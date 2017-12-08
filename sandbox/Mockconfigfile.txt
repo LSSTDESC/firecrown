@@ -1,0 +1,50 @@
+Config file mock up for TJPCosmo
+
+Legend:
+each element have either a - or ~ infront of it. the - means a obligatory element, while ~ is a optional element. 
+
+Cosmology:
+- Type				flag
+- Omega_B					[,]
+- Omega_M					[,]
+- Omega_lambda				[,]
+- Omega_nu					[,]
+- sigma_8					[,]
+- w							[,]
+- H0						[,]
+- h							[,]
+- n_s						[,]
+
+Global systematics:
+~ baryonmodel				Baryonmodel_name[params,range]
+
+Statistics:
+2pt-correlations
+- GG						GG_class_name[sample1_name, sample2_name]
+- Ggamma					Ggamma_class_name[sample1_name, sample2_name]
+- gammmagamma				gammagamma_class_name[sample1_name, sample2_name]
+- Theta_min					[]
+- Theta_max					[]
+~ L_min						[]
+~ L_max						[]
+
+
+
+
+SourceSamples:
+- LSS_sample
+	- name
+	- redshiftdist			spline/histogram
+	- redshift_uncertainty	model + param
+	- Galaxy_bias			model + param
+	~ Assembly_bias			model + param
+	- redshift bins			[,]
+	~ Color bins			[,]
+	
+- WL_sample
+
+- CL_sample
+
+- SN_sample
+
+- SL_sample
