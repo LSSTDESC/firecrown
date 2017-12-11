@@ -367,14 +367,15 @@ class BaryonEffects(Systematic):
     """
     name = 'BaryonEffects'
 
-    def __init__(self, amplitude=0.):
+    def __init__(self, kmin=1000., amplitude=0.):
+        self.kmin = kmin
         self.amp = amplitude
 
     def get_nuisance_params(self, cosmology, source=None):
         return ParameterSet(amplitude=float)
 
     def with_params(self, params):
-        return BaryonEffects(params.amplitude)
+        return BaryonEffects(self.kmin, params.amplitude)
 
     def adjust_cosmology(self, cosmology):
         new_cosmo = copy.copy(cosmology)
@@ -642,7 +643,7 @@ def test_theory_vector():
         else:
             source.systematics = [bias]
 
-    baryons = BaryonEffects()
+    baryons = BaryonEffects(kmin=1000)  # Presumably some minimum k at which baryons affect Pdelta.
     cosmic_shear = TheoryVector(cosmology, sources, stats, [baryons])
 
     # Get the set of parameters including nuisance parameters
@@ -682,7 +683,60 @@ def test_invalid():
     np.testing.assert_raises(ValueError, TheoryVector, cosmology, [source1], [stat2])
 
 
+def test_config():
+    """Demo of what a config-based version of test_theory_vector might look like:
+
+    Note: A real implementation would do a lot more checking of the validity of the input.
+          I don't do any such checking here.
+    """
+    import yaml
+    with open('mike_demo.yaml') as fin:
+        config = yaml.load(fin)
+
+    # Construct the Cosmology instance
+    cosmology = Cosmology(fixed_params=ParameterSet(**(config['cosmology']['fixed'])),
+                          variable_params=ParameterSet(**(config['cosmology']['variable'])))
+
+    # Construct the Sources, including their associated Systematics
+    sources = []
+    for source_dict in config['sources']:
+        source_type = eval(source_dict.pop('type'))
+        sys_config = source_dict.pop('systematics', [])  # These are the config specs
+        systematics = [] # These will be the constructed Systematics instances
+        for sys_dict in sys_config:
+            sys_type = eval(sys_dict.pop('type'))
+            systematics.append(sys_type(**sys_dict))
+        source = source_type(**source_dict)
+        source.systematics = systematics
+        sources.append(source)
+    assert len(sources) == 3
+
+    # Construct the Statistics
+    stats = []
+    for stat_dict in config['statistics']:
+        stat_type = eval(stat_dict.pop('type'))
+        stats.append(stat_type(**stat_dict))
+    assert len(stats) == 6
+
+    # Construct the global Systematics
+    systematics = []
+    for sys_dict in config.get('systematics',[]):
+        sys_type = eval(sys_dict.pop('type'))
+        systematics.append(sys_type(**sys_dict))
+
+    theory_vector = TheoryVector(cosmology, sources, stats, systematics)
+
+    # Run through the same usage tests we did in test_theory_vector()
+    params = theory_vector.get_params()
+    assert len(params.full_keys()) == 11
+    for key in params.full_keys():
+        params[key] = np.random.random()
+    vector = theory_vector.build_vector(params)
+    assert len(vector) == 30
+
+
 if __name__ == '__main__':
     test_params()
     test_theory_vector()
     test_invalid()
+    test_config()
