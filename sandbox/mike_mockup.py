@@ -5,7 +5,7 @@ import sys
 from collections import OrderedDict
 
 #
-# ParameterSet class
+# ParameterSet class keeps track of the variable parameters being chained over.
 #
 
 class ParameterSet(OrderedDict):
@@ -167,6 +167,10 @@ class ParameterSet(OrderedDict):
         return True
 
 
+#
+# TheoryVector is the main driver class that generates a theory vector for each step in a chain.
+#
+
 class TheoryVector(object):
     """A class that can generate a theory vector.
 
@@ -309,7 +313,8 @@ class TheoryVector(object):
 
 
 #
-# Systematic class
+# Systematic classes modify various aspects of the calculation appropriately.
+# Included here are three toy systematics models that apply to different stages of the process.
 #
 
 class Systematic(object):
