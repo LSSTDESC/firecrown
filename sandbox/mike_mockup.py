@@ -169,8 +169,8 @@ class ParameterSet(OrderedDict):
 
 class TheoryVector(object):
     """A class that can generate a theory vector.
-    
-    Inputs are an input cosmology, some sources, some target statistics to include, and 
+
+    Inputs are an input cosmology, some sources, some target statistics to include, and
     possibly some systematics.  Most systematics are attached to the sources directly,
     but some may be passed here as more global or cosmological systematics.
     """
@@ -178,18 +178,10 @@ class TheoryVector(object):
         self.cosmology = cosmology
         self.sources = sources
         self.statistics = statistics
+        self.systematics = systematics
 
-        # Build our complete list of systematics
-        # First, any systematics given directly here are global-level systematics, not tied
-        # to any particular source. E.g. baryon effects.
-        if systematics is None:
-            self.systematics = []
-        else:
-            self.systematics = systematics
-
-        # Add in any systematics that the sources define
-        for source in self.sources:
-            self.systematics += source.systematics
+        # Make a dict that connects names to source objects
+        self.source_by_name = { s.name : s for s in sources }
 
         self.validate()
 
@@ -197,76 +189,311 @@ class TheoryVector(object):
         """Validate the inputs to make sure everything in consistent.
         """
         # Check that our sources have unique names.  Maybe other sanity checks about the sources.
-        names = [source.name for source in self.sources]
+        names = [ s.name for s in self.sources ]
         if len(names) != len(set(names)):
             raise ValueError("Some sources have identical names!")
-        # Other sanity checks? ... 
+        # Other sanity checks? ...
 
         # Check that we have the appropriate sources to do each statistic, that the cosmology
         # is valid for this statistic, maybe other sanity checks.
+        self.stat_sources = {}
         for stat in self.statistics:
-            stat.validate(self.cosmology, self.sources)
+            for source_name in stat.source_names:
+                if source_name not in self.source_by_name:
+                    raise ValueError("Source %s needed by %s not found"%(source_name, stat.name))
+
+            stat_sources = [ self.source_by_name[n] for n in stat.source_names ]
+            self.stat_sources[stat.name] = stat_sources
+
+            # Any other checks that the statistic might want to do.
+            stat.validate(self.cosmology, stat_sources)
+
+        # Check that the systematics have whatever they need
+        for source in self.sources:
+            for sys in source.systematics:
+                sys.validate(source)
+
 
     def get_params(self):
-        """Build a parameter vector.
-        
+        """Build a ParameterSet for the cosmology and all systematics.
+
         These are the values that need to be chained over, including both cosmological parameters
         of interest, and nuisance parameters.
-
-        Mostly the calling routine probably just needs the length of this vector
         """
         # Start with the variable cosmological parameters
-        params = self.cosmology.get_params()
-
-        self._param_index = [0] * (len(self.systematics)+1)
-        self._param_index[0] = len(params)
+        kwargs = { 'cosmo' : self.cosmology.get_variable_params() }
 
         # Add in nuisance parameters
-        for i_sys, sys in enumerate(self.systematics):
-            sys_params = sys.get_nuisance_params(self.sources)
-            params += sys_params
-            self._param_index[i_sys+1] = len(params)
+        for sys in self.systematics:
+            sys_params = sys.get_nuisance_params(self.cosmology)
+            if sys_params is not None:
+                kwargs[sys.name] = sys_params
 
-        return params
+        for source in self.sources:
+            source_kwargs = {}
+            for sys in source.systematics:
+                sys_params = sys.get_nuisance_params(self.cosmology, source)
+                if sys_params is not None:
+                    source_kwargs[sys.name] = sys_params
+            kwargs[source.name] = ParameterSet(**source_kwargs)
 
+        return ParameterSet(**kwargs)
 
     def build_vector(self, params):
         """Build up a vector for a given step in a chain
         """
-        # Get a new cosmology for this step in the chain.
-        cosmology = self.cosmology.with_params(params[0:self._param_index[0]])
 
-        systematics = []
-        for i_sys, sys in enumerate(self.systematics):
-            sys_params = params[self._param_index[i_sys]:self._param_index[i_sys+1]]
-            systematics.append(sys.with_params(sys_params))
+        # Note: Not sure how best to get the covariance calculation in here.  It could either
+        #       be returned as well from this method, where each statistic would know how to
+        #       compute its own covariance and then something be done for the cross-statistics
+        #       blocks.  Or there could be a parallel method that looks a lot like this in terms
+        #       of the structure of hot the cosmology, sources get adjusted, but then there would
+        #       be a different method at the end for adjusting the covariance rather than the
+        #       vector.
+        #       The former might be better if the the covariance is different for each step in the
+        #       chain, but the latter would be better if the covariance is kept fixed.  (And having
+        #       them be two functions would still work even if the covariance is changing each time,
+        #       since it would probably not be much overhead to run both functions for each step.)
+
+        # Get a new cosmology for this step in the chain.
+        cosmology = self.cosmology.with_params(params.cosmo)
+
+        # Update the systematics with the parameters for this step.
+        global_systematics = []
+        for sys in self.systematics:
+            if sys.name in params:
+                sys = sys.with_params(params[sys.name])
+            global_systematics.append(sys)
+
+        source_systematics = {}
+        for source in self.sources:
+            source_systematics[source.name] = []
+            for sys in source.systematics:
+                if sys.name in params[source.name]:
+                    sys = sys.with_params(params[source.name][sys.name])
+                source_systematics[source.name].append(sys)
 
         # Presumably do any initial calculations that are needed.  Pdelta, etc.?
         cosmology.initialize()
 
-        # Note: some systamtics might be in more than one of these catagories.
-        input_sys = [ sys for sys in self.systematics if sys.affects_input() ]
-        output_sys = [ sys for sys in self.systematics if sys.affects_output() ]
-        calc_sys = [ sys for sys in self.systematics if sys.requires_calculation() ]
+        # Update the cosmology as appropriate.
+        for sys in self.systematics:
+            cosmology = sys.adjust_cosmology(cosmology)
 
-        for sys in input_sys:
-            # Not exactly sure if I understood the meaning of input systematics, but maybe
-            # something like this to adjust the nominal Pdelta, etc.
-            cosmology = sys.adjust_input(cosmology)
+        # Update the sources as appropriate.
+        sources = []
+        for source in self.sources:
+            for sys in source_systematics[source.name]:
+                source = sys.adjust_source(source, cosmology)
+            sources.append(source)
 
         # Build up the statistcs vectors
         stat_vectors = []
         for stat in self.statistics:
-            # I guess the calculation statistics need to be passed into this function.
-            calc_sys = [ sys for sys in calc_sys if sys.is_relevant_to(stat) ]
-            v = stat.build_vector(cosmology, self.sources, calc_sys)
+            stat_sources = self.stat_sources[stat.name]
+            # Get the raw theory vector for this statistics
+            v = stat.build_vector(cosmology, stat_sources)
 
-            # Adjust the output vectors as needed
-            for sys in output_sys:
-                sys.adjust_output(v, stat, cosmology)
+            # Update this vector as appropriate
+            for sys in global_systematics:
+                v = sys.adjust_vector(v, stat, stat_sources, cosmology)
+
+            for source in stat_sources:
+                for sys in source_systematics[source.name]:
+                    v = sys.adjust_vector(v, stat, stat_sources, cosmology)
+
+            stat_vectors.append(v)
 
         # Combine into a single theory vector
         return np.concatenate(stat_vectors)
+
+
+#
+# Systematic class
+#
+
+class Systematic(object):
+    """Base class for the various systematic types.
+    """
+    def __init__(self):
+        pass
+
+    def validate(self, source):
+        """Check that the source has the required metadata to use this systematic.
+        """
+        pass
+
+    def get_nuisance_params(self, cosmology, source=None):
+        """Get the appropriate nuisance parameters for this systematic
+
+        The base class implementation is to have no nuisance parameters.
+        Subclasses that do have nuisance parameters will override this and return a
+        ParameterSet instance.
+        """
+        return None
+
+    def adjust_cosmology(self, cosmology):
+        """Adjust the cosmology appropriately according to the current systematic.
+
+        The base class implementation is a no op.
+
+        Subclasses that need to do something here will override this functionality,
+        returning a new copy of the cosmology with appropriate modifications.
+        """
+        return cosmology
+
+    def adjust_source(self, source, cosmology):
+        """Adjust source information appropriately according to the current systematic.
+
+        The base class implementation is a no op.
+
+        Subclasses that need to do something here will override this functionality,
+        returning a new copy of the source with appropriate modifications.
+        """
+        return source
+
+    def adjust_vector(self, vector, stat, sources, cosmology):
+        """Adjust the theory vector from a given statistic appropriately.
+
+        The base class implementation is a no op.
+
+        Unlike other adjust_* methods, there is probably no need to make a copy of the
+        vector.  So the vector may be modified in place.
+        """
+        return vector
+
+class BaryonEffects(Systematic):
+    """Systematic implementing the effects of baryons on the cosmological power spectrum.
+    """
+    name = 'BaryonEffects'
+
+    def __init__(self, amplitude=0.):
+        self.amp = amplitude
+
+    def get_nuisance_params(self, cosmology, source=None):
+        return ParameterSet(amplitude=float)
+
+    def with_params(self, params):
+        return BaryonEffects(params.amplitude)
+
+    def adjust_cosmology(self, cosmology):
+        new_cosmo = copy.copy(cosmology)
+        # Should do something here presumably...
+        return new_cosmo
+
+class NonlinearBias(Systematic):
+    """Systematic implementing the effects of non-linear bias.
+    """
+    name = 'NonlinearBias'
+
+    def __init__(self, b1=1., b2=0., fixed=False):
+        self.b1 = b1
+        self.b2 = b2
+        self.fixed = fixed
+
+    def get_nuisance_params(self, cosmology, source):
+        # N.B. source is a require parameter here, since a NonlinearBias must be attached to a
+        # particular source object.
+        if self.fixed:
+            return None
+        else:
+            return ParameterSet(b1=float, b2=float)
+
+    def with_params(self, params):
+        # This has a cheap constructor, so go ahead and use that.
+        return NonlinearBias(params.b1, params.b2)
+
+    def adjust_source(self, source, cosmology):
+        new_source = copy.copy(source)
+        # Should do something here presumably...
+        return new_source
+
+class SimpleIA(Systematic):
+    """Systematic implementing some model of intrinsic alignments
+    """
+    name = 'SimpleIA'
+
+    def __init__(self, a1=0., a2=0.):
+        self.a1 = a1
+        self.a2 = a2
+
+    def validate(self, source):
+        # For this toy model, we posit that the IA model is invalid above z=0.6.
+        if source.mean_z > 0.6:
+            raise ValueError("SimpleIA is invalid above redshift 0.6")
+
+    def get_nuisance_params(self, cosmology, source):
+        return ParameterSet(a1=float, a2=float)
+
+    def with_params(self, params):
+        return SimpleIA(params.a1, params.a2)
+
+    def adjust_vector(self, v, stat, sources, cosmology):
+        # Should do something here presumably...
+        return v
+
+
+# Note: Everything below here is very much a toy model just to write the tests.
+#       These aren't trying to be complete in any sense.
+class Cosmology(object):
+    """A toy class representing cosmological information.
+    """
+    def __init__(self, fixed_params, variable_params):
+        # This is probably not the interface you'd want for this, but it's fine for setting up
+        # the tests below.
+        self.fixed_params = fixed_params
+        self.variable_params = variable_params
+
+    def get_variable_params(self):
+        return self.variable_params
+
+    def initialize(self):
+        pass
+
+    def with_params(self, params):
+        return Cosmology(self.fixed_params, params)
+
+
+class Statistic(object):
+    """Base class for the various statistic types.
+    """
+    def __init__(self):
+        pass
+
+    def validate(self, cosmology, sources):
+        pass
+
+    def build_vector(self, cosmology, sources):
+        raise NotImplementedError("Each derived class needs to implement build_vector")
+
+class ShearShearCorrelation(Statistic):
+    """A toy two-point shear-shear correlation function.
+    """
+    def __init__(self, name, source_names, theta_min=10, theta_max=200, nbins=5):
+        self.name = name
+        self.theta_min = theta_min
+        self.theta_max = theta_max
+        self.nbins = nbins
+        self.source_names = source_names
+
+    def validate(self, cosmology, sources):
+        pass
+
+    def build_vector(self, cosmology, sources):
+        return np.zeros(self.nbins)
+
+class Source(object):
+    """Base class for a source type
+    """
+    def __init__(self):
+        pass
+
+class WLShear(Source):
+    """A toy class representing the data in a WL shear catalog
+    """
+    def __init__(self, name, mean_z):
+        self.name = name
+        self.mean_z = mean_z
 
 
 
@@ -376,5 +603,86 @@ def test_params():
     np.testing.assert_raises(TypeError, all_params.__getattr__, 3)
 
 
+def test_theory_vector():
+    """Basic tests of the TheoryVector usage
+    """
+    # We'll model a very simple use case of shear-shear correlations with 3 tomo bins.
+
+    # Cosmology has 2 variable parameters: Omega_m and sigma_8.
+    cosmology = Cosmology(fixed_params=None,
+                          variable_params=ParameterSet(Omega_m=float, sigma_8=float))
+
+    # The sources are shears in 3 bins.  These don't actually have any information except the name.
+    ntomo = 3
+    mean_z = [0.31, 0.57, 0.88]
+    sources = [ WLShear(name='shears_%d'%tomo, mean_z=mean_z[tomo]) for tomo in range(ntomo) ]
+    assert len(sources) == ntomo
+
+    # There are 6 two-point correlations, 3 auto and 3 cross.
+    nbins = 5
+    stats = [ ShearShearCorrelation(name='shear2pt_%d_%d'%(i,j),
+                                    source_names=['shears_%d'%i, 'shears_%d'%j],
+                                    nbins=nbins)
+              for i in range(ntomo) for j in range(i,ntomo) ]
+    assert len(stats) == ntomo * (ntomo+1) / 2
+
+    # We have three systematics:
+    # BaryonEffects modifies some stuff about the cosmology
+    # NonlinearBias modifies the bias term for each source
+    # SimpleIA modifies the measured two-point correlation function
+    # The latter two are attached to sources.
+
+    for source in sources:
+        # Let's say we only apply IA for z < 0.6, so the first 2 tomo bins.
+        # And the bias is fixed for z < 0.4, so only variable in the higher 2 tomo bins.
+        bias = NonlinearBias(fixed=source.mean_z < 0.4)
+        if source.mean_z < 0.6:
+            ia = SimpleIA()
+            source.systematics = [bias, ia]
+        else:
+            source.systematics = [bias]
+
+    baryons = BaryonEffects()
+    cosmic_shear = TheoryVector(cosmology, sources, stats, [baryons])
+
+    # Get the set of parameters including nuisance parameters
+    params = cosmic_shear.get_params()
+    print('params = ',params.full_keys())
+    # There are 2 cosmo params, 1 baryon, 2*2 bias, and 2*2 ia.
+    assert len(params.full_keys()) == 11
+
+    # Simulate a step in a MCMC with specific values for each parameter.
+    # Note: not sure where limits and priors fit in.  They might belong in the ParameterSet
+    # class as further information about each parameter.  Or possibly in a separate structure.
+    # For now, I ignore that, and just draw random values from 0-1 for each parameter.
+    for key in params.full_keys():
+        params[key] = np.random.random()
+    print('params for this step = ',params)
+    vector = cosmic_shear.build_vector(params)
+
+    print('vector has %d elements.'%len(vector))
+    assert len(vector) == nbins * len(stats)
+
+def test_invalid():
+    """Test some invalid operations with TheoryVector
+    """
+    cosmology = Cosmology(fixed_params=None,
+                          variable_params=ParameterSet(Omega_m=float, sigma_8=float))
+    source1 = WLShear(name='shears_0', mean_z=0.5)
+    source2 = WLShear(name='shears_1', mean_z=0.8)
+
+    stat1 = ShearShearCorrelation(name='shear2pt', source_names=['shears_0'])
+    stat2 = ShearShearCorrelation(name='shear2pt', source_names=['shears_1'])
+    stat3 = ShearShearCorrelation(name='shear2pt', source_names=['shears_1', 'shears_2'])
+
+    # Multiple sources with the same name is not allowed.
+    np.testing.assert_raises(ValueError, TheoryVector, cosmology, [source1, source1], [stat1])
+
+    # Stats needing a source not listed
+    np.testing.assert_raises(ValueError, TheoryVector, cosmology, [source1], [stat2])
+
+
 if __name__ == '__main__':
     test_params()
+    test_theory_vector()
+    test_invalid()
