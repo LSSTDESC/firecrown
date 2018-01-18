@@ -119,7 +119,10 @@ Tasks
 - generate the metadata required to assemble the various data points into a specific order
 - generate a data vector in this specified order
 
+Parameter Object
+----------------
 
+The parameter object contains all the parameters available to the theory calculations.  An example is described in https://github.com/LSSTDESC/TJPCosmo/blob/master/sandbox/mike_mockup.py
 
 
 Component Reference: CosmoSIS Classes
