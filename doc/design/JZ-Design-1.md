@@ -19,6 +19,7 @@ Dashed border = collection of models in various classes/files
 
 No fill = new code
 Yellow fill = already implemented in cosmosis
+Green = other existing libraries (just CCL for now)
 
 The CosmoSIS components will be pip installable from the (nearly ready) standalone version of the code (doesn't include the standard library).  If there are any deficiencies in it I can work on them.
 
