@@ -1,8 +1,16 @@
 import argparse
-from cosmosis.main import run_cosmosis, mpi_pool, process_pool
-import cosmosis.samplers
 import os
 import pathlib
+import pdb
+
+# external packages
+from cosmosis.main import run_cosmosis, mpi_pool, process_pool, Inifile
+import cosmosis.samplers
+
+# internal imports
+from . import utils
+
+
 
 dirname = pathlib.Path(__file__).parent
 
@@ -46,17 +54,17 @@ def main(args):
         # This parameter just needs a dummy value to stop cosmosis complaining
         ("runtime","root") : "",
         # Our models are always made up of a theory component and a likelihood components
-        ("pipeline","modules") : "theory likelihood",
+        ("pipeline","modules") : "model",
         # we always generate one named (total) likelihood, called "lsst"
-        ("pipeline","likelihoods") : "lsst",
+        ("pipeline","likelihoods") : "total",
         # we always use these same two cosmosis modules, but we configure them 
         # to do what we want.
-        ("theory","file") : str(dirname.joinpath('theory_model.py')),
-        ("likelihood","file") : str(dirname.joinpath('likelihood_model.py')),
+        ("model","file") : "model",
+        ("model","file") : str(dirname.joinpath('theory_model.py')),
     }
     args.params = override
-    # This can provide overrides for the values file
     args.variables = {}
+
 
     # Run the cosmosis main function, optionally under two different types of parallelism
     if args.mpi:
@@ -75,4 +83,5 @@ def main(args):
                 print(error)
                 pdb.post_mortem()
             else:
+                print("here")
                 raise
