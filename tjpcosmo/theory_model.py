@@ -16,10 +16,7 @@ def parse_data_set_options(options):
     for data_file in data_files.split():
         tag, section = data_file.split(':')
         d = {}
-        print(tag,section)
-        print(options.keys(section))
         for _, key in options.keys(section):
-            print (tag, section, key)
             d[key] = options[section,key]
         data_info[tag] = d
     return data_info

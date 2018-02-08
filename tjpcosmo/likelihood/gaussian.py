@@ -1,4 +1,4 @@
-
+import numpy as np
 from .base import BaseLikelihood
 
 class Gaussian(BaseLikelihood):
@@ -7,5 +7,5 @@ class Gaussian(BaseLikelihood):
         mu = self.data.data_vector
         P = self.data.precision
         delta = d-mu
-        like = np.einsum('i,ij,j', delta, P, delta)
+        like = float(np.einsum('i,ij,j', delta, P, delta))
         return like
