@@ -1,4 +1,4 @@
-from .base import BaseModel, BasePredictor, TheoryResults
+from .base import BaseModel, BaseTheoryCalculator, TheoryResults
 from ..dataset import BaseDataSet
 import yaml
 import numpy as np
@@ -27,7 +27,7 @@ class ExampleTheoryResults(TheoryResults):
         return np.array([self.ombh2])
 
 
-class ExamplePredictor(BasePredictor):
+class ExampleTheoryCalculator(BaseTheoryCalculator):
     def __init__(self, config, metadata):
         super().__init__(config, metadata)
 
@@ -42,7 +42,7 @@ class ExamplePredictor(BasePredictor):
 
 class ExampleModel(BaseModel):
     name = 'example'
-    predictor_class = ExamplePredictor
+    theory_calculator_class = ExampleTheoryCalculator
     theory_results_class = ExampleTheoryResults
     data_class = ExampleDataSet
     metadata_class = None

@@ -11,13 +11,13 @@ from ..theory_results import TheoryResults
 
 model_registry = {}
 
-class BasePredictor:
+class BaseTheoryCalculator:
     def __init__(self, config, metadata):
         self.config = config
         self.metadata = metadata
 
 class BaseModel:
-    predictor_class = None
+    theory_calculator_class = None
     theory_results_class = None
     data_class = None
     metadata_class = None
@@ -50,7 +50,7 @@ class BaseModel:
         self.config=config
         self.data = self.data_class.load(data_info)
         self.metadata = self.extract_metadata(data_info)
-        self.predictor = self.predictor_class(config, self.metadata)
+        self.theory_calculator = self.theory_calculator_class(config, self.metadata)
         self.likelihood = likelihood_class(self.data)
 
     @staticmethod
@@ -61,7 +61,7 @@ class BaseModel:
         pass
 
     def run(self, parameters):
-        theory_results = self.predictor.run(parameters)
+        theory_results = self.theory_calculator.run(parameters)
         like = self.likelihood.run(theory_results)
         return like, theory_results
 
