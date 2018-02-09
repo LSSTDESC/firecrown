@@ -55,6 +55,32 @@ def execute(block, model):
 
 
 def block_to_parameters(block):
-    omega_b = block[names.cosmological_parameters, 'omega_b']
+    # These are the mandatory parameters for cosmology, if they aren't there,
+    # the code crashes.
+    Omega_c = block[names.cosmological_parameters, 'Omega_c']
+    Omega_b = block[names.cosmological_parameters, 'Omega_b']
+    Omega_l = block[names.cosmological_parameters, 'Omega_l']
     h = block[names.cosmological_parameters, 'h']
-    return Parameters(omega_b=omega_b, h=h)
+    n_s = block[names.cosmological_parameters, 'n_s']
+    A_s = block[names.cosmological_parameters, 'A_s']
+    
+    #Optional parameters, will be set to a default value, if not there
+    w0 = block.get_double(names.cosmological_parameters, 'w0',-1.0)
+    wa = block.get_double(names.cosmological_parameters, 'wa', 0.0)
+    
+    Omega_n_mass = block.get_double(names.cosmological_parameters, 'Omega_n_mass', 0.0)
+    Omega_n_rel = block.get_double(names.cosmological_parameters, 'Omega_n_rel', 0.0)
+    Omega_g = block.get_double(names.cosmological_parameters, 'Omega_g', 0.0)
+    N_nu_mass = block.get_double(names.cosmological_parameters, 'N_nu_mass', 0.0)
+    N_nu_rel = block.get_double(names.cosmological_parameters, 'N_nu_rel', 3.046)
+    mnu = block.get_double(names.cosmological_parameters, 'mnu', 0.0)
+    
+    #Parameters that must be derived
+    Omega_m = Omega_c + Omega_b + Omega_n_mass
+    Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)
+    
+    return ParameterSet(Omega_c = Omega_c, Omega_b = Omega_b, Omega_m = Omega_m,
+                        Omega_k = Omega_k, Omega_l = Omega_l, Omega_n_mass = Omega_n_mass,
+                        Omega_n_rel = Omega_n_rel, Omega_g = Omega_g, w0 = w0, wa = wa,
+                        h = h, N_nu_mass = N_nu_mass, N_nu_rel = N_nu_rel, mnu = mnu, A_s = A_s,
+                        n_s = n_s, sigma_8 = sigma_8)
