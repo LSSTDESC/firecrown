@@ -15,6 +15,15 @@ class BaseTheoryCalculator:
     def __init__(self, config, metadata):
         self.config = config
         self.metadata = metadata
+        
+        """ We need to load in details of the models"""
+        config_file = yaml.load(config.open())
+        
+        self.source_by_name = config['name']
+    
+        
+    def validate(self):
+        """Validating the inputs, This function is missing for now, implement it later"""
 
 class BaseModel:
     theory_calculator_class = None
@@ -60,12 +69,12 @@ class BaseModel:
     def extract_metadata(self, data_info):
         pass
 
-    def run(self, parameters):
-        theory_results = self.theory_calculator.run(parameters)
+    def run(self, parameterSet):
+        theory_results = self.theory_calculator.run(parameterSet)
         like = self.likelihood.run(theory_results)
         return like, theory_results
 
-    def likelihood(self, parameters):
+    def likelihood(self, parameterSet):
         return self.run[0]
 
 
