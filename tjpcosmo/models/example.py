@@ -1,4 +1,4 @@
-from .base import BaseModel, BaseTheoryCalculator, TheoryResults
+from .base import AnalysisModelBase, BaseTheoryCalculator, TheoryResults
 from ..dataset import BaseDataSet
 import yaml
 import numpy as np
@@ -33,14 +33,14 @@ class ExampleTheoryCalculator(BaseTheoryCalculator):
 
     def run(self, parameters):
         print("Running Example theory prediction")
-        omega_b = parameters.omega_b
+        omega_b = parameters.Omega_b
         h = parameters.h
 
         results = ExampleTheoryResults()
         results.ombh2 = omega_b * h**2
         return results
 
-class ExampleModel(BaseModel):
+class ExampleAnalysisModel(AnalysisModelBase):
     name = 'example'
     theory_calculator_class = ExampleTheoryCalculator
     theory_results_class = ExampleTheoryResults

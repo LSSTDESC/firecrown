@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 scripts = ['bin/tjpcosmo']
 
 if __name__ == "__main__":
-    setup(name = 'cosmosis',
+    setup(name = 'tjpcosmo',
           description       = "DESC Cosmology Constraints Tool",
           author            = "DESC Team",
           packages = find_packages(),

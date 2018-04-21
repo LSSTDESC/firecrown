@@ -5,6 +5,8 @@ DESC Parameters class.
 This is a placeholder.
 
 """
+from collections import OrderedDict
+
 
 class ParameterSet(OrderedDict):
     _valid_types = [ float, int, bool ]

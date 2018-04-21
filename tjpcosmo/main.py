@@ -65,7 +65,6 @@ def main(args):
     args.params = override
     args.variables = {}
 
-
     # Run the cosmosis main function, optionally under two different types of parallelism
     if args.mpi:
         with mpi_pool.MPIPool() as pool:
@@ -79,6 +78,7 @@ def main(args):
             run_cosmosis(args)
         except Exception as error:
             if args.pdb:
+                print("pdb")
                 print("There was an exception - starting python debugger because you ran with --pdb")
                 print(error)
                 pdb.post_mortem()

@@ -6,7 +6,7 @@ All theory models must be subclasses of this Model superclass.
 import pathlib
 import warnings
 from ..theory_results import TheoryResults
-
+import yaml
 
 
 model_registry = {}
@@ -17,7 +17,7 @@ class BaseTheoryCalculator:
         self.metadata = metadata
         
         """ We need to load in details of the models"""
-        config_file = yaml.load(config.open())
+        # config_file = yaml.load(config.open())
         
         self.source_by_name = config['name']
     
@@ -25,7 +25,7 @@ class BaseTheoryCalculator:
     def validate(self):
         """Validating the inputs, This function is missing for now, implement it later"""
 
-class BaseModel:
+class AnalysisModelBase:
     theory_calculator_class = None
     theory_results_class = None
     data_class = None

@@ -1,2 +1,2 @@
-from .base import BaseModel
+from .base import AnalysisModelBase
 from . import example
