@@ -1,4 +1,6 @@
-from .base import AnalysisModelBase, BaseTheoryCalculator, TheoryResults
+from .base_model import AnalysisModel
+from .base_calculator import TheoryCalculator
+from .base_theory_results import TheoryResults
 from ..dataset import BaseDataSet
 import yaml
 import numpy as np
@@ -27,7 +29,7 @@ class ExampleTheoryResults(TheoryResults):
         return np.array([self.ombh2])
 
 
-class ExampleTheoryCalculator(BaseTheoryCalculator):
+class ExampleTheoryCalculator(TheoryCalculator):
     def __init__(self, config, metadata):
         super().__init__(config, metadata)
 
@@ -40,7 +42,7 @@ class ExampleTheoryCalculator(BaseTheoryCalculator):
         results.ombh2 = omega_b * h**2
         return results
 
-class ExampleAnalysisModel(AnalysisModelBase):
+class ExampleAnalysisModel(AnalysisModel):
     name = 'example'
     theory_calculator_class = ExampleTheoryCalculator
     theory_results_class = ExampleTheoryResults

@@ -3,63 +3,56 @@ sources:
     -
         type: WLShear
         name: shears_0
-        mean_z: 0.31
-        systematics:
-            -
-                type: NonlinearBias
-                fixed: True
-            -
-                type: SimpleIA
+        systematics: [ia_lowz] 
     -
         type: WLShear
         name: shears_1
-        mean_z: 0.57
-        systematics:
-            -
-                type: NonlinearBias
-            -
-                type: SimpleIA
+        systematics: [ia_lowz]
     -
         type: WLShear
         name: shears_2
-        mean_z: 0.88
-        systematics:
-            -
-                type: NonlinearBias
+        systematics: [ia_highz, multiplicative_shear]
 
 statistics:
-    -
-        type: ShearShearCorrelation
-        name: shear2pt_0_0
-        source_names: ['shears_0', 'shears_0']
-        nbins: 5
-    -
-        type: ShearShearCorrelation
-        name: shear2pt_0_1
-        source_names: ['shears_0', 'shears_1']
-        nbins: 5
-    -
-        type: ShearShearCorrelation
-        name: shear2pt_0_2
-        source_names: ['shears_0', 'shears_2']
-        nbins: 5
-    -
-        type: ShearShearCorrelation
-        name: shear2pt_1_1
-        source_names: ['shears_1', 'shears_1']
-        nbins: 5
-    -
-        type: ShearShearCorrelation
-        name: shear2pt_1_2
-        source_names: ['shears_1', 'shears_2']
-        nbins: 5
-    -
-        type: ShearShearCorrelation
-        name: shear2pt_2_2
-        source_names: ['shears_2', 'shears_2']
-        nbins: 5
+    names:
+        shear2pt_0_0:
+            source_names: [shears_0, shears_0]
+            theta_min: 3.4
+            theta_max: 200.0
+            systematics: additive_shear
+        shear2pt_0_1:
+            source_names: [shears_0, shears_1]
+            theta_min: 3.4
+            theta_max: 200.0
+            systematics: additive_shear
+        shear2pt_0_2:
+            source_names: [shears_0, shears_2]
+            theta_min: 3.4
+            theta_max: 200.0
+            systematics: additive_shear
+        shear2pt_1_1:
+            source_names: [shears_1, shears_1]
+            theta_min: 3.4
+            theta_max: 200.0
+            systematics: additive_shear
+        shear2pt_1_2:
+            source_names: [shears_1, shears_2]
+            theta_min: 3.4
+            theta_max: 200.0
+            systematics: additive_shear
+        shear2pt_2_2:
+            source_names: [shears_2, shears_2]
+            theta_min: 3.4
+            theta_max: 200.0
+            systematics: additive_shear
 
 systematics:
-    -
+    ia_lowz: 
+        type: LinearAlignment
+    ia_highz:
+        type: LinearAlignment
+    multiplicative_shear:
+        type: MultiplicativeShear
+    baryons:
         type: BaryonEffects
         kmin: 1000

@@ -2,3 +2,5 @@ sandbox/.ipynb_checkpoints/*
 env/
 dist/
 build/
+__pycache__/
+

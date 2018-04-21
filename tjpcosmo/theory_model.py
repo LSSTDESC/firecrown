@@ -4,7 +4,7 @@ to the primary TJPCosmo code.
 
 """
 from cosmosis.datablock import names, option_section
-from tjpcosmo.models import AnalysisModelBase
+from tjpcosmo.models import AnalysisModel
 from tjpcosmo.likelihood import BaseLikelihood
 from tjpcosmo.parameters import ParameterSet
 import pathlib
@@ -33,7 +33,7 @@ def setup(options):
 
     # Get any metadata
     model_name = config['name']
-    model_class = AnalysisModelBase.from_name(model_name)
+    model_class = AnalysisModel.from_name(model_name)
     likelihood_class = BaseLikelihood.from_name(likelihood_name)
 
     # Create the model using the yaml config info
