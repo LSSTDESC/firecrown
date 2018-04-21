@@ -1,4 +1,4 @@
-from .base_model import AnalysisModel
+from .base_analysis import Analysis
 from . import example
 
 

@@ -13,39 +13,47 @@ sources:
         name: shears_2
         systematics: [ia_highz, multiplicative_shear]
 
-statistics:
-    names:
-        shear2pt_0_0:
-            source_names: [shears_0, shears_0]
-            theta_min: 3.4
-            theta_max: 200.0
-            systematics: additive_shear
-        shear2pt_0_1:
-            source_names: [shears_0, shears_1]
-            theta_min: 3.4
-            theta_max: 200.0
-            systematics: additive_shear
-        shear2pt_0_2:
-            source_names: [shears_0, shears_2]
-            theta_min: 3.4
-            theta_max: 200.0
-            systematics: additive_shear
-        shear2pt_1_1:
-            source_names: [shears_1, shears_1]
-            theta_min: 3.4
-            theta_max: 200.0
-            systematics: additive_shear
-        shear2pt_1_2:
-            source_names: [shears_1, shears_2]
-            theta_min: 3.4
-            theta_max: 200.0
-            systematics: additive_shear
-        shear2pt_2_2:
-            source_names: [shears_2, shears_2]
-            theta_min: 3.4
-            theta_max: 200.0
-            systematics: additive_shear
+    -
+        type: Cluster
+        name: cluster_1
+        systematics: [MOR]
 
+statistics:
+    shear2pt_0_0:
+        source_names: [shears_0, shears_0]
+        theta_min: 3.4
+        theta_max: 200.0
+        systematics: additive_shear
+    shear2pt_0_1:
+        source_names: [shears_0, shears_1]
+        theta_min: 3.4
+        theta_max: 200.0
+        systematics: additive_shear
+    shear2pt_0_2:
+        source_names: [shears_0, shears_2]
+        theta_min: 3.4
+        theta_max: 200.0
+        systematics: additive_shear
+    shear2pt_1_1:
+        source_names: [shears_1, shears_1]
+        theta_min: 3.4
+        theta_max: 200.0
+        systematics: additive_shear
+    shear2pt_1_2:
+        source_names: [shears_1, shears_2]
+        theta_min: 3.4
+        theta_max: 200.0
+        systematics: additive_shear
+    shear2pt_2_2:
+        source_names: [shears_2, shears_2]
+        theta_min: 3.4
+        theta_max: 200.0
+        systematics: additive_shear
+    cluster_lensing:
+        source_names: [cluster_1, shear_2]
+        theta_min: 2.0
+        theta_max: 100.0
+        systematics: []
 systematics:
     ia_lowz: 
         type: LinearAlignment
@@ -56,3 +64,6 @@ systematics:
     baryons:
         type: BaryonEffects
         kmin: 1000
+    xxx:
+        type: blah
+        

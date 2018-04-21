@@ -9,6 +9,6 @@ class TwoPointDataSet(BaseDataSet):
     @classmethod
     def load(cls, data_info):
         sacc_data = ...
-        return cls(sacc_data)
+        return cls(sacc_data), None
 
 

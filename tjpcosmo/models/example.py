@@ -1,4 +1,4 @@
-from .base_model import AnalysisModel
+from .base_analysis import Analysis
 from .base_calculator import TheoryCalculator
 from .base_theory_results import TheoryResults
 from ..dataset import BaseDataSet
@@ -19,7 +19,7 @@ class ExampleDataSet(BaseDataSet):
         ombh2_data = yaml.load(open(ombh2_file))
         mu = ombh2_data['mean']
         sigma = ombh2_data['sigma']
-        return cls(mu, sigma)
+        return cls(mu, sigma), None
 
 
 
@@ -42,7 +42,7 @@ class ExampleTheoryCalculator(TheoryCalculator):
         results.ombh2 = omega_b * h**2
         return results
 
-class ExampleAnalysisModel(AnalysisModel):
+class ExampleAnalysisModel(Analysis):
     name = 'example'
     theory_calculator_class = ExampleTheoryCalculator
     theory_results_class = ExampleTheoryResults

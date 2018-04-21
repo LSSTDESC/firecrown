@@ -1,7 +1,7 @@
 model_registry = {}
 
 
-class AnalysisModel:
+class Analysis:
     theory_calculator_class = None
     theory_results_class = None
     data_class = None
@@ -33,8 +33,7 @@ class AnalysisModel:
         They should call this parent method first.
         """
         self.config=config
-        self.data = self.data_class.load(data_info)
-        self.metadata = self.extract_metadata(data_info)
+        self.data, self.metadata = self.data_class.load(data_info)
         self.theory_calculator = self.theory_calculator_class(config, self.metadata)
         self.likelihood = likelihood_class(self.data)
 
@@ -42,8 +41,6 @@ class AnalysisModel:
     def from_name(name):
         return model_registry[name]
 
-    def extract_metadata(self, data_info):
-        pass
 
     def run(self, parameterSet):
         theory_results = self.theory_calculator.run(parameterSet)
