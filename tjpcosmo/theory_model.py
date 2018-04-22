@@ -83,7 +83,7 @@ def block_to_parameters(block):
     Omega_l = block[names.cosmological_parameters, 'Omega_l']  # NEED TO CHANGE THIS!
     Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)		#NEED TO CHANGE THIS!
     
-    Cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, n_s, A_s, sigma_8, Omega_g,
+    Cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, h, n_s, A_s, sigma_8, Omega_g,
         Omega_n_mass, Omega_n_rel, w0, wa, N_nu_mass, N_nu_rel, mnu)
     
     return Cosmology
