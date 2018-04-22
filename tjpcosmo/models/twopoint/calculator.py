@@ -122,12 +122,12 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             sys.update(parameters)
 
     def apply_source_systematics(self, cosmo):
-        sources = []
+        sources = {}
         for source in self.sources:
             for syst in source.systematics:
                 if isinstance(syst, SourceSystematic):
                     source = syst(cosmo, source)
-            sources.append(source)
+            sources[source.name] = source
         return sources            
 
     def apply_output_systematics(self, c_ell_pair):
@@ -135,7 +135,7 @@ class TwoPointTheoryCalculator(TheoryCalculator):
 
     def make_tracers(self, cosmo, sources):
         tracers = {}
-        for source in sources:
+        for source in sources.values():
             tracers[source.name] = source.to_tracer(cosmo)
         return tracers
 
@@ -161,7 +161,8 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             src2 = pair_info['src2']
             tracer2 = tracers[src2]
             ells = pair_info['ells']
-            c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)
+            scale_product = sources[src1].scaling * sources[src2].scaling
+            c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)*scale_product
 
             self.apply_output_systematics(c_ell_pair)
 
