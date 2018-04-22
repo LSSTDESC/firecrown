@@ -1,6 +1,9 @@
 systematic_registry = {}
 
 class Systematic:
+    def __init__(self, **config):
+        self.config = config
+        print(f"Would now create systematic f{self.__class__.__name__} from config info: {config}")
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
@@ -9,13 +12,13 @@ class Systematic:
         print(f"Register systematic {name}")
         systematic_registry[name] = cls
 
-    @classmethods
+    @classmethod
     def from_info(cls, config):
         config  = config.copy()
         class_name = config.pop('type')
         if class_name is None:
             raise ValueError("Systematic is missing 'type' entry in param file")
-        class_obj = systematic_registry.get(name.lower())
+        class_obj = systematic_registry.get(class_name.lower())
         if class_obj is None:
             raise ValueError(f"Systematic called {class_name} not known")
 

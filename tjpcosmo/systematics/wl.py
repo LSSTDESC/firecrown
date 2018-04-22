@@ -1,4 +1,4 @@
-from .base_systematics import SourceSystematic, OutputSystematic
+from .base_systematic import SourceSystematic, OutputSystematic, CosmologySystematic
 
 
 class MultiplicativeShearBias(SourceSystematic):
@@ -11,4 +11,10 @@ class PZShift(PZTransformation):
     pass
 
 class AdditiveShearBias(OutputSystematic):
+    pass
+
+class LinearAlignment(SourceSystematic):
+    pass
+
+class BaryonEffects(CosmologySystematic):
     pass

@@ -1,2 +1,2 @@
 from .base_systematic import *
-import .wl
+from . import wl

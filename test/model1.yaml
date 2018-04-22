@@ -1,4 +1,4 @@
-name: example
+name: twopoint
 sources:
     -
         type: WLShear
@@ -60,10 +60,7 @@ systematics:
     ia_highz:
         type: LinearAlignment
     multiplicative_shear:
-        type: MultiplicativeShear
+        type: MultiplicativeShearBias
     baryons:
         type: BaryonEffects
         kmin: 1000
-    xxx:
-        type: blah
-        

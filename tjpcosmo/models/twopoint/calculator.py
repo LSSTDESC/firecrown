@@ -1,5 +1,6 @@
 from ..base_calculator import TheoryCalculator
 from .theory_results import TwoPointTheoryResults
+from ...systematics import Systematic, SourceSystematic, OutputSystematic, CosmologySystematic
 
 class Source:
     def __init__(self, info):
