@@ -4,7 +4,7 @@ to the primary TJPCosmo code.
 
 """
 from cosmosis.datablock import names, option_section
-from tjpcosmo.models import Analysis
+from tjpcosmo.analyses import Analysis
 from tjpcosmo.likelihood import BaseLikelihood
 from tjpcosmo.parameters import ParameterSet
 from Philscosmobase import CosmoBase
