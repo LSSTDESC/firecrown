@@ -1,12 +1,7 @@
 from ..base_calculator import TheoryCalculator
 from .theory_results import TwoPointTheoryResults
 from ...systematics import Systematic, SourceSystematic, OutputSystematic, CosmologySystematic
-
-class Source:
-    def __init__(self, info):
-        pass
-
-
+from ..sources import make_source
 
 
 class TwoPointTheoryCalculator(TheoryCalculator):
@@ -14,6 +9,7 @@ class TwoPointTheoryCalculator(TheoryCalculator):
         super().__init__(config, metadata)
         self.setup_systematics(config['systematics'])
         self.sources = self.make_sources(config)
+        self.metadata = metadata
 
     def setup_systematics(self, sys_config):
         self.systematics = {}
@@ -48,7 +44,7 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             stype = source_info['type']
             sname = source_info['name']
 
-            source = Source(...)
+            source = make_source(sname, stype, self.metadata)
             sys_names = source_info.get('systematics', [])
             # check if string or list
             for sys_name in sys_names:

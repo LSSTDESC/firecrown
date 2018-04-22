@@ -41,7 +41,7 @@ class CMBsource(Source):
 def make_source(sname, stype, metadata):
 	if sname=='WL':
 		return WLSource(...)
-	elif sname=='LSS'
+	elif sname=='LSS':
 		return LSSSource(...)
 	elif sname=='SL':
 		return SLSource(...)
@@ -51,5 +51,5 @@ def make_source(sname, stype, metadata):
 		return CMBsource(...)
 	elif sname=='Supernova':
 		return SNsource(...)
-	else 
+	else:
 		raise ValueError(f"The source {sname} asked for doesn't exist in our data!")
