@@ -4,7 +4,7 @@ from .theory_results import TwoPointTheoryResults
 from ..base_analysis import Analysis
 
 class TwoPointAnalysisModel(Analysis):
-    name = '_'
+    name = 'twopoint'
     theory_calculator_class = TwoPointTheoryCalculator
     data_class = TwoPointDataSet
     metadata_class = None
