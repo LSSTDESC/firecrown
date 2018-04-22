@@ -1,12 +1,21 @@
 from ..base_calculator import TheoryCalculator
 from .theory_results import TwoPointTheoryResults
 from ...systematics import Systematic, SourceSystematic, OutputSystematic, CosmologySystematic
-from ..sources import make_source
+from ..sources import make_source, LSSSource
+
+def make_fake_source(name, stype, metadata):
+    import numpy as np
+
+    z = np.arange(0.0, 2.0, 0.01)
+    n_of_z = np.exp(-0.5 * (z - 0.8)**2/0.1**2)
+    metadata = {name:{"nz":(z,n_of_z)}}
+    return LSSSource(name, stype, metadata)
 
 
 class TwoPointTheoryCalculator(TheoryCalculator):
     def __init__(self, config, metadata):
         super().__init__(config, metadata)
+        print("Warning! Making a fake source")
         self.setup_systematics(config['systematics'])
         self.sources = self.make_sources(config)
         self.metadata = metadata
@@ -44,7 +53,8 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             stype = source_info['type']
             sname = source_info['name']
 
-            source = make_source(sname, stype, self.metadata)
+            source = make_fake_source(sname, stype, self.metadata)
+
             sys_names = source_info.get('systematics', [])
             # check if string or list
             for sys_name in sys_names:
@@ -64,7 +74,7 @@ class TwoPointTheoryCalculator(TheoryCalculator):
     def run(self, parameters):
         print("Running 2pt theory prediction")
 
-        self.update_systea
+        self.update_systematics(parameters)
         cosmo = CCL.cosmo(parameters)
 
         tracers = self.make_tracers()
