@@ -19,48 +19,48 @@ class Source:
 
 
 class WLSource(Source):
-	def __init__(self, name, stype, metadata):
-		super().__init__(self, name, stype, metadata)
+    def __init__(self, name, stype, metadata):
+        super().__init__(self, name, stype, metadata)
         self.scaling = 1.0
-		
-		
+        
+        
 class LSSSource(Source):
-	def __init__(self, name, stype, metadata):
-		super().__init__(name, stype, metadata)
-		self.z,self.nz = metadata[name]["nz"]
-		self.orignal_nz = self.nz
+    def __init__(self, name, stype, metadata):
+        super().__init__(name, stype, metadata)
+        self.z,self.nz = metadata[name]["nz"]
+        self.orignal_nz = self.nz
 
 
-	
+    
 class SLSource(Source):
-	def __init__(self, name, stype, metadata):
-		super(SLSource, self).__init__(   name, stype, metadata)
+    def __init__(self, name, stype, metadata):
+        super(SLSource, self).__init__(   name, stype, metadata)
 
 class SNSource(Source):
-	def __init__(self, name, stype, metadata):
-		super().__init__(self, name, stype, metadata)
+    def __init__(self, name, stype, metadata):
+        super().__init__(self, name, stype, metadata)
 
 class CLSource(Source):
-	def __init__(self, name, stype, metadata):
-		super().__init__(self, name, stype, metadata)
+    def __init__(self, name, stype, metadata):
+        super().__init__(self, name, stype, metadata)
 
 class CMBSource(Source):
-	def __init__(self, name, stype, metadata):
-		super().__init__(self, name, stype, metadata)
+    def __init__(self, name, stype, metadata):
+        super().__init__(self, name, stype, metadata)
 
 
 def make_source(sname, stype, metadata):
-	if stype=='WL':
-		return WLSource(sname, stype, metadata)
-	elif stype=='LSS':
-		return LSSSource(sname, stype, metadata)
-	elif stype=='SL':
-		return SLSource(sname, stype, metadata)
-	elif stype=='CL':
-		return Clustersource(sname, stype, metadata)
-	elif stype=='CMB':
-		return CMBsource(sname, stype, metadata)
-	elif stype=='SN':
-		return SNsource(sname, stype, metadata)
-	else:
-		raise ValueError(f"The source {stype} asked for doesn't exist in our data!")
+    if stype=='WL':
+        return WLSource(sname, stype, metadata)
+    elif stype=='LSS':
+        return LSSSource(sname, stype, metadata)
+    elif stype=='SL':
+        return SLSource(sname, stype, metadata)
+    elif stype=='CL':
+        return Clustersource(sname, stype, metadata)
+    elif stype=='CMB':
+        return CMBsource(sname, stype, metadata)
+    elif stype=='SN':
+        return SNsource(sname, stype, metadata)
+    else:
+        raise ValueError(f"The source {stype} asked for doesn't exist in our data!")

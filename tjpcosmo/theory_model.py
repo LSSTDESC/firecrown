@@ -72,7 +72,7 @@ def block_to_parameters(block):
     N_nu_mass = block.get_double(names.cosmological_parameters, 'N_nu_mass', 0.0)
     N_nu_rel = block.get_double(names.cosmological_parameters, 'N_nu_rel', 3.046)
     mnu = block.get_double(names.cosmological_parameters, 'mnu', 0.0)
-    sigma_8 = block[names.cosmological_parameters, 'Sigma_8', 0.0]
+    sigma_8 = block.get_double(names.cosmological_parameters, 'Sigma_8', 0.0)
     
     #Parameters that must be derived
     Omega_m = Omega_c + Omega_b + Omega_n_mass
@@ -82,7 +82,7 @@ def block_to_parameters(block):
     Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)		#NEED TO CHANGE THIS!
     
     Cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, n_s, A_s, sigma_8, Omega_g,
-		Omega_n_mass, Omega_n_rel, w0, wa, N_nu_mass, N_nu_rel, mnu)
+        Omega_n_mass, Omega_n_rel, w0, wa, N_nu_mass, N_nu_rel, mnu)
     
     return Cosmology
 

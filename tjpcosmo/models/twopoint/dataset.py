@@ -7,7 +7,7 @@ class TwoPointDataSet(BaseDataSet):
         self.precision = ...
 
     @classmethod
-    def load(cls, data_info):
+    def load(cls, data_info, config):
         sacc_data = ...
         return cls(sacc_data), None
 
