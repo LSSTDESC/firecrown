@@ -1,3 +1,4 @@
+import pyccl as ccl
 from ..base_calculator import TheoryCalculator
 from .theory_results import TwoPointTheoryResults
 from ...systematics import Systematic, SourceSystematic, OutputSystematic, CosmologySystematic
@@ -18,6 +19,29 @@ def make_fake_source(name, stype, metadata):
     return LSSSource(name, stype, metadata)
 
         # self.z,self.nz = metadata['sources'][name]["nz"]
+def convert_cosmobase_to_ccl(cosmo_base):
+    omega_c = cosmo_base.Omega_c
+    omega_b = cosmo_base.Omega_b
+    omega_k = cosmo_base.Omega_k
+    if (cosmo_base.Omega_n_rel +cosmo_base.Omega_n_mass):
+        raise ValueError("cosmo_base doesn't handle massive neutrinos yet")
+    w = cosmo_base.w0
+    wa = cosmo_base.wa
+    h0 = cosmo_base.h
+    sigma8 = cosmo_base.sigma_8
+    A_s = cosmo_base.A_s
+    n_s = cosmo_base.n_s
+    if sigma8 and A_s:
+        raise ValueError("Specifying both sigma8 and A_s: pick one")
+    elif sigma8:
+        params=ccl.Parameters(Omega_c=omega_c,Omega_b=omega_b,Omega_k=omega_k,
+                              w0=w,wa=wa,sigma8=sigma8,n_s=n_s,h=h0)
+    elif A_s:
+        params = ccl.Parameters(Omega_c=omega_c,Omega_b=omega_b,Omega_k=omega_k,
+                                w0=w,wa=wa,A_s=A_s,n_s=n_s,h=h0)
+    else:
+        raise ValueError("Need either sigma 8 or A_s in pyccl.")
+    return params
 
 class TwoPointTheoryCalculator(TheoryCalculator):
     def __init__(self, config, metadata):
@@ -76,16 +100,20 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             if sys_name not in used_systematics:
                 raise ValueError(f"Systematic with name {sys_name} was specified in param file but never used")
 
-    def make_tracers(self):
+    def make_tracers(self,cosmo):
         pass
 
     def run(self, parameters):
         print("Running 2pt theory prediction")
-
-        self.update_systematics(parameters)
-        cosmo = CCL.cosmo(parameters)
-
-        tracers = self.make_tracers()
+        print(parameters)
+        print("Still need to implement TwoPointTheoryCalculator.update_systematics")
+        #self.update_systematics(parameters)
+        params = convert_cosmobase_to_ccl(parameters)
+        cosmo=ccl.Cosmology(params)
+                            #transfer_function=dic_par['transfer_function'],
+                            #matter_power_spectrum=dic_par['matter_power_spectrum'])
+        print(cosmo)
+        tracers = self.make_tracers(cosmo)
 
         for twopoint_pair in something:
             tracer1 = ccl.CLTracer(..., tracer_type=...)
