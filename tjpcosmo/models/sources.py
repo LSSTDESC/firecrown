@@ -29,15 +29,18 @@ class WLSource(Source):
         self.z,self.nz = metadata['sources'][name]["nz"]
         self.orignal_nz = self.nz
         self.f_red = np.ones_like(self.z)
-        self.ia_amplitude = np.zeros_like(self.z)
-
+        self.ia_amplitude = np.ones_like(self.z)
+        #self.scaling = 1.0
 
     def to_tracer(self, cosmo):
         import pyccl as ccl
-        print("Put IA in here when needed")
-        tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=False, 
-            n=(self.z,self.nz), bias_ia=(self.z, self.ia_amplitude),
-            f_red=(self.z,self.f_red))
+        if(np.any(self.ia_amplitude!=0) & np.any(self.f_red!=0)):
+            tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=True,
+                     n=(self.z,self.nz), bias_ia=(self.z, self.ia_amplitude),
+                     f_red=(self.z,self.f_red))
+        else:
+            tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=False,
+                     n=(self.z,self.nz))
         return tracer
 
 
