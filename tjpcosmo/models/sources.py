@@ -19,7 +19,7 @@ class Source:
     def validate(self):
         pass
     def copy(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
 
 
