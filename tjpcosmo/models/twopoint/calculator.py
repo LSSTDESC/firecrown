@@ -81,8 +81,6 @@ class TwoPointTheoryCalculator(TheoryCalculator):
 
     def run(self, parameters):
         print("Running 2pt theory prediction")
-        import pdb
-        pdb.set_trace()
 
         self.update_systematics(parameters)
         cosmo = CCL.cosmo(parameters)
