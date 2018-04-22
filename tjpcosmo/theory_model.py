@@ -60,6 +60,7 @@ def block_to_parameters(block):
     h = block[names.cosmological_parameters, 'h']
     n_s = block[names.cosmological_parameters, 'n_s']
     A_s = block[names.cosmological_parameters, 'A_s']
+
     
     #Optional parameters, will be set to a default value, if not there
     w0 = block.get_double(names.cosmological_parameters, 'w0',-1.0)
@@ -71,6 +72,7 @@ def block_to_parameters(block):
     N_nu_mass = block.get_double(names.cosmological_parameters, 'N_nu_mass', 0.0)
     N_nu_rel = block.get_double(names.cosmological_parameters, 'N_nu_rel', 3.046)
     mnu = block.get_double(names.cosmological_parameters, 'mnu', 0.0)
+    sigma_8 = block[name.cosmological_parameters, 'Sigma_8', 0.0]
     
     #Parameters that must be derived
     Omega_m = Omega_c + Omega_b + Omega_n_mass
