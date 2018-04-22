@@ -64,6 +64,15 @@ class ParameterSet(OrderedDict):
             raise ValueError("Type %s not supported for parameter %s"%(type(value), key))
         return value
 
+    def get(self, key, default=None):
+        # Could definitely be optimized!
+        try:
+            return self[key]
+        except KeyError:
+            return default
+
+
+
     def __getitem__(self, key):
         if key in self:
             return OrderedDict.__getitem__(self, key)
