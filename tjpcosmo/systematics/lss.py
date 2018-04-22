@@ -2,6 +2,6 @@ from .base_systematic import SourceSystematic, OutputSystematic, CosmologySystem
 
 
 class LinearBias(SourceSystematic):
-    params = ['b']
+    params = ['b','z_piv','alpha']
     def adjust_source(self, cosmo, source):
-        source.bias[:] = self.values['b']
+        source.bias[:] = ((1.+source.z)/(1.+self.values['z_piv']))**(self.values['alpha'])*self.values['b']

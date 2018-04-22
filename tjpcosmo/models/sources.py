@@ -7,7 +7,7 @@ class Source:
         self.stype = stype
         self.systematics = []
         self.metadata = metadata
-
+        self.scaling = 1.0
 
     def apply_source_systematic(self):
         for sys in self.systematics:
@@ -30,7 +30,7 @@ class WLSource(Source):
         self.orignal_nz = self.nz
         self.f_red = np.ones_like(self.z)
         self.ia_amplitude = np.zeros_like(self.z)
-        self.scaling = 1.0
+
 
     def to_tracer(self, cosmo):
         import pyccl as ccl
@@ -45,7 +45,7 @@ class LSSSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z,self.nz = metadata['sources'][name]["nz"]
-        self.orignal_nz = self.nz
+        #self.orignal_nz = self.nz
         self.bias = np.ones_like(self.z)
 
     def to_tracer(self, cosmo):
