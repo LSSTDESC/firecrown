@@ -12,7 +12,10 @@ class AdditiveShearBias(OutputSystematic):
     pass
 
 class LinearAlignment(SourceSystematic):
-    pass
+    params = ['biasia','fred']
+    def adjust_source(self,cosmo,source):
+        source.ia_amplitude[:]=self.values['biasia']
+        source.f_red[:]=self.values['fred']
 
 class BaryonEffects(CosmologySystematic):
     pass
