@@ -10,6 +10,8 @@ from tjpcosmo.parameters import ParameterSet
 from Philscosmobase import CosmoBase
 import pathlib
 import yaml
+import numpy as np
+import parameter_consistency
 
 def parse_data_set_options(options):
     data_files = options.get_string(option_section, "data")    
@@ -30,7 +32,8 @@ def setup(options):
 
     path = pathlib.Path(config_filename).expanduser()
     config = yaml.load(path.open())
-
+    
+    consistency = parameter_consistency.Consistency()
 
     # Get any metadata
     model_name = config['name']
@@ -40,19 +43,20 @@ def setup(options):
     # Create the model using the yaml config info
     model = model_class(config, data_info, likelihood_class)
     # Return model and likelihood
-    return model
+    return model, consistency
 
-def execute(block, model):
+def execute(block, config):
     # Generate a DESC Parameters object from a cosmosis block
-    params = block_to_parameters(block)
+    model,consistency = config
+    params = block_to_parameters(block, consistency)
     likelihood, theory_results = model.run(params)
     theory_results.to_cosmosis_block(block)
     block['likelihoods', 'total_like'] = likelihood
     return 0
 
 
-# Translate Cosmosis blocks to PHIL PARAMS!!! MISSING IMPORT of phil's 
-def block_to_parameters(block):
+# Translate Cosmosis blocks to PHIL PARAMS!!!
+def block_to_parameters(block, consistency):
     # These are the mandatory parameters for cosmology, if they aren't there,
     # the code crashes.
     Omega_c = block[names.cosmological_parameters, 'Omega_c']
@@ -64,7 +68,12 @@ def block_to_parameters(block):
     
     #Optional parameters, will be set to a default value, if not there
     A_s = block.get_double(names.cosmological_parameters, 'a_s', 0.0)
-    sigma_8 = block.get_double(names.cosmological_parameters, 'sigma_8', 0.0)    
+    sigma_8 = block.get_double(names.cosmological_parameters, 'sigma_8', 0.0)
+    if A_s==0:
+		A_s = None
+	if sigma_8==0:
+		sigma_8 = None    
+    
     
     w0 = block.get_double(names.cosmological_parameters, 'w0',-1.0)
     wa = block.get_double(names.cosmological_parameters, 'wa', 0.0)
@@ -76,15 +85,20 @@ def block_to_parameters(block):
     N_nu_rel = block.get_double(names.cosmological_parameters, 'N_nu_rel', 3.046)
     mnu = block.get_double(names.cosmological_parameters, 'mnu', 0.0)
     
-    #Parameters that must be derived
-    Omega_m = Omega_c + Omega_b + Omega_n_mass
+	# Now if we have provided the code with Omega_k or Omega_l it will figure out
+	# what it has, make sure to calculate Omega_l no matter what, since CosmoBase requires that. 
+	known_parameters = {}
+	for param in parameter_consistency.parameters:
+		if block.has_value(section, param):
+			known_parameters[param] = block["cosmological_parameters", param]
+	
+	full_parameters = consistency(known_parameters)
+	
+    Omega_l = full_parameters[omega_lambda]
     
-    #Either of These WE need to in the future be able to check which one 
-    Omega_l = block[names.cosmological_parameters, 'Omega_l']  # NEED TO CHANGE THIS!
-    Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)		#NEED TO CHANGE THIS!
-    
-    Cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, h, n_s, A_s, sigma_8, Omega_g,
+    #Everything done so far gets thrown into the to DESC standard cosmoogy base.
+    cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, h, n_s, A_s, sigma_8, Omega_g,
         Omega_n_mass, Omega_n_rel, w0, wa, N_nu_mass, N_nu_rel, mnu)
     
-    return Cosmology
+    return cosmology
 
