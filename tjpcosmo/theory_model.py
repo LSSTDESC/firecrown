@@ -7,6 +7,7 @@ from cosmosis.datablock import names, option_section
 from tjpcosmo.models import Analysis
 from tjpcosmo.likelihood import BaseLikelihood
 from tjpcosmo.parameters import ParameterSet
+from Philscosmobase import CosmoBase
 import pathlib
 import yaml
 
@@ -50,16 +51,16 @@ def execute(block, model):
     return 0
 
 
-
+# Translate Cosmosis blocks to PHIL PARAMS!!! MISSING IMPORT of phil's 
 def block_to_parameters(block):
     # These are the mandatory parameters for cosmology, if they aren't there,
     # the code crashes.
     Omega_c = block[names.cosmological_parameters, 'Omega_c']
     Omega_b = block[names.cosmological_parameters, 'Omega_b']
-    Omega_l = block[names.cosmological_parameters, 'Omega_l']
     h = block[names.cosmological_parameters, 'h']
     n_s = block[names.cosmological_parameters, 'n_s']
     A_s = block[names.cosmological_parameters, 'A_s']
+
     
     #Optional parameters, will be set to a default value, if not there
     w0 = block.get_double(names.cosmological_parameters, 'w0',-1.0)
@@ -71,14 +72,17 @@ def block_to_parameters(block):
     N_nu_mass = block.get_double(names.cosmological_parameters, 'N_nu_mass', 0.0)
     N_nu_rel = block.get_double(names.cosmological_parameters, 'N_nu_rel', 3.046)
     mnu = block.get_double(names.cosmological_parameters, 'mnu', 0.0)
+    sigma_8 = block[name.cosmological_parameters, 'Sigma_8', 0.0]
     
     #Parameters that must be derived
     Omega_m = Omega_c + Omega_b + Omega_n_mass
-    Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)
     
-    return ParameterSet(Omega_c = Omega_c, Omega_b = Omega_b, Omega_m = Omega_m,
-                        Omega_k = Omega_k, Omega_l = Omega_l, Omega_n_mass = Omega_n_mass,
-                        Omega_n_rel = Omega_n_rel, Omega_g = Omega_g, w0 = w0, wa = wa,
-                        h = h, N_nu_mass = N_nu_mass, N_nu_rel = N_nu_rel, mnu = mnu, A_s = A_s,
-                        n_s = n_s)
+    #Either of These WE need to in the future be able to check which one 
+    Omega_l = block[names.cosmological_parameters, 'Omega_l']  # NEED TO CHANGE THIS!
+    Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)		#NEED TO CHANGE THIS!
+    
+    Cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, n_s, A_s, sigma_8, Omega_g,
+		Omega_n_mass, Omega_n_rel, w0, wa, N_nu_mass, N_nu_rel, mnu)
+    
+    return Cosmology
 
