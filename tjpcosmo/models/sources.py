@@ -7,7 +7,8 @@ class Source:
 
 
     def apply_source_systematic(self):
-        pass
+        for sys in self.systematics:
+            sys.apply(self)
 
     def to_tracer(self):
         # return CCL.CLTracer
@@ -19,7 +20,8 @@ class Source:
 
 class WLSource(Source):
 	def __init__(self, name, stype, metadata):
-		super(WLSource, self).__init__(self, name, stype, metadata)
+		super().__init__(self, name, stype, metadata)
+        self.scaling = 1.0
 		
 		
 class LSSSource(Source):
@@ -27,7 +29,8 @@ class LSSSource(Source):
 		super().__init__(name, stype, metadata)
 		self.z,self.nz = metadata[name]["nz"]
 		self.orignal_nz = self.nz
-	
+
+
 	
 class SLSource(Source):
 	def __init__(self, name, stype, metadata):
@@ -35,15 +38,15 @@ class SLSource(Source):
 
 class SNSource(Source):
 	def __init__(self, name, stype, metadata):
-		super(SNSource, self).__init__(self, name, stype, metadata)
+		super().__init__(self, name, stype, metadata)
 
 class CLSource(Source):
 	def __init__(self, name, stype, metadata):
-		super(Clustersource, self).__init__(self, name, stype, metadata)
+		super().__init__(self, name, stype, metadata)
 
 class CMBSource(Source):
 	def __init__(self, name, stype, metadata):
-		super(CMBsource, self).__init__(self, name, stype, metadata)
+		super().__init__(self, name, stype, metadata)
 
 
 def make_source(sname, stype, metadata):
