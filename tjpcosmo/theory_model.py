@@ -63,8 +63,8 @@ def block_to_parameters(block):
 
     
     #Optional parameters, will be set to a default value, if not there
-    A_s = block.get_double(names.cosmological_parameters, 'a_s', None)
-    sigma_8 = block.get_double(names.cosmological_parameters, 'sigma_8', None)    
+    A_s = block.get_double(names.cosmological_parameters, 'a_s', 0.0)
+    sigma_8 = block.get_double(names.cosmological_parameters, 'sigma_8', 0.0)    
     
     w0 = block.get_double(names.cosmological_parameters, 'w0',-1.0)
     wa = block.get_double(names.cosmological_parameters, 'wa', 0.0)
