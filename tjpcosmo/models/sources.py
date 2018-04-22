@@ -3,6 +3,7 @@ class Source:
         self.name = name
         self.stype = stype
         self.systematics = []
+        self.metadata = metadata
 
 
     def apply_source_systematic(self):
@@ -24,6 +25,9 @@ class WLSource(Source):
 class LSSSource(Source):
 	def __init__(self, name, stype, metadata):
 		super(LSSSource, self).__init__(self, name, stype, metadata)
+		self.z,self.nz = metadata[name]["nz"]
+		self.orignal_nz = self.nz
+	
 	
 class SLSource(Source):
 	def __init__(self, name, stype, metadata):
@@ -39,17 +43,17 @@ class CMBsource(Source):
 
 
 def make_source(sname, stype, metadata):
-	if sname=='WL':
+	if stype=='WL':
 		return WLSource(...)
-	elif sname=='LSS':
+	elif stype=='LSS':
 		return LSSSource(...)
-	elif sname=='SL':
+	elif stype=='SL':
 		return SLSource(...)
-	elif sname=='Cluster':
+	elif stype=='CL':
 		return Clustersource(...)
-	elif sname=='CMB':
+	elif stype=='CMB':
 		return CMBsource(...)
-	elif sname=='Supernova':
+	elif stype=='Supernova':
 		return SNsource(...)
 	else:
-		raise ValueError(f"The source {sname} asked for doesn't exist in our data!")
+		raise ValueError(f"The source {stype} asked for doesn't exist in our data!")
