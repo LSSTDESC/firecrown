@@ -11,7 +11,7 @@ sources:
         systematics: [linear_bias_highz]
     sources_2:
         type: WL
-        systematics: [multiplicative_shear_bias]
+        systematics: [multiplicative_shear_bias, wl_pz_shift]
 
 statistics:
     clustCl_0_0:
@@ -56,6 +56,8 @@ systematics:
     baryons:
         type: BaryonEffects
         kmin: 1000
+    wl_pz_shift:
+        type: PZShift
     multiplicative_shear_bias:
         type: MultiplicativeShearBias
     additive_shear:
