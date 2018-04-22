@@ -75,11 +75,10 @@ class TheoryCalculator:
         for sys in self.systematics.values():
             sys.update(parameters)
 
+
     def apply_source_systematics(self, cosmo):
-        sources = {}
         for source in self.sources:
+            source.reset()
             for syst in source.systematics:
                 if isinstance(syst, SourceSystematic):
-                    source = syst(cosmo, source)
-            sources[source.name] = source
-        return sources            
+                    syst.adjust_source(cosmo, source)

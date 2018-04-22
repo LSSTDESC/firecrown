@@ -66,10 +66,10 @@ class TwoPointTheoryCalculator(TheoryCalculator):
     def apply_output_systematics(self, c_ell_pair):
         pass
 
-    def make_tracers(self, cosmo, sources):
+    def make_tracers(self, cosmo):
         tracers = {}
-        for source in sources.values():
-            tracers[source.name] = source.to_tracer(cosmo)
+        for source in self.sources:
+            tracers[source.name] = (source.to_tracer(cosmo), source.scaling)
         return tracers
 
     def run(self, parameters):
@@ -83,19 +83,19 @@ class TwoPointTheoryCalculator(TheoryCalculator):
         cosmo=ccl.Cosmology(params)
                             #transfer_function=dic_par['transfer_function'],
                             #matter_power_spectrum=dic_par['matter_power_spectrum'])
-        sources = self.apply_source_systematics(cosmo)
+        self.apply_source_systematics(cosmo)
 
-        tracers = self.make_tracers(cosmo, sources)
+        tracers = self.make_tracers(cosmo)
 
         c_ell = []
         for pair_info in self.metadata['2pt_ordering']:
             src1 = pair_info['src1']
-            tracer1 = tracers[src1]
+            tracer1, scaling1 = tracers[src1]
             src2 = pair_info['src2']
-            tracer2 = tracers[src2]
+            tracer2, scaling2 = tracers[src2]
             ells = pair_info['ells']
-            scale_product = sources[src1].scaling * sources[src2].scaling
-            c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)*scale_product
+            scaling = scaling1 * scaling2
+            c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)*scaling
 
             self.apply_output_systematics(c_ell_pair)
 

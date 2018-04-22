@@ -8,4 +8,4 @@ class LinearBias(SourceSystematic):
         'z_piv':0.0
     }
     def adjust_source(self, cosmo, source):
-        source.bias[:] = ((1.+source.z)/(1.+self.values['z_piv']))**(self.values['alpha'])*self.values['b']
+        source.bias[:] *= ((1.+source.z)/(1.+self.values['z_piv']))**(self.values['alpha'])*self.values['b']

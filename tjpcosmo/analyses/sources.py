@@ -1,5 +1,6 @@
 import numpy as np
 import copy
+from scipy.interpolate import Akima1DInterpolator
 
 class Source:
     def __init__(self, name, stype, metadata):
@@ -9,28 +10,30 @@ class Source:
         self.metadata = metadata
         self.scaling = 1.0
 
-    def apply_source_systematic(self):
-        for sys in self.systematics:
-            sys.apply(self)
-
     def to_tracer(self):
         raise ValueError("Wrong kind of source turned into a tracer!")
 
     def validate(self):
         pass
-    def copy(self):
-        return copy.deepcopy(self)
+
+    def reset(self):
+        raise NotImplementedError(f"Need to implement reset method for source subclass {self.__class__.__name__}")
 
 
 
 class WLSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
-        self.z,self.nz = metadata['sources'][name]["nz"]
-        self.orignal_nz = self.nz
+        self.z,self.original_nz = metadata['sources'][name]["nz"]
+        self.nz_interp = Akima1DInterpolator(self.z, self.original_nz)
+        self.reset()
+
+    def reset(self):
         self.f_red = np.ones_like(self.z)
         self.ia_amplitude = np.ones_like(self.z)
-        #self.scaling = 1.0
+        self.nz = self.original_nz.copy()
+        self.scaling = 1.0
+
 
     def to_tracer(self, cosmo):
         import pyccl as ccl
@@ -47,9 +50,14 @@ class WLSource(Source):
 class LSSSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
-        self.z,self.nz = metadata['sources'][name]["nz"]
-        #self.orignal_nz = self.nz
+        self.z, self.original_nz = metadata['sources'][name]["nz"]
+        self.reset()
+
+    def reset(self):
         self.bias = np.ones_like(self.z)
+        self.nz = self.original_nz.copy()
+        self.scaling = 1.0
+
 
     def to_tracer(self, cosmo):
         import pyccl as ccl

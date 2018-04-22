@@ -30,11 +30,6 @@ class Systematic:
         systematic = class_obj(name, **config)
         return systematic
 
-    def __call__(self, cosmo, source):
-        s = source.copy()
-        self.adjust_source(cosmo, s)
-        return s
-
     def adjust_source(self, cosmo, source):
         print(f"Systematics {self.name} is NOT IMPLEMENTED!")
 
