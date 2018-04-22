@@ -90,6 +90,9 @@ class CosmoBase(object):
         s += "Omega_n_mass: %3.3e\n" % self.Omega_n_mass
         s += "Omega_n_rel:  %3.3e\n" % self.Omega_n_rel
         s += "Omega_g:      %3.3e\n" % self.Omega_g
+
+        # Hubble
+        s += "h:            %3.3e\n" % self.h
         
         # Dark energy equation of state parameters
         s += "w0:           %3.3f\n" % self.w0
