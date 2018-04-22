@@ -2,7 +2,10 @@ from .base_systematic import SourceSystematic, OutputSystematic, CosmologySystem
 
 
 class MultiplicativeShearBias(SourceSystematic):
-    pass
+    params = ['m']
+    def adjust_source(self, cosmo, source):
+        source.scaling[:] = self.scaling[:]*self.values['m']    
+
 
 
 class AdditiveShearBias(OutputSystematic):
