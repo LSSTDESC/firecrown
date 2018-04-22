@@ -11,7 +11,7 @@ sources:
         systematics: [linear_bias_highz]
     sources_2:
         type: WL
-        systematics: [multiplicative_shear_bias]
+        systematics: [multiplicative_shear_bias,linear_ia]
 
 statistics:
     clustCl_0_0:
@@ -45,10 +45,8 @@ statistics:
         ell_max: 200.0
         systematics: []
 systematics:
-    # ia_lowz: 
-        # type: LinearAlignment
-    # ia_highz:
-    #     type: LinearAlignment
+    linear_ia:
+        type: LinearAlignment
     linear_bias_lowz:
         type: LinearBias
     linear_bias_highz:
