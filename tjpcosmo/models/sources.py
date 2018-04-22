@@ -26,9 +26,9 @@ class WLSource(Source):
         
 class LSSSource(Source):
     def __init__(self, name, stype, metadata):
-	super().__init__(name, stype, metadata)
-	self.z,self.nz = metadata['sources'][name]["nz"]
-	self.orignal_nz = self.nz
+        super().__init__(name, stype, metadata)
+        self.z,self.nz = metadata['sources'][name]["nz"]
+        self.orignal_nz = self.nz
         
 class SLSource(Source):
     def __init__(self, name, stype, metadata):

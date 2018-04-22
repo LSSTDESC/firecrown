@@ -79,5 +79,8 @@ RUN cd /opt/ && git clone https://github.com/LSSTDESC/CCL && cd CCL && python cl
 RUN CC=gcc CXX=g++ FC=gfortran pip install cosmosis-standalone
 
 RUN pip install pyccl
+
+RUN cd /opt && git clone https://github.com/LSSTDESC/sacc/ && cd sacc && python setup.py install
+
 # Run a bash login shell if no other command is specified.
 CMD ["/bin/bash", "-l"]
