@@ -2,14 +2,11 @@ from .base_systematic import SourceSystematic, OutputSystematic, CosmologySystem
 
 
 class MultiplicativeShearBias(SourceSystematic):
-    pass
+    params = ['m']
+    def adjust_source(self, cosmo, source):
+        source.scaling = source.scaling*(1+ self.values['m'])   
 
 
-class PZTransformation(SourceSystematic):
-    pass
-
-class PZShift(PZTransformation):
-    pass
 
 class AdditiveShearBias(OutputSystematic):
     pass

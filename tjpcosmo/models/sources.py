@@ -7,7 +7,7 @@ class Source:
         self.stype = stype
         self.systematics = []
         self.metadata = metadata
-
+        self.scaling = 1.0
 
     def apply_source_systematic(self):
         for sys in self.systematics:
@@ -19,7 +19,7 @@ class Source:
     def validate(self):
         pass
     def copy(self):
-        return copy.copy(self)
+        return copy.deepcopy(self)
 
 
 
@@ -31,16 +31,14 @@ class WLSource(Source):
         self.f_red = np.ones_like(self.z)
         self.ia_amplitude = np.ones_like(self.z)
         #self.scaling = 1.0
-        
+
     def to_tracer(self, cosmo):
         import pyccl as ccl
         if(np.any(self.ia_amplitude!=0) & np.any(self.f_red!=0)):
-            print("with alignment\n\n\n")
             tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=True,
                      n=(self.z,self.nz), bias_ia=(self.z, self.ia_amplitude),
                      f_red=(self.z,self.f_red))
         else:
-            print("no alignment\n\n\n")
             tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=False,
                      n=(self.z,self.nz))
         return tracer
@@ -50,7 +48,7 @@ class LSSSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z,self.nz = metadata['sources'][name]["nz"]
-        self.orignal_nz = self.nz
+        #self.orignal_nz = self.nz
         self.bias = np.ones_like(self.z)
 
     def to_tracer(self, cosmo):
