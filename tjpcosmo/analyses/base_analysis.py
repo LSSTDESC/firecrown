@@ -17,7 +17,7 @@ class Analysis:
 
 
     """
-    This is the superclass for all Models, which represent the part of the
+    This is the superclass for all analyses, which represent the part of the
     likelihood function that generate mean theory predictions from parameters.
 
     This is just the skeleton - there are various more complete designs in the sandbox.
