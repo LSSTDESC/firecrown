@@ -1,3 +1,5 @@
+import numpy as np
+
 class Source:
     def __init__(self, name, stype, metadata):
         self.name = name
@@ -23,15 +25,33 @@ class WLSource(Source):
         super().__init__(name, stype, metadata)
         self.z,self.nz = metadata['sources'][name]["nz"]
         self.orignal_nz = self.nz
+        self.f_red = np.ones_like(self.z)
+        self.ia_amplitude = np.zeros_like(self.z)
         self.scaling = 1.0
-        
-        
+
+    def to_tracer(self, cosmo):
+        import pyccl as ccl
+        print("Put IA in here when needed")
+        tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=False, 
+            n=(self.z,self.nz), bias_ia=(self.z, self.ia_amplitude),
+            f_red=(self.z,self.f_red))
+        return tracer
+
+
 class LSSSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z,self.nz = metadata['sources'][name]["nz"]
         self.orignal_nz = self.nz
-        
+        self.bias = np.ones_like(self.z)
+
+    def to_tracer(self, cosmo):
+        import pyccl as ccl
+        print("Put RSD and mag in here when needed")
+        tracer = ccl.ClTracerNumberCounts(cosmo, has_rsd=False, has_magnification=False, 
+            n=(self.z,self.nz), bias=(self.z, self.bias))
+        return tracer
+
 class SLSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)

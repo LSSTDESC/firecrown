@@ -3,7 +3,7 @@ from ..base_calculator import TheoryCalculator
 from .theory_results import TwoPointTheoryResults
 from ...systematics import Systematic, SourceSystematic, OutputSystematic, CosmologySystematic
 from ..sources import make_source, LSSSource
-
+import numpy as np
 def make_fake_source(name, stype, metadata):
     import numpy as np
 
@@ -43,6 +43,9 @@ def convert_cosmobase_to_ccl(cosmo_base):
 
     n_s = cosmo_base.n_s
 
+    print("Baryon systematics go into convert_cosmobase_to_ccl")
+
+
     if sigma8 and A_s:
         raise ValueError("Specifying both sigma8 and A_s: pick one")
     elif sigma8:
@@ -53,6 +56,8 @@ def convert_cosmobase_to_ccl(cosmo_base):
                                 w0=w,wa=wa,A_s=A_s,n_s=n_s,h=h0)
     else:
         raise ValueError("Need either sigma 8 or A_s in pyccl.")
+
+
     return params
 
 class TwoPointTheoryCalculator(TheoryCalculator):
@@ -112,31 +117,51 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             if sys_name not in used_systematics:
                 raise ValueError(f"Systematic with name {sys_name} was specified in param file but never used")
 
-    def update_systematics(self, parameters):
+    def update_systematics(self, parameterers):
         for sys in self.systematics:
-            sys.update(parameters)
+            pass
+            #sys.update(parameters)
+
+    def apply_source_systematics(self, cosmo):
+        pass
+
+    def apply_output_systematics(self, c_ell_pair):
+        pass
 
     def make_tracers(self,cosmo):
+        tracers = {}
         for source in self.sources:
-            pass
+            tracers[source.name] = source.to_tracer(cosmo)
+        return tracers
 
     def run(self, parameters):
         print("Running 2pt theory prediction")
         print(parameters)
         print("Still need to implement TwoPointTheoryCalculator.update_systematics")
-        #self.update_systematics(parameters)
+
         params = convert_cosmobase_to_ccl(parameters)
+        print("Calling CCL with default config - may need to change depending on systematics/choices")
         cosmo=ccl.Cosmology(params)
                             #transfer_function=dic_par['transfer_function'],
                             #matter_power_spectrum=dic_par['matter_power_spectrum'])
-        print(cosmo)
+        self.apply_source_systematics(cosmo)
+
         tracers = self.make_tracers(cosmo)
 
-        for twopoint_pair in something:
-            tracer1 = ccl.CLTracer(..., tracer_type=...)
-            tracer2 = ccl.CLTracer(...)
-            CCL.XXX(cosmo, tracer, tracer2)
+        c_ell = []
+        for pair_info in self.metadata['2pt_ordering']:
+            src1 = pair_info['src1']
+            tracer1 = tracers[src1]
+            src2 = pair_info['src2']
+            tracer2 = tracers[src2]
+            ells = pair_info['ells']
+            c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)
 
-        results = TwoPointTheoryResults(...)
+            self.apply_output_systematics(c_ell_pair)
+
+            c_ell.append((src1,src2,ells,c_ell_pair))
+
+        results = TwoPointTheoryResults(c_ell)
+
         return results
 

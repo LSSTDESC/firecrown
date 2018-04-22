@@ -4,4 +4,4 @@ class TheoryResults:
 
     def to_cosmosis_block(self, block):
         for key in self.slots:
-            block['cosmological_parameters', key] = getattr(self, key)
+            block['results', key] = getattr(self, key)
