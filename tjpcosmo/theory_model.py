@@ -50,13 +50,12 @@ def execute(block, model):
     return 0
 
 
-
+# Translate Cosmosis blocks to PHIL PARAMS!!!
 def block_to_parameters(block):
     # These are the mandatory parameters for cosmology, if they aren't there,
     # the code crashes.
     Omega_c = block[names.cosmological_parameters, 'Omega_c']
     Omega_b = block[names.cosmological_parameters, 'Omega_b']
-    Omega_l = block[names.cosmological_parameters, 'Omega_l']
     h = block[names.cosmological_parameters, 'h']
     n_s = block[names.cosmological_parameters, 'n_s']
     A_s = block[names.cosmological_parameters, 'A_s']
@@ -74,11 +73,13 @@ def block_to_parameters(block):
     
     #Parameters that must be derived
     Omega_m = Omega_c + Omega_b + Omega_n_mass
-    Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)
     
-    return ParameterSet(Omega_c = Omega_c, Omega_b = Omega_b, Omega_m = Omega_m,
-                        Omega_k = Omega_k, Omega_l = Omega_l, Omega_n_mass = Omega_n_mass,
-                        Omega_n_rel = Omega_n_rel, Omega_g = Omega_g, w0 = w0, wa = wa,
-                        h = h, N_nu_mass = N_nu_mass, N_nu_rel = N_nu_rel, mnu = mnu, A_s = A_s,
-                        n_s = n_s)
+    #Either of These WE need to in the future be able to check which one 
+    Omega_l = block[names.cosmological_parameters, 'Omega_l']  # NEED TO CHANGE THIS!
+    Omega_k = 1.0 -(Omega_m + Omega_l + Omega_g + Omega_n_rel)		#NEED TO CHANGE THIS!
+    
+    Cosmology = CosmoBase(Omega_c, Omega_b, Omega_l, n_s, A_s, sigma_8, Omega_g,
+		Omega_n_mass, Omega_n_rel, w0, wa, N_nu_mass, N_nu_rel, mnu)
+    
+    return Cosmology
 
