@@ -7,6 +7,7 @@ from cosmosis.datablock import names, option_section
 from tjpcosmo.models import Analysis
 from tjpcosmo.likelihood import BaseLikelihood
 from tjpcosmo.parameters import ParameterSet
+from Philscosmobase import CosmoBase
 import pathlib
 import yaml
 
@@ -50,7 +51,7 @@ def execute(block, model):
     return 0
 
 
-# Translate Cosmosis blocks to PHIL PARAMS!!!
+# Translate Cosmosis blocks to PHIL PARAMS!!! MISSING IMPORT of phil's 
 def block_to_parameters(block):
     # These are the mandatory parameters for cosmology, if they aren't there,
     # the code crashes.
