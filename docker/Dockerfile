@@ -74,7 +74,11 @@ RUN pip install astropy==3.0.1 \
 
 
 RUN pip install --no-binary=h5py h5py
-RUN cd /opt/ && git clone https://github.com/LSSTDESC/CCL && cd CCL && python class_install.py && ./configure && make && make install
+
+RUN cd /opt/ && git clone https://github.com/LSSTDESC/CCL \
+&& cd CCL && python class_install.py \
+&& ./configure && make && make install \
+&& python setup.py install --prefix=/usr/local
 
 RUN CC=gcc CXX=g++ FC=gfortran pip install cosmosis-standalone
 

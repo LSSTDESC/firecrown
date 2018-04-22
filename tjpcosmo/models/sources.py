@@ -1,4 +1,5 @@
 import numpy as np
+import copy
 
 class Source:
     def __init__(self, name, stype, metadata):
@@ -13,11 +14,13 @@ class Source:
             sys.apply(self)
 
     def to_tracer(self):
-        # return CCL.CLTracer
-        pass
+        raise ValueError("Wrong kind of source turned into a tracer!")
 
     def validate(self):
         pass
+    def copy(self):
+        return copy.copy(self)
+
 
 
 class WLSource(Source):

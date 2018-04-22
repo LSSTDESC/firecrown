@@ -71,7 +71,7 @@ class TwoPointTheoryCalculator(TheoryCalculator):
     def setup_systematics(self, sys_config):
         self.systematics = {}
         for name, info in sys_config.items():
-            sys = Systematic.from_info(info)
+            sys = Systematic.from_info(name, info)
             self.systematics[name] = sys
         
         self.output_systematics = {
@@ -117,36 +117,42 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             if sys_name not in used_systematics:
                 raise ValueError(f"Systematic with name {sys_name} was specified in param file but never used")
 
-    def update_systematics(self, parameterers):
-        for sys in self.systematics:
-            pass
-            #sys.update(parameters)
+    def update_systematics(self, parameters):
+        for sys in self.systematics.values():
+            sys.update(parameters)
 
     def apply_source_systematics(self, cosmo):
-        pass
+        sources = []
+        for source in self.sources:
+            for syst in source.systematics:
+                if isinstance(syst, SourceSystematic):
+                    source = syst(cosmo, source)
+            sources.append(source)
+        return sources            
 
     def apply_output_systematics(self, c_ell_pair):
         pass
 
-    def make_tracers(self,cosmo):
+    def make_tracers(self, cosmo, sources):
         tracers = {}
-        for source in self.sources:
+        for source in sources:
             tracers[source.name] = source.to_tracer(cosmo)
         return tracers
 
     def run(self, parameters):
         print("Running 2pt theory prediction")
         print(parameters)
-        print("Still need to implement TwoPointTheoryCalculator.update_systematics")
+        
+        self.update_systematics(parameters)
 
         params = convert_cosmobase_to_ccl(parameters)
         print("Calling CCL with default config - may need to change depending on systematics/choices")
         cosmo=ccl.Cosmology(params)
                             #transfer_function=dic_par['transfer_function'],
                             #matter_power_spectrum=dic_par['matter_power_spectrum'])
-        self.apply_source_systematics(cosmo)
+        sources = self.apply_source_systematics(cosmo)
 
-        tracers = self.make_tracers(cosmo)
+        tracers = self.make_tracers(cosmo, sources)
 
         c_ell = []
         for pair_info in self.metadata['2pt_ordering']:

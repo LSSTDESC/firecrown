@@ -2,7 +2,7 @@ from .base_systematic import SourceSystematic, OutputSystematic, CosmologySystem
 
 
 class MultiplicativeShearBias(SourceSystematic):
-    params = ['m_{}']
+    pass
 
 
 class PZTransformation(SourceSystematic):
