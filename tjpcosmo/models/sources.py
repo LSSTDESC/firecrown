@@ -29,11 +29,15 @@ class SLSource(Source):
 	def __init__(self, name, stype, metadata):
 		super(SLSource, self).__init__(self, name, stype, metadata)
 
-class Clustersource(Source):
+class SNSource(Source):
+	def __init__(self, name, stype, metadata):
+		super(SNSource, self).__init__(self, name, stype, metadata)
+
+class CLSource(Source):
 	def __init__(self, name, stype, metadata):
 		super(Clustersource, self).__init__(self, name, stype, metadata)
 
-class CMBsource(Source):
+class CMBSource(Source):
 	def __init__(self, name, stype, metadata):
 		super(CMBsource, self).__init__(self, name, stype, metadata)
 
@@ -45,11 +49,11 @@ def make_source(sname, stype, metadata):
 		return LSSSource(...)
 	elif sname=='SL':
 		return SLSource(...)
-	elif sname=='Cluster':
+	elif sname=='CL':
 		return Clustersource(...)
 	elif sname=='CMB':
 		return CMBsource(...)
-	elif sname=='Supernova':
+	elif sname=='SN':
 		return SNsource(...)
 	else:
 		raise ValueError(f"The source {sname} asked for doesn't exist in our data!")
