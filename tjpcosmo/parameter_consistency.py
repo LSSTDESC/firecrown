@@ -21,8 +21,8 @@ remaining parameters filled in.
 
 This incorporates a series of escalating assumptions.
 At first, no other data is assumed.  If this model is under-specified,
-we then try using omega_nu=0 as well.  And if that fails we escalate to
-using both omega_nu=0 and omega_k=0.
+we then try using omega_n_mass=0 as well.  And if that fails we escalate to
+using both omega_n_mass=0 and omega_k=0.
 
 The relations between parameters and the assumptions
 can all be specified directly instead of using the cosmology examples
@@ -53,14 +53,14 @@ def cosmology_consistency(verbose=False, relations_file=""):
 
 
 COSMOLOGY_CONSISTENCY_RELATIONS = [
-    ("omega_m", "ommh2/h0/h0"),
-    ("omega_b", "ombh2/h0/h0"),
-    ("omega_c", "omch2/h0/h0"),
-    ("omega_nu", "omnuh2/h0/h0"),
-    ("ommh2", "omega_m*h0*h0"),
-    ("ombh2", "omega_b*h0*h0"),
-    ("omch2", "omega_c*h0*h0"),
-    ("omnuh2", "omega_nu*h0*h0"),
+    ("omega_m", "ommh2/h/h"),
+    ("omega_b", "ombh2/h/h"),
+    ("omega_c", "omch2/h/h"),
+    ("omega_n_mass", "omnuh2/h/h"),
+    ("ommh2", "omega_m*h*h"),
+    ("ombh2", "omega_b*h*h"),
+    ("omch2", "omega_c*h*h"),
+    ("omnuh2", "omega_n_mass*h*h"),
     ("omch2", "ommh2-ombh2-omnuh2"),
     ("ommh2", "omch2+ombh2+omnuh2"),
     ("omnuh2", "ommh2-ombh2-omch2"),
@@ -70,25 +70,25 @@ COSMOLOGY_CONSISTENCY_RELATIONS = [
     ("baryon_fraction", "ombh2/ommh2"),
     ("ombh2", "ommh2*baryon_fraction"),
     ("ommh2", "ombh2/baryon_fraction"),
-    ("omega_m", "omega_b+omega_c+omega_nu"),
-    ("omega_b", "omega_m-omega_c-omega_nu"),
-    ("omega_c", "omega_m-omega_b-omega_nu"),
-    ("omega_nu", "omega_m-omega_b-omega_c"),
-    ("h0", "(ommh2/omega_m)**0.5"),
-    ("h0", "(ombh2/omega_b)**0.5"),
-    ("h0", "(omch2/omega_c)**0.5"),
+    ("omega_m", "omega_b+omega_c+omega_n_mass"),
+    ("omega_b", "omega_m-omega_c-omega_n_mass"),
+    ("omega_c", "omega_m-omega_b-omega_n_mass"),
+    ("omega_n_mass", "omega_m-omega_b-omega_c"),
+    ("h", "(ommh2/omega_m)**0.5"),
+    ("h", "(ombh2/omega_b)**0.5"),
+    ("h", "(omch2/omega_c)**0.5"),
     # Had to leave this one out as it causes ZeroDivisionError.
     # Could catch this somewhere?
-    # ("h0", "(omnuh2/omega_nu)**0.5"),
-    ("h0", "hubble/100"),
-    ("hubble", "h0*100"),
+    # ("h", "(omnuh2/omega_n_mass)**0.5"),
+    ("h", "hubble/100"),
+    ("hubble", "h*100"),
     ("omega_lambda", "1-omega_m-omega_k"),
     ("omega_m", "1-omega_lambda-omega_k"),
     ("omega_k", "1-omega_m-omega_lambda"),
 ]
 
 COSMOLOGY_POSSIBLE_DEFAULTS = [
-    ("omega_nu", 0.0),
+    ("omega_n_mass", 0.0),
     ("omega_k", 0.0),
 ]
 

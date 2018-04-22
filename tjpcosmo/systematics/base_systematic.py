@@ -1,6 +1,7 @@
 systematic_registry = {}
 
 class Systematic:
+    params = []
     def __init__(self, **config):
         self.config = config
         print(f"Would now create systematic {self.__class__.__name__} from config info: {config}")

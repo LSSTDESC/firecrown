@@ -20,17 +20,29 @@ def make_fake_source(name, stype, metadata):
 
         # self.z,self.nz = metadata['sources'][name]["nz"]
 def convert_cosmobase_to_ccl(cosmo_base):
-    omega_c = cosmo_base.Omega_c
-    omega_b = cosmo_base.Omega_b
-    omega_k = cosmo_base.Omega_k
-    if (cosmo_base.Omega_n_rel +cosmo_base.Omega_n_mass):
+    # Although these are lower case they are fractions
+    # not densities - this is an artifact of cosmosis
+    # case insesitivity
+    omega_c = cosmo_base.omega_c
+    omega_b = cosmo_base.omega_b
+    omega_k = cosmo_base.omega_k
+    if (cosmo_base.omega_n_rel + cosmo_base.omega_n_mass):
         raise ValueError("cosmo_base doesn't handle massive neutrinos yet")
     w = cosmo_base.w0
     wa = cosmo_base.wa
     h0 = cosmo_base.h
-    sigma8 = cosmo_base.sigma_8
-    A_s = cosmo_base.A_s
+    if 'sigma_8' in cosmo_base:
+        sigma8 = cosmo_base.sigma_8
+    else:
+        sigma8 = 0.0
+
+    if 'a_s' in cosmo_base:
+        A_s = cosmo_base.a_s
+    else:
+        A_s = 0.0
+
     n_s = cosmo_base.n_s
+
     if sigma8 and A_s:
         raise ValueError("Specifying both sigma8 and A_s: pick one")
     elif sigma8:
@@ -100,8 +112,13 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             if sys_name not in used_systematics:
                 raise ValueError(f"Systematic with name {sys_name} was specified in param file but never used")
 
+    def update_systematics(self, parameters):
+        for sys in self.systematics:
+            sys.update(parameters)
+
     def make_tracers(self,cosmo):
-        pass
+        for source in self.sources:
+            pass
 
     def run(self, parameters):
         print("Running 2pt theory prediction")

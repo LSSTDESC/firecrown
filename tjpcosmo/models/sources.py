@@ -20,7 +20,7 @@ class Source:
 
 class WLSource(Source):
     def __init__(self, name, stype, metadata):
-        super().__init__(self, name, stype, metadata)
+        super().__init__(name, stype, metadata)
         self.scaling = 1.0
         
         
@@ -32,19 +32,19 @@ class LSSSource(Source):
         
 class SLSource(Source):
     def __init__(self, name, stype, metadata):
-        super(SLSource, self).__init__(   name, stype, metadata)
+        super().__init__(name, stype, metadata)
 
 class SNSource(Source):
     def __init__(self, name, stype, metadata):
-        super().__init__(self, name, stype, metadata)
+        super().__init__(name, stype, metadata)
 
 class CLSource(Source):
     def __init__(self, name, stype, metadata):
-        super().__init__(self, name, stype, metadata)
+        super().__init__(name, stype, metadata)
 
 class CMBSource(Source):
     def __init__(self, name, stype, metadata):
-        super().__init__(self, name, stype, metadata)
+        super().__init__(name, stype, metadata)
 
 
 def make_source(sname, stype, metadata):

@@ -2,52 +2,61 @@ name: twopoint
 sources:
     lenses_0:
         type: LSS
-        systematics: [] 
+        systematics: [linear_bias_lowz] 
     lenses_1:
         type: LSS
-        systematics: []
-    sources_2:
+        systematics: [linear_bias_lowz]
+    lenses_2:
         type: LSS
-        systematics: []
+        systematics: [linear_bias_highz]
+    sources_2:
+        type: WL
+        systematics: [multiplicative_shear_bias]
 
 statistics:
     clustCl_0_0:
         source_names: [lenses_0, lenses_0]
         ell_min: 3.4
         ell_max: 200.0
-        systematics: additive_shear
+        systematics: []
     clustCl_0_1:
         source_names: [lenses_0, lenses_1]
         ell_min: 3.4
         ell_max: 200.0
-        systematics: additive_shear
+        systematics: []
     clustCl_0_2:
         source_names: [lenses_0, sources_2]
         ell_min: 3.4
         ell_max: 200.0
-        systematics: additive_shear
+        systematics: []
     clustCl_1_1:
         source_names: [lenses_1, lenses_1]
         ell_min: 3.4
         ell_max: 200.0
-        systematics: additive_shear
+        systematics: []
     clustCl_1_2:
         source_names: [lenses_1, sources_2]
         ell_min: 3.4
         ell_max: 200.0
-        systematics: additive_shear
+        systematics: []
     clustCl_2_2:
         source_names: [sources_2, sources_2]
         ell_min: 3.4
         ell_max: 200.0
-        systematics: additive_shear
+        systematics: []
 systematics:
     # ia_lowz: 
         # type: LinearAlignment
     # ia_highz:
     #     type: LinearAlignment
+    linear_bias_lowz:
+        type: LinearBias
+    linear_bias_highz:
+        type: LinearBias
     baryons:
         type: BaryonEffects
         kmin: 1000
+    multiplicative_shear_bias:
+        type: MultiplicativeShearBias
     additive_shear:
         type: AdditiveShearBias

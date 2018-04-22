@@ -1,14 +1,41 @@
-"""
-This class will be replaced by the standard
-DESC Parameters class.
-
-This is a placeholder.
-
-"""
 from collections import OrderedDict
-
-
 class ParameterSet(OrderedDict):
+    """A class for holding the names and current values of the parameters that will be varied.
+
+    Typically, these are the parameters that are stepped over in a Markov chain or similar
+    code.  This class is little more than a glorified Python dict with a bit of extra
+    syntactic sugar to let parameters be accessed as attributes rather than keys.
+
+    A ParameterSet object is constructed with arbitrary kwargs, giving the names of the parameters
+    to include.  The value of each should be either a type (float, int or bool) or a value with
+    one of these types.
+
+    Example:
+
+        >>> cosmo_params = ParameterSet(Omega_m=float, h=float, Lambda=float, As=float, ns=float,
+        ...                             sum_neutrino_masses=float, n_neutrino_species=int,
+        ...                             inverted_neutrino_hierarchy=bool)
+        >>> ia_params = ParameterSet(a1=1.4, a2=2.3)
+
+    In addition, the value of an argument may be another ParameterSet object, in which case the
+    parameters will be accessed hierarchically (not unlike a dict inside another dict):
+
+        >>> bias_params = ParameterSet(b1=3.0, b2=0.0)
+        >>> sys_params = ParameterSet(ia=ia_params, bias=bias_params)
+        >>> all_params = ParameterSet(cosmo=cosmo_params, sys=sys_params)
+
+    You can set or access hierarchical parameter values with the same syntax as a dict or with
+    a single key string using a '.' to separate the keys in the different levels:
+
+        >>> sys_params['ia']['a1'] = 1.2
+        >>> sys_params['bias.b1'] = 3.
+
+    Finally, you can access the parameters as attributes instead:
+
+        >>> all_params.sys.bias.b2 = 0.2
+        >>> all_params.cosmo.sum_neutrino_masses = 0.6
+
+    """
     _valid_types = [ float, int, bool ]
 
     def __init__(self, **kwargs):
