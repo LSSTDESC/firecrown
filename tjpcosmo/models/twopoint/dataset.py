@@ -6,7 +6,7 @@ class TwoPointDataSet(BaseDataSet):
     def __init__(self, sacc_data,config) :
         indices=twopoint_process_sacc(sacc_data,config)
         self.data_vector = sacc_data.mean.vector[indices]
-        self.covariance = sacc_data.precision.pmatrix[indices,:][:,indices]
+        self.covariance = sacc_data.precision.cmatrix[indices,:][:,indices]
         self.precision = np.linalg.inv(self.covariance) #TODO: optimize this through Cholesky
 
     @classmethod
@@ -32,6 +32,7 @@ def twopoint_process_sacc(sacc_data,config):
         d['nz']=[t.z,t.Nz]
 
     indices=[]
+    pair_ordering=[]
     for xcor,d in config['statistics'].items() :
         tns=sorted([tracer_numbers[n] for n in d['source_names']])
         id_xcor=np.where((t1_list==tns[0]) & (t2_list==tns[1]))[0]
@@ -44,7 +45,9 @@ def twopoint_process_sacc(sacc_data,config):
             ells_full=ell_list[id_xcor]
             ndxs_full=ndx_list[id_xcor]
             indices_cut=np.where((ells_full<=d['ell_max']) & (ells_full>=d['ell_min']))[0]
-            d['ells']=ells_full[indices_cut]
             indices+=ndxs_full[indices_cut].tolist()
+            pair_ordering.append({'src1':d['source_names'][0],'src2':d['source_names'][1],'ells':ells_full[indices_cut]})
+
+    config['2pt_ordering']=pair_ordering
 
     return np.array(indices)
