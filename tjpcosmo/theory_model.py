@@ -59,11 +59,13 @@ def block_to_parameters(block):
     Omega_b = block[names.cosmological_parameters, 'Omega_b']
     h = block[names.cosmological_parameters, 'h']
     n_s = block[names.cosmological_parameters, 'n_s']
-    A_s = block[names.cosmological_parameters, 'A_s']
-    sigma_8 = block[names.cosmological_parameters, 'sigma_8']
+
 
     
     #Optional parameters, will be set to a default value, if not there
+    A_s = block.get_double(names.cosmological_parameters, 'a_s', None)
+    sigma_8 = block.get_double(names.cosmological_parameters, 'sigma_8', None)    
+    
     w0 = block.get_double(names.cosmological_parameters, 'w0',-1.0)
     wa = block.get_double(names.cosmological_parameters, 'wa', 0.0)
     
