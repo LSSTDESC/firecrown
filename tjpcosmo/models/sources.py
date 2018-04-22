@@ -21,6 +21,8 @@ class Source:
 class WLSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(self, name, stype, metadata)
+        self.z,self.nz = metadata['sources'][name]["nz"]
+        self.orignal_nz = self.nz
         self.scaling = 1.0
         
         
