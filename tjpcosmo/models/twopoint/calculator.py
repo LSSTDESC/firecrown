@@ -8,16 +8,23 @@ def make_fake_source(name, stype, metadata):
 
     z = np.arange(0.0, 2.0, 0.01)
     n_of_z = np.exp(-0.5 * (z - 0.8)**2/0.1**2)
-    metadata = {name:{"nz":(z,n_of_z)}}
+    metadata = {
+        "sources":{
+            name: {
+                "nz": [z, n_of_z]
+            }
+        }
+    }
     return LSSSource(name, stype, metadata)
 
+        # self.z,self.nz = metadata['sources'][name]["nz"]
 
 class TwoPointTheoryCalculator(TheoryCalculator):
     def __init__(self, config, metadata):
         super().__init__(config, metadata)
         print("Warning! Making a fake source")
         self.setup_systematics(config['systematics'])
-        self.sources = self.make_sources(config)
+        self.setup_sources(config)
         self.metadata = metadata
 
     def setup_systematics(self, sys_config):
@@ -45,24 +52,25 @@ class TwoPointTheoryCalculator(TheoryCalculator):
         }
 
 
-    def make_sources(self, config):
+    def setup_sources(self, config):
         info = config['sources']
         used_systematics = set()
+        self.sources = []
 
-        for source_info in info:
+        for name, source_info in info.items():
             stype = source_info['type']
-            sname = source_info['name']
 
-            source = make_fake_source(sname, stype, self.metadata)
+            source = make_source(name, stype, self.metadata)
 
             sys_names = source_info.get('systematics', [])
             # check if string or list
             for sys_name in sys_names:
                 sys = self.systematics.get(sys_name)
                 if sys is None:
-                    raise ValueError(f"Systematic with name {sys_name} was specified for source {sname} but not defined in parameter file systematics section")
+                    raise ValueError(f"Systematic with name {sys_name} was specified for source {name} but not defined in parameter file systematics section")
                 source.systematics.append(sys)
                 used_systematics.add(sys_name)
+            self.sources.append(source)
 
         for sys_name in self.source_systematics.keys():
             if sys_name not in used_systematics:
@@ -73,6 +81,8 @@ class TwoPointTheoryCalculator(TheoryCalculator):
 
     def run(self, parameters):
         print("Running 2pt theory prediction")
+        import pdb
+        pdb.set_trace()
 
         self.update_systematics(parameters)
         cosmo = CCL.cosmo(parameters)

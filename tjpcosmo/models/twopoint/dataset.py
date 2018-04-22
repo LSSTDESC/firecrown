@@ -27,8 +27,8 @@ def twopoint_process_sacc(sacc_data,config):
     for itr,tr in enumerate(sacc_data.tracers) :
         tracer_numbers[str(tr.name.decode())]=itr
 
-    for d in config['sources'] :
-        t=sacc_data.tracers[tracer_numbers[d['name']]]
+    for name,d in config['sources'].items() :
+        t=sacc_data.tracers[tracer_numbers[name]]
         d['nz']=[t.z,t.Nz]
 
     indices=[]

@@ -1,17 +1,14 @@
 name: twopoint
 sources:
-    -
+    sample_0:
         type: LSS
-        name: sample_0
-        systematics: [ia_lowz] 
-    -
+        systematics: [] 
+    sample_1:
         type: LSS
-        name: sample_1
-        systematics: [ia_lowz]
-    -
+        systematics: []
+    sample_2:
         type: LSS
-        name: sample_2
-        systematics: [ia_lowz]
+        systematics: []
 
 statistics:
     clustCl_0_0:
@@ -45,10 +42,12 @@ statistics:
         ell_max: 200.0
         systematics: additive_shear
 systematics:
-    ia_lowz: 
-        type: LinearAlignment
-    ia_highz:
-        type: LinearAlignment
+    # ia_lowz: 
+        # type: LinearAlignment
+    # ia_highz:
+    #     type: LinearAlignment
     baryons:
         type: BaryonEffects
         kmin: 1000
+    additive_shear:
+        type: AdditiveShearBias
