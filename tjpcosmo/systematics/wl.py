@@ -7,12 +7,6 @@ class MultiplicativeShearBias(SourceSystematic):
         source.scaling[:] = self.scaling[:]*m    
 
 
-class PZTransformation(SourceSystematic):
-    pass
-
-class PZShift(PZTransformation):
-    pass
-
 class AdditiveShearBias(OutputSystematic):
     pass
 
