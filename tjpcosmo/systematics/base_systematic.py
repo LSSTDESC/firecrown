@@ -3,7 +3,7 @@ systematic_registry = {}
 class Systematic:
     def __init__(self, **config):
         self.config = config
-        print(f"Would now create systematic f{self.__class__.__name__} from config info: {config}")
+        print(f"Would now create systematic {self.__class__.__name__} from config info: {config}")
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
