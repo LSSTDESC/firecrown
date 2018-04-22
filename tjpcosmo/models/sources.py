@@ -45,7 +45,7 @@ class LSSSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z,self.nz = metadata['sources'][name]["nz"]
-        self.orignal_nz = self.nz
+        #self.orignal_nz = self.nz
         self.bias = np.ones_like(self.z)
 
     def to_tracer(self, cosmo):
