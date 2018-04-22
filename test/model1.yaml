@@ -1,22 +1,22 @@
 name: twopoint
 sources:
     -
-        type: WLShear
-        name: shears_0
+        type: LSS
+        name: sample_0
         systematics: [ia_lowz] 
     -
-        type: WLShear
-        name: shears_1
+        type: LSS
+        name: sample_0
         systematics: [ia_lowz]
     -
-        type: WLShear
+        type: LSS
         name: shears_2
         systematics: [ia_highz, multiplicative_shear]
 
-    -
-        type: Cluster
-        name: cluster_1
-        systematics: [MOR]
+    # -
+    #     type: CL
+    #     name: cluster_1
+    #     systematics: [MOR]
 
 statistics:
     shear2pt_0_0:

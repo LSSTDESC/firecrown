@@ -24,14 +24,14 @@ class WLSource(Source):
 		
 class LSSSource(Source):
 	def __init__(self, name, stype, metadata):
-		super(LSSSource, self).__init__(self, name, stype, metadata)
+		super().__init__(name, stype, metadata)
 		self.z,self.nz = metadata[name]["nz"]
 		self.orignal_nz = self.nz
 	
 	
 class SLSource(Source):
 	def __init__(self, name, stype, metadata):
-		super(SLSource, self).__init__(self, name, stype, metadata)
+		super(SLSource, self).__init__(   name, stype, metadata)
 
 class SNSource(Source):
 	def __init__(self, name, stype, metadata):
@@ -48,16 +48,16 @@ class CMBSource(Source):
 
 def make_source(sname, stype, metadata):
 	if stype=='WL':
-		return WLSource(...)
+		return WLSource(sname, stype, metadata)
 	elif stype=='LSS':
-		return LSSSource(...)
+		return LSSSource(sname, stype, metadata)
 	elif stype=='SL':
-		return SLSource(...)
+		return SLSource(sname, stype, metadata)
 	elif stype=='CL':
-		return Clustersource(...)
+		return Clustersource(sname, stype, metadata)
 	elif stype=='CMB':
-		return CMBsource(...)
+		return CMBsource(sname, stype, metadata)
 	elif stype=='SN':
-		return SNsource(...)
+		return SNsource(sname, stype, metadata)
 	else:
 		raise ValueError(f"The source {stype} asked for doesn't exist in our data!")

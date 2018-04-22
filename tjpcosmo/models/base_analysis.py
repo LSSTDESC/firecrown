@@ -33,7 +33,7 @@ class Analysis:
         They should call this parent method first.
         """
         self.config=config
-        self.data, self.metadata = self.data_class.load(data_info)
+        self.data, self.metadata = self.data_class.load(data_info, config)
         self.theory_calculator = self.theory_calculator_class(config, self.metadata)
         self.likelihood = likelihood_class(self.data)
 
