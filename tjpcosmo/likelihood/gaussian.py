@@ -7,5 +7,6 @@ class Gaussian(BaseLikelihood):
         mu = self.data.data_vector
         P = self.data.precision
         delta = d-mu
-        like = float(np.einsum('i,ij,j', delta, P, delta))
+        chi2 = float(np.einsum('i,ij,j', delta, P, delta))
+        like = -0.5 * chi2
         return like
