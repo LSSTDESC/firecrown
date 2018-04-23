@@ -83,8 +83,8 @@ RUN cd /opt/ && git clone https://github.com/LSSTDESC/CCL \
 RUN CC=gcc CXX=g++ FC=gfortran pip install cosmosis-standalone
 
 RUN pip install pyccl
-
-RUN cd /opt && git clone https://github.com/LSSTDESC/sacc/ && cd sacc && python setup.py install
+ENV TJPCOSMO_DOCKER_VERSION 1.1
+RUN cd /opt && git clone --single-branch --branch tjpcosmo_mods https://github.com/LSSTDESC/sacc/ && cd sacc && python setup.py install
 
 # Run a bash login shell if no other command is specified.
 CMD ["/bin/bash", "-l"]
