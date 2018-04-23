@@ -43,7 +43,7 @@ class Analysis:
 
     @staticmethod
     def from_name(name):
-        return model_registry[name]
+        return model_registry[name.lower()]
 
 
     def run(self, parameterSet):
