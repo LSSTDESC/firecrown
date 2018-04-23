@@ -40,7 +40,12 @@ def list_samplers():
 
 
 def main(args):
-
+    """ Main run loop, calls cosmosis to do the sampling. 
+    Reads in the command line argument, which should be the .ini file used for this run.
+    Look at example for that Params.ini for how one of these are structured.
+    
+    Cosmosis calls the theory_model.py for information on how to execute the TJPCosmo code.
+    """
     args = parser.parse_args(args)
 
     # A handy option to list all available samplers

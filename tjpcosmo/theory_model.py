@@ -26,6 +26,8 @@ def parse_data_set_options(options):
 
 
 def setup(options):
+    """ Sets up the input to cosmosis for each analysis model.
+    """
     config_filename = options.get_string(option_section, "config")
     likelihood_name = options.get_string(option_section, "Likelihood")
     data_info = parse_data_set_options(options)
@@ -46,7 +48,8 @@ def setup(options):
     return model, consistency
 
 def execute(block, config):
-    # Generate a DESC Parameters object from a cosmosis block
+    """ Generate a DESC Parameters object from a cosmosis block
+    """
     model,consistency = config
     params = block_to_parameters(block, consistency)
     likelihood, theory_results = model.run(params)
@@ -57,8 +60,12 @@ def execute(block, config):
 
 # Translate Cosmosis blocks to PHIL PARAMS!!!
 def block_to_parameters(block, consistency):
-    # These are the mandatory parameters for cosmology, if they aren't there,
-    # the code crashes.
+    """ This fucntion translates the parameters from a cosmosis block to TJPCosmo's
+    Parameter class (A sub class of a dictionary. This list should be consistent 
+    with the DESC standard for cosmological parameters. A few parameters are 
+    mandatory while others will be getting defaults values if not specified in 
+    the initial file.
+    """
     Omega_c = block[names.cosmological_parameters, 'Omega_c']
     Omega_b = block[names.cosmological_parameters, 'Omega_b']
     h = block[names.cosmological_parameters, 'h']
@@ -82,7 +89,6 @@ def block_to_parameters(block, consistency):
     mnu = block.get_double(names.cosmological_parameters, 'mnu', 0.0)
     
     # Now if we have provided the code with Omega_k or Omega_l it will figure out
-    # what it has, make sure to calculate Omega_l no matter what, since CosmoBase requires that. 
     known_parameters = {}
     for param in consistency.parameters:
         if block.has_value("cosmological_parameters", param):

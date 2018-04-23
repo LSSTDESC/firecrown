@@ -2,6 +2,11 @@ systematic_registry = {}
 import copy
 
 class Systematic:
+    """ Super class for systematics, we have assumed there are 3 types of places
+    systematics can live, either in the source, cosmology or in the output.
+    
+    4/23 Only source systematics is actually implemented. 
+    """
     params = []
     optional_params = {}
     
@@ -70,4 +75,3 @@ class SourceSystematic(Systematic):
 
 class OutputSystematic(Systematic):
     pass
-
