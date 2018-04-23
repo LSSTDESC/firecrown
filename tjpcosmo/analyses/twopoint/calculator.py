@@ -17,6 +17,9 @@ def make_fake_source(name, stype, metadata):
 
         # self.z,self.nz = metadata['sources'][name]["nz"]
 def convert_cosmobase_to_ccl(cosmo_base):
+    """ Function for changing our set of parameters from the DESC standard set
+    forth by Phil Bull, to a format that can be put into CCL.
+    """
     # Although these are lower case they are fractions
     # not densities - this is an artifact of cosmosis
     # case insesitivity
