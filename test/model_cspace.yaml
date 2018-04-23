@@ -14,36 +14,49 @@ sources:
         systematics: [multiplicative_shear_bias,linear_ia, wl_pz_shift]
 
 statistics:
-    clustCl_0_0:
+    wth_0_0:
+        corr_type: XiGG
         source_names: [lenses_0, lenses_0]
-        ell_min: 3.4
-        ell_max: 200.0
+        x_min: 3.4
+        x_max: 200.0
         systematics: []
-    clustCl_0_1:
+    wth_0_1:
+        corr_type: XiGG
         source_names: [lenses_0, lenses_1]
-        ell_min: 3.4
-        ell_max: 200.0
+        x_min: 3.4
+        x_max: 200.0
         systematics: []
-    clustCl_0_2:
+    xiT_0_2:
+        corr_type: XiGE
         source_names: [lenses_0, sources_2]
-        ell_min: 3.4
-        ell_max: 200.0
+        x_min: 3.4
+        x_max: 200.0
         systematics: []
-    clustCl_1_1:
+    wth_1_1:
+        corr_type: XiGG
         source_names: [lenses_1, lenses_1]
-        ell_min: 3.4
-        ell_max: 200.0
+        x_min: 3.4
+        x_max: 200.0
         systematics: []
-    clustCl_1_2:
+    xiT_1_2:
+        corr_type: XiGE
         source_names: [lenses_1, sources_2]
-        ell_min: 3.4
-        ell_max: 200.0
+        x_min: 3.4
+        x_max: 200.0
         systematics: []
-    clustCl_2_2:
+    xiP_2_2:
+        corr_type: XiP
         source_names: [sources_2, sources_2]
-        ell_min: 3.4
-        ell_max: 200.0
+        x_min: 3.4
+        x_max: 200.0
         systematics: []
+    xiM_2_2:
+        corr_type: XiM
+        source_names: [sources_2, sources_2]
+        x_min: 3.4
+        x_max: 200.0
+        systematics: []
+
 systematics:
     linear_ia:
         type: LinearAlignment
@@ -60,5 +73,3 @@ systematics:
         type: MultiplicativeShearBias
     additive_shear:
         type: AdditiveShearBias
-
-

@@ -17,5 +17,3 @@ class LinearBias(SourceSystematic):
             pref *= ccl.growth_factor(cosmo,1./(1.+source.z))**self.values['alphag']
             
         source.bias[:] = pref*self.values['b']
-        #to do: we want to allow for growth dependent bias (e.g. growth*bias = const).
-        # but we currently don't have the growth parameters until we run ccl.
