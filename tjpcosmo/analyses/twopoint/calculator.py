@@ -1,6 +1,5 @@
 import pyccl as ccl
 from ..base_calculator import TheoryCalculator
-from .theory_results import TwoPointTheoryResults
 import numpy as np
 def make_fake_source(name, stype, metadata):
     import numpy as np
