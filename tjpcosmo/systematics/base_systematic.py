@@ -50,7 +50,23 @@ class CosmologySystematic(Systematic):
     pass
 
 class SourceSystematic(Systematic):
-    pass
+    modified_source_properties = []
+    required_source_properties = []
+    def adjust_requirements(self,source):
+        if (len(self.modified_source_properties)==0):
+        #move this check to init?
+            print(f"Systematic {self.__class__.__name__} does not modify any source properties!")
+            print(f"If this is unintended, register them in {self.__class__.__name__}.modified_source_properties")
+            
+        #print(f"required {self.required_source_properties}")
+        #print(f"existing {source.eval_source_prop}")
+        if set(self.required_source_properties) <= set(source.eval_source_prop):
+            if (len(self.modified_source_properties)):
+                source.eval_source_prop.extend(self.modified_source_properties)
+                #print(f"extended {source.eval_source_prop}\n")
+            return True
+        else:
+            return False
 
 class OutputSystematic(Systematic):
     pass
