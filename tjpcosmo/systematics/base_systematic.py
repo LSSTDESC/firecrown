@@ -4,6 +4,7 @@ import copy
 class Systematic:
     params = []
     optional_params = {}
+    
     def __init__(self, name, **config):
         self.name = name
         self.config = config
