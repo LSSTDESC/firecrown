@@ -26,6 +26,7 @@ class WLSource(Source):
         super().__init__(name, stype, metadata)
         self.z,self.original_nz = metadata['sources'][name]["nz"]
         self.nz_interp = Akima1DInterpolator(self.z, self.original_nz)
+        print("Are we calling reset in the wrong places?")
         self.reset()
 
     def reset(self):

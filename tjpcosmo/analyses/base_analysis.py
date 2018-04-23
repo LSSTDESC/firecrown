@@ -34,7 +34,11 @@ class Analysis:
         """
         self.config=config
         self.data, self.metadata = self.data_class.load(data_info, config)
-        self.theory_calculator = self.theory_calculator_class(config, self.metadata)
+        
+        self.theory_calculators = [
+            cls(config, self.metadata)
+            for cls in self.theory_calculator_classes]
+
         self.likelihood = likelihood_class(self.data)
 
     @staticmethod
@@ -43,7 +47,9 @@ class Analysis:
 
 
     def run(self, parameterSet):
-        theory_results = self.theory_calculator.run(parameterSet)
+        theory_results = self.theory_results_class(self.metadata)
+        for calculator in self.theory_calculators:
+             calculator.run(theory_results, parameterSet)
         like = self.likelihood.run(theory_results)
         return like, theory_results
 

@@ -72,7 +72,7 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             tracers[source.name] = (source.to_tracer(cosmo), source.scaling)
         return tracers
 
-    def run(self, parameters):
+    def run(self, results, parameters):
         print("Running 2pt theory prediction")
         print(parameters)
         
@@ -93,15 +93,10 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             tracer1, scaling1 = tracers[src1]
             src2 = pair_info['src2']
             tracer2, scaling2 = tracers[src2]
-            ells = pair_info['ells']
+            ells = pair_info['xs']
             scaling = scaling1 * scaling2
             c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)*scaling
 
             self.apply_output_systematics(c_ell_pair)
-
-            c_ell.append((src1,src2,ells,c_ell_pair))
-
-        results = TwoPointTheoryResults(c_ell)
-
-        return results
+            results.add('twopoint', src1, src2, ells, c_ell_pair)
 
