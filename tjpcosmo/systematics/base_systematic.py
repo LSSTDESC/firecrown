@@ -36,16 +36,12 @@ class Systematic:
     def update(self, parameters):
         for param in self.params:
             v = parameters[f"{self.name}.{param}"]
-            print(f"Updating value: {self.name} {param} = {v} ")
             self.values[param] = v
+
         for param, default in self.optional_params.items():
             v = parameters.get(f"{self.name}.{param}")
-            # v = parameters[f"{self.name}.{param}"]
             if v is None:
                 v = default
-                print(f"Updating value: {self.name} {param} = {v} [default value]")
-            else:
-                print(f"Updating value: {self.name} {param} = {v} [not default value]")
             self.values[param] = v
 
 
