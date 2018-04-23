@@ -17,6 +17,7 @@ class Source:
         self.name = name
         self.stype = stype
         self.systematics = []
+        self.eval_source_prop=[]
         self.metadata = metadata
         self.scaling = 1.0
         
@@ -61,8 +62,7 @@ class WLSource(Source):
         self.ia_amplitude = np.ones_like(self.z)
         self.nz = self.original_nz.copy()
         self.scaling = 1.0
-
-
+        
     def to_tracer(self, cosmo):
         import pyccl as ccl
         if(np.any(self.ia_amplitude!=0) & np.any(self.f_red!=0)):
