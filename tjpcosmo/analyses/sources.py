@@ -87,6 +87,7 @@ class LSSSource(Source):
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z, self.original_nz = metadata['sources'][name]["nz"]
+        self.nz_interp = Akima1DInterpolator(self.z, self.original_nz)
         self.reset()
 
     def reset(self):

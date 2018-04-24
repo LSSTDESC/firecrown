@@ -2,13 +2,13 @@ name: twopoint
 sources:
     lenses_0:
         type: LSS
-        systematics: [linear_bias_lowz] 
+        systematics: [linear_bias_lowz, wl_pz_shift] 
     lenses_1:
         type: LSS
-        systematics: [linear_bias_lowz]
+        systematics: [linear_bias_lowz, wl_pz_shift]
     lenses_2:
         type: LSS
-        systematics: [linear_bias_highz]
+        systematics: [linear_bias_highz, wl_pz_shift]
     sources_2:
         type: WL
         systematics: [multiplicative_shear_bias,linear_ia, wl_pz_shift]
