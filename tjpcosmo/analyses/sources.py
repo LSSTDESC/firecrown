@@ -17,7 +17,7 @@ class Source:
         self.name = name
         self.stype = stype
         self.systematics = []
-        self.eval_source_prop=[]
+        self.eval_source_prop=['z']
         self.metadata = metadata
         self.scaling = 1.0
         

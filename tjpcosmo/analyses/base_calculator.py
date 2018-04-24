@@ -88,5 +88,7 @@ class TheoryCalculator:
                         if(syst.adjust_source(cosmo, source)):
                             missing_systematics.append(syst)
                     systloop=missing_systematics.copy()
+                    if (len(systloop)):
+                        print(f"Encountered nested systematics, entering next iteration")
                     if(len(systloop)==prevlength):
                         raise ValueError(f"Could not reduce size of systematics list: NESTED")
