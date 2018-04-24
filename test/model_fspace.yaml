@@ -17,38 +17,38 @@ statistics:
     cl_0_0:
         corr_type: ClGG
         source_names: [lenses_0, lenses_0]
-        x_min: 3.4
-        x_max: 200.0
+        x_min: 8.0
+        x_max: 1000.0
         systematics: []
     cl_0_1:
         corr_type: ClGG
         source_names: [lenses_0, lenses_1]
-        x_min: 3.4
-        x_max: 200.0
+        x_min: 8.0
+        x_max: 1000.0
         systematics: []
     cl_0_2:
         corr_type: ClGE
         source_names: [lenses_0, sources_2]
-        x_min: 3.4
-        x_max: 200.0
+        x_min: 8.0
+        x_max: 1000.0
         systematics: []
     cl_1_1:
         corr_type: ClGG
         source_names: [lenses_1, lenses_1]
-        x_min: 3.4
-        x_max: 200.0
+        x_min: 8.0
+        x_max: 1000.0
         systematics: []
     cl_1_2:
         corr_type: ClGE
         source_names: [lenses_1, sources_2]
-        x_min: 3.4
-        x_max: 200.0
+        x_min: 8.0
+        x_max: 1000.0
         systematics: []
     cl_2_2:
         corr_type: ClEE
         source_names: [sources_2, sources_2]
-        x_min: 3.4
-        x_max: 200.0
+        x_min: 8.0
+        x_max: 1000.0
         systematics: []
 
 systematics:
