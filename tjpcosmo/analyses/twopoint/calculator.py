@@ -16,6 +16,18 @@ def make_fake_source(name, stype, metadata):
     return LSSSource(name, stype, metadata)
 
         # self.z,self.nz = metadata['sources'][name]["nz"]
+
+def ell_for_xi() :
+    """ Returns an array of ells that should hopefully sample the
+    power spectrum sufficiently well
+    """
+    #TODO: these values are hard-coded right now
+    ell_min=2
+    ell_mid=50
+    ell_max=6E4
+    return np.concatenate((np.linspace(ell_min,ell_mid-1,ell_mid-ell_min),
+                           np.logspace(np.log10(ell_mid),np.log10(ell_max),200)))
+        
 def convert_cosmobase_to_ccl(cosmo_base):
     """ Function for changing our set of parameters from the DESC standard set
     forth by Phil Bull, to a format that can be put into CCL.
@@ -89,16 +101,26 @@ class TwoPointTheoryCalculator(TheoryCalculator):
 
         tracers = self.make_tracers(cosmo)
 
-        c_ell = []
+        dict_xcor_types={'ClGG':100,'ClGE':100,'ClEE':100,
+                         'XiGG':200,'XiGE':201,'XiP':202,'XiM':203}
+        dict_xcor_ccl={'XiGG':'gg','XiGE':'gl','XiP':'l+','XiM':'l-'}
         for pair_info in self.metadata['2pt_ordering']:
             src1 = pair_info['src1']
             tracer1, scaling1 = tracers[src1]
             src2 = pair_info['src2']
             tracer2, scaling2 = tracers[src2]
-            ells = pair_info['xs']
+            xcor_type=pair_info['type']
+            xs = pair_info['xs']
             scaling = scaling1 * scaling2
-            c_ell_pair = ccl.angular_cl(cosmo, tracer1, tracer2, ells)*scaling
 
-            self.apply_output_systematics(c_ell_pair)
-            results.add('twopoint', src1, src2, ells, c_ell_pair)
+            if dict_xcor_types[xcor_type]==dict_xcor_types['ClGG'] : #Fourier space
+                xcor_pair = ccl.angular_cl(cosmo, tracer1, tracer2, xs)
+            else : #Configuration space
+                larr=ell_for_xi()
+                clarr=ccl.angular_cl(cosmo, tracer1, tracer2, larr)
+                xcor_pair=ccl.correlation(cosmo,larr,clarr,xs/60,
+                                          corr_type=dict_xcor_ccl[xcor_type])
 
+            xcor_pair*=scaling
+            self.apply_output_systematics(xcor_pair)
+            results.add('twopoint', src1, src2, xs, xcor_pair)
