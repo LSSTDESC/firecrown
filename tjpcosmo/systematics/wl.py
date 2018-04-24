@@ -23,7 +23,7 @@ class LinearAlignment(SourceSystematic):
     }
 
     def adjust_source(self,cosmo,source):
-        print(source.eval_source_prop)
+        #print(source.eval_source_prop)
         if('m' in source.eval_source_prop):
             pref=1.
             if self.values['alphaz']:
