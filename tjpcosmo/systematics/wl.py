@@ -3,9 +3,9 @@ import pyccl as ccl
 
 
 class MultiplicativeShearBias(SourceSystematic):
-    params = ['m']
-    modified_source_properties =[]
+    modified_source_properties =['scaling']
     required_source_properties =[]
+    params = ['m']
     def adjust_source(self, cosmo, source):
         if self.adjust_requirements(source):
             source.scaling *= (1+ self.values['m'])   
