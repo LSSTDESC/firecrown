@@ -25,13 +25,13 @@
 
 \begin{document}
 
-\title{TJPCosmo}
+\title{TJPCosmo: The DESC Joint Probes Likelihood Pipeline}
 
 \maketitlepre
 
 \begin{abstract}
 
-  This note describes the TJPCosmo joint-probes likelihood pipeline for LSST DESC.
+  This note describes, TJPCosmo, the joint probes likelihood pipeline for LSST DESC. The pipeline is to be used by all DESC Working Groups to produce cosmological constraints from LSST summary data. {\it Host Working Group:} TJP.
 
 \end{abstract}
 
@@ -53,27 +53,92 @@ Overview, need for a joint-likelihood pipeline in the context of LSST.
 \section{Pipeline structure}
 \label{sec:struct}
 
-From pipelines repo?
+From pipelines repo. Include pipeline diagram - Figure \ref{fig:diagram}.
+
+\begin{figure}
+  \centering
+  \includegraphics[width=0.49\textwidth]{tjpcosmo_diagram.eps}
+  \caption{TJPCosmo pipeline diagram goes here.}
+  \label{fig:diagram}
+\end{figure}
 
 % ----------------------------------------------------------------------
 
-\section{Models}
-\label{sec:models}
+\section{Analysis stages}
+\label{sec:analysis}
 
-Currently available models via {\tt CCL}. Other models.
+
+\begin{table}[h!]
+    \caption{Example analysis stage.}
+    \label{tab:stage1}
+    \begin{tabular}{| l| l |}
+      \hline
+      Name & x\\\hline
+      Description & x\\\hline
+      Inputs & x\\\hline
+      Outputs & x\\\hline
+      Parallel size & x\\\hline
+      Run time & x\\\hline
+      I/O dominant? & x\\\hline
+      Dependencies & x\\\hline
+      Future & x\\\hline
+      Notes & x\\\hline
+    \end{tabular}
+\end{table}
+% ----------------------------------------------------------------------
+
+\section{Data}
+\label{sec:data}
+
+\begin{table}[h!]
+    \caption{Example data.}
+    \label{tab:stage1}
+    \begin{tabular}{| l| l |}
+      \hline
+      Name & x\\\hline
+      Description & x\\\hline
+      Format & x\\\hline
+      Data & x\\\hline
+      Metadata & x\\\hline
+      Size & x\\\hline
+      Notes & x\\\hline
+    \end{tabular}
+\end{table}
 
 % ----------------------------------------------------------------------
 
-\section{Installation}
-\label{sec:install}
+\section{External infraestructure}
+\label{sec:ext}
+% ----------------------------------------------------------------------
 
-Dependencies. Docker.
+\section{Unit tests, System tests and Validation tests}
+\label{sec:tests}
 
 
-% ----------------------------------------------------------------------                                           
+% ----------------------------------------------------------------------
 
-\section{Outlook}
-\label{sec:outlook}
+\section{Milestones}
+\label{sec:mile}
+
+\begin{table}[h!]
+    \caption{TJPCosmo milestones.}
+    \label{tab:mile}
+    \begin{tabular}{| l| l |}
+      \hline
+      \textbf{Date} & \textbf{Milestone}\\
+      \hline
+      xx/xx & Task\\
+      xx/xx & Task\\
+      xx/xx & Task\\
+      \hline
+    \end{tabular}
+\end{table}
+
+
+% ----------------------------------------------------------------------
+
+\section{Future plans}
+\label{sec:future}
 
 Future features.
 % ----------------------------------------------------------------------
@@ -84,13 +149,13 @@ Future features.
 
 %This paper has undergone internal review in the LSST Dark Energy Science Collaboration. % REQUIRED if true
 
-\input{contributions} % Standard papers only: author contribution statements. For examples, see http://blogs.nature.com/nautilus/2007/11/post_12.html
+%\input{contributions} % Standard papers only: author contribution statements. For examples, see http://blogs.nature.com/nautilus/2007/11/post_12.html
 
 % This work used TBD kindly provided by Not-A-DESC Member and benefitted from comments by Another Non-DESC person.
 
 % Standard papers only: A.B.C. acknowledges support from grant 1234 from ...
 
-\input{desc-tex/ack/standard} % also available: key standard_short
+%\input{desc-tex/ack/standard} % also available: key standard_short
 
 % This work used some telescope which is operated/funded by some agency or consortium or foundation ...
 
