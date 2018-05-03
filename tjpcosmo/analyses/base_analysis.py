@@ -2,6 +2,14 @@ model_registry = {}
 
 
 class Analysis:
+    """
+    This is the superclass for all analyses, which represent the part of the
+    likelihood function that generate mean theory predictions from parameters.
+
+    This is just the skeleton - there are various more complete designs in the sandbox.
+    Delete this notice after implementing them!
+
+    """
     theory_calculator_class = None
     theory_results_class = None
     data_class = None
@@ -16,14 +24,7 @@ class Analysis:
         model_registry[name] = cls
 
 
-    """
-    This is the superclass for all analyses, which represent the part of the
-    likelihood function that generate mean theory predictions from parameters.
 
-    This is just the skeleton - there are various more complete designs in the sandbox.
-    Delete this notice after implementing them!
-
-    """
 
     def __init__(self, config, data_info, likelihood_class):
         """

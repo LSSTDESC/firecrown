@@ -3,12 +3,30 @@ import copy
 from scipy.interpolate import Akima1DInterpolator
 
 class Source:
+    """
+    The super class for Sources, any source should be a made as a subclass of this.
+    A source need to know how to initialize it self and how to it can get transformed
+    into a tracer, and how it resets itself to the its original values and how to
+    validate it self. Validation is however not implemented yet! blane Joe Zuntz
+    
+    Each source also have a scaling factor, it should be 1, but certain effects might
+    effect this. subclasses and systematics might affect this, but if nothing else is 
+    given it is scaled to 1.
+    """
     def __init__(self, name, stype, metadata):
         self.name = name
         self.stype = stype
         self.systematics = []
+        self.eval_source_prop=['z']
         self.metadata = metadata
         self.scaling = 1.0
+        
+        """
+        Args:
+            name(String) the name of the source
+            stype(string) source type
+            metadata(object) metadata, should be loaded automatically.
+        """
 
     def to_tracer(self):
         raise ValueError("Wrong kind of source turned into a tracer!")
@@ -22,6 +40,16 @@ class Source:
 
 
 class WLSource(Source):
+    """ Weak lensing Source.
+        Expected data:
+            z
+            nz
+    
+        Systematics:
+            f_red
+            ia.amplitude
+            
+    """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z,self.original_nz = metadata['sources'][name]["nz"]
@@ -34,8 +62,7 @@ class WLSource(Source):
         self.ia_amplitude = np.ones_like(self.z)
         self.nz = self.original_nz.copy()
         self.scaling = 1.0
-
-
+        
     def to_tracer(self, cosmo):
         import pyccl as ccl
         if(np.any(self.ia_amplitude!=0) & np.any(self.f_red!=0)):
@@ -49,9 +76,18 @@ class WLSource(Source):
 
 
 class LSSSource(Source):
+    """ Large scale structure source:
+        Expected data:
+            z
+            nz
+            
+        Systematics:
+            
+    """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
         self.z, self.original_nz = metadata['sources'][name]["nz"]
+        self.nz_interp = Akima1DInterpolator(self.z, self.original_nz)
         self.reset()
 
     def reset(self):
@@ -68,23 +104,53 @@ class LSSSource(Source):
         return tracer
 
 class SLSource(Source):
+    """ Strong Lensing source:
+        Expected data:
+            
+        Systematics:
+    """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
 
 class SNSource(Source):
+    """ SuperNovae sourec:
+        Expected data:
+            
+        Systematics:
+    """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
 
 class CLSource(Source):
+    """ Cluster source:
+        Expected data:
+            
+        Systematics:
+            
+    """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
 
 class CMBSource(Source):
+    """ Cosmic Microwave background Source:
+        Expected data:
+            
+        Systematics:
+            
+    """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
 
 
 def make_source(sname, stype, metadata):
+    """ Makes a source from the input in the config .yaml file, assigning it to
+    the right type of source. or tells you that the type of source isn't implemented.
+    
+    Args:
+        Sname(string): name of the source
+        stype(string): type of the source
+        metadata(object): created automatically from the config file. 
+    """
     if stype=='WL':
         return WLSource(sname, stype, metadata)
     elif stype=='LSS':

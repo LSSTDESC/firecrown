@@ -1,0 +1,106 @@
+\RequirePackage{docswitch}
+% \flag is set by the user, through the makefile:
+%    make note
+%    make apj
+% etc.
+\setjournal{\flag}
+
+\documentclass[\docopts]{\docclass}
+
+% You could also define the document class directly
+%\documentclass[]{emulateapj}
+
+% Custom commands from LSST DESC, see texmf/styles/lsstdesc_macros.sty
+\usepackage{lsstdesc_macros}
+
+\usepackage{graphicx}
+\graphicspath{{./}{./figures/}}
+\bibliographystyle{apj}
+
+% Add your own macros here:
+
+
+
+% ======================================================================
+
+\begin{document}
+
+\title{TJPCosmo}
+
+\maketitlepre
+
+\begin{abstract}
+
+  This note describes the TJPCosmo joint-probes likelihood pipeline for LSST DESC.
+
+\end{abstract}
+
+% Keywords are ignored in the LSST DESC Note style:
+\dockeys{}
+
+\maketitlepost
+
+% ----------------------------------------------------------------------
+% {% raw %}
+
+\section{Introduction}
+\label{sec:intro}
+
+Overview, need for a joint-likelihood pipeline in the context of LSST.
+
+% ----------------------------------------------------------------------
+
+\section{Pipeline structure}
+\label{sec:struct}
+
+From pipelines repo?
+
+% ----------------------------------------------------------------------
+
+\section{Models}
+\label{sec:models}
+
+Currently available models via {\tt CCL}. Other models.
+
+% ----------------------------------------------------------------------
+
+\section{Installation}
+\label{sec:install}
+
+Dependencies. Docker.
+
+
+% ----------------------------------------------------------------------                                           
+
+\section{Outlook}
+\label{sec:outlook}
+
+Future features.
+% ----------------------------------------------------------------------
+
+\subsection*{Acknowledgments}
+
+%%% Here is where you should add your specific acknowledgments, remembering that some standard thanks will be added via the \code{desc-tex/ack/*.tex} and \code{contributions.tex} files.
+
+%This paper has undergone internal review in the LSST Dark Energy Science Collaboration. % REQUIRED if true
+
+\input{contributions} % Standard papers only: author contribution statements. For examples, see http://blogs.nature.com/nautilus/2007/11/post_12.html
+
+% This work used TBD kindly provided by Not-A-DESC Member and benefitted from comments by Another Non-DESC person.
+
+% Standard papers only: A.B.C. acknowledges support from grant 1234 from ...
+
+\input{desc-tex/ack/standard} % also available: key standard_short
+
+% This work used some telescope which is operated/funded by some agency or consortium or foundation ...
+
+% We acknowledge the use of An-External-Tool-like-NED-or-ADS.
+
+%{\it Facilities:} \facility{LSST}
+
+% Include both collaboration papers and external citations:
+\bibliography{main,lsstdesc}
+
+\end{document}
+
+% ======================================================================

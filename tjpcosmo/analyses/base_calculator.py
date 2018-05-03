@@ -79,6 +79,16 @@ class TheoryCalculator:
     def apply_source_systematics(self, cosmo):
         for source in self.sources:
             source.reset()
-            for syst in source.systematics:
-                if isinstance(syst, SourceSystematic):
-                    syst.adjust_source(cosmo, source)
+            systloop=source.systematics
+            while(len(systloop)):
+                missing_systematics=[]
+                prevlength=len(systloop)
+                for syst in source.systematics:
+                    if isinstance(syst, SourceSystematic):
+                        if(syst.adjust_source(cosmo, source)):
+                            missing_systematics.append(syst)
+                    systloop=missing_systematics.copy()
+                    if (len(systloop)):
+                        print(f"Encountered nested systematics, entering next iteration")
+                    if(len(systloop)==prevlength):
+                        raise ValueError(f"Could not reduce size of systematics list: NESTED")
