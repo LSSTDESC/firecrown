@@ -1,6 +1,20 @@
 from ...dataset import BaseDataSet
 import sacc
 import numpy as np
+from tjpcosmo.main import parser
+import argparse
+import re
+
+def readpar(path,par):
+    with open(path,'r') as fn:
+        for line in fn:
+            if '=' in line and line[0] != '#':
+                line = re.sub('#.+', '', line)
+                name, value = line.split('=')
+                name = name.strip()
+                if name == par:
+                    return value.strip()
+        raise ValueError('parameter not found')
 
 class TwoPointDataSet(BaseDataSet):
     def __init__(self, sacc_data,config) :
@@ -8,6 +22,10 @@ class TwoPointDataSet(BaseDataSet):
         self.data_vector = sacc_data.mean.vector[indices]
         self.covariance = sacc_data.precision.cmatrix[indices,:][:,indices]
         self.precision = np.linalg.inv(self.covariance) #TODO: optimize this through Cholesky
+        print('likelihood choice: ',readpar(parser.parse_args().inifile,'likelihood'))
+        if readpar(parser.parse_args().inifile,'likelihood') =='tdist' :
+            self.nsims = 10**4 #for now
+#            self.nsims = sacc_data.meta["nsims"]
 
     @classmethod
     def load(cls, data_info, config):
