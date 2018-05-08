@@ -24,8 +24,7 @@ class TwoPointDataSet(BaseDataSet):
         self.precision = np.linalg.inv(self.covariance) #TODO: optimize this through Cholesky
         print('likelihood choice: ',readpar(parser.parse_args().inifile,'likelihood'))
         if readpar(parser.parse_args().inifile,'likelihood') =='tdist' :
-            self.nsims = 10**4 #for now
-#            self.nsims = sacc_data.meta["nsims"]
+            self.nsims = sacc_data.meta["nsims"]
 
     @classmethod
     def load(cls, data_info, config):
