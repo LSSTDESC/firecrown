@@ -11,6 +11,8 @@ class Tdist(BaseLikelihood):
         mu = self.data.data_vector
         P = self.data.precision
         nsims = self.data.nsims
+        if nsims <= 0 :
+            raise ValueError('nsims needs to be a positive integer read in from SACC.')
         delta = d-mu
         chi2 = float(np.einsum('i,ij,j', delta, P, delta))
         like = -0.5 * nsims*np.log(1.0 + chi2/(nsims-1.0))
