@@ -8,6 +8,7 @@ class TwoPointDataSet(BaseDataSet):
         self.data_vector = sacc_data.mean.vector[indices]
         self.covariance = sacc_data.precision.cmatrix[indices,:][:,indices]
         self.precision = np.linalg.inv(self.covariance) #TODO: optimize this through Cholesky
+        self.nsims = sacc_data.meta.get("nsims",0)
 
     @classmethod
     def load(cls, data_info, config):
