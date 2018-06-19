@@ -1,0 +1,131 @@
+# Example parameter file for one analysis
+
+# a single correlated_probe generates one likelihood, independent (factorized) from all the other
+# correlated_probes.
+# cosmology-level systematics are shared between all these probes
+# other systematics (source-level and statistics-level) are not
+correlated_probes: supernovae twopoint_clusters
+# or e.g.:
+# correlated_probes: supernova tx
+
+supernovae:
+    data:
+        filename: first-sn-sample.sn1
+    likelihood:
+        type: gaussian
+    sources:
+        sample_ia_spectro:
+            type: SN
+            systematics: [mag_evolution1]
+        sample_ia_photo:
+            type: SN
+            systematics: [mag_evolution2]
+    statistics:
+        hubble_diagram_spec:
+            type: individual_sn
+            sources: [sample_ia_spectro]
+            zmin: 0.0
+            zmax: 1.0
+            systematics: [photometric_calibration]
+        hubble_diagram_photo:
+            type: binned_sn
+            sources: [sample_ia_photo]
+            zmin: 0.0
+            zmax: 1.0
+            systematics: [photometric_calibration]
+    systematics:
+        mag_evolution1:
+            type: MagnitudeEvolution
+        mag_evolution2:
+            type: MagnitudeEvolution
+        photometric_calibration:
+            type: PhotometricCalibration
+
+
+
+twopoint_clusters:
+    data:
+        filename: sim_DR1.sacc
+    likelihood:
+        type: gaussian
+        cov_correction:
+            type: Hartlap
+            realizations: 100
+
+    sources:
+        lenses_0:
+            type: LSS
+            systematics: [linear_bias_lowz, wl_pz_shift] 
+        lenses_1:
+            type: LSS
+            systematics: [linear_bias_lowz, wl_pz_shift]
+        lenses_2:
+            type: LSS
+            systematics: [linear_bias_highz, wl_pz_shift]
+        sources_2:
+            type: WL
+            systematics: [multiplicative_shear_bias,linear_ia, wl_pz_shift]
+        cluster_sample_1:
+            type: CL
+            systematics: [mor1]
+
+    statistics:
+        cl_0_0:
+            type: ClGG
+            source_names: [lenses_0, lenses_0]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: []
+        cl_0_1:
+            type: ClGG_nonlimber
+            source_names: [lenses_0, lenses_1]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: []
+        cl_0_2:
+            type: ClGE
+            source_names: [lenses_0, sources_2]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: []
+        cl_1_1:
+            type: ClGG
+            source_names: [lenses_1, lenses_1]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: []
+        cl_1_2:
+            type: ClGE
+            source_names: [lenses_1, sources_2]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: []
+        cl_2_2:
+            type: ClEE
+            source_names: [sources_2, sources_2]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: []
+        cluster1:
+            type: cluster1pt
+            source_names: [cluster_sample_1]
+            systematics: []
+
+    systematics:
+        linear_ia:
+            type: LinearAlignment
+        linear_bias_lowz:
+            type: LinearBias
+        linear_bias_highz:
+            type: LinearBias
+        baryons:
+            type: BaryonEffects
+            kmin: 1000
+        wl_pz_shift:
+            type: PZShift
+        multiplicative_shear_bias:
+            type: MultiplicativeShearBias
+        additive_shear:
+            type: AdditiveShearBias
+        mor1:
+            type: MassObservableRelation1

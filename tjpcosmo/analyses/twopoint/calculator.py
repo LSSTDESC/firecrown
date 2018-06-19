@@ -73,6 +73,8 @@ def convert_cosmobase_to_ccl(cosmo_base):
     return params
 
 class TwoPointTheoryCalculator(TheoryCalculator):
+    # This needs to be added by hand for every TheoryCalculator subclass
+    statistic_types:['ClGG', 'ClGE', 'ClEE', 'XiGG', 'XiGE', 'XiP', 'XiM']
     def __init__(self, config, metadata):
         super().__init__(config, metadata)
 
