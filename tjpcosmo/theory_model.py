@@ -46,7 +46,7 @@ def execute(block, config):
 
     total_like = 0.0
     for analysis in analyses:
-        like, theory_result = analysis.run(cosmo, params)    
+        like, theory_result = analysis.run(cosmo, parameterSet)    
         theory_result.to_cosmosis_block(block)
         block['likelihoods', analysis.name+'_like'] = like
         total_like += like
@@ -126,7 +126,6 @@ def block_to_parameters(block, consistency):
 
     # Omega_l = full_parameters["omega_lambda"]
     parameters = ParameterSet(**cosmo_parameters, **sections)
-    print(parameters)
 
     return parameters    
     #Everything done so far gets thrown into the to DESC standard cosmoogy base.

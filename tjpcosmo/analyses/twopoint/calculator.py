@@ -34,7 +34,6 @@ class TwoPointTheoryCalculator(TheoryCalculator):
 
     def run(self, cosmo, parameters, results):
         print("Running 2pt theory prediction")
-        print(parameters)
         tracers = self.make_tracers(cosmo)
 
         dict_xcor_types={'ClGG':100,'ClGE':100,'ClEE':100,

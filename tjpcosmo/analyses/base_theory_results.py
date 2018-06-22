@@ -4,9 +4,9 @@ import numpy as np
 class TheoryResults:
     def __init__(self, metadata):
         self.metadata = metadata
-        self.indices = self.build_indices(metadata)
+        self.indices, self.length = self.build_indices(metadata)
         self.results = {}
-        self.vector = np.zeros(len(self.indices))
+        self.vector = np.zeros(self.length)
 
     def data_vector(self):
         return self.vector
@@ -19,7 +19,7 @@ class TheoryResults:
             n = len(block['xs'])
             indices[name] = (i, i+n)
             i+=n
-        return indices
+        return indices, i
 
     def set(self, name, x):
         start, end = self.indices[name]

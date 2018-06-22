@@ -18,13 +18,11 @@ class Analysis:
     """
 
 
-    def __init__(self, theory_calculators, systematics, sources, likelihood, data, metadata):
+    def __init__(self, name, theory_calculators, systematics, sources, likelihood, data, metadata):
         """
-        Instantiate the model from a dictionary of options.
 
-        Subclasses usually override this to do their own instantiation.
-        They should call this parent method first.
         """
+        self.name = name
         self.theory_calculators = theory_calculators
         self.sources = sources
         self.likelihood = likelihood
@@ -41,7 +39,6 @@ class Analysis:
     def from_dict(cls, name, info):
 
         # Read in data
-        print(info['data'])
         data, metadata = cls.create_data(info)
 
         systematics = cls.create_systematics(info)
@@ -54,7 +51,7 @@ class Analysis:
 
         likelihood = cls.create_likelihood(info, data)
 
-        return cls(calculators, systematics, sources, likelihood, data, metadata)
+        return cls(name, calculators, systematics, sources, likelihood, data, metadata)
 
 
 
@@ -176,8 +173,8 @@ class Analysis:
 
     def run(self, cosmo, parameterSet):
 
-        # self.update_systematics(parameterSet)
-        # self.apply_source_systematics(cosmo)
+        self.update_systematics(parameterSet)
+        self.apply_source_systematics(cosmo)
 
         theory_results = TheoryResults(self.metadata)
 

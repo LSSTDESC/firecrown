@@ -73,9 +73,6 @@ class WLSource(Source):
         
     def to_tracer(self, cosmo):
         import pyccl as ccl
-        import pylab
-        pylab.plot(self.z, self.nz)
-        pylab.show()
         if(np.any(self.ia_amplitude!=0) & np.any(self.f_red!=0)):
             tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=True,
                      n=(self.z,self.nz), bias_ia=(self.z, self.ia_amplitude),
