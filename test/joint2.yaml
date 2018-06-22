@@ -8,6 +8,11 @@ correlated_probes: [twopoint]
 # or e.g.:
 # correlated_probes: supernova tx
 
+cosmology_systematics:
+    baryons:
+        type: BaryonEffects
+        kmin: 1000
+
 
 twopoint:
     data:
@@ -77,9 +82,6 @@ twopoint:
             type: LinearBias
         linear_bias_highz:
             type: LinearBias
-        baryons:
-            type: BaryonEffects
-            kmin: 1000
         wl_pz_shift:
             type: PZShift
         multiplicative_shear_bias:

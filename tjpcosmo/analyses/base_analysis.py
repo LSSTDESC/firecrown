@@ -9,18 +9,24 @@ import pyccl as ccl
 
 class Analysis:
     """
-    This is the superclass for all analyses, which represent the part of the
-    likelihood function that generate mean theory predictions from parameters.
+    An Analysis object collects together the various pieces needed to calculate
+    a likelihood of a collected group of correlated probes.
 
-    This is just the skeleton - there are various more complete designs in the sandbox.
-    Delete this notice after implementing them!
+    It incorporates the theory_calculators that compute the theory predictions,
+    systematic error models and the sources to which they apply, the observed data,
+    and the likelihood functional form that compares the theory to the data.
 
+    A new Analysis object is created by the Analysis.from_dict class method.
+
+    The Analysis.run is the main method called from outside the class.
+
+    
     """
 
 
     def __init__(self, name, theory_calculators, systematics, sources, likelihood, data, metadata):
         """
-
+        Create an Analysis object by specifying all its ingredients.
         """
         self.name = name
         self.theory_calculators = theory_calculators
@@ -37,18 +43,16 @@ class Analysis:
 
     @classmethod
     def from_dict(cls, name, info):
+        """
+        Build an Analysis object from a dictionary describing its various
+        ingredients.
+        """
 
-        # Read in data
+        # Call other class methods that create the different components of an Analysis
         data, metadata = cls.create_data(info)
-
         systematics = cls.create_systematics(info)
-
-        # Collect a dictionary of the sources that we will use
         sources = cls.create_sources(info, systematics, metadata)
-
-        # Load the calculator object
         calculators = cls.create_calculators(info, systematics, sources, metadata)
-
         likelihood = cls.create_likelihood(info, data)
 
         return cls(name, calculators, systematics, sources, likelihood, data, metadata)
@@ -57,6 +61,9 @@ class Analysis:
 
     @classmethod
     def create_data(cls, info):
+        """
+
+        """
         filename = info['data']['filename']
         if filename.endswith(".sacc"):
             data = TwoPointDataSet.load(filename, info)
@@ -148,7 +155,9 @@ class Analysis:
 
 
     def update_systematics(self, parameters):
-        for sys in self.systematics.values():
+        for sys in self.source_systematics.values():
+            sys.update(parameters)
+        for sys in self.output_systematics.values():
             sys.update(parameters)
 
 
@@ -169,38 +178,70 @@ class Analysis:
                     if(len(systloop)==prevlength):
                         raise ValueError(f"Could not reduce size of systematics list: NESTED")
 
+    def apply_output_systematics(self):
+        for sys in self.output_systematics.values():
+            print("Need to write code to apply output systematics!")
 
 
     def run(self, cosmo, parameterSet):
+        """
+        Run the analysis on the given cosmology and parameterSet.
 
+        Parameters
+        ----------
+
+        cosmo: CCL.Cosmology object
+            The (pre-initialized) cosmology
+
+        parameterSet: ParameterSet object
+            Container of other parameters
+
+        Returns
+        -------
+
+        like: float
+            Likelihood value
+
+        theory_results: TheoryResults object
+            Collection of theory predictions for the measured values
+
+        """
+
+        # Update all the systematics that apply to this
+        # analysis
         self.update_systematics(parameterSet)
+
+        # Apply any systematics that modify the sources
         self.apply_source_systematics(cosmo)
 
+        # Create the structure which will hold the different theory prediction numbers
         theory_results = TheoryResults(self.metadata)
 
+        # Run each of our calculators in turn
+        # Each will fill in a different bit of the theory_results object
         for calculator in self.theory_calculators:
             calculator.run(cosmo, parameterSet, theory_results)
 
+        # Apply any systematics that modify the theory_results at the end
+        self.apply_output_systematics()
+
+        # Compute the likelihood value
         like = self.likelihood.run(theory_results)
+
+        # Return both the likelihood number and the theory results object
         return like, theory_results
-
-    def likelihood(self, parameterSet):
-        return self.run[0]
-
 
 
 
     def classify_systematics(self):
+        """
+        Split up the Systematics that apply to this analysis into
+        output and source type systematics.
+        """
         self.output_systematics = {
             name:sys
             for name,sys in self.systematics.items()
             if isinstance(sys,OutputSystematic)
-        }
-
-        self.cosmology_systematics = {
-            name:sys
-            for name,sys in self.systematics.items()
-            if isinstance(sys,CosmologySystematic)
         }
 
         self.source_systematics = {
