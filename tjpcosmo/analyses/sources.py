@@ -28,6 +28,13 @@ class Source:
             metadata(object) metadata, should be loaded automatically.
         """
 
+    @classmethod
+    def from_dict(cls, name, info):
+
+        stype = info['type']
+        cls(name, stype, )
+
+
     def to_tracer(self):
         raise ValueError("Wrong kind of source turned into a tracer!")
 
@@ -52,7 +59,8 @@ class WLSource(Source):
     """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
-        self.z,self.original_nz = metadata['sources'][name]["nz"]
+        self.z = metadata['sources'][name]["z"]
+        self.original_nz = metadata['sources'][name]["nz"]
         self.nz_interp = Akima1DInterpolator(self.z, self.original_nz)
         print("Are we calling reset in the wrong places?")
         self.reset()
@@ -65,6 +73,9 @@ class WLSource(Source):
         
     def to_tracer(self, cosmo):
         import pyccl as ccl
+        import pylab
+        pylab.plot(self.z, self.nz)
+        pylab.show()
         if(np.any(self.ia_amplitude!=0) & np.any(self.f_red!=0)):
             tracer = ccl.ClTracerLensing(cosmo, has_intrinsic_alignment=True,
                      n=(self.z,self.nz), bias_ia=(self.z, self.ia_amplitude),
@@ -86,7 +97,8 @@ class LSSSource(Source):
     """
     def __init__(self, name, stype, metadata):
         super().__init__(name, stype, metadata)
-        self.z, self.original_nz = metadata['sources'][name]["nz"]
+        self.z = metadata['sources'][name]["z"]
+        self.original_nz = metadata['sources'][name]["nz"]
         self.nz_interp = Akima1DInterpolator(self.z, self.original_nz)
         self.reset()
 

@@ -20,7 +20,6 @@ class Systematic:
         super().__init_subclass__(**kwargs)
         name = cls.name if hasattr(cls, 'name') else cls.__name__
         name = name.lower()
-        print(f"Register systematic {name}")
         systematic_registry[name] = cls
 
     @classmethod
