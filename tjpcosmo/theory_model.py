@@ -4,9 +4,14 @@ to the primary TJPCosmo code.
 
 """
 from cosmosis.datablock import names, option_section
+
+# We do need to do relative imports here, for technical reasons to do with
+# how cosmosis loads modules.  That also means that no other TJPCosmo module
+# should ever import this one.
 from tjpcosmo.analyses import Analysis, convert_cosmobase_to_ccl
 from tjpcosmo.parameters import ParameterSet
-from Philscosmobase import CosmoBase
+from tjpcosmo.Philscosmobase import CosmoBase
+
 import pathlib
 import yaml
 import numpy as np
@@ -17,8 +22,9 @@ import pyccl as ccl
 def setup(options):
     """ Sets up the input to cosmosis for each analysis model.
     """
-    config_filename = options.get_string(option_section, "config")
 
+    # Find the YAML file that describes our analyses.
+    config_filename = options.get_string(option_section, "config")
     path = pathlib.Path(config_filename).expanduser()
     config = yaml.load(path.open())
     
