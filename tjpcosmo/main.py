@@ -65,7 +65,7 @@ def main(args):
         # we always use these same two cosmosis modules, but we configure them 
         # to do what we want.
         ("model","file") : "model",
-        ("model","file") : str(dirname.joinpath('theory_model.py')),
+        ("model","file") : str(dirname.joinpath('cosmosis_entry_point.py')),
     }
     args.params = override
     args.variables = {}

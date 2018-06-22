@@ -1,5 +1,5 @@
 from ..systematics import Systematic, SourceSystematic, OutputSystematic, CosmologySystematic
-from .sources import make_source
+from ..sources import make_source
 import collections
 
 #

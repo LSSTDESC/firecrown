@@ -1,5 +1,5 @@
 from .twopoint import TwoPointDataSet
-from .sources import make_source
+from ..sources import make_source
 from .base_calculator import TheoryCalculator
 from .base_theory_results import TheoryResults
 from ..systematics import Systematic, OutputSystematic, CosmologySystematic, SourceSystematic
