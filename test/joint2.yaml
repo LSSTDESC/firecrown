@@ -8,6 +8,51 @@ correlated_probes: [twopoint]
 # or e.g.:
 # correlated_probes: supernova tx
 
+sampling:
+    sampler: grid
+    grid:
+        nsample_dimension: 20
+    test:
+        fatal_errors: T
+
+output:
+    filename: grid.txt
+
+
+
+parameters:
+    cosmological_parameters:
+        Omega_k: 0.0
+        Omega_c:  0.27
+        Omega_b: 0.045
+        h: 0.67
+        n_s: 0.96
+        #A_s: 2.1e-9
+        sigma_8: 0.8
+    linear_bias_lowz:
+        b: 3.1415
+        # test using the default values for these:
+        # z_piv: 0.5
+        alphaz: 0.0
+        alphag: 0.0
+
+    linear_bias_highz:
+        b: 1.0
+        z_piv: 0.0
+        alphaz: 0.0
+
+    linear_ia:
+        biasia: 0.031415
+        # fred: 0.5
+
+    wl_pz_shift:
+        delta_z:  [0.0 ,  0.05 , 0.10]
+
+    multiplicative_shear_bias:
+        m: 0.0
+
+
+
 cosmology_systematics:
     baryons:
         type: BaryonEffects
@@ -88,3 +133,5 @@ twopoint:
             type: MultiplicativeShearBias
         additive_shear:
             type: AdditiveShearBias
+
+

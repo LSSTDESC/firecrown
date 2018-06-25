@@ -1,7 +1,7 @@
 from cosmosis.datablock import names
 from .parameter_set import ParameterSet
 
-# Translate Cosmosis blocks to PHIL PARAMS!!!
+# Translate Cosmosis blocks to ParameterSet object
 def block_to_parameters(block, consistency):
     """ This fucntion translates the parameters from a cosmosis block to TJPCosmo's
     Parameter class (A sub class of a dictionary. This list should be consistent 
