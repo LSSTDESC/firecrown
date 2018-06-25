@@ -1,51 +1,69 @@
+# Not working yet!
+
 # Example parameter file for one analysis
 
 # a single correlated_probe generates one likelihood, independent (factorized) from all the other
 # correlated_probes.
 # cosmology-level systematics are shared between all these probes
 # other systematics (source-level and statistics-level) are not
-correlated_probes: supernovae twopoint_clusters
+correlated_probes: [twopoint]
 # or e.g.:
 # correlated_probes: supernova tx
 
-supernovae:
+sampling:
+    sampler: grid
+    grid:
+        nsample_dimension: 20
+    test:
+        fatal_errors: T
+
+output:
+    filename: grid.txt
+
+
+
+parameters:
+    cosmological_parameters:
+        Omega_k: 0.0
+        Omega_c:  0.27
+        Omega_b: 0.045
+        h: 0.67
+        n_s: 0.96
+        #A_s: 2.1e-9
+        sigma_8: 0.8
+    linear_bias_lowz:
+        b: 3.1415
+        # test using the default values for these:
+        # z_piv: 0.5
+        alphaz: 0.0
+        alphag: 0.0
+
+    linear_bias_highz:
+        b: 1.0
+        z_piv: 0.0
+        alphaz: 0.0
+
+    linear_ia:
+        biasia: 0.031415
+        # fred: 0.5
+
+    wl_pz_shift:
+        delta_z:  [0.0 ,  0.05 , 0.10]
+
+    multiplicative_shear_bias:
+        m: 0.0
+
+
+
+cosmology_systematics:
+    baryons:
+        type: BaryonEffects
+        kmin: 1000
+
+
+twopoint:
     data:
-        filename: first-sn-sample.sn1
-    likelihood:
-        type: gaussian
-    sources:
-        sample_ia_spectro:
-            type: SN
-            systematics: [mag_evolution1]
-        sample_ia_photo:
-            type: SN
-            systematics: [mag_evolution2]
-    statistics:
-        hubble_diagram_spec:
-            type: individual_sn
-            sources: [sample_ia_spectro]
-            zmin: 0.0
-            zmax: 1.0
-            systematics: [photometric_calibration]
-        hubble_diagram_photo:
-            type: binned_sn
-            sources: [sample_ia_photo]
-            zmin: 0.0
-            zmax: 1.0
-            systematics: [photometric_calibration]
-    systematics:
-        mag_evolution1:
-            type: MagnitudeEvolution
-        mag_evolution2:
-            type: MagnitudeEvolution
-        photometric_calibration:
-            type: PhotometricCalibration
-
-
-
-twopoint_clusters:
-    data:
-        filename: sim_DR1.sacc
+        filename: test/sims/c_ell_mean.sacc
     likelihood:
         type: gaussian
         cov_correction:
@@ -65,9 +83,6 @@ twopoint_clusters:
         sources_2:
             type: WL
             systematics: [multiplicative_shear_bias,linear_ia, wl_pz_shift]
-        cluster_sample_1:
-            type: CL
-            systematics: [mor1]
 
     statistics:
         cl_0_0:
@@ -75,41 +90,37 @@ twopoint_clusters:
             source_names: [lenses_0, lenses_0]
             x_min: 8.0
             x_max: 1000.0
-            systematics: []
+            systematics: [additive_shear]
         cl_0_1:
-            type: ClGG_nonlimber
+            type: ClGG
             source_names: [lenses_0, lenses_1]
             x_min: 8.0
             x_max: 1000.0
-            systematics: []
+            systematics: [additive_shear]
         cl_0_2:
             type: ClGE
             source_names: [lenses_0, sources_2]
             x_min: 8.0
             x_max: 1000.0
-            systematics: []
+            systematics: [additive_shear]
         cl_1_1:
             type: ClGG
             source_names: [lenses_1, lenses_1]
             x_min: 8.0
             x_max: 1000.0
-            systematics: []
+            systematics: [additive_shear]
         cl_1_2:
             type: ClGE
             source_names: [lenses_1, sources_2]
             x_min: 8.0
             x_max: 1000.0
-            systematics: []
+            systematics: [additive_shear]
         cl_2_2:
             type: ClEE
             source_names: [sources_2, sources_2]
             x_min: 8.0
             x_max: 1000.0
-            systematics: []
-        cluster1:
-            type: cluster1pt
-            source_names: [cluster_sample_1]
-            systematics: []
+            systematics: [additive_shear]
 
     systematics:
         linear_ia:
@@ -118,14 +129,11 @@ twopoint_clusters:
             type: LinearBias
         linear_bias_highz:
             type: LinearBias
-        baryons:
-            type: BaryonEffects
-            kmin: 1000
         wl_pz_shift:
             type: PZShift
         multiplicative_shear_bias:
             type: MultiplicativeShearBias
         additive_shear:
             type: AdditiveShearBias
-        mor1:
-            type: MassObservableRelation1
+
+
