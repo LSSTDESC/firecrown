@@ -46,9 +46,9 @@ def twopoint_process_sacc(sacc_data,config):
         typ=dict_types[d['type']]
         id_xcor=np.where((t1_list==tns[0]) & (t2_list==tns[1]) & (typ_list==typ))[0]
         if len(id_xcor)==0 :
-            raise ValueError("This correlation is not present in the SACC file")
+            raise ValueError(f"The correlation {xcor} is not present in the SACC file")
         elif len(id_xcor)!=1 :
-            raise ValueError("This SACC file is wrong, the correlation appears more than once")
+            raise ValueError(f"This SACC file is wrong, the correlation {xcor} appears more than once")
         else :
             id_xcor=id_xcor[0]
             xs_full=xs_list[id_xcor]

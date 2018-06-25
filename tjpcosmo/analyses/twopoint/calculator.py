@@ -36,8 +36,6 @@ class TwoPointTheoryCalculator(TheoryCalculator):
         print("Running 2pt theory prediction")
         tracers = self.make_tracers(cosmo)
 
-        dict_xcor_types={'ClGG':100,'ClGE':100,'ClEE':100,
-                         'XiGG':200,'XiGE':201,'XiP':202,'XiM':203}
         dict_xcor_ccl={'XiGG':'gg','XiGE':'gl','XiP':'l+','XiM':'l-'}
         for pair_info in self.metadata['ordering']:
             src1 = pair_info['src1']
@@ -49,13 +47,15 @@ class TwoPointTheoryCalculator(TheoryCalculator):
             stat_name = pair_info['name']
             scaling = scaling1 * scaling2
 
-            if dict_xcor_types[xcor_type]==dict_xcor_types['ClGG'] : #Fourier space
+            if xcor_type.startswith('Cl'):
                 xcor_pair = ccl.angular_cl(cosmo, tracer1, tracer2, xs)
-            else : #Configuration space
+            elif xcor_type.startswith('Xi'): #Configuration space
                 larr=ell_for_xi()
                 clarr=ccl.angular_cl(cosmo, tracer1, tracer2, larr)
                 xcor_pair=ccl.correlation(cosmo,larr,clarr,xs/60,
                                           corr_type=dict_xcor_ccl[xcor_type])
+            else:
+                raise ValueError("Unknown cross-correlation type for this code")
 
             xcor_pair*=scaling
             self.apply_output_systematics(xcor_pair)

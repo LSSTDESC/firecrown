@@ -69,9 +69,12 @@ def main(args):
         ("runtime","sampler") : sampling['sampler'],
         # we always generate one named (total) likelihood
         ("pipeline","likelihoods") : "total",
+        # For now always be noisy
+        ("pipeline","quiet") : "F",
         # we always use regard our entire pipeline as a single cosmosis module
         # but we can configure it elsewhere.  The module name is just "model"
         ("pipeline","modules") : "model",
+        #
         ("model","file") : str(dirname.joinpath('cosmosis_entry_point.py')),
         ("model","config") : args.yaml_config_file,
     }
