@@ -11,9 +11,9 @@ correlated_probes: [twopoint]
 # correlated_probes: supernova tx
 
 sampling:
-    sampler: grid
+    sampler: test
     grid:
-        nsample_dimension: 20
+        nsample_dimension: 4
     test:
         fatal_errors: T
 
@@ -31,8 +31,9 @@ parameters:
         n_s: 0.96
         #A_s: 2.1e-9
         sigma_8: 0.8
+
     linear_bias_lowz:
-        b: 3.1415
+        b: [0.8,  1.0,  1.5]
         # test using the default values for these:
         # z_piv: 0.5
         alphaz: 0.0
@@ -44,11 +45,11 @@ parameters:
         alphaz: 0.0
 
     linear_ia:
-        biasia: 0.031415
+        biasia: [-5,  0.0,  5.0]
         # fred: 0.5
 
     wl_pz_shift:
-        delta_z:  [0.0 ,  0.05 , 0.10]
+        delta_z:  0.00 #[0.0 ,  0.05 , 0.10]
 
     multiplicative_shear_bias:
         m: 0.0
@@ -63,7 +64,7 @@ cosmology_systematics:
 
 twopoint:
     data:
-        filename: test/sims/c_ell_mean.sacc
+        filename: test/sims/xi_th_mean_simple.sacc
     likelihood:
         type: gaussian
         cov_correction:
@@ -85,38 +86,38 @@ twopoint:
             systematics: [multiplicative_shear_bias,linear_ia, wl_pz_shift]
 
     statistics:
-        cl_0_0:
-            type: ClGG
+        wtheta_0_0:
+            type: XiGG
             source_names: [lenses_0, lenses_0]
             x_min: 8.0
             x_max: 1000.0
             systematics: [additive_shear]
-        cl_0_1:
-            type: ClGG
+        wtheta_0_1:
+            type: XiGG
             source_names: [lenses_0, lenses_1]
             x_min: 8.0
             x_max: 1000.0
             systematics: [additive_shear]
-        cl_0_2:
-            type: ClGE
+        gammat_0_2:
+            type: XiGE
             source_names: [lenses_0, sources_2]
             x_min: 8.0
             x_max: 1000.0
             systematics: [additive_shear]
-        cl_1_1:
-            type: ClGG
+        wtheta_1_1:
+            type: XiGG
             source_names: [lenses_1, lenses_1]
             x_min: 8.0
             x_max: 1000.0
             systematics: [additive_shear]
-        cl_1_2:
-            type: ClGE
+        gammat_1_2:
+            type: XiGE
             source_names: [lenses_1, sources_2]
             x_min: 8.0
             x_max: 1000.0
             systematics: [additive_shear]
-        cl_2_2:
-            type: ClEE
+        xip_2_2:
+            type: XiP
             source_names: [sources_2, sources_2]
             x_min: 8.0
             x_max: 1000.0

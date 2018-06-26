@@ -9,11 +9,16 @@ correlated_probes: [twopoint]
 # correlated_probes: supernova tx
 
 sampling:
-    sampler: grid
+    sampler: test
     grid:
         nsample_dimension: 20
     test:
         fatal_errors: T
+    maxlike:
+        maxiter: 1000
+        tolerance: 0.01
+        output_ini: best.ini
+
 
 output:
     filename: grid.txt
@@ -46,7 +51,7 @@ parameters:
         # fred: 0.5
 
     wl_pz_shift:
-        delta_z:  [0.0 ,  0.05 , 0.10]
+        delta_z:  0.05
 
     multiplicative_shear_bias:
         m: 0.0
