@@ -35,19 +35,19 @@ parameters:
         #A_s: 2.1e-9
         sigma_8: 0.8
     linear_bias_lowz:
-        b: 3.1415
+        b: 3.141592653589793
         # test using the default values for these:
         # z_piv: 0.5
         alphaz: 0.0
         alphag: 0.0
 
     linear_bias_highz:
-        b: 1.0
+        b: -666.6  # not currently used
         z_piv: 0.0
         alphaz: 0.0
 
     linear_ia:
-        biasia: 0.031415
+        biasia: 0.03141592653589793
         # fred: 0.5
 
     wl_pz_shift:
