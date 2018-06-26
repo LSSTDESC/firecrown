@@ -29,5 +29,13 @@ class TheoryResults:
         start, end = self.indices[name]
         return self.vector[start:end]
 
-    def to_cosmosis_block(self, block):
-        pass
+    def to_cosmosis_block(self, block, like_name):
+        for chunk in self.metadata['ordering']:
+            name = chunk['name']
+            dtype = chunk['type']
+            x = chunk['xs']
+            start,end = self.indices[name]
+            block[dtype, name] = self.vector[start:end]
+            block[dtype, "x_" + like_name] = x
+
+        block['data_vector', like_name+'_theory'] = self.vector

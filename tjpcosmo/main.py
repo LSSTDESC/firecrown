@@ -62,13 +62,21 @@ def main(args):
 
     sampling = config['sampling']
 
+    sampler = sampling['sampler']
+
+    # Most samplers only need the likelihoods, but the Fisher and
+    # test samplers benefit from getting all the data
+    save_data_to_cosmosis = sampler in ['fisher', 'test']
+
+
     override = {
         # This parameter just needs a dummy value to stop cosmosis complaining
         ("runtime","root") : "",
         # Some parameters have slightly more intuitive names here
-        ("runtime","sampler") : sampling['sampler'],
+        ("runtime","sampler") : sampler,
         # we always generate one named (total) likelihood
-        ("pipeline","likelihoods") : "total",
+        # In the newest cosmosis all detected likelihoods are found
+        # ("pipeline","likelihoods") : "total",
         # For now always be noisy
         ("pipeline","quiet") : "F",
         # we always use regard our entire pipeline as a single cosmosis module
@@ -77,6 +85,7 @@ def main(args):
         #
         ("model","file") : str(dirname.joinpath('cosmosis_entry_point.py')),
         ("model","config") : args.yaml_config_file,
+        ("model","save_data_to_cosmosis") : str(save_data_to_cosmosis)[0],
     }
 
     # Take the parts of the config file that define the sampling and put them
