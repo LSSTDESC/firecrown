@@ -1,4 +1,2 @@
-from .base_analysis import Analysis
-from . import example
-from  . import twopoint
-from . import clusterN
+from .analysis import Analysis, convert_cosmobase_to_ccl
+from . import twopoint

@@ -1,64 +1,7 @@
-"""
-These are very thin cosmosis wrappers that connect to tell it how to connect
-to the primary TJPCosmo code.
+from cosmosis.datablock import names
+from .parameter_set import ParameterSet
 
-"""
-from cosmosis.datablock import names, option_section
-from tjpcosmo.analyses import Analysis
-from tjpcosmo.likelihood import BaseLikelihood
-from tjpcosmo.parameters import ParameterSet
-from Philscosmobase import CosmoBase
-import pathlib
-import yaml
-import numpy as np
-import parameter_consistency
-
-def parse_data_set_options(options):
-    data_files = options.get_string(option_section, "data")    
-    data_info = {}
-    for data_file in data_files.split():
-        tag, section = data_file.split(':')
-        d = {}
-        for _, key in options.keys(section):
-            d[key] = options[section,key]
-        data_info[tag] = d
-    return data_info
-
-
-def setup(options):
-    """ Sets up the input to cosmosis for each analysis model.
-    """
-    config_filename = options.get_string(option_section, "config")
-    likelihood_name = options.get_string(option_section, "Likelihood")
-    data_info = parse_data_set_options(options)
-
-    path = pathlib.Path(config_filename).expanduser()
-    config = yaml.load(path.open())
-    
-    consistency = parameter_consistency.cosmology_consistency()
-
-    # Get any metadata
-    model_name = config['name']
-    model_class = Analysis.from_name(model_name)
-    likelihood_class = BaseLikelihood.from_name(likelihood_name)
-
-    # Create the model using the yaml config info
-    model = model_class(config, data_info, likelihood_class)
-    # Return model and likelihood
-    return model, consistency
-
-def execute(block, config):
-    """ Generate a DESC Parameters object from a cosmosis block
-    """
-    model,consistency = config
-    params = block_to_parameters(block, consistency)
-    likelihood, theory_results = model.run(params)
-    theory_results.to_cosmosis_block(block)
-    block['likelihoods', 'total_like'] = likelihood
-    return 0
-
-
-# Translate Cosmosis blocks to PHIL PARAMS!!!
+# Translate Cosmosis blocks to ParameterSet object
 def block_to_parameters(block, consistency):
     """ This fucntion translates the parameters from a cosmosis block to TJPCosmo's
     Parameter class (A sub class of a dictionary. This list should be consistent 
@@ -130,7 +73,6 @@ def block_to_parameters(block, consistency):
 
     # Omega_l = full_parameters["omega_lambda"]
     parameters = ParameterSet(**cosmo_parameters, **sections)
-    print(parameters)
 
     return parameters    
     #Everything done so far gets thrown into the to DESC standard cosmoogy base.

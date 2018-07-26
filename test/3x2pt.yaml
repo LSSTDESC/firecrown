@@ -1,0 +1,144 @@
+# Example parameter file for one analysis
+
+# a single correlated_probe generates one likelihood, independent (factorized) from all the other
+# correlated_probes.
+# cosmology-level systematics are shared between all these probes
+# other systematics (source-level and statistics-level) are not
+correlated_probes: [twopoint]
+# or e.g.:
+# correlated_probes: supernova tx
+
+sampling:
+    sampler: test
+    grid:
+        nsample_dimension: 20
+    test:
+        fatal_errors: T
+        save_dir: 3x2pt
+    maxlike:
+        maxiter: 1000
+        tolerance: 0.01
+        output_ini: best.ini
+    fisher : {}
+
+
+output:
+    filename: output.txt
+
+
+
+parameters:
+    cosmological_parameters:
+        Omega_k: 0.0
+        Omega_c:  0.27
+        Omega_b: 0.045
+        h: 0.67
+        n_s: 0.96
+        #A_s: 2.1e-9
+        sigma_8: 0.8
+    linear_bias_lowz:
+        b: [3.1, 3.141592653589793, 3.2]
+        # test using the default values for these:
+        # z_piv: 0.5
+        alphaz: 0.0
+        alphag: 0.0
+
+    linear_bias_highz:
+        b: -666.6  # not currently used
+        z_piv: 0.0
+        alphaz: 0.0
+
+    linear_ia:
+        biasia: 0.03141592653589793
+        # fred: 0.5
+
+    wl_pz_shift:
+        delta_z:  [0.0, 0.05, 0.1]
+
+    multiplicative_shear_bias:
+        m: 0.0
+
+
+
+cosmology_systematics:
+    baryons:
+        type: BaryonEffects
+        kmin: 1000
+
+
+twopoint:
+    data:
+        filename: test/sims/c_ell_mean.sacc
+    likelihood:
+        type: gaussian
+        cov_correction:
+            type: Hartlap
+            realizations: 100
+
+    sources:
+        lenses_0:
+            type: LSS
+            systematics: [linear_bias_lowz, wl_pz_shift] 
+        lenses_1:
+            type: LSS
+            systematics: [linear_bias_lowz, wl_pz_shift]
+        lenses_2:
+            type: LSS
+            systematics: [linear_bias_highz, wl_pz_shift]
+        sources_2:
+            type: WL
+            systematics: [multiplicative_shear_bias,linear_ia, wl_pz_shift]
+
+    statistics:
+        cl_0_0:
+            type: ClGG
+            source_names: [lenses_0, lenses_0]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: [additive_shear]
+        cl_0_1:
+            type: ClGG
+            source_names: [lenses_0, lenses_1]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: [additive_shear]
+        cl_0_2:
+            type: ClGE
+            source_names: [lenses_0, sources_2]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: [additive_shear]
+        cl_1_1:
+            type: ClGG
+            source_names: [lenses_1, lenses_1]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: [additive_shear]
+        cl_1_2:
+            type: ClGE
+            source_names: [lenses_1, sources_2]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: [additive_shear]
+        cl_2_2:
+            type: ClEE
+            source_names: [sources_2, sources_2]
+            x_min: 8.0
+            x_max: 1000.0
+            systematics: [additive_shear]
+
+    systematics:
+        linear_ia:
+            type: LinearAlignment
+        linear_bias_lowz:
+            type: LinearBias
+        linear_bias_highz:
+            type: LinearBias
+        wl_pz_shift:
+            type: PZShift
+        multiplicative_shear_bias:
+            type: MultiplicativeShearBias
+        additive_shear:
+            type: AdditiveShearBias
+
+
