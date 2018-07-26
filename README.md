@@ -5,7 +5,7 @@ TJPCosmo is the nascent LSST/DESC cosmological parameter estimation code.  It is
 
 ## Installation 
 
-TJPCosmo requires python 3.
+TJPCosmo requires python 3.6 or above
 
 Installation is currently a bit painful we will try to improve this in future.
 On local machines (where you have root access) you can get a much easier installation using Docker.
