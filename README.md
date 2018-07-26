@@ -12,7 +12,7 @@ On local machines (where you have root access) you can get a much easier install
 
 ## Docker installation
 
-If you install [Docker from here](https://www.docker.com/community-edition) you can get a TJPCosmo-ready docker environment with: **JAZ: I am currently rebuilding this ... give me a few minutes**
+If you install [Docker from here](https://www.docker.com/community-edition) you can get a TJPCosmo-ready docker environment with:
 
     docker pull joezuntz/tjpcosmo
     git clone https://github.com/LSSTDESC/TJPCosmo
