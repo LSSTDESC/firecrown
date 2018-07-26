@@ -66,6 +66,6 @@ You can now install TJPCosmo:
 
 Now you're ready to run TJPCosmo:
 
-    export PYTHONPATH=$PYTHONPATH:PWD
+    export PYTHONPATH=$PYTHONPATH:$PWD
     ./bin/tjpcosmo test/3x2pt.yaml 
 
