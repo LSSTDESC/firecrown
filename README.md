@@ -36,6 +36,7 @@ You also need to run these:
 
     git clone https://github.com/LSSTDESC/sacc/
     cd sacc
+    git checkout tjpcosmo_mods
     python setup.py install
 
 
