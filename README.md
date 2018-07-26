@@ -7,17 +7,28 @@ TJPCosmo is the nascent LSST/DESC cosmological parameter estimation code.  It is
 
 TJPCosmo requires python 3.
 
-TJPCosmo requires various dependencies, which will be installed when you run:
+Installation is currently a bit painful we will try to improve this in future.
+On local machines (where you have root access) you can get a much easier installation using Docker.
 
-    python setup.py install
+## Docker installation
 
-You also need SACC - see below
+If you install [Docker from here](https://www.docker.com/community-edition) you can get a TJPCosmo-ready docker environment with:
 
-## SACC
+    docker pull joezuntz/tjpcosmo
+    git clone https://github.com/LSSTDESC/TJPCosmo
+    cd TJPCosmo
+    docker run --rm -it -v $PWD:/opt/TJPCosmo joezuntz/tjpcosmo
+    cd /opt/TJPCosmo
 
-The SACC library is currently a little more difficult to install.
+You will now be in a docker container ready to run TJPCosmo.
 
-You need to first install [HDF5](https://support.hdfgroup.org/HDF5/), and then h5py:
+## Manual installation
+
+If you don't want to or can't use Docker you can follow these instaructions
+
+### Step 1: SACC
+
+You need to first install [HDF5](https://support.hdfgroup.org/HDF5/) - this is available from that site or in most packagd managers like homebrew, apt, or yum.and then h5py:
     
     pip install h5py
 
@@ -26,6 +37,29 @@ You also need to run these:
     git clone https://github.com/LSSTDESC/sacc/
     cd sacc
     python setup.py install
+
+
+### Step 2: CosmoSIS-standalone
+
+Next you can install CosmoSIS.  You need to have newish compilers to make this work - in particular the default Apple Clang with most machines will not work.  You can get newer compilers from [HomeBrew](https://brew.sh/).
+
+Assuming you have installed, for example, gcc version 7, you can install cosmosis like this:
+
+    export CC=gcc
+    export FC=gfortran
+    export CXX=g++
+    pip install cosmosis-standalone
+
+
+### TJPCosmo
+
+You can now install TJPCosmo:
+
+    git clone https://github.com/LSSTDESC/TJPCosmo
+    cd TJPCosmo
+    python setup.py install
+
+
 
 
 ## A basic test
@@ -39,10 +73,3 @@ Now you're ready to run TJPCosmo
 
 ## Docker
 
-If you install Docker you can get a TJPCosmo-ready docker environment with:
-
-    docker pull joezuntz/tjpcosmo
-    cd /path/to/TJPCosmo
-    docker run --rm -it -v $PWD:/opt/TJPCosmo joezuntz/tjpcosmo
-
-You will now be in a docker container and can cd to /opt/TJPCosmo to use TJPCosmo.
