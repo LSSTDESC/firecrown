@@ -5,7 +5,7 @@ to the primary TJPCosmo code.
 """
 from cosmosis.datablock import names, option_section
 
-# We do need to do relative imports here, for technical reasons to do with
+# We do need to do absolute imports here, for technical reasons to do with
 # how cosmosis loads modules.  That also means that no other TJPCosmo module
 # should ever import this one.
 from tjpcosmo.analyses import Analysis, convert_cosmobase_to_ccl
