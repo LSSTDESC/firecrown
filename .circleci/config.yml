@@ -20,14 +20,8 @@ jobs:
           name: install dependencies
           # cmake is not up to date on apt-get, using the ppa
           command: |
-            sudo apt-get install -y build-essential wget cmake
-            wget http://www.cmake.org/files/v3.2/cmake-3.2.2.tar.gz
-            tar xf cmake-3.2.2.tar.gz
-            cd cmake-3.2.2
-            cmake .
-            make
-            sudo make install
-            cd -
+            wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
+            sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir
             sudo apt-get update && sudo apt-get install -y gcc g++ gfortran swig
             python3 -m venv venv
             . venv/bin/activate
