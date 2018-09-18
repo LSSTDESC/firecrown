@@ -20,7 +20,7 @@ jobs:
           name: install dependencies
           # cmake is not up to date on apt-get, using the ppa
           command: |
-            sudo apt-get install software-properties-common
+            sudo apt-get install -y software-properties-common
             sudo add-apt-repository ppa:george-edison55/cmake-3.x
             sudo apt-get update && sudo apt-get install -y cmake gcc g++ gfortran swig
             python3 -m venv venv
