@@ -32,13 +32,14 @@ jobs:
             sudo apt-get update && sudo apt-get install -y gcc g++ gfortran swig
             python3 -m venv venv
             . venv/bin/activate
-            pip install -U pip setuptools
+            pip install -U pip setuptools wheel
             pip install -r requirements.txt
             pip install .
 
       - save_cache:
           paths:
             - ./venv
+            - ./gsl-2.5
           key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
 
       # run tests!
