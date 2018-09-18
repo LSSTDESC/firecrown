@@ -1,1 +1,3 @@
 pyccl
+cosmosis-standalone
+numpy>=1.15
