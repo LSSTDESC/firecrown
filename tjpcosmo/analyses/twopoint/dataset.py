@@ -24,13 +24,13 @@ def twopoint_process_sacc(sacc_data,config):
 
     t1_list=np.array([s[0] for s in tracer_sorting])
     t2_list=np.array([s[1] for s in tracer_sorting])
-    typ_list=np.array([s[2].decode() for s in tracer_sorting]) 
+    typ_list=np.array([s[2].decode() for s in tracer_sorting])
     xs_list=[s[3] for s in tracer_sorting]
     ndx_list=[s[4] for s in tracer_sorting]
 
     tracer_numbers={}
     for itr,tr in enumerate(sacc_data.tracers) :
-        tracer_numbers[str(tr.name.decode())]=itr
+        tracer_numbers[str(eval(tr.name).decode())]=itr
 
     for name,d in config['sources'].items() :
         t=sacc_data.tracers[tracer_numbers[name]]
