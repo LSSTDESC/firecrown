@@ -33,6 +33,10 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install -U pip setuptools wheel
+            pip install numpy>=1.15
+            export CC=gcc
+            export FC=gfortran
+            export CXX=g++
             pip install -r requirements.txt
             pip install .
 
