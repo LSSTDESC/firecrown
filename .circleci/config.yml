@@ -51,14 +51,14 @@ jobs:
             - ./gsl-2.5
           key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
 
-      # - run:
-      #     name: run tests
-      #     command: |
-      #       . venv/bin/activate
-      #       flake8 tjpcosmo
+      - run:
+          name: run tests
+          command: |
+            . venv/bin/activate
+            flake8 tjpcosmo
 
       - run:
-          name: test integration
+          name: smoke test
           command: |
             . venv/bin/activate
             ./bin/tjpcosmo test/3x2pt.yaml
