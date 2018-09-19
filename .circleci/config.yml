@@ -22,11 +22,15 @@ jobs:
           command: |
             wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
             sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir
-            wget ftp://ftp.gnu.org/gnu/gsl/gsl-2.5.tar.gz
-            tar xzvf gsl-2.5.tar.gz
-            cd gsl-2.5
-            ./configure
-            make
+            if [ ! -d "./gsl-2.5" ]; then
+              wget ftp://ftp.gnu.org/gnu/gsl/gsl-2.5.tar.gz
+              tar xzvf gsl-2.5.tar.gz
+              cd gsl-2.5
+              ./configure
+              make
+              cd ..
+            fi
+            cd ./gsl-2.5
             sudo make install
             cd ..
             sudo apt-get update && sudo apt-get install -y gcc g++ gfortran swig
@@ -38,6 +42,7 @@ jobs:
             export FC=gfortran
             export CXX=g++
             pip install -r requirements.txt
+            pip install -r dev-requirements.txt
             pip install .
 
       - save_cache:
