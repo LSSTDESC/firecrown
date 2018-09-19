@@ -1,6 +1,8 @@
 import numpy as np
 
-# Use the metadata to 
+# Use the metadata to
+
+
 class TheoryResults:
     def __init__(self, metadata):
         self.metadata = metadata
@@ -18,7 +20,7 @@ class TheoryResults:
             name = block['name']
             n = len(block['xs'])
             indices[name] = (i, i+n)
-            i+=n
+            i += n
         return indices, i
 
     def set(self, name, x):
@@ -34,7 +36,7 @@ class TheoryResults:
             name = chunk['name']
             dtype = chunk['type']
             x = chunk['xs']
-            start,end = self.indices[name]
+            start, end = self.indices[name]
             block[dtype, name] = self.vector[start:end]
             block[dtype, "x_" + like_name] = x
 

@@ -4,4 +4,4 @@
 # For example, we might add behaviour like provenance tracking here.
 # Or the decision of which format to use.
 
-from .base import BaseDataSet
+from .base import BaseDataSet  # flake8: noqa

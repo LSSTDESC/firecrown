@@ -2,10 +2,11 @@ from .twopoint import TwoPointDataSet
 from ..sources import make_source
 from .base_calculator import TheoryCalculator
 from .base_theory_results import TheoryResults
-from ..systematics import Systematic, OutputSystematic, CosmologySystematic, SourceSystematic
+from ..systematics import Systematic, OutputSystematic, SourceSystematic
 from ..likelihood import BaseLikelihood
 import collections
 import pyccl as ccl
+
 
 class Analysis:
     """
@@ -13,18 +14,18 @@ class Analysis:
     a likelihood of a collected group of correlated probes.
 
     It incorporates the theory_calculators that compute the theory predictions,
-    systematic error models and the sources to which they apply, the observed data,
-    and the likelihood functional form that compares the theory to the data.
+    systematic error models and the sources to which they apply, the observed
+    data, and the likelihood functional form that compares the theory to the
+    data.
 
     A new Analysis object is created by the Analysis.from_dict class method.
 
     The Analysis.run is the main method called from outside the class.
 
-    
+
     """
-
-
-    def __init__(self, name, theory_calculators, systematics, sources, likelihood, data, metadata):
+    def __init__(self, name, theory_calculators, systematics, sources,
+                 likelihood, data, metadata):
         """
         Create an Analysis object by specifying all its ingredients.
         """
@@ -35,11 +36,7 @@ class Analysis:
         self.data = data
         self.metadata = metadata
         self.systematics = systematics
-
         self.classify_systematics()
-
-
-
 
     @classmethod
     def from_dict(cls, name, info):
@@ -48,16 +45,23 @@ class Analysis:
         ingredients.
         """
 
-        # Call other class methods that create the different components of an Analysis
+        # Call other class methods that create the different components of an
+        # Analysis
         data, metadata = cls.create_data(info)
         systematics = cls.create_systematics(info)
         sources = cls.create_sources(info, systematics, metadata)
-        calculators = cls.create_calculators(info, systematics, sources, metadata)
+        calculators = cls.create_calculators(
+            info, systematics, sources, metadata)
         likelihood = cls.create_likelihood(info, data)
 
-        return cls(name, calculators, systematics, sources, likelihood, data, metadata)
-
-
+        return cls(
+            name,
+            calculators,
+            systematics,
+            sources,
+            likelihood,
+            data,
+            metadata)
 
     @classmethod
     def create_data(cls, info):
@@ -68,10 +72,10 @@ class Analysis:
         if filename.endswith(".sacc"):
             data = TwoPointDataSet.load(filename, info)
         else:
-            raise ValueError("We have not written code to load anything except SACC 2pt files yet.")
+            raise ValueError(
+                "We have not written code to load anything "
+                "except SACC 2pt files yet.")
         return data
-
-
 
     @classmethod
     def create_sources(cls, info, systematics, metadata):
@@ -90,9 +94,14 @@ class Analysis:
             for sys_name in sys_names:
                 sys = systematics.get(sys_name)
                 if sys is None:
-                    raise ValueError(f"Systematic with name {sys_name} was specified for source {name} but not defined in parameter file systematics section")
+                    raise ValueError(
+                        f"Systematic with name {sys_name} was specified "
+                        f"for source {name} but not defined in parameter "
+                        "file systematics section")
                 source.systematics.append(sys)
-                print(f"    Attaching systematics model {sys_name} to source '{name}'")
+                print(
+                    f"    Attaching systematics model {sys_name} "
+                    f"to source '{name}'")
 
             sources.append(source)
 
@@ -109,14 +118,11 @@ class Analysis:
 
         return systematics
 
-
- 
-
     @classmethod
     def create_calculators(cls, info, systematics, sources, metadata):
         stats_info = info['statistics']
 
-        source_dict = {s.name:s for s in sources}
+        source_dict = {s.name: s for s in sources}
 
         calc_types = set()
 
@@ -128,19 +134,26 @@ class Analysis:
             choice = stat_info.get('calculator', None)
 
             # Find a theory class that can calculate this statistic
-            calc_type = TheoryCalculator.calculator_for_statistic(stat_type, choice)
+            calc_type = TheoryCalculator.calculator_for_statistic(
+                stat_type, choice)
             calc_types.add(calc_type)
 
             # Get the systematics that apply to this statistic
             # and record them so that the class can apply them
             sys_names = stat_info.get('systematics', [])
-            output_sys[calc_type][name] = [systematics.get(sys_name) for sys_name in sys_names]
+            output_sys[calc_type][name] = [
+                systematics.get(sys_name) for sys_name in sys_names]
 
             sources_for_stat = stat_info['source_names']
             for s in sources_for_stat:
                 sources_for_calcs[calc_type].add(source_dict[s])
 
-        calcs = [calc_type(info, metadata, sources_for_calcs[calc_type], output_sys[calc_type]) for calc_type in calc_types]
+        calcs = [
+            calc_type(info,
+                      metadata,
+                      sources_for_calcs[calc_type],
+                      output_sys[calc_type])
+            for calc_type in calc_types]
 
         return calcs
 
@@ -153,14 +166,11 @@ class Analysis:
         like = like_class(data)
         return like
 
-
     def update_systematics(self, parameters):
         for sys in self.source_systematics.values():
             sys.update(parameters)
         for sys in self.output_systematics.values():
             sys.update(parameters)
-
-
 
     def apply_source_systematics(self, cosmo):
         for source in self.sources:
@@ -169,7 +179,6 @@ class Analysis:
     def apply_output_systematics(self):
         for sys in self.output_systematics.values():
             print("Need to write code to apply output systematics!")
-
 
     def run(self, cosmo, parameterSet):
         """
@@ -202,7 +211,8 @@ class Analysis:
         # Apply any systematics that modify the sources
         self.apply_source_systematics(cosmo)
 
-        # Create the structure which will hold the different theory prediction numbers
+        # Create the structure which will hold the different theory
+        # prediction numbers
         theory_results = TheoryResults(self.metadata)
 
         # Run each of our calculators in turn
@@ -219,29 +229,26 @@ class Analysis:
         # Return both the likelihood number and the theory results object
         return like, theory_results
 
-
-
     def classify_systematics(self):
         """
         Split up the Systematics that apply to this analysis into
         output and source type systematics.
         """
         self.output_systematics = {
-            name:sys
-            for name,sys in self.systematics.items()
-            if isinstance(sys,OutputSystematic)
+            name: sys
+            for name, sys in self.systematics.items()
+            if isinstance(sys, OutputSystematic)
         }
 
         self.source_systematics = {
-            name:sys
-            for name,sys in self.systematics.items()
-            if isinstance(sys,SourceSystematic)
+            name: sys
+            for name, sys in self.systematics.items()
+            if isinstance(sys, SourceSystematic)
         }
 
 
-
 def convert_cosmobase_to_ccl(cosmo_base):
-    """ Function for changing our set of parameters from the DESC standard set
+    """Function for changing our set of parameters from the DESC standard set
     forth by Phil Bull, to a format that can be put into CCL.
     """
     # Although these are lower case they are fractions
@@ -269,17 +276,29 @@ def convert_cosmobase_to_ccl(cosmo_base):
 
     print("Baryon systematics go into convert_cosmobase_to_ccl")
 
-
     if sigma8 and A_s:
         raise ValueError("Specifying both sigma8 and A_s: pick one")
     elif sigma8:
-        params=ccl.Parameters(Omega_c=omega_c,Omega_b=omega_b,Omega_k=omega_k,
-                              w0=w,wa=wa,sigma8=sigma8,n_s=n_s,h=h0)
+        params = ccl.Parameters(
+            Omega_c=omega_c,
+            Omega_b=omega_b,
+            Omega_k=omega_k,
+            w0=w,
+            wa=wa,
+            sigma8=sigma8,
+            n_s=n_s,
+            h=h0)
     elif A_s:
-        params = ccl.Parameters(Omega_c=omega_c,Omega_b=omega_b,Omega_k=omega_k,
-                                w0=w,wa=wa,A_s=A_s,n_s=n_s,h=h0)
+        params = ccl.Parameters(
+            Omega_c=omega_c,
+            Omega_b=omega_b,
+            Omega_k=omega_k,
+            w0=w,
+            wa=wa,
+            A_s=A_s,
+            n_s=n_s,
+            h=h0)
     else:
         raise ValueError("Need either sigma 8 or A_s in pyccl.")
-
 
     return params
