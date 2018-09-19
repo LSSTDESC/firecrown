@@ -36,7 +36,6 @@ from builtins import range
 from builtins import object
 from numpy import nan, isnan, allclose
 import re
-from math import sqrt, log, exp, pow, log10
 
 
 def cosmology_consistency(verbose=False, relations_file=""):
@@ -143,7 +142,8 @@ class Consistency(object):
                 # just try throwing some more defaults in.
                 if self.verbose:
                     unspecified = self.find_unspecified()
-                    print("Model still unspecified: %s" % (", ".join(unspecified)))
+                    print("Model still unspecified: %s" % (
+                        ", ".join(unspecified)))
         # Our final run uses all the defaults we know about.
         # If this still doesn't work we'll throw the error.
         if self.verbose and self.possible_defaults:
@@ -179,7 +179,9 @@ class Consistency(object):
         for name, value in defaults:
             if not isnan(self.parameters.get(name, nan)):
                 if self.verbose:
-                    print("Not using default value for {} as it is already specified".format(name))
+                    print(
+                        "Not using default value for {} as "
+                        "it is already specified".format(name))
             else:
                 self.parameters[name] = value
 
@@ -204,8 +206,9 @@ class Consistency(object):
             # In that case we must never have fully specified the model
             # Invalidate the cache - it did not work
             self.cached_relations = []
-            raise UnderSpecifiedModel("Model under-specified - I could not compute "
-                                      "these values: %r" % unspecified)
+            raise UnderSpecifiedModel(
+                "Model under-specified - I could not compute "
+                "these values: %r" % unspecified)
         # output results
         return self.parameters.copy()
 
@@ -243,10 +246,15 @@ class Consistency(object):
                 # Invalidate the cache so that next time things still go wrong
                 self.cached_relations = []
                 if self.verbose:
-                    print("Calculated %s = %g from %s" % (name, value, function))
-                    print("But also value was already found as %s" % current_value)
-                raise OverSpecifiedModel("Model over-specified and consistency relations failed"
-                                         "for parameter %s (values %g and %g)" % (name, current_value, value))
+                    print(
+                        "Calculated %s = %g from %s" % (name, value, function))
+                    print(
+                        "But also value was already "
+                        "found as %s" % current_value)
+                raise OverSpecifiedModel(
+                    "Model over-specified and consistency relations failed"
+                    "for parameter %s (values %g and %g)" % (
+                        name, current_value, value))
 
     def find_unspecified(self):
         # Check for any nan parameters
@@ -268,10 +276,9 @@ def test_under_specified():
 
 
 def test_defaults():
-    import nose
     consistency = cosmology_consistency()
     p = {"omega_m": 0.3, "hubble": 72., "baryon_fraction": 0.02}
-    q = consistency(p)
+    consistency(p)
 
 
 def test_fully_specified():
