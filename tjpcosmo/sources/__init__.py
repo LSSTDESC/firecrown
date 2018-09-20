@@ -1,1 +1,1 @@
-from .sources import *
+from .sources import *  # flake8: noqa

@@ -1,7 +1,7 @@
 likelihood_registry = {}
 
-class BaseLikelihood:
 
+class BaseLikelihood:
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
         name = cls.name if hasattr(cls, 'name') else cls.__name__
@@ -14,5 +14,3 @@ class BaseLikelihood:
 
     def __init__(self, data):
         self.data = data
-
-    

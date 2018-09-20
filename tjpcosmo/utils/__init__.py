@@ -1,11 +1,10 @@
 import importlib
 import pathlib
-import warnings
 
 
 def load_module_by_path(filepath):
     # Determine the base name of the file
-    # no directory or 
+    # no directory or
     p = pathlib.Path(filepath)
     name = p.stem
 
@@ -16,5 +15,3 @@ def load_module_by_path(filepath):
     spec.loader.exec_module(mod)
 
     return mod
-
-
