@@ -1,3 +1,4 @@
 click
 pyccl
 numpy>=1.15
+pyyaml
