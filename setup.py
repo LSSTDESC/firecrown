@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
-scripts = ['bin/falcon']
+scripts = ['bin/nightvision']
 
 setup(
-    name='falcon',
-    description="DESC Parameter Estimation",
+    name='nightvision',
+    description="DESC Parameter Estimation for Seeing in the Dark",
     author="DESC",
     packages=find_packages(),
     include_package_data=True,

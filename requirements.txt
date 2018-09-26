@@ -1,4 +1,4 @@
-click
-pyccl
+click~=6.7
+pyccl~=0.3.5
 numpy>=1.15
 pyyaml
