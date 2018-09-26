@@ -8,7 +8,7 @@ import falcon.config
 @click.argument('action', type=str)
 @click.argument('config', type=str)
 def run(action, config):
-    """Watch out! Here comes a falcon!
+    """Watch out! Here comes a (night) falcon!
 
     Also, run some ACTION on a CONFIG file."""
     config, data = falcon.config.parse(config)
