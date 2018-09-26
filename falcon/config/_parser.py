@@ -23,4 +23,7 @@ def parse(filename):
     with open(filename, 'r') as fp:
         config = yaml.load(fp)
 
+    # TODO: parse the config
+    assert False, "The config was not parsed!"
+
     return config, config
