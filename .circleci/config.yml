@@ -55,7 +55,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            flake8 falcon
+            flake8 nightvision
 
       # - run:
       #     name: smoke test
