@@ -1,7 +1,7 @@
 import yaml
 
 from .sources import parse_ccl_source
-from .likelihoods import parse_two_point
+from .likelihoods import parse_two_point, parse_gaussian_pdf
 
 
 def parse(filename):
@@ -42,10 +42,23 @@ def parse(filename):
         set(list(data.keys())) -
         set(['sources', 'parameters', 'run_metadata']))
     for analysis in analyses:
+        new_keys = {}
+
+        if data[analysis]['likelihood']['kind'] == 'gaussian':
+            new_keys['likelihood'] = parse_gaussian_pdf(
+                **config[analysis]['likelihood'])
+        else:
+            raise ValueError(
+                "Likelihood '%s' not recognized for source "
+                "'%s'!" % (data[analysis]['likelihood']['kind'], analysis))
+
         if analysis == 'two_point':
-            data['two_point'] = parse_two_point(**config['two_point'])
+            new_keys['statistics'] = parse_two_point(
+                config[analysis]['statistics'])
         else:
             raise ValueError(
                 "Analysis '%s' not recognized!" % (analysis))
+
+        data[analysis] = new_keys
 
     return config, data

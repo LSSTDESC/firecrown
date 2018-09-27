@@ -2,19 +2,16 @@ import numpy as np
 import pandas as pd
 
 import pyccl as ccl
-from ._pdfs import parse_gaussian_pdf, compute_gaussian_pdf
+from ._pdfs import compute_gaussian_pdf
 
 __all__ = ['parse_two_point', 'compute_two_point']
 
 
 def parse_two_point(*, likelihood, statistics):
-    """Parse a two-point likelihood computation from the config.
+    """Parse two-point statistics from the config.
 
     Parameters
     ----------
-    likelihood : dict
-        Dictionary describing the form of the likelihood. Must have at least
-        the key 'kind'. See `nightvision.likelihoods._pdfs` for details.
     statistics : dict
         Dictionary describing the 2pt statistics. This dict expressed in YAML
         should have the form:
@@ -34,36 +31,23 @@ def parse_two_point(*, likelihood, statistics):
     Returns
     -------
     parsed : dict
-        The parsed two-point likelihood information.
+        The parsed two-point statistics.
     """
-    new_keys = {}
-    if likelihood['kind'] == 'gaussian':
-        new_keys['likelihood'] = parse_gaussian_pdf(likelihood)
-    else:
-        raise ValueError(
-            "Likelihood '%s' not recognized for source "
-            "'two_point'!" % likelihood['kind'])
-
     stats = {}
     for stat, keys in statistics.items():
-        stats[stat] = _parse_two_point_statistic(keys)
-    new_keys['statistics'] = stats
+        new_keys = {}
+        new_keys.update(keys)
+        df = pd.read_csv(keys['data'])
+        if keys['kind'] == 'cl':
+            new_keys['l'] = df['l'].values.copy()
+            new_keys['cl'] = df['cl'].values.copy()
+        elif keys['kind'] in ['gg', 'gl', 'l+', 'l+']:
+            new_keys['t'] = df['t'].values.copy()
+            new_keys['xi'] = df['xi'].values.copy()
 
-    return new_keys
+        stats[stat] = new_keys
 
-
-def _parse_two_point_statistic(keys):
-    new_keys = {}
-    new_keys.update(keys)
-    df = pd.read_csv(keys['data'])
-    if keys['kind'] == 'cl':
-        new_keys['l'] = df['l'].values.copy()
-        new_keys['cl'] = df['cl'].values.copy()
-    elif keys['kind'] in ['gg', 'gl', 'l+', 'l+']:
-        new_keys['t'] = df['t'].values.copy()
-        new_keys['xi'] = df['xi'].values.copy()
-
-    return new_keys
+    return stats
 
 
 def compute_two_point(

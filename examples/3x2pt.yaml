@@ -1,7 +1,4 @@
 
-analyses:
-  - two_point
-
 parameters:
   Omega_k: 0.0
   Omega_c: 0.27
