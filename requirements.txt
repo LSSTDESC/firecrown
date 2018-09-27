@@ -1,5 +1,6 @@
-pyccl
-cosmosis-standalone
+click~=6.7
+pyccl~=0.3.5
 numpy>=1.15
-h5py
-git+https://github.com/LSSTDESC/sacc.git
+scipy
+pandas
+pyyaml
