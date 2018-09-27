@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import pprint
 import click
-import falcon.config
+import nightvision.config
 
 
 @click.command()
@@ -11,7 +11,7 @@ def run(action, config):
     """Watch out! Here comes a (night) falcon!
 
     Also, run some ACTION on a CONFIG file."""
-    config, data = falcon.config.parse(config)
+    config, data = nightvision.config.parse(config)
     print("Watch out! Here comes a falcon!")
     print("config file:\n", pprint.pformat(config))
 
