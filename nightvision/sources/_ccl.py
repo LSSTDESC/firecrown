@@ -70,7 +70,28 @@ def build_ccl_source(
 
     Parameters
     ----------
-    TODO: Write shit here.
+    cosmo : a `ccl.Cosmology` object
+        The current cosmology.
+    params : dict
+        Dictionary mapping parameter names to values.
+    src_name : str
+        The name of the source.
+    kind : `ccl.ClTracer` or one of its subclasses
+        The class to instantiate.
+    z : array-like, shape (n_bins,)
+        The photo-z bin locations.
+    n : array-like, shape (n_bins,)
+        The photo-z distribution.
+    pz_spline : function
+        A function that computers a interpoled values of the photo-z
+        distribution at a given redshift.
+    has_intrinsic_alignment : bool, optional
+        If the source has instrinsic alignments.
+    systematics : dict of systematic descriptions or None
+        A dict of systematic descriptions if any. See the functions in
+        module `nightvision.systematics` for details and examples.
+    build_func, data : keyword arguments
+        These parameters are ignored by this function.
 
     Returns
     -------
@@ -88,6 +109,8 @@ def build_ccl_source(
                 z,
                 pz_spline,
                 params[sys_params['delta_z']])
+        elif sys == 'wl_mult_bias':
+            scale = 1.0 + params[sys_params['m']]
         else:
             raise ValueError(
                 "Systematic `%s` is not valid for tracer type `%s` for "
