@@ -1,5 +1,7 @@
 import numpy as np
 
+__all__ = ['photoz_shift']
+
 
 def photoz_shift(z, spline, delta_z):
     """Apply a photo-z shift to an input photo-z distribution.
