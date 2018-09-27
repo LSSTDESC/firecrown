@@ -7,7 +7,7 @@ from ._pdfs import compute_gaussian_pdf
 __all__ = ['parse_two_point', 'compute_two_point']
 
 
-def parse_two_point(*, likelihood, statistics):
+def parse_two_point(statistics):
     """Parse two-point statistics from the config.
 
     Parameters
