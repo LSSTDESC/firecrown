@@ -41,7 +41,7 @@ def parse_two_point(*, likelihood, statistics):
         if keys['kind'] == 'cl':
             new_keys['l'] = df['l'].values.copy()
             new_keys['cl'] = df['cl'].values.copy()
-        elif keys['kind'] in ['gg', 'gl', 'l+', 'l+']:
+        elif keys['kind'] in ['gg', 'gl', 'l+', 'l-']:
             new_keys['t'] = df['t'].values.copy()
             new_keys['xi'] = df['xi'].values.copy()
 
