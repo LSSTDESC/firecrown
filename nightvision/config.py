@@ -38,7 +38,10 @@ def parse(filename):
                     name, keys['type']))
     data['sources'] = sources
 
-    for analysis in data['analyses']:
+    analyses = list(
+        set(list(data.keys())) -
+        set(['sources', 'parameters', 'run_metadata']))
+    for analysis in analyses:
         if analysis == 'two_point':
             data['two_point'] = parse_two_point(**config['two_point'])
         else:

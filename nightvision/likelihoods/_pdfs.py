@@ -3,7 +3,7 @@ import pandas as pd
 import scipy.linalg
 
 
-def parse_gauss_pdf(keys):
+def parse_gaussian_pdf(keys):
     new_keys = {}
     df = pd.read_csv(keys['data'])
     dim = max(np.max(df['i']), np.max(df['j'])) + 1
@@ -12,12 +12,9 @@ def parse_gauss_pdf(keys):
     new_keys['cov'] = cov
     new_keys['L'] = np.linalg.cholesky(cov)
     new_keys.update(keys)
-
-    def _comp_ll(dv):
-        x = scipy.linalg.solve_triangular(new_keys['L'], dv)
-        loglike = -0.5 * np.dot(x, x)
-        return loglike
-
-    new_keys['comp'] = _comp_ll
-
     return new_keys
+
+
+def compute_gaussian_pdf(dv, L):
+    x = scipy.linalg.solve_triangular(L, dv)
+    return -0.5 * np.dot(x, x)

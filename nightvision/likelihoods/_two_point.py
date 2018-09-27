@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 import pyccl as ccl
-from ._pdfs import parse_gauss_pdf
+from ._pdfs import parse_gaussian_pdf, compute_gaussian_pdf
 
 __all__ = ['parse_two_point', 'compute_two_point']
 
@@ -16,7 +16,7 @@ def parse_two_point(*, likelihood, statistics):
         Dictionary describing the form of the likelihood. Must have at least
         the key 'kind'. See `nightvision.likelihoods._pdfs` for details.
     statistics : dict
-        Dictionary describing the 2p statistics. This dict expressed in YAML
+        Dictionary describing the 2pt statistics. This dict expressed in YAML
         should have the form:
 
             ```YAML
@@ -38,7 +38,7 @@ def parse_two_point(*, likelihood, statistics):
     """
     new_keys = {}
     if likelihood['kind'] == 'gaussian':
-        new_keys['likelihood'] = parse_gauss_pdf(likelihood)
+        new_keys['likelihood'] = parse_gaussian_pdf(likelihood)
     else:
         raise ValueError(
             "Likelihood '%s' not recognized for source "
@@ -77,7 +77,21 @@ def compute_two_point(
 
     Parameters
     ----------
-    TODO: Write shit here.
+    cosmo : a `pyccl.Cosmology` object
+        A cosmology.
+    parameters : dict
+        Dictionary mapping parameters to their values.
+    sources : dict
+        Dictionary mapping source names to the built sources. See for example
+        `nightvision.sources.build_ccl_source`.
+    likelihood : dict
+        Dictionary specifying the likelihood. This is a result of
+        calling `nightvision.sources.parse_two_point` on an input two-point
+        YAML config.
+    statistics : dict
+        Dictionary specifying the statistics to compute. This is a result of
+        calling `nightvision.sources.parse_two_point` on an input two-point
+        YAML config.
 
     Returns
     -------
@@ -86,19 +100,11 @@ def compute_two_point(
     stats : dict
         Dictionary with 2pt stat predictions.
     """
-    srcs = {}
-    for src, keys in sources.items():
-        srcs[src] = keys['build_func'](
-            cosmo=cosmo,
-            params=parameters,
-            src_name=src,
-            **keys
-        )
 
     stats = {}
     for stat, keys in statistics.items():
-        _srcs = [srcs[k][0] for k in keys['sources']]
-        scale = np.prod([srcs[k][1] for k in keys['sources']])
+        _srcs = [sources[k][0] for k in keys['sources']]
+        scale = np.prod([sources[k][1] for k in keys['sources']])
         if keys['kind'] == 'cl':
             stats[stat] = ccl.angular_cl(cosmo, *_srcs, keys['l']) * scale
         else:
@@ -113,6 +119,11 @@ def compute_two_point(
     dv = np.concatenate(dv, axis=0)
 
     # compute the log-like
-    loglike = likelihood['comp'](dv)
+    if likelihood['kind'] == 'gaussian':
+        loglike = compute_gaussian_pdf(dv, likelihood['L'])
+    else:
+        raise ValueError(
+            "Likelihood '%s' not recognized for source "
+            "'two_point'!" % likelihood['kind'])
 
     return loglike, stats
