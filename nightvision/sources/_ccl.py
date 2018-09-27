@@ -74,9 +74,13 @@ def build_ccl_source(
 
     Returns
     -------
-    tracer : a CCL Tracer
+    tracer : a CCL ClTracer object
+        The tracer.
+    scale : float
+        The scaling factor to apply to the source.
     """
     systematics = systematics or {}
+    scale = 1.0
 
     for sys, sys_params in systematics.items():
         if sys == 'photoz_shift':
@@ -99,4 +103,4 @@ def build_ccl_source(
             "CCL source kind '%s' for source '%s' not "
             "recognized!" % (kind, src_name))
 
-    return tracer
+    return tracer, scale

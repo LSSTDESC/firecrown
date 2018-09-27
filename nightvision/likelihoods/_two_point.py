@@ -97,9 +97,10 @@ def compute_two_point(
 
     stats = {}
     for stat, keys in statistics.items():
-        _srcs = [srcs[k] for k in keys['sources']]
+        _srcs = [srcs[k][0] for k in keys['sources']]
+        scale = np.prod([srcs[k][1] for k in keys['sources']])
         if keys['kind'] == 'cl':
-            stats[stat] = ccl.angular_cl(cosmo, *_srcs, keys['l'])
+            stats[stat] = ccl.angular_cl(cosmo, *_srcs, keys['l']) * scale
         else:
             raise ValueError(
                 "Statistic kind '%s' for statistic '%s' for the 'two_point' "
