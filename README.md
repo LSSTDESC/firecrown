@@ -1,3 +1,7 @@
 # firecrown
 
-The "c" stands for cosmology. 
+The "c" stands for "cosmology."
+
+## Installation
+
+## Usage

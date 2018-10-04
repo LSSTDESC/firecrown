@@ -55,7 +55,7 @@ jobs:
           name: run tests
           command: |
             . venv/bin/activate
-            flake8 osprey
+            flake8 firecrown
 
       # - run:
       #     name: smoke test
