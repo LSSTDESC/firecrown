@@ -1,18 +1,18 @@
 #!/usr/bin/env python
 import pprint
 import click
-import nightvision.config
+import firecrown.config
 
 
 @click.command()
 @click.argument('action', type=str)
 @click.argument('config', type=str)
 def run(action, config):
-    """Watch out! Here comes a (night) falcon!
+    """Watch out! Here comes a firecrown!
 
     Also, run some ACTION on a CONFIG file."""
-    config, data = nightvision.config.parse(config)
-    print("Watch out! Here comes a falcon!")
+    config, data = firecrown.config.parse(config)
+    print("Watch out! Here comes a firecrown!")
     print("config file:\n", pprint.pformat(config))
 
 

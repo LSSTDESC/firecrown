@@ -1,10 +1,10 @@
 from setuptools import setup, find_packages
 
-scripts = ['bin/nightvision']
+scripts = ['bin/firecrown']
 
 setup(
-    name='nightvision',
-    description="DESC Parameter Estimation for Seeing in the Dark",
+    name='firecrown',
+    description="DESC Parameter Estimation",
     author="DESC",
     packages=find_packages(),
     include_package_data=True,
