@@ -34,7 +34,7 @@ def parse_gaussian_pdf(
     cov = np.zeros((dim, dim))
     cov[df['i'].values, df['j'].values] = df['cov'].values
     new_keys['cov'] = cov
-    new_keys['L'] = np.linalg.cholesky(cov)
+    new_keys['L'] = scipy.linalg.cholesky(cov, lower=True)
     return new_keys
 
 
@@ -53,5 +53,5 @@ def compute_gaussian_pdf(dv, L):
     loglike : float
         The negative loglike excluding the covariance terms.
     """
-    x = scipy.linalg.solve_triangular(L, dv)
+    x = scipy.linalg.solve_triangular(L, dv, lower=True)
     return -0.5 * np.dot(x, x)
