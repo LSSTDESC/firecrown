@@ -1,1 +1,2 @@
-from .sources import *  # flake8: noqa
+# flake8: noqa
+from .ccl_sources import WLSource, LSSSource

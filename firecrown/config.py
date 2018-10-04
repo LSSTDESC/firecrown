@@ -1,9 +1,10 @@
+import copy
 import yaml
 
-from .sources import SOURCES
-from .analyses import ANALYSES
-from .systematics import SYSTEMATICS
-from .likelihoods import LIKELIHOODS
+from . import sources
+from . import analyses
+from . import systematics
+from . import likelihoods
 
 
 def parse(filename):
@@ -40,15 +41,17 @@ def parse(filename):
                     name, keys['type']))
     data['sources'] = sources
 
-    analyses = list(
+    _analyses = list(
         set(list(data.keys())) -
         set(['sources', 'parameters', 'run_metadata']))
-    for analysis in analyses:
+    for analysis in _analyses:
         new_keys = {}
 
-        if data[analysis]['likelihood']['kind'] == 'gaussian':
-            new_keys['likelihood'] = parse_gaussian_pdf(
-                **config[analysis]['likelihood'])
+        if hasattr(likelihoods, data[analysis]['likelihood']['kind']):
+            _cfg = copy.deepcop(data[analysis]['likelihood'])
+            _cfg.pop('kind')
+            new_keys['likelihood'] = getattr(
+                    likelihoods, data[analysis]['likelihood'][''])(**_cfg)
         else:
             raise ValueError(
                 "Likelihood '%s' not recognized for source "
