@@ -5,7 +5,7 @@ import pytest
 
 import pyccl as ccl
 
-from .._ccl import build_ccl_source
+from ..sources import build_ccl_source
 
 
 @pytest.fixture
@@ -24,16 +24,13 @@ def source_keys():
     PZ_SPLINE = Akima1DInterpolator(Z, NZ)
     kwargs = {
         'cosmo': COSMO,
-        'params': {},
-        'src_name': 'falcons',
+        'parameters': {},
         'kind': ccl.ClTracerLensing,
-        'z': Z,
+        'z_n': Z,
         'n': NZ,
         'pz_spline': PZ_SPLINE,
         'has_intrinsic_alignment': False,
-        'systematics': None,
-        'build_func': None,
-        'data': None}
+        'systematics': None}
     return kwargs
 
 
@@ -42,7 +39,7 @@ def test_build_ccl_source_smoke(source_keys):
 
     assert scale == 1.0
     assert isinstance(tracer, ccl.ClTracerLensing)
-    assert np.allclose(tracer.z_n, source_keys['z'])
+    assert np.allclose(tracer.z_n, source_keys['z_n'])
     assert np.allclose(tracer.n, source_keys['n'])
 
 
@@ -62,14 +59,14 @@ def test_build_ccl_source_wl_sys(source_keys):
     source_keys['systematics'] = {
         'wl_mult_bias': {'m': 'cat'},
         'photoz_shift': {'delta_z': 'dog'}}
-    source_keys['params'] = {'cat': 0.01, 'dog': 0.05}
+    source_keys['parameters'] = {'cat': 0.01, 'dog': 0.05}
 
     tracer, scale = build_ccl_source(**source_keys)
 
     assert scale == 1.01
 
     old_mnz = (
-        np.sum(source_keys['z'] * source_keys['n']) /
+        np.sum(source_keys['z_n'] * source_keys['n']) /
         np.sum(source_keys['n']))
     new_mnz = (
         np.sum(tracer.z_n * tracer.n) /

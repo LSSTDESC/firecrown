@@ -14,26 +14,29 @@ parameters:
   src1_delta_z: 0.0
   # lens0_wl_mult_bias: 0.0
 
-sources:
-  src0:
-    kind: ClTracerLensing
-    data: ./data/pz0.csv
-    has_intrinsic_alignment: False
-
-    systematics:
-      photoz_shift:
-        delta_z: src0_delta_z
-
-  src1:
-    kind: ClTracerLensing
-    data: ./data/pz1.csv
-    has_intrinsic_alignment: False
-
-    systematics:
-      photoz_shift:
-        delta_z: src1_delta_z
 
 two_point:
+  module: firecrown.ccl.two_point
+
+  sources:
+    src0:
+      kind: ClTracerLensing
+      nz_data: ./data/pz0.csv
+      has_intrinsic_alignment: False
+
+      systematics:
+        photoz_shift:
+          delta_z: src0_delta_z
+
+    src1:
+      kind: ClTracerLensing
+      nz_data: ./data/pz1.csv
+      has_intrinsic_alignment: False
+
+      systematics:
+        photoz_shift:
+          delta_z: src1_delta_z
+
   likelihood:
     kind: gaussian
     data: ./data/cov.csv
@@ -41,6 +44,7 @@ two_point:
       - cl_src0_src0
       - cl_src0_src1
       - cl_src1_src1
+
 
   statistics:
     cl_src0_src0:
