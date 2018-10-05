@@ -1,7 +1,5 @@
+import importlib
 import yaml
-
-from .sources import parse_ccl_source
-from .likelihoods import parse_two_point, parse_gaussian_pdf
 
 
 def parse(filename):
@@ -17,8 +15,8 @@ def parse(filename):
     config: dict
         The raw config file as a dictionary.
     data : dict
-        A dictionary containg each config file key replaced with its
-        corresponding data structure.
+        A dictionary containg each analyses key replaced with its
+        corresponding data and function to compute the loglikelihood.
     """
 
     with open(filename, 'r') as fp:
@@ -27,37 +25,27 @@ def parse(filename):
     with open(filename, 'r') as fp:
         data = yaml.load(fp)
 
-    # extract sources
-    sources = {}
-    for name, keys in data.get('sources', {}).items():
-        if keys['kind'] in ['ClTracerLensing', 'ClTracerNumberCounts']:
-            sources[name] = parse_ccl_source(**keys)
-        else:
-            raise ValueError(
-                "Source type '%s' not recognized for source '%s'!" % (
-                    name, keys['type']))
-    data['sources'] = sources
-
     analyses = list(
         set(list(data.keys())) -
-        set(['sources', 'parameters', 'run_metadata']))
+        set(['parameters', 'run_metadata']))
     for analysis in analyses:
         new_keys = {}
 
-        if data[analysis]['likelihood']['kind'] == 'gaussian':
-            new_keys['likelihood'] = parse_gaussian_pdf(
-                **config[analysis]['likelihood'])
-        else:
-            raise ValueError(
-                "Likelihood '%s' not recognized for source "
-                "'%s'!" % (data[analysis]['likelihood']['kind'], analysis))
+        try:
+            mod = importlib.import_module(data[analysis]['module'])
+        except Exception:
+            print("Module '%s' for analysis '%s' cannot be imported!" % (
+                data[analysis]['module'], analysis))
+            raise
 
-        if analysis == 'two_point':
-            new_keys['statistics'] = parse_two_point(
-                config[analysis]['statistics'])
+        new_keys[analysis] = {}
+        if hasattr(mod, 'parse_config'):
+            new_keys[analysis]['data'] = getattr(
+                mod, 'parse_config')(data[analysis])
+            new_keys[analysis]['eval'] = getattr(
+                mod, 'compute_loglike')
         else:
-            raise ValueError(
-                "Analysis '%s' not recognized!" % (analysis))
+            raise ValueError("Analsis '%s' could not be parsed!" % (analysis))
 
         data[analysis] = new_keys
 
