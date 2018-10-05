@@ -3,7 +3,7 @@ import numpy as np
 import pyccl as ccl
 from .parser import _parse_sources, _parse_statistics
 from .sources import build_ccl_source
-from ._pdfs import parse_gaussian_pdf, compute_gaussian_pdf
+from .pdfs import parse_gaussian_pdf, compute_gaussian_pdf
 
 
 def parse_config(analysis):
@@ -22,7 +22,12 @@ def parse_config(analysis):
     new_keys = {}
     new_keys['statistics'] = _parse_statistics(analysis['statistics'])
     new_keys['sources'] = _parse_sources(analysis['sources'])
-    new_keys['likelihood'] = parse_gaussian_pdf(**analysis['likelihood'])
+    if analysis['likelihood']['kind'] == 'gaussian':
+        new_keys['likelihood'] = parse_gaussian_pdf(**analysis['likelihood'])
+    else:
+        raise ValueError(
+            "Likelihood '%s' not recognized for source "
+            "'two_point'!" % analysis['likelihood']['kind'])
 
     return new_keys
 
