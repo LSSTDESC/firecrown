@@ -3,4 +3,5 @@ env/
 dist/
 build/
 __pycache__/
-
+examples/data/*
+examples/.ipynb_checkpoints/*
