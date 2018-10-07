@@ -1,5 +1,4 @@
 pyccl
-cosmosis-standalone
 numpy>=1.15
-h5py
-git+https://github.com/LSSTDESC/sacc.git
+pyyaml
+scipy
