@@ -40,7 +40,7 @@ class TwoPointStatistic(Statistic):
         The final scale factor applied to the statistic. Set after `compute`
         is called. Note that this scale factor is already applied.
     """
-    def __init__(self, data, kind, ell_or_theta, sources, systematics=None):
+    def __init__(self, data, kind, sources, systematics=None):
         self.data = data
         self.kind = kind
         df = pd.read_csv(self.data)
@@ -77,7 +77,7 @@ class TwoPointStatistic(Statistic):
 
         if self.kind == 'cl':
             self.predicted_statistic_ = ccl.angular_cl(
-                cosmo, *tracers, self.ell_or_theta) * self.scale_
+                cosmo, *tracers, self.ell_or_theta_) * self.scale_
 
         systematics = systematics or {}
         for systematic in self.systematics:

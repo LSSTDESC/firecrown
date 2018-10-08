@@ -38,7 +38,7 @@ def parse(filename):
                 data[analysis]['module'], analysis))
             raise
 
-        new_keys[analysis] = {}
+        new_keys = {}
         if hasattr(mod, 'parse_config'):
             new_keys['data'] = getattr(
                 mod, 'parse_config')(data[analysis])
