@@ -1,11 +1,63 @@
-"""The mixins in this file define the firecrown likelihood API.
+"""The mixins in this file define the firecrown-CCL API.
 
 Notes:
  - Each class which inherits from a given mixin is expected to define any
    methods defined in the mixin with the same call signature.
  - If the mixin includes a class-level doc string, then the `__init__` function
    should define at least those arguments and/or keyword arguments.
+ - Attributed ending with an underscore are set after the call to
+   `apply`/`compute`/`render`.
+ - Attributes define in the `__init__` method should be considered constant
+   and not changed after instantiation.
+ - Objects inheriting from `SystematicMixin` should only adjust
+   source/statistic properties ending with an underscore.
 """
+
+
+class StatisticMixin(object):
+    """The statistic mixin.
+
+    Parameters
+    ----------
+    sources : list of str
+        A list of the sources needed to compute this statistic.
+    systematics : list of str, optional
+        A list of the statistics-level systematics to apply to the statistic.
+        The default of `None` implies no systematics.
+    """
+    def compute(self, cosmo, params, sources):
+        """Compute a statistic from sources.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        sources : dict
+            A dictionary mapping sources to their objects. The sources must
+            already have been rendered by calling `render` on them.
+        """
+        raise NotImplementedError(
+            "Method `compute` is not implemented!")
+
+
+class SystematicMixin(object):
+    """The systematic mixin."""
+    def apply(self, cosmo, params, source_or_statistic):
+        """Apply systematics to a source.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        source_or_statistic : a source or statistic object
+            The source or statistic to which apply systematics.
+        """
+        raise NotImplementedError(
+            "Method `apply` is not implemented!")
 
 
 class SourceMixin(object):
@@ -13,8 +65,9 @@ class SourceMixin(object):
 
     Parameters
     ----------
-    systematics : list of str
-        A list of the source-level systematics to apply to the source.
+    systematics : list of str, optional
+        A list of the source-level systematics to apply to the source. The
+        default of `None` implies no systematics.
     """
     def render(self, cosmo, params):
         """Render a source by applying systematics.
@@ -25,10 +78,8 @@ class SourceMixin(object):
             A pyccl.Cosmology object.
         params : dict
             A dictionary mapping parameter names to their current values.
-
-        Returns
-        -------
-        self
+        systematics : dict
+            A dictionary mapping systematic names to their objects
         """
         raise NotImplementedError(
             "Method `render` is not implemented!")
@@ -43,7 +94,7 @@ class LogLikeMixin(object):
         A list of the statistics in the config file in the order they appear in
         the covariance matrix.
     """
-    def compute_loglike(self, data, theory, **kwargs):
+    def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.
 
         Parameters
