@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import scipy.linalg
 
-from .base import BaseLogLike
+from ..core import LogLikeMixin
 
 
-class TdistLogLike(BaseLogLike):
+class TdistLogLike(LogLikeMixin):
     """A T-distribution for the log-likelihood.
 
     This distribution is appropriate when the covariance has been obtained

@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 import scipy.linalg
 
-from .base import BaseLogLike
+from ..core import LogLikeMixin
 
 
-class ConstGaussianLogLike(BaseLogLike):
+class ConstGaussianLogLike(LogLikeMixin):
     """A Gaussian log-likelihood with a constant covariance matrix.
 
     Parameters
