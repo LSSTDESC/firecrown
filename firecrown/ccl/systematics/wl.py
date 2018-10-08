@@ -1,9 +1,9 @@
-from ..core import SystematicMixin
+from ..core import Systematic
 
 __all__ = ['MultiplicativeShearBias']
 
 
-class MultiplicativeShearBias(SystematicMixin):
+class MultiplicativeShearBias(Systematic):
     """Multiplicative shear bias systematic.
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.

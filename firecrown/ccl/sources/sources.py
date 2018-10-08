@@ -4,13 +4,13 @@ from scipy.interpolate import Akima1DInterpolator
 
 import pyccl as ccl
 
-from ..core import SourceMixin
+from ..core import Source
 
 
 __all__ = ['WLSource']
 
 
-class WLSource(SourceMixin):
+class WLSource(Source):
     """A CCL weak lensing Source.
 
     Parameters

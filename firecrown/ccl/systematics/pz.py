@@ -1,10 +1,10 @@
 import numpy as np
-from ..core import SystematicMixin
+from ..core import Systematic
 
 __all__ = ['PhotoZShiftBias']
 
 
-class PhotoZShiftBias(SystematicMixin):
+class PhotoZShiftBias(Systematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some ammount `delta_z`.

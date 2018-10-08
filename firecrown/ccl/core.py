@@ -1,4 +1,4 @@
-"""The mixins in this file define the firecrown-CCL API.
+"""The classes in this file define the firecrown-CCL API.
 
 Notes:
  - Each class which inherits from a given mixin is expected to define any
@@ -9,12 +9,12 @@ Notes:
    `apply`/`compute`/`render`.
  - Attributes define in the `__init__` method should be considered constant
    and not changed after instantiation.
- - Objects inheriting from `SystematicMixin` should only adjust
+ - Objects inheriting from `Systematic` should only adjust
    source/statistic properties ending with an underscore.
 """
 
 
-class StatisticMixin(object):
+class Statistic(object):
     """The statistic mixin.
 
     Parameters
@@ -42,7 +42,7 @@ class StatisticMixin(object):
             "Method `compute` is not implemented!")
 
 
-class SystematicMixin(object):
+class Systematic(object):
     """The systematic mixin."""
     def apply(self, cosmo, params, source_or_statistic):
         """Apply systematics to a source.
@@ -60,7 +60,7 @@ class SystematicMixin(object):
             "Method `apply` is not implemented!")
 
 
-class SourceMixin(object):
+class Source(object):
     """The source mixin.
 
     Parameters
@@ -85,7 +85,7 @@ class SourceMixin(object):
             "Method `render` is not implemented!")
 
 
-class LogLikeMixin(object):
+class LogLike(object):
     """The log-likelihood mixin.
 
     Parameters
