@@ -21,7 +21,7 @@ class ConstGaussianLogLike(LogLikeMixin):
     Attributes
     ----------
     cov : np.ndarray, shape (n, n)
-        The covariance matrix as a numpy array.
+        The covariance matrix.
     cholesky : np.ndarray, shape (n, n)
         The (lower triangular) Cholesky decomposition of the covariance matrix.
 
@@ -40,7 +40,7 @@ class ConstGaussianLogLike(LogLikeMixin):
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(cov, lower=True)
 
-    def compute_loglike(self, data, theory, **kwargs):
+    def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.
 
         Parameters

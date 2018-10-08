@@ -35,4 +35,4 @@ def test_gaussian():
     data = {'a': delta}
     theory = {'a': np.zeros(n)}
     loglike = -0.5 * np.dot(delta, np.dot(np.linalg.inv(cov), delta))
-    assert np.allclose(loglike, ll.compute_loglike(data, theory))
+    assert np.allclose(loglike, ll.compute(data, theory))
