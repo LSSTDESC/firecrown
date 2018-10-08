@@ -26,7 +26,7 @@ class Statistic(object):
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
     """
-    def compute(self, cosmo, params, sources):
+    def compute(self, cosmo, params, sources, systematics=None):
         """Compute a statistic from sources.
 
         Parameters
@@ -38,6 +38,9 @@ class Statistic(object):
         sources : dict
             A dictionary mapping sources to their objects. The sources must
             already have been rendered by calling `render` on them.
+        systematics : dict
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
         """
         raise NotImplementedError(
             "Method `compute` is not implemented!")
@@ -70,7 +73,7 @@ class Source(object):
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
     """
-    def render(self, cosmo, params):
+    def render(self, cosmo, params, systematics=None):
         """Render a source by applying systematics.
 
         Parameters
@@ -79,8 +82,9 @@ class Source(object):
             A pyccl.Cosmology object.
         params : dict
             A dictionary mapping parameter names to their current values.
-        systematics : dict
-            A dictionary mapping systematic names to their objects
+        systematics : dict, optional
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
         """
         raise NotImplementedError(
             "Method `render` is not implemented!")

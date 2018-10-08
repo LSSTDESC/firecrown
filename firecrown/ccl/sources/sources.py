@@ -52,6 +52,11 @@ class WLSource(Source):
     tracer_ : `pyccl.CLTracerLensing`
         The CCL tracer associated with this source. Set after a call to
         `render`.
+
+    Methods
+    -------
+    render : apply systematics to this source and build the
+        `pyccl.ClTracerLensing`
     """
     def __init__(
             self, nz_data, has_intrinsic_alignment=False, f_red=None,
@@ -67,7 +72,7 @@ class WLSource(Source):
         self._nz = _nz
         self.nz_interp = Akima1DInterpolator(self._z, self._nz)
 
-    def render(self, cosmo, params, systematics):
+    def render(self, cosmo, params, systematics=None):
         """
         Render a source by applying systematics.
 
@@ -78,12 +83,11 @@ class WLSource(Source):
         params : dict
             A dictionary mapping parameter names to their current values.
         systematics : dict
-            A dictionary mapping systematic names to their objects
-
-        Returns
-        -------
-        self
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
         """
+        systematics = systematics or {}
+
         self.z_ = self._z.copy()
         self.nz_ = self._nz.copy()
         self.scale_ = 1.0
@@ -107,5 +111,3 @@ class WLSource(Source):
                 has_intrinsic_alignment=False,
                 n=(self.z_, self.nz_))
         self.tracer_ = tracer
-
-        return self
