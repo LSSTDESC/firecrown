@@ -107,11 +107,15 @@ two_point:
       kind: WLSource
       nz_data: {tmpdir}/pz0.csv
       has_intrinsic_alignment: False
+      systematics:
+        - pz_delta_0
 
     src1:
       kind: WLSource
       nz_data: {tmpdir}/pz1.csv
       has_intrinsic_alignment: False
+      systematics:
+        - pz_delta_1
 
   systematics:
     pz_delta_0:
