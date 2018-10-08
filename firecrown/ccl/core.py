@@ -16,7 +16,7 @@ Notes:
 
 
 class Statistic(object):
-    """The statistic mixin.
+    """A statistic (e.g., two-point function, mass function, etc.).
 
     Parameters
     ----------
@@ -44,7 +44,7 @@ class Statistic(object):
 
 
 class Systematic(object):
-    """The systematic mixin."""
+    """The systematic (e.g., shear biases, photo-z shifts, etc.)."""
     def apply(self, cosmo, params, source_or_statistic):
         """Apply systematics to a source.
 
@@ -62,7 +62,7 @@ class Systematic(object):
 
 
 class Source(object):
-    """The source mixin.
+    """The source (e.g., a sample of lenses).
 
     Parameters
     ----------
@@ -87,7 +87,7 @@ class Source(object):
 
 
 class LogLike(object):
-    """The log-likelihood mixin.
+    """The log-likelihood (e.g., a Gaussian, T-distribution, etc.).
 
     Parameters
     ----------
