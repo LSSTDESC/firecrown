@@ -1,10 +1,11 @@
 """The classes in this file define the firecrown-CCL API.
 
 Notes:
- - Each class which inherits from a given mixin is expected to define any
+ - Each subclass which inherits from a given class is expected to define any
    methods defined in the mixin with the same call signature.
- - If the mixin includes a class-level doc string, then the `__init__` function
-   should define at least those arguments and/or keyword arguments.
+ - If the class nelow  includes a class-level doc string, then
+   the `__init__` function of the subclass should define at least those
+   arguments and/or keyword arguments.
  - Attributed ending with an underscore are set after the call to
    `apply`/`compute`/`render`.
  - Attributes define in the `__init__` method should be considered constant
