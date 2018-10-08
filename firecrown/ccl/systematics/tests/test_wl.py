@@ -6,7 +6,7 @@ class DummySource(object):
     pass
 
 
-def test_photoz_shift_smoke():
+def test_mult_shear_bias_smoke():
     src = DummySource()
     src.scale_ = 1.0
     m = 0.05
