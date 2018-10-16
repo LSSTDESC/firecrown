@@ -6,7 +6,7 @@ The "c" is for "cosmology."
 
 ## Usage
 
-## LICENSE
+## License
 
 The firecrown package is still under development and should be considered work in progress. 
 If you make use of any of the ideas or software in this package in your own research, please cite them as 
