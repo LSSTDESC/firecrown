@@ -1,9 +1,9 @@
 from setuptools import setup, find_packages
 
-scripts = ['bin/tjpcosmo']
+scripts = ['bin/firecrown']
 
 setup(
-    name='tjpcosmo',
+    name='firecrown',
     description="DESC Cosmology Constraints Tool",
     author="DESC Team",
     packages=find_packages(),
