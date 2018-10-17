@@ -11,7 +11,7 @@ def parse_config(analysis):
     Parameters
     ----------
     analysis : dict
-        Dictionary containg the Nx2pt analysis.
+        Dictionary containing the Nx2pt analysis.
 
     Returns
     -------
