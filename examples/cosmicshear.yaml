@@ -1,6 +1,6 @@
 parameters:
   Omega_k: 0.0
-  Omega_c: [0.25, 0.27, 0.32]
+  Omega_c: [0.25, 0.27, 0.32]  # [min, start, max]
   Omega_b: 0.045
   h: 0.67
   n_s: 0.96
@@ -19,6 +19,7 @@ sampler:
   debug: True
   quiet: False
   mpi: True
+  # parameters for individual samplers:
   test:
     fatal_errors: True
   emcee:
