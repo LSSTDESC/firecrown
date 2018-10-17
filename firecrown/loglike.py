@@ -20,9 +20,10 @@ def compute_loglike(*, cosmo, data):
     """
     loglike = 0.0
     statistics = {}
+
     analyses = list(
         set(list(data.keys())) -
-        set(['parameters', 'run_metadata']))
+        set(['parameters', 'run_metadata', 'sampler']))
     for analysis in analyses:
         _ll, _stats = data[analysis]['eval'](
             cosmo=cosmo,
