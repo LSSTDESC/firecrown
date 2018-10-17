@@ -1,11 +1,37 @@
 # API
 
-The firecrown API has two parts. The first is a wrapper around CCL for building
+The `firecrown` API has two parts. The first is a wrapper around CCL for building
 likelihood computations for CCL-supported analyses, e.g. 3x2pt, cosmic shear,
 etc. The second is a generic interface for adding terms to the log-likelihood.
 The generic interface provides a simple way to combine statistically
 independent analyses (i.e., one can add the log-likelihoods). The CCL API
 allows users to build full log-likelihoods using a YAML configuration file.
+Finally, a global configuration block holds parameters and other metadata.
+
+## Global YAML Configuration
+
+A `firecrown` configuration file has a single parameters block plus one or more
+blocks encoding the components of the log-likelihood.
+
+```YAML
+parameters:
+  Omega_k: 0.0
+  Omega_c: 0.27
+  Omega_b: 0.045
+  h: 0.67
+  n_s: 0.96
+  sigma8: 0.8
+  w0: -1.0
+  wa: 0.0
+
+  # lens bin zero
+  src0_delta_z: 0.0
+  src1_delta_z: 0.0
+
+two_point:
+  module: firecrown.ccl.two_point
+  ...
+```
 
 ## CCL API
 
@@ -13,32 +39,51 @@ The CCL API is composed of four base classes. Subclasses of these base classes
 are combined to compute the full log-likelihood based on a YAML configuration
 file.
 
-The base classes are
+### Base Classes
+
+These are:
 
 1. `firecrown.ccl.core.Source`: Defines a source (e.g., a set of galaxies).
   This class is used to produce `pyccl.cls.Tracer` objects (actually its
   subclasses).
+2. `firecrown.ccl.core.Statistic`: Defines a statistic (e.g., a 2pt function).
+  This class is used to combine sources into statistics.
+3. `firecrown.ccl.core.Systematic`: Defines a systematic effect to apply to
+  either a `Source` or `Statistic`. This class is used to apply systematics
+  that are associated either with a single source or a single statistic.
+4. `firecrown.ccl.core.LogLike`: Defines various log-likelihood computations.
+  This class is used to combine `Statistic`s together with a covariance matrix
+  into a final likelihood computation.
 
-The classes in this file define the firecrown-CCL API.
+Please see [firecrown/ccl/core.py](firecrown/ccl/core.py) for the details of
+each class.
 
-Notes:
+Some Notes:
+
  - Each subclass which inherits from a given class is expected to define any
-   methods defined in the mixin with the same call signature.
- - If the class nelow  includes a class-level doc string, then
+   methods defined in the parent with the same call signature. See the base
+   class docstrings for additional instructions.
+ - If a base class includes a class-level doc string, then
    the `__init__` function of the subclass should define at least those
-   arguments and/or keyword arguments.
- - Attributed ending with an underscore are set after the call to
+   arguments and/or keyword arguments in the class-level doc string.
+ - Attributes ending with an underscore are set after the call to
    `apply`/`compute`/`render`.
  - Attributes define in the `__init__` method should be considered constant
    and not changed after instantiation.
- - Objects inheriting from `Systematic` should only adjust
-   source/statistic properties ending with an underscore.
+ - Objects inheriting from `Systematic` should only adjust source/statistic
+   properties ending with an underscore.
 
-Statistic
-Systematic
-Source
+### YAML Configuration
 
-LogLike
+The example configuration file, [cosmicshear.yaml](examples/cosmicshear.yaml),
+shows how one would configure a cosmic shear analysis in Fourier space.
+
+In general, a two-point YAML configuration file has four sections, `sources`,
+`systematics`, `likelihood`, and `statistics`. The `sources`, `systematics`,
+and `statistics` sections contain mappings of names to configuration
+specifications for each item. Other sections of the file should refer to
+these items by their names. The configuration of each item follows their
+docstrings.
 
 ## Generic API
 
@@ -46,7 +91,7 @@ The generic API works with two functions. The first, `parse_config`, is
 responsible for doing any initialization based on parsing on a YAML
 configuration file. The second function, `compute_loglike`, does the actual
 log-likelihood computations. Finally, a configuration section in the input
-YAML file points firecrown to the python module with these functions.
+YAML file points `firecrown` to the python module with these functions.
 
 ### YAML Configuration
 

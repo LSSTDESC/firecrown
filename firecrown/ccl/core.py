@@ -1,17 +1,19 @@
 """The classes in this file define the firecrown-CCL API.
 
-Notes:
+Some Notes:
+
  - Each subclass which inherits from a given class is expected to define any
-   methods defined in the mixin with the same call signature.
- - If the class nelow  includes a class-level doc string, then
+   methods defined in the parent with the same call signature. See the base
+   class docstrings for additional instructions.
+ - If a base class includes a class-level doc string, then
    the `__init__` function of the subclass should define at least those
-   arguments and/or keyword arguments.
- - Attributed ending with an underscore are set after the call to
+   arguments and/or keyword arguments in the class-level doc string.
+ - Attributes ending with an underscore are set after the call to
    `apply`/`compute`/`render`.
  - Attributes define in the `__init__` method should be considered constant
    and not changed after instantiation.
- - Objects inheriting from `Systematic` should only adjust
-   source/statistic properties ending with an underscore.
+ - Objects inheriting from `Systematic` should only adjust source/statistic
+   properties ending with an underscore.
 """
 
 
@@ -27,7 +29,7 @@ class Statistic(object):
         The default of `None` implies no systematics.
     """
     def compute(self, cosmo, params, sources, systematics=None):
-        """Compute a statistic from sources.
+        """Compute a statistic from sources, applying any systematics.
 
         Parameters
         ----------
@@ -69,12 +71,17 @@ class Source(object):
 
     Parameters
     ----------
+    scale : 1.0, optional
+        The default scale for this source.
     systematics : list of str, optional
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
     """
     def render(self, cosmo, params, systematics=None):
         """Render a source by applying systematics.
+
+        This method should compute the final scale factor for the source
+        as `scale_` and then apply any systematics.
 
         Parameters
         ----------

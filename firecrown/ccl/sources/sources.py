@@ -26,6 +26,9 @@ class WLSource(Source):
     bias_ia : str, optional
         The parameter for the intrinsic alignment amplitude. Only used if
         `has_intrinsic_alignment` is `True`.
+    scale : float, optional
+        The default scale for this source. Usually the default of 1.0 is
+        correct.
     systematics : list of str, optional
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
@@ -60,7 +63,7 @@ class WLSource(Source):
     """
     def __init__(
             self, nz_data, has_intrinsic_alignment=False, f_red=None,
-            bias_ia=None, systematics=None):
+            bias_ia=None, scale=1.0, systematics=None):
         self.nz_data = nz_data
         self.has_intrinsic_alignment = has_intrinsic_alignment
         self.f_red = f_red
@@ -71,6 +74,7 @@ class WLSource(Source):
         self._z = _z
         self._nz = _nz
         self.nz_interp = Akima1DInterpolator(self._z, self._nz)
+        self.scale = scale
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -90,7 +94,7 @@ class WLSource(Source):
 
         self.z_ = self._z.copy()
         self.nz_ = self._nz.copy()
-        self.scale_ = 1.0
+        self.scale_ = self.scale
         if self.has_intrinsic_alignment:
             self.f_red_ = np.ones_like(self.z_) * params[self.f_red]
             self.bias_ia_ = np.ones_like(self.z_) * params[self.bias_ia]

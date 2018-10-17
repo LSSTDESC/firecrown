@@ -53,7 +53,8 @@ def wl_data(tmpdir_factory):
 def test_wl_source_nosys(wl_data):
     src = WLSource(
         nz_data=wl_data['nz_data'],
-        has_intrinsic_alignment=False)
+        has_intrinsic_alignment=False,
+        scale=0.5)
 
     src.render(
         wl_data['cosmo'],
@@ -62,7 +63,8 @@ def test_wl_source_nosys(wl_data):
 
     assert np.allclose(src.z_, wl_data['z'])
     assert np.allclose(src.nz_, wl_data['nz'])
-    assert np.allclose(src.scale_, 1.0)
+    assert np.allclose(src.scale, 0.5)
+    assert np.allclose(src.scale_, 0.5)
     assert src.systematics == []
 
     assert isinstance(src.tracer_, ccl.ClTracerLensing)
