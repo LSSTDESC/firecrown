@@ -92,7 +92,7 @@ parameters:
   Omega_b: 0.045
   h: 0.67
   n_s: 0.96
-  sigma_8: 0.8
+  sigma8: 0.8
   w0: -1.0
   wa: 0.0
 

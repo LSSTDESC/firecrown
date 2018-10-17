@@ -2,6 +2,7 @@
 import pprint
 import click
 import firecrown
+import pyccl
 
 
 @click.command()
@@ -14,6 +15,19 @@ def run(action, config):
     config, data = firecrown.parse(config)
     print("Watch out! Here comes a firecrown!")
     print("config file:\n", pprint.pformat(config))
+
+    # FIXME: stubby code for testing
+    if action == 'compute':
+        params = {}
+        for p in ['Omega_k', 'Omega_b', 'Omega_c', 'h',
+                  'n_s', 'sigma8', 'w0', 'wa']:
+            if p in config['parameters']:
+                params[p] = config['parameters'][p]
+
+        cosmo = pyccl.Cosmology(**params)
+        loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
+        print('loglike:', loglike)
+        print('stats:', pprint.pformat(stats))
 
 
 if __name__ == '__main__':

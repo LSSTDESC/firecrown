@@ -1,3 +1,5 @@
+import pandas as pd
+
 from .parser import (
     _parse_sources,
     _parse_systematics,
@@ -11,7 +13,7 @@ def parse_config(analysis):
     Parameters
     ----------
     analysis : dict
-        Dictionary containg the Nx2pt analysis.
+        Dictionary containing the Nx2pt analysis.
 
     Returns
     -------
@@ -65,10 +67,10 @@ def compute_loglike(
             systematics=data['systematics'])
         _data[name] = stat.measured_statistic_
         _theory[name] = stat.predicted_statistic_
-        stats[name] = {
+        stats[name] = pd.DataFrame({
             'ell_or_theta': stat.ell_or_theta_,
             'measured_statistic_': _data[name],
-            'predicted_statistic_': _theory[name]}
+            'predicted_statistic_': _theory[name]}).to_records(index=False)
 
     # compute the log-like
     loglike = data['likelihood'].compute(_data, _theory)

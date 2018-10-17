@@ -4,3 +4,6 @@ dist/
 build/
 __pycache__/
 
+*.csv
+*.txt
+*.hdf5
