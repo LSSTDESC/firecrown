@@ -9,7 +9,7 @@ cosmo = ccl.Cosmology(
     Omega_k=0.0,
     w0=-1.0,
     wa=0.0,
-    sigma8=0.8,
+    A_s=2.1e-9,
     n_s=0.96,
     h=0.67)
 
