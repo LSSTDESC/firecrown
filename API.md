@@ -9,7 +9,36 @@ allows users to build full log-likelihoods using a YAML configuration file.
 
 ## CCL API
 
+The CCL API is composed of four base classes. Subclasses of these base classes
+are combined to compute the full log-likelihood based on a YAML configuration
+file.
 
+The base classes are
+
+1. `firecrown.ccl.core.Source`: Defines a source (e.g., a set of galaxies).
+  This class is used to produce `pyccl.cls.Tracer` objects (actually its
+  subclasses).
+
+The classes in this file define the firecrown-CCL API.
+
+Notes:
+ - Each subclass which inherits from a given class is expected to define any
+   methods defined in the mixin with the same call signature.
+ - If the class nelow  includes a class-level doc string, then
+   the `__init__` function of the subclass should define at least those
+   arguments and/or keyword arguments.
+ - Attributed ending with an underscore are set after the call to
+   `apply`/`compute`/`render`.
+ - Attributes define in the `__init__` method should be considered constant
+   and not changed after instantiation.
+ - Objects inheriting from `Systematic` should only adjust
+   source/statistic properties ending with an underscore.
+
+Statistic
+Systematic
+Source
+
+LogLike
 
 ## Generic API
 
@@ -97,9 +126,12 @@ def compute_loglike(
     ...
 ```
 
-It takes as an input a `pyccl.Cosmology` object, the dictionary of
-current parameter values, and the data returned from `parse_config`. This
-function should use the data to compute the log-likelihood. If the
-likelihood is zero, this function should return `-np.inf`. It should
-also return any data to store as keys in a dictionary. The elements of this
-dictionary should be `numpy` [structured arrays](https://docs.scipy.org/doc/numpy/user/basics.rec.html#module-numpy.doc.structured_arrays).
+It takes as an input a `pyccl.Cosmology` object, the dictionary of current
+parameter values, and the data returned from `parse_config`. This function
+should use the data to compute the log-likelihood. It should
+also return any data to store as keys in a dictionary. Follow the following rules
+when implementing this function.
+
+1. Always use the `pyccl.Cosmology` object for any cosmological computations (e.g., distances).
+2. If the likelihood is zero, this function should return `-np.inf`.
+3. The elements of dictionary of returned data must be [numpy structured arrays](https://docs.scipy.org/doc/numpy/user/basics.rec.html#module-numpy.doc.structured_arrays).
