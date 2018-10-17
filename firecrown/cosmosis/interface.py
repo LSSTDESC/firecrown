@@ -3,6 +3,7 @@
 # - the module is not reloaded
 import firecrown
 import pyccl
+import sys
 
 def setup(data):
     return data
@@ -22,7 +23,10 @@ def execute(block, data):
     # Unless in quiet mode, print out what we have done
     if not data['sampler']['quiet']:
         print(f"params = {params}\nloglike = {loglike}\n")
+        # Useful to flush when running under MPI, to avoid
+        # buffering
+        sys.stdout.flush()
 
     # Signal success.  An exception anywhere above will
-    # be converted to an error status
+    # be converted to a -inf likelihood by default.
     return 0
