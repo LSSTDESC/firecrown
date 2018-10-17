@@ -1,5 +1,6 @@
 import pathlib
 import os
+import sys
 
 # Locate the path to this directory
 # For fiddly reasons that make a great deal of sense in an entirely
