@@ -1,1 +1,1 @@
-from .api import run
+from .run import run_cosmosis

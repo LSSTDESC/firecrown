@@ -10,7 +10,7 @@ THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 COSMOSIS_INTERFACE = str(THIS_DIRECTORY.joinpath('interface.py'))
 
 
-def run(config, data):
+def run_cosmosis(config, data):
     """Run CosmoSIS on the problem.
 
     This requires the following parameters 'sampler' section

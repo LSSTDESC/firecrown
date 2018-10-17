@@ -3,7 +3,6 @@ import pprint
 import click
 import firecrown
 import pyccl
-import firecrown.cosmosis
 
 
 @click.command()
@@ -33,7 +32,7 @@ def run(action, config):
         print('stats:', pprint.pformat(stats))
 
     elif action == 'sample':
-        firecrown.cosmosis.run(config, data)
+        firecrown.run_cosmosis(config, data)
 
 
 if __name__ == '__main__':
