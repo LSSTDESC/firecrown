@@ -14,14 +14,18 @@ parameters:
 
 
 sampler:
-  sampler: test
+  sampler: grid
   output: chain.txt
   debug: True
+  quiet: False
+  mpi: True
   test:
     fatal_errors: True
   emcee:
     walkers: 10
     nsample: 20
+  grid:
+    nsample_dimension: 5
   fisher:
     step_size: 0.02
 
