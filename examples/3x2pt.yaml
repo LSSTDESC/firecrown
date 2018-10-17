@@ -1,0 +1,63 @@
+parameters:
+  Omega_k: 0.0
+  Omega_c: 0.27
+  Omega_b: 0.045
+  h: 0.67
+  n_s: 0.96
+  sigma8: 0.8
+  w0: -1.0
+  wa: 0.0
+
+  # lens bin zero
+  src0_delta_z: 0.0
+  src1_delta_z: 0.0
+
+two_point:
+  module: firecrown.ccl.two_point
+  sources:
+    src0:
+      kind: WLSource
+      nz_data: pz0.csv
+      has_intrinsic_alignment: false
+      systematics:
+        - pz_delta_0
+
+    src1:
+      kind: WLSource
+      nz_data: pz1.csv
+      has_intrinsic_alignment: False
+      systematics:
+        - pz_delta_1
+
+  systematics:
+    pz_delta_0:
+      kind: PhotoZShiftBias
+      delta_z: src0_delta_z
+
+    pz_delta_1:
+      kind: PhotoZShiftBias
+      delta_z: src1_delta_z
+
+  likelihood:
+    kind: ConstGaussianLogLike
+    data: cov.csv
+    data_vector:
+      - cl_src0_src0
+      - cl_src0_src1
+      - cl_src1_src1
+
+  statistics:
+    cl_src0_src0:
+      sources: ['src0', 'src0']
+      kind: 'cl'
+      data: cl00.csv
+
+    cl_src0_src1:
+      sources: ['src0', 'src1']
+      kind: 'cl'
+      data: cl01.csv
+
+    cl_src1_src1:
+      sources: ['src1', 'src1']
+      kind: 'cl'
+      data: cl11.csv

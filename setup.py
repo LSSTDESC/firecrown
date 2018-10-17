@@ -9,5 +9,5 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     scripts=scripts,
-    install_requires=['cosmosis-standalone', 'pyccl'],
+    install_requires=['pyccl'],
 )
