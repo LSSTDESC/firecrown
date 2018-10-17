@@ -9,5 +9,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     scripts=scripts,
-    install_requires=['pyccl'],
+    install_requires=[
+        'pyccl', 'click', 'numpy',
+        'scipy', 'pandas', 'pyyaml'],
 )
