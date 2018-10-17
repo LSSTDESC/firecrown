@@ -1,5 +1,9 @@
 import pathlib
 
+# Locate the path to this directory
+# For fiddly reasons that make a great deal of sense in an entirely
+# different context to this one, we pass cosmosis a full path
+# to the interface file
 THIS_DIRECTORY = pathlib.Path(__file__).parent.resolve()
 COSMOSIS_INTERFACE = str(THIS_DIRECTORY.joinpath('interface.py'))
 
@@ -8,14 +12,17 @@ def run(config, data):
     from cosmosis.runtime.module import Module
     from cosmosis.runtime.pipeline import LikelihoodPipeline
     from cosmosis.main import run_cosmosis
+    from cosmosis.runtime.mpi_pool import MPIPool
 
-    # Name of the sampler to use
 
-    # Set up a single cosmosis module to use as the interface
+    # Set up a single cosmosis module, which will be the interface
+    # file in the same directory as this one
     module = Module('firecrown', COSMOSIS_INTERFACE)
     module.setup_functions(data)
     modules = [module]
 
+    # Extract the bits of the config file that
+    # cosmosis wants
     ini = make_cosmosis_config(config)
     values = make_cosmosis_values(config)
 
@@ -27,9 +34,11 @@ def run(config, data):
         pool = None
         print("Running single core")
 
+    # Build the pipeline that evaluates the likelihood
     pipeline = LikelihoodPipeline(load=False, values=values, priors=None)
     pipeline.modules = modules
 
+    # Actually run the thing
     run_cosmosis(None, pool=pool, ini=ini, pipeline=pipeline, values=values)
 
 
