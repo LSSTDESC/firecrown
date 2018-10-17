@@ -1,16 +1,30 @@
 parameters:
   Omega_k: 0.0
-  Omega_c: 0.27
+  Omega_c: [0.25, 0.27, 0.32]
   Omega_b: 0.045
   h: 0.67
   n_s: 0.96
-  sigma8: 0.8
+  A_s: [2.0e-9, 2.1e-9, 2.2e-9]
   w0: -1.0
   wa: 0.0
 
   # lens bin zero
   src0_delta_z: 0.0
   src1_delta_z: 0.0
+
+
+sampler:
+  sampler: test
+  output: chain.txt
+  debug: True
+  test:
+    fatal_errors: True
+  emcee:
+    walkers: 10
+    nsample: 20
+  fisher:
+    step_size: 0.02
+
 
 two_point:
   module: firecrown.ccl.two_point
