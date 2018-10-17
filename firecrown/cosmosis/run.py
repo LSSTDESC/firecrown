@@ -66,7 +66,7 @@ def _make_parallel_pool(config):
     from cosmosis.runtime.mpi_pool import MPIPool
 
     # There is a reason to make the user actively
-    # request to use MPI rather than just checking - 
+    # request to use MPI rather than just checking -
     # on many systems, including, importantly, NERSC,
     # trying to import MPI when not running under the
     # MPI environment will cause a crash
@@ -83,7 +83,6 @@ def _make_parallel_pool(config):
         print("Running in serial mode (one process).")
 
     return pool
-
 
 
 def _make_cosmosis_pipeline(data, values, pool):
@@ -112,10 +111,12 @@ def _make_cosmosis_pipeline(data, values, pool):
     # We avoid printing various bits of output info by silencing stdout on
     # worker nodes.
     if (pool is None) or pool.is_master():
-        pipeline = LikelihoodPipeline(load=False, values=values, priors=None)
+        pipeline = LikelihoodPipeline(load=False, values=values,
+                                      priors=None)
     else:
         with stdout_redirected():
-            pipeline = LikelihoodPipeline(load=False, values=values, priors=None)
+            pipeline = LikelihoodPipeline(load=False, values=values,
+                                          priors=None)
 
     sys.stdout.flush()
     # Set up a single cosmosis module, which will be the interface
@@ -125,7 +126,6 @@ def _make_cosmosis_pipeline(data, values, pool):
     pipeline.modules = [module]
 
     return pipeline
-
 
 
 def _make_cosmosis_config(config):
@@ -141,7 +141,6 @@ def _make_cosmosis_config(config):
 
     cosmosis_config: Inifile
         object to use to build cosmosis pipeline
-    
     """
     from cosmosis.runtime.config import Inifile
 
@@ -150,26 +149,27 @@ def _make_cosmosis_config(config):
     output_file = config['output']
     debug = config.get('debug', False)
     quiet = config.get('quiet', False)
-    root = "" # Dummy value to stop cosmosis complaining
+    root = ""  # Dummy value to stop cosmosis complaining
 
     # Passive-aggressive error message
     if sampler_name == 'fisher':
-        raise ValueError("The Fisher matrix sampler does not work since the refactor - sorry.")
+        raise ValueError("The Fisher matrix sampler " +
+                         "does not work since the refactor - sorry.")
 
     # Make into a pair dictionary with the right cosmosis sections
     cosmosis_options = {
-        ("runtime","root") : root,  
-        ("runtime","sampler") : sampler_name,
-        ("output","filename") : output_file,
-        ("pipeline","debug") : str(debug),
-        ("pipeline","quiet") : str(quiet),
+        ("runtime", "root"): root,
+        ("runtime", "sampler"): sampler_name,
+        ("output", "filename"): output_file,
+        ("pipeline", "debug"): str(debug),
+        ("pipeline", "quiet"): str(quiet),
     }
 
     # Set all the sampler configuration options from the
     # appropriate section of the config (e.g., the "grid"
     # section if using the grid sampler, etc.)
     sampler_config = config.get(sampler_name, {})
-    for key,val in sampler_config.items():
+    for key, val in sampler_config.items():
         cosmosis_options[(sampler_name, key)] = str(val)
 
     # Convert into cosmosis Inifile format.
@@ -191,14 +191,13 @@ def _make_cosmosis_values(params):
 
     cosmosis_values: Inifile
         object to use to build cosmosis parameter ranges/values
-    
     """
     from cosmosis.runtime.config import Inifile
 
     values = {}
-    for p,v in params.items():
-        key = ('params',p)
-        if isinstance(v,list):
+    for p, v in params.items():
+        key = ('params', p)
+        if isinstance(v, list):
             values[key] = ' '.join(str(x) for x in v)
         else:
             values[key] = str(v)
@@ -206,5 +205,3 @@ def _make_cosmosis_values(params):
     cosmosis_values = Inifile(None, override=values)
 
     return cosmosis_values
-
-
