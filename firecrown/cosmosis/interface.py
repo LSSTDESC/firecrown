@@ -27,8 +27,8 @@ def execute(block, data):
     ccl_values = {p: block['params', p] for p in ccl_params}
     cosmo = pyccl.Cosmology(**ccl_values)
 
-    # Put all the other parameters in the data dictionary,
-    # from the ones cosmosis sent us.
+    # Put all the parameters in the data dictionary,
+    # both CCL-related and others, like nuisance params.
     all_params = data['parameters'].keys()
     for p in all_params:
         data['parameters'][p] = block['params', p]

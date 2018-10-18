@@ -99,7 +99,7 @@ def test_pipeline(tx_config):
 
     # check that parameter limits are right
     assert np.allclose(pipeline.min_vector(), np.array([0.25, 2.0e-9]))
-    assert np.allclose(pipeline.min_vector(), np.array([0.25, 2.0e-9]))
+    assert np.allclose(pipeline.max_vector(), np.array([0.32, 2.2e-9]))
 
     # check params have correct names
     assert pipeline.output_names() == ['params--omega_c', 'params--a_s']
