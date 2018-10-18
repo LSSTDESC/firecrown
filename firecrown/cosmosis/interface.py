@@ -7,10 +7,19 @@ import sys
 
 
 def setup(data):
+    # In most cosmosis modules this function
+    # is a bit more complicated!  We are hacking it
+    # a bit here - normally the input to this function
+    # is the configuration information for the module.
     return data
 
 
 def execute(block, data):
+    # Calculate the firecrown likelihood as a module
+    # This function, which isn't designed for end users,
+    # is the main connection between cosmosis and firecrown.
+    # CosmoSIS builds the block, and passes it to us here.
+    # The block contains all the sample parameters.
 
     # Create CCL cosmology
     ccl_params = ['Omega_k', 'Omega_b', 'Omega_c',
@@ -18,6 +27,8 @@ def execute(block, data):
     ccl_values = {p: block['params', p] for p in ccl_params}
     cosmo = pyccl.Cosmology(**ccl_values)
 
+    # Put all the other parameters in the data dictionary,
+    # from the ones cosmosis sent us.
     all_params = data['parameters'].keys()
     for p in all_params:
         data['parameters'][p] = block['params', p]

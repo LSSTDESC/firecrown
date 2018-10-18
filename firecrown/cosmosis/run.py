@@ -125,7 +125,10 @@ def _make_cosmosis_pipeline(data, values, pool):
             pipeline = LikelihoodPipeline(load=False, values=values,
                                           priors=None)
 
+    # Flush now to print out the master node's setup stdout
+    # before printing the worker likelihoods
     sys.stdout.flush()
+
     # Set up a single cosmosis module, which will be the interface
     # file in the same directory as this one
     module = Module('firecrown', COSMOSIS_INTERFACE)
@@ -201,6 +204,7 @@ def _make_cosmosis_values(params):
     """
     from cosmosis.runtime.config import Inifile
 
+    # copy all the parameters into the cosmosis config structure
     values = {}
     for p, v in params.items():
         key = ('params', p)
