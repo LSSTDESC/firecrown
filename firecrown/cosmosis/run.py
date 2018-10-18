@@ -33,9 +33,9 @@ def run_cosmosis(config, data):
 
     # Extract the bits of the config file that
     # cosmosis wants
-    ini = _make_cosmosis_config(config['sampler'])
+    ini = _make_cosmosis_params(config['cosmosis'])
     values = _make_cosmosis_values(config['parameters'])
-    pool = _make_parallel_pool(config['sampler'])
+    pool = _make_parallel_pool(config['cosmosis'])
     pipeline = _make_cosmosis_pipeline(data, values, pool)
 
     # Actually run the thing
@@ -45,16 +45,16 @@ def run_cosmosis(config, data):
         pool.close()
 
 
-def _make_parallel_pool(config):
+def _make_parallel_pool(cosmosis_config):
     """ Set up a parallel process pool.
 
     Parameters
     ----------
 
-    config: dict
+    cosmosis_config: dict
         Sampler configuration section of the input
 
-    Will look for the 'mpi' command in the parallel section
+    Will look for the 'mpi' key in the input.
 
     Returns
     -------
@@ -70,7 +70,7 @@ def _make_parallel_pool(config):
     # on many systems, including, importantly, NERSC,
     # trying to import MPI when not running under the
     # MPI environment will cause a crash
-    use_mpi = config.get('mpi', False)
+    use_mpi = cosmosis_config.get('mpi', False)
 
     if use_mpi:
         pool = MPIPool()
@@ -138,27 +138,27 @@ def _make_cosmosis_pipeline(data, values, pool):
     return pipeline
 
 
-def _make_cosmosis_config(config):
+def _make_cosmosis_params(cosmosis_config):
     """ Extract a cosmosis configuration object from a config dict
 
     Parameters
     ----------
-    config: dict
-        Configuration dictionary of 'sampler' section of yaml
+    cosmosis_config: dict
+        Configuration dictionary of 'cosmosis' section of yaml
 
     Returns
     -------
 
-    cosmosis_config: Inifile
+    cosmosis_params: Inifile
         object to use to build cosmosis pipeline
     """
     from cosmosis.runtime.config import Inifile
 
     # Some general options
-    sampler_name = config['sampler']
-    output_file = config['output']
-    debug = config.get('debug', False)
-    quiet = config.get('quiet', False)
+    sampler_name = cosmosis_config['sampler']
+    output_file = cosmosis_config['output']
+    debug = cosmosis_config.get('debug', False)
+    quiet = cosmosis_config.get('quiet', False)
     root = ""  # Dummy value to stop cosmosis complaining
 
     # Passive-aggressive error message
@@ -176,16 +176,16 @@ def _make_cosmosis_config(config):
     }
 
     # Set all the sampler configuration options from the
-    # appropriate section of the config (e.g., the "grid"
+    # appropriate section of the cosmosis_config (e.g., the "grid"
     # section if using the grid sampler, etc.)
-    sampler_config = config.get(sampler_name, {})
+    sampler_config = cosmosis_config.get(sampler_name, {})
     for key, val in sampler_config.items():
         cosmosis_options[(sampler_name, key)] = str(val)
 
     # Convert into cosmosis Inifile format.
-    cosmosis_config = Inifile(None, override=cosmosis_options)
+    cosmosis_params = Inifile(None, override=cosmosis_options)
 
-    return cosmosis_config
+    return cosmosis_params
 
 
 def _make_cosmosis_values(params):

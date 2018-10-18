@@ -40,7 +40,7 @@ def execute(block, data):
     block['likelihoods', 'firecrown_like'] = loglike
 
     # Unless in quiet mode, print out what we have done
-    if not data['sampler']['quiet']:
+    if not data['cosmosis']['quiet']:
         print("params = {}".format(data['parameters']))
         print(f"loglike = {loglike}\n")
         # Useful to flush when running under MPI, to avoid

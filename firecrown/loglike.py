@@ -23,7 +23,7 @@ def compute_loglike(*, cosmo, data):
 
     analyses = list(
         set(list(data.keys())) -
-        set(['parameters', 'run_metadata', 'sampler']))
+        set(['parameters', 'run_metadata', 'cosmosis']))
     for analysis in analyses:
         _ll, _stats = data[analysis]['eval'](
             cosmo=cosmo,

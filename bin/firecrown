@@ -25,7 +25,7 @@ def run(action, config):
             if p in config['parameters']:
                 val = config['parameters'][p]
                 if isinstance(val, list):
-                    val=val[1]
+                    val = val[1]
                 params[p] = val
 
         cosmo = pyccl.Cosmology(**params)
