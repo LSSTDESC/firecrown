@@ -42,10 +42,7 @@ def execute(block, data):
     # Unless in quiet mode, print out what we have done
     if not data['cosmosis']['quiet']:
         print("params = {}".format(data['parameters']))
-        print(f"loglike = {loglike}\n")
-        # Useful to flush when running under MPI, to avoid
-        # buffering
-        sys.stdout.flush()
+        print(f"loglike = {loglike}\n", flush=True)
 
     # Signal success.  An exception anywhere above will
     # be converted to a -inf likelihood by default.
