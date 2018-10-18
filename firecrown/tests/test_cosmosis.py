@@ -1,9 +1,10 @@
 import pytest
 from ..cosmosis.run import _make_parallel_pool, _make_cosmosis_params
 from ..cosmosis.run import _make_cosmosis_values, _make_cosmosis_pipeline
+from ..cosmosis.run import run_cosmosis
 import yaml
 import numpy as np
-
+import os
 try:
     import cosmosis
 except ImportError:
@@ -35,7 +36,7 @@ cosmosis:
   sampler: test
   output: chain.txt
   debug: True
-  quiet: False
+  quiet: True
   mpi: False
   # parameters for individual samplers:
   test:
@@ -45,6 +46,8 @@ cosmosis:
     nsample: 20
     nsample_dimension: 5
     step_size: 0.02
+  grid:
+    nsample_dimension: 5
 """
     config = yaml.load(config_text)
     return config
@@ -106,3 +109,21 @@ def test_pipeline(tx_config):
 
     # Check the modules list is set up
     assert len(pipeline.modules) == 1
+
+
+@requires_cosmosis
+def test_sampling(tx_config, tmpdir):
+    chain_file = os.path.join(tmpdir, 'chain.txt')
+    tx_config['cosmosis']['sampler'] = 'grid'
+    tx_config['cosmosis']['output'] = chain_file
+    # Run with no likelihoods, so that posterior = constant
+    run_cosmosis(tx_config, tx_config)
+    chain = np.loadtxt(chain_file)
+    # Check the grid sampler has made the right number of points
+    assert len(chain) == 25
+    # Check the grid points are in the right place
+    assert np.allclose(np.unique(chain[:, 0]), np.linspace(0.25, 0.32, 5))
+    assert np.allclose(np.unique(chain[:, 1]), np.linspace(2.0e-9, 2.1e-9, 5))
+    # Check the posteriors are all the same.
+    # They are not zero because of the prior.
+    assert np.allclose(np.unique(chain[:, 2]), chain[0, 2])
