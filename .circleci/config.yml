@@ -36,6 +36,9 @@ jobs:
             sudo apt-get update && sudo apt-get install -y gcc g++ gfortran swig libhdf5-serial-dev
             python3 -m venv venv
             . venv/bin/activate
+            export CC=gcc
+            export FC=gfortran
+            export CXX=g++
             pip install -U pip setuptools wheel
             pip install numpy>=1.15
             pip install -r requirements.txt
