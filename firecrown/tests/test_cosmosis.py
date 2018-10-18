@@ -19,7 +19,10 @@ def tx_config(tmpdir_factory):
     config_text = """
 parameters:
   Omega_k: 0.0
-  Omega_c: [0.25, 0.27, 0.32]  # [min, start, max]
+  # Parameters varied with cosmosis
+  # need a min value, starting point, and max value,
+  # like so:
+  Omega_c: [0.25, 0.27, 0.32]
   Omega_b: 0.045
   h: 0.67
   n_s: 0.96
