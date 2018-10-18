@@ -15,19 +15,29 @@ def run(action, config):
     config, data = firecrown.parse(config)
     print("Watch out! Here comes a firecrown!")
     print("config file:\n", pprint.pformat(config))
+    print("data:\n", pprint.pformat(data))
 
     # FIXME: stubby code for testing
     if action == 'compute':
         params = {}
         for p in ['Omega_k', 'Omega_b', 'Omega_c', 'h',
-                  'n_s', 'sigma8', 'w0', 'wa']:
+                  'n_s', 'A_s', 'w0', 'wa']:
             if p in config['parameters']:
-                params[p] = config['parameters'][p]
+                val = config['parameters'][p]
+                if isinstance(val, list):
+                    if len(val)!=3:
+                        raise ValueError("Parameters should be specified"
+                                         "either as one param or three")
+                    val = val[1]
+                params[p] = val
 
         cosmo = pyccl.Cosmology(**params)
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike)
         print('stats:', pprint.pformat(stats))
+
+    elif action == 'run-cosmosis':
+        firecrown.run_cosmosis(config, data)
 
 
 if __name__ == '__main__':

@@ -28,6 +28,24 @@ will run an example problem.
 
 See the example in the examples folder for more details.
 
+## Sampling
+
+To use CosmoSIS to sample cosmological parameters, first install cosmosis-standalone.
+You will need to specify compilers on install, for example:
+
+```bash
+CC=gcc-7 CXX=g++-7 FC=gfortran pip install cosmosis-standalone
+```
+
+Currently the Clang compiler cannot compile cosmosis.
+
+You can then run with:
+
+```bash
+cd examples
+firecrown run-cosmosis cosmicshear.yaml
+```
+
 ## API
 
 See the [API documentation](API.md) for details.
