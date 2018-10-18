@@ -3,7 +3,6 @@
 # - the module is not reloaded
 import firecrown
 import pyccl
-import sys
 
 
 def setup(data):
@@ -40,7 +39,7 @@ def execute(block, data):
     block['likelihoods', 'firecrown_like'] = loglike
 
     # Unless in quiet mode, print out what we have done
-    if not data['cosmosis'].get(quiet, True):
+    if not data['cosmosis'].get("quiet", True):
         print("params = {}".format(data['parameters']))
         print(f"loglike = {loglike}\n", flush=True)
 
