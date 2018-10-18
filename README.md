@@ -40,6 +40,7 @@ CC=gcc-7 CXX=g++-7 FC=gfortran pip install cosmosis-standalone
 Currently the Clang compiler cannot compile cosmosis.
 
 You can then run with:
+
 ```bash
 cd examples
 firecrown sample cosmicshear.yaml

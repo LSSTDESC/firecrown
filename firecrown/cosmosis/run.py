@@ -91,14 +91,21 @@ def _make_cosmosis_pipeline(data, values, pool):
     Parameters
     ----------
 
+    data: dict
+        The data object parse'd from an input yaml file.
+        This is passed as-is to the likelihood function
+
     values: Inifile
         Cosmosis object representing the input parameter values
+
+    pool: MPIPool or None
+        If using MPI parallelism, a CosmoSIS pool object.
 
     Returns
     -------
 
     pipeline: CosmoSIS pipeline objects
-        Instantiated pipeline but with no modules
+        Instantiated pipeline ready to run.
     """
     from cosmosis.runtime.pipeline import LikelihoodPipeline
     from cosmosis.runtime.module import Module
@@ -134,7 +141,7 @@ def _make_cosmosis_config(config):
     Parameters
     ----------
     config: dict
-        Configuration dictionary of 'sampler' section
+        Configuration dictionary of 'sampler' section of yaml
 
     Returns
     -------
@@ -153,7 +160,7 @@ def _make_cosmosis_config(config):
 
     # Passive-aggressive error message
     if sampler_name == 'fisher':
-        raise ValueError("The Fisher matrix sampler " +
+        raise ValueError("The Fisher matrix sampler "
                          "does not work since the refactor - sorry.")
 
     # Make into a pair dictionary with the right cosmosis sections
@@ -184,7 +191,7 @@ def _make_cosmosis_values(params):
     Parameters
     ----------
     params: dict
-        Configuration dictionary of 'sampler' section and options
+        Configuration dictionary of 'parameters' section of input yaml
 
     Returns
     -------
