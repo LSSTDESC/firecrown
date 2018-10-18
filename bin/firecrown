@@ -15,6 +15,7 @@ def run(action, config):
     config, data = firecrown.parse(config)
     print("Watch out! Here comes a firecrown!")
     print("config file:\n", pprint.pformat(config))
+    print("data:\n", pprint.pformat(data))
 
     # FIXME: stubby code for testing
     if action == 'compute':
