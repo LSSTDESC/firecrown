@@ -11,11 +11,16 @@ def setup(data):
 
 
 def execute(block, data):
-    # TODO: Replace this with proper parameter handling when ready
-    required_params = ['Omega_k', 'Omega_b', 'Omega_c',
-                       'h', 'n_s', 'A_s', 'w0', 'wa']
-    params = {p: block['params', p] for p in required_params}
-    cosmo = pyccl.Cosmology(**params)
+
+    # Create CCL cosmology
+    ccl_params = ['Omega_k', 'Omega_b', 'Omega_c',
+                  'h', 'n_s', 'A_s', 'w0', 'wa']
+    ccl_values = {p: block['params', p] for p in ccl_params}
+    cosmo = pyccl.Cosmology(**ccl_values)
+
+    all_params = data['parameters'].keys()
+    for p in all_params:
+        data['parameters'][p] = block['params', p]
 
     # Call out to the log likelihood
     loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
@@ -25,7 +30,7 @@ def execute(block, data):
 
     # Unless in quiet mode, print out what we have done
     if not data['sampler']['quiet']:
-        print(f"params = {params}")
+        print("params = {}".format(data['parameters']))
         print(f"loglike = {loglike}\n")
         # Useful to flush when running under MPI, to avoid
         # buffering
