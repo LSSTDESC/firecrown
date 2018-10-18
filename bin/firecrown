@@ -1,31 +1,38 @@
 #!/usr/bin/env python
+import uuid
 import pprint
 import click
+
 import firecrown
+from firecrown.metadata import write_metadata
 import pyccl
 
 
 @click.command()
 @click.argument('action', type=str)
 @click.argument('config', type=str)
-def run(action, config):
+@click.option('-o', '--output', type=str, default='.')
+def run(action, config, output):
     """Watch out! Here comes a firecrown!
 
     Also, run some ACTION on a CONFIG file."""
-    config, data = firecrown.parse(config)
+
+    analysis_id = uuid.uuid4().hex
+
+    _config, data = firecrown.parse(config)
     print("Watch out! Here comes a firecrown!")
-    print("config file:\n", pprint.pformat(config))
+    print('analysis id:', analysis_id)
+    print("config file:\n", pprint.pformat(_config))
     print("data:\n", pprint.pformat(data))
 
-    # FIXME: stubby code for testing
     if action == 'compute':
         params = {}
         for p in ['Omega_k', 'Omega_b', 'Omega_c', 'h',
                   'n_s', 'A_s', 'w0', 'wa']:
-            if p in config['parameters']:
-                val = config['parameters'][p]
+            if p in _config['parameters']:
+                val = _config['parameters'][p]
                 if isinstance(val, list):
-                    if len(val)!=3:
+                    if len(val) != 3:
                         raise ValueError("Parameters should be specified"
                                          "either as one param or three")
                     val = val[1]
@@ -37,7 +44,11 @@ def run(action, config):
         print('stats:', pprint.pformat(stats))
 
     elif action == 'run-cosmosis':
-        firecrown.run_cosmosis(config, data)
+        firecrown.run_cosmosis(_config, data)
+
+    # we associate a unique id with each analysis
+    # let's write that out with some extra info
+    write_metadata(analysis_id, output, config)
 
 
 if __name__ == '__main__':

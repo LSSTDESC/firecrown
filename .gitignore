@@ -3,6 +3,7 @@ env/
 dist/
 build/
 __pycache__/
+examples/output_*
 
 *.csv
 *.txt
