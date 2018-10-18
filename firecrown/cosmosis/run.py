@@ -2,6 +2,17 @@ import pathlib
 import os
 import sys
 
+try:
+    import cosmosis
+    import cosmosis.main
+    from cosmosis.runtime.mpi_pool import MPIPool
+    from cosmosis.runtime.pipeline import LikelihoodPipeline
+    from cosmosis.runtime.module import Module
+    from cosmosis.runtime.utils import stdout_redirected
+    from cosmosis.runtime.config import Inifile
+except ImportError:
+    cosmosis = None
+
 # Locate the path to this directory
 # For fiddly reasons that make a great deal of sense in an entirely
 # different context to this one, we pass cosmosis a full path
@@ -28,7 +39,10 @@ def run_cosmosis(config, data):
         The result of calling `firecrown.config.parse` on an input YAML
         config.
     """
-    from cosmosis.main import run_cosmosis
+
+    if cosmosis is None:
+        raise ImportError("CosmoSIS is not installed. "
+                          "See readme for instructions on doing so.")
 
     # Extract the bits of the config file that
     # cosmosis wants
@@ -38,7 +52,8 @@ def run_cosmosis(config, data):
     pipeline = _make_cosmosis_pipeline(data, values, pool)
 
     # Actually run the thing
-    run_cosmosis(None, pool=pool, ini=ini, pipeline=pipeline, values=values)
+    cosmosis.main.run_cosmosis(None, pool=pool, ini=ini,
+                               pipeline=pipeline, values=values)
 
     if pool is not None:
         pool.close()
@@ -60,7 +75,6 @@ def _make_parallel_pool(cosmosis_config):
     pool: CosmoSIS MPIPool object
         parallel process pool
     """
-    from cosmosis.runtime.mpi_pool import MPIPool
 
     # There is a reason to make the user actively
     # request to use MPI rather than just checking -
@@ -102,9 +116,6 @@ def _make_cosmosis_pipeline(data, values, pool):
     pipeline: CosmoSIS pipeline objects
         Instantiated pipeline ready to run.
     """
-    from cosmosis.runtime.pipeline import LikelihoodPipeline
-    from cosmosis.runtime.module import Module
-    from cosmosis.runtime.utils import stdout_redirected
 
     # Lie to CosmoSIS about where it is installed.
     os.environ['COSMOSIS_SRC_DIR'] = '.'
@@ -146,7 +157,6 @@ def _make_cosmosis_params(cosmosis_config):
     cosmosis_params: Inifile
         object to use to build cosmosis pipeline
     """
-    from cosmosis.runtime.config import Inifile
 
     # Some general options
     sampler_name = cosmosis_config['sampler']
@@ -195,7 +205,6 @@ def _make_cosmosis_values(params):
     cosmosis_values: Inifile
         object to use to build cosmosis parameter ranges/values
     """
-    from cosmosis.runtime.config import Inifile
 
     # copy all the parameters into the cosmosis config structure
     values = {}
