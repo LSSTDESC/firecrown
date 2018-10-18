@@ -25,7 +25,8 @@ def execute(block, data):
 
     # Unless in quiet mode, print out what we have done
     if not data['sampler']['quiet']:
-        print(f"params = {params}\nloglike = {loglike}\n")
+        print(f"params = {params}")
+        print(f"loglike = {loglike}\n")
         # Useful to flush when running under MPI, to avoid
         # buffering
         sys.stdout.flush()
