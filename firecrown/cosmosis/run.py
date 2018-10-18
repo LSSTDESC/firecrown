@@ -27,7 +27,6 @@ def run_cosmosis(config, data):
     data : dict
         The result of calling `firecrown.config.parse` on an input YAML
         config.
-
     """
     from cosmosis.main import run_cosmosis
 
@@ -48,21 +47,19 @@ def run_cosmosis(config, data):
 def _make_parallel_pool(cosmosis_config):
     """ Set up a parallel process pool.
 
+    Will look for the 'mpi' key in the cosmosis_config.
+
     Parameters
     ----------
-
     cosmosis_config: dict
         Sampler configuration section of the input
 
-    Will look for the 'mpi' key in the input.
 
     Returns
     -------
-
     pool: CosmoSIS MPIPool object
         parallel process pool
     """
-
     from cosmosis.runtime.mpi_pool import MPIPool
 
     # There is a reason to make the user actively
@@ -90,7 +87,6 @@ def _make_cosmosis_pipeline(data, values, pool):
 
     Parameters
     ----------
-
     data: dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
@@ -103,7 +99,6 @@ def _make_cosmosis_pipeline(data, values, pool):
 
     Returns
     -------
-
     pipeline: CosmoSIS pipeline objects
         Instantiated pipeline ready to run.
     """
@@ -148,7 +143,6 @@ def _make_cosmosis_params(cosmosis_config):
 
     Returns
     -------
-
     cosmosis_params: Inifile
         object to use to build cosmosis pipeline
     """
@@ -198,7 +192,6 @@ def _make_cosmosis_values(params):
 
     Returns
     -------
-
     cosmosis_values: Inifile
         object to use to build cosmosis parameter ranges/values
     """
