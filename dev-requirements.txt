@@ -1,4 +1,4 @@
 flake8
 pytest
 nose
-cosmosis-standalone==0.0.8
+cosmosis-standalone==0.0.9
