@@ -40,7 +40,6 @@ jobs:
             pip install numpy>=1.15
             pip install -r requirements.txt
             pip install -r dev-requirements.txt
-            CC=gcc CXX=g++ FC=gfortran pip install cosmosis-standalone==0.0.8
             pip install .
 
       - save_cache:
