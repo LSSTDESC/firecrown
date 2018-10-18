@@ -43,7 +43,7 @@ You can then run with:
 
 ```bash
 cd examples
-firecrown sample cosmicshear.yaml
+firecrown run-cosmosis cosmicshear.yaml
 ```
 
 ## API
