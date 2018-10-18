@@ -25,6 +25,9 @@ def run(action, config):
             if p in config['parameters']:
                 val = config['parameters'][p]
                 if isinstance(val, list):
+                    if len(val)!=3:
+                        raise ValueError("Parameters should be specified"
+                                         "either as one param or three")
                     val = val[1]
                 params[p] = val
 

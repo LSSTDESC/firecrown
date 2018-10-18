@@ -75,7 +75,7 @@ def _make_parallel_pool(cosmosis_config):
     if use_mpi:
         pool = MPIPool()
         if pool.size == 1:
-            print("Have mpi set to True but one process.")
+            print("Have mpi=True, but only running a single process.")
             print("I will ignore and run in serial mode.")
             pool = None
     else:
