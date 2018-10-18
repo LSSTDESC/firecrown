@@ -30,11 +30,11 @@ def run_cosmosis(config, data):
       sampler - name of sampler to use, e.g. emcee, multinest, grid, ...
       output - name of file to save to
 
-
     Parameters
     ----------
     config : dict
         Configuration info, usually read directly from the YAML file
+
     data : dict
         The result of calling `firecrown.config.parse` on an input YAML
         config.
@@ -68,7 +68,6 @@ def _make_parallel_pool(cosmosis_config):
     ----------
     cosmosis_config: dict
         Sampler configuration section of the input
-
 
     Returns
     -------
