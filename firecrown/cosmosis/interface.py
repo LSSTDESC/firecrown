@@ -40,7 +40,7 @@ def execute(block, data):
     block['likelihoods', 'firecrown_like'] = loglike
 
     # Unless in quiet mode, print out what we have done
-    if not data['cosmosis']['quiet']:
+    if not data['cosmosis'].get(quiet, True):
         print("params = {}".format(data['parameters']))
         print(f"loglike = {loglike}\n", flush=True)
 
