@@ -5,6 +5,7 @@ import click
 
 import firecrown
 from firecrown.metadata import write_metadata
+from firecrown.io import write_statistics
 import pyccl
 
 
@@ -49,6 +50,7 @@ def run(action, config, output):
     # we associate a unique id with each analysis
     # let's write that out with some extra info
     write_metadata(analysis_id, output, config)
+    write_statistics(analysis_id, output, stats)
 
 
 if __name__ == '__main__':
