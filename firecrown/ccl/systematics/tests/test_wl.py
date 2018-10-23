@@ -36,12 +36,10 @@ def test_linear_alignment_systematic_smoke():
     params = {
         '__alphag': 0.2,
         '__alphaz': 0.5,
-        '__bias_ia': 0.8,
         '__z_piv': 0.4}
     sys = LinearAlignmentSystematic(
         alphag='__alphag',
         alphaz='__alphaz',
-        bias_ia='__bias_ia',
         z_piv='__z_piv')
 
     sys.apply(cosmo, params, src)
