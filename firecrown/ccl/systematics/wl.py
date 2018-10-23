@@ -45,8 +45,6 @@ class LinearAlignmentSystematic(Systematic):
 
     Parameters
     ----------
-    bias_ia : str
-        The name of the intrinsic alignment parameter.
     alphaz : str
         The mame of redshift dependence parameter of the intrinsic alignment
         signal.
@@ -61,8 +59,7 @@ class LinearAlignmentSystematic(Systematic):
     -------
     apply : appaly the systematic to a source
     """
-    def __init__(self, bias_ia, alphaz, alphag, z_piv):
-        self.bias_ia = bias_ia
+    def __init__(self, alphaz, alphag, z_piv):
         self.alphaz = alphaz
         self.alphag = alphag
         self.z_piv = z_piv
