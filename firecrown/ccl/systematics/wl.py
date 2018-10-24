@@ -2,7 +2,7 @@ import pyccl as ccl
 
 from ..core import Systematic
 
-__all__ = ['MultiplicativeShearBias']
+__all__ = ['MultiplicativeShearBias', 'LinearAlignmentSystematic']
 
 
 class MultiplicativeShearBias(Systematic):
