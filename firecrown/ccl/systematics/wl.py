@@ -41,7 +41,7 @@ class MultiplicativeShearBias(Systematic):
 class LinearAlignmentSystematic(Systematic):
     """Linear alignment systematic.
 
-    This systematic adds a linear intrinsic alignment model systematic 
+    This systematic adds a linear intrinsic alignment model systematic
     which varies with redshift and the growth function.
 
     Parameters
