@@ -178,9 +178,10 @@ class NumberCountsSource(Source):
         self.systematics = systematics or []
         df = pd.read_csv(nz_data)
         _z, _nz = df['z'].values.copy(), df['nz'].values.copy()
-        self._z = _z
-        self._nz = _nz
-        self.nz_interp = Akima1DInterpolator(self._z, self._nz)
+        self._z_orig = _z
+        self._nz_orig = _nz
+        self.nz_interp = Akima1DInterpolator(
+            self._z_orig, self._nz_orig)
         self.scale = scale
 
     def render(self, cosmo, params, systematics=None):
@@ -199,8 +200,8 @@ class NumberCountsSource(Source):
         """
         systematics = systematics or {}
 
-        self.z_ = self._z.copy()
-        self.nz_ = self._nz.copy()
+        self.z_ = self._z_orig.copy()
+        self.nz_ = self._nz_orig.copy()
         self.scale_ = self.scale
         self.bias_ = np.ones_like(self.z_) * params[self.bias]
 
