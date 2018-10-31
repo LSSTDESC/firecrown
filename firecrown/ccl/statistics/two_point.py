@@ -5,6 +5,15 @@ import pyccl as ccl
 from ..core import Statistic
 
 
+def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
+    """Build an array of ells to sample the power spectrum for real-space
+    predictions.
+    """
+    return np.concatenate((
+        np.linspace(ell_min, ell_mid-1, ell_mid-ell_min),
+        np.logspace(np.log10(ell_mid), np.log10(ell_max), n_log)))
+
+
 class TwoPointStatistic(Statistic):
     """A two-point statistic (e.g., shear correlation function, galaxy-shear
     correlation function, etc.).
@@ -26,6 +35,19 @@ class TwoPointStatistic(Statistic):
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
+    ell_min : int
+        The minimum angulare wavenumber to use for real-space integrations.
+    ell_mid : int
+        The midpoint angular wavenumber to use for real-space integrations. The
+        angular wavenumber samples are linearly spaced at integers between
+        `ell_min` and `ell_mid`.
+    ell_max : float
+        The maximum angular wavenumber to use for real-space integrations. The
+        angular wavenumber samples are logarithmically spaced between
+        `ell_mid` and `ell_max`.
+    n_log : int
+        The number of logarithmically spaced angular wavenumber samples between
+        `ell_mid` and `ell_max`.
 
     Attributes
     ----------
@@ -40,7 +62,8 @@ class TwoPointStatistic(Statistic):
         The final scale factor applied to the statistic. Set after `compute`
         is called. Note that this scale factor is already applied.
     """
-    def __init__(self, data, kind, sources, systematics=None):
+    def __init__(self, data, kind, sources, systematics=None,
+                 ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
         self.data = data
         self.kind = kind
         df = pd.read_csv(self.data)
@@ -52,6 +75,10 @@ class TwoPointStatistic(Statistic):
             self._stat = df['xi'].values.copy()
         self.sources = sources
         self.systematics = systematics or []
+        self.ell_min = ell_min
+        self.ell_max = ell_max
+        self.ell_mid = ell_mid
+        self.n_log = n_log
 
     def compute(self, cosmo, params, sources, systematics=None):
         """Compute a two-point statistic from sources.
@@ -78,6 +105,16 @@ class TwoPointStatistic(Statistic):
         if self.kind == 'cl':
             self.predicted_statistic_ = ccl.angular_cl(
                 cosmo, *tracers, self.ell_or_theta_) * self.scale_
+        else:
+            ells = _ell_for_xi(
+                ell_min=self.ell_min,
+                ell_mid=self.ell_mid,
+                ell_max=self.ell_max,
+                n_log=self.n_log)
+            cells = ccl.angular_cl(cosmo, *tracers, ells)
+            self.predicted_statistic_ = ccl.correlation(
+                cosmo, ells, cells, self.ell_or_theta_ / 60,
+                corr_type=self.kind) * self.scale_
 
         systematics = systematics or {}
         for systematic in self.systematics:
