@@ -40,14 +40,12 @@ two_point:
     src0:
       kind: WLSource
       dndz_data: pz0.csv
-      has_intrinsic_alignment: false
       systematics:
         - pz_delta_0
 
     src1:
       kind: WLSource
       dndz_data: pz1.csv
-      has_intrinsic_alignment: False
       systematics:
         - pz_delta_1
 

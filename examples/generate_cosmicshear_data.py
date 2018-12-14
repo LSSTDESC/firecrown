@@ -30,9 +30,7 @@ for i, mn in enumerate([0.25, 0.75]):
 
     tracers.append(ccl.WeakLensingTracer(
         cosmo,
-        has_intrinsic_alignment=False,
-        z=z,
-        n=dndz))
+        dndz=(z, dndz)))
 
 dv = []
 ndv = []
