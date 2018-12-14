@@ -34,6 +34,8 @@ jobs:
             sudo make install
             cd ..
             sudo apt-get update && sudo apt-get install -y gcc g++ gfortran swig libhdf5-serial-dev
+            swig -version
+            rm -rf venv
             python3 -m venv venv
             . venv/bin/activate
             export CC=gcc
