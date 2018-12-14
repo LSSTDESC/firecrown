@@ -33,9 +33,7 @@ jobs:
             cd ./gsl-2.5
             sudo make install
             cd ..
-            sudo apt-get update && sudo apt-get install -y gcc g++ gfortran swig libhdf5-serial-dev
-            swig -version
-            rm -rf venv
+            sudo apt-get update && sudo apt-get install -y gcc g++ gfortran libhdf5-serial-dev
             python3 -m venv venv
             . venv/bin/activate
             export CC=gcc
@@ -43,7 +41,7 @@ jobs:
             export CXX=g++
             pip install -U pip setuptools wheel
             pip install numpy>=1.15
-            pip install --no-cache-dir --force-reinstall -r requirements.txt
+            pip install --no-cache-dir -r requirements.txt
             pip install -r dev-requirements.txt
             pip install .
 
