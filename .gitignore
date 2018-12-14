@@ -8,3 +8,5 @@ examples/output_*
 *.csv
 *.txt
 *.hdf5
+!requirements.txt
+!dev-requirements.txt
