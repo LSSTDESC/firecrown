@@ -3,3 +3,4 @@ numpy>=1.15
 pyyaml
 scipy
 click
+pandas

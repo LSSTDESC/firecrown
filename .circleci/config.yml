@@ -10,11 +10,11 @@ jobs:
       - checkout
 
       # Download and cache dependencies
-#       - restore_cache:
-#           keys:
-#           - v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
-#           # fallback to using the latest cache if no exact match is found
-#           - v1-dependencies-
+      - restore_cache:
+          keys:
+          - v0-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}-gsl2.5-swig3.0.12
+          # fallback to using the latest cache if no exact match is found
+          - v0-dependencies-
 
       - run:
           name: install dependencies
@@ -60,16 +60,17 @@ jobs:
             export FC=gfortran
             export CXX=g++
             pip install -U pip setuptools wheel
-            pip install numpy>=1.15
-            pip install --no-cache-dir -r requirements.txt
-            pip install -r dev-requirements.txt
+            pip install --no-cache-dir -U --upgrage-strategy=eager numpy>=1.15
+            pip install --no-cache-dir -U --upgrage-strategy=eager -r requirements.txt
+            pip install --no-cache-dir -U --upgrage-strategy=eager -r dev-requirements.txt
             pip install .
 
-#       - save_cache:
-#           paths:
-#             - ./venv
-#             - ./gsl-2.5
-#           key: v1-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+      - save_cache:
+          paths:
+            - ./venv
+            - ./gsl-2.5
+            - ./swig-3.0.12
+          key: v0-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}-gsl2.5-swig3.0.12
 
       - run:
           name: lint
@@ -89,5 +90,5 @@ jobs:
           command: |
             . venv/bin/activate
             cd examples
-            python generate_cosmic_shear_data.py
+            python generate_cosmicshear_data.py
             firecrown compute cosmicshear.yaml
