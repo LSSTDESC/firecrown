@@ -60,9 +60,9 @@ jobs:
             export FC=gfortran
             export CXX=g++
             pip install -U pip setuptools wheel
-            pip install --no-cache-dir -U --upgrade-strategy=eager numpy>=1.15
-            pip install --no-cache-dir -U --upgrade-strategy=eager -r requirements.txt
-            pip install --no-cache-dir -U --upgrade-strategy=eager -r dev-requirements.txt
+            pip install -U --upgrade-strategy=eager numpy>=1.15
+            pip install -U --upgrade-strategy=eager -r requirements.txt
+            pip install -U --upgrade-strategy=eager -r dev-requirements.txt
             pip install .
 
       - save_cache:
