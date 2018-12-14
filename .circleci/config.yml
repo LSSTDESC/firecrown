@@ -63,3 +63,11 @@ jobs:
           command: |
             . venv/bin/activate
             pytest -vv firecrown
+
+      - run:
+          name: cosmic-shear-example
+          command: |
+            . venv/bin/activate
+            cd examples
+            python generate_cosmic_shear_data.py
+            firecrown compute cosmicshear.yaml
