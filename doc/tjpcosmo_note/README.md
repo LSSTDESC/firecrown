@@ -12,7 +12,7 @@ Download the contents of the `start_paper` repository. We recommend downloading 
 ./deploy_from_github_zip.bash MyNewPaper
 ```
 
-This will download and unzip the `start_paper` files to a new folder called `MyNewPaper/`.
+This will download and udndzip the `start_paper` files to a new folder called `MyNewPaper/`.
 
 `start_paper` provides templates in various formats: [`Jupyter Notebook`](https://ipython.org/notebook.html) (`main.ipynb`), [`Markdown`](https://github.com/adam-p/Markdown-here/wiki/Markdown-Cheatsheet) (`main.md`), [`reStructuredText`](http://docutils.sourceforge.net/rst.html) (`main.rst`), and latex (`main.tex`). There is also a template [Google Doc](https://docs.google.com/document/d/1ERz_S02Uvc0QkapVx145PrYZT0CRJbkPMmY5T95uMkk/edit?usp=sharing).
 

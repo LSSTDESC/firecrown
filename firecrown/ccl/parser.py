@@ -58,7 +58,7 @@ def _parse_sources(srcs):
         ```YAML
         src0:
           kind: 'WLSource'
-          nz_data: ./data/cl00.csv
+          dndz_data: ./data/cl00.csv
           has_intrinsic_alignment: False
           systematics:
             ...

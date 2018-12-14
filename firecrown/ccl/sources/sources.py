@@ -15,17 +15,14 @@ class WLSource(Source):
 
     Parameters
     ----------
-    nz_data : str
+    dndz_data : str
         The path to the photo-z distribution in a CSV. The columns should be
-        {'z', 'nz'}.
-    has_intrinsic_alignment : bool, optional
-        If `True`, the source has intrinsic alignment terms.
-    f_red : str, optional
+        {'z', 'dndz'}.
+    red_frac : str, optional
         The parameter for the red fraction. Only used if
         `has_intrinsic_alignment` is `True`.
-    bias_ia : str, optional
-        The parameter for the intrinsic alignment amplitude. Only used if
-        `has_intrinsic_alignment` is `True`.
+    ia_bias : str, optional
+        The parameter for the intrinsic alignment amplitude.
     scale : float, optional
         The default scale for this source. Usually the default of 1.0 is
         correct.
@@ -35,46 +32,45 @@ class WLSource(Source):
 
     Attributes
     ----------
-    nz_interp : Akima1DInterpolator
+    dndz_interp : Akima1DInterpolator
         A spline interpolation of the initial photo-z distribution.
     z_ : np.ndarray, shape (n_z,)
         The array of redshifts for the photo-z distribution. Set after a call
         to `render`.
-    nz_ : np.ndarray, shape (n_z,)
+    dndz_ : np.ndarray, shape (n_z,)
         The photo-z distribution amplitudes.  Set after a call to `render`.
-    f_red_ : np.ndarray, shape (n_z,)
+    red_frac_ : np.ndarray, shape (n_z,)
         The red fraction as a function of redshift.  Set after a call to
         `render`. Only present in `has_intrinsic_alignment` is `True`.
-    bias_ia_ : np.ndarray, shape (n_z,)
+    ia_bias_ : np.ndarray, shape (n_z,)
         The intrinsic alignment amplitude as a function of redshift. Set after
         a call to `render`. Only present in `has_intrinsic_alignment` is
         `True`.
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
-    tracer_ : `pyccl.CLTracerLensing`
+    tracer_ : `pyccl.WeakLensingTracer`
         The CCL tracer associated with this source. Set after a call to
         `render`.
 
     Methods
     -------
     render : apply systematics to this source and build the
-        `pyccl.ClTracerLensing`
+        `pyccl.WeakLensingTracer`
     """
     def __init__(
-            self, nz_data, has_intrinsic_alignment=False, f_red=None,
-            bias_ia=None, scale=1.0, systematics=None):
-        self.nz_data = nz_data
-        self.has_intrinsic_alignment = has_intrinsic_alignment
-        self.f_red = f_red
-        self.bias_ia = bias_ia
+            self, dndz_data, red_frac=None,
+            ia_bias=None, scale=1.0, systematics=None):
+        self.dndz_data = dndz_data
+        self.red_frac = red_frac
+        self.ia_bias = ia_bias
         self.systematics = systematics or []
-        df = pd.read_csv(nz_data)
-        _z, _nz = df['z'].values.copy(), df['nz'].values.copy()
+        df = pd.read_csv(dndz_data)
+        _z, _dndz = df['z'].values.copy(), df['dndz'].values.copy()
         self._z_orig = _z
-        self._nz_orig = _nz
-        self.nz_interp = Akima1DInterpolator(
-            self._z_orig, self._nz_orig)
+        self._dndz_orig = _dndz
+        self.dndz_interp = Akima1DInterpolator(
+            self._z_orig, self._dndz_orig)
         self.scale = scale
 
     def render(self, cosmo, params, systematics=None):
@@ -94,27 +90,25 @@ class WLSource(Source):
         systematics = systematics or {}
 
         self.z_ = self._z_orig.copy()
-        self.nz_ = self._nz_orig.copy()
+        self.dndz_ = self._dndz_orig.copy()
         self.scale_ = self.scale
-        if self.has_intrinsic_alignment:
-            self.f_red_ = np.ones_like(self.z_) * params[self.f_red]
-            self.bias_ia_ = np.ones_like(self.z_) * params[self.bias_ia]
+        if self.red_frac is not None or self.ia_bias is not None:
+            self.red_frac_ = np.ones_like(self.z_) * params[self.red_frac]
+            self.ia_bias_ = np.ones_like(self.z_) * params[self.ia_bias]
 
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        if self.has_intrinsic_alignment:
-            tracer = ccl.ClTracerLensing(
+        if self.red_frac is not None or self.ia_bias is not None:
+            tracer = ccl.WeakLensingTracer(
                 cosmo,
-                has_intrinsic_alignment=True,
-                n=(self.z_, self.nz_),
-                bias_ia=(self.z_, self.bias_ia_),
-                f_red=(self.z_, self.f_red_))
+                dndz=(self.z_, self.dndz_),
+                ia_bias=(self.z_, self.ia_bias_),
+                red_frac=(self.z_, self.red_frac_))
         else:
-            tracer = ccl.ClTracerLensing(
+            tracer = ccl.WeakLensingTracer(
                 cosmo,
-                has_intrinsic_alignment=False,
-                n=(self.z_, self.nz_))
+                dndz=(self.z_, self.dndz_))
         self.tracer_ = tracer
 
 
@@ -123,18 +117,15 @@ class NumberCountsSource(Source):
 
     Parameters
     ----------
-    nz_data : str
+    dndz_data : str
         The path to the photo-z distribution in a CSV. The columns should be
-        {'z', 'nz'}.
+        {'z', 'dndz'}.
     bias : str
         The parameter for the bias of the source.
     has_rsd : bool, optional
         If `True`, the source has RSD terms.
-    has_magnification : bool, optional
-        If `True`, the source has magnification terms.
     mag_bias : str, optional
-        The parameter for the magnification bias of the source. Only used if
-        `has_magnification` is `True`.
+        The parameter for the magnification bias of the source.
     scale : float, optional
         The default scale for this source. Usually the default of 1.0 is
         correct.
@@ -144,12 +135,12 @@ class NumberCountsSource(Source):
 
     Attributes
     ----------
-    nz_interp : Akima1DInterpolator
+    dndz_interp : Akima1DInterpolator
         A spline interpolation of the initial photo-z distribution.
     z_ : np.ndarray, shape (n_z,)
         The array of redshifts for the photo-z distribution. Set after a call
         to `render`.
-    nz_ : np.ndarray, shape (n_z,)
+    dndz_ : np.ndarray, shape (n_z,)
         The photo-z distribution amplitudes.  Set after a call to `render`.
     bias_ : np.ndarray, shape (n_z,)
         The bias of the source. Set after a call to `render`.
@@ -159,30 +150,29 @@ class NumberCountsSource(Source):
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
-    tracer_ : `pyccl.CLTracerLensing`
+    tracer_ : `pyccl.WeakLensingTracer`
         The CCL tracer associated with this source. Set after a call to
         `render`.
 
     Methods
     -------
     render : apply systematics to this source and build the
-        `pyccl.ClTracerNumberCounts`
+        `pyccl.NumberCountsTracer`
     """
     def __init__(
-            self, nz_data, bias, has_rsd=False, has_magnification=False,
+            self, dndz_data, bias, has_rsd=False,
             mag_bias=None, scale=1.0, systematics=None):
-        self.nz_data = nz_data
+        self.dndz_data = dndz_data
         self.bias = bias
         self.has_rsd = has_rsd
-        self.has_magnification = has_magnification
         self.mag_bias = mag_bias
         self.systematics = systematics or []
-        df = pd.read_csv(nz_data)
-        _z, _nz = df['z'].values.copy(), df['nz'].values.copy()
+        df = pd.read_csv(dndz_data)
+        _z, _dndz = df['z'].values.copy(), df['dndz'].values.copy()
         self._z_orig = _z
-        self._nz_orig = _nz
-        self.nz_interp = Akima1DInterpolator(
-            self._z_orig, self._nz_orig)
+        self._dndz_orig = _dndz
+        self.dndz_interp = Akima1DInterpolator(
+            self._z_orig, self._dndz_orig)
         self.scale = scale
 
     def render(self, cosmo, params, systematics=None):
@@ -202,29 +192,27 @@ class NumberCountsSource(Source):
         systematics = systematics or {}
 
         self.z_ = self._z_orig.copy()
-        self.nz_ = self._nz_orig.copy()
+        self.dndz_ = self._dndz_orig.copy()
         self.scale_ = self.scale
         self.bias_ = np.ones_like(self.z_) * params[self.bias]
 
-        if self.has_magnification:
+        if self.mag_bias is not None:
             self.mag_bias_ = np.ones_like(self.z_) * params[self.mag_bias]
 
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        if self.has_magnification:
-            tracer = ccl.ClTracerNumberCounts(
+        if self.mag_bias is not None:
+            tracer = ccl.NumberCountsTracer(
                 cosmo,
                 has_rsd=self.has_rsd,
-                has_magnification=True,
-                n=(self.z_, self.nz_),
+                dndz=(self.z_, self.dndz_),
                 bias=(self.z_, self.bias_),
                 mag_bias=(self.z_, self.mag_bias_))
         else:
-            tracer = ccl.ClTracerNumberCounts(
+            tracer = ccl.NumberCountsTracer(
                 cosmo,
                 has_rsd=self.has_rsd,
-                has_magnification=False,
-                n=(self.z_, self.nz_),
+                dndz=(self.z_, self.dndz_),
                 bias=(self.z_, self.bias_))
         self.tracer_ = tracer

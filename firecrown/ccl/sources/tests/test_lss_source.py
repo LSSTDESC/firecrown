@@ -32,29 +32,28 @@ def lss_data(tmpdir_factory):
 
     mn = 0.25
     z = np.linspace(0, 2, 50)
-    nz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
-    df = pd.DataFrame({'z': z, 'nz': nz})
-    nz_data = os.path.join(tmpdir, 'pz.csv')
-    df.to_csv(nz_data, index=False)
+    df = pd.DataFrame({'z': z, 'dndz': dndz})
+    dndz_data = os.path.join(tmpdir, 'pz.csv')
+    df.to_csv(dndz_data, index=False)
 
     return {
         'cosmo': cosmo,
         'tmpdir': tmpdir,
         'params': params,
-        'nz_data': nz_data,
+        'dndz_data': dndz_data,
         'systematics': ['wlm'],
         'systematics_dict': {'wlm': wlm},
         'scale_': 1.05,
         'z': z,
-        'nz': nz}
+        'dndz': dndz}
 
 
 def test_lss_source_nosys(lss_data):
     src = NumberCountsSource(
-        nz_data=lss_data['nz_data'],
+        dndz_data=lss_data['dndz_data'],
         has_rsd=False,
-        has_magnification=False,
         bias='blah2',
         scale=0.5)
 
@@ -64,22 +63,21 @@ def test_lss_source_nosys(lss_data):
         lss_data['systematics_dict'])
 
     assert np.allclose(src.z_, lss_data['z'])
-    assert np.allclose(src.nz_, lss_data['nz'])
+    assert np.allclose(src.dndz_, lss_data['dndz'])
     assert np.allclose(src.scale, 0.5)
     assert np.allclose(src.scale_, 0.5)
     assert src.systematics == []
 
-    assert isinstance(src.tracer_, ccl.ClTracerNumberCounts)
+    assert isinstance(src.tracer_, ccl.NumberCountsTracer)
     assert np.allclose(src.tracer_.z_n, lss_data['z'])
-    assert np.allclose(src.tracer_.n, lss_data['nz'])
+    assert np.allclose(src.tracer_.n, lss_data['dndz'])
     assert np.allclose(src.tracer_.b, lss_data['params']['blah2'])
 
 
 def test_lss_source_sys(lss_data):
     src = NumberCountsSource(
-        nz_data=lss_data['nz_data'],
+        dndz_data=lss_data['dndz_data'],
         has_rsd=False,
-        has_magnification=False,
         bias='blah2',
         systematics=lss_data['systematics'])
 
@@ -89,21 +87,20 @@ def test_lss_source_sys(lss_data):
         lss_data['systematics_dict'])
 
     assert np.allclose(src.z_, lss_data['z'])
-    assert np.allclose(src.nz_, lss_data['nz'])
+    assert np.allclose(src.dndz_, lss_data['dndz'])
     assert np.allclose(src.scale_, lss_data['scale_'])
     assert src.systematics == lss_data['systematics']
 
-    assert isinstance(src.tracer_, ccl.ClTracerNumberCounts)
+    assert isinstance(src.tracer_, ccl.NumberCountsTracer)
     assert np.allclose(src.tracer_.z_n, lss_data['z'])
-    assert np.allclose(src.tracer_.n, lss_data['nz'])
+    assert np.allclose(src.tracer_.n, lss_data['dndz'])
     assert np.allclose(src.tracer_.b, lss_data['params']['blah2'])
 
 
 def test_lss_source_mag(lss_data):
     src = NumberCountsSource(
-        nz_data=lss_data['nz_data'],
+        dndz_data=lss_data['dndz_data'],
         has_rsd=False,
-        has_magnification=True,
         bias='blah2',
         mag_bias='blah6',
         systematics=lss_data['systematics'])
@@ -114,12 +111,12 @@ def test_lss_source_mag(lss_data):
         lss_data['systematics_dict'])
 
     assert np.allclose(src.z_, lss_data['z'])
-    assert np.allclose(src.nz_, lss_data['nz'])
+    assert np.allclose(src.dndz_, lss_data['dndz'])
     assert np.allclose(src.scale_, lss_data['scale_'])
     assert src.systematics == lss_data['systematics']
 
-    assert isinstance(src.tracer_, ccl.ClTracerNumberCounts)
+    assert isinstance(src.tracer_, ccl.NumberCountsTracer)
     assert np.allclose(src.tracer_.z_n, lss_data['z'])
-    assert np.allclose(src.tracer_.n, lss_data['nz'])
+    assert np.allclose(src.tracer_.n, lss_data['dndz'])
     assert np.allclose(src.tracer_.b, lss_data['params']['blah2'])
     assert np.allclose(src.tracer_.s, lss_data['params']['blah6'])
