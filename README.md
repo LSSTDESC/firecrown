@@ -1,6 +1,6 @@
-# firecrown
+# firecrown: the "c" is for "cosmology"
 
-The "c" is for "cosmology."
+[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master)
 
 ## Installation
 

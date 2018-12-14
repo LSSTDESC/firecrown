@@ -33,7 +33,7 @@ class PhotoZShiftBias(Systematic):
         source : a source object
             The source to which apply the shift.
         """
-        _nz = source.nz_interp(
+        _dndz = source.dndz_interp(
                 source.z_ - params[self.delta_z], extrapolate=False)
-        _nz[np.isnan(_nz)] = 0.0
-        source.nz_ = _nz
+        _dndz[np.isnan(_dndz)] = 0.0
+        source.dndz_ = _dndz

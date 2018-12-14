@@ -39,15 +39,13 @@ two_point:
   sources:
     src0:
       kind: WLSource
-      nz_data: pz0.csv
-      has_intrinsic_alignment: false
+      dndz_data: pz0.csv
       systematics:
         - pz_delta_0
 
     src1:
       kind: WLSource
-      nz_data: pz1.csv
-      has_intrinsic_alignment: False
+      dndz_data: pz1.csv
       systematics:
         - pz_delta_1
 

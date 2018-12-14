@@ -32,28 +32,27 @@ def wl_data(tmpdir_factory):
 
     mn = 0.25
     z = np.linspace(0, 2, 50)
-    nz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
-    df = pd.DataFrame({'z': z, 'nz': nz})
-    nz_data = os.path.join(tmpdir, 'pz.csv')
-    df.to_csv(nz_data, index=False)
+    df = pd.DataFrame({'z': z, 'dndz': dndz})
+    dndz_data = os.path.join(tmpdir, 'pz.csv')
+    df.to_csv(dndz_data, index=False)
 
     return {
         'cosmo': cosmo,
         'tmpdir': tmpdir,
         'params': params,
-        'nz_data': nz_data,
+        'dndz_data': dndz_data,
         'systematics': ['wlm'],
         'systematics_dict': {'wlm': wlm},
         'scale_': 1.05,
         'z': z,
-        'nz': nz}
+        'dndz': dndz}
 
 
 def test_wl_source_nosys(wl_data):
     src = WLSource(
-        nz_data=wl_data['nz_data'],
-        has_intrinsic_alignment=False,
+        dndz_data=wl_data['dndz_data'],
         scale=0.5)
 
     src.render(
@@ -62,20 +61,19 @@ def test_wl_source_nosys(wl_data):
         wl_data['systematics_dict'])
 
     assert np.allclose(src.z_, wl_data['z'])
-    assert np.allclose(src.nz_, wl_data['nz'])
+    assert np.allclose(src.dndz_, wl_data['dndz'])
     assert np.allclose(src.scale, 0.5)
     assert np.allclose(src.scale_, 0.5)
     assert src.systematics == []
 
-    assert isinstance(src.tracer_, ccl.ClTracerLensing)
+    assert isinstance(src.tracer_, ccl.WeakLensingTracer)
     assert np.allclose(src.tracer_.z_n, wl_data['z'])
-    assert np.allclose(src.tracer_.n, wl_data['nz'])
+    assert np.allclose(src.tracer_.n, wl_data['dndz'])
 
 
 def test_wl_source_sys(wl_data):
     src = WLSource(
-        nz_data=wl_data['nz_data'],
-        has_intrinsic_alignment=False,
+        dndz_data=wl_data['dndz_data'],
         systematics=wl_data['systematics'])
 
     src.render(
@@ -84,22 +82,21 @@ def test_wl_source_sys(wl_data):
         wl_data['systematics_dict'])
 
     assert np.allclose(src.z_, wl_data['z'])
-    assert np.allclose(src.nz_, wl_data['nz'])
+    assert np.allclose(src.dndz_, wl_data['dndz'])
     assert np.allclose(src.scale_, wl_data['scale_'])
     assert src.systematics == wl_data['systematics']
 
-    assert isinstance(src.tracer_, ccl.ClTracerLensing)
+    assert isinstance(src.tracer_, ccl.WeakLensingTracer)
     assert np.allclose(src.tracer_.z_n, wl_data['z'])
-    assert np.allclose(src.tracer_.n, wl_data['nz'])
+    assert np.allclose(src.tracer_.n, wl_data['dndz'])
 
 
 def test_wl_source_with_ia(wl_data):
     src = WLSource(
-        nz_data=wl_data['nz_data'],
-        has_intrinsic_alignment=True,
+        dndz_data=wl_data['dndz_data'],
         systematics=wl_data['systematics'],
-        f_red='blah2',
-        bias_ia='blah6')
+        red_frac='blah2',
+        ia_bias='blah6')
 
     src.render(
         wl_data['cosmo'],
@@ -107,17 +104,17 @@ def test_wl_source_with_ia(wl_data):
         wl_data['systematics_dict'])
 
     assert np.allclose(src.z_, wl_data['z'])
-    assert np.allclose(src.nz_, wl_data['nz'])
+    assert np.allclose(src.dndz_, wl_data['dndz'])
     assert np.allclose(src.scale_, wl_data['scale_'])
-    assert np.allclose(src.f_red_, wl_data['params']['blah2'])
-    assert np.shape(src.f_red_) == np.shape(src.z_)
-    assert np.allclose(src.bias_ia_, wl_data['params']['blah6'])
-    assert np.shape(src.bias_ia_) == np.shape(src.z_)
+    assert np.allclose(src.red_frac_, wl_data['params']['blah2'])
+    assert np.shape(src.red_frac_) == np.shape(src.z_)
+    assert np.allclose(src.ia_bias_, wl_data['params']['blah6'])
+    assert np.shape(src.ia_bias_) == np.shape(src.z_)
     assert src.systematics == wl_data['systematics']
 
-    assert isinstance(src.tracer_, ccl.ClTracerLensing)
+    assert isinstance(src.tracer_, ccl.WeakLensingTracer)
     assert np.allclose(src.tracer_.z_n, wl_data['z'])
-    assert np.allclose(src.tracer_.n, wl_data['nz'])
+    assert np.allclose(src.tracer_.n, wl_data['dndz'])
     assert np.allclose(src.tracer_.z_rf, wl_data['z'])
     assert np.allclose(src.tracer_.rf, wl_data['params']['blah2'])
     assert np.allclose(src.tracer_.z_ba, wl_data['z'])

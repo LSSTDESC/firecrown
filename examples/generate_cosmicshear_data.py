@@ -21,18 +21,16 @@ eps = 0.01
 tracers = []
 for i, mn in enumerate([0.25, 0.75]):
     z = np.linspace(0, 2, 50)
-    nz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
-    df = pd.DataFrame({'z': z, 'nz': nz})
+    df = pd.DataFrame({'z': z, 'dndz': dndz})
     df.to_csv(
         os.path.join(tmpdir, 'pz%d.csv' % i),
         index=False)
 
-    tracers.append(ccl.ClTracerLensing(
+    tracers.append(ccl.WeakLensingTracer(
         cosmo,
-        has_intrinsic_alignment=False,
-        z=z,
-        n=nz))
+        dndz=(z, dndz)))
 
 dv = []
 ndv = []

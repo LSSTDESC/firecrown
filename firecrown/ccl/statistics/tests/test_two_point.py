@@ -30,22 +30,18 @@ def test_two_point_some(kind, tmpdir):
     for i, mn in enumerate([0.25, 0.75]):
         sources['src%d' % i] = DummySource()
         z = np.linspace(0, 2, 50)
-        nz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+        dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
         if ('g' in kind and i == 0) or kind == 'gg':
-            sources['src%d' % i].tracer_ = ccl.ClTracerNumberCounts(
+            sources['src%d' % i].tracer_ = ccl.NumberCountsTracer(
                 cosmo,
                 has_rsd=False,
-                has_magnification=False,
-                z=z,
-                n=nz,
-                bias=np.ones_like(z) * 2.0)
+                dndz=(z, dndz),
+                bias=(z, np.ones_like(z) * 2.0))
         else:
-            sources['src%d' % i].tracer_ = ccl.ClTracerLensing(
+            sources['src%d' % i].tracer_ = ccl.WeakLensingTracer(
                 cosmo,
-                has_intrinsic_alignment=False,
-                z=z,
-                n=nz)
+                dndz=(z, dndz))
 
         sources['src%d' % i].scale_ = i / 2.0 + 1.0
 
