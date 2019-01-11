@@ -22,7 +22,7 @@ def test_mult_shear_bias_smoke():
 def test_linear_alignment_systematic_smoke():
     src = DummySource()
     src.z_ = np.linspace(0, 2.0, 10)
-    src.bias_ia_ = 30.0
+    src.ia_bias_ = 30.0
     cosmo = ccl.Cosmology(
         Omega_c=0.27,
         Omega_b=0.045,
