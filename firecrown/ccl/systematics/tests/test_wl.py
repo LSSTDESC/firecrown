@@ -44,4 +44,4 @@ def test_linear_alignment_systematic_smoke():
 
     sys.apply(cosmo, params, src)
     bias_ia = 30.0 * gf**0.2 * ((1.0 + src.z_) / (1.0 + 0.4)) ** 0.5
-    assert np.allclose(src.bias_ia_, bias_ia)
+    assert np.allclose(src.ia_bias_, bias_ia)
