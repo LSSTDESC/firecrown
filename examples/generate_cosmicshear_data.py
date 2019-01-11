@@ -20,7 +20,7 @@ eps = 0.01
 
 tracers = []
 for i, mn in enumerate([0.25, 0.75]):
-    z = np.linspace(0, 2, 50)
+    z = np.linspace(0, 2, 50) + 0.05
     dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
     df = pd.DataFrame({'z': z, 'dndz': dndz})

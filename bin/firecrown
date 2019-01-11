@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+import os.path
+import sys
+
 import uuid
 import pprint
 import click
@@ -17,6 +20,11 @@ def run(action, config, output):
     """Watch out! Here comes a firecrown!
 
     Also, run some ACTION on a CONFIG file."""
+
+    # I hate myself.
+    # we insert the working dir of the config on the path so that users
+    # can put their own models in files there
+    sys.path.insert(0, os.path.dirname(os.path.abspath(config)))
 
     analysis_id = uuid.uuid4().hex
 
