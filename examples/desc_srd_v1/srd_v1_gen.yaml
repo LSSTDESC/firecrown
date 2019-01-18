@@ -15,9 +15,10 @@ parameters:
   A0: 5.0
   red_frac: 1.0
 
-  {% for i in range(5) %}
-  bias_lens{{ i }}: 1.9
-  {% endfor %}
+  bias_lens: 1.05
+  bias_alphaz: 0.0
+  bias_z_piv: 0.75  # doesn't matter since alphaz = 0
+  bias_alphag: -1.0
 
   # photoz shifts for the lensing sources
   {% for i in range(5) %}
@@ -47,9 +48,10 @@ two_point:
     lens{{ i }}:
       kind: NumberCountsSource
       dndz_data: data/lens{{ i }}_dndz.csv
-      bias: bias_lens{{ i }}
+      bias: bias_lens
       systematics:
         - delta_z_lens{{ i }}
+        - linear_bias
     {% endfor %}
 
   systematics:
@@ -68,6 +70,12 @@ two_point:
       beta_ia: beta_ia
       Omega_b: Omega_b
       Omega_c: Omega_c
+
+    linear_bias:
+      kind: LinearBiasSystematic
+      alphaz: bias_alphaz
+      z_piv: bias_z_piv
+      alphag: bias_alphag
 
   statistics:
     {% for i in range(5) %}
@@ -94,11 +102,3 @@ two_point:
       data: data/ell_lens{{ i }}_src{{ j }}.csv
     {% endfor %}
     {% endfor %}
-
-  # likelihood:
-  #   kind: ConstGaussianLogLike
-  #   data: cov.csv
-  #   data_vector:
-  #     - cl_src0_src0
-  #     - cl_src0_src1
-  #     - cl_src1_src1

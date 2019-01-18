@@ -16,7 +16,8 @@ import pyccl
 @click.argument('action', type=str)
 @click.argument('config', type=str)
 @click.option('-o', '--output', type=str, default='.')
-def run(action, config, output):
+@click.option('-v', '--verbose', is_flag=True)
+def run(action, config, output, verbose):
     """Watch out! Here comes a firecrown!
 
     Also, run some ACTION on a CONFIG file."""
@@ -33,8 +34,8 @@ def run(action, config, output):
     print('analysis id:', analysis_id)
 
     _config, data = firecrown.parse(config)
-    print("config file:\n", pprint.pformat(_config))
-    print("data:\n", pprint.pformat(data))
+    if verbose:
+        print("rendered config file:\n", pprint.pformat(_config))
 
     if action == 'compute':
         params = {}
@@ -52,7 +53,6 @@ def run(action, config, output):
         cosmo = pyccl.Cosmology(**params)
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike)
-        print('stats:', pprint.pformat(stats))
 
     elif action == 'run-cosmosis':
         firecrown.run_cosmosis(_config, data)

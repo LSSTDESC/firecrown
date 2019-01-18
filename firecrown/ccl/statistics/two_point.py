@@ -98,7 +98,6 @@ class TwoPointStatistic(Statistic):
             default of `None` corresponds to no systematics.
         """
         self.ell_or_theta_ = self._ell_or_theta.copy()
-        self.measured_statistic_ = self._stat.copy()
 
         tracers = [sources[k].tracer_ for k in self.sources]
         self.scale_ = np.prod([sources[k].scale_ for k in self.sources])
@@ -123,3 +122,5 @@ class TwoPointStatistic(Statistic):
 
         if self._stat is None:
             self.measured_statistic_ = self.predicted_statistic_
+        else:
+            self.measured_statistic_ = self._stat.copy()

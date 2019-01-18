@@ -19,6 +19,7 @@ class LinearBiasSystematic(Systematic):
         The name of the growth dependence parameter of the linear bias.
     z_piv : str
         The name of the pivot redshift parameter for the linear bias.
+
     Methods
     -------
     apply : appaly the systematic to a source

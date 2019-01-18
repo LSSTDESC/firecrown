@@ -48,7 +48,7 @@ def make_lens_src_ell_bins(output_dir, mean_z):
                     COSMO, 1.0 / (1.0 + mean_z[lens_i])) - 0.5)
             lmax = min(lmax_lens, SRC_LMAX)
             msk = ELL_VALUES < lmax
-            df = pd.DataFrame({'l': ELL_VALUES[msk]})
+            df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
             df.to_csv(
                 os.path.join(
                     output_dir, 'ell_lens%d_src%d.csv' % (lens_i, src_j)),
@@ -61,7 +61,7 @@ def make_lens_ell_bins(output_dir, mean_z):
             LENS_KMAX * ccl.comoving_radial_distance(
                 COSMO, 1.0 / (1.0 + mean_z[i])) - 0.5)
         msk = ELL_VALUES < lmax
-        df = pd.DataFrame({'l': ELL_VALUES[msk]})
+        df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
         df.to_csv(
             os.path.join(output_dir, 'ell_lens%d_lens%d.csv' % (i, i)),
             index=False)
@@ -69,7 +69,7 @@ def make_lens_ell_bins(output_dir, mean_z):
 
 def make_src_ell_bins(output_dir):
     msk = ELL_VALUES < SRC_LMAX
-    df = pd.DataFrame({'l': ELL_VALUES[msk]})
+    df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
     for i in range(N_BINS):
         for j in range(i, N_BINS):
             df.to_csv(
