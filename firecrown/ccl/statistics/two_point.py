@@ -22,7 +22,7 @@ class TwoPointStatistic(Statistic):
     ----------
     data : str
         The path to a CSV file with the measured statistic. The columns should
-        either be {'t', 'xi'} or {'l', 'cl'}.
+        be {'ell_or_theta', 'measured_statistic'}.
     kind : str
         The kind of two-point statistic. One of
             - 'cl' : angular power spectrum
@@ -66,17 +66,14 @@ class TwoPointStatistic(Statistic):
                  ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
         self.data = data
         self.kind = kind
+
         df = pd.read_csv(self.data)
-        if self.kind == 'cl':
-            self._ell_or_theta = df['l'].values.copy()
-            if 'cl' not in df:
-                df['cl'] = np.nan
-            self._stat = df['cl'].values.copy()
+        self._ell_or_theta = df['ell_or_theta'].values.copy()
+        if 'measured_statistic' not in df:
+            self._stat = None
         else:
-            self._ell_or_theta = df['t'].values.copy()
-            if 'xi' not in df:
-                df['xi'] = np.nan
-            self._stat = df['xi'].values.copy()
+            self._stat = df['measured_statistic'].values.copy()
+
         self.sources = sources
         self.systematics = systematics or []
         self.ell_min = ell_min
@@ -123,3 +120,6 @@ class TwoPointStatistic(Statistic):
         systematics = systematics or {}
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
+
+        if self._stat is None:
+            self.measured_statistic_ = self.predicted_statistic_

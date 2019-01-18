@@ -52,14 +52,16 @@ def test_two_point_some(kind, tmpdir):
     if kind == 'cl':
         ell = np.logspace(1, 3, 10)
         cell = ccl.angular_cl(cosmo, *tracers, ell) * scale
-        pd.DataFrame({'l': ell, 'cl': cell}).to_csv(data, index=False)
+        pd.DataFrame({'ell_or_theta': ell, 'measured_statistic': cell}).to_csv(
+            data, index=False)
     else:
         theta = np.logspace(1, 2, 100)
         ell = _ell_for_xi()
         cell = ccl.angular_cl(cosmo, *tracers, ell)
         xi = ccl.correlation(
             cosmo, ell, cell, theta / 60.0, corr_type=kind) * scale
-        pd.DataFrame({'t': theta, 'xi': xi}).to_csv(data, index=False)
+        pd.DataFrame({'ell_or_theta': theta, 'measured_statistic': xi}).to_csv(
+            data, index=False)
 
     stat = TwoPointStatistic(
         data=data, kind=kind, sources=['src0', 'src1'])

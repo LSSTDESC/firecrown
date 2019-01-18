@@ -71,8 +71,8 @@ def compute_loglike(
         _theory[name] = stat.predicted_statistic_
         stats[name] = pd.DataFrame({
             'ell_or_theta': stat.ell_or_theta_,
-            'measured_statistic_': _data[name],
-            'predicted_statistic_': _theory[name]}).to_records(index=False)
+            'measured_statistic': _data[name],
+            'predicted_statistic': _theory[name]}).to_records(index=False)
 
     # compute the log-like
     if 'likelihood' in data:

@@ -51,7 +51,8 @@ def tx_data(tmpdir_factory):
             pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell)
             npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
-            df = pd.DataFrame({'l': ell, 'cl': npell})
+            df = pd.DataFrame(
+                {'ell_or_theta': ell, 'measured_statistic': npell})
             df.to_csv(
                 os.path.join(tmpdir, 'cl%d%d.csv' % (i, j)),
                 index=False)
