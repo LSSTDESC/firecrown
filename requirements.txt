@@ -4,3 +4,4 @@ pyyaml
 scipy
 click
 pandas
+jinja2

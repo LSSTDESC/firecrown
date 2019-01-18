@@ -10,3 +10,5 @@ examples/output_*
 *.hdf5
 !requirements.txt
 !dev-requirements.txt
+examples/*/output_*
+examples/output_*

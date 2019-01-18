@@ -1,12 +1,12 @@
 parameters:
   Omega_k: 0.0
-  Omega_c: 0.27
-  Omega_b: 0.045
-  h: 0.67
-  n_s: 0.96
-  A_s: 2.1e-9
+  Omega_b: 0.0492
+  Omega_c: 0.26639999999999997  # = 0.3156 - 0.0492
   w0: -1.0
   wa: 0.0
+  h: 0.6727
+  A_s: 2.12655e-9  # has sigma8 = 0.8310036
+  n_s: 0.9645
 
   # IA model
   eta_ia: 0.0
@@ -15,40 +15,51 @@ parameters:
   A0: 5.0
   red_frac: 1.0
 
-  # photoz shifts for the WL sources
-  src0_delta_z: 0.0
-  src1_delta_z: 0.0
+  {% for i in range(5) %}
+  bias_lens{{ i }}: 1.9
+  {% endfor %}
 
+  # photoz shifts for the lensing sources
+  {% for i in range(5) %}
+  src{{ i }}_delta_z: 0.0
+  {% endfor %}
+
+  # photoz shifts for the lenses
+  {% for i in range(5) %}
+  lens{{ i }}_delta_z: 0.0
+  {% endfor %}
 
 two_point:
   module: firecrown.ccl.two_point
   sources:
-    src0:
+    {% for i in range(5) %}
+    src{{ i }}:
       kind: WLSource
-      dndz_data: pz0.csv
+      dndz_data: data/src{{ i }}_dndz.csv
       ia_bias: A0
       red_frac: red_frac
       systematics:
-        - pz_delta_0
+        - delta_z_src{{ i }}
         - keb16_ia
+    {% endfor %}
 
-    src1:
-      kind: WLSource
-      dndz_data: pz1.csv
-      ia_bias: A0
-      red_frac: red_frac
+    {% for i in range(5) %}
+    lens{{ i }}:
+      kind: NumberCountsSource
+      dndz_data: data/lens{{ i }}_dndz.csv
+      bias: bias_lens{{ i }}
       systematics:
-        - pz_delta_1
-        - keb16_ia
+        - delta_z_lens{{ i }}
+    {% endfor %}
 
   systematics:
-    pz_delta_0:
+    {% for thing in ['lens', 'src'] %}
+    {% for i in range(5) %}
+    delta_z_{{ thing }}{{ i }}:
       kind: PhotoZShiftBias
-      delta_z: src0_delta_z
-
-    pz_delta_1:
-      kind: PhotoZShiftBias
-      delta_z: src1_delta_z
+      delta_z: {{ thing }}{{ i }}_delta_z
+    {% endfor %}
+    {% endfor %}
 
     keb16_ia:
       kind: srd_models.KEBNLASystematic
@@ -58,26 +69,36 @@ two_point:
       Omega_b: Omega_b
       Omega_c: Omega_c
 
-  likelihood:
-    kind: ConstGaussianLogLike
-    data: cov.csv
-    data_vector:
-      - cl_src0_src0
-      - cl_src0_src1
-      - cl_src1_src1
-
   statistics:
-    cl_src0_src0:
-      sources: ['src0', 'src0']
+    {% for i in range(5) %}
+    {% for j in range(i, 5) %}
+    cl_src{{ i }}_src{{ j }}:
+      sources: ['src{{ i }}', 'src{{ j }}']
       kind: 'cl'
-      data: cl00.csv
+      data: data/ell_src{{ i }}_src{{ j }}.csv
+    {% endfor %}
+    {% endfor %}
 
-    cl_src0_src1:
-      sources: ['src0', 'src1']
+    {% for i in range(5) %}
+    cl_lens{{ i }}_lens{{ i }}:
+      sources: ['lens{{ i }}', 'lens{{ i }}']
       kind: 'cl'
-      data: cl01.csv
+      data: data/ell_lens{{ i }}_lens{{ i }}.csv
+    {% endfor %}
 
-    cl_src1_src1:
-      sources: ['src1', 'src1']
+    {% for i in range(5) %}
+    {% for j in range(5) %}
+    cl_src{{ i }}_lens{{ j }}:
+      sources: ['src{{ i }}', 'lens{{ j }}']
       kind: 'cl'
-      data: cl11.csv
+      data: data/ell_lens{{ i }}_src{{ j }}.csv
+    {% endfor %}
+    {% endfor %}
+
+  # likelihood:
+  #   kind: ConstGaussianLogLike
+  #   data: cov.csv
+  #   data_vector:
+  #     - cl_src0_src0
+  #     - cl_src0_src1
+  #     - cl_src1_src1

@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 
 from .parser import (
@@ -24,7 +25,8 @@ def parse_config(analysis):
     new_keys['statistics'] = _parse_two_point_statistics(
         analysis['statistics'])
     new_keys['sources'] = _parse_sources(analysis['sources'])
-    new_keys['likelihood'] = _parse_likelihood(analysis['likelihood'])
+    if 'likelihood' in analysis:
+        new_keys['likelihood'] = _parse_likelihood(analysis['likelihood'])
     new_keys['systematics'] = _parse_systematics(analysis['systematics'])
 
     return new_keys
@@ -73,6 +75,9 @@ def compute_loglike(
             'predicted_statistic_': _theory[name]}).to_records(index=False)
 
     # compute the log-like
-    loglike = data['likelihood'].compute(_data, _theory)
+    if 'likelihood' in data:
+        loglike = data['likelihood'].compute(_data, _theory)
+    else:
+        loglike = np.nan
 
     return loglike, stats

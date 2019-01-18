@@ -1,5 +1,6 @@
 import importlib
 import yaml
+import jinja2
 
 
 def parse(filename):
@@ -20,10 +21,9 @@ def parse(filename):
     """
 
     with open(filename, 'r') as fp:
-        config = yaml.load(fp)
-
-    with open(filename, 'r') as fp:
-        data = yaml.load(fp)
+        config_str = jinja2.Template(fp.read()).render()
+    config = yaml.load(config_str)
+    data = yaml.load(config_str)
 
     analyses = list(
         set(list(data.keys())) -

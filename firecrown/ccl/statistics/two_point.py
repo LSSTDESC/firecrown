@@ -69,9 +69,13 @@ class TwoPointStatistic(Statistic):
         df = pd.read_csv(self.data)
         if self.kind == 'cl':
             self._ell_or_theta = df['l'].values.copy()
+            if 'cl' not in df:
+                df['cl'] = np.nan
             self._stat = df['cl'].values.copy()
         else:
             self._ell_or_theta = df['t'].values.copy()
+            if 'xi' not in df:
+                df['xi'] = np.nan
             self._stat = df['xi'].values.copy()
         self.sources = sources
         self.systematics = systematics or []

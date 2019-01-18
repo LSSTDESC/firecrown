@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 import scipy.integrate
 
@@ -61,6 +62,40 @@ def _lf_all(L, z, phi0=9.4e-3, Mstar=-20.70, alpha=-1.23, P=-0.30, Q=1.23):
     return _schechter_lf(L, z, phi0, Mstar, alpha, P, Q)
 
 
+@functools.lru_cache(maxsize=1024)
+def _compute_red_frac_z_Az(z, cosmo, beta_ia, lpiv_beta_ia):
+    low_lim = _mag_to_lum(_abs_mag_lim(
+        MLIM,
+        # FIXME: do I need a factor of little h here?
+        ccl.luminosity_distance(cosmo, 1 / (1.0 + z)),
+        # FIXME: compute the proper k+e correction
+        0.0))
+    up_lim = np.inf
+
+    # the factors below are from eqns 24 and 25 of KEB16
+    red_intg = scipy.integrate.quad(
+        _lf_red,
+        low_lim,
+        up_lim,
+        args=(z,))
+
+    all_intg = scipy.integrate.quad(
+        _lf_all,
+        low_lim,
+        up_lim,
+        args=(z,))
+
+    def _func(L):
+        return _lf_red(L, z) * np.power(L / lpiv_beta_ia, beta_ia)
+
+    red_wgt_intg = scipy.integrate.quad(
+        _func,
+        low_lim,
+        up_lim)
+
+    return red_intg[0] / all_intg[0], red_wgt_intg[0] / red_intg[0]
+
+
 class KEBNLASystematic(Systematic):
     """KEB NLA systematic.
 
@@ -115,8 +150,8 @@ class KEBNLASystematic(Systematic):
         red_frac = []
         ia_bias = []
         for z in source.z_:
-            rf, az = self._compute_red_frac_z_Az(
-                z, cosmo, params[self.beta_ia])
+            rf, az = _compute_red_frac_z_Az(
+                z, cosmo, params[self.beta_ia], self._lpiv_beta_ia)
             red_frac.append(rf)
 
             # eqn 7 of KEB16 without A0 (already in ia_bias)
@@ -139,35 +174,3 @@ class KEBNLASystematic(Systematic):
 
         source.ia_bias_ *= np.array(ia_bias)
         source.red_frac_ *= np.array(red_frac)
-
-    def _compute_red_frac_z_Az(self, z, cosmo, beta_ia):
-        low_lim = _mag_to_lum(_abs_mag_lim(
-            MLIM,
-            # FIXME: do I need a factor of little h here?
-            ccl.luminosity_distance(cosmo, 1 / (1.0 + z)),
-            # FIXME: compute the proper k+e correction
-            0.0))
-        up_lim = np.inf
-
-        # the factors below are from eqns 24 and 25 of KEB16
-        red_intg = scipy.integrate.quad(
-            _lf_red,
-            low_lim,
-            up_lim,
-            args=(z,))
-
-        all_intg = scipy.integrate.quad(
-            _lf_all,
-            low_lim,
-            up_lim,
-            args=(z,))
-
-        def _func(L):
-            return _lf_red(L, z) * np.power(L / self._lpiv_beta_ia, beta_ia)
-
-        red_wgt_intg = scipy.integrate.quad(
-            _func,
-            low_lim,
-            up_lim)
-
-        return red_intg[0] / all_intg[0], red_wgt_intg[0] / red_intg[0]
