@@ -22,11 +22,11 @@ jobs:
           command: |
             # basic deps
             sudo apt-get update && sudo apt-get install -y gcc g++ gfortran byacc libhdf5-serial-dev
-            
+
             # install cmake
             wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
             sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir
-            
+
             # now GSL
             if [ ! -d "./gsl-2.5" ]; then
               wget ftp://ftp.gnu.org/gnu/gsl/gsl-2.5.tar.gz
@@ -39,7 +39,7 @@ jobs:
             cd ./gsl-2.5
             sudo make install
             cd ..
-            
+
             # now swig
             if [ ! -d "./swig-3.0.12" ]; then
               wget https://sourceforge.net/projects/swig/files/swig/swig-3.0.12/swig-3.0.12.tar.gz
@@ -52,7 +52,7 @@ jobs:
             cd ./swig-3.0.12
             sudo make install
             cd ..
-            
+
             # and python
             python3 -m venv venv
             . venv/bin/activate
@@ -89,6 +89,6 @@ jobs:
           name: cosmic-shear-example
           command: |
             . venv/bin/activate
-            cd examples
+            cd examples/cosmicshear
             python generate_cosmicshear_data.py
             firecrown compute cosmicshear.yaml
