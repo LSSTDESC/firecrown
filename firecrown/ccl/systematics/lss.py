@@ -48,6 +48,7 @@ class LinearBiasSystematic(Systematic):
                 cosmo, 1.0 / (1.0 + source.z_)) ** params[self.alphag]
         source.bias_ *= pref
 
+
 class MagnificationBias(Systematic):
     """Magnification bias systematic.
 
@@ -78,10 +79,12 @@ class MagnificationBias(Systematic):
         source : a source object
             The source to which apply the shear bias.
         """
-        b = np.array([[0.44827, 0.0, 0.0], [-1, 1, 1], [0.05617, 0.19658, 0.18107],
-        [0.07704, 3.31359, 3.05213], [-11.3768, -2.5028, -2.5027]])
+        b = np.array([[0.44827, 0.0, 0.0], [-1, 1, 1],
+                      [0.05617, 0.19658, 0.18107],
+                      [0.07704, 3.31359, 3.05213],
+                      [-11.3768, -2.5028, -2.5027]])
         a = b[0] + b[1] * np.power(b[2] * params[self.r_lim] - b[3], b[4])
         z = source.z_
-        z_pow = [np.ones_like(z), z, z*z]
+        z_pow = np.array([np.ones_like(z), z, z*z])
         pref = a @ z_pow
         source.mag_bias_ = 0.4 * pref
