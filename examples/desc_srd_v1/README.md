@@ -11,5 +11,17 @@ from this directory.
 Then you can type
 
 ```bash
-firecrown compute srd_v1.yaml
+$ generate_srd_data.py
+$ firecrown compute srd_v1_gen.yaml
+$ python move_gen_data.py
 ```
+
+to build the example data.
+
+Finally, type
+
+```bash
+$ firecrown compute srd_v1_model.yaml
+```
+
+to compute the model.

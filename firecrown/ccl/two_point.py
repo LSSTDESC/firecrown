@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from .parser import (
@@ -78,6 +77,6 @@ def compute_loglike(
     if 'likelihood' in data:
         loglike = data['likelihood'].compute(_data, _theory)
     else:
-        loglike = np.nan
+        loglike = None
 
     return loglike, stats

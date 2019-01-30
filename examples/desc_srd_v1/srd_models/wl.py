@@ -11,6 +11,10 @@ C1RHOC = 0.0134
 # constant from KEB16, table 1, LSST row
 MLIM = 27.0
 
+# value used to clip large luminosities
+# also serves as an upper integration limit
+MAX_LNL = 500  # exp(500) ~ 1e217
+
 
 def _mag_to_lum(mag):
     """convert a magnitude to a luminosity
@@ -38,39 +42,42 @@ def _schechter_lf(L, z, phi0, Mstar, alpha, P, Q):
     Lstarz = _mag_to_lum(Mstarz)
     Lrat = L / Lstarz
     res = phiz * np.power(Lrat, alpha) * np.exp(-1.0 * Lrat)
-    assert res >= 0, res
+    assert np.all(res >= 0), res
     return res
 
 
-def _lf_red(L, z, phi0=1.1e-2, Mstar=-20.34, alpha=-0.57, P=-1.15, Q=1.20):
+def _lf_red(lnL, z, phi0=1.1e-2, Mstar=-20.34, alpha=-0.57, P=-1.2, Q=1.8):
     """Red galaxy luminosity function.
 
     See KEB16, eqns 21-23
 
     This function uses the "DEEP2" parameters from table 2 of KEB16.
     """
-    return _schechter_lf(L, z, phi0, Mstar, alpha, P, Q)
+    L = np.exp(np.clip(lnL, None, MAX_LNL))
+    # factor of L at the end is for doing the integral in lnL
+    return _schechter_lf(L, z, phi0, Mstar, alpha, P, Q) * L
 
 
-def _lf_all(L, z, phi0=9.4e-3, Mstar=-20.70, alpha=-1.23, P=-0.30, Q=1.23):
+def _lf_all(lnL, z, phi0=9.4e-3, Mstar=-20.70, alpha=-1.23, P=1.8, Q=0.7):
     """All galaxy luminosity function.
 
     See KEB16, eqns 21-23
 
     This function uses the "DEEP2" parameters from table 2 of KEB16.
     """
-    return _schechter_lf(L, z, phi0, Mstar, alpha, P, Q)
+    L = np.exp(np.clip(lnL, None, MAX_LNL))
+    # factor of L at the end is for doing the integral in lnL
+    return _schechter_lf(L, z, phi0, Mstar, alpha, P, Q) * L
 
 
 @functools.lru_cache(maxsize=1024)
 def _compute_red_frac_z_Az(z, cosmo, beta_ia, lpiv_beta_ia):
-    low_lim = _mag_to_lum(_abs_mag_lim(
+    low_lim = np.log(_mag_to_lum(_abs_mag_lim(
         MLIM,
-        # FIXME: do I need a factor of little h here?
         ccl.luminosity_distance(cosmo, 1 / (1.0 + z)),
         # FIXME: compute the proper k+e correction
-        0.0))
-    up_lim = np.inf
+        0.0)))
+    up_lim = MAX_LNL
 
     # the factors below are from eqns 24 and 25 of KEB16
     red_intg = scipy.integrate.quad(
@@ -85,8 +92,10 @@ def _compute_red_frac_z_Az(z, cosmo, beta_ia, lpiv_beta_ia):
         up_lim,
         args=(z,))
 
-    def _func(L):
-        return _lf_red(L, z) * np.power(L / lpiv_beta_ia, beta_ia)
+    def _func(lnL):
+        L = np.exp(np.clip(lnL, None, MAX_LNL))
+        # factor of L at the end is for doing the integral in lnL
+        return _lf_red(lnL, z) * np.power(L / lpiv_beta_ia, beta_ia) * L
 
     red_wgt_intg = scipy.integrate.quad(
         _func,
