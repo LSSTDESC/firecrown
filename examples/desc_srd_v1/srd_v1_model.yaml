@@ -31,6 +31,32 @@ parameters:
   lens{{ i }}_delta_z: 0.0
   {% endfor %}
 
+priors:
+  module: srd_models.priors
+  A0:
+    kind: norm
+    loc: 5.0
+    scale: 3.9
+  beta_ia:
+    kind: norm
+    loc: 1.0
+    scale: 1.6
+  eta_ia:
+    kind: norm
+    loc: 0.0
+    scale: 2.3
+  eta_ia_highz:
+    kind: norm
+    loc: 0.0
+    scale: 0.8
+  {% for i in range(5) %}
+  bias_lens{{ i }}:
+    kind: norm
+    loc: 1.9
+    scale: 0.9
+  {% endfor %}
+
+
 two_point:
   module: firecrown.ccl.two_point
   sources:
