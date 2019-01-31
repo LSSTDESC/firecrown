@@ -14,6 +14,7 @@ srd_priors:
     scale: 0.5
 ```
 """
+import copy
 import scipy.stats
 
 
@@ -30,7 +31,7 @@ def parse_config(analysis):
     data : dict
         The dictionary.
     """
-    return analysis
+    return copy.deepcopy(analysis)
 
 
 def compute_loglike(
@@ -65,4 +66,4 @@ def compute_loglike(
             dist = getattr(scipy.stats, data[param]['kind'])
             keys = {k: v for k, v in data[param].items() if k != 'kind'}
             loglike += dist.logpdf(parameters[param], **keys)
-    return loglike
+    return loglike, {}
