@@ -183,3 +183,50 @@ class KEBNLASystematic(Systematic):
 
         source.ia_bias_ *= np.array(ia_bias)
         source.red_frac_ *= np.array(red_frac)
+
+
+class DESCSRDv1MultiplicativeShearBias(Systematic):
+    """DESC SRD v1 Multiplicative shear bias systematic.
+
+    This systematic adjusts the `scale_` of a source by `(1 + m)`
+    where `m` depends on redshift according to `(2z - zmax) / (zmax)`.
+
+    In this version we average `m` over the source dndz. This procedure
+    is not exactly correct, but the SRD document didn't say what they
+    did either, so shrug.
+
+    Parameters
+    ----------
+    m : str
+        The name of the multiplicative bias parameter.
+
+    Methods
+    -------
+    apply : appaly the systematic to a source
+    """
+    def __init__(self, m):
+        self.m = m
+        self._zmax = 1.33  # set in stone now and forever
+
+    def apply(self, cosmo, params, source):
+        """Apply multiplicative shear bias to a source. The `scale_` of the
+        source is multiplied by `(1 + m)` where `m` depends on redshift
+        according to `(2z - zmax) / (zmax)`.
+
+        In this version we average `m` over the source dndz. This procedure
+        is not exactly correct, but the SRD document didn't say what they
+        did either, so shrug.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        source : a source object
+            The source to which apply the shear bias.
+        """
+        nrm = np.sum(source.dndz_)
+        zfac = np.sum(
+            (2.0 * source.z_ - self._zmax) / self._zmax * source.dndz_) / nrm
+        source.scale_ *= (1.0 + params[self.m] * zfac)

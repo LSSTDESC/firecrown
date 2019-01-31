@@ -15,6 +15,8 @@ parameters:
   A0: 5.0
   red_frac: 1.0
 
+  mult_bias: 0.0
+
   {% for i in range(5) %}
   bias_lens{{ i }}: 1.9
   {% endfor %}
@@ -41,6 +43,7 @@ two_point:
       systematics:
         - delta_z_src{{ i }}
         - keb16_ia
+        - shear_bias
     {% endfor %}
 
     {% for i in range(5) %}
@@ -68,6 +71,10 @@ two_point:
       beta_ia: beta_ia
       Omega_b: Omega_b
       Omega_c: Omega_c
+
+    shear_bias:
+      kind: srd_models.DESCSRDv1MultiplicativeShearBias
+      m: mult_bias
 
   statistics:
     {% for i in range(5) %}

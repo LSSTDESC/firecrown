@@ -15,6 +15,8 @@ parameters:
   A0: 5.0
   red_frac: 1.0
 
+  mult_bias: 0.0
+
   bias_lens: 1.05
   bias_alphaz: 0.0
   bias_z_piv: 0.75  # doesn't matter since alphaz = 0
@@ -42,6 +44,7 @@ two_point:
       systematics:
         - delta_z_src{{ i }}
         - keb16_ia
+        - shear_bias
     {% endfor %}
 
     {% for i in range(5) %}
@@ -76,6 +79,10 @@ two_point:
       alphaz: bias_alphaz
       z_piv: bias_z_piv
       alphag: bias_alphag
+
+    shear_bias:
+      kind: srd_models.DESCSRDv1MultiplicativeShearBias
+      m: mult_bias
 
   statistics:
     {% for i in range(5) %}

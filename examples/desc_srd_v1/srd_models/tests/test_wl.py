@@ -1,7 +1,9 @@
 import numpy as np
 import pyccl as ccl
 
-from ..wl import _mag_to_lum, _compute_red_frac_z_Az, KEBNLASystematic
+from ..wl import (
+    _mag_to_lum, _compute_red_frac_z_Az, KEBNLASystematic,
+    DESCSRDv1MultiplicativeShearBias)
 
 COSMO = ccl.Cosmology(
     Omega_b=0.0492,
@@ -15,6 +17,23 @@ COSMO = ccl.Cosmology(
 
 class DummySource(object):
     pass
+
+
+def test_mult_shear_bias():
+    src = DummySource()
+    src.z_ = np.linspace(0.0, 1.0, 100)
+    src.dndz_ = src.z_**2 / 10 + src.z_
+    src.scale_ = 1.0
+    m = 0.05
+    params = {'blah': m}
+
+    nrm = np.sum(src.dndz_)
+    fac = np.sum(src.dndz_ * (2 * src.z_ - 1.33) / 1.33) / nrm
+
+    sys = DESCSRDv1MultiplicativeShearBias(m='blah')
+    sys.apply(None, params, src)
+
+    assert np.allclose(src.scale_, 1.0 + fac * 0.05)
 
 
 def test_compute_red_frac_z_Az_redfrac():
@@ -34,7 +53,7 @@ def test_compute_red_frac_z_Az_redfrac():
     assert np.all(rf[msk] < 0.01)
 
 
-def test_mult_shear_bias_smoke():
+def test_ia_bias():
     src = DummySource()
     src.z_ = np.linspace(0.05, 3.55, 10)
     src.ia_bias_ = np.ones_like(src.z_)
