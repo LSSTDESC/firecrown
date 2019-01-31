@@ -31,6 +31,8 @@ def parse_config(analysis):
     data : dict
         The dictionary.
     """
+    # we need a copy here since we are not promised that the input analysis
+    # dict will not be changed
     return copy.deepcopy(analysis)
 
 
