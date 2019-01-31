@@ -121,7 +121,7 @@ my_loglike_term:
 The `parse_config` function should have the following signature
 
 ```python
-def parse_config((analysis):
+def parse_config(analysis):
     """Parse an analysis.
 
     Parameters
