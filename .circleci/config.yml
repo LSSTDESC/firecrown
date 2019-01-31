@@ -94,7 +94,7 @@ jobs:
             firecrown compute cosmicshear.yaml
 
       - run:
-          name: cosmic-shear-example
+          name: desc-srd-v1
           command: |
             . venv/bin/activate
             cd examples/desc_srd_v1
