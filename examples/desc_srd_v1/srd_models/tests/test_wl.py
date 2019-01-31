@@ -40,7 +40,9 @@ def test_compute_red_frac_z_Az_redfrac():
     z = np.linspace(0.05, 3.55, 10)
     lpiv_beta_ia = _mag_to_lum(-22)
     beta_ia = 1.0
-    vals = [_compute_red_frac_z_Az(_z, COSMO, beta_ia, lpiv_beta_ia)
+    vals = [_compute_red_frac_z_Az(
+                _z, ccl.luminosity_distance(COSMO, 1 / (1.0 + _z)),
+                beta_ia, lpiv_beta_ia)
             for _z in z]
     rf, _ = zip(*vals)
     rf = np.array(rf)
@@ -66,7 +68,9 @@ def test_ia_bias():
     Omega_c = 0.25
 
     lpiv_beta_ia = _mag_to_lum(-22)
-    vals = [_compute_red_frac_z_Az(_z, COSMO, beta_ia, lpiv_beta_ia)
+    vals = [_compute_red_frac_z_Az(
+                _z, ccl.luminosity_distance(COSMO, 1 / (1.0 + _z)),
+                beta_ia, lpiv_beta_ia)
             for _z in src.z_]
     rf, az = zip(*vals)
 

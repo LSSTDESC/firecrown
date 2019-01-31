@@ -71,10 +71,10 @@ def _lf_all(lnL, z, phi0=9.4e-3, Mstar=-20.70, alpha=-1.23, P=1.8, Q=0.7):
 
 
 @functools.lru_cache(maxsize=1024)
-def _compute_red_frac_z_Az(z, cosmo, beta_ia, lpiv_beta_ia):
+def _compute_red_frac_z_Az(z, dlum, beta_ia, lpiv_beta_ia):
     low_lim = np.log(_mag_to_lum(_abs_mag_lim(
         MLIM,
-        ccl.luminosity_distance(cosmo, 1 / (1.0 + z)),
+        dlum,
         # FIXME: compute the proper k+e correction
         0.0)))
     up_lim = MAX_LNL
@@ -159,8 +159,9 @@ class KEBNLASystematic(Systematic):
         red_frac = []
         ia_bias = []
         for z in source.z_:
+            dlum = ccl.luminosity_distance(cosmo, 1 / (1.0 + z))
             rf, az = _compute_red_frac_z_Az(
-                z, cosmo, params[self.beta_ia], self._lpiv_beta_ia)
+                z, dlum, params[self.beta_ia], self._lpiv_beta_ia)
             red_frac.append(rf)
 
             # eqn 7 of KEB16 without A0 (already in ia_bias)
