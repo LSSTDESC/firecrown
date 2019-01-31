@@ -92,3 +92,11 @@ jobs:
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
             firecrown compute cosmicshear.yaml
+
+      - run:
+          name: cosmic-shear-example
+          command: |
+            . venv/bin/activate
+            cd examples/desc_srd_v1
+            pip install -e .
+            pytest -vv srd_models
