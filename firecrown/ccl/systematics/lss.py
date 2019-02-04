@@ -3,7 +3,7 @@ import numpy as np
 
 from ..core import Systematic
 
-__all__ = ['LinearBiasSystematic']
+__all__ = ['LinearBiasSystematic', 'MagnificationBias']
 
 
 class LinearBiasSystematic(Systematic):
@@ -53,22 +53,29 @@ class MagnificationBias(Systematic):
     """Magnification bias systematic.
 
     This systematic adds a magnification bias model for galaxy number contrast
-    following Joachimi and Bridle (2010), arXiv:0911.2454 (Appendix C).
+    following Joachimi & Bridle (2010), arXiv:0911.2454.
 
     Parameters
     ----------
     r_lim : str
         The name of the limiting magnitude in r band filter.
+    Sig_c, eta, z_c, z_m : str
+        The name of the fitting parameters in Joachimi & Bridle (2010) equation
+    (C.1).
 
     Methods
     -------
     apply : appaly the systematic to a source
     """
-    def __init__(self, r_lim):
+    def __init__(self, r_lim, Sig_c, eta, z_c, z_m):
         self.r_lim = r_lim
+        self.Sig_c = Sig_c
+        self.eta = eta
+        self.z_c = z_c
+        self.z_m = z_m
 
     def apply(self, cosmo, params, source):
-        """Apply a linear alignment systematic.
+        """Apply a magnification bias systematic.
 
         Parameters
         ----------
@@ -79,12 +86,10 @@ class MagnificationBias(Systematic):
         source : a source object
             The source to which apply the shear bias.
         """
-        b = np.array([[0.44827, 0.0, 0.0], [-1, 1, 1],
-                      [0.05617, 0.19658, 0.18107],
-                      [0.07704, 3.31359, 3.05213],
-                      [-11.3768, -2.5028, -2.5027]])
-        a = b[0] + b[1] * np.power(b[2] * params[self.r_lim] - b[3], b[4])
+
+        z_bar = params[self.z_c] + params[self.z_m] * (params[self.r_lim] - 24)
         z = source.z_
-        z_pow = np.array([np.ones_like(z), z, z*z])
-        pref = a @ z_pow
-        source.mag_bias_ = 0.4 * pref
+        s = (
+            params[self.eta] / params[self.r_lim] - 3 * params[self.z_m] /
+            z_bar + 1.5 * params[self.z_m] * np.power(z / z_bar, 1.5) / z_bar)
+        source.mag_bias_ = s / np.log(10)
