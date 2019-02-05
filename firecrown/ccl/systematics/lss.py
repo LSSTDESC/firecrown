@@ -3,7 +3,7 @@ import numpy as np
 
 from ..core import Systematic
 
-__all__ = ['LinearBiasSystematic', 'MagnificationBias']
+__all__ = ['LinearBiasSystematic', 'MagnificationBiasSystematic']
 
 
 class LinearBiasSystematic(Systematic):
@@ -49,7 +49,7 @@ class LinearBiasSystematic(Systematic):
         source.bias_ *= pref
 
 
-class MagnificationBias(Systematic):
+class MagnificationBiasSystematic(Systematic):
     """Magnification bias systematic.
 
     This systematic adds a magnification bias model for galaxy number contrast
@@ -59,17 +59,17 @@ class MagnificationBias(Systematic):
     ----------
     r_lim : str
         The name of the limiting magnitude in r band filter.
-    Sig_c, eta, z_c, z_m : str
+    sig_c, eta, z_c, z_m : str
         The name of the fitting parameters in Joachimi & Bridle (2010) equation
-    (C.1).
+        (C.1).
 
     Methods
     -------
     apply : appaly the systematic to a source
     """
-    def __init__(self, r_lim, Sig_c, eta, z_c, z_m):
+    def __init__(self, r_lim, sig_c, eta, z_c, z_m):
         self.r_lim = r_lim
-        self.Sig_c = Sig_c
+        self.sig_c = sig_c
         self.eta = eta
         self.z_c = z_c
         self.z_m = z_m
@@ -89,7 +89,9 @@ class MagnificationBias(Systematic):
 
         z_bar = params[self.z_c] + params[self.z_m] * (params[self.r_lim] - 24)
         z = source.z_
+        # The slope of log(n_tot(z,r_lim)) with respect to r_lim
+        # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
         s = (
             params[self.eta] / params[self.r_lim] - 3 * params[self.z_m] /
             z_bar + 1.5 * params[self.z_m] * np.power(z / z_bar, 1.5) / z_bar)
-        source.mag_bias_ = s / np.log(10)
+        source.mag_bias_ *= s / np.log(10)
