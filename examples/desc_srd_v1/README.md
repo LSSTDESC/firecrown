@@ -11,9 +11,12 @@ from this directory.
 Then you can type
 
 ```bash
-$ generate_srd_data.py
+$ python generate_srd_data.py
 $ firecrown compute srd_v1_gen.yaml
-$ python move_gen_data.py
+Watch out! Here comes a firecrown!
+analysis id: <analysis id>
+loglike: None
+$ python move_gen_data.py <analysis id>
 ```
 
 to build the example data.

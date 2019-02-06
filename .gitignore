@@ -12,3 +12,4 @@ examples/output_*
 !dev-requirements.txt
 examples/*/output_*
 examples/output_*
+examples/desc_srd_v1/LSST_DESC_SRD_v1_release
