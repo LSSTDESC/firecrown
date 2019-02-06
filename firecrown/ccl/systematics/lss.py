@@ -22,7 +22,7 @@ class LinearBiasSystematic(Systematic):
         The name of the pivot redshift parameter for the linear bias.
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self, alphaz, alphag, z_piv):
         self.alphaz = alphaz
@@ -65,7 +65,7 @@ class MagnificationBiasSystematic(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self, r_lim, sig_c, eta, z_c, z_m):
         self.r_lim = r_lim

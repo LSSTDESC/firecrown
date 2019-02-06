@@ -52,8 +52,8 @@ def test_magnification_bias_systematic_smoke():
         '__r_lim': 25.5,
         '__sig_c': 9.83,
         '__eta': 19.0,
-        '__z_c':0.39,
-        '__z_m':0.055}
+        '__z_c': 0.39,
+        '__z_m': 0.055}
     sys = MagnificationBiasSystematic(
         r_lim='__r_lim',
         sig_c='__sig_c',
