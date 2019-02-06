@@ -4,6 +4,7 @@ import scipy.integrate
 
 import pyccl as ccl
 from firecrown.ccl.core import Systematic
+from .kecorrections import kcorr, ecorr
 
 # constant from KEB16, near eqn 7
 C1RHOC = 0.0134
@@ -75,8 +76,7 @@ def _compute_red_frac_z_Az(z, dlum, beta_ia, lpiv_beta_ia):
     low_lim = np.log(_mag_to_lum(_abs_mag_lim(
         MLIM,
         dlum,
-        # FIXME: compute the proper k+e correction
-        0.0)))
+        float(kcorr(z) + ecorr(z)))))
     up_lim = MAX_LNL
 
     # the factors below are from eqns 24 and 25 of KEB16
