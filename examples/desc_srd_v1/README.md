@@ -1,4 +1,4 @@
-# DESC SRC v1 Models
+# DESC SRD v1 Models
 
 To run this example, first type
 
