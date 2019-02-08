@@ -32,7 +32,7 @@ directly in `examples/des_y1_3x2pt/des_data`. You do not have to make them
 yourself.
 
 To generate the `firecrown` inputs, first download the DES Y1 3x2pt
-data products (here)[http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits].
+data products [here](http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits).
 
 Then run the script
 
