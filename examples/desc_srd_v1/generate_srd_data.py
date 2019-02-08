@@ -71,6 +71,7 @@ if os.path.exists(cov_file):
     mask = mask[:n2pt]
     cumsum_mask = np.cumsum(mask) - 1
     cov = cov[:n2pt, :n2pt]
+    datav = datav[:n2pt]
 
     cor = np.zeros_like(cov)
     for i in range(cov.shape[0]):
@@ -78,7 +79,7 @@ if os.path.exists(cov_file):
             if cov[i, i] * cov[j, j] > 0:
                 cor[i, j] = cov[i, j] / np.sqrt(cov[i, i] * cov[j, j])
 
-    with open('data_model/cov.csv', 'w') as fp:
+    with open('srd_data/Y1_3x2pt_clusterN_clusterWL_cov.csv', 'w') as fp:
         fp.write('i,j,cov\n')
         for _i in range(cov.shape[0]):
             for _j in range(cov.shape[1]):
@@ -86,3 +87,8 @@ if os.path.exists(cov_file):
                     i = cumsum_mask[_i]
                     j = cumsum_mask[_j]
                     fp.write('%d,%d,%.16e\n' % (i, j, cov[_i, _j]))
+
+    with open('srd_data/Y1_3x2pt_clusterN_clusterWL_fid.csv', 'w') as fp:
+        fp.write('i,val\n')
+        for _i in range(datav.shape[0]):
+            fp.write('%d,%.16e\n' % (_i, datav[_i, 1]))

@@ -2,6 +2,8 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.integrate
+import scipy.interpolate
+
 import pyccl as ccl
 
 N_BINS = 5
@@ -41,6 +43,7 @@ COSMO = ccl.Cosmology(
 
 
 def make_lens_src_ell_bins(output_dir, mean_z):
+    # here we have to combine the small-scale cuts and the linear bias cuts
     for lens_i in range(N_BINS):
         for src_j in range(N_BINS):
             lmax_lens = (
@@ -56,6 +59,8 @@ def make_lens_src_ell_bins(output_dir, mean_z):
 
 
 def make_lens_ell_bins(output_dir, mean_z):
+    # these cuts make sure we are in the linear bias regime for the
+    # given redshift distribution
     for i in range(N_BINS):
         lmax = (
             LENS_KMAX * ccl.comoving_radial_distance(
@@ -68,6 +73,8 @@ def make_lens_ell_bins(output_dir, mean_z):
 
 
 def make_src_ell_bins(output_dir):
+    # we cut the fiducial binning below SRC_LMAX to account for baryons
+    # and general small-scale problems
     msk = ELL_VALUES < SRC_LMAX
     df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
     for i in range(N_BINS):
@@ -86,11 +93,7 @@ def make_lens_z_bins(output_dir):
         _zmin = i * dz + zmin
         _zmax = _zmin + dz
 
-        z, dndz = _make_pz(
-            _zmin,
-            _zmax,
-            _pz_lens,
-            _sigmaz_lens)
+        z, dndz = _make_pz(_zmin, _zmax, _pz_lens, _sigmaz_lens)
 
         msk = dndz > 0
         df = pd.DataFrame({'z': z[msk], 'dndz': dndz[msk]})
@@ -106,22 +109,26 @@ def _sigmaz_lens(z):
 
 
 def make_src_z_bins(output_dir):
-    zmin = 0.2
-    zmax = 1.2
-    dz = (zmax - zmin) / N_BINS
+    # we are making equal number density bins here
+    # idea is to invert the cumulative dndz and then find the
+    # redshifts that divide the distribution equally
+    zarr = np.linspace(0, 5.0, 10000)
+    dndz_true = _pz_src(zarr)
+    cuml_dndz_true = np.cumsum(dndz_true / np.sum(dndz_true))
+    interp = scipy.interpolate.interp1d(
+        cuml_dndz_true, zarr,
+        fill_value='extrapolate', kind='cubic')
+    z_cutoffs = interp(np.linspace(0, 1, N_BINS+1))
+    z_cutoffs[-1] = np.inf
 
+    # the SRD convolves the photoz scatter into the "true" distribution in
+    # order to define the redshift distribution of each bin. As stated there,
+    # this is NOT correct but easier to implememt.
     for i in range(N_BINS):
-        _zmin = i * dz + zmin
-        _zmax = _zmin + dz
+        _zmin = z_cutoffs[i]
+        _zmax = z_cutoffs[i+1]
 
-        if i == N_BINS-1:
-            _zmax = np.inf
-
-        z, dndz = _make_pz(
-            _zmin,
-            _zmax,
-            _pz_src,
-            _sigmaz_src)
+        z, dndz = _make_pz(_zmin, _zmax, _pz_src, _sigmaz_src)
 
         msk = dndz > 0
         df = pd.DataFrame({'z': z[msk], 'dndz': dndz[msk]})
@@ -137,6 +144,9 @@ def _sigmaz_src(z):
 
 
 def _make_pz(z_true_min, z_true_max, _pz, _sigmaz, n_z=1000):
+    """Makes a p(z) by convolving some scatter into a "true" redshift
+    distribution in some range (z_true_min, z_true_max).
+    """
     z_obs = np.linspace(0.0, 4.0, n_z)
     dz_obs = z_obs[1] - z_obs[0]
     z_obs += dz_obs

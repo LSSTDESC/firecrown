@@ -6,7 +6,7 @@ __all__ = ['LinearBiasSystematic']
 
 
 class LinearBiasSystematic(Systematic):
-    """Linear alignment systematic.
+    """Linear bias systematic.
 
     This systematic adds a linear bias model which varies with redshift and
     the growth function.
@@ -22,7 +22,7 @@ class LinearBiasSystematic(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self, alphaz, alphag, z_piv):
         self.alphaz = alphaz

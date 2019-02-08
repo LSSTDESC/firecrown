@@ -128,7 +128,7 @@ two_point:
 
   likelihood:
     kind: ConstGaussianLogLike
-    data: data_model/cov.csv
+    data: srd_data/Y1_3x2pt_clusterN_clusterWL_cov.csv
     data_vector:
     {% for i in range(5) %}
     {% for j in range(i, 5) %}

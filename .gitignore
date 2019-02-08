@@ -4,6 +4,7 @@ dist/
 build/
 __pycache__/
 examples/output_*
+examples/*/.ipynb_checkpoints/*
 
 *.csv
 *.txt

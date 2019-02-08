@@ -130,7 +130,7 @@ class KEBNLASystematic(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self, eta_ia, eta_ia_highz, beta_ia, Omega_b, Omega_c):
         self.eta_ia = eta_ia
@@ -203,7 +203,7 @@ class DESCSRDv1MultiplicativeShearBias(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self, m):
         self.m = m
