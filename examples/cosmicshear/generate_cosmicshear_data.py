@@ -20,7 +20,7 @@ eps = 0.01
 
 tracers = []
 for i, mn in enumerate([0.25, 0.75]):
-    z = np.linspace(0, 2, 50)
+    z = np.linspace(0, 2, 50) + 0.05
     dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
     df = pd.DataFrame({'z': z, 'dndz': dndz})
@@ -40,7 +40,7 @@ for i in range(len(tracers)):
         pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell)
         npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
-        df = pd.DataFrame({'l': ell, 'cl': npell})
+        df = pd.DataFrame({'ell_or_theta': ell, 'measured_statistic': npell})
         df.to_csv(
             os.path.join(tmpdir, 'cl%d%d.csv' % (i, j)),
             index=False)

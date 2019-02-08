@@ -1,4 +1,5 @@
 import copy
+import importlib
 
 from .statistics import TwoPointStatistic
 from . import sources as firecrown_ccl_sources
@@ -22,7 +23,16 @@ def _parse_systematics(systematics):
     for name, keys in systematics.items():
         _src = copy.deepcopy(keys)
         kind = _src.pop('kind')
-        syss[name] = getattr(firecrown_ccl_systematics, kind)(**_src)
+        try:
+            syss[name] = getattr(firecrown_ccl_systematics, kind)(**_src)
+        except AttributeError:
+            # this must in another module, try an import
+            items = kind.split('.')
+            kind = items[-1]
+            mod = ".".join(items[:-1])
+            mod = importlib.import_module(mod)
+            syss[name] = getattr(mod, kind)(**_src)
+
     return syss
 
 

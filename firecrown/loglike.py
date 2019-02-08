@@ -18,7 +18,7 @@ def compute_loglike(*, cosmo, data):
     statistics : dict
         A dictionary of output statistics from each analysis.
     """
-    loglike = 0.0
+    loglike = None
     statistics = {}
 
     analyses = list(
@@ -29,7 +29,10 @@ def compute_loglike(*, cosmo, data):
             cosmo=cosmo,
             parameters=data['parameters'],
             data=data[analysis]['data'])
-        loglike += _ll
+        if _ll is not None:
+            if loglike is None:
+                loglike = 0.0
+            loglike += _ll
         statistics[analysis] = _stats
 
     return loglike, statistics

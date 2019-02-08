@@ -21,5 +21,5 @@ setup(
     scripts=scripts,
     install_requires=[
         'pyccl', 'click', 'numpy',
-        'scipy', 'pandas', 'pyyaml'],
+        'scipy', 'pandas', 'pyyaml', 'jinja2'],
 )

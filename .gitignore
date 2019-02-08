@@ -4,9 +4,13 @@ dist/
 build/
 __pycache__/
 examples/output_*
+examples/*/.ipynb_checkpoints/*
 
 *.csv
 *.txt
 *.hdf5
 !requirements.txt
 !dev-requirements.txt
+examples/*/output_*
+examples/output_*
+examples/desc_srd_v1/LSST_DESC_SRD_v1_release

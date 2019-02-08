@@ -12,9 +12,9 @@ parameters:
   wa: 0.0
 
   # lens bin zero
-  src0_delta_z: 0.0
-  src1_delta_z: 0.0
-
+  {% for i in range(2) %}
+  src{{ i }}_delta_z: 0.0
+  {% endfor %}
 
 cosmosis:
   sampler: grid
@@ -37,47 +37,37 @@ cosmosis:
 two_point:
   module: firecrown.ccl.two_point
   sources:
-    src0:
+    {% for i in range(2) %}
+    src{{ i }}:
       kind: WLSource
-      dndz_data: pz0.csv
+      dndz_data: pz{{ i }}.csv
       systematics:
-        - pz_delta_0
-
-    src1:
-      kind: WLSource
-      dndz_data: pz1.csv
-      systematics:
-        - pz_delta_1
+        - pz_delta_{{ i }}
+    {% endfor %}
 
   systematics:
-    pz_delta_0:
+    {% for i in range(2) %}
+    pz_delta_{{ i }}:
       kind: PhotoZShiftBias
-      delta_z: src0_delta_z
+      delta_z: src{{ i }}_delta_z
+    {% endfor %}
 
-    pz_delta_1:
-      kind: PhotoZShiftBias
-      delta_z: src1_delta_z
+  statistics:
+    {% for i in range(2) %}
+    {% for j in range(i, 2) %}
+    cl_src{{ i }}_src{{ j }}:
+      sources: ['src{{ i }}', 'src{{ j }}']
+      kind: 'cl'
+      data: cl{{ i }}{{ j }}.csv
+    {% endfor %}
+    {% endfor %}
 
   likelihood:
     kind: ConstGaussianLogLike
     data: cov.csv
     data_vector:
-      - cl_src0_src0
-      - cl_src0_src1
-      - cl_src1_src1
-
-  statistics:
-    cl_src0_src0:
-      sources: ['src0', 'src0']
-      kind: 'cl'
-      data: cl00.csv
-
-    cl_src0_src1:
-      sources: ['src0', 'src1']
-      kind: 'cl'
-      data: cl01.csv
-
-    cl_src1_src1:
-      sources: ['src1', 'src1']
-      kind: 'cl'
-      data: cl11.csv
+    {% for i in range(2) %}
+    {% for j in range(i, 2) %}
+      - cl_src{{ i }}_src{{ j }}
+    {% endfor %}
+    {% endfor %}

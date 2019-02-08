@@ -82,4 +82,4 @@ class LinearAlignmentSystematic(Systematic):
             params[self.alphaz])
         pref *= ccl.growth_factor(
                 cosmo, 1.0 / (1.0 + source.z_)) ** params[self.alphag]
-        source.bias_ia_ *= pref
+        source.ia_bias_ *= pref

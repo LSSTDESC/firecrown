@@ -1,0 +1,143 @@
+parameters:
+  Omega_k: 0.0
+  Omega_b: 0.0492
+  Omega_c: 0.26639999999999997  # = 0.3156 - 0.0492
+  w0: -1.0
+  wa: 0.0
+  h: 0.6727
+  A_s: 2.12655e-9  # has sigma8 = 0.8310036
+  n_s: 0.9645
+
+  # IA model
+  eta_ia: 0.0
+  eta_ia_highz: 0.0
+  beta_ia: 1.0
+  A0: 5.0
+  red_frac: 1.0
+
+  mult_bias: 0.0
+
+  {% for i in range(5) %}
+  bias_lens{{ i }}: 1.9
+  {% endfor %}
+
+  # photoz shifts for the lensing sources
+  {% for i in range(5) %}
+  src{{ i }}_delta_z: 0.0
+  {% endfor %}
+
+  # photoz shifts for the lenses
+  {% for i in range(5) %}
+  lens{{ i }}_delta_z: 0.0
+  {% endfor %}
+
+priors:
+  module: srd_models.priors
+  A0:
+    kind: norm
+    loc: 5.0
+    scale: 3.9
+  beta_ia:
+    kind: norm
+    loc: 1.0
+    scale: 1.6
+  eta_ia:
+    kind: norm
+    loc: 0.0
+    scale: 2.3
+  eta_ia_highz:
+    kind: norm
+    loc: 0.0
+    scale: 0.8
+  {% for i in range(5) %}
+  bias_lens{{ i }}:
+    kind: norm
+    loc: 1.9
+    scale: 0.9
+  {% endfor %}
+
+
+two_point:
+  module: firecrown.ccl.two_point
+  sources:
+    {% for i in range(5) %}
+    src{{ i }}:
+      kind: WLSource
+      dndz_data: data_model/src{{ i }}_dndz.csv
+      ia_bias: A0
+      red_frac: red_frac
+      systematics:
+        - delta_z_src{{ i }}
+        - keb16_ia
+        - shear_bias
+    {% endfor %}
+
+    {% for i in range(5) %}
+    lens{{ i }}:
+      kind: NumberCountsSource
+      dndz_data: data_model/lens{{ i }}_dndz.csv
+      bias: bias_lens{{ i }}
+      systematics:
+        - delta_z_lens{{ i }}
+    {% endfor %}
+
+  systematics:
+    {% for thing in ['lens', 'src'] %}
+    {% for i in range(5) %}
+    delta_z_{{ thing }}{{ i }}:
+      kind: PhotoZShiftBias
+      delta_z: {{ thing }}{{ i }}_delta_z
+    {% endfor %}
+    {% endfor %}
+
+    keb16_ia:
+      kind: srd_models.KEBNLASystematic
+      eta_ia: eta_ia
+      eta_ia_highz: eta_ia_highz
+      beta_ia: beta_ia
+      Omega_b: Omega_b
+      Omega_c: Omega_c
+
+    shear_bias:
+      kind: srd_models.DESCSRDv1MultiplicativeShearBias
+      m: mult_bias
+
+  statistics:
+    {% for i in range(5) %}
+    {% for j in range(i, 5) %}
+    cl_src{{ i }}_src{{ j }}:
+      sources: ['src{{ i }}', 'src{{ j }}']
+      kind: 'cl'
+      data: data_model/cl_src{{ i }}_src{{ j }}.csv
+    {% endfor %}
+    {% endfor %}
+
+    {% for j,i in [(0, 2), (0, 3), (0, 4), (1, 3), (1, 4), (2, 4), (3, 4)] %}
+    cl_src{{ i }}_lens{{ j }}:
+      sources: ['lens{{ j }}', 'src{{ i }}']
+      kind: 'cl'
+      data: data_model/cl_src{{ i }}_lens{{ j }}.csv
+    {% endfor %}
+
+    {% for i in range(5) %}
+    cl_lens{{ i }}_lens{{ i }}:
+      sources: ['lens{{ i }}', 'lens{{ i }}']
+      kind: 'cl'
+      data: data_model/cl_lens{{ i }}_lens{{ i }}.csv
+    {% endfor %}
+
+  likelihood:
+    kind: ConstGaussianLogLike
+    data: srd_data/Y1_3x2pt_clusterN_clusterWL_cov.csv
+    data_vector:
+    {% for i in range(5) %}
+    {% for j in range(i, 5) %}
+      - cl_src{{ i }}_src{{ j }}
+    {% endfor %}
+    {% endfor %}
+    {% for j,i in [(0, 2), (0, 3), (0, 4), (1, 3), (1, 4), (2, 4), (3, 4)] %}
+      - cl_src{{ i }}_lens{{ j }}
+    {% endfor %}
+    {% for i in range(5) %}
+      - cl_lens{{ i }}_lens{{ i }}
+    {% endfor %}

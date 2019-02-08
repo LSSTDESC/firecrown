@@ -7,7 +7,7 @@ __all__ = ['LinearBiasSystematic', 'MagnificationBiasSystematic']
 
 
 class LinearBiasSystematic(Systematic):
-    """Linear alignment systematic.
+    """Linear bias systematic.
 
     This systematic adds a linear bias model which varies with redshift and
     the growth function.
@@ -20,6 +20,7 @@ class LinearBiasSystematic(Systematic):
         The name of the growth dependence parameter of the linear bias.
     z_piv : str
         The name of the pivot redshift parameter for the linear bias.
+
     Methods
     -------
     apply : apply the systematic to a source
