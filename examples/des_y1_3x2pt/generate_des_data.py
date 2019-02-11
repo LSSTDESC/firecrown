@@ -1,7 +1,10 @@
+import os
 import fitsio
 import pandas as pd
 import numpy as np
 
+
+os.makedirs('des_data', exist_ok=True)
 
 # bin limits are from the chain headers courtesy of M. Troxel
 angles = """\
@@ -228,3 +231,7 @@ with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
     df.to_csv(
         'des_data/cov.csv',
         index=False)
+
+# now tar the data
+os.system('tar czvf des_data.tar.gz des_data')
+os.system('rm -rf des_data')
