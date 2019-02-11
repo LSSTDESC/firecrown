@@ -11,6 +11,12 @@ typing
 pip install -e .
 ```
 
+You also need to unpack the data with `tar`
+
+```bash
+$ tar xzvf des_data.tar.gz
+```
+
 To run the code and output the likelihood at the fiducial parameter values,
 you can run the following
 
