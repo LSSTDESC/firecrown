@@ -60,7 +60,7 @@ def run_cosmosis(config, data):
 
 
 def _make_parallel_pool(cosmosis_config):
-    """ Set up a parallel process pool.
+    """Set up a parallel process pool.
 
     Will look for the 'mpi' key in the cosmosis_config.
 
@@ -144,7 +144,7 @@ def _make_cosmosis_pipeline(data, values, pool):
 
 
 def _make_cosmosis_params(cosmosis_config):
-    """ Extract a cosmosis configuration object from a config dict
+    """Extract a cosmosis configuration object from a config dict
 
     Parameters
     ----------
@@ -192,7 +192,7 @@ def _make_cosmosis_params(cosmosis_config):
 
 
 def _make_cosmosis_values(params):
-    """ Extract a cosmosis values object from a config dict
+    """Extract a cosmosis values object from a config dict
 
     Parameters
     ----------
@@ -209,7 +209,7 @@ def _make_cosmosis_values(params):
     values = {}
     for p, v in params.items():
         key = ('params', p)
-        if isinstance(v, list):
+        if isinstance(v, list) and not isinstance(v, str):
             values[key] = ' '.join(str(x) for x in v)
         else:
             values[key] = str(v)

@@ -9,7 +9,7 @@ import jinja2
 import firecrown
 from firecrown.metadata import write_metadata
 from firecrown.io import write_statistics
-import pyccl
+from firecrown.cosmology import get_ccl_cosmology
 
 
 @click.command()
@@ -38,19 +38,7 @@ def run(action, config, output, verbose):
         print("rendered config file:\n", pprint.pformat(_config))
 
     if action == 'compute':
-        params = {}
-        for p in ['Omega_k', 'Omega_b', 'Omega_c', 'h',
-                  'n_s', 'A_s', 'w0', 'wa']:
-            if p in _config['parameters']:
-                val = _config['parameters'][p]
-                if isinstance(val, list):
-                    if len(val) != 3:
-                        raise ValueError("Parameters should be specified"
-                                         "either as one param or three")
-                    val = val[1]
-                params[p] = val
-
-        cosmo = pyccl.Cosmology(**params)
+        cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike)
 

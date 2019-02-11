@@ -2,7 +2,7 @@
 # import. This has no effect on anything in this case
 # - the module is not reloaded
 import firecrown
-import pyccl
+from firecrown.cosmology import get_ccl_cosmology
 
 
 def setup(data):
@@ -24,7 +24,7 @@ def execute(block, data):
     ccl_params = ['Omega_k', 'Omega_b', 'Omega_c',
                   'h', 'n_s', 'A_s', 'w0', 'wa']
     ccl_values = {p: block['params', p] for p in ccl_params}
-    cosmo = pyccl.Cosmology(**ccl_values)
+    cosmo = get_ccl_cosmology(ccl_values)
 
     # Put all the parameters in the data dictionary,
     # both CCL-related and others, like nuisance params.
