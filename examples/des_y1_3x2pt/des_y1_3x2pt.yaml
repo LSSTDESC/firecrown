@@ -34,7 +34,7 @@ parameters:
   {% endfor %}
 
 priors:
-  module: des_models.priors
+  module: firecrown.priors
 
   Omega_b:
     kind: uniform
