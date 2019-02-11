@@ -59,7 +59,7 @@ def get_ccl_cosmology(input_params):
     params = []
     for p, val in input_params.items():
         if p in RESERVED_CCL_PARAMS:
-            if isinstance(p, list) and not isinstance(p, str):
+            if isinstance(val, list) and not isinstance(val, str):
                 params.append((p, val[1]))
             else:
                 params.append((p, val))
