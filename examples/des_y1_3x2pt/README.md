@@ -32,10 +32,10 @@ $ firecrown sample des_y1_3x2pt.yaml
 
 ## Generating the `firecrown` Inputs
 
-Note, this code below only has to be run if you want to generate the firscrown
+Note, this code below only has to be run if you want to generate the firecrown
 inputs from the DES Y1 3x2pt data products. These files are stored in the repo
-directly in `examples/des_y1_3x2pt/des_data`. You do not have to make them
-yourself.
+with tar  at `examples/des_y1_3x2pt/des_data.tar.gz`. You do not have to make
+them yourself.
 
 To generate the `firecrown` inputs, first download the DES Y1 3x2pt
 data products [here](http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits).
