@@ -4,14 +4,7 @@ The code here will run a short MCMC chain for a Flat LCDM cosmology using
 `emcee`. While in principle you can run this chain serially, you probably
 want access to a compute cluster where this chain can be run in parallel.
 
-Before doing anything else, you need to install the DES systematic models by
-typing
-
-```bash
-pip install -e .
-```
-
-You also need to unpack the data with `tar`
+Before doing anything else, you need to unpack the data with `tar`
 
 ```bash
 $ tar xzvf des_data.tar.gz
