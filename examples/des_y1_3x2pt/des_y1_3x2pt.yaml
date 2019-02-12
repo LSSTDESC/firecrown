@@ -12,6 +12,8 @@ parameters:
   A0: 0.5
   red_frac: 1.0
   eta_ia: 0.0
+  alphag_ia: -1
+  z_piv_ia: 0.62
 
   # shear errors
   {% for i in range(1, 5) %}
@@ -132,8 +134,10 @@ two_point:
     {% endfor %}
 
     des_ia:
-      kind: des_models.DESNLASystematic
-      eta_ia: eta_ia
+      kind: LinearAlignmentSystematic
+      alphaz: eta_ia
+      alphag: alphag_ia
+      z_piv: z_piv_ia
       Omega_b: Omega_b
       Omega_c: Omega_c
 
