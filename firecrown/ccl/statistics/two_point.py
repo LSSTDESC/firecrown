@@ -16,13 +16,8 @@ def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
 
 
 @functools.lru_cache(maxsize=1024)
-def _cached_angular_cl(cosmo, tracers, ell_min, ell_mid, ell_max, n_log):
-    ells = _ell_for_xi(
-        ell_min=ell_min,
-        ell_mid=ell_mid,
-        ell_max=ell_max,
-        n_log=n_log)
-    return ells, ccl.angular_cl(cosmo, *tracers, ells)
+def _cached_angular_cl(cosmo, tracers, ells):
+    return ccl.angular_cl(cosmo, *tracers, np.array(ells))
 
 
 class TwoPointStatistic(Statistic):
@@ -114,12 +109,17 @@ class TwoPointStatistic(Statistic):
         self.scale_ = np.prod([sources[k].scale_ for k in self.sources])
 
         if self.kind == 'cl':
-            self.predicted_statistic_ = ccl.angular_cl(
-                cosmo, *tracers, self.ell_or_theta_) * self.scale_
+            self.predicted_statistic_ = _cached_angular_cl(
+                cosmo, tuple(tracers), tuple(self.ell_or_theta_.tolist())
+            ) * self.scale_
         else:
-            ells, cells = _cached_angular_cl(
-                cosmo, tuple(tracers),
-                self.ell_min, self.ell_mid, self.ell_max, self.n_log)
+            ells = _ell_for_xi(
+                ell_min=self.ell_min,
+                ell_mid=self.ell_mid,
+                ell_max=self.ell_max,
+                n_log=self.n_log)
+            cells = _cached_angular_cl(
+                cosmo, tuple(tracers), tuple(ells.tolist()))
             self.predicted_statistic_ = ccl.correlation(
                 cosmo, ells, cells, self.ell_or_theta_ / 60,
                 corr_type=self.kind) * self.scale_
