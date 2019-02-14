@@ -8,3 +8,4 @@ jinja2
 schwimmbad
 emcee
 tqdm
+joblib
