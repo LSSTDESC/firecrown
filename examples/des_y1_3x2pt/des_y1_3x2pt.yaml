@@ -35,6 +35,12 @@ parameters:
   lens{{ i }}_delta_z: {{ loc }}
   {% endfor %}
 
+emcee:
+  parameters:
+    - A_s
+    - Omega_c
+  n_steps: 10
+
 priors:
   module: firecrown.priors
 

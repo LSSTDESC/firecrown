@@ -5,3 +5,6 @@ scipy
 click
 pandas
 jinja2
+schwimmbad
+emcee
+tqdm
