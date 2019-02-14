@@ -23,7 +23,8 @@ def tx_data(tmpdir_factory):
         wa=0.0,
         sigma8=0.8,
         n_s=0.96,
-        h=0.67)
+        h=0.67,
+        transfer_function='eisenstein_hu')
 
     seed = 42
     rng = np.random.RandomState(seed=seed)
@@ -90,13 +91,14 @@ parameters:
   Omega_c: 0.27
   Omega_b: 0.045
   h: 0.67
-  n_s: 0.96
+  n_s: [0.9, 0.96, 1.0]
   sigma8: 0.8
   w0: -1.0
   wa: 0.0
+  transfer_function: 'eisenstein_hu'
 
   # lens bin zero
-  src0_delta_z: 0.0
+  src0_delta_z: [-0.1, 0.0, 0.1]
   src1_delta_z: 0.0
 
 two_point:

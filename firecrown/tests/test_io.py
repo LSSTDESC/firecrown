@@ -25,3 +25,7 @@ def test_write_statistics(tmpdir):
     df = pd.read_csv(os.path.join(odir, 'c.csv'))
     assert np.array_equal(df['i'], arr2['i'])
     assert np.array_equal(df['h'], arr2['h'])
+
+
+def test_write_analysis(tmpdir):
+    assert False
