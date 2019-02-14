@@ -20,14 +20,12 @@ RESERVED_CCL_PARAMS = (
     "baryons_power_spectrum",
     "mass_function",
     "halo_concentration",
-    "emulator_neutrinos")
+    "emulator_neutrinos",
+    "Neff",
+    "m_nu",
+    "mnu_type")
 
 # FIXME: these params are not supported right now
-# Neff (:obj:`float`, optional): Effective number of massless
-#     neutrinos present. Defaults to 3.046.
-# m_nu (:obj:`float`, optional): Total mass in eV of the massive
-#     neutrinos present. Defaults to 0.
-# mnu_type (:obj:`str`, optional): The type of massive neutrinos.
 # df_mg (array_like, optional): Perturbations to the GR growth rate as
 #     a function of redshift :math:`\\Delta f`. Used to implement simple
 #     modified growth scenarios.
