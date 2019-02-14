@@ -2,7 +2,7 @@
 # import. This has no effect on anything in this case
 # - the module is not reloaded
 import firecrown
-from firecrown.cosmology import get_ccl_cosmology
+from firecrown.cosmology import get_ccl_cosmology, RESERVED_CCL_PARAMS
 
 
 def setup(data):
@@ -21,9 +21,13 @@ def execute(block, data):
     # The block contains all the sample parameters.
 
     # Create CCL cosmology
-    ccl_params = ['Omega_k', 'Omega_b', 'Omega_c',
-                  'h', 'n_s', 'A_s', 'w0', 'wa']
-    ccl_values = {p: block['params', p] for p in ccl_params}
+    ccl_values = {}
+    for p in RESERVED_CCL_PARAMS:
+        try:
+            val = block['params', p]
+            ccl_values[p] = val
+        except Exception:
+            pass
     cosmo = get_ccl_cosmology(ccl_values)
 
     # Put all the parameters in the data dictionary,
