@@ -5,13 +5,16 @@ parameters:
   w0: -1.0
   wa: 0.0
   h: 0.682
-  A_s: 2.04e-9
+  sigma8: 0.801
   n_s: 0.971
+  transfer_function: eisenstein_hu
 
   # IA model
   A0: 0.5
-  red_frac: 1.0
   eta_ia: 0.0
+
+  # these parameters are fixed
+  red_frac: 1.0
   alphag_ia: -1
   z_piv_ia: 0.62
 
@@ -37,9 +40,23 @@ parameters:
 
 emcee:
   parameters:
-    - A_s
+    - sigma8
     - Omega_c
-  n_steps: 10
+    - A0
+    - eta_ia
+  {% for i in range(1, 5) %}
+    - src{{ i }}_mult_bias
+  {% endfor %}
+  {% for i in range(1, 6) %}
+    - bias_lens{{ i }}
+  {% endfor %}
+  {% for i in range(1, 5) %}
+    - src{{ i }}_delta_z
+  {% endfor %}
+  {% for i in range(1, 6) %}
+    - lens{{ i }}_delta_z
+  {% endfor %}
+  n_steps: 1000
 
 priors:
   module: firecrown.priors
