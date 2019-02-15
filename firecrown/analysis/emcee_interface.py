@@ -27,7 +27,6 @@ def _lnprob(p, params, config, data):
         data['parameters'][k] = v
     cosmo = get_ccl_cosmology(data['parameters'])
     loglike, _ = compute_loglike(cosmo=cosmo, data=data)
-    print(loglike, cosmo)
     return loglike
 
 
