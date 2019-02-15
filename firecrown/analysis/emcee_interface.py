@@ -9,11 +9,25 @@ from ..loglike import compute_loglike
 from ..cosmology import get_ccl_cosmology
 
 
+def _get_init(pvals, n_walkers, rel_kern=0.1, abs_kern=1e-2):
+    n_dims = len(pvals)
+    p0 = []
+    for i in range(n_walkers):
+        rel_fac = (np.random.uniform(size=n_dims)-0.5)*2*rel_kern + 1
+        msk = (rel_fac * pvals) == 0
+        abs_fac = np.zeros(n_dims)
+        abs_fac[msk] = abs_kern
+        p0.append(rel_fac * pvals + abs_fac)
+
+    return p0
+
+
 def _lnprob(p, params, config, data):
     for k, v in zip(params, p):
         data['parameters'][k] = v
     cosmo = get_ccl_cosmology(data['parameters'])
     loglike, _ = compute_loglike(cosmo=cosmo, data=data)
+    print(loglike, cosmo)
     return loglike
 
 
@@ -87,8 +101,7 @@ def run_emcee(config, data, *, parameters, n_steps,
                 args=(parameters, config, data),
                 pool=pool)
             pvals = np.array([data['parameters'][p] for p in parameters])
-            p0 = [((np.random.uniform(size=n_dims)-0.5)*2*0.1 + 1) * pvals
-                  for i in range(n_walkers)]
+            p0 = _get_init(pvals, n_walkers, rel_kern=0.1, abs_kern=1e-2)
             with tqdm.tqdm(
                     iterable=sampler.sample(p0,
                                             iterations=n_steps),
