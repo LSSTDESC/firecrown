@@ -57,6 +57,7 @@ emcee:
     - lens{{ i }}_delta_z
   {% endfor %}
   n_steps: 1000
+  backend: mpi
 
 priors:
   module: firecrown.priors
