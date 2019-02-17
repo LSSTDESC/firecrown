@@ -51,7 +51,8 @@ def test_two_point_some(kind, tmpdir):
     data = os.path.join(tmpdir, 'stat.csv')
     if kind == 'cl':
         ell = np.logspace(1, 3, 10)
-        cell = ccl.angular_cl(cosmo, *tracers, ell) * scale
+        cell = ccl.angular_cl(cosmo, *tracers, ell,
+                              l_logstep=1.15, l_linstep=6e4) * scale
         pd.DataFrame({'ell_or_theta': ell, 'measured_statistic': cell}).to_csv(
             data, index=False)
     else:
