@@ -1,7 +1,7 @@
 import pytest
-from ..cosmosis.run import _make_parallel_pool, _make_cosmosis_params
-from ..cosmosis.run import _make_cosmosis_values, _make_cosmosis_pipeline
-from ..cosmosis.run import run_cosmosis
+from ..run import _make_parallel_pool, _make_cosmosis_params
+from ..run import _make_cosmosis_values, _make_cosmosis_pipeline
+from ..run import run_cosmosis
 import yaml
 import numpy as np
 import os
@@ -31,7 +31,7 @@ parameters:
   wa: 0.0
 
   # lens bin zero
-  src0_delta_z: 0.0
+  src0_delta_z: [-0.1, 0.0, 0.1]
   src1_delta_z: 0.0
 
 
@@ -61,10 +61,6 @@ def test_pool(tx_config):
     pool = _make_parallel_pool(tx_config['cosmosis'])
     assert pool is None or pool.size > 0
     assert pool is None or isinstance(pool, cosmosis.runtime.mpi_pool.MPIPool)
-
-    # In general I'm wary of attempting tests that
-    # need MPI - bit of a minefield.
-    # Advice welcome.
 
 
 @requires_cosmosis
@@ -100,15 +96,16 @@ def test_pipeline(tx_config):
     pipeline = _make_cosmosis_pipeline(data, values, pool)
 
     # check all params made it through
-    assert pipeline.nvaried == 2
-    assert pipeline.nfixed == 8
+    assert pipeline.nvaried == 3
+    assert pipeline.nfixed == 7
 
     # check that parameter limits are right
-    assert np.allclose(pipeline.min_vector(), np.array([0.25, 2.0e-9]))
-    assert np.allclose(pipeline.max_vector(), np.array([0.32, 2.2e-9]))
+    assert np.allclose(pipeline.min_vector(), np.array([0.25, 2.0e-9, -0.1]))
+    assert np.allclose(pipeline.max_vector(), np.array([0.32, 2.2e-9, 0.1]))
 
     # check params have correct names
-    assert pipeline.output_names() == ['params--omega_c', 'params--a_s']
+    assert pipeline.output_names() == [
+        'params--omega_c', 'params--a_s', 'params--src0_delta_z']
 
     # Check the modules list is set up
     assert len(pipeline.modules) == 1
@@ -123,10 +120,11 @@ def test_sampling(tx_config, tmpdir):
     run_cosmosis(tx_config, tx_config)
     chain = np.loadtxt(chain_file)
     # Check the grid sampler has made the right number of points
-    assert len(chain) == 25
+    assert len(chain) == 125
     # Check the grid points are in the right place
     assert np.allclose(np.unique(chain[:, 0]), np.linspace(0.25, 0.32, 5))
     assert np.allclose(np.unique(chain[:, 1]), np.linspace(2.0e-9, 2.1e-9, 5))
+    assert np.allclose(np.unique(chain[:, 2]), np.linspace(-0.1, 0.1, 5))
     # Check the posteriors are all the same.
     # They are not zero because of the prior.
-    assert np.allclose(np.unique(chain[:, 2]), chain[0, 2])
+    assert np.allclose(np.unique(chain[:, 3]), chain[0, 3])

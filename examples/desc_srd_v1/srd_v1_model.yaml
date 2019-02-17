@@ -32,7 +32,7 @@ parameters:
   {% endfor %}
 
 priors:
-  module: srd_models.priors
+  module: firecrown.priors
   A0:
     kind: norm
     loc: 5.0

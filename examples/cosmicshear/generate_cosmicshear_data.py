@@ -14,9 +14,11 @@ cosmo = ccl.Cosmology(
     h=0.67)
 
 seed = 42
-tmpdir = '.'
+tmpdir = 'data'
 rng = np.random.RandomState(seed=seed)
 eps = 0.01
+
+os.makedirs(tmpdir, exist_ok=True)
 
 tracers = []
 for i, mn in enumerate([0.25, 0.75]):

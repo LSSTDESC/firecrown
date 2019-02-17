@@ -25,9 +25,17 @@ def parse(filename):
     config = yaml.load(config_str)
     data = yaml.load(config_str)
 
+    params = {}
+    for p, val in data['parameters'].items():
+        if isinstance(val, list) and not isinstance(val, str):
+            params[p] = val[1]
+        else:
+            params[p] = val
+    data['parameters'] = params
+
     analyses = list(
         set(list(data.keys())) -
-        set(['parameters', 'cosmosis']))
+        set(['parameters', 'cosmosis', 'emcee']))
     for analysis in analyses:
         new_keys = {}
 

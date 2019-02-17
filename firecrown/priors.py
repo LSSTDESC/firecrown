@@ -3,8 +3,8 @@ A prior can be any distribution in `scipy.stats`. You specify them in YAML
 as follows:
 
 ```YAML
-srd_priors:
-  module: srd_models.priors
+priors:
+  module: firecrown.priors
   param1:
     # here 'norm' is the name of the function/class in scipy.stats
     kind: norm

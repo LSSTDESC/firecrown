@@ -8,8 +8,32 @@ import jinja2
 
 import firecrown
 from firecrown.metadata import write_metadata
-from firecrown.io import write_statistics
-import pyccl
+from firecrown.io import write_statistics, write_analysis
+from firecrown.cosmology import get_ccl_cosmology
+
+
+def _test_mpi():
+    """Test for the presence of MPI.
+
+    Returns
+    -------
+    using_mpi : bool
+        True is mpi4py can be imported, False otherwise.
+    is_master : bool
+        True if the current process is rank 0, False otherwise.
+    """
+    try:
+        from mpi4py import MPI
+        using_mpi = True
+    except Exception:
+        using_mpi = False
+
+    if using_mpi:
+        is_master = MPI.COMM_WORLD.Get_rank() == 0
+    else:
+        is_master = False
+
+    return using_mpi, is_master
 
 
 @click.command()
@@ -22,47 +46,60 @@ def run(action, config, output, verbose):
 
     Also, run some ACTION on a CONFIG file."""
 
-    print("Watch out! Here comes a firecrown!")
+    # figure out if we are using MPI
+    using_mpi, is_master = _test_mpi()
+    print_or_run = (using_mpi and is_master) or not using_mpi
+
+    if print_or_run:
+        print("Watch out! Here comes a firecrown!", flush=True)
 
     if action == 'render':
-        with open(config, 'r') as fp:
-            config_str = jinja2.Template(fp.read()).render()
-        print(' \n' + config_str)
+        if print_or_run:
+            with open(config, 'r') as fp:
+                config_str = jinja2.Template(fp.read()).render()
+            print(' \n' + config_str, flush=True)
         sys.exit(0)
 
     analysis_id = uuid.uuid4().hex
-    print('analysis id:', analysis_id)
+    if print_or_run:
+        print('analysis id:', analysis_id, flush=True)
 
     _config, data = firecrown.parse(config)
-    if verbose:
-        print("rendered config file:\n", pprint.pformat(_config))
+    if verbose and (print_or_run):
+        print("rendered config file:\n", pprint.pformat(_config), flush=True)
 
-    if action == 'compute':
-        params = {}
-        for p in ['Omega_k', 'Omega_b', 'Omega_c', 'h',
-                  'n_s', 'A_s', 'w0', 'wa']:
-            if p in _config['parameters']:
-                val = _config['parameters'][p]
-                if isinstance(val, list):
-                    if len(val) != 3:
-                        raise ValueError("Parameters should be specified"
-                                         "either as one param or three")
-                    val = val[1]
-                params[p] = val
-
-        cosmo = pyccl.Cosmology(**params)
+    stats = None
+    chain = None
+    if action == 'compute' and print_or_run:
+        cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
-        print('loglike:', loglike)
+        print('loglike:', loglike, flush=True)
 
     elif action == 'run-cosmosis':
+        if 'cosmosis' not in _config:
+            raise ValueError('You must have an `cosmosis` '
+                             'configuartion block to run `cosmosis`!')
+
         firecrown.run_cosmosis(_config, data)
-        stats = None
+
+    elif action == 'run-emcee':
+        if 'emcee' not in _config:
+            raise ValueError('You must have an `emcee` '
+                             'configuartion block to run `emcee`!')
+        # using a guarded import here to prevent weird errors if MPI is
+        # not installed or being funny
+        from firecrown.analysis.emcee_interface import run_emcee
+        stats, chain = run_emcee(
+            _config, data, **_config['emcee'])
 
     # we associate a unique id with each analysis
     # let's write that out with some extra info
-    write_metadata(analysis_id, output, config)
-    if stats is not None:
-        write_statistics(analysis_id, output, stats)
+    if print_or_run:
+        write_metadata(analysis_id, output, config)
+        if stats is not None:
+            write_statistics(analysis_id, output, stats)
+        if chain is not None:
+            write_analysis(analysis_id, output, chain)
 
 
 if __name__ == '__main__':

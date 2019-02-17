@@ -1,3 +1,4 @@
+import functools
 import numpy as np
 import pandas as pd
 import pyccl as ccl
@@ -12,6 +13,13 @@ def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
     return np.concatenate((
         np.linspace(ell_min, ell_mid-1, ell_mid-ell_min),
         np.logspace(np.log10(ell_mid), np.log10(ell_max), n_log)))
+
+
+@functools.lru_cache(maxsize=1024)
+def _cached_angular_cl(cosmo, tracers, ells):
+    return ccl.angular_cl(
+        cosmo, *tracers, np.array(ells),
+        l_logstep=1.15, l_linstep=6e4)
 
 
 class TwoPointStatistic(Statistic):
@@ -103,15 +111,17 @@ class TwoPointStatistic(Statistic):
         self.scale_ = np.prod([sources[k].scale_ for k in self.sources])
 
         if self.kind == 'cl':
-            self.predicted_statistic_ = ccl.angular_cl(
-                cosmo, *tracers, self.ell_or_theta_) * self.scale_
+            self.predicted_statistic_ = _cached_angular_cl(
+                cosmo, tuple(tracers), tuple(self.ell_or_theta_.tolist())
+            ) * self.scale_
         else:
             ells = _ell_for_xi(
                 ell_min=self.ell_min,
                 ell_mid=self.ell_mid,
                 ell_max=self.ell_max,
                 n_log=self.n_log)
-            cells = ccl.angular_cl(cosmo, *tracers, ells)
+            cells = _cached_angular_cl(
+                cosmo, tuple(tracers), tuple(ells.tolist()))
             self.predicted_statistic_ = ccl.correlation(
                 cosmo, ells, cells, self.ell_or_theta_ / 60,
                 corr_type=self.kind) * self.scale_

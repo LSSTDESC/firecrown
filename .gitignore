@@ -9,6 +9,8 @@ examples/*/.ipynb_checkpoints/*
 *.csv
 *.txt
 *.hdf5
+*.fit
+*.fits
 !requirements.txt
 !dev-requirements.txt
 examples/*/output_*

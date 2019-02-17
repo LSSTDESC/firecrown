@@ -36,12 +36,18 @@ def test_linear_alignment_systematic_smoke():
     params = {
         '__alphag': 0.2,
         '__alphaz': 0.5,
-        '__z_piv': 0.4}
+        '__z_piv': 0.4,
+        '__Omega_b': 0.045,
+        '__Omega_c': 0.27}
     sys = LinearAlignmentSystematic(
         alphag='__alphag',
         alphaz='__alphaz',
-        z_piv='__z_piv')
+        z_piv='__z_piv',
+        Omega_b='__Omega_b',
+        Omega_c='__Omega_c')
 
     sys.apply(cosmo, params, src)
-    bias_ia = 30.0 * gf**0.2 * ((1.0 + src.z_) / (1.0 + 0.4)) ** 0.5
+    bias_ia = (
+        (0.045 + 0.27) * 0.0134 *
+        30.0 * gf**0.2 * ((1.0 + src.z_) / (1.0 + 0.4)) ** 0.5)
     assert np.allclose(src.ia_bias_, bias_ia)

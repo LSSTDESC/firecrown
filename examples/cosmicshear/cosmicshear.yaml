@@ -16,6 +16,12 @@ parameters:
   src{{ i }}_delta_z: 0.0
   {% endfor %}
 
+emcee:
+  parameters:
+    - A_s
+    - Omega_c
+  n_steps: 10
+
 cosmosis:
   sampler: grid
   output: chain.txt
@@ -40,7 +46,7 @@ two_point:
     {% for i in range(2) %}
     src{{ i }}:
       kind: WLSource
-      dndz_data: pz{{ i }}.csv
+      dndz_data: data/pz{{ i }}.csv
       systematics:
         - pz_delta_{{ i }}
     {% endfor %}
@@ -58,13 +64,13 @@ two_point:
     cl_src{{ i }}_src{{ j }}:
       sources: ['src{{ i }}', 'src{{ j }}']
       kind: 'cl'
-      data: cl{{ i }}{{ j }}.csv
+      data: data/cl{{ i }}{{ j }}.csv
     {% endfor %}
     {% endfor %}
 
   likelihood:
     kind: ConstGaussianLogLike
-    data: cov.csv
+    data: data/cov.csv
     data_vector:
     {% for i in range(2) %}
     {% for j in range(i, 2) %}
