@@ -50,7 +50,7 @@ def run(action, config, output, verbose):
     using_mpi, is_master = _test_mpi()
 
     if (using_mpi and is_master) or not using_mpi:
-        print("Watch out! Here comes a firecrown!")
+        print("Watch out! Here comes a firecrown!", flush=True)
 
     if action == 'render':
         if (using_mpi and is_master) or not using_mpi:
@@ -61,18 +61,18 @@ def run(action, config, output, verbose):
 
     analysis_id = uuid.uuid4().hex
     if (using_mpi and is_master) or not using_mpi:
-        print('analysis id:', analysis_id)
+        print('analysis id:', analysis_id, flush=True)
 
     _config, data = firecrown.parse(config)
     if verbose and ((using_mpi and is_master) or not using_mpi):
-        print("rendered config file:\n", pprint.pformat(_config))
+        print("rendered config file:\n", pprint.pformat(_config), flush=True)
 
     stats = None
     chain = None
     if action == 'compute' and ((using_mpi and is_master) or not using_mpi):
         cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
-        print('loglike:', loglike)
+        print('loglike:', loglike, flush=True)
 
     elif action == 'run-cosmosis':
         if 'cosmosis' not in _config:
