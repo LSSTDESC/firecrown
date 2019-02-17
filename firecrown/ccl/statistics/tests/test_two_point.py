@@ -58,7 +58,8 @@ def test_two_point_some(kind, tmpdir):
     else:
         theta = np.logspace(1, 2, 100)
         ell = _ell_for_xi()
-        cell = ccl.angular_cl(cosmo, *tracers, ell)
+        cell = ccl.angular_cl(cosmo, *tracers, ell,
+                              l_logstep=1.15, l_linstep=6e4)
         xi = ccl.correlation(
             cosmo, ell, cell, theta / 60.0, corr_type=kind) * scale
         pd.DataFrame({'ell_or_theta': theta, 'measured_statistic': xi}).to_csv(

@@ -49,7 +49,8 @@ def tx_data(tmpdir_factory):
     for i in range(len(tracers)):
         for j in range(i, len(tracers)):
             ell = np.logspace(1, 4, 10)
-            pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell)
+            pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell,
+                                  l_logstep=1.15, l_linstep=6e4)
             npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
             df = pd.DataFrame(
