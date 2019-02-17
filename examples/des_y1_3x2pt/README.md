@@ -20,7 +20,7 @@ $ firecrown compute des_y1_3x2pt.yaml
 Finally, to run a chain, type
 
 ```bash
-$ firecrown sample des_y1_3x2pt.yaml
+$ firecrown run-emcee des_y1_3x2pt.yaml
 ```
 
 ## Generating the `firecrown` Inputs
