@@ -104,9 +104,11 @@ def run_emcee(config, data, *, parameters, n_steps,
                 pool=pool)
             pvals = np.array([data['parameters'][p] for p in parameters])
             p0 = _get_init(pvals, n_walkers, rel_kern=0.1, abs_kern=1e-2)
+
+            print('\n', flush=True)
+
             with tqdm.tqdm(
-                    iterable=sampler.sample(p0,
-                                            iterations=n_steps),
+                    iterable=sampler.sample(p0, iterations=n_steps),
                     total=n_steps,
                     desc='sampling') as pbar:
                 for _ in pbar:
