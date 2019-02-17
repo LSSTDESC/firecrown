@@ -48,28 +48,29 @@ def run(action, config, output, verbose):
 
     # figure out if we are using MPI
     using_mpi, is_master = _test_mpi()
+    print_or_run = (using_mpi and is_master) or not using_mpi
 
-    if (using_mpi and is_master) or not using_mpi:
+    if print_or_run:
         print("Watch out! Here comes a firecrown!", flush=True)
 
     if action == 'render':
-        if (using_mpi and is_master) or not using_mpi:
+        if print_or_run:
             with open(config, 'r') as fp:
                 config_str = jinja2.Template(fp.read()).render()
             print(' \n' + config_str, flush=True)
         sys.exit(0)
 
     analysis_id = uuid.uuid4().hex
-    if (using_mpi and is_master) or not using_mpi:
+    if print_or_run:
         print('analysis id:', analysis_id, flush=True)
 
     _config, data = firecrown.parse(config)
-    if verbose and ((using_mpi and is_master) or not using_mpi):
+    if verbose and (print_or_run):
         print("rendered config file:\n", pprint.pformat(_config), flush=True)
 
     stats = None
     chain = None
-    if action == 'compute' and ((using_mpi and is_master) or not using_mpi):
+    if action == 'compute' and print_or_run:
         cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike, flush=True)
@@ -93,7 +94,7 @@ def run(action, config, output, verbose):
 
     # we associate a unique id with each analysis
     # let's write that out with some extra info
-    if (using_mpi and is_master) or not using_mpi:
+    if print_or_run:
         write_metadata(analysis_id, output, config)
         if stats is not None:
             write_statistics(analysis_id, output, stats)
