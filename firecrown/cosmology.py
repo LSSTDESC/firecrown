@@ -32,7 +32,7 @@ RESERVED_CCL_PARAMS = (
 # z_mg (array_like, optional): Array of redshifts corresponding to df_mg.
 
 
-@functools.lru_cache(maxsize=1024)
+@functools.lru_cache(maxsize=64)
 def _get_ccl_cosmology(params):
     dct = {p: v for p, v in params}
     return pyccl.Cosmology(**dct)
