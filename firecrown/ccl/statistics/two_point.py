@@ -15,7 +15,7 @@ def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
         np.logspace(np.log10(ell_mid), np.log10(ell_max), n_log)))
 
 
-@functools.lru_cache(maxsize=1024)
+@functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells):
     return ccl.angular_cl(
         cosmo, *tracers, np.array(ells),
