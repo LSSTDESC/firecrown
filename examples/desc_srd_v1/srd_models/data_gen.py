@@ -162,4 +162,5 @@ def _make_pz(z_true_min, z_true_max, _pz, _sigmaz, n_z=1000):
 
         dndz[i] = scipy.integrate.quad(_func, z_true_min, z_true_max)[0]
 
-    return z_obs, dndz
+    nrm = np.trapz(y=dndz, x=z_obs)
+    return z_obs, dndz / nrm
