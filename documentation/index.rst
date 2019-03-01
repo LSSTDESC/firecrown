@@ -10,7 +10,8 @@ Welcome to fireCrown's documentation!
    :maxdepth: 4
    :caption: Contents:
    
-   Welcome_page
+   Welcome page <Welcome_page>
+   API Overview <API.md>
    API Reference <api/firecrown>
 
 
