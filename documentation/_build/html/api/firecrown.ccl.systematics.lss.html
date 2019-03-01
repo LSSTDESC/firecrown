@@ -1,0 +1,240 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>firecrown.ccl.systematics.lss module &#8212; fireCrown  documentation</title>
+    <link rel="stylesheet" href="../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+    <script type="text/javascript" src="../_static/jquery.js"></script>
+    <script type="text/javascript" src="../_static/underscore.js"></script>
+    <script type="text/javascript" src="../_static/doctools.js"></script>
+    <script type="text/javascript" src="../_static/language_data.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="prev" title="firecrown.ccl.systematics.tests.test_wl module" href="firecrown.ccl.systematics.tests.test_wl.html" />
+   
+  <link rel="stylesheet" href="../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="module-firecrown.ccl.systematics.lss">
+<span id="firecrown-ccl-systematics-lss-module"></span><h1>firecrown.ccl.systematics.lss module<a class="headerlink" href="#module-firecrown.ccl.systematics.lss" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="firecrown.ccl.systematics.lss.LinearBiasSystematic">
+<em class="property">class </em><code class="descclassname">firecrown.ccl.systematics.lss.</code><code class="descname">LinearBiasSystematic</code><span class="sig-paren">(</span><em>alphaz</em>, <em>alphag</em>, <em>z_piv</em><span class="sig-paren">)</span><a class="headerlink" href="#firecrown.ccl.systematics.lss.LinearBiasSystematic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="firecrown.ccl.core.html#firecrown.ccl.core.Systematic" title="firecrown.ccl.core.Systematic"><code class="xref py py-class docutils literal notranslate"><span class="pre">firecrown.ccl.core.Systematic</span></code></a></p>
+<p>Linear bias systematic.</p>
+<p>This systematic adds a linear bias model which varies with redshift and
+the growth function.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>alphaz</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The mame of redshift dependence parameter of the linear bias.</p>
+</dd>
+<dt><strong>alphag</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The name of the growth dependence parameter of the linear bias.</p>
+</dd>
+<dt><strong>z_piv</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The name of the pivot redshift parameter for the linear bias.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#firecrown.ccl.systematics.lss.LinearBiasSystematic.apply" title="firecrown.ccl.systematics.lss.LinearBiasSystematic.apply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply</span></code></a>(cosmo,&nbsp;params,&nbsp;source)</td>
+<td>Apply a linear bias systematic.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="firecrown.ccl.systematics.lss.LinearBiasSystematic.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>cosmo</em>, <em>params</em>, <em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#firecrown.ccl.systematics.lss.LinearBiasSystematic.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a linear bias systematic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>cosmo</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pyccl.Cosmology</span></dt>
+<dd><p class="first last">A pyccl.Cosmology object.</p>
+</dd>
+<dt><strong>params</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">A dictionary mapping parameter names to their current values.</p>
+</dd>
+<dt><strong>source</strong> <span class="classifier-delimiter">:</span> <span class="classifier">a source object</span></dt>
+<dd><p class="first last">The source to which apply the shear bias.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="class">
+<dt id="firecrown.ccl.systematics.lss.MagnificationBiasSystematic">
+<em class="property">class </em><code class="descclassname">firecrown.ccl.systematics.lss.</code><code class="descname">MagnificationBiasSystematic</code><span class="sig-paren">(</span><em>r_lim</em>, <em>sig_c</em>, <em>eta</em>, <em>z_c</em>, <em>z_m</em><span class="sig-paren">)</span><a class="headerlink" href="#firecrown.ccl.systematics.lss.MagnificationBiasSystematic" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="firecrown.ccl.core.html#firecrown.ccl.core.Systematic" title="firecrown.ccl.core.Systematic"><code class="xref py py-class docutils literal notranslate"><span class="pre">firecrown.ccl.core.Systematic</span></code></a></p>
+<p>Magnification bias systematic.</p>
+<p>This systematic adds a magnification bias model for galaxy number contrast
+following Joachimi &amp; Bridle (2010), arXiv:0911.2454.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>r_lim</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The name of the limiting magnitude in r band filter.</p>
+</dd>
+<dt><strong>sig_c, eta, z_c, z_m</strong> <span class="classifier-delimiter">:</span> <span class="classifier">str</span></dt>
+<dd><p class="first last">The name of the fitting parameters in Joachimi &amp; Bridle (2010) equation
+(C.1).</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<table border="1" class="longtable docutils">
+<colgroup>
+<col width="10%" />
+<col width="90%" />
+</colgroup>
+<tbody valign="top">
+<tr class="row-odd"><td><a class="reference internal" href="#firecrown.ccl.systematics.lss.MagnificationBiasSystematic.apply" title="firecrown.ccl.systematics.lss.MagnificationBiasSystematic.apply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">apply</span></code></a>(cosmo,&nbsp;params,&nbsp;source)</td>
+<td>Apply a magnification bias systematic.</td>
+</tr>
+</tbody>
+</table>
+<dl class="method">
+<dt id="firecrown.ccl.systematics.lss.MagnificationBiasSystematic.apply">
+<code class="descname">apply</code><span class="sig-paren">(</span><em>cosmo</em>, <em>params</em>, <em>source</em><span class="sig-paren">)</span><a class="headerlink" href="#firecrown.ccl.systematics.lss.MagnificationBiasSystematic.apply" title="Permalink to this definition">¶</a></dt>
+<dd><p>Apply a magnification bias systematic.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><dl class="first last docutils">
+<dt><strong>cosmo</strong> <span class="classifier-delimiter">:</span> <span class="classifier">pyccl.Cosmology</span></dt>
+<dd><p class="first last">A pyccl.Cosmology object.</p>
+</dd>
+<dt><strong>params</strong> <span class="classifier-delimiter">:</span> <span class="classifier">dict</span></dt>
+<dd><p class="first last">A dictionary mapping parameter names to their current values.</p>
+</dd>
+<dt><strong>source</strong> <span class="classifier-delimiter">:</span> <span class="classifier">a source object</span></dt>
+<dd><p class="first last">The source to which apply the shear bias.</p>
+</dd>
+</dl>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="../index.html">fireCrown</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="firecrown.html">API Reference</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="firecrown.html#subpackages">Subpackages</a></li>
+<li class="toctree-l2"><a class="reference internal" href="firecrown.html#submodules">Submodules</a></li>
+</ul>
+</li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../index.html">Documentation overview</a><ul>
+  <li><a href="firecrown.html">firecrown package</a><ul>
+  <li><a href="firecrown.ccl.html">firecrown.ccl package</a><ul>
+  <li><a href="firecrown.ccl.systematics.html">firecrown.ccl.systematics package</a><ul>
+      <li>Previous: <a href="firecrown.ccl.systematics.tests.test_wl.html" title="previous chapter">firecrown.ccl.systematics.tests.test_wl module</a></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Matt Becker, Elisabeth Krause, Joe Zuntz, Eske Pedersen.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="../_sources/api/firecrown.ccl.systematics.lss.rst.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
