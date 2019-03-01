@@ -11,7 +11,8 @@ Welcome to fireCrown's documentation!
    :caption: Contents:
    
    Welcome page <Welcome_page>
-   API Overview <API.md>
+   Installation Readme <../README.md>
+   API Overview <../API.md>
    API Reference <api/firecrown>
 
 
