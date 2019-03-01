@@ -1,5 +1,5 @@
 flake8
 pytest
 nose
-numpydocs
+numpydoc
 recommonmark
