@@ -1,0 +1,290 @@
+
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge" />
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>API &#8212; fireCrown  documentation</title>
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="_static/language_data.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="firecrown package" href="api/firecrown.html" />
+    <link rel="prev" title="Welcome" href="Welcome_page.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head><body>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          
+
+          <div class="body" role="main">
+            
+  <div class="section" id="api">
+<h1>API<a class="headerlink" href="#api" title="Permalink to this headline">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">firecrown</span></code> API has two parts. The first is a wrapper around CCL for building
+likelihood computations for CCL-supported analyses, e.g. 3x2pt, cosmic shear,
+etc. The second is a generic interface for adding terms to the log-likelihood.
+The generic interface provides a simple way to combine statistically
+independent analyses (i.e., one can add the log-likelihoods). The CCL API
+allows users to build full log-likelihoods using a YAML configuration file.
+Finally, a global configuration block holds parameters and other metadata.</p>
+<div class="section" id="global-yaml-configuration">
+<h2>Global YAML Configuration<a class="headerlink" href="#global-yaml-configuration" title="Permalink to this headline">¶</a></h2>
+<p>A <code class="docutils literal notranslate"><span class="pre">firecrown</span></code> configuration file has a single parameters block plus one or more
+blocks encoding the components of the log-likelihood.</p>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">parameters</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">Omega_k</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
+  <span class="l l-Scalar l-Scalar-Plain">Omega_c</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.27</span>
+  <span class="l l-Scalar l-Scalar-Plain">Omega_b</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.045</span>
+  <span class="l l-Scalar l-Scalar-Plain">h</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.67</span>
+  <span class="l l-Scalar l-Scalar-Plain">n_s</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.96</span>
+  <span class="l l-Scalar l-Scalar-Plain">sigma8</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.8</span>
+  <span class="l l-Scalar l-Scalar-Plain">w0</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">-1.0</span>
+  <span class="l l-Scalar l-Scalar-Plain">wa</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
+
+  <span class="c1"># lens bin zero</span>
+  <span class="l l-Scalar l-Scalar-Plain">src0_delta_z</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
+  <span class="l l-Scalar l-Scalar-Plain">src1_delta_z</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">0.0</span>
+
+<span class="l l-Scalar l-Scalar-Plain">two_point</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">module</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">firecrown.ccl.two_point</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="ccl-api">
+<h2>CCL API<a class="headerlink" href="#ccl-api" title="Permalink to this headline">¶</a></h2>
+<p>The CCL API is composed of four base classes. Subclasses of these base classes
+are combined to compute the full log-likelihood based on a YAML configuration
+file.</p>
+<div class="section" id="base-classes">
+<h3>Base Classes<a class="headerlink" href="#base-classes" title="Permalink to this headline">¶</a></h3>
+<p>These are:</p>
+<ol class="simple">
+<li><code class="docutils literal notranslate"><span class="pre">firecrown.ccl.core.Source</span></code>: Defines a source (e.g., a set of galaxies).
+This class is used to produce <code class="docutils literal notranslate"><span class="pre">pyccl.cls.Tracer</span></code> objects (actually its
+subclasses).</li>
+<li><code class="docutils literal notranslate"><span class="pre">firecrown.ccl.core.Statistic</span></code>: Defines a statistic (e.g., a 2pt function).
+This class is used to combine sources into statistics.</li>
+<li><code class="docutils literal notranslate"><span class="pre">firecrown.ccl.core.Systematic</span></code>: Defines a systematic effect to apply to
+either a <code class="docutils literal notranslate"><span class="pre">Source</span></code> or <code class="docutils literal notranslate"><span class="pre">Statistic</span></code>. This class is used to apply systematics
+that are associated either with a single source or a single statistic.</li>
+<li><code class="docutils literal notranslate"><span class="pre">firecrown.ccl.core.LogLike</span></code>: Defines various log-likelihood computations.
+This class is used to combine <code class="docutils literal notranslate"><span class="pre">Statistic</span></code>s together with a covariance matrix
+into a final likelihood computation.</li>
+</ol>
+<p>Please see <a class="reference external" href="firecrown/ccl/core.py">firecrown/ccl/core.py</a> for the details of
+each class.</p>
+<p>Some Notes:</p>
+<ul class="simple">
+<li>Each subclass which inherits from a given class is expected to define any
+methods defined in the parent with the same call signature. See the base
+class docstrings for additional instructions.</li>
+<li>If a base class includes a class-level doc string, then
+the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> function of the subclass should define at least those
+arguments and/or keyword arguments in the class-level doc string.</li>
+<li>Attributes ending with an underscore are set after the call to
+<code class="docutils literal notranslate"><span class="pre">apply</span></code>/<code class="docutils literal notranslate"><span class="pre">compute</span></code>/<code class="docutils literal notranslate"><span class="pre">render</span></code>.</li>
+<li>Attributes define in the <code class="docutils literal notranslate"><span class="pre">__init__</span></code> method should be considered constant
+and not changed after instantiation.</li>
+<li>Objects inheriting from <code class="docutils literal notranslate"><span class="pre">Systematic</span></code> should only adjust source/statistic
+properties ending with an underscore.</li>
+</ul>
+</div>
+<div class="section" id="yaml-configuration">
+<h3>YAML Configuration<a class="headerlink" href="#yaml-configuration" title="Permalink to this headline">¶</a></h3>
+<p>The example configuration file, <a class="reference external" href="examples/cosmicshear.yaml">cosmicshear.yaml</a>,
+shows how one would configure a cosmic shear analysis in Fourier space.</p>
+<p>In general, a two-point YAML configuration file has four sections, <code class="docutils literal notranslate"><span class="pre">sources</span></code>,
+<code class="docutils literal notranslate"><span class="pre">systematics</span></code>, <code class="docutils literal notranslate"><span class="pre">likelihood</span></code>, and <code class="docutils literal notranslate"><span class="pre">statistics</span></code>. The <code class="docutils literal notranslate"><span class="pre">sources</span></code>, <code class="docutils literal notranslate"><span class="pre">systematics</span></code>,
+and <code class="docutils literal notranslate"><span class="pre">statistics</span></code> sections contain mappings of names to configuration
+specifications for each item. Other sections of the file should refer to
+these items by their names. The configuration of each item follows their
+docstrings.</p>
+</div>
+</div>
+<div class="section" id="generic-api">
+<h2>Generic API<a class="headerlink" href="#generic-api" title="Permalink to this headline">¶</a></h2>
+<p>The generic API works with two functions. The first, <code class="docutils literal notranslate"><span class="pre">parse_config</span></code>, is
+responsible for doing any initialization based on parsing on a YAML
+configuration file. The second function, <code class="docutils literal notranslate"><span class="pre">compute_loglike</span></code>, does the actual
+log-likelihood computations. Finally, a configuration section in the input
+YAML file points <code class="docutils literal notranslate"><span class="pre">firecrown</span></code> to the python module with these functions.</p>
+<div class="section" id="id1">
+<h3>YAML Configuration<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h3>
+<p>The YAML configuration blob for your function should look like</p>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">my_loglike_term</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">module</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mymodule.import.path.to.functions</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+<p>Any valid YAML is allowed after the <code class="docutils literal notranslate"><span class="pre">module</span></code> key. You can refer to parameters
+in the parameters section by their names, e.g.</p>
+<div class="highlight-YAML notranslate"><div class="highlight"><pre><span></span><span class="l l-Scalar l-Scalar-Plain">parameters</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">a</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">5</span>
+
+<span class="l l-Scalar l-Scalar-Plain">my_loglike_term</span><span class="p p-Indicator">:</span>
+  <span class="l l-Scalar l-Scalar-Plain">module</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">mymodule.import.path.to.functions</span>
+  <span class="l l-Scalar l-Scalar-Plain">input_for_a</span><span class="p p-Indicator">:</span> <span class="l l-Scalar l-Scalar-Plain">a</span>
+  <span class="l l-Scalar l-Scalar-Plain">...</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="implementing-parse-config-and-compute-loglike">
+<h3>Implementing <code class="docutils literal notranslate"><span class="pre">parse_config</span></code> and <code class="docutils literal notranslate"><span class="pre">compute_loglike</span></code><a class="headerlink" href="#implementing-parse-config-and-compute-loglike" title="Permalink to this headline">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">parse_config</span></code> function should have the following signature</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">parse_config</span><span class="p">(</span><span class="n">analysis</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Parse an analysis.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    analysis : dict</span>
+<span class="sd">        Dictionary containing the parsed YAML.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>It is imported from the module path given above, e.g.
+<code class="docutils literal notranslate"><span class="pre">mymodule.import.path.to.functions</span></code>. It gets as an input the parsed YAML blob
+for your analysis (everything under <code class="docutils literal notranslate"><span class="pre">my_loglike_term</span></code> above). It is expected
+to return one object (<code class="docutils literal notranslate"><span class="pre">data</span></code> above). This object is passed back to the
+<code class="docutils literal notranslate"><span class="pre">compute_loglike</span></code> function.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">compute_loglike</span></code> function has the signature</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">compute_loglike</span><span class="p">(</span>
+        <span class="o">*</span><span class="p">,</span>
+        <span class="n">cosmo</span><span class="p">,</span>
+        <span class="n">parameters</span><span class="p">,</span>
+        <span class="n">data</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;Compute the log-likelihood of the data.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cosmo : a `pyccl.Cosmology` object</span>
+<span class="sd">        A cosmology.</span>
+<span class="sd">    parameters : dict</span>
+<span class="sd">        Dictionary mapping parameters to their values.</span>
+<span class="sd">    data : dict</span>
+<span class="sd">        The output of `parse_config`.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    loglike : float</span>
+<span class="sd">        The computed log-likelihood.</span>
+<span class="sd">    stats : dict</span>
+<span class="sd">        Dictionary with any data to store.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="o">...</span>
+</pre></div>
+</div>
+<p>It takes as an input a <code class="docutils literal notranslate"><span class="pre">pyccl.Cosmology</span></code> object, the dictionary of current
+parameter values, and the data returned from <code class="docutils literal notranslate"><span class="pre">parse_config</span></code>. This function
+should use the data to compute the log-likelihood. It should
+also return any data to store as keys in a dictionary. Follow the following rules
+when implementing this function.</p>
+<ol class="simple">
+<li>Always use the <code class="docutils literal notranslate"><span class="pre">pyccl.Cosmology</span></code> object for any cosmological computations (e.g., distances).</li>
+<li>If the likelihood is zero, this function should return <code class="docutils literal notranslate"><span class="pre">-np.inf</span></code>.</li>
+<li>The elements of dictionary of returned data must be <a class="reference external" href="https://docs.scipy.org/doc/numpy/user/basics.rec.html#module-numpy.doc.structured_arrays">numpy structured arrays</a>.</li>
+</ol>
+</div>
+</div>
+</div>
+
+
+          </div>
+          
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+<h1 class="logo"><a href="index.html">fireCrown</a></h1>
+
+
+
+
+
+
+
+
+<h3>Navigation</h3>
+<p class="caption"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="Welcome_page.html">Welcome page</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">API Overview</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#global-yaml-configuration">Global YAML Configuration</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#ccl-api">CCL API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#base-classes">Base Classes</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#yaml-configuration">YAML Configuration</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="#generic-api">Generic API</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#id1">YAML Configuration</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#implementing-parse-config-and-compute-loglike">Implementing <code class="docutils literal notranslate"><span class="pre">parse_config</span></code> and <code class="docutils literal notranslate"><span class="pre">compute_loglike</span></code></a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="api/firecrown.html">API Reference</a></li>
+</ul>
+
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="Welcome_page.html" title="previous chapter">Welcome</a></li>
+      <li>Next: <a href="api/firecrown.html" title="next chapter">firecrown package</a></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    </div>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2019, Matt Becker, Elisabeth Krause, Joe Zuntz, Eske Pedersen.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.8.4</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.11</a>
+      
+      |
+      <a href="_sources/API.md.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
