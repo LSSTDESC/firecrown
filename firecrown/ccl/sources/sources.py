@@ -249,7 +249,7 @@ class ClusterSource(Source):
         The comoving volume element, which for a volume limited sample
         is the equivalent to the dndzhistogram.  Set after a call to `render`.
     dndz_interp : Akima1DInterpolator
-        A spline interpolation of the comoving volume element 
+        A spline interpolation of the comoving volume element
     bias_ : np.ndarray, shape (n_z,)
         The bias of the source. Set after a call to `render`.
     scale_ : float
@@ -261,7 +261,7 @@ class ClusterSource(Source):
 
     Methods
     -------
-    integrate_pmor_dz_dm_dproxy : evaluate 
+    integrate_pmor_dz_dm_dproxy : evaluate
         \int dz n(z) \int dM n(M,z) weight(M,z) \int dproxy P(proxy|M,z).
     render : apply systematics to this source and build the
         `pyccl.NumberCountsTracer`.
@@ -291,7 +291,7 @@ class ClusterSource(Source):
         params : dict
             A dictionary mapping parameter names to their current values.
         mor: firecrown.ccl.systematic
-            A Mass-Observable relation systematic. 
+            A Mass-Observable relation systematic.
         weight : function
             An optional weight function with signature (cosmo, halo mass, scale factor).
         """
@@ -305,13 +305,13 @@ class ClusterSource(Source):
             norm = 1
 
         def _integrand_pmor_dz_dm_dproxy(z, ln_m, params):
-            return np.exp(ln_m) * self.dndz_interp(z) * 
+            return (np.exp(ln_m) * self.dndz_interp(z) *
                     ccl.massfunc(cosmo,np.exp(ln_m),1/(1+z)) *
                     mor.integrate_p_dproxy(params,ln_m,z,self._proxy_min,self._proxy_max) *
-                    weight(cosmo,np.exp(ln_m),1/(1+z))
+                    weight(cosmo,np.exp(ln_m),1/(1+z)))
 
         result = scipy.integrate.dblquad(
-            _integrand_dz_dm_dproxy, 
+            _integrand_dz_dm_dproxy,
             np.log(M_MIN),np.log(M_MAX),
             self._z_min,self._z_max,args=(params,))[0]
         return result / norm
@@ -338,8 +338,9 @@ class ClusterSource(Source):
             _dndz_masked = np.zeros_like(self.z_)
             _z_in_range = np.where((self.z_ >= self._z_min) & (self.z_ <= self._z_max))
             _a = 1./(1+self.z_[_z_in_range])
-            dndz_masked[_z_in_range] = ccl.h_over_h0(cosmo,_a) * 
-                                        ccl.comoving_radial_distance(cosmo, _a)**2
+            dndz_masked[_z_in_range] = (
+                ccl.h_over_h0(cosmo,_a) *
+                ccl.comoving_radial_distance(cosmo, _a)**2)
             return dndz_masked
 
         systematics = systematics or {}
