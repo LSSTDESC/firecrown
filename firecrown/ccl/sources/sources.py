@@ -5,6 +5,7 @@ from scipy.interpolate import Akima1DInterpolator
 import pyccl as ccl
 
 from ..core import Source
+
 Z_MIN = 0.0
 Z_MAX = 5.0
 M_MIN = 1.e+7
@@ -239,16 +240,8 @@ class ClusterSource(Source):
 
     Attributes
     ----------
-    z_min : float
-        The minimum redshift of this source bin
-    z_max : float
-        The maximum redshift of this source bin
-    proxy_min : float
-        The minimum mass proxy of this source bin
-    proxy_max : float
-        The maximum mass proxy of this source bin
-    a_eff : float
-        The effective survey area for this source bin, in square degrees.
+    bin_data : str
+        A CSV file with columns z_min, z_max, proxy_min, proxy_max, area_eff
     z_ : np.ndarray, shape (n_z,)
         An array of redshifts, on which PZ systematics operate. Set after a call
         to `render`.
@@ -268,25 +261,27 @@ class ClusterSource(Source):
 
     Methods
     -------
+    integrate_pmor_dz_dm_dproxy : evaluate 
+        \int dz n(z) \int dM n(M,z) weight(M,z) \int dproxy P(proxy|M,z).
     render : apply systematics to this source and build the
-        `pyccl.NumberCountsTracer`
+        `pyccl.NumberCountsTracer`.
     """
     def __init__(
             self, bin_data, has_rsd=False,
             scale=1.0, systematics=None):
         df = pd.read_csv(bin_data)
-        self.z_min = f['z_min'].values.copy()[0]
-        self.z_max = f['z_max'].values.copy()[0]
-        self.proxy_min = f['proxy_min'].values.copy()[0]
-        self.proxy_max = f['proxy_max'].values.copy()[0]
-        self.a_eff = f['area_eff'].values.copy()[0]
+        self._z_min = f['z_min'].values.copy()[0]
+        self._z_max = f['z_max'].values.copy()[0]
+        self._proxy_min = f['proxy_min'].values.copy()[0]
+        self._proxy_max = f['proxy_max'].values.copy()[0]
+        self._a_eff = f['area_eff'].values.copy()[0]
+        self.bin_data = bin_data
         self.has_rsd = has_rsd
         self.systematics = systematics or []
         self.scale = scale
-        self.bias_ = 0
-    def int_p_dz_dm_dproxy(self, cosmo, params, mor, weight=None):
-        """
-        evaluate \int dz n(z) \int dM n(M,z) weight(M,z) \int dproxy P(proxy|M,z)
+
+    def integrate_pmor_dz_dm_dproxy(self, cosmo, params, mor, weight=None):
+        """Evaluate \int dz n(z) \int dM n(M,z) weight(M,z) \int dproxy P(proxy|M,z)
         if weight = None, this amounts to number count integral
 
         Parameters
@@ -295,10 +290,10 @@ class ClusterSource(Source):
             A pyccl.Cosmology object.
         params : dict
             A dictionary mapping parameter names to their current values.
-        mor: systematic
+        mor: firecrown.ccl.systematic
             A Mass-Observable relation systematic. 
-        weight : function(cosmo, m, a)
-            An optional weight function with arguments cosmo, halo mass, scale factor.
+        weight : function
+            An optional weight function with signature (cosmo, halo mass, scale factor).
         """
 
         if weight is None:
@@ -309,16 +304,21 @@ class ClusterSource(Source):
         else:
             norm = 1
 
-        def _integrand_p_dz_dm_dproxy(z, lgm):
-            math.exp(lgm)*self.dndz(z)*mor.int_p_dproxy(proxy, m,z)*ccl.massfunc(cosmo, math.exp(lgm),1/(1+z))*weight(cosmo, math.exp(lgm),1/(1+z))
+        def _integrand_pmor_dz_dm_dproxy(z, ln_m, params):
+            return np.exp(ln_m) * self.dndz_interp(z) * 
+                    ccl.massfunc(cosmo,np.exp(ln_m),1/(1+z)) *
+                    mor.integrate_p_dproxy(params,ln_m,z,self._proxy_min,self._proxy_max) *
+                    weight(cosmo,np.exp(ln_m),1/(1+z))
 
-        result = scipy.integrate.dblquad(self._integrand_dz_dm_dproxy, math.log(M_MIN),math.log(M_MAX),self.z_min,self.z_max)[0]
+        result = scipy.integrate.dblquad(
+            _integrand_dz_dm_dproxy, 
+            np.log(M_MIN),np.log(M_MAX),
+            self._z_min,self._z_max,args=(params,))[0]
         return result / norm
 
 
     def render(self, cosmo, params, systematics=None):
-        """
-        Render a source by applying systematics.
+        """Render a source by applying systematics.
 
         Parameters
         ----------
@@ -330,22 +330,32 @@ class ClusterSource(Source):
             A dictionary mapping systematic names to their objects. The
             default of `None` corresponds to no systematics.
         """
+
+        def _compute_comoving_volume_elements_zbin(self,cosmo):
+            """Compute comoving volume elements for self.z_ in the range [self._z_min, self._z_max].
+            Return zero outside range [self._z_min, self._z_max].
+            """
+            _dndz_masked = np.zeros_like(self.z_)
+            _z_in_range = np.where((self.z_ >= self._z_min) & (self.z_ <= self._z_max))
+            _a = 1./(1+self.z_[_z_in_range])
+            dndz_masked[_z_in_range] = ccl.h_over_h0(cosmo,_a) * 
+                                        ccl.comoving_radial_distance(cosmo, _a)**2
+            return dndz_masked
+
         systematics = systematics or {}
 
-        self.z_ = np.linspace(Z_MIN, Z_MAX, num=100)
-        _a = 1./(1+self.z_)
-        self.dndz_ = ccl.h_over_h0(cosmo,_a)*(ccl.comoving_radial_distance(cosmo, _a)**2)
-
+        self.z_ = np.linspace(Z_MIN, Z_MAX, num=500)
+        self.dndz_ = _compute_comoving_volume_elements_zbin(cosmo)
         self.dndz_interp = Akima1DInterpolator(
             self.z_ , self.dndz_)
         self.scale_ = self.scale
+        self.bias_ = np.ones_like(self.z_)
 
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
-        #need to check that self.systematics includes some type of MOR
 
-        #what's happening here?
-        self.bias_ = np.ones_like(self.z_) * params[self.bias]
+        #TODO: check that self.systematics includes some type of MOR
+
         tracer = ccl.NumberCountsTracer(
             cosmo,
             has_rsd=self.has_rsd,
