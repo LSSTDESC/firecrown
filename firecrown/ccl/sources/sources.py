@@ -5,9 +5,12 @@ from scipy.interpolate import Akima1DInterpolator
 import pyccl as ccl
 
 from ..core import Source
+Z_MIN = 0.0
+Z_MAX = 5.0
+M_MIN = 1.e+7
+M_MAX = 1.e+18
 
-
-__all__ = ['WLSource', 'NumberCountsSource']
+__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource']
 
 
 class WLSource(Source):
@@ -150,7 +153,7 @@ class NumberCountsSource(Source):
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
-    tracer_ : `pyccl.WeakLensingTracer`
+    tracer_ : `pyccl.NumberCountsTracer`
         The CCL tracer associated with this source. Set after a call to
         `render`.
 
@@ -215,4 +218,137 @@ class NumberCountsSource(Source):
                 has_rsd=self.has_rsd,
                 dndz=(self.z_, self.dndz_),
                 bias=(self.z_, self.bias_))
+        self.tracer_ = tracer
+
+
+class ClusterSource(Source):
+    """A CCL volume-limited count source binned MOR. Create separate source per mass proxy, redshift bin.
+
+    Parameters
+    ----------
+    bin_data : str
+        A CSV file with columns z_min, z_max, proxy_min, proxy_max, area_eff
+    has_rsd : bool, optional
+        If `True`, the source has RSD terms.
+    scale : float, optional
+        The default scale for this source. Usually the default of 1.0 is
+        correct.
+    systematics : list of str, optional
+        A list of the source-level systematics to apply to the source. The
+        default of `None` implies no systematics.
+
+    Attributes
+    ----------
+    z_min : float
+        The minimum redshift of this source bin
+    z_max : float
+        The maximum redshift of this source bin
+    proxy_min : float
+        The minimum mass proxy of this source bin
+    proxy_max : float
+        The maximum mass proxy of this source bin
+    a_eff : float
+        The effective survey area for this source bin, in square degrees.
+    z_ : np.ndarray, shape (n_z,)
+        An array of redshifts, on which PZ systematics operate. Set after a call
+        to `render`.
+    dndz_ : np.ndarray, shape (n_z,)
+        The comoving volume element, which for a volume limited sample
+        is the equivalent to the dndzhistogram.  Set after a call to `render`.
+    dndz_interp : Akima1DInterpolator
+        A spline interpolation of the comoving volume element 
+    bias_ : np.ndarray, shape (n_z,)
+        The bias of the source. Set after a call to `render`.
+    scale_ : float
+        The overall scale associated with the source. Set after a call to
+        `render`.
+    tracer_ : `pyccl.NumberCountsTracer`
+        The CCL tracer associated with this source. Set after a call to
+        `render`.
+
+    Methods
+    -------
+    render : apply systematics to this source and build the
+        `pyccl.NumberCountsTracer`
+    """
+    def __init__(
+            self, bin_data, has_rsd=False,
+            scale=1.0, systematics=None):
+        df = pd.read_csv(bin_data)
+        self.z_min = f['z_min'].values.copy()[0]
+        self.z_max = f['z_max'].values.copy()[0]
+        self.proxy_min = f['proxy_min'].values.copy()[0]
+        self.proxy_max = f['proxy_max'].values.copy()[0]
+        self.a_eff = f['area_eff'].values.copy()[0]
+        self.has_rsd = has_rsd
+        self.systematics = systematics or []
+        self.scale = scale
+        self.bias_ = 0
+    def int_p_dz_dm_dproxy(self, cosmo, params, mor, weight=None):
+        """
+        evaluate \int dz n(z) \int dM n(M,z) weight(M,z) \int dproxy P(proxy|M,z)
+        if weight = None, this amounts to number count integral
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        mor: systematic
+            A Mass-Observable relation systematic. 
+        weight : function(cosmo, m, a)
+            An optional weight function with arguments cosmo, halo mass, scale factor.
+        """
+
+        if weight is None:
+            weight = lambda cosmo, M, a : 1.0
+
+        if weight is not None:
+            norm = self.int_dz_dM_dproxy(cosmo, params, mor)
+        else:
+            norm = 1
+
+        def _integrand_p_dz_dm_dproxy(z, lgm):
+            math.exp(lgm)*self.dndz(z)*mor.int_p_dproxy(proxy, m,z)*ccl.massfunc(cosmo, math.exp(lgm),1/(1+z))*weight(cosmo, math.exp(lgm),1/(1+z))
+
+        result = scipy.integrate.dblquad(self._integrand_dz_dm_dproxy, math.log(M_MIN),math.log(M_MAX),self.z_min,self.z_max)[0]
+        return result / norm
+
+
+    def render(self, cosmo, params, systematics=None):
+        """
+        Render a source by applying systematics.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        systematics : dict
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
+        """
+        systematics = systematics or {}
+
+        self.z_ = np.linspace(Z_MIN, Z_MAX, num=100)
+        _a = 1./(1+self.z_)
+        self.dndz_ = ccl.h_over_h0(cosmo,_a)*(ccl.comoving_radial_distance(cosmo, _a)**2)
+
+        self.dndz_interp = Akima1DInterpolator(
+            self.z_ , self.dndz_)
+        self.scale_ = self.scale
+
+        for systematic in self.systematics:
+            systematics[systematic].apply(cosmo, params, self)
+        #need to check that self.systematics includes some type of MOR
+
+        #what's happening here?
+        self.bias_ = np.ones_like(self.z_) * params[self.bias]
+        tracer = ccl.NumberCountsTracer(
+            cosmo,
+            has_rsd=self.has_rsd,
+            dndz=(self.z_, self.dndz_),
+            bias=(self.z_, self.bias_))
         self.tracer_ = tracer
