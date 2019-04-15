@@ -42,24 +42,22 @@ class PhotoZShiftBias(Systematic):
 
 
 class PhotoZSystematic(Systematic):
-    """ Convolves the original redshift distribution with a gaussian filter
-    with mean mu and std sigma that evolve with redshift
-    according to mu_shift = z + para_mean[0] + (1+z)*para_mean[1] and
-    sigma_shift = (1+z)*para_std
+    """ A photo-z systematic.
+
+    Convolves the original redshift distribution with a gaussian filter
+    with mean mu and std sigma that evolve with redshift according to
+    mu_shift = z + mu_0 + (1+z)*mu_1 and sigma_shift = (1+z)*sigma
 
     TODO: use more efficient integration and test more complex parametrizations
 
     Parameters:
     -----------
-    zorig: midpoints of original histogram bins
-    zpdf_orig: histogram heights
-    para_mean: parameters that describes the evolution of the mean function
-    para_std: parameter that describes the evolution of the std function
+    mu_0, mu_1: parameters that describes the evolution of the mean function
+    sigma: parameter that describes the evolution of the std function
 
-    Returns:
-    --------
-    mod_pdf: Modified histogram bins
-
+    Methods
+    -------
+    apply : apply the systematic to a source
     """
     def __init__(self, mu_0, mu_1, sigma):
         self.mu_0 = mu_0
@@ -67,6 +65,17 @@ class PhotoZSystematic(Systematic):
         self.sigma = sigma
 
     def apply(self, cosmo, params, source):
+        """Apply the systematic to the photo-z distribution of a source.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        source : a source object
+            The source to which apply the shift.
+        """
         zorig, N = (source.z_, len(source.z_))
         zpdf_orig = source.dndz_/np.sum(source.dndz_*source.z_)
         joint_distr = np.zeros((N, N))
