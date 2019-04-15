@@ -74,7 +74,7 @@ def test_photoz_systematic_smoke():
     mu_0 = 0.1
     mu_1 = 0.0
     sigma = 0.05
-    params = {'mu_0': mu_0, 'mu_1':mu_1, 'sigma':sigma}
+    params = {'mu_0': mu_0, 'mu_1': mu_1, 'sigma': sigma}
 
     sys = PhotoZSystematic(mu_0='mu_0', mu_1='mu_1', sigma='sigma')
     sys.apply(None, params, src)
