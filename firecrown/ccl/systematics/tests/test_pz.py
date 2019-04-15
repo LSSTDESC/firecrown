@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import Akima1DInterpolator
-from ..pz import PhotoZShiftBias
+from scipy.stats import norm
+from ..pz import PhotoZShiftBias, PhotoZSystematic
 
 
 class DummySource(object):
@@ -58,3 +59,29 @@ def test_photoz_shift_fill_nan():
     msk = z - 0.5 <= 0
     assert np.all(src.dndz_[msk] == 0)
     assert np.all(src.dndz_[~msk] != 0)
+
+
+def test_photoz_systematic_smoke():
+    z = np.linspace(0, 1.5, 600)
+    dndz = norm.pdf(z, 0.5, 0.1)
+
+    src = DummySource()
+    src.z = z
+    src.dndz = dndz
+    src.z_ = z.copy()
+    src.dndz_ = dndz.copy()
+
+    mu_0 = 0.1
+    mu_1 = 0.0
+    sigma = 0.05
+    params = {'mu_0': mu_0, 'mu_1':mu_1, 'sigma':sigma}
+
+    sys = PhotoZSystematic(mu_0='mu_0', mu_1='mu_1', sigma='sigma')
+    sys.apply(None, params, src)
+
+    # mdndz_old = np.sum(z * dndz) / np.sum(dndz)
+    # mdndz_new = np.sum(src.z_ * src.dndz_) / np.sum(src.dndz_)
+    # assert np.abs(mdndz_new - mdndz_old - 0.05) < 1e-3
+    assert np.allclose(src.z_, z)
+    assert np.allclose(src.z, z)
+    assert np.allclose(src.dndz, dndz)
