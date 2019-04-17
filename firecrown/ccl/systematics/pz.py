@@ -52,8 +52,15 @@ class PhotoZSystematic(Systematic):
 
     Parameters:
     -----------
-    mu_0, mu_1: parameters that describes the evolution of the mean function
-    sigma: parameter that describes the evolution of the std function
+    mu_0 : str
+        the name of the first parameter that describes the evolution of the
+        mean function
+    mu_1 : str
+        the name of the second parameter that describes the evolution of the
+        mean function
+    sigma : str
+        the name of the parameter that describes the evolution of the
+        std function
 
     Methods
     -------
@@ -76,17 +83,12 @@ class PhotoZSystematic(Systematic):
         source : a source object
             The source to which apply the shift.
         """
-        zorig, N = (source.z_, len(source.z_))
-        zpdf_orig = source.dndz_/np.sum(source.dndz_*source.z_)
-        joint_distr = np.zeros((N, N))
-        _dndz = np.zeros(N)
-
-        for i in range(N):
+        _dndz = []
+        for z in source.z_:
             gauss_filter = (
-                norm.pdf(zorig[i], loc=zorig + params[self.mu_0] +
-                         params[self.mu_1]*(1. + zorig),
-                         scale=params[self.sigma]*(1. + zorig)))
-            joint_distr[i, :] = gauss_filter*zpdf_orig
-            _dndz[i] = simps(joint_distr[i, :], zorig)
-
-        source.dndz_ = _dndz/simps(_dndz, zorig)
+                norm.pdf(z, loc=source.z_ + params[self.mu_0] +
+                         params[self.mu_1]*(1. + source.z_),
+                         scale=params[self.sigma]*(1. + source.z_)))
+            joint_distr = gauss_filter*source.dndz_
+            _dndz.append(simps(joint_distr, source.z_))
+        source.dndz_ = np.array(_dndz)
