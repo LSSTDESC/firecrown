@@ -71,17 +71,23 @@ def test_photoz_systematic_smoke():
     src.z_ = z.copy()
     src.dndz_ = dndz.copy()
 
-    mu_0 = 0.1
-    mu_1 = 0.0
-    sigma = 0.05
-    params = {'mu_0': mu_0, 'mu_1': mu_1, 'sigma': sigma}
-
-    sys = PhotoZSystematic(mu_0='mu_0', mu_1='mu_1', sigma='sigma')
+    params = {
+        'mu_0': 0.1,
+        'mu_1': 0.0,
+        'sigma': 0.05}
+    sys = PhotoZSystematic(
+        mu_0='mu_0',
+        mu_1='mu_1',
+        sigma='sigma')
     sys.apply(None, params, src)
 
-    # mdndz_old = np.sum(z * dndz) / np.sum(dndz)
-    # mdndz_new = np.sum(src.z_ * src.dndz_) / np.sum(src.dndz_)
-    # assert np.abs(mdndz_new - mdndz_old - 0.05) < 1e-3
+    new_dndz = []
+    h = z[1] - z[0]
+    for z0 in z:
+        jd = norm.pdf(z0, loc=z + 0.1, scale=0.05 * (1. + z)) * dndz
+        new_dndz.append((sum(jd) - jd[-1]) * h)
+    new_dndz = np.array(new_dndz)
+    assert np.max(np.abs(src.dndz_ - new_dndz)) < 1e-3
     assert np.allclose(src.z_, z)
     assert np.allclose(src.z, z)
     assert np.allclose(src.dndz, dndz)

@@ -53,13 +53,13 @@ class PhotoZSystematic(Systematic):
     Parameters:
     -----------
     mu_0 : str
-        the name of the first parameter that describes the evolution of the
+        The name of the first parameter that describes the evolution of the
         mean function
     mu_1 : str
-        the name of the second parameter that describes the evolution of the
+        The name of the second parameter that describes the evolution of the
         mean function
     sigma : str
-        the name of the parameter that describes the evolution of the
+        The name of the parameter that describes the evolution of the
         std function
 
     Methods
