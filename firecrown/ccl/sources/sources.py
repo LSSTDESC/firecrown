@@ -269,7 +269,7 @@ class ClusterSource(Source):
     def __init__(
             self, bin_data, has_rsd=False,
             scale=1.0, systematics=None):
-        df = pd.read_csv(bin_data)
+        f = pd.read_csv(bin_data)
         self._z_min = f['z_min'].values.copy()[0]
         self._z_max = f['z_max'].values.copy()[0]
         self._proxy_min = f['proxy_min'].values.copy()[0]
