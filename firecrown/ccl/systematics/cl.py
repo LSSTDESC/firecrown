@@ -4,8 +4,39 @@ import scipy.special
 
 from ..core import Systematic
 
-__all__ = ['MORMurata']
+__all__ = ['MORTrue', 'MORMurata']
 
+class MORTrue(Systematic):
+    """Mass-Observable relation systematic.
+
+    This systematic simply returns the input mass.
+
+    Methods
+    -------
+    apply : apply the systematic to a source
+    """
+    def __init__(self,):
+        pass
+
+    def integrate_p_dproxy(self, params, ln_m, z, lambda_min, lambda_max):
+        """Just returns 1
+        """
+        return 1
+
+    def apply(self, cosmo, params, source):
+        """Apply a linear bias systematic.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        source : a source object
+            The source to which apply the MOR model.
+        """
+        source.bias_ *= source.integrate_pmor_dz_dm_dproxy(
+            cosmo, params, self, weight=ccl.halo_bias)
 
 class MORMurata(Systematic):
     """Mass-Observable relation systematic.
