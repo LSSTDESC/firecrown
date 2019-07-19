@@ -6,56 +6,20 @@ import pyccl as ccl
 from ..core import Statistic
 
 
-def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
-    """Build an array of ells to sample the power spectrum for real-space
-    predictions.
-    """
-    return np.concatenate((
-        np.linspace(ell_min, ell_mid-1, ell_mid-ell_min),
-        np.logspace(np.log10(ell_mid), np.log10(ell_max), n_log)))
 
-
-@functools.lru_cache(maxsize=128)
-def _cached_angular_cl(cosmo, tracers, ells):
-    return ccl.angular_cl(
-        cosmo, *tracers, np.array(ells),
-        l_logstep=1.15, l_linstep=6e4)
-
-
-class TwoPointStatistic(Statistic):
-    """A two-point statistic (e.g., shear correlation function, galaxy-shear
-    correlation function, etc.).
+class CountsStatistic(Statistic):
+    """A number count statistic (e.g., cluster counts, etc.).
 
     Parameters
     ----------
     data : str
         The path to a CSV file with the measured statistic. The columns should
-        be {'ell_or_theta', 'measured_statistic'}.
-    kind : str
-        The kind of two-point statistic. One of
-            - 'cl' : angular power spectrum
-            - 'gg' : angular position auto-correlation function
-            - 'gl' : angular cross-correlation between position and shear
-            - 'l+' : angular shear auto-correlation function (xi+)
-            - 'l-' : angular shear auto-correlation function (xi-)
+        be {'z_min', 'z_max', 'massproxy_min','massproxy_min','measured_statistic'}.
     sources : list of str
-        A list of the sources needed to compute this statistic.
+        A source for which to compute this statistic.
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
-    ell_min : int
-        The minimum angulare wavenumber to use for real-space integrations.
-    ell_mid : int
-        The midpoint angular wavenumber to use for real-space integrations. The
-        angular wavenumber samples are linearly spaced at integers between
-        `ell_min` and `ell_mid`.
-    ell_max : float
-        The maximum angular wavenumber to use for real-space integrations. The
-        angular wavenumber samples are logarithmically spaced between
-        `ell_mid` and `ell_max`.
-    n_log : int
-        The number of logarithmically spaced angular wavenumber samples between
-        `ell_mid` and `ell_max`.
 
     Attributes
     ----------
