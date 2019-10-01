@@ -252,6 +252,9 @@ class ClusterSource(Source):
         A spline interpolation of the comoving volume element
     bias_ : np.ndarray, shape (n_z,)
         The bias of the source. Set after a call to `render`.
+#### Elisabeth: I need help here - how is properly described?
+    mor_ : function(proxy, mass, z)
+        Pointer for the MOR pdf
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
@@ -279,6 +282,16 @@ class ClusterSource(Source):
         self.has_rsd = has_rsd
         self.systematics = systematics or []
         self.scale = scale
+
+        def _mor_ident(proxy, mass, z):
+        """Extremely simplified attempt at delta-function MOR
+        """
+            _eps = 0.01
+            if np.abs(proxy - mass) < _eps*mass:
+                return 0.5/_eps
+            else:
+                return 0.
+        self.mor_ = _mor_ident
 
     def integrate_pmor_dz_dm_dproxy(self, cosmo, params, mor, weight=None):
         """Evaluate \int dz n(z) \int dM n(M,z) weight(M,z) \int dproxy P(proxy|M,z)
