@@ -37,7 +37,6 @@ RESERVED_CCL_PARAMS = (
 
 @functools.lru_cache(maxsize=64)
 def _get_ccl_cosmology(params):
-    print('cosmo comp!')  # print([(v[0], hash(v[1])) for v in params])
     dct = {p: v for p, v in params}
     return pyccl.Cosmology(**dct)
 
