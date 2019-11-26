@@ -54,7 +54,7 @@ jobs:
               pandas \
               jinja2 \
               schwimmbad \
-              emcee \
+              "emcee>=3" \
               tqdm \
               joblib \
               flake8 \

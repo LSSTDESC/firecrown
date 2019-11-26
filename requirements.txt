@@ -6,6 +6,6 @@ click
 pandas
 jinja2
 schwimmbad
-emcee
+emcee>=3
 tqdm
 joblib
