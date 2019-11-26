@@ -1,4 +1,4 @@
-pyccl~=1.0
+pyccl~=2.0
 numpy>=1.15
 pyyaml
 scipy
