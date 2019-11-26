@@ -104,7 +104,9 @@ def run_emcee(config, data, *, parameters, n_steps,
             pvals = np.array([data['parameters'][p] for p in parameters])
             p0 = _get_init(pvals, n_walkers, rel_kern=0.1, abs_kern=1e-2)
 
-            sampler.run_mcmc(p0, n_steps, progress=True)
+            sampler.run_mcmc(
+                p0, n_steps,
+                progress=True, skip_initial_state_check=True)
         else:
             sampler = None
             # the only case that gets here is backend == 'mpi' and a worker

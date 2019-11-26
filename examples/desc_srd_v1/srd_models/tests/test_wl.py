@@ -64,8 +64,6 @@ def test_ia_bias():
     eta_ia = 1.0
     eta_ia_highz = 4.0
     beta_ia = 1.0
-    Omega_b = 0.05
-    Omega_c = 0.25
 
     lpiv_beta_ia = _mag_to_lum(-22)
     vals = [_compute_red_frac_z_Az(
@@ -77,32 +75,22 @@ def test_ia_bias():
     params = {
         'a': eta_ia,
         'b': eta_ia_highz,
-        'c': beta_ia,
-        'd': Omega_b,
-        'e': Omega_c}
+        'c': beta_ia}
 
     sys = KEBNLASystematic(
         eta_ia='a',
         eta_ia_highz='b',
-        beta_ia='c',
-        Omega_b='d',
-        Omega_c='e')
+        beta_ia='c')
     sys.apply(COSMO, params, src)
 
     # make sure it did something
     assert not np.allclose(src.ia_bias_, 1.0)
-    assert not np.allclose(src.red_frac_, 1.0)
-
-    # check the red frac
-    assert np.allclose(src.red_frac_, rf)
 
     # check the IA signal
-    fac = (
-        (Omega_b + Omega_c) * 0.0134 /
-        ccl.growth_factor(COSMO, 1.0 / (1.0 + src.z_)) *
-        np.power((1 + src.z_) / (1 + 0.3), eta_ia))
+    fac = np.power((1 + src.z_) / (1 + 0.3), eta_ia)
     fac *= (
         1.0 * (src.z_ < 0.7) +
         np.power((1 + src.z_) / (1 + 0.7), eta_ia_highz) * (src.z_ > 0.7))
     fac *= az
+    fac *= rf
     assert np.allclose(src.ia_bias_, fac)
