@@ -2,7 +2,6 @@ import multiprocessing
 
 import numpy as np
 import emcee
-import tqdm
 import schwimmbad
 
 from ..loglike import compute_loglike
@@ -35,7 +34,7 @@ def _lnprob(p, params, config, data):
 
 def run_emcee(config, data, *, parameters, n_steps,
               n_walkers='max(2*n_dims, 20)',
-              n_workers=None, backend='joblib'):
+              n_workers=None, backend='serial'):
     """Run the emcee sampler.
 
     Parameters
@@ -64,7 +63,7 @@ def run_emcee(config, data, *, parameters, n_steps,
             'joblib' : joblib lokey-based parallelism (OpenMP safe)
             'mpi' : MPI-base parallelism via mpi4py
             'serial' : use a single process
-        The default is 'joblib'.
+        The default is 'serial'.
 
     Returns
     -------
@@ -105,12 +104,7 @@ def run_emcee(config, data, *, parameters, n_steps,
             pvals = np.array([data['parameters'][p] for p in parameters])
             p0 = _get_init(pvals, n_walkers, rel_kern=0.1, abs_kern=1e-2)
 
-            with tqdm.tqdm(
-                    iterable=sampler.sample(p0, iterations=n_steps),
-                    total=n_steps,
-                    desc='sampling') as pbar:
-                for _ in pbar:
-                    pass
+            sampler.run_mcmc(p0, n_steps, progress=True)
         else:
             sampler = None
             # the only case that gets here is backend == 'mpi' and a worker
@@ -123,13 +117,16 @@ def run_emcee(config, data, *, parameters, n_steps,
             ('emcee_walker', 'i8'),
             ('mcmc_step', 'i8'),
             ('loglike', 'f8')]
-        chain = np.zeros(sampler.flatchain.shape[0], dtype=dtype)
+        chain = np.zeros(
+            sampler.get_chain().shape[0] * sampler.get_chain().shape[1],
+            dtype=dtype)
+        _chain = sampler.get_chain()
+        _log_prob = sampler.get_log_prob()
         loc = 0
         for walker in range(n_walkers):
             for i, p in enumerate(parameters):
-                chain[p][loc:loc+n_steps] = sampler.chain[walker, :, i]
-            chain['loglike'][loc:loc+n_steps] \
-                = sampler.lnprobability[walker, :]
+                chain[p][loc:loc+n_steps] = _chain[:, walker, i]
+            chain['loglike'][loc:loc+n_steps] = _log_prob[:, walker]
             chain['mcmc_step'][loc:loc+n_steps] \
                 = np.arange(n_steps, dtype='i8')
             chain['emcee_walker'][loc:loc+n_steps] = walker

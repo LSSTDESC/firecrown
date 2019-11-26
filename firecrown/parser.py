@@ -22,8 +22,8 @@ def parse(filename):
 
     with open(filename, 'r') as fp:
         config_str = jinja2.Template(fp.read()).render()
-    config = yaml.load(config_str)
-    data = yaml.load(config_str)
+    config = yaml.load(config_str, Loader=yaml.Loader)
+    data = yaml.load(config_str, Loader=yaml.Loader)
 
     params = {}
     for p, val in data['parameters'].items():
