@@ -27,9 +27,9 @@ def test_write_metadata(tmpdir):
     assert os.path.exists(mtd)
 
     with open(mtd, 'r') as fp:
-        metadata = yaml.load(fp)
+        metadata = yaml.load(fp, Loader=yaml.Loader)
     assert metadata['analysis_id'] == analysis_id
 
     with open(cfg, 'r') as fp:
-        config = yaml.load(fp)
+        config = yaml.load(fp, Loader=yaml.Loader)
     assert config['data'] == 1

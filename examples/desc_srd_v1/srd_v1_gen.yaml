@@ -13,7 +13,6 @@ parameters:
   eta_ia_highz: 0.0
   beta_ia: 1.0
   A0: 5.0
-  red_frac: 1.0
 
   # magic numbers from Tim
   # for the life of me, I cannot figure out how to get CCL to compute the
@@ -30,7 +29,6 @@ two_point:
       kind: WLSource
       dndz_data: data_gen/src{{ i }}_dndz.csv
       ia_bias: A0
-      red_frac: red_frac
       systematics:
         - keb16_ia
     {% endfor %}
@@ -48,8 +46,6 @@ two_point:
       eta_ia: eta_ia
       eta_ia_highz: eta_ia_highz
       beta_ia: beta_ia
-      Omega_b: Omega_b
-      Omega_c: Omega_c
 
   statistics:
     {% for i in range(5) %}

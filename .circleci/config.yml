@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: circleci/python:3.6.4
+      - image: circleci/python:3.7
 
     working_directory: ~/repo
 
@@ -12,83 +12,85 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v0-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}-gsl2.5-swig3.0.12
+          - v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
           # fallback to using the latest cache if no exact match is found
-          - v0-dependencies-
+          - v0-conda-dependencies-
 
       - run:
           name: install dependencies
-          # cmake is not up to date on apt-get, using the ppa
           command: |
-            # basic deps
-            sudo apt-get update && sudo apt-get install -y gcc g++ gfortran byacc libhdf5-serial-dev
+            if [ ! -d miniconda ]; then
+              curl -s https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh
+              bash miniconda.sh -b -p miniconda
 
-            # install cmake
-            wget https://cmake.org/files/v3.12/cmake-3.12.0-Linux-x86_64.sh
-            sudo sh cmake-3.12.0-Linux-x86_64.sh --prefix=/usr/local --exclude-subdir
+              export PATH=`pwd`/miniconda/bin:$PATH
 
-            # now GSL
-            if [ ! -d "./gsl-2.5" ]; then
-              wget ftp://ftp.gnu.org/gnu/gsl/gsl-2.5.tar.gz
-              tar xzvf gsl-2.5.tar.gz
-              cd gsl-2.5
-              ./configure
-              make
-              cd ..
+              conda config --set always_yes yes --set changeps1 no
+              conda config --add channels defaults
+              conda config --add channels conda-forge
+              conda update -q conda
+
+              conda create -q -n test-env \
+                python=3.7 \
+                pip
             fi
-            cd ./gsl-2.5
-            sudo make install
-            cd ..
 
-            # now swig
-            if [ ! -d "./swig-3.0.12" ]; then
-              wget https://sourceforge.net/projects/swig/files/swig/swig-3.0.12/swig-3.0.12.tar.gz
-              tar xzvf swig-3.0.12.tar.gz
-              cd swig-3.0.12
-              ./configure
-              make
-              cd ..
-            fi
-            cd ./swig-3.0.12
-            sudo make install
-            cd ..
+            export PATH=`pwd`/miniconda/bin:$PATH
 
-            # and python
-            python3 -m venv venv
-            . venv/bin/activate
-            export CC=gcc
-            export FC=gfortran
-            export CXX=g++
-            pip install -U pip setuptools wheel
-            pip install -U --upgrade-strategy=eager numpy>=1.15
-            pip install -U --upgrade-strategy=eager -r requirements.txt
-            pip install -U --upgrade-strategy=eager -r dev-requirements.txt
-            pip install .
+            conda config --set always_yes yes --set changeps1 no
+            conda config --add channels defaults
+            conda config --add channels conda-forge
+            conda update -q conda
+
+            source activate test-env
+
+            conda install -y -q \
+              numpy \
+              "pyccl>=2.0" \
+              numpy \
+              pyyaml \
+              scipy \
+              click \
+              pandas \
+              jinja2 \
+              schwimmbad \
+              "emcee>=3" \
+              tqdm \
+              joblib \
+              flake8 \
+              pytest \
+              nose
+
+            # requires special compilers we don't have
+            # pip install cosmosis-standalone==0.0.9
+            conda update --all -y -q
+            pip install -e .
 
       - save_cache:
           paths:
-            - ./venv
-            - ./gsl-2.5
-            - ./swig-3.0.12
-          key: v0-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}-gsl2.5-swig3.0.12
+            - ./miniconda
+          key: v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
 
       - run:
           name: lint
           command: |
-            . venv/bin/activate
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
             flake8 firecrown
             flake8 bin/firecrown
 
       - run:
           name: test
           command: |
-            . venv/bin/activate
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
             pytest -vv firecrown
 
       - run:
           name: cosmic-shear-example
           command: |
-            . venv/bin/activate
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
             firecrown compute cosmicshear.yaml
@@ -96,7 +98,8 @@ jobs:
       - run:
           name: desc-srd-v1
           command: |
-            . venv/bin/activate
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
             cd examples/desc_srd_v1
             pip install -e .
             pytest -vv srd_models

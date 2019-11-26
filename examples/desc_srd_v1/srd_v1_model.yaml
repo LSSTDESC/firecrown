@@ -13,7 +13,6 @@ parameters:
   eta_ia_highz: 0.0
   beta_ia: 1.0
   A0: 5.0
-  red_frac: 1.0
 
   mult_bias: 0.0
 
@@ -65,7 +64,6 @@ two_point:
       kind: WLSource
       dndz_data: data_model/src{{ i }}_dndz.csv
       ia_bias: A0
-      red_frac: red_frac
       systematics:
         - delta_z_src{{ i }}
         - keb16_ia
@@ -95,8 +93,6 @@ two_point:
       eta_ia: eta_ia
       eta_ia_highz: eta_ia_highz
       beta_ia: beta_ia
-      Omega_b: Omega_b
-      Omega_c: Omega_c
 
     shear_bias:
       kind: srd_models.DESCSRDv1MultiplicativeShearBias

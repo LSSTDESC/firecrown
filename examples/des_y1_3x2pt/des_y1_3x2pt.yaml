@@ -14,7 +14,6 @@ parameters:
   eta_ia: 0.0
 
   # these parameters are fixed
-  red_frac: 1.0
   alphag_ia: -1
   z_piv_ia: 0.62
 
@@ -57,7 +56,7 @@ emcee:
     - lens{{ i }}_delta_z
   {% endfor %}
   n_steps: 1000
-  backend: mpi
+  backend: serial
 
 priors:
   module: firecrown.priors
@@ -128,7 +127,6 @@ two_point:
       kind: WLSource
       dndz_data: des_data/dndz_src{{ i }}.csv
       ia_bias: A0
-      red_frac: red_frac
       systematics:
         - delta_z_src{{ i }}
         - des_ia
@@ -162,8 +160,6 @@ two_point:
       alphaz: eta_ia
       alphag: alphag_ia
       z_piv: z_piv_ia
-      Omega_b: Omega_b
-      Omega_c: Omega_c
 
     {% for i in range(1, 5) %}
     shear_bias_src{{ i }}:
