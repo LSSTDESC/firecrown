@@ -69,9 +69,6 @@ def test_lss_source_nosys(lss_data):
     assert src.systematics == []
 
     assert isinstance(src.tracer_, ccl.NumberCountsTracer)
-    assert np.allclose(src.tracer_.z_n, lss_data['z'])
-    assert np.allclose(src.tracer_.n, lss_data['dndz'])
-    assert np.allclose(src.tracer_.b, lss_data['params']['blah2'])
 
 
 def test_lss_source_sys(lss_data):
@@ -92,9 +89,6 @@ def test_lss_source_sys(lss_data):
     assert src.systematics == lss_data['systematics']
 
     assert isinstance(src.tracer_, ccl.NumberCountsTracer)
-    assert np.allclose(src.tracer_.z_n, lss_data['z'])
-    assert np.allclose(src.tracer_.n, lss_data['dndz'])
-    assert np.allclose(src.tracer_.b, lss_data['params']['blah2'])
 
 
 def test_lss_source_mag(lss_data):
@@ -116,7 +110,3 @@ def test_lss_source_mag(lss_data):
     assert src.systematics == lss_data['systematics']
 
     assert isinstance(src.tracer_, ccl.NumberCountsTracer)
-    assert np.allclose(src.tracer_.z_n, lss_data['z'])
-    assert np.allclose(src.tracer_.n, lss_data['dndz'])
-    assert np.allclose(src.tracer_.b, lss_data['params']['blah2'])
-    assert np.allclose(src.tracer_.s, lss_data['params']['blah6'])

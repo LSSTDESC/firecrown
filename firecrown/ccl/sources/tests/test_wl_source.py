@@ -67,8 +67,6 @@ def test_wl_source_nosys(wl_data):
     assert src.systematics == []
 
     assert isinstance(src.tracer_, ccl.WeakLensingTracer)
-    assert np.allclose(src.tracer_.z_n, wl_data['z'])
-    assert np.allclose(src.tracer_.n, wl_data['dndz'])
 
 
 def test_wl_source_sys(wl_data):
@@ -87,15 +85,12 @@ def test_wl_source_sys(wl_data):
     assert src.systematics == wl_data['systematics']
 
     assert isinstance(src.tracer_, ccl.WeakLensingTracer)
-    assert np.allclose(src.tracer_.z_n, wl_data['z'])
-    assert np.allclose(src.tracer_.n, wl_data['dndz'])
 
 
 def test_wl_source_with_ia(wl_data):
     src = WLSource(
         dndz_data=wl_data['dndz_data'],
         systematics=wl_data['systematics'],
-        red_frac='blah2',
         ia_bias='blah6')
 
     src.render(
@@ -106,16 +101,8 @@ def test_wl_source_with_ia(wl_data):
     assert np.allclose(src.z_, wl_data['z'])
     assert np.allclose(src.dndz_, wl_data['dndz'])
     assert np.allclose(src.scale_, wl_data['scale_'])
-    assert np.allclose(src.red_frac_, wl_data['params']['blah2'])
-    assert np.shape(src.red_frac_) == np.shape(src.z_)
     assert np.allclose(src.ia_bias_, wl_data['params']['blah6'])
     assert np.shape(src.ia_bias_) == np.shape(src.z_)
     assert src.systematics == wl_data['systematics']
 
     assert isinstance(src.tracer_, ccl.WeakLensingTracer)
-    assert np.allclose(src.tracer_.z_n, wl_data['z'])
-    assert np.allclose(src.tracer_.n, wl_data['dndz'])
-    assert np.allclose(src.tracer_.z_rf, wl_data['z'])
-    assert np.allclose(src.tracer_.rf, wl_data['params']['blah2'])
-    assert np.allclose(src.tracer_.z_ba, wl_data['z'])
-    assert np.allclose(src.tracer_.ba, wl_data['params']['blah6'])

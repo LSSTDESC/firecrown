@@ -18,9 +18,6 @@ class WLSource(Source):
     dndz_data : str
         The path to the photo-z distribution in a CSV. The columns should be
         {'z', 'dndz'}.
-    red_frac : str, optional
-        The parameter for the red fraction. Only used if
-        `has_intrinsic_alignment` is `True`.
     ia_bias : str, optional
         The parameter for the intrinsic alignment amplitude.
     scale : float, optional
@@ -39,13 +36,10 @@ class WLSource(Source):
         to `render`.
     dndz_ : np.ndarray, shape (n_z,)
         The photo-z distribution amplitudes.  Set after a call to `render`.
-    red_frac_ : np.ndarray, shape (n_z,)
-        The red fraction as a function of redshift.  Set after a call to
-        `render`. Only present in `has_intrinsic_alignment` is `True`.
     ia_bias_ : np.ndarray, shape (n_z,)
         The intrinsic alignment amplitude as a function of redshift. Set after
-        a call to `render`. Only present in `has_intrinsic_alignment` is
-        `True`.
+        a call to `render`. Only present in `is_bias` was non-None when the
+        object was made.
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
@@ -59,10 +53,8 @@ class WLSource(Source):
         `pyccl.WeakLensingTracer`
     """
     def __init__(
-            self, dndz_data, red_frac=None,
-            ia_bias=None, scale=1.0, systematics=None):
+            self, dndz_data, ia_bias=None, scale=1.0, systematics=None):
         self.dndz_data = dndz_data
-        self.red_frac = red_frac
         self.ia_bias = ia_bias
         self.systematics = systematics or []
         df = pd.read_csv(dndz_data)
@@ -92,19 +84,17 @@ class WLSource(Source):
         self.z_ = self._z_orig.copy()
         self.dndz_ = self._dndz_orig.copy()
         self.scale_ = self.scale
-        if self.red_frac is not None or self.ia_bias is not None:
-            self.red_frac_ = np.ones_like(self.z_) * params[self.red_frac]
+        if self.ia_bias is not None:
             self.ia_bias_ = np.ones_like(self.z_) * params[self.ia_bias]
 
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        if self.red_frac is not None or self.ia_bias is not None:
+        if self.ia_bias is not None:
             tracer = ccl.WeakLensingTracer(
                 cosmo,
                 dndz=(self.z_, self.dndz_),
-                ia_bias=(self.z_, self.ia_bias_),
-                red_frac=(self.z_, self.red_frac_))
+                ia_bias=(self.z_, self.ia_bias_))
         else:
             tracer = ccl.WeakLensingTracer(
                 cosmo,

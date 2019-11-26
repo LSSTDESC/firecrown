@@ -17,9 +17,7 @@ def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
 
 @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells):
-    return ccl.angular_cl(
-        cosmo, *tracers, np.array(ells),
-        l_logstep=1.15, l_linstep=6e4)
+    return ccl.angular_cl(cosmo, *tracers, np.array(ells))
 
 
 class TwoPointStatistic(Statistic):

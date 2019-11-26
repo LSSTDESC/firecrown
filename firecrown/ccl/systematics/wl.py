@@ -4,9 +4,6 @@ from ..core import Systematic
 
 __all__ = ['MultiplicativeShearBias', 'LinearAlignmentSystematic']
 
-# constant from KEB16, near eqn 7
-C1RHOC = 0.0134
-
 
 class MultiplicativeShearBias(Systematic):
     """Multiplicative shear bias systematic.
@@ -58,21 +55,15 @@ class LinearAlignmentSystematic(Systematic):
     z_piv : str
         The name of the pivot redshift parameter for the intrinsic alignment
         parameter.
-    Omega_b : str
-        The name of the parameter for the baryon density at z = 0.
-    Omega_c : str
-        The name of the patameter for the cold dark matter density at z = 0.
 
     Methods
     -------
     apply : apply the systematic to a source
     """
-    def __init__(self, alphaz, alphag, z_piv, Omega_b, Omega_c):
+    def __init__(self, alphaz, alphag, z_piv):
         self.alphaz = alphaz
         self.alphag = alphag
         self.z_piv = z_piv
-        self.Omega_b = Omega_b
-        self.Omega_c = Omega_c
 
     def apply(self, cosmo, params, source):
         """Apply a linear alignment systematic.
@@ -86,9 +77,9 @@ class LinearAlignmentSystematic(Systematic):
         source : a source object
             The source to which apply the shear bias.
         """
-        pref = (params[self.Omega_b] + params[self.Omega_c]) * C1RHOC * (
+        pref = (
             ((1.0 + source.z_) / (1.0 + params[self.z_piv])) **
             params[self.alphaz])
         pref *= ccl.growth_factor(
-                cosmo, 1.0 / (1.0 + source.z_)) ** params[self.alphag]
+                cosmo, 1.0 / (1.0 + source.z_)) ** (params[self.alphag]-1)
         source.ia_bias_ *= pref
