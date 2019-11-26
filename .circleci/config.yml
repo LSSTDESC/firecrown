@@ -61,7 +61,8 @@ jobs:
               pytest \
               nose
 
-            pip install cosmosis-standalone==0.0.9
+            # requires special compilers we don't have
+            # pip install cosmosis-standalone==0.0.9
             conda update --all -y -q
             pip install -e .
 
