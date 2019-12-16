@@ -34,9 +34,9 @@ def lss_data():
 
     # add extra data to make sure nothing weird is pulled back out
     mn = 0.5
-    z = np.linspace(0, 2, 50)
-    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
-    sacc_data.add_tracer('NZ', 'trc2', z, dndz)
+    _z = np.linspace(0, 2, 50)
+    _dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    sacc_data.add_tracer('NZ', 'trc2', _z, _dndz)
 
     return {
         'cosmo': cosmo,
