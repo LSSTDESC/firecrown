@@ -1,19 +1,15 @@
-import os
-
-import pandas as pd
 import numpy as np
-
 import pytest
-
+import sacc
 import pyccl as ccl
 
 from ..sources import WLSource
 from ...systematics import MultiplicativeShearBias
 
 
-@pytest.fixture(scope="session")
-def wl_data(tmpdir_factory):
-    tmpdir = str(tmpdir_factory.mktemp("data"))
+@pytest.fixture
+def wl_data():
+    sacc_data = sacc.Sacc()
 
     params = dict(
         Omega_c=0.27,
@@ -33,16 +29,19 @@ def wl_data(tmpdir_factory):
     mn = 0.25
     z = np.linspace(0, 2, 50)
     dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    sacc_data.add_tracer('NZ', 'trc1', z, dndz)
 
-    df = pd.DataFrame({'z': z, 'dndz': dndz})
-    dndz_data = os.path.join(tmpdir, 'pz.csv')
-    df.to_csv(dndz_data, index=False)
+    # add extra data to make sure nothing weird is pulled back out
+    mn = 0.5
+    z = np.linspace(0, 2, 50)
+    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    sacc_data.add_tracer('NZ', 'trc2', z, dndz)
 
     return {
         'cosmo': cosmo,
-        'tmpdir': tmpdir,
+        'sacc_tracer': 'trc1',
+        'sacc_data': sacc_data,
         'params': params,
-        'dndz_data': dndz_data,
         'systematics': ['wlm'],
         'systematics_dict': {'wlm': wlm},
         'scale_': 1.05,
@@ -52,8 +51,9 @@ def wl_data(tmpdir_factory):
 
 def test_wl_source_nosys(wl_data):
     src = WLSource(
-        dndz_data=wl_data['dndz_data'],
+        sacc_tracer=wl_data['sacc_tracer'],
         scale=0.5)
+    src.read(wl_data['sacc_data'])
 
     src.render(
         wl_data['cosmo'],
@@ -71,8 +71,9 @@ def test_wl_source_nosys(wl_data):
 
 def test_wl_source_sys(wl_data):
     src = WLSource(
-        dndz_data=wl_data['dndz_data'],
+        sacc_tracer=wl_data['sacc_tracer'],
         systematics=wl_data['systematics'])
+    src.read(wl_data['sacc_data'])
 
     src.render(
         wl_data['cosmo'],
@@ -89,9 +90,10 @@ def test_wl_source_sys(wl_data):
 
 def test_wl_source_with_ia(wl_data):
     src = WLSource(
-        dndz_data=wl_data['dndz_data'],
+        sacc_tracer=wl_data['sacc_tracer'],
         systematics=wl_data['systematics'],
         ia_bias='blah6')
+    src.read(wl_data['sacc_data'])
 
     src.render(
         wl_data['cosmo'],

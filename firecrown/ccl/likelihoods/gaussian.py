@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 import scipy.linalg
 
 from ..core import LogLike
@@ -10,13 +9,9 @@ class ConstGaussianLogLike(LogLike):
 
     Parameters
     ----------
-    data : str
-        The path to the covariance matrix in CSV format. The columns should be
-        {'i', 'j', 'cov'} giving the indices of each matrix element and its
-        value.
     data_vector : list of str
-        A list of the statistics in the config file in the order they appear in
-        the covariance matrix.
+        A list of the statistics in the config file in the order you want them
+        to appear in the covariance matrix.
 
     Attributes
     ----------
@@ -29,16 +24,30 @@ class ConstGaussianLogLike(LogLike):
     -------
     compute_loglike : compute the log-likelihood
     """
-    def __init__(self, data, data_vector):
-        self.data = data
+    def __init__(self, data_vector):
         self.data_vector = data_vector
 
-        df = pd.read_csv(data)
-        dim = max(np.max(df['i']), np.max(df['j'])) + 1
-        cov = np.zeros((dim, dim))
-        cov[df['i'].values, df['j'].values] = df['cov'].values
-        self.cov = cov
-        self.cholesky = scipy.linalg.cholesky(cov, lower=True)
+    def read(self, sacc_data, sources, statistics):
+        """Read the covariance matrirx for this likelihood from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        sources : dict
+            A dictionary mapping sources to their objects. These sources do
+            not have to have been rendered.
+        statistics : dict
+            A dictionary mapping statistics to their objects. These statistics do
+            not have to have been rendered.
+        """
+        # df = pd.read_csv(data)
+        # dim = max(np.max(df['i']), np.max(df['j'])) + 1
+        # cov = np.zeros((dim, dim))
+        # cov[df['i'].values, df['j'].values] = df['cov'].values
+        # self.cov = cov
+        # self.cholesky = scipy.linalg.cholesky(cov, lower=True)
+        pass
 
     def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.

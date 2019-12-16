@@ -14,6 +14,8 @@ Some Notes:
    and not changed after instantiation.
  - Objects inheriting from `Systematic` should only adjust source/statistic
    properties ending with an underscore.
+ - The `read` methods are called after all objects are made and are used to
+   read any additional data.
 """
 
 
@@ -28,6 +30,19 @@ class Statistic(object):
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
     """
+    def read(self, sacc_data, sources):
+        """Read the data for this statistic from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        sources : dict
+            A dictionary mapping sources to their objects. These sources do
+            not have to have been rendered.
+        """
+        pass
+
     def compute(self, cosmo, params, sources, systematics=None):
         """Compute a statistic from sources, applying any systematics.
 
@@ -77,6 +92,16 @@ class Source(object):
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
     """
+    def read(self, sacc_data):
+        """Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
+        pass
+
     def render(self, cosmo, params, systematics=None):
         """Render a source by applying systematics.
 
@@ -103,9 +128,25 @@ class LogLike(object):
     Parameters
     ----------
     data_vector : list of str
-        A list of the statistics in the config file in the order they appear in
-        the covariance matrix.
+        A list of the statistics in the config file in the order you want them
+        to appear in the covariance matrix.
     """
+    def read(self, sacc_data, sources, statistics):
+        """Read the covariance matrirx for this likelihood from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        sources : dict
+            A dictionary mapping sources to their objects. These sources do
+            not have to have been rendered.
+        statistics : dict
+            A dictionary mapping statistics to their objects. These statistics do
+            not have to have been rendered.
+        """
+        pass
+
     def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.
 

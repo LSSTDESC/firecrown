@@ -14,7 +14,7 @@ def _parse_systematics(systematics):
 
     ```YAML
     wl_m0:
-      kind: MultiplicateShearBias:
+      kind: MultiplicateShearBias
       m: 'm0'
     ```
     """
@@ -44,14 +44,12 @@ def _parse_two_point_statistics(statistics):
         ```YAML
         cl_src0_src0:
           sources: ['src0', 'src0']
-          kind: 'cl'
-          data: ./data/cl00.csv
+          sacc_data_type: 'galaxy_density_xi'  # a SACC type that maps to a CCL
+                                               # correlation function kind or
+                                               # power spectrum
           systematics:
             ...
         ```
-
-    The kind can be any of the CCL 2pt function types ('gg', 'gl', 'l+',
-    'l-') or 'cl' for Fourier space statistics.
     """
     stats = {}
     for stat, keys in statistics.items():
@@ -68,14 +66,12 @@ def _parse_sources(srcs):
         ```YAML
         src0:
           kind: 'WLSource'
-          dndz_data: ./data/cl00.csv
-          has_intrinsic_alignment: False
+          sacc_tracer: 'bin_0'  # name of the tracer in the SACC file goes here
           systematics:
             ...
         ```
 
-    The kind can be any of the CCL 2pt function types ('gg', 'gl', 'l+',
-    'l-') or 'cl' for Fourier space statistics.
+    The kind can be on of {'WLSource', 'NumberCountsSource'}.
     """
     # extract sources
     sources = {}
@@ -94,7 +90,6 @@ def _parse_likelihood(likelihood):
         ```YAML
         likelihood:
           kind: 'ConstGaussianLogLike'
-          data: ./data/cov.csv
           data_vector:
             - stat1
             - stat2
