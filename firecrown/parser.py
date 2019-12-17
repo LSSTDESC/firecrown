@@ -48,10 +48,9 @@ def parse(filename):
 
         new_keys = {}
         if hasattr(mod, 'parse_config'):
-            new_keys['data'] = getattr(
-                mod, 'parse_config')(data[analysis])
-            new_keys['eval'] = getattr(
-                mod, 'compute_loglike')
+            new_keys['data'] = getattr(mod, 'parse_config')(data[analysis])
+            new_keys['eval'] = getattr(mod, 'compute_loglike')
+            new_keys['write'] = getattr(mod, 'write_stats')
         else:
             raise ValueError("Analsis '%s' could not be parsed!" % (analysis))
 

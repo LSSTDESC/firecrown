@@ -90,11 +90,13 @@ the path to the SACC data file if desired.
 
 ## Generic API
 
-The generic API works with two functions. The first, `parse_config`, is
+The generic API works with three required functions. The first, `parse_config`, is
 responsible for doing any initialization based on parsing on a YAML
 configuration file. The second function, `compute_loglike`, does the actual
-log-likelihood computations. Finally, a configuration section in the input
-YAML file points `firecrown` to the python module with these functions.
+log-likelihood computations. A configuration section in the input
+YAML file points `firecrown` to the python module with these functions. Finally,
+you should define a third function `write_stats`, that writes any returned data
+to a specified path.
 
 ### YAML Configuration
 
@@ -119,7 +121,7 @@ my_loglike_term:
   ...
 ```
 
-### Implementing `parse_config` and `compute_loglike`
+### Implementing `parse_config`, `compute_loglike`, and `write_stats`
 
 The `parse_config` function should have the following signature
 
@@ -168,8 +170,8 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
-    stats : dict
-        Dictionary with any data to store.
+    stats : object or other data
+        Any data you wish to store.
     """
     ...
 ```
@@ -182,4 +184,21 @@ when implementing this function.
 
 1. Always use the `pyccl.Cosmology` object for any cosmological computations (e.g., distances).
 2. If the likelihood is zero, this function should return `-np.inf`.
-3. The elements of dictionary of returned data must be [numpy structured arrays](https://docs.scipy.org/doc/numpy/user/basics.rec.html#module-numpy.doc.structured_arrays).
+
+The `write_stats` function has the signature
+
+```python
+def write_stats(*, output_path, data, stats):
+    """Write statistics to a file at `output_path`.
+
+    Parameters
+    ----------
+    output_path : str
+        The path to which to write the data.
+    data : dict
+        The output of `parse_config`.
+    stats : object or other data
+        Any data you wish to store.
+    """
+    ...
+```
