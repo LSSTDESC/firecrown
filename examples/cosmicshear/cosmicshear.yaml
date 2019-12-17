@@ -42,11 +42,12 @@ cosmosis:
 
 two_point:
   module: firecrown.ccl.two_point
+  sacc_file: cosmicshear.fits
   sources:
     {% for i in range(2) %}
     src{{ i }}:
       kind: WLSource
-      dndz_data: data/pz{{ i }}.csv
+      sacc_tracer: trc{{ i }}
       systematics:
         - pz_delta_{{ i }}
     {% endfor %}
@@ -63,14 +64,12 @@ two_point:
     {% for j in range(i, 2) %}
     cl_src{{ i }}_src{{ j }}:
       sources: ['src{{ i }}', 'src{{ j }}']
-      kind: 'cl'
-      data: data/cl{{ i }}{{ j }}.csv
+      sacc_data_type: 'galaxy_shear_cl_ee'
     {% endfor %}
     {% endfor %}
 
   likelihood:
     kind: ConstGaussianLogLike
-    data: data/cov.csv
     data_vector:
     {% for i in range(2) %}
     {% for j in range(i, 2) %}
