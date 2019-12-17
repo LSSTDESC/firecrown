@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import sacc
 
 from .parser import (
@@ -64,14 +63,13 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
-    stats : dict
-        Dictionary with 2pt stat predictions.
+    stats : None
+        Always None for this analysis.
     """
 
     for name, src in data['sources'].items():
         src.render(cosmo, parameters, systematics=data['systematics'])
 
-    stats = {}
     _data = {}
     _theory = {}
     for name, stat in data['statistics'].items():
@@ -79,10 +77,6 @@ def compute_loglike(
             cosmo, parameters, data['sources'], systematics=data['systematics'])
         _data[name] = stat.measured_statistic_
         _theory[name] = stat.predicted_statistic_
-        stats[name] = pd.DataFrame({
-            'ell_or_theta': stat.ell_or_theta_,
-            'measured_statistic': _data[name],
-            'predicted_statistic': _theory[name]}).to_records(index=False)
 
     # compute the log-like
     if 'likelihood' in data:
@@ -90,7 +84,7 @@ def compute_loglike(
     else:
         loglike = None
 
-    return loglike, stats
+    return loglike, None
 
 
 def write_stats(*, output_path, data, stats):
