@@ -1,19 +1,16 @@
-import os
-
-import pandas as pd
 import numpy as np
-
 import pytest
 
+import sacc
 import pyccl as ccl
 
 from ..sources import NumberCountsSource
 from ...systematics import MultiplicativeShearBias
 
 
-@pytest.fixture(scope="session")
-def lss_data(tmpdir_factory):
-    tmpdir = str(tmpdir_factory.mktemp("data"))
+@pytest.fixture
+def lss_data():
+    sacc_data = sacc.Sacc()
 
     params = dict(
         Omega_c=0.27,
@@ -33,16 +30,19 @@ def lss_data(tmpdir_factory):
     mn = 0.25
     z = np.linspace(0, 2, 50)
     dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    sacc_data.add_tracer('NZ', 'trc1', z, dndz)
 
-    df = pd.DataFrame({'z': z, 'dndz': dndz})
-    dndz_data = os.path.join(tmpdir, 'pz.csv')
-    df.to_csv(dndz_data, index=False)
+    # add extra data to make sure nothing weird is pulled back out
+    mn = 0.5
+    _z = np.linspace(0, 2, 50)
+    _dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    sacc_data.add_tracer('NZ', 'trc2', _z, _dndz)
 
     return {
         'cosmo': cosmo,
-        'tmpdir': tmpdir,
+        'sacc_tracer': 'trc1',
+        'sacc_data': sacc_data,
         'params': params,
-        'dndz_data': dndz_data,
         'systematics': ['wlm'],
         'systematics_dict': {'wlm': wlm},
         'scale_': 1.05,
@@ -52,10 +52,11 @@ def lss_data(tmpdir_factory):
 
 def test_lss_source_nosys(lss_data):
     src = NumberCountsSource(
-        dndz_data=lss_data['dndz_data'],
+        sacc_tracer=lss_data['sacc_tracer'],
         has_rsd=False,
         bias='blah2',
         scale=0.5)
+    src.read(lss_data['sacc_data'])
 
     src.render(
         lss_data['cosmo'],
@@ -73,10 +74,11 @@ def test_lss_source_nosys(lss_data):
 
 def test_lss_source_sys(lss_data):
     src = NumberCountsSource(
-        dndz_data=lss_data['dndz_data'],
+        sacc_tracer=lss_data['sacc_tracer'],
         has_rsd=False,
         bias='blah2',
         systematics=lss_data['systematics'])
+    src.read(lss_data['sacc_data'])
 
     src.render(
         lss_data['cosmo'],
@@ -93,11 +95,12 @@ def test_lss_source_sys(lss_data):
 
 def test_lss_source_mag(lss_data):
     src = NumberCountsSource(
-        dndz_data=lss_data['dndz_data'],
+        sacc_tracer=lss_data['sacc_tracer'],
         has_rsd=False,
         bias='blah2',
         mag_bias='blah6',
         systematics=lss_data['systematics'])
+    src.read(lss_data['sacc_data'])
 
     src.render(
         lss_data['cosmo'],

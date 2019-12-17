@@ -72,6 +72,8 @@ Some Notes:
    and not changed after instantiation.
  - Objects inheriting from `Systematic` should only adjust source/statistic
    properties ending with an underscore.
+ - The `read` methods are called after all objects are made and are used to
+   read any additional data.   
 
 ### YAML Configuration
 
@@ -83,7 +85,8 @@ In general, a two-point YAML configuration file has four sections, `sources`,
 and `statistics` sections contain mappings of names to configuration
 specifications for each item. Other sections of the file should refer to
 these items by their names. The configuration of each item follows their
-docstrings.
+docstrings. There is a final optional key, `sacc_file`, which should contain
+the path to the SACC data file if desired.
 
 ## Generic API
 
