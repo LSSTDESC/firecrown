@@ -1,5 +1,6 @@
 import numpy as np
 import scipy.linalg
+import sacc
 
 from ..core import LogLike
 
@@ -41,13 +42,22 @@ class ConstGaussianLogLike(LogLike):
             A dictionary mapping statistics to their objects. These statistics do
             not have to have been rendered.
         """
-        # df = pd.read_csv(data)
-        # dim = max(np.max(df['i']), np.max(df['j'])) + 1
-        # cov = np.zeros((dim, dim))
-        # cov[df['i'].values, df['j'].values] = df['cov'].values
-        # self.cov = cov
-        # self.cholesky = scipy.linalg.cholesky(cov, lower=True)
-        pass
+        if not isinstance(sacc_data.covariance, sacc.covariance.FullCovariance):
+            raise RuntimeError(
+                "Currently, the SACC covariance must be a 'FullCovariance'. "
+                "This may change in a future firecrown release.")
+        _sd = sacc_data.copy()
+        inds = []
+        for stat in self.data_vector:
+            inds.append(
+                _sd.indices(
+                    statistics[stat].sacc_data_type,
+                    statistics[stat].sacc_tracers)
+            )
+        inds = np.concatenate(inds, axis=0)
+        _sd.keep_indices(inds)
+        self.cov = _sd.covariance.covmat.copy()
+        self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
 
     def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.

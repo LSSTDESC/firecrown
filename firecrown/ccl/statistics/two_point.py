@@ -75,6 +75,9 @@ class TwoPointStatistic(Statistic):
     ccl_kind : str
         The CCL correlation function kind or 'cl' for power spectra corresponding
         to the SACC data type.
+    sacc_tracers : 2-tuple of str
+        A tuple of the SACC tracer names for this 2pt statistic. Set after a
+        call to read.
     ell_or_theta_ : np.ndarray
         The final array of ell/theta values for the statistic. Set after
         `compute` is called.
@@ -136,7 +139,9 @@ class TwoPointStatistic(Statistic):
             raise RuntimeError(
                 "Tracers '%s' have no 2pt data in the SACC file!" % tracers)
 
-        # I don't think we need these, but being safe here
+        self.sacc_tracers = tuple(tracers)
+
+        # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
         self._stat = _stat.copy()
 
