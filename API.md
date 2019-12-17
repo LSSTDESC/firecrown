@@ -198,7 +198,7 @@ def write_stats(*, output_path, data, stats):
     data : dict
         The output of `parse_config`.
     stats : object or other data
-        Any data you wish to store.
+        Second output of `compute_loglike`.
     """
     ...
 ```
