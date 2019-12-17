@@ -7,6 +7,7 @@ import pyccl as ccl
 
 from ..parser import parse
 from ..loglike import compute_loglike
+from ..io import write_statistics
 
 
 @pytest.fixture(scope="session")
@@ -146,8 +147,40 @@ def test_integration_smoke(tx_data):
     cfg_path = os.path.join(tmpdir, 'config.yaml')
 
     config, data = parse(cfg_path)
-    loglike, _ = compute_loglike(
+    loglike, stats = compute_loglike(
         cosmo=tx_data['cosmo'],
         data=data)
 
     assert np.allclose(loglike, tx_data['loglike'])
+
+    write_statistics(
+        analysis_id="123",
+        output_path=tmpdir,
+        data=data,
+        statistics=stats,
+    )
+
+    opth = os.path.join(tmpdir, 'output_123', 'statistics', 'two_point')
+    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, 'sacc.fits'))
+    meas_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_measured.fits'))
+    pred_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_predicted.fits'))
+
+    for trc_name in ['trc0', 'trc1']:
+        orig_tr = orig_data.get_tracer(trc_name)
+        meas_tr = meas_data.get_tracer(trc_name)
+        pred_tr = pred_data.get_tracer(trc_name)
+
+        assert np.allclose(orig_tr.z, meas_tr.z)
+        assert np.allclose(orig_tr.z, pred_tr.z)
+        assert np.allclose(orig_tr.nz, meas_tr.nz)
+        assert np.allclose(orig_tr.nz, pred_tr.nz)
+
+    for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
+        oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        pell, pcl = pred_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+
+        assert np.allclose(oell, mell)
+        assert np.allclose(oell, pell)
+        assert np.array_equal(ocl, mcl)
+        assert not np.array_equal(ocl, pcl)

@@ -27,6 +27,12 @@ class WLSource(Source):
 
     Attributes
     ----------
+    z_orig : np.ndarray, shape (n_z,)
+        The original redshifts for the photo-z distribution before any
+        systematics are applied. Set after the call to `read`.
+    dndz_orig : np.ndarray, shape (n_z,)
+        The photo-z distribution amplitudes before any systematics are applied.
+        Set after the call to `read`.
     dndz_interp : Akima1DInterpolator
         A spline interpolation of the initial photo-z distribution.
     z_ : np.ndarray, shape (n_z,)
@@ -71,9 +77,9 @@ class WLSource(Source):
         inds = np.argsort(z)
         z = z[inds]
         nz = nz[inds]
-        self._z_orig = z
-        self._dndz_orig = nz
-        self.dndz_interp = Akima1DInterpolator(self._z_orig, self._dndz_orig)
+        self.z_orig = z
+        self.dndz_orig = nz
+        self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -91,8 +97,8 @@ class WLSource(Source):
         """
         systematics = systematics or {}
 
-        self.z_ = self._z_orig.copy()
-        self.dndz_ = self._dndz_orig.copy()
+        self.z_ = self.z_orig.copy()
+        self.dndz_ = self.dndz_orig.copy()
         self.scale_ = self.scale
         if self.ia_bias is not None:
             self.ia_bias_ = np.ones_like(self.z_) * params[self.ia_bias]
@@ -134,6 +140,12 @@ class NumberCountsSource(Source):
 
     Attributes
     ----------
+    z_orig : np.ndarray, shape (n_z,)
+        The original redshifts for the photo-z distribution before any
+        systematics are applied. Set after the call to `read`.
+    dndz_orig : np.ndarray, shape (n_z,)
+        The photo-z distribution amplitudes before any systematics are applied.
+        Set after the call to `read`.
     dndz_interp : Akima1DInterpolator
         A spline interpolation of the initial photo-z distribution.
     z_ : np.ndarray, shape (n_z,)
@@ -182,9 +194,9 @@ class NumberCountsSource(Source):
         inds = np.argsort(z)
         z = z[inds]
         nz = nz[inds]
-        self._z_orig = z
-        self._dndz_orig = nz
-        self.dndz_interp = Akima1DInterpolator(self._z_orig, self._dndz_orig)
+        self.z_orig = z
+        self.dndz_orig = nz
+        self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -202,8 +214,8 @@ class NumberCountsSource(Source):
         """
         systematics = systematics or {}
 
-        self.z_ = self._z_orig.copy()
-        self.dndz_ = self._dndz_orig.copy()
+        self.z_ = self.z_orig.copy()
+        self.dndz_ = self.dndz_orig.copy()
         self.scale_ = self.scale
         self.bias_ = np.ones_like(self.z_) * params[self.bias]
 
