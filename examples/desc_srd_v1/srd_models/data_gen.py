@@ -1,6 +1,4 @@
-import os
 import numpy as np
-import pandas as pd
 import scipy.integrate
 import scipy.interpolate
 
@@ -42,49 +40,53 @@ COSMO = ccl.Cosmology(
     n_s=0.9645)
 
 
-def make_lens_src_ell_bins(output_dir, mean_z):
+#############################################
+# helper functions for ell bins
+
+
+def add_srci_lensj_ell_cl(sacc_data, i, j, mean_z, cl):
     # here we have to combine the small-scale cuts and the linear bias cuts
-    for lens_i in range(N_BINS):
-        for src_j in range(N_BINS):
-            lmax_lens = (
-                LENS_KMAX * ccl.comoving_radial_distance(
-                    COSMO, 1.0 / (1.0 + mean_z[lens_i])) - 0.5)
-            lmax = min(lmax_lens, SRC_LMAX)
-            msk = ELL_VALUES < lmax
-            df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
-            df.to_csv(
-                os.path.join(
-                    output_dir, 'ell_lens%d_src%d.csv' % (lens_i, src_j)),
-                index=False)
+    lmax_lens = (
+        LENS_KMAX * ccl.comoving_radial_distance(
+            COSMO, 1.0 / (1.0 + mean_z)) - 0.5)
+    lmax = min(lmax_lens, SRC_LMAX)
+    msk = (ELL_VALUES < lmax) & (cl > 1e-15)
+    assert len(ELL_VALUES) == len(cl)
+    sacc_data.add_ell_cl(
+        "galaxy_shearDensity_cl_e",
+        "src%d" % i, "lens%d" % j,
+        ELL_VALUES[msk], cl[msk])
+    return msk
 
 
-def make_lens_ell_bins(output_dir, mean_z):
+def add_lensi_lensi_ell_cl(sacc_data, i, mean_z, cl):
     # these cuts make sure we are in the linear bias regime for the
     # given redshift distribution
-    for i in range(N_BINS):
-        lmax = (
-            LENS_KMAX * ccl.comoving_radial_distance(
-                COSMO, 1.0 / (1.0 + mean_z[i])) - 0.5)
-        msk = ELL_VALUES < lmax
-        df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
-        df.to_csv(
-            os.path.join(output_dir, 'ell_lens%d_lens%d.csv' % (i, i)),
-            index=False)
+    lmax = (
+        LENS_KMAX * ccl.comoving_radial_distance(
+            COSMO, 1.0 / (1.0 + mean_z)) - 0.5)
+    msk = (ELL_VALUES < lmax) & (cl > 1e-15)
+    assert len(ELL_VALUES) == len(cl)
+    sacc_data.add_ell_cl(
+        "galaxy_density_cl",
+        "lens%d" % i, "lens%d" % i,
+        ELL_VALUES[msk], cl[msk])
+    return msk
 
 
-def make_src_ell_bins(output_dir):
+def add_srci_srcj_ell_cl(sacc_data, i, j, cl):
     # we cut the fiducial binning below SRC_LMAX to account for baryons
     # and general small-scale problems
-    msk = ELL_VALUES < SRC_LMAX
-    df = pd.DataFrame({'ell_or_theta': ELL_VALUES[msk]})
-    for i in range(N_BINS):
-        for j in range(i, N_BINS):
-            df.to_csv(
-                os.path.join(output_dir, 'ell_src%d_src%d.csv' % (i, j)),
-                index=False)
+    msk = (ELL_VALUES < SRC_LMAX) & (cl > 1e-15)
+    assert len(ELL_VALUES) == len(cl)
+    sacc_data.add_ell_cl(
+        'galaxy_shear_cl_ee',
+        'src%d' % i, 'src%d' % j,
+        ELL_VALUES[msk], cl[msk])
+    return msk
 
 
-def make_lens_z_bins(output_dir):
+def add_lens_tracers(sacc_data):
     zmin = 0.2
     zmax = 1.2
     dz = (zmax - zmin) / N_BINS
@@ -96,19 +98,10 @@ def make_lens_z_bins(output_dir):
         z, dndz = _make_pz(_zmin, _zmax, _pz_lens, _sigmaz_lens)
 
         msk = dndz > 0
-        df = pd.DataFrame({'z': z[msk], 'dndz': dndz[msk]})
-        df.to_csv(os.path.join(output_dir, 'lens%d_dndz.csv' % i), index=False)
+        sacc_data.add_tracer('NZ', 'lens%d' % i, z[msk], dndz[msk])
 
 
-def _pz_lens(z, z0=0.26, alpha=0.94):
-    return z * z * np.exp(-np.power(z/z0, alpha))
-
-
-def _sigmaz_lens(z):
-    return 0.03 * (1.0 + z)
-
-
-def make_src_z_bins(output_dir):
+def add_src_tracers(sacc_data):
     # we are making equal number density bins here
     # idea is to invert the cumulative dndz and then find the
     # redshifts that divide the distribution equally
@@ -131,8 +124,19 @@ def make_src_z_bins(output_dir):
         z, dndz = _make_pz(_zmin, _zmax, _pz_src, _sigmaz_src)
 
         msk = dndz > 0
-        df = pd.DataFrame({'z': z[msk], 'dndz': dndz[msk]})
-        df.to_csv(os.path.join(output_dir, 'src%d_dndz.csv' % i), index=False)
+        sacc_data.add_tracer('NZ', 'src%d' % i, z[msk], dndz[msk])
+
+
+#############################################
+# helper functions for redshift integrals
+
+
+def _pz_lens(z, z0=0.26, alpha=0.94):
+    return z * z * np.exp(-np.power(z/z0, alpha))
+
+
+def _sigmaz_lens(z):
+    return 0.03 * (1.0 + z)
 
 
 def _pz_src(z, z0=0.13, alpha=0.78):

@@ -100,6 +100,32 @@ def write_stats(*, output_path, data, stats):
         Second output of `compute_loglike`. Always None for the two point
         analysis here.
     """
+    meas_sacc, pred_sacc = build_sacc_data(data=data, stats=stats)
+    meas_sacc.save_fits(
+        os.path.join(output_path, 'sacc_measured.fits'), overwrite=True)
+    pred_sacc.save_fits(
+        os.path.join(output_path, 'sacc_predicted.fits'), overwrite=True)
+
+
+def build_sacc_data(data, stats):
+    """Build an SACC data file from a 2pt analysis computation.
+
+    Parameters
+    ----------
+    data : dict
+        The output of `parse_config`.
+    stats : object or other data
+        Second output of `compute_loglike`. Always None for the two point
+        analysis here.
+
+    Returns
+    -------
+    meas_sacc : sacc.Sacc
+        The SACC data for the measured statistics.
+    pred_sacc : sacc.Sacc
+        The SACC data for the predicted statistics.
+    """
+
     if 'likelihood' in data:
         names = data['likelihood'].data_vector
     else:
@@ -109,6 +135,7 @@ def write_stats(*, output_path, data, stats):
     for name, src in data['sources'].items():
         base_sacc_data.add_tracer('NZ', src.sacc_tracer, src.z_orig, src.dndz_orig)
 
+    datas = {}
     for attr in ['measured', 'predicted']:
         sacc_data = base_sacc_data.copy()
 
@@ -130,5 +157,6 @@ def write_stats(*, output_path, data, stats):
         if 'likelihood' in data:
             sacc_data.add_covariance(data['likelihood'].cov)
 
-        sacc_data.save_fits(
-            os.path.join(output_path, 'sacc_%s.fits' % attr), overwrite=True)
+        datas[attr] = sacc_data
+
+    return datas['measured'], datas['predicted']
