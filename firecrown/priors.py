@@ -69,3 +69,8 @@ def compute_loglike(
             keys = {k: v for k, v in data[param].items() if k != 'kind'}
             loglike += dist.logpdf(parameters[param], **keys)
     return loglike, {}
+
+
+def write_stats(*, output_path, data, stats):
+    """Dummy function for API compatibility."""
+    pass

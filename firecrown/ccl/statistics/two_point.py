@@ -135,9 +135,21 @@ class TwoPointStatistic(Statistic):
             _ell_or_theta, _stat = sacc_data.get_theta_xi(
                 self.sacc_data_type, *tracers, return_cov=False)
 
+        # sacc is tracer order sensitive
+        # so we try again if we didn't find anything
         if len(_ell_or_theta) == 0 or len(_stat) == 0:
-            raise RuntimeError(
-                "Tracers '%s' have no 2pt data in the SACC file!" % tracers)
+            tracers = tracers[::-1]
+
+            if self.ccl_kind == 'cl':
+                _ell_or_theta, _stat = sacc_data.get_ell_cl(
+                    self.sacc_data_type, *tracers, return_cov=False)
+            else:
+                _ell_or_theta, _stat = sacc_data.get_theta_xi(
+                    self.sacc_data_type, *tracers, return_cov=False)
+
+            if len(_ell_or_theta) == 0 or len(_stat) == 0:
+                raise RuntimeError(
+                    "Tracers '%s' have no 2pt data in the SACC file!" % tracers)
 
         self.sacc_tracers = tuple(tracers)
 

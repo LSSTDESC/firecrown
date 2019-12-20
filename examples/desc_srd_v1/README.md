@@ -12,11 +12,6 @@ Then you can type
 
 ```bash
 $ python generate_srd_data.py
-$ firecrown compute srd_v1_gen.yaml
-Watch out! Here comes a firecrown!
-analysis id: <analysis id>
-loglike: None
-$ python move_gen_data.py <analysis id>
 ```
 
 to build the example data.
