@@ -104,3 +104,11 @@ jobs:
             cd examples/desc_srd_v1
             pip install -e .
             pytest -vv srd_models
+
+      - run:
+          name: emcee example
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            cd examples/samplers_and_analysis
+            firecrown run-emcee emcee.yaml 
