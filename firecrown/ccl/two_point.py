@@ -28,10 +28,14 @@ def parse_config(analysis):
     if 'likelihood' in analysis:
         new_keys['likelihood'] = _parse_likelihood(analysis['likelihood'])
 
-    # read data if there is a sacc file
-    if 'sacc_file' in analysis:
+    # read data if there is a sacc file or read object
+    sacc_data = None
+    if 'sacc_data' in analysis:
+        sacc_data = analysis['sacc_data']
+    elif 'sacc_file' in analysis :
         sacc_data = sacc.Sacc.load_fits(
             os.path.expanduser(os.path.expandvars(analysis['sacc_file'])))
+    if sacc_data is not None:
         for src in new_keys['sources']:
             new_keys['sources'][src].read(sacc_data)
         for stat in new_keys['statistics']:
