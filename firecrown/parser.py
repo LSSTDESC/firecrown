@@ -14,9 +14,9 @@ def parse(source, settings=None):
         if source has 'read' attribute, it is used to fetch data,
         otherwise it is interpreted as a filename
     settings : dictionary, optional
-         Dictionary (can be of dictionaries) used to update parsed 
-         config file after reading it. If items in config exist, then 
-         they are overwritten, otherwise added. It does not delete existing 
+         Dictionary (can be of dictionaries) used to update parsed
+         config file after reading it. If items in config exist, then
+         they are overwritten, otherwise added. It does not delete existing
          keys in the config.
 
     Returns
