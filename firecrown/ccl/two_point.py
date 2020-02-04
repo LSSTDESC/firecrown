@@ -1,6 +1,5 @@
 import os
 import sacc
-import warnings
 
 from .parser import (
     _parse_sources,
@@ -30,12 +29,8 @@ def parse_config(analysis):
         new_keys['likelihood'] = _parse_likelihood(analysis['likelihood'])
 
     # read data if there is a sacc file or read object
-    if 'sacc_file' in analysis:
-        warnings.warn("sacc_file is deprecated, use sacc_data instead",
-                      DeprecationWarning)
-        analysis['sacc_data'] = analysis['sacc_file']
     if 'sacc_data' in analysis:
-        if type('sacc_data') == str:
+        if isinstance(analysis['sacc_data'], str):
             sacc_data = sacc.Sacc.load_fits(
                 os.path.expanduser(os.path.expandvars(analysis['sacc_file'])))
         else:
