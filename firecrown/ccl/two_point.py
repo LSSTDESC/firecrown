@@ -24,7 +24,10 @@ def parse_config(analysis):
     new_keys = {}
     new_keys['sources'] = _parse_sources(analysis['sources'])
     new_keys['statistics'] = _parse_two_point_statistics(analysis['statistics'])
-    new_keys['systematics'] = _parse_systematics(analysis['systematics'])
+    if 'systematics' in analysis:
+        new_keys['systematics'] = _parse_systematics(analysis['systematics'])
+    else:
+        new_keys['systematics'] = {}
     if 'likelihood' in analysis:
         new_keys['likelihood'] = _parse_likelihood(analysis['likelihood'])
 
