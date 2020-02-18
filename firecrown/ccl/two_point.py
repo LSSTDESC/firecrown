@@ -35,7 +35,7 @@ def parse_config(analysis):
     if 'sacc_data' in analysis:
         if isinstance(analysis['sacc_data'], str):
             sacc_data = sacc.Sacc.load_fits(
-                os.path.expanduser(os.path.expandvars(analysis['sacc_file'])))
+                os.path.expanduser(os.path.expandvars(analysis['sacc_data'])))
         else:
             sacc_data = analysis['sacc_data']
 
