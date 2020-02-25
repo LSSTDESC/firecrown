@@ -365,7 +365,8 @@ class ClusterSource(Source):
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        # TODO set a default mor if none is given
+        if not hasattr(self, 'selfunc_lnmassa_'):
+            self.selfunc_lnmassa_ = None
 
         # TODO compute avg_bias and bias
         self.avg_bias_ = 1.0
