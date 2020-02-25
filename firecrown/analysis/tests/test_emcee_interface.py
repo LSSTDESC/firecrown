@@ -48,3 +48,4 @@ def test_run_emcee(n_walkers):
     assert np.abs((mn - 0.5) / sd) <= 1
     assert np.max(chain['emcee_walker']) == 9
     assert np.max(chain['mcmc_step']) == 999
+    assert type(data['parameters']['x']) == float

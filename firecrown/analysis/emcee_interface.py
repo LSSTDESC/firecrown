@@ -137,7 +137,7 @@ def run_emcee(config, data, *, parameters, n_steps,
         # compute the stats at the best point seen
         max_ind = np.argmax(chain['loglike'])
         for k in parameters:
-            data['parameters'][k] = chain[k][max_ind]
+            data['parameters'][k] = np.asscalar(chain[k][max_ind])
         cosmo = get_ccl_cosmology(data['parameters'])
         _, stats = compute_loglike(cosmo=cosmo, data=data)
 
