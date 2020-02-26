@@ -4,6 +4,7 @@ from scipy.interpolate import Akima1DInterpolator
 import pyccl as ccl
 
 from ..core import Source
+from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
 
 __all__ = ['WLSource', 'NumberCountsSource']
@@ -288,8 +289,20 @@ class ClusterSource(Source):
         The minimum lnlambda value. Set after a call to `render`.
     lnlam_max_ : float
         The maximum lnlambda value. Set after a call to `render`.
-    selfunc_lnmassa_ : callable
-        A function with signature `selfunc_lnmassa_(lnmass, a)` that
+    mor_ : callable
+        The mass-observable relationship. This is a callable with signature
+        `mor(lnmass, a)` that returns a value of the "observable" denoted as
+        `lam` in the code. Set after a call to `render`.
+        A default of the identity function is applied. Add
+        systematics to the source to support more complicated models.
+    inv_mor_ : callable
+        The inverse of the mass-observable relationship. This is a callable with
+        signature `inv_mor(lnlam, a)` that returns the `lnmass` for a given
+        `lam` and scale factor `a`. Set after a call to `render`.
+        A default of the identity function is applied. Add
+        systematics to the source to support more complicated models.
+    selfunc_ : callable
+        A function with signature `selfunc(lnmass, a)` that
         gives the cluster selection function in mass and scale factor
         `\\int_{lnlam_min_}^{lnlam_max_} p(lnlam|lnmass, a) dlnlam`.
         Set after a call to `render`. The default is to assume `p(lnlam|lnmass, a)`
@@ -362,11 +375,14 @@ class ClusterSource(Source):
         self.lnlam_min_ = self.lnlam_min_orig
         self.lnlam_max_ = self.lnlam_max_orig
 
+        # set fiducial MOR and selection function systematics
+        mor_sys = IdentityFunctionMOR()
+        mor_sys.apply(cosmo, params, self)
+        sel_sys = TopHatSelectionFunction()
+        sel_sys.apply(cosmo, params, self)
+
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
-
-        if not hasattr(self, 'selfunc_lnmassa_'):
-            self.selfunc_lnmassa_ = None
 
         # TODO compute avg_bias and bias
         self.avg_bias_ = 1.0
