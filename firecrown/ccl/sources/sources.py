@@ -249,14 +249,6 @@ class ClusterSource(Source):
     ----------
     sacc_tracer : str
         The name of the source in the SACC file.
-    mass_function : str
-        The mass function to use. This parameter is passed directly to
-        `pyccl.halos.hmfunc.mass_function_from_name` to obtain the mass
-        function.
-    bias_function : str
-        The halo bias function to use. This parameter is passed directly to
-        `pyccl.halos.hbias.halo_bias_from_name` to obtain the halo bias
-        function.
     scale : float, optional
         The default scale for this source. Usually the default of 1.0 is
         correct.
@@ -279,6 +271,9 @@ class ClusterSource(Source):
         to `render`.
     dndz_ : np.ndarray, shape (n_z,)
         The photo-z distribution amplitudes. Set after a call to `render`.
+    dndz_interp_ : Akima1DInterpolator
+        A spline interpolation of the final photo-z distribution. Set after a
+        call to `render`.
     lnlam_min_orig : float
         The minimum lnlambda value read from the SACC file. Set after the call to
         `read`.
@@ -310,19 +305,9 @@ class ClusterSource(Source):
         is a top-hat from `lnlam_min_` to `lnlam_max_` (which are in now in units
         of mass). Add systematics to the source when rendering in order to produce
         more complicated models.
-    avg_bias_ : float
-        The average linear bias for the cluster sample, integrated over the selection
-        function and weighted by the mass function. Set after a call to `render`.
-    bias_ : np.ndarray, shape (n_z,)
-        The redshift-dependent linear bias for the cluster sample, integrated
-        over the selection function in mass and weighted by the mass function.
-        Set after a call to `render`.
     scale_ : float
         The overall scale associated with the source. Set after a call to
-        `render`.
-    tracer_ : `pyccl.NumberCountsTracer`
-        The CCL tracer associated with this source. Set after a call to
-        `render`.
+        `render`. Not currently used for anything.
 
     Methods
     -------
@@ -330,11 +315,9 @@ class ClusterSource(Source):
         `pyccl.NumberCountsTracer`, and compute the linear bias
     """
     def __init__(
-            self, *, sacc_tracer, mass_function, bias_function,
+            self, *, sacc_tracer,
             scale=1.0, systematics=None):
         self.sacc_tracer = sacc_tracer
-        self.mass_function = mass_function
-        self.bias_function = bias_function
         self.systematics = systematics or []
         self.scale = scale
 
@@ -384,12 +367,4 @@ class ClusterSource(Source):
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        # TODO compute avg_bias and bias
-        self.avg_bias_ = 1.0
-        self.bias_ = np.ones_like(self.z_)
-
-        self.tracer_ = ccl.NumberCountsTracer(
-            cosmo,
-            has_rsd=False,
-            dndz=(self.z_, self.dndz_),
-            bias=(self.z_, self.bias_))
+        self.dndz_interp_ = Akima1DInterpolator(self.z_, self.dndz_)

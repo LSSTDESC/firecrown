@@ -1,8 +1,11 @@
+import numpy as np
+
 from ..core import Systematic
 
 __all__ = [
     'IdentityFunctionMOR',
     'TopHatSelectionFunction',
+    'PowerLawMOR',
 ]
 
 
@@ -19,6 +22,9 @@ class IdentityFunctionMOR(Systematic):
     def apply(self, cosmo, params, source):
         """Apply this MOR to the source.
 
+        This method attaches functions `mor_` and `inv_mor_` to be used
+        by later functions for compute the MOR and its inverse.
+
         Parameters
         ----------
         cosmo : pyccl.Cosmology
@@ -31,11 +37,69 @@ class IdentityFunctionMOR(Systematic):
         source.mor_ = self._gen_mor()
         source.inv_mor_ = self._gen_mor()
 
-    def _gen_mor():
+    def _gen_mor(self):
         def _mor(lnmass, a):
             return lnmass
 
         return _mor
+
+
+class PowerLawMOR(Systematic):
+    """An power-law mass-observable relationship.
+
+    It has the form
+
+        lam = lam_norm * (m / m_norm)**mass_slope * (a / a_norm)**a_slope
+
+    Methods
+    -------
+    apply : appaly the systematic to a source
+    """
+    def __init__(self, *,
+                 lnlam_norm, mass_slope, a_slope,
+                 lnmass_norm=np.log(1e14), a_norm=0.75):
+        self.lnlam_norm = lnlam_norm
+        self.mass_slope = mass_slope
+        self.a_slope = a_slope
+        self.lnmass_norm = lnmass_norm
+        self.a_norm = a_norm
+        self._lna_norm = np.log(self.a_norm)
+
+    def apply(self, cosmo, params, source):
+        """Apply this MOR to the source.
+
+        This method attaches functions `mor_` and `inv_mor_` to be used
+        by later functions for compute the MOR and its inverse.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        source : a source object
+            The source to which apply the shear bias.
+        """
+        source.mor_ = self._gen_mor(params)
+        source.inv_mor_ = self._gen_inv_mor(params)
+
+    def _gen_mor(self, params):
+        def _mor(lnmass, a):
+            return (
+                params[self.lnlam_norm]
+                + params[self.mass_slope] * (lnmass - params[self.lnmass_norm])
+                + params[self.a_slope] * (np.log(a) - self._lna_norm)
+            )
+        return _mor
+
+    def _gen_inv_mor(self, params):
+        def _inv_mor(lnlam, a):
+            return (
+                lnlam
+                - params[self.lnlam_norm]
+                - params[self.a_slope] * (np.log(a) - self._lna_norm)
+            ) / params[self.mass_slope] + params[self.lnmass_norm]
+        return _inv_mor
 
 
 class TopHatSelectionFunction(Systematic):
@@ -71,7 +135,8 @@ class TopHatSelectionFunction(Systematic):
                 lnmass_min, lnmass_max = lnmass_max, lnmass_min
 
             if lnmass_min <= lnmass and lnmass <= lnmass_max:
-                return 1.0
+                abs_dzda = 1 / a / a
+                return 1.0 * source.dndz_interp_(1/a-1) * abs_dzda
             else:
                 return 0.0
 
