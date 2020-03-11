@@ -17,6 +17,12 @@ Finally, to run a chain, type
 $ firecrown run-emcee des_y1_3x2pt.yaml
 ```
 
+You might need to install the `schwimmbad` modeule if not already there. You can do this via pip:
+
+```bash
+pip install schwimmbad
+```
+
 ## Generating the `firecrown` Inputs
 
 Note, this code below only has to be run if you want to generate the firecrown
