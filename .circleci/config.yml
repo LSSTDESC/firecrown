@@ -1,0 +1,114 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/python:3.7
+
+    working_directory: ~/repo
+
+    steps:
+      - checkout
+
+      # Download and cache dependencies
+      - restore_cache:
+          keys:
+          - v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+          # fallback to using the latest cache if no exact match is found
+          - v0-conda-dependencies-
+
+      - run:
+          name: install dependencies
+          command: |
+            if [ ! -d miniconda ]; then
+              curl -s https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh
+              bash miniconda.sh -b -p miniconda
+
+              export PATH=`pwd`/miniconda/bin:$PATH
+
+              conda config --set always_yes yes --set changeps1 no
+              conda config --add channels defaults
+              conda config --add channels conda-forge
+              conda update -q conda
+
+              conda create -q -n test-env \
+                python=3.7 \
+                pip
+            fi
+
+            export PATH=`pwd`/miniconda/bin:$PATH
+
+            conda config --set always_yes yes --set changeps1 no
+            conda config --add channels defaults
+            conda config --add channels conda-forge
+            conda update -q conda
+
+            source activate test-env
+
+            conda install -y -q \
+              numpy \
+              "pyccl>=2.0" \
+              numpy \
+              pyyaml \
+              scipy \
+              click \
+              pandas \
+              jinja2 \
+              schwimmbad \
+              "emcee>=3,<5" \
+              tqdm \
+              joblib \
+              flake8 \
+              pytest \
+              nose \
+              "sacc=0.2"
+
+            # requires special compilers we don't have
+            # pip install cosmosis-standalone==0.0.9
+            conda update --all -y -q
+            pip install -e .
+
+      - save_cache:
+          paths:
+            - ./miniconda
+          key: v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+
+      - run:
+          name: lint
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            flake8 firecrown
+            flake8 bin/firecrown
+
+      - run:
+          name: test
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            pytest -vv firecrown
+
+      - run:
+          name: cosmic-shear-example
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            cd examples/cosmicshear
+            python generate_cosmicshear_data.py
+            firecrown compute cosmicshear.yaml
+
+      - run:
+          name: desc-srd-v1
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            cd examples/desc_srd_v1
+            pip install -e .
+            pytest -vv srd_models
+
+      - run:
+          name: emcee example
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate test-env
+            cd examples/samplers_and_analysis
+            firecrown run-emcee emcee.yaml 

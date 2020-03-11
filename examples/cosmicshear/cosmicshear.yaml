@@ -1,0 +1,78 @@
+parameters:
+  Omega_k: 0.0
+  # Parameters varied with cosmosis
+  # need a min value, starting point, and max value,
+  # like so:
+  Omega_c: [0.25, 0.27, 0.32]
+  Omega_b: 0.045
+  h: 0.67
+  n_s: 0.96
+  A_s: [2.0e-9, 2.1e-9, 2.2e-9]
+  w0: -1.0
+  wa: 0.0
+
+  # lens bin zero
+  {% for i in range(2) %}
+  src{{ i }}_delta_z: 0.0
+  {% endfor %}
+
+emcee:
+  parameters:
+    - A_s
+    - Omega_c
+  n_steps: 10
+
+cosmosis:
+  sampler: grid
+  output: chain.txt
+  debug: True
+  quiet: False
+  mpi: True
+  # parameters for individual samplers:
+  test:
+    fatal_errors: True
+  emcee:
+    walkers: 10
+    nsample: 20
+  grid:
+    nsample_dimension: 5
+  fisher:
+    step_size: 0.02
+
+
+two_point:
+  module: firecrown.ccl.two_point
+  sacc_file: cosmicshear.fits
+  sources:
+    {% for i in range(2) %}
+    src{{ i }}:
+      kind: WLSource
+      sacc_tracer: trc{{ i }}
+      systematics:
+        - pz_delta_{{ i }}
+    {% endfor %}
+
+  systematics:
+    {% for i in range(2) %}
+    pz_delta_{{ i }}:
+      kind: PhotoZShiftBias
+      delta_z: src{{ i }}_delta_z
+    {% endfor %}
+
+  statistics:
+    {% for i in range(2) %}
+    {% for j in range(i, 2) %}
+    cl_src{{ i }}_src{{ j }}:
+      sources: ['src{{ i }}', 'src{{ j }}']
+      sacc_data_type: 'galaxy_shear_cl_ee'
+    {% endfor %}
+    {% endfor %}
+
+  likelihood:
+    kind: ConstGaussianLogLike
+    data_vector:
+    {% for i in range(2) %}
+    {% for j in range(i, 2) %}
+      - cl_src{{ i }}_src{{ j }}
+    {% endfor %}
+    {% endfor %}
