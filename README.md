@@ -45,11 +45,16 @@ CC=gcc-7 CXX=g++-7 FC=gfortran pip install cosmosis-standalone
 
 Currently the Clang compiler cannot compile cosmosis.
 
-You can then run with:
+You will also need to [install SACC](https://github.com/LSSTDESC/sacc):
 
 ```bash
-cd examples
-firecrown run-cosmosis cosmicshear.yaml
+pip install sacc
+```
+
+You can then run an example following the instructions in the README in this directory:
+
+```bash
+cd examples/cosmicshear/
 ```
 
 ## API
