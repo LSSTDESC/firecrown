@@ -63,22 +63,16 @@ class PowerLawMOR(Systematic):
         The name of the scale factor slope parameter.
     lnmass_norm : float
         The natural logarithm of the pivot mass. Default is `np.log(1e14)`.
-    a_norm : float
-        The scale factor pivot. Default is 0.75.
 
     Methods
     -------
     apply : apply the systematic to a source
     """
-    def __init__(self, *,
-                 lnlam_norm, mass_slope, a_slope,
-                 lnmass_norm=np.log(1e14), a_norm=0.75):
+    def __init__(self, *, lnlam_norm, mass_slope, a_slope, lnmass_norm=np.log(1e14)):
         self.lnlam_norm = lnlam_norm
         self.mass_slope = mass_slope
         self.a_slope = a_slope
         self.lnmass_norm = lnmass_norm
-        self.a_norm = a_norm
-        self._lna_norm = np.log(self.a_norm)
 
     def apply(self, cosmo, params, source):
         """Apply this MOR to the source.
@@ -102,8 +96,8 @@ class PowerLawMOR(Systematic):
         def _mor(lnmass, a):
             return (
                 params[self.lnlam_norm]
-                + params[self.mass_slope] * (lnmass - params[self.lnmass_norm])
-                + params[self.a_slope] * (np.log(a) - self._lna_norm)
+                + params[self.mass_slope] * (lnmass - self.lnmass_norm)
+                + params[self.a_slope] * np.log(a)
             )
         return _mor
 
@@ -112,8 +106,8 @@ class PowerLawMOR(Systematic):
             return (
                 lnlam
                 - params[self.lnlam_norm]
-                - params[self.a_slope] * (np.log(a) - self._lna_norm)
-            ) / params[self.mass_slope] + params[self.lnmass_norm]
+                - params[self.a_slope] * np.log(a)
+            ) / params[self.mass_slope] + self.lnmass_norm
         return _inv_mor
 
 
