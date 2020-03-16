@@ -14,7 +14,7 @@ class IdentityFunctionMOR(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self):
         pass
@@ -32,7 +32,7 @@ class IdentityFunctionMOR(Systematic):
         params : dict
             A dictionary mapping parameter names to their current values.
         source : a source object
-            The source to which apply the shear bias.
+            The source to which apply the MOR relationship.
         """
         source.mor_ = self._gen_mor()
         source.inv_mor_ = self._gen_mor()
@@ -45,15 +45,30 @@ class IdentityFunctionMOR(Systematic):
 
 
 class PowerLawMOR(Systematic):
-    """An power-law mass-observable relationship.
+    """A power-law mass-observable relationship.
 
     It has the form
 
         lam = lam_norm * (m / m_norm)**mass_slope * (a / a_norm)**a_slope
 
+    Note that this function returns lnlam, not lam.
+
+    Parameters
+    ----------
+    lnlam_norm : str
+        The name of the normalization parameter.
+    mass_slope : str
+        The name of the mass slope parameter.
+    a_slope : str
+        The name of the scale factor slope parameter.
+    lnmass_norm : float
+        The natural logarithm of the pivot mass. Default is `np.log(1e14)`.
+    a_norm : float
+        The scale factor pivot. Default is 0.75.
+
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self, *,
                  lnlam_norm, mass_slope, a_slope,
@@ -78,7 +93,7 @@ class PowerLawMOR(Systematic):
         params : dict
             A dictionary mapping parameter names to their current values.
         source : a source object
-            The source to which apply the shear bias.
+            The source to which apply the MOR relationship.
         """
         source.mor_ = self._gen_mor(params)
         source.inv_mor_ = self._gen_inv_mor(params)
@@ -107,7 +122,7 @@ class TopHatSelectionFunction(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
     def __init__(self):
         pass
@@ -122,7 +137,7 @@ class TopHatSelectionFunction(Systematic):
         params : dict
             A dictionary mapping parameter names to their current values.
         source : a source object
-            The source to which apply the shear bias.
+            The source to which apply the top-hat selection function.
         """
         source.selfunc_ = self._gen_selection_function(source)
 
