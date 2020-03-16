@@ -55,8 +55,11 @@ class ConstGaussianLogLike(LogLike):
                     statistics[stat].sacc_tracers)
             )
         inds = np.concatenate(inds, axis=0)
-        _sd.keep_indices(inds)
-        self.cov = _sd.covariance.covmat.copy()
+        cov = np.zeros((len(inds), len(inds)))
+        for new_i, old_i in enumerate(inds):
+            for new_j, old_j in enumerate(inds):
+                cov[new_i, new_j] = _sd.covariance.covmat[old_i, old_j]
+        self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
 
     def compute(self, data, theory, **kwargs):
