@@ -249,9 +249,6 @@ class ClusterSource(Source):
     ----------
     sacc_tracer : str
         The name of the source in the SACC file.
-    scale : float, optional
-        The default scale for this source. Usually the default of 1.0 is
-        correct.
     systematics : list of str, optional
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
@@ -314,12 +311,10 @@ class ClusterSource(Source):
     render : apply systematics to this source, build the
         `pyccl.NumberCountsTracer`, and compute the linear bias
     """
-    def __init__(
-            self, *, sacc_tracer,
-            scale=1.0, systematics=None):
+    def __init__(self, *, sacc_tracer, systematics=None):
         self.sacc_tracer = sacc_tracer
         self.systematics = systematics or []
-        self.scale = scale
+        self.scale = 1.0
 
     def read(self, sacc_data):
         """Read the data for this source from the SACC file.
@@ -329,12 +324,17 @@ class ClusterSource(Source):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        print("!!!!!!!!!!!!!!WARNING dummy values here for now!!!!!!!!!!!!!")
-        self.z_orig = np.linspace(0.5, 0.7)
-        self.dndz_orig = self.z_orig * 0 + 1
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        z = getattr(tracer, 'z').copy().flatten()
+        nz = getattr(tracer, 'nz').copy().flatten()
+        inds = np.argsort(z)
+        z = z[inds]
+        nz = nz[inds]
+        self.z_orig = z
+        self.dndz_orig = nz
         self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
-        self.lnlam_min_orig = 50
-        self.lnlam_max_orig = 70
+        self.lnlam_min_orig = tracer.metadata['lnlam_min']
+        self.lnlam_max_orig = tracer.metadata['lnlam_max']
 
     def render(self, cosmo, params, systematics=None):
         """
