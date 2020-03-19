@@ -85,7 +85,7 @@ In general, a two-point YAML configuration file has four sections, `sources`,
 and `statistics` sections contain mappings of names to configuration
 specifications for each item. Other sections of the file should refer to
 these items by their names. The configuration of each item follows their
-docstrings. There is a final optional key, `sacc_file`, which should contain
+docstrings. There is a final optional key, `sacc_data`, which should contain
 the path to the SACC data file if desired.
 
 ## Generic API

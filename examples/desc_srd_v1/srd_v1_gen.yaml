@@ -23,7 +23,7 @@ parameters:
 
 two_point:
   module: firecrown.ccl.two_point
-  sacc_file: "srd_data/srd_v1_sacc_data.fits"
+  sacc_data: "srd_data/srd_v1_sacc_data.fits"
   sources:
     {% for i in range(5) %}
     src{{ i }}:
