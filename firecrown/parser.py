@@ -29,7 +29,8 @@ def parse(config_or_filename):
         config = yaml.load(config_str, Loader=yaml.Loader)
         data = yaml.load(config_str, Loader=yaml.Loader)
     else:
-        data = copy.deepcopy(config)
+        config = copy.deepcopy(config_or_filename)
+        data = copy.deepcopy(config_or_filename)
 
     params = {}
     for p, val in data['parameters'].items():
