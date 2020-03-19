@@ -121,7 +121,7 @@ priors:
 
 two_point:
   module: firecrown.ccl.two_point
-  sacc_file: des_y1_3x2pt_sacc_data.fits
+  sacc_data: des_y1_3x2pt_sacc_data.fits
   sources:
     {% for i in range(4) %}
     src{{ i }}:

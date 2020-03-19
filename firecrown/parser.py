@@ -1,29 +1,35 @@
+import collections.abc
+import copy
 import importlib
 import yaml
 import jinja2
 
 
-def parse(filename):
+def parse(config_or_filename):
     """Parse a configuration file.
 
     Parameters
     ----------
-    filename : str
-        The config file to parse. Should be YAML formatted.
+    config_or_filename : str or dict
+        The config file to parse or an already parsed config dictionary.
+        If a file, the file should be YAML formatted.
 
     Returns
     -------
-    config: dict
+    config : dict
         The raw config file as a dictionary.
     data : dict
         A dictionary containg each analyses key replaced with its
         corresponding data and function to compute the log-likelihood.
     """
 
-    with open(filename, 'r') as fp:
-        config_str = jinja2.Template(fp.read()).render()
-    config = yaml.load(config_str, Loader=yaml.Loader)
-    data = yaml.load(config_str, Loader=yaml.Loader)
+    if not isinstance(config_or_filename, collections.abc.MutableMapping):
+        with open(config_or_filename, 'r') as fp:
+            config_str = jinja2.Template(fp.read()).render()
+        config = yaml.load(config_str, Loader=yaml.Loader)
+        data = yaml.load(config_str, Loader=yaml.Loader)
+    else:
+        data = copy.deepcopy(config)
 
     params = {}
     for p, val in data['parameters'].items():
