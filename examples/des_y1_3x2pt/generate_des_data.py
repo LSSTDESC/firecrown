@@ -1,10 +1,6 @@
-import os
 import fitsio
-import pandas as pd
 import numpy as np
-
-
-os.makedirs('des_data', exist_ok=True)
+import sacc
 
 # bin limits are from the chain headers courtesy of M. Troxel
 angles = """\
@@ -112,7 +108,19 @@ n_lens = 5
 # this holds a global mask of which elements of the data vector to keep
 tot_msk = []
 
+sacc_data = sacc.Sacc()
+
 with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
+    # nz_lens
+    dndz = data['nz_lens'].read()
+    for i in range(1, n_lens+1):
+        sacc_data.add_tracer('NZ', 'lens%d' % (i-1), dndz['Z_MID'], dndz['BIN%d' % i])
+
+    # nz_src
+    dndz = data['nz_source'].read()
+    for i in range(1, n_srcs+1):
+        sacc_data.add_tracer('NZ', 'src%d' % (i-1), dndz['Z_MID'], dndz['BIN%d' % i])
+
     # xip
     xip = data['xip'].read()
     for i in range(1, n_srcs+1):
@@ -125,12 +133,12 @@ with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
 
             tot_msk.extend(msk.tolist())
 
-            df = pd.DataFrame({
-                'ell_or_theta': xip_ij['ANG'][msk],
-                'measured_statistic': xip_ij['VALUE'][msk]})
-            df.to_csv(
-                'des_data/xip_src%d_src%d.csv' % (i, j),
-                index=False)
+            sacc_data.add_theta_xi(
+                'galaxy_shear_xi_plus',
+                'src%d' % (i-1),
+                'src%d' % (j-1),
+                xip_ij['ANG'][msk],
+                xip_ij['VALUE'][msk])
 
     # xim
     xim = data['xim'].read()
@@ -144,12 +152,12 @@ with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
 
             tot_msk.extend(msk.tolist())
 
-            df = pd.DataFrame({
-                'ell_or_theta': xim_ij['ANG'][msk],
-                'measured_statistic': xim_ij['VALUE'][msk]})
-            df.to_csv(
-                'des_data/xim_src%d_src%d.csv' % (i, j),
-                index=False)
+            sacc_data.add_theta_xi(
+                'galaxy_shear_xi_minus',
+                'src%d' % (i-1),
+                'src%d' % (j-1),
+                xim_ij['ANG'][msk],
+                xim_ij['VALUE'][msk])
 
     # gammat
     gammat = data['gammat'].read()
@@ -165,12 +173,12 @@ with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
 
             tot_msk.extend(msk.tolist())
 
-            df = pd.DataFrame({
-                'ell_or_theta': gammat_ij['ANG'][msk],
-                'measured_statistic': gammat_ij['VALUE'][msk]})
-            df.to_csv(
-                'des_data/gammat_lens%d_src%d.csv' % (i, j),
-                index=False)
+            sacc_data.add_theta_xi(
+                'galaxy_shearDensity_xi_t',
+                'lens%d' % (i-1),
+                'src%d' % (j-1),
+                gammat_ij['ANG'][msk],
+                gammat_ij['VALUE'][msk])
 
     # wtheta
     wtheta = data['wtheta'].read()
@@ -185,53 +193,23 @@ with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
 
         tot_msk.extend(msk.tolist())
 
-        df = pd.DataFrame({
-            'ell_or_theta': wtheta_ii['ANG'][msk],
-            'measured_statistic': wtheta_ii['VALUE'][msk]})
-        df.to_csv(
-            'des_data/wtheta_lens%d_lens%d.csv' % (i, i),
-            index=False)
-
-    # nz_lens
-    dndz = data['nz_lens'].read()
-    for i in range(1, n_lens+1):
-        df = pd.DataFrame({
-            'z': dndz['Z_MID'],
-            'dndz': dndz['BIN%d' % i]})
-        df.to_csv(
-            'des_data/dndz_lens%d.csv' % i,
-            index=False)
-
-    # nz_src
-    dndz = data['nz_source'].read()
-    for i in range(1, n_srcs+1):
-        df = pd.DataFrame({
-            'z': dndz['Z_MID'],
-            'dndz': dndz['BIN%d' % i]})
-        df.to_csv(
-            'des_data/dndz_src%d.csv' % i,
-            index=False)
+        sacc_data.add_theta_xi(
+            'galaxy_density_xi',
+            'lens%d' % (i-1),
+            'lens%d' % (i-1),
+            wtheta_ii['ANG'][msk],
+            wtheta_ii['VALUE'][msk])
 
     # covmat
     msk_inds = np.where(tot_msk)[0]
     n_cov = np.sum(tot_msk)
     old_cov = data['COVMAT'].read()
-    cov_i = []
-    cov_j = []
-    new_cov = []
+    new_cov = np.zeros((np.sum(tot_msk), np.sum(tot_msk)))
+
     for new_cov_i, old_cov_i in enumerate(msk_inds):
         for new_cov_j, old_cov_j in enumerate(msk_inds):
-            new_cov.append(old_cov[old_cov_i, old_cov_j])
-            cov_i.append(new_cov_i)
-            cov_j.append(new_cov_j)
-    df = pd.DataFrame({
-        'i': cov_i,
-        'j': cov_j,
-        'cov': new_cov})
-    df.to_csv(
-        'des_data/cov.csv',
-        index=False)
+            new_cov[new_cov_i, new_cov_j] = old_cov[old_cov_i, old_cov_j]
 
-# now tar the data
-os.system('tar czvf des_data.tar.gz des_data')
-os.system('rm -rf des_data')
+    sacc_data.add_covariance(new_cov)
+
+sacc_data.save_fits('des_y1_3x2pt_sacc_data.fits', overwrite=True)

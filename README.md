@@ -10,10 +10,16 @@ You need to have CCL installed first. Try:
 pip install pyccl
 ```
 
-Then you can install the `master` branch via
+Then you can download and install the `master` branch via
 
 ```
 pip install git+https://github.com/LSSTDESC/firecrown.git
+```
+
+If you have already cloned the repo, simply install via
+
+```
+pip install -e .
 ```
 
 ## Usage

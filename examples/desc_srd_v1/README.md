@@ -12,11 +12,6 @@ Then you can type
 
 ```bash
 $ python generate_srd_data.py
-$ firecrown compute srd_v1_gen.yaml
-Watch out! Here comes a firecrown!
-analysis id: <analysis id>
-loglike: None
-$ python move_gen_data.py <analysis id>
 ```
 
 to build the example data.
@@ -29,4 +24,4 @@ $ firecrown compute srd_v1_model.yaml
 
 to compute the model.
 
-You can make plots of the data compared to the SRD using the notebook.
+You can make plots of the data compared to the SRD using the notebook `plot_desc_srd_v1_computations.ipynb` included in this directory.

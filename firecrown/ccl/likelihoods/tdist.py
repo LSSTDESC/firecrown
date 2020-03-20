@@ -1,6 +1,6 @@
 import numpy as np
-import pandas as pd
 import scipy.linalg
+import sacc
 
 from ..core import LogLike
 
@@ -15,13 +15,9 @@ class TdistLogLike(LogLike):
 
     Parameters
     ----------
-    data : str
-        The path to the covariance matrix in CSV format. The columns should be
-        {'i', 'j', 'cov'} giving the indices of each matrix element and its
-        value.
     data_vector : list of str
-        A list of the statistics in the config file in the order they appear in
-        the covariance matrix.
+        A list of the statistics in the config file in the order you want them
+        to appear in the covariance matrix.
     nu: int
         The shape parameter. Set to the number of simulations.
 
@@ -36,17 +32,43 @@ class TdistLogLike(LogLike):
     -------
     compute_loglike : compute the log-likelihood
     """
-    def __init__(self, data, data_vector, nu):
-        self.data = data
+    def __init__(self, data_vector, nu):
         self.data_vector = data_vector
         self.nu = nu
 
-        df = pd.read_csv(data)
-        dim = max(np.max(df['i']), np.max(df['j'])) + 1
-        cov = np.zeros((dim, dim))
-        cov[df['i'].values, df['j'].values] = df['cov'].values
+    def read(self, sacc_data, sources, statistics):
+        """Read the covariance matrirx for this likelihood from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        sources : dict
+            A dictionary mapping sources to their objects. These sources do
+            not have to have been rendered.
+        statistics : dict
+            A dictionary mapping statistics to their objects. These statistics do
+            not have to have been rendered.
+        """
+        if not isinstance(sacc_data.covariance, sacc.covariance.FullCovariance):
+            raise RuntimeError(
+                "Currently, the SACC covariance must be a 'FullCovariance'. "
+                "This may change in a future firecrown release.")
+        _sd = sacc_data.copy()
+        inds = []
+        for stat in self.data_vector:
+            inds.append(
+                _sd.indices(
+                    statistics[stat].sacc_data_type,
+                    statistics[stat].sacc_tracers)
+            )
+        inds = np.concatenate(inds, axis=0)
+        cov = np.zeros((len(inds), len(inds)))
+        for new_i, old_i in enumerate(inds):
+            for new_j, old_j in enumerate(inds):
+                cov[new_i, new_j] = _sd.covariance.covmat[old_i, old_j]
         self.cov = cov
-        self.cholesky = scipy.linalg.cholesky(cov, lower=True)
+        self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
 
     def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.

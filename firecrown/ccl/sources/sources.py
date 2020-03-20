@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 from scipy.interpolate import Akima1DInterpolator
 
 import pyccl as ccl
@@ -15,12 +14,8 @@ class WLSource(Source):
 
     Parameters
     ----------
-    dndz_data : str
-        The path to the photo-z distribution in a CSV. The columns should be
-        {'z', 'dndz'}.
-    red_frac : str, optional
-        The parameter for the red fraction. Only used if
-        `has_intrinsic_alignment` is `True`.
+    sacc_tracer : str
+        The name of the tracer in the SACC file.
     ia_bias : str, optional
         The parameter for the intrinsic alignment amplitude.
     scale : float, optional
@@ -32,6 +27,12 @@ class WLSource(Source):
 
     Attributes
     ----------
+    z_orig : np.ndarray, shape (n_z,)
+        The original redshifts for the photo-z distribution before any
+        systematics are applied. Set after the call to `read`.
+    dndz_orig : np.ndarray, shape (n_z,)
+        The photo-z distribution amplitudes before any systematics are applied.
+        Set after the call to `read`.
     dndz_interp : Akima1DInterpolator
         A spline interpolation of the initial photo-z distribution.
     z_ : np.ndarray, shape (n_z,)
@@ -39,13 +40,10 @@ class WLSource(Source):
         to `render`.
     dndz_ : np.ndarray, shape (n_z,)
         The photo-z distribution amplitudes.  Set after a call to `render`.
-    red_frac_ : np.ndarray, shape (n_z,)
-        The red fraction as a function of redshift.  Set after a call to
-        `render`. Only present in `has_intrinsic_alignment` is `True`.
     ia_bias_ : np.ndarray, shape (n_z,)
         The intrinsic alignment amplitude as a function of redshift. Set after
-        a call to `render`. Only present in `has_intrinsic_alignment` is
-        `True`.
+        a call to `render`. Only present in `is_bias` was non-None when the
+        object was made.
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
@@ -59,19 +57,29 @@ class WLSource(Source):
         `pyccl.WeakLensingTracer`
     """
     def __init__(
-            self, dndz_data, red_frac=None,
-            ia_bias=None, scale=1.0, systematics=None):
-        self.dndz_data = dndz_data
-        self.red_frac = red_frac
+            self, sacc_tracer, ia_bias=None, scale=1.0, systematics=None):
+        self.sacc_tracer = sacc_tracer
         self.ia_bias = ia_bias
         self.systematics = systematics or []
-        df = pd.read_csv(dndz_data)
-        _z, _dndz = df['z'].values.copy(), df['dndz'].values.copy()
-        self._z_orig = _z
-        self._dndz_orig = _dndz
-        self.dndz_interp = Akima1DInterpolator(
-            self._z_orig, self._dndz_orig)
         self.scale = scale
+
+    def read(self, sacc_data):
+        """Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        z = getattr(tracer, 'z').copy().flatten()
+        nz = getattr(tracer, 'nz').copy().flatten()
+        inds = np.argsort(z)
+        z = z[inds]
+        nz = nz[inds]
+        self.z_orig = z
+        self.dndz_orig = nz
+        self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -89,22 +97,20 @@ class WLSource(Source):
         """
         systematics = systematics or {}
 
-        self.z_ = self._z_orig.copy()
-        self.dndz_ = self._dndz_orig.copy()
+        self.z_ = self.z_orig.copy()
+        self.dndz_ = self.dndz_orig.copy()
         self.scale_ = self.scale
-        if self.red_frac is not None or self.ia_bias is not None:
-            self.red_frac_ = np.ones_like(self.z_) * params[self.red_frac]
+        if self.ia_bias is not None:
             self.ia_bias_ = np.ones_like(self.z_) * params[self.ia_bias]
 
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        if self.red_frac is not None or self.ia_bias is not None:
+        if self.ia_bias is not None:
             tracer = ccl.WeakLensingTracer(
                 cosmo,
                 dndz=(self.z_, self.dndz_),
-                ia_bias=(self.z_, self.ia_bias_),
-                red_frac=(self.z_, self.red_frac_))
+                ia_bias=(self.z_, self.ia_bias_))
         else:
             tracer = ccl.WeakLensingTracer(
                 cosmo,
@@ -117,9 +123,8 @@ class NumberCountsSource(Source):
 
     Parameters
     ----------
-    dndz_data : str
-        The path to the photo-z distribution in a CSV. The columns should be
-        {'z', 'dndz'}.
+    sacc_tracer : str
+        The name of the source in the SACC file.
     bias : str
         The parameter for the bias of the source.
     has_rsd : bool, optional
@@ -135,6 +140,12 @@ class NumberCountsSource(Source):
 
     Attributes
     ----------
+    z_orig : np.ndarray, shape (n_z,)
+        The original redshifts for the photo-z distribution before any
+        systematics are applied. Set after the call to `read`.
+    dndz_orig : np.ndarray, shape (n_z,)
+        The photo-z distribution amplitudes before any systematics are applied.
+        Set after the call to `read`.
     dndz_interp : Akima1DInterpolator
         A spline interpolation of the initial photo-z distribution.
     z_ : np.ndarray, shape (n_z,)
@@ -160,20 +171,32 @@ class NumberCountsSource(Source):
         `pyccl.NumberCountsTracer`
     """
     def __init__(
-            self, dndz_data, bias, has_rsd=False,
+            self, sacc_tracer, bias, has_rsd=False,
             mag_bias=None, scale=1.0, systematics=None):
-        self.dndz_data = dndz_data
+        self.sacc_tracer = sacc_tracer
         self.bias = bias
         self.has_rsd = has_rsd
         self.mag_bias = mag_bias
         self.systematics = systematics or []
-        df = pd.read_csv(dndz_data)
-        _z, _dndz = df['z'].values.copy(), df['dndz'].values.copy()
-        self._z_orig = _z
-        self._dndz_orig = _dndz
-        self.dndz_interp = Akima1DInterpolator(
-            self._z_orig, self._dndz_orig)
         self.scale = scale
+
+    def read(self, sacc_data):
+        """Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        z = getattr(tracer, 'z').copy().flatten()
+        nz = getattr(tracer, 'nz').copy().flatten()
+        inds = np.argsort(z)
+        z = z[inds]
+        nz = nz[inds]
+        self.z_orig = z
+        self.dndz_orig = nz
+        self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -191,8 +214,8 @@ class NumberCountsSource(Source):
         """
         systematics = systematics or {}
 
-        self.z_ = self._z_orig.copy()
-        self.dndz_ = self._dndz_orig.copy()
+        self.z_ = self.z_orig.copy()
+        self.dndz_ = self.dndz_orig.copy()
         self.scale_ = self.scale
         self.bias_ = np.ones_like(self.z_) * params[self.bias]
 

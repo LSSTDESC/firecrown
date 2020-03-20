@@ -1,11 +1,12 @@
-pyccl~=1.0
-numpy>=1.15
+pyccl~=2.0
+numpy>=1.16
 pyyaml
 scipy
 click
 pandas
 jinja2
 schwimmbad
-emcee
+emcee>=3,<5
 tqdm
 joblib
+sacc~=0.2

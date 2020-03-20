@@ -1,38 +1,48 @@
-import os
-import tempfile
-
-import pandas as pd
 import numpy as np
-import scipy.linalg
+import pytest
 
 from ..gaussian import ConstGaussianLogLike
 
 
-def test_gaussian():
-    n = 5
-    rng = np.random.RandomState(seed=42)
-    # code to make a random positive semi-definite, symmetric matrix
-    cov = rng.rand(n, n)
-    u, s, v = scipy.linalg.svd(np.dot(cov.T, cov))
-    cov = np.dot(np.dot(u, 1.0 + np.diag(rng.rand(n))), v)
-    delta = rng.normal(size=n)
+def test_likelihood_gaussian_smoke(likelihood_test_data):
+    ll = ConstGaussianLogLike(data_vector=likelihood_test_data['data_vector'])
+    ll.read(
+        likelihood_test_data['sacc_data'],
+        likelihood_test_data['sources'],
+        likelihood_test_data['statistics'])
+    assert ll.data_vector == likelihood_test_data['data_vector']
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        rows = []
-        for i in range(n):
-            for j in range(n):
-                rows.append((i, j, cov[i, j]))
-        df = pd.DataFrame.from_records(rows, columns=['i', 'j', 'cov'])
-
-        fname = os.path.join(tmpdir, 'cov.dat')
-        df.to_csv(fname, index=False)
-
-        ll = ConstGaussianLogLike(
-            data=fname,
-            data_vector=['a'])
-
-    assert ll.data_vector == ['a']
-    data = {'a': delta}
-    theory = {'a': np.zeros(n)}
+    delta = likelihood_test_data['delta']
+    data = likelihood_test_data['data']
+    theory = likelihood_test_data['theory']
+    cov = likelihood_test_data['cov']
     loglike = -0.5 * np.dot(delta, np.dot(np.linalg.inv(cov), delta))
     assert np.allclose(loglike, ll.compute(data, theory))
+
+
+def test_likelihood_gaussian_subset(likelihood_test_data):
+    ll = ConstGaussianLogLike(data_vector=["stat_src0_src0", "stat_src0_src1"])
+    ll.read(
+        likelihood_test_data['sacc_data'],
+        likelihood_test_data['sources'],
+        likelihood_test_data['statistics'])
+    assert ll.data_vector == ["stat_src0_src0", "stat_src0_src1"]
+
+    delta = likelihood_test_data['delta'][0:4]
+    data = likelihood_test_data['data']
+    theory = likelihood_test_data['theory']
+    cov = likelihood_test_data['cov'][0:4, 0:4]
+    loglike = -0.5 * np.dot(delta, np.dot(np.linalg.inv(cov), delta))
+    assert np.allclose(loglike, ll.compute(data, theory))
+
+
+def test_likelihood_gaussian_raises(likelihood_test_data):
+    ll = ConstGaussianLogLike(data_vector=["stat_src0_src0", "stat_src0_src1"])
+    sd = likelihood_test_data['sacc_data'].copy()
+    sd.covariance = 10
+    with pytest.raises(RuntimeError) as e:
+        ll.read(
+            sd,
+            likelihood_test_data['sources'],
+            likelihood_test_data['statistics'])
+    assert 'FullCovariance' in str(e)

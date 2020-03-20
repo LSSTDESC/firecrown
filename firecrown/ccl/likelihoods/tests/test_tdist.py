@@ -1,42 +1,56 @@
-import os
-import tempfile
-
-import pandas as pd
 import numpy as np
-import scipy.linalg
+import pytest
 
 from ..tdist import TdistLogLike
 
 
-def test_gaussian():
-    n = 5
-    rng = np.random.RandomState(seed=42)
-    # code to make a random positive semi-definite, symmetric matrix
-    cov = rng.rand(n, n)
-    u, s, v = scipy.linalg.svd(np.dot(cov.T, cov))
-    cov = np.dot(np.dot(u, 1.0 + np.diag(rng.rand(n))), v)
-    delta = rng.normal(size=n)
-    nu = 100
+def test_likelihood_tdist_smoke(likelihood_test_data):
+    nu = 25
+    ll = TdistLogLike(
+        data_vector=likelihood_test_data['data_vector'],
+        nu=nu)
+    ll.read(
+        likelihood_test_data['sacc_data'],
+        likelihood_test_data['sources'],
+        likelihood_test_data['statistics'])
+    assert ll.data_vector == likelihood_test_data['data_vector']
 
-    with tempfile.TemporaryDirectory() as tmpdir:
-        rows = []
-        for i in range(n):
-            for j in range(n):
-                rows.append((i, j, cov[i, j]))
-        df = pd.DataFrame.from_records(rows, columns=['i', 'j', 'cov'])
-
-        fname = os.path.join(tmpdir, 'cov.dat')
-        df.to_csv(fname, index=False)
-
-        ll = TdistLogLike(
-            data=fname,
-            data_vector=['a'],
-            nu=nu)
-
-    assert ll.data_vector == ['a']
-    assert ll.nu == nu
+    delta = likelihood_test_data['delta']
+    data = likelihood_test_data['data']
+    theory = likelihood_test_data['theory']
+    cov = likelihood_test_data['cov']
     chi2 = np.dot(delta, np.dot(np.linalg.inv(cov), delta))
     loglike = -0.5 * nu * np.log(1.0 + chi2 / (nu - 1.0))
-    data = {'a': delta}
-    theory = {'a': np.zeros(n)}
     assert np.allclose(loglike, ll.compute(data, theory))
+
+
+def test_likelihood_tdist_subset(likelihood_test_data):
+    nu = 25
+    ll = TdistLogLike(
+        data_vector=["stat_src0_src0", "stat_src0_src1"],
+        nu=nu)
+    ll.read(
+        likelihood_test_data['sacc_data'],
+        likelihood_test_data['sources'],
+        likelihood_test_data['statistics'])
+    assert ll.data_vector == ["stat_src0_src0", "stat_src0_src1"]
+
+    delta = likelihood_test_data['delta'][0:4]
+    data = likelihood_test_data['data']
+    theory = likelihood_test_data['theory']
+    cov = likelihood_test_data['cov'][0:4, 0:4]
+    chi2 = np.dot(delta, np.dot(np.linalg.inv(cov), delta))
+    loglike = -0.5 * nu * np.log(1.0 + chi2 / (nu - 1.0))
+    assert np.allclose(loglike, ll.compute(data, theory))
+
+
+def test_likelihood_tdist_raises(likelihood_test_data):
+    ll = TdistLogLike(data_vector=["stat_src0_src0", "stat_src0_src1"], nu=10)
+    sd = likelihood_test_data['sacc_data'].copy()
+    sd.covariance = 10
+    with pytest.raises(RuntimeError) as e:
+        ll.read(
+            sd,
+            likelihood_test_data['sources'],
+            likelihood_test_data['statistics'])
+    assert 'FullCovariance' in str(e)

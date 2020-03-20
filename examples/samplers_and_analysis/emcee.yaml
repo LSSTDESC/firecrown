@@ -21,7 +21,7 @@ emcee:
   n_steps: 10
 
   # you can specify a backend if you would like
-  backend: 'joblib'  # default is joblib, could be mpi, multiprocessing, or serial too
+  backend: 'serial'  # default is serial, could be mpi, multiprocessing, or joblib too
 
   # for the joblib or multiprocessing backends, you can give the number of workers
   # n_workers: 10  # defaults to the number of CPUs

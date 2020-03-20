@@ -1,6 +1,5 @@
-import os
-import pandas as pd
 import numpy as np
+import sacc
 import pyccl as ccl
 
 cosmo = ccl.Cosmology(
@@ -14,21 +13,17 @@ cosmo = ccl.Cosmology(
     h=0.67)
 
 seed = 42
-tmpdir = 'data'
 rng = np.random.RandomState(seed=seed)
 eps = 0.01
 
-os.makedirs(tmpdir, exist_ok=True)
+sacc_data = sacc.Sacc()
 
 tracers = []
 for i, mn in enumerate([0.25, 0.75]):
     z = np.linspace(0, 2, 50) + 0.05
     dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
-    df = pd.DataFrame({'z': z, 'dndz': dndz})
-    df.to_csv(
-        os.path.join(tmpdir, 'pz%d.csv' % i),
-        index=False)
+    sacc_data.add_tracer('NZ', 'trc%d' % i, z, dndz)
 
     tracers.append(ccl.WeakLensingTracer(
         cosmo,
@@ -42,30 +37,17 @@ for i in range(len(tracers)):
         pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell)
         npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
-        df = pd.DataFrame({'ell_or_theta': ell, 'measured_statistic': npell})
-        df.to_csv(
-            os.path.join(tmpdir, 'cl%d%d.csv' % (i, j)),
-            index=False)
+        sacc_data.add_ell_cl(
+            'galaxy_shear_cl_ee', 'trc%d' % i, 'trc%d' % j, ell, npell)
         dv.append(pell)
         ndv.append(npell)
 
 # a fake covariance matrix
 dv = np.concatenate(dv, axis=0)
-ndv = np.concatenate(ndv, axis=0)
-nelts = len(tracers) * (len(tracers) + 1) // 2
-cov = np.identity(len(pell) * nelts)
+cov = np.zeros((len(dv), len(dv)))
 for i in range(len(dv)):
-    cov[i, i] *= (eps * dv[i]) ** 2
-assert len(dv) == cov.shape[0]
-_i = []
-_j = []
-_val = []
-for i in range(cov.shape[0]):
-    for j in range(cov.shape[1]):
-        _i.append(i)
-        _j.append(j)
-        _val.append(cov[i, j])
-df = pd.DataFrame({'i': _i, 'j': _j, 'cov': _val})
-df.to_csv(
-    os.path.join(tmpdir, 'cov.csv'),
-    index=False)
+    cov[i, i] = (eps * dv[i]) ** 2
+
+sacc_data.add_covariance(cov)
+
+sacc_data.save_fits('cosmicshear.fits', overwrite=True)
