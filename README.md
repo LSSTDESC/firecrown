@@ -81,4 +81,3 @@ The `CLASS` repository can be found in http://class-code.net. CCL also uses
 code from the [FFTLog](http://casa.colorado.edu/~ajsh/FFTLog/) package.  We
 have obtained permission from the FFTLog author to include modified versions of
 his source code.
-
