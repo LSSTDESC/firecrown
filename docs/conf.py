@@ -12,16 +12,43 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
-# import os
-# import sys
-# sys.path.insert(0, os.path.abspath('.'))
+import os
+from os.path import abspath, dirname, join as pjoin
+import sys
+import sphinx_rtd_theme
+#sys.path.insert(0, os.path.abspath('.'))
+
+this_dir = dirname(abspath(__file__))
+root_path = abspath(pjoin(this_dir, '../'))
+if os.path.isdir(root_path):
+    sys.path.insert(0, root_path)
+
+on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+# if on_rtd:
+#     try:
+#         from unittest.mock import MagicMock
+#     except ImportError:
+#         from mock import Mock as MagicMock
+#
+#         class Mock(MagicMock):
+#             @classmethod
+#             def __getattr__(cls,name):
+#                 return MagicMock()
+#
+#     MOCK_MODULES = [
+#         "firecrown.analysis",
+#         "firecrown.ccl",
+#         "firecrown.cosmosis",
+#     ]
+#
+#     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'fireCrown'
-copyright = '2020, Matt Becker, Elisabeth Krause, Joe Zuntz, Eske Pedersen'
-author = 'Matt Becker, Elisabeth Krause, Joe Zuntz, Eske Pedersen'
+project = u'fireCrown'
+copyright = u'2020, LSST DESC'
+author = u'LSST DESC, Matt Becker, Elisabeth Krause, Joe Zuntz, Eske Pedersen'
 
 # The short X.Y version
 version = ''
@@ -40,9 +67,14 @@ release = ''
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
+    'sphinx.ext.doctest',
+    'sphinx.ext.intersphinx',
+    'sphinx.ext.todo',
+    'sphinx.ext.coverage',
+    'sphinx.ext.ifconfig',
+    'sphinx.ext.viewcode',
     'sphinx.ext.mathjax',
-    'numpydoc',
+    'm2r'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -75,10 +107,12 @@ language = None
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 'tests/*']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = None
+pygments_style = 'sphinx'
+
+todo_include_todos = True
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -86,7 +120,8 @@ pygments_style = None
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'sphinx_rtd_theme'
+html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
@@ -97,7 +132,7 @@ html_theme = 'alabaster'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['_static']
+html_static_path = [] #['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -107,7 +142,15 @@ html_static_path = ['_static']
 # default: ``['localtoc.html', 'relations.html', 'sourcelink.html',
 # 'searchbox.html']``.
 #
-# html_sidebars = {}
+html_sidebars = {
+    '**': [
+        'about.html',
+        'navigation.html',
+        'relations.html',
+        'searchbox.html',
+        'donate.html',
+    ]
+}
 
 
 # -- Options for HTMLHelp output ---------------------------------------------
@@ -182,13 +225,14 @@ epub_title = project
 # epub_uid = ''
 
 # A list of files that should not be packed into the epub file.
-epub_exclude_files = ['search.html']
+intersphinx_mapping = {'https://docs.python.org/3': None}
+#epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
 
-def autodoc_skip_member_handler(app, what, name, obj, skip, options):
-    return name.startswith("test_")
+#def autodoc_skip_member_handler(app, what, name, obj, skip, options):
+#    return name.startswith("test_")
 
-def setup(app):
-    app.connect('autodoc-skip-member', autodoc_skip_member_handler)
+#def setup(app):
+#    app.connect('autodoc-skip-member', autodoc_skip_member_handler)
