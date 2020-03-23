@@ -3,3 +3,4 @@ pytest
 nose
 numpydoc
 recommonmark
+yaml
