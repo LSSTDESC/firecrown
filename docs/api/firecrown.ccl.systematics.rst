@@ -1,18 +1,6 @@
 firecrown.ccl.systematics package
 =================================
 
-.. automodule:: firecrown.ccl.systematics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    firecrown.ccl.systematics.tests
-
 Submodules
 ----------
 
@@ -22,3 +10,10 @@ Submodules
    firecrown.ccl.systematics.pz
    firecrown.ccl.systematics.wl
 
+Module contents
+---------------
+
+.. automodule:: firecrown.ccl.systematics
+   :members:
+   :undoc-members:
+   :show-inheritance:

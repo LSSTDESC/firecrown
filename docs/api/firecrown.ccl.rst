@@ -1,20 +1,15 @@
 firecrown.ccl package
 =====================
 
-.. automodule:: firecrown.ccl
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
 .. toctree::
 
-    firecrown.ccl.likelihoods
-    firecrown.ccl.sources
-    firecrown.ccl.statistics
-    firecrown.ccl.systematics
+   firecrown.ccl.likelihoods
+   firecrown.ccl.sources
+   firecrown.ccl.statistics
+   firecrown.ccl.systematics
 
 Submodules
 ----------
@@ -25,3 +20,10 @@ Submodules
    firecrown.ccl.parser
    firecrown.ccl.two_point
 
+Module contents
+---------------
+
+.. automodule:: firecrown.ccl
+   :members:
+   :undoc-members:
+   :show-inheritance:

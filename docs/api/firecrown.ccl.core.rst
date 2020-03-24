@@ -2,6 +2,6 @@ firecrown.ccl.core module
 =========================
 
 .. automodule:: firecrown.ccl.core
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

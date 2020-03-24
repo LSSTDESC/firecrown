@@ -1,18 +1,6 @@
 firecrown.cosmosis package
 ==========================
 
-.. automodule:: firecrown.cosmosis
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    firecrown.cosmosis.tests
-
 Submodules
 ----------
 
@@ -21,3 +9,10 @@ Submodules
    firecrown.cosmosis.interface
    firecrown.cosmosis.run
 
+Module contents
+---------------
+
+.. automodule:: firecrown.cosmosis
+   :members:
+   :undoc-members:
+   :show-inheritance:

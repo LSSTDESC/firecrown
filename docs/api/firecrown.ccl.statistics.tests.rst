@@ -1,11 +1,6 @@
 firecrown.ccl.statistics.tests package
 ======================================
 
-.. automodule:: firecrown.ccl.statistics.tests
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Submodules
 ----------
 
@@ -13,3 +8,10 @@ Submodules
 
    firecrown.ccl.statistics.tests.test_two_point
 
+Module contents
+---------------
+
+.. automodule:: firecrown.ccl.statistics.tests
+   :members:
+   :undoc-members:
+   :show-inheritance:

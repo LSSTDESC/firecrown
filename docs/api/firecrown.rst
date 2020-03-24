@@ -1,20 +1,14 @@
 firecrown package
 =================
 
-.. automodule:: firecrown
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
 Subpackages
 -----------
 
 .. toctree::
 
-    firecrown.analysis
-    firecrown.ccl
-    firecrown.cosmosis
-    firecrown.tests
+   firecrown.analysis
+   firecrown.ccl
+   firecrown.cosmosis
 
 Submodules
 ----------
@@ -28,3 +22,10 @@ Submodules
    firecrown.parser
    firecrown.priors
 
+Module contents
+---------------
+
+.. automodule:: firecrown
+   :members:
+   :undoc-members:
+   :show-inheritance:
