@@ -5,5 +5,4 @@ numpydoc
 recommonmark
 emcee
 pyyaml
-pyccl
-cmake
+

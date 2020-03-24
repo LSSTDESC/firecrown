@@ -231,6 +231,8 @@ intersphinx_mapping = {'https://docs.python.org/3': None}
 
 # -- Extension configuration -------------------------------------------------
 
+autodoc_mock_imports = ['pyccl']
+
 #def autodoc_skip_member_handler(app, what, name, obj, skip, options):
 #    return name.startswith("test_")
 
