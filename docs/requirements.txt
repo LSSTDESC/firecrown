@@ -6,3 +6,4 @@ recommonmark
 emcee
 pyyaml
 pyccl
+cmake
