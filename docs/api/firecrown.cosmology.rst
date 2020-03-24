@@ -2,6 +2,6 @@ firecrown.cosmology module
 ==========================
 
 .. automodule:: firecrown.cosmology
-    :members:
-    :undoc-members:
-    :show-inheritance:
+   :members:
+   :undoc-members:
+   :show-inheritance:

@@ -1,18 +1,6 @@
 firecrown.ccl.sources package
 =============================
 
-.. automodule:: firecrown.ccl.sources
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    firecrown.ccl.sources.tests
-
 Submodules
 ----------
 
@@ -20,3 +8,10 @@ Submodules
 
    firecrown.ccl.sources.sources
 
+Module contents
+---------------
+
+.. automodule:: firecrown.ccl.sources
+   :members:
+   :undoc-members:
+   :show-inheritance:

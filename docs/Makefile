@@ -3,7 +3,7 @@
 
 # You can set these variables from the command line.
 SPHINXOPTS    =
-SPHINXBUILD   = python -msphinx
+SPHINXBUILD   = python3 -msphinx
 SPHINXPROJ    = fireCrown
 SOURCEDIR     = .
 BUILDDIR      = _build
@@ -16,7 +16,7 @@ help:
 
 generate-api: ./apidoc.sh
 	bash $<
-.PHONY: html	
+.PHONY: html
 html: generate-api
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
 

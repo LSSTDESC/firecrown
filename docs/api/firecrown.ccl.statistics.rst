@@ -1,18 +1,6 @@
 firecrown.ccl.statistics package
 ================================
 
-.. automodule:: firecrown.ccl.statistics
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-Subpackages
------------
-
-.. toctree::
-
-    firecrown.ccl.statistics.tests
-
 Submodules
 ----------
 
@@ -20,3 +8,10 @@ Submodules
 
    firecrown.ccl.statistics.two_point
 
+Module contents
+---------------
+
+.. automodule:: firecrown.ccl.statistics
+   :members:
+   :undoc-members:
+   :show-inheritance:
