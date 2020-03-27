@@ -1,13 +1,13 @@
 parameters:
   Omega_k: 0.0
   Omega_b: 0.0485
-  Omega_c: 0.2545
+  Omega_c: [0.2, 0.2545, 0.4]
   w0: -1.0
   wa: 0.0
   h: 0.682
-  sigma8: 0.801
+  sigma8: [0.6, 0.801,  0.9]
   n_s: 0.971
-  transfer_function: eisenstein_hu
+  #transfer_function: eisenstein_hu
 
   # IA model
   A0: 0.5
@@ -57,6 +57,26 @@ emcee:
   {% endfor %}
   n_steps: 1000
   backend: serial
+
+
+cosmosis:
+  sampler: grid
+  output: des-y1-3x2pt-grid.txt
+  debug: True
+  quiet: True
+  mpi: False
+  # parameters for individual samplers:
+  multinest:
+    max_iterations: 50000
+    live_points: 250
+    tolerance: 0.1
+    constant_efficiency: False
+    live_points: 500
+    efficiency: 0.3
+    resume: True
+    multinest_outfile_root: des-y1-multinest
+  grid:
+    nsample_dimension: 25
 
 priors:
   module: firecrown.priors

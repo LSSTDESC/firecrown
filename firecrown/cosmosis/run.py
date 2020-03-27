@@ -24,11 +24,14 @@ COSMOSIS_INTERFACE = str(THIS_DIRECTORY.joinpath('interface.py'))
 def run_cosmosis(config, data):
     """Run CosmoSIS on the problem.
 
-    This requires the following parameters 'sampler' section
+    This requires the following parameters 'cosmosis' section
     of the config:
 
       sampler - name of sampler to use, e.g. emcee, multinest, grid, ...
       output - name of file to save to
+
+      a section with the same name as the sampler, selecting options
+      for that sampler.
 
     Parameters
     ----------
