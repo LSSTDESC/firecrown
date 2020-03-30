@@ -63,7 +63,7 @@ jobs:
               "sacc=0.2"
 
             # requires special compilers we don't have
-            # pip install cosmosis-standalone==0.0.9
+            pip install cosmosis-standalone==0.2.2
             conda update --all -y -q
             pip install -e .
 
