@@ -118,11 +118,11 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
     # worker nodes.
     if (pool is None) or pool.is_master():
         pipeline = cosmosis.LikelihoodPipeline(load=False, values=values,
-                                      priors=priors)
+                                               priors=priors)
     else:
         with cosmosis.stdout_redirected():
             pipeline = cosmosis.LikelihoodPipeline(load=False, values=values,
-                                          priors=priors)
+                                                   priors=priors)
 
     # Flush now to print out the master node's setup stdout
     # before printing the worker likelihoods
@@ -141,8 +141,9 @@ def _make_cosmosis_params(config):
 
     Parameters
     ----------
-    cosmosis_config: dict
-        Configuration dictionary of 'cosmosis' section of yaml
+    config: dict
+        The data object parse'd from an input yaml file.
+        This is passed as-is to the likelihood function
 
     Returns
     -------
@@ -200,8 +201,9 @@ def _make_cosmosis_values(config):
 
     Parameters
     ----------
-    params: dict
-        Configuration dictionary of 'parameters' section of input yaml
+    config: dict
+        The data object parse'd from an input yaml file.
+        This is passed as-is to the likelihood function
 
     Returns
     -------
@@ -229,8 +231,18 @@ def _make_cosmosis_values(config):
 
 
 def _make_cosmosis_priors(config):
-    """Make a cosmosis priors ini file
-    
+    """Make a cosmosis priors ini file.
+
+    Parameters
+    ----------
+    config: dict
+        The data object parse'd from an input yaml file.
+        This is passed as-is to the likelihood function
+
+    Returns
+    -------
+    priors: cosmosis Inifile
+        The cosmosis config object specifying priors
     """
     P = {}
     for name, p in config['priors'].items():
@@ -238,8 +250,8 @@ def _make_cosmosis_priors(config):
         # CosmoSIS only exposes three of these right now (plus
         # a couple of others that scipy doesn't support), but
         # these are by far the most common.
-        
-        # This is a key used by other FireCrown tools        
+
+        # This is a key used by other FireCrown tools
         if name == 'module':
             continue
 
