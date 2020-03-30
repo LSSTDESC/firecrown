@@ -1,13 +1,13 @@
 parameters:
   Omega_k: 0.0
   Omega_b: 0.0485
-  Omega_c: [0.2, 0.2545, 0.4]
+  Omega_c: 0.2545
   w0: -1.0
   wa: 0.0
   h: 0.682
-  sigma8: [0.6, 0.801,  0.9]
+  sigma8: 0.801
   n_s: 0.971
-  #transfer_function: eisenstein_hu
+  transfer_function: eisenstein_hu
 
   # IA model
   A0: 0.5
@@ -61,15 +61,19 @@ emcee:
 
 cosmosis:
   # the name of the sampler to use
-  sampler: grid
+  sampler: maxlike
   # the output chain file name
-  output: des-y1-3x2pt-grid.txt
+  output: des-y1-3x2pt-maxlike.txt
+  parameters:
+    Omega_c: [0.1, 0.2545,  0.6]
+    sigma8: [0.6,  0.801,  1.0]
+    src0_mult_bias: [-0.1, 0.0,  0.1]
   # whether to output more debugging information on failure
   # and regard python exceptions as errors (instead of just
   # using -inf likelihoods)
   debug: True
   # suppress output information
-  quiet: True
+  quiet: False
   # whether to use MPI - must run under mpirun to do this
   mpi: False
   # parameters for individual samplers.
