@@ -77,8 +77,8 @@ def run(action, config, output, verbose):
 
     elif action == 'run-cosmosis':
         if 'cosmosis' not in _config:
-            raise ValueError('You must have an `cosmosis` '
-                             'configuartion block to run `cosmosis`!')
+            raise ValueError('You must have a `cosmosis` '
+                             'configuration block to run `cosmosis`!')
 
         firecrown.run_cosmosis(_config, data)
 

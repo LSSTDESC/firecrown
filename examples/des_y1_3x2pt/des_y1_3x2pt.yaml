@@ -23,18 +23,18 @@ parameters:
   {% endfor %}
 
   # linear bias for lenses
-  {% for i, val in [(0, 1.4), (1, 1.6), (2, 1.6), (3, 1.9), (4, 2.0)] %}
-  bias_lens{{ i }}: {{ val }}
+  {% for val in [1.4, 1.6, 1.6, 1.9, 2.0] %}
+  bias_lens{{ loop.index0 }}: {{ val }}
   {% endfor %}
 
   # photoz shifts for the lensing sources
-  {% for i, loc in [(0, -0.001), (1, -0.019), (2, 0.009), (3, -0.018)] %}
-  src{{ i }}_delta_z: {{ loc }}
+  {% for loc in [-0.001, -0.019, 0.009, -0.018] %}
+  src{{ loop.index0 }}_delta_z: {{ loc }}
   {% endfor %}
 
   # photoz shifts for the lenses
-  {% for i, loc in [(0, 0.001), (1, 0.002), (2, 0.001), (3, 0.003), (4, 0.0)] %}
-  lens{{ i }}_delta_z: {{ loc }}
+  {% for loc in [0.001, 0.002, 0.001, 0.003, 0.0] %}
+  lens{{ loop.index0 }}_delta_z: {{ loc }}
   {% endfor %}
 
 emcee:
@@ -57,6 +57,43 @@ emcee:
   {% endfor %}
   n_steps: 1000
   backend: serial
+
+
+cosmosis:
+  # the name of the sampler to use
+  sampler: maxlike
+  # the output chain file name
+  output: des-y1-3x2pt-maxlike.txt
+  parameters:
+    Omega_c: [0.1, 0.2545,  0.6]
+    sigma8: [0.6,  0.801,  1.0]
+    src0_mult_bias: [-0.1, 0.0,  0.1]
+  # whether to output more debugging information on failure
+  # and regard python exceptions as errors (instead of just
+  # using -inf likelihoods)
+  debug: True
+  # suppress output information
+  quiet: False
+  # whether to use MPI - must run under mpirun to do this
+  mpi: False
+  # parameters for individual samplers.
+  # multinest - nested sampling
+  multinest:
+    # for info on these parameter see the multinest documentation.
+    max_iterations: 50000
+    live_points: 250
+    tolerance: 0.1
+    constant_efficiency: False
+    live_points: 500
+    efficiency: 0.3
+    resume: True
+    multinest_outfile_root: des-y1-multinest
+  # for computing a grid of models - works for up to about three dimensions
+  # but quickly becomes untenable above that.
+  grid:
+    # the number of grid points in each dimension.  Total number of models
+    # is nsample_dimension ** ndim
+    nsample_dimension: 25
 
 priors:
   module: firecrown.priors
@@ -81,7 +118,6 @@ priors:
     kind: uniform
     loc: 0.87
     scale: 0.2  # 1.07 - 0.87
-
   A0:
     kind: uniform
     loc: -5.0
@@ -98,15 +134,15 @@ priors:
     scale: 2.2  # 3.0 - 0.8
   {% endfor %}
 
-  {% for i, loc, scale in [(0, 0.001, 0.008), (1, 0.002, 0.007), (2, 0.001, 0.007), (3, 0.003, 0.01), (4, 0.0, 0.01)] %}
-  lens{{ i }}_delta_z:
+  {% for loc, scale in [(0.001, 0.008), (0.002, 0.007), (0.001, 0.007), (0.003, 0.01), (0.0, 0.01)] %}
+  lens{{ loop.index0 }}_delta_z:
     kind: norm
     loc: {{ loc }}
     scale: {{ scale }}
   {% endfor %}
 
-  {% for i, loc, scale in [(0, -0.001, 0.016), (1, -0.019, 0.013), (2, 0.009, 0.011), (3, -0.018, 0.022)] %}
-  src{{ i }}_delta_z:
+  {% for loc, scale in [(-0.001, 0.016), (-0.019, 0.013), (0.009, 0.011), (-0.018, 0.022)] %}
+  src{{ loop.index0 }}_delta_z:
     kind: norm
     loc: {{ loc }}
     scale: {{ scale }}

@@ -60,10 +60,9 @@ jobs:
               flake8 \
               pytest \
               nose \
-              "sacc=0.2"
+              "sacc=0.3" \
+              "cosmosis-standalone==0.2.2"
 
-            # requires special compilers we don't have
-            # pip install cosmosis-standalone==0.0.9
             conda update --all -y -q
             pip install -e .
 

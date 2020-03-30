@@ -91,7 +91,7 @@ def compute_loglike(
     else:
         loglike = None
 
-    return loglike, None
+    return loglike, {'data': _data, 'theory': _theory, 'loglike': loglike}
 
 
 def write_stats(*, output_path, data, stats):
@@ -104,8 +104,8 @@ def write_stats(*, output_path, data, stats):
     data : dict
         The output of `parse_config`.
     stats : object or other data
-        Second output of `compute_loglike`. Always None for the two point
-        analysis here.
+        Second output of `compute_loglike`, though this
+        is not used in the function it is passed to here.
     """
     meas_sacc, pred_sacc = build_sacc_data(data=data, stats=stats)
     meas_sacc.save_fits(
@@ -122,8 +122,7 @@ def build_sacc_data(data, stats):
     data : dict
         The output of `parse_config`.
     stats : object or other data
-        Second output of `compute_loglike`. Always None for the two point
-        analysis here.
+        Second output of `compute_loglike`. Not used in this case.
 
     Returns
     -------

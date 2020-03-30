@@ -9,4 +9,5 @@ schwimmbad
 emcee>=3,<5
 tqdm
 joblib
-sacc~=0.2
+sacc~=0.3
+cosmosis-standalone>=0.2.2

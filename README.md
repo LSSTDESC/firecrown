@@ -36,14 +36,24 @@ See the example in the examples folder for more details.
 
 ## Sampling
 
-To use CosmoSIS to sample cosmological parameters, first install cosmosis-standalone.
-You will need to specify compilers on install, for example:
+To use CosmoSIS to sample cosmological parameters, first install cosmosis-standalone:
 
 ```bash
-CC=gcc-7 CXX=g++-7 FC=gfortran pip install cosmosis-standalone
+pip install cosmosis-standalone
 ```
 
-Currently the Clang compiler cannot compile cosmosis.
+or
+
+```bash
+conda install cosmosis-standalone
+```
+
+
+You may need to specify compilers on install, if your default compilers are not new enough to support cosmosis, for example, to use non-default GCCs:
+
+```bash
+FC=gfortran CC=gcc-9 CXX=g++-9  pip install cosmosis-standalone
+```
 
 You can then run with:
 
