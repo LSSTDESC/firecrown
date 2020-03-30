@@ -1,13 +1,11 @@
+# This section defines fiducial values for all parameters.
 parameters:
   Omega_k: 0.0
-  # Parameters varied with cosmosis
-  # need a min value, starting point, and max value,
-  # like so:
-  Omega_c: [0.25, 0.27, 0.32]
+  Omega_c: 0.27
   Omega_b: 0.045
   h: 0.67
   n_s: 0.96
-  A_s: [2.0e-9, 2.1e-9, 2.2e-9]
+  A_s: 2.1e-9
   w0: -1.0
   wa: 0.0
 
@@ -16,12 +14,16 @@ parameters:
   src{{ i }}_delta_z: 0.0
   {% endfor %}
 
+# Defines options when running the emcee sampler
 emcee:
+  # Which parameters emcee should vary
   parameters:
     - A_s
     - Omega_c
   n_steps: 10
 
+# Defines options when running one of the samplers
+# through cosmosis
 cosmosis:
   sampler: grid
   output: chain.txt
@@ -38,6 +40,11 @@ cosmosis:
     nsample_dimension: 5
   fisher:
     step_size: 0.02
+  # which parameters to vary in the chains
+  parameters:
+    Omega_c: [0.25, 0.27, 0.32]
+    A_s: [2.0e-9, 2.1e-9, 2.2e-9]
+
 
 
 two_point:

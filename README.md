@@ -42,6 +42,13 @@ To use CosmoSIS to sample cosmological parameters, first install cosmosis-standa
 pip install cosmosis-standalone
 ```
 
+or
+
+```bash
+conda install cosmosis-standalone
+```
+
+
 You may need to specify compilers on install, if your default compilers are not new enough to support cosmosis, for example, to use non-default GCCs:
 
 ```bash
