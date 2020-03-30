@@ -308,6 +308,13 @@ def _execute(block, data):
         if block.has_value('params', p):
             data['parameters'][p] = block['params', p]
 
+    # Currently compute_loglike actually computes the posterior
+    # if priors are included. Prevent that from happening since
+    # CosmoSIS is already handling priors
+    if 'priors' in data:
+        data = data.copy()
+        del data['priors']
+
     # Call out to the log likelihood
     loglike, stats = compute_loglike(cosmo=cosmo, data=data)
 
