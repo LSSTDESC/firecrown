@@ -1,6 +1,6 @@
 # firecrown: the "c" is for "cosmology"
 
-[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master) [![Documentation Status](https://readthedocs.org/projects/descfirecrown/badge/?version=latest)](https://descfirecrown.readthedocs.io/en/latest/?badge=latest)
+[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master)
 
 ## Installation
 
@@ -10,16 +10,10 @@ You need to have CCL installed first. Try:
 pip install pyccl
 ```
 
-Then you can download and install the `master` branch via
+Then you can install the `master` branch via
 
 ```
 pip install git+https://github.com/LSSTDESC/firecrown.git
-```
-
-If you have already cloned the repo, simply install via
-
-```
-pip install -e .
 ```
 
 ## Usage
@@ -36,24 +30,14 @@ See the example in the examples folder for more details.
 
 ## Sampling
 
-To use CosmoSIS to sample cosmological parameters, first install cosmosis-standalone:
+To use CosmoSIS to sample cosmological parameters, first install cosmosis-standalone.
+You will need to specify compilers on install, for example:
 
 ```bash
-pip install cosmosis-standalone
+CC=gcc-7 CXX=g++-7 FC=gfortran pip install cosmosis-standalone
 ```
 
-or
-
-```bash
-conda install cosmosis-standalone
-```
-
-
-You may need to specify compilers on install, if your default compilers are not new enough to support cosmosis, for example, to use non-default GCCs:
-
-```bash
-FC=gfortran CC=gcc-9 CXX=g++-9  pip install cosmosis-standalone
-```
+Currently the Clang compiler cannot compile cosmosis.
 
 You can then run with:
 
