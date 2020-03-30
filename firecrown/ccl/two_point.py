@@ -87,7 +87,7 @@ def compute_loglike(
     else:
         loglike = None
 
-    return loglike, None
+    return loglike, {'data': _data, 'theory': _theory, 'loglike': loglike}
 
 
 def write_stats(*, output_path, data, stats):

@@ -1,8 +1,10 @@
 import os
 import sys
 import numbers
+import warnings
 from ..cosmology import get_ccl_cosmology, RESERVED_CCL_PARAMS
 from ..loglike import compute_loglike
+import numpy as np
 
 try:
     import cosmosis
@@ -121,11 +123,11 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
     # We avoid printing various bits of output info by silencing stdout on
     # worker nodes.
     if (pool is None) or pool.is_master():
-        pipeline = cosmosis.LikelihoodPipeline(load=False, values=values,
+        pipeline = cosmosis.LikelihoodPipeline(ini, load=False, values=values,
                                                priors=priors)
     else:
         with cosmosis.stdout_redirected():
-            pipeline = cosmosis.LikelihoodPipeline(load=False, values=values,
+            pipeline = cosmosis.LikelihoodPipeline(ini, load=False, values=values,
                                                    priors=priors)
 
     # Flush now to print out the master node's setup stdout
@@ -164,11 +166,6 @@ def _make_cosmosis_params(config):
     quiet = cosmosis_config.get('quiet', False)
     root = ""  # Dummy value to stop cosmosis complaining
 
-    # Passive-aggressive error message
-    if sampler_name == 'fisher':
-        raise ValueError("The Fisher matrix sampler "
-                         "does not work since the refactor - sorry.")
-
     # Make into a pair dictionary with the right cosmosis sections
     cosmosis_options = {
         ("runtime", "root"): root,
@@ -192,7 +189,6 @@ def _make_cosmosis_params(config):
     for p, v in config['parameters'].items():
         if isinstance(v, str):
             cosmosis_options['firecrown', p] = v
-            print(f"Setting string parameter {p} = {v}")
 
     # Convert into cosmosis Inifile format.
     cosmosis_params = cosmosis.Inifile(None, override=cosmosis_options)
@@ -288,15 +284,58 @@ def _make_cosmosis_priors(config):
 
 
 def _setup(data):
-    # In most cosmosis modules this function
-    # is a bit more complicated!  We are hacking it
-    # a bit here - normally the input to this function
-    # is the configuration information for the module.
-    return data
-
-
-def _execute(block, data):
+    # Most CosmoSIS modules do proper setup here.
+    # In this module we just collect together the
+    # covariances and get their inverses, so that
+    # we can do a Fisher matrix later, if we want to.
+    from cosmosis.runtime.utils import symmetric_positive_definite_inverse
     data, ini = data
+    invs = {}
+    covs = {}
+    error = False
+    for name, config in data.items():
+        # ignore priors and other non-likelihood sections
+        if name == 'priors' or 'data' not in config:
+            continue
+
+        # deal with any of
+        # - there being no likelihood specified
+        # - the likelihood not being a gaussian
+        # If there is a better way of introspecting
+        # this that would be great.
+        try:
+            cov = config['data']['likelihood'].cov
+        except (AttributeError, KeyError):
+            error = True
+            continue
+
+        # Get inverse if possible. Might not be SPD,
+        # though it should be.  We allow this for most samplers
+        # because small errors can creep in numerically, but we
+        # don't allow for Fisher
+        if cov is None:
+            inv_cov = None
+        else:
+            try:
+                inv_cov = symmetric_positive_definite_inverse(cov)
+            except ValueError:
+                error = True
+                continue
+        # If the above didn't work then we should already have
+        # continue'd, so if we get this far all is good.
+        covs[name] = cov
+        invs[name] = inv_cov
+
+    if error:
+        warnings.warn("Note that not all of your likelihoods are "
+                      "valid Gaussians, so I will not be able to "
+                      "run Fisher matrix, if that's what you wanted.")
+
+    return data, ini, covs, invs
+
+
+def _execute(block, config):
+    data, ini, covs, invs = config
     # Calculate the firecrown likelihood as a module
     # This function, which isn't designed for end users,
     # is the main connection between cosmosis and firecrown.
@@ -334,8 +373,39 @@ def _execute(block, data):
     # Call out to the log likelihood
     loglike, stats = compute_loglike(cosmo=cosmo, data=data)
 
-    # Send result back to cosmosis
-    block['likelihoods', 'firecrown_like'] = loglike
+    # concatenate theory and data vectors, where these
+    # are supported by the log likelihood
+    theory = {}
+    obs = {}
+    for name, stat in stats.items():
+        # These can easily be missing, in which case they will just
+        # be left out.
+        try:
+            obs[name] = np.concatenate([v for v in stat['data'].values()])
+            theory[name] = np.concatenate([v for v in stat['theory'].values()])
+        except (KeyError, ValueError):
+            pass
+
+    # For Fisher, etc., we save all the data vector info that we have
+    for name in data:
+        # indicates that this is a likelihood
+        if 'data' not in data[name]:
+            continue
+
+        # Send result back to cosmosis
+        block['likelihoods', f'{name}_like'] = stats[name]['loglike']
+
+        # Save whatever we have managed to collect.
+        # The CosmoSIS Fisher sampler and others look in this
+        # section to build up the Fisher data vectors.
+        if name in theory:
+            block['data_vector', f'{name}_theory'] = theory[name]
+        if name in obs:
+            block['data_vector', f'{name}_data'] = obs[name]
+        if name in covs:
+            block['data_vector', f'{name}_covariance'] = covs[name]
+        if name in invs:
+            block['data_vector', f'{name}_inverse_covariance'] = invs[name]
 
     # Unless in quiet mode, print out what we have done
     if not data['cosmosis'].get("quiet", True):

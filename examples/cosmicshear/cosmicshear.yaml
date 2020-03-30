@@ -25,11 +25,11 @@ emcee:
 # Defines options when running one of the samplers
 # through cosmosis
 cosmosis:
-  sampler: grid
+  sampler: fisher
   output: chain.txt
   debug: True
   quiet: False
-  mpi: True
+  mpi: False
   # parameters for individual samplers:
   test:
     fatal_errors: True
