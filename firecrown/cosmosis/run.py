@@ -55,12 +55,13 @@ def run_cosmosis(config, data):
 def _make_parallel_pool(config):
     """Set up a parallel process pool.
 
-    Will look for the 'mpi' key in the cosmosis_config.
+    Will look for the 'mpi' key in the config cosmosis section.
 
     Parameters
     ----------
-    cosmosis_config: dict
-        Sampler configuration section of the input
+    config: dict
+        The data object parse'd from an input yaml file.
+        This is passed as-is to the likelihood function
 
     Returns
     -------
@@ -97,6 +98,9 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
     data: dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
+
+    ini: Inifile
+        Cosmosis object representing the main input parameter file
 
     values: Inifile
         Cosmosis object representing the input parameter values
