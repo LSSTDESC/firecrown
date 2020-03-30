@@ -55,7 +55,7 @@ priors:
 
 two_point:
   module: firecrown.ccl.two_point
-  sacc_file: cosmicshear.fits
+  sacc_data: cosmicshear.fits
   sources:
     {% for i in range(2) %}
     src{{ i }}:

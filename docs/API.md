@@ -72,8 +72,6 @@ Some Notes:
    and not changed after instantiation.
  - Objects inheriting from `Systematic` should only adjust source/statistic
    properties ending with an underscore.
- - The `read` methods are called after all objects are made and are used to
-   read any additional data.   
 
 ### YAML Configuration
 
@@ -85,18 +83,15 @@ In general, a two-point YAML configuration file has four sections, `sources`,
 and `statistics` sections contain mappings of names to configuration
 specifications for each item. Other sections of the file should refer to
 these items by their names. The configuration of each item follows their
-docstrings. There is a final optional key, `sacc_data`, which should contain
-the path to the SACC data file if desired.
+docstrings.
 
 ## Generic API
 
-The generic API works with three required functions. The first, `parse_config`, is
+The generic API works with two functions. The first, `parse_config`, is
 responsible for doing any initialization based on parsing on a YAML
 configuration file. The second function, `compute_loglike`, does the actual
-log-likelihood computations. A configuration section in the input
-YAML file points `firecrown` to the python module with these functions. Finally,
-you should define a third function `write_stats`, that writes any returned data
-to a specified path.
+log-likelihood computations. Finally, a configuration section in the input
+YAML file points `firecrown` to the python module with these functions.
 
 ### YAML Configuration
 
@@ -121,7 +116,7 @@ my_loglike_term:
   ...
 ```
 
-### Implementing `parse_config`, `compute_loglike`, and `write_stats`
+### Implementing `parse_config` and `compute_loglike`
 
 The `parse_config` function should have the following signature
 
@@ -170,8 +165,8 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
-    stats : object or other data
-        Any data you wish to store.
+    stats : dict
+        Dictionary with any data to store.
     """
     ...
 ```
@@ -184,21 +179,4 @@ when implementing this function.
 
 1. Always use the `pyccl.Cosmology` object for any cosmological computations (e.g., distances).
 2. If the likelihood is zero, this function should return `-np.inf`.
-
-The `write_stats` function has the signature
-
-```python
-def write_stats(*, output_path, data, stats):
-    """Write statistics to a file at `output_path`.
-
-    Parameters
-    ----------
-    output_path : str
-        The path to which to write the data.
-    data : dict
-        The output of `parse_config`.
-    stats : object or other data
-        Second output of `compute_loglike`.
-    """
-    ...
-```
+3. The elements of dictionary of returned data must be [numpy structured arrays](https://docs.scipy.org/doc/numpy/user/basics.rec.html#module-numpy.doc.structured_arrays).
