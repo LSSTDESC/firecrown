@@ -10,4 +10,4 @@ emcee>=3,<5
 tqdm
 joblib
 sacc~=0.2
-cosmosis-standalone>=0.2.1
+cosmosis-standalone>=0.2.2
