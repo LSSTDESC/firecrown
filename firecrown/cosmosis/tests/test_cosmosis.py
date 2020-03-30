@@ -1,6 +1,7 @@
 import pytest
 from ..run import _make_parallel_pool, _make_cosmosis_params
 from ..run import _make_cosmosis_values, _make_cosmosis_pipeline
+from ..run import _make_cosmosis_priors
 from ..run import run_cosmosis
 import yaml
 import numpy as np
@@ -22,16 +23,16 @@ parameters:
   # Parameters varied with cosmosis
   # need a min value, starting point, and max value,
   # like so:
-  Omega_c: [0.25, 0.27, 0.32]
+  Omega_c: 0.27
   Omega_b: 0.045
   h: 0.67
   n_s: 0.96
-  A_s: [2.0e-9, 2.1e-9, 2.2e-9]
+  A_s: 2.1e-9
   w0: -1.0
   wa: 0.0
 
   # lens bin zero
-  src0_delta_z: [-0.1, 0.0, 0.1]
+  src0_delta_z: 0.0
   src1_delta_z: 0.0
 
 
@@ -51,21 +52,27 @@ cosmosis:
     step_size: 0.02
   grid:
     nsample_dimension: 5
+  parameters:
+    A_s: [2.0e-9, 2.1e-9, 2.2e-9]
+    Omega_c: [0.25, 0.27, 0.32]
+    src0_delta_z: [-0.1, 0.0, 0.1]
+
+priors: {}
 """
-    config = yaml.load(config_text)
+    config = yaml.safe_load(config_text)
     return config
 
 
 @requires_cosmosis
 def test_pool(tx_config):
-    pool = _make_parallel_pool(tx_config['cosmosis'])
+    pool = _make_parallel_pool(tx_config)
     assert pool is None or pool.size > 0
     assert pool is None or isinstance(pool, cosmosis.runtime.mpi_pool.MPIPool)
 
 
 @requires_cosmosis
 def test_config(tx_config):
-    ini = _make_cosmosis_params(tx_config['cosmosis'])
+    ini = _make_cosmosis_params(tx_config)
     assert isinstance(ini, cosmosis.runtime.config.Inifile)
     assert ini.getint('test', 'walkers') == 10
     assert np.isclose(ini.getfloat('test', 'step_size'), 0.02)
@@ -79,7 +86,7 @@ def test_config(tx_config):
 
 @requires_cosmosis
 def test_values(tx_config):
-    values = _make_cosmosis_values(tx_config['parameters'])
+    values = _make_cosmosis_values(tx_config)
 
     assert values.getfloat('params', 'Omega_k') == 0
     assert values.get('params', 'Omega_c').split() == ['0.25', '0.27', '0.32']
@@ -90,10 +97,12 @@ def test_values(tx_config):
 
 @requires_cosmosis
 def test_pipeline(tx_config):
-    data = None
-    values = _make_cosmosis_values(tx_config['parameters'])
-    pool = None
-    pipeline = _make_cosmosis_pipeline(data, values, pool)
+    data = {}
+    ini = _make_cosmosis_params(tx_config)
+    values = _make_cosmosis_values(tx_config)
+    pool = _make_parallel_pool(tx_config)
+    priors = _make_cosmosis_priors(tx_config)
+    pipeline = _make_cosmosis_pipeline(data, ini, values, priors, pool)
 
     # check all params made it through
     assert pipeline.nvaried == 3
