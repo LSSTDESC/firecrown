@@ -12,7 +12,6 @@ except ImportError:
     cosmosis = None
 
 
-
 @pytest.fixture(scope="session")
 def tx_config(tmpdir_factory):
     config_text = """
