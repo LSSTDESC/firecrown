@@ -45,13 +45,6 @@ cosmosis:
     Omega_c: [0.25, 0.27, 0.32]
     A_s: [2.0e-9, 2.1e-9, 2.2e-9]
 
-# If no priors are specified then there is
-# an implicit uniform priors on all varied
-# parameters
-priors:
-  module: firecrown.priors
-
-
 
 two_point:
   module: firecrown.ccl.two_point

@@ -244,6 +244,11 @@ def _make_cosmosis_priors(config):
     priors: cosmosis Inifile
         The cosmosis config object specifying priors
     """
+
+    # Early return if no priors section is specified
+    if 'priors' not in config:
+        return cosmosis.Inifile(None)
+
     P = {}
     for name, p in config['priors'].items():
         # FireCrown exposes any scipy distribtion as a prior.
