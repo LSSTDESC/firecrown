@@ -11,8 +11,6 @@ try:
 except ImportError:
     cosmosis = None
 
-requires_cosmosis = pytest.mark.skipif(cosmosis is None,
-                                       reason="cosmosis not installed")
 
 
 @pytest.fixture(scope="session")
@@ -63,14 +61,12 @@ priors: {}
     return config
 
 
-@requires_cosmosis
 def test_pool(tx_config):
     pool = _make_parallel_pool(tx_config)
     assert pool is None or pool.size > 0
     assert pool is None or isinstance(pool, cosmosis.runtime.mpi_pool.MPIPool)
 
 
-@requires_cosmosis
 def test_config(tx_config):
     ini = _make_cosmosis_params(tx_config)
     assert isinstance(ini, cosmosis.runtime.config.Inifile)
@@ -84,7 +80,6 @@ def test_config(tx_config):
         assert ini.getboolean('test', 'walkers')
 
 
-@requires_cosmosis
 def test_values(tx_config):
     values = _make_cosmosis_values(tx_config)
 
@@ -95,7 +90,6 @@ def test_values(tx_config):
         assert values.getfloat('cosmological_parameters', 'Omega_k')
 
 
-@requires_cosmosis
 def test_pipeline(tx_config):
     data = {}
     ini = _make_cosmosis_params(tx_config)
@@ -120,7 +114,6 @@ def test_pipeline(tx_config):
     assert len(pipeline.modules) == 1
 
 
-@requires_cosmosis
 def test_sampling(tx_config, tmpdir):
     chain_file = os.path.join(tmpdir, 'chain.txt')
     tx_config['cosmosis']['sampler'] = 'grid'
