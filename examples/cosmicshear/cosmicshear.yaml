@@ -14,6 +14,11 @@ parameters:
   src{{ i }}_delta_z: 0.0
   {% endfor %}
 
+  # add your new parameters here
+  m_base: 0.0
+  m_delta_0: 0.1
+  m_delta_1: -0.1
+
 # Defines options when running the emcee sampler
 emcee:
   # Which parameters emcee should vary
@@ -63,6 +68,14 @@ two_point:
     pz_delta_{{ i }}:
       kind: PhotoZShiftBias
       delta_z: src{{ i }}_delta_z
+    {% endfor %}
+
+    # add your new systematic here
+    {% for i in range(2) %}
+    mbias_{{ i }}:
+      kind: cs_custom_model.CustomShearBias
+      m_delta: m_delta_{{ i }}
+      m_base: m_base
     {% endfor %}
 
   statistics:
