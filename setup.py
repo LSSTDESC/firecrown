@@ -11,6 +11,12 @@ pth = os.path.join(
 with open(pth, 'r') as fp:
     exec(fp.read())
 
+pth = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "requirements.txt")
+with open(pth, 'r') as fp:
+    rqs = [r.strip() for r in fp.readlines()]
+
 setup(
     name='firecrown',
     version=__version__,
@@ -19,7 +25,5 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     scripts=scripts,
-    install_requires=[
-        'pyccl', 'click', 'numpy',
-        'scipy', 'pandas', 'pyyaml', 'jinja2'],
+    install_requires=rqs,
 )
