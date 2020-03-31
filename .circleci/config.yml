@@ -93,6 +93,7 @@ jobs:
             source activate test-env
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
+            pip install -e .
             firecrown compute cosmicshear.yaml
 
       - run:
