@@ -12,9 +12,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+          - v1-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
           # fallback to using the latest cache if no exact match is found
-          - v0-conda-dependencies-
+          - v1-conda-dependencies-
 
       - run:
           name: install dependencies
@@ -22,6 +22,7 @@ jobs:
             if [ ! -d miniconda ]; then
               curl -s https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -o miniconda.sh
               bash miniconda.sh -b -p miniconda
+              rm -f miniconda.sh
 
               export PATH=`pwd`/miniconda/bin:$PATH
 
@@ -44,32 +45,16 @@ jobs:
 
             source activate test-env
 
-            conda install -y -q \
-              numpy \
-              "pyccl>=2.0" \
-              numpy \
-              pyyaml \
-              scipy \
-              click \
-              pandas \
-              jinja2 \
-              schwimmbad \
-              "emcee>=3,<5" \
-              tqdm \
-              joblib \
-              flake8 \
-              pytest \
-              nose \
-              "sacc=0.3" \
-              "cosmosis-standalone==0.2.2"
+            conda install -y -q --file=requirements.txt
+            conda install -y -q --file=dev-requirements.txt
 
             conda update --all -y -q
-            pip install -e .
+            pip install --no-deps -e .
 
       - save_cache:
           paths:
             - ./miniconda
-          key: v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+          key: v1-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
 
       - run:
           name: lint
