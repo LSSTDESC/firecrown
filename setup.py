@@ -1,7 +1,12 @@
 import os
 from setuptools import setup, find_packages
 
-scripts = ['bin/firecrown']
+
+def _munge_req(r):
+    for sym in ["~", "=", "<", ">", ",", "!", "!"]:
+        r = r.split(sym)[0]
+    return r
+
 
 __version__ = None
 pth = os.path.join(
@@ -15,7 +20,7 @@ pth = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
     "requirements.txt")
 with open(pth, 'r') as fp:
-    rqs = [r.strip() for r in fp.readlines()]
+    rqs = [_munge_req(r.strip()) for r in fp.readlines()]
 
 setup(
     name='firecrown',
@@ -24,6 +29,6 @@ setup(
     author="DESC Team",
     packages=find_packages(),
     include_package_data=True,
-    scripts=scripts,
+    scripts=['bin/firecrown'],
     install_requires=rqs,
 )
