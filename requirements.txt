@@ -1,4 +1,4 @@
-pyccl~=2.0
+pyccl=2.0
 numpy>=1.16
 pyyaml
 scipy
@@ -9,5 +9,5 @@ schwimmbad
 emcee>=3,<5
 tqdm
 joblib
-sacc~=0.3
+sacc=0.3
 cosmosis-standalone>=0.2.2
