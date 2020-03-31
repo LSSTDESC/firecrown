@@ -58,6 +58,8 @@ two_point:
       sacc_tracer: trc{{ i }}
       systematics:
         - pz_delta_{{ i }}
+        # add m bias sys here
+
     {% endfor %}
 
   systematics:
