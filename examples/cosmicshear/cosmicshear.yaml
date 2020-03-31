@@ -61,6 +61,7 @@ two_point:
       sacc_tracer: trc{{ i }}
       systematics:
         - pz_delta_{{ i }}
+        - mbias_{{ i }}
     {% endfor %}
 
   systematics:
