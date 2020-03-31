@@ -54,7 +54,7 @@ jobs:
       - save_cache:
           paths:
             - ./miniconda
-          key: v0-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+          key: v1-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
 
       - run:
           name: lint
