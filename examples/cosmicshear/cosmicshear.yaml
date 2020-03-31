@@ -15,9 +15,6 @@ parameters:
   {% endfor %}
 
   # add your new parameters here
-  m_base: 0.0
-  m_delta_0: 0.1
-  m_delta_1: -0.1
 
 # Defines options when running the emcee sampler
 emcee:
@@ -71,12 +68,6 @@ two_point:
     {% endfor %}
 
     # add your new systematic here
-    {% for i in range(2) %}
-    mbias_{{ i }}:
-      kind: cs_custom_model.CustomShearBias
-      m_delta: m_delta_{{ i }}
-      m_base: m_base
-    {% endfor %}
 
   statistics:
     {% for i in range(2) %}

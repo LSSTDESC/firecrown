@@ -29,8 +29,6 @@ class CustomShearBias(Systematic):
     def __init__(self, m_delta, m_base):
         # don't do any work in this function
         # you need to attach the params to the object
-        self.m_delta = m_delta
-        self.m_base = m_base
 
     def apply(self, cosmo, params, source):
         """Apply multiplicative shear bias to a source. The `scale_` of the
@@ -49,4 +47,3 @@ class CustomShearBias(Systematic):
         # parameter in the params dict
 
         # you need to adjust the scale of the input source
-        source.scale_ *= (1.0 + params[self.m_delta] + params[self.m_base])
