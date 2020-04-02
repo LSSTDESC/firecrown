@@ -1,6 +1,5 @@
 import numpy as np
 import scipy.linalg
-import sacc
 
 from ..core import LogLike
 
@@ -50,10 +49,6 @@ class TdistLogLike(LogLike):
             A dictionary mapping statistics to their objects. These statistics do
             not have to have been rendered.
         """
-        if not isinstance(sacc_data.covariance, sacc.covariance.FullCovariance):
-            raise RuntimeError(
-                "Currently, the SACC covariance must be a 'FullCovariance'. "
-                "This may change in a future firecrown release.")
         _sd = sacc_data.copy()
         inds = []
         for stat in self.data_vector:
@@ -66,7 +61,7 @@ class TdistLogLike(LogLike):
         cov = np.zeros((len(inds), len(inds)))
         for new_i, old_i in enumerate(inds):
             for new_j, old_j in enumerate(inds):
-                cov[new_i, new_j] = _sd.covariance.covmat[old_i, old_j]
+                cov[new_i, new_j] = _sd.covariance.dense[old_i, old_j]
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
 
