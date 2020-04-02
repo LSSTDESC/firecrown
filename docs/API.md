@@ -55,7 +55,7 @@ These are:
   This class is used to combine `Statistic`s together with a covariance matrix
   into a final likelihood computation.
 
-Please see [firecrown/ccl/core.py](firecrown/ccl/core.py) for the details of
+Please see [firecrown/ccl/core.py](https://github.com/LSSTDESC/firecrown/firecrown/ccl/core.py) for the details of
 each class.
 
 Some Notes:
@@ -77,7 +77,7 @@ Some Notes:
 
 ### YAML Configuration
 
-The example configuration file, [cosmicshear.yaml](examples/cosmicshear.yaml),
+The example configuration file, [cosmicshear.yaml](https://github.com/LSSTDESC/firecrown/examples/cosmicshear.yaml),
 shows how one would configure a cosmic shear analysis in Fourier space.
 
 In general, a two-point YAML configuration file has four sections, `sources`,

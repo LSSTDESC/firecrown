@@ -23,7 +23,7 @@ def write_statistics(*, analysis_id, output_path, data, statistics):
 
     analyses = list(
         set(list(data.keys())) -
-        set(['parameters', 'cosmosis', 'emcee']))
+        set(['parameters', 'cosmosis']))
     for analysis in analyses:
         _ana_odir = os.path.join(_odir, analysis)
         os.makedirs(_ana_odir, exist_ok=True)

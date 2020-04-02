@@ -82,16 +82,6 @@ def run(action, config, output, verbose):
 
         firecrown.run_cosmosis(_config, data)
 
-    elif action == 'run-emcee':
-        if 'emcee' not in _config:
-            raise ValueError('You must have an `emcee` '
-                             'configuartion block to run `emcee`!')
-        # using a guarded import here to prevent weird errors if MPI is
-        # not installed or being funny
-        from firecrown.analysis.emcee_interface import run_emcee
-        stats, chain = run_emcee(
-            _config, data, **_config['emcee'])
-
     # we associate a unique id with each analysis
     # let's write that out with some extra info
     if print_or_run:

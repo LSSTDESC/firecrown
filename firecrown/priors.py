@@ -2,17 +2,17 @@
 A prior can be any distribution in `scipy.stats`. You specify them in YAML
 as follows:
 
-```YAML
-priors:
-  module: firecrown.priors
-  param1:
-    # here 'norm' is the name of the function/class in scipy.stats
-    kind: norm
-    # any keywors to this function are listd by name
-    # these are passed to the `logpdf` method
-    loc: 0.5
-    scale: 0.5
-```
+.. code-block:: yaml
+
+   priors:
+     module: firecrown.priors
+     param1:
+       # here 'norm' is the name of the function/class in scipy.stats
+       kind: norm
+       # any keywors to this function are listd by name
+       # these are passed to the `logpdf` method
+       loc: 0.5
+       scale: 0.5
 """
 import copy
 import scipy.stats

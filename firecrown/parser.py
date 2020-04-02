@@ -42,7 +42,7 @@ def parse(config_or_filename):
 
     analyses = list(
         set(list(data.keys())) -
-        set(['parameters', 'cosmosis', 'emcee']))
+        set(['parameters', 'cosmosis']))
     for analysis in analyses:
         new_keys = {}
 

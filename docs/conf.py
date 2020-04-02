@@ -16,7 +16,7 @@ import os
 from os.path import abspath, dirname, join as pjoin
 import sys
 import sphinx_rtd_theme
-#sys.path.insert(0, os.path.abspath('.'))
+# sys.path.insert(0, os.path.abspath('.'))
 
 this_dir = dirname(abspath(__file__))
 root_path = abspath(pjoin(this_dir, '../'))
@@ -231,7 +231,7 @@ intersphinx_mapping = {'https://docs.python.org/3': None}
 
 # -- Extension configuration -------------------------------------------------
 
-autodoc_mock_imports = ['pyccl','sacc','emcee','schwimmbad']
+autodoc_mock_imports = ['pyccl','sacc',]
 
 #def autodoc_skip_member_handler(app, what, name, obj, skip, options):
 #    return name.startswith("test_")

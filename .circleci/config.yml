@@ -95,4 +95,4 @@ jobs:
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate test-env
             cd examples/samplers_and_analysis
-            firecrown run-emcee emcee.yaml 
+            firecrown run-cosmosis emcee.yaml 
