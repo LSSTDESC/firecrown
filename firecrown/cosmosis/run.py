@@ -50,10 +50,6 @@ def run_cosmosis(config, data, output_dir):
     if pool is not None:
         pool.close()
 
-    with open(config['cosmosis']['output'], "r") as fp:
-        chain_txt = fp.read()
-    return chain_txt
-
 
 def _make_parallel_pool(config):
     """Set up a parallel process pool.
