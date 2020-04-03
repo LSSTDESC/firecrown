@@ -11,5 +11,4 @@ dependencies:
  - pip
  - cmake
  - pip:
-    # - pyccl>=2.0,<3
-    - sacc>=0.3,<0.4
+    - sphinxcontrib-apidoc

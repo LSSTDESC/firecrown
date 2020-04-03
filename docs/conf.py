@@ -42,6 +42,8 @@ if os.path.isdir(root_path):
 #
 #     sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 
+# run api doc
+os.system("./apidoc.sh")
 
 # -- Project information -----------------------------------------------------
 
