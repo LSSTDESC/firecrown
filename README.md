@@ -58,7 +58,7 @@ FC=gfortran CC=gcc-9 CXX=g++-9 pip install cosmosis-standalone
 You can then run with:
 
 ```bash
-cd examples
+cd examples/cosmicshear
 firecrown run-cosmosis cosmicshear.yaml
 ```
 
