@@ -4,14 +4,12 @@ import yaml
 from .parser_constants import FIRECROWN_RESERVED_NAMES
 
 
-def write_statistics(*, analysis_id, output_dir, data, statistics):
+def write_statistics(*, output_dir, data, statistics):
     """Write statistics to an output path.
 
     Parameters
     ----------
-    analysis_id : str
-        A unique id for this analysis.
-    output_dir : str or pathlib.Path
+    output_dir : str
         The directory in which which to write the statistics.
     data : dict
         The output of `parse_config`.

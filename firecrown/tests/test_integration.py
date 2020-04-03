@@ -213,8 +213,7 @@ def test_integration_smoke(tx_data):
     assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
-        analysis_id="123",
-        output_path=tmpdir,
+        output_dir=os.path.join(tmpdir, 'output_123'),
         data=data,
         statistics=stats,
     )
@@ -272,8 +271,7 @@ def test_integration_sacc_in_mem(tx_data):
     assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
-        analysis_id="123",
-        output_path=tmpdir,
+        output_dir=os.path.join(tmpdir, 'output_123'),
         data=data,
         statistics=stats,
     )
@@ -325,8 +323,7 @@ def test_integration_nosys_smoke(tx_data):
     assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
-        analysis_id="123",
-        output_path=tmpdir,
+        output_dir=os.path.join(tmpdir, 'output_123'),
         data=data,
         statistics=stats,
     )

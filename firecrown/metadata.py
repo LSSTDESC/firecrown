@@ -17,7 +17,7 @@ def write_metadata(analysis_id, output_dir, config_file):
     ----------
     analysis_id : str
         A unique id for this analysis.
-    output_dir : str or pathlib.Path
+    output_dir : str
         The directory in which to write metadata
     config_file : str
         The path to the config file.

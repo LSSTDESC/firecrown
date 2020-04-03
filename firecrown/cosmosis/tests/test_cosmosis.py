@@ -1,15 +1,15 @@
+import os
+
 import pytest
+import yaml
+import numpy as np
+import cosmosis
+import pathlib
+
 from ..run import _make_parallel_pool, _make_cosmosis_params
 from ..run import _make_cosmosis_values, _make_cosmosis_pipeline
 from ..run import _make_cosmosis_priors
 from ..run import run_cosmosis
-import yaml
-import numpy as np
-import os
-try:
-    import cosmosis
-except ImportError:
-    cosmosis = None
 
 
 @pytest.fixture(scope="session")
@@ -35,7 +35,6 @@ parameters:
 
 cosmosis:
   sampler: test
-  output: chain.txt
   debug: False
   quiet: True
   mpi: False
@@ -67,13 +66,13 @@ def test_pool(tx_config):
 
 
 def test_config(tx_config):
-    ini = _make_cosmosis_params(tx_config)
+    ini = _make_cosmosis_params(tx_config, pathlib.Path('blah'))
     assert isinstance(ini, cosmosis.runtime.config.Inifile)
     assert ini.getint('test', 'walkers') == 10
     assert np.isclose(ini.getfloat('test', 'step_size'), 0.02)
     assert ini.getboolean('test', 'fatal_errors')
     assert ini.get('runtime', 'sampler') == 'test'
-    assert ini.get('output', 'filename') == 'chain.txt'
+    assert ini.get('output', 'filename') == 'blah/chain.txt'
 
     with pytest.raises(ValueError):
         assert ini.getboolean('test', 'walkers')
@@ -90,8 +89,10 @@ def test_values(tx_config):
 
 
 def test_pipeline(tx_config):
+    output_dir = pathlib.Path('blah')
+
     data = {}
-    ini = _make_cosmosis_params(tx_config)
+    ini = _make_cosmosis_params(tx_config, output_dir)
     values = _make_cosmosis_values(tx_config)
     pool = _make_parallel_pool(tx_config)
     priors = _make_cosmosis_priors(tx_config)
@@ -118,7 +119,7 @@ def test_sampling(tx_config, tmpdir):
     tx_config['cosmosis']['sampler'] = 'grid'
     tx_config['cosmosis']['output'] = chain_file
     # Run with no likelihoods, so that posterior = constant
-    run_cosmosis(tx_config, tx_config)
+    run_cosmosis(tx_config, tx_config, pathlib.Path(str(tmpdir)))
     chain = np.loadtxt(chain_file)
     # Check the grid sampler has made the right number of points
     assert len(chain) == 125

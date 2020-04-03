@@ -91,11 +91,10 @@ def run(action, config, output, verbose):
     # we associate a unique id with each analysis
     # let's write that out with some extra info
     if print_or_run:
-        write_metadata(analysis_id, output_dir, config)
+        write_metadata(analysis_id, str(output_dir), config)
         if stats is not None:
             write_statistics(
-                analysis_id=analysis_id,
-                output_path=output_dir,
+                output_dir=str(output_dir),
                 data=data,
                 statistics=stats)
 
