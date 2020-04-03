@@ -64,7 +64,7 @@ firecrown run-cosmosis cosmicshear.yaml
 
 ## API
 
-See the [API documentation](docs/API.md) for details.
+See the [API documentation](https://github.com/LSSTDESC/firecrown/docs/API.md) for details.
 
 ## License and Conditions of Use
 

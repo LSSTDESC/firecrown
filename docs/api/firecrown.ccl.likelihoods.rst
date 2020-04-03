@@ -1,13 +1,6 @@
 firecrown.ccl.likelihoods package
 =================================
 
-Subpackages
------------
-
-.. toctree::
-
-   firecrown.ccl.likelihoods.tests
-
 Submodules
 ----------
 

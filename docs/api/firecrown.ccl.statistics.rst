@@ -1,13 +1,6 @@
 firecrown.ccl.statistics package
 ================================
 
-Subpackages
------------
-
-.. toctree::
-
-   firecrown.ccl.statistics.tests
-
 Submodules
 ----------
 

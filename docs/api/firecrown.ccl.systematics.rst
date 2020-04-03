@@ -1,13 +1,6 @@
 firecrown.ccl.systematics package
 =================================
 
-Subpackages
------------
-
-.. toctree::
-
-   firecrown.ccl.systematics.tests
-
 Submodules
 ----------
 

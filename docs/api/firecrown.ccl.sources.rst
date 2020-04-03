@@ -1,13 +1,6 @@
 firecrown.ccl.sources package
 =============================
 
-Subpackages
------------
-
-.. toctree::
-
-   firecrown.ccl.sources.tests
-
 Submodules
 ----------
 
