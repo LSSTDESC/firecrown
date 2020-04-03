@@ -1,6 +1,7 @@
 name: firecrown
 channels:
   - defaults
+  - conda-forge
 dependencies:
  - python=3
  - numpy>=1.16
@@ -8,3 +9,4 @@ dependencies:
  - scipy
  - click
  - jinja2
+ - cosmosis-standalone>=0.2.2
