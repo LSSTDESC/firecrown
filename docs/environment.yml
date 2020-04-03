@@ -10,6 +10,5 @@ dependencies:
  - jinja2
  - pip
  - pip:
-    - cosmosis-standalone>=0.2.2
     - pyccl>=2.0,<3
     - sacc>=0.3,<0.4
