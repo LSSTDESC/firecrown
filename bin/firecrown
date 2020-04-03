@@ -72,7 +72,7 @@ def run(action, config, output, verbose):
     chain_txt = None
     if action == 'compute' and print_or_run:
         cosmo = get_ccl_cosmology(_config['parameters'])
-        loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
+        loglike, _, _, _, _, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike, flush=True)
 
     elif action == 'run-cosmosis':
