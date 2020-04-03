@@ -1,5 +1,4 @@
 import os
-import pandas as pd
 import yaml
 
 
@@ -37,7 +36,7 @@ def write_statistics(*, analysis_id, output_path, data, statistics):
         yaml.dump(data['parameters'], fp)
 
 
-def write_analysis(analysis_id, output_path, chain):
+def write_analysis(analysis_id, output_path, chain_txt):
     """Write a chain to an output path.
 
     Parameters
@@ -46,12 +45,12 @@ def write_analysis(analysis_id, output_path, chain):
         A unique id for this analysis.
     output_path : str
         The path to which to write the run metdata.
-    chain : numpy structured array
-        The MCMC chain as a structured array.
+    chain_txt : str
+        The cosmosis output file as a string.
     """
     _opth = os.path.expandvars(os.path.expanduser(output_path))
     _odir = os.path.join(_opth, 'output_%s' % analysis_id)
     os.makedirs(_odir, exist_ok=True)
 
-    df = pd.DataFrame.from_records(chain)
-    df.to_csv(os.path.join(_odir, 'analysis.csv'), index=False)
+    with open(os.path.join(_odir, 'chain.txt'), "w") as fp:
+        fp.write(chain_txt)

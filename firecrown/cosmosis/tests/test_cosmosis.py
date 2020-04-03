@@ -36,7 +36,7 @@ parameters:
 cosmosis:
   sampler: test
   output: chain.txt
-  debug: True
+  debug: False
   quiet: True
   mpi: False
   # parameters for individual samplers:

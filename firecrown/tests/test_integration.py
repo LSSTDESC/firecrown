@@ -195,7 +195,10 @@ two_point:
         'tmpdir': tmpdir,
         'loglike': loglike,
         'config': config,
-        'config_nosys': config_nosys}
+        'config_nosys': config_nosys,
+        'cov': cov,
+        'inv_cov': cinv,
+    }
 
 
 def test_integration_smoke(tx_data):
@@ -203,11 +206,11 @@ def test_integration_smoke(tx_data):
     cfg_path = os.path.join(tmpdir, 'config.yaml')
 
     config, data = parse(cfg_path)
-    loglike, stats = compute_loglike(
+    loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
         cosmo=tx_data['cosmo'],
         data=data)
 
-    assert np.allclose(loglike, tx_data['loglike'])
+    assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
         analysis_id="123",
@@ -231,6 +234,8 @@ def test_integration_smoke(tx_data):
         assert np.allclose(orig_tr.nz, meas_tr.nz)
         assert np.allclose(orig_tr.nz, pred_tr.nz)
 
+    meas_dv = []
+    pred_dv = []
     for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
         oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
         mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
@@ -240,6 +245,13 @@ def test_integration_smoke(tx_data):
         assert np.allclose(oell, pell)
         assert np.array_equal(ocl, mcl)
         assert not np.array_equal(ocl, pcl)
+        meas_dv.append(mcl)
+        pred_dv.append(pcl)
+
+    assert np.allclose(np.concatenate(meas_dv, axis=0), meas["two_point"])
+    assert np.allclose(np.concatenate(pred_dv, axis=0), pred["two_point"])
+    assert np.allclose(covs["two_point"], tx_data["cov"])
+    assert np.allclose(inv_covs["two_point"], tx_data["inv_cov"])
 
 
 def test_integration_sacc_in_mem(tx_data):
@@ -253,11 +265,11 @@ def test_integration_sacc_in_mem(tx_data):
         os.path.join(tmpdir, 'sacc.fits'))
 
     config, data = parse(_config)
-    loglike, stats = compute_loglike(
+    loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
         cosmo=tx_data['cosmo'],
         data=data)
 
-    assert np.allclose(loglike, tx_data['loglike'])
+    assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
         analysis_id="123",
@@ -281,6 +293,8 @@ def test_integration_sacc_in_mem(tx_data):
         assert np.allclose(orig_tr.nz, meas_tr.nz)
         assert np.allclose(orig_tr.nz, pred_tr.nz)
 
+    meas_dv = []
+    pred_dv = []
     for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
         oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
         mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
@@ -290,6 +304,13 @@ def test_integration_sacc_in_mem(tx_data):
         assert np.allclose(oell, pell)
         assert np.array_equal(ocl, mcl)
         assert not np.array_equal(ocl, pcl)
+        meas_dv.append(mcl)
+        pred_dv.append(pcl)
+
+    assert np.allclose(np.concatenate(meas_dv, axis=0), meas["two_point"])
+    assert np.allclose(np.concatenate(pred_dv, axis=0), pred["two_point"])
+    assert np.allclose(covs["two_point"], tx_data["cov"])
+    assert np.allclose(inv_covs["two_point"], tx_data["inv_cov"])
 
 
 def test_integration_nosys_smoke(tx_data):
@@ -297,11 +318,11 @@ def test_integration_nosys_smoke(tx_data):
     cfg_path = os.path.join(tmpdir, 'config_nosys.yaml')
 
     config, data = parse(cfg_path)
-    loglike, stats = compute_loglike(
+    loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
         cosmo=tx_data['cosmo'],
         data=data)
 
-    assert np.allclose(loglike, tx_data['loglike'])
+    assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
         analysis_id="123",
@@ -325,6 +346,8 @@ def test_integration_nosys_smoke(tx_data):
         assert np.allclose(orig_tr.nz, meas_tr.nz)
         assert np.allclose(orig_tr.nz, pred_tr.nz)
 
+    meas_dv = []
+    pred_dv = []
     for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
         oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
         mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
@@ -334,3 +357,10 @@ def test_integration_nosys_smoke(tx_data):
         assert np.allclose(oell, pell)
         assert np.array_equal(ocl, mcl)
         assert not np.array_equal(ocl, pcl)
+        meas_dv.append(mcl)
+        pred_dv.append(pcl)
+
+    assert np.allclose(np.concatenate(meas_dv, axis=0), meas["two_point"])
+    assert np.allclose(np.concatenate(pred_dv, axis=0), pred["two_point"])
+    assert np.allclose(covs["two_point"], tx_data["cov"])
+    assert np.allclose(inv_covs["two_point"], tx_data["inv_cov"])

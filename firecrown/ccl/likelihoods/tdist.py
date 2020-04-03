@@ -64,6 +64,7 @@ class TdistLogLike(LogLike):
                 cov[new_i, new_j] = _sd.covariance.dense[old_i, old_j]
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
+        self.inv_cov = np.linalg.inv(cov)
 
     def compute(self, data, theory, **kwargs):
         """Compute the log-likelihood.

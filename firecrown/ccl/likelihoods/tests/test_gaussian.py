@@ -18,6 +18,9 @@ def test_likelihood_gaussian_smoke(likelihood_test_data):
     loglike = -0.5 * np.dot(delta, np.dot(np.linalg.inv(cov), delta))
     assert np.allclose(loglike, ll.compute(data, theory))
 
+    dv = np.concatenate([data[v] for v in ll.data_vector])
+    assert np.allclose(ll.assemble_data_vector(data), dv)
+
 
 def test_likelihood_gaussian_subset(likelihood_test_data):
     ll = ConstGaussianLogLike(data_vector=["stat_src0_src0", "stat_src0_src1"])
@@ -33,3 +36,6 @@ def test_likelihood_gaussian_subset(likelihood_test_data):
     cov = likelihood_test_data['cov'][0:4, 0:4]
     loglike = -0.5 * np.dot(delta, np.dot(np.linalg.inv(cov), delta))
     assert np.allclose(loglike, ll.compute(data, theory))
+
+    dv = np.concatenate([data[v] for v in ll.data_vector])
+    assert np.allclose(ll.assemble_data_vector(data), dv)

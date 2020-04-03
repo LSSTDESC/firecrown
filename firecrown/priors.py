@@ -56,8 +56,16 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
-    stats : dict
-        Dictionary with any data to store.
+    measured : array-like, shape (n,)
+        Always None for the priors.
+    predicted : array-like, shape (n,)
+        Always None for the priors.
+    covmat : array-like, shape (n, n)
+        Always None for the priors.
+    inv_covmat : array-like, shape (n, n)
+        Always None for the priors.
+    stats : dict or other data
+        Always Bone foe the priors.
     """
     loglike = 0.0
     for param in parameters:
@@ -68,7 +76,7 @@ def compute_loglike(
             dist = getattr(scipy.stats, data[param]['kind'])
             keys = {k: v for k, v in data[param].items() if k != 'kind'}
             loglike += dist.logpdf(parameters[param], **keys)
-    return loglike, {}
+    return loglike, None, None, None, None, None
 
 
 def write_stats(*, output_path, data, stats):

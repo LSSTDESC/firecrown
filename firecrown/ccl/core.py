@@ -17,6 +17,7 @@ Some Notes:
  - The `read` methods are called after all objects are made and are used to
    read any additional data.
 """
+import numpy as np
 
 
 class Statistic(object):
@@ -130,6 +131,13 @@ class LogLike(object):
     data_vector : list of str
         A list of the statistics in the config file in the order you want them
         to appear in the covariance matrix.
+
+    Attributes
+    ----------
+    cov : array-like, shape (n, n)
+        The covariance matrix for the data vector.
+    inv_cov : array-like, shape (n, n)
+        The inverse of the covariance matrix.
     """
     def read(self, sacc_data, sources, statistics):
         """Read the covariance matrirx for this likelihood from the SACC file.
@@ -168,3 +176,22 @@ class LogLike(object):
         """
         raise NotImplementedError(
             "Method `compute_loglike` is not implemented!")
+
+    def assemble_data_vector(self, data):
+        """Compute the log-likelihood.
+
+        Parameters
+        ----------
+        data : dict of arrays
+            A dictionary mapping the names of the statistics to their
+            values.
+
+        Returns
+        -------
+        data_vector : array-like
+            The data vector.
+        """
+        dv = []
+        for stat in self.data_vector:
+            dv.append(np.atleast_1d(data[stat]))
+        return np.concatenate(dv, axis=0)

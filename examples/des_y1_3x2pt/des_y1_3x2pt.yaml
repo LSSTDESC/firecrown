@@ -37,28 +37,6 @@ parameters:
   lens{{ loop.index0 }}_delta_z: {{ loc }}
   {% endfor %}
 
-emcee:
-  parameters:
-    - sigma8
-    - Omega_c
-    - A0
-    - eta_ia
-  {% for i in range(4) %}
-    - src{{ i }}_mult_bias
-  {% endfor %}
-  {% for i in range(5) %}
-    - bias_lens{{ i }}
-  {% endfor %}
-  {% for i in range(4) %}
-    - src{{ i }}_delta_z
-  {% endfor %}
-  {% for i in range(5) %}
-    - lens{{ i }}_delta_z
-  {% endfor %}
-  n_steps: 1000
-  backend: serial
-
-
 cosmosis:
   # the name of the sampler to use
   sampler: maxlike

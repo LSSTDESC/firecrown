@@ -1,19 +1,23 @@
 # Sampling and Analysis Examples
 
-## Sampling with `emcee`
+## Sampling with `emcee` via `cosmosis`
 
-See the file `emcee.yaml` and the comments for instructions. To run the example
-type
-
-```bash
-firecrown run-emcee emcee.yaml
-```
-
-For the mpi backend, you will probably need to use `mpirun`, `srun` or the
-equivalent on your system like this
+You first need to install the test loglike via
 
 ```bash
-mpirun -n 10 firecrown run-emcee emcee.yaml
+pip install -e .
 ```
 
-Remember to set the proper backend in your configuration file as well.
+Then see the file `emcee.yaml` and the comments for instructions.
+
+To run the example type
+
+```bash
+firecrown run-cosmosis emcee.yaml
+```
+
+For MPI, you will need to use `mpirun`, `srun` or the equivalent on your system like this
+
+```bash
+mpirun -n 10 firecrown run-cosmosis emcee.yaml
+```

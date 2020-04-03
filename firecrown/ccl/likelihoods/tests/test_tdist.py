@@ -22,6 +22,9 @@ def test_likelihood_tdist_smoke(likelihood_test_data):
     loglike = -0.5 * nu * np.log(1.0 + chi2 / (nu - 1.0))
     assert np.allclose(loglike, ll.compute(data, theory))
 
+    dv = np.concatenate([data[v] for v in ll.data_vector])
+    assert np.allclose(ll.assemble_data_vector(data), dv)
+
 
 def test_likelihood_tdist_subset(likelihood_test_data):
     nu = 25
@@ -41,3 +44,6 @@ def test_likelihood_tdist_subset(likelihood_test_data):
     chi2 = np.dot(delta, np.dot(np.linalg.inv(cov), delta))
     loglike = -0.5 * nu * np.log(1.0 + chi2 / (nu - 1.0))
     assert np.allclose(loglike, ll.compute(data, theory))
+
+    dv = np.concatenate([data[v] for v in ll.data_vector])
+    assert np.allclose(ll.assemble_data_vector(data), dv)

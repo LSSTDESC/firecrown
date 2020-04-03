@@ -69,7 +69,7 @@ def run(action, config, output, verbose):
         print("rendered config file:\n", pprint.pformat(_config), flush=True)
 
     stats = None
-    chain = None
+    chain_txt = None
     if action == 'compute' and print_or_run:
         cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
@@ -80,7 +80,7 @@ def run(action, config, output, verbose):
             raise ValueError('You must have a `cosmosis` '
                              'configuration block to run `cosmosis`!')
 
-        firecrown.run_cosmosis(_config, data)
+        chain_txt = firecrown.run_cosmosis(_config, data)
 
     # we associate a unique id with each analysis
     # let's write that out with some extra info
@@ -92,8 +92,8 @@ def run(action, config, output, verbose):
                 output_path=output,
                 data=data,
                 statistics=stats)
-        if chain is not None:
-            write_analysis(analysis_id, output, chain)
+        if chain_txt is not None:
+            write_analysis(analysis_id, output, chain_txt)
 
 
 if __name__ == '__main__':
