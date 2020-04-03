@@ -1,6 +1,6 @@
 # firecrown: the "c" is for "cosmology"
 
-[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master) [![Documentation Status](https://readthedocs.org/projects/descfirecrown/badge/?version=latest)](https://descfirecrown.readthedocs.io/en/latest/?badge=latest)
+[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master) [![Documentation Status](https://readthedocs.org/projects/firecrown/badge/?version=latest)](https://firecrown.readthedocs.io/en/latest/?badge=latest)
 
 ## Installation
 
@@ -58,13 +58,13 @@ FC=gfortran CC=gcc-9 CXX=g++-9 pip install cosmosis-standalone
 You can then run with:
 
 ```bash
-cd examples
+cd examples/cosmicshear
 firecrown run-cosmosis cosmicshear.yaml
 ```
 
 ## API
 
-See the [API documentation](docs/API.md) for details.
+See the [API documentation](https://github.com/LSSTDESC/firecrown/docs/API.md) for details.
 
 ## License and Conditions of Use
 

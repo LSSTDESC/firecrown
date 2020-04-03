@@ -19,6 +19,8 @@ class ConstGaussianLogLike(LogLike):
         The covariance matrix.
     cholesky : np.ndarray, shape (n, n)
         The (lower triangular) Cholesky decomposition of the covariance matrix.
+    inv_cov : np.ndarray, shape (n, n)
+        The inverse of the covariance matrix.
 
     Methods
     -------
