@@ -10,7 +10,7 @@ def write_statistics(*, output_dir, data, statistics):
     Parameters
     ----------
     output_dir : str
-        The directory in which which to write the statistics.
+        The directory in which to write the statistics.
     data : dict
         The output of `parse_config`.
     statistics : dict
