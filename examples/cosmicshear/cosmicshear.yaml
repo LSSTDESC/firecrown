@@ -26,7 +26,6 @@ emcee:
 # through cosmosis
 cosmosis:
   sampler: fisher
-  output: chain.txt
   debug: True
   quiet: False
   mpi: False

@@ -8,15 +8,15 @@ import pyccl
 from ._version import __version__
 
 
-def write_metadata(analysis_id, output_path, config_file):
+def write_metadata(analysis_id, output_dir, config_file):
     """Write run metadata to an output path.
 
     Parameters
     ----------
     analysis_id : str
         A unique id for this analysis.
-    output_path : str
-        The path to which to write the run metdata.
+    output_dir : str or Path
+        The directory in which to write metadata
     config_file : str
         The path to the config file.
     """
@@ -27,10 +27,10 @@ def write_metadata(analysis_id, output_path, config_file):
         'firecrown_version': __version__,
         'pyccl_version': pyccl.__version__}
 
-    _opth = os.path.expandvars(os.path.expanduser(output_path))
-    _odir = os.path.join(_opth, 'output_%s' % metadata['analysis_id'])
-    os.makedirs(_odir)
+    # Copy configuration file into output
+    shutil.copyfile(config_file,
+                    os.path.join(output_dir, 'config.yaml'))
 
-    shutil.copyfile(config_file, os.path.join(_odir, 'config.yaml'))
-    with open(os.path.join(_odir, 'metadata.yaml'), 'w') as fp:
+    # Save any metadata
+    with open(os.path.join(output_dir, 'metadata.yaml'), 'w') as fp:
         yaml.dump(metadata, fp, default_flow_style=False)

@@ -12,7 +12,7 @@ except ImportError:
     cosmosis = None
 
 
-def run_cosmosis(config, data):
+def run_cosmosis(config, data, output_dir):
     """Run CosmoSIS on the problem.
 
     This requires the following parameters 'cosmosis' section
@@ -32,6 +32,9 @@ def run_cosmosis(config, data):
     data : dict
         The result of calling `firecrown.config.parse` on an input YAML
         config.
+
+    output_dir : Path
+        Directory in which to put output
     """
 
     if cosmosis is None:
@@ -40,7 +43,7 @@ def run_cosmosis(config, data):
 
     # Extract the bits of the config file that
     # cosmosis wants
-    ini = _make_cosmosis_params(config)
+    ini = _make_cosmosis_params(config, output_dir)
     values = _make_cosmosis_values(config)
     pool = _make_parallel_pool(config)
     priors = _make_cosmosis_priors(config)
@@ -142,7 +145,7 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
     return pipeline
 
 
-def _make_cosmosis_params(config):
+def _make_cosmosis_params(config, output_dir):
     """Extract a cosmosis configuration object from a config dict
 
     Parameters
@@ -155,13 +158,15 @@ def _make_cosmosis_params(config):
     -------
     cosmosis_params: Inifile
         object to use to build cosmosis pipeline
+    output_dir: Path
+        directory to put output into
     """
 
     cosmosis_config = config['cosmosis']
 
     # Some general options
-    sampler_name = cosmosis_config['sampler']
-    output_file = cosmosis_config['output']
+    sampler_names = cosmosis_config['sampler']
+    output_file = str(output_dir / 'chain.txt')
     debug = cosmosis_config.get('debug', False)
     quiet = cosmosis_config.get('quiet', False)
     root = ""  # Dummy value to stop cosmosis complaining
@@ -169,7 +174,7 @@ def _make_cosmosis_params(config):
     # Make into a pair dictionary with the right cosmosis sections
     cosmosis_options = {
         ("runtime", "root"): root,
-        ("runtime", "sampler"): sampler_name,
+        ("runtime", "sampler"): sampler_names,
         ("output", "filename"): output_file,
         ("pipeline", "debug"): str(debug),
         ("pipeline", "quiet"): str(quiet),
@@ -178,9 +183,65 @@ def _make_cosmosis_params(config):
     # Set all the sampler configuration options from the
     # appropriate section of the cosmosis_config (e.g., the "grid"
     # section if using the grid sampler, etc.)
-    sampler_config = cosmosis_config.get(sampler_name, {})
-    for key, val in sampler_config.items():
-        cosmosis_options[(sampler_name, key)] = str(val)
+    for sampler_name in sampler_names.split():
+        sampler_config = cosmosis_config.get(sampler_name, {})
+        for key, val in sampler_config.items():
+            cosmosis_options[sampler_name, key] = str(val)
+
+    # Override options that involve the user-specified
+    # output paths to put everything in the one directory
+    overridden_options = [
+        ('maxlike', 'output_ini', 'output.ini'),
+        ('maxlike', 'output_cov', 'covmat.txt'),
+        ('multinest', 'multinest_outfile_root', 'multinest'),
+        ('gridmax', 'output_ini', 'maxlike.ini'),
+        ('minuit', 'output_ini', 'maxlike.ini'),
+        ('minuit', 'save_cov', 'covmat.txt'),
+        ('pmaxlike', 'output_ini', 'maxlike.ini'),
+        ('pmaxlike', 'output_covmat', 'covmat.txt'),
+        ('polychord', 'polychord_outfile_root', 'polychord'),
+        ('polychord', 'base_dir', ''),
+    ]
+
+    # Apply these overrides
+    for section, key, value in overridden_options:
+        # To avoid too much noise in headers, only
+        # copy over sections for samplers we're actually
+        # using
+        if section not in sampler_names:
+            continue
+        full_value = output_dir / value
+        # Only warn user if they tried to set this already
+        if (section, key) in cosmosis_options:
+            sys.stderr.write(f"NOTE: Overriding option {section}/{key}"
+                             f" to {full_value}")
+        cosmosis_options[section, key] = str(full_value)
+
+    # These options are not enabled by default, because they can
+    # produce large output files.  So we only override them if
+    # they are already set
+    optional_overrides = [
+        ('aprior', 'save', 'save'),
+        ('grid', 'save', 'save'),
+        ('list', 'save', 'save'),
+        ('minuit', 'save_dir', 'save'),
+        ('star', 'save', 'save'),
+    ]
+
+    # Apply these overrides
+    for section, key, value in optional_overrides:
+        # To avoid too much noise in headers, only
+        # copy over sections for samplers we're actually
+        # using
+        if section not in sampler_names:
+            continue
+        # Only override the option if it is already set
+        if (section, key) in cosmosis_options:
+            full_value = output_dir / value
+            # Still warn the user
+            sys.stderr.write(f"NOTE: Overriding option {section}/{key}"
+                             f" to {full_value}")
+            cosmosis_options[section, key] = str(full_value)
 
     # The string parameters in the yaml file parameters
     # can't go into cosmosis values, because that is for parameters
