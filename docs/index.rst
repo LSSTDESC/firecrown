@@ -7,7 +7,7 @@ Welcome to firecrown's documentation!
 
    Installation and Quick Start <README.md>
    API Overview <API.md>
-   API Reference <api/modules>
+   API Reference <api/firecrown.rst>
 
 
 
