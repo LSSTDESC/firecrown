@@ -1,0 +1,10 @@
+name: firecrown
+channels:
+  - defaults
+dependencies:
+ - python=3
+ - numpy>=1.16
+ - pyyaml
+ - scipy
+ - click
+ - jinja2
