@@ -9,4 +9,7 @@ dependencies:
  - scipy
  - click
  - jinja2
- - cosmosis-standalone>=0.2.2
+ - pip:
+    - cosmosis-standalone>=0.2.2
+    - pyccl>=2.0,<3
+    - sacc>=0.3,<0.4
