@@ -45,6 +45,15 @@ jobs:
 
             conda env update --file environment.yml -n firecrown
 
+            conda install -y -q \
+              flake8 \
+              pytest \
+              nose \
+              recommonmark \
+              sphinx_rtd_theme \
+              sphinx \
+              sphinxcontrib-apidoc
+
             conda update --all -y -q
             pip install --no-deps -e .
 

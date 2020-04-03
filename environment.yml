@@ -3,7 +3,7 @@ channels:
   - conda-forge
   - defaults
 dependencies:
- - python=3 
+ - python=3
  - pyccl>=2.0,<3
  - numpy>=1.16
  - pyyaml
@@ -12,10 +12,3 @@ dependencies:
  - jinja2
  - sacc>=0.3,<0.4
  - cosmosis-standalone>=0.2.2
- - flake8
- - pytest
- - nose
- - recommonmark
- - sphinx_rtd_theme
- - sphinx
- - sphinxcontrib-apidoc

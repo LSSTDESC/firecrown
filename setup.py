@@ -18,9 +18,16 @@ with open(pth, 'r') as fp:
 
 pth = os.path.join(
     os.path.dirname(os.path.realpath(__file__)),
-    "requirements.txt")
+    "environment.yml")
+rqs = []
 with open(pth, 'r') as fp:
-    rqs = [_munge_req(r.strip()) for r in fp.readlines()]
+    start = False
+    for line in fp.readlines():
+        if line.strip() == "dependencies:":
+            start = False
+        if start:
+            r = line.strip()[3:].strip()
+            rqs.append(_munge_req(r))
 
 setup(
     name='firecrown',
