@@ -26,6 +26,8 @@ with open(pth, 'r') as fp:
         if line.strip() == "dependencies:":
             start = False
         if start:
+            if "- pip:" in line.strip():
+                continue
             r = line.strip()[3:].strip()
             rqs.append(_munge_req(r))
 
