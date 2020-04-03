@@ -37,6 +37,7 @@ if on_rtd:
 
     MOCK_MODULES = [
         "firecrown.cosmosis.run.cosmosis",
+        "firecrown.metadata.cosmosis",
     ]
 
     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
