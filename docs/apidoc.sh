@@ -1,6 +1,5 @@
 # bash
 
-sphinx-apidoc -f -e -o api/ \
+sphinx-apidoc -f -M -T -e -o api/ \
   ../firecrown/ \
-  ../firecrown/tests/* ../firecrown/*/tests/*
- 
+  ../firecrown/tests/* ../firecrown/*/tests/* ../firecrown/*/*/tests/*

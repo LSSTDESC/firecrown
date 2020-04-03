@@ -1,7 +1,0 @@
-flake8
-pytest
-nose
-numpydoc
-recommonmark
-pyyaml
-

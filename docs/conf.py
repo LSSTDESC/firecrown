@@ -23,7 +23,7 @@ root_path = abspath(pjoin(this_dir, '../'))
 if os.path.isdir(root_path):
     sys.path.insert(0, root_path)
 
-on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
+# on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 # if on_rtd:
 #     try:
 #         from unittest.mock import MagicMock
@@ -32,17 +32,18 @@ on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
 #
 #         class Mock(MagicMock):
 #             @classmethod
-#             def __getattr__(cls,name):
+#             def __getattr__(cls, name):
 #                 return MagicMock()
 #
 #     MOCK_MODULES = [
-#         "firecrown.analysis",
-#         "firecrown.ccl",
-#         "firecrown.cosmosis",
+#         "firecrown.cosmosis.run.cosmosis",
+#         "firecrown.metadata.cosmosis",
 #     ]
 #
-#     sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+#     sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 
+# run api doc
+os.system("./apidoc.sh")
 
 # -- Project information -----------------------------------------------------
 
@@ -85,7 +86,7 @@ templates_path = ['_templates']
 #
 # source_suffix = ['.rst', '.md']
 
-from recommonmark.parser import CommonMarkParser
+from recommonmark.parser import CommonMarkParser  # noqa
 
 source_parsers = {
     '.md': CommonMarkParser,
@@ -132,7 +133,7 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = [] #['_static']
+html_static_path = []  # ['_static']
 
 # Custom sidebar templates, must be a dictionary that maps document names
 # to template names.
@@ -226,15 +227,15 @@ epub_title = project
 
 # A list of files that should not be packed into the epub file.
 intersphinx_mapping = {'https://docs.python.org/3': None}
-#epub_exclude_files = ['search.html']
+# epub_exclude_files = ['search.html']
 
 
 # -- Extension configuration -------------------------------------------------
 
-autodoc_mock_imports = ['pyccl','sacc',]
+autodoc_mock_imports = ['pyccl', 'sacc', 'cosmosis']
 
-#def autodoc_skip_member_handler(app, what, name, obj, skip, options):
-#    return name.startswith("test_")
+# def autodoc_skip_member_handler(app, what, name, obj, skip, options):
+#     return name.startswith("test_")
 
-#def setup(app):
-#    app.connect('autodoc-skip-member', autodoc_skip_member_handler)
+# def setup(app):
+#     app.connect('autodoc-skip-member', autodoc_skip_member_handler)

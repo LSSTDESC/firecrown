@@ -12,9 +12,9 @@ jobs:
       # Download and cache dependencies
       - restore_cache:
           keys:
-          - v1-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+          - v2-conda-dependencies-{{ checksum "environment.yml" }}
           # fallback to using the latest cache if no exact match is found
-          - v1-conda-dependencies-
+          - v2-conda-dependencies-
 
       - run:
           name: install dependencies
@@ -31,9 +31,7 @@ jobs:
               conda config --add channels conda-forge
               conda update -q conda
 
-              conda create -q -n test-env \
-                python=3.7 \
-                pip
+              conda env create --file environment.yml --force
             fi
 
             export PATH=`pwd`/miniconda/bin:$PATH
@@ -43,10 +41,18 @@ jobs:
             conda config --add channels conda-forge
             conda update -q conda
 
-            source activate test-env
+            source activate firecrown
 
-            conda install -y -q --file=requirements.txt
-            conda install -y -q --file=dev-requirements.txt
+            conda env update --file environment.yml -n firecrown
+
+            conda install -y -q \
+              flake8 \
+              pytest \
+              nose \
+              recommonmark \
+              sphinx_rtd_theme \
+              sphinx \
+              sphinxcontrib-apidoc
 
             conda update --all -y -q
             pip install --no-deps -e .
@@ -54,13 +60,13 @@ jobs:
       - save_cache:
           paths:
             - ./miniconda
-          key: v1-conda-dependencies-{{ checksum "requirements.txt" }}-{{ checksum "dev-requirements.txt" }}
+          key: v2-conda-dependencies-{{ checksum "environment.yml" }}
 
       - run:
           name: lint
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
-            source activate test-env
+            source activate firecrown
             flake8 firecrown
             flake8 bin/firecrown
 
@@ -68,14 +74,14 @@ jobs:
           name: test
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
-            source activate test-env
+            source activate firecrown
             pytest -vv firecrown
 
       - run:
           name: cosmic-shear-example
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
-            source activate test-env
+            source activate firecrown
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
             firecrown compute cosmicshear.yaml
@@ -84,7 +90,7 @@ jobs:
           name: desc-srd-v1
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
-            source activate test-env
+            source activate firecrown
             cd examples/desc_srd_v1
             pip install -e .
             pytest -vv srd_models
@@ -93,7 +99,7 @@ jobs:
           name: emcee example
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
-            source activate test-env
+            source activate firecrown
             cd examples/samplers_and_analysis
             pip install -e .
             firecrown run-cosmosis emcee.yaml

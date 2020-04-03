@@ -1,3 +1,2 @@
-include dev-requirements.txt
-include requirements.txt
+environment.yml
 include LICENSE
