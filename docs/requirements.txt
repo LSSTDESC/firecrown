@@ -1,7 +1,2 @@
-flake8
-pytest
-nose
-numpydoc
-recommonmark
-pyyaml
-
+-r ../requirements.txt
+-r ../dev-requirements.txt
