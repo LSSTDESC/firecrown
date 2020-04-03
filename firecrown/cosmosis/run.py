@@ -6,17 +6,13 @@ from ..loglike import compute_loglike
 from ..parser_constants import FIRECROWN_RESERVED_NAMES
 import numpy as np
 
-try:
-    import cosmosis
-except ImportError:
-    cosmosis = None
-
+import cosmosis
 
 # these keys are ignored by cosmosis
 RESERVED_NAMES_COSMOSIS = FIRECROWN_RESERVED_NAMES + ['priors']
 
 
-def run_cosmosis(config, data):
+def run_cosmosis(config, data, output_dir):
     """Run CosmoSIS on the problem.
 
     This requires the following parameters 'cosmosis' section
@@ -32,19 +28,16 @@ def run_cosmosis(config, data):
     ----------
     config : dict
         Configuration info, usually read directly from the YAML file
-
     data : dict
         The result of calling `firecrown.config.parse` on an input YAML
         config.
+    output_dir : pathlib.Path
+        Directory in which to put output.
     """
-
-    if cosmosis is None:
-        raise ImportError("CosmoSIS is not installed. "
-                          "See readme for instructions on doing so.")
 
     # Extract the bits of the config file that
     # cosmosis wants
-    ini = _make_cosmosis_params(config)
+    ini = _make_cosmosis_params(config, output_dir)
     values = _make_cosmosis_values(config)
     pool = _make_parallel_pool(config)
     priors = _make_cosmosis_priors(config)
@@ -75,7 +68,7 @@ def _make_parallel_pool(config):
 
     Returns
     -------
-    pool: CosmoSIS MPIPool object
+    pool : CosmoSIS MPIPool object
         parallel process pool
     """
     cosmosis_config = config['cosmosis']
@@ -105,22 +98,19 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
 
     Parameters
     ----------
-    data: dict
+    data : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
-
-    ini: Inifile
+    ini : Inifile
         Cosmosis object representing the main input parameter file
-
-    values: Inifile
+    values : Inifile
         Cosmosis object representing the input parameter values
-
-    pool: MPIPool or None
+    pool : MPIPool or None
         If using MPI parallelism, a CosmoSIS pool object.
 
     Returns
     -------
-    pipeline: CosmoSIS pipeline objects
+    pipeline : CosmoSIS pipeline objects
         Instantiated pipeline ready to run.
     """
 
@@ -150,26 +140,28 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
     return pipeline
 
 
-def _make_cosmosis_params(config):
+def _make_cosmosis_params(config, output_dir):
     """Extract a cosmosis configuration object from a config dict
 
     Parameters
     ----------
-    config: dict
+    config : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
+    output_dir : pathlib.Path
+        Directory to put output into.
 
     Returns
     -------
-    cosmosis_params: Inifile
+    cosmosis_params : Inifile
         object to use to build cosmosis pipeline
     """
 
     cosmosis_config = config['cosmosis']
 
     # Some general options
-    sampler_name = cosmosis_config['sampler']
-    output_file = cosmosis_config['output']
+    sampler_names = cosmosis_config['sampler']
+    output_file = str(output_dir / 'chain.txt')
     debug = cosmosis_config.get('debug', False)
     quiet = cosmosis_config.get('quiet', False)
     root = ""  # Dummy value to stop cosmosis complaining
@@ -177,7 +169,7 @@ def _make_cosmosis_params(config):
     # Make into a pair dictionary with the right cosmosis sections
     cosmosis_options = {
         ("runtime", "root"): root,
-        ("runtime", "sampler"): sampler_name,
+        ("runtime", "sampler"): sampler_names,
         ("output", "filename"): output_file,
         ("pipeline", "debug"): str(debug),
         ("pipeline", "quiet"): str(quiet),
@@ -186,9 +178,65 @@ def _make_cosmosis_params(config):
     # Set all the sampler configuration options from the
     # appropriate section of the cosmosis_config (e.g., the "grid"
     # section if using the grid sampler, etc.)
-    sampler_config = cosmosis_config.get(sampler_name, {})
-    for key, val in sampler_config.items():
-        cosmosis_options[(sampler_name, key)] = str(val)
+    for sampler_name in sampler_names.split():
+        sampler_config = cosmosis_config.get(sampler_name, {})
+        for key, val in sampler_config.items():
+            cosmosis_options[sampler_name, key] = str(val)
+
+    # Override options that involve the user-specified
+    # output paths to put everything in the one directory
+    overridden_options = [
+        ('maxlike', 'output_ini', 'output.ini'),
+        ('maxlike', 'output_cov', 'covmat.txt'),
+        ('multinest', 'multinest_outfile_root', 'multinest'),
+        ('gridmax', 'output_ini', 'maxlike.ini'),
+        ('minuit', 'output_ini', 'maxlike.ini'),
+        ('minuit', 'save_cov', 'covmat.txt'),
+        ('pmaxlike', 'output_ini', 'maxlike.ini'),
+        ('pmaxlike', 'output_covmat', 'covmat.txt'),
+        ('polychord', 'polychord_outfile_root', 'polychord'),
+        ('polychord', 'base_dir', ''),
+    ]
+
+    # Apply these overrides
+    for section, key, value in overridden_options:
+        # To avoid too much noise in headers, only
+        # copy over sections for samplers we're actually
+        # using
+        if section not in sampler_names:
+            continue
+        full_value = output_dir / value
+        # Only warn user if they tried to set this already
+        if (section, key) in cosmosis_options:
+            sys.stderr.write(f"NOTE: Overriding option {section}/{key}"
+                             f" to {full_value}")
+        cosmosis_options[section, key] = str(full_value)
+
+    # These options are not enabled by default, because they can
+    # produce large output files.  So we only override them if
+    # they are already set
+    optional_overrides = [
+        ('aprior', 'save', 'save'),
+        ('grid', 'save', 'save'),
+        ('list', 'save', 'save'),
+        ('minuit', 'save_dir', 'save'),
+        ('star', 'save', 'save'),
+    ]
+
+    # Apply these overrides
+    for section, key, value in optional_overrides:
+        # To avoid too much noise in headers, only
+        # copy over sections for samplers we're actually
+        # using
+        if section not in sampler_names:
+            continue
+        # Only override the option if it is already set
+        if (section, key) in cosmosis_options:
+            full_value = output_dir / value
+            # Still warn the user
+            sys.stderr.write(f"NOTE: Overriding option {section}/{key}"
+                             f" to {full_value}")
+            cosmosis_options[section, key] = str(full_value)
 
     # The string parameters in the yaml file parameters
     # can't go into cosmosis values, because that is for parameters
@@ -209,14 +257,14 @@ def _make_cosmosis_values(config):
 
     Parameters
     ----------
-    config: dict
+    config : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
 
     Returns
     -------
-    cosmosis_values: Inifile
-        object to use to build cosmosis parameter ranges/values
+    cosmosis_values : Inifile
+        Object to use to build cosmosis parameter ranges/values.
     """
     params = config['parameters']
     varied_params = config['cosmosis']['parameters']
@@ -243,14 +291,14 @@ def _make_cosmosis_priors(config):
 
     Parameters
     ----------
-    config: dict
+    config : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
 
     Returns
     -------
-    priors: cosmosis Inifile
-        The cosmosis config object specifying priors
+    priors : cosmosis Inifile
+        The cosmosis config object specifying priors.
     """
 
     # Early return if no priors section is specified

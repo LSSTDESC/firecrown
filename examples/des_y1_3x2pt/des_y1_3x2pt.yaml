@@ -41,7 +41,6 @@ cosmosis:
   # the name of the sampler to use
   sampler: maxlike
   # the output chain file name
-  output: des-y1-3x2pt-maxlike.txt
   parameters:
     Omega_c: [0.1, 0.2545,  0.6]
     sigma8: [0.6,  0.801,  1.0]
@@ -65,7 +64,6 @@ cosmosis:
     live_points: 500
     efficiency: 0.3
     resume: True
-    multinest_outfile_root: des-y1-multinest
   # for computing a grid of models - works for up to about three dimensions
   # but quickly becomes untenable above that.
   grid:

@@ -16,7 +16,6 @@ cosmosis:
   parameters:
     x: [-100, 0.3, 100]
   sampler: emcee
-  output: chain.txt
   debug: False
   quiet: True
   mpi: False

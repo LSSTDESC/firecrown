@@ -4,11 +4,12 @@ import uuid
 import pprint
 import click
 import jinja2
-
+import pathlib
+import os
 
 import firecrown
 from firecrown.metadata import write_metadata
-from firecrown.io import write_statistics, write_analysis
+from firecrown.io import write_statistics
 from firecrown.cosmology import get_ccl_cosmology
 
 
@@ -61,15 +62,20 @@ def run(action, config, output, verbose):
         sys.exit(0)
 
     analysis_id = uuid.uuid4().hex
+
+    # Expand and (if master) create output dir
+    output_path = pathlib.Path(os.path.expandvars(output)).expanduser()
+    output_dir = output_path / f'output_{analysis_id}'
+
     if print_or_run:
         print('analysis id:', analysis_id, flush=True)
+        output_dir.mkdir(exist_ok=False)
 
     _config, data = firecrown.parse(config)
     if verbose and (print_or_run):
         print("rendered config file:\n", pprint.pformat(_config), flush=True)
 
     stats = None
-    chain_txt = None
     if action == 'compute' and print_or_run:
         cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, _, _, _, _, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
@@ -80,20 +86,18 @@ def run(action, config, output, verbose):
             raise ValueError('You must have a `cosmosis` '
                              'configuration block to run `cosmosis`!')
 
-        chain_txt = firecrown.run_cosmosis(_config, data)
+        firecrown.run_cosmosis(_config, data, output_dir)
 
     # we associate a unique id with each analysis
     # let's write that out with some extra info
     if print_or_run:
-        write_metadata(analysis_id, output, config)
+        write_metadata(analysis_id, output_dir, config)
         if stats is not None:
             write_statistics(
                 analysis_id=analysis_id,
-                output_path=output,
+                output_path=output_dir,
                 data=data,
                 statistics=stats)
-        if chain_txt is not None:
-            write_analysis(analysis_id, output, chain_txt)
 
 
 if __name__ == '__main__':
