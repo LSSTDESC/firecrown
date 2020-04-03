@@ -9,6 +9,7 @@ from ..metadata import write_metadata
 def test_write_metadata(tmpdir):
     analysis_id = uuid.uuid4().hex
     odir = os.path.join(tmpdir, 'output_%s' % analysis_id)
+    os.makedirs(odir, exist_ok=True)
 
     config_file = os.path.join(tmpdir, 'cnf.yaml')
     with open(config_file, 'w') as fp:
