@@ -10,7 +10,7 @@ def compute_loglike(
         cosmo,
         parameters,
         data):
-    return -0.5 * (parameters['x'] - 0.5)**2, {}
+    return -0.5 * (parameters['x'] - 0.5)**2, None, None, None, None, {}
 
 
 def write_stats(*, output_path, data, stats):

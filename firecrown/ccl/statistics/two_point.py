@@ -41,16 +41,18 @@ class TwoPointStatistic(Statistic):
         The kind of two-point statistic. This must be a valid SACC data type that
         maps to one of the CCL correlation function kinds or a power spectra.
         Possible options are
-            - galaxy_density_cl : maps to 'cl' (a CCL angular power spectrum)
-            - galaxy_density_xi : maps to 'gg' (a CCL angular position corr. function)
-            - galaxy_shearDensity_cl_e : maps to 'cl' (a CCL angular power spectrum)
-            - galaxy_shearDensity_xi_t : maps to 'gl' (a CCL angular cross-correlation
-                                                       between position and shear)
-            - galaxy_shear_cl_ee : maps to 'cl' (a CCL angular power spectrum)
-            - galaxy_shear_xi_minus : maps to 'l-' (a CCL angular shear corr.
-                                                    function xi-)
-            - galaxy_shear_xi_plus : maps to 'l+' (a CCL angular shear corr.
-                                                   function xi-)
+
+          - galaxy_density_cl : maps to 'cl' (a CCL angular power spectrum)
+          - galaxy_density_xi : maps to 'gg' (a CCL angular position corr. function)
+          - galaxy_shearDensity_cl_e : maps to 'cl' (a CCL angular power spectrum)
+          - galaxy_shearDensity_xi_t : maps to 'gl' (a CCL angular cross-correlation
+            between position and shear)
+          - galaxy_shear_cl_ee : maps to 'cl' (a CCL angular power spectrum)
+          - galaxy_shear_xi_minus : maps to 'l-' (a CCL angular shear corr.
+            function xi-)
+          - galaxy_shear_xi_plus : maps to 'l+' (a CCL angular shear corr.
+            function xi-)
+
     sources : list of str
         A list of the sources needed to compute this statistic.
     systematics : list of str, optional

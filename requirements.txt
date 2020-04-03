@@ -3,11 +3,6 @@ numpy>=1.16
 pyyaml
 scipy
 click
-pandas
 jinja2
-schwimmbad
-emcee>=3,<5
-tqdm
-joblib
 sacc>=0.3,<0.4
 cosmosis-standalone>=0.2.2

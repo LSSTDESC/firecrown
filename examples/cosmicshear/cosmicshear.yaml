@@ -14,19 +14,10 @@ parameters:
   src{{ i }}_delta_z: 0.0
   {% endfor %}
 
-# Defines options when running the emcee sampler
-emcee:
-  # Which parameters emcee should vary
-  parameters:
-    - A_s
-    - Omega_c
-  n_steps: 10
-
 # Defines options when running one of the samplers
 # through cosmosis
 cosmosis:
   sampler: fisher
-  output: chain.txt
   debug: True
   quiet: False
   mpi: False

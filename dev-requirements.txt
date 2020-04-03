@@ -1,3 +1,7 @@
 flake8
 pytest
 nose
+recommonmark
+sphinx_rtd_theme
+sphinx
+sphinxcontrib-apidoc

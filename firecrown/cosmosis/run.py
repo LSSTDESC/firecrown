@@ -1,18 +1,18 @@
 import os
 import sys
 import numbers
-import warnings
 from ..cosmology import get_ccl_cosmology, RESERVED_CCL_PARAMS
 from ..loglike import compute_loglike
+from ..parser_constants import FIRECROWN_RESERVED_NAMES
 import numpy as np
 
-try:
-    import cosmosis
-except ImportError:
-    cosmosis = None
+import cosmosis
+
+# these keys are ignored by cosmosis
+RESERVED_NAMES_COSMOSIS = FIRECROWN_RESERVED_NAMES + ['priors']
 
 
-def run_cosmosis(config, data):
+def run_cosmosis(config, data, output_dir):
     """Run CosmoSIS on the problem.
 
     This requires the following parameters 'cosmosis' section
@@ -28,19 +28,16 @@ def run_cosmosis(config, data):
     ----------
     config : dict
         Configuration info, usually read directly from the YAML file
-
     data : dict
         The result of calling `firecrown.config.parse` on an input YAML
         config.
+    output_dir : pathlib.Path
+        Directory in which to put output.
     """
-
-    if cosmosis is None:
-        raise ImportError("CosmoSIS is not installed. "
-                          "See readme for instructions on doing so.")
 
     # Extract the bits of the config file that
     # cosmosis wants
-    ini = _make_cosmosis_params(config)
+    ini = _make_cosmosis_params(config, output_dir)
     values = _make_cosmosis_values(config)
     pool = _make_parallel_pool(config)
     priors = _make_cosmosis_priors(config)
@@ -67,7 +64,7 @@ def _make_parallel_pool(config):
 
     Returns
     -------
-    pool: CosmoSIS MPIPool object
+    pool : CosmoSIS MPIPool object
         parallel process pool
     """
     cosmosis_config = config['cosmosis']
@@ -97,22 +94,19 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
 
     Parameters
     ----------
-    data: dict
+    data : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
-
-    ini: Inifile
+    ini : Inifile
         Cosmosis object representing the main input parameter file
-
-    values: Inifile
+    values : Inifile
         Cosmosis object representing the input parameter values
-
-    pool: MPIPool or None
+    pool : MPIPool or None
         If using MPI parallelism, a CosmoSIS pool object.
 
     Returns
     -------
-    pipeline: CosmoSIS pipeline objects
+    pipeline : CosmoSIS pipeline objects
         Instantiated pipeline ready to run.
     """
 
@@ -142,26 +136,28 @@ def _make_cosmosis_pipeline(data, ini, values, priors, pool):
     return pipeline
 
 
-def _make_cosmosis_params(config):
+def _make_cosmosis_params(config, output_dir):
     """Extract a cosmosis configuration object from a config dict
 
     Parameters
     ----------
-    config: dict
+    config : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
+    output_dir : pathlib.Path
+        Directory to put output into.
 
     Returns
     -------
-    cosmosis_params: Inifile
+    cosmosis_params : Inifile
         object to use to build cosmosis pipeline
     """
 
     cosmosis_config = config['cosmosis']
 
     # Some general options
-    sampler_name = cosmosis_config['sampler']
-    output_file = cosmosis_config['output']
+    sampler_names = cosmosis_config['sampler']
+    output_file = str(output_dir / 'chain.txt')
     debug = cosmosis_config.get('debug', False)
     quiet = cosmosis_config.get('quiet', False)
     root = ""  # Dummy value to stop cosmosis complaining
@@ -169,7 +165,7 @@ def _make_cosmosis_params(config):
     # Make into a pair dictionary with the right cosmosis sections
     cosmosis_options = {
         ("runtime", "root"): root,
-        ("runtime", "sampler"): sampler_name,
+        ("runtime", "sampler"): sampler_names,
         ("output", "filename"): output_file,
         ("pipeline", "debug"): str(debug),
         ("pipeline", "quiet"): str(quiet),
@@ -178,9 +174,65 @@ def _make_cosmosis_params(config):
     # Set all the sampler configuration options from the
     # appropriate section of the cosmosis_config (e.g., the "grid"
     # section if using the grid sampler, etc.)
-    sampler_config = cosmosis_config.get(sampler_name, {})
-    for key, val in sampler_config.items():
-        cosmosis_options[(sampler_name, key)] = str(val)
+    for sampler_name in sampler_names.split():
+        sampler_config = cosmosis_config.get(sampler_name, {})
+        for key, val in sampler_config.items():
+            cosmosis_options[sampler_name, key] = str(val)
+
+    # Override options that involve the user-specified
+    # output paths to put everything in the one directory
+    overridden_options = [
+        ('maxlike', 'output_ini', 'output.ini'),
+        ('maxlike', 'output_cov', 'covmat.txt'),
+        ('multinest', 'multinest_outfile_root', 'multinest'),
+        ('gridmax', 'output_ini', 'maxlike.ini'),
+        ('minuit', 'output_ini', 'maxlike.ini'),
+        ('minuit', 'save_cov', 'covmat.txt'),
+        ('pmaxlike', 'output_ini', 'maxlike.ini'),
+        ('pmaxlike', 'output_covmat', 'covmat.txt'),
+        ('polychord', 'polychord_outfile_root', 'polychord'),
+        ('polychord', 'base_dir', ''),
+    ]
+
+    # Apply these overrides
+    for section, key, value in overridden_options:
+        # To avoid too much noise in headers, only
+        # copy over sections for samplers we're actually
+        # using
+        if section not in sampler_names:
+            continue
+        full_value = output_dir / value
+        # Only warn user if they tried to set this already
+        if (section, key) in cosmosis_options:
+            sys.stderr.write(f"NOTE: Overriding option {section}/{key}"
+                             f" to {full_value}")
+        cosmosis_options[section, key] = str(full_value)
+
+    # These options are not enabled by default, because they can
+    # produce large output files.  So we only override them if
+    # they are already set
+    optional_overrides = [
+        ('aprior', 'save', 'save'),
+        ('grid', 'save', 'save'),
+        ('list', 'save', 'save'),
+        ('minuit', 'save_dir', 'save'),
+        ('star', 'save', 'save'),
+    ]
+
+    # Apply these overrides
+    for section, key, value in optional_overrides:
+        # To avoid too much noise in headers, only
+        # copy over sections for samplers we're actually
+        # using
+        if section not in sampler_names:
+            continue
+        # Only override the option if it is already set
+        if (section, key) in cosmosis_options:
+            full_value = output_dir / value
+            # Still warn the user
+            sys.stderr.write(f"NOTE: Overriding option {section}/{key}"
+                             f" to {full_value}")
+            cosmosis_options[section, key] = str(full_value)
 
     # The string parameters in the yaml file parameters
     # can't go into cosmosis values, because that is for parameters
@@ -201,14 +253,14 @@ def _make_cosmosis_values(config):
 
     Parameters
     ----------
-    config: dict
+    config : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
 
     Returns
     -------
-    cosmosis_values: Inifile
-        object to use to build cosmosis parameter ranges/values
+    cosmosis_values : Inifile
+        Object to use to build cosmosis parameter ranges/values.
     """
     params = config['parameters']
     varied_params = config['cosmosis']['parameters']
@@ -235,14 +287,14 @@ def _make_cosmosis_priors(config):
 
     Parameters
     ----------
-    config: dict
+    config : dict
         The data object parse'd from an input yaml file.
         This is passed as-is to the likelihood function
 
     Returns
     -------
-    priors: cosmosis Inifile
-        The cosmosis config object specifying priors
+    priors : cosmosis Inifile
+        The cosmosis config object specifying priors.
     """
 
     # Early return if no priors section is specified
@@ -288,59 +340,14 @@ def _make_cosmosis_priors(config):
     return cosmosis.Inifile(None, override=P)
 
 
-def _setup(data):
+def _setup(data_ini):
     # Most CosmoSIS modules do proper setup here.
-    # In this module we just collect together the
-    # covariances and get their inverses, so that
-    # we can do a Fisher matrix later, if we want to.
-    from cosmosis.runtime.utils import symmetric_positive_definite_inverse
-    data, ini = data
-    invs = {}
-    covs = {}
-    error = False
-    for name, config in data.items():
-        # ignore priors and other non-likelihood sections
-        if name == 'priors' or 'data' not in config:
-            continue
-
-        # deal with any of
-        # - there being no likelihood specified
-        # - the likelihood not being a gaussian
-        # If there is a better way of introspecting
-        # this that would be great.
-        try:
-            cov = config['data']['likelihood'].cov
-        except (AttributeError, KeyError):
-            error = True
-            continue
-
-        # Get inverse if possible. Might not be SPD,
-        # though it should be.  We allow this for most samplers
-        # because small errors can creep in numerically, but we
-        # don't allow for Fisher
-        if cov is None:
-            inv_cov = None
-        else:
-            try:
-                inv_cov = symmetric_positive_definite_inverse(cov)
-            except ValueError:
-                error = True
-                continue
-        # If the above didn't work then we should already have
-        # continue'd, so if we get this far all is good.
-        covs[name] = cov
-        invs[name] = inv_cov
-
-    if error:
-        warnings.warn("Note that not all of your likelihoods are "
-                      "valid Gaussians, so I will not be able to "
-                      "run Fisher matrix, if that's what you wanted.")
-
-    return data, ini, covs, invs
+    # We don't need amything so just return.
+    return data_ini
 
 
 def _execute(block, config):
-    data, ini, covs, invs = config
+    data, ini = config
     # Calculate the firecrown likelihood as a module
     # This function, which isn't designed for end users,
     # is the main connection between cosmosis and firecrown.
@@ -376,40 +383,28 @@ def _execute(block, config):
         del data['priors']
 
     # Call out to the log likelihood
-    loglike, stats = compute_loglike(cosmo=cosmo, data=data)
-
-    # concatenate theory and data vectors, where these
-    # are supported by the log likelihood
-    theory = {}
-    obs = {}
-    for name, stat in stats.items():
-        # These can easily be missing, in which case they will just
-        # be left out.
-        try:
-            obs[name] = np.concatenate([v for v in stat['data'].values()])
-            theory[name] = np.concatenate([v for v in stat['theory'].values()])
-        except (KeyError, ValueError):
-            pass
+    loglikes, obs, theory, covs, invs, stats = compute_loglike(cosmo=cosmo, data=data)
+    loglike = np.sum([v for v in loglikes.values() if v is not None])
 
     # For Fisher, etc., we save all the data vector info that we have
-    for name in data:
-        # indicates that this is a likelihood
-        if 'data' not in data[name]:
+    for name in loglikes:
+        # skip some stuff
+        if name in RESERVED_NAMES_COSMOSIS:
             continue
 
         # Send result back to cosmosis
-        block['likelihoods', f'{name}_like'] = stats[name]['loglike']
+        block['likelihoods', f'{name}_like'] = loglikes[name]
 
         # Save whatever we have managed to collect.
         # The CosmoSIS Fisher sampler and others look in this
         # section to build up the Fisher data vectors.
-        if name in theory:
+        if theory[name] is not None:
             block['data_vector', f'{name}_theory'] = theory[name]
-        if name in obs:
+        if obs[name] is not None:
             block['data_vector', f'{name}_data'] = obs[name]
-        if name in covs:
+        if covs[name] is not None:
             block['data_vector', f'{name}_covariance'] = covs[name]
-        if name in invs:
+        if invs[name] is not None:
             block['data_vector', f'{name}_inverse_covariance'] = invs[name]
 
     # Unless in quiet mode, print out what we have done

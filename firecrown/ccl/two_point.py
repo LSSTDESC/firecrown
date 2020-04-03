@@ -70,6 +70,14 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
+    measured : array-like, shape (n,)
+        The measure statistics for this log-likelihood.
+    predicted : array-like, shape (n,)
+        The predicted statistics for this log-likelihood.
+    covmat : array-like, shape (n, n)
+        The covariance matrix for the measured statistics.
+    inv_covmat : array-like, shape (n, n)
+        The inverse of the covariance matrix for the measured statistics.
     stats : None
         Always None for this analysis.
     """
@@ -88,10 +96,14 @@ def compute_loglike(
     # compute the log-like
     if 'likelihood' in data:
         loglike = data['likelihood'].compute(_data, _theory)
+        measured = data['likelihood'].assemble_data_vector(_data)
+        predicted = data['likelihood'].assemble_data_vector(_theory)
+        cov = data['likelihood'].cov.copy()
+        inv_cov = data['likelihood'].inv_cov.copy()
     else:
         loglike = None
 
-    return loglike, {'data': _data, 'theory': _theory, 'loglike': loglike}
+    return loglike, measured, predicted, cov, inv_cov, None
 
 
 def write_stats(*, output_path, data, stats):

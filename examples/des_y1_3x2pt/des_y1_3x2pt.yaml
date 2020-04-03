@@ -37,33 +37,10 @@ parameters:
   lens{{ loop.index0 }}_delta_z: {{ loc }}
   {% endfor %}
 
-emcee:
-  parameters:
-    - sigma8
-    - Omega_c
-    - A0
-    - eta_ia
-  {% for i in range(4) %}
-    - src{{ i }}_mult_bias
-  {% endfor %}
-  {% for i in range(5) %}
-    - bias_lens{{ i }}
-  {% endfor %}
-  {% for i in range(4) %}
-    - src{{ i }}_delta_z
-  {% endfor %}
-  {% for i in range(5) %}
-    - lens{{ i }}_delta_z
-  {% endfor %}
-  n_steps: 1000
-  backend: serial
-
-
 cosmosis:
   # the name of the sampler to use
   sampler: maxlike
   # the output chain file name
-  output: des-y1-3x2pt-maxlike.txt
   parameters:
     Omega_c: [0.1, 0.2545,  0.6]
     sigma8: [0.6,  0.801,  1.0]
@@ -87,7 +64,6 @@ cosmosis:
     live_points: 500
     efficiency: 0.3
     resume: True
-    multinest_outfile_root: des-y1-multinest
   # for computing a grid of models - works for up to about three dimensions
   # but quickly becomes untenable above that.
   grid:

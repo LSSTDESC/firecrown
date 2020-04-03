@@ -2,17 +2,17 @@
 A prior can be any distribution in `scipy.stats`. You specify them in YAML
 as follows:
 
-```YAML
-priors:
-  module: firecrown.priors
-  param1:
-    # here 'norm' is the name of the function/class in scipy.stats
-    kind: norm
-    # any keywors to this function are listd by name
-    # these are passed to the `logpdf` method
-    loc: 0.5
-    scale: 0.5
-```
+.. code-block:: yaml
+
+   priors:
+     module: firecrown.priors
+     param1:
+       # here 'norm' is the name of the function/class in scipy.stats
+       kind: norm
+       # any keywors to this function are listd by name
+       # these are passed to the `logpdf` method
+       loc: 0.5
+       scale: 0.5
 """
 import copy
 import scipy.stats
@@ -56,8 +56,16 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
-    stats : dict
-        Dictionary with any data to store.
+    measured : array-like, shape (n,)
+        Always None for the priors.
+    predicted : array-like, shape (n,)
+        Always None for the priors.
+    covmat : array-like, shape (n, n)
+        Always None for the priors.
+    inv_covmat : array-like, shape (n, n)
+        Always None for the priors.
+    stats : dict or other data
+        Always Bone foe the priors.
     """
     loglike = 0.0
     for param in parameters:
@@ -68,7 +76,7 @@ def compute_loglike(
             dist = getattr(scipy.stats, data[param]['kind'])
             keys = {k: v for k, v in data[param].items() if k != 'kind'}
             loglike += dist.logpdf(parameters[param], **keys)
-    return loglike, {}
+    return loglike, None, None, None, None, None
 
 
 def write_stats(*, output_path, data, stats):

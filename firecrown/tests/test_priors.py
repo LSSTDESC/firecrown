@@ -13,10 +13,14 @@ def test_priors():
     data = parse_config(analysis)
     assert data == analysis
 
-    loglike, stats = compute_loglike(
+    loglike, ms, pd, cov, inv_cov, stats = compute_loglike(
         cosmo=None, parameters=parameters, data=data)
 
     assert loglike == (
         -0.5 * ((0.3) / 1.0)**2 - 0.5 * np.log(2.0 * np.pi) +
         -0.5 * ((-0.1 - 0.1) / 2.0)**2 - 0.5 * np.log(2.0 * np.pi) - np.log(2))
-    assert stats == {}
+    assert stats is None
+    assert ms is None
+    assert pd is None
+    assert cov is None
+    assert inv_cov is None

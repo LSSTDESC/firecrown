@@ -4,6 +4,8 @@ import importlib
 import yaml
 import jinja2
 
+from .parser_constants import FIRECROWN_RESERVED_NAMES
+
 
 def parse(config_or_filename):
     """Parse a configuration file.
@@ -40,9 +42,7 @@ def parse(config_or_filename):
             params[p] = val
     data['parameters'] = params
 
-    analyses = list(
-        set(list(data.keys())) -
-        set(['parameters', 'cosmosis', 'emcee']))
+    analyses = list(set(list(data.keys())) - set(FIRECROWN_RESERVED_NAMES))
     for analysis in analyses:
         new_keys = {}
 

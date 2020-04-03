@@ -55,7 +55,7 @@ These are:
   This class is used to combine `Statistic`s together with a covariance matrix
   into a final likelihood computation.
 
-Please see [firecrown/ccl/core.py](firecrown/ccl/core.py) for the details of
+Please see [firecrown/ccl/core.py](https://github.com/LSSTDESC/firecrown/firecrown/ccl/core.py) for the details of
 each class.
 
 Some Notes:
@@ -77,7 +77,7 @@ Some Notes:
 
 ### YAML Configuration
 
-The example configuration file, [cosmicshear.yaml](examples/cosmicshear.yaml),
+The example configuration file, [cosmicshear.yaml](https://github.com/LSSTDESC/firecrown/examples/cosmicshear.yaml),
 shows how one would configure a cosmic shear analysis in Fourier space.
 
 In general, a two-point YAML configuration file has four sections, `sources`,
@@ -170,6 +170,14 @@ def compute_loglike(
     -------
     loglike : float
         The computed log-likelihood.
+    measured : array-like, shape (n,)
+        The measure statistics for this log-likelihood.
+    predicted : array-like, shape (n,)
+        The predicted statistics for this log-likelihood.
+    covmat : array-like, shape (n, n)
+        The covariance matrix for the measured statistics.
+    inv_covmat : array-like, shape (n, n)
+        The inverse of the covariance matrix for the measured statistics.
     stats : object or other data
         Any data you wish to store.
     """
@@ -178,7 +186,9 @@ def compute_loglike(
 
 It takes as an input a `pyccl.Cosmology` object, the dictionary of current
 parameter values, and the data returned from `parse_config`. This function
-should use the data to compute the log-likelihood. It should
+should use the data to compute the log-likelihood. It shoudl then return
+this log-likelihood along with the measured statistics, predicted statistics,
+the covariance matrix of the measured statistics, and its inverse. It should
 also return any data to store as keys in a dictionary. Follow the following rules
 when implementing this function.
 
