@@ -22,7 +22,7 @@ def write_statistics(*, analysis_id, output_path, data, statistics):
     _odir = os.path.join(_opth, 'output_%s' % analysis_id, 'statistics')
     os.makedirs(_odir, exist_ok=True)
 
-    analyses = list(set(list(data.keys())) - FIRECROWN_RESERVED_NAMES)
+    analyses = list(set(list(data.keys())) - set(FIRECROWN_RESERVED_NAMES))
     for analysis in analyses:
         _ana_odir = os.path.join(_odir, analysis)
         os.makedirs(_ana_odir, exist_ok=True)
