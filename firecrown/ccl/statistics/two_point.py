@@ -1,3 +1,4 @@
+import copy
 import functools
 import numpy as np
 import pyccl as ccl
@@ -17,7 +18,10 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 }
 
 
-def _ell_for_xi(ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
+ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
+
+
+def _ell_for_xi(*, ell_min, ell_mid, ell_max, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
@@ -58,19 +62,20 @@ class TwoPointStatistic(Statistic):
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
-    ell_min : int, optional
-        The minimum angulare wavenumber to use for real-space integrations.
-    ell_mid : int, optional
-        The midpoint angular wavenumber to use for real-space integrations. The
-        angular wavenumber samples are linearly spaced at integers between
-        `ell_min` and `ell_mid`.
-    ell_max : float, optional
-        The maximum angular wavenumber to use for real-space integrations. The
-        angular wavenumber samples are logarithmically spaced between
-        `ell_mid` and `ell_max`.
-    n_log : int, optional
-        The number of logarithmically spaced angular wavenumber samples between
-        `ell_mid` and `ell_max`.
+    ell_for_xi : dict, optional
+        A dictionary of options for making the ell values at which to compute
+        Cls for use in real-space integrations. The possible keys are:
+
+         - min : int, optional - The minimum angulare wavenumber to use for
+           real-space integrations. Default is 2.
+         - mid : int, optional - The midpoint angular wavenumber to use for
+           real-space integrations. The angular wavenumber samples are linearly
+           spaced at integers between `min` and `mid`. Default is 50.
+         - max : float, optional - The maximum angular wavenumber to use for
+           real-space integrations. The angular wavenumber samples are
+           logarithmically spaced between `mid` and `max`. Default is 6e4.
+         - n_log : int, optional - The number of logarithmically spaced angular
+           wavenumber samples between `mid` and `max`. Default is 200.
 
     Attributes
     ----------
@@ -92,14 +97,13 @@ class TwoPointStatistic(Statistic):
         is called. Note that this scale factor is already applied.
     """
     def __init__(self, sacc_data_type, sources, systematics=None,
-                 ell_min=2, ell_mid=50, ell_max=6e4, n_log=200):
+                 ell_for_xi=None):
         self.sacc_data_type = sacc_data_type
         self.sources = sources
         self.systematics = systematics or []
-        self.ell_min = ell_min
-        self.ell_max = ell_max
-        self.ell_mid = ell_mid
-        self.n_log = n_log
+        self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        if ell_for_xi is not None:
+            self.ell_for_xi.update(ell_for_xi)
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -185,11 +189,7 @@ class TwoPointStatistic(Statistic):
                 cosmo, tuple(tracers), tuple(self.ell_or_theta_.tolist())
             ) * self.scale_
         else:
-            ells = _ell_for_xi(
-                ell_min=self.ell_min,
-                ell_mid=self.ell_mid,
-                ell_max=self.ell_max,
-                n_log=self.n_log)
+            ells = _ell_for_xi(**self.ell_for_xi)
             cells = _cached_angular_cl(
                 cosmo, tuple(tracers), tuple(ells.tolist()))
             self.predicted_statistic_ = ccl.correlation(
