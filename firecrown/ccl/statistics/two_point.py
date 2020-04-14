@@ -21,13 +21,13 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
 
 
-def _ell_for_xi(*, ell_min, ell_mid, ell_max, n_log):
+def _ell_for_xi(*, min, mid, max, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
     return np.concatenate((
-        np.linspace(ell_min, ell_mid-1, ell_mid-ell_min),
-        np.logspace(np.log10(ell_mid), np.log10(ell_max), n_log)))
+        np.linspace(min, mid-1, mid-min),
+        np.logspace(np.log10(mid), np.log10(max), n_log)))
 
 
 @functools.lru_cache(maxsize=128)

@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import copy
 
 import sacc
 import pyccl as ccl
@@ -68,7 +69,10 @@ def test_two_point_smoke(kind, ell_for_xi, tmpdir):
         sacc_data.add_ell_cl(sacc_kind, 'sacc_src0', 'sacc_src5', ell, cell*2)
     else:
         theta = np.logspace(1, 2, 100)
-        ell = _ell_for_xi(**ELL_FOR_XI_DEFAULTS)
+        ell_for_xi_kws = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        if ell_for_xi is not None:
+            ell_for_xi_kws.update(ell_for_xi)
+        ell = _ell_for_xi(**ell_for_xi_kws)
         cell = ccl.angular_cl(cosmo, *tracers, ell)
         xi = ccl.correlation(
             cosmo, ell, cell, theta / 60.0, corr_type=kind) * scale
