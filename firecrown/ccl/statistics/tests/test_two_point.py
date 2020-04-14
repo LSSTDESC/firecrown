@@ -4,17 +4,18 @@ import pytest
 import sacc
 import pyccl as ccl
 
-from ..two_point import TwoPointStatistic, _ell_for_xi
+from ..two_point import TwoPointStatistic, _ell_for_xi, ELL_FOR_XI_DEFAULTS
 
 
 class DummySource(object):
     pass
 
 
+@pytest.mark.parametrize('ell_for_xi', [None, ELL_FOR_XI_DEFAULTS, {'mid': 100}])
 @pytest.mark.parametrize(
     'kind',
     ['cl',  'gg', 'gl', 'l+', 'l-'])
-def test_two_point_smoke(kind, tmpdir):
+def test_two_point_smoke(kind, ell_for_xi, tmpdir):
     sacc_data = sacc.Sacc()
 
     cosmo = ccl.Cosmology(
@@ -67,7 +68,7 @@ def test_two_point_smoke(kind, tmpdir):
         sacc_data.add_ell_cl(sacc_kind, 'sacc_src0', 'sacc_src5', ell, cell*2)
     else:
         theta = np.logspace(1, 2, 100)
-        ell = _ell_for_xi()
+        ell = _ell_for_xi(**ELL_FOR_XI_DEFAULTS)
         cell = ccl.angular_cl(cosmo, *tracers, ell)
         xi = ccl.correlation(
             cosmo, ell, cell, theta / 60.0, corr_type=kind) * scale
@@ -83,9 +84,13 @@ def test_two_point_smoke(kind, tmpdir):
         sacc_data.add_theta_xi(sacc_kind, 'sacc_src0', 'sacc_src5', theta, xi*2)
 
     stat = TwoPointStatistic(
-        sacc_data_type=sacc_kind, sources=['src0', 'src1'])
+        sacc_data_type=sacc_kind, sources=['src0', 'src1'], ell_for_xi=ell_for_xi)
     stat.read(sacc_data, sources)
     stat.compute(cosmo, {}, sources, systematics=None)
+
+    if ell_for_xi is not None:
+        for key in ell_for_xi:
+            assert ell_for_xi[key] == stat.ell_for_xi[key]
 
     assert stat.ccl_kind == kind
     assert np.allclose(stat.scale_, np.prod(np.arange(2) / 2.0 + 1.0))
