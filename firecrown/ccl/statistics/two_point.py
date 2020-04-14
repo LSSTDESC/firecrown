@@ -1,5 +1,7 @@
 import copy
 import functools
+import warnings
+
 import numpy as np
 import pyccl as ccl
 
@@ -28,6 +30,15 @@ def _ell_for_xi(*, min, mid, max, n_log):
     return np.concatenate((
         np.linspace(min, mid-1, mid-min),
         np.logspace(np.log10(mid), np.log10(max), n_log)))
+
+
+def _generate_ell_or_theta(*, min, max, n, binning='log'):
+    if binning == 'log':
+        edges = np.logspace(np.log10(min), np.log10(max), n+1)
+        return np.sqrt(edges[1:] * edges[:-1])
+    else:
+        edges = np.linspace(min, max, n+1)
+        return (edges[1:] + edges[:-1]) / 2.0
 
 
 @functools.lru_cache(maxsize=128)
@@ -62,6 +73,25 @@ class TwoPointStatistic(Statistic):
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
+    ell_or_theta : dict, optional
+        A dictionary of options for generating the ell or theta values at which
+        to compute the statistics. This option can be used to have firecrown
+        generate data without the corresponding 2pt data in the input SACC file.
+        The options are:
+
+         - min : float - The start of the binning.
+         - max : float - The end of the binning.
+         - n : int - The number of bins. Note that the edges of the bins start
+           at `min` and end at `max`. The actual bin locations will be at the
+           (possibly geometric) midpoint of the bin.
+         - binning : str, optional - Pass 'log' to get logarithmic spaced bins and 'lin'
+           to get linearly spaced bins. Default is 'log'.
+    ell_or_theta_min : float, optional
+        The minimum ell or theta value to keep. This minimum is applied after
+        the ell or theta values are read and/or generated.
+    ell_or_theta_max : float, optional
+        The maximum ell or theta value to keep. This maximum is applied after
+        the ell or theta values are read and/or generated.
     ell_for_xi : dict, optional
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
@@ -97,13 +127,17 @@ class TwoPointStatistic(Statistic):
         is called. Note that this scale factor is already applied.
     """
     def __init__(self, sacc_data_type, sources, systematics=None,
-                 ell_for_xi=None):
+                 ell_for_xi=None, ell_or_theta=None, ell_or_theta_min=None,
+                 ell_or_theta_max=None):
         self.sacc_data_type = sacc_data_type
         self.sources = sources
         self.systematics = systematics or []
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
+        self.ell_or_theta = ell_or_theta
+        self.ell_or_theta_min = ell_or_theta_min
+        self.ell_or_theta_max = ell_or_theta_max
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -134,17 +168,10 @@ class TwoPointStatistic(Statistic):
                 "A firecrown 2pt statistic should only have two "
                 "tracers, you sent '%s'!" % self.sources)
 
-        if self.ccl_kind == 'cl':
-            _ell_or_theta, _stat = sacc_data.get_ell_cl(
-                self.sacc_data_type, *tracers, return_cov=False)
-        else:
-            _ell_or_theta, _stat = sacc_data.get_theta_xi(
-                self.sacc_data_type, *tracers, return_cov=False)
-
         # sacc is tracer order sensitive
         # so we try again if we didn't find anything
-        if len(_ell_or_theta) == 0 or len(_stat) == 0:
-            tracers = tracers[::-1]
+        for order in [1, -1]:
+            tracers = tracers[::order]
 
             if self.ccl_kind == 'cl':
                 _ell_or_theta, _stat = sacc_data.get_ell_cl(
@@ -153,11 +180,50 @@ class TwoPointStatistic(Statistic):
                 _ell_or_theta, _stat = sacc_data.get_theta_xi(
                     self.sacc_data_type, *tracers, return_cov=False)
 
-            if len(_ell_or_theta) == 0 or len(_stat) == 0:
-                raise RuntimeError(
-                    "Tracers '%s' have no 2pt data in the SACC file!" % tracers)
+            if len(_ell_or_theta) > 0 and len(_stat) > 0:
+                break
+
+        if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
+            raise RuntimeError(
+                "Tracers '%s' have no 2pt data in the SACC file "
+                "and no input ell or theta values were given!" % tracers)
+        elif (
+            self.ell_or_theta is not None
+            and len(_ell_or_theta) > 0
+            and len(_stat) > 0
+        ):
+            warnings.warn(
+                "Tracers '%s' have 2pt data and you have specified `ell_or_theta` "
+                "in the configuration. `ell_or_theta` is being ignored!",
+                warnings.UserWarning,
+                stacklevel=2,
+            )
 
         self.sacc_tracers = tuple(tracers)
+
+        # at this point we default to the values in the sacc file
+        if len(_ell_or_theta) == 0 or len(_stat) == 0:
+            _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
+            _stat = np.zeros_like(_ell_or_theta)
+            self.sacc_inds = None
+        else:
+            self.sacc_inds = np.atleast_1d(sacc_data.indices(
+                self.sacc_data_type,
+                self.sacc_tracers))
+
+        if self.ell_or_theta_min is not None:
+            q = np.where(_ell_or_theta >= self.ell_or_theta_min)
+            _ell_or_theta = _ell_or_theta[q]
+            _stat = _stat[q]
+            if self.sacc_inds is not None:
+                self.sacc_inds = self.sacc_inds[q]
+
+        if self.ell_or_theta_max is not None:
+            q = np.where(_ell_or_theta <= self.ell_or_theta_max)
+            _ell_or_theta = _ell_or_theta[q]
+            _stat = _stat[q]
+            if self.sacc_inds is not None:
+                self.sacc_inds = self.sacc_inds[q]
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()

@@ -57,6 +57,8 @@ def likelihood_test_data():
             statistics[sname] = DummyThing()
             statistics[sname].sacc_data_type = 'galaxy_density_cl'
             statistics[sname].sacc_tracers = (trci, trcj)
+            statistics[sname].sacc_inds = sacc_data.indices(
+                statistics[sname].sacc_data_type, statistics[sname].sacc_tracers)
             theory[sname] = np.zeros(2)
             data[sname] = sacc_data.get_ell_cl('galaxy_density_cl', trci, trcj)[1]
             data_vector.append(sname)
