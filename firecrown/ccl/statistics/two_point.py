@@ -194,7 +194,7 @@ class TwoPointStatistic(Statistic):
         ):
             warnings.warn(
                 "Tracers '%s' have 2pt data and you have specified `ell_or_theta` "
-                "in the configuration. `ell_or_theta` is being ignored!",
+                "in the configuration. `ell_or_theta` is being ignored!" % tracers,
                 warnings.UserWarning,
                 stacklevel=2,
             )
