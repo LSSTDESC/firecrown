@@ -46,11 +46,7 @@ class ConstGaussianLogLike(LogLike):
         _sd = sacc_data.copy()
         inds = []
         for stat in self.data_vector:
-            inds.append(
-                _sd.indices(
-                    statistics[stat].sacc_data_type,
-                    statistics[stat].sacc_tracers)
-            )
+            inds.append(statistics[stat].sacc_inds.copy())
         inds = np.concatenate(inds, axis=0)
         cov = np.zeros((len(inds), len(inds)))
         for new_i, old_i in enumerate(inds):
