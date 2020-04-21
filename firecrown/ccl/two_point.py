@@ -93,6 +93,13 @@ def compute_loglike(
         _data[name] = stat.measured_statistic_
         _theory[name] = stat.predicted_statistic_
 
+    # defaults
+    loglike = None
+    measured = None
+    predicted = None
+    cov = None
+    inv_cov = None
+
     # compute the log-like
     if 'likelihood' in data:
         loglike = data['likelihood'].compute(_data, _theory)
@@ -100,8 +107,6 @@ def compute_loglike(
         predicted = data['likelihood'].assemble_data_vector(_theory)
         cov = data['likelihood'].cov.copy()
         inv_cov = data['likelihood'].inv_cov.copy()
-    else:
-        loglike = None
 
     return loglike, measured, predicted, cov, inv_cov, None
 
