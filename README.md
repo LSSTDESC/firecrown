@@ -2,25 +2,24 @@
 
 [![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master) [![Documentation Status](https://readthedocs.org/projects/firecrown/badge/?version=latest)](https://firecrown.readthedocs.io/en/latest/?badge=latest)
 
-## Installation
+## Installation Quickstart
 
-You need to have CCL installed first. Try:
+The easiest way to get started is conda
 
 ```bash
-pip install pyccl
+conda install -c conda-forge firecrown
 ```
 
-Then you can download and install the `master` branch via
+## Developer Installation
 
-```
-pip install git+https://github.com/LSSTDESC/firecrown.git
-```
-
-If you have already cloned the repo, simply install via
+To install the package in developer mode, clone the git repo locally and then
+use a pip development installation by running
 
 ```
 pip install -e .
 ```
+
+from the top-level of the repo.
 
 ## Usage
 
@@ -32,7 +31,8 @@ firecrown compute <config file>
 
 will run an example problem.
 
-See the example in the examples folder for more details.
+See the examples in the [examples folder](https://github.com/LSSTDESC/firecrown/examples)
+for more details.
 
 ## Sampling
 
@@ -48,8 +48,8 @@ or
 conda install cosmosis-standalone
 ```
 
-You may need to specify compilers on install, if your default compilers are not new enough
-to support cosmosis, for example, to use non-default GCCs:
+You may need to specify compilers when using the pip install, if your default compilers
+are not new enough to support cosmosis, for example, to use non-default GCCs:
 
 ```bash
 FC=gfortran CC=gcc-9 CXX=g++-9 pip install cosmosis-standalone
