@@ -138,15 +138,30 @@ class TopHatSelectionFunction(Systematic):
     def _gen_selection_function(self, source):
 
         def _selfunc(lnmass, a):
+            a = np.atleast_1d(a)
+            lnmass = np.atleast_1d(lnmass)
+            if a.ndim == 1:
+                a = a.reshape((1, -1))
+            if lnmass.ndim == 1:
+                lnmass = lnmass.reshape((-1, 1))
+            out_shape = np.broadcast(lnmass, a)
+            a = np.broadcast_to(a, out_shape.shape)
+            lnmass = np.broadcast_to(lnmass, out_shape.shape)
+            vals = np.zeros(out_shape.shape)
+
             lnmass_min = source.inv_mor_(source.lnlam_min_, a)
             lnmass_max = source.inv_mor_(source.lnlam_max_, a)
-            if lnmass_max < lnmass_min:
-                lnmass_min, lnmass_max = lnmass_max, lnmass_min
+            msk = lnmass_max < lnmass_min
+            if np.any(msk):
+                _tmp = lnmass_min.copy()
+                lnmass_min[msk] = lnmass_max[msk]
+                lnmass_max[msk] = _tmp[msk]
 
-            if lnmass_min <= lnmass and lnmass <= lnmass_max:
-                abs_dzda = 1 / a / a
-                return 1.0 * source.dndz_interp_(1/a-1) * abs_dzda
-            else:
-                return 0.0
+            msk = (lnmass_min <= lnmass) & (lnmass <= lnmass_max)
+
+            if np.any(msk):
+                vals[msk] = source.dndz_interp_(1/a[msk]-1)
+
+            return vals
 
         return _selfunc

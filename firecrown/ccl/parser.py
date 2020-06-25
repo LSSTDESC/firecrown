@@ -1,7 +1,7 @@
 import copy
 import importlib
 
-from .statistics import TwoPointStatistic
+from . import statistics as firecrown_ccl_statistics
 from . import sources as firecrown_ccl_sources
 from . import likelihoods as firecrown_ccl_likelihoods
 from . import systematics as firecrown_ccl_systematics
@@ -54,7 +54,26 @@ def _parse_two_point_statistics(statistics):
     stats = {}
     for stat, keys in statistics.items():
         new_keys = copy.deepcopy(keys)
-        stats[stat] = TwoPointStatistic(**new_keys)
+        stats[stat] = firecrown_ccl_statistics.TwoPointStatistic(**new_keys)
+    return stats
+
+
+def _parse_statistics(statistics):
+    """Parse statistics from the config.
+
+    Each stat expressed in YAML should have the form:
+
+        ```YAML
+        cl_src0_src0:
+          kind: TwoPointStatistic
+            ...
+        ```
+    """
+    stats = {}
+    for stat, keys in statistics.items():
+        _stat = copy.deepcopy(keys)
+        kind = _stat.pop('kind')
+        stats[stat] = getattr(firecrown_ccl_statistics, kind)(**_stat)
     return stats
 
 

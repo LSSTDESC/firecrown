@@ -7,7 +7,7 @@ from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
 
-__all__ = ['WLSource', 'NumberCountsSource']
+__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource']
 
 
 class WLSource(Source):
@@ -302,6 +302,10 @@ class ClusterSource(Source):
         is a top-hat from `lnlam_min_` to `lnlam_max_` (which are in now in units
         of mass). Add systematics to the source when rendering in order to produce
         more complicated models.
+    area_sr_orig : float
+        The original area in steradians of the cluster sample.
+    area_sr_ : float
+        The (effective) area in steradians of the cluster sample.
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`. Not currently used for anything.
@@ -335,6 +339,7 @@ class ClusterSource(Source):
         self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
         self.lnlam_min_orig = tracer.metadata['lnlam_min']
         self.lnlam_max_orig = tracer.metadata['lnlam_max']
+        self.area_sr_orig = tracer.metadata['area_sd'] * (np.pi/180.0)**2
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -357,6 +362,7 @@ class ClusterSource(Source):
         self.scale_ = self.scale
         self.lnlam_min_ = self.lnlam_min_orig
         self.lnlam_max_ = self.lnlam_max_orig
+        self.area_sr_ = self.area_sr_orig
 
         # set fiducial MOR and selection function systematics
         mor_sys = IdentityFunctionMOR()

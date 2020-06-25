@@ -55,6 +55,21 @@ jobs:
               sphinxcontrib-apidoc
 
             conda update --all -y -q
+
+            # install CCL master
+            conda install -y -q \
+              compilers \
+              cmake \
+              swig \
+              pip
+
+            conda uninstall pyccl --force --yes
+            git clone https://github.com/LSSTDESC/CCL.git
+            pushd CCL
+            pip install --no-deps .
+            popd
+            rm -rf CCL
+
             pip install --no-deps -e .
 
       - save_cache:
