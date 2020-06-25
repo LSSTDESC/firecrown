@@ -70,8 +70,8 @@ def test_tophat_selection_function_systematic():
 
     assert np.array_equal(
         src.selfunc_((lnm_min + lnm_max)/2, 0.5),
-        0.5 / 0.5**2 / (1/0.5 - 1),
+        np.atleast_2d(0.5 / (1/0.5 - 1)),
     )
 
-    assert np.array_equal(src.selfunc_(lnm_min - 10, 0.5), 0)
-    assert np.array_equal(src.selfunc_(lnm_max + 10, 0.5), 0)
+    assert np.array_equal(src.selfunc_(lnm_min - 10, 0.5), np.atleast_2d(0))
+    assert np.array_equal(src.selfunc_(lnm_max + 10, 0.5), np.atleast_2d(0))

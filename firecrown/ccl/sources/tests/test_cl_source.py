@@ -27,7 +27,8 @@ def cl_data():
     z = np.linspace(0, 2, 50)
     dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
     sacc_data.add_tracer(
-        'NZ', 'trc1', z, dndz, metadata={"lnlam_min": -12, "lnlam_max": -10})
+        'NZ', 'trc1', z, dndz,
+        metadata={"lnlam_min": -12, "lnlam_max": -10, 'area_sd': 200})
 
     # add extra data to make sure nothing weird is pulled back out
     mn = 0.5
@@ -50,6 +51,7 @@ def test_cl_source(cl_data):
 
     assert np.allclose(src.lnlam_min_orig, -12)
     assert np.allclose(src.lnlam_max_orig, -10)
+    assert np.allclose(src.area_sr_orig, 200 * (np.pi/180.0)**2)
 
     src.render(
         cl_data['cosmo'],
@@ -64,6 +66,7 @@ def test_cl_source(cl_data):
 
     assert np.allclose(src.lnlam_min_, -12)
     assert np.allclose(src.lnlam_max_, -10)
+    assert np.allclose(src.area_sr_, 200 * (np.pi/180.0)**2)
 
     assert hasattr(src, "mor_")
     assert hasattr(src, "inv_mor_")
@@ -76,6 +79,7 @@ def test_cl_source_override_sys(cl_data):
 
     assert np.allclose(src.lnlam_min_orig, -12)
     assert np.allclose(src.lnlam_max_orig, -10)
+    assert np.allclose(src.area_sr_orig, 200 * (np.pi/180.0)**2)
 
     sys = PowerLawMOR(lnlam_norm="a", mass_slope="b", a_slope="c")
     cl_data['params']["a"] = 1.0
@@ -94,6 +98,7 @@ def test_cl_source_override_sys(cl_data):
 
     assert np.allclose(src.lnlam_min_, -12)
     assert np.allclose(src.lnlam_max_, -10)
+    assert np.allclose(src.area_sr_, 200 * (np.pi/180.0)**2)
 
     assert hasattr(src, "mor_")
     assert hasattr(src, "inv_mor_")
