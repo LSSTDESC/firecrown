@@ -7,7 +7,7 @@ from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
 
-__all__ = ['WLSource', 'NumberCountsSource']
+__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource']
 
 
 class WLSource(Source):

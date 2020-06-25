@@ -65,7 +65,7 @@ def compute_loglike(
     inv_covmat : array-like, shape (n, n)
         Always None for the priors.
     stats : dict or other data
-        Always Bone foe the priors.
+        Always None foe the priors.
     """
     loglike = 0.0
     for param in parameters:
