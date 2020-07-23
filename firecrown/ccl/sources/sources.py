@@ -7,7 +7,7 @@ from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
 
-__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource']
+__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource', 'CMBLsource']
 
 
 class WLSource(Source):
@@ -374,3 +374,23 @@ class ClusterSource(Source):
             systematics[systematic].apply(cosmo, params, self)
 
         self.dndz_interp_ = Akima1DInterpolator(self.z_, self.dndz_)
+
+        
+class CMBLSource(Source):
+    def __init__(self, *, sacc_tracer, systematics=None):
+        self.sacc_tracer = sacc_tracer
+        self.systematics = systematics or []
+        
+    def read(self, sacc_data):
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        ell = getattr(tracer, 'ell').copy().flatten()
+        beam = getattr(tracer, 'beam').copy().flatten()
+        inds = np.argsort(ell)
+        ell = ell[inds]
+        beam = beam[inds]
+        self.ell_orig = ell
+        self.beam_orig = beam
+        
+    def render(self, cosmo, params, systematics=None):
+        #I don't know what to do
+        
