@@ -377,8 +377,9 @@ class ClusterSource(Source):
 
         
 class CMBLSource(Source):
-    def __init__(self, *, sacc_tracer, systematics=None):
+    def __init__(self, *, sacc_tracer, scale=1.0, systematics=None):
         self.sacc_tracer = sacc_tracer
+        self.scale = scale
         self.systematics = systematics or []
         
     def read(self, sacc_data):
@@ -392,5 +393,11 @@ class CMBLSource(Source):
         self.beam_orig = beam
         
     def render(self, cosmo, params, systematics=None):
-        #I don't know what to do
+        systematics = systematics or {}
         
+        for systematic in self.systematics:
+            systematics[systematic].apply(cosmo, params, self)
+
+        tracer = ccl.CMBLensingTracer(cosmo,1100.)
+        self.tracer_ = tracer
+        self.scale_ = self.scale

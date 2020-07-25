@@ -17,6 +17,8 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "galaxy_shear_cl_ee": 'cl',
     "galaxy_shear_xi_minus": 'l-',
     "galaxy_shear_xi_plus": 'l+',
+    "cmbGalaxy_convergenceDensity_xi": 'gg',
+    "cmbGalaxy_convergenceShear_xi_t": 'gl'
 }
 
 
