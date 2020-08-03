@@ -377,7 +377,7 @@ class ClusterSource(Source):
 
 
 class CMBLSource(Source):
-     """A CCL CMB lensing Source.
+    """A galaxy cluster source.
 
     Parameters
     ----------
@@ -393,10 +393,10 @@ class CMBLSource(Source):
     Attributes
     ----------
     ell_orig : np.ndarray
-        The original ells used in the sacc tracer. Set after the call 
+        The original ells used in the sacc tracer. Set after the call
         to `read`.
     beam_orig : np.ndarray
-        The original beam used in the sacc tracer. Set after the call 
+        The original beam used in the sacc tracer. Set after the call
         to `read`.
     scale_ : float
         The overall scale associated with the source. Set after a call to
