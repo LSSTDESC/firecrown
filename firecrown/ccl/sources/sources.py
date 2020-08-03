@@ -377,12 +377,53 @@ class ClusterSource(Source):
 
 
 class CMBLSource(Source):
+     """A CCL CMB lensing Source.
+
+    Parameters
+    ----------
+    sacc_tracer : str
+        The name of the tracer in the SACC file.
+    scale : float, optional
+        The default scale for this source. Usually the default of 1.0 is
+        correct.
+    systematics : list of str, optional
+        A list of the source-level systematics to apply to the source. The
+        default of `None` implies no systematics.
+
+    Attributes
+    ----------
+    ell_orig : np.ndarray
+        The original ells used in the sacc tracer. Set after the call 
+        to `read`.
+    beam_orig : np.ndarray
+        The original beam used in the sacc tracer. Set after the call 
+        to `read`.
+    scale_ : float
+        The overall scale associated with the source. Set after a call to
+        `render`.
+    tracer_ : `pyccl.WeakLensingTracer`
+        The CCL tracer associated with this source. Set after a call to
+        `render`.
+
+    Methods
+    -------
+    render : apply systematics to this source and build the
+        `pyccl.CMBLSource`
+    """
     def __init__(self, *, sacc_tracer, scale=1.0, systematics=None):
         self.sacc_tracer = sacc_tracer
         self.scale = scale
         self.systematics = systematics or []
 
     def read(self, sacc_data):
+        """
+        Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
         ell = getattr(tracer, 'ell').copy().flatten()
         beam = getattr(tracer, 'beam').copy().flatten()
@@ -393,6 +434,19 @@ class CMBLSource(Source):
         self.beam_orig = beam
 
     def render(self, cosmo, params, systematics=None):
+        """
+        Render a source by applying systematics.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        systematics : dict
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
+        """
         systematics = systematics or {}
 
         for systematic in self.systematics:
