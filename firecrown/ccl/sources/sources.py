@@ -377,7 +377,7 @@ class ClusterSource(Source):
 
 
 class CMBLSource(Source):
-    """A galaxy cluster source.
+    """A CCL CMB Lensing Source.
 
     Parameters
     ----------
@@ -392,12 +392,11 @@ class CMBLSource(Source):
 
     Attributes
     ----------
-    ell_orig : np.ndarray
-        The original ells used in the sacc tracer. Set after the call
-        to `read`.
     beam_orig : np.ndarray
-        The original beam used in the sacc tracer. Set after the call
-        to `read`.
+        The original beam used in the sacc tracer before any systematics
+        are applied. Set after a call to `read`.
+    beam_: np.ndarray
+        The beam used for CMB lensing. Set after a call to `render`.
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
@@ -425,12 +424,7 @@ class CMBLSource(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        ell = getattr(tracer, 'ell').copy().flatten()
-        beam = getattr(tracer, 'beam').copy().flatten()
-        inds = np.argsort(ell)
-        ell = ell[inds]
-        beam = beam[inds]
-        self.ell_orig = ell
+        beam = tracer.beam.copy().flatten()
         self.beam_orig = beam
 
     def render(self, cosmo, params, systematics=None):
@@ -449,9 +443,11 @@ class CMBLSource(Source):
         """
         systematics = systematics or {}
 
+        self.beam_ = self.beam_orig.copy()
+        self.scale_ = self.scale
+
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
         tracer = ccl.CMBLensingTracer(cosmo, 1100.)
         self.tracer_ = tracer
-        self.scale_ = self.scale
