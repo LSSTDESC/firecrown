@@ -69,6 +69,10 @@ class TwoPointStatistic(Statistic):
             function xi-)
           - galaxy_shear_xi_plus : maps to 'l+' (a CCL angular shear corr.
             function xi-)
+          - cmbGalaxy_convergenceDensity_xi : maps to 'gg' (a CCL angular position
+            corr. function)
+          - cmbGalaxy_convergenceShear_xi_t : maps to 'gl' (a CCL angular cross-
+            correlation between position and shear)
 
     sources : list of str
         A list of the sources needed to compute this statistic.
