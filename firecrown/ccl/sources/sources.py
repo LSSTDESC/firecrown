@@ -392,11 +392,6 @@ class CMBLSource(Source):
 
     Attributes
     ----------
-    beam_orig : np.ndarray
-        The original beam used in the sacc tracer before any systematics
-        are applied. Set after a call to `read`.
-    beam_: np.ndarray
-        The beam used for CMB lensing. Set after a call to `render`.
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
