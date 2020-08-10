@@ -400,7 +400,7 @@ class CMBLSource(Source):
     scale_ : float
         The overall scale associated with the source. Set after a call to
         `render`.
-    tracer_ : `pyccl.WeakLensingTracer`
+    tracer_ : `pyccl.CMBLensingTracer`
         The CCL tracer associated with this source. Set after a call to
         `render`.
 
@@ -423,9 +423,6 @@ class CMBLSource(Source):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
-        beam = tracer.beam.copy().flatten()
-        self.beam_orig = beam
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -443,7 +440,6 @@ class CMBLSource(Source):
         """
         systematics = systematics or {}
 
-        self.beam_ = self.beam_orig.copy()
         self.scale_ = self.scale
 
         for systematic in self.systematics:
