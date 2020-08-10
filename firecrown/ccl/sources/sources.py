@@ -418,6 +418,7 @@ class CMBLSource(Source):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
+        pass
 
     def render(self, cosmo, params, systematics=None):
         """
