@@ -39,14 +39,14 @@ def cmbl_data():
 
 def test_cmbl_source_nosys(cmbl_data):
     src = CMBLSource(
-        sacc_tracer=lss_data['sacc_tracer'],
+        sacc_tracer=cmbl_data['sacc_tracer'],
         scale=0.5)
-    src.read(lss_data['sacc_data'])
+    src.read(cmbl_data['sacc_data'])
 
     src.render(
-        lss_data['cosmo'],
-        lss_data['params'],
-        lss_data['systematics_dict'])
+        cmbl_data['cosmo'],
+        cmbl_data['params'],
+        cmbl_data['systematics_dict'])
 
     assert np.allclose(src.scale, 0.5)
     assert np.allclose(src.scale_, 0.5)
