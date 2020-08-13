@@ -37,7 +37,7 @@ def cmbl_data():
         'scale_': 1.05}
 
 
-def test_cmbl_source_nosys(lss_data):
+def test_cmbl_source_nosys(cmbl_data):
     src = CMBLSource(
         sacc_tracer=lss_data['sacc_tracer'],
         scale=0.5)
