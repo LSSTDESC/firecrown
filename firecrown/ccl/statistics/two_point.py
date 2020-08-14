@@ -17,6 +17,8 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "galaxy_shear_cl_ee": 'cl',
     "galaxy_shear_xi_minus": 'l-',
     "galaxy_shear_xi_plus": 'l+',
+    "cmbGalaxy_convergenceDensity_xi": 'gg',
+    "cmbGalaxy_convergenceShear_xi_t": 'gl'
 }
 
 
@@ -67,6 +69,10 @@ class TwoPointStatistic(Statistic):
             function xi-)
           - galaxy_shear_xi_plus : maps to 'l+' (a CCL angular shear corr.
             function xi-)
+          - cmbGalaxy_convergenceDensity_xi : maps to 'gg' (a CCL angular position
+            corr. function)
+          - cmbGalaxy_convergenceShear_xi_t : maps to 'gl' (a CCL angular cross-
+            correlation between position and shear)
 
     sources : list of str
         A list of the sources needed to compute this statistic.

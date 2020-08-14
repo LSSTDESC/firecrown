@@ -7,7 +7,7 @@ from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
 
-__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource']
+__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource', 'CMBLSource']
 
 
 class WLSource(Source):
@@ -374,3 +374,72 @@ class ClusterSource(Source):
             systematics[systematic].apply(cosmo, params, self)
 
         self.dndz_interp_ = Akima1DInterpolator(self.z_, self.dndz_)
+
+
+class CMBLSource(Source):
+    """A CCL CMB Lensing Source.
+
+    Parameters
+    ----------
+    sacc_tracer : str
+        The name of the tracer in the SACC file.
+    scale : float, optional
+        The default scale for this source. Usually the default of 1.0 is
+        correct.
+    systematics : list of str, optional
+        A list of the source-level systematics to apply to the source. The
+        default of `None` implies no systematics.
+
+    Attributes
+    ----------
+    scale_ : float
+        The overall scale associated with the source. Set after a call to
+        `render`.
+    tracer_ : `pyccl.CMBLensingTracer`
+        The CCL tracer associated with this source. Set after a call to
+        `render`.
+
+    Methods
+    -------
+    render : apply systematics to this source and build the
+        `pyccl.CMBLSource`
+    """
+    def __init__(self, *, sacc_tracer, scale=1.0, systematics=None):
+        self.sacc_tracer = sacc_tracer
+        self.scale = scale
+        self.systematics = systematics or []
+
+    def read(self, sacc_data):
+        """
+        Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
+        pass
+
+    def render(self, cosmo, params, systematics=None):
+        """
+        Render a source by applying systematics.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        systematics : dict
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
+        """
+        systematics = systematics or {}
+
+        self.scale_ = self.scale
+
+        for systematic in self.systematics:
+            systematics[systematic].apply(cosmo, params, self)
+
+        tracer = ccl.CMBLensingTracer(cosmo, 1100.)
+        self.tracer_ = tracer
