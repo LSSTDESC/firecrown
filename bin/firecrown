@@ -45,20 +45,24 @@ def _test_mpi():
 def run(action, config, output, verbose):
     """Watch out! Here comes a firecrown!
 
-    Also, run some ACTION on a CONFIG file."""
+    Also, run some ACTION on a CONFIG file.
+    
+    ACTION must be one of:
+        render
+        compute
+        run-cosmosis
+    
+    CONFIG must be the name of a Firecrown YAML configuration file."""
 
     # figure out if we are using MPI
     using_mpi, is_master = _test_mpi()
     print_or_run = (using_mpi and is_master) or not using_mpi
 
-    if print_or_run:
-        print("Watch out! Here comes a firecrown!", flush=True)
-
     if action == 'render':
         if print_or_run:
             with open(config, 'r') as fp:
                 config_str = jinja2.Template(fp.read()).render()
-            print(' \n' + config_str, flush=True)
+            print(config_str, flush=True)
         sys.exit(0)
 
     analysis_id = uuid.uuid4().hex
