@@ -4,7 +4,6 @@ import datetime
 
 import yaml
 import pyccl
-import cosmosis
 import sacc
 
 from ._version import __version__
@@ -37,8 +36,7 @@ def write_metadata(analysis_id, output_dir, config_file):
         'analysis_id': analysis_id,
         'timestamp': datetime.datetime.utcnow().isoformat(),
         'firecrown_version': __version__,
-        'pyccl_version': pyccl_version,
-        'cosmosis-standalone_version': cosmosis_version,
+        'pyccl_version': pyccl.__version__,
         'sacc_version': sacc.__version__,
     }
 
