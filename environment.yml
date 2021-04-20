@@ -11,4 +11,3 @@ dependencies:
  - click
  - jinja2
  - sacc>=0.3,<0.4
- - cosmosis-standalone>=0.2.2
