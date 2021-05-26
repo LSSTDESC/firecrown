@@ -23,12 +23,22 @@ def write_metadata(analysis_id, output_dir, config_file):
         The path to the config file.
     """
 
+    try:
+        pyccl_version = pyccl.__version__
+    except:
+        pyccl_version = "unknown"
+
+    try:
+        cosmosis_version = cosmosis.__version__
+    except:
+        cosmosis_version = "unknown"
+
     metadata = {
         'analysis_id': analysis_id,
         'timestamp': datetime.datetime.utcnow().isoformat(),
         'firecrown_version': __version__,
-        'pyccl_version': pyccl.__version__,
-        'cosmosis-standalone_version': cosmosis.__version__,
+        'pyccl_version': pyccl_version,
+        'cosmosis-standalone_version': cosmosis_version,
         'sacc_version': sacc.__version__,
     }
 
