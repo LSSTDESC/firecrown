@@ -50,7 +50,6 @@ def run(action, config, output, verbose):
     ACTION must be one of:
         render
         compute
-        run-cosmosis
     
     CONFIG must be the name of a Firecrown YAML configuration file."""
 
@@ -84,13 +83,6 @@ def run(action, config, output, verbose):
         cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, _, _, _, _, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike, flush=True)
-
-    elif action == 'run-cosmosis':
-        if 'cosmosis' not in _config:
-            raise ValueError('You must have a `cosmosis` '
-                             'configuration block to run `cosmosis`!')
-
-        firecrown.run_cosmosis(_config, data, output_dir)
 
     # we associate a unique id with each analysis
     # let's write that out with some extra info

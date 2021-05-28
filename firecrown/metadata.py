@@ -27,11 +27,6 @@ def write_metadata(analysis_id, output_dir, config_file):
     except:
         pyccl_version = "unknown"
 
-    try:
-        cosmosis_version = cosmosis.__version__
-    except:
-        cosmosis_version = "unknown"
-
     metadata = {
         'analysis_id': analysis_id,
         'timestamp': datetime.datetime.utcnow().isoformat(),

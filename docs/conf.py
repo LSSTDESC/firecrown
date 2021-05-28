@@ -23,24 +23,6 @@ root_path = abspath(pjoin(this_dir, '../'))
 if os.path.isdir(root_path):
     sys.path.insert(0, root_path)
 
-# on_rtd = os.environ.get('READTHEDOCS', None) == 'True'
-# if on_rtd:
-#     try:
-#         from unittest.mock import MagicMock
-#     except ImportError:
-#         from mock import Mock as MagicMock
-#
-#         class Mock(MagicMock):
-#             @classmethod
-#             def __getattr__(cls, name):
-#                 return MagicMock()
-#
-#     MOCK_MODULES = [
-#         "firecrown.cosmosis.run.cosmosis",
-#         "firecrown.metadata.cosmosis",
-#     ]
-#
-#     sys.modules.update((mod_name, MagicMock()) for mod_name in MOCK_MODULES)
 
 # run api doc
 os.system("./apidoc.sh")
@@ -232,7 +214,7 @@ intersphinx_mapping = {'https://docs.python.org/3': None}
 
 # -- Extension configuration -------------------------------------------------
 
-autodoc_mock_imports = ['pyccl', 'sacc', 'cosmosis']
+autodoc_mock_imports = ['pyccl', 'sacc']
 
 # def autodoc_skip_member_handler(app, what, name, obj, skip, options):
 #     return name.startswith("test_")

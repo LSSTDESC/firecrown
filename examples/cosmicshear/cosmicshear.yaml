@@ -14,29 +14,6 @@ parameters:
   src{{ i }}_delta_z: 0.0
   {% endfor %}
 
-# Defines options when running one of the samplers
-# through cosmosis
-cosmosis:
-  sampler: fisher
-  debug: True
-  quiet: False
-  mpi: False
-  # parameters for individual samplers:
-  test:
-    fatal_errors: True
-  emcee:
-    walkers: 10
-    nsample: 20
-  grid:
-    nsample_dimension: 5
-  fisher:
-    step_size: 0.02
-  # which parameters to vary in the chains
-  parameters:
-    Omega_c: [0.25, 0.27, 0.32]
-    A_s: [2.0e-9, 2.1e-9, 2.2e-9]
-
-
 two_point:
   module: firecrown.ccl.two_point
   sacc_data: cosmicshear.fits
