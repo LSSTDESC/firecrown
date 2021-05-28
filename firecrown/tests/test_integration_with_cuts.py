@@ -63,7 +63,7 @@ def tx_data(tmpdir_factory):
             dv_orig.append(pell)
             ndv_orig.append(npell)
             inds.append(np.ones_like(pell))
-            msk = np.ones_like(pell).astype(np.bool)
+            msk = np.ones_like(pell).astype(bool)
 
             # but only some of it comes back out
             if rng.uniform() < 0.5:
