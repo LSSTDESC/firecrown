@@ -31,6 +31,7 @@ class Statistic(object):
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
     """
+
     def read(self, sacc_data, sources):
         """Read the data for this statistic from the SACC file.
 
@@ -60,12 +61,12 @@ class Statistic(object):
             A dictionary mapping systematic names to their objects. The
             default of `None` corresponds to no systematics.
         """
-        raise NotImplementedError(
-            "Method `compute` is not implemented!")
+        raise NotImplementedError("Method `compute` is not implemented!")
 
 
 class Systematic(object):
     """The systematic (e.g., shear biases, photo-z shifts, etc.)."""
+
     def apply(self, cosmo, params, source_or_statistic):
         """Apply systematics to a source.
 
@@ -78,8 +79,7 @@ class Systematic(object):
         source_or_statistic : a source or statistic object
             The source or statistic to which apply systematics.
         """
-        raise NotImplementedError(
-            "Method `apply` is not implemented!")
+        raise NotImplementedError("Method `apply` is not implemented!")
 
 
 class Source(object):
@@ -93,6 +93,7 @@ class Source(object):
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
     """
+
     def read(self, sacc_data):
         """Read the data for this source from the SACC file.
 
@@ -119,8 +120,7 @@ class Source(object):
             A dictionary mapping systematic names to their objects. The
             default of `None` corresponds to no systematics.
         """
-        raise NotImplementedError(
-            "Method `render` is not implemented!")
+        raise NotImplementedError("Method `render` is not implemented!")
 
 
 class LogLike(object):
@@ -139,6 +139,7 @@ class LogLike(object):
     inv_cov : array-like, shape (n, n)
         The inverse of the covariance matrix.
     """
+
     def read(self, sacc_data, sources, statistics):
         """Read the covariance matrirx for this likelihood from the SACC file.
 
@@ -174,8 +175,7 @@ class LogLike(object):
         loglike : float
             The log-likelihood.
         """
-        raise NotImplementedError(
-            "Method `compute_loglike` is not implemented!")
+        raise NotImplementedError("Method `compute_loglike` is not implemented!")
 
     def assemble_data_vector(self, data):
         """Compute the log-likelihood.

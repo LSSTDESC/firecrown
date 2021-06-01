@@ -7,7 +7,7 @@ from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
 
-__all__ = ['WLSource', 'NumberCountsSource', 'ClusterSource', 'CMBLSource']
+__all__ = ["WLSource", "NumberCountsSource", "ClusterSource", "CMBLSource"]
 
 
 class WLSource(Source):
@@ -57,8 +57,8 @@ class WLSource(Source):
     render : apply systematics to this source and build the
         `pyccl.WeakLensingTracer`
     """
-    def __init__(
-            self, *, sacc_tracer, ia_bias=None, scale=1.0, systematics=None):
+
+    def __init__(self, *, sacc_tracer, ia_bias=None, scale=1.0, systematics=None):
         self.sacc_tracer = sacc_tracer
         self.ia_bias = ia_bias
         self.systematics = systematics or []
@@ -73,8 +73,8 @@ class WLSource(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, 'z').copy().flatten()
-        nz = getattr(tracer, 'nz').copy().flatten()
+        z = getattr(tracer, "z").copy().flatten()
+        nz = getattr(tracer, "nz").copy().flatten()
         inds = np.argsort(z)
         z = z[inds]
         nz = nz[inds]
@@ -109,13 +109,10 @@ class WLSource(Source):
 
         if self.ia_bias is not None:
             tracer = ccl.WeakLensingTracer(
-                cosmo,
-                dndz=(self.z_, self.dndz_),
-                ia_bias=(self.z_, self.ia_bias_))
+                cosmo, dndz=(self.z_, self.dndz_), ia_bias=(self.z_, self.ia_bias_)
+            )
         else:
-            tracer = ccl.WeakLensingTracer(
-                cosmo,
-                dndz=(self.z_, self.dndz_))
+            tracer = ccl.WeakLensingTracer(cosmo, dndz=(self.z_, self.dndz_))
         self.tracer_ = tracer
 
 
@@ -171,9 +168,17 @@ class NumberCountsSource(Source):
     render : apply systematics to this source and build the
         `pyccl.NumberCountsTracer`
     """
+
     def __init__(
-            self, *, sacc_tracer, bias, has_rsd=False,
-            mag_bias=None, scale=1.0, systematics=None):
+        self,
+        *,
+        sacc_tracer,
+        bias,
+        has_rsd=False,
+        mag_bias=None,
+        scale=1.0,
+        systematics=None
+    ):
         self.sacc_tracer = sacc_tracer
         self.bias = bias
         self.has_rsd = has_rsd
@@ -190,8 +195,8 @@ class NumberCountsSource(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, 'z').copy().flatten()
-        nz = getattr(tracer, 'nz').copy().flatten()
+        z = getattr(tracer, "z").copy().flatten()
+        nz = getattr(tracer, "nz").copy().flatten()
         inds = np.argsort(z)
         z = z[inds]
         nz = nz[inds]
@@ -232,13 +237,15 @@ class NumberCountsSource(Source):
                 has_rsd=self.has_rsd,
                 dndz=(self.z_, self.dndz_),
                 bias=(self.z_, self.bias_),
-                mag_bias=(self.z_, self.mag_bias_))
+                mag_bias=(self.z_, self.mag_bias_),
+            )
         else:
             tracer = ccl.NumberCountsTracer(
                 cosmo,
                 has_rsd=self.has_rsd,
                 dndz=(self.z_, self.dndz_),
-                bias=(self.z_, self.bias_))
+                bias=(self.z_, self.bias_),
+            )
         self.tracer_ = tracer
 
 
@@ -315,6 +322,7 @@ class ClusterSource(Source):
     render : apply systematics to this source, build the
         `pyccl.NumberCountsTracer`, and compute the linear bias
     """
+
     def __init__(self, *, sacc_tracer, systematics=None):
         self.sacc_tracer = sacc_tracer
         self.systematics = systematics or []
@@ -329,17 +337,17 @@ class ClusterSource(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, 'z').copy().flatten()
-        nz = getattr(tracer, 'nz').copy().flatten()
+        z = getattr(tracer, "z").copy().flatten()
+        nz = getattr(tracer, "nz").copy().flatten()
         inds = np.argsort(z)
         z = z[inds]
         nz = nz[inds]
         self.z_orig = z
         self.dndz_orig = nz
         self.dndz_interp = Akima1DInterpolator(self.z_orig, self.dndz_orig)
-        self.lnlam_min_orig = tracer.metadata['lnlam_min']
-        self.lnlam_max_orig = tracer.metadata['lnlam_max']
-        self.area_sr_orig = tracer.metadata['area_sd'] * (np.pi/180.0)**2
+        self.lnlam_min_orig = tracer.metadata["lnlam_min"]
+        self.lnlam_max_orig = tracer.metadata["lnlam_max"]
+        self.area_sr_orig = tracer.metadata["area_sd"] * (np.pi / 180.0) ** 2
 
     def render(self, cosmo, params, systematics=None):
         """
@@ -404,6 +412,7 @@ class CMBLSource(Source):
     render : apply systematics to this source and build the
         `pyccl.CMBLSource`
     """
+
     def __init__(self, *, sacc_tracer, scale=1.0, systematics=None):
         self.sacc_tracer = sacc_tracer
         self.scale = scale
@@ -441,5 +450,5 @@ class CMBLSource(Source):
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        tracer = ccl.CMBLensingTracer(cosmo, 1100.)
+        tracer = ccl.CMBLensingTracer(cosmo, 1100.0)
         self.tracer_ = tracer

@@ -26,7 +26,8 @@ RESERVED_CCL_PARAMS = (
     "m_nu",
     "m_nu_type",
     "mu_0",
-    "sigma_0")
+    "sigma_0",
+)
 
 # FIXME: these params are not supported right now
 # df_mg (array_like, optional): Perturbations to the GR growth rate as

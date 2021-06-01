@@ -36,10 +36,9 @@ def compute_loglike(*, cosmo, data):
 
     analyses = list(set(list(data.keys())) - set(FIRECROWN_RESERVED_NAMES))
     for analysis in analyses:
-        _ll, _meas, _pred, _cov, _inv_cov, _stats = data[analysis]['eval'](
-            cosmo=cosmo,
-            parameters=data['parameters'],
-            data=data[analysis]['data'])
+        _ll, _meas, _pred, _cov, _inv_cov, _stats = data[analysis]["eval"](
+            cosmo=cosmo, parameters=data["parameters"], data=data[analysis]["data"]
+        )
         loglike[analysis] = _ll
         statistics[analysis] = _stats
         meas[analysis] = _meas

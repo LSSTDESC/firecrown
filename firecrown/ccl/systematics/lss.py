@@ -3,7 +3,7 @@ import numpy as np
 
 from ..core import Systematic
 
-__all__ = ['LinearBiasSystematic', 'MagnificationBiasSystematic']
+__all__ = ["LinearBiasSystematic", "MagnificationBiasSystematic"]
 
 
 class LinearBiasSystematic(Systematic):
@@ -25,6 +25,7 @@ class LinearBiasSystematic(Systematic):
     -------
     apply : apply the systematic to a source
     """
+
     def __init__(self, alphaz, alphag, z_piv):
         self.alphaz = alphaz
         self.alphag = alphag
@@ -42,11 +43,8 @@ class LinearBiasSystematic(Systematic):
         source : a source object
             The source to which apply the shear bias.
         """
-        pref = (
-            ((1.0 + source.z_) / (1.0 + params[self.z_piv])) **
-            params[self.alphaz])
-        pref *= ccl.growth_factor(
-                cosmo, 1.0 / (1.0 + source.z_)) ** params[self.alphag]
+        pref = ((1.0 + source.z_) / (1.0 + params[self.z_piv])) ** params[self.alphaz]
+        pref *= ccl.growth_factor(cosmo, 1.0 / (1.0 + source.z_)) ** params[self.alphag]
         source.bias_ *= pref
 
 
@@ -68,6 +66,7 @@ class MagnificationBiasSystematic(Systematic):
     -------
     apply : apply the systematic to a source
     """
+
     def __init__(self, r_lim, sig_c, eta, z_c, z_m):
         self.r_lim = r_lim
         self.sig_c = sig_c
@@ -93,6 +92,8 @@ class MagnificationBiasSystematic(Systematic):
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
         s = (
-            params[self.eta] / params[self.r_lim] - 3 * params[self.z_m] /
-            z_bar + 1.5 * params[self.z_m] * np.power(z / z_bar, 1.5) / z_bar)
+            params[self.eta] / params[self.r_lim]
+            - 3 * params[self.z_m] / z_bar
+            + 1.5 * params[self.z_m] * np.power(z / z_bar, 1.5) / z_bar
+        )
         source.mag_bias_ *= s / np.log(10)

@@ -82,9 +82,9 @@ angles = """\
 #   ...
 
 bin_limits = {}
-for line in angles.split('\n'):
+for line in angles.split("\n"):
     items = line.split()
-    keys = items[1].replace('angle_range_', '').split('_')
+    keys = items[1].replace("angle_range_", "").split("_")
     topkey = keys[0]
     binkeys = (int(keys[1]), int(keys[2]))
     if topkey not in bin_limits:
@@ -110,100 +110,100 @@ tot_msk = []
 
 sacc_data = sacc.Sacc()
 
-with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
+with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
     # nz_lens
-    dndz = data['nz_lens'].read()
-    for i in range(1, n_lens+1):
-        sacc_data.add_tracer('NZ', 'lens%d' % (i-1), dndz['Z_MID'], dndz['BIN%d' % i])
+    dndz = data["nz_lens"].read()
+    for i in range(1, n_lens + 1):
+        sacc_data.add_tracer("NZ", "lens%d" % (i - 1), dndz["Z_MID"], dndz["BIN%d" % i])
 
     # nz_src
-    dndz = data['nz_source'].read()
-    for i in range(1, n_srcs+1):
-        sacc_data.add_tracer('NZ', 'src%d' % (i-1), dndz['Z_MID'], dndz['BIN%d' % i])
+    dndz = data["nz_source"].read()
+    for i in range(1, n_srcs + 1):
+        sacc_data.add_tracer("NZ", "src%d" % (i - 1), dndz["Z_MID"], dndz["BIN%d" % i])
 
     # xip
-    xip = data['xip'].read()
-    for i in range(1, n_srcs+1):
-        for j in range(i, n_srcs+1):
-            theta_min, theta_max = bin_limits['xip'][(i, j)]
+    xip = data["xip"].read()
+    for i in range(1, n_srcs + 1):
+        for j in range(i, n_srcs + 1):
+            theta_min, theta_max = bin_limits["xip"][(i, j)]
 
-            ij_msk = (xip['BIN1'] == i) & (xip['BIN2'] == j)
+            ij_msk = (xip["BIN1"] == i) & (xip["BIN2"] == j)
             xip_ij = xip[ij_msk]
-            msk = (xip_ij['ANG'] > theta_min) & (xip_ij['ANG'] < theta_max)
+            msk = (xip_ij["ANG"] > theta_min) & (xip_ij["ANG"] < theta_max)
 
             tot_msk.extend(msk.tolist())
 
             sacc_data.add_theta_xi(
-                'galaxy_shear_xi_plus',
-                'src%d' % (i-1),
-                'src%d' % (j-1),
-                xip_ij['ANG'][msk],
-                xip_ij['VALUE'][msk])
+                "galaxy_shear_xi_plus",
+                "src%d" % (i - 1),
+                "src%d" % (j - 1),
+                xip_ij["ANG"][msk],
+                xip_ij["VALUE"][msk],
+            )
 
     # xim
-    xim = data['xim'].read()
-    for i in range(1, n_srcs+1):
-        for j in range(i, n_srcs+1):
-            theta_min, theta_max = bin_limits['xim'][(i, j)]
+    xim = data["xim"].read()
+    for i in range(1, n_srcs + 1):
+        for j in range(i, n_srcs + 1):
+            theta_min, theta_max = bin_limits["xim"][(i, j)]
 
-            ij_msk = (xim['BIN1'] == i) & (xim['BIN2'] == j)
+            ij_msk = (xim["BIN1"] == i) & (xim["BIN2"] == j)
             xim_ij = xim[ij_msk]
-            msk = (xim_ij['ANG'] > theta_min) & (xim_ij['ANG'] < theta_max)
+            msk = (xim_ij["ANG"] > theta_min) & (xim_ij["ANG"] < theta_max)
 
             tot_msk.extend(msk.tolist())
 
             sacc_data.add_theta_xi(
-                'galaxy_shear_xi_minus',
-                'src%d' % (i-1),
-                'src%d' % (j-1),
-                xim_ij['ANG'][msk],
-                xim_ij['VALUE'][msk])
+                "galaxy_shear_xi_minus",
+                "src%d" % (i - 1),
+                "src%d" % (j - 1),
+                xim_ij["ANG"][msk],
+                xim_ij["VALUE"][msk],
+            )
 
     # gammat
-    gammat = data['gammat'].read()
-    for i in range(1, n_lens+1):
-        for j in range(1, n_srcs+1):
-            theta_min, theta_max = bin_limits['gammat'][(i, j)]
+    gammat = data["gammat"].read()
+    for i in range(1, n_lens + 1):
+        for j in range(1, n_srcs + 1):
+            theta_min, theta_max = bin_limits["gammat"][(i, j)]
 
-            ij_msk = (gammat['BIN1'] == i) & (gammat['BIN2'] == j)
+            ij_msk = (gammat["BIN1"] == i) & (gammat["BIN2"] == j)
             gammat_ij = gammat[ij_msk]
-            msk = (
-                (gammat_ij['ANG'] > theta_min) &
-                (gammat_ij['ANG'] < theta_max))
+            msk = (gammat_ij["ANG"] > theta_min) & (gammat_ij["ANG"] < theta_max)
 
             tot_msk.extend(msk.tolist())
 
             sacc_data.add_theta_xi(
-                'galaxy_shearDensity_xi_t',
-                'lens%d' % (i-1),
-                'src%d' % (j-1),
-                gammat_ij['ANG'][msk],
-                gammat_ij['VALUE'][msk])
+                "galaxy_shearDensity_xi_t",
+                "lens%d" % (i - 1),
+                "src%d" % (j - 1),
+                gammat_ij["ANG"][msk],
+                gammat_ij["VALUE"][msk],
+            )
 
     # wtheta
-    wtheta = data['wtheta'].read()
-    for i in range(1, n_lens+1):
-        theta_min, theta_max = bin_limits['wtheta'][(i, i)]
+    wtheta = data["wtheta"].read()
+    for i in range(1, n_lens + 1):
+        theta_min, theta_max = bin_limits["wtheta"][(i, i)]
 
-        ii_msk = (wtheta['BIN1'] == i) & (wtheta['BIN2'] == i)
+        ii_msk = (wtheta["BIN1"] == i) & (wtheta["BIN2"] == i)
         wtheta_ii = wtheta[ii_msk]
-        msk = (
-            (wtheta_ii['ANG'] > theta_min) &
-            (wtheta_ii['ANG'] < theta_max))
+        msk = (wtheta_ii["ANG"] > theta_min) & (wtheta_ii["ANG"] < theta_max)
 
         tot_msk.extend(msk.tolist())
 
         sacc_data.add_theta_xi(
-            'galaxy_density_xi',
-            'lens%d' % (i-1),
-            'lens%d' % (i-1),
-            wtheta_ii['ANG'][msk],
-            wtheta_ii['VALUE'][msk])
+            "galaxy_density_xi",
+            "lens%d" % (i - 1),
+            "lens%d" % (i - 1),
+            wtheta_ii["ANG"][msk],
+            wtheta_ii["VALUE"][msk],
+        )
 
     # covmat
     msk_inds = np.where(tot_msk)[0]
     n_cov = np.sum(tot_msk)
-    old_cov = data['COVMAT'].read()
+    old_cov = data["COVMAT"].read()
     new_cov = np.zeros((np.sum(tot_msk), np.sum(tot_msk)))
 
     for new_cov_i, old_cov_i in enumerate(msk_inds):
@@ -212,4 +212,4 @@ with fitsio.FITS('2pt_NG_mcal_1110.fits') as data:
 
     sacc_data.add_covariance(new_cov)
 
-sacc_data.save_fits('des_y1_3x2pt_sacc_data.fits', overwrite=True)
+sacc_data.save_fits("des_y1_3x2pt_sacc_data.fits", overwrite=True)

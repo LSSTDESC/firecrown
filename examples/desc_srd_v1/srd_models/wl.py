@@ -70,34 +70,20 @@ def _lf_all(lnL, z, phi0=9.4e-3, Mstar=-20.70, alpha=-1.23, P=1.8, Q=0.7):
 
 @functools.lru_cache(maxsize=1024)
 def _compute_red_frac_z_Az(z, dlum, beta_ia, lpiv_beta_ia):
-    low_lim = np.log(_mag_to_lum(_abs_mag_lim(
-        MLIM,
-        dlum,
-        float(kcorr(z) + ecorr(z)))))
+    low_lim = np.log(_mag_to_lum(_abs_mag_lim(MLIM, dlum, float(kcorr(z) + ecorr(z)))))
     up_lim = MAX_LNL
 
     # the factors below are from eqns 24 and 25 of KEB16
-    red_intg = scipy.integrate.quad(
-        _lf_red,
-        low_lim,
-        up_lim,
-        args=(z,))
+    red_intg = scipy.integrate.quad(_lf_red, low_lim, up_lim, args=(z,))
 
-    all_intg = scipy.integrate.quad(
-        _lf_all,
-        low_lim,
-        up_lim,
-        args=(z,))
+    all_intg = scipy.integrate.quad(_lf_all, low_lim, up_lim, args=(z,))
 
     def _func(lnL):
         L = np.exp(np.clip(lnL, None, MAX_LNL))
         # factor of L at the end is for doing the integral in lnL
         return _lf_red(lnL, z) * np.power(L / lpiv_beta_ia, beta_ia) * L
 
-    red_wgt_intg = scipy.integrate.quad(
-        _func,
-        low_lim,
-        up_lim)
+    red_wgt_intg = scipy.integrate.quad(_func, low_lim, up_lim)
 
     return red_intg[0] / all_intg[0], red_wgt_intg[0] / red_intg[0]
 
@@ -125,6 +111,7 @@ class KEBNLASystematic(Systematic):
     -------
     apply : apply the systematic to a source
     """
+
     def __init__(self, eta_ia, eta_ia_highz, beta_ia):
         self.eta_ia = eta_ia
         self.eta_ia_highz = eta_ia_highz
@@ -151,20 +138,22 @@ class KEBNLASystematic(Systematic):
         for z in source.z_:
             dlum = ccl.luminosity_distance(cosmo, 1 / (1.0 + z))
             rf, az = _compute_red_frac_z_Az(
-                z, dlum, params[self.beta_ia], self._lpiv_beta_ia)
+                z, dlum, params[self.beta_ia], self._lpiv_beta_ia
+            )
 
             # eqn 7 of KEB16 without A0 (already in ia_bias)
-            az_low = (
-                az *
-                np.power((1 + z) / (1 + self._zpiv_eta_ia),
-                         params[self.eta_ia]))
+            az_low = az * np.power(
+                (1 + z) / (1 + self._zpiv_eta_ia), params[self.eta_ia]
+            )
 
             # eqn 8 of KEB16
             az = az_low * (
-                1.0 * (z < self._zpiv_eta_ia_highz) +
-                np.power((1 + z) / (1 + self._zpiv_eta_ia_highz),
-                         params[self.eta_ia_highz]) * (
-                            z > self._zpiv_eta_ia_highz))
+                1.0 * (z < self._zpiv_eta_ia_highz)
+                + np.power(
+                    (1 + z) / (1 + self._zpiv_eta_ia_highz), params[self.eta_ia_highz]
+                )
+                * (z > self._zpiv_eta_ia_highz)
+            )
 
             ia_bias.append(az * rf)
 
@@ -190,6 +179,7 @@ class DESCSRDv1MultiplicativeShearBias(Systematic):
     -------
     apply : apply the systematic to a source
     """
+
     def __init__(self, m):
         self.m = m
         self._zmax = 1.33  # set in stone now and forever
@@ -213,6 +203,5 @@ class DESCSRDv1MultiplicativeShearBias(Systematic):
             The source to which apply the shear bias.
         """
         nrm = np.sum(source.dndz_)
-        zfac = np.sum(
-            (2.0 * source.z_ - self._zmax) / self._zmax * source.dndz_) / nrm
-        source.scale_ *= (1.0 + params[self.m] * zfac)
+        zfac = np.sum((2.0 * source.z_ - self._zmax) / self._zmax * source.dndz_) / nrm
+        source.scale_ *= 1.0 + params[self.m] * zfac

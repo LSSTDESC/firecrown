@@ -46,7 +46,7 @@ def test_powerlaw_mor_systematic():
 
 def test_tophat_selection_function_systematic():
     def dndz_interp_(z):
-        return 0.5/z
+        return 0.5 / z
 
     src = DummySource()
     src.lnlam_min_ = -12
@@ -69,8 +69,8 @@ def test_tophat_selection_function_systematic():
     lnm_max = src.inv_mor_(src.lnlam_max_, 0.5)
 
     assert np.array_equal(
-        src.selfunc_((lnm_min + lnm_max)/2, 0.5),
-        np.atleast_2d(0.5 / (1/0.5 - 1)),
+        src.selfunc_((lnm_min + lnm_max) / 2, 0.5),
+        np.atleast_2d(0.5 / (1 / 0.5 - 1)),
     )
 
     assert np.array_equal(src.selfunc_(lnm_min - 10, 0.5), np.atleast_2d(0))

@@ -2,7 +2,7 @@ import pyccl as ccl
 
 from ..core import Systematic
 
-__all__ = ['MultiplicativeShearBias', 'LinearAlignmentSystematic']
+__all__ = ["MultiplicativeShearBias", "LinearAlignmentSystematic"]
 
 
 class MultiplicativeShearBias(Systematic):
@@ -19,6 +19,7 @@ class MultiplicativeShearBias(Systematic):
     -------
     apply : appaly the systematic to a source
     """
+
     def __init__(self, m):
         self.m = m
 
@@ -35,7 +36,7 @@ class MultiplicativeShearBias(Systematic):
         source : a source object
             The source to which apply the shear bias.
         """
-        source.scale_ *= (1.0 + params[self.m])
+        source.scale_ *= 1.0 + params[self.m]
 
 
 class LinearAlignmentSystematic(Systematic):
@@ -60,6 +61,7 @@ class LinearAlignmentSystematic(Systematic):
     -------
     apply : apply the systematic to a source
     """
+
     def __init__(self, alphaz, alphag, z_piv):
         self.alphaz = alphaz
         self.alphag = alphag
@@ -77,9 +79,8 @@ class LinearAlignmentSystematic(Systematic):
         source : a source object
             The source to which apply the shear bias.
         """
-        pref = (
-            ((1.0 + source.z_) / (1.0 + params[self.z_piv])) **
-            params[self.alphaz])
-        pref *= ccl.growth_factor(
-                cosmo, 1.0 / (1.0 + source.z_)) ** (params[self.alphag]-1)
+        pref = ((1.0 + source.z_) / (1.0 + params[self.z_piv])) ** params[self.alphaz]
+        pref *= ccl.growth_factor(cosmo, 1.0 / (1.0 + source.z_)) ** (
+            params[self.alphag] - 1
+        )
         source.ia_bias_ *= pref
