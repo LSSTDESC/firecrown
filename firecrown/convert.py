@@ -3,13 +3,13 @@ from abc import ABC, abstractmethod
 from pprint import pprint
 
 
-def firecrown_convert_builder(input_style, **kwargs):
+def firecrown_convert_builder(*, input_style, **kwargs):
     if input_style == "CAMB":
         return FirecrownConvertCAMB(**kwargs)
     elif input_style == "CLASS":
         return FirecrownConvertCLASS(**kwargs)
     else:
-        raise ValueError(f'style must be "CAMB" or "CLASS", not {style}')
+        raise ValueError(f'input_style must be "CAMB" or "CLASS", not {input_style}')
 
 
 class FirecrownConvert(ABC):
@@ -83,6 +83,15 @@ class FirecrownConvert(ABC):
             ...
         """
         pass
+
+
+class FirecrownConvertCLASS(FirecrownConvert):
+    """
+    This class is not yet implemented; this stub is here to satisfy IDEs that
+    complain about using the names of missing classes.
+    """
+
+    pass
 
 
 class FirecrownConvertCAMB(FirecrownConvert):
