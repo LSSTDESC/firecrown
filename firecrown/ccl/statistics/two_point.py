@@ -11,14 +11,14 @@ from ..core import Statistic
 # a value error
 SACC_DATA_TYPE_TO_CCL_KIND = {
     "galaxy_density_cl": 'cl',
-    "galaxy_density_xi": 'gg',
+    "galaxy_density_xi": 'NN',
     "galaxy_shearDensity_cl_e": 'cl',
-    "galaxy_shearDensity_xi_t": 'gl',
+    "galaxy_shearDensity_xi_t": 'NG',
     "galaxy_shear_cl_ee": 'cl',
-    "galaxy_shear_xi_minus": 'l-',
-    "galaxy_shear_xi_plus": 'l+',
-    "cmbGalaxy_convergenceDensity_xi": 'gg',
-    "cmbGalaxy_convergenceShear_xi_t": 'gl'
+    "galaxy_shear_xi_minus": 'GG-',
+    "galaxy_shear_xi_plus": 'GG+',
+    "cmbGalaxy_convergenceDensity_xi": 'NN',
+    "cmbGalaxy_convergenceShear_xi_t": 'NG'
 }
 
 
@@ -266,7 +266,7 @@ class TwoPointStatistic(Statistic):
                 cosmo, tuple(tracers), tuple(ells.tolist()))
             self.predicted_statistic_ = ccl.correlation(
                 cosmo, ells, cells, self.ell_or_theta_ / 60,
-                corr_type=self.ccl_kind) * self.scale_
+                type=self.ccl_kind) * self.scale_
 
         systematics = systematics or {}
         for systematic in self.systematics:
