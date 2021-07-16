@@ -1,9 +1,17 @@
 from cosmosis.datablock import option_section
+from cosmosis.datablock import names as section_names
+
 import numpy as np
 import firecrown
 from firecrown.convert import firecrown_convert_builder
 
+from firecrown.connector.mapping import from_cosmosis_camb
+
 import logging
+import pprint
+
+
+likes = section_names.likelihoods
 
 logging.basicConfig(
     filename="debug.log",
@@ -28,6 +36,8 @@ class FirecrownLikelihood:
         logging.debug("FirecrownLikelihood created.")
         logging.debug(self)
         logging.debug(f"Parameters are: {self.data['parameters']}")
+        logging.debug(f"Priors are: {self.data['priors']}")
+        logging.debug(f"two_point keys are: {self.data['two_point'].keys()}")
 
         # TODO: CCLPrecisionParameters object instead of this glue code.
         # Consider migrating this to CCL itself.
@@ -52,6 +62,7 @@ class FirecrownLikelihood:
         return f"Firecrown object with keys: {list(self.data.keys())}"
 
     def execute(self, sample):
+        logging.debug("Entered cosmosis.likelihood.execute")
         # We have to make a new ccl object on each sample.
         # Get CAMB output; look at ccl.get_requirements to see what is required.
 
@@ -66,8 +77,29 @@ class FirecrownLikelihood:
             for name in cosmological_parameter_names
         }
 
-        cosmo = self._make_ccl_cosmology(sample)
-        likelihood = firecrown.compute_loglike(cosmo=cosmo, data=self.data)
+        logging.debug(f"We have {len(cosmological_params)} cosmological parameters")
+        logging.debug("Cosmological params from CAMB are:")
+        logging.debug(pprint.pformat(cosmological_params))
+        cosmological_params_for_ccl = from_cosmosis_camb(cosmological_params)
+        logging.debug("Cosmological params for CCL are:")
+        logging.debug(pprint.pformat(cosmological_params_for_ccl.__dict__))
+
+        # TODO:
+        #   1. figure out if we were using CAMB or CLASS to do Boltzmann calculations
+        #   2. convert cosmological_params (as they came from CosmoSIS, which either means CAMB or CLASS ... right?)
+        #      to CCL format, to be fed to firecrown.compute_loglike. Create a CCLCosmologicalParams class or dataclass for this.
+        #      This class should be constructible from the same set of parameters as the pyccl.core.Cosmology (or xxCalculator?)
+        #      class. All keyword args for __init__? That would allow initialzation from a splatted dictionary. Add a factory
+        #      function from a pyccl.core.Cosmology object itself?
+        #   3. Get the Boltzmann calculations from the datablock; convert from CAMB format to CCL calculator mode versions. Need
+        #      to get units right, need to reverse the order of entries in power spectrum. NO need to make things calculated by
+        #      CCL visible to CosmoSIS at this stage (except for the likelihood).
+        #   4. Call firecrown.compute_loglike
+        #   5. put the resulting likelihood into the datablock
+
+        # lnlike = firecrown.compute_loglike(cosmo=cosmo, data=self.data)
+        lnlike = -0.01
+        sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
         return 0
 
     def cleanup(self):
