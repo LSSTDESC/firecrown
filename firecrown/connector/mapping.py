@@ -41,12 +41,12 @@ class PyCCLCosmologyConstants:
         sigma_8=None,
         n_s,
         Omega_k,
-        Omega_g=None,
         Neff,
         m_nu,
         m_nu_type,
         w0,
         wa,
+        T_CMB,
     ):
         """Construct an object suitable for use in constructing a pyccl.core.CosmologyCalculator. See the
         documentation of that class for an explanation of the choices and meanings of default values of
@@ -68,13 +68,13 @@ class PyCCLCosmologyConstants:
 
         self.n_s = require_float(n_s)
         self.Omega_k = require_float(Omega_k)
-        self.Omega_g = Omega_g
+        self.Omega_g = None
         self.Neff = require_float(Neff)
         self.m_nu = require_float(m_nu)
         self.m_nu_type = require_string(m_nu_type)
         self.w0 = require_float(w0)
         self.wa = require_float(wa)
-        self.T_CMB = None
+        self.T_CMB = require_float(T_CMB)
 
 
 def from_cosmosis_camb(cosmosis_params: dict):
@@ -92,7 +92,6 @@ def from_cosmosis_camb(cosmosis_params: dict):
     sigma_8 = cosmosis_params["sigma_8"]
     n_s = cosmosis_params["n_s"]
     Omega_k = cosmosis_params["omega_k"]
-    Omega_g = None
     Neff = cosmosis_params.get("delta_neff", 0.0) + 3.0
     m_nu = 0.0
     m_nu_type = "normal"
@@ -105,10 +104,10 @@ def from_cosmosis_camb(cosmosis_params: dict):
         sigma_8=sigma_8,
         n_s=n_s,
         Omega_k=Omega_k,
-        Omega_g=Omega_g,
         Neff=Neff,
         m_nu=m_nu,
         m_nu_type=m_nu_type,
         w0=w0,
         wa=-wa,
+        T_CMB=2.7255, # Modify CosmoSIS to make this available in the datablock
     )
