@@ -63,14 +63,16 @@ class PyCCLCosmologyConstants:
             raise ValueError("Exactly one of A_s and sigma_8 must be supplied")
         if sigma_8 is None:
             self.A_s = require_float(A_s)
+            self.sigma_a = None
         else:
+            self.A_s = None
             self.sigma_8 = require_float(sigma_8)
 
         self.n_s = require_float(n_s)
         self.Omega_k = require_float(Omega_k)
         self.Omega_g = None
         self.Neff = require_float(Neff)
-        self.m_nu = require_float(m_nu)
+        self.m_nu = 0.0 # TODO: Should this come from "omega_nu" in CosmoSIS?
         self.m_nu_type = require_string(m_nu_type)
         self.w0 = require_float(w0)
         self.wa = require_float(wa)
@@ -109,5 +111,5 @@ def from_cosmosis_camb(cosmosis_params: dict):
         m_nu_type=m_nu_type,
         w0=w0,
         wa=-wa,
-        T_CMB=2.7255, # Modify CosmoSIS to make this available in the datablock
+        T_CMB=2.7255,  # Modify CosmoSIS to make this available in the datablock
     )
