@@ -10,7 +10,8 @@ cosmo = ccl.Cosmology(
     wa=0.0,
     A_s=2.1e-9,
     n_s=0.96,
-    h=0.67)
+    h=0.67,
+)
 
 seed = 42
 rng = np.random.RandomState(seed=seed)
@@ -21,13 +22,11 @@ sacc_data = sacc.Sacc()
 tracers = []
 for i, mn in enumerate([0.25, 0.75]):
     z = np.linspace(0, 2, 50) + 0.05
-    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
 
-    sacc_data.add_tracer('NZ', 'trc%d' % i, z, dndz)
+    sacc_data.add_tracer("NZ", "trc%d" % i, z, dndz)
 
-    tracers.append(ccl.WeakLensingTracer(
-        cosmo,
-        dndz=(z, dndz)))
+    tracers.append(ccl.WeakLensingTracer(cosmo, dndz=(z, dndz)))
 
 dv = []
 ndv = []
@@ -37,8 +36,7 @@ for i in range(len(tracers)):
         pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell)
         npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
-        sacc_data.add_ell_cl(
-            'galaxy_shear_cl_ee', 'trc%d' % i, 'trc%d' % j, ell, npell)
+        sacc_data.add_ell_cl("galaxy_shear_cl_ee", "trc%d" % i, "trc%d" % j, ell, npell)
         dv.append(pell)
         ndv.append(npell)
 
@@ -50,4 +48,4 @@ for i in range(len(dv)):
 
 sacc_data.add_covariance(cov)
 
-sacc_data.save_fits('cosmicshear.fits', overwrite=True)
+sacc_data.save_fits("cosmicshear.fits", overwrite=True)

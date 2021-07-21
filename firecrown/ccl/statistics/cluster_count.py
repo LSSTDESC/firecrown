@@ -37,9 +37,16 @@ class ClusterCountStatistic(Statistic):
     predicted_statistic_ : np.ndarray
         The final prediction for the statistic. Set after `compute` is called.
     """
+
     def __init__(
-        self, sources, mass_def, mass_func, halo_bias,
-        systematics=None, na=256, nlog10M=256
+        self,
+        sources,
+        mass_def,
+        mass_func,
+        halo_bias,
+        systematics=None,
+        na=256,
+        nlog10M=256,
     ):
         self.sources = sources
         self.mass_def = mass_def
@@ -52,7 +59,8 @@ class ClusterCountStatistic(Statistic):
         if len(sources) != 1:
             raise ValueError(
                 "A firecrown count statistic should only have one "
-                "source, you sent '%s'!" % self.sources)
+                "source, you sent '%s'!" % self.sources
+            )
 
     def read(self, sacc_data, sources):
         """Read the data for this statistic from the SACC file.
@@ -70,28 +78,25 @@ class ClusterCountStatistic(Statistic):
         if len(tracers) != 1:
             raise RuntimeError(
                 "A firecrown count statistic should only have one "
-                "tracer, you sent '%s'!" % self.sources)
+                "tracer, you sent '%s'!" % self.sources
+            )
 
-        counts = sacc_data.get_data_points(
-            data_type='count',
-            tracers=tracers
-        )
+        counts = sacc_data.get_data_points(data_type="count", tracers=tracers)
 
         self.sacc_tracers = tuple(tracers)
 
         if len(counts) > 1:
             raise ValueError(
-                "Only one data point per tracer can be included "
-                "for counts!"
+                "Only one data point per tracer can be included " "for counts!"
             )
 
         if len(counts) == 0:
             _stat = np.zeros(1)
             self.sacc_inds = None
         else:
-            self.sacc_inds = np.atleast_1d(sacc_data.indices(
-                "count",
-                self.sacc_tracers))
+            self.sacc_inds = np.atleast_1d(
+                sacc_data.indices("count", self.sacc_tracers)
+            )
             _stat = counts[0].value
 
         self._stat = _stat.copy()
@@ -120,11 +125,14 @@ class ClusterCountStatistic(Statistic):
         hbf = hbf(cosmo, mdef, mass_def_strict=False)
 
         hmc = ccl.halos.HMCalculator(
-            cosmo, hmf, hbf, mdef,
+            cosmo,
+            hmf,
+            hbf,
+            mdef,
             nlog10M=self.nlog10M,
             # not using splint here will result in very poor integrations and
             # inaccurate stats
-            integration_method_M='spline',
+            integration_method_M="spline",
         )
 
         _src = sources[self.sources[0]]
@@ -140,7 +148,7 @@ class ClusterCountStatistic(Statistic):
             _sel,
             amin=1.0 / (1.0 + np.max(_src.z_)),
             amax=1.0 / (1.0 + np.min(_src.z_)),
-            na=self.na
+            na=self.na,
         )
         cnts *= _src.area_sr_
 
@@ -150,7 +158,7 @@ class ClusterCountStatistic(Statistic):
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        if not hasattr(self, '_stat'):
+        if not hasattr(self, "_stat"):
             self.measured_statistic_ = self.predicted_statistic_
         else:
             self.measured_statistic_ = self._stat.copy()

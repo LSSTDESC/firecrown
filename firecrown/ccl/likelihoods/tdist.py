@@ -33,6 +33,7 @@ class TdistLogLike(LogLike):
     -------
     compute_loglike : compute the log-likelihood
     """
+
     def __init__(self, data_vector, nu):
         self.data_vector = data_vector
         self.nu = nu

@@ -22,21 +22,25 @@ def test_cluster_count_sacc(tmpdir):
         wa=0.0,
         sigma8=0.8,
         n_s=0.96,
-        h=0.67)
+        h=0.67,
+    )
     cosmo = ccl.Cosmology(**params)
 
     mn = 0.5
     z = np.linspace(0, 2, 50)
-    dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+    dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
     nrm = np.max(dndz)
     dndz /= nrm
     sacc_data.add_tracer(
-        'NZ', 'trc1', z, dndz,
+        "NZ",
+        "trc1",
+        z,
+        dndz,
         metadata={
             "lnlam_min": 14,
             "lnlam_max": 16,
-            "area_sd": 15.1 * (180.0/np.pi)**2
-        }
+            "area_sd": 15.1 * (180.0 / np.pi) ** 2,
+        },
     )
 
     intp = Akima1DInterpolator(z, dndz)
@@ -55,16 +59,12 @@ def test_cluster_count_sacc(tmpdir):
         vals[~msk, :] = 0
         return vals
 
-    mdef = ccl.halos.MassDef(200, 'matter')
-    hmf = ccl.halos.MassFuncTinker10(cosmo, mdef,
-                                     mass_def_strict=False)
-    hbf = ccl.halos.HaloBiasTinker10(cosmo, mass_def=mdef,
-                                     mass_def_strict=False)
+    mdef = ccl.halos.MassDef(200, "matter")
+    hmf = ccl.halos.MassFuncTinker10(cosmo, mdef, mass_def_strict=False)
+    hbf = ccl.halos.HaloBiasTinker10(cosmo, mass_def=mdef, mass_def_strict=False)
 
     hmc = ccl.halos.HMCalculator(
-        cosmo, hmf, hbf, mdef,
-        integration_method_M='spline',
-        nlog10M=256
+        cosmo, hmf, hbf, mdef, integration_method_M="spline", nlog10M=256
     )
 
     true_cnts = hmc.number_counts(cosmo, _sel, amin=0.333333, amax=1, na=256)
@@ -73,7 +73,7 @@ def test_cluster_count_sacc(tmpdir):
     sacc_data.add_data_point(
         "count",
         ("trc1",),
-        true_cnts/10,
+        true_cnts / 10,
     )
 
     assert true_cnts > 0
@@ -101,4 +101,4 @@ def test_cluster_count_sacc(tmpdir):
     stat.compute(cosmo, {}, sources)
 
     assert np.allclose(stat.predicted_statistic_, true_cnts)
-    assert np.allclose(stat.measured_statistic_, true_cnts/10)
+    assert np.allclose(stat.measured_statistic_, true_cnts / 10)

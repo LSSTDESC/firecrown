@@ -25,7 +25,8 @@ def tx_data(tmpdir_factory):
         sigma8=0.8,
         n_s=0.96,
         h=0.67,
-        transfer_function='eisenstein_hu')
+        transfer_function="eisenstein_hu",
+    )
 
     seed = 42
     rng = np.random.RandomState(seed=seed)
@@ -34,13 +35,11 @@ def tx_data(tmpdir_factory):
     tracers = []
     for i, mn in enumerate([0.25, 0.75]):
         z = np.linspace(0, 2, 50)
-        dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
+        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
 
-        sacc_data.add_tracer('NZ', 'trc%d' % i, z, dndz)
+        sacc_data.add_tracer("NZ", "trc%d" % i, z, dndz)
 
-        tracers.append(ccl.WeakLensingTracer(
-            cosmo,
-            dndz=(z, dndz)))
+        tracers.append(ccl.WeakLensingTracer(cosmo, dndz=(z, dndz)))
 
     ell_min = {}
     ell_max = {}
@@ -59,7 +58,8 @@ def tx_data(tmpdir_factory):
 
             # all of the data goes into the file
             sacc_data.add_ell_cl(
-                'galaxy_shear_cl_ee', 'trc%d' % i, 'trc%d' % j, ell, npell)
+                "galaxy_shear_cl_ee", "trc%d" % i, "trc%d" % j, ell, npell
+            )
             dv_orig.append(pell)
             ndv_orig.append(npell)
             inds.append(np.ones_like(pell))
@@ -68,13 +68,13 @@ def tx_data(tmpdir_factory):
             # but only some of it comes back out
             if rng.uniform() < 0.5:
                 ell_min[(i, j)] = rng.uniform(10, 100)
-                msk &= (ell >= ell_min[(i, j)])
+                msk &= ell >= ell_min[(i, j)]
             else:
                 ell_min[(i, j)] = None
 
             if rng.uniform() < 0.5:
                 ell_max[(i, j)] = rng.uniform(1000, 10000)
-                msk &= (ell <= ell_max[(i, j)])
+                msk &= ell <= ell_max[(i, j)]
             else:
                 ell_max[(i, j)] = None
 
@@ -103,7 +103,7 @@ def tx_data(tmpdir_factory):
         cov[i, i] = (eps * dv_orig[i]) ** 2
     sacc_data.add_covariance(cov)
 
-    sacc_data.save_fits(os.path.join(tmpdir, 'sacc.fits'), overwrite=True)
+    sacc_data.save_fits(os.path.join(tmpdir, "sacc.fits"), overwrite=True)
 
     # cut the cov mat
     inds = np.concatenate(inds, axis=0)
@@ -171,7 +171,9 @@ two_point:
       - cl_src1_src1
 
   statistics:
-""".format(tmpdir=tmpdir)
+""".format(
+        tmpdir=tmpdir
+    )
 
     for i in range(len(tracers)):
         for j in range(i, len(tracers)):
@@ -179,7 +181,9 @@ two_point:
     cl_src{i}_src{j}:
       sources: ['src{i}', 'src{j}']
       sacc_data_type: galaxy_shear_cl_ee
-""".format(i=i, j=j)
+""".format(
+                i=i, j=j
+            )
 
             if ell_min[(i, j)] is not None:
                 config += "      ell_or_theta_min: {val}\n".format(val=ell_min[(i, j)])
@@ -187,42 +191,42 @@ two_point:
             if ell_max[(i, j)] is not None:
                 config += "      ell_or_theta_max: {val}\n".format(val=ell_max[(i, j)])
 
-    with open(os.path.join(tmpdir, 'config.yaml'), 'w') as fp:
+    with open(os.path.join(tmpdir, "config.yaml"), "w") as fp:
         fp.write(config)
 
     return {
-        'cosmo': cosmo,
-        'tmpdir': tmpdir,
-        'loglike': loglike,
-        'config': config,
-        'cov': new_cov,
-        'inv_cov': cinv,
+        "cosmo": cosmo,
+        "tmpdir": tmpdir,
+        "loglike": loglike,
+        "config": config,
+        "cov": new_cov,
+        "inv_cov": cinv,
     }
 
 
 def test_integration_with_cuts_smoke(tx_data):
-    tmpdir = tx_data['tmpdir']
-    cfg_path = os.path.join(tmpdir, 'config.yaml')
+    tmpdir = tx_data["tmpdir"]
+    cfg_path = os.path.join(tmpdir, "config.yaml")
 
     config, data = parse(cfg_path)
     loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
-        cosmo=tx_data['cosmo'],
-        data=data)
+        cosmo=tx_data["cosmo"], data=data
+    )
 
-    assert np.allclose(loglike["two_point"], tx_data['loglike'])
+    assert np.allclose(loglike["two_point"], tx_data["loglike"])
 
     write_statistics(
-        output_dir=os.path.join(tmpdir, 'output_123'),
+        output_dir=os.path.join(tmpdir, "output_123"),
         data=data,
         statistics=stats,
     )
 
-    opth = os.path.join(tmpdir, 'output_123', 'statistics', 'two_point')
-    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, 'sacc.fits'))
-    meas_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_measured.fits'))
-    pred_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_predicted.fits'))
+    opth = os.path.join(tmpdir, "output_123", "statistics", "two_point")
+    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, "sacc.fits"))
+    meas_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_measured.fits"))
+    pred_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_predicted.fits"))
 
-    for trc_name in ['trc0', 'trc1']:
+    for trc_name in ["trc0", "trc1"]:
         orig_tr = orig_data.get_tracer(trc_name)
         meas_tr = meas_data.get_tracer(trc_name)
         pred_tr = pred_data.get_tracer(trc_name)
@@ -234,9 +238,9 @@ def test_integration_with_cuts_smoke(tx_data):
 
     meas_dv = []
     pred_dv = []
-    for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
-        mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
-        pell, pcl = pred_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+    for trs in [("trc0", "trc0"), ("trc0", "trc1"), ("trc1", "trc1")]:
+        mell, mcl = meas_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
+        pell, pcl = pred_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
 
         assert np.allclose(pell, mell)
         assert not np.array_equal(mcl, pcl)

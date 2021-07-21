@@ -11,9 +11,9 @@ def test_mult_shear_bias_smoke():
     src = DummySource()
     src.scale_ = 1.0
     m = 0.05
-    params = {'blah': m}
+    params = {"blah": m}
 
-    sys = MultiplicativeShearBias(m='blah')
+    sys = MultiplicativeShearBias(m="blah")
     sys.apply(None, params, src)
 
     assert np.allclose(src.scale_, 1.05)
@@ -31,18 +31,14 @@ def test_linear_alignment_systematic_smoke():
         wa=0.0,
         sigma8=0.8,
         n_s=0.96,
-        h=0.67)
+        h=0.67,
+    )
     gf = ccl.growth_factor(cosmo, 1.0 / (1.0 + src.z_))
-    params = {
-        '__alphag': 0.2,
-        '__alphaz': 0.5,
-        '__z_piv': 0.4}
+    params = {"__alphag": 0.2, "__alphaz": 0.5, "__z_piv": 0.4}
     sys = LinearAlignmentSystematic(
-        alphag='__alphag',
-        alphaz='__alphaz',
-        z_piv='__z_piv')
+        alphag="__alphag", alphaz="__alphaz", z_piv="__z_piv"
+    )
 
     sys.apply(cosmo, params, src)
-    bias_ia = (
-        30.0 * gf**(0.2-1) * ((1.0 + src.z_) / (1.0 + 0.4)) ** 0.5)
+    bias_ia = 30.0 * gf ** (0.2 - 1) * ((1.0 + src.z_) / (1.0 + 0.4)) ** 0.5
     assert np.allclose(src.ia_bias_, bias_ia)

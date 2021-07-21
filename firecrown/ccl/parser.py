@@ -22,12 +22,12 @@ def _parse_systematics(systematics):
     syss = {}
     for name, keys in systematics.items():
         _src = copy.deepcopy(keys)
-        kind = _src.pop('kind')
+        kind = _src.pop("kind")
         try:
             syss[name] = getattr(firecrown_ccl_systematics, kind)(**_src)
         except AttributeError:
             # this must in another module, try an import
-            items = kind.split('.')
+            items = kind.split(".")
             kind = items[-1]
             mod = ".".join(items[:-1])
             mod = importlib.import_module(mod)
@@ -72,7 +72,7 @@ def _parse_statistics(statistics):
     stats = {}
     for stat, keys in statistics.items():
         _stat = copy.deepcopy(keys)
-        kind = _stat.pop('kind')
+        kind = _stat.pop("kind")
         stats[stat] = getattr(firecrown_ccl_statistics, kind)(**_stat)
     return stats
 
@@ -96,7 +96,7 @@ def _parse_sources(srcs):
     sources = {}
     for name, keys in srcs.items():
         _src = copy.deepcopy(keys)
-        kind = _src.pop('kind')
+        kind = _src.pop("kind")
         sources[name] = getattr(firecrown_ccl_sources, kind)(**_src)
     return sources
 
@@ -118,5 +118,5 @@ def _parse_likelihood(likelihood):
     from the YAML.
     """
     _lk = copy.deepcopy(likelihood)
-    kind = _lk.pop('kind')
+    kind = _lk.pop("kind")
     return getattr(firecrown_ccl_likelihoods, kind)(**_lk)

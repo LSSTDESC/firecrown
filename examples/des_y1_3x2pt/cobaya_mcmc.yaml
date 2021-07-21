@@ -36,5 +36,5 @@ sampler:
     Rminus1_stop: 0.01
     max_tries: 1000
 stop_at_error: true
-output: cobaya_mcmc_output_mpi
+output: cobaya_mcmc_output_mpi2
 resume: True
