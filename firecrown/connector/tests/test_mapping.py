@@ -21,7 +21,7 @@ def test_conversion_from_cosmosis_camb():
         "omega_k": 0.0,
         "omega_lambda": 0.7,
         "omega_m": 0.3,
-        "omega_nu": 0.0,
+        "omega_nu": 0.00624525169,
         "ommh2": 0.15552,
         "omnuh2": 0.0,
         "r_t": 0.0,
@@ -41,7 +41,7 @@ def test_conversion_from_cosmosis_camb():
     assert p.Omega_k == cosmosis_params["omega_k"]
     assert p.Omega_g is None
     assert p.Neff == 3.0  # we have not set delta_neff
-    assert p.m_nu == 0  # Currently the only option
+    assert p.m_nu == pytest.approx(0.3015443336635814)
     assert p.m_nu_type == "normal"  # Currently the only option
     assert p.w0 == cosmosis_params["w"]
     assert p.wa == cosmosis_params["wa"]
