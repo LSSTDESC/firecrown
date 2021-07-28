@@ -41,12 +41,12 @@ class PyCCLCosmologyConstants:
         sigma_8=None,
         n_s,
         Omega_k,
-        Omega_g=None,
         Neff,
         m_nu,
         m_nu_type,
         w0,
         wa,
+        T_CMB,
     ):
         """Construct an object suitable for use in constructing a pyccl.core.CosmologyCalculator. See the
         documentation of that class for an explanation of the choices and meanings of default values of
@@ -63,18 +63,20 @@ class PyCCLCosmologyConstants:
             raise ValueError("Exactly one of A_s and sigma_8 must be supplied")
         if sigma_8 is None:
             self.A_s = require_float(A_s)
+            self.sigma_a = None
         else:
+            self.A_s = None
             self.sigma_8 = require_float(sigma_8)
 
         self.n_s = require_float(n_s)
         self.Omega_k = require_float(Omega_k)
-        self.Omega_g = Omega_g
+        self.Omega_g = None
         self.Neff = require_float(Neff)
         self.m_nu = require_float(m_nu)
         self.m_nu_type = require_string(m_nu_type)
         self.w0 = require_float(w0)
         self.wa = require_float(wa)
-        self.T_CMB = None
+        self.T_CMB = require_float(T_CMB)
 
 
 def from_cosmosis_camb(cosmosis_params: dict):
@@ -82,19 +84,14 @@ def from_cosmosis_camb(cosmosis_params: dict):
     those read from CosmoSIS when using CAMB."""
     # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
     # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
-    # TODO: Get the right value of m_nu from CosmoSIS/CAMB. This might
-    #       depend on which of the CAMB versions are used, or whether
-    #       one of the modified CAMBs is in use. m_nu_type almost certain
-    #       also needs to be altered.
     Omega_c = cosmosis_params["omega_c"]
     Omega_b = cosmosis_params["omega_b"]
     h = cosmosis_params["h0"]  # Not 'hubble' !
     sigma_8 = cosmosis_params["sigma_8"]
     n_s = cosmosis_params["n_s"]
     Omega_k = cosmosis_params["omega_k"]
-    Omega_g = None
     Neff = cosmosis_params.get("delta_neff", 0.0) + 3.0
-    m_nu = 0.0
+    m_nu = cosmosis_params["omega_nu"] * h * h * 93.14
     m_nu_type = "normal"
     w0 = cosmosis_params["w"]
     wa = cosmosis_params["wa"]
@@ -105,10 +102,10 @@ def from_cosmosis_camb(cosmosis_params: dict):
         sigma_8=sigma_8,
         n_s=n_s,
         Omega_k=Omega_k,
-        Omega_g=Omega_g,
         Neff=Neff,
         m_nu=m_nu,
         m_nu_type=m_nu_type,
         w0=w0,
         wa=-wa,
+        T_CMB=2.7255,  # Modify CosmoSIS to make this available in the datablock
     )
