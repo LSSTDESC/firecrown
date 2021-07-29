@@ -3,6 +3,7 @@ import numpy as np
 import pyccl as ccl
 
 from firecrown.convert import firecrown_convert_builder
+from firecrown.connector.mapping import redshift_to_scale_factor
 
 from pprint import pprint
 
@@ -148,14 +149,14 @@ class CCLConnector(Theory):
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.fc_params.get_H0()
         k, z, pk = self.provider.get_Pk_grid()
 
-        self.a_Pk = np.sort(1.0 / (1.0 + z))
+        self.a_Pk, pk_a = redshift_to_scale_factor(z, pk)
         cosmo = ccl.CosmologyCalculator(
             **ccl_params_values,
-            background={"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
+            background={"a": self.a_bg, "chi": np.flip(chi_arr), "h_over_h0": np.flip(hoh0_arr)},
             pk_linear={
                 "a": self.a_Pk,
                 "k": k,
-                "delta_matter:delta_matter": pk[:, ::-1],
+                "delta_matter:delta_matter": pk_a,
             },
             nonlinear_model="halofit"
         )

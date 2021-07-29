@@ -36,11 +36,11 @@ def test_conversion_from_cosmosis_camb():
     assert p.Omega_b == cosmosis_params["omega_b"]
     assert p.h == cosmosis_params["h0"]
     assert p.A_s is None
-    assert p.sigma_8 == cosmosis_params["sigma_8"]
+    assert p.sigma8 == cosmosis_params["sigma_8"]
     assert p.n_s == cosmosis_params["n_s"]
     assert p.Omega_k == cosmosis_params["omega_k"]
     assert p.Omega_g is None
-    assert p.Neff == 3.0  # we have not set delta_neff
+    assert p.Neff == pytest.approx(3.046)
     assert p.m_nu == pytest.approx(0.3015443336635814)
     assert p.m_nu_type == "normal"  # Currently the only option
     assert p.w0 == cosmosis_params["w"]
@@ -78,4 +78,4 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
         "yhe": 0.23999999463558197,
     }
     p = mapping.from_cosmosis_camb(cosmosis_params)
-    assert p.Neff == 3.125
+    assert p.Neff == pytest.approx(3.171)

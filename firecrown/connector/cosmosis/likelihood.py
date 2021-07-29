@@ -1,22 +1,24 @@
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
-
 import numpy as np
+import pyccl as ccl
 import firecrown
 from firecrown.convert import firecrown_convert_builder
-
-from firecrown.connector.mapping import from_cosmosis_camb
-
-import logging
-import pprint
-
+from firecrown.connector.mapping import from_cosmosis_camb, redshift_to_scale_factor
 
 likes = section_names.likelihoods
 
-logging.basicConfig(
-    filename="debug.log",
-    level=logging.DEBUG,
-)
+
+def calculate_background(sample):
+    """Calculate the background (dictionary) required for CCL, from a CosmoSIS
+    datablock."""
+    a = np.flip(1.0 / (1.0 + sample["distances", "z"]))
+    chi = np.flip(sample["distances", "d_m"])
+    # TODO: is this scaling correct?
+    h0 = sample["cosmological_parameters", "h0"]
+    speed_of_light = 2
+    h_over_h0 = np.flip(sample["distances", "h"]) * ccl.physical_constants.CLIGHT / h0
+    return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
 
 class FirecrownLikelihood:
@@ -33,11 +35,6 @@ class FirecrownLikelihood:
         firecrown_yaml_file = config[option_section, "firecrown_config"]
         _, self.data = firecrown.parse(firecrown_yaml_file)
         assert type(self.data) is dict
-        logging.debug("FirecrownLikelihood created.")
-        logging.debug(self)
-        logging.debug(f"Parameters are: {self.data['parameters']}")
-        logging.debug(f"Priors are: {self.data['priors']}")
-        logging.debug(f"two_point keys are: {self.data['two_point'].keys()}")
 
         # TODO: CCLPrecisionParameters object instead of this glue code.
         # Consider migrating this to CCL itself.
@@ -62,7 +59,6 @@ class FirecrownLikelihood:
         return f"Firecrown object with keys: {list(self.data.keys())}"
 
     def execute(self, sample):
-        logging.debug("Entered cosmosis.likelihood.execute")
         # We have to make a new ccl object on each sample.
         # Get CAMB output; look at ccl.get_requirements to see what is required.
 
@@ -77,12 +73,36 @@ class FirecrownLikelihood:
             for name in cosmological_parameter_names
         }
 
-        logging.debug(f"We have {len(cosmological_params)} cosmological parameters")
-        logging.debug("Cosmological params from CAMB are:")
-        logging.debug(pprint.pformat(cosmological_params))
+
         cosmological_params_for_ccl = from_cosmosis_camb(cosmological_params)
-        logging.debug("Cosmological params for CCL are:")
-        logging.debug(pprint.pformat(cosmological_params_for_ccl.__dict__))
+
+
+        h0 = cosmological_params["h0"]
+        k = sample["matter_power_lin", "k_h"] * h0
+        z = sample["matter_power_lin", "z"]
+        p_k = sample["matter_power_lin", "p_k"] / (h0 ** 3)
+
+        scale, p_k = redshift_to_scale_factor(z, p_k)
+
+        # TODO: also handle the non-linear; we need configurability
+        # We need 3 configuration modes:
+        #     CAMB linear only
+        #     CAMB linear + CAMB nonlinear
+        #     CAMB linear + CCL nonlinear
+
+        background = calculate_background(sample)
+
+        cosmo = ccl.CosmologyCalculator(
+            **cosmological_params_for_ccl.asdict(),
+            background=background,
+            pk_linear={"a": scale, "k": k, "delta_matter:delta_matter": p_k},
+            # TODO: the nonlinear_model should be a configuration parameter; this
+            # is part of the configuration above.
+            # TODO: if we are using CCL to calculate the nonlinear power spectrum,
+            # we probably should not have CAMB configured to give us a nonlinear power
+            # spectrum. Emit a warning? Fail?
+            nonlinear_model="halofit",
+        )
 
         # TODO:
         #   1. figure out if we were using CAMB or CLASS to do Boltzmann calculations
@@ -97,8 +117,9 @@ class FirecrownLikelihood:
         #   4. Call firecrown.compute_loglike
         #   5. put the resulting likelihood into the datablock
 
-        # lnlike = firecrown.compute_loglike(cosmo=cosmo, data=self.data)
-        lnlike = -0.01
+        lnlikes, *_ = firecrown.compute_loglike(cosmo=cosmo, data=self.data)
+        lnlike = np.sum(v for v in lnlikes.values() if v is not None)
+
         sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
         return 0
 

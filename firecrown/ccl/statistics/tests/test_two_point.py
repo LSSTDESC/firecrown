@@ -12,6 +12,7 @@ class DummySource(object):
     pass
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize("ell_or_theta_max", [None, 80])
 @pytest.mark.parametrize("ell_or_theta_min", [None, 20])
 @pytest.mark.parametrize("ell_for_xi", [None, ELL_FOR_XI_DEFAULTS, {"mid": 100}])
@@ -131,6 +132,7 @@ def test_two_point_sacc(kind, ell_for_xi, ell_or_theta_min, ell_or_theta_max, tm
     assert np.allclose(stat.measured_statistic_, stat.predicted_statistic_)
 
 
+@pytest.mark.slow()
 @pytest.mark.parametrize("binning", ["log", "lin"])
 @pytest.mark.parametrize("ell_or_theta_max", [None, 80])
 @pytest.mark.parametrize("ell_or_theta_min", [None, 20])
