@@ -18,7 +18,8 @@ def test_priors():
 
     assert ((loglike - (
         -0.5 * ((0.3) / 1.0)**2 - 0.5 * np.log(2.0 * np.pi) +
-        -0.5 * ((-0.1 - 0.1) / 2.0)**2 - 0.5 * np.log(2.0 * np.pi) - np.log(2)))/loglike < 1e-10)
+        -0.5 * ((-0.1 - 0.1) / 2.0)**2 - 0.5 * np.log(2.0 * np.pi)
+        - np.log(2)))/loglike < 1e-10)
     assert stats is None
     assert ms is None
     assert pd is None
