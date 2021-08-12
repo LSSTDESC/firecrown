@@ -27,8 +27,8 @@ def write_metadata(analysis_id, output_dir, config_file):
         'analysis_id': analysis_id,
         'timestamp': datetime.datetime.utcnow().isoformat(),
         'firecrown_version': __version__,
-        'pyccl_version': pyccl.__version__,
-        'cosmosis-standalone_version': cosmosis.__version__,
+        #'pyccl_version': pyccl.__version__, #pyccl does not export that variable consistently
+        #'cosmosis-standalone_version': cosmosis.__version__,
         'sacc_version': sacc.__version__,
     }
 

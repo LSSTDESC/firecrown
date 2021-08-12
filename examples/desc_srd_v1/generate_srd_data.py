@@ -1,13 +1,13 @@
 import sacc
 import firecrown
-from firecrown.ccl.two_point import build_sacc_data
+from firecrown.ccl import build_sacc_data
 
 # read the config
 config, data = firecrown.parse("srd_v1_gen.yaml")
 
 # run the config
 cosmo = firecrown.get_ccl_cosmology(config['parameters'])
-_, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
+_, _, _, _, _, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
 
 # build sacc data from outputs
 _, pred_sacc = build_sacc_data(
