@@ -117,6 +117,10 @@ class FirecrownLikelihood:
         #   4. Call firecrown.compute_loglike
         #   5. put the resulting likelihood into the datablock
 
+        # TODO: Future development will need to capture elements that get put into the datablock.
+        # This probably will be in a different "physics module" and not in the likelihood module.
+        # And it requires updates to Firecrown to split the calculations.
+        # e.g., data_vector/firecrown_theory  data_vector/firecrown_data
         lnlikes, *_ = firecrown.compute_loglike(cosmo=cosmo, data=self.data)
         lnlike = np.sum(v for v in lnlikes.values() if v is not None)
 
@@ -126,18 +130,6 @@ class FirecrownLikelihood:
     def cleanup(self):
         """There is nothing to do in the cleanup function for this module."""
         return 0
-
-    # def _make_ccl_cosmology(self, sample):
-    #     """Call pyccl to create the cosmology for this sample."""
-    #     # Get stuff from the sample for the current sample; output from CAMB
-    #
-    #     # a_bg = np.linspace(0.1, 1.0, 50)
-    #     # z_bg = 1.0 / self.a_bg - 1.0
-    #     # z_Pk = np.arange(0.2, 6.0, 1)
-    #     # Pk_kmax = 1.0
-    #
-    #     # Translate CAMB output to CCL format
-    #     # Create the CCL cosmology for this sample
 
 
 def setup(config):

@@ -124,6 +124,8 @@ def from_cosmosis_camb(cosmosis_params: dict):
     sigma8 = cosmosis_params["sigma_8"]
     n_s = cosmosis_params["n_s"]
     Omega_k = cosmosis_params["omega_k"]
+    # Read omega_nu from CosmoSIS (in newer CosmoSIS)
+    # Read m_nu from CosmoSIS (in newer CosmoSIS)
     Neff = cosmosis_params.get("delta_neff", 0.0) + 3.046  # Verify this with Joe
     m_nu = cosmosis_params["omega_nu"] * h * h * 93.14
     m_nu_type = "normal"
