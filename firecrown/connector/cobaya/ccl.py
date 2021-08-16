@@ -152,7 +152,7 @@ class CCLConnector(Theory):
         self.a_Pk, pk_a = redshift_to_scale_factor(z, pk)
         cosmo = ccl.CosmologyCalculator(
             **ccl_params_values,
-            background={"a": self.a_bg, "chi": np.flip(chi_arr), "h_over_h0": np.flip(hoh0_arr)},
+            background={"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
             pk_linear={
                 "a": self.a_Pk,
                 "k": k,
