@@ -16,8 +16,10 @@ def calculate_background(sample):
     chi = np.flip(sample["distances", "d_m"])
     # TODO: is this scaling correct?
     h0 = sample["cosmological_parameters", "h0"]
-    speed_of_light = 2
-    h_over_h0 = np.flip(sample["distances", "h"]) * ccl.physical_constants.CLIGHT / h0
+    # NOTE: The first value of the h_over_h0 array is non-zero because of the way
+    # CAMB does it calculation. We do not modify this, because we want consistency.
+    hubble_radius_today = (ccl.physical_constants.CLIGHT * 1e-5) / h0
+    h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
     return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
 
