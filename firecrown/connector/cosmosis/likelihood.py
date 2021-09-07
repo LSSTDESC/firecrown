@@ -3,8 +3,7 @@ from cosmosis.datablock import names as section_names
 import numpy as np
 import pyccl as ccl
 import firecrown
-from firecrown.convert import firecrown_convert_builder
-from firecrown.connector.mapping import from_cosmosis_camb, redshift_to_scale_factor
+from firecrown.connector.mapping import mapping_builder
 
 likes = section_names.likelihoods
 
@@ -36,6 +35,8 @@ class FirecrownLikelihood:
         firecrown_yaml_file = config[option_section, "firecrown_config"]
         _, self.data = firecrown.parse(firecrown_yaml_file)
         assert type(self.data) is dict
+        
+        self.map = mapping_builder(input_style="CosmoSIS")
 
     def __str__(self):
         """Return the human-readabe representation of this object."""
@@ -53,14 +54,15 @@ class FirecrownLikelihood:
             for name in cosmological_parameter_names
         }
 
-        cosmological_params_for_ccl = from_cosmosis_camb(cosmological_params)
+        cosmological_params_for_ccl = self.map.set_params_from_cosmosis(cosmological_params)
 
         h0 = cosmological_params["h0"]
         k = sample["matter_power_lin", "k_h"] * h0
         z = sample["matter_power_lin", "z"]
         p_k = sample["matter_power_lin", "p_k"] / (h0 ** 3)
 
-        scale, p_k = redshift_to_scale_factor(z, p_k)
+        scale = self.map.redshift_to_scale_factor(z)
+        p_k = self.map.redshift_to_scale_factor_p_k(p_k)
 
         # TODO: We should have several configurable modes for this module.
         # In all cases, an exception will be raised (causing a program shutdown) if something
@@ -80,7 +82,7 @@ class FirecrownLikelihood:
         background = calculate_background(sample)
 
         cosmo = ccl.CosmologyCalculator(
-            **cosmological_params_for_ccl.asdict(),
+            **self.map.asdict(),
             background=background,
             pk_linear={"a": scale, "k": k, "delta_matter:delta_matter": p_k},
             nonlinear_model="halofit",

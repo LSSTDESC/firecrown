@@ -31,9 +31,12 @@ params:
   nnu: 3.046
   ns: 0.9665
   YHe: 0.2454
+  w: -1.0
+  wa: 0.0
 sampler:
   evaluate: null
 stop_at_error: true
 output: cobaya_evaluate_output
 packages_path: null
 test: false
+debug: false

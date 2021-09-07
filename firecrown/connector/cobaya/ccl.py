@@ -2,13 +2,11 @@ import math
 import numpy as np
 import pyccl as ccl
 
-from firecrown.convert import firecrown_convert_builder
-from firecrown.connector.mapping import redshift_to_scale_factor
+from firecrown.connector.mapping import mapping_builder
 
 from pprint import pprint
 
 from cobaya.theory import Theory
-
 
 class CCLConnector(Theory):
     """
@@ -38,7 +36,7 @@ class CCLConnector(Theory):
             ...
         """
 
-        self.fc_params = firecrown_convert_builder(input_style=self.input_style)
+        self.map = mapping_builder(input_style=self.input_style)
 
         self.a_bg = np.linspace(0.1, 1.0, 50)
         self.z_bg = 1.0 / self.a_bg - 1.0
@@ -94,7 +92,7 @@ class CCLConnector(Theory):
         ... : str
             ...
         """
-        return self.fc_params.get_names()
+        return self.map.get_names()
 
     def get_allow_agnostic(self):
         """...
@@ -114,11 +112,13 @@ class CCLConnector(Theory):
         ... : str
             ...
         """
-        ccl_calculator_requires = {
-            "Pk_grid": {"k_max": self.Pk_kmax, "z": self.z_Pk},
-            "comoving_radial_distance": {"z": self.z_bg},
-            "Hubble": {"z": self.z_bg},
-        }
+        
+        ccl_calculator_requires = {'omk': None}#{param: None for param in self.map.get_names()}
+        
+        ccl_calculator_requires["Pk_grid"] = {"k_max": self.Pk_kmax, "z": self.z_Pk}
+        ccl_calculator_requires["comoving_radial_distance"] = {"z": self.z_bg}
+        ccl_calculator_requires["Hubble"] = {"z": self.z_bg}
+
         return ccl_calculator_requires
 
     def must_provide(self, **requirements):
@@ -140,16 +140,18 @@ class CCLConnector(Theory):
             ...
         """
 
-        self.fc_params.set_params(**params_values)
+        self.map.set_params_from_camb(**params_values)
 
-        ccl_params_values = self.fc_params.get_params()
+        ccl_params_values = self.map.asdict()
         # This is the dictionary appropriate for CCL creation
 
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
-        hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.fc_params.get_H0()
+        hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
         k, z, pk = self.provider.get_Pk_grid()
 
-        self.a_Pk, pk_a = redshift_to_scale_factor(z, pk)
+        self.a_Pk = self.map.redshift_to_scale_factor(z)
+        pk_a = self.map.redshift_to_scale_factor_p_k(pk)
+
         cosmo = ccl.CosmologyCalculator(
             **ccl_params_values,
             background={"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
