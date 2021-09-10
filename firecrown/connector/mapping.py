@@ -34,7 +34,10 @@ class Mapping(ABC):
     T_CMB = Float()
 
     """
-    A class ...
+    Mapping is an abstract base class providing the interface that describes
+    a mapping of cosmological constants from some concrete Boltzmann calculator
+    to the form those constants take in CCL. Each supported Boltzmann calculator
+    will have its own concrete subclass.
 
     ...
 
@@ -62,12 +65,8 @@ class Mapping(ABC):
 
     @abstractmethod
     def get_params_names(self):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
+        """Return the names of the cosmological parameters that this
+        mapping is expected to deliver.
         """
         pass
 
@@ -167,6 +166,7 @@ class Mapping(ABC):
         return self.h * 100.0
 
 
+
 class MappingCLASS(Mapping):
     """
     This class is not yet implemented; this stub is here to satisfy IDEs that
@@ -177,6 +177,11 @@ class MappingCLASS(Mapping):
 
 
 class MappingCosmoSIS(Mapping):
+    """
+    Implementation of the mapping class between CosmoSIS datablock parameters
+    and CCL.
+    """
+    
     def get_params_names(self):
         """...
         ...
