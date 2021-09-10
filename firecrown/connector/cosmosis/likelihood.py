@@ -35,7 +35,7 @@ class FirecrownLikelihood:
         firecrown_yaml_file = config[option_section, "firecrown_config"]
         _, self.data = firecrown.parse(firecrown_yaml_file)
         assert type(self.data) is dict
-        
+
         self.map = mapping_builder(input_style="CosmoSIS")
 
     def __str__(self):
@@ -54,7 +54,9 @@ class FirecrownLikelihood:
             for name in cosmological_parameter_names
         }
 
-        cosmological_params_for_ccl = self.map.set_params_from_cosmosis(cosmological_params)
+        cosmological_params_for_ccl = self.map.set_params_from_cosmosis(
+            cosmological_params
+        )
 
         h0 = cosmological_params["h0"]
         k = sample["matter_power_lin", "k_h"] * h0

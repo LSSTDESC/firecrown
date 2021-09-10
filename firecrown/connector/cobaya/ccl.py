@@ -8,6 +8,7 @@ from pprint import pprint
 
 from cobaya.theory import Theory
 
+
 class CCLConnector(Theory):
     """
     A class implementing cobaya.theory.Theory ...
@@ -112,9 +113,11 @@ class CCLConnector(Theory):
         ... : str
             ...
         """
-        
-        ccl_calculator_requires = {'omk': None}#{param: None for param in self.map.get_names()}
-        
+
+        ccl_calculator_requires = {
+            "omk": None
+        }  # {param: None for param in self.map.get_names()}
+
         ccl_calculator_requires["Pk_grid"] = {"k_max": self.Pk_kmax, "z": self.z_Pk}
         ccl_calculator_requires["comoving_radial_distance"] = {"z": self.z_bg}
         ccl_calculator_requires["Hubble"] = {"z": self.z_bg}

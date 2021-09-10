@@ -14,10 +14,11 @@ The supported codes include:
 import numpy as np
 
 from abc import ABC, abstractmethod
-from ..descriptors import Float, String 
+from ..descriptors import Float, String
+
 
 class Mapping(ABC):
-    
+
     Omega_c = Float(minvalue=0.0, maxvalue=1.0)
     Omega_b = Float(minvalue=0.0, maxvalue=1.0)
     h = Float(minvalue=0.3, maxvalue=1.2)
@@ -31,7 +32,7 @@ class Mapping(ABC):
     w0 = Float()
     wa = Float()
     T_CMB = Float()
-    
+
     """
     A class ...
 
@@ -47,7 +48,7 @@ class Mapping(ABC):
     ...(...)
         ....
     """
-    
+
     def __init__(self, **kwargs):
         """...
         ...
@@ -70,13 +71,14 @@ class Mapping(ABC):
         """
         pass
 
-    def set_params(self,
+    def set_params(
+        self,
         *,
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: float=None,
-        sigma8: float=None,
+        A_s: float = None,
+        sigma8: float = None,
         n_s: float,
         Omega_k: float,
         Neff: float,
@@ -85,9 +87,9 @@ class Mapping(ABC):
         w0: float,
         wa: float,
         T_CMB: float,
-        ):
-        """Sets the cosmological constants suitable for use in constructing a pyccl.core.CosmologyCalculator. 
-        See the documentation of that class for an explanation of the choices and meanings of default values 
+    ):
+        """Sets the cosmological constants suitable for use in constructing a pyccl.core.CosmologyCalculator.
+        See the documentation of that class for an explanation of the choices and meanings of default values
         of None.
         ...
         Parameters
@@ -96,7 +98,7 @@ class Mapping(ABC):
             ...
         """
 
-        # Typecheck is done automatically using the descriptorsa and is done to avoid very confusing error 
+        # Typecheck is done automatically using the descriptorsa and is done to avoid very confusing error
         # messages at a later time in case of error.
         self.Omega_c = Omega_c
         self.Omega_b = Omega_b
@@ -120,11 +122,11 @@ class Mapping(ABC):
         self.w0 = w0
         self.wa = wa
         self.T_CMB = T_CMB
-    
+
     def redshift_to_scale_factor(self, z):
         """Given arrays of redshift returns an array of scale factor with the inverse
         order."""
-        
+
         scale = np.flip(1.0 / (1.0 + z))
         return scale
 
@@ -164,6 +166,7 @@ class Mapping(ABC):
         """
         return self.h * 100.0
 
+
 class MappingCLASS(Mapping):
     """
     This class is not yet implemented; this stub is here to satisfy IDEs that
@@ -172,8 +175,8 @@ class MappingCLASS(Mapping):
 
     pass
 
+
 class MappingCosmoSIS(Mapping):
-    
     def get_params_names(self):
         """...
         ...
@@ -182,12 +185,24 @@ class MappingCosmoSIS(Mapping):
         ... : str
             ...
         """
-        return ["h0", "omega_b", "omega_c", "sigma_8", "n_s", "omega_k", "delta_neff", "omega_nu", "w", "wa"]    
-    
+        return [
+            "h0",
+            "omega_b",
+            "omega_c",
+            "sigma_8",
+            "n_s",
+            "omega_k",
+            "delta_neff",
+            "omega_nu",
+            "w",
+            "wa",
+        ]
+
     """
     Implementation of the mapping class between CosmoSIS datablock parameters
     and CCL.
     """
+
     def set_params_from_cosmosis(self, cosmosis_params: dict):
         """Return a PyCCLCosmologyConstants object with parameters equivalent to
         those read from CosmoSIS when using CAMB."""
@@ -218,9 +233,10 @@ class MappingCosmoSIS(Mapping):
             m_nu=m_nu,
             m_nu_type=m_nu_type,
             w0=w0,
-            wa=-wa, # Is this minus sign here correct?
+            wa=-wa,  # Is this minus sign here correct?
             T_CMB=2.7255,  # Modify CosmoSIS to make this available in the datablock
-            )
+        )
+
 
 class MappingCAMB(Mapping):
     """
@@ -257,7 +273,19 @@ class MappingCAMB(Mapping):
         ... : str
             ...
         """
-        return ["H0", "ombh2", "omch2", "mnu", "nnu", "tau", "YHe", "As", "ns", "w", "wa"]
+        return [
+            "H0",
+            "ombh2",
+            "omch2",
+            "mnu",
+            "nnu",
+            "tau",
+            "YHe",
+            "As",
+            "ns",
+            "w",
+            "wa",
+        ]
 
     def set_params_from_camb(self, **params_values):
         """...
@@ -280,16 +308,16 @@ class MappingCAMB(Mapping):
         m_nu = params_values["mnu"]
         Omega_k0 = params_values["omk"]
         # pprint (params_values)
-        
+
         m_nu_type = "normal"
         h0 = H0 / 100.0
         h02 = h0 * h0
         Omega_b0 = ombh2 / h02
         Omega_c0 = omch2 / h02
-        
-        w = params_values.get ("w", -1.0)
-        wa = params_values.get ("wa", 0.0)
-        
+
+        w = params_values.get("w", -1.0)
+        wa = params_values.get("wa", 0.0)
+
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default
         # ones are used. Thus, for instance, here we do not know which type of
@@ -299,28 +327,31 @@ class MappingCAMB(Mapping):
         # Nevertheless, we need a better solution.
 
         self.set_params(
-            Omega_c = Omega_c0, 
-            Omega_b = Omega_b0,
-            h = h0,
-            n_s = ns,
-            Omega_k = Omega_k0,
-            sigma8 = None,
-            A_s = As,
-            m_nu = m_nu,
+            Omega_c=Omega_c0,
+            Omega_b=Omega_b0,
+            h=h0,
+            n_s=ns,
+            Omega_k=Omega_k0,
+            sigma8=None,
+            A_s=As,
+            m_nu=m_nu,
             m_nu_type=m_nu_type,
             w0=w,
             wa=wa,
-            Neff = Neff,
+            Neff=Neff,
             T_CMB=2.7255,  # Can we make cobaya set this?
-            )
+        )
+
 
 mapping_classes = {
     "CAMB": MappingCAMB,
     "CLASS": MappingCLASS,
-    "CosmoSIS": MappingCosmoSIS}
+    "CosmoSIS": MappingCosmoSIS,
+}
+
 
 def mapping_builder(*, input_style, **kwargs):
     if not input_style in mapping_classes.keys():
-        raise ValueError(f'input_style must be {*mapping_classes,}, not {input_style}')
-    
+        raise ValueError(f"input_style must be {*mapping_classes,}, not {input_style}")
+
     return mapping_classes[input_style](**kwargs)
