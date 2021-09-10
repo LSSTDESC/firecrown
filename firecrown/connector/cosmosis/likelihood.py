@@ -8,20 +8,6 @@ from firecrown.connector.mapping import mapping_builder
 likes = section_names.likelihoods
 
 
-def calculate_background(sample):
-    """Calculate the background (dictionary) required for CCL, from a CosmoSIS
-    datablock."""
-    a = np.flip(1.0 / (1.0 + sample["distances", "z"]))
-    chi = np.flip(sample["distances", "d_m"])
-    # TODO: is this scaling correct?
-    h0 = sample["cosmological_parameters", "h0"]
-    # NOTE: The first value of the h_over_h0 array is non-zero because of the way
-    # CAMB does it calculation. We do not modify this, because we want consistency.
-    hubble_radius_today = (ccl.physical_constants.CLIGHT * 1e-5) / h0
-    h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
-    return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
-
-
 class FirecrownLikelihood:
     """CosmoSIS likelihood module for calculating Firecrown likelihood.
 
@@ -58,12 +44,10 @@ class FirecrownLikelihood:
             cosmological_params
         )
 
-        h0 = cosmological_params["h0"]
         k = self.map.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
-        z = sample["matter_power_lin", "z"]
+        z_mpl = sample["matter_power_lin", "z"]
+        scale_mpl = self.map.redshift_to_scale_factor(z_mpl)
         p_k = self.map.transform_p_k_h3_to_p_k(sample["matter_power_lin", "p_k"])
-
-        scale = self.map.redshift_to_scale_factor(z)
         p_k = self.map.redshift_to_scale_factor_p_k(p_k)
 
         # TODO: We should have several configurable modes for this module.
@@ -81,12 +65,18 @@ class FirecrownLikelihood:
         #     DataBlock is used as input. In all cases, it is an error if the DataBlock also
         #     contains a nonlinear power spectrum.
 
-        background = calculate_background(sample)
+        chi = np.flip(sample["distances", "d_m"])
+        scale_distances = self.map.redshift_to_scale_factor(sample["distances", "z"])
+        h0 = sample["cosmological_parameters", "h0"]
+        # NOTE: The first value of the h_over_h0 array is non-zero because of the way
+        # CAMB does it calculation. We do not modify this, because we want consistency.
+        hubble_radius_today = (ccl.physical_constants.CLIGHT * 1e-5) / h0
+        h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
 
         cosmo = ccl.CosmologyCalculator(
             **self.map.asdict(),
-            background=background,
-            pk_linear={"a": scale, "k": k, "delta_matter:delta_matter": p_k},
+            background={"a": scale_distances, "chi": chi, "h_over_h0": h_over_h0},
+            pk_linear={"a": scale_mpl, "k": k, "delta_matter:delta_matter": p_k},
             nonlinear_model="halofit",
         )
 
@@ -95,7 +85,9 @@ class FirecrownLikelihood:
         # And it requires updates to Firecrown to split the calculations.
         # e.g., data_vector/firecrown_theory  data_vector/firecrown_data
         lnlikes, *_ = firecrown.compute_loglike(cosmo=cosmo, data=self.data)
-        lnlike = np.sum(v for v in lnlikes.values() if v is not None)
+        lnlike = np.sum(
+            v for k, v in lnlikes.items() if k != "priors" and v is not None
+        )
 
         sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
         return 0
