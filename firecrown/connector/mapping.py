@@ -70,20 +70,15 @@ class Mapping(ABC):
         """
         pass
 
-
     @abstractmethod
     def transform_k_h_to_k(self, k_h):
-        """Transform the given k_h (k over h) to k.
-        """
+        """Transform the given k_h (k over h) to k."""
         pass
-
 
     @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given p_k * h^3 to p_k.
-        """
+        """Transform the given p_k * h^3 to p_k."""
         pass
-
 
     def set_params(
         self,
@@ -181,7 +176,6 @@ class Mapping(ABC):
         return self.h * 100.0
 
 
-
 class MappingCLASS(Mapping):
     """
     This class is not yet implemented; this stub is here to satisfy IDEs that
@@ -196,7 +190,7 @@ class MappingCosmoSIS(Mapping):
     Implementation of the mapping class between CosmoSIS datablock parameters
     and CCL.
     """
-     
+
     def get_params_names(self):
         """...
         ...
@@ -218,15 +212,12 @@ class MappingCosmoSIS(Mapping):
             "wa",
         ]
 
-
     def transform_k_h_to_k(self, k_h):
         return k_h * self.h
-
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         return p_k_h3 / (self.h ** 3)
 
-    
     def set_params_from_cosmosis(self, cosmosis_params: dict):
         """Return a PyCCLCosmologyConstants object with parameters equivalent to
         those read from CosmoSIS when using CAMB."""
