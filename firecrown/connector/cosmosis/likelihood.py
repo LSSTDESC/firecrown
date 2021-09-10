@@ -59,10 +59,9 @@ class FirecrownLikelihood:
         )
 
         h0 = cosmological_params["h0"]
-        #k = sample["matter_power_lin", "k_h"] * h0
         k = self.map.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
         z = sample["matter_power_lin", "z"]
-        p_k = sample["matter_power_lin", "p_k"] / (h0 ** 3)
+        p_k = self.map.transform_p_k_h3_to_p_k(sample["matter_power_lin", "p_k"])
 
         scale = self.map.redshift_to_scale_factor(z)
         p_k = self.map.redshift_to_scale_factor_p_k(p_k)

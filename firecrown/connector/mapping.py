@@ -78,6 +78,13 @@ class Mapping(ABC):
         pass
 
 
+    @abstractmethod
+    def transform_p_k_h3_to_p_k(self, p_k_h3):
+        """Transform the given p_k * h^3 to p_k.
+        """
+        pass
+
+
     def set_params(
         self,
         *,
@@ -214,6 +221,10 @@ class MappingCosmoSIS(Mapping):
 
     def transform_k_h_to_k(self, k_h):
         return k_h * self.h
+
+
+    def transform_p_k_h3_to_p_k(self, p_k_h3):
+        return p_k_h3 / (self.h ** 3)
 
     
     def set_params_from_cosmosis(self, cosmosis_params: dict):
