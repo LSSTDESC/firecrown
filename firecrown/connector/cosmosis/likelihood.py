@@ -70,8 +70,10 @@ class FirecrownLikelihood:
         h0 = sample["cosmological_parameters", "h0"]
         # NOTE: The first value of the h_over_h0 array is non-zero because of the way
         # CAMB does it calculation. We do not modify this, because we want consistency.
-        hubble_radius_today = (ccl.physical_constants.CLIGHT * 1e-5) / h0
-        h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
+
+        # hubble_radius_today = (ccl.physical_constants.CLIGHT * 1e-5) / h0
+        # h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
+        h_over_h0 = self.map.transform_h_to_h_over_h0(sample["distances", "h"])
 
         cosmo = ccl.CosmologyCalculator(
             **self.map.asdict(),

@@ -16,6 +16,8 @@ import numpy as np
 from abc import ABC, abstractmethod
 from ..descriptors import Float, String
 
+from pyccl import physical_constants as physics
+
 
 class Mapping(ABC):
 
@@ -78,6 +80,11 @@ class Mapping(ABC):
     @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         """Transform the given p_k * h^3 to p_k."""
+        pass
+
+    @abstractmethod
+    def transform_h_to_h_over_h0(self, h):
+        """Transform distances h to h/h0."""
         pass
 
     def set_params(
@@ -217,6 +224,10 @@ class MappingCosmoSIS(Mapping):
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         return p_k_h3 / (self.h ** 3)
+
+    def transform_h_to_h_over_h0(self, h):
+        hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
+        return np.flip(h) * hubble_radius_today
 
     def set_params_from_cosmosis(self, cosmosis_params: dict):
         """Return a PyCCLCosmologyConstants object with parameters equivalent to
