@@ -1,5 +1,4 @@
 parameters:
-  Omega_b: 0.0485
   Omega_c: 0.2545
   w0: -1.0
   wa: 0.0
