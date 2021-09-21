@@ -1,6 +1,6 @@
 parameters:
-  Omega_c: 0.2545
-  sigma8: 0.801
+  #Omega_c: 0.2545
+  #sigma8: 0.801
   n_s: 0.971
   transfer_function: eisenstein_hu
 
