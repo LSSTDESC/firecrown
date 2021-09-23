@@ -9,24 +9,30 @@ parameters:
   z_piv_ia: 0.62
 
   # shear errors
-  {%- for i in range(4) %}
-  src{{ i }}_mult_bias: 0.0
-  {%- endfor %}
+  src0_mult_bias: 0.0
+  src1_mult_bias: 0.0
+  src2_mult_bias: 0.0
+  src3_mult_bias: 0.0
 
   # linear bias for lenses
-  {%- for val in [1.4, 1.6, 1.6, 1.9, 2.0] %}
-  bias_lens{{ loop.index0 }}: {{ val }}
-  {%- endfor %}
+  bias_lens0: 1.4
+  bias_lens1: 1.6
+  bias_lens2: 1.6
+  bias_lens3: 1.9
+  bias_lens4: 2.0
 
   # photoz shifts for the lensing sources
-  {%- for loc in [-0.001, -0.019, 0.009, -0.018] %}
-  src{{ loop.index0 }}_delta_z: {{ loc }}
-  {%- endfor %}
+  src0_delta_z: -0.001
+  src1_delta_z: -0.019
+  src2_delta_z: 0.009
+  src3_delta_z: -0.018
 
   # photoz shifts for the lenses
-  {%- for loc in [0.001, 0.002, 0.001, 0.003, 0.0] %}
-  lens{{ loop.index0 }}_delta_z: {{ loc }}
-  {%- endfor %}
+  lens0_delta_z: 0.001
+  lens1_delta_z: 0.002
+  lens2_delta_z: 0.001
+  lens3_delta_z: 0.003
+  lens4_delta_z: 0.0
 
 priors:
   module: firecrown.priors
