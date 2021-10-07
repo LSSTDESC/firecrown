@@ -1,3 +1,4 @@
+from __future__ import annotations
 import functools
 import pyccl
 
@@ -37,7 +38,7 @@ RESERVED_CCL_PARAMS = (
 
 
 @functools.lru_cache(maxsize=64)
-def _get_ccl_cosmology(params):
+def _get_ccl_cosmology(params) -> pyccl.Cosmology:
     dct = {p: v for p, v in params}
     return pyccl.Cosmology(**dct)
 

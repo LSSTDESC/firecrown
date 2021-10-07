@@ -17,10 +17,15 @@ Some Notes:
  - The `read` methods are called after all objects are made and are used to
    read any additional data.
 """
+from __future__ import annotations
+from typing import Dict, Optional
+from abc import ABC, abstractmethod
 import numpy as np
+import pyccl
+import sacc
 
 
-class Statistic(object):
+class Statistic(ABC):
     """A statistic (e.g., two-point function, mass function, etc.).
 
     Parameters
@@ -32,7 +37,10 @@ class Statistic(object):
         The default of `None` implies no systematics.
     """
 
-    def read(self, sacc_data, sources):
+    # Why does this exist? It is not marked as abstract, so derived classes are
+    # not required to implement it. It has no behavior, so any code calling it
+    # and expecting some side effect will not be satisfied.
+    def read(self, sacc_data: sacc.Sacc, sources) -> None:
         """Read the data for this statistic from the SACC file.
 
         Parameters
@@ -45,7 +53,9 @@ class Statistic(object):
         """
         pass
 
-    def compute(self, cosmo, params, sources, systematics=None):
+    @abstractmethod
+    def compute(self, cosmo: pyccl.Cosmology, params: Dict, sources: Dict,
+                systematics: Optional[Dict] = None) -> float:
         """Compute a statistic from sources, applying any systematics.
 
         Parameters

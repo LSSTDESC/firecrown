@@ -1,5 +1,6 @@
 import numpy as np
 import pyccl as ccl
+import sacc
 
 from ..core import Statistic
 
@@ -62,7 +63,7 @@ class ClusterCountStatistic(Statistic):
                 "source, you sent '%s'!" % self.sources
             )
 
-    def read(self, sacc_data, sources):
+    def read(self, sacc_data: sacc.Sacc, sources) -> None:
         """Read the data for this statistic from the SACC file.
 
         Parameters
