@@ -14,26 +14,25 @@ The supported codes include:
 import numpy as np
 
 from abc import ABC, abstractmethod
-from ..descriptors import Float, String
+from ..descriptors import TypeFloat, TypeString
 
 from pyccl import physical_constants as physics
 
-
 class Mapping(ABC):
 
-    Omega_c = Float(minvalue=0.0, maxvalue=1.0)
-    Omega_b = Float(minvalue=0.0, maxvalue=1.0)
-    h = Float(minvalue=0.3, maxvalue=1.2)
-    A_s = Float(allow_none=True)
-    sigma8 = Float(allow_none=True)
-    n_s = Float()
-    Omega_k = Float(minvalue=-1.0, maxvalue=1.0)
-    Neff = Float(minvalue=0.0)
-    m_nu = Float(minvalue=0.0)
-    m_nu_type = String()
-    w0 = Float()
-    wa = Float()
-    T_CMB = Float()
+    Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
+    Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
+    h = TypeFloat(minvalue=0.3, maxvalue=1.2)
+    A_s = TypeFloat(allow_none=True)
+    sigma8 = TypeFloat(allow_none=True)
+    n_s = TypeFloat()
+    Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
+    Neff = TypeFloat(minvalue=0.0)
+    m_nu = TypeFloat(minvalue=0.0)
+    m_nu_type = TypeString()
+    w0 = TypeFloat()
+    wa = TypeFloat()
+    T_CMB = TypeFloat()
 
     """
     Mapping is an abstract base class providing the interface that describes
@@ -312,6 +311,21 @@ class MappingCAMB(Mapping):
             "w",
             "wa",
         ]
+
+    def transform_k_h_to_k(self, k_h):
+        """Transform the given k_h (k over h) to k."""
+        # Not implemented
+        assert False
+
+    def transform_p_k_h3_to_p_k(self, p_k_h3):
+        """Transform the given p_k * h^3 to p_k."""
+        # Not implemented
+        assert False
+
+    def transform_h_to_h_over_h0(self, h):
+        """Transform distances h to h/h0."""
+        # Not implemented
+        assert False
 
     def set_params_from_camb(self, **params_values):
         """...

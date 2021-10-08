@@ -8,7 +8,6 @@ from pprint import pprint
 
 from cobaya.theory import Theory
 
-
 class CCLConnector(Theory):
     """
     A class implementing cobaya.theory.Theory ...
@@ -93,7 +92,7 @@ class CCLConnector(Theory):
         ... : str
             ...
         """
-        return self.map.get_names()
+        return self.map.get_params_names()
 
     def get_allow_agnostic(self):
         """...

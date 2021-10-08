@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-
+from firecrown.ccl.core import LogLike
 
 class Validator(ABC):
     def __set_name__(self, owner, name):
@@ -17,7 +17,7 @@ class Validator(ABC):
         pass
 
 
-class Float(Validator):
+class TypeFloat(Validator):
     def __init__(self, minvalue=None, maxvalue=None, allow_none=False):
         self.minvalue = minvalue
         self.maxvalue = maxvalue
@@ -34,7 +34,7 @@ class Float(Validator):
             raise ValueError(f"Expected {value!r} to be no more than {self.maxvalue!r}")
 
 
-class String(Validator):
+class TypeString(Validator):
     def __init__(self, minsize=None, maxsize=None, predicate=None):
         self.minsize = minsize
         self.maxsize = maxsize
@@ -53,3 +53,11 @@ class String(Validator):
             )
         if self.predicate is not None and not self.predicate(value):
             raise ValueError(f"Expected {self.predicate} to be true for {value!r}")
+
+class TypeLikelihood(Validator):
+    def __init__(self):
+        pass
+
+    def validate(self, value):
+        if not isinstance(value, LogLike):
+            raise TypeError(f"Expected {value!r} {value} {self} to be an firecrown.core.LogLike")

@@ -140,6 +140,24 @@ class LogLike(object):
         The inverse of the covariance matrix.
     """
 
+    def set_sources(self, sources):
+        self.sources = sources
+
+    def set_statistics(self, statistics):
+        self.statistics = statistics
+
+    def set_systematics(self, systematics):
+        self.systematics = systematics
+
+    def set_params_names(self, params_names):
+        self.params_names = params_names
+
+    def get_params_names(self):
+        if hasattr(self, "params_names"):
+            return self.params_names
+        else:
+            return []
+
     def read(self, sacc_data, sources, statistics):
         """Read the covariance matrirx for this likelihood from the SACC file.
 
@@ -195,3 +213,33 @@ class LogLike(object):
         for stat in self.data_vector:
             dv.append(np.atleast_1d(data[stat]))
         return np.concatenate(dv, axis=0)
+
+    def compute_loglike(self, cosmo, parameters):
+        """Compute the log-likelihood of generic CCL data.
+
+        Parameters
+        ----------
+        cosmo : a `pyccl.Cosmology` object
+            A cosmology.
+        parameters : dict
+            Dictionary mapping parameters to their values.
+
+        Returns
+        -------
+        loglike : float
+            The computed log-likelihood.
+        """
+
+        for name, src in self.sources.items():
+            src.render(cosmo, parameters, systematics=self.systematics)
+
+        _data = {}
+        _theory = {}
+        for name, stat in self.statistics.items():
+            stat.compute(
+                cosmo, parameters, self.sources, systematics=self.systematics
+            )
+            _data[name] = stat.measured_statistic_
+            _theory[name] = stat.predicted_statistic_
+
+        return self.compute (_data, _theory)
