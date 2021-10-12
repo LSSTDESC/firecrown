@@ -47,17 +47,18 @@ class LikelihoodConnector(Likelihood):
         
         if ext == '.yaml':
             self.config, self.data = firecrown.parse(self.firecrownIni)
-            
-            analyses = list(set(list(self.data.keys())) - set(FIRECROWN_RESERVED_NAMES) - set(["priors"]))
-            
-            if len (analyses) != 1:
+
+            # analyses = list(set(list(self.data.keys())) - set(FIRECROWN_RESERVED_NAMES) - set(["priors"]))
+            analyses = set(self.data.keys()) - set(FIRECROWN_RESERVED_NAMES + ["priors"])
+
+            if len(analyses) != 1:
                 raise ValueError("Only a single likelihood per file is supported")
-            
+
             for analysis in analyses:
                 self.likelihood = self.data[analysis]['data']['likelihood']
-                self.likelihood.set_sources (self.data[analysis]['data']['sources'])
-                self.likelihood.set_systematics (self.data[analysis]['data']['systematics'])
-                self.likelihood.set_statistics (self.data[analysis]['data']['statistics'])
+                self.likelihood.set_sources(self.data[analysis]['data']['sources'])
+                self.likelihood.set_systematics(self.data[analysis]['data']['systematics'])
+                self.likelihood.set_statistics(self.data[analysis]['data']['statistics'])
 
         elif ext == '.py':            
             inifile = os.path.basename(self.firecrownIni)

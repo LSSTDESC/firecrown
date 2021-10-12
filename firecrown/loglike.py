@@ -37,7 +37,7 @@ def compute_loglike(*, cosmo: CosmologyCalculator, data: Dict[str, Dict]):
     cov = {}
     inv_cov = {}
 
-    analyses = list(set(list(data.keys())) - set(FIRECROWN_RESERVED_NAMES))
+    analyses = set(data.keys()) - set(FIRECROWN_RESERVED_NAMES)
     for analysis in analyses:
         _ll, _meas, _pred, _cov, _inv_cov, _stats = data[analysis]["eval"](
             cosmo=cosmo, parameters=data["parameters"], data=data[analysis]["data"]

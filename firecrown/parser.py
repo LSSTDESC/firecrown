@@ -42,7 +42,7 @@ def parse(config_or_filename):
             params[p] = val
     data["parameters"] = params
 
-    analyses = list(set(list(data.keys())) - set(FIRECROWN_RESERVED_NAMES))
+    analyses = set(data.keys()) - set(FIRECROWN_RESERVED_NAMES)
     for analysis in analyses:
         new_keys = {}
 
