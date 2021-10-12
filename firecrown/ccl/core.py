@@ -205,7 +205,7 @@ class LogLike(object):
         """
         raise NotImplementedError("Method `compute_loglike` is not implemented!")
 
-    def assemble_data_vector(self, data):
+    def assemble_data_vector(self, data: Dict[str, np.ndarray]) -> np.ndarray:
         """Compute the log-likelihood.
 
         Parameters

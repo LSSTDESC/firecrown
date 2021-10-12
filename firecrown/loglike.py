@@ -1,7 +1,10 @@
+from __future__ import annotations
+from typing import Dict
 from .parser_constants import FIRECROWN_RESERVED_NAMES
+from pyccl.core import CosmologyCalculator
 
 
-def compute_loglike(*, cosmo, data):
+def compute_loglike(*, cosmo: CosmologyCalculator, data: Dict[str, Dict]):
     """Compute the log-likelihood.
 
     Parameters
