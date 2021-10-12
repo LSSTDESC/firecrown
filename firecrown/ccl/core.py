@@ -219,9 +219,7 @@ class LogLike(object):
         data_vector : array-like
             The data vector.
         """
-        dv = []
-        for stat in self.data_vector:
-            dv.append(np.atleast_1d(data[stat]))
+        dv = [np.atleast_1d(data[stat]) for stat in self.data_vector]
         return np.concatenate(dv, axis=0)
 
     def compute_loglike(self, cosmo, parameters):
