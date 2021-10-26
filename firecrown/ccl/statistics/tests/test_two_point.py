@@ -6,7 +6,7 @@ import sacc
 import pyccl as ccl
 
 from ..two_point import TwoPointStatistic, _ell_for_xi, ELL_FOR_XI_DEFAULTS
-
+from ..two_point import SACC_DATA_TYPE_TO_CCL_KIND
 
 class DummySource(object):
     pass
@@ -16,7 +16,7 @@ class DummySource(object):
 @pytest.mark.parametrize("ell_or_theta_max", [None, 80])
 @pytest.mark.parametrize("ell_or_theta_min", [None, 20])
 @pytest.mark.parametrize("ell_for_xi", [None, ELL_FOR_XI_DEFAULTS, {"mid": 100}])
-@pytest.mark.parametrize("kind", ["cl", "gg", "gl", "l+", "l-"])
+@pytest.mark.parametrize("kind", ["cl", "NN", "NG", "GG+", "GG-"])
 def test_two_point_sacc(kind, ell_for_xi, ell_or_theta_min, ell_or_theta_max, tmpdir):
     sacc_data = sacc.Sacc()
 
@@ -37,7 +37,7 @@ def test_two_point_sacc(kind, ell_for_xi, ell_or_theta_min, ell_or_theta_max, tm
         z = np.linspace(0, 2, 50)
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
 
-        if ("g" in kind and i == 0) or kind == "gg":
+        if ("N" in kind and i == 0) or kind == "NN":
             sources["src%d" % i].tracer_ = ccl.NumberCountsTracer(
                 cosmo, has_rsd=False, dndz=(z, dndz), bias=(z, np.ones_like(z) * 2.0)
             )
@@ -74,14 +74,14 @@ def test_two_point_sacc(kind, ell_for_xi, ell_or_theta_min, ell_or_theta_max, tm
             ell_for_xi_kws.update(ell_for_xi)
         ell = _ell_for_xi(**ell_for_xi_kws)
         cell = ccl.angular_cl(cosmo, *tracers, ell)
-        xi = ccl.correlation(cosmo, ell, cell, theta / 60.0, corr_type=kind) * scale
-        if kind == "gg":
+        xi = ccl.correlation(cosmo, ell, cell, theta / 60.0, type=kind) * scale
+        if kind == "NN":
             sacc_kind = "galaxy_density_xi"
-        elif kind == "gl":
+        elif kind == "NG":
             sacc_kind = "galaxy_shearDensity_xi_t"
-        elif kind == "l+":
+        elif kind == "GG+":
             sacc_kind = "galaxy_shear_xi_plus"
-        elif kind == "l-":
+        elif kind == "GG-":
             sacc_kind = "galaxy_shear_xi_minus"
         sacc_data.add_theta_xi(sacc_kind, "sacc_src0", "sacc_src1", theta, xi)
         sacc_data.add_theta_xi(sacc_kind, "sacc_src0", "sacc_src5", theta, xi * 2)
@@ -132,12 +132,13 @@ def test_two_point_sacc(kind, ell_for_xi, ell_or_theta_min, ell_or_theta_max, tm
     assert np.allclose(stat.measured_statistic_, stat.predicted_statistic_)
 
 
+@pytest.mark.filterwarnings("ignore:Empty index selected:UserWarning")
 @pytest.mark.slow()
 @pytest.mark.parametrize("binning", ["log", "lin"])
 @pytest.mark.parametrize("ell_or_theta_max", [None, 80])
 @pytest.mark.parametrize("ell_or_theta_min", [None, 20])
 @pytest.mark.parametrize("ell_for_xi", [None, ELL_FOR_XI_DEFAULTS, {"mid": 100}])
-@pytest.mark.parametrize("kind", ["cl", "gg", "gl", "l+", "l-"])
+@pytest.mark.parametrize("kind", ["cl", "NN", "NG", "GG+", "GG-"])
 def test_two_point_gen(
     kind, ell_for_xi, ell_or_theta_min, ell_or_theta_max, binning, tmpdir
 ):
@@ -160,7 +161,7 @@ def test_two_point_gen(
         z = np.linspace(0, 2, 50)
         dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
 
-        if ("g" in kind and i == 0) or kind == "gg":
+        if ("N" in kind and i == 0) or kind == "NN":
             sources["src%d" % i].tracer_ = ccl.NumberCountsTracer(
                 cosmo, has_rsd=False, dndz=(z, dndz), bias=(z, np.ones_like(z) * 2.0)
             )
@@ -205,14 +206,14 @@ def test_two_point_gen(
             ell_for_xi_kws.update(ell_for_xi)
         ell = _ell_for_xi(**ell_for_xi_kws)
         cell = ccl.angular_cl(cosmo, *tracers, ell)
-        xi = ccl.correlation(cosmo, ell, cell, theta / 60.0, corr_type=kind) * scale
-        if kind == "gg":
+        xi = ccl.correlation(cosmo, ell, cell, theta / 60.0, type=kind) * scale
+        if kind == "NN":
             sacc_kind = "galaxy_density_xi"
-        elif kind == "gl":
+        elif kind == "NG":
             sacc_kind = "galaxy_shearDensity_xi_t"
-        elif kind == "l+":
+        elif kind == "GG+":
             sacc_kind = "galaxy_shear_xi_plus"
-        elif kind == "l-":
+        elif kind == "GG-":
             sacc_kind = "galaxy_shear_xi_minus"
 
     stat = TwoPointStatistic(
