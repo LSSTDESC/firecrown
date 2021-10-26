@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import Dict
-from .parser_constants import FIRECROWN_RESERVED_NAMES
+from typing import Dict, Set
 from pyccl.core import CosmologyCalculator
+from .parser_constants import FIRECROWN_RESERVED_NAMES
 
 
 def compute_loglike(*, cosmo: CosmologyCalculator, data: Dict[str, Dict]):
@@ -36,11 +36,18 @@ def compute_loglike(*, cosmo: CosmologyCalculator, data: Dict[str, Dict]):
     pred = {}
     cov = {}
     inv_cov = {}
-
-    analyses = set(data.keys()) - set(FIRECROWN_RESERVED_NAMES)
+    analyses: Set[str] = set(data.keys()) - set(FIRECROWN_RESERVED_NAMES)
+    parameters: Dict[str, float] = data["parameters"]
     for analysis in analyses:
-        _ll, _meas, _pred, _cov, _inv_cov, _stats = data[analysis]["eval"](
-            cosmo=cosmo, parameters=data["parameters"], data=data[analysis]["data"]
+        # It appears that current_analysis will always have keys "data", "eval" and "write".
+        # Does it really never lack these keys?
+        # Will it ever have others keys?
+        current_analysis = data[analysis]
+        assert set(current_analysis.keys()) == {"data", "eval", "write"}
+        current_eval = current_analysis["eval"]
+        current_data = current_analysis["data"]
+        _ll, _meas, _pred, _cov, _inv_cov, _stats = current_eval(
+            cosmo=cosmo, parameters=parameters, data=current_data
         )
         loglike[analysis] = _ll
         statistics[analysis] = _stats
