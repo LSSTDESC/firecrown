@@ -31,7 +31,7 @@ def write_metadata(analysis_id, output_dir, config_file):
         "analysis_id": analysis_id,
         "timestamp": datetime.datetime.utcnow().isoformat(),
         "firecrown_version": __version__,
-        "pyccl_version": pyccl.__version__,
+        "pyccl_version": pyccl_version,
         "sacc_version": sacc.__version__,
     }
 
