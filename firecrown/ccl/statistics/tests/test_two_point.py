@@ -279,7 +279,7 @@ def test_two_point_raises_wrong_num_sources():
         TwoPointStatistic(sacc_data_type="galaxy_shear_cl_ee", sources=["src0"])
     assert "src0" in str(e)
 
-
+@pytest.mark.filterwarnings("ignore:Empty index selected:UserWarning")
 def test_two_point_raises_no_sacc_data():
     sacc_data = sacc.Sacc()
 

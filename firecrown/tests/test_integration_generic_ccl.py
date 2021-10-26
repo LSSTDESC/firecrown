@@ -213,6 +213,7 @@ two_point_plus_clusters:
     }
 
 
+@pytest.mark.filterwarnings("ignore:Keyword name:astropy.io.fits.verify.VerifyWarning")
 def test_integration_generic_ccl_smoke(tx_data):
     tmpdir = tx_data["tmpdir"]
     cfg_path = os.path.join(tmpdir, "config.yaml")
