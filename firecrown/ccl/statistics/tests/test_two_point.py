@@ -8,6 +8,7 @@ import pyccl as ccl
 from ..two_point import TwoPointStatistic, _ell_for_xi, ELL_FOR_XI_DEFAULTS
 from ..two_point import SACC_DATA_TYPE_TO_CCL_KIND
 
+
 class DummySource(object):
     pass
 
@@ -279,6 +280,7 @@ def test_two_point_raises_wrong_num_sources():
     with pytest.raises(ValueError) as e:
         TwoPointStatistic(sacc_data_type="galaxy_shear_cl_ee", sources=["src0"])
     assert "src0" in str(e)
+
 
 @pytest.mark.filterwarnings("ignore:Empty index selected:UserWarning")
 def test_two_point_raises_no_sacc_data():

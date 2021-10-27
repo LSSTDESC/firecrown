@@ -8,6 +8,7 @@ from pprint import pprint
 
 from cobaya.theory import Theory
 
+
 class CCLConnector(Theory):
     """
     A class implementing cobaya.theory.Theory ...

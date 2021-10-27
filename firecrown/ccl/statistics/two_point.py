@@ -139,14 +139,14 @@ class TwoPointStatistic(Statistic):
     """
 
     def __init__(
-            self,
-            sacc_data_type,
-            sources: List[str],
-            systematics: Optional[List[str]] = None,
-            ell_for_xi=None,
-            ell_or_theta=None,
-            ell_or_theta_min=None,
-            ell_or_theta_max=None,
+        self,
+        sacc_data_type,
+        sources: List[str],
+        systematics: Optional[List[str]] = None,
+        ell_for_xi=None,
+        ell_or_theta=None,
+        ell_or_theta_min=None,
+        ell_or_theta_max=None,
     ):
         self.sacc_data_type = sacc_data_type
         self.sources = sources

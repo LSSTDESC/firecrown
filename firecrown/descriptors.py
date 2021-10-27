@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from firecrown.ccl.core import LogLike
 
+
 class Validator(ABC):
     def __set_name__(self, owner, name):
         self.private_name = "_" + name
@@ -54,10 +55,13 @@ class TypeString(Validator):
         if self.predicate is not None and not self.predicate(value):
             raise ValueError(f"Expected {self.predicate} to be true for {value!r}")
 
+
 class TypeLikelihood(Validator):
     def __init__(self):
         pass
 
     def validate(self, value):
         if not isinstance(value, LogLike):
-            raise TypeError(f"Expected {value!r} {value} {self} to be an firecrown.core.LogLike")
+            raise TypeError(
+                f"Expected {value!r} {value} {self} to be an firecrown.core.LogLike"
+            )
