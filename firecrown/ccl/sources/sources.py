@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 import numpy as np
 from scipy.interpolate import Akima1DInterpolator
 
@@ -5,7 +7,6 @@ import pyccl as ccl
 
 from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
-
 
 __all__ = ["WLSource", "NumberCountsSource", "ClusterSource", "CMBLSource"]
 
@@ -63,6 +64,9 @@ class WLSource(Source):
         self.ia_bias = ia_bias
         self.systematics = systematics or []
         self.scale = scale
+        self.z_orig: Optional[np.ndarray] = None
+        self.dndz_orig: Optional[np.ndarray] = None
+        self.dndz_interp = None
 
     def read(self, sacc_data):
         """Read the data for this source from the SACC file.
