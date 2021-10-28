@@ -1,3 +1,5 @@
+from __future__ import annotations
+from typing import Optional
 import numpy as np
 from scipy.interpolate import Akima1DInterpolator
 
@@ -5,7 +7,6 @@ import pyccl as ccl
 
 from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
-
 
 __all__ = ["WLSource", "NumberCountsSource", "ClusterSource", "CMBLSource"]
 
@@ -63,6 +64,9 @@ class WLSource(Source):
         self.ia_bias = ia_bias
         self.systematics = systematics or []
         self.scale = scale
+        self.z_orig: Optional[np.ndarray] = None
+        self.dndz_orig: Optional[np.ndarray] = None
+        self.dndz_interp = None
 
     def read(self, sacc_data):
         """Read the data for this source from the SACC file.
@@ -288,27 +292,6 @@ class ClusterSource(Source):
         The minimum lnlambda value. Set after a call to `render`.
     lnlam_max_ : float
         The maximum lnlambda value. Set after a call to `render`.
-    mor_ : callable
-        The mass-observable relationship. This is a callable with signature
-        `mor(lnmass, a)` that returns a value of the "observable" denoted as
-        `lam` in the code. Set after a call to `render`.
-        A default of the identity function is applied. Add
-        systematics to the source to support more complicated models.
-    inv_mor_ : callable
-        The inverse of the mass-observable relationship. This is a callable with
-        signature `inv_mor(lnlam, a)` that returns the `lnmass` for a given
-        `lam` and scale factor `a`. Set after a call to `render`.
-        A default of the identity function is applied. Add
-        systematics to the source to support more complicated models.
-    selfunc_ : callable
-        A function with signature `selfunc(lnmass, a)` that
-        gives the cluster selection function in mass and scale factor
-        `\\int_{lnlam_min_}^{lnlam_max_} p(lnlam|lnmass, a) dlnlam`.
-        Set after a call to `render`. The default is to assume `p(lnlam|lnmass, a)`
-        is a Delta function `\\delta(lnmass - lnlam)` so that the selection function
-        is a top-hat from `lnlam_min_` to `lnlam_max_` (which are in now in units
-        of mass). Add systematics to the source when rendering in order to produce
-        more complicated models.
     area_sr_orig : float
         The original area in steradians of the cluster sample.
     area_sr_ : float

@@ -54,8 +54,13 @@ class Statistic(ABC):
         pass
 
     @abstractmethod
-    def compute(self, cosmo: pyccl.Cosmology, params: Dict, sources: Dict,
-                systematics: Optional[Dict] = None) -> float:
+    def compute(
+        self,
+        cosmo: pyccl.Cosmology,
+        params: Dict,
+        sources: Dict,
+        systematics: Optional[Dict] = None,
+    ) -> float:
         """Compute a statistic from sources, applying any systematics.
 
         Parameters
@@ -244,10 +249,8 @@ class LogLike(object):
         _data = {}
         _theory = {}
         for name, stat in self.statistics.items():
-            stat.compute(
-                cosmo, parameters, self.sources, systematics=self.systematics
-            )
+            stat.compute(cosmo, parameters, self.sources, systematics=self.systematics)
             _data[name] = stat.measured_statistic_
             _theory[name] = stat.predicted_statistic_
 
-        return self.compute (_data, _theory)
+        return self.compute(_data, _theory)

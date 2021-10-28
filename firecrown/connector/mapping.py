@@ -18,6 +18,7 @@ from ..descriptors import TypeFloat, TypeString
 
 from pyccl import physical_constants as physics
 
+
 class Mapping(ABC):
 
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)

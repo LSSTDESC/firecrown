@@ -16,7 +16,7 @@ class PhotoZShiftBias(Systematic):
 
     Methods
     -------
-    apply : appaly the systematic to a source
+    apply : apply the systematic to a source
     """
 
     def __init__(self, delta_z):
