@@ -36,20 +36,20 @@ params:
   
 #   Likelihood params
 #   - IA model
-  A0:
+  ia_bias:
      ref: 0.5
      prior:
         min: -5.0
         max: +5.0
-  eta_ia:
+  alphaz:
      ref: 0.0
      prior:
         min: -5.0
         max: +5.0
 
 #   - these parameters are fixed
-  alphag_ia: -1
-  z_piv_ia: 0.62
+  alphag: -1
+  z_piv: 0.62
 
 #   - linear bias for lenses
   bias_lens0: 

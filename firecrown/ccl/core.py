@@ -119,6 +119,9 @@ class Source(object):
         """
         pass
 
+    def update_params(self, params):
+        pass
+
     def render(self, cosmo, params, systematics=None):
         """Render a source by applying systematics.
 
@@ -244,6 +247,7 @@ class LogLike(object):
         """
 
         for name, src in self.sources.items():
+            src.update_params(parameters)
             src.render(cosmo, parameters, systematics=self.systematics)
 
         _data = {}

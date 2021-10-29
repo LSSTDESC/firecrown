@@ -11,6 +11,8 @@ from firecrown.ccl.statistics import *
 from firecrown.ccl.systematics import *
 from firecrown.ccl.likelihoods import *
 
+import firecrown.ccl.sources.wl_source
+
 import sacc
 
 # Sources
@@ -19,11 +21,25 @@ params = set([])
 
 sources = {}
 
-params.add("A0")
+params.add("ia_bias")
+params.add("alphaz")
+params.add("alphag")
+params.add("z_piv")
+
+lai_systematic = firecrown.ccl.sources.wl_source.LinearAlignmentSystematic(
+    sacc_tracer=""
+)
 for i in range(4):
-    systematics_params = [f"delta_z_src{i}", "des_ia", f"shear_bias_src{i}"]
-    sources[f"src{i}"] = WLSource(
-        sacc_tracer=f"src{i}", ia_bias="A0", systematics=systematics_params
+    mbias = firecrown.ccl.sources.wl_source.MultiplicativeShearBias(
+        sacc_tracer=f"src{i}"
+    )
+    params.add(f"src{i}_mult_bias")
+
+    pzshift = firecrown.ccl.sources.wl_source.PhotoZShift(sacc_tracer=f"src{i}")
+    params.add(f"src{i}_delta_z")
+
+    sources[f"src{i}"] = firecrown.ccl.sources.wl_source.WLSource(
+        sacc_tracer=f"src{i}", systematics=[lai_systematic, mbias, pzshift]
     )
 
 for i in range(5):
@@ -57,26 +73,12 @@ for i in range(5):
     )
 
 # Systematics
-
 systematics = {}
 
 for i in range(5):
     systematics[f"delta_z_lens{i}"] = PhotoZShiftBias(delta_z=f"lens{i}_delta_z")
     params.add(f"lens{i}_delta_z")
 
-for i in range(4):
-    systematics[f"delta_z_src{i}"] = PhotoZShiftBias(delta_z=f"src{i}_delta_z")
-    params.add(f"src{i}_delta_z")
-
-params.add("eta_ia")
-params.add("alphag_ia")
-params.add("z_piv_ia")
-systematics["des_ia"] = LinearAlignmentSystematic(
-    alphaz="eta_ia", alphag="alphag_ia", z_piv="z_piv_ia"
-)
-for i in range(4):
-    systematics[f"shear_bias_src{i}"] = MultiplicativeShearBias(m=f"src{i}_mult_bias")
-    params.add(f"src{i}_mult_bias")
 
 # Likelihood
 
