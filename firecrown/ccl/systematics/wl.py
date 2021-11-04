@@ -20,7 +20,8 @@ class MultiplicativeShearBias(Systematic):
     apply : apply the systematic to a source
     """
 
-    def __init__(self, m):
+    def __init__(self, m: str):
+        """"Create a MultiplicitiveShearBias with bias parameter name `m`"""
         self.m = m
 
     def apply(self, cosmo, params, source):

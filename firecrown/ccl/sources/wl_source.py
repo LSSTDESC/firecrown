@@ -9,9 +9,8 @@ import pyccl as ccl
 
 from ..core import Source
 from ..core import Systematic
-from zmq.sugar import attrsettr
 
-__all__ = ["WLSource", "NumberCountsSource", "ClusterSource", "CMBLSource"]
+__all__ = ["WLSource"]
 
 
 @dataclass(frozen=True)
@@ -28,7 +27,7 @@ class WLSourceSystematic(Systematic):
     pass
 
 
-def get_from_prefix_param(obj_str, params, prefix, param):
+def get_from_prefix_param(obj_str: str, params, prefix, param):
     p = None
     if prefix and f"{prefix}_{param}" in params.keys():
         p = params[f"{prefix}_{param}"]
