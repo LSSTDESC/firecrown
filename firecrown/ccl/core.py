@@ -79,23 +79,13 @@ class Statistic(ABC):
         raise NotImplementedError("Method `compute` is not implemented!")
 
 
-class Systematic(object):
-    """The systematic (e.g., shear biases, photo-z shifts, etc.)."""
+class Systematic():
+    """The systematic (e.g., shear biases, photo-z shifts, etc.).
 
-    def apply(self, cosmo, params, source_or_statistic):
-        """Apply systematics to a source.
+    This class currently has no methods at all, because the argument types for
+    the `apply` method of different subclasses are different."""
 
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        source_or_statistic : a source or statistic object
-            The source or statistic to which apply systematics.
-        """
-        raise NotImplementedError("Method `apply` is not implemented!")
-
+    pass
 
     # def apply(self, cosmo: pyccl.Cosmology, params: Dict, source_or_statistic):
     #     """Apply systematics to a source.
