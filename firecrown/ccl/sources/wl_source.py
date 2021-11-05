@@ -1,8 +1,9 @@
 from __future__ import annotations
-from typing import Optional, List
+from typing import List, Dict, Optional
 from dataclasses import dataclass
 
 import numpy as np
+import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
 import pyccl as ccl
@@ -27,14 +28,17 @@ class WLSourceSystematic(Systematic):
     pass
 
 
-def get_from_prefix_param(obj_str: str, params, prefix, param):
+def get_from_prefix_param(systematic: Systematic, params: Dict[str, float],
+                          prefix: str,
+                          param: str) -> float:
     p = None
     if prefix and f"{prefix}_{param}" in params.keys():
         p = params[f"{prefix}_{param}"]
     elif param in params.keys():
         p = params[param]
     else:
-        raise KeyError(f"{obj_str} key `{param}' not found")
+        typename = type(systematic).__name__
+        raise KeyError(f"{typename} key `{param}' not found")
 
     return p
 
@@ -44,10 +48,6 @@ class MultiplicativeShearBias(WLSourceSystematic):
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
 
-    Parameters
-    ----------
-    m : float
-        The name of the multiplicative bias parameter.
 
     Methods
     -------
@@ -57,15 +57,21 @@ class MultiplicativeShearBias(WLSourceSystematic):
     params_names = ["mult_bias"]
 
     def __init__(self, sacc_tracer: str):
+        """Create a MultipliciativeShearBias object that uses the named tracer.
+        Parameters
+        ----------
+        sacc_tracer : The name of the multiplicative bias parameter.
+        """
         self.sacc_tracer = sacc_tracer
-        self.m = None
+        self.m: Optional[float] = None
 
-    def update_params(self, params):
+    def update_params(self, params: Dict):
+        """Read the corresponding named tracer from the given collection of parameters."""
         self.m = get_from_prefix_param(
-            type(self), params, self.sacc_tracer, "mult_bias"
+            self, params, self.sacc_tracer, "mult_bias"
         )
 
-    def apply(self, cosmo, tracer_arg: WLSourceArgs):
+    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WLSourceArgs):
         """Apply multiplicative shear bias to a source. The `scale_` of the
         source is multiplied by `(1 + m)`.
 
@@ -120,16 +126,16 @@ class LinearAlignmentSystematic(WLSourceSystematic):
 
     def update_params(self, params):
         self.ia_bias = get_from_prefix_param(
-            type(self), params, self.sacc_tracer, "ia_bias"
+            self, params, self.sacc_tracer, "ia_bias"
         )
         self.alphaz = get_from_prefix_param(
-            type(self), params, self.sacc_tracer, "alphaz"
+            self, params, self.sacc_tracer, "alphaz"
         )
         self.alphag = get_from_prefix_param(
-            type(self), params, self.sacc_tracer, "alphag"
+            self, params, self.sacc_tracer, "alphag"
         )
         self.z_piv = get_from_prefix_param(
-            type(self), params, self.sacc_tracer, "z_piv"
+            self, params, self.sacc_tracer, "z_piv"
         )
 
     def apply(self, cosmo, tracer_arg: WLSourceArgs):
@@ -183,7 +189,7 @@ class PhotoZShift(WLSourceSystematic):
 
     def update_params(self, params):
         self.delta_z = get_from_prefix_param(
-            type(self), params, self.sacc_tracer, "delta_z"
+            self, params, self.sacc_tracer, "delta_z"
         )
 
     def apply(self, cosmo, tracer_arg: WLSourceArgs):

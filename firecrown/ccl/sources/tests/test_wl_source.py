@@ -5,9 +5,10 @@ import pyccl as ccl
 
 from ..sources import WLSource
 from ...systematics import MultiplicativeShearBias
+from ..wl_source import get_from_prefix_param, WLSourceSystematic
 
 
-@pytest.fixture
+@pytest.fixture()
 def wl_data():
     sacc_data = sacc.Sacc()
 
@@ -49,6 +50,63 @@ def wl_data():
         "z": z,
         "dndz": dndz,
     }
+
+
+@pytest.fixture()
+def empty_params():
+    return {}
+
+
+@pytest.fixture()
+def params_with_generic_name():
+    return {"bias": 1.5}
+
+
+@pytest.fixture()
+def params_with_specific_name():
+    return {"thing3_bias": 2.5}
+
+
+@pytest.fixture()
+def params_with_both_names(params_with_generic_name, params_with_specific_name):
+    return params_with_specific_name | params_with_generic_name
+
+
+def test_get_from_prefix_param_exception_for_empty_params(empty_params):
+    systematic = WLSourceSystematic()
+    with pytest.raises(KeyError) as info:
+        get_from_prefix_param(systematic, empty_params,
+                              "thing3", "bias")
+    assert info.type is KeyError
+    # The expected string formatting is ugly, because of the expected
+    # double-quote and single-quote characters that will be in the error
+    # message.
+    assert info.exconly() == "KeyError: \"WLSourceSystematic key `bias' not " \
+                             "found\""
+
+
+def test_get_prefix_param_finds_specific_name(params_with_specific_name):
+    systematic = WLSourceSystematic
+    assert get_from_prefix_param(systematic, params_with_specific_name,
+                                 "thing3", "bias") == 2.5
+
+
+def test_get_prefix_param_finds_generic_name(params_with_generic_name):
+    systematic = WLSourceSystematic
+    assert get_from_prefix_param(systematic, params_with_generic_name,
+                                 "thing3", "bias") == 1.5
+
+
+def test_get_prefix_param_prefers_specific_name(params_with_both_names):
+    systematic = WLSourceSystematic
+    assert get_from_prefix_param(systematic, params_with_both_names,
+                                 "thing3", "bias") == 2.5
+
+
+def test_get_prefix_param_skips_wrong_prefix(params_with_both_names):
+    systematic = WLSourceSystematic
+    assert get_from_prefix_param(systematic, params_with_both_names,
+                                 "thing0", "bias") == 1.5
 
 
 def test_wl_source_nosys(wl_data):
