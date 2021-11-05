@@ -97,7 +97,22 @@ class Systematic(object):
         raise NotImplementedError("Method `apply` is not implemented!")
 
 
-class Source(object):
+    # def apply(self, cosmo: pyccl.Cosmology, params: Dict, source_or_statistic):
+    #     """Apply systematics to a source.
+    #
+    #     Parameters
+    #     ----------
+    #     cosmo : pyccl.Cosmology
+    #         A pyccl.Cosmology object.
+    #     params : dict
+    #         A dictionary mapping parameter names to their current values.
+    #     source_or_statistic : a source or statistic object
+    #         The source or statistic to which apply systematics.
+    #     """
+    #     raise NotImplementedError("Method `apply` is not implemented!")
+
+
+class Source(ABC):
     """The source (e.g., a sample of lenses).
 
     Parameters
@@ -109,7 +124,8 @@ class Source(object):
         default of `None` implies no systematics.
     """
 
-    def read(self, sacc_data):
+    @abstractmethod
+    def read(self, sacc_data: sacc.Sacc):
         """Read the data for this source from the SACC file.
 
         Parameters
