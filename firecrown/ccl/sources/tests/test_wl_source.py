@@ -109,6 +109,12 @@ def test_get_prefix_param_skips_wrong_prefix(params_with_both_names):
                                  "thing0", "bias") == 1.5
 
 
+def test_get_prefix_params_with_no_prefix_finds_general(params_with_both_names):
+    systematic = WLSourceSystematic
+    assert get_from_prefix_param(systematic, params_with_both_names,
+                                 None, "bias") == 1.5
+
+
 def test_wl_source_nosys(wl_data):
     src = WLSource(sacc_tracer=wl_data["sacc_tracer"], scale=0.5)
     src.read(wl_data["sacc_data"])

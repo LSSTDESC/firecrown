@@ -29,18 +29,15 @@ class WLSourceSystematic(Systematic):
 
 
 def get_from_prefix_param(systematic: Systematic, params: Dict[str, float],
-                          prefix: str,
+                          prefix: Optional[str],
                           param: str) -> float:
-    p = None
     if prefix and f"{prefix}_{param}" in params.keys():
-        p = params[f"{prefix}_{param}"]
+        return params[f"{prefix}_{param}"]
     elif param in params.keys():
-        p = params[param]
+        return params[param]
     else:
         typename = type(systematic).__name__
         raise KeyError(f"{typename} key `{param}' not found")
-
-    return p
 
 
 class MultiplicativeShearBias(WLSourceSystematic):
