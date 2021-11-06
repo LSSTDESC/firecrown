@@ -97,17 +97,7 @@ class LinearAlignmentSystematic(WLSourceSystematic):
     This systematic adds a linear intrinsic alignment model systematic
     which varies with redshift and the growth function.
 
-    Parameters
-    ----------
-    alphaz :
-        The redshift dependence parameter of the intrinsic alignment
-        signal.
-    alphag :
-        The growth dependence parameter of the intrinsic alignment
-        signal.
-    z_piv :
-        The pivot redshift parameter for the intrinsic alignment
-        parameter.
+
 
     Methods
     -------
@@ -117,6 +107,20 @@ class LinearAlignmentSystematic(WLSourceSystematic):
     params_names = ["ia_bias", "alphaz", "alphag", "z_piv"]
 
     def __init__(self, sacc_tracer: Optional[str] = None):
+        """Create a LinearAlignmentSystematic object, using the specified
+        tracer name.
+
+        Instance data are:
+
+        alphaz : The redshift dependence parameter of the intrinsic alignment
+        signal.
+
+        alphag : The growth dependence parameter of the intrinsic alignment
+        signal.
+
+        z_piv : The pivot redshift parameter for the intrinsic alignment
+        parameter.
+        """
         self.sacc_tracer = sacc_tracer
 
         self.ia_bias = None
@@ -138,22 +142,14 @@ class LinearAlignmentSystematic(WLSourceSystematic):
             self, params, self.sacc_tracer, "z_piv"
         )
 
-    def apply(self, cosmo, tracer_arg: WLSourceArgs):
-        """Apply a linear alignment systematic.
-
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        tracer_arg : a WLSourceArgs object
-            The WLSourceArgs to which apply the shear bias.
-        """
+    def apply(self, cosmo: pyccl.Cosmology,
+              tracer_arg: WLSourceArgs) -> WLSourceArgs:
+        """Return a new linear alignment systematic, based on the given 
+        tracer_arg, in the context of the given cosmology."""
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= ccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag - 1.0
+                self.alphag - 1.0
         )
 
         ia_bias_array = pref * self.ia_bias
@@ -170,16 +166,7 @@ class PhotoZShift(WLSourceSystematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some ammount `delta_z`.
-
-    Parameters
-    ----------
-    delta_z : str
-        The name of the photo-z shift parameter.
-
-    Methods
-    -------
-    apply : apply the systematic to a source
-    """
+   """
 
     params_names = ["delta_z"]
 
@@ -192,17 +179,8 @@ class PhotoZShift(WLSourceSystematic):
             self, params, self.sacc_tracer, "delta_z"
         )
 
-    def apply(self, cosmo, tracer_arg: WLSourceArgs):
+    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WLSourceArgs):
         """Apply a shift to the photo-z distribution of a source.
-
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        source : a source object
-            The source to which apply the shift.
         """
 
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
@@ -231,6 +209,9 @@ class WLSource(Source):
         self.z_orig: Optional[np.ndarray] = None
         self.dndz_orig: Optional[np.ndarray] = None
         self.dndz_interp = None
+        self.tracer_args = None
+        self.scale_ = None
+        self.tracer_ = None
 
         self.systematics = []
         for systematic in systematics:
@@ -256,35 +237,26 @@ class WLSource(Source):
         z = z[inds]
         nz = nz[inds]
 
-        self.tracer_args = WLSourceArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
+        self.tracer_args = WLSourceArgs(scale=self.scale, z=z, dndz=nz,
+                                        ia_bias=None)
 
     def render(self, cosmo, params, systematics=None):
-        self.tracer_, tracer_args = self.create_tracer(cosmo, params, systematics)
+        self.tracer_, tracer_args = self.create_tracer(cosmo)
         self.scale_ = tracer_args.scale
 
-    def create_tracer(self, cosmo, params, systematics=None):
+    def create_tracer(self, cosmo: pyccl.Cosmology, params):
         """
         Render a source by applying systematics.
 
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        systematics : dict
-            A dictionary mapping systematic names to their objects. The
-            default of `None` corresponds to no systematics.
         """
-        systematics = systematics or {}
-
         tracer_args = self.tracer_args
 
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
         tracer = ccl.WeakLensingTracer(
-            cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
+            cosmo, dndz=(tracer_args.z, tracer_args.dndz),
+            ia_bias=tracer_args.ia_bias
         )
 
         return tracer, tracer_args
