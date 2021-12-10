@@ -1,4 +1,4 @@
-name: firecrown
+name: firecrown2
 channels:
   - conda-forge
   - defaults
