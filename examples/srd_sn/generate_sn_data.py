@@ -57,8 +57,9 @@ subtype = None
 sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
 
 type_details = sacc.parse_data_type_name(sndata_type)
+print('type_details.sources, type_details.properties, type_details.statistic, type_details.subtype')
+print(type_details.sources, type_details.properties, type_details.statistic, type_details.subtype)
 
-print(type_details.sources, type_details.properties, type_details.statistic)
 
 
 
