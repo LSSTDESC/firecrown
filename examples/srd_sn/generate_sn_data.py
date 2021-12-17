@@ -43,10 +43,8 @@ else:
     print("Done")
 
     
-#  set up the sacc data namefor the astrophysical sources involved.
+#  set up the sacc data name for the astrophysical sources involved.
 sources = ['supernova']
-# the properties of these two sources we are measuring.  If they were the same
-# property for the two sources we would not repeat it
 properties = ['distance']
 
 # The statistc 
@@ -59,8 +57,6 @@ sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
 type_details = sacc.parse_data_type_name(sndata_type)
 print('type_details.sources, type_details.properties, type_details.statistic, type_details.subtype')
 print(type_details.sources, type_details.properties, type_details.statistic, type_details.subtype)
-
-
 
 
 #Each DataPoint object contains:
