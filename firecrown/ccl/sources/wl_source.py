@@ -13,7 +13,6 @@ from ..core import Systematic
 
 __all__ = ["WLSource"]
 
-
 @dataclass(frozen=True)
 class WLSourceArgs:
     """Class for weak lensing tracer builder argument."""
