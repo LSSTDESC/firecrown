@@ -26,7 +26,7 @@ class Mapping(ABC):
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
     sigma8 = TypeFloat(allow_none=True)
-    n_s = TypeFloat()
+    n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
     m_nu = TypeFloat(minvalue=0.0)
@@ -237,8 +237,8 @@ class MappingCosmoSIS(Mapping):
         h = cosmosis_params["h0"]  # Not 'hubble' !
         Omega_b = cosmosis_params["omega_b"]
         Omega_c = cosmosis_params["omega_c"]
-        sigma8 = cosmosis_params["sigma_8"]
-        n_s = cosmosis_params["n_s"]
+        sigma8 = cosmosis_params.get ("sigma_8", 0.8)
+        n_s = cosmosis_params.get ("n_s", 0.96)
         Omega_k = cosmosis_params["omega_k"]
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
         # Read m_nu from CosmoSIS (in newer CosmoSIS)

@@ -237,7 +237,7 @@ class WLSource(Source):
                                         ia_bias=None)
 
     def render(self, cosmo, params, systematics=None):
-        self.tracer_, tracer_args = self.create_tracer(cosmo)
+        self.tracer_, tracer_args = self.create_tracer(cosmo, params)
         self.scale_ = tracer_args.scale
 
     def create_tracer(self, cosmo: pyccl.Cosmology, params):

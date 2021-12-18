@@ -17,13 +17,19 @@ Some Notes:
  - The `read` methods are called after all objects are made and are used to
    read any additional data.
 """
+
 from __future__ import annotations
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
 import numpy as np
 import pyccl
 import sacc
+import importlib
+import importlib.util
+import os
 
+import firecrown
+from ..parser_constants import FIRECROWN_RESERVED_NAMES
 
 class Statistic(ABC):
     """A statistic (e.g., two-point function, mass function, etc.).
@@ -51,6 +57,9 @@ class Statistic(ABC):
             A dictionary mapping sources to their objects. These sources do
             not have to have been rendered.
         """
+        pass
+
+    def update_params(self, params):
         pass
 
     @abstractmethod
@@ -251,7 +260,7 @@ class LogLike(object):
         loglike : float
             The computed log-likelihood.
         """
-
+        
         for name, src in self.sources.items():
             src.update_params(parameters)
             src.render(cosmo, parameters, systematics=self.systematics)
@@ -259,8 +268,57 @@ class LogLike(object):
         _data = {}
         _theory = {}
         for name, stat in self.statistics.items():
+            stat.update_params(parameters)
             stat.compute(cosmo, parameters, self.sources, systematics=self.systematics)
             _data[name] = stat.measured_statistic_
             _theory[name] = stat.predicted_statistic_
 
         return self.compute(_data, _theory)
+
+def load_likelihood(firecrownIni):
+    filename, file_extension = os.path.splitext(firecrownIni)
+
+    ext = file_extension.lower()
+
+    if ext == ".yaml":
+        config, data = firecrown.parse(firecrownIni)
+
+        analyses = set(data.keys()) - set(
+            FIRECROWN_RESERVED_NAMES + ["priors"]
+        )
+
+        if len(analyses) != 1:
+            raise ValueError("Only a single likelihood per file is supported")
+
+        for analysis in analyses:
+            likelihood = data[analysis]["data"]["likelihood"]
+            likelihood.set_sources(data[analysis]["data"]["sources"])
+            likelihood.set_systematics(
+                data[analysis]["data"]["systematics"]
+            )
+            likelihood.set_statistics(
+                data[analysis]["data"]["statistics"]
+            )
+
+    elif ext == ".py":
+        inifile = os.path.basename(firecrownIni)
+        inipath = os.path.dirname(firecrownIni)
+        modname, _ = os.path.splitext(inifile)
+
+        spec = importlib.util.spec_from_file_location(modname, firecrownIni)
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+
+        if not hasattr(mod, "likelihood"):
+            raise ValueError(
+                f"Firecrown initialization file {firecrownIni} does not define a likelihood."
+            )
+
+        likelihood = mod.likelihood
+    else:
+        raise ValueError(
+            f"Unrecognized Firecrown initialization file {firecrownIni}."
+        )
+
+    return likelihood
+

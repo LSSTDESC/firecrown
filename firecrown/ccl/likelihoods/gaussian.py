@@ -83,7 +83,8 @@ class ConstGaussianLogLike(LogLike):
         """
         dv = []
         for stat in self.data_vector:
-            dv.append(np.atleast_1d(data[stat] - np.atleast_1d(theory[stat])))
+            dv.append(np.atleast_1d(data[stat] - np.atleast_1d(theory[stat])))            
+
         dv = np.concatenate(dv, axis=0)
         x = scipy.linalg.solve_triangular(self.cholesky, dv, lower=True)
         return -0.5 * np.dot(x, x)
