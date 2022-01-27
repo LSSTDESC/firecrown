@@ -14,6 +14,7 @@ from ..core import Systematic
 
 __all__ = ["WLSource"]
 
+
 @dataclass(frozen=True)
 class WLSourceArgs:
     """Class for weak lensing tracer builder argument."""
@@ -195,11 +196,11 @@ class PhotoZShift(WLSourceSystematic):
 
 class WLSource(Source):
     def __init__(
-        self,
-        *,
-        sacc_tracer,
-        scale=1.0,
-        systematics: Optional[List[WLSourceSystematic]] = None,
+            self,
+            *,
+            sacc_tracer: str,
+            scale: float = 1.0,
+            systematics: Optional[List[WLSourceSystematic]] = None,
     ):
         self.sacc_tracer = sacc_tracer
         self.scale = scale
