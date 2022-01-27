@@ -27,8 +27,7 @@ def tx_data(tmpdir_factory):
         sigma8=0.8,
         n_s=0.96,
         h=0.67,
-        transfer_function="eisenstein_hu",
-    )
+        transfer_function='eisenstein_hu')
 
     seed = 42
     rng = np.random.RandomState(seed=seed)
@@ -37,11 +36,13 @@ def tx_data(tmpdir_factory):
     tracers = []
     for i, mn in enumerate([0.25, 0.75]):
         z = np.linspace(0, 2, 50)
-        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
+        dndz = np.exp(-0.5 * (z - mn)**2 / 0.25 / 0.25)
 
-        sacc_data.add_tracer("NZ", "trc%d" % i, z, dndz)
+        sacc_data.add_tracer('NZ', 'trc%d' % i, z, dndz)
 
-        tracers.append(ccl.WeakLensingTracer(cosmo, dndz=(z, dndz)))
+        tracers.append(ccl.WeakLensingTracer(
+            cosmo,
+            dndz=(z, dndz)))
 
     dv = []
     ndv = []
@@ -52,8 +53,7 @@ def tx_data(tmpdir_factory):
             npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
             sacc_data.add_ell_cl(
-                "galaxy_shear_cl_ee", "trc%d" % i, "trc%d" % j, ell, npell
-            )
+                'galaxy_shear_cl_ee', 'trc%d' % i, 'trc%d' % j, ell, npell)
             dv.append(pell)
             ndv.append(npell)
 
@@ -65,7 +65,7 @@ def tx_data(tmpdir_factory):
         cov[i, i] = (eps * dv[i]) ** 2
     sacc_data.add_covariance(cov)
 
-    sacc_data.save_fits(os.path.join(tmpdir, "sacc.fits"), overwrite=True)
+    sacc_data.save_fits(os.path.join(tmpdir, 'sacc.fits'), overwrite=True)
 
     cinv = np.linalg.inv(cov)
     delta = ndv - dv
@@ -132,9 +132,7 @@ two_point:
       sources: ['src1', 'src1']
       sacc_data_type: galaxy_shear_cl_ee
 
-""".format(
-        tmpdir=tmpdir
-    )
+""".format(tmpdir=tmpdir)
 
     config_nosys = """\
 parameters:
@@ -184,50 +182,48 @@ two_point:
       sources: ['src1', 'src1']
       sacc_data_type: galaxy_shear_cl_ee
 
-""".format(
-        tmpdir=tmpdir
-    )
+""".format(tmpdir=tmpdir)
 
-    with open(os.path.join(tmpdir, "config.yaml"), "w") as fp:
+    with open(os.path.join(tmpdir, 'config.yaml'), 'w') as fp:
         fp.write(config)
 
-    with open(os.path.join(tmpdir, "config_nosys.yaml"), "w") as fp:
+    with open(os.path.join(tmpdir, 'config_nosys.yaml'), 'w') as fp:
         fp.write(config_nosys)
 
     return {
-        "cosmo": cosmo,
-        "tmpdir": tmpdir,
-        "loglike": loglike,
-        "config": config,
-        "config_nosys": config_nosys,
-        "cov": cov,
-        "inv_cov": cinv,
+        'cosmo': cosmo,
+        'tmpdir': tmpdir,
+        'loglike': loglike,
+        'config': config,
+        'config_nosys': config_nosys,
+        'cov': cov,
+        'inv_cov': cinv,
     }
 
 
 def test_integration_smoke(tx_data):
-    tmpdir = tx_data["tmpdir"]
-    cfg_path = os.path.join(tmpdir, "config.yaml")
+    tmpdir = tx_data['tmpdir']
+    cfg_path = os.path.join(tmpdir, 'config.yaml')
 
     config, data = parse(cfg_path)
     loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
-        cosmo=tx_data["cosmo"], data=data
-    )
+        cosmo=tx_data['cosmo'],
+        data=data)
 
-    assert np.allclose(loglike["two_point"], tx_data["loglike"])
+    assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
-        output_dir=os.path.join(tmpdir, "output_123"),
+        output_dir=os.path.join(tmpdir, 'output_123'),
         data=data,
         statistics=stats,
     )
 
-    opth = os.path.join(tmpdir, "output_123", "statistics", "two_point")
-    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, "sacc.fits"))
-    meas_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_measured.fits"))
-    pred_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_predicted.fits"))
+    opth = os.path.join(tmpdir, 'output_123', 'statistics', 'two_point')
+    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, 'sacc.fits'))
+    meas_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_measured.fits'))
+    pred_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_predicted.fits'))
 
-    for trc_name in ["trc0", "trc1"]:
+    for trc_name in ['trc0', 'trc1']:
         orig_tr = orig_data.get_tracer(trc_name)
         meas_tr = meas_data.get_tracer(trc_name)
         pred_tr = pred_data.get_tracer(trc_name)
@@ -239,10 +235,10 @@ def test_integration_smoke(tx_data):
 
     meas_dv = []
     pred_dv = []
-    for trs in [("trc0", "trc0"), ("trc0", "trc1"), ("trc1", "trc1")]:
-        oell, ocl = orig_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
-        mell, mcl = meas_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
-        pell, pcl = pred_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
+    for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
+        oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        pell, pcl = pred_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
 
         assert np.allclose(oell, mell)
         assert np.allclose(oell, pell)
@@ -258,35 +254,34 @@ def test_integration_smoke(tx_data):
 
 
 def test_integration_sacc_in_mem(tx_data):
-    tmpdir = tx_data["tmpdir"]
-    cfg_path = os.path.join(tmpdir, "config.yaml")
+    tmpdir = tx_data['tmpdir']
+    cfg_path = os.path.join(tmpdir, 'config.yaml')
 
-    with open(cfg_path, "r") as fp:
+    with open(cfg_path, 'r') as fp:
         config_str = jinja2.Template(fp.read()).render()
     _config = yaml.load(config_str, Loader=yaml.Loader)
-    _config["two_point"]["sacc_data"] = sacc.Sacc.load_fits(
-        os.path.join(tmpdir, "sacc.fits")
-    )
+    _config['two_point']['sacc_data'] = sacc.Sacc.load_fits(
+        os.path.join(tmpdir, 'sacc.fits'))
 
     config, data = parse(_config)
     loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
-        cosmo=tx_data["cosmo"], data=data
-    )
+        cosmo=tx_data['cosmo'],
+        data=data)
 
-    assert np.allclose(loglike["two_point"], tx_data["loglike"])
+    assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
-        output_dir=os.path.join(tmpdir, "output_123"),
+        output_dir=os.path.join(tmpdir, 'output_123'),
         data=data,
         statistics=stats,
     )
 
-    opth = os.path.join(tmpdir, "output_123", "statistics", "two_point")
-    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, "sacc.fits"))
-    meas_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_measured.fits"))
-    pred_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_predicted.fits"))
+    opth = os.path.join(tmpdir, 'output_123', 'statistics', 'two_point')
+    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, 'sacc.fits'))
+    meas_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_measured.fits'))
+    pred_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_predicted.fits'))
 
-    for trc_name in ["trc0", "trc1"]:
+    for trc_name in ['trc0', 'trc1']:
         orig_tr = orig_data.get_tracer(trc_name)
         meas_tr = meas_data.get_tracer(trc_name)
         pred_tr = pred_data.get_tracer(trc_name)
@@ -298,10 +293,10 @@ def test_integration_sacc_in_mem(tx_data):
 
     meas_dv = []
     pred_dv = []
-    for trs in [("trc0", "trc0"), ("trc0", "trc1"), ("trc1", "trc1")]:
-        oell, ocl = orig_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
-        mell, mcl = meas_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
-        pell, pcl = pred_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
+    for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
+        oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        pell, pcl = pred_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
 
         assert np.allclose(oell, mell)
         assert np.allclose(oell, pell)
@@ -317,28 +312,28 @@ def test_integration_sacc_in_mem(tx_data):
 
 
 def test_integration_nosys_smoke(tx_data):
-    tmpdir = tx_data["tmpdir"]
-    cfg_path = os.path.join(tmpdir, "config_nosys.yaml")
+    tmpdir = tx_data['tmpdir']
+    cfg_path = os.path.join(tmpdir, 'config_nosys.yaml')
 
     config, data = parse(cfg_path)
     loglike, meas, pred, covs, inv_covs, stats = compute_loglike(
-        cosmo=tx_data["cosmo"], data=data
-    )
+        cosmo=tx_data['cosmo'],
+        data=data)
 
-    assert np.allclose(loglike["two_point"], tx_data["loglike"])
+    assert np.allclose(loglike["two_point"], tx_data['loglike'])
 
     write_statistics(
-        output_dir=os.path.join(tmpdir, "output_123"),
+        output_dir=os.path.join(tmpdir, 'output_123'),
         data=data,
         statistics=stats,
     )
 
-    opth = os.path.join(tmpdir, "output_123", "statistics", "two_point")
-    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, "sacc.fits"))
-    meas_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_measured.fits"))
-    pred_data = sacc.Sacc.load_fits(os.path.join(opth, "sacc_predicted.fits"))
+    opth = os.path.join(tmpdir, 'output_123', 'statistics', 'two_point')
+    orig_data = sacc.Sacc.load_fits(os.path.join(tmpdir, 'sacc.fits'))
+    meas_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_measured.fits'))
+    pred_data = sacc.Sacc.load_fits(os.path.join(opth, 'sacc_predicted.fits'))
 
-    for trc_name in ["trc0", "trc1"]:
+    for trc_name in ['trc0', 'trc1']:
         orig_tr = orig_data.get_tracer(trc_name)
         meas_tr = meas_data.get_tracer(trc_name)
         pred_tr = pred_data.get_tracer(trc_name)
@@ -350,10 +345,10 @@ def test_integration_nosys_smoke(tx_data):
 
     meas_dv = []
     pred_dv = []
-    for trs in [("trc0", "trc0"), ("trc0", "trc1"), ("trc1", "trc1")]:
-        oell, ocl = orig_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
-        mell, mcl = meas_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
-        pell, pcl = pred_data.get_ell_cl("galaxy_shear_cl_ee", trs[0], trs[1])
+    for trs in [('trc0', 'trc0'), ('trc0', 'trc1'), ('trc1', 'trc1')]:
+        oell, ocl = orig_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        mell, mcl = meas_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
+        pell, pcl = pred_data.get_ell_cl('galaxy_shear_cl_ee', trs[0], trs[1])
 
         assert np.allclose(oell, mell)
         assert np.allclose(oell, pell)

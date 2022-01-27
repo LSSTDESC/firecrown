@@ -26,7 +26,7 @@ def parse(config_or_filename):
     """
 
     if not isinstance(config_or_filename, collections.abc.MutableMapping):
-        with open(config_or_filename, "r") as fp:
+        with open(config_or_filename, 'r') as fp:
             config_str = jinja2.Template(fp.read()).render()
         config = yaml.load(config_str, Loader=yaml.Loader)
         data = yaml.load(config_str, Loader=yaml.Loader)
@@ -35,31 +35,29 @@ def parse(config_or_filename):
         data = copy.deepcopy(config_or_filename)
 
     params = {}
-    for p, val in data["parameters"].items():
+    for p, val in data['parameters'].items():
         if isinstance(val, list) and not isinstance(val, str):
             params[p] = val[1]
         else:
             params[p] = val
-    data["parameters"] = params
+    data['parameters'] = params
 
-    analyses = set(data.keys()) - set(FIRECROWN_RESERVED_NAMES)
+    analyses = list(set(list(data.keys())) - set(FIRECROWN_RESERVED_NAMES))
     for analysis in analyses:
         new_keys = {}
 
         try:
-            mod = importlib.import_module(data[analysis]["module"])
+            mod = importlib.import_module(data[analysis]['module'])
         except Exception:
-            print(
-                "Module '%s' for analysis '%s' cannot be imported!"
-                % (data[analysis]["module"], analysis)
-            )
+            print("Module '%s' for analysis '%s' cannot be imported!" % (
+                data[analysis]['module'], analysis))
             raise
 
         new_keys = {}
-        if hasattr(mod, "parse_config"):
-            new_keys["data"] = getattr(mod, "parse_config")(data[analysis])
-            new_keys["eval"] = getattr(mod, "compute_loglike")
-            new_keys["write"] = getattr(mod, "write_stats")
+        if hasattr(mod, 'parse_config'):
+            new_keys['data'] = getattr(mod, 'parse_config')(data[analysis])
+            new_keys['eval'] = getattr(mod, 'compute_loglike')
+            new_keys['write'] = getattr(mod, 'write_stats')
         else:
             raise ValueError("Analsis '%s' could not be parsed!" % (analysis))
 

@@ -18,24 +18,58 @@ parameters:
   z_piv_ia: 0.62
 
   # shear errors
-  {%- for i in range(4) %}
+  {% for i in range(4) %}
   src{{ i }}_mult_bias: 0.0
-  {%- endfor %}
+  {% endfor %}
 
   # linear bias for lenses
-  {%- for val in [1.4, 1.6, 1.6, 1.9, 2.0] %}
+  {% for val in [1.4, 1.6, 1.6, 1.9, 2.0] %}
   bias_lens{{ loop.index0 }}: {{ val }}
-  {%- endfor %}
+  {% endfor %}
 
   # photoz shifts for the lensing sources
-  {%- for loc in [-0.001, -0.019, 0.009, -0.018] %}
+  {% for loc in [-0.001, -0.019, 0.009, -0.018] %}
   src{{ loop.index0 }}_delta_z: {{ loc }}
-  {%- endfor %}
+  {% endfor %}
 
   # photoz shifts for the lenses
-  {%- for loc in [0.001, 0.002, 0.001, 0.003, 0.0] %}
+  {% for loc in [0.001, 0.002, 0.001, 0.003, 0.0] %}
   lens{{ loop.index0 }}_delta_z: {{ loc }}
-  {%- endfor %}
+  {% endfor %}
+
+cosmosis:
+  # the name of the sampler to use
+  sampler: maxlike
+  # the output chain file name
+  parameters:
+    Omega_c: [0.1, 0.2545,  0.6]
+    sigma8: [0.6,  0.801,  1.0]
+    src0_mult_bias: [-0.1, 0.0,  0.1]
+  # whether to output more debugging information on failure
+  # and regard python exceptions as errors (instead of just
+  # using -inf likelihoods)
+  debug: True
+  # suppress output information
+  quiet: False
+  # whether to use MPI - must run under mpirun to do this
+  mpi: False
+  # parameters for individual samplers.
+  # multinest - nested sampling
+  multinest:
+    # for info on these parameter see the multinest documentation.
+    max_iterations: 50000
+    live_points: 250
+    tolerance: 0.1
+    constant_efficiency: False
+    live_points: 500
+    efficiency: 0.3
+    resume: True
+  # for computing a grid of models - works for up to about three dimensions
+  # but quickly becomes untenable above that.
+  grid:
+    # the number of grid points in each dimension.  Total number of models
+    # is nsample_dimension ** ndim
+    nsample_dimension: 25
 
 priors:
   module: firecrown.priors
@@ -69,39 +103,39 @@ priors:
     loc: -5.0
     scale: 10  # 5.0 -- 5
 
-  {%- for i in range(5) %}
+  {% for i in range(5) %}
   bias_lens{{ i }}:
     kind: uniform
     loc: 0.8
     scale: 2.2  # 3.0 - 0.8
-  {%- endfor %}
+  {% endfor %}
 
-  {%- for loc, scale in [(0.001, 0.008), (0.002, 0.007), (0.001, 0.007), (0.003, 0.01), (0.0, 0.01)] %}
+  {% for loc, scale in [(0.001, 0.008), (0.002, 0.007), (0.001, 0.007), (0.003, 0.01), (0.0, 0.01)] %}
   lens{{ loop.index0 }}_delta_z:
     kind: norm
     loc: {{ loc }}
     scale: {{ scale }}
-  {%- endfor %}
+  {% endfor %}
 
-  {%- for loc, scale in [(-0.001, 0.016), (-0.019, 0.013), (0.009, 0.011), (-0.018, 0.022)] %}
+  {% for loc, scale in [(-0.001, 0.016), (-0.019, 0.013), (0.009, 0.011), (-0.018, 0.022)] %}
   src{{ loop.index0 }}_delta_z:
     kind: norm
     loc: {{ loc }}
     scale: {{ scale }}
-  {%- endfor %}
+  {% endfor %}
 
-  {%- for i in range(4) %}
+  {% for i in range(4) %}
   src{{ i }}_mult_bias:
     kind: norm
     loc: 0.012
     scale: 0.023
-  {%- endfor %}
+  {% endfor %}
 
 two_point:
   module: firecrown.ccl.two_point
-  sacc_data: ${FIRECROWN_EXAMPLES_DIR}/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits
+  sacc_data: des_y1_3x2pt_sacc_data.fits
   sources:
-    {%- for i in range(4) %}
+    {% for i in range(4) %}
     src{{ i }}:
       kind: WLSource
       sacc_tracer: src{{ i }}
@@ -110,29 +144,29 @@ two_point:
         - delta_z_src{{ i }}
         - des_ia
         - shear_bias_src{{ i }}
-    {%- endfor %}
+    {% endfor %}
 
-    {%- for i in range(5) %}
+    {% for i in range(5) %}
     lens{{ i }}:
       kind: NumberCountsSource
       sacc_tracer: lens{{ i }}
       bias: bias_lens{{ i }}
       systematics:
         - delta_z_lens{{ i }}
-    {%- endfor %}
+    {% endfor %}
 
   systematics:
-    {%- for i in range(5) %}
+    {% for i in range(5) %}
     delta_z_lens{{ i }}:
       kind: PhotoZShiftBias
       delta_z: lens{{ i }}_delta_z
-    {%- endfor %}
+    {% endfor %}
 
-    {%- for i in range(4) %}
+    {% for i in range(4) %}
     delta_z_src{{ i }}:
       kind: PhotoZShiftBias
       delta_z: src{{ i }}_delta_z
-    {%- endfor %}
+    {% endfor %}
 
     des_ia:
       kind: LinearAlignmentSystematic
@@ -140,54 +174,54 @@ two_point:
       alphag: alphag_ia
       z_piv: z_piv_ia
 
-    {%- for i in range(4) %}
+    {% for i in range(4) %}
     shear_bias_src{{ i }}:
       kind: MultiplicativeShearBias
       m: src{{ i }}_mult_bias
-    {%- endfor %}
+    {% endfor %}
 
   statistics:
-    {%- for stat, sacc_stat in [('xip', 'galaxy_shear_xi_plus'), ('xim', 'galaxy_shear_xi_minus')] %}
-    {%- for i in range(4) %}
-    {%- for j in range(i, 4) %}
+    {% for stat, sacc_stat in [('xip', 'galaxy_shear_xi_plus'), ('xim', 'galaxy_shear_xi_minus')] %}
+    {% for i in range(4) %}
+    {% for j in range(i, 4) %}
     {{ stat }}_src{{ i }}_src{{ j }}:
       sources: ['src{{ i }}', 'src{{ j }}']
       sacc_data_type: '{{ sacc_stat }}'
-    {%- endfor %}
-    {%- endfor %}
-    {%- endfor %}
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
 
-    {%- for j in range(5) %}
-    {%- for i in range(4) %}
+    {% for j in range(5) %}
+    {% for i in range(4) %}
     gammat_lens{{ j }}_src{{ i }}:
       sources: ['lens{{ j }}', 'src{{ i }}']
       sacc_data_type: 'galaxy_shearDensity_xi_t'
-    {%- endfor %}
-    {%- endfor %}
+    {% endfor %}
+    {% endfor %}
 
-    {%- for i in range(5) %}
+    {% for i in range(5) %}
     wtheta_lens{{ i }}_lens{{ i }}:
       sources: ['lens{{ i }}', 'lens{{ i }}']
       sacc_data_type: 'galaxy_density_xi'
-    {%- endfor %}
+    {% endfor %}
 
   likelihood:
     kind: ConstGaussianLogLike
     data_vector:
-    {%- for stat in ['xip', 'xim'] %}
-    {%- for i in range(4) %}
-    {%- for j in range(i, 4) %}
+    {% for stat in ['xip', 'xim'] %}
+    {% for i in range(4) %}
+    {% for j in range(i, 4) %}
       - {{ stat }}_src{{ i }}_src{{ j }}
-    {%- endfor %}
-    {%- endfor %}
-    {%- endfor %}
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
 
-    {%- for j in range(5) %}
-    {%- for i in range(4) %}
+    {% for j in range(5) %}
+    {% for i in range(4) %}
       - gammat_lens{{ j }}_src{{ i }}
-    {%- endfor %}
-    {%- endfor %}
+    {% endfor %}
+    {% endfor %}
 
-    {%- for i in range(5) %}
+    {% for i in range(5) %}
       - wtheta_lens{{ i }}_lens{{ i }}
-    {%- endfor %}
+    {% endfor %}

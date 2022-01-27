@@ -34,6 +34,34 @@ will run an example problem.
 See the examples in the [examples folder](https://github.com/LSSTDESC/firecrown/examples)
 for more details.
 
+## Sampling
+
+To use CosmoSIS to sample cosmological parameters, first install cosmosis-standalone:
+
+```bash
+pip install cosmosis-standalone
+```
+
+or
+
+```bash
+conda install cosmosis-standalone
+```
+
+You may need to specify compilers when using the pip install, if your default compilers
+are not new enough to support cosmosis, for example, to use non-default GCCs:
+
+```bash
+FC=gfortran CC=gcc-9 CXX=g++-9 pip install cosmosis-standalone
+```
+
+You can then run with:
+
+```bash
+cd examples/cosmicshear
+firecrown run-cosmosis cosmicshear.yaml
+```
+
 ## API
 
 See the [API documentation](https://firecrown.readthedocs.io/en/latest/) for details.

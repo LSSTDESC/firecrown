@@ -45,23 +45,20 @@ def _test_mpi():
 def run(action, config, output, verbose):
     """Watch out! Here comes a firecrown!
 
-    Also, run some ACTION on a CONFIG file.
-    
-    ACTION must be one of:
-        render
-        compute
-    
-    CONFIG must be the name of a Firecrown YAML configuration file."""
+    Also, run some ACTION on a CONFIG file."""
 
     # figure out if we are using MPI
     using_mpi, is_master = _test_mpi()
     print_or_run = (using_mpi and is_master) or not using_mpi
 
+    if print_or_run:
+        print("Watch out! Here comes a firecrown!", flush=True)
+
     if action == 'render':
         if print_or_run:
             with open(config, 'r') as fp:
                 config_str = jinja2.Template(fp.read()).render()
-            print(config_str, flush=True)
+            print(' \n' + config_str, flush=True)
         sys.exit(0)
 
     analysis_id = uuid.uuid4().hex
@@ -83,6 +80,13 @@ def run(action, config, output, verbose):
         cosmo = get_ccl_cosmology(_config['parameters'])
         loglike, _, _, _, _, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
         print('loglike:', loglike, flush=True)
+
+    elif action == 'run-cosmosis':
+        if 'cosmosis' not in _config:
+            raise ValueError('You must have a `cosmosis` '
+                             'configuration block to run `cosmosis`!')
+
+        firecrown.run_cosmosis(_config, data, output_dir)
 
     # we associate a unique id with each analysis
     # let's write that out with some extra info

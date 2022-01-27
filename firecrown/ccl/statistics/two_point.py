@@ -1,5 +1,3 @@
-from __future__ import annotations
-from typing import List, Dict, Optional
 import copy
 import functools
 import warnings
@@ -12,15 +10,15 @@ from ..core import Statistic
 # only supported types are here, any thing else will throw
 # a value error
 SACC_DATA_TYPE_TO_CCL_KIND = {
-    "galaxy_density_cl": "cl",
-    "galaxy_density_xi": "NN",
-    "galaxy_shearDensity_cl_e": "cl",
-    "galaxy_shearDensity_xi_t": "NG",
-    "galaxy_shear_cl_ee": "cl",
-    "galaxy_shear_xi_minus": "GG-",
-    "galaxy_shear_xi_plus": "GG+",
-    "cmbGalaxy_convergenceDensity_xi": "NN",
-    "cmbGalaxy_convergenceShear_xi_t": "NG",
+    "galaxy_density_cl": 'cl',
+    "galaxy_density_xi": 'gg',
+    "galaxy_shearDensity_cl_e": 'cl',
+    "galaxy_shearDensity_xi_t": 'gl',
+    "galaxy_shear_cl_ee": 'cl',
+    "galaxy_shear_xi_minus": 'l-',
+    "galaxy_shear_xi_plus": 'l+',
+    "cmbGalaxy_convergenceDensity_xi": 'gg',
+    "cmbGalaxy_convergenceShear_xi_t": 'gl'
 }
 
 
@@ -31,20 +29,17 @@ def _ell_for_xi(*, min, mid, max, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
-    return np.concatenate(
-        (
-            np.linspace(min, mid - 1, mid - min),
-            np.logspace(np.log10(mid), np.log10(max), n_log),
-        )
-    )
+    return np.concatenate((
+        np.linspace(min, mid-1, mid-min),
+        np.logspace(np.log10(mid), np.log10(max), n_log)))
 
 
-def _generate_ell_or_theta(*, min, max, n, binning="log"):
-    if binning == "log":
-        edges = np.logspace(np.log10(min), np.log10(max), n + 1)
+def _generate_ell_or_theta(*, min, max, n, binning='log'):
+    if binning == 'log':
+        edges = np.logspace(np.log10(min), np.log10(max), n+1)
         return np.sqrt(edges[1:] * edges[:-1])
     else:
-        edges = np.linspace(min, max, n + 1)
+        edges = np.linspace(min, max, n+1)
         return (edges[1:] + edges[:-1]) / 2.0
 
 
@@ -137,17 +132,9 @@ class TwoPointStatistic(Statistic):
         The final scale factor applied to the statistic. Set after `compute`
         is called. Note that this scale factor is already applied.
     """
-
-    def __init__(
-        self,
-        sacc_data_type,
-        sources: List[str],
-        systematics: Optional[List[str]] = None,
-        ell_for_xi=None,
-        ell_or_theta=None,
-        ell_or_theta_min=None,
-        ell_or_theta_max=None,
-    ):
+    def __init__(self, sacc_data_type, sources, systematics=None,
+                 ell_for_xi=None, ell_or_theta=None, ell_or_theta_min=None,
+                 ell_or_theta_max=None):
         self.sacc_data_type = sacc_data_type
         self.sources = sources
         self.systematics = systematics or []
@@ -162,14 +149,12 @@ class TwoPointStatistic(Statistic):
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
             raise ValueError(
-                "The SACC data type '%s' is not supported!" % sacc_data_type
-            )
+                "The SACC data type '%s' is not supported!" % sacc_data_type)
 
         if len(sources) != 2:
             raise ValueError(
                 "A firecrown 2pt statistic should only have two "
-                "sources, you sent '%s'!" % self.sources
-            )
+                "sources, you sent '%s'!" % self.sources)
 
     def read(self, sacc_data, sources):
         """Read the data for this statistic from the SACC file.
@@ -187,22 +172,19 @@ class TwoPointStatistic(Statistic):
         if len(tracers) != 2:
             raise RuntimeError(
                 "A firecrown 2pt statistic should only have two "
-                "tracers, you sent '%s'!" % self.sources
-            )
+                "tracers, you sent '%s'!" % self.sources)
 
         # sacc is tracer order sensitive
         # so we try again if we didn't find anything
         for order in [1, -1]:
             tracers = tracers[::order]
 
-            if self.ccl_kind == "cl":
+            if self.ccl_kind == 'cl':
                 _ell_or_theta, _stat = sacc_data.get_ell_cl(
-                    self.sacc_data_type, *tracers, return_cov=False
-                )
+                    self.sacc_data_type, *tracers, return_cov=False)
             else:
                 _ell_or_theta, _stat = sacc_data.get_theta_xi(
-                    self.sacc_data_type, *tracers, return_cov=False
-                )
+                    self.sacc_data_type, *tracers, return_cov=False)
 
             if len(_ell_or_theta) > 0 and len(_stat) > 0:
                 break
@@ -210,10 +192,11 @@ class TwoPointStatistic(Statistic):
         if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
             raise RuntimeError(
                 "Tracers '%s' have no 2pt data in the SACC file "
-                "and no input ell or theta values were given!" % tracers
-            )
+                "and no input ell or theta values were given!" % tracers)
         elif (
-            self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
+            self.ell_or_theta is not None
+            and len(_ell_or_theta) > 0
+            and len(_stat) > 0
         ):
             warnings.warn(
                 "Tracers '%s' have 2pt data and you have specified `ell_or_theta` "
@@ -230,9 +213,9 @@ class TwoPointStatistic(Statistic):
             _stat = np.zeros_like(_ell_or_theta)
             self.sacc_inds = None
         else:
-            self.sacc_inds = np.atleast_1d(
-                sacc_data.indices(self.sacc_data_type, self.sacc_tracers)
-            )
+            self.sacc_inds = np.atleast_1d(sacc_data.indices(
+                self.sacc_data_type,
+                self.sacc_tracers))
 
         if self.ell_or_theta_min is not None:
             q = np.where(_ell_or_theta >= self.ell_or_theta_min)
@@ -273,28 +256,23 @@ class TwoPointStatistic(Statistic):
         tracers = [sources[k].tracer_ for k in self.sources]
         self.scale_ = np.prod([sources[k].scale_ for k in self.sources])
 
-        if self.ccl_kind == "cl":
-            self.predicted_statistic_ = (
-                _cached_angular_cl(
-                    cosmo, tuple(tracers), tuple(self.ell_or_theta_.tolist())
-                )
-                * self.scale_
-            )
+        if self.ccl_kind == 'cl':
+            self.predicted_statistic_ = _cached_angular_cl(
+                cosmo, tuple(tracers), tuple(self.ell_or_theta_.tolist())
+            ) * self.scale_
         else:
             ells = _ell_for_xi(**self.ell_for_xi)
-            cells = _cached_angular_cl(cosmo, tuple(tracers), tuple(ells.tolist()))
-            self.predicted_statistic_ = (
-                ccl.correlation(
-                    cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
-                )
-                * self.scale_
-            )
+            cells = _cached_angular_cl(
+                cosmo, tuple(tracers), tuple(ells.tolist()))
+            self.predicted_statistic_ = ccl.correlation(
+                cosmo, ells, cells, self.ell_or_theta_ / 60,
+                corr_type=self.ccl_kind) * self.scale_
 
         systematics = systematics or {}
         for systematic in self.systematics:
             systematics[systematic].apply(cosmo, params, self)
 
-        if not hasattr(self, "_stat"):
+        if not hasattr(self, '_stat'):
             self.measured_statistic_ = self.predicted_statistic_
         else:
             self.measured_statistic_ = self._stat.copy()

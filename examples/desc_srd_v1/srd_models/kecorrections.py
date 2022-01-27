@@ -41,17 +41,13 @@ KCORR_DATA = """\
 2.50 r  6.182  6.019  2.887  1.018
 3.00 r  6.888  6.558  2.804  0.897"""
 
-KCORR_Z = np.array([float(line.strip().split()[0]) for line in KCORR_DATA.split("\n")])
-KCORR_VAL = np.array(
-    [float(line.strip().split()[2]) for line in KCORR_DATA.split("\n")]
-)
+KCORR_Z = np.array([
+    float(line.strip().split()[0]) for line in KCORR_DATA.split('\n')])
+KCORR_VAL = np.array([
+    float(line.strip().split()[2]) for line in KCORR_DATA.split('\n')])
 KCORR_SPLINE = scipy.interpolate.interp1d(
-    KCORR_Z,
-    KCORR_VAL,
-    kind="cubic",
-    bounds_error=False,
-    fill_value=(KCORR_VAL[0], KCORR_VAL[-1]),
-)
+    KCORR_Z, KCORR_VAL, kind='cubic', bounds_error=False,
+    fill_value=(KCORR_VAL[0], KCORR_VAL[-1]))
 
 ECORR_DATA = """\
 0.02 r -0.024 -0.026 -0.035 -0.028
@@ -93,17 +89,13 @@ ECORR_DATA = """\
 2.50 r -7.243 -7.496 -4.709 -2.056
 3.00 r -8.549 -8.499 -4.961 -2.054"""
 
-ECORR_Z = np.array([float(line.strip().split()[0]) for line in ECORR_DATA.split("\n")])
-ECORR_VAL = np.array(
-    [float(line.strip().split()[2]) for line in ECORR_DATA.split("\n")]
-)
+ECORR_Z = np.array([
+    float(line.strip().split()[0]) for line in ECORR_DATA.split('\n')])
+ECORR_VAL = np.array([
+    float(line.strip().split()[2]) for line in ECORR_DATA.split('\n')])
 ECORR_SPLINE = scipy.interpolate.interp1d(
-    ECORR_Z,
-    ECORR_VAL,
-    kind="cubic",
-    bounds_error=False,
-    fill_value=(ECORR_VAL[0], ECORR_VAL[-1]),
-)
+    ECORR_Z, ECORR_VAL, kind='cubic', bounds_error=False,
+    fill_value=(ECORR_VAL[0], ECORR_VAL[-1]))
 
 
 def kcorr(z):

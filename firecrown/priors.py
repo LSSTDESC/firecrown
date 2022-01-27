@@ -36,7 +36,11 @@ def parse_config(analysis):
     return copy.deepcopy(analysis)
 
 
-def compute_loglike(*, cosmo, parameters, data):
+def compute_loglike(
+        *,
+        cosmo,
+        parameters,
+        data):
     """Compute the log-likelihood of the priors.
 
     Parameters
@@ -65,12 +69,12 @@ def compute_loglike(*, cosmo, parameters, data):
     """
     loglike = 0.0
     for param in parameters:
-        if param in data and param != "module":
-            if not hasattr(scipy.stats, data[param]["kind"]):
+        if param in data and param != 'module':
+            if not hasattr(scipy.stats, data[param]['kind']):
                 raise ValueError("Prior dist %s not defined!" % data[param])
 
-            dist = getattr(scipy.stats, data[param]["kind"])
-            keys = {k: v for k, v in data[param].items() if k != "kind"}
+            dist = getattr(scipy.stats, data[param]['kind'])
+            keys = {k: v for k, v in data[param].items() if k != 'kind'}
             loglike += dist.logpdf(parameters[param], **keys)
     return loglike, None, None, None, None, None
 

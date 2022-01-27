@@ -3,9 +3,9 @@ import numpy as np
 from ..core import Systematic
 
 __all__ = [
-    "IdentityFunctionMOR",
-    "TopHatSelectionFunction",
-    "PowerLawMOR",
+    'IdentityFunctionMOR',
+    'TopHatSelectionFunction',
+    'PowerLawMOR',
 ]
 
 
@@ -16,7 +16,6 @@ class IdentityFunctionMOR(Systematic):
     -------
     apply : apply the systematic to a source
     """
-
     def __init__(self):
         pass
 
@@ -69,7 +68,6 @@ class PowerLawMOR(Systematic):
     -------
     apply : apply the systematic to a source
     """
-
     def __init__(self, *, lnlam_norm, mass_slope, a_slope, lnmass_norm=np.log(1e14)):
         self.lnlam_norm = lnlam_norm
         self.mass_slope = mass_slope
@@ -101,15 +99,15 @@ class PowerLawMOR(Systematic):
                 + params[self.mass_slope] * (lnmass - self.lnmass_norm)
                 + params[self.a_slope] * np.log(a)
             )
-
         return _mor
 
     def _gen_inv_mor(self, params):
         def _inv_mor(lnlam, a):
             return (
-                lnlam - params[self.lnlam_norm] - params[self.a_slope] * np.log(a)
+                lnlam
+                - params[self.lnlam_norm]
+                - params[self.a_slope] * np.log(a)
             ) / params[self.mass_slope] + self.lnmass_norm
-
         return _inv_mor
 
 
@@ -120,7 +118,6 @@ class TopHatSelectionFunction(Systematic):
     -------
     apply : apply the systematic to a source
     """
-
     def __init__(self):
         pass
 
@@ -139,6 +136,7 @@ class TopHatSelectionFunction(Systematic):
         source.selfunc_ = self._gen_selection_function(source)
 
     def _gen_selection_function(self, source):
+
         def _selfunc(lnmass, a):
             a = np.atleast_1d(a)
             lnmass = np.atleast_1d(lnmass)
@@ -162,7 +160,7 @@ class TopHatSelectionFunction(Systematic):
             msk = (lnmass_min <= lnmass) & (lnmass <= lnmass_max)
 
             if np.any(msk):
-                vals[msk] = source.dndz_interp_(1 / a[msk] - 1)
+                vals[msk] = source.dndz_interp_(1/a[msk]-1)
 
             return vals
 

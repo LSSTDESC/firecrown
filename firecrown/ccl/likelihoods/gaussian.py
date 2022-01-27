@@ -1,5 +1,3 @@
-from __future__ import annotations
-from typing import List, Optional
 import numpy as np
 import scipy.linalg
 
@@ -28,14 +26,10 @@ class ConstGaussianLogLike(LogLike):
     -------
     compute_loglike : compute the log-likelihood
     """
-
-    def __init__(self, data_vector: List[str]):
+    def __init__(self, data_vector):
         self.data_vector = data_vector
-        self.cov: Optional[np.ndarray] = None
-        self.cholesky: Optional[np.ndarray] = None
-        self.inv_cov: Optional[np.ndarray] = None
 
-    def read(self, sacc_data, sources, statistics) -> None:
+    def read(self, sacc_data, sources, statistics):
         """Read the covariance matrirx for this likelihood from the SACC file.
 
         Parameters
@@ -83,8 +77,7 @@ class ConstGaussianLogLike(LogLike):
         """
         dv = []
         for stat in self.data_vector:
-            dv.append(np.atleast_1d(data[stat] - np.atleast_1d(theory[stat])))            
-
+            dv.append(np.atleast_1d(data[stat] - np.atleast_1d(theory[stat])))
         dv = np.concatenate(dv, axis=0)
         x = scipy.linalg.solve_triangular(self.cholesky, dv, lower=True)
         return -0.5 * np.dot(x, x)

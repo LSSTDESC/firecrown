@@ -7,7 +7,7 @@ from srd_models import (
     add_lensi_lensi_ell_cl,
     add_srci_srcj_ell_cl,
     add_lens_tracers,
-    add_src_tracers,
+    add_src_tracers
 )
 
 sacc_data = sacc.Sacc()
@@ -22,13 +22,11 @@ add_lens_tracers(sacc_data)
 # the correct order and the cov mat
 
 cov_file = (
-    "LSST_DESC_SRD_v1_release/forecasting/WL-LSS-CL/cov"
-    "/Y1_3x2pt_clusterN_clusterWL_cov"
-)
+    'LSST_DESC_SRD_v1_release/forecasting/WL-LSS-CL/cov'
+    '/Y1_3x2pt_clusterN_clusterWL_cov')
 data_file = (
-    "LSST_DESC_SRD_v1_release/forecasting/WL-LSS-CL/datav"
-    "/3x2pt_clusterN_clusterWL_Y1_fid"
-)
+    'LSST_DESC_SRD_v1_release/forecasting/WL-LSS-CL/datav'
+    '/3x2pt_clusterN_clusterWL_Y1_fid')
 
 nggl = 7  # number of ggl power spectra
 ngcl = 6  # number of cluster-source galaxy power spectra
@@ -39,7 +37,10 @@ ncl = 20  # number of ell-bins
 nclgcl = 5  # number of cluster ell-bins
 nrich = 5  # number of richness bins
 
-ndata = (nshear + nggl + nlens) * ncl + nlenscl * nrich + nrich * ngcl * nclgcl
+ndata = (
+    (nshear + nggl + nlens) * ncl +
+    nlenscl * nrich +
+    nrich * ngcl * nclgcl)
 n2pt = (nshear + nggl + nlens) * ncl
 
 datav = np.genfromtxt(data_file)
@@ -61,7 +62,7 @@ msks = []
 loc = 0
 for i in range(5):
     for j in range(i, 5):
-        msk = add_srci_srcj_ell_cl(sacc_data, i, j, datav[loc : loc + ncl, 1])
+        msk = add_srci_srcj_ell_cl(sacc_data, i, j, datav[loc:loc+ncl, 1])
         msks.append(msk)
         loc += ncl
 
@@ -69,17 +70,17 @@ for i in range(5):
 # i is the source index
 # j is the lens index
 for j, i in [(0, 2), (0, 3), (0, 4), (1, 3), (1, 4), (2, 4), (3, 4)]:
-    tr = sacc_data.get_tracer("lens%d" % j)
+    tr = sacc_data.get_tracer('lens%d' % j)
     mean_z = np.sum(tr.z * tr.nz) / np.sum(tr.nz)
-    msk = add_srci_lensj_ell_cl(sacc_data, i, j, mean_z, datav[loc : loc + ncl, 1])
+    msk = add_srci_lensj_ell_cl(sacc_data, i, j, mean_z, datav[loc:loc+ncl, 1])
     msks.append(msk)
     loc += ncl
 
 # gal-gal
 for i in range(5):
-    tr = sacc_data.get_tracer("lens%d" % j)
+    tr = sacc_data.get_tracer('lens%d' % j)
     mean_z = np.sum(tr.z * tr.nz) / np.sum(tr.nz)
-    msk = add_lensi_lensi_ell_cl(sacc_data, i, mean_z, datav[loc : loc + ncl, 1])
+    msk = add_lensi_lensi_ell_cl(sacc_data, i, mean_z, datav[loc:loc+ncl, 1])
     msks.append(msk)
     loc += ncl
 
@@ -103,4 +104,4 @@ for _i in range(cov.shape[0]):
 
 sacc_data.add_covariance(masked_cov)
 
-sacc_data.save_fits("srd_v1_sacc_data.fits", overwrite=True)
+sacc_data.save_fits('srd_v1_sacc_data.fits', overwrite=True)

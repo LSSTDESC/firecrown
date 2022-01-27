@@ -1,0 +1,30 @@
+parameters:
+  # always needed even if we are not using them
+  Omega_k: 0.0
+  Omega_b: 0.0485
+  Omega_c: 0.2545
+  w0: -1.0
+  wa: 0.0
+  h: 0.682
+  A_s: 2.04e-9
+  n_s: 0.971
+
+  # the thing we sample
+  x: 0.3
+
+cosmosis:
+  parameters:
+    x: [-100, 0.3, 100]
+  sampler: emcee
+  debug: False
+  quiet: True
+  mpi: False
+  # parameters for individual samplers:
+  test:
+    fatal_errors: True
+  emcee:
+    walkers: 10
+    nsample: 20
+
+emcee_test:
+  module: myloglike

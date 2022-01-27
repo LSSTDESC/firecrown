@@ -1,0 +1,84 @@
+# This is a simple example that runs a Fisher forecast for a 2-parameter case.
+# The data vector used here is measurements from CosmoDC2, only using xip for
+# now and all the scales. No systematics are included.
+#
+# To run, do `firecrown run-cosmosis cosmodc2_firecrown_real_fisher.yaml`
+
+parameters:
+  Omega_k: 0.0
+  Omega_b: 0.04479
+  Omega_c: 0.22
+  w0: -1.0
+  wa: 0.0
+  h: 0.71
+  sigma8: 0.8
+  n_s: 0.963
+
+# Defines options when running one of the samplers through cosmosis
+cosmosis:
+  sampler: fisher  # choose from fisher, test, emcee, multinest and others
+  debug: True
+  quiet: False
+  mpi: False
+
+  # parameters for individual samplers:
+  test:
+    fatal_errors: True
+  emcee:
+    walkers: 10
+    nsample: 20
+  grid:
+    nsample_dimension: 5
+  fisher:
+    step_size: 0.02
+
+  # which parameters to vary in the chains
+  # (this will be combined with the prior section below)
+  parameters:
+    Omega_c: [0.1, 0.22, 0.9]
+    sigma8: [0.4, 0.8, 1.2]
+
+priors:
+  module: firecrown.priors
+
+  Omega_c:
+    kind: uniform
+    loc: 0.1
+    scale: 0.8
+
+  sigma8:
+    kind: uniform
+    loc: 0.4
+    scale: 0.8
+
+two_point:
+  module: firecrown.ccl.two_point
+  sacc_data: summary_statistics_real.sacc
+  sources:
+    {% for i in range(4) %}
+    src{{ i }}:
+      kind: WLSource
+      sacc_tracer: source_{{ i }}
+    {% endfor %}
+
+  statistics:
+    {% for stat, sacc_stat in [('xip', 'galaxy_shear_xi_plus')] %}
+    {% for i in range(4) %}
+    {% for j in range(i, 4) %}
+    {{ stat }}_src{{ j }}_src{{ i }}:
+      sources: ['src{{ j }}', 'src{{ i }}']
+      sacc_data_type: '{{ sacc_stat }}'
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}
+
+  likelihood:
+    kind: ConstGaussianLogLike
+    data_vector:
+    {% for stat in ['xip'] %}
+    {% for i in range(4) %}
+    {% for j in range(i, 4) %}
+      - {{ stat }}_src{{ j }}_src{{ i }}
+    {% endfor %}
+    {% endfor %}
+    {% endfor %}

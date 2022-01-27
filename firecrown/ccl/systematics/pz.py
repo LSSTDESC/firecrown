@@ -1,7 +1,7 @@
 import numpy as np
 from ..core import Systematic
 
-__all__ = ["PhotoZShiftBias"]
+__all__ = ['PhotoZShiftBias']
 
 
 class PhotoZShiftBias(Systematic):
@@ -16,9 +16,8 @@ class PhotoZShiftBias(Systematic):
 
     Methods
     -------
-    apply : apply the systematic to a source
+    apply : appaly the systematic to a source
     """
-
     def __init__(self, delta_z):
         self.delta_z = delta_z
 
@@ -34,6 +33,7 @@ class PhotoZShiftBias(Systematic):
         source : a source object
             The source to which apply the shift.
         """
-        _dndz = source.dndz_interp(source.z_ - params[self.delta_z], extrapolate=False)
+        _dndz = source.dndz_interp(
+                source.z_ - params[self.delta_z], extrapolate=False)
         _dndz[np.isnan(_dndz)] = 0.0
         source.dndz_ = _dndz

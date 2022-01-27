@@ -1,4 +1,3 @@
-from __future__ import annotations
 import functools
 import pyccl
 
@@ -27,8 +26,7 @@ RESERVED_CCL_PARAMS = (
     "m_nu",
     "m_nu_type",
     "mu_0",
-    "sigma_0",
-)
+    "sigma_0")
 
 # FIXME: these params are not supported right now
 # df_mg (array_like, optional): Perturbations to the GR growth rate as
@@ -38,8 +36,8 @@ RESERVED_CCL_PARAMS = (
 
 
 @functools.lru_cache(maxsize=64)
-def _get_ccl_cosmology(params) -> pyccl.Cosmology:
-    dct = dict(params)
+def _get_ccl_cosmology(params):
+    dct = {p: v for p, v in params}
     return pyccl.Cosmology(**dct)
 
 
@@ -63,8 +61,6 @@ def get_ccl_cosmology(input_params):
     for p, val in input_params.items():
         if p in RESERVED_CCL_PARAMS:
             if isinstance(val, list) and not isinstance(val, str):
-                # TODO: if val is a list, it is not a str. Why test both?
-                # TODO: assure the length of this list is 3 with an assertion?
                 params.append((p, val[1]))
             else:
                 params.append((p, val))

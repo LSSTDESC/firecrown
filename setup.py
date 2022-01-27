@@ -10,14 +10,17 @@ def _munge_req(r):
 
 __version__ = None
 pth = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "firecrown", "_version.py"
-)
-with open(pth, "r") as fp:
+    os.path.dirname(os.path.realpath(__file__)),
+    "firecrown",
+    "_version.py")
+with open(pth, 'r') as fp:
     exec(fp.read())
 
-pth = os.path.join(os.path.dirname(os.path.realpath(__file__)), "environment.yml")
+pth = os.path.join(
+    os.path.dirname(os.path.realpath(__file__)),
+    "environment.yml")
 rqs = []
-with open(pth, "r") as fp:
+with open(pth, 'r') as fp:
     start = False
     for line in fp.readlines():
         if line.strip() == "dependencies:":
@@ -29,12 +32,12 @@ with open(pth, "r") as fp:
             rqs.append(_munge_req(r))
 
 setup(
-    name="firecrown",
+    name='firecrown',
     version=__version__,
     description="DESC Cosmology Constraints Tool",
     author="DESC Team",
     packages=find_packages(),
     include_package_data=True,
-    scripts=["bin/firecrown"],
+    scripts=['bin/firecrown'],
     install_requires=rqs,
 )
