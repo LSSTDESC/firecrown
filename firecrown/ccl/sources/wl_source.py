@@ -1,5 +1,6 @@
 from __future__ import annotations
-from typing import List, Dict, Optional
+
+from typing import List, Dict, Optional, Tuple
 from dataclasses import dataclass
 
 import numpy as np
@@ -240,7 +241,8 @@ class WLSource(Source):
         self.tracer_, tracer_args = self.create_tracer(cosmo, params)
         self.scale_ = tracer_args.scale
 
-    def create_tracer(self, cosmo: pyccl.Cosmology, params):
+    def create_tracer(self, cosmo: pyccl.Cosmology, params) -> Tuple[
+        ccl.WeakLensingTracer, WLSourceArgs]:
         """
         Render a source by applying systematics.
 
