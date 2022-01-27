@@ -260,8 +260,10 @@ class LogLike(object):
         loglike : float
             The computed log-likelihood.
         """
-        
-        for name, src in self.sources.items():
+        for src in self.sources.values():
+            # TODO: Our test suite does not currently run this code.
+            # The following assert does not cause any test to fail.
+            # assert (False)
             src.update_params(parameters)
             src.render(cosmo, parameters, systematics=self.systematics)
 
