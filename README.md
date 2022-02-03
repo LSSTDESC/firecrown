@@ -1,23 +1,82 @@
 # firecrown: the "c" is for "cosmology"
 
-[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master) [![Documentation Status](https://readthedocs.org/projects/firecrown/badge/?version=latest)](https://firecrown.readthedocs.io/en/latest/?badge=latest)
+[![CircleCI](https://circleci.com/gh/LSSTDESC/firecrown/tree/master.svg?style=svg)](https://circleci.com/gh/LSSTDESC/firecrown/tree/master)
+
+## Introduction
+
+Firecrown is most often used along with a *sampler*.
+There are two samplers currently supported:
+
+* [Cobaya](https://github.com/CobayaSampler/cobaya)
+* [CosmoSIS](https://bitbucket.org/joezuntz/cosmosis)
+
+It can also be used as a library in other contexts,
+and so installation of Firecrown does not *require* installation of a sampler.
 
 ## Installation Quickstart
 
-The easiest way to get started is conda
+The easiest way to get started is through using conda.
+We recommend creating a conda environment for your use.
 
+There are different prescriptions, depending upon the choice you make on the use of samplers.
+You can use whatever environment name you prefer for any installation.
+
+For Firecrown alone:
 ```bash
-conda install -c conda-forge firecrown
+conda create --name fc -c conda-forge firecrown
+```
+
+For Firecrown with CosmoSIS:
+```bash
+conda create --name fc_cosmosis -c conda-forge cosmosis firecrown
+```
+
+For Firecrown with Cobaya (note Cobaya is not currently available from conda-forge):
+```bash
+conda create --name fc_cobaya -c conda-forge firecrown
+conda activate fc_cobaya
+python -m pip install cobaya
+```
+
+For Firecrown with both Cobaya and CosmoSIS:
+```bash
+conda create --name fc_both -c conda-forge cosmosis firecrown
+conda activate fc_both
+python -m pip install cobaya
 ```
 
 ## Developer Installation
 
-To install the package in developer mode, clone the git repo locally and then
-use a pip development installation by running
+To install the package in developer mode, start by cloning the git repo.
+As with the quickstart installation, you need to choose how you want to use
+the Firecrown code you will be working on.
+Simultaneous development of either Cobaya or CosmoSIS and Firecrown
+is beyond the scope of these instructions.
 
+### Firecrown alone
+```bash
+conda create --name for_fc -c conda-forge sacc pyccl
 ```
-pip install -e .
+
+### Firecrown with CosmoSIS
+```bash
+conda create --name for_fc_cosmosis -c conda-forge cosmosis sacc pyccl
 ```
+
+### Firecrown with Cobaya
+```bash
+conda create --name for_fc_cobaya -c conda-forge sacc pyccl fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib
+conda activate for_fc_cobaya
+python -m pip install cobaya
+```
+
+### Firecrown with both CosmoSIS and Cobaya
+```bash
+conda create --name for_fc_both -c conda-forge cosmosis sacc pyccl fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib
+conda activate for_fc_both
+python -m pip install cobaya
+```
+
 
 from the top-level of the repo.
 
@@ -33,10 +92,6 @@ will run an example problem.
 
 See the examples in the [examples folder](https://github.com/LSSTDESC/firecrown/examples)
 for more details.
-
-## API
-
-See the [API documentation](https://firecrown.readthedocs.io/en/latest/) for details.
 
 ## License and Conditions of Use
 
