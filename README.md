@@ -45,9 +45,8 @@ conda activate fc_both
 python -m pip install cobaya
 ```
 
-## Developer Installation
+## Installation of dependencies for development
 
-To install the package in developer mode, start by cloning the git repo.
 As with the quickstart installation, you need to choose how you want to use
 the Firecrown code you will be working on.
 Simultaneous development of either Cobaya or CosmoSIS and Firecrown
@@ -77,18 +76,29 @@ conda activate for_fc_both
 python -m pip install cobaya
 ```
 
+## Getting Firecrown for development
 
-from the top-level of the repo.
+To install the package in developer mode, start by cloning the git repo.
+Activate which ever conda environment you created for your development effort.
+
+In the active environment, you can build Firecrown by:
+```bash
+python setup.py build
+```
+
+The tests can be run with `pytest`:
+```bash
+pytest
+```
+
+Some tests are marked as *slow*; those are skipped unless they are requested using `--runslow`:
+```bash
+pytest --runslow
+```
 
 ## Usage
 
-TLDR
-
-```bash
-firecrown compute <config file>
-```
-
-will run an example problem.
+*Updates still to come*.
 
 See the examples in the [examples folder](https://github.com/LSSTDESC/firecrown/examples)
 for more details.
