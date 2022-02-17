@@ -23,11 +23,11 @@ sources = {}
 
 params.add("ia_bias")
 
-stats = {"snia_theory": Supernova(sacc_tracer = "sn_ddf_sample")}
+snia_stats = Supernova(sacc_tracer = "sn_ddf_sample")
 
 # Likelihood
 
-lk = ConstGaussianLogLike(data_vector=list(stats.keys()))
+lk = ConstGaussianLogLike(statistics=[snia_stats])
 
 # SACC file
 
@@ -38,14 +38,7 @@ saccfile = os.path.expanduser(
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
-for name, stat in stats.items():
-    stat.read(sacc_data)
-
-lk.read(sacc_data, sources, stats)
-
-lk.set_sources({})
-lk.set_systematics({})
-lk.set_statistics(stats)
+lk.read(sacc_data)
 lk.set_params_names(params)
 
 # Final object

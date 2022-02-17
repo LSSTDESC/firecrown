@@ -52,27 +52,27 @@ params:
   z_piv: 0.62
 
 #   - linear bias for lenses
-  bias_lens0: 
+  lens0_bias: 
      ref: 1.4
      prior:
         min: 0.8
         max: 3.0
-  bias_lens1: 
+  lens1_bias: 
      ref: 1.6
      prior:
         min: 0.8
         max: 3.0
-  bias_lens2: 
+  lens2_bias: 
      ref: 1.6
      prior:
         min: 0.8
         max: 3.0
-  bias_lens3: 
+  lens3_bias: 
      ref: 1.9
      prior:
         min: 0.8
         max: 3.0
-  bias_lens4: 
+  lens4_bias: 
      ref: 2.0
      prior:
         min: 0.8

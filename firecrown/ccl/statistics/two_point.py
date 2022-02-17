@@ -7,6 +7,7 @@ import warnings
 import numpy as np
 import pyccl as ccl
 
+from ..core import Source
 from ..core import Statistic
 
 # only supported types are here, any thing else will throw
@@ -23,9 +24,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-
 ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
-
 
 def _ell_for_xi(*, min, mid, max, n_log):
     """Build an array of ells to sample the power spectrum for real-space
@@ -79,8 +78,10 @@ class TwoPointStatistic(Statistic):
           - cmbGalaxy_convergenceShear_xi_t : maps to 'gl' (a CCL angular cross-
             correlation between position and shear)
 
-    sources : list of str
-        A list of the sources needed to compute this statistic.
+    source0 : Source
+        The first sources needed to compute this statistic.
+    source1 : Source
+        The second sources needed to compute this statistic.
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
@@ -141,7 +142,8 @@ class TwoPointStatistic(Statistic):
     def __init__(
         self,
         sacc_data_type,
-        sources: List[str],
+        source0: Source,
+        source1: Source,
         systematics: Optional[List[str]] = None,
         ell_for_xi=None,
         ell_or_theta=None,
@@ -149,7 +151,8 @@ class TwoPointStatistic(Statistic):
         ell_or_theta_max=None,
     ):
         self.sacc_data_type = sacc_data_type
-        self.sources = sources
+        self.source0 = source0
+        self.source1 = source1
         self.systematics = systematics or []
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
@@ -157,6 +160,8 @@ class TwoPointStatistic(Statistic):
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
+        
+        self.data_vector = None
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -165,47 +170,35 @@ class TwoPointStatistic(Statistic):
                 "The SACC data type '%s' is not supported!" % sacc_data_type
             )
 
-        if len(sources) != 2:
-            raise ValueError(
-                "A firecrown 2pt statistic should only have two "
-                "sources, you sent '%s'!" % self.sources
-            )
+        assert isinstance(source0, Source)
+        assert isinstance(source1, Source)
 
-    def read(self, sacc_data, sources):
+    def _update_params(self, params):
+        self.source0.update_params(params)
+        self.source1.update_params(params)
+
+    def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
 
         Parameters
         ----------
         sacc_data : sacc.Sacc
             The data in the sacc format.
-        sources : dict
-            A dictionary mapping sources to their objects. These sources do
-            not have to have been rendered.
         """
 
-        tracers = [sources[src].sacc_tracer for src in self.sources]
-        if len(tracers) != 2:
-            raise RuntimeError(
-                "A firecrown 2pt statistic should only have two "
-                "tracers, you sent '%s'!" % self.sources
+        self.source0.read (sacc_data)
+        self.source1.read (sacc_data)
+
+        tracers = [self.source0.sacc_tracer, self.source1.sacc_tracer]
+
+        if self.ccl_kind == "cl":
+            _ell_or_theta, _stat = sacc_data.get_ell_cl(
+                self.sacc_data_type, *tracers, return_cov=False
             )
-
-        # sacc is tracer order sensitive
-        # so we try again if we didn't find anything
-        for order in [1, -1]:
-            tracers = tracers[::order]
-
-            if self.ccl_kind == "cl":
-                _ell_or_theta, _stat = sacc_data.get_ell_cl(
-                    self.sacc_data_type, *tracers, return_cov=False
-                )
-            else:
-                _ell_or_theta, _stat = sacc_data.get_theta_xi(
-                    self.sacc_data_type, *tracers, return_cov=False
-                )
-
-            if len(_ell_or_theta) > 0 and len(_stat) > 0:
-                break
+        else:
+            _ell_or_theta, _stat = sacc_data.get_theta_xi(
+                self.sacc_data_type, *tracers, return_cov=False
+            )
 
         if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
             raise RuntimeError(
@@ -222,8 +215,6 @@ class TwoPointStatistic(Statistic):
                 stacklevel=2,
             )
 
-        self.sacc_tracers = tuple(tracers)
-
         # at this point we default to the values in the sacc file
         if len(_ell_or_theta) == 0 or len(_stat) == 0:
             _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
@@ -231,7 +222,7 @@ class TwoPointStatistic(Statistic):
             self.sacc_inds = None
         else:
             self.sacc_inds = np.atleast_1d(
-                sacc_data.indices(self.sacc_data_type, self.sacc_tracers)
+                sacc_data.indices(self.sacc_data_type, tuple(tracers))
             )
 
         if self.ell_or_theta_min is not None:
@@ -250,9 +241,9 @@ class TwoPointStatistic(Statistic):
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
-        self._stat = _stat.copy()
+        self.data_vector = _stat.copy()
 
-    def compute(self, cosmo, params, sources, systematics=None):
+    def compute(self, cosmo: pyccl.Cosmology, params: Dict[str, float]) -> (np.ndarray, np.ndarray):
         """Compute a two-point statistic from sources.
 
         Parameters
@@ -261,40 +252,30 @@ class TwoPointStatistic(Statistic):
             A pyccl.Cosmology object.
         params : dict
             A dictionary mapping parameter names to their current values.
-        sources : dict
-            A dictionary mapping sources to their objects. The sources must
-            already have been rendered by calling `render` on them.
-        systematics : dict, optional
-            A dictionary mapping systematic names to their objects. The
-            default of `None` corresponds to no systematics.
         """
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracers = [sources[k].tracer_ for k in self.sources]
-        self.scale_ = np.prod([sources[k].scale_ for k in self.sources])
+        tracer0 = self.source0.get_tracer(cosmo, params)
+        tracer1 = self.source1.get_tracer(cosmo, params)
+        scale = self.source0.get_scale () * self.source1.get_scale ()
 
         if self.ccl_kind == "cl":
-            self.predicted_statistic_ = (
+            theory_vector = (
                 _cached_angular_cl(
-                    cosmo, tuple(tracers), tuple(self.ell_or_theta_.tolist())
+                    cosmo, (tracer0, tracer1), tuple(self.ell_or_theta_.tolist())
                 )
-                * self.scale_
+                * scale
             )
         else:
             ells = _ell_for_xi(**self.ell_for_xi)
-            cells = _cached_angular_cl(cosmo, tuple(tracers), tuple(ells.tolist()))
-            self.predicted_statistic_ = (
+            cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
+            theory_vector = (
                 ccl.correlation(
                     cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
                 )
-                * self.scale_
+                * scale
             )
-
-        systematics = systematics or {}
-        for systematic in self.systematics:
-            systematics[systematic].apply(cosmo, params, self)
-
-        if not hasattr(self, "_stat"):
-            self.measured_statistic_ = self.predicted_statistic_
-        else:
-            self.measured_statistic_ = self._stat.copy()
+        
+        assert self.data_vector is not None
+            
+        return np.array (self.data_vector), np.array (theory_vector)

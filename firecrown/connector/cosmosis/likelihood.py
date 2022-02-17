@@ -97,6 +97,7 @@ class FirecrownLikelihood:
         lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
     
         sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
+        
         return 0
 
     def cleanup(self):

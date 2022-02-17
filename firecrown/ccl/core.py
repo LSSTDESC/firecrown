@@ -21,6 +21,7 @@ Some Notes:
 from __future__ import annotations
 from typing import Dict, Optional
 from abc import ABC, abstractmethod
+from typing import final
 import numpy as np
 import pyccl
 import sacc
@@ -30,6 +31,9 @@ import os
 
 import firecrown
 from ..parser_constants import FIRECROWN_RESERVED_NAMES
+
+def get_params_hash (params: Dict[str, float]):
+    return repr(sorted(params.items()))
 
 class Statistic(ABC):
     """A statistic (e.g., two-point function, mass function, etc.).
@@ -43,33 +47,33 @@ class Statistic(ABC):
         The default of `None` implies no systematics.
     """
 
-    # Why does this exist? It is not marked as abstract, so derived classes are
-    # not required to implement it. It has no behavior, so any code calling it
-    # and expecting some side effect will not be satisfied.
-    def read(self, sacc_data: sacc.Sacc, sources) -> None:
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
 
         Parameters
         ----------
         sacc_data : sacc.Sacc
             The data in the sacc format.
-        sources : dict
-            A dictionary mapping sources to their objects. These sources do
-            not have to have been rendered.
         """
         pass
 
+    @final
     def update_params(self, params):
+        if hasattr(self, "systematics"):
+            for systematic in self.systematics:
+                systematic.update_params(params)
+        self._update_params(params)
+    
+    @abstractmethod
+    def _update_params(self, params):
         pass
 
     @abstractmethod
     def compute(
         self,
         cosmo: pyccl.Cosmology,
-        params: Dict,
-        sources: Dict,
-        systematics: Optional[Dict] = None,
-    ) -> float:
+        params: Dict[str, float],
+    ) -> (np.ndarray, np.ndarray):
         """Compute a statistic from sources, applying any systematics.
 
         Parameters
@@ -78,12 +82,6 @@ class Statistic(ABC):
             A pyccl.Cosmology object.
         params : dict
             A dictionary mapping parameter names to their current values.
-        sources : dict
-            A dictionary mapping sources to their objects. The sources must
-            already have been rendered by calling `render` on them.
-        systematics : dict
-            A dictionary mapping systematic names to their objects. The
-            default of `None` corresponds to no systematics.
         """
         raise NotImplementedError("Method `compute` is not implemented!")
 
@@ -94,7 +92,8 @@ class Systematic():
     This class currently has no methods at all, because the argument types for
     the `apply` method of different subclasses are different."""
 
-    pass
+    def read(self, sacc_data: sacc.Sacc):
+        pass
 
     # def apply(self, cosmo: pyccl.Cosmology, params: Dict, source_or_statistic):
     #     """Apply systematics to a source.
@@ -123,8 +122,22 @@ class Source(ABC):
         default of `None` implies no systematics.
     """
 
-    @abstractmethod
+    @final
     def read(self, sacc_data: sacc.Sacc):
+        """Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
+        if hasattr(self, "systematics"):
+            for systematic in self.systematics:
+                systematic.read(sacc_data)
+        self._read(sacc_data)
+
+    @abstractmethod
+    def _read(self, sacc_data: sacc.Sacc):
         """Read the data for this source from the SACC file.
 
         Parameters
@@ -134,27 +147,34 @@ class Source(ABC):
         """
         pass
 
-    def update_params(self, params):
+    @abstractmethod
+    def get_scale(self) -> float:
         pass
 
-    def render(self, cosmo, params, systematics=None):
-        """Render a source by applying systematics.
+    @final
+    def update_params(self, params: Dict[str, float]):
+        if hasattr(self, "systematics"):
+            for systematic in self.systematics:
+                systematic.update_params(params)
+        self._update_params(params)
+    
+    @abstractmethod
+    def _update_params(self, params: Dict[str, float]):
+        pass
 
-        This method should compute the final scale factor for the source
-        as `scale_` and then apply any systematics.
+    @abstractmethod
+    def create_tracer(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+        pass
 
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        systematics : dict, optional
-            A dictionary mapping systematic names to their objects. The
-            default of `None` corresponds to no systematics.
-        """
-        raise NotImplementedError("Method `render` is not implemented!")
-
+    @final
+    def get_tracer(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+        cur_hash = hash ((cosmo, get_params_hash (params)))
+        if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
+            return self.tracer
+        else:
+            self.tracer, _ = self.create_tracer (cosmo, params)
+            self.cosmo_hash = cur_hash
+            return self.tracer
 
 class LogLike(object):
     """The log-likelihood (e.g., a Gaussian, T-distribution, etc.).
@@ -173,16 +193,7 @@ class LogLike(object):
         The inverse of the covariance matrix.
     """
 
-    def set_sources(self, sources):
-        self.sources = sources
-
-    def set_statistics(self, statistics):
-        self.statistics = statistics
-
-    def set_systematics(self, systematics):
-        self.systematics = systematics
-
-    def set_params_names(self, params_names):
+    def set_params_names(self, params_names: List[str]):
         self.params_names = params_names
 
     def get_params_names(self):
@@ -191,68 +202,26 @@ class LogLike(object):
         else:
             return []
 
-    def read(self, sacc_data, sources, statistics):
+    @abstractmethod
+    def read(self, sacc_data: sacc.Sacc):
         """Read the covariance matrirx for this likelihood from the SACC file.
 
         Parameters
         ----------
         sacc_data : sacc.Sacc
             The data in the sacc format.
-        sources : dict
-            A dictionary mapping sources to their objects. These sources do
-            not have to have been rendered.
-        statistics : dict
-            A dictionary mapping statistics to their objects. These statistics do
-            not have to have been rendered.
         """
         pass
 
-    def compute(self, data, theory, **kwargs):
-        """Compute the log-likelihood.
-
-        Parameters
-        ----------
-        data : dict of arrays
-            A dictionary mapping the names of the statistics to their
-            values in the data.
-        theory : dict of arrays
-            A dictionary mapping the names of the statistics to their
-            predictions.
-        **kwargs : extra keyword arguments
-            Any extra keyword arguments can be used by subclasses.
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood.
-        """
-        raise NotImplementedError("Method `compute_loglike` is not implemented!")
-
-    def assemble_data_vector(self, data: Dict[str, np.ndarray]) -> np.ndarray:
-        """Compute the log-likelihood.
-
-        Parameters
-        ----------
-        data : dict of arrays
-            A dictionary mapping the names of the statistics to their
-            values.
-
-        Returns
-        -------
-        data_vector : array-like
-            The data vector.
-        """
-        dv = [np.atleast_1d(data[stat]) for stat in self.data_vector]
-        return np.concatenate(dv, axis=0)
-
-    def compute_loglike(self, cosmo, parameters):
+    @abstractmethod
+    def compute_loglike(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
         """Compute the log-likelihood of generic CCL data.
 
         Parameters
         ----------
         cosmo : a `pyccl.Cosmology` object
             A cosmology.
-        parameters : dict
+        params : dict
             Dictionary mapping parameters to their values.
 
         Returns
@@ -260,20 +229,7 @@ class LogLike(object):
         loglike : float
             The computed log-likelihood.
         """
-        
-        for name, src in self.sources.items():
-            src.update_params(parameters)
-            src.render(cosmo, parameters, systematics=self.systematics)
-
-        _data = {}
-        _theory = {}
-        for name, stat in self.statistics.items():
-            stat.update_params(parameters)
-            stat.compute(cosmo, parameters, self.sources, systematics=self.systematics)
-            _data[name] = stat.measured_statistic_
-            _theory[name] = stat.predicted_statistic_
-
-        return self.compute(_data, _theory)
+        pass
 
 def load_likelihood(firecrownIni):
     filename, file_extension = os.path.splitext(firecrownIni)

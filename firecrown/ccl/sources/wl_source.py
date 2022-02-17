@@ -6,12 +6,12 @@ import numpy as np
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
-import pyccl as ccl
-
 from ..core import Source
 from ..core import Systematic
+from ..parameters import get_from_prefix_param
 
 __all__ = ["WLSource"]
+
 
 @dataclass(frozen=True)
 class WLSourceArgs:
@@ -25,18 +25,6 @@ class WLSourceArgs:
 
 class WLSourceSystematic(Systematic):
     pass
-
-
-def get_from_prefix_param(systematic: Systematic, params: Dict[str, float],
-                          prefix: Optional[str],
-                          param: str) -> float:
-    if prefix and f"{prefix}_{param}" in params.keys():
-        return params[f"{prefix}_{param}"]
-    elif param in params.keys():
-        return params[param]
-    else:
-        typename = type(systematic).__name__
-        raise KeyError(f"{typename} key `{param}' not found")
 
 
 class MultiplicativeShearBias(WLSourceSystematic):
@@ -63,9 +51,7 @@ class MultiplicativeShearBias(WLSourceSystematic):
 
     def update_params(self, params: Dict):
         """Read the corresponding named tracer from the given collection of parameters."""
-        self.m = get_from_prefix_param(
-            self, params, self.sacc_tracer, "mult_bias"
-        )
+        self.m = get_from_prefix_param(self, params, self.sacc_tracer, "mult_bias")
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WLSourceArgs):
         """Apply multiplicative shear bias to a source. The `scale_` of the
@@ -125,27 +111,18 @@ class LinearAlignmentSystematic(WLSourceSystematic):
         self.z_piv = None
 
     def update_params(self, params):
-        self.ia_bias = get_from_prefix_param(
-            self, params, self.sacc_tracer, "ia_bias"
-        )
-        self.alphaz = get_from_prefix_param(
-            self, params, self.sacc_tracer, "alphaz"
-        )
-        self.alphag = get_from_prefix_param(
-            self, params, self.sacc_tracer, "alphag"
-        )
-        self.z_piv = get_from_prefix_param(
-            self, params, self.sacc_tracer, "z_piv"
-        )
+        self.ia_bias = get_from_prefix_param(self, params, self.sacc_tracer, "ia_bias")
+        self.alphaz = get_from_prefix_param(self, params, self.sacc_tracer, "alphaz")
+        self.alphag = get_from_prefix_param(self, params, self.sacc_tracer, "alphag")
+        self.z_piv = get_from_prefix_param(self, params, self.sacc_tracer, "z_piv")
 
-    def apply(self, cosmo: pyccl.Cosmology,
-              tracer_arg: WLSourceArgs) -> WLSourceArgs:
-        """Return a new linear alignment systematic, based on the given 
+    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WLSourceArgs) -> WLSourceArgs:
+        """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= ccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-                self.alphag - 1.0
+        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
+            self.alphag - 1.0
         )
 
         ia_bias_array = pref * self.ia_bias
@@ -162,7 +139,7 @@ class PhotoZShift(WLSourceSystematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some ammount `delta_z`.
-   """
+    """
 
     params_names = ["delta_z"]
 
@@ -171,13 +148,10 @@ class PhotoZShift(WLSourceSystematic):
         self.delta_z = None
 
     def update_params(self, params):
-        self.delta_z = get_from_prefix_param(
-            self, params, self.sacc_tracer, "delta_z"
-        )
+        self.delta_z = get_from_prefix_param(self, params, self.sacc_tracer, "delta_z")
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WLSourceArgs):
-        """Apply a shift to the photo-z distribution of a source.
-        """
+        """Apply a shift to the photo-z distribution of a source."""
 
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
 
@@ -206,6 +180,7 @@ class WLSource(Source):
         self.dndz_orig: Optional[np.ndarray] = None
         self.dndz_interp = None
         self.tracer_args = None
+        self.current_tracer_args = None
         self.scale_ = None
         self.tracer_ = None
 
@@ -213,11 +188,10 @@ class WLSource(Source):
         for systematic in systematics:
             self.systematics.append(systematic)
 
-    def update_params(self, params):
-        for systematic in self.systematics:
-            systematic.update_params(params)
+    def _update_params(self, params):
+        pass
 
-    def read(self, sacc_data):
+    def _read(self, sacc_data):
         """Read the data for this source from the SACC file.
 
         Parameters
@@ -233,12 +207,7 @@ class WLSource(Source):
         z = z[inds]
         nz = nz[inds]
 
-        self.tracer_args = WLSourceArgs(scale=self.scale, z=z, dndz=nz,
-                                        ia_bias=None)
-
-    def render(self, cosmo, params, systematics=None):
-        self.tracer_, tracer_args = self.create_tracer(cosmo, params)
-        self.scale_ = tracer_args.scale
+        self.tracer_args = WLSourceArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
     def create_tracer(self, cosmo: pyccl.Cosmology, params):
         """
@@ -250,9 +219,14 @@ class WLSource(Source):
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
-        tracer = ccl.WeakLensingTracer(
-            cosmo, dndz=(tracer_args.z, tracer_args.dndz),
-            ia_bias=tracer_args.ia_bias
+        tracer = pyccl.WeakLensingTracer(
+            cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
         )
+        self.current_tracer_args = tracer_args
 
         return tracer, tracer_args
+
+    def get_scale(self):
+        assert self.current_tracer_args
+        return self.current_tracer_args.scale
+

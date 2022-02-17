@@ -1,9 +1,11 @@
+from __future__ import annotations
+from typing import List, Dict, Optional
 import copy
 import functools
 import warnings
 
 import numpy as np
-import pyccl as ccl
+import pyccl
 
 from ..core import Statistic
 
@@ -24,11 +26,12 @@ def _z_for_mu(*, min, max, n):
 @functools.lru_cache(maxsize=128)
 def _cached_distmod(cosmo, tracers, z):
     a = 1./(1+z)
-    return ccl.background.distance_modulus(cosmo, *tracers, np.array(a))
+    return pyccl.background.distance_modulus(cosmo, *tracers, np.array(a))
 
 class Supernova(Statistic):
     def __init__(self, sacc_tracer):
         self.sacc_tracer = sacc_tracer
+        self.data_vector = None
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
@@ -43,13 +46,13 @@ class Supernova(Statistic):
 
         self.z = np.array ([dp.get_tag ("z") for dp in data_points])
         self.a = 1.0 / (1.0 + self.z)
-        self.m = np.array ([dp.value for dp in data_points])
-        self.sacc_inds = list (range (0, len (self.m)))
+        self.data_vector = np.array ([dp.value for dp in data_points])
+        self.sacc_inds = list (range (0, len (self.data_vector)))
         
-    def update_params(self, params):
+    def _update_params(self, params):
         self.M = params['m'] # CosmoSIS makes everything lowercase
 
-    def compute(self, cosmo, params, sources, systematics=None):
+    def compute(self, cosmo: pyccl.Cosmology, params: Dict[str, float]) -> (np.ndarray, np.ndarray):
         """Compute a two-point statistic from sources.
 
         Parameters
@@ -65,6 +68,10 @@ class Supernova(Statistic):
             A dictionary mapping systematic names to their objects. The
             default of `None` corresponds to no systematics.
         """
-        self.predicted_statistic_ = self.M + ccl.distance_modulus(cosmo, self.a)
-        self.measured_statistic_ = self.m
+        theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
+        
+        assert self.data_vector is not None
+        
+        return np.array (self.data_vector), np.array (theory_vector)
+    
         
