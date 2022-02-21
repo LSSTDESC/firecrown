@@ -1,0 +1,41 @@
+@startuml
+skinparam dpi 300
+skinparam linetype ortho
+skinparam shadowing false
+top to bottom direction
+
+abstract class Updateable {
+  + {final} update(...)
+  - {abstract} update_(...)
+}
+
+class UpdateableAtom {
+- update_(...)
+}
+
+note bottom
+  This is an example;
+  <i>UpdateableAtom</i> is
+  not an actual class.  
+end note
+
+UpdateableAtom -up-|> Updateable
+
+class UpdateableCollection {
+  - update_(...)
+  + append(item : Updateable)
+}
+
+UpdateableCollection *-- Updateable : contents
+
+' note left of UpdateableCollection::update_
+'   Calls <i>update</i> on each
+'   item in contents
+' end note
+
+' Updateable <|-down- UpdateableCollection
+
+UpdateableCollection -up-|> Updateable
+
+
+@enduml
