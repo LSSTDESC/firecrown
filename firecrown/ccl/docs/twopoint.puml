@@ -1,12 +1,11 @@
 @startuml
-skinparam dpi 300
-'skinparam linetype ortho
-skinparam shadowing false
-top to bottom direction
 
-abstract class Statistic {}
+!include skinparams.iuml
+!include statistic_frag.iuml
+!include updateable_frag.iuml
+
 abstract class Source {}
-abstract class Updateable {}
+
 abstract class UpdateableCollection {}
 note bottom
  This will contain only
@@ -14,10 +13,8 @@ note bottom
 end note
 
 abstract class TwoPoint {
-  - update_(...)
+  - {abstract} _update(params : ParamsDict)
   + {abstract} read(data : sacc.Sacc)
-  - {abstract} _update_params(params)
-  + {abstract} compute(cosmo: pyccl.Cosmology, params: Dict)
 }
 
 TwoPoint -up-|> Updateable
@@ -28,7 +25,7 @@ TwoPoint *--down- Source : s2
 TwoPoint *--down- UpdateableCollection : systematics
 
 class ConcreteTPF {
- - update_(...)
+ - _update(params : ParamsDict)
 }
  
 ConcreteTPF -left-|> TwoPoint 

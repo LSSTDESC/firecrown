@@ -1,0 +1,5 @@
+abstract class Statistic {
+  + {abstract} read(data : sacc.Sacc)
+  + {abstract} compute_theory_vector(cosmo: pyccl.Cosmology) : np.array
+  + {abstract} compute_data_vector(cosmo: pyccl.Cosmology) : np.array
+}

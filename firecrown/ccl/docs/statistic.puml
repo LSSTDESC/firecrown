@@ -1,15 +1,9 @@
 @startuml
-skinparam dpi 300
-'skinparam linetype ortho
-skinparam shadowing false
-top to bottom direction
 
+!include skinparams.iuml 
+!include statistic_frag.iuml
+!include updateable_frag.iuml
 
-abstract class Statistic {
-  + {abstract} read(data : sacc.Sacc)
-  + {final} update_params(params)
-  - {abstract} _update_params(params)
-  + {abstract} compute(cosmo: pyccl.Cosmology, params: Dict)
-}
+Statistic -up-|> Updateable
 
 @enduml

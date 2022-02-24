@@ -1,0 +1,4 @@
+abstract class Updateable {
+  + {final} update(params: ParamsDict)
+  - {abstract} _update(params: ParamsDict)
+}

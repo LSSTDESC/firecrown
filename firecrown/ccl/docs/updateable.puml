@@ -1,16 +1,10 @@
 @startuml
-skinparam dpi 300
-skinparam linetype ortho
-skinparam shadowing false
-top to bottom direction
 
-abstract class Updateable {
-  + {final} update(...)
-  - {abstract} update_(...)
-}
+!include skinparams.iuml
+!include updateable_frag.iuml
 
 class UpdateableAtom {
-- update_(...)
+- _update(params : ParamsDict)
 }
 
 note bottom
@@ -22,13 +16,13 @@ end note
 UpdateableAtom -up-|> Updateable
 
 class UpdateableCollection {
-  - update_(...)
+  - _update(params : ParamsDict)
   + append(item : Updateable)
 }
 
 UpdateableCollection *-- Updateable : contents
 
-' note left of UpdateableCollection::update_
+' note left of UpdateableCollection::_update
 '   Calls <i>update</i> on each
 '   item in contents
 ' end note
