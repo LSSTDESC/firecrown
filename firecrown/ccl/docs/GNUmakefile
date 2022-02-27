@@ -28,7 +28,10 @@ pdf: $(PDFS)
 clean:
 	rm -f *.eps *.pdf *.png
 
-likelihood.png: skinparams.iuml updateable_frag.iuml
-statistic.png: skinparams.iuml statistic_frag.iuml updateable_frag.iuml
-twopoint.png: skinparams.iuml statistic_frag.iuml updateable_frag.iuml
-updateable.png: skinparams.iuml updateable_frag.iuml
+$(PNGS): skinparams.iuml
+$(PDFS): skinparams.iuml
+
+likelihood.png: updateable_frag.iuml
+statistic.png: statistic_frag.iuml updateable_frag.iuml
+twopoint.png: statistic_frag.iuml updateable_frag.iuml
+updateable.png: updateable_frag.iuml
