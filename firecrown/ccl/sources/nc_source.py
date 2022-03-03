@@ -22,10 +22,8 @@ class NumberCountsSourceArgs:
     bias: np.ndarray
     mag_bias: np.ndarray
 
-
 class NumberCountsSourceSystematic(Systematic):
     pass
-
 
 class PhotoZShift(NumberCountsSourceSystematic):
     """A photo-z shift bias.

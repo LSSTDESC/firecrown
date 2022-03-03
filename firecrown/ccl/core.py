@@ -30,7 +30,6 @@ import importlib.util
 import os
 
 import firecrown
-from ..parser_constants import FIRECROWN_RESERVED_NAMES
 
 def get_params_hash (params: Dict[str, float]):
     return repr(sorted(params.items()))

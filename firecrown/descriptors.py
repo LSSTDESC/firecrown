@@ -1,7 +1,6 @@
 from abc import ABC, abstractmethod
 from firecrown.ccl.core import LogLike
 
-
 class Validator(ABC):
     def __set_name__(self, owner, name):
         self.private_name = "_" + name
