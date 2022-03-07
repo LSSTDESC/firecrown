@@ -1,6 +1,7 @@
 import collections.abc
 import copy
 import importlib
+from importlib import import_module as imp
 import yaml
 import jinja2
 
@@ -34,6 +35,11 @@ def parse(config_or_filename):
         config = copy.deepcopy(config_or_filename)
         data = copy.deepcopy(config_or_filename)
 
+    #print("+++++++++++++++++")
+    #print(config)
+    #print("+++++++++++++++++")
+    #print(data)
+    #print("+++++++++++++++++")
     params = {}
     for p, val in data["parameters"].items():
         if isinstance(val, list) and not isinstance(val, str):
@@ -43,12 +49,16 @@ def parse(config_or_filename):
     data["parameters"] = params
 
     analyses = set(data.keys()) - set(FIRECROWN_RESERVED_NAMES)
+    #print(analyses)
+    #print("+++++++++++++++++")
     for analysis in analyses:
+        #print(analysis)
+        #print("+++++++++++++++++")
         new_keys = {}
-
         try:
-            mod = importlib.import_module(data[analysis]["module"])
+            mod = imp(data[analysis]["module"])
         except Exception:
+            #print("data, analysis ***************%s "%(data[analysis]))
             print(
                 "Module '%s' for analysis '%s' cannot be imported!"
                 % (data[analysis]["module"], analysis)
@@ -57,6 +67,7 @@ def parse(config_or_filename):
 
         new_keys = {}
         if hasattr(mod, "parse_config"):
+            #print("++++++++++++++")
             new_keys["data"] = getattr(mod, "parse_config")(data[analysis])
             new_keys["eval"] = getattr(mod, "compute_loglike")
             new_keys["write"] = getattr(mod, "write_stats")

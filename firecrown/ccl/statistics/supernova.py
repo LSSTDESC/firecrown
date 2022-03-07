@@ -26,10 +26,12 @@ def _cached_distmod(cosmo, tracers, z):
     a = 1./(1+z)
     return ccl.background.distance_modulus(cosmo, *tracers, np.array(a))
 
-class Supernova(Statistic):
+class SupernovaStatistic(Statistic):
     def __init__(self, sacc_tracer):
-        self.sacc_tracer = sacc_tracer
-
+        self.sacc_tracers = sacc_tracer
+        print(self.sacc_tracers)
+        self.M = -19 #params['m'] # CosmoSIS makes everything lowercase
+        print('SELF.M = ',self.M)
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
 
@@ -38,8 +40,8 @@ class Supernova(Statistic):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
-        data_points = sacc_data.get_data_points (data_type="supernova_distance_mu", tracers=(self.sacc_tracer,))
+        tracer = sacc_data.get_tracer(self.sacc_tracers)
+        data_points = sacc_data.get_data_points (data_type="supernova_distance_mu", tracers=(self.sacc_tracers,))
 
         self.z = np.array ([dp.get_tag ("z") for dp in data_points])
         self.a = 1.0 / (1.0 + self.z)

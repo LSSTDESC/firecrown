@@ -1,0 +1,4 @@
+CCL gives you theory prediction. Say, halo mass function
+SACC stores the data produced by LSST.
+Firecrown puts data and theory together to give you cosmological parameters.
+Augur is an adaptation to produce forecasts, since we don't have data yet.

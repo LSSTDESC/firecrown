@@ -8,7 +8,7 @@ import pyccl as ccl
 from ..core import Source
 from ..systematics import IdentityFunctionMOR, TopHatSelectionFunction
 
-__all__ = ["WLSource", "NumberCountsSource", "ClusterSource", "CMBLSource"]
+__all__ = ["WLSource", "NumberCountsSource", "ClusterSource", "CMBLSource", "SNSource"]
 
 
 class WLSource(Source):
@@ -435,3 +435,107 @@ class CMBLSource(Source):
 
         tracer = ccl.CMBLensingTracer(cosmo, 1100.0)
         self.tracer_ = tracer
+
+class SNSource(Source):
+    """A galaxy cluster source.
+
+    Parameters
+    ----------
+    sacc_tracer : str
+        The name of the source in the SACC file.
+    systematics : list of str, optional
+        A list of the source-level systematics to apply to the source. The
+        default of `None` implies no systematics.
+
+    Attributes
+    ----------
+    z_orig : np.ndarray, shape (n_z,)
+        The original redshifts for the photo-z distribution before any
+        systematics are applied. Set after the call to `read`.
+    dndz_orig : np.ndarray, shape (n_z,)
+        The photo-z distribution amplitudes before any systematics are applied.
+        Set after the call to `read`.
+    dndz_interp : Akima1DInterpolator
+        A spline interpolation of the initial photo-z distribution.
+    z_ : np.ndarray, shape (n_z,)
+        The array of redshifts for the photo-z distribution. Set after a call
+        to `render`.
+    dndz_ : np.ndarray, shape (n_z,)
+        The photo-z distribution amplitudes. Set after a call to `render`.
+    dndz_interp_ : Akima1DInterpolator
+        A spline interpolation of the final photo-z distribution. Set after a
+        call to `render`.
+    lnlam_min_orig : float
+        The minimum lnlambda value read from the SACC file. Set after the call to
+        `read`.
+    lnlam_max_orig : float
+        The maximum lnlambda value read from the SACC file. Set after the call to
+        `read`.
+    lnlam_min_ : float
+        The minimum lnlambda value. Set after a call to `render`.
+    lnlam_max_ : float
+        The maximum lnlambda value. Set after a call to `render`.
+    area_sr_orig : float
+        The original area in steradians of the cluster sample.
+    area_sr_ : float
+        The (effective) area in steradians of the cluster sample.
+    scale_ : float
+        The overall scale associated with the source. Set after a call to
+        `render`. Not currently used for anything.
+
+    Methods
+    -------
+    render : apply systematics to this source, build the
+        `pyccl.NumberCountsTracer`, and compute the linear bias
+    """
+
+    def __init__(self, *, sacc_tracer, systematics=None):
+        self.sacc_tracer = sacc_tracer
+        self.systematics = systematics or []
+        self.scale = 1.0
+
+    def read(self, sacc_data):
+        """Read the data for this source from the SACC file.
+
+        Parameters
+        ----------
+        sacc_data : sacc.Sacc
+            The data in the sacc format.
+        """
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        z = np.array([datapt.get_tag("z") for datapt in sacc_data.get_data_points()])
+        mu = np.array([datapt.value for datapt in sacc_data.get_data_points()])
+        mb = np.array([datapt.get_tag("mb") for datapt in sacc_data.get_data_points()])
+        inds = np.argsort(z)
+        z = z[inds]
+        mu = mu[inds]
+        mb = mb[inds]
+        self.mu_orig = mu
+        self.z_orig = z
+        self.mb_orig = mb
+        #print("Yay! Read the SACC data file")
+
+    def render(self, cosmo, params, systematics=None):
+        """
+        Render a source by applying systematics.
+
+        Parameters
+        ----------
+        cosmo : pyccl.Cosmology
+            A pyccl.Cosmology object.
+        params : dict
+            A dictionary mapping parameter names to their current values.
+        systematics : dict
+            A dictionary mapping systematic names to their objects. The
+            default of `None` corresponds to no systematics.
+        """
+        systematics = systematics or {}
+
+        self.z_ = self.z_orig.copy()
+        self.mu_ = self.mu_orig.copy()
+        self.mb_ = self.mb_orig.copy()
+        self.scale_ = self.scale
+
+        for systematic in self.systematics:
+            print("Systematics not included")
+            systematics[systematic].apply(cosmo, params, self)

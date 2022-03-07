@@ -7,7 +7,7 @@ from .parser import (
     _parse_statistics,
     _parse_likelihood,
 )
-from .statistics import TwoPointStatistic, ClusterCountStatistic
+from .statistics import TwoPointStatistic, ClusterCountStatistic, SupernovaStatistic
 
 
 def parse_config(analysis):
@@ -156,7 +156,10 @@ def build_sacc_data(data, stats):
         names = list(data["statistics"].keys())
 
     base_sacc_data = sacc.Sacc()
+    #print([(name, source) for name, source  in data['sources'].items()],"NAME BUILD XXX")
     for name, src in data["sources"].items():
+        if name== "supernova":
+            continue
         metadata = {}
         for attr in ["lnlam_min_orig", "lnlam_max_orig", "area_sd_orig"]:
             if hasattr(src, attr):
@@ -188,10 +191,28 @@ def build_sacc_data(data, stats):
                     )
             elif isinstance(stat, ClusterCountStatistic):
                 sacc_data.add_data_point(
-                    "count", stat.sacc_tracers, getattr(stat, "%s_statistic_" % attr)
+                    "count", stat.sacc_tracers, getattr(stat, "%s_statistic_" % attr)        
                 )
+            elif isinstance(stat, SupernovaStatistic):
+                #  set up the sacc data name for the astrophysical sources involved.
+                sources = ['supernova']
+                properties = ['distance']
+                # The statistc 
+                statistic = 'mu'
+                # There is no futher specified needed here - everything is scalar.
+                subtype = None
+                sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
+
+                sacc_data.add_tracer("misc", "sn_ddf_sample")
+                #print('XXX STAT', attr, stat.predicted_statistic_, stat.measured_statistic_)
+                #print("What is this:", getattr(stat, "%s_statistic_" % attr))
+                for tmpstat in getattr(stat, "%s_statistic_" % attr):
+                    sacc_data.add_data_point(
+                        sndata_type, [stat.sacc_tracers], tmpstat
+                    )
 
         if "likelihood" in data:
+            #print("XXX ",data["likelihood"].cov)
             sacc_data.add_covariance(data["likelihood"].cov)
 
         datas[attr] = sacc_data

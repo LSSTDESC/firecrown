@@ -3,16 +3,12 @@
 from pprint import pprint
 import os
 import firecrown
-
 import firecrown.ccl.two_point
-
 from firecrown.ccl.sources import *
 from firecrown.ccl.statistics import *
 from firecrown.ccl.systematics import *
 from firecrown.ccl.likelihoods import *
-
 import firecrown.ccl.sources.wl_source
-
 import sacc
 
 # Sources
@@ -42,7 +38,7 @@ for name, stat in stats.items():
     stat.read(sacc_data)
 
 lk.read(sacc_data, sources, stats)
-
+print('AM****') #AM
 lk.set_sources({})
 lk.set_systematics({})
 lk.set_statistics(stats)

@@ -1,0 +1,99 @@
+#!/global/homes/a/ayanmitr/.conda/envs/firecrown_librefactor/bin/python
+import sys
+import uuid
+import pprint
+import click
+import jinja2
+import pathlib
+import os
+
+import firecrown
+from firecrown.metadata import write_metadata
+from firecrown.io import write_statistics
+from firecrown.cosmology import get_ccl_cosmology
+
+
+def _test_mpi():
+    """Test for the presence of MPI.
+
+    Returns
+    -------
+    using_mpi : bool
+        True is mpi4py can be imported, False otherwise.
+    is_master : bool
+        True if the current process is rank 0, False otherwise.
+    """
+    try:
+        from mpi4py import MPI
+        using_mpi = True
+    except Exception:
+        using_mpi = False
+
+    if using_mpi:
+        is_master = MPI.COMM_WORLD.Get_rank() == 0
+    else:
+        is_master = False
+
+    return using_mpi, is_master
+
+
+@click.command()
+@click.argument('action', type=str)
+@click.argument('config', type=str)
+@click.option('-o', '--output', type=str, default='.')
+@click.option('-v', '--verbose', is_flag=True)
+def run(action, config, output, verbose):
+    """Watch out! Here comes a firecrown!
+
+    Also, run some ACTION on a CONFIG file.
+    
+    ACTION must be one of:
+        render
+        compute
+    
+    CONFIG must be the name of a Firecrown YAML configuration file."""
+
+    # figure out if we are using MPI
+    using_mpi, is_master = _test_mpi()
+    print_or_run = (using_mpi and is_master) or not using_mpi
+
+    if action == 'render':
+        if print_or_run:
+            with open(config, 'r') as fp:
+                config_str = jinja2.Template(fp.read()).render()
+            print(config_str, flush=True)
+        sys.exit(0)
+
+    analysis_id = uuid.uuid4().hex
+
+    # Expand and (if master) create output dir
+    output_path = pathlib.Path(os.path.expandvars(output)).expanduser()
+    output_dir = output_path / f'output_{analysis_id}'
+
+    if print_or_run:
+        print('analysis id:', analysis_id, flush=True)
+        output_dir.mkdir(exist_ok=False)
+
+    _config, data = firecrown.parse(config)
+    if verbose and (print_or_run):
+        print("rendered config file:\n", pprint.pformat(_config), flush=True)
+
+    stats = None
+    if action == 'compute' and print_or_run:
+        cosmo = get_ccl_cosmology(_config['parameters'])
+        loglike, _, _, _, _, stats = firecrown.compute_loglike(cosmo=cosmo, data=data)
+        print('loglike:', loglike, flush=True)
+
+    # we associate a unique id with each analysis
+    # let's write that out with some extra info
+    if print_or_run:
+        write_metadata(analysis_id, str(output_dir), config)
+        if stats is not None:
+            write_statistics(
+                output_dir=str(output_dir),
+                data=data,
+                statistics=stats)
+
+
+if __name__ == '__main__':
+    run()

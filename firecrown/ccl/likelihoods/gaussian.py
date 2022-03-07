@@ -31,10 +31,11 @@ class ConstGaussianLogLike(LogLike):
 
     def __init__(self, data_vector: List[str]):
         self.data_vector = data_vector
+        #print('XXX data vector = ',data_vector,type(data_vector),[stat for stat in self.data_vector])
         self.cov: Optional[np.ndarray] = None
         self.cholesky: Optional[np.ndarray] = None
         self.inv_cov: Optional[np.ndarray] = None
-
+    
     def read(self, sacc_data, sources, statistics) -> None:
         """Read the covariance matrirx for this likelihood from the SACC file.
 
@@ -51,7 +52,9 @@ class ConstGaussianLogLike(LogLike):
         """
         _sd = sacc_data.copy()
         inds = []
+        #print('XXXXXX',statistics)
         for stat in self.data_vector:
+            #print('XXXXXX',statistics["sources"].__dict__)
             inds.append(statistics[stat].sacc_inds.copy())
         inds = np.concatenate(inds, axis=0)
         cov = np.zeros((len(inds), len(inds)))

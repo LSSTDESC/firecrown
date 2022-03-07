@@ -35,6 +35,26 @@ def _parse_systematics(systematics):
 
     return syss
 
+def _parse_sn_statistics(statistics):
+    """Parse tatistics from the config.
+
+    Each stat expressed in YAML should have the form:
+
+        ```YAML
+        cl_src0_src0:
+          sources: ['src0']
+          sacc_data_type: 'distance'  # a SACC type that maps to a CCL
+                                      # distances
+          systematics:
+            ...
+        ```
+    """
+    stats = {}
+    for stat, keys in statistics.items():
+        new_keys = copy.deepcopy(keys)
+        print(new_keys)
+        stats[stat] = firecrown_ccl_statistics.SupernovaStatistic(**new_keys)
+    return stats
 
 def _parse_two_point_statistics(statistics):
     """Parse two-point statistics from the config.
@@ -56,7 +76,6 @@ def _parse_two_point_statistics(statistics):
         new_keys = copy.deepcopy(keys)
         stats[stat] = firecrown_ccl_statistics.TwoPointStatistic(**new_keys)
     return stats
-
 
 def _parse_statistics(statistics):
     """Parse statistics from the config.
