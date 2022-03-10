@@ -17,7 +17,7 @@ import sacc
 
 # Sources
 
-params = set([])
+params = set()
 
 sources = {}
 

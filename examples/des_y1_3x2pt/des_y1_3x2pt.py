@@ -16,7 +16,7 @@ import sacc
 
 # Sources
 
-params = set([])
+params = set()
 
 '''
     Creating a systematic object that will be used by many sources. We need to 

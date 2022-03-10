@@ -15,7 +15,7 @@ import sacc
 
 # Sources
 
-params = set([])
+params = set()
 
 '''
     Creating sources, each one maps to a specific section of a SACC file. In 
