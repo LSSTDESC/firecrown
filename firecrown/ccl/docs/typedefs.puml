@@ -1,0 +1,14 @@
+@startuml
+
+!include skinparams.iuml
+
+class ParamsDict <<dictionary>> { }
+note top
+  Map of <i>string</i>
+  to <i>float</i>
+end note
+
+
+class Statistics << List[Statistic] >> { }
+
+@enduml

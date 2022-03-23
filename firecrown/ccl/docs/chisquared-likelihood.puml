@@ -2,33 +2,34 @@
 
 !include skinparams.iuml
 !include updateable_frag.iuml
-
-class ParamsDict <<dictionary>> { }
-note top
-  Map of <i>string</i>
-  to <i>float</i>
-end note
+!include likelihood_frag.iuml
 
 
-class Statistics << List[Statistic] >> { }
-
-abstract class Likelihood {
-  + {abstract} read(data : sacc.Sacc) : None
-  + {abstract} compute(cosmo : ccl.Cosmology)
-}
 
 Updateable <|-down- Likelihood
 
 abstract class ChiSquaredLikelihood {
   +ChiSquaredLikelihood(stats : Statistics)
-  -{final} compute_chisq(cosmo : ccl.Cosmology) : double
+  +{final} compute_chisq(cosmo : ccl.Cosmology) : double
   - _update(params : ParamsDict)
 }
+
+note right of ChiSquaredLikelihood::compute_chisq
+  <i>compute_chisq<i> is to be called by derived
+  classes in their implementation of <i>compute</i>
+end note
+
+note left of ChiSquaredLikelihood::_update
+  <i>_update</i> updates <i>systematics</i>
+  Classes that override <i>_update</i> should
+  make sure to call it as part of their
+  implementation.
+end note
 
 
 class UpdateableCollection <<Statistic>> {}
 
-ChiSquaredLikelihood *-- UpdateableCollection
+ChiSquaredLikelihood *-- UpdateableCollection : systematics
 
 Likelihood <|-down- ChiSquaredLikelihood
 

@@ -2,49 +2,29 @@
 
 !include skinparams.iuml
 !include updateable_frag.iuml
-
-class ParamsDict <<dictionary>> { }
-note top
-  Map of <i>string</i>
-  to <i>float</i>
-end note
-
-
-class Statistics << List[Statistic] >> { }
-
-abstract class Likelihood {
-  + {abstract} read(data : sacc.Sacc) : None
-  + {abstract} compute(cosmo : ccl.Cosmology)
-}
+!include likelihood_frag.iuml
 
 Updateable <|-down- Likelihood
 
-abstract class ChiSquaredLikelihood {
-  +ChiSquaredLikelihood(stats : Statistics)
-  -{final} compute_chisq(cosmo : ccl.Cosmology) : double
-  - _update(params : ParamsDict)
-}
+note right of Updateable::_update
+  A Likelihood should update its
+  state to reflect changes <i>
+  other<i> than to the cosmology.
+end note
 
+note right of Likelihood::read
+  <i>read</i> is to read both data
+  and information about systematics
+  from SACC.
+end note
 
-class UpdateableCollection <<Statistic>> {}
+note left of Likelihood::compute
+  <i>compute</i> is to return the
+  log likelihood for the given data.
+  It is expected that the state of
+  the Likelihood object is not changed
+  by this call.
+end note
 
-ChiSquaredLikelihood *-- UpdateableCollection
-
-Likelihood <|-down- ChiSquaredLikelihood
-
-class GaussianLikelihood {
-  + {final} compute(cosmo : ccl.Cosmology)
-}
-
-class StudentTLikelihood {
-  + StudentTLikelihood(stats : Statistics, nu : double)
-  + {final} compute(cosmo : ccl.Cosmology)
-  - _update(params : ParamsDict)
-}
-
-
-ChiSquaredLikelihood <|--down- GaussianLikelihood
-
-ChiSquaredLikelihood <|--down- StudentTLikelihood
 
 @enduml
