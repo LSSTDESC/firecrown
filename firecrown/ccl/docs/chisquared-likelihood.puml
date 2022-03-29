@@ -23,7 +23,7 @@ note left of ChiSquaredLikelihood::_update
   <i>_update</i> updates <i>systematics</i>
   Classes that override <i>_update</i> should
   make sure to call it as part of their
-  implementation.
+  implementation, using `super`.
 end note
 
 

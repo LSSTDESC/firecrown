@@ -8,8 +8,8 @@ Updateable <|-down- Likelihood
 
 note right of Updateable::_update
   A Likelihood should update its
-  state to reflect changes <i>
-  other<i> than to the cosmology.
+  state to reflect changes
+  <i>other</i> than to the cosmology.
 end note
 
 note right of Likelihood::read
@@ -20,7 +20,8 @@ end note
 
 note left of Likelihood::compute
   <i>compute</i> is to return the
-  log likelihood for the given data.
+  log likelihood for the contained data,
+  given the cosmology <i>cosmo</i>.
   It is expected that the state of
   the Likelihood object is not changed
   by this call.

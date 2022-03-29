@@ -1,5 +1,5 @@
 abstract class Likelihood {
-  + {abstract} read(data : sacc.Sacc) : None
+  + {abstract} read(data : SaccData) : None
   + {abstract} compute(cosmo : ccl.Cosmology) : double
-  + {abstract} generate_sample( ???) : ???
+  + {abstract} generate_sample(cosmo : ccl.Cosmology) : SaccData
 }

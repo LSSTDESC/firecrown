@@ -11,4 +11,11 @@ end note
 
 class Statistics << List[Statistic] >> { }
 
+class SaccData { }
+note top
+  Represents data read from a sacc.SACC.
+  We want to be able to read and write from
+  a SACC-format FITS file.
+end note
+
 @enduml
