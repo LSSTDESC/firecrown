@@ -25,7 +25,7 @@ class NumberCountsArgs:
 class NumberCountsSystematic(Systematic):
     pass
 
-class LinearBiasSystematic(Systematic):
+class LinearBiasSystematic(NumberCountsSystematic):
     """Linear bias systematic.
 
     This systematic adds a linear bias model which varies with redshift and
@@ -67,7 +67,7 @@ class LinearBiasSystematic(Systematic):
         source.bias_ *= pref
 
 
-class MagnificationBiasSystematic(Systematic):
+class MagnificationBiasSystematic(NumberCountsSystematic):
     """Magnification bias systematic.
 
     This systematic adds a magnification bias model for galaxy number contrast

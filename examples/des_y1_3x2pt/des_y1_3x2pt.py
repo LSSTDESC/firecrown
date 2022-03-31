@@ -4,13 +4,8 @@ from pprint import pprint
 import os
 import firecrown
 
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import WeakLensing
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import LinearAlignmentSystematic
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import MultiplicativeShearBias
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import PhotoZShift as WLPhotoZShift
-
-from firecrown.likelihood.gauss_family.statistic.source.number_counts import NumberCounts
-from firecrown.likelihood.gauss_family.statistic.source.number_counts import PhotoZShift as NCPhotoZShift
+import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as WL
+import firecrown.likelihood.gauss_family.statistic.source.number_counts as NC
 
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 
@@ -31,7 +26,7 @@ params.add("alphaz")
 params.add("alphag")
 params.add("z_piv")
 
-lai_systematic = LinearAlignmentSystematic(
+lai_systematic = WL.LinearAlignmentSystematic(
     sacc_tracer=""
 )
 
@@ -48,7 +43,7 @@ for i in range(4):
         Each weak-lensing section has its own multiplicative bias. Parameters 
         reflect this by using src{i}_ prefix. 
     '''
-    mbias = MultiplicativeShearBias(
+    mbias = WL.MultiplicativeShearBias(
         sacc_tracer=f"src{i}"
     )
     params.add(f"src{i}_mult_bias")
@@ -58,7 +53,7 @@ for i in range(4):
         also have a different parameter for each bin, so here again we use the
         src{i}_ prefix. 
     '''
-    pzshift = WLPhotoZShift(sacc_tracer=f"src{i}")
+    pzshift = WL.PhotoZShift(sacc_tracer=f"src{i}")
     params.add(f"src{i}_delta_z")
 
     '''
@@ -66,7 +61,7 @@ for i in range(4):
         theoretical prediction for that section of the data, given the 
         systematics.
     '''
-    sources[f"src{i}"] = WeakLensing(
+    sources[f"src{i}"] = WL.WeakLensing(
         sacc_tracer=f"src{i}", systematics=[lai_systematic, mbias, pzshift]
     )
 
@@ -79,12 +74,12 @@ for i in range(5):
     '''
         We also include a photo-z shift for the dndz.
     '''
-    pzshift = NCPhotoZShift(sacc_tracer=f"lens{i}")
+    pzshift = NC.PhotoZShift(sacc_tracer=f"lens{i}")
         
     '''
         The source is created and saved (temporarely in the sources dict).
     '''
-    sources[f"lens{i}"] = NumberCounts(
+    sources[f"lens{i}"] = NC.NumberCounts(
         sacc_tracer=f"lens{i}", systematics=[pzshift]
     )
     params.add(f"lens{i}_bias")

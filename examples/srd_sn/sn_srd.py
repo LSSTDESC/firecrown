@@ -3,7 +3,7 @@
 from pprint import pprint
 import os
 import firecrown
-from firecrown.likelihood.gauss_family.statistic.supernova import Supernova
+import firecrown.likelihood.gauss_family.statistic.supernova as SN
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
@@ -16,7 +16,7 @@ sources = {}
 
 params.add("ia_bias")
 
-snia_stats = Supernova(sacc_tracer = "sn_ddf_sample")
+snia_stats = SN.Supernova(sacc_tracer = "sn_ddf_sample")
 
 # Likelihood
 

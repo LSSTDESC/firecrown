@@ -4,8 +4,7 @@ from pprint import pprint
 import os
 import firecrown
 
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import WeakLensing
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import PhotoZShift as WLPhotoZShift
+import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as WL
 
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
@@ -29,7 +28,7 @@ for i in range(2):
         have a different parameter for each bin, so here again we use the
         src{i}_ prefix. 
     '''
-    pzshift = WLPhotoZShift(sacc_tracer=f"trc{i}")
+    pzshift = WL.PhotoZShift(sacc_tracer=f"trc{i}")
     params.add(f"trc{i}_delta_z")
 
     '''
@@ -37,7 +36,7 @@ for i in range(2):
         theoretical prediction for that section of the data, given the 
         systematics.
     '''
-    sources[f"trc{i}"] = WeakLensing(
+    sources[f"trc{i}"] = WL.WeakLensing(
         sacc_tracer=f"trc{i}", systematics=[pzshift]
     )
 
