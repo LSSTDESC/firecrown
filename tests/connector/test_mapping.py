@@ -1,5 +1,5 @@
 import pytest
-from .. import mapping
+from firecrown.connector import mapping
 
 
 # TODO: Refactor these test functions to use a sensible fixture.

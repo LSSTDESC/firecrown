@@ -93,14 +93,15 @@ In the active environment, you can build Firecrown by:
 python setup.py build
 ```
 
-The tests can be run with `pytest`:
+The tests can be run with `pytest`, after building:
 ```bash
-pytest
+python setup.py build
+PYTHONPATH=./build/lib pytest
 ```
 
 Some tests are marked as *slow*; those are skipped unless they are requested using `--runslow`:
 ```bash
-pytest --runslow
+PYTHONPATH=./build/lib pytest --runslow
 ```
 
 ## Usage
