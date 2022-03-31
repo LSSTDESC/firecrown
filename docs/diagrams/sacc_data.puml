@@ -32,7 +32,7 @@ end note
 
 note left of SaccData::add_tracer
   Constructs a tracer of the specified type.
-  The expected *args and **kwargs depends on
+  The expected *args and **kwargs depend on
   the type.
 end note
 
