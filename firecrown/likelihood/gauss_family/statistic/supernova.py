@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 import copy
 import functools
 import warnings
@@ -8,6 +8,7 @@ import numpy as np
 import pyccl
 
 from .statistic import Statistic
+from firecrown.parameters import ParamsMap
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -49,10 +50,10 @@ class Supernova(Statistic):
         self.data_vector = np.array ([dp.value for dp in data_points])
         self.sacc_inds = list (range (0, len (self.data_vector)))
         
-    def _update_params(self, params):
+    def _update_params(self, params: ParamsMap):
         self.M = params['m'] # CosmoSIS makes everything lowercase
 
-    def compute(self, cosmo: pyccl.Cosmology, params: Dict[str, float]) -> (np.ndarray, np.ndarray):
+    def compute(self, cosmo: pyccl.Cosmology, params: ParamsMap) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
         Parameters

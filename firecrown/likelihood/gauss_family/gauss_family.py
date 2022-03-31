@@ -5,8 +5,12 @@ from typing import final
 import numpy as np
 import scipy.linalg
 
+import pyccl
+import sacc
+
 from ..likelihood import Likelihood
 from .statistic.statistic import Statistic
+from firecrown.parameters import ParamsMap
 
 class GaussFamily(Likelihood):
     """A Gaussian log-likelihood with a constant covariance matrix.
@@ -45,12 +49,12 @@ class GaussFamily(Likelihood):
             The data in the sacc format.
         """
         _sd = sacc_data.copy()
-        inds = []
+        inds_list = []
         for stat in self.statistics:
             stat.read (sacc_data)
-            inds.append(stat.sacc_inds.copy())
+            inds_list.append(stat.sacc_inds.copy())
             
-        inds = np.concatenate(inds, axis=0)
+        inds = np.concatenate(inds_list, axis=0)
         cov = np.zeros((len(inds), len(inds)))
         for new_i, old_i in enumerate(inds):
             for new_j, old_j in enumerate(inds):
@@ -60,7 +64,7 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+    def compute_chisq(self, cosmo: pyccl.Cosmology, params: ParamsMap):
         """Compute the log-likelihood.
 
         Parameters

@@ -6,7 +6,7 @@ Some Notes:
 """
 
 from __future__ import annotations
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 from abc import ABC, abstractmethod
 from typing import final
 import numpy as np
@@ -15,6 +15,8 @@ import sacc
 import importlib
 import importlib.util
 import os
+
+from firecrown.parameters import ParamsMap
 
 class Likelihood(object):
     """The log-likelihood (e.g., a Gaussian, T-distribution, etc.).
@@ -54,7 +56,7 @@ class Likelihood(object):
         pass
 
     @abstractmethod
-    def compute_loglike(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+    def compute_loglike(self, cosmo: pyccl.Cosmology, params: ParamsMap):
         """Compute the log-likelihood of generic CCL data.
 
         Parameters

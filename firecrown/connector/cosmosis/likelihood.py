@@ -3,8 +3,10 @@ from cosmosis.datablock import names as section_names
 import numpy as np
 import pyccl as ccl
 import firecrown
+
 from firecrown.connector.mapping import mapping_builder
 from firecrown.likelihood.likelihood import load_likelihood
+from firecrown.parameters import ParamsMap
 
 likes = section_names.likelihoods
 
@@ -87,12 +89,12 @@ class FirecrownLikelihood:
         # And it requires updates to Firecrown to split the calculations.
         # e.g., data_vector/firecrown_theory  data_vector/firecrown_data
         
-        firecrown_params = {}
+        firecrown_params = ParamsMap()
         
         for section in sample.sections ():
             if "firecrown" in  section:
                 sec_dict = extract_section (sample, section)
-                firecrown_params = {**firecrown_params, **sec_dict}
+                firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
         
         lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
     

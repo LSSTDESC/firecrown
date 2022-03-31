@@ -1,3 +1,6 @@
+from __future__ import annotations
+from typing import List, Optional
+
 import math
 import numpy as np
 import pyccl as ccl
@@ -26,7 +29,7 @@ class CCLConnector(Theory):
         ....
     """
 
-    input_style: str = None
+    input_style: Optional[str] = None
 
     def initialize(self):
         """...

@@ -1,6 +1,7 @@
 from __future__ import annotations
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Sequence, Optional
 from dataclasses import dataclass
+from abc import ABC, abstractmethod
 
 import numpy as np
 import pyccl
@@ -8,7 +9,7 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
-from firecrown.parameters import get_from_prefix_param
+from firecrown.parameters import ParamsMap
 
 __all__ = ["WeakLensing"]
 
@@ -19,11 +20,14 @@ class WeakLensingArgs:
     scale: float
     z: np.ndarray
     dndz: np.ndarray
-    ia_bias: np.ndarray
+    ia_bias: Tuple[np.ndarray, np.ndarray]
 
 
 class WeakLensingSystematic(Systematic):
-    pass
+    
+    @abstractmethod
+    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
+        pass
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):
@@ -38,6 +42,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     """
 
     params_names = ["mult_bias"]
+    m: float
 
     def __init__(self, sacc_tracer: str):
         """Create a MultipliciativeShearBias object that uses the named tracer.
@@ -46,11 +51,10 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         sacc_tracer : The name of the multiplicative bias parameter.
         """
         self.sacc_tracer = sacc_tracer
-        self.m: Optional[float] = None
 
-    def update_params(self, params: Dict):
+    def update_params(self, params: ParamsMap):
         """Read the corresponding named tracer from the given collection of parameters."""
-        self.m = get_from_prefix_param(self, params, self.sacc_tracer, "mult_bias")
+        self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply multiplicative shear bias to a source. The `scale_` of the
@@ -86,6 +90,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     """
 
     params_names = ["ia_bias", "alphaz", "alphag", "z_piv"]
+    ia_bias: float
+    alphaz: float
+    alphag: float
+    z_piv: float
 
     def __init__(self, sacc_tracer: Optional[str] = None):
         """Create a LinearAlignmentSystematic object, using the specified
@@ -104,16 +112,11 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         self.sacc_tracer = sacc_tracer
 
-        self.ia_bias = None
-        self.alphaz = None
-        self.alphag = None
-        self.z_piv = None
-
-    def update_params(self, params):
-        self.ia_bias = get_from_prefix_param(self, params, self.sacc_tracer, "ia_bias")
-        self.alphaz = get_from_prefix_param(self, params, self.sacc_tracer, "alphaz")
-        self.alphag = get_from_prefix_param(self, params, self.sacc_tracer, "alphag")
-        self.z_piv = get_from_prefix_param(self, params, self.sacc_tracer, "z_piv")
+    def update_params(self, params: ParamsMap):
+        self.ia_bias = params.get_from_prefix_param(self.sacc_tracer, "ia_bias")
+        self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
+        self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
+        self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
@@ -141,13 +144,13 @@ class PhotoZShift(WeakLensingSystematic):
     """
 
     params_names = ["delta_z"]
+    delta_z: float
 
     def __init__(self, sacc_tracer: str):
         self.sacc_tracer = sacc_tracer
-        self.delta_z = None
 
-    def update_params(self, params):
-        self.delta_z = get_from_prefix_param(self, params, self.sacc_tracer, "delta_z")
+    def update_params(self, params: ParamsMap):
+        self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -166,6 +169,10 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensing(Source):
+    
+    systematics: Sequence[WeakLensingSystematic]
+    tracer_arg: WeakLensingArgs
+    
     def __init__(
         self,
         *,
@@ -178,16 +185,16 @@ class WeakLensing(Source):
         self.z_orig: Optional[np.ndarray] = None
         self.dndz_orig: Optional[np.ndarray] = None
         self.dndz_interp = None
-        self.tracer_args = None
         self.current_tracer_args = None
         self.scale_ = None
         self.tracer_ = None
 
         self.systematics = []
-        for systematic in systematics:
-            self.systematics.append(systematic)
+        if systematics:
+            for systematic in systematics:
+                self.systematics.append(systematic)
 
-    def _update_params(self, params):
+    def _update_params(self, params: ParamsMap):
         pass
 
     def _read(self, sacc_data):
@@ -208,7 +215,7 @@ class WeakLensing(Source):
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracer(self, cosmo: pyccl.Cosmology, params):
+    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
         """
         Render a source by applying systematics.
 

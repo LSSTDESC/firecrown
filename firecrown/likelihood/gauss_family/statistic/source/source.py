@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Optional
+from typing import List, Dict, Sequence, Optional
 from abc import ABC, abstractmethod
 from typing import final
 import numpy as np
@@ -13,6 +13,8 @@ import importlib
 import importlib.util
 import os
 
+from firecrown.parameters import ParamsMap
+
 def get_params_hash (params: Dict[str, float]):
     return repr(sorted(params.items()))
 
@@ -21,6 +23,10 @@ class Systematic():
 
     This class currently has no methods at all, because the argument types for
     the `apply` method of different subclasses are different."""
+
+    @abstractmethod
+    def update_params(self, params: ParamsMap):
+        pass
 
     def read(self, sacc_data: sacc.Sacc):
         pass
@@ -36,6 +42,10 @@ class Source(ABC):
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.
     """
+    
+    systematics: Sequence[Systematic]
+    cosmo_hash: int
+    tracer: pyccl.tracers.Tracer
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -67,22 +77,22 @@ class Source(ABC):
         pass
 
     @final
-    def update_params(self, params: Dict[str, float]):
+    def update_params(self, params: ParamsMap):
         if hasattr(self, "systematics"):
             for systematic in self.systematics:
                 systematic.update_params(params)
         self._update_params(params)
     
     @abstractmethod
-    def _update_params(self, params: Dict[str, float]):
+    def _update_params(self, params: ParamsMap):
         pass
 
     @abstractmethod
-    def create_tracer(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
         pass
 
     @final
-    def get_tracer(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+    def get_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap) -> pyccl.tracers.Tracer:
         cur_hash = hash ((cosmo, get_params_hash (params)))
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
             return self.tracer

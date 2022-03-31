@@ -1,14 +1,15 @@
 from __future__ import annotations
-from typing import List, Dict, Optional
+from typing import List, Dict, Tuple, Optional
 import copy
 import functools
 import warnings
 
 import numpy as np
-import pyccl as ccl
+import pyccl
 
 from .statistic import Statistic
-from .source.source import Source
+from .source.source import Source, Systematic
+from firecrown.parameters import ParamsMap
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -49,7 +50,7 @@ def _generate_ell_or_theta(*, min, max, n, binning="log"):
 
 @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells):
-    return ccl.angular_cl(cosmo, *tracers, np.array(ells))
+    return pyccl.angular_cl(cosmo, *tracers, np.array(ells))
 
 
 class TwoPoint(Statistic):
@@ -144,7 +145,7 @@ class TwoPoint(Statistic):
         sacc_data_type,
         source0: Source,
         source1: Source,
-        systematics: Optional[List[str]] = None,
+        systematics: Optional[List[Systematic]] = None,
         ell_for_xi=None,
         ell_or_theta=None,
         ell_or_theta_min=None,
@@ -173,7 +174,7 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-    def _update_params(self, params):
+    def _update_params(self, params: ParamsMap):
         self.source0.update_params(params)
         self.source1.update_params(params)
 
@@ -243,7 +244,7 @@ class TwoPoint(Statistic):
         self._ell_or_theta = _ell_or_theta.copy()
         self.data_vector = _stat.copy()
 
-    def compute(self, cosmo: pyccl.Cosmology, params: Dict[str, float]) -> (np.ndarray, np.ndarray):
+    def compute(self, cosmo: pyccl.Cosmology, params: ParamsMap) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
         Parameters
@@ -270,7 +271,7 @@ class TwoPoint(Statistic):
             ells = _ell_for_xi(**self.ell_for_xi)
             cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
             theory_vector = (
-                ccl.correlation(
+                pyccl.correlation(
                     cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
                 )
                 * scale

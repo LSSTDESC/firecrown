@@ -1,7 +1,14 @@
+from __future__ import annotations
+from typing import List, Dict, Optional
+
 import numpy as np
 import scipy.linalg
 
+import pyccl
+
 from .gauss_family import GaussFamily
+from .statistic.statistic import Statistic, Systematic
+from firecrown.parameters import ParamsMap
 
 class StudentT(GaussFamily):
     """A T-distribution for the log-likelihood.
@@ -24,10 +31,10 @@ class StudentT(GaussFamily):
     """
 
     def __init__(self, statistics: List[Statistic], nu):
-        super.__init__(statistics)
+        super().__init__(statistics)
         self.nu = nu
 
-    def compute_loglike(self, cosmo: pyccl.Cosmology, params: Dict[str, float]):
+    def compute_loglike(self, cosmo: pyccl.Cosmology, params: ParamsMap):
         """Compute the log-likelihood.
 
         Parameters
