@@ -31,7 +31,7 @@ clean:
 $(PNGS): skinparams.iuml
 $(PDFS): skinparams.iuml
 
-chisquared-likelihood.png: updateable_frag.iuml likelihood_frag.iuml
+gaussian-family.png: updateable_frag.iuml likelihood_frag.iuml
 likelihood.png: updateable_frag.iuml  likelihood_frag.iuml
 statistic.png: statistic_frag.iuml updateable_frag.iuml
 twopoint.png: statistic_frag.iuml updateable_frag.iuml

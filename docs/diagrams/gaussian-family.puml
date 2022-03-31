@@ -8,18 +8,18 @@
 
 Updateable <|-down- Likelihood
 
-abstract class ChiSquaredLikelihood {
-  +ChiSquaredLikelihood(stats : Statistics)
+abstract class GaussianFamily {
+  +GaussianFamily(stats : Statistics)
   +{final} compute_chisq(cosmo : ccl.Cosmology) : double
   - _update(params : ParamsDict)
 }
 
-note right of ChiSquaredLikelihood::compute_chisq
+note right of GaussianFamily::compute_chisq
   <i>compute_chisq<i> is to be called by derived
   classes in their implementation of <i>compute</i>
 end note
 
-note left of ChiSquaredLikelihood::_update
+note left of GaussianFamily::_update
   <i>_update</i> updates <i>systematics</i>
   Classes that override <i>_update</i> should
   make sure to call it as part of their
@@ -29,23 +29,23 @@ end note
 
 class UpdateableCollection <<Statistic>> {}
 
-ChiSquaredLikelihood *-- UpdateableCollection : systematics
+GaussianFamily *-- UpdateableCollection : systematics
 
-Likelihood <|-down- ChiSquaredLikelihood
+Likelihood <|-down- GaussianFamily
 
-class GaussianLikelihood {
+class ConstGaussian {
   + {final} compute(cosmo : ccl.Cosmology)
 }
 
-class StudentTLikelihood {
-  + StudentTLikelihood(stats : Statistics, nu : double)
+class StudentT {
+  + StudentT(stats : Statistics, nu : double)
   + {final} compute(cosmo : ccl.Cosmology)
   - _update(params : ParamsDict)
 }
 
 
-ChiSquaredLikelihood <|--down- GaussianLikelihood
+GaussianFamily <|--down- ConstGaussian
 
-ChiSquaredLikelihood <|--down- StudentTLikelihood
+GaussianFamily <|--down- StudentT
 
 @enduml
