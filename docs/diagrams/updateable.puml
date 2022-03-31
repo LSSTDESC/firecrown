@@ -10,7 +10,10 @@ class UpdateableAtom {
 note bottom
   This is an example;
   <i>UpdateableAtom</i> is
-  not an actual class.  
+  not an actual class; it is
+  an example showing a non-collection
+  that implements the <i>Updateable</i>
+  interface.  
 end note
 
 UpdateableAtom -up-|> Updateable

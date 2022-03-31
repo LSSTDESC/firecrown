@@ -20,10 +20,10 @@ note right of GaussianFamily::compute_chisq
 end note
 
 note left of GaussianFamily::_update
-  <i>_update</i> updates <i>systematics</i>
+  <i>_update</i> updates <i>systematics</i>.
   Classes that override <i>_update</i> should
   make sure to call it as part of their
-  implementation, using `super`.
+  implementation, using <i>super</i>.
 end note
 
 
