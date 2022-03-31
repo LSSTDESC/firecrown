@@ -15,7 +15,14 @@ and so installation of Firecrown does not *require* installation of a sampler.
 
 ## Installation Quickstart
 
-The easiest way to get started is through using conda.
+> Warning
+>
+> The conda packaging of Firecrown is not yet done.
+> The following instructions show how we intend the installation to work;
+> however, for now please follow the "Installation of dependencies for development"
+> instructions below.
+
+The easiest way to get started is by using conda.
 We recommend creating a conda environment for your use.
 
 There are different prescriptions, depending upon the choice you make on the use of samplers.
