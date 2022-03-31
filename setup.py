@@ -10,7 +10,7 @@ def _munge_req(r):
 
 __version__ = None
 pth = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), "firecrown", "_version.py"
+    os.path.dirname(os.path.realpath(__file__)), "firecrown", "version.py"
 )
 with open(pth, "r") as fp:
     exec(fp.read())
