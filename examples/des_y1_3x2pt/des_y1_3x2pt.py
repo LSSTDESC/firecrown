@@ -4,13 +4,17 @@ from pprint import pprint
 import os
 import firecrown
 
-from firecrown.ccl.sources import *
-from firecrown.ccl.statistics import *
-from firecrown.ccl.systematics import *
-from firecrown.ccl.likelihoods import *
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import WeakLensing
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import LinearAlignmentSystematic
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import MultiplicativeShearBias
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import PhotoZShift as WLPhotoZShift
 
-import firecrown.ccl.sources.wl_source as wl_source
-import firecrown.ccl.sources.nc_source as nc_source
+from firecrown.likelihood.gauss_family.statistic.source.number_counts import NumberCounts
+from firecrown.likelihood.gauss_family.statistic.source.number_counts import PhotoZShift as NCPhotoZShift
+
+from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
@@ -27,7 +31,7 @@ params.add("alphaz")
 params.add("alphag")
 params.add("z_piv")
 
-lai_systematic = wl_source.LinearAlignmentSystematic(
+lai_systematic = LinearAlignmentSystematic(
     sacc_tracer=""
 )
 
@@ -44,7 +48,7 @@ for i in range(4):
         Each weak-lensing section has its own multiplicative bias. Parameters 
         reflect this by using src{i}_ prefix. 
     '''
-    mbias = wl_source.MultiplicativeShearBias(
+    mbias = MultiplicativeShearBias(
         sacc_tracer=f"src{i}"
     )
     params.add(f"src{i}_mult_bias")
@@ -54,7 +58,7 @@ for i in range(4):
         also have a different parameter for each bin, so here again we use the
         src{i}_ prefix. 
     '''
-    pzshift = wl_source.PhotoZShift(sacc_tracer=f"src{i}")
+    pzshift = WLPhotoZShift(sacc_tracer=f"src{i}")
     params.add(f"src{i}_delta_z")
 
     '''
@@ -62,10 +66,9 @@ for i in range(4):
         theoretical prediction for that section of the data, given the 
         systematics.
     '''
-    sources[f"src{i}"] = WLSource(
+    sources[f"src{i}"] = WeakLensing(
         sacc_tracer=f"src{i}", systematics=[lai_systematic, mbias, pzshift]
     )
-
 
 '''
     Creating the number counting sources. There are five sources each one 
@@ -76,12 +79,12 @@ for i in range(5):
     '''
         We also include a photo-z shift for the dndz.
     '''
-    pzshift = nc_source.PhotoZShift(sacc_tracer=f"lens{i}")
+    pzshift = NCPhotoZShift(sacc_tracer=f"lens{i}")
         
     '''
         The source is created and saved (temporarely in the sources dict).
     '''
-    sources[f"lens{i}"] = nc_source.NumberCountsSource(
+    sources[f"lens{i}"] = NumberCounts(
         sacc_tracer=f"lens{i}", systematics=[pzshift]
     )
     params.add(f"lens{i}_bias")
@@ -103,7 +106,7 @@ for stat, sacc_stat in [
     '''
     for i in range(4):
         for j in range(i, 4):
-            stats[f"{stat}_src{i}_src{j}"] = TwoPointStatistic(
+            stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
                 source0=sources[f"src{i}"], source1=sources[f"src{j}"], 
                 sacc_data_type=sacc_stat
             )
@@ -113,7 +116,7 @@ for stat, sacc_stat in [
     '''
 for j in range(5):
     for i in range(4):
-        stats[f"gammat_lens{j}_src{i}"] = TwoPointStatistic(
+        stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
             source0=sources[f"lens{j}"], source1=sources[f"src{i}"], 
             sacc_data_type="galaxy_shearDensity_xi_t"
         )
@@ -122,7 +125,7 @@ for j in range(5):
         Finally the instances for the lensing auto-correlations are created.
     '''
 for i in range(5):
-    stats[f"wtheta_lens{i}_lens{i}"] = TwoPointStatistic(
+    stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
         source0=sources[f"lens{i}"], source1=sources[f"lens{i}"], 
         sacc_data_type="galaxy_density_xi"
     )
@@ -131,7 +134,7 @@ for i in range(5):
     Here we instantiate the actual likelihood. The statistics argument carry
     the order of the data/theory vector.
 '''
-lk = ConstGaussianLogLike(statistics=list(stats.values()))
+lk = ConstGaussian(statistics=list(stats.values()))
 
 '''
     We load the correct SACC file.

@@ -9,5 +9,4 @@ dependencies:
  - pyyaml
  - scipy
  - click
- - jinja2
  - sacc>=0.3,<0.4

@@ -4,12 +4,11 @@ from pprint import pprint
 import os
 import firecrown
 
-from firecrown.ccl.sources import *
-from firecrown.ccl.statistics import *
-from firecrown.ccl.systematics import *
-from firecrown.ccl.likelihoods import *
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import WeakLensing
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import PhotoZShift as WLPhotoZShift
 
-import firecrown.ccl.sources.wl_source as wl_source
+from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
@@ -30,7 +29,7 @@ for i in range(2):
         have a different parameter for each bin, so here again we use the
         src{i}_ prefix. 
     '''
-    pzshift = wl_source.PhotoZShift(sacc_tracer=f"trc{i}")
+    pzshift = WLPhotoZShift(sacc_tracer=f"trc{i}")
     params.add(f"trc{i}_delta_z")
 
     '''
@@ -38,7 +37,7 @@ for i in range(2):
         theoretical prediction for that section of the data, given the 
         systematics.
     '''
-    sources[f"trc{i}"] = WLSource(
+    sources[f"trc{i}"] = WeakLensing(
         sacc_tracer=f"trc{i}", systematics=[pzshift]
     )
 
@@ -54,7 +53,7 @@ stats = {}
 '''
 for i in range(2):
     for j in range(i, 2):
-        stats[f"trc{i}_trc{j}"] = TwoPointStatistic(
+        stats[f"trc{i}_trc{j}"] = TwoPoint(
             source0=sources[f"trc{i}"], source1=sources[f"trc{j}"], 
             sacc_data_type="galaxy_shear_cl_ee"
         )
@@ -63,7 +62,7 @@ for i in range(2):
     Here we instantiate the actual likelihood. The statistics argument carry
     the order of the data/theory vector.
 '''
-lk = ConstGaussianLogLike(statistics=list(stats.values()))
+lk = ConstGaussian(statistics=list(stats.values()))
 
 '''
     We load the correct SACC file.

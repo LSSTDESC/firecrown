@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from firecrown.ccl.core import LogLike
+from .likelihood.likelihood import Likelihood
 
 class Validator(ABC):
     def __set_name__(self, owner, name):

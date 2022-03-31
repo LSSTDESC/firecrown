@@ -3,15 +3,8 @@
 from pprint import pprint
 import os
 import firecrown
-
-import firecrown.ccl.two_point
-
-from firecrown.ccl.sources import *
-from firecrown.ccl.statistics import *
-from firecrown.ccl.systematics import *
-from firecrown.ccl.likelihoods import *
-
-import firecrown.ccl.sources.wl_source
+from firecrown.likelihood.gauss_family.statistic.supernova import Supernova
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
@@ -27,7 +20,7 @@ snia_stats = Supernova(sacc_tracer = "sn_ddf_sample")
 
 # Likelihood
 
-lk = ConstGaussianLogLike(statistics=[snia_stats])
+lk = ConstGaussian(statistics=[snia_stats])
 
 # SACC file
 

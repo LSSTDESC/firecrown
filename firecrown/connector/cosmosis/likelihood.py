@@ -4,7 +4,7 @@ import numpy as np
 import pyccl as ccl
 import firecrown
 from firecrown.connector.mapping import mapping_builder
-from firecrown.ccl.core import load_likelihood
+from firecrown.likelihood.likelihood import load_likelihood
 
 likes = section_names.likelihoods
 

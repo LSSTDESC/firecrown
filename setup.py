@@ -31,10 +31,10 @@ with open(pth, "r") as fp:
 setup(
     name="firecrown",
     version=__version__,
-    description="DESC Cosmology Constraints Tool",
+    description="DESC Cosmology Likelihood Framework",
     author="DESC Team",
     packages=find_packages(),
     include_package_data=True,
-    scripts=["bin/firecrown"],
+    scripts=[],
     install_requires=rqs,
 )
