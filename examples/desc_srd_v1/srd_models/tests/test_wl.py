@@ -26,7 +26,7 @@ class DummySource(object):
 def test_mult_shear_bias():
     src = DummySource()
     src.z_ = np.linspace(0.0, 1.0, 100)
-    src.dndz_ = src.z_**2 / 10 + src.z_
+    src.dndz_ = src.z_ ** 2 / 10 + src.z_
     src.scale_ = 1.0
     m = 0.05
     params = {"blah": m}

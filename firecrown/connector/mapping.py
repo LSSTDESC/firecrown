@@ -223,7 +223,7 @@ class MappingCosmoSIS(Mapping):
         return k_h * self.h
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        return p_k_h3 / (self.h**3)
+        return p_k_h3 / (self.h ** 3)
 
     def transform_h_to_h_over_h0(self, h):
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
