@@ -7,9 +7,12 @@ class UpdateableAtom {
 - _update(params : ParamsDict)
 }
 
-note bottom
-  This is an example;
-  <i>UpdateableAtom</i> is
+note top of Updateable
+  This design uses the Composite pattern.
+end note
+
+note bottom of UpdateableAtom
+  This is an example; <i>UpdateableAtom</i> is
   not an actual class; it is
   an example showing a non-collection
   that implements the <i>Updateable</i>
@@ -25,12 +28,10 @@ class UpdateableCollection {
 
 UpdateableCollection *-- Updateable : contents
 
-' note left of UpdateableCollection::_update
-'   Calls <i>update</i> on each
-'   item in contents
-' end note
-
-' Updateable <|-down- UpdateableCollection
+note left of UpdateableCollection::_update
+  Calls <i>update</i> on each
+  item in contents
+end note
 
 UpdateableCollection -up-|> Updateable
 

@@ -11,7 +11,8 @@ Updateable <|-down- Likelihood
 abstract class GaussianFamily {
   +GaussianFamily(stats : Statistics)
   +{final} compute_chisq(cosmo : ccl.Cosmology) : double
-  - _update(params : ParamsDict)
+  - {final} _update(params : ParamsDict)
+  - {abstract} _update_gaussian_family(params : ParamsDict)
 }
 
 note right of GaussianFamily::compute_chisq
@@ -21,11 +22,9 @@ end note
 
 note left of GaussianFamily::_update
   <i>_update</i> updates <i>systematics</i>.
-  Classes that override <i>_update</i> should
-  make sure to call it as part of their
-  implementation, using <i>super</i>.
+  Derived classes must implement
+  <i>_update_gaussian_family</i>.
 end note
-
 
 class UpdateableCollection <<Statistic>> {}
 
@@ -35,12 +34,16 @@ Likelihood <|-down- GaussianFamily
 
 class ConstGaussian {
   + {final} compute(cosmo : ccl.Cosmology)
+  - {final} _update_gaussian_family(params : ParamsDict)
 }
+note left of ConstGaussian::_update_gaussian_family
+  This function does nothing.
+end note
 
 class StudentT {
   + StudentT(stats : Statistics, nu : double)
   + {final} compute(cosmo : ccl.Cosmology)
-  - _update(params : ParamsDict)
+  - {final} _update_gaussian_family(params : ParamsDict)
 }
 
 
