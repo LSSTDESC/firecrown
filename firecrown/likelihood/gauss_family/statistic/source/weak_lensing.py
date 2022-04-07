@@ -13,6 +13,7 @@ from firecrown.parameters import ParamsMap
 
 __all__ = ["WeakLensing"]
 
+
 @dataclass(frozen=True)
 class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
@@ -24,9 +25,10 @@ class WeakLensingArgs:
 
 
 class WeakLensingSystematic(Systematic):
-    
     @abstractmethod
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
+    def apply(
+        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
         pass
 
 
@@ -118,7 +120,9 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
+    def apply(
+        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
@@ -169,10 +173,10 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensing(Source):
-    
+
     systematics: Sequence[WeakLensingSystematic]
     tracer_arg: WeakLensingArgs
-    
+
     def __init__(
         self,
         *,
@@ -235,4 +239,3 @@ class WeakLensing(Source):
     def get_scale(self):
         assert self.current_tracer_args
         return self.current_tracer_args.scale
-

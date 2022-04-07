@@ -223,7 +223,7 @@ class MappingCosmoSIS(Mapping):
         return k_h * self.h
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        return p_k_h3 / (self.h ** 3)
+        return p_k_h3 / (self.h**3)
 
     def transform_h_to_h_over_h0(self, h):
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
@@ -237,8 +237,8 @@ class MappingCosmoSIS(Mapping):
         h = cosmosis_params["h0"]  # Not 'hubble' !
         Omega_b = cosmosis_params["omega_b"]
         Omega_c = cosmosis_params["omega_c"]
-        sigma8 = cosmosis_params.get ("sigma_8", 0.8)
-        n_s = cosmosis_params.get ("n_s", 0.96)
+        sigma8 = cosmosis_params.get("sigma_8", 0.8)
+        n_s = cosmosis_params.get("n_s", 0.96)
         Omega_k = cosmosis_params["omega_k"]
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
         # Read m_nu from CosmoSIS (in newer CosmoSIS)

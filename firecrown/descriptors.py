@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from .likelihood.likelihood import Likelihood
 
+
 class Validator(ABC):
     def __set_name__(self, owner, name):
         self.private_name = "_" + name

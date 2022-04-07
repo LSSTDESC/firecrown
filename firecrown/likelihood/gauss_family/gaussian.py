@@ -10,6 +10,7 @@ from .gauss_family import GaussFamily
 from .statistic.statistic import Systematic
 from firecrown.parameters import ParamsMap
 
+
 class ConstGaussian(GaussFamily):
     """A Gaussian log-likelihood with a constant covariance matrix.
 

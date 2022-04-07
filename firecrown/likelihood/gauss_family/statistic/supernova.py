@@ -12,22 +12,23 @@ from firecrown.parameters import ParamsMap
 
 # only supported types are here, any thing else will throw
 # a value error
-SACC_DATA_TYPE_TO_CCL_KIND = {
-    "supernova": 'sn'
-}
+SACC_DATA_TYPE_TO_CCL_KIND = {"supernova": "sn"}
 
 Z_FOR_MU_DEFAULTS = dict(min=0, max=2, n=100)
+
 
 def _z_for_mu(*, min, max, n):
     """Build an array of z to sample the distance modulus
     predictions.
     """
-    return  np.linspace(min, max,n)
+    return np.linspace(min, max, n)
+
 
 @functools.lru_cache(maxsize=128)
 def _cached_distmod(cosmo, tracers, z):
-    a = 1./(1+z)
+    a = 1.0 / (1 + z)
     return pyccl.background.distance_modulus(cosmo, *tracers, np.array(a))
+
 
 class Supernova(Statistic):
     def __init__(self, sacc_tracer):
@@ -43,17 +44,21 @@ class Supernova(Statistic):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        data_points = sacc_data.get_data_points (data_type="supernova_distance_mu", tracers=(self.sacc_tracer,))
+        data_points = sacc_data.get_data_points(
+            data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
+        )
 
-        self.z = np.array ([dp.get_tag ("z") for dp in data_points])
+        self.z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = 1.0 / (1.0 + self.z)
-        self.data_vector = np.array ([dp.value for dp in data_points])
-        self.sacc_inds = list (range (0, len (self.data_vector)))
-        
-    def _update_params(self, params: ParamsMap):
-        self.M = params['m'] # CosmoSIS makes everything lowercase
+        self.data_vector = np.array([dp.value for dp in data_points])
+        self.sacc_inds = list(range(0, len(self.data_vector)))
 
-    def compute(self, cosmo: pyccl.Cosmology, params: ParamsMap) -> Tuple[np.ndarray, np.ndarray]:
+    def _update_params(self, params: ParamsMap):
+        self.M = params["m"]  # CosmoSIS makes everything lowercase
+
+    def compute(
+        self, cosmo: pyccl.Cosmology, params: ParamsMap
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
         Parameters
@@ -70,9 +75,7 @@ class Supernova(Statistic):
             default of `None` corresponds to no systematics.
         """
         theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
-        
+
         assert self.data_vector is not None
-        
-        return np.array (self.data_vector), np.array (theory_vector)
-    
-        
+
+        return np.array(self.data_vector), np.array(theory_vector)

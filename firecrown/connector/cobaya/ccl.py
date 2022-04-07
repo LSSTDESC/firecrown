@@ -166,7 +166,7 @@ class CCLConnector(Theory):
                 "k": k,
                 "delta_matter:delta_matter": pk_a,
             },
-            nonlinear_model="halofit"
+            nonlinear_model="halofit",
         )
         state["ccl"] = cosmo
 

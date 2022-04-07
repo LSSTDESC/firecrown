@@ -10,6 +10,7 @@ from .gauss_family import GaussFamily
 from .statistic.statistic import Statistic, Systematic
 from firecrown.parameters import ParamsMap
 
+
 class StudentT(GaussFamily):
     """A T-distribution for the log-likelihood.
 
@@ -21,7 +22,7 @@ class StudentT(GaussFamily):
     Parameters
     ----------
     statistics : list of Statistic
-        A list of the statistics 
+        A list of the statistics
     nu: int
         The shape parameter. Set to the number of simulations.
 

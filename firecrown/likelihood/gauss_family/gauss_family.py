@@ -12,13 +12,14 @@ from ..likelihood import Likelihood
 from .statistic.statistic import Statistic
 from firecrown.parameters import ParamsMap
 
+
 class GaussFamily(Likelihood):
     """A Gaussian log-likelihood with a constant covariance matrix.
 
     Parameters
     ----------
     statistics : list of Statistic
-        A list of the statistics 
+        A list of the statistics
 
     Attributes
     ----------
@@ -51,9 +52,9 @@ class GaussFamily(Likelihood):
         _sd = sacc_data.copy()
         inds_list = []
         for stat in self.statistics:
-            stat.read (sacc_data)
+            stat.read(sacc_data)
             inds_list.append(stat.sacc_inds.copy())
-            
+
         inds = np.concatenate(inds_list, axis=0)
         cov = np.zeros((len(inds), len(inds)))
         for new_i, old_i in enumerate(inds):
@@ -86,4 +87,3 @@ class GaussFamily(Likelihood):
         dv = np.concatenate(dv, axis=0)
         x = scipy.linalg.solve_triangular(self.cholesky, dv, lower=True)
         return np.dot(x, x)
-

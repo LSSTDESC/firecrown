@@ -13,6 +13,7 @@ import sacc
 from firecrown.parameters import ParamsMap
 from .source.source import Systematic
 
+
 class Statistic(ABC):
     """A statistic (e.g., two-point function, mass function, etc.).
 
@@ -24,7 +25,7 @@ class Statistic(ABC):
         A list of the statistics-level systematics to apply to the statistic.
         The default of `None` implies no systematics.
     """
-    
+
     systematics: List[Systematic]
     sacc_inds: List[int]
 
@@ -44,13 +45,15 @@ class Statistic(ABC):
             for systematic in self.systematics:
                 systematic.update_params(params)
         self._update_params(params)
-    
+
     @abstractmethod
     def _update_params(self, params: ParamsMap):
         pass
 
     @abstractmethod
-    def compute(self, cosmo: pyccl.Cosmology, params: ParamsMap) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(
+        self, cosmo: pyccl.Cosmology, params: ParamsMap
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a statistic from sources, applying any systematics.
 
         Parameters

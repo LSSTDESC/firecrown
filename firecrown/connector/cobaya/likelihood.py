@@ -11,6 +11,7 @@ from cobaya.likelihood import Likelihood
 
 from firecrown.descriptors import TypeLikelihood
 
+
 class LikelihoodConnector(Likelihood):
     """
     A class implementing cobaya.likelihood.Likelihood ...
@@ -39,7 +40,7 @@ class LikelihoodConnector(Likelihood):
             ...
         """
 
-        self.likelihood = load_likelihood (self.firecrownIni)
+        self.likelihood = load_likelihood(self.firecrownIni)
 
     def get_param(self, p):
         """...

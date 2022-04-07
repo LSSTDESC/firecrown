@@ -18,6 +18,7 @@ import os
 
 from firecrown.parameters import ParamsMap
 
+
 class Likelihood(object):
     """The log-likelihood (e.g., a Gaussian, T-distribution, etc.).
 
@@ -73,6 +74,7 @@ class Likelihood(object):
         """
         pass
 
+
 def load_likelihood(firecrownIni):
     filename, file_extension = os.path.splitext(firecrownIni)
 
@@ -94,8 +96,6 @@ def load_likelihood(firecrownIni):
 
         likelihood = mod.likelihood
     else:
-        raise ValueError(
-            f"Unrecognized Firecrown initialization file {firecrownIni}."
-        )
+        raise ValueError(f"Unrecognized Firecrown initialization file {firecrownIni}.")
 
     return likelihood

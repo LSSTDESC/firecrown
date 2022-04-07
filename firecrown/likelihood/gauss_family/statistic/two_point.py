@@ -27,6 +27,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 
 ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
 
+
 def _ell_for_xi(*, min, mid, max, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
@@ -161,7 +162,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        
+
         self.data_vector = None
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
@@ -187,8 +188,8 @@ class TwoPoint(Statistic):
             The data in the sacc format.
         """
 
-        self.source0.read (sacc_data)
-        self.source1.read (sacc_data)
+        self.source0.read(sacc_data)
+        self.source1.read(sacc_data)
 
         tracers = [self.source0.sacc_tracer, self.source1.sacc_tracer]
 
@@ -244,7 +245,9 @@ class TwoPoint(Statistic):
         self._ell_or_theta = _ell_or_theta.copy()
         self.data_vector = _stat.copy()
 
-    def compute(self, cosmo: pyccl.Cosmology, params: ParamsMap) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(
+        self, cosmo: pyccl.Cosmology, params: ParamsMap
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
         Parameters
@@ -258,7 +261,7 @@ class TwoPoint(Statistic):
 
         tracer0 = self.source0.get_tracer(cosmo, params)
         tracer1 = self.source1.get_tracer(cosmo, params)
-        scale = self.source0.get_scale () * self.source1.get_scale ()
+        scale = self.source0.get_scale() * self.source1.get_scale()
 
         if self.ccl_kind == "cl":
             theory_vector = (
@@ -276,7 +279,7 @@ class TwoPoint(Statistic):
                 )
                 * scale
             )
-        
+
         assert self.data_vector is not None
-            
-        return np.array (self.data_vector), np.array (theory_vector)
+
+        return np.array(self.data_vector), np.array(theory_vector)

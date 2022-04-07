@@ -13,6 +13,7 @@ from firecrown.parameters import ParamsMap
 
 __all__ = ["NumberCounts"]
 
+
 @dataclass(frozen=True)
 class NumberCountsArgs:
     """Class for weak lensing tracer builder argument."""
@@ -23,10 +24,12 @@ class NumberCountsArgs:
     bias: np.ndarray
     mag_bias: np.ndarray
 
-class NumberCountsSystematic(Systematic):
 
+class NumberCountsSystematic(Systematic):
     @abstractmethod
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
         pass
 
 
@@ -49,7 +52,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
     -------
     apply : apply the systematic to a source
     """
-    
+
     alphaz: float
     alphag: float
     z_piv: float
@@ -63,7 +66,9 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
         """Apply a linear bias systematic.
 
         Parameters
@@ -85,6 +90,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
             mag_bias=tracer_arg.mag_bias,
         )
 
+
 class MagnificationBiasSystematic(NumberCountsSystematic):
     """Magnification bias systematic.
 
@@ -103,7 +109,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     -------
     apply : apply the systematic to a source
     """
-    
+
     r_lim: float
     sig_c: float
     eta: float
@@ -121,7 +127,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_c = params.get_from_prefix_param(self.sacc_tracer, "z_c")
         self.z_m = params.get_from_prefix_param(self.sacc_tracer, "z_m")
 
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
         Parameters
@@ -149,6 +157,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
             bias=tracer_arg.bias,
             mag_bias=tracer_arg.mag_bias * s / np.log(10),
         )
+
 
 class PhotoZShift(NumberCountsSystematic):
     """A photo-z shift bias.
@@ -218,9 +227,7 @@ class NumberCounts(Source):
         self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
 
         if self.has_mag_bias:
-            self.mag_bias = params.get_from_prefix_param(
-                self.sacc_tracer, "mag_bias"
-            )
+            self.mag_bias = params.get_from_prefix_param(self.sacc_tracer, "mag_bias")
         else:
             self.mag_bias = None
 
@@ -289,7 +296,7 @@ class NumberCounts(Source):
         self.current_tracer_args = tracer_args
 
         return tracer, tracer_args
-    
+
     def get_scale(self):
         assert self.current_tracer_args
         return self.current_tracer_args.scale
