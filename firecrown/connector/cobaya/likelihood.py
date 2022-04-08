@@ -1,15 +1,6 @@
-import math
-import numpy as np
-
-from pprint import pprint
-
-import firecrown
 from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.parameters import ParamsMap
-
 from cobaya.likelihood import Likelihood
-
-from firecrown.descriptors import TypeLikelihood
 
 
 class LikelihoodConnector(Likelihood):

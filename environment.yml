@@ -3,10 +3,9 @@ channels:
   - conda-forge
   - defaults
 dependencies:
- - python=3
- - pyccl>=2.0,<3
- - numpy>=1.16
- - pyyaml
- - scipy
- - click
- - sacc>=0.3,<0.4
+  - python=3
+  - pyccl>=2.0,<3
+  - numpy>=1.16
+  - pyyaml
+  - scipy
+  - sacc>=0.3,<0.4

@@ -1,8 +1,6 @@
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional
-import copy
+from typing import Tuple
 import functools
-import warnings
 
 import numpy as np
 import pyccl
@@ -43,7 +41,6 @@ class Supernova(Statistic):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
         data_points = sacc_data.get_data_points(
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
@@ -57,7 +54,7 @@ class Supernova(Statistic):
         self.M = params["m"]  # CosmoSIS makes everything lowercase
 
     def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+            self, cosmo: pyccl.Cosmology, params: ParamsMap
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 

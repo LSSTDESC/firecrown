@@ -1,15 +1,13 @@
 import sacc
-from sacc import Sacc, standard_types
+from sacc import Sacc
 import os
-import glob
 import numpy as np
-
-dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
-dirname_year10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
 import tarfile
 import urllib.request
 import datetime
 
+dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
+dirname_year10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
 url = (
     "https://zenodo.org/record/2662127/files/LSST_DESC_SRD_v1_release.tar.gz?download=1"
 )
@@ -36,7 +34,6 @@ else:
     os.chdir("../../")
     print("Done")
 
-
 if os.path.exists(dirname_year10):
     print("Y10 directory already downloaded")
 else:
@@ -57,7 +54,6 @@ else:
     )
     os.chdir("../../")
     print("Done")
-
 
 #  set up the sacc data name for the astrophysical sources involved.
 sources = ["supernova"]
@@ -80,7 +76,6 @@ print(
     type_details.statistic,
     type_details.subtype,
 )
-
 
 # Each DataPoint object contains:
 
@@ -128,5 +123,5 @@ S.metadata["creation"] = datetime.datetime.now().isoformat()
 S.metadata["info"] = "SN data sets"
 S.save_fits("srd-y1-converted.sacc", overwrite=True)
 
-## modify this to have interpolation hubble diagrams
-## bias corrections depend on cosmology - systematic vector
+# modify this to have interpolation hubble diagrams
+# bias corrections depend on cosmology - systematic vector

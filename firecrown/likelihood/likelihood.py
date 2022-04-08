@@ -6,10 +6,8 @@ Some Notes:
 """
 
 from __future__ import annotations
-from typing import Dict, List, Optional
-from abc import ABC, abstractmethod
-from typing import final
-import numpy as np
+from typing import List
+from abc import abstractmethod
 import pyccl
 import sacc
 import importlib
@@ -75,27 +73,26 @@ class Likelihood(object):
         pass
 
 
-def load_likelihood(firecrownIni):
-    filename, file_extension = os.path.splitext(firecrownIni)
+def load_likelihood(firecrown_ini):
+    filename, file_extension = os.path.splitext(firecrown_ini)
 
     ext = file_extension.lower()
 
     if ext == ".py":
-        inifile = os.path.basename(firecrownIni)
-        inipath = os.path.dirname(firecrownIni)
+        inifile = os.path.basename(firecrown_ini)
         modname, _ = os.path.splitext(inifile)
 
-        spec = importlib.util.spec_from_file_location(modname, firecrownIni)
+        spec = importlib.util.spec_from_file_location(modname, firecrown_ini)
         mod = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(mod)
 
         if not hasattr(mod, "likelihood"):
             raise ValueError(
-                f"Firecrown initialization file {firecrownIni} does not define a likelihood."
+                f"Firecrown initialization file {firecrown_ini} does not define a likelihood."
             )
 
         likelihood = mod.likelihood
     else:
-        raise ValueError(f"Unrecognized Firecrown initialization file {firecrownIni}.")
+        raise ValueError(f"Unrecognized Firecrown initialization file {firecrown_ini}.")
 
     return likelihood

@@ -1,11 +1,9 @@
 #!/usr/bin/env python
 
-from pprint import pprint
 import os
-import firecrown
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as WL
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as NC
+import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
+import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 
@@ -18,7 +16,7 @@ import sacc
 params = set()
 
 """
-    Creating a systematic object that will be used by many sources. We need to 
+    Creating a systematic object that will be used by many sources. We need to
     inform all parameter names (this will be automatic soon).
 """
 params.add("ia_bias")
@@ -26,12 +24,12 @@ params.add("alphaz")
 params.add("alphag")
 params.add("z_piv")
 
-lai_systematic = WL.LinearAlignmentSystematic(sacc_tracer="")
+lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
 
 """
-    Creating sources, each one maps to a specific section of a SACC file. In 
-    this case src0, src1, src2 and src3 describe weak-lensing probes. The 
-    sources are saved in a dictionary since they will be used by one or more 
+    Creating sources, each one maps to a specific section of a SACC file. In
+    this case src0, src1, src2 and src3 describe weak-lensing probes. The
+    sources are saved in a dictionary since they will be used by one or more
     two-point function.
 """
 sources = {}
@@ -41,47 +39,46 @@ for i in range(4):
     Each weak-lensing section has its own multiplicative bias. Parameters
     reflect this by using src{i}_ prefix.
     """
-    mbias = WL.MultiplicativeShearBias(sacc_tracer=f"src{i}")
+    mbias = wl.MultiplicativeShearBias(sacc_tracer=f"src{i}")
     params.add(f"src{i}_mult_bias")
 
     """
-        We also include a photo-z shift bias (a constant shift in dndz). We 
+        We also include a photo-z shift bias (a constant shift in dndz). We
         also have a different parameter for each bin, so here again we use the
-        src{i}_ prefix. 
+        src{i}_ prefix.
     """
-    pzshift = WL.PhotoZShift(sacc_tracer=f"src{i}")
+    pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
     params.add(f"src{i}_delta_z")
 
     """
         Now we can finally create the weak-lensing source that will compute the
-        theoretical prediction for that section of the data, given the 
+        theoretical prediction for that section of the data, given the
         systematics.
     """
-    sources[f"src{i}"] = WL.WeakLensing(
+    sources[f"src{i}"] = wl.WeakLensing(
         sacc_tracer=f"src{i}", systematics=[lai_systematic, mbias, pzshift]
     )
 
 """
-    Creating the number counting sources. There are five sources each one 
-    labeled by lens{i}. 
+    Creating the number counting sources. There are five sources each one
+    labeled by lens{i}.
 """
 for i in range(5):
-
     """
     We also include a photo-z shift for the dndz.
     """
-    pzshift = NC.PhotoZShift(sacc_tracer=f"lens{i}")
+    pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
 
     """
         The source is created and saved (temporarely in the sources dict).
     """
-    sources[f"lens{i}"] = NC.NumberCounts(sacc_tracer=f"lens{i}", systematics=[pzshift])
+    sources[f"lens{i}"] = nc.NumberCounts(sacc_tracer=f"lens{i}", systematics=[pzshift])
     params.add(f"lens{i}_bias")
     params.add(f"lens{i}_delta_z")
 
 """
-    Now that we have all sources we can instantiate all the two-point 
-    functions. The weak-lensing sources have two "data types", for each one we 
+    Now that we have all sources we can instantiate all the two-point
+    functions. The weak-lensing sources have two "data types", for each one we
     create a new two-point function.
 """
 stats = {}
@@ -90,8 +87,8 @@ for stat, sacc_stat in [
     ("xim", "galaxy_shear_xi_minus"),
 ]:
     """
-    Creating all auto/cross-correlations two-point function objects for
-    the weak-lensing probes.
+    Creating all auto/cross-correlations two-point function objects for the
+    weak-lensing probes.
     """
     for i in range(4):
         for j in range(i, 4):
@@ -139,12 +136,12 @@ saccfile = os.path.expanduser(
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
 """
-    The read likelihood method is called passing the loaded SACC file, the 
+    The read likelihood method is called passing the loaded SACC file, the
     two-point functions will receive the appropriated sections of the SACC
-    file and the sources their respective dndz. 
+    file and the sources their respective dndz.
 """
 lk.read(sacc_data)
-lk.set_params_names(params)
+lk.set_params_names(list(params))
 
 """
     This script will be loaded by the appropriated connector. The framework

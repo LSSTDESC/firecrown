@@ -3,16 +3,11 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Sequence, Optional
+from typing import Dict, Sequence
 from abc import ABC, abstractmethod
 from typing import final
-import numpy as np
 import pyccl
 import sacc
-import importlib
-import importlib.util
-import os
-
 from firecrown.parameters import ParamsMap
 
 
@@ -96,7 +91,7 @@ class Source(ABC):
 
     @final
     def get_tracer(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+            self, cosmo: pyccl.Cosmology, params: ParamsMap
     ) -> pyccl.tracers.Tracer:
         cur_hash = hash((cosmo, get_params_hash(params)))
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:

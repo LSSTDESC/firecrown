@@ -1,13 +1,12 @@
 from __future__ import annotations
-from typing import List, Dict, Optional
+from typing import List
 
 import numpy as np
-import scipy.linalg
 
 import pyccl
 
 from .gauss_family import GaussFamily
-from .statistic.statistic import Statistic, Systematic
+from .statistic.statistic import Statistic
 from firecrown.parameters import ParamsMap
 
 

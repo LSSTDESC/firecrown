@@ -1,9 +1,7 @@
 #!/usr/bin/env python
 
-from pprint import pprint
 import os
-import firecrown
-import firecrown.likelihood.gauss_family.statistic.supernova as SN
+import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
@@ -16,7 +14,7 @@ sources = {}
 
 params.add("ia_bias")
 
-snia_stats = SN.Supernova(sacc_tracer="sn_ddf_sample")
+snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
 
 # Likelihood
 
@@ -30,7 +28,7 @@ saccfile = os.path.expanduser(
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
 lk.read(sacc_data)
-lk.set_params_names(params)
+lk.set_params_names(list(params))
 
 # Final object
 

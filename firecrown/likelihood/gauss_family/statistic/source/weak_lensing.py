@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import List, Dict, Tuple, Sequence, Optional
+from typing import List, Tuple, Sequence, Optional
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 import numpy as np
 import pyccl
@@ -27,7 +27,7 @@ class WeakLensingArgs:
 class WeakLensingSystematic(Systematic):
     @abstractmethod
     def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
+            self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         pass
 
@@ -121,14 +121,14 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
     def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
+            self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag - 1.0
+                self.alphag - 1.0
         )
 
         ia_bias_array = pref * self.ia_bias
@@ -173,16 +173,15 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensing(Source):
-
     systematics: Sequence[WeakLensingSystematic]
     tracer_arg: WeakLensingArgs
 
     def __init__(
-        self,
-        *,
-        sacc_tracer,
-        scale=1.0,
-        systematics: Optional[List[WeakLensingSystematic]] = None,
+            self,
+            *,
+            sacc_tracer,
+            scale=1.0,
+            systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
         self.sacc_tracer = sacc_tracer
         self.scale = scale
@@ -217,7 +216,8 @@ class WeakLensing(Source):
         z = z[inds]
         nz = nz[inds]
 
-        self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
+        self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz,
+                                           ia_bias=None)
 
     def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
         """
@@ -230,7 +230,8 @@ class WeakLensing(Source):
             tracer_args = systematic.apply(cosmo, tracer_args)
 
         tracer = pyccl.WeakLensingTracer(
-            cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
+            cosmo, dndz=(tracer_args.z, tracer_args.dndz),
+            ia_bias=tracer_args.ia_bias
         )
         self.current_tracer_args = tracer_args
 

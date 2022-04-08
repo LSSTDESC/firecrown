@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional
+from typing import List, Tuple
 from abc import ABC, abstractmethod
 from typing import final
 import numpy as np
@@ -52,7 +52,7 @@ class Statistic(ABC):
 
     @abstractmethod
     def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+            self, cosmo: pyccl.Cosmology, params: ParamsMap
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a statistic from sources, applying any systematics.
 

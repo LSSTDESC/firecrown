@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import List, Optional
-from abc import ABC, abstractmethod
 from typing import final
 import numpy as np
 import scipy.linalg

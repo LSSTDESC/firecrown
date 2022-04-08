@@ -61,7 +61,8 @@ class TypeLikelihood(Validator):
         pass
 
     def validate(self, value):
-        if not isinstance(value, LogLike):
+        if not isinstance(value, Likelihood):
             raise TypeError(
-                f"Expected {value!r} {value} {self} to be an firecrown.core.LogLike"
+                f"Expected {value!r} {value} {self} to be a "
+                f"firecrown.likelihood.likelihood.Likelihood"
             )
