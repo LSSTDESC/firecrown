@@ -87,21 +87,21 @@ class Mapping(ABC):
         pass
 
     def set_params(
-            self,
-            *,
-            Omega_c: float,
-            Omega_b: float,
-            h: float,
-            A_s: float = None,
-            sigma8: float = None,
-            n_s: float,
-            Omega_k: float,
-            Neff: float,
-            m_nu: float,
-            m_nu_type: str,
-            w0: float,
-            wa: float,
-            T_CMB: float,
+        self,
+        *,
+        Omega_c: float,
+        Omega_b: float,
+        h: float,
+        A_s: float = None,
+        sigma8: float = None,
+        n_s: float,
+        Omega_k: float,
+        Neff: float,
+        m_nu: float,
+        m_nu_type: str,
+        w0: float,
+        wa: float,
+        T_CMB: float,
     ):
         """Sets the cosmological constants suitable for use in constructing a
         pyccl.core.CosmologyCalculator. See the documentation of that class
@@ -221,7 +221,7 @@ class MappingCosmoSIS(Mapping):
         return k_h * self.h
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        return p_k_h3 / (self.h ** 3)
+        return p_k_h3 / (self.h**3)
 
     def transform_h_to_h_over_h0(self, h):
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
@@ -240,8 +240,7 @@ class MappingCosmoSIS(Mapping):
         Omega_k = cosmosis_params["omega_k"]
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
         # Read m_nu from CosmoSIS (in newer CosmoSIS)
-        Neff = cosmosis_params.get("delta_neff",
-                                   0.0) + 3.046  # Verify this with Joe
+        Neff = cosmosis_params.get("delta_neff", 0.0) + 3.046  # Verify this with Joe
         m_nu = cosmosis_params["omega_nu"] * h * h * 93.14
         m_nu_type = "normal"
         w0 = cosmosis_params["w"]
@@ -382,7 +381,6 @@ mapping_classes = {
 
 def mapping_builder(*, input_style, **kwargs):
     if input_style not in mapping_classes.keys():
-        raise ValueError(
-            f"input_style must be {*mapping_classes,}, not {input_style}")
+        raise ValueError(f"input_style must be {*mapping_classes,}, not {input_style}")
 
     return mapping_classes[input_style](**kwargs)

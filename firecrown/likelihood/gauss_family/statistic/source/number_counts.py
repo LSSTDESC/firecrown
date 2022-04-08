@@ -28,7 +28,7 @@ class NumberCountsArgs:
 class NumberCountsSystematic(Systematic):
     @abstractmethod
     def apply(
-            self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         pass
 
@@ -67,7 +67,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
     def apply(
-            self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         """Apply a linear bias systematic.
 
@@ -80,8 +80,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= pyccl.growth_factor(cosmo,
-                                    1.0 / (1.0 + tracer_arg.z)) ** self.alphag
+        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** self.alphag
 
         return NumberCountsArgs(
             scale=tracer_arg.scale,
@@ -129,7 +128,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = params.get_from_prefix_param(self.sacc_tracer, "z_m")
 
     def apply(
-            self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
@@ -146,9 +145,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
         s = (
-                self.eta / self.r_lim
-                - 3.0 * self.z_m / z_bar
-                + 1.5 * self.z_m * np.power(z / z_bar, 1.5) / z_bar
+            self.eta / self.r_lim
+            - 3.0 * self.z_m / z_bar
+            + 1.5 * self.z_m * np.power(z / z_bar, 1.5) / z_bar
         )
 
         return NumberCountsArgs(
@@ -201,13 +200,13 @@ class NumberCounts(Source):
     tracer_arg: NumberCountsArgs
 
     def __init__(
-            self,
-            *,
-            sacc_tracer,
-            has_rsd=False,
-            has_mag_bias=False,
-            scale=1.0,
-            systematics: Optional[List[NumberCountsSystematic]] = None,
+        self,
+        *,
+        sacc_tracer,
+        has_rsd=False,
+        has_mag_bias=False,
+        scale=1.0,
+        systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
@@ -227,8 +226,7 @@ class NumberCounts(Source):
         self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
 
         if self.has_mag_bias:
-            self.mag_bias = params.get_from_prefix_param(self.sacc_tracer,
-                                                         "mag_bias")
+            self.mag_bias = params.get_from_prefix_param(self.sacc_tracer, "mag_bias")
         else:
             self.mag_bias = None
 

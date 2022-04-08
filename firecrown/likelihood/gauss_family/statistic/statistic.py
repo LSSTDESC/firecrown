@@ -52,7 +52,7 @@ class Statistic(ABC):
 
     @abstractmethod
     def compute(
-            self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology, params: ParamsMap
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a statistic from sources, applying any systematics.
 

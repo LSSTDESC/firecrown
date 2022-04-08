@@ -54,7 +54,7 @@ class Supernova(Statistic):
         self.M = params["m"]  # CosmoSIS makes everything lowercase
 
     def compute(
-            self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology, params: ParamsMap
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 

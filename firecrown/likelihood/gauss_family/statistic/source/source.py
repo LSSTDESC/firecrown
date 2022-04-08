@@ -91,7 +91,7 @@ class Source(ABC):
 
     @final
     def get_tracer(
-            self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology, params: ParamsMap
     ) -> pyccl.tracers.Tracer:
         cur_hash = hash((cosmo, get_params_hash(params)))
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
