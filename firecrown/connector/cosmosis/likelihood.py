@@ -50,7 +50,20 @@ class FirecrownLikelihood:
                 "k": k,
                 "delta_matter:delta_matter": p_k,
             }
-            ccl_args["nonlinear_model"] = "halofit"
+        if sample.has_section("matter_power_nl"):
+            k = self.map.transform_k_h_to_k(sample["matter_power_nl", "k_h"])
+            z_mpl = sample["matter_power_nl", "z"]
+            scale_mpl = self.map.redshift_to_scale_factor(z_mpl)
+            p_k = self.map.transform_p_k_h3_to_p_k(sample["matter_power_nl", "p_k"])
+            p_k = self.map.redshift_to_scale_factor_p_k(p_k)
+
+            ccl_args["pk_nonlin"] = {
+                "a": scale_mpl,
+                "k": k,
+                "delta_matter:delta_matter": p_k,
+            }
+        else:
+            ccl_args["nonlinear_model"] = "halofit"            
 
         # TODO: We should have several configurable modes for this module.
         # In all cases, an exception will be raised (causing a program
