@@ -4,11 +4,12 @@
 
 class ParamsDict <<dictionary>> { }
 note top
-  Map of <i>string</i>
-  to <i>float</i>
+  Map of //string// to  //float//.
 end note
 
 
 class Statistics << List[Statistic] >> { }
+
+class RequiredParamters << List[Str] >> { }
 
 @enduml

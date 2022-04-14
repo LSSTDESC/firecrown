@@ -13,17 +13,24 @@ abstract class GaussianFamily {
   +{final} compute_chisq(cosmo : ccl.Cosmology) : double
   - {final} _update(params : ParamsDict)
   - {abstract} _update_gaussian_family(params : ParamsDict)
+  + {final} required_parameters() : RequiredParameters
 }
 
 note right of GaussianFamily::compute_chisq
-  <i>compute_chisq<i> is to be called by derived
-  classes in their implementation of <i>compute</i>
+  //compute_chisq// is to be called by derived
+  classes in their implementation of //compute//
 end note
 
 note left of GaussianFamily::_update
-  <i>_update</i> updates <i>systematics</i>.
+  //_update// updates //systematics//.
   Derived classes must implement
-  <i>_update_gaussian_family</i>.
+  //_update_gaussian_family//.
+end note
+
+note left of GaussianFamily::required_parameters
+  This call required_parameters() on systematics,
+  and then calls required_parameters_gaussian_family()
+  and returns the appropriate concatenation.
 end note
 
 class UpdateableCollection <<Statistic>> {}
@@ -44,6 +51,7 @@ class StudentT {
   + StudentT(stats : Statistics, nu : double)
   + {final} compute(cosmo : ccl.Cosmology)
   - {final} _update_gaussian_family(params : ParamsDict)
+  + {final} required_parameters_gaussian_family() : RequiredParameters
 }
 
 

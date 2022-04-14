@@ -9,7 +9,7 @@ abstract class Source {}
 abstract class UpdateableCollection {}
 note bottom
  This will contain only
- <i>Systematic</i> objects.
+ //Systematic// objects.
 end note
 
 abstract class TwoPoint {
@@ -26,6 +26,7 @@ TwoPoint *--down- UpdateableCollection : systematics
 
 class ConcreteTPF {
  - _update(params : ParamsDict)
+ + required_params() : RequiredParameters
 }
  
 ConcreteTPF -left-|> TwoPoint 
