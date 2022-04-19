@@ -8,10 +8,10 @@ Firecrown is most often used along with a *sampler*. There are two samplers
 currently supported:
 
 * [Cobaya](https://github.com/CobayaSampler/cobaya)
-* [CosmoSIS](https://bitbucket.org/joezuntz/cosmosis)
+* [CosmoSIS](https://github.com/joezuntz/cosmosis)
 
 It can also be used as a library in other contexts, and so installation of
-Firecrown does not *require* installation of a sampler.
+Firecrown does not *require* the installation of a sampler.
 
 ## Installation Quickstart
 
@@ -38,7 +38,7 @@ conda create --name fc -c conda-forge firecrown
 For Firecrown with CosmoSIS:
 
 ```bash
-conda create --name fc_cosmosis -c conda-forge cosmosis firecrown
+conda create --name fc_cosmosis -c conda-forge cosmosis cosmosis-build-standard-library firecrown
 ```
 
 For Firecrown with Cobaya (note Cobaya is not currently available from
@@ -53,7 +53,7 @@ python -m pip install cobaya
 For Firecrown with both Cobaya and CosmoSIS:
 
 ```bash
-conda create --name fc_both -c conda-forge cosmosis firecrown
+conda create --name fc_both -c conda-forge cosmosis cosmosis-build-standard-library firecrown
 conda activate fc_both
 python -m pip install cobaya
 ```
@@ -72,8 +72,18 @@ conda create --name for_fc -c conda-forge sacc pyccl fitsio flake8 pylint black
 
 ### Firecrown with CosmoSIS
 
+Firecrown supports CosmoSIS 2.x.
+The conda installation of CosmoSIS does not include the CosmoSIS Standard Library (CSL), but almost all use of CosmoSIS will include the use of parts of the CSL.
+These instructions include the instructions for building the CSL.
+
 ```bash
-conda create --name for_fc_cosmosis -c conda-forge cosmosis sacc pyccl fitsio flake8 pylint black
+conda create --name for_fc_cosmosis -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio flake8 pylint black
+# Note that the following will clone the CSL repository and build it in your current working directory.
+# This should be done *outside* of the directory tree managed by conda, and *outside* of the `firecrown` directory.
+conda activate for_fc_cosmosis
+source ${CONDA_PREFIX}/bin/cosmosis-configure
+cosmosis-build-standard-library
+export CSL_DIR=${PWD}/cosmosis-standard-library
 ```
 
 ### Firecrown with Cobaya
@@ -81,40 +91,53 @@ conda create --name for_fc_cosmosis -c conda-forge cosmosis sacc pyccl fitsio fl
 ```bash
 conda create --name for_fc_cobaya -c conda-forge sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black
 conda activate for_fc_cobaya
+# Not all cobaya dependencies can be installed with conda.
 python -m pip install cobaya
 ```
 
 ### Firecrown with both CosmoSIS and Cobaya
 
 ```bash
-conda create --name for_fc_both -c conda-forge cosmosis sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black
+conda create --name for_fc_both -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black
 conda activate for_fc_both
 python -m pip install cobaya
+# Note that the following will clone the CSL repository and build it in your current working directory.
+# This should be done *outside* of the directory tree managed by conda, and *outside* of the `firecrown` directory.
+source ${CONDA_PREFIX}/bin/cosmosis-configure
+cosmosis-build-standard-library
+export CSL_DIR=${PWD}/cosmosis-standard-library
 ```
 
 ## Getting Firecrown for development
 
 To install the package in developer mode, start by cloning the git repo.
-Activate which ever conda environment you created for your development effort.
+Activate whichever conda environment you created for your development effort.
+
+1. Define `CSL_DIR` appropriately if you are going to use CosmoSIS.
+2. Define `FIRECROWN_DIR` to be the directory into which you have cloned the `firecrown` repository.
+
+If you do not have `PYTHONPATH` defined: define `PYTHONPATH=${FIRECROWN_DIR}/build/lib`
+
+If you have `PYTHONPATH` defined: define `PYTHONPATH=${FIRECROWN_DIR}/build/lib:${PYTHONPATH}`
 
 In the active environment, you can build Firecrown by:
 
 ```bash
+cd ${FIRECROWN_DIR}
 python setup.py build
 ```
 
 The tests can be run with `pytest`, after building:
 
 ```bash
-python setup.py build
-PYTHONPATH=./build/lib pytest
+pytest
 ```
 
 Some tests are marked as *slow*; those are skipped unless they are requested
 using `--runslow`:
 
 ```bash
-PYTHONPATH=./build/lib pytest --runslow
+pytest --runslow
 ```
 
 ## Usage
