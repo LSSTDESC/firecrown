@@ -130,7 +130,7 @@ lk = ConstGaussian(statistics=list(stats.values()))
 """
 saccfile = os.path.expanduser(
     os.path.expandvars(
-        "${FIRECROWN_EXAMPLES_DIR}/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
+        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
     )
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
