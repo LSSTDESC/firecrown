@@ -23,7 +23,7 @@ lk = ConstGaussian(statistics=[snia_stats])
 # SACC file
 
 saccfile = os.path.expanduser(
-    os.path.expandvars("${FIRECROWN_EXAMPLES_DIR}/srd_sn/srd-y1-converted.sacc")
+    os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
