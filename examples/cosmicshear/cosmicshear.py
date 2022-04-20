@@ -64,7 +64,7 @@ lk = ConstGaussian(statistics=list(stats.values()))
     We load the correct SACC file.
 """
 saccfile = os.path.expanduser(
-    os.path.expandvars("${FIRECROWN_EXAMPLES_DIR}/cosmicshear/cosmicshear.fits")
+    os.path.expandvars("${FIRECROWN_DIR}/examples/cosmicshear/cosmicshear.fits")
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
 

@@ -2,12 +2,12 @@
 
 To run the example, first generate the data
 
-```bash
-python generate_cosmicshear_data.py
-```
+    python generate_cosmicshear_data.py
 
-Then you can run the computation via
+This will create the file `cosmicshear.fits`.
 
-```bash
-firecrown compute cosmicshear.yaml
-```
+Then run CosmoSIS using:
+
+    cosmosis cosmicshear.ini
+
+This uses the `test` sampler, and will write the likelihood output to the screen.
