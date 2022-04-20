@@ -3,33 +3,29 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Sequence
-from abc import ABC, abstractmethod
-from typing import final
+from typing import Dict, Sequence, final
+from abc import abstractmethod
 import pyccl
 import sacc
-from firecrown.parameters import ParamsMap
+from .....parameters import ParamsMap
+from .....updatable import Updatable
 
 
 def get_params_hash(params: Dict[str, float]):
     return repr(sorted(params.items()))
 
 
-class Systematic:
+class Systematic(Updatable):
     """The systematic (e.g., shear biases, photo-z shifts, etc.).
 
     This class currently has no methods at all, because the argument types for
     the `apply` method of different subclasses are different."""
 
-    @abstractmethod
-    def update_params(self, params: ParamsMap):
-        pass
-
     def read(self, sacc_data: sacc.Sacc):
         pass
 
 
-class Source(ABC):
+class Source(Updatable):
     """The source (e.g., a sample of lenses).
 
     Parameters
@@ -72,17 +68,6 @@ class Source(ABC):
 
     @abstractmethod
     def get_scale(self) -> float:
-        pass
-
-    @final
-    def update_params(self, params: ParamsMap):
-        if hasattr(self, "systematics"):
-            for systematic in self.systematics:
-                systematic.update_params(params)
-        self._update_params(params)
-
-    @abstractmethod
-    def _update_params(self, params: ParamsMap):
         pass
 
     @abstractmethod

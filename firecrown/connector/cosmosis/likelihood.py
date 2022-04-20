@@ -104,6 +104,7 @@ class FirecrownLikelihood:
                 sec_dict = extract_section(sample, section)
                 firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
 
+        self.likelihood.update(firecrown_params)
         lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
 
         sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)

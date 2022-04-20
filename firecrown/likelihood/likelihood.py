@@ -14,10 +14,11 @@ import importlib
 import importlib.util
 import os
 
-from firecrown.parameters import ParamsMap
+from ..parameters import ParamsMap
+from ..updatable import Updatable
 
 
-class Likelihood(object):
+class Likelihood(Updatable):
     """The log-likelihood (e.g., a Gaussian, T-distribution, etc.).
 
     Parameters

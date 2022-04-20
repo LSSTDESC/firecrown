@@ -13,16 +13,6 @@ import sacc
 
 # Sources
 
-params = set()
-
-"""
-    Creating a systematic object that will be used by many sources. We need to
-    inform all parameter names (this will be automatic soon).
-"""
-params.add("ia_bias")
-params.add("alphaz")
-params.add("alphag")
-params.add("z_piv")
 
 lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
 
@@ -40,7 +30,6 @@ for i in range(4):
     reflect this by using src{i}_ prefix.
     """
     mbias = wl.MultiplicativeShearBias(sacc_tracer=f"src{i}")
-    params.add(f"src{i}_mult_bias")
 
     """
         We also include a photo-z shift bias (a constant shift in dndz). We
@@ -48,7 +37,6 @@ for i in range(4):
         src{i}_ prefix.
     """
     pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
-    params.add(f"src{i}_delta_z")
 
     """
         Now we can finally create the weak-lensing source that will compute the
@@ -73,8 +61,6 @@ for i in range(5):
         The source is created and saved (temporarely in the sources dict).
     """
     sources[f"lens{i}"] = nc.NumberCounts(sacc_tracer=f"lens{i}", systematics=[pzshift])
-    params.add(f"lens{i}_bias")
-    params.add(f"lens{i}_delta_z")
 
 """
     Now that we have all sources we can instantiate all the two-point
@@ -141,7 +127,6 @@ sacc_data = sacc.Sacc.load_fits(saccfile)
     file and the sources their respective dndz.
 """
 lk.read(sacc_data)
-lk.set_params_names(list(params))
 
 """
     This script will be loaded by the appropriated connector. The framework

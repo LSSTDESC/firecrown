@@ -8,11 +8,7 @@ import sacc
 
 # Sources
 
-params = set()
-
 sources = {}
-
-params.add("ia_bias")
 
 snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
 
@@ -28,7 +24,6 @@ saccfile = os.path.expanduser(
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
 lk.read(sacc_data)
-lk.set_params_names(list(params))
 
 # Final object
 

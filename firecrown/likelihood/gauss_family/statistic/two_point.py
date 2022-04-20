@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, final
 import copy
 import functools
 import warnings
@@ -9,7 +9,7 @@ import pyccl
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
-from firecrown.parameters import ParamsMap
+from ....parameters import ParamsMap, RequiredParameters
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -175,9 +175,14 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-    def _update_params(self, params: ParamsMap):
-        self.source0.update_params(params)
-        self.source1.update_params(params)
+    @final
+    def _update(self, params: ParamsMap):
+        self.source0.update(params)
+        self.source1.update(params)
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return self.source0.required_parameters() + self.source1.required_parameters()
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.

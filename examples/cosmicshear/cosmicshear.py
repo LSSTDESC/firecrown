@@ -11,7 +11,6 @@ import sacc
 
 # Sources
 
-unique_params = set()
 
 """
     Creating sources, each one maps to a specific section of a SACC file. In
@@ -27,7 +26,6 @@ for i in range(2):
     src{i}_ prefix.
     """
     pzshift = wl.PhotoZShift(sacc_tracer=f"trc{i}")
-    unique_params.add(f"trc{i}_delta_z")
 
     """
         Now we can finally create the weak-lensing source that will compute the
@@ -74,7 +72,6 @@ sacc_data = sacc.Sacc.load_fits(saccfile)
     file and the sources their respective dndz.
 """
 lk.read(sacc_data)
-lk.set_params_names(list(unique_params))
 
 """
     This script will be loaded by the appropriated connector. The framework

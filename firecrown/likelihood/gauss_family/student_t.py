@@ -1,5 +1,5 @@
 from __future__ import annotations
-from typing import List
+from typing import List, final
 
 import numpy as np
 
@@ -7,7 +7,7 @@ import pyccl
 
 from .gauss_family import GaussFamily
 from .statistic.statistic import Statistic
-from firecrown.parameters import ParamsMap
+from ...parameters import ParamsMap, RequiredParameters
 
 
 class StudentT(GaussFamily):
@@ -48,3 +48,11 @@ class StudentT(GaussFamily):
 
         chi2 = self.compute_chisq(cosmo, params)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
+
+    @final
+    def _update_gaussian_family(self, params: ParamsMap):
+        pass
+
+    @final
+    def required_parameters_gaussian_family(self):
+        return RequiredParameters([])
