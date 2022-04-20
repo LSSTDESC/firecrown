@@ -52,9 +52,20 @@ jobs:
               recommonmark \
               sphinx_rtd_theme \
               sphinx \
-              sphinxcontrib-apidoc
-
+              sphinxcontrib-apidoc \
+              cosmosis \
+              cosmosis-build-standard-library
+              
+            source ${CONDA_PREFIX}/bin/cosmosis-configure
+            cosmosis-build-standard-library
+            export CSL_DIR=${PWD}/cosmosis-standard-library
+            
+            conda env config vars set CSL_DIR=${CSL_DIR}
+            conda env config vars set FIRECROWN_DIR=${PWD}
+            
             conda update --all -y -q
+            
+            python -m pip install cobaya
 
             # install CCL master
             conda install -y -q \
@@ -83,14 +94,13 @@ jobs:
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate firecrown
             flake8 firecrown
-            flake8 bin/firecrown
 
       - run:
           name: test
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate firecrown
-            pytest -vv firecrown
+            pytest -vv tests
 
       - run:
           name: cosmic-shear-example
@@ -99,22 +109,25 @@ jobs:
             source activate firecrown
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
-            firecrown compute cosmicshear.yaml
+            
+            cosmosis cosmicshear.ini
 
       - run:
-          name: desc-srd-v1
+          name: des-y1-3x2pt-example
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate firecrown
-            cd examples/desc_srd_v1
-            pip install -e .
-            pytest -vv srd_models
+            cd examples/des_y1_3x2pt
+            
+            cosmosis des_y1_3x2pt.ini
 
       - run:
-          name: emcee example
+          name: srd_sn-example
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate firecrown
-            cd examples/samplers_and_analysis
-            pip install -e .
-            firecrown run-cosmosis emcee.yaml
+            cd examples/srd_sn
+            
+            cosmosis sn_srd.ini
+
+
