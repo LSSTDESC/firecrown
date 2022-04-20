@@ -7,6 +7,8 @@ import warnings
 import numpy as np
 import pyccl
 
+import scipy.interpolate
+
 from .statistic import Statistic
 from .source.source import Source, Systematic
 from ....parameters import ParamsMap, RequiredParameters
@@ -164,6 +166,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta_max = ell_or_theta_max
 
         self.data_vector = None
+        self.theory_vector = None
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -209,8 +212,9 @@ class TwoPoint(Statistic):
 
         if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
             raise RuntimeError(
-                "Tracers '%s' have no 2pt data in the SACC file "
-                "and no input ell or theta values were given!" % tracers
+                f"Tracers '{tracers}' for data type '{self.sacc_data_type}' "
+                f"have no 2pt data in the SACC file and no input ell or "
+                f"theta values were given!"
             )
         elif (
             self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
@@ -246,9 +250,18 @@ class TwoPoint(Statistic):
             if self.sacc_inds is not None:
                 self.sacc_inds = self.sacc_inds[q]
 
+        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_inds)
+        if self.theory_window_function is not None:
+            ell_config = {**ELL_FOR_XI_DEFAULTS}
+            ell_config["max"] = self.theory_window_function.values[-1]
+            ell_config["min"] = max(ell_config["min"], self.theory_window_function.values[0])
+            _ell_or_theta = _ell_for_xi(**ell_config)
+
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
         self.data_vector = _stat.copy()
+        self.measured_statistic_ = self.data_vector
+        self.sacc_tracers = tracers
 
     def compute(
         self, cosmo: pyccl.Cosmology, params: ParamsMap
@@ -284,6 +297,32 @@ class TwoPoint(Statistic):
                 )
                 * scale
             )
+
+        if self.theory_window_function is not None:
+            def log_interpolator(x, y):
+                if np.all(y > 0):
+                    # use log-log interpolation
+                    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), np.log(y), ext=2)
+                    return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
+                else:
+                    # only use log for x
+                    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
+                    return lambda x_, intp=intp: intp(np.log(x_))
+
+            theory_interpolator = log_interpolator(self.ell_or_theta_, theory_vector)
+            ell = self.theory_window_function.values
+            # Deal with ell=0 and ell=1
+            theory_vector_interpolated = np.zeros(ell.size)
+            theory_vector_interpolated[2:] = theory_interpolator(ell[2:])
+            # np.piecewise(ell, [ell >= 2], [theory_interpolator, lambda x: 0])
+            # print(self.ell_or_theta_, theory_vector)
+            # print(ell, theory_vector_interpolated)
+            # print(theory_interpolator(ell[2:]))
+            # raise
+            theory_vector = np.einsum("lb, l -> b", self.theory_window_function.weight, theory_vector_interpolated)
+            self.ell_or_theta_ = np.einsum("lb, l -> b", self.theory_window_function.weight, ell)
+
+        self.predicted_statistic_ = theory_vector
 
         assert self.data_vector is not None
 
