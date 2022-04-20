@@ -24,6 +24,7 @@ Run this using:
     cosmosis des_y1_3x2pt.ini
 
 This will produce the output to the screen, showing the calculated likelihood.
+It also creates the directory `des_y1_3x2pt_output` which is populated with the CosmoSIS datablock contents for the generated sample.
 
 ## Generating the `firecrown` Inputs
 
