@@ -109,9 +109,25 @@ jobs:
             source activate firecrown
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
-            echo "CONDA_PREFIX: ${CONDA_PREFIX}"
-            echo "FIRECROWN_DIR: ${FIRECROWN_DIR}"
-            echo "CSL_DIR: ${CSL_DIR}"
             
             cosmosis cosmicshear.ini
+
+      - run:
+          name: des-y1-3x2pt-example
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate firecrown
+            cd examples/des_y1_3x2pt
+            
+            cosmosis des_y1_3x2pt.ini
+
+      - run:
+          name: srd_sn-example
+          command: |
+            export PATH=`pwd`/miniconda/bin:$PATH
+            source activate firecrown
+            cd examples/srd_sn
+            
+            cosmosis sn_srd.ini
+
 
