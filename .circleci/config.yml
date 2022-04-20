@@ -52,9 +52,17 @@ jobs:
               recommonmark \
               sphinx_rtd_theme \
               sphinx \
-              sphinxcontrib-apidoc
-
+              sphinxcontrib-apidoc \
+              cosmosis \
+              cosmosis-build-standard-library
+              
+            source ${CONDA_PREFIX}/bin/cosmosis-configure
+            cosmosis-build-standard-library
+            export CSL_DIR=${PWD}/cosmosis-standard-library
+              
             conda update --all -y -q
+            
+            python -m pip install cobaya
 
             # install CCL master
             conda install -y -q \
