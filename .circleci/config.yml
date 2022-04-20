@@ -89,7 +89,7 @@ jobs:
           command: |
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate firecrown
-            pytest -vv firecrown
+            pytest -vv tests
 
       - run:
           name: cosmic-shear-example
@@ -98,22 +98,5 @@ jobs:
             source activate firecrown
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
-            firecrown compute cosmicshear.yaml
+            cosmosis cosmicshear.ini
 
-      - run:
-          name: desc-srd-v1
-          command: |
-            export PATH=`pwd`/miniconda/bin:$PATH
-            source activate firecrown
-            cd examples/desc_srd_v1
-            pip install -e .
-            pytest -vv srd_models
-
-      - run:
-          name: emcee example
-          command: |
-            export PATH=`pwd`/miniconda/bin:$PATH
-            source activate firecrown
-            cd examples/samplers_and_analysis
-            pip install -e .
-            firecrown run-cosmosis emcee.yaml
