@@ -83,7 +83,6 @@ jobs:
             export PATH=`pwd`/miniconda/bin:$PATH
             source activate firecrown
             flake8 firecrown
-            flake8 bin/firecrown
 
       - run:
           name: test
