@@ -61,6 +61,7 @@ jobs:
             export CSL_DIR=${PWD}/cosmosis-standard-library
             
             conda env config vars set CSL_DIR=${CSL_DIR}
+            conda env config vars set FIRECROWN_DIR=${PWD}
             
             conda update --all -y -q
             
@@ -109,7 +110,7 @@ jobs:
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
             echo "CONDA_PREFIX: ${CONDA_PREFIX}"
-            echo "CONDA_PREFIX: ${CONDA_PREFIX}"
+            echo "FIRECROWN_DIR: ${FIRECROWN_DIR}"
             echo "CSL_DIR: ${CSL_DIR}"
             
             cosmosis cosmicshear.ini
