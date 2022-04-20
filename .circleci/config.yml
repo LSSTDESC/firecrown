@@ -59,7 +59,9 @@ jobs:
             source ${CONDA_PREFIX}/bin/cosmosis-configure
             cosmosis-build-standard-library
             export CSL_DIR=${PWD}/cosmosis-standard-library
-              
+            
+            conda env config vars set CSL_DIR=${CSL_DIR}
+            
             conda update --all -y -q
             
             python -m pip install cobaya
@@ -106,5 +108,9 @@ jobs:
             source activate firecrown
             cd examples/cosmicshear
             python generate_cosmicshear_data.py
+            echo "CONDA_PREFIX: ${CONDA_PREFIX}"
+            echo "CONDA_PREFIX: ${CONDA_PREFIX}"
+            echo "CSL_DIR: ${CSL_DIR}"
+            
             cosmosis cosmicshear.ini
 
