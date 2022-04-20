@@ -1,6 +1,7 @@
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
 import numpy as np
+from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 import pyccl as ccl
 
 from firecrown.connector.mapping import mapping_builder
@@ -121,6 +122,14 @@ class FirecrownLikelihood:
         lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
 
         sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
+
+        for stat in self.likelihood.statistics:
+            if isinstance(stat, TwoPoint):
+                tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
+
+                sample.put("data_vectors", f"ell_or_theta_{stat.sacc_data_type}_{tracer}", stat.ell_or_theta_)
+                sample.put("data_vectors", f"theory_{stat.sacc_data_type}_{tracer}", stat.predicted_statistic_)
+                sample.put("data_vectors", f"data_{stat.sacc_data_type}_{tracer}", stat.measured_statistic_)
 
         return 0
 
