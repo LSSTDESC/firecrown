@@ -3,18 +3,18 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional
-from abc import ABC, abstractmethod
-from typing import final
+from typing import List, Tuple
+from abc import abstractmethod
 import numpy as np
 import pyccl
 import sacc
 
-from firecrown.parameters import ParamsMap
+from ....parameters import ParamsMap
+from ....updatable import Updatable
 from .source.source import Systematic
 
 
-class Statistic(ABC):
+class Statistic(Updatable):
     """A statistic (e.g., two-point function, mass function, etc.).
 
     Parameters
@@ -37,17 +37,6 @@ class Statistic(ABC):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        pass
-
-    @final
-    def update_params(self, params: ParamsMap):
-        if hasattr(self, "systematics"):
-            for systematic in self.systematics:
-                systematic.update_params(params)
-        self._update_params(params)
-
-    @abstractmethod
-    def _update_params(self, params: ParamsMap):
         pass
 
     @abstractmethod

@@ -1,2 +1,2 @@
-environment.yml
+include environment.yml
 include LICENSE

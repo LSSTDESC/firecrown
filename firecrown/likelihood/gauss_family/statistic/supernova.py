@@ -1,14 +1,12 @@
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional
-import copy
+from typing import Tuple, final
 import functools
-import warnings
 
 import numpy as np
 import pyccl
 
 from .statistic import Statistic
-from firecrown.parameters import ParamsMap
+from ....parameters import ParamsMap, RequiredParameters
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -43,7 +41,6 @@ class Supernova(Statistic):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
         data_points = sacc_data.get_data_points(
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
@@ -53,8 +50,13 @@ class Supernova(Statistic):
         self.data_vector = np.array([dp.value for dp in data_points])
         self.sacc_inds = list(range(0, len(self.data_vector)))
 
-    def _update_params(self, params: ParamsMap):
+    @final
+    def _update(self, params: ParamsMap):
         self.M = params["m"]  # CosmoSIS makes everything lowercase
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(["m"])
 
     def compute(
         self, cosmo: pyccl.Cosmology, params: ParamsMap

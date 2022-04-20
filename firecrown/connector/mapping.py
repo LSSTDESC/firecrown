@@ -1,7 +1,7 @@
-"""The module mapping provides facilities for mapping the cosmological constants
-and functions used by one body of code to another. This is done by defining one 
-of the codes (pyccl) as being the 'standard', and for all other supported code, 
-providing functions from_ccl and to_ccl.
+"""The module mapping provides facilities for mapping the cosmological
+constants and functions used by one body of code to another. This is done by
+defining one of the codes (pyccl) as being the 'standard', and for all other
+supported code, providing functions from_ccl and to_ccl.
 
 The supported codes include:
     pyccl
@@ -20,7 +20,6 @@ from pyccl import physical_constants as physics
 
 
 class Mapping(ABC):
-
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
@@ -104,18 +103,15 @@ class Mapping(ABC):
         wa: float,
         T_CMB: float,
     ):
-        """Sets the cosmological constants suitable for use in constructing a pyccl.core.CosmologyCalculator.
-        See the documentation of that class for an explanation of the choices and meanings of default values
+        """Sets the cosmological constants suitable for use in constructing a
+        pyccl.core.CosmologyCalculator. See the documentation of that class
+        for an explanation of the choices and meanings of default values
         of None.
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
         """
 
-        # Typecheck is done automatically using the descriptorsa and is done to avoid very confusing error
-        # messages at a later time in case of error.
+        # Typecheck is done automatically using the descriptors and is done to
+        # avoid void very confusing error messages at a later time in case of
+        # error.
         self.Omega_c = Omega_c
         self.Omega_b = Omega_b
         self.h = h
@@ -139,14 +135,16 @@ class Mapping(ABC):
         self.wa = wa
         self.T_CMB = T_CMB
 
-    def redshift_to_scale_factor(self, z):
-        """Given arrays of redshift returns an array of scale factor with the inverse
-        order."""
+    @staticmethod
+    def redshift_to_scale_factor(z):
+        """Given arrays of redshift returns an array of scale factor with the
+        inverse order."""
 
         scale = np.flip(1.0 / (1.0 + z))
         return scale
 
-    def redshift_to_scale_factor_p_k(self, p_k):
+    @staticmethod
+    def redshift_to_scale_factor_p_k(p_k):
         """Given an 2d arrays power spectrum ordered by (redshift, mode)
         return a 2d array with the rows flipped to match the reorderning
         from redshift to scale factor."""
@@ -223,7 +221,7 @@ class MappingCosmoSIS(Mapping):
         return k_h * self.h
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        return p_k_h3 / (self.h ** 3)
+        return p_k_h3 / (self.h**3)
 
     def transform_h_to_h_over_h0(self, h):
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
@@ -260,7 +258,8 @@ class MappingCosmoSIS(Mapping):
             m_nu_type=m_nu_type,
             w0=w0,
             wa=-wa,  # Is this minus sign here correct?
-            T_CMB=2.7255,  # Modify CosmoSIS to make this available in the datablock
+            T_CMB=2.7255,
+            # Modify CosmoSIS to make this available in the datablock
         )
 
 
@@ -282,22 +281,11 @@ class MappingCAMB(Mapping):
     """
 
     def __init__(self):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
-        """
         pass
 
     def get_params_names(self):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
+        """
+        Return the list of parameters handled by this mapping.
         """
         return [
             "H0",
@@ -392,7 +380,7 @@ mapping_classes = {
 
 
 def mapping_builder(*, input_style, **kwargs):
-    if not input_style in mapping_classes.keys():
+    if input_style not in mapping_classes.keys():
         raise ValueError(f"input_style must be {*mapping_classes,}, not {input_style}")
 
     return mapping_classes[input_style](**kwargs)

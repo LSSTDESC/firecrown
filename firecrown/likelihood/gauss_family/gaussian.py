@@ -1,14 +1,9 @@
 from __future__ import annotations
-from typing import List, Optional
-
-import numpy as np
-import scipy.linalg
-
+from typing import final
 import pyccl
 
 from .gauss_family import GaussFamily
-from .statistic.statistic import Systematic
-from firecrown.parameters import ParamsMap
+from ...parameters import ParamsMap, RequiredParameters
 
 
 class ConstGaussian(GaussFamily):
@@ -32,3 +27,11 @@ class ConstGaussian(GaussFamily):
         """
 
         return -0.5 * self.compute_chisq(cosmo, params)
+
+    @final
+    def _update_gaussian_family(self, params: ParamsMap):
+        pass
+
+    @final
+    def required_parameters_gaussian_family(self):
+        return RequiredParameters([])

@@ -1,7 +1,7 @@
 from __future__ import annotations
-from typing import List, Dict, Sequence, Optional
+from typing import List, Optional, final
 from dataclasses import dataclass
-from abc import ABC, abstractmethod
+from abc import abstractmethod
 
 import numpy as np
 import pyccl
@@ -9,7 +9,8 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
-from firecrown.parameters import ParamsMap
+from .....parameters import ParamsMap, RequiredParameters, parameter_get_full_name
+from .....updatable import UpdatableCollection
 
 __all__ = ["NumberCounts"]
 
@@ -53,6 +54,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
     apply : apply the systematic to a source
     """
 
+    params_names = ["alphaz", "alphag", "z_piv"]
     alphaz: float
     alphag: float
     z_piv: float
@@ -60,11 +62,18 @@ class LinearBiasSystematic(NumberCountsSystematic):
     def __init__(self, sacc_tracer: str):
         self.sacc_tracer = sacc_tracer
 
-    def update_params(self, params: ParamsMap):
+    @final
+    def _update(self, params: ParamsMap):
         """Read the corresponding named tracer from the given collection of parameters."""
         self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
 
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
@@ -110,6 +119,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     apply : apply the systematic to a source
     """
 
+    params_names = ["r_lim", "sig_c", "eta", "z_c", "z_m"]
     r_lim: float
     sig_c: float
     eta: float
@@ -119,13 +129,20 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     def __init__(self, sacc_tracer: str):
         self.sacc_tracer = sacc_tracer
 
-    def update_params(self, params: ParamsMap):
+    @final
+    def _update(self, params: ParamsMap):
         """Read the corresponding named tracer from the given collection of parameters."""
         self.r_lim = params.get_from_prefix_param(self.sacc_tracer, "r_lim")
         self.sig_c = params.get_from_prefix_param(self.sacc_tracer, "sig_c")
         self.eta = params.get_from_prefix_param(self.sacc_tracer, "eta")
         self.z_c = params.get_from_prefix_param(self.sacc_tracer, "z_c")
         self.z_m = params.get_from_prefix_param(self.sacc_tracer, "z_m")
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
 
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
@@ -171,8 +188,15 @@ class PhotoZShift(NumberCountsSystematic):
     def __init__(self, sacc_tracer: str):
         self.sacc_tracer = sacc_tracer
 
-    def update_params(self, params: ParamsMap):
+    @final
+    def _update(self, params: ParamsMap):
         self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -192,12 +216,11 @@ class PhotoZShift(NumberCountsSystematic):
 
 
 class NumberCounts(Source):
-
     params_names = ["bias", "mag_bias"]
     bias: float
     mag_bias: Optional[float]
 
-    systematics: Sequence[NumberCountsSystematic]
+    systematics: UpdatableCollection
     tracer_arg: NumberCountsArgs
 
     def __init__(
@@ -213,7 +236,7 @@ class NumberCounts(Source):
         self.has_rsd = has_rsd
         self.has_mag_bias = has_mag_bias
 
-        self.systematics = []
+        self.systematics = UpdatableCollection([])
         if systematics:
             for systematic in systematics:
                 self.systematics.append(systematic)
@@ -223,7 +246,8 @@ class NumberCounts(Source):
         self.scale_ = None
         self.tracer_ = None
 
-    def _update_params(self, params: ParamsMap):
+    @final
+    def _update(self, params: ParamsMap):
         self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
 
         if self.has_mag_bias:
@@ -231,8 +255,26 @@ class NumberCounts(Source):
         else:
             self.mag_bias = None
 
-        for systematic in self.systematics:
-            systematic.update_params(params)
+        self.systematics.update(params)
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        if self.has_mag_bias:
+            rp = RequiredParameters(
+                [
+                    parameter_get_full_name(self.sacc_tracer, pn)
+                    for pn in self.params_names
+                ]
+            )
+        else:
+            rp = RequiredParameters(
+                [
+                    parameter_get_full_name(self.sacc_tracer, pn)
+                    for pn in self.params_names
+                    if pn != "mag_bias"
+                ]
+            )
+        return rp + self.systematics.required_parameters()
 
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.

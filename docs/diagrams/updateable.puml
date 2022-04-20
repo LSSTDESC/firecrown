@@ -4,18 +4,26 @@
 !include updateable_frag.iuml
 
 class UpdateableAtom {
-- _update(params : ParamsDict)
+  - _update(params : ParamsDict)
+  + required_parameters() : RequiredParameters
 }
 
 note top of Updateable
-  This design uses the Composite pattern.
+  This design uses the **Composite** pattern.
+end note
+
+note left of Updateable
+  A concrete class must implement //required_parameters//
+  to return the names of all parameters that //update// will
+  read; //update// must read no parameter names except those
+  listed in //required_parameters//.
 end note
 
 note bottom of UpdateableAtom
-  This is an example; <i>UpdateableAtom</i> is
+  This is an example; //UpdateableAtom// is
   not an actual class; it is
   an example showing a non-collection
-  that implements the <i>Updateable</i>
+  that implements the //Updateable//
   interface.  
 end note
 
@@ -23,14 +31,20 @@ UpdateableAtom -up-|> Updateable
 
 class UpdateableCollection {
   - _update(params : ParamsDict)
+  + required_parameters() : RequiredParameters
   + append(item : Updateable)
 }
 
 UpdateableCollection *-- Updateable : contents
 
 note left of UpdateableCollection::_update
-  Calls <i>update</i> on each
-  item in contents
+  Calls //update// on each item in //contents//.
+end note
+
+note left of UpdateableCollection::required_parameters
+  Returns the appropriate concatenation of the results
+  of calling //required_parameters// on each element of
+  //contents//.
 end note
 
 UpdateableCollection -up-|> Updateable

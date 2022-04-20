@@ -1,10 +1,8 @@
 #!/usr/bin/env python
 
-from pprint import pprint
 import os
-import firecrown
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as WL
+import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
@@ -13,11 +11,10 @@ import sacc
 
 # Sources
 
-params = set()
 
 """
-    Creating sources, each one maps to a specific section of a SACC file. In 
-    this case trc0, trc1 describe weak-lensing probes. The sources are saved 
+    Creating sources, each one maps to a specific section of a SACC file. In
+    this case trc0, trc1 describe weak-lensing probes. The sources are saved
     in a dictionary since they will be used by one or more two-point function.
 """
 sources = {}
@@ -28,24 +25,23 @@ for i in range(2):
     have a different parameter for each bin, so here again we use the
     src{i}_ prefix.
     """
-    pzshift = WL.PhotoZShift(sacc_tracer=f"trc{i}")
-    params.add(f"trc{i}_delta_z")
+    pzshift = wl.PhotoZShift(sacc_tracer=f"trc{i}")
 
     """
         Now we can finally create the weak-lensing source that will compute the
-        theoretical prediction for that section of the data, given the 
+        theoretical prediction for that section of the data, given the
         systematics.
     """
-    sources[f"trc{i}"] = WL.WeakLensing(sacc_tracer=f"trc{i}", systematics=[pzshift])
+    sources[f"trc{i}"] = wl.WeakLensing(sacc_tracer=f"trc{i}", systematics=[pzshift])
 
 """
-    Now that we have all sources we can instantiate all the two-point 
+    Now that we have all sources we can instantiate all the two-point
     functions. For each one we create a new two-point function object.
 """
 stats = {}
 
 """
-    Creating all auto/cross-correlations two-point function objects for 
+    Creating all auto/cross-correlations two-point function objects for
     the weak-lensing probes.
 """
 for i in range(2):
@@ -66,17 +62,16 @@ lk = ConstGaussian(statistics=list(stats.values()))
     We load the correct SACC file.
 """
 saccfile = os.path.expanduser(
-    os.path.expandvars("${FIRECROWN_EXAMPLES_DIR}/cosmicshear/cosmicshear.fits")
+    os.path.expandvars("${FIRECROWN_DIR}/examples/cosmicshear/cosmicshear.fits")
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
 """
-    The read likelihood method is called passing the loaded SACC file, the 
+    The read likelihood method is called passing the loaded SACC file, the
     two-point functions will receive the appropriated sections of the SACC
-    file and the sources their respective dndz. 
+    file and the sources their respective dndz.
 """
 lk.read(sacc_data)
-lk.set_params_names(params)
 
 """
     This script will be loaded by the appropriated connector. The framework
@@ -84,3 +79,24 @@ lk.set_params_names(params)
     be used to compute the likelihood.
 """
 likelihood = lk
+
+if __name__ == "__main__":
+    import pyccl
+
+    ccl_cosmo = pyccl.Cosmology(
+        Omega_c=Omega_c,
+        Omega_b=Omega_b,
+        Neff=Neff,
+        h=h,
+        A_s=A_s,
+        n_s=n_s,
+        Omega_k=Omega_k,
+        w0=w0,
+        wa=wa,
+        transfer_function="eisenstein_hu",
+    )
+    # This doesn't yet work; we need to sort out how to build
+    # our parameters_dictionary.
+    #
+    loglike = likelihood.compute_loglike(ccl_cosmo, parameters_dictionary)
+    print(f"The log likelihood is {loglike}")

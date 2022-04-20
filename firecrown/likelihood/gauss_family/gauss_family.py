@@ -1,6 +1,5 @@
 from __future__ import annotations
 from typing import List, Optional
-from abc import ABC, abstractmethod
 from typing import final
 import numpy as np
 import scipy.linalg
@@ -9,8 +8,10 @@ import pyccl
 import sacc
 
 from ..likelihood import Likelihood
+from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from firecrown.parameters import ParamsMap
+from ...parameters import ParamsMap, RequiredParameters
+from abc import abstractmethod
 
 
 class GaussFamily(Likelihood):
@@ -36,7 +37,7 @@ class GaussFamily(Likelihood):
     """
 
     def __init__(self, statistics: List[Statistic]):
-        self.statistics = statistics
+        self.statistics = UpdatableCollection(statistics)
         self.cov: Optional[np.ndarray] = None
         self.cholesky: Optional[np.ndarray] = None
         self.inv_cov: Optional[np.ndarray] = None
@@ -79,11 +80,28 @@ class GaussFamily(Likelihood):
 
         dv = []
         for stat in self.statistics:
-            stat.update_params(params)
             data, theory = stat.compute(cosmo, params)
-
             dv.append(np.atleast_1d(data - theory))
 
         dv = np.concatenate(dv, axis=0)
         x = scipy.linalg.solve_triangular(self.cholesky, dv, lower=True)
         return np.dot(x, x)
+
+    @final
+    def _update(self, params: ParamsMap):
+        self.statistics.update(params)
+
+    @abstractmethod
+    def _update_gaussian_family(self, params: ParamsMap):
+        pass
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        stats_rp = self.statistics.required_parameters()
+        stats_rp = self.required_parameters_gaussian_family() + stats_rp
+
+        return stats_rp
+
+    @abstractmethod
+    def required_parameters_gaussian_family(self):
+        pass
