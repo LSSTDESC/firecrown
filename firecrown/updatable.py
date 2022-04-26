@@ -15,7 +15,7 @@ class Updatable(ABC):
 
     @abstractmethod
     def required_parameters(self) -> RequiredParameters:
-        pass
+        return RequiredParameters([])
 
 
 class UpdatableCollection(List):

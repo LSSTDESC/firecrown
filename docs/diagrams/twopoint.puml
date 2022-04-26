@@ -2,11 +2,11 @@
 
 !include skinparams.iuml
 !include statistic_frag.iuml
-!include updateable_frag.iuml
+!include updatable_frag.iuml
 
 abstract class Source {}
 
-abstract class UpdateableCollection {}
+abstract class UpdatableCollection {}
 note bottom
  This will contain only
  //Systematic// objects.
@@ -17,12 +17,12 @@ abstract class TwoPoint {
   + {abstract} read(data : sacc.Sacc)
 }
 
-TwoPoint -up-|> Updateable
+TwoPoint -up-|> Updatable
 TwoPoint -up-|> Statistic
 
 TwoPoint *--down- Source : s1
 TwoPoint *--down- Source : s2
-TwoPoint *--down- UpdateableCollection : systematics
+TwoPoint *--down- UpdatableCollection : systematics
 
 class ConcreteTPF {
  - _update(params : ParamsDict)
