@@ -2,8 +2,8 @@
 
 !include skinparams.iuml 
 !include statistic_frag.iuml
-!include updateable_frag.iuml
+!include updatable_frag.iuml
 
-Statistic -up-|> Updateable
+Statistic -up-|> Updatable
 
 @enduml

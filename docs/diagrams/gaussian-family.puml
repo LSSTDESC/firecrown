@@ -1,12 +1,12 @@
 @startuml
 
 !include skinparams.iuml
-!include updateable_frag.iuml
+!include updatable_frag.iuml
 !include likelihood_frag.iuml
 
 
 
-Updateable <|-down- Likelihood
+Updatable <|-down- Likelihood
 
 abstract class GaussianFamily {
   +GaussianFamily(stats : Statistics)
@@ -33,9 +33,9 @@ note left of GaussianFamily::required_parameters
   and returns the appropriate concatenation.
 end note
 
-class UpdateableCollection <<Statistic>> {}
+class UpdatableCollection <<Statistic>> {}
 
-GaussianFamily *-- UpdateableCollection : systematics
+GaussianFamily *-- UpdatableCollection : systematics
 
 Likelihood <|-down- GaussianFamily
 
