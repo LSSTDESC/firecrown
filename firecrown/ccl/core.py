@@ -109,6 +109,28 @@ class Systematic():
     #     raise NotImplementedError("Method `apply` is not implemented!")
 
 
+
+class SNSystematic():
+    """The systematic (e.g., shear biases, photo-z shifts, etc.).                                                                                                    This class currently has no methods at all, because the argument types for                                                                                    the `apply` method of different subclasses are different."""
+
+    def read(self, sacc_data: sacc.Sacc):
+        pass
+
+    # def apply(self, cosmo: pyccl.Cosmology, params: Dict, source_or_statistic):                                                                             
+    #     """Apply systematics to a source.                                                                                                                   
+    #                                                                                                                                                         
+    #     Parameters                                                                                                                                          
+    #     ----------                                                                                                                                          
+    #     cosmo : pyccl.Cosmology                                                                                                                             
+    #         A pyccl.Cosmology object.                                                                                                                       
+    #     params : dict                                                                                                                                       
+    #         A dictionary mapping parameter names to their current values.                                                                                   
+    #     source_or_statistic : a source or statistic object                                                                                                  
+    #         The source or statistic to which apply systematics.                                                                                             
+    #     """                                                                                                                                                 
+    #     raise NotImplementedError("Method `apply` is not implemented!")  
+
+    
 class Source(ABC):
     """The source (e.g., a sample of lenses).
 

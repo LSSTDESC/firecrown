@@ -3,25 +3,22 @@
 from pprint import pprint
 import os
 import firecrown
-
-import firecrown.ccl.two_point
-
+#import firecrown.ccl.two_point
 from firecrown.ccl.sources import *
 from firecrown.ccl.statistics import *
 from firecrown.ccl.systematics import *
 from firecrown.ccl.likelihoods import *
-
-import firecrown.ccl.sources.wl_source
+#import firecrown.ccl.sources.wl_source
 
 import sacc
 
 # Sources
-
+# Systematics
 params = set()
 
 sources = {}
 
-params.add("ia_bias")
+params.add("delta_z") # redshift bias
 
 snia_stats = Supernova(sacc_tracer = "sn_ddf_sample")
 
