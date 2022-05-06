@@ -6,7 +6,7 @@ Some Notes:
 """
 
 from __future__ import annotations
-from typing import List
+from typing import List, Optional
 from abc import abstractmethod
 import pyccl
 import sacc
@@ -19,7 +19,7 @@ from ..updatable import Updatable
 
 
 class Likelihood(Updatable):
-    """Likelihood is an abstract classes. Concrete subclasses represent specific
+    """Likelihood is an abstract class. Concrete subclasses represent specific
     likelihood forms (e.g. gaussian with constant covariance matrix, or Student's t,
     etc.).
 
@@ -27,6 +27,9 @@ class Likelihood(Updatable):
     *compute_loglike*. Note that abstract subclasses of Likelihood might implement
     these methods, and provide other abstract methods for their subclasses to implement.
     """
+
+    def __init__(self):
+        self.params_names: Optional[List[str]] = None
 
     def set_params_names(self, params_names: List[str]):
         self.params_names = params_names
@@ -67,26 +70,25 @@ class Likelihood(Updatable):
         pass
 
 
-def load_likelihood(firecrown_ini):
-    filename, file_extension = os.path.splitext(firecrown_ini)
+def load_likelihood(filename: str) -> Likelihood:
+    _, file_extension = os.path.splitext(filename)
 
     ext = file_extension.lower()
 
-    if ext == ".py":
-        inifile = os.path.basename(firecrown_ini)
-        modname, _ = os.path.splitext(inifile)
+    if ext != ".py":
+        raise ValueError(f"Unrecognized Firecrown initialization file {filename}.")
 
-        spec = importlib.util.spec_from_file_location(modname, firecrown_ini)
-        mod = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(mod)
+    inifile = os.path.basename(filename)
+    modname, _ = os.path.splitext(inifile)
 
-        if not hasattr(mod, "likelihood"):
-            raise ValueError(
-                f"Firecrown initialization file {firecrown_ini} does not define a likelihood."
-            )
+    spec = importlib.util.spec_from_file_location(modname, filename)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
 
-        likelihood = mod.likelihood
-    else:
-        raise ValueError(f"Unrecognized Firecrown initialization file {firecrown_ini}.")
+    if not hasattr(mod, "likelihood"):
+        raise ValueError(
+            f"Firecrown initialization file {filename} does not define a likelihood."
+        )
 
+    likelihood = mod.likelihood
     return likelihood
