@@ -19,20 +19,13 @@ from ..updatable import Updatable
 
 
 class Likelihood(Updatable):
-    """The log-likelihood (e.g., a Gaussian, T-distribution, etc.).
+    """Likelihood is an abstract classes. Concrete subclasses represent specific
+    likelihood forms (e.g. gaussian with constant covariance matrix, or Student's t,
+    etc.).
 
-    Parameters
-    ----------
-    data_vector : list of str
-        A list of the statistics in the config file in the order you want them
-        to appear in the covariance matrix.
-
-    Attributes
-    ----------
-    cov : array-like, shape (n, n)
-        The covariance matrix for the data vector.
-    inv_cov : array-like, shape (n, n)
-        The inverse of the covariance matrix.
+    Concrete subclasses must have an implementation of both *read* and
+    *compute_loglike*. Note that abstract subclasses of Likelihood might implement
+    these methods, and provide other abstract methods for their subclasses to implement.
     """
 
     def set_params_names(self, params_names: List[str]):
