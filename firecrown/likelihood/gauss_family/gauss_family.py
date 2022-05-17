@@ -21,9 +21,9 @@ class GaussFamily(Likelihood):
     compute_chisq, which is used in the implementation of compute_loglike.
     """
 
-    def __init__(self, stats: List[Statistic]):
+    def __init__(self, statstics: List[Statistic]):
         super().__init__()
-        self.statistics = UpdatableCollection(stats)
+        self.statistics = UpdatableCollection(statistics)
         self.cov: Optional[np.ndarray] = None
         self.cholesky: Optional[np.ndarray] = None
         self.inv_cov: Optional[np.ndarray] = None
