@@ -6,22 +6,36 @@ from firecrown.parameters import RequiredParameters, ParamsMap
 class Missing_update(Updatable):
     """A type that is abstract because it does not implement _update."""
 
-    def required_parameters(self):
-        return RequiredParameters([])
+    def required_parameters(self):  # pragma: no cover
+        return super().required_parameters()
 
 
 class Missing_required_parameters(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
 
-    def _update(self, params):
+    def _update(self, params):  # pragma: no cover
         super()._update(params)
 
 
 class MinimalUpdatable(Updatable):
+    """A concrete time that implements Updatable."""
+
+    def __init__(self):
+        """Initialize object with defaulted value."""
+        self.a = 1.0
+
+    def _update(self, params):
+        self.a = params.get_from_prefix_param(None, "a")
+
+    def required_parameters(self):
+        return RequiredParameters(["a"])
+
+
+class SimpleUpdatable(Updatable):
     """A concrete type that implements Updatable."""
 
     def __init__(self):
-        """Initialize objec with defaulted values."""
+        """Initialize object with defaulted values."""
         self.x = 0.0
         self.y = 2.5
 
@@ -32,11 +46,6 @@ class MinimalUpdatable(Updatable):
     def required_parameters(self):
         return RequiredParameters(["x", "y"])
 
-    def __eq__(self, other):
-        if not isinstance(other, MinimalUpdatable):
-            return false
-        return self.x == other.x and self.y == other.y
-
 
 def test_verify_abstract_interface():
     with pytest.raises(TypeError):
@@ -45,8 +54,8 @@ def test_verify_abstract_interface():
         x = Missing_required_parameters()
 
 
-def test_minimal_updatable():
-    obj = MinimalUpdatable()
+def test_simple_updatable():
+    obj = SimpleUpdatable()
     expected_params = RequiredParameters(["x", "y"])
     assert obj.required_parameters() == expected_params
     assert obj.x == 0.0
@@ -57,11 +66,42 @@ def test_minimal_updatable():
     assert obj.y == 5.5
 
 
-def test_updateable_collection():
+def test_updatable_collection_appends():
     coll = UpdatableCollection()
-    coll.append(MinimalUpdatable())
-    assert len(coll) == 1
-    assert coll[0] == MinimalUpdatable()
-    new_params = ParamsMap({"x": -1.0, "y": 5.5})
+    assert len(coll) == 0
 
-    coll.update(new_params)
+    coll.append(SimpleUpdatable())
+    assert len(coll) == 1
+    assert coll[0].x == 0.0
+    assert coll[0].y == 2.5
+    assert coll.required_parameters() == RequiredParameters(["x", "y"])
+
+    coll.append(MinimalUpdatable())
+    assert len(coll) == 2
+    assert coll[1].a == 1.0
+    assert coll.required_parameters() == RequiredParameters(["x", "y", "a"])
+
+
+def test_updateable_collection_updates():
+    coll = UpdatableCollection()
+    assert len(coll) == 0
+
+    coll.append(SimpleUpdatable())
+    assert len(coll) == 1
+    assert coll[0].x == 0.0
+    assert coll[0].y == 2.5
+
+    new_params = {"x": -1.0, "y": 5.5}
+    coll.update(ParamsMap(new_params))
+    assert len(coll) == 1
+    assert coll[0].x == -1.0
+    assert coll[0].y == 5.5
+
+
+def test_updatable_collection_rejects_nonupdatables():
+    coll = UpdatableCollection()
+    assert len(coll) == 0
+
+    with pytest.raises(TypeError):
+        coll.append(3)  # int is not a subtype of Updatable
+    assert len(coll) == 0

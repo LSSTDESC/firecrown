@@ -10,11 +10,11 @@ class Updatable(ABC):
         self._update(params)
 
     @abstractmethod
-    def _update(self, params: ParamsMap):
+    def _update(self, params: ParamsMap):  # pragma: no cover
         pass
 
     @abstractmethod
-    def required_parameters(self) -> RequiredParameters:
+    def required_parameters(self) -> RequiredParameters:  # pragma: no cover
         return RequiredParameters([])
 
 
@@ -32,3 +32,10 @@ class UpdatableCollection(List):
             rp = rp + updatable.required_parameters()
 
         return rp
+
+    def append(self, item: Updatable) -> None:
+        if not isinstance(item, Updatable):
+            raise TypeError(
+                "Only updatable items can be appended to an UpdatableCollection"
+            )
+        super().append(item)

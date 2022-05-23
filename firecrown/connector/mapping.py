@@ -11,15 +11,23 @@ The supported codes include:
     Cobaya
     CosmoSIS
 """
-import numpy as np
 
 from abc import ABC, abstractmethod
-from ..descriptors import TypeFloat, TypeString
-
+from typing import List
+import numpy as np
 from pyccl import physical_constants as physics
+from ..descriptors import TypeFloat, TypeString
 
 
 class Mapping(ABC):
+    """
+    Mapping is an abstract base class providing the interface that describes
+    a mapping of cosmological constants from some concrete Boltzmann calculator
+    to the form those constants take in CCL. Each supported Boltzmann calculator
+    will have its own concrete subclass.
+    """
+
+    # pylint: disable-msg=R0902
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
@@ -34,42 +42,15 @@ class Mapping(ABC):
     wa = TypeFloat()
     T_CMB = TypeFloat()
 
-    """
-    Mapping is an abstract base class providing the interface that describes
-    a mapping of cosmological constants from some concrete Boltzmann calculator
-    to the form those constants take in CCL. Each supported Boltzmann calculator
-    will have its own concrete subclass.
-
-    ...
-
-    Attributes
-    ----------
-    ... : str
-        ...
-
-    Methods
-    -------
-    ...(...)
-        ....
-    """
-
-    def __init__(self, **kwargs):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
-        """
-
-        super().__init__()
+    def __init__(self):
+        pass
 
     @abstractmethod
-    def get_params_names(self):
+    def get_params_names(self) -> List[str]:
         """Return the names of the cosmological parameters that this
         mapping is expected to deliver.
         """
-        pass
+        return []
 
     @abstractmethod
     def transform_k_h_to_k(self, k_h):
@@ -82,7 +63,7 @@ class Mapping(ABC):
         pass
 
     @abstractmethod
-    def transform_h_to_h_over_h0(self, h):
+    def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
         """Transform distances h to h/h0."""
         pass
 
@@ -112,31 +93,31 @@ class Mapping(ABC):
         # Typecheck is done automatically using the descriptors and is done to
         # avoid void very confusing error messages at a later time in case of
         # error.
-        self.Omega_c = Omega_c
-        self.Omega_b = Omega_b
-        self.h = h
+        self.Omega_c = Omega_c  # pylint: disable-msg=C0103
+        self.Omega_b = Omega_b  # pylint: disable-msg=C0103
+        self.h = h  # pylint: disable-msg=C0103
 
         if A_s is not None and sigma8 is not None:
             raise ValueError("Exactly one of A_s and sigma8 must be supplied")
         if sigma8 is None:
-            self.A_s = A_s
-            self.sigma8 = None
+            self.A_s = A_s  # pylint: disable-msg=C0103
+            self.sigma8 = None  # pylint: disable-msg=C0103
         else:
-            self.A_s = None
-            self.sigma8 = sigma8
+            self.A_s = None  # pylint: disable-msg=C0103
+            self.sigma8 = sigma8  # pylint: disable-msg=C0103
 
         self.n_s = n_s
-        self.Omega_k = Omega_k
-        self.Omega_g = None
-        self.Neff = Neff
+        self.Omega_k = Omega_k  # pylint: disable-msg=C0103
+        self.Omega_g = None  # pylint: disable-msg=C0103
+        self.Neff = Neff  # pylint: disable-msg=C0103
         self.m_nu = m_nu
         self.m_nu_type = m_nu_type
-        self.w0 = w0
-        self.wa = wa
-        self.T_CMB = T_CMB
+        self.w0 = w0  # pylint: disable-msg=C0103
+        self.wa = wa  # pylint: disable-msg=C0103
+        self.T_CMB = T_CMB  # pylint: disable-msg=C0103
 
     @staticmethod
-    def redshift_to_scale_factor(z):
+    def redshift_to_scale_factor(z):  # pylint: disable-msg=C0103
         """Given arrays of redshift returns an array of scale factor with the
         inverse order."""
 
@@ -170,14 +151,8 @@ class Mapping(ABC):
             "T_CMB": self.T_CMB,
         }
 
-    def get_H0(self):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
-        """
+    def get_H0(self) -> float:  # pylint: disable-msg=C0103
+
         return self.h * 100.0
 
 
@@ -197,13 +172,6 @@ class MappingCosmoSIS(Mapping):
     """
 
     def get_params_names(self):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
-        """
         return [
             "h0",
             "omega_b",
@@ -232,19 +200,20 @@ class MappingCosmoSIS(Mapping):
         those read from CosmoSIS when using CAMB."""
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
-        h = cosmosis_params["h0"]  # Not 'hubble' !
-        Omega_b = cosmosis_params["omega_b"]
-        Omega_c = cosmosis_params["omega_c"]
+        h = cosmosis_params["h0"]  # pylint: disable-msg=C0103
+        Omega_b = cosmosis_params["omega_b"]  # pylint: disable-msg=C0103
+        Omega_c = cosmosis_params["omega_c"]  # pylint: disable-msg=C0103
         sigma8 = cosmosis_params.get("sigma_8", 0.8)
         n_s = cosmosis_params.get("n_s", 0.96)
-        Omega_k = cosmosis_params["omega_k"]
+        Omega_k = cosmosis_params["omega_k"]  # pylint: disable-msg=C0103
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
         # Read m_nu from CosmoSIS (in newer CosmoSIS)
-        Neff = cosmosis_params.get("delta_neff", 0.0) + 3.046  # Verify this with Joe
+        delta_neff = cosmosis_params.get("delta_neff", 0.0)
+        Neff = delta_neff + 3.046  # pylint: disable-msg=C0103
         m_nu = cosmosis_params["omega_nu"] * h * h * 93.14
         m_nu_type = "normal"
-        w0 = cosmosis_params["w"]
-        wa = cosmosis_params["wa"]
+        w0 = cosmosis_params["w"]  # pylint: disable-msg=C0103
+        wa = cosmosis_params["wa"]  # pylint: disable-msg=C0103
 
         self.set_params(
             Omega_c=Omega_c,
@@ -265,25 +234,13 @@ class MappingCosmoSIS(Mapping):
 
 class MappingCAMB(Mapping):
     """
-    A class implementing Mapping ...
-
-    ...
-
-    Attributes
-    ----------
-    ... : str
-        ...
-
-    Methods
-    -------
-    ...(...)
-        ....
+    A class implementing Mapping for the Python CAMB interface.
     """
 
     def __init__(self):
         pass
 
-    def get_params_names(self):
+    def get_params_names(self) -> List[str]:
         """
         Return the list of parameters handled by this mapping.
         """
@@ -317,35 +274,30 @@ class MappingCAMB(Mapping):
         assert False
 
     def set_params_from_camb(self, **params_values):
-        """...
-        ...
-        Parameters
-        ----------
-        ... : str
-            ...
-        """
+        """Read the CAMB-style parameters from params_values, translate them to
+        our conventions, and store them."""
+        # pylint: disable-msg=R0914
 
         # CAMB can use different parameters in place of H0, we must deal with this
         # possibility here.
 
-        H0 = params_values["H0"]
-        As = params_values["As"]
-        ns = params_values["ns"]
+        H0 = params_values["H0"]  # pylint: disable-msg=C0103
+        As = params_values["As"]  # pylint: disable-msg=C0103
+        ns = params_values["ns"]  # pylint: disable-msg=C0103
         ombh2 = params_values["ombh2"]
         omch2 = params_values["omch2"]
-        Neff = params_values["nnu"]
+        Neff = params_values["nnu"]  # pylint: disable-msg=C0103
         m_nu = params_values["mnu"]
-        Omega_k0 = params_values["omk"]
-        # pprint (params_values)
+        Omega_k0 = params_values["omk"]  # pylint: disable-msg=C0103
 
         m_nu_type = "normal"
-        h0 = H0 / 100.0
+        h0 = H0 / 100.0  # pylint: disable-msg=C0103
         h02 = h0 * h0
-        Omega_b0 = ombh2 / h02
-        Omega_c0 = omch2 / h02
+        Omega_b0 = ombh2 / h02  # pylint: disable-msg=C0103
+        Omega_c0 = omch2 / h02  # pylint: disable-msg=C0103
 
-        w = params_values.get("w", -1.0)
-        wa = params_values.get("wa", 0.0)
+        w = params_values.get("w", -1.0)  # pylint: disable-msg=C0103
+        wa = params_values.get("wa", 0.0)  # pylint: disable-msg=C0103
 
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default
@@ -379,8 +331,11 @@ mapping_classes = {
 }
 
 
-def mapping_builder(*, input_style, **kwargs):
-    if input_style not in mapping_classes.keys():
+def mapping_builder(*, input_style: str, **kwargs):
+    """Return the Mapping class for the given input_style. If input_style is not
+    recognized raise an exception."""
+
+    if input_style not in mapping_classes:
         raise ValueError(f"input_style must be {*mapping_classes,}, not {input_style}")
 
     return mapping_classes[input_style](**kwargs)

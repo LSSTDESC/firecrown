@@ -67,7 +67,7 @@ or CosmoSIS and Firecrown is beyond the scope of these instructions.
 ### Firecrown alone
 
 ```bash
-conda create --name for_fc -c conda-forge sacc pyccl fitsio flake8 pylint black
+conda create --name for_fc -c conda-forge sacc pyccl fitsio flake8 pylint black pytest coverage
 ```
 
 ### Firecrown with CosmoSIS
@@ -77,7 +77,7 @@ The conda installation of CosmoSIS does not include the CosmoSIS Standard Librar
 These instructions include the instructions for building the CSL.
 
 ```bash
-conda create --name for_fc_cosmosis -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio flake8 pylint black
+conda create --name for_fc_cosmosis -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio flake8 pylint black pytest coverage
 # Note that the following will clone the CSL repository and build it in your current working directory.
 # This should be done *outside* of the directory tree managed by conda, and *outside* of the `firecrown` directory.
 conda activate for_fc_cosmosis
@@ -89,7 +89,7 @@ export CSL_DIR=${PWD}/cosmosis-standard-library
 ### Firecrown with Cobaya
 
 ```bash
-conda create --name for_fc_cobaya -c conda-forge sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black
+conda create --name for_fc_cobaya -c conda-forge sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black pytest coverage
 conda activate for_fc_cobaya
 # Not all cobaya dependencies can be installed with conda.
 python -m pip install cobaya
@@ -98,7 +98,7 @@ python -m pip install cobaya
 ### Firecrown with both CosmoSIS and Cobaya
 
 ```bash
-conda create --name for_fc_both -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black
+conda create --name for_fc_both -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black pytest coverage
 conda activate for_fc_both
 python -m pip install cobaya
 # Note that the following will clone the CSL repository and build it in your current working directory.

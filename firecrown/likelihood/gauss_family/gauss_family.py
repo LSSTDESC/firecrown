@@ -15,28 +15,14 @@ from abc import abstractmethod
 
 
 class GaussFamily(Likelihood):
-    """A Gaussian log-likelihood with a constant covariance matrix.
-
-    Parameters
-    ----------
-    statistics : list of Statistic
-        A list of the statistics
-
-    Attributes
-    ----------
-    cov : np.ndarray, shape (n, n)
-        The covariance matrix.
-    cholesky : np.ndarray, shape (n, n)
-        The (lower triangular) Cholesky decomposition of the covariance matrix.
-    inv_cov : np.ndarray, shape (n, n)
-        The inverse of the covariance matrix.
-
-    Methods
-    -------
-    compute_loglike : compute the log-likelihood
+    """GaussFamily is an abstract class. It is the base class for all likelihoods
+    based on a chi-squared calculation. It provides an implementation of
+    Likelihood.compute_chisq. Derived classes must implement the abstract method
+    compute_loglike, which is inherited from Likelihood.
     """
 
     def __init__(self, statistics: List[Statistic]):
+        super().__init__()
         self.statistics = UpdatableCollection(statistics)
         self.cov: Optional[np.ndarray] = None
         self.cholesky: Optional[np.ndarray] = None
