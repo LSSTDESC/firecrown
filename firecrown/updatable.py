@@ -76,15 +76,14 @@ class UpdatableCollection(List):
 
     @final
     def required_parameters(self) -> RequiredParameters:
-
-        rp = RequiredParameters([])
         """Return a RequiredParameters object formed by concatenating the
         RequiredParameters of each contained item.
         """
+        result = RequiredParameters([])
         for updatable in self:
-            rp = rp + updatable.required_parameters()
+            result = result + updatable.required_parameters()
 
-        return rp
+        return result
 
     def append(self, item: Updatable) -> None:
         """Append the given item to self.
