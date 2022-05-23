@@ -17,8 +17,8 @@ from abc import abstractmethod
 class GaussFamily(Likelihood):
     """GaussFamily is an abstract class. It is the base class for all likelihoods
     based on a chi-squared calculation. It provides an implementation of
-    Likelihood.compute_loglike. Derived classes must implement the abstract method
-    compute_chisq, which is used in the implementation of compute_loglike.
+    Likelihood.compute_chisq. Derived classes must implement the abstract method
+    compute_loglike, which is inherited from Likelihood.
     """
 
     def __init__(self, statistics: List[Statistic]):
