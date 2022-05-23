@@ -4,7 +4,7 @@ version 2.
 See https://semver.org for details.
 """
 
-firecrown_major = 1
-firecrown_minor = 0
-firecrown_patch = 0
-__version__ = f"{firecrown_major}.{firecrown_minor}.{firecrown_patch}"
+FIRECROWN_MAJOR = 1
+FIRECROWN_MINOR = 0
+FIRECROWN_PATCH = 0
+__version__ = f"{FIRECROWN_MAJOR}.{FIRECROWN_MINOR}.{FIRECROWN_PATCH}"
