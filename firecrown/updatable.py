@@ -14,8 +14,9 @@ type that implements Updatable can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import List, final
+from typing import final
 from abc import ABC, abstractmethod
+from collections import UserList
 from .parameters import ParamsMap, RequiredParameters
 
 
@@ -58,7 +59,7 @@ class Updatable(ABC):
         return RequiredParameters([])
 
 
-class UpdatableCollection(List):
+class UpdatableCollection(UserList):
 
     """UpdatableCollection is a list of Updatable objects and is itself
     Updatable.
@@ -67,6 +68,19 @@ class UpdatableCollection(List):
     update on the collection results in every item in the collection being
     updated.
     """
+
+    def __init__(self, iterable=None):
+        """Initialize the UpdatableCollection from the supplied iterable.
+
+        If the iterable contains any object that is not Updatable, a TypeError
+        is raised.
+        """
+        super().__init__(iterable)
+        for item in self:
+            if not isinstance(item, Updatable):
+                raise TypeError(
+                    "All the items in an UpdatableCollection must be updatable"
+                )
 
     @final
     def update(self, params: ParamsMap):
@@ -95,3 +109,11 @@ class UpdatableCollection(List):
                 "Only updatable items can be appended to an UpdatableCollection"
             )
         super().append(item)
+
+    def __setitem__(self, key, value):
+        """Set self[key] to value; raise TypeError if Value is not Updatable."""
+        if not isinstance(value, Updatable):
+            raise TypeError(
+                "Values inserted into an UpdatableCollection must be Updatable"
+            )
+        super().__setitem__(key, value)
