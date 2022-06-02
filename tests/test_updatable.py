@@ -105,3 +105,26 @@ def test_updatable_collection_rejects_nonupdatables():
     with pytest.raises(TypeError):
         coll.append(3)  # int is not a subtype of Updatable
     assert len(coll) == 0
+
+
+def test_updatable_collection_construction():
+    good_list = [SimpleUpdatable(), SimpleUpdatable()]
+    good = UpdatableCollection(good_list)
+    assert len(good) == 2
+
+    bad_list = [1]
+    with pytest.raises(TypeError):
+        x = UpdatableCollection(bad_list)
+
+
+def test_updatable_collection_insertion():
+    x = UpdatableCollection([MinimalUpdatable()])
+    assert len(x) == 1
+    assert isinstance(x[0], MinimalUpdatable)
+
+    x[0] = SimpleUpdatable()
+    assert len(x) == 1
+    assert isinstance(x[0], SimpleUpdatable)
+
+    with pytest.raises(TypeError):
+        x[0] = 1
