@@ -13,7 +13,7 @@ The supported codes include:
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict
+from typing import List, Dict, final
 import numpy as np
 from pyccl import physical_constants as physics
 from ..descriptors import TypeFloat, TypeString
@@ -25,7 +25,7 @@ class Mapping(ABC):
     a mapping of cosmological constants from some concrete Boltzmann calculator
     to the form those constants take in CCL. Each supported Boltzmann calculator
     will have its own concrete subclass.
-    
+
     The class variables are actually descriptors to control the allowed types
     for the members. A descriptor of name 'x' will provide an apparent instance
     datum of name 'x' in each class, as well as an entry '_x' in the object's
