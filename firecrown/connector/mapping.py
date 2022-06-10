@@ -13,7 +13,7 @@ The supported codes include:
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Dict
 import numpy as np
 from pyccl import physical_constants as physics
 from ..descriptors import TypeFloat, TypeString
@@ -25,6 +25,11 @@ class Mapping(ABC):
     a mapping of cosmological constants from some concrete Boltzmann calculator
     to the form those constants take in CCL. Each supported Boltzmann calculator
     will have its own concrete subclass.
+    
+    The class variables are actually descriptors to control the allowed types
+    for the members. A descriptor of name 'x' will provide an apparent instance
+    datum of name 'x' in each class, as well as an entry '_x' in the object's
+    __dict__.
     """
 
     # pylint: disable-msg=R0902
@@ -55,18 +60,16 @@ class Mapping(ABC):
     @abstractmethod
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
-        pass
 
     @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         """Transform the given p_k * h^3 to p_k."""
-        pass
 
     @abstractmethod
     def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
         """Transform distances h to h/h0."""
-        pass
 
+    @final
     def set_params(
         self,
         *,
@@ -133,7 +136,8 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self):
+    def asdict(self) -> Dict:
+        """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
@@ -152,7 +156,7 @@ class Mapping(ABC):
         }
 
     def get_H0(self) -> float:  # pylint: disable-msg=C0103
-
+        """Return the value of H0."""
         return self.h * 100.0
 
 
@@ -161,8 +165,6 @@ class MappingCLASS(Mapping):
     This class is not yet implemented; this stub is here to satisfy IDEs that
     complain about using the names of missing classes.
     """
-
-    pass
 
 
 class MappingCosmoSIS(Mapping):
@@ -236,9 +238,6 @@ class MappingCAMB(Mapping):
     """
     A class implementing Mapping for the Python CAMB interface.
     """
-
-    def __init__(self):
-        pass
 
     def get_params_names(self) -> List[str]:
         """
