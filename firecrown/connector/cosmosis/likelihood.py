@@ -36,6 +36,7 @@ class FirecrownLikelihood:
     """
 
     def __init__(self, config: cosmosis.datablock):
+        """Create the FirecrownLikelihood object from the given configuration."""
         firecrown_ini = config[option_section, "firecrown_config"]
 
         self.likelihood = load_likelihood(firecrown_ini)
@@ -47,8 +48,36 @@ class FirecrownLikelihood:
         cosmological_params = extract_section(sample, "cosmological_parameters")
         self.map.set_params_from_cosmosis(cosmological_params)
 
-        ccl_args = {}
+        ccl_args = self.calculate_ccl_args(sample)
 
+        cosmo = ccl.CosmologyCalculator(**self.map.asdict(), **ccl_args)
+
+        # TODO: Future development will need to capture elements that get put into the datablock.
+        # This probably will be in a different "physics module" and not in the likelihood module.
+        # And it requires updates to Firecrown to split the calculations.
+        # e.g., data_vector/firecrown_theory  data_vector/firecrown_data
+
+        firecrown_params = self.calculate_firecrown_params(sample)
+
+        self.likelihood.update(firecrown_params)
+        lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
+
+        sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
+
+        return 0
+
+    def calculate_firecrown_params(self, sample: cosmosis.datablock) -> ParamsMap:
+        """Calculate the ParamsMap for this sample."""
+        firecrown_params = ParamsMap()
+        for section in sample.sections():
+            if "firecrown" in section:
+                sec_dict = extract_section(sample, section)
+                firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
+        return firecrown_params
+
+    def calculate_ccl_args(self, sample):
+        """Calculate the arguments necessary for CCL for this sample."""
+        ccl_args = {}
         if sample.has_section("matter_power_lin"):
             k = self.map.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
             z_mpl = sample["matter_power_lin", "z"]
@@ -101,26 +130,7 @@ class FirecrownLikelihood:
             "h_over_h0": h_over_h0,
         }
 
-        cosmo = ccl.CosmologyCalculator(**self.map.asdict(), **ccl_args)
-
-        # TODO: Future development will need to capture elements that get put into the datablock.
-        # This probably will be in a different "physics module" and not in the likelihood module.
-        # And it requires updates to Firecrown to split the calculations.
-        # e.g., data_vector/firecrown_theory  data_vector/firecrown_data
-
-        firecrown_params = ParamsMap()
-
-        for section in sample.sections():
-            if "firecrown" in section:
-                sec_dict = extract_section(sample, section)
-                firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
-
-        self.likelihood.update(firecrown_params)
-        lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
-
-        sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
-
-        return 0
+        return ccl_args
 
 
 def setup(config: cosmosis.datablock) -> FirecrownLikelihood:
