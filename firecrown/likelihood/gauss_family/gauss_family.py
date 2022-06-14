@@ -70,6 +70,7 @@ class GaussFamily(Likelihood):
             dv.append(np.atleast_1d(data - theory))
 
         dv = np.concatenate(dv, axis=0)
+        self.predicted_data_vector = dv
         x = scipy.linalg.solve_triangular(self.cholesky, dv, lower=True)
         return np.dot(x, x)
 
