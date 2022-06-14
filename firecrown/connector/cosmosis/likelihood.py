@@ -64,7 +64,7 @@ class FirecrownLikelihood:
                 "delta_matter:delta_matter": p_k,
             }
         else:
-            ccl_args["nonlinear_model"] = "halofit"            
+            ccl_args["nonlinear_model"] = "halofit"
 
         # TODO: We should have several configurable modes for this module.
         # In all cases, an exception will be raised (causing a program
