@@ -314,11 +314,7 @@ class TwoPoint(Statistic):
             # Deal with ell=0 and ell=1
             theory_vector_interpolated = np.zeros(ell.size)
             theory_vector_interpolated[2:] = theory_interpolator(ell[2:])
-            # np.piecewise(ell, [ell >= 2], [theory_interpolator, lambda x: 0])
-            # print(self.ell_or_theta_, theory_vector)
-            # print(ell, theory_vector_interpolated)
-            # print(theory_interpolator(ell[2:]))
-            # raise
+
             theory_vector = np.einsum("lb, l -> b", self.theory_window_function.weight, theory_vector_interpolated)
             self.ell_or_theta_ = np.einsum("lb, l -> b", self.theory_window_function.weight, ell)
 
