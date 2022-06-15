@@ -126,6 +126,7 @@ class FirecrownLikelihood:
         # Save concatenated data vector and inverse covariance to enable support
         # for the CosmoSIS fisher sampler.
         sample.put("data_vector", "firecrown_theory", self.likelihood.predicted_data_vector)
+        sample.put("data_vector", "firecrown_data", self.likelihood.measured_data_vector)
         sample.put("data_vector", "firecrown_inverse_covariance", self.likelihood.inv_cov)
 
         # Write out theory and data vectors to the data block the ease debugging.
