@@ -7,6 +7,9 @@ import numpy as np
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
+import qp
+import scipy.stats
+
 from .source import Source
 from .source import Systematic
 from .....parameters import ParamsMap, RequiredParameters, parameter_get_full_name
@@ -190,6 +193,63 @@ class PhotoZShift(WeakLensingSystematic):
             scale=tracer_arg.scale,
             z=tracer_arg.z,
             dndz=dndz,
+            ia_bias=tracer_arg.ia_bias,
+        )
+
+
+class QPPhotoZShiftScale(WeakLensingSystematic):
+    """A photo-z shift bias, using a qp Ensemble.
+    """
+
+    params_names = ["u_shift_z", "u_scale_z"]
+    u_shift_z: float
+    u_scale_z: float
+
+    def __init__(self, sacc_tracer: str, nz_ensemble: qp.Ensemble):
+        self.sacc_tracer = sacc_tracer
+        self.nz_ensemble = nz_ensemble
+
+        # Create prior transforms from scatter of the mean and std of the
+        # ensemble.
+        # This could probably be done neater within qp.
+        means_std = np.std(nz_ensemble.mean())
+        self.shift_prior_transform = scipy.stats.norm(scale=means_std).ppf
+
+        std_std = np.std(nz_ensemble.std())
+        std_mean = np.mean(nz_ensemble.std())
+        self.scale_prior_transform = scipy.stats.norm(loc=1, scale=std_std/std_mean).ppf
+
+    @final
+    def _update(self, params: ParamsMap):
+        self.u_shift_z = params.get_from_prefix_param(self.sacc_tracer, "u_shift_z")
+        self.u_scale_z = params.get_from_prefix_param(self.sacc_tracer, "u_scale_z")
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
+
+    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
+        """Apply a shift to the photo-z distribution of a source."""
+
+        # Generate qp distribution from nz, z arrays. There's probably a nicer
+        # way to do this
+        fiducial_nz = qp.interp(xvals=tracer_arg.z, yvals=tracer_arg.dndz)
+
+        mu = fiducial_nz.mean().squeeze()
+
+        # We should get the values of the shifts and scales back out into the
+        # data block to be output as derived parameters
+        shift = self.shift_prior_transform(self.u_shift_z)
+        scale = self.scale_prior_transform(self.u_scale_z)
+
+        pdf = fiducial_nz.pdf((tracer_arg.z-mu)/scale + mu + shift)/scale
+
+        return WeakLensingArgs(
+            scale=tracer_arg.scale,
+            z=tracer_arg.z,
+            dndz=pdf,
             ia_bias=tracer_arg.ia_bias,
         )
 
