@@ -52,7 +52,7 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def compute_chisq(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood.
 
         Parameters
@@ -66,7 +66,7 @@ class GaussFamily(Likelihood):
 
         dv = []
         for stat in self.statistics:
-            data, theory = stat.compute(cosmo, params)
+            data, theory = stat.compute(cosmo)
             dv.append(np.atleast_1d(data - theory))
 
         dv = np.concatenate(dv, axis=0)
@@ -76,6 +76,7 @@ class GaussFamily(Likelihood):
     @final
     def _update(self, params: ParamsMap):
         self.statistics.update(params)
+        self._update_gaussian_family(params)
 
     @abstractmethod
     def _update_gaussian_family(self, params: ParamsMap):

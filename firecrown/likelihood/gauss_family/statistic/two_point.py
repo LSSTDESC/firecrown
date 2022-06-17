@@ -251,7 +251,7 @@ class TwoPoint(Statistic):
         self.data_vector = _stat.copy()
 
     def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
@@ -259,13 +259,11 @@ class TwoPoint(Statistic):
         ----------
         cosmo : pyccl.Cosmology
             A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
         """
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracer0 = self.source0.get_tracer(cosmo, params)
-        tracer1 = self.source1.get_tracer(cosmo, params)
+        tracer0 = self.source0.get_tracer(cosmo)
+        tracer1 = self.source1.get_tracer(cosmo)
         scale = self.source0.get_scale() * self.source1.get_scale()
 
         if self.ccl_kind == "cl":

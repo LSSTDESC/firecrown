@@ -28,7 +28,9 @@ class RequiredParameters:
     def __add__(self, rp: RequiredParameters):
         return RequiredParameters(self.params_names + rp.params_names)
 
-    def __eq__(self, other: RequiredParameters):
+    def __eq__(self, other: object):
+        if not isinstance(other, RequiredParameters):
+            return NotImplemented
         return self.params_names == other.params_names
 
     def get_params_names(self):

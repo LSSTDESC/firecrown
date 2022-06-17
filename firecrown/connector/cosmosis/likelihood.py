@@ -14,7 +14,7 @@ from cosmosis.datablock import names as section_names
 import numpy as np
 import pyccl as ccl
 
-from firecrown.connector.mapping import mapping_builder
+from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.parameters import ParamsMap
 
@@ -34,6 +34,8 @@ class FirecrownLikelihood:
     output of CAMB, and also for calculating the data likelihood baesd on this
     theory.
     """
+
+    map: MappingCosmoSIS
 
     def __init__(self, config: cosmosis.datablock):
         """Create the FirecrownLikelihood object from the given configuration."""
@@ -60,7 +62,7 @@ class FirecrownLikelihood:
         firecrown_params = self.calculate_firecrown_params(sample)
 
         self.likelihood.update(firecrown_params)
-        lnlike = self.likelihood.compute_loglike(cosmo, firecrown_params)
+        lnlike = self.likelihood.compute_loglike(cosmo)
 
         sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
 

@@ -9,7 +9,6 @@ import numpy as np
 import pyccl
 import sacc
 
-from ....parameters import ParamsMap
 from ....updatable import Updatable
 from .source.source import Systematic
 
@@ -41,7 +40,7 @@ class Statistic(Updatable):
 
     @abstractmethod
     def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a statistic from sources, applying any systematics.
 
@@ -49,7 +48,5 @@ class Statistic(Updatable):
         ----------
         cosmo : pyccl.Cosmology
             A pyccl.Cosmology object.
-        params : ParamsMap
-            A dictionary mapping parameter names to their current values.
         """
         raise NotImplementedError("Method `compute` is not implemented!")

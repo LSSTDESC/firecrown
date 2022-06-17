@@ -34,7 +34,7 @@ class StudentT(GaussFamily):
         super().__init__(statistics)
         self.nu = nu
 
-    def compute_loglike(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def compute_loglike(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood.
 
         Parameters
@@ -46,7 +46,7 @@ class StudentT(GaussFamily):
             The log-likelihood.
         """
 
-        chi2 = self.compute_chisq(cosmo, params)
+        chi2 = self.compute_chisq(cosmo)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
 
     @final
