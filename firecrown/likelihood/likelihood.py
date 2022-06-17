@@ -14,7 +14,6 @@ import importlib
 import importlib.util
 import os
 
-from ..parameters import ParamsMap
 from ..updatable import Updatable
 
 
@@ -52,15 +51,13 @@ class Likelihood(Updatable):
         pass
 
     @abstractmethod
-    def compute_loglike(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def compute_loglike(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood of generic CCL data.
 
         Parameters
         ----------
         cosmo : a `pyccl.Cosmology` object
             A cosmology.
-        params : dict
-            Dictionary mapping parameters to their values.
 
         Returns
         -------
@@ -82,8 +79,17 @@ def load_likelihood(filename: str) -> Likelihood:
     modname, _ = os.path.splitext(inifile)
 
     spec = importlib.util.spec_from_file_location(modname, filename)
+    if spec is None:
+        raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
     mod = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(mod)
+
+    if spec.loader is None:
+        raise ImportError(f"Spec for module '{modname}' has no loader.")
+
+    try:
+        spec.loader.exec_module(mod)
+    except FileNotFoundError as e:
+        raise ImportError(f"{e.strerror}: {filename}") from e
 
     if not hasattr(mod, "likelihood"):
         raise ValueError(

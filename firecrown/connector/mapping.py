@@ -13,7 +13,8 @@ The supported codes include:
 """
 
 from abc import ABC, abstractmethod
-from typing import List, Dict, final
+from typing import Type, List, Dict, final
+import typing
 import numpy as np
 from pyccl import physical_constants as physics
 from ..descriptors import TypeFloat, TypeString
@@ -259,18 +260,15 @@ class MappingCAMB(Mapping):
 
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
-        # Not implemented
-        assert False
+        raise NotImplementedError("Method `transform_k_h_to_k` is not implemented.")
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         """Transform the given p_k * h^3 to p_k."""
-        # Not implemented
-        assert False
+        raise NotImplementedError("Method `transform_p_k_h3_to_p_k` is not implemented.")
 
     def transform_h_to_h_over_h0(self, h):
         """Transform distances h to h/h0."""
-        # Not implemented
-        assert False
+        raise NotImplementedError("Method `transform_h_to_h_over_h0` is not implemented.")
 
     def set_params_from_camb(self, **params_values):
         """Read the CAMB-style parameters from params_values, translate them to
@@ -323,7 +321,7 @@ class MappingCAMB(Mapping):
         )
 
 
-mapping_classes = {
+mapping_classes: typing.Mapping[str, Type[Mapping]] = {
     "CAMB": MappingCAMB,
     "CLASS": MappingCLASS,
     "CosmoSIS": MappingCosmoSIS,

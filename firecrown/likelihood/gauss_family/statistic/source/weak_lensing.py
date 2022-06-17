@@ -220,7 +220,7 @@ class WeakLensing(Source):
                 self.systematics.append(systematic)
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update_source(self, params: ParamsMap):
         self.systematics.update(params)
 
     @final
@@ -245,7 +245,7 @@ class WeakLensing(Source):
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def create_tracer(self, cosmo: pyccl.Cosmology):
         """
         Render a source by applying systematics.
 

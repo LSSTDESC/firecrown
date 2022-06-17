@@ -80,9 +80,7 @@ class LikelihoodConnector(Likelihood):
         Return the (log) calculated likelihood.
         """
         ccl = self.provider.get_ccl()
-        # loglikes, _, _, _, _, _ = firecrown.compute_loglike(cosmo=ccl, data=self.data)
-        # return np.sum([v for v in loglikes.values() if v is not None])
 
         self.likelihood.update(ParamsMap(params_values))
 
-        return self.likelihood.compute_loglike(ccl, ParamsMap(params_values))
+        return self.likelihood.compute_loglike(ccl)

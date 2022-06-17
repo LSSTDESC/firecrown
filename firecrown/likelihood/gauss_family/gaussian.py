@@ -14,7 +14,7 @@ class ConstGaussian(GaussFamily):
     compute_loglike : compute the log-likelihood
     """
 
-    def compute_loglike(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def compute_loglike(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood.
 
         Parameters
@@ -26,7 +26,7 @@ class ConstGaussian(GaussFamily):
             The log-likelihood.
         """
 
-        return -0.5 * self.compute_chisq(cosmo, params)
+        return -0.5 * self.compute_chisq(cosmo)
 
     @final
     def _update_gaussian_family(self, params: ParamsMap):
