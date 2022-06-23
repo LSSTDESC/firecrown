@@ -13,7 +13,7 @@ The supported codes include:
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, List, Dict, final
+from typing import Type, List, Dict, final, Any
 import typing
 import numpy as np
 from pyccl import physical_constants as physics
@@ -49,8 +49,8 @@ class Mapping(ABC):
     wa = TypeFloat()
     T_CMB = TypeFloat()
 
-    def __init__(self):
-        pass
+    def __init__(self, *, require_nonlinear_pk: bool = False):
+        self.require_nonlinear_pk = require_nonlinear_pk
 
     @abstractmethod
     def get_params_names(self) -> List[str]:
@@ -237,7 +237,7 @@ class MappingCosmoSIS(Mapping):
 
     def calculate_ccl_args(self, sample: cosmosis.datablock):
         """Calculate the arguments necessary for CCL for this sample."""
-        ccl_args = {}
+        ccl_args: Dict[str, Any] = {}
         if sample.has_section("matter_power_lin"):
             k = self.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
             z_mpl = sample["matter_power_lin", "z"]
@@ -250,7 +250,10 @@ class MappingCosmoSIS(Mapping):
                 "k": k,
                 "delta_matter:delta_matter": p_k,
             }
-            ccl_args["nonlinear_model"] = "halofit"
+            if self.require_nonlinear_pk:
+                ccl_args["nonlinear_model"] = "halofit"
+            else:
+                ccl_args["nonlinear_model"] = None
 
         # TODO: We should have several configurable modes for this module.
         # In all cases, an exception will be raised (causing a program
