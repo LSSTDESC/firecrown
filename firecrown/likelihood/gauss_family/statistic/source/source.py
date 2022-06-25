@@ -3,16 +3,12 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Sequence, final
+from typing import Optional, Sequence, final
 from abc import abstractmethod
 import pyccl
 import sacc
 from .....parameters import ParamsMap
 from .....updatable import Updatable
-
-
-def get_params_hash(params: Dict[str, float]):
-    return repr(sorted(params.items()))
 
 
 class Systematic(Updatable):
@@ -38,8 +34,8 @@ class Source(Updatable):
     """
 
     systematics: Sequence[Systematic]
-    cosmo_hash: int
-    tracer: pyccl.tracers.Tracer
+    cosmo_hash: Optional[int]
+    tracer: Optional[pyccl.tracers.Tracer]
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -67,21 +63,31 @@ class Source(Updatable):
         pass
 
     @abstractmethod
+    def _update_source(self, params: ParamsMap):
+        pass
+
+    @final
+    def _update(self, params: ParamsMap):
+        self.cosmo_hash = None
+        self.tracer = None
+        self._update_source(params)
+
+    @abstractmethod
     def get_scale(self) -> float:
         pass
 
     @abstractmethod
-    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def create_tracer(self, cosmo: pyccl.Cosmology):
         pass
 
     @final
     def get_tracer(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology
     ) -> pyccl.tracers.Tracer:
-        cur_hash = hash((cosmo, get_params_hash(params)))
+        cur_hash = hash(cosmo)
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
             return self.tracer
         else:
-            self.tracer, _ = self.create_tracer(cosmo, params)
+            self.tracer, _ = self.create_tracer(cosmo)
             self.cosmo_hash = cur_hash
             return self.tracer

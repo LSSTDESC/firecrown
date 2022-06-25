@@ -247,7 +247,7 @@ class NumberCounts(Source):
         self.tracer_ = None
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update_source(self, params: ParamsMap):
         self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
 
         if self.has_mag_bias:
@@ -295,7 +295,7 @@ class NumberCounts(Source):
             scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
         )
 
-    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def create_tracer(self, cosmo: pyccl.Cosmology):
         tracer_args = self.tracer_args
 
         bias = np.ones_like(tracer_args.z) * self.bias

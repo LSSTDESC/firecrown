@@ -59,7 +59,7 @@ class Supernova(Statistic):
         return RequiredParameters(["m"])
 
     def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
+        self, cosmo: pyccl.Cosmology
     ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
@@ -67,8 +67,6 @@ class Supernova(Statistic):
         ----------
         cosmo : pyccl.Cosmology
             A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
         sources : dict
             A dictionary mapping sources to their objects. The sources must
             already have been rendered by calling `render` on them.
