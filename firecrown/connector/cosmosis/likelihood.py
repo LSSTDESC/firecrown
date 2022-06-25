@@ -11,7 +11,6 @@ from typing import Dict
 import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
-import numpy as np
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 import pyccl as ccl
 
