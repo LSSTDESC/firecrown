@@ -254,7 +254,9 @@ class TwoPoint(Statistic):
         if self.theory_window_function is not None:
             ell_config = {**ELL_FOR_XI_DEFAULTS}
             ell_config["max"] = self.theory_window_function.values[-1]
-            ell_config["min"] = max(ell_config["min"], self.theory_window_function.values[0])
+            ell_config["min"] = max(
+                ell_config["min"], self.theory_window_function.values[0]
+            )
             _ell_or_theta = _ell_for_xi(**ell_config)
 
         # I don't think we need these copies, but being safe here.
@@ -263,22 +265,18 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
         Parameters
         ----------
         cosmo : pyccl.Cosmology
             A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
         """
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracer0 = self.source0.get_tracer(cosmo, params)
-        tracer1 = self.source1.get_tracer(cosmo, params)
+        tracer0 = self.source0.get_tracer(cosmo)
+        tracer1 = self.source1.get_tracer(cosmo)
         scale = self.source0.get_scale() * self.source1.get_scale()
 
         if self.ccl_kind == "cl":
@@ -299,14 +297,19 @@ class TwoPoint(Statistic):
             )
 
         if self.theory_window_function is not None:
+
             def log_interpolator(x, y):
                 if np.all(y > 0):
                     # use log-log interpolation
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), np.log(y), ext=2)
+                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
+                        np.log(x), np.log(y), ext=2
+                    )
                     return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
                 else:
                     # only use log for x
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
+                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
+                        np.log(x), y, ext=2
+                    )
                     return lambda x_, intp=intp: intp(np.log(x_))
 
             theory_interpolator = log_interpolator(self.ell_or_theta_, theory_vector)
@@ -315,8 +318,14 @@ class TwoPoint(Statistic):
             theory_vector_interpolated = np.zeros(ell.size)
             theory_vector_interpolated[2:] = theory_interpolator(ell[2:])
 
-            theory_vector = np.einsum("lb, l -> b", self.theory_window_function.weight, theory_vector_interpolated)
-            self.ell_or_theta_ = np.einsum("lb, l -> b", self.theory_window_function.weight, ell)
+            theory_vector = np.einsum(
+                "lb, l -> b",
+                self.theory_window_function.weight,
+                theory_vector_interpolated,
+            )
+            self.ell_or_theta_ = np.einsum(
+                "lb, l -> b", self.theory_window_function.weight, ell
+            )
 
         self.predicted_statistic_ = theory_vector
 

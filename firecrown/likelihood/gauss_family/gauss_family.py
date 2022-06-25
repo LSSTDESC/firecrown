@@ -52,23 +52,14 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology, params: ParamsMap):
-        """Compute the log-likelihood.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood.
-        """
+    def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
+        """Calculate and return the chi-squared for the given cosmology."""
 
         r = []
         theory_vector = []
         data_vector = []
         for stat in self.statistics:
-            data, theory = stat.compute(cosmo, params)
+            data, theory = stat.compute(cosmo)
             r.append(np.atleast_1d(data - theory))
             theory_vector.append(np.atleast_1d(theory))
             data_vector.append(np.atleast_1d(data))
@@ -82,6 +73,7 @@ class GaussFamily(Likelihood):
     @final
     def _update(self, params: ParamsMap):
         self.statistics.update(params)
+        self._update_gaussian_family(params)
 
     @abstractmethod
     def _update_gaussian_family(self, params: ParamsMap):
