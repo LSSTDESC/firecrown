@@ -19,6 +19,7 @@ import numpy.typing as npt
 from ..updatable import Updatable, UpdatableCollection
 
 
+
 class Likelihood(Updatable):
     """Likelihood is an abstract class. Concrete subclasses represent specific
     likelihood forms (e.g. gaussian with constant covariance matrix, or Student's t,

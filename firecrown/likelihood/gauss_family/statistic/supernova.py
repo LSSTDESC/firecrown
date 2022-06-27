@@ -58,7 +58,9 @@ class Supernova(Statistic):
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(["m"])
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(
+        self, cosmo: pyccl.Cosmology
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources.
 
         Parameters
