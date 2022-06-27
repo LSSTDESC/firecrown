@@ -39,9 +39,7 @@ class Statistic(Updatable):
         pass
 
     @abstractmethod
-    def compute(
-        self, cosmo: pyccl.Cosmology
-    ) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a statistic from sources, applying any systematics.
 
         Parameters

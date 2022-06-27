@@ -13,8 +13,10 @@ import sacc
 import importlib
 import importlib.util
 import os
+import numpy as np
+import numpy.typing as npt
 
-from ..updatable import Updatable
+from ..updatable import Updatable, UpdatableCollection
 
 
 class Likelihood(Updatable):
@@ -29,6 +31,10 @@ class Likelihood(Updatable):
 
     def __init__(self):
         self.params_names: Optional[List[str]] = None
+        self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
+        self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
+        self.inv_cov: Optional[npt.NDArray[np.double]] = None
+        self.statistics: UpdatableCollection = UpdatableCollection()
 
     def set_params_names(self, params_names: List[str]):
         self.params_names = params_names

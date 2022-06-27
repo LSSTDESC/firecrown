@@ -81,9 +81,7 @@ class Source(Updatable):
         pass
 
     @final
-    def get_tracer(
-        self, cosmo: pyccl.Cosmology
-    ) -> pyccl.tracers.Tracer:
+    def get_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
         cur_hash = hash(cosmo)
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
             return self.tracer

@@ -52,25 +52,22 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology):
-        """Compute the log-likelihood.
+    def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
+        """Calculate and return the chi-squared for the given cosmology."""
 
-        Parameters
-        ----------
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood.
-        """
-
-        dv = []
+        r = []
+        theory_vector = []
+        data_vector = []
         for stat in self.statistics:
             data, theory = stat.compute(cosmo)
-            dv.append(np.atleast_1d(data - theory))
+            r.append(np.atleast_1d(data - theory))
+            theory_vector.append(np.atleast_1d(theory))
+            data_vector.append(np.atleast_1d(data))
 
-        dv = np.concatenate(dv, axis=0)
-        x = scipy.linalg.solve_triangular(self.cholesky, dv, lower=True)
+        r = np.concatenate(r, axis=0)
+        self.predicted_data_vector = np.concatenate(theory_vector)
+        self.measured_data_vector = np.concatenate(data_vector)
+        x = scipy.linalg.solve_triangular(self.cholesky, r, lower=True)
         return np.dot(x, x)
 
     @final
