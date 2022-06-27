@@ -265,7 +265,6 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-
     def compute(
         self, cosmo: pyccl.Cosmology
     ) -> Tuple[np.ndarray, np.ndarray]:
