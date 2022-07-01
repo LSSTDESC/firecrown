@@ -13,6 +13,7 @@ import sacc
 import importlib
 import importlib.util
 import os
+import sys
 import numpy as np
 import numpy.typing as npt
 
@@ -83,11 +84,14 @@ def load_likelihood(filename: str) -> Likelihood:
 
     inifile = os.path.basename(filename)
     modname, _ = os.path.splitext(inifile)
+    script_path = os.path.dirname(os.path.abspath(filename))
 
-    spec = importlib.util.spec_from_file_location(modname, filename)
+    spec = importlib.util.spec_from_file_location(modname, filename, submodule_search_locations=[script_path])
+
     if spec is None:
         raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
     mod = importlib.util.module_from_spec(spec)
+    sys.modules[modname] = mod
 
     if spec.loader is None:
         raise ImportError(f"Spec for module '{modname}' has no loader.")
