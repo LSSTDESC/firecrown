@@ -29,13 +29,8 @@ class GaussFamily(Likelihood):
         self.inv_cov: Optional[np.ndarray] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the covariance matrirx for this likelihood from the SACC file.
+        """Read the covariance matrirx for this likelihood from the SACC file."""
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
         _sd = sacc_data.copy()
         inds_list = []
         for stat in self.statistics:

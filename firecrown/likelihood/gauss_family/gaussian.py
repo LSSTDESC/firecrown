@@ -7,24 +7,10 @@ from ...parameters import ParamsMap, RequiredParameters
 
 
 class ConstGaussian(GaussFamily):
-    """A Gaussian log-likelihood with a constant covariance matrix.
-
-    Methods
-    -------
-    compute_loglike : compute the log-likelihood
-    """
+    """A Gaussian log-likelihood with a constant covariance matrix."""
 
     def compute_loglike(self, cosmo: pyccl.Cosmology):
-        """Compute the log-likelihood.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood.
-        """
+        """Compute the log-likelihood."""
 
         return -0.5 * self.compute_chisq(cosmo)
 

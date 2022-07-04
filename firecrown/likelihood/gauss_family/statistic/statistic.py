@@ -14,37 +14,17 @@ from .source.source import Systematic
 
 
 class Statistic(Updatable):
-    """A statistic (e.g., two-point function, mass function, etc.).
-
-    Parameters
-    ----------
-    sources : list of str
-        A list of the sources needed to compute this statistic.
-    systematics : list of str, optional
-        A list of the statistics-level systematics to apply to the statistic.
-        The default of `None` implies no systematics.
-    """
+    """A statistic (e.g., two-point function, mass function, etc.)."""
 
     systematics: List[Systematic]
     sacc_inds: List[int]
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this statistic from the SACC file.
-
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
+        """Read the data for this statistic from the SACC file."""
         pass
 
     @abstractmethod
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a statistic from sources, applying any systematics.
+        """Compute a statistic from sources, applying any systematics."""
 
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        """
         raise NotImplementedError("Method `compute` is not implemented!")

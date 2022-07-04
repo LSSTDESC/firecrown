@@ -102,6 +102,7 @@ class TwoPoint(Statistic):
            (possibly geometric) midpoint of the bin.
          - binning : str, optional - Pass 'log' to get logarithmic spaced bins and 'lin'
            to get linearly spaced bins. Default is 'log'.
+
     ell_or_theta_min : float, optional
         The minimum ell or theta value to keep. This minimum is applied after
         the ell or theta values are read and/or generated.
@@ -141,6 +142,7 @@ class TwoPoint(Statistic):
     scale_ : float
         The final scale factor applied to the statistic. Set after `compute`
         is called. Note that this scale factor is already applied.
+
     """
 
     def __init__(
@@ -266,13 +268,7 @@ class TwoPoint(Statistic):
         self.sacc_tracers = tracers
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a two-point statistic from sources.
-
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        """
+        """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
         tracer0 = self.source0.get_tracer(cosmo)

@@ -33,7 +33,10 @@ class Updatable(ABC):
 
     @final
     def update(self, params: ParamsMap):
-        """Update self by calling the abstract _update() method."""
+        """Update self by calling the abstract _update() method.
+
+        :param params: new parameter values
+        """
         self._update(params)
 
     @abstractmethod
@@ -84,7 +87,10 @@ class UpdatableCollection(UserList):
 
     @final
     def update(self, params: ParamsMap):
-        """Update self by calling update() on each contained item."""
+        """Update self by calling update() on each contained item.
+
+        :param params: new parameter values
+        """
         for updatable in self:
             updatable.update(params)
 
@@ -103,6 +109,8 @@ class UpdatableCollection(UserList):
         """Append the given item to self.
 
         If the item is not Updatable a TypeError is raised.
+
+        :param item: new item to be appended to the list
         """
         if not isinstance(item, Updatable):
             raise TypeError(

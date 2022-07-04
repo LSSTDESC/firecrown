@@ -9,11 +9,12 @@ SOURCES = $(wildcard *.puml)
 PNGS = $(patsubst %.puml,%.png,$(SOURCES))
 PDFS = $(patsubst %.puml,%.pdf,$(SOURCES))
 
+html: all
 all: png pdf
 png: $(PNGS)
 pdf: $(PDFS)
 
-.PHONY : clean
+.PHONY : clean html
 .SUFFIXES : .puml .eps .pdf .png
 
 .puml.png:
