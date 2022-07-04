@@ -33,6 +33,8 @@ class FirecrownLikelihood:
     is responsible for calling CCL to perform theory calculations, based on the
     output of CAMB, and also for calculating the data likelihood baesd on this
     theory.
+
+    :param config: CosmoSIS datablock
     """
 
     likelihood: Likelihood

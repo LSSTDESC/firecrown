@@ -4,6 +4,7 @@ import functools
 
 import numpy as np
 import pyccl
+import sacc
 
 from .statistic import Statistic
 from ....parameters import ParamsMap, RequiredParameters
@@ -33,14 +34,9 @@ class Supernova(Statistic):
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
 
-    def read(self, sacc_data):
-        """Read the data for this statistic from the SACC file.
+    def read(self, sacc_data: sacc.Sacc):
+        """Read the data for this statistic from the SACC file."""
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
         data_points = sacc_data.get_data_points(
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
@@ -59,19 +55,8 @@ class Supernova(Statistic):
         return RequiredParameters(["m"])
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a two-point statistic from sources.
+        """Compute a two-point statistic from sources."""
 
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        sources : dict
-            A dictionary mapping sources to their objects. The sources must
-            already have been rendered by calling `render` on them.
-        systematics : dict, optional
-            A dictionary mapping systematic names to their objects. The
-            default of `None` corresponds to no systematics.
-        """
         theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
 
         assert self.data_vector is not None

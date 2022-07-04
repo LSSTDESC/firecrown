@@ -39,13 +39,7 @@ class Source(Updatable):
 
     @final
     def read(self, sacc_data: sacc.Sacc):
-        """Read the data for this source from the SACC file.
-
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
+        """Read the data for this source from the SACC file."""
         if hasattr(self, "systematics"):
             for systematic in self.systematics:
                 systematic.read(sacc_data)
@@ -53,13 +47,7 @@ class Source(Updatable):
 
     @abstractmethod
     def _read(self, sacc_data: sacc.Sacc):
-        """Read the data for this source from the SACC file.
-
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
+        """Read the data for this source from the SACC file."""
         pass
 
     @abstractmethod

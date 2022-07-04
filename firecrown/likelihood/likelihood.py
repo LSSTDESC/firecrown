@@ -48,13 +48,7 @@ class Likelihood(Updatable):
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc):
-        """Read the covariance matrirx for this likelihood from the SACC file.
-
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
+        """Read the covariance matrirx for this likelihood from the SACC file."""
         pass
 
     @abstractmethod

@@ -4,7 +4,7 @@ from __future__ import annotations
 from typing import Optional, Dict, List
 
 import numpy as np
-import pyccl as ccl
+import pyccl
 
 from cobaya.theory import Theory
 
@@ -80,17 +80,18 @@ class CCLConnector(Theory):
 
         Returns a dictionary with keys:
              omk, Pk_grid, comoving_radial_distance, Hubble,
-        and with values reflecting the current status of the object.
+             and with values reflecting the current status of the object.
+
         """
 
-        ccl_calculator_requires = {
+        pyccl_calculator_requires = {
             "omk": None,
             "Pk_grid": {"k_max": self.Pk_kmax, "z": self.z_Pk},
             "comoving_radial_distance": {"z": self.z_bg},
             "Hubble": {"z": self.z_bg},
         }
 
-        return ccl_calculator_requires
+        return pyccl_calculator_requires
 
     def must_provide(self, **requirements):
         """Required by Cobaya.
@@ -99,11 +100,11 @@ class CCLConnector(Theory):
         """
 
     def calculate(self, state: Dict, want_derived=True, **params_values) -> None:
-        """Calculate the current cosmology, and set state["ccl"] to the result."""
+        """Calculate the current cosmology, and set state["pyccl"] to the result."""
 
         self.map.set_params_from_camb(**params_values)
 
-        ccl_params_values = self.map.asdict()
+        pyccl_params_values = self.map.asdict()
         # This is the dictionary appropriate for CCL creation
 
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
@@ -113,8 +114,8 @@ class CCLConnector(Theory):
         self.a_Pk = self.map.redshift_to_scale_factor(z)  # pylint: disable-msg=C0103
         pk_a = self.map.redshift_to_scale_factor_p_k(pk)
 
-        cosmo = ccl.CosmologyCalculator(
-            **ccl_params_values,
+        cosmo = pyccl.CosmologyCalculator(
+            **pyccl_params_values,
             background={"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
             pk_linear={
                 "a": self.a_Pk,
@@ -123,8 +124,8 @@ class CCLConnector(Theory):
             },
             nonlinear_model="halofit",
         )
-        state["ccl"] = cosmo
+        state["pyccl"] = cosmo
 
-    def get_ccl(self) -> ccl.Cosmology:
+    def get_pyccl(self) -> pyccl.Cosmology:
         """Return the current cosmology."""
-        return self.current_state["ccl"]
+        return self.current_state["pyccl"]

@@ -18,32 +18,18 @@ class StudentT(GaussFamily):
     (2016; arXiv:1511.05969). As the number of simulations increases, the
     T-distribution approaches a Gaussian.
 
-    Parameters
-    ----------
-    statistics : list of Statistic
-        A list of the statistics
-    nu: int
-        The shape parameter. Set to the number of simulations.
-
-    Methods
-    -------
-    compute_loglike : compute the log-likelihood
+    :param statistics: List of statistics to build the theory and data vectors
+    :param nu: The Student-t $\\nu$ parameter
     """
 
-    def __init__(self, statistics: List[Statistic], nu):
+    def __init__(self, statistics: List[Statistic], nu: float):
         super().__init__(statistics)
         self.nu = nu
 
     def compute_loglike(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood.
 
-        Parameters
-        ----------
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood.
+        :param cosmo: Current Cosmology object
         """
 
         chi2 = self.compute_chisq(cosmo)
