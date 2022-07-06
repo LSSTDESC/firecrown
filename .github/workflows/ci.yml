@@ -1,0 +1,23 @@
+name: firecrown-ci
+
+on: [push, pull_request]
+
+jobs:
+  firecrown-miniforge:
+    name: Firecrown (${{ matrix.os }}, Miniforge)
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      matrix:
+        os: ["ubuntu", "macos"]
+        python-version: ["3.7", "3.10"]
+    steps:
+      - uses: actions/checkout@v2
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: firecrown-mini
+          environment-file: environment-mini.yml
+          python-version: ${{ matrix.python-version }}
+          miniforge-version: latest
+      - name: Conda info
+        shell: bash -l {0}
+        run: conda info
