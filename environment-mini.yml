@@ -1,11 +1,18 @@
 name: firecrown-mini
 channels:
   - conda-forge
-  - defaults
 dependencies:
-  - python=3
   - pyccl>=2.0
   - numpy>=1.16
-  - pyyaml
   - scipy
   - sacc>=0.3
+  - flake8
+  - pytest
+  - sphinx
+  - sphinx_rtd_theme
+  - sphinx-autoapi
+  - sphinx-autodoc-typehints
+  - sphinxcontrib-apidoc
+  - cosmosis
+  - cosmosis-build-standard-library
+
