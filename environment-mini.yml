@@ -7,6 +7,7 @@ dependencies:
   - scipy
   - sacc>=0.3
   - flake8
+  - mypy
   - pytest
   - sphinx
   - sphinx_rtd_theme
