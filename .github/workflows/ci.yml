@@ -23,9 +23,12 @@ jobs:
         run: |
           source ${CONDA_PREFIX}/bin/cosmosis-configure
           cosmosis-build-standard-library
+          
           export CSL_DIR=${PWD}/cosmosis-standard-library
+          export FIRECROWN_DIR=${PWD}
+          
           conda env config vars set CSL_DIR=${CSL_DIR}
-          conda env config vars set FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           conda activate firecrown-mini
       - name: Running flake8
         shell: bash -l {0}
