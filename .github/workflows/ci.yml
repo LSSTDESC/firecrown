@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   firecrown-miniforge:
-    name: Firecrown (${{ matrix.os }}, Miniforge)
+    name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
