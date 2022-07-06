@@ -18,6 +18,13 @@ jobs:
           environment-file: environment-mini.yml
           python-version: ${{ matrix.python-version }}
           miniforge-version: latest
+      - name: Setting up CosmoSIS    
+        shell: bash -l {0}
+        run: |
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          cosmosis-build-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          conda env config vars set FIRECROWN_DIR=${PWD}
       - name: Conda info
         shell: bash -l {0}
         run: conda info
