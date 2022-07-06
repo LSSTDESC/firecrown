@@ -39,7 +39,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
         env:
-          CACHE_NUMBER: 0
+          CACHE_NUMBER: 1
         id: cache
       - name: Update environment
         run: conda env update -n firecrown -f environment.yml
@@ -55,10 +55,12 @@ jobs:
         shell: bash -l {0}
         run: |
           source ${CONDA_PREFIX}/bin/cosmosis-configure
+          pushd ${CONDA_PREFIX}
           cosmosis-build-standard-library
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           conda activate firecrown
+        if: steps.cache.outputs.cache-hit != 'true'      
       - name: Running flake8
         shell: bash -l {0}
         run: flake8 firecrown
