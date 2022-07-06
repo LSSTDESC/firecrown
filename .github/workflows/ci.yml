@@ -23,6 +23,7 @@ jobs:
         run: |
           source ${CONDA_PREFIX}/bin/cosmosis-configure
           cosmosis-build-standard-library
+          export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           conda env config vars set FIRECROWN_DIR=${PWD}
           conda activate firecrown-mini
