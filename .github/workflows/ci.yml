@@ -33,7 +33,7 @@ jobs:
         run: mypy -p firecrown --ignore-missing-imports
       - name: Running pytest
         shell: bash -l {0}
-        run: pytest -vv tests
+        run: python -m pytest -vv 
       - name: Running example -- cosmic-shear
         shell: bash -l {0}
         run: |
