@@ -57,9 +57,9 @@ class LikelihoodConnector(Likelihood):
         """Required by Cobaya.
 
         Returns a dictionary with keys corresponding the contained likelihood's
-        required parameter, plus "ccl". All values are None.
+        required parameter, plus "pyccl". All values are None.
         """
-        likelihood_requires = {"ccl": None}
+        likelihood_requires = {"pyccl": None}
 
         required_params = self.likelihood.required_parameters()
 
@@ -79,8 +79,8 @@ class LikelihoodConnector(Likelihood):
 
         Return the (log) calculated likelihood.
         """
-        ccl = self.provider.get_ccl()
+        pyccl = self.provider.get_pyccl()
 
         self.likelihood.update(ParamsMap(params_values))
 
-        return self.likelihood.compute_loglike(ccl)
+        return self.likelihood.compute_loglike(pyccl)
