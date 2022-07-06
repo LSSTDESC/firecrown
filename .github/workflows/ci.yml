@@ -18,17 +18,20 @@ jobs:
           environment-file: environment-mini.yml
           python-version: ${{ matrix.python-version }}
           miniforge-version: latest
+      - name: Setting up Firecrown
+        shell: bash -l {0}
+        run: |
+          export FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
+          conda activate firecrown-mini
+          pip install --no-deps -e .
       - name: Setting up CosmoSIS    
         shell: bash -l {0}
         run: |
           source ${CONDA_PREFIX}/bin/cosmosis-configure
           cosmosis-build-standard-library
-          
           export CSL_DIR=${PWD}/cosmosis-standard-library
-          export FIRECROWN_DIR=${PWD}
-          
           conda env config vars set CSL_DIR=${CSL_DIR}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           conda activate firecrown-mini
       - name: Running flake8
         shell: bash -l {0}
@@ -55,7 +58,3 @@ jobs:
         run: |
           cd examples/srd_sn
           cosmosis sn_srd.ini
-
-
-
-      
