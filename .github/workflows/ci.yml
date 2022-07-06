@@ -25,6 +25,7 @@ jobs:
           cosmosis-build-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           conda env config vars set FIRECROWN_DIR=${PWD}
+          conda activate firecrown-mini
       - name: Running flake8
         shell: bash -l {0}
         run: flake8 firecrown
