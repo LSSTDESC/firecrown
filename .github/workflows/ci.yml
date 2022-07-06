@@ -12,12 +12,28 @@ jobs:
         python-version: ["3.8", "3.10"]
     steps:
       - uses: actions/checkout@v2
-      - uses: conda-incubator/setup-miniconda@v2
+      - name: Setup miniforge
+        uses: conda-incubator/setup-miniconda@v2
         with:
           activate-environment: firecrown
-          environment-file: environment.yml
           python-version: ${{ matrix.python-version }}
           miniforge-version: latest
+          use-only-tar-bz2: true
+      - name: Cache date
+        id: get-date
+        run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+        shell: bash
+      - name: Cache Conda env
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
+        env:
+          CACHE_NUMBER: 0
+        id: cache
+      - name: Update environment
+        run: conda env update -n firecrown -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
