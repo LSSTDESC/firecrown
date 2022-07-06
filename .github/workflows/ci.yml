@@ -61,6 +61,10 @@ jobs:
           conda env config vars set CSL_DIR=${CSL_DIR}
           conda activate firecrown
         if: steps.cache.outputs.cache-hit != 'true'      
+      - name: Setting up Cobaya
+        shell: bash -l {0}
+        run: python -m pip install cobaya
+        if: steps.cache.outputs.cache-hit != 'true'      
       - name: Running flake8
         shell: bash -l {0}
         run: flake8 firecrown
@@ -70,18 +74,23 @@ jobs:
       - name: Running pytest
         shell: bash -l {0}
         run: python -m pytest -vv 
-      - name: Running example -- cosmic-shear
+      - name: Running example - cosmosis - cosmic-shear
         shell: bash -l {0}
         run: |
           cd examples/cosmicshear
           python generate_cosmicshear_data.py
           cosmosis cosmicshear.ini
-      - name: Running example -- des-y1-3x2pt
+      - name: Running example - cosmosis - des-y1-3x2pt
         shell: bash -l {0}
         run: |
           cd examples/des_y1_3x2pt
           cosmosis des_y1_3x2pt.ini
-      - name: Running example -- srd_sn
+      - name: Running example - cobaya - des-y1-3x2pt
+        shell: bash -l {0}
+        run: |
+          cd examples/des_y1_3x2pt
+          cobaya-run cobaya_evaluate.yaml
+      - name: Running example - cosmosis - srd_sn
         shell: bash -l {0}
         run: |
           cd examples/srd_sn

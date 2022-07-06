@@ -16,4 +16,4 @@ dependencies:
   - sphinxcontrib-apidoc
   - cosmosis
   - cosmosis-build-standard-library
-
+  - pip
