@@ -1,0 +1,97 @@
+name: firecrown-ci
+
+on:
+  push:
+    branches:
+      - '*'
+
+  pull_request:
+    branches:
+      - '*'
+
+  schedule:
+    - cron: '0 0 * * *'
+
+jobs:
+  firecrown-miniforge:
+    name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
+    runs-on: ${{ matrix.os }}-latest
+    strategy:
+      matrix:
+        os: ["ubuntu", "macos"]
+        python-version: ["3.8", "3.9", "3.10"]
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup miniforge
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: firecrown
+          python-version: ${{ matrix.python-version }}
+          miniforge-version: latest
+          use-only-tar-bz2: true
+      - name: Cache date
+        id: get-date
+        run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+        shell: bash
+      - name: Cache Conda env
+        uses: actions/cache@v2
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
+        env:
+          CACHE_NUMBER: 1
+        id: cache
+      - name: Update environment
+        run: conda env update -n firecrown -f environment.yml
+        if: steps.cache.outputs.cache-hit != 'true'
+      - name: Setting up Firecrown
+        shell: bash -l {0}
+        run: |
+          export FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
+          conda activate firecrown
+          pip install --no-deps -e .
+      - name: Setting up CosmoSIS    
+        shell: bash -l {0}
+        run: |
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          pushd ${CONDA_PREFIX}
+          cosmosis-build-standard-library
+          export CSL_DIR=${PWD}/cosmosis-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          conda activate firecrown
+        if: steps.cache.outputs.cache-hit != 'true'      
+      - name: Setting up Cobaya
+        shell: bash -l {0}
+        run: python -m pip install cobaya
+        if: steps.cache.outputs.cache-hit != 'true'      
+      - name: Running flake8
+        shell: bash -l {0}
+        run: flake8 firecrown
+      - name: Running mypy
+        shell: bash -l {0}
+        run: mypy -p firecrown --ignore-missing-imports
+      - name: Running pytest
+        shell: bash -l {0}
+        run: python -m pytest -vv 
+      - name: Running example - cosmosis - cosmic-shear
+        shell: bash -l {0}
+        run: |
+          cd examples/cosmicshear
+          python generate_cosmicshear_data.py
+          cosmosis cosmicshear.ini
+      - name: Running example - cosmosis - des-y1-3x2pt
+        shell: bash -l {0}
+        run: |
+          cd examples/des_y1_3x2pt
+          cosmosis des_y1_3x2pt.ini
+      - name: Running example - cobaya - des-y1-3x2pt
+        shell: bash -l {0}
+        run: |
+          cd examples/des_y1_3x2pt
+          cobaya-run cobaya_evaluate.yaml
+      - name: Running example - cosmosis - srd_sn
+        shell: bash -l {0}
+        run: |
+          cd examples/srd_sn
+          cosmosis sn_srd.ini
