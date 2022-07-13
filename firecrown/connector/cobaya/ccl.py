@@ -111,9 +111,8 @@ class CCLConnector(Theory):
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
         k, z, pk = self.provider.get_Pk_grid()  # pylint: disable-msg=C0103
 
-        self.a_Pk = self.map.redshift_to_scale_factor(
-            z
-        )  # pylint: disable-msg=W0201,C0103
+        # pylint: disable-next=W0201,C0103
+        self.a_Pk = self.map.redshift_to_scale_factor(z)
         pk_a = self.map.redshift_to_scale_factor_p_k(pk)
 
         cosmo = pyccl.CosmologyCalculator(
