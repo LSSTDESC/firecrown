@@ -40,7 +40,7 @@ class Updatable(ABC):
         self._update(params)
 
     @abstractmethod
-    def _update(self, params: ParamsMap):  # pragma: no cover
+    def _update(self, params: ParamsMap) -> None:  # pragma: no cover
         """Abstract method to be implemented by all concrete classes to update
         self.
 
@@ -49,6 +49,8 @@ class Updatable(ABC):
         an implementation should raise a TypeError.
 
         The base class implementation does nothing.
+
+        :param params: a new set of parameter values
         """
 
     @abstractmethod
@@ -77,6 +79,8 @@ class UpdatableCollection(UserList):
 
         If the iterable contains any object that is not Updatable, a TypeError
         is raised.
+
+        :param iterable: An iterable that yields Updateable objects
         """
         super().__init__(iterable)
         for item in self:
