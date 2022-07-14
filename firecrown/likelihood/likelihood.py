@@ -80,7 +80,9 @@ def load_likelihood(filename: str) -> Likelihood:
     modname, _ = os.path.splitext(inifile)
     script_path = os.path.dirname(os.path.abspath(filename))
 
-    spec = importlib.util.spec_from_file_location(modname, filename, submodule_search_locations=[script_path])
+    spec = importlib.util.spec_from_file_location(
+        modname, filename, submodule_search_locations=[script_path]
+    )
 
     if spec is None:
         raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
