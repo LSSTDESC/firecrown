@@ -37,7 +37,7 @@ class Mapping(ABC):
     # pylint: disable-msg=R0902
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
-    Omega_g = TypeFloat()
+    Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
     sigma8 = TypeFloat(allow_none=True)
