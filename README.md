@@ -28,7 +28,7 @@ Firecrown does not *require* the installation of a sampler.
 The easiest way to get started is by using conda. We recommend creating a conda
 environment for your use.
 
-This will install Firecrown as well as the sampler that are currently supported.
+This will install Firecrown as well as the samplers that are currently supported.
 
 ```bash
 conda create --name fc -c conda-forge firecrown
@@ -146,6 +146,9 @@ Contributions to Firecrown are welcome.
 For any contribution, please start by [opening an issue](https://github.com/LSSTDESC/firecrown/issues),
 and using the GitHub interface to create a branch for that issue.
 
+To create a branch you will need write access; if you don't have write access, please send a request to the @LSSTDESC/firecrown-devs team.
+You can also fork the repository and send a pull request from your fork.
+
 When you have completed the task, push your commits to the branch you created for the issue and create a pull request.
 
 We are using several tools to help keep the code tidy and correct; these are described below.
@@ -188,12 +191,11 @@ This will require that all new code pass `pylint`'s checks.
 We are using the command-line tool `black` to auto-format Python code in Firecrown.
 Please make sure to run black on your code before creating any commits.
 
-
 ## Contact
 
 If you have comments, questions, or feedback, please [open an issue](https://github.com/LSSTDESC/firecrown/issues).
 
-You can also discuss Firecrown on the [#desc-firecrown](https://lsstc.slack.com/app_redirect?channel=desc-firecrown) LSSTC DESC Slack channel.
+You can also discuss Firecrown on the [#desc-firecrown](https://lsstc.slack.com/app_redirect?channel=desc-firecrown) LSSTC Slack channel.
 
 ## License and Conditions of Use
 
