@@ -11,10 +11,9 @@ from typing import Dict
 import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 import pyccl as ccl
-
 from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
+from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.likelihood import load_likelihood, Likelihood
 from firecrown.parameters import ParamsMap
 
