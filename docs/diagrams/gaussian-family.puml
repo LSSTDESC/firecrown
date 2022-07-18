@@ -22,20 +22,20 @@ note right of GaussianFamily::compute_chisq
 end note
 
 note left of GaussianFamily::_update
-  //_update// updates //systematics//.
+  //_update// updates //statisticcs//.
   Derived classes must implement
   //_update_gaussian_family//.
 end note
 
 note left of GaussianFamily::required_parameters
-  This call required_parameters() on systematics,
+  This call required_parameters() on statistics.
   and then calls required_parameters_gaussian_family()
   and returns the appropriate concatenation.
 end note
 
 class UpdatableCollection <<Statistic>> {}
 
-GaussianFamily *-- UpdatableCollection : systematics
+GaussianFamily *-- UpdatableCollection : statistics
 
 Likelihood <|-down- GaussianFamily
 
