@@ -1,7 +1,9 @@
-name: firecrown
+name: firecrown-docs
 channels:
   - conda-forge
+  - nodefaults
 dependencies:
+  - python>=3.8
   - cosmosis
   - cosmosis-build-standard-library
   - flake8
@@ -12,3 +14,8 @@ dependencies:
   - pytest
   - sacc>=0.3
   - scipy
+  - sphinx
+  - sphinx-autoapi
+  - sphinx-autodoc-typehints
+  - sphinxcontrib-apidoc
+  - sphinx_rtd_theme
