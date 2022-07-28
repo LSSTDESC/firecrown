@@ -14,8 +14,6 @@ dependencies:
   - scipy
   - sphinx
   - sphinx-autoapi
-  - sphinx-apidoc
   - sphinx-autodoc-typehints
   - sphinxcontrib-apidoc
   - sphinx_rtd_theme
- 
