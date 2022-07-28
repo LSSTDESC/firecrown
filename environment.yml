@@ -17,3 +17,5 @@ dependencies:
   - sphinx-autodoc-typehints
   - sphinxcontrib-apidoc
   - sphinx_rtd_theme
+  - sphinx-apidoc
+ 
