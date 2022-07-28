@@ -12,6 +12,8 @@ conda:
 
 build:
   os: ubuntu-20.04
+  apt_packages:
+    - plantuml
   tools:
     python: "3.10"
   jobs:
