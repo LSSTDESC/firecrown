@@ -80,15 +80,48 @@ autodoc_mock_imports = ["ccl", "pyccl", "numpy.typing._ufunc", "pandas._typing",
 
 # Napoleon compiles the docstrings into .rst
 
-# If True, include class __init__ docstrings separately from class
+napoleon_google_docstring = True
+napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
-# If True, include docstrings of private functions
-napoleon_include_private_with_doc = False
-# Detail for converting docstrings to rst
+napoleon_include_private_with_doc = True
+napoleon_include_special_with_doc = True
+napoleon_use_admonition_for_examples = False
+napoleon_use_admonition_for_notes = False
+napoleon_use_admonition_for_references = False
 napoleon_use_ivar = True
+napoleon_use_param = True
+napoleon_use_rtype = True
 
 
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+# Copied from github.com/sanderslab/magellanmapper:
+## automate building API .rst files, necessary for ReadTheDocs, as inspired by:
+## https://github.com/readthedocs/readthedocs.org/issues/1139#issuecomment-398083449
+def run_apidoc(_):
+    ignore_paths = []
+
+    argv = [
+        "--separate",
+        "-f",
+        "-M",
+        "-o", "source",
+        "../firecrown"
+    ] + ignore_paths
+
+    try:
+        # Sphinx >= 1.7
+        from sphinx.ext import apidoc
+        apidoc.main(argv)
+    except ImportError:
+        # Sphinx  < 1.7
+        from sphinx import apidoc
+        argv.insert(0, apidoc.__file__)
+        apidoc.main(argv)
+
+
+def setup(app):
+    app.connect('builder-inited', run_apidoc)

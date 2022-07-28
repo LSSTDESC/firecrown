@@ -32,6 +32,11 @@ class Mapping(ABC):
     for the members. A descriptor of name 'x' will provide an apparent instance
     datum of name 'x' in each class, as well as an entry '_x' in the object's
     __dict__.
+    
+    Attributes:
+        Omega_c: bla
+        A_s: Primordial power-spectrum amplitude.
+    
     """
 
     # pylint: disable-msg=R0902
