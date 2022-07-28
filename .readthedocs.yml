@@ -3,7 +3,17 @@ version: 2
 sphinx:
   configuration: docs/conf.py
 
+# Build all formats
+
 formats: all
 
 conda:
   environment: environment.yml
+
+build:
+  os: ubuntu-20.04
+  tools:
+    python: "3.10"
+  jobs:
+    pre_build:
+      - cd docs && make html
