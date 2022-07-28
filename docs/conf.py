@@ -76,7 +76,7 @@ set_type_checking_flag = True
 typehints_fully_qualified = False
 always_document_param_types = True
 typehints_document_rtype = True
-autodoc_mock_imports = ["ccl", "pyccl", "numpy.typing._ufunc", "pandas._typing", "pandas"]
+autodoc_mock_imports = ["ccl", "pyccl", "numpy.typing._ufunc", "pandas._typing", "pandas", "numpy._typing._ufunc"]
 
 # Napoleon compiles the docstrings into .rst
 

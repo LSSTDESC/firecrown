@@ -18,10 +18,10 @@ pdf: $(PDFS)
 .SUFFIXES : .puml .eps .pdf .png
 
 .puml.png:
-	$(PUML) -tpng $<
+	$(PUML) -v -tpng $<
 
 .puml.eps:
-	$(PUML) -teps $<
+	$(PUML) -v -teps $<
 	
 .eps.pdf:
 	epstopdf $<
