@@ -19,4 +19,4 @@ build:
   jobs:
     pre_build:
       - echo $PATH
-      - cd docs && make html
+      - cd docs/diagrams && make 
