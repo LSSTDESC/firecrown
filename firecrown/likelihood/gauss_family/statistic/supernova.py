@@ -1,3 +1,10 @@
+"""
+
+Gaussian Supernova Statistic module
+===================================
+
+"""
+
 from __future__ import annotations
 from typing import Tuple, final
 import functools

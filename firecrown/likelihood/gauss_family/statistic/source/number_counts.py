@@ -1,3 +1,11 @@
+"""
+
+Number counts source module
+===========================
+The classe in this file define ...
+
+"""
+
 from __future__ import annotations
 from typing import List, Optional, final
 from dataclasses import dataclass

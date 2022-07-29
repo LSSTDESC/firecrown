@@ -32,22 +32,32 @@ release = '1.0'
 # ones.
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx_autodoc_typehints',
     'sphinx.ext.doctest',
     'sphinx.ext.todo',
     'sphinx.ext.coverage',
     'sphinx.ext.mathjax',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
+#    'sphinx_toolbox.more_autodoc.typehints',
+    'sphinx_autodoc_typehints',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-#templates_path = ['_templates']
+templates_path = ['_templates']
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 
+#                    'source/api/firecrown.rst',
+#                    'source/api/firecrown.connector.rst',
+#                    'source/api/firecrown.connector.cobaya.rst',
+#                    'source/api/firecrown.connector.cosmosis.rst',
+#                    'source/api/firecrown.likelihood.rst',
+#                    'source/api/firecrown.likelihood.gauss_family.rst',
+#                    'source/api/firecrown.likelihood.gauss_family.statistic.rst',
+#                    'source/api/firecrown.likelihood.gauss_family.statistic.source.rst',
+                    ]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -62,8 +72,10 @@ html_theme = 'sphinx_rtd_theme'
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['diagrams']
 
-
 # -- Extension configuration -------------------------------------------------
+
+# autosummary
+#autosummary_generate = True
 
 # Some style options
 highlight_language = 'python3'
@@ -85,13 +97,12 @@ napoleon_numpy_docstring = True
 napoleon_include_init_with_doc = False
 napoleon_include_private_with_doc = True
 napoleon_include_special_with_doc = True
-napoleon_use_admonition_for_examples = False
-napoleon_use_admonition_for_notes = False
-napoleon_use_admonition_for_references = False
+#napoleon_use_admonition_for_examples = False
+#napoleon_use_admonition_for_notes = False
+#napoleon_use_admonition_for_references = False
 napoleon_use_ivar = True
 napoleon_use_param = True
 napoleon_use_rtype = True
-
 
 # -- Options for todo extension ----------------------------------------------
 
@@ -101,6 +112,7 @@ todo_include_todos = True
 # Copied from github.com/sanderslab/magellanmapper:
 ## automate building API .rst files, necessary for ReadTheDocs, as inspired by:
 ## https://github.com/readthedocs/readthedocs.org/issues/1139#issuecomment-398083449
+
 def run_apidoc(_):
     ignore_paths = []
 
@@ -108,7 +120,12 @@ def run_apidoc(_):
         "--separate",
         "-f",
         "-M",
-        "-o", "source",
+        "-e",
+        "-E",
+        "-T",
+#        "--implicit-namespaces",
+        "-d", "1",
+        "-o", "source/api",
         "../firecrown"
     ] + ignore_paths
 
@@ -125,3 +142,4 @@ def run_apidoc(_):
 
 def setup(app):
     app.connect('builder-inited', run_apidoc)
+

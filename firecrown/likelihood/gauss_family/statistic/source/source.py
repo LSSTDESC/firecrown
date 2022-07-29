@@ -1,4 +1,8 @@
-"""The classe in this file define ...
+"""
+
+Two Point Statistic Source module
+=================================
+The classe in this file define ...
 
 """
 

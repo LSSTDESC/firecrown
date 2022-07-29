@@ -1,4 +1,8 @@
-"""The module mapping provides facilities for mapping the cosmological
+"""
+
+Connector Mapping Module
+========================
+The module mapping provides facilities for mapping the cosmological
 constants and functions used by one body of code to another. This is done by
 defining one of the codes (pyccl) as being the 'standard', and for all other
 supported code, providing functions from_ccl and to_ccl.
@@ -33,18 +37,21 @@ class Mapping(ABC):
     datum of name 'x' in each class, as well as an entry '_x' in the object's
     __dict__.
     
-    Attributes:
-        Omega_c: bla
-        A_s: Primordial power-spectrum amplitude.
+    :attr Omega_c: bla
     
     """
 
     # pylint: disable-msg=R0902
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
+    """:meta hide-value:"""
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
+    """A_s is bla bla
+    :meta hide-value:
+    
+    """
     sigma8 = TypeFloat(allow_none=True)
     n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)

@@ -1,4 +1,9 @@
-"""Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
+"""
+
+Cobaya CCL Connector
+====================
+Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
+
 """
 from __future__ import annotations
 from typing import Optional, Dict, List

@@ -1,3 +1,13 @@
+"""
+
+Gaussian likelihood module
+==========================
+
+Some notes.
+
+"""
+
+
 from __future__ import annotations
 from typing import final
 import pyccl

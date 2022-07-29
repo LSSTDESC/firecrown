@@ -1,8 +1,11 @@
-"""The base likelihood class
+"""
 
-Some Notes:
+Likelihood module
+=================
 
-    -
+Provides the base likelihood class, all firecrown likelihoods must descend from
+this class.
+
 """
 
 from __future__ import annotations

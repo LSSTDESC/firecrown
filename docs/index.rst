@@ -16,10 +16,11 @@ It can also be used as a library in other contexts, and so the installation of
 Firecrown does not *require* the installation of a sampler.
 
 .. toctree::
-   :maxdepth: 2
-   :caption: Firecrown
+   :maxdepth: 1
+   :caption: Reference
+   :name: apiref
 
-   source/modules
+   API Documentation<source/api.rst>
 
 
 Indices and tables

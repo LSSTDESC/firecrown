@@ -1,4 +1,8 @@
-"""The Statistic class describing ...
+"""
+
+Gaussian family statistic module
+================================
+The Statistic class describing ...
 
 """
 

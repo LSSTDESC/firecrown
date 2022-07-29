@@ -1,3 +1,11 @@
+"""
+
+Weak lensing source module
+==========================
+The classe in this file define ...
+
+"""
+
 from __future__ import annotations
 from typing import List, Tuple, Optional, final
 from dataclasses import dataclass

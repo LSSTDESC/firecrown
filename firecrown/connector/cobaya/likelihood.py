@@ -1,4 +1,8 @@
-"""Module for providing a likelihood for use in Cobaya.
+"""
+
+Cobaya Likelihood Connector
+===========================
+Module for providing a likelihood for use in Cobaya.
 
 This module provides the class LikelihoodConnector, which is an implementation
 of a Cobaya likelihood.

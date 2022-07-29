@@ -1,4 +1,8 @@
-"""The versioning of Firecrown is intended to follow *Semantic Versioning*,
+"""
+
+Version module
+==============
+The versioning of Firecrown is intended to follow *Semantic Versioning*,
 version 2.
 
 See https://semver.org for details.

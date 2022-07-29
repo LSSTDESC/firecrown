@@ -1,3 +1,12 @@
+"""
+
+Gaussian family module
+======================
+
+Some notes.
+
+"""
+
 from __future__ import annotations
 from typing import List, Optional
 from typing import final
