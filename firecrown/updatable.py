@@ -2,6 +2,7 @@
 
 Updatable module
 ================
+
 Classes Updatable and UpdatableCollection.
 
 Abstract class Updatable is a base class from which any class in Firecrown that

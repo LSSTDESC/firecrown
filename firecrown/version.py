@@ -2,6 +2,7 @@
 
 Version module
 ==============
+
 The versioning of Firecrown is intended to follow *Semantic Versioning*,
 version 2.
 

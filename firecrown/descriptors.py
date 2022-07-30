@@ -3,6 +3,7 @@
 
 Descriptors module
 ==================
+
 Provides type validation as used in connectors.
 
 Classes provided:
