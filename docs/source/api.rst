@@ -3,8 +3,9 @@ API Documentation
 
 Information on specific functions, classes, and methods.
 
-.. toctree::
-   :maxdepth: 1
-   :caption: Firecrown package
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom-module-template.rst
+   :recursive:
 
-   api/firecrown.rst
+   firecrown

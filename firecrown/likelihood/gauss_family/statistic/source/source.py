@@ -2,7 +2,8 @@
 
 Two Point Statistic Source module
 =================================
-The classe in this file define ...
+
+The class in this file define ...
 
 """
 
@@ -22,7 +23,7 @@ class Systematic(Updatable):
     the `apply` method of different subclasses are different."""
 
     def read(self, sacc_data: sacc.Sacc):
-        pass
+        """This method is called to allow the systematic object to read from the appropriated sacc data."""
 
 
 class Source(Updatable):

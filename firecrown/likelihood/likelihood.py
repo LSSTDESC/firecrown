@@ -72,6 +72,10 @@ class Likelihood(Updatable):
 
 
 def load_likelihood(filename: str) -> Likelihood:
+    """Loads a likelihood script and returns an instance
+
+    :param filename: script filename
+    """
     _, file_extension = os.path.splitext(filename)
 
     ext = file_extension.lower()

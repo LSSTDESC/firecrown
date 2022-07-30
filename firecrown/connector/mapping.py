@@ -2,6 +2,7 @@
 
 Connector Mapping Module
 ========================
+
 The module mapping provides facilities for mapping the cosmological
 constants and functions used by one body of code to another. This is done by
 defining one of the codes (pyccl) as being the 'standard', and for all other
@@ -41,7 +42,6 @@ class Mapping(ABC):
 
     # pylint: disable-msg=R0902
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
-    """:meta hide-value:"""
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
@@ -72,11 +72,11 @@ class Mapping(ABC):
 
     @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given p_k * h^3 to p_k."""
+        """Transform the given :math:`p_k h^3 \\to p_k`."""
 
     @abstractmethod
     def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
-        """Transform distances h to h/h0."""
+        """Transform distances h to :math:`h/h_0`."""
 
     @final
     def set_params(
@@ -175,6 +175,8 @@ class MappingCLASS(Mapping):
     complain about using the names of missing classes.
     """
 
+    def get_params_names(self):
+        return []
 
 class MappingCosmoSIS(Mapping):
     """

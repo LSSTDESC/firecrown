@@ -59,7 +59,6 @@ class Updatable(ABC):
 
     @abstractmethod
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
-
         """Return a RequiredParameters object containing the information for
         this Updatable. This method must be overridden by concrete classes.
 

@@ -2,6 +2,7 @@
 
 Weak lensing source module
 ==========================
+
 The classe in this file define ...
 
 """
@@ -38,7 +39,7 @@ class WeakLensingSystematic(Systematic):
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        pass
+        """Apply method to include systematics in the tracer_arg."""
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):

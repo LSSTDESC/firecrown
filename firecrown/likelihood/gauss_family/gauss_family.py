@@ -1,9 +1,9 @@
 """
 
-Gaussian family module
+Gaussian Family Module
 ======================
 
-Some notes.
+Some notes. 
 
 """
 
@@ -92,4 +92,5 @@ class GaussFamily(Likelihood):
 
     @abstractmethod
     def required_parameters_gaussian_family(self):
+        """Required parameters for GaussFamily subclasses."""
         pass

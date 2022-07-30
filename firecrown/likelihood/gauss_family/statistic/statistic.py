@@ -2,7 +2,9 @@
 
 Gaussian family statistic module
 ================================
-The Statistic class describing ...
+
+The Statistic class describing objects that implement methods to compute the
+data and theory vectors for a GaussianFamily subclass.
 
 """
 

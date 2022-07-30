@@ -31,14 +31,15 @@ release = '1.0'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
+    'autoclasstoc',
     'sphinx.ext.autodoc',
-    'sphinx.ext.doctest',
-    'sphinx.ext.todo',
+    'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
+    'sphinx.ext.doctest',
     'sphinx.ext.mathjax',
-    'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-#    'sphinx_toolbox.more_autodoc.typehints',
+    'sphinx.ext.todo',
+    'sphinx.ext.viewcode',
     'sphinx_autodoc_typehints',
 ]
 
@@ -48,16 +49,7 @@ templates_path = ['_templates']
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store', 
-#                    'source/api/firecrown.rst',
-#                    'source/api/firecrown.connector.rst',
-#                    'source/api/firecrown.connector.cobaya.rst',
-#                    'source/api/firecrown.connector.cosmosis.rst',
-#                    'source/api/firecrown.likelihood.rst',
-#                    'source/api/firecrown.likelihood.gauss_family.rst',
-#                    'source/api/firecrown.likelihood.gauss_family.statistic.rst',
-#                    'source/api/firecrown.likelihood.gauss_family.statistic.source.rst',
-                    ]
+exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -74,15 +66,13 @@ html_static_path = ['diagrams']
 
 # -- Extension configuration -------------------------------------------------
 
-def typehints_formatter(
-    annotation,
-    sphinx_config,
-) -> str:
-    print ("ASAS")
-    return None
+# mathjax
+#mathjax_path = "MathJax/latest.js?config=TeX-AMS-MML_HTMLorMML"
+#mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js'
+mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 # autosummary
-#autosummary_generate = True
+autosummary_generate = True
 
 # Some style options
 highlight_language = 'python3'
@@ -116,6 +106,19 @@ napoleon_use_rtype = True
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
 
+sphinx_apidoc_options = [
+    "members",
+    "show-inheritance",
+    "private-members",
+    "special-members",
+]
+os.environ["SPHINX_APIDOC_OPTIONS"] = ",".join(sphinx_apidoc_options)
+
+autoclasstoc_sections = [
+        'public-methods',
+        'private-methods',
+]
+
 # Copied from github.com/sanderslab/magellanmapper:
 ## automate building API .rst files, necessary for ReadTheDocs, as inspired by:
 ## https://github.com/readthedocs/readthedocs.org/issues/1139#issuecomment-398083449
@@ -146,7 +149,5 @@ def run_apidoc(_):
         argv.insert(0, apidoc.__file__)
         apidoc.main(argv)
 
-
-def setup(app):
-    app.connect('builder-inited', run_apidoc)
-
+#def setup(app):
+#    app.connect('builder-inited', run_apidoc)
