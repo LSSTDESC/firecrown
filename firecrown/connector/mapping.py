@@ -36,9 +36,7 @@ class Mapping(ABC):
     for the members. A descriptor of name 'x' will provide an apparent instance
     datum of name 'x' in each class, as well as an entry '_x' in the object's
     __dict__.
-    
-    :attr Omega_c: bla
-    
+
     """
 
     # pylint: disable-msg=R0902
@@ -48,10 +46,6 @@ class Mapping(ABC):
     Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
-    """A_s is bla bla
-    :meta hide-value:
-    
-    """
     sigma8 = TypeFloat(allow_none=True)
     n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)

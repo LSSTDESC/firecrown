@@ -67,7 +67,7 @@ class Validator(ABC):
 
 class TypeFloat(Validator):
     """Floating point number attribute descriptor."""
-     
+
     def __init__(self, minvalue=None, maxvalue=None, allow_none=False):
         self.minvalue = minvalue
         self.maxvalue = maxvalue

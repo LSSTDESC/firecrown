@@ -1,6 +1,6 @@
 """
 
-Gaussian Two Point Statistic 
+Gaussian Two Point Statistic
 ============================
 
 """
