@@ -1,6 +1,6 @@
 """
 
-Two Point Statistic Source module
+Two Point Statistic Source Module
 =================================
 
 The class in this file define ...

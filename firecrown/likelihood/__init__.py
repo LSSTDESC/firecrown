@@ -1,6 +1,6 @@
 """
 
-Likelihood package
+Likelihood Package
 ==================
 
 This package provide all likelihood related code. The subpackages contain

@@ -1,6 +1,6 @@
 """
 
-Version module
+Version Module
 ==============
 
 The versioning of Firecrown is intended to follow *Semantic Versioning*,

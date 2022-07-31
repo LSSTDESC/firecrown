@@ -1,6 +1,6 @@
 """
 
-Gaussian Supernova Statistic module
+Gaussian Supernova Statistic Module
 ===================================
 
 """

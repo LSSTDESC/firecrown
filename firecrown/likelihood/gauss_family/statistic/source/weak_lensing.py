@@ -1,6 +1,6 @@
 """
 
-Weak lensing source module
+Weak Lensing Source Module
 ==========================
 
 The classe in this file define ...

@@ -1,7 +1,7 @@
 """
 
 
-Descriptors module
+Descriptors Module
 ==================
 
 Provides type validation as used in connectors.

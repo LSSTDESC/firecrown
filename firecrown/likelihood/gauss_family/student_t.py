@@ -1,6 +1,6 @@
 """
 
-Student-t likelihood module
+Student-t Likelihood Module
 ===========================
 
 Some notes.

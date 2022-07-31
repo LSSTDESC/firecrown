@@ -1,6 +1,6 @@
 """
 
-Likelihood module
+Likelihood Module
 =================
 
 Provides the base likelihood class, all firecrown likelihoods must descend from

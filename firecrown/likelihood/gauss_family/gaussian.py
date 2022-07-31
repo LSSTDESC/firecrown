@@ -1,6 +1,6 @@
 """
 
-Gaussian likelihood module
+Gaussian Likelihood Module
 ==========================
 
 Some notes.

@@ -1,7 +1,7 @@
 """
 
 
-Parameters module
+Parameters Module
 =================
 
 Provide classes and functions to support groups of named parameters.

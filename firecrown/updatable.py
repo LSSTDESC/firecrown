@@ -1,6 +1,6 @@
 """
 
-Updatable module
+Updatable Module
 ================
 
 Classes Updatable and UpdatableCollection.

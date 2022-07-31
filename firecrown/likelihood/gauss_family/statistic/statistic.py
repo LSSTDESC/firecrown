@@ -1,6 +1,6 @@
 """
 
-Gaussian family statistic module
+Gaussian Family Statistic Module
 ================================
 
 The Statistic class describing objects that implement methods to compute the

@@ -1,6 +1,6 @@
 """
 
-Firecrown package
+Firecrown Package
 =================
 
 
