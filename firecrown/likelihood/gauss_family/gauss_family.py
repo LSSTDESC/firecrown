@@ -3,7 +3,7 @@
 Gaussian Family Module
 ======================
 
-Some notes. 
+Some notes.
 
 """
 

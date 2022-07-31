@@ -178,6 +178,7 @@ class MappingCLASS(Mapping):
     def get_params_names(self):
         return []
 
+
 class MappingCosmoSIS(Mapping):
     """
     Implementation of the mapping class between CosmoSIS datablock parameters
