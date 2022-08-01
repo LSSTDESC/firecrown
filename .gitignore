@@ -1,4 +1,3 @@
-sandbox/.ipynb_checkpoints/*
 env/
 dist/
 build/
@@ -96,7 +95,7 @@ instance/
 
 # Sphinx documentation
 docs/_build/
-docs/source/api
+docs/api
 
 # PyBuilder
 target/
