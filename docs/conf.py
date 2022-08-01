@@ -62,13 +62,11 @@ html_theme = 'sphinx_rtd_theme'
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-html_static_path = ['diagrams']
+#html_static_path = []
 
 # -- Extension configuration -------------------------------------------------
 
 # mathjax
-#mathjax_path = "MathJax/latest.js?config=TeX-AMS-MML_HTMLorMML"
-#mathjax_path = 'http://cdn.mathjax.org/mathjax/latest/MathJax.js'
 mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 # autosummary
