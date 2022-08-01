@@ -5,6 +5,10 @@ build/
 __pycache__/
 examples/output_*
 examples/*/.ipynb_checkpoints/*
+examples/srd_sn/sndata/
+.idea
+.project
+.pydevproject
 
 *.csv
 *.txt
