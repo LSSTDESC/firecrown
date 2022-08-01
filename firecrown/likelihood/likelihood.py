@@ -1,8 +1,11 @@
-"""The base likelihood class
+"""
 
-Some Notes:
+Likelihood Module
+=================
 
-    -
+Provides the base likelihood class, all firecrown likelihoods must descend from
+this class.
+
 """
 
 from __future__ import annotations
@@ -69,6 +72,10 @@ class Likelihood(Updatable):
 
 
 def load_likelihood(filename: str) -> Likelihood:
+    """Loads a likelihood script and returns an instance
+
+    :param filename: script filename
+    """
     _, file_extension = os.path.splitext(filename)
 
     ext = file_extension.lower()

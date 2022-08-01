@@ -1,4 +1,10 @@
-"""Provide classes and functions to support groups of named parameters.
+"""
+
+
+Parameters Module
+=================
+
+Provide classes and functions to support groups of named parameters.
 
 Classes include:
     ParamsMap: specialized Dict mapping strings to floats.

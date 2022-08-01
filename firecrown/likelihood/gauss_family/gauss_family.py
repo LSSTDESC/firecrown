@@ -1,3 +1,12 @@
+"""
+
+Gaussian Family Module
+======================
+
+Some notes.
+
+"""
+
 from __future__ import annotations
 from typing import List, Optional
 from typing import final
@@ -83,4 +92,5 @@ class GaussFamily(Likelihood):
 
     @abstractmethod
     def required_parameters_gaussian_family(self):
+        """Required parameters for GaussFamily subclasses."""
         pass

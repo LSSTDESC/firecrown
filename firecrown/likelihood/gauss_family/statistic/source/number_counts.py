@@ -1,3 +1,12 @@
+"""
+
+Number Counts Source Module
+===========================
+
+The classe in this file define ...
+
+"""
+
 from __future__ import annotations
 from typing import List, Optional, final
 from dataclasses import dataclass
@@ -27,11 +36,13 @@ class NumberCountsArgs:
 
 
 class NumberCountsSystematic(Systematic):
+    """Class implementing systematics for Number Counts sources."""
+
     @abstractmethod
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
-        pass
+        """Apply method to include systematics in the tracer_arg."""
 
 
 class LinearBiasSystematic(NumberCountsSystematic):

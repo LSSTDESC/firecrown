@@ -1,4 +1,10 @@
-"""Provides type validation as used in connectors.
+"""
+
+
+Descriptors Module
+==================
+
+Provides type validation as used in connectors.
 
 Classes provided:
     Validator: Abstract base class for concrete validators
@@ -61,6 +67,8 @@ class Validator(ABC):
 
 
 class TypeFloat(Validator):
+    """Floating point number attribute descriptor."""
+
     def __init__(self, minvalue=None, maxvalue=None, allow_none=False):
         self.minvalue = minvalue
         self.maxvalue = maxvalue
@@ -83,6 +91,8 @@ class TypeFloat(Validator):
 
 
 class TypeString(Validator):
+    """String attribute descriptor."""
+
     def __init__(self, minsize=None, maxsize=None, predicate=None):
         self.minsize = minsize
         self.maxsize = maxsize
@@ -104,6 +114,8 @@ class TypeString(Validator):
 
 
 class TypeLikelihood(Validator):
+    """Likelihood attribute descriptor."""
+
     def __init__(self):
         pass
 

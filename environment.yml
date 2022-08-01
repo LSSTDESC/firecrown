@@ -12,8 +12,3 @@ dependencies:
   - pytest
   - sacc>=0.3
   - scipy
-  - sphinx
-  - sphinx-autoapi
-  - sphinx-autodoc-typehints
-  - sphinxcontrib-apidoc
-  - sphinx_rtd_theme

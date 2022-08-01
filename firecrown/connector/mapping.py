@@ -1,4 +1,9 @@
-"""The module mapping provides facilities for mapping the cosmological
+"""
+
+Connector Mapping Module
+========================
+
+The module mapping provides facilities for mapping the cosmological
 constants and functions used by one body of code to another. This is done by
 defining one of the codes (pyccl) as being the 'standard', and for all other
 supported code, providing functions from_ccl and to_ccl.
@@ -32,6 +37,7 @@ class Mapping(ABC):
     for the members. A descriptor of name 'x' will provide an apparent instance
     datum of name 'x' in each class, as well as an entry '_x' in the object's
     __dict__.
+
     """
 
     # pylint: disable-msg=R0902
@@ -66,11 +72,11 @@ class Mapping(ABC):
 
     @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given p_k * h^3 to p_k."""
+        """Transform the given :math:`p_k h^3 \\to p_k`."""
 
     @abstractmethod
     def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
-        """Transform distances h to h/h0."""
+        """Transform distances h to :math:`h/h_0`."""
 
     @final
     def set_params(
@@ -168,6 +174,9 @@ class MappingCLASS(Mapping):
     This class is not yet implemented; this stub is here to satisfy IDEs that
     complain about using the names of missing classes.
     """
+
+    def get_params_names(self):
+        return []
 
 
 class MappingCosmoSIS(Mapping):

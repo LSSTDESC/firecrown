@@ -1,4 +1,8 @@
-"""The module provides the class FirecrownLikelihood, and the hook functions
+"""
+
+CosmoSIS Likelihood Connector
+=============================
+The module provides the class FirecrownLikelihood, and the hook functions
 for this module to be a CosmoSIS likelihood module.
 
 Note that the class FirecrownLikelihood does *not* inherit from firecrown's
@@ -33,7 +37,7 @@ class FirecrownLikelihood:
     output of CAMB, and also for calculating the data likelihood baesd on this
     theory.
 
-    :param config: CosmoSIS datablock
+    :param config: current CosmoSIS datablock
     """
 
     likelihood: Likelihood

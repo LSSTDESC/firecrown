@@ -1,4 +1,10 @@
-"""The Statistic class describing ...
+"""
+
+Gaussian Family Statistic Module
+================================
+
+The Statistic class describing objects that implement methods to compute the
+data and theory vectors for a GaussianFamily subclass.
 
 """
 

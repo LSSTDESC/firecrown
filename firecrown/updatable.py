@@ -1,4 +1,9 @@
-"""Classes Updatable and UpdatableCollection.
+"""
+
+Updatable Module
+================
+
+Classes Updatable and UpdatableCollection.
 
 Abstract class Updatable is a base class from which any class in Firecrown that
 supports updating from a ParamsMap should inherit. Such classes are expected to
@@ -55,7 +60,6 @@ class Updatable(ABC):
 
     @abstractmethod
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
-
         """Return a RequiredParameters object containing the information for
         this Updatable. This method must be overridden by concrete classes.
 

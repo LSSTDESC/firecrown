@@ -5,10 +5,9 @@
 # from the environment for the first two.
 SPHINXOPTS    ?= -W
 SPHINXBUILD   ?= sphinx-build
-SOURCEDIR     = .
+SOURCEDIR     = source
 BUILDDIR      = _build
 RM            = rm -rf
-SPHINXAPIDOC  = sphinx-apidoc
 MODULEDIR     = ../firecrown
 
 # Put it first so that "make" without argument is like "make help".
@@ -28,18 +27,17 @@ $(SUBDIRS):
 .PHONY: $(TOPTARGETS) $(SUBDIRS)
 
 .PHONY: html
-html: sphinx-apidoc
+html:
 	@$(SPHINXBUILD) -M html "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(0)
 
 .PHONY: clean
 clean:
 	@echo "Erasing build directory"
 	$(RM) _build/* 
+	$(RM) _autosummary/* 
+	$(RM) _api/* 
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile $(SUBDIRS)
 	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)
-
-sphinx-apidoc: $(SUBDIRS)
-	@$(SPHINXAPIDOC) --separate -f -M -o source $(MODULEDIR)
