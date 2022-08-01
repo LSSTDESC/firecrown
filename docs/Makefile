@@ -34,7 +34,8 @@ html:
 clean:
 	@echo "Erasing build directory"
 	$(RM) _build/* 
-	$(RM) source/_autosummary/* 
+	$(RM) _autosummary/* 
+	$(RM) _api/* 
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

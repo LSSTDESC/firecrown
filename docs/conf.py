@@ -133,7 +133,7 @@ def run_apidoc(_):
         "-T",
 #        "--implicit-namespaces",
         "-d", "1",
-        "-o", "source/api",
+        "-o", "_api",
         "../firecrown"
     ] + ignore_paths
 

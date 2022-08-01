@@ -26,6 +26,14 @@ Welcome to firecrown's documentation!
 
    API Documentation<api.rst>
 
+.. toctree::
+   :maxdepth: 1
+   :caption: License
+   :name: license
+
+   termcond
+
+
 Indices and tables
 ==================
 
