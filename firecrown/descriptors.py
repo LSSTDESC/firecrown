@@ -4,13 +4,17 @@
 Descriptors Module
 ==================
 
+.. role:: python(code)
+   :language: python
+
 Provides type validation as used in connectors.
 
 Classes provided:
-    Validator: Abstract base class for concrete validators
-    TypeFloat: verifies a parameter is a float, with optional range checking
-    TypeString: verifies a parameter is a string, with optional value checking
-    TypeLikelihood: verifies a parameter is a Firecrown likelihood object
+
+* :class:`firecrown.descriptors.Validator`: Abstract base class for concrete validators
+* TypeFloat: verifies a parameter is a float, with optional range checking
+* TypeString: verifies a parameter is a string, with optional value checking
+* TypeLikelihood: verifies a parameter is a Firecrown likelihood object
 
 Validators are created using the constructor for each class.
 Access to the data done through the object name, not through any named function.
@@ -18,8 +22,10 @@ Setting the data is validated with the class's `validate` function; the user doe
 not need to call any special functions.
 
 Validators are intended for use in class definitions. An example is a class that
-has a data member `x` that is required to be a float in the range [1.0, 3.0], but
+has a data member :python:`x` that is required to be a float in the range :python:`[1.0, 3.0]`, but
 is optional and has a default value of None:
+
+.. code:: python
 
     class SampleValidatedTHing:
         x = TypeFloat(1.0, 3.0, allow_none=True)

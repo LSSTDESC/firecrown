@@ -5,7 +5,7 @@
 # from the environment for the first two.
 SPHINXOPTS    ?= -W
 SPHINXBUILD   ?= sphinx-build
-SOURCEDIR     = source
+SOURCEDIR     = .
 BUILDDIR      = _build
 RM            = rm -rf
 MODULEDIR     = ../firecrown

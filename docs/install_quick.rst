@@ -7,7 +7,6 @@ Installation Quickstart
    :language: bash
 
 .. warning::
-    Warning
 
     The conda packaging of Firecrown is not yet completed.
     The following instructions show how we intend the installation to work;
