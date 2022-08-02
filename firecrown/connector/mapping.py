@@ -1,7 +1,4 @@
-"""
-
-Connector Mapping Module
-========================
+"""Facilities for mapping cosmological parameters between frameworks.
 
 The module mapping provides facilities for mapping the cosmological
 constants and functions used by one body of code to another. This is done by
@@ -9,12 +6,13 @@ defining one of the codes (pyccl) as being the 'standard', and for all other
 supported code, providing functions from_ccl and to_ccl.
 
 The supported codes include:
-    pyccl
-    CAMB (Fortran convention)
-    pycamb (similar but not identical to the CAMB Fortran convention)
-    CLASS
-    Cobaya
-    CosmoSIS
+
+* pyccl
+* CAMB (Fortran convention)
+* pycamb (similar but not identical to the CAMB Fortran convention)
+* CLASS
+* Cobaya
+* CosmoSIS
 """
 
 from abc import ABC, abstractmethod

@@ -1,14 +1,4 @@
-"""
-
-
-Parameters Module
-=================
-
-Provide classes and functions to support groups of named parameters.
-
-Classes include:
-    ParamsMap: specialized Dict mapping strings to floats.
-    RequiredParameters: represents a collection of required parameter names.
+"""Classes and functions to support groups of named parameters.
 
 """
 

@@ -1,20 +1,8 @@
-"""
-
-
-Descriptors Module
-==================
+"""Provides type validation as used in connectors.
 
 .. role:: python(code)
    :language: python
 
-Provides type validation as used in connectors.
-
-Classes provided:
-
-* :class:`firecrown.descriptors.Validator`: Abstract base class for concrete validators
-* TypeFloat: verifies a parameter is a float, with optional range checking
-* TypeString: verifies a parameter is a string, with optional value checking
-* TypeLikelihood: verifies a parameter is a Firecrown likelihood object
 
 Validators are created using the constructor for each class.
 Access to the data done through the object name, not through any named function.
