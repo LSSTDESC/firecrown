@@ -80,23 +80,4 @@ lk.read(sacc_data)
 """
 likelihood = lk
 
-if __name__ == "__main__":
-    import pyccl
-
-    ccl_cosmo = pyccl.Cosmology(
-        Omega_c=Omega_c,
-        Omega_b=Omega_b,
-        Neff=Neff,
-        h=h,
-        A_s=A_s,
-        n_s=n_s,
-        Omega_k=Omega_k,
-        w0=w0,
-        wa=wa,
-        transfer_function="eisenstein_hu",
-    )
-    # This doesn't yet work; we need to sort out how to build
-    # our parameters_dictionary.
-    #
-    loglike = likelihood.compute_loglike(ccl_cosmo, parameters_dictionary)
-    print(f"The log likelihood is {loglike}")
+y
