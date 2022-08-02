@@ -1,12 +1,9 @@
-"""
+"""Support of Firecrown likelihood use in CosmoSIS.
 
-CosmoSIS Connector Package
-==========================
-
-This package provide all objects necessary to use Firecrown likelihoods from
-CosmoSIS.
-
+The subpackages and modules in this package depend upon CosmoSIS, and can not
+be used without an installation of CosmoSIS.
 
 """
+
 
 # flake8: noqa

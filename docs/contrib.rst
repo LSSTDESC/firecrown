@@ -35,7 +35,6 @@ Testing
 
 
 .. warning::
-    Warning
 
     We are working on improving the coverage of testing for Firecrown; it is currently very inadequate.
     As the coverage improves, we will provide instructions for writing tests for new code.

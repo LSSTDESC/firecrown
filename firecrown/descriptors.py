@@ -1,16 +1,5 @@
-"""
+"""Provides type validation as used in connectors.
 
-
-Descriptors Module
-==================
-
-Provides type validation as used in connectors.
-
-Classes provided:
-    Validator: Abstract base class for concrete validators
-    TypeFloat: verifies a parameter is a float, with optional range checking
-    TypeString: verifies a parameter is a string, with optional value checking
-    TypeLikelihood: verifies a parameter is a Firecrown likelihood object
 
 Validators are created using the constructor for each class.
 Access to the data done through the object name, not through any named function.
@@ -18,8 +7,10 @@ Setting the data is validated with the class's `validate` function; the user doe
 not need to call any special functions.
 
 Validators are intended for use in class definitions. An example is a class that
-has a data member `x` that is required to be a float in the range [1.0, 3.0], but
+has a instance variable :python:`x` that is required to be a float in the range :python:`[1.0, 3.0]`, but
 is optional and has a default value of None:
+
+.. code:: python
 
     class SampleValidatedTHing:
         x = TypeFloat(1.0, 3.0, allow_none=True)
@@ -45,7 +36,7 @@ class Validator(ABC):
     """
 
     def __set_name__(self, owner, name):
-        """Create the name of the private data member that will hold the value."""
+        """Create the name of the private instance variable that will hold the value."""
         self.private_name = "_" + name
 
     def __get__(self, obj, objtype=None):

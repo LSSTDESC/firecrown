@@ -1,8 +1,6 @@
 """
 
-Firecrown Package
-=================
-
+A package for creation of DESC likelihoods.
 
 
 """

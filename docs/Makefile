@@ -5,7 +5,7 @@
 # from the environment for the first two.
 SPHINXOPTS    ?= -W
 SPHINXBUILD   ?= sphinx-build
-SOURCEDIR     = source
+SOURCEDIR     = .
 BUILDDIR      = _build
 RM            = rm -rf
 MODULEDIR     = ../firecrown
@@ -33,9 +33,9 @@ html:
 .PHONY: clean
 clean:
 	@echo "Erasing build directory"
-	$(RM) _build/* 
-	$(RM) _autosummary/* 
-	$(RM) _api/* 
+	$(RM) _build/
+	$(RM) _autosummary/
+
 
 # Catch-all target: route all unknown targets to Sphinx using the new
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).

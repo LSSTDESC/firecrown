@@ -1,5 +1,8 @@
 {{ fullname | escape | underline}}
 
+.. role:: python(code)
+   :language: python
+
 .. currentmodule:: {{ module }}
 
 .. autoclass:: {{ objname }}
