@@ -1,18 +1,13 @@
 """Facilities for mapping cosmological parameters between frameworks.
 
-The module mapping provides facilities for mapping the cosmological
+The module :mod:`mapping` provides facilities for mapping the cosmological
 constants and functions used by one body of code to another. This is done by
-defining one of the codes (pyccl) as being the 'standard', and for all other
-supported code, providing functions from_ccl and to_ccl.
+defining one of the codes (:mod:`pyccl`) as being the 'standard', and for all
+other supported code, providing functions :python:`from_ccl` and
+:python:`to_ccl`.
 
-The supported codes include:
+Each supported body of code has its own dedicated class.
 
-* pyccl
-* CAMB (Fortran convention)
-* pycamb (similar but not identical to the CAMB Fortran convention)
-* CLASS
-* Cobaya
-* CosmoSIS
 """
 
 from abc import ABC, abstractmethod
@@ -25,16 +20,16 @@ from ..descriptors import TypeFloat, TypeString
 
 
 class Mapping(ABC):
-    """
-    Mapping is an abstract base class providing the interface that describes
-    a mapping of cosmological constants from some concrete Boltzmann calculator
-    to the form those constants take in CCL. Each supported Boltzmann calculator
-    will have its own concrete subclass.
+    """Abstract base class defining the interface for each supported code.
 
-    The class variables are actually descriptors to control the allowed types
-    for the members. A descriptor of name 'x' will provide an apparent instance
-    datum of name 'x' in each class, as well as an entry '_x' in the object's
-    __dict__.
+    The interface describes a mapping of cosmological constants from some
+    concrete Boltzmann calculator to the form those constants take in CCL. Each
+    supported Boltzmann calculator must have its own concrete subclass.
+
+    The class variables are all :mod:`firecrown.connector.descriptors`. This is
+    to control the allowed types for the instance variables. A descriptor of
+    name 'x' will provide an apparent instance variable of name :python:`x` in
+    each class, as well as an entry :python:`_x` in the object's __dict__.
 
     """
 
@@ -168,9 +163,10 @@ class Mapping(ABC):
 
 
 class MappingCLASS(Mapping):
-    """
-    This class is not yet implemented; this stub is here to satisfy IDEs that
-    complain about using the names of missing classes.
+    """This class is not yet implemented.
+
+    This stub is here to satisfy IDEs that complain about using the names of
+    missing classes.
     """
 
     def get_params_names(self):
@@ -178,10 +174,7 @@ class MappingCLASS(Mapping):
 
 
 class MappingCosmoSIS(Mapping):
-    """
-    Implementation of the mapping class between CosmoSIS datablock parameters
-    and CCL.
-    """
+    """Mapping support for CosmoSIS."""
 
     def get_params_names(self):
         return [
@@ -319,8 +312,10 @@ class MappingCosmoSIS(Mapping):
 
 
 class MappingCAMB(Mapping):
-    """
-    A class implementing Mapping for the Python CAMB interface.
+    """Mapping support for PyCAMB, the Python version of CAMB.
+
+    Note that the Python version of CAMB uses some different conventions from
+    the Fortran version of CAMB. The two are not interchangeable.
     """
 
     def get_params_names(self) -> List[str]:
