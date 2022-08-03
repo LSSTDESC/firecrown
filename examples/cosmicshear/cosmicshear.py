@@ -80,4 +80,3 @@ lk.read(sacc_data)
 """
 likelihood = lk
 
-y
