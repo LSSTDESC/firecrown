@@ -7,8 +7,8 @@ Setting the data is validated with the class's `validate` function; the user doe
 not need to call any special functions.
 
 Validators are intended for use in class definitions. An example is a class that
-has a instance variable :python:`x` that is required to be a float in the range :python:`[1.0, 3.0]`, but
-is optional and has a default value of None:
+has a instance variable :python:`x` that is required to be a float in the range
+:python:`[1.0, 3.0]`, but is optional and has a default value of None:
 
 .. code:: python
 

@@ -68,10 +68,10 @@ class FirecrownLikelihood:
 
         cosmo = ccl.CosmologyCalculator(**self.map.asdict(), **ccl_args)
 
-        # TODO: Future development will need to capture elements that get put into the datablock.
-        # This probably will be in a different "physics module" and not in the likelihood module.
-        # And it requires updates to Firecrown to split the calculations.
-        # e.g., data_vector/firecrown_theory  data_vector/firecrown_data
+        # TODO: Future development will need to capture elements that get put into the
+        # datablock. This probably will be in a different "physics module" and not in
+        # the likelihood module. And it requires updates to Firecrown to split the
+        # calculations. e.g., data_vector/firecrown_theory  data_vector/firecrown_data
 
         firecrown_params = self.calculate_firecrown_params(sample)
 

@@ -23,7 +23,8 @@ class Systematic(Updatable):
     the `apply` method of different subclasses are different."""
 
     def read(self, sacc_data: sacc.Sacc):
-        """This method is called to allow the systematic object to read from the appropriated sacc data."""
+        """This method is called to allow the systematic object to read from the
+        appropriated sacc data."""
 
 
 class Source(Updatable):

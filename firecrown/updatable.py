@@ -1,15 +1,15 @@
 """Parameters that can be updated, and collections of them.
 
-Abstract class :class:`Updatable` is the base class from which any class in Firecrown that
-supports updating from a :class:`ParamsMap` should inherit. Such classes are expected to
-change state only in through their implementation of :python:`_update` (including any
-other private methods used to implement :python:`_update`). Other functions should not
-change the data of :class:`Updatable` objects.
+Abstract class :class:`Updatable` is the base class from which any class in Firecrown
+that supports updating from a :class:`ParamsMap` should inherit. Such classes are
+expected to change state only in through their implementation of :python:`_update`
+(including any other private methods used to implement :python:`_update`). Other
+functions should not change the data of :class:`Updatable` objects.
 
 :class:`UpdatableCollection` is a subclass of the built-in list. It implements the
-:class:`Updatable` interface by calling :python:`update()` on each element it contains. The
-:python:`append()` member is overridden to make sure that only objects which are of a
-type that implements :class:`Updatable` can be appended to the list.
+:class:`Updatable` interface by calling :python:`update()` on each element it contains.
+The :python:`append()` member is overridden to make sure that only objects which are of
+a type that implements :class:`Updatable` can be appended to the list.
 
 """
 

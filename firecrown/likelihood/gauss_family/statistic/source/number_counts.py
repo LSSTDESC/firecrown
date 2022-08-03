@@ -75,7 +75,8 @@ class LinearBiasSystematic(NumberCountsSystematic):
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of parameters."""
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
         self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
@@ -142,7 +143,8 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of parameters."""
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
         self.r_lim = params.get_from_prefix_param(self.sacc_tracer, "r_lim")
         self.sig_c = params.get_from_prefix_param(self.sacc_tracer, "sig_c")
         self.eta = params.get_from_prefix_param(self.sacc_tracer, "eta")

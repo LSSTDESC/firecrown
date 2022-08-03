@@ -66,7 +66,8 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of parameters."""
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
         self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
 
     @final
