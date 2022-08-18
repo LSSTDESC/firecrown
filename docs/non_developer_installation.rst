@@ -54,3 +54,4 @@ Begin by `cd`-ing to the working directory you used above (which should contain 
     export FIRECROWN_SITE_PACKAGES=${COSMOSIS_SRC_DIR}/..
 
 See the :doc:`example of non-developer mode usage <non-developer-mode-example/README>` for an example likelihood script and its use with both Cobaya and CosmoSIS.
+
