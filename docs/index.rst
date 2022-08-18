@@ -2,13 +2,14 @@ Welcome to firecrown's documentation!
 =====================================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
    :caption: Getting Started
    :name: getstart
 
    Introduction<intro.rst>
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
+
 
 .. toctree::
    :maxdepth: 1

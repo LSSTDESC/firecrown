@@ -22,7 +22,7 @@ copyright = '2022, LSST DESC Firecrown Contributors'
 author = 'LSST DESC Firecrown Contributors'
 
 # The full version, including alpha/beta/rc tags
-release = '1.0'
+release = '1.1'
 
 
 # -- General configuration ---------------------------------------------------
@@ -54,10 +54,17 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # -- Options for HTML output -------------------------------------------------
 
+# Attempt to generate a sidebar
+html_sidebars = {'**': ['localtoc.html', 'sourcelink.html', 'searchbox.html']}
+
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
 html_theme = 'sphinx_rtd_theme'
+
+html_theme_options = {
+    "collapse_navigation" : False
+}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
