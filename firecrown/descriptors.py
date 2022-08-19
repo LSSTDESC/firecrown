@@ -20,6 +20,11 @@ has a instance variable :python:`x` that is required to be a float in the range
 
 """
 
+# Validator classes naturally have very few public methods. We silence the
+# warning from pylint that complains about this.
+#
+# pylint: disable=R0903
+
 import math
 from abc import ABC, abstractmethod
 from .likelihood.likelihood import Likelihood
@@ -37,7 +42,7 @@ class Validator(ABC):
 
     def __set_name__(self, owner, name):
         """Create the name of the private instance variable that will hold the value."""
-        self.private_name = "_" + name
+        self.private_name = "_" + name  # pylint: disable-msg=W0201
 
     def __get__(self, obj, objtype=None):
         """Accessor method, which reads controlled value.
