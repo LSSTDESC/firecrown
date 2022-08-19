@@ -1,10 +1,11 @@
-"""
+"""Basic likelihood infrastructure
 
-Likelihood Module
-=================
 
-Provides the base likelihood class, all firecrown likelihoods must descend from
-this class.
+This module provides the base class :python:`Likelihood`, which is the class
+from which all concrete firecrown likelihoods must descend.
+
+It also provides the function :python:`load_likelihood` which reads a
+likelihood script to create an object of some subclass of :python:`Likelihood`.
 
 """
 

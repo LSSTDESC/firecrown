@@ -1,7 +1,4 @@
-"""
-
-Cobaya Likelihood Connector
-===========================
+"""Cobaya Likelihood Connector
 
 Module for providing a likelihood for use in Cobaya.
 

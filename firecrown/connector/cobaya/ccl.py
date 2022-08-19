@@ -1,7 +1,5 @@
-"""
+"""Cobaya CCL Connector
 
-Cobaya CCL Connector
-====================
 
 Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
 
