@@ -1,8 +1,6 @@
-"""
+"""CosmoSIS Likelihood Connector
 
-CosmoSIS Likelihood Connector
-=============================
-The module provides the class FirecrownLikelihood, and the hook functions
+This module provides the class FirecrownLikelihood, and the hook functions
 for this module to be a CosmoSIS likelihood module.
 
 Note that the class FirecrownLikelihood does *not* inherit from firecrown's
