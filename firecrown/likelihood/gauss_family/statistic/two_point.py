@@ -34,20 +34,21 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
+ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=60_000, n_log=200)
 
 
-def _ell_for_xi(*, min, mid, max, n_log):
+def _ell_for_xi(*, min: int, mid: int, max: int, n_log: int) -> np.ndarray:
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
+
+    The result will contain each integral value from min to mid.
+    Starting from mid, and going up to max, there will be n_log
+    logarithmically spaced values.
     """
-    # TODO: Shouldn't the calculated values for 'l' be integers?
-    # If so, this algorithm does not always do so.
-    import pdb
-    pdb.set_trace()
-    lower_range = np.linspace(min, mid - 1, mid - min),
+    lower_range = np.linspace(min, mid - 1, mid - min)
     upper_range = np.logspace(np.log10(mid), np.log10(max), n_log)
-    return np.concatenate((lower_range, upper_range))
+    concatenated = np.concatenate((lower_range, upper_range))
+    return np.around(concatenated)
 
 
 def _generate_ell_or_theta(*, min, max, n, binning="log"):
@@ -59,7 +60,6 @@ def _generate_ell_or_theta(*, min, max, n, binning="log"):
         return (edges[1:] + edges[:-1]) / 2.0
 
 
-@functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells):
     # TODO: functools.lru_cache requires that the function arguments all be
     # hashable. Is this the case for these arguments?
@@ -123,12 +123,12 @@ class TwoPoint(Statistic):
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
 
-         - min : int, optional - The minimum angulare wavenumber to use for
+         - min : int, optional - The minimum angular wavenumber to use for
            real-space integrations. Default is 2.
          - mid : int, optional - The midpoint angular wavenumber to use for
            real-space integrations. The angular wavenumber samples are linearly
            spaced at integers between `min` and `mid`. Default is 50.
-         - max : float, optional - The maximum angular wavenumber to use for
+         - max : int, optional - The maximum angular wavenumber to use for
            real-space integrations. The angular wavenumber samples are
            logarithmically spaced between `mid` and `max`. Default is 6e4.
          - n_log : int, optional - The number of logarithmically spaced angular
@@ -181,6 +181,7 @@ class TwoPoint(Statistic):
         self.theory_vector = None
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
+            # data type in CCL nomenclature.
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
             raise ValueError(
