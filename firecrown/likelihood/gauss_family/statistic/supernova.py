@@ -32,6 +32,8 @@ def _z_for_mu(*, min, max, n):
 
 @functools.lru_cache(maxsize=128)
 def _cached_distmod(cosmo, tracers, z):
+    # TODO: functools.lru_cache requires that all the function arguments be
+    # hashable. Is this the case for these arguments?
     a = 1.0 / (1 + z)
     return pyccl.background.distance_modulus(cosmo, *tracers, np.array(a))
 

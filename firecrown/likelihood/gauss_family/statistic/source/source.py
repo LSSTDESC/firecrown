@@ -18,11 +18,12 @@ from .....updatable import Updatable
 
 class Systematic(Updatable):
     """The systematic (e.g., shear biases, photo-z shifts, etc.).
+    """
 
-    This class currently has no methods at all, because the argument types for
-    the `apply` method of different subclasses are different."""
 
-    def read(self, sacc_data: sacc.Sacc):
+    # @abstractmethod
+    # making this abstract causes failures in demos.
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """This method is called to allow the systematic object to read from the
         appropriated sacc data."""
 
@@ -34,9 +35,6 @@ class Source(Updatable):
     ----------
     scale : 1.0, optional
         The default scale for this source.
-    systematics : list of str, optional
-        A list of the source-level systematics to apply to the source. The
-        default of `None` implies no systematics.
     """
 
     systematics: Sequence[Systematic]

@@ -229,7 +229,6 @@ class PhotoZShift(NumberCountsSystematic):
 
 
 class NumberCounts(Source):
-    params_names = ["bias", "mag_bias"]
     bias: float
     mag_bias: Optional[float]
 
@@ -248,6 +247,9 @@ class NumberCounts(Source):
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
         self.has_mag_bias = has_mag_bias
+        self.param_names = ["bias"]
+        if has_mag_bias:
+            self.param_names.append("mag_bias")
 
         self.systematics = UpdatableCollection([])
         if systematics:
@@ -272,21 +274,12 @@ class NumberCounts(Source):
 
     @final
     def required_parameters(self) -> RequiredParameters:
-        if self.has_mag_bias:
-            rp = RequiredParameters(
-                [
+        rp = RequiredParameters(
+              [
                     parameter_get_full_name(self.sacc_tracer, pn)
                     for pn in self.params_names
-                ]
-            )
-        else:
-            rp = RequiredParameters(
-                [
-                    parameter_get_full_name(self.sacc_tracer, pn)
-                    for pn in self.params_names
-                    if pn != "mag_bias"
-                ]
-            )
+              ]
+           )
         return rp + self.systematics.required_parameters()
 
     def _read(self, sacc_data):

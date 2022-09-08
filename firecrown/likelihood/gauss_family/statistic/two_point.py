@@ -41,12 +41,13 @@ def _ell_for_xi(*, min, mid, max, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
-    return np.concatenate(
-        (
-            np.linspace(min, mid - 1, mid - min),
-            np.logspace(np.log10(mid), np.log10(max), n_log),
-        )
-    )
+    # TODO: Shouldn't the calculated values for 'l' be integers?
+    # If so, this algorithm does not always do so.
+    import pdb
+    pdb.set_trace()
+    lower_range = np.linspace(min, mid - 1, mid - min),
+    upper_range = np.logspace(np.log10(mid), np.log10(max), n_log)
+    return np.concatenate((lower_range, upper_range))
 
 
 def _generate_ell_or_theta(*, min, max, n, binning="log"):
@@ -60,6 +61,8 @@ def _generate_ell_or_theta(*, min, max, n, binning="log"):
 
 @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells):
+    # TODO: functools.lru_cache requires that the function arguments all be
+    # hashable. Is this the case for these arguments?
     return pyccl.angular_cl(cosmo, *tracers, np.array(ells))
 
 
