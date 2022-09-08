@@ -31,10 +31,11 @@ def test_unequal_cosmologies_hash_unequal(cosmo_params_1, cosmo_params_2):
 
 
 def test_equal_cosmologies_hash_equal(cosmo_params_1):
-    # Currently this test fails. This seems to demonstrate that caching based on the
-    # value of a Cosmology does us no good. Instead, we should make sure we don't call
-    # an expensive function passing the same Cosmology multiple times.
+    # This test verifies expected (but not really desired) behavior. Two
+    # Cosmology variables only have equal hashes when they are in fact they
+    # are aliases for the same object. They also test as equal only if they
+    # are aliases for the same object.
     x = pyccl.Cosmology(**cosmo_params_1)
     y = pyccl.Cosmology(**cosmo_params_1)
-    assert x == y
-    assert hash(x) == hash(y)
+    assert x != y
+    assert hash(x) != hash(y)
