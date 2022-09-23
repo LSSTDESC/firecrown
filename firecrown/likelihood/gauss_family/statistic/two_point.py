@@ -8,7 +8,6 @@ Gaussian Two Point Statistic
 from __future__ import annotations
 from typing import List, Tuple, Optional, final
 import copy
-import functools
 import warnings
 
 import numpy as np
