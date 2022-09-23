@@ -17,9 +17,7 @@ from .....updatable import Updatable
 
 
 class Systematic(Updatable):
-    """The systematic (e.g., shear biases, photo-z shifts, etc.).
-    """
-
+    """The systematic (e.g., shear biases, photo-z shifts, etc.)."""
 
     # @abstractmethod
     # making this abstract causes failures in demos.

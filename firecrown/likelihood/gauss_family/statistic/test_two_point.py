@@ -1,4 +1,3 @@
-import pytest
 import numpy as np
 
 from .two_point import _ell_for_xi
@@ -14,5 +13,5 @@ def test_ell_for_xi():
     assert np.all(expected == res)
 
     res = _ell_for_xi(min=1, mid=3, max=100, n_log=5)
-    expected = np.array([1., 2., 3., 7., 17., 42., 100.])
+    expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.all(expected == res)

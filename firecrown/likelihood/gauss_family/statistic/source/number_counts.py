@@ -275,11 +275,8 @@ class NumberCounts(Source):
     @final
     def required_parameters(self) -> RequiredParameters:
         rp = RequiredParameters(
-              [
-                    parameter_get_full_name(self.sacc_tracer, pn)
-                    for pn in self.params_names
-              ]
-           )
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.param_names]
+        )
         return rp + self.systematics.required_parameters()
 
     def _read(self, sacc_data):
