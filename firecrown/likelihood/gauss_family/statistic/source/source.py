@@ -61,7 +61,7 @@ class Source(Updatable):
         pass
 
     @abstractmethod
-    def _reset_source(self, params: ParamsMap):
+    def _reset_source(self):
         pass
 
     @final
