@@ -6,6 +6,7 @@ dependencies:
   - cosmosis-build-standard-library
   - flake8
   - mypy
+  - pylint
   - numpy>=1.16
   - pip
   - pyccl>=2.0
