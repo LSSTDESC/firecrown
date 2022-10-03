@@ -38,6 +38,8 @@ def _cached_distmod(cosmo, tracers, z):
 
 class Supernova(Statistic):
     def __init__(self, sacc_tracer):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
 
@@ -56,6 +58,10 @@ class Supernova(Statistic):
     @final
     def _update(self, params: ParamsMap):
         self.M = params["m"]  # CosmoSIS makes everything lowercase
+
+    @final
+    def _reset(self):
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:

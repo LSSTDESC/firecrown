@@ -29,5 +29,9 @@ class ConstGaussian(GaussFamily):
         pass
 
     @final
+    def _reset_gaussian_family(self):
+        pass
+
+    @final
     def required_parameters_gaussian_family(self):
         return RequiredParameters([])

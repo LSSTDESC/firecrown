@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Optional
+from typing import Iterable, Dict, Set, Optional
 
 
 def parameter_get_full_name(prefix: Optional[str], param: str) -> str:
@@ -63,16 +63,16 @@ class RequiredParameters:
     which implements lazy evaluation.
     """
 
-    def __init__(self, params_names: List[str]):
+    def __init__(self, params_names: Iterable[str]):
         """Construct an instance from a list of strings."""
-        self.params_names = params_names
+        self.params_names: Set[str] = set(params_names)
 
     def __add__(self, other: RequiredParameters):
         """Return a new RequiredParameters with the concatenated names.
 
         Note that this function returns a new object that does not share state
         with either argument to the addition operator."""
-        return RequiredParameters(self.params_names + other.params_names)
+        return RequiredParameters(self.params_names | other.params_names)
 
     def __eq__(self, other: object):
         """Compare two RequiredParameters objects for equality.
@@ -89,5 +89,7 @@ class RequiredParameters:
 
     def get_params_names(self):
         """Implement lazy iteration through the contained parameter names."""
-        for name in self.params_names:
+        params_names_set = set(self.params_names)
+
+        for name in params_names_set:
             yield name

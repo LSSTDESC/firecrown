@@ -35,7 +35,9 @@ class Likelihood(Updatable):
     """
 
     def __init__(self):
-        """Deafault initialization for a base Likelihood object."""
+        """Default initialization for a base Likelihood object."""
+        super().__init__()
+
         self.params_names: Optional[List[str]] = None
         self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
         self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
@@ -106,4 +108,6 @@ def load_likelihood(filename: str) -> Likelihood:
         )
 
     likelihood = mod.likelihood
+    assert isinstance(likelihood, Likelihood)
+
     return likelihood

@@ -163,6 +163,8 @@ class TwoPoint(Statistic):
         ell_or_theta_min=None,
         ell_or_theta_max=None,
     ):
+        super().__init__()
+
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
@@ -191,6 +193,11 @@ class TwoPoint(Statistic):
     def _update(self, params: ParamsMap):
         self.source0.update(params)
         self.source1.update(params)
+
+    @final
+    def _reset(self) -> None:
+        self.source0.reset()
+        self.source1.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:
