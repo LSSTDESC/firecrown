@@ -79,8 +79,17 @@ class GaussFamily(Likelihood):
         self.statistics.update(params)
         self._update_gaussian_family(params)
 
+    @final
+    def _reset(self):
+        self._reset_gaussian_family()
+        self.statistics.reset()
+
     @abstractmethod
     def _update_gaussian_family(self, params: ParamsMap):
+        pass
+
+    @abstractmethod
+    def _reset_gaussian_family(self, params: ParamsMap):
         pass
 
     @final

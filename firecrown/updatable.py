@@ -31,13 +31,25 @@ class Updatable(ABC):
 
     """
 
+    def __init__(self):
+        """Updatable initialization."""
+        self._updated: bool = False
+
     @final
     def update(self, params: ParamsMap):
         """Update self by calling the abstract _update() method.
 
         :param params: new parameter values
         """
-        self._update(params)
+
+        if not self._updated:
+            self._update(params)
+            self._updated = True
+
+    @final
+    def reset(self):
+        self._updated = False
+        self._reset()
 
     @abstractmethod
     def _update(self, params: ParamsMap) -> None:  # pragma: no cover
@@ -51,6 +63,16 @@ class Updatable(ABC):
         The base class implementation does nothing.
 
         :param params: a new set of parameter values
+        """
+
+    @abstractmethod
+    def _reset(self) -> None:  # pragma: no cover
+        """Abstract method to be implemented by all concrete classes to update
+        self.
+
+        Concrete classes must override this, resetting themselves.
+
+        The base class implementation does nothing.
         """
 
     @abstractmethod
@@ -79,7 +101,7 @@ class UpdatableCollection(UserList):
         If the iterable contains any object that is not Updatable, a TypeError
         is raised.
 
-        :param iterable: An iterable that yields Updateable objects
+        :param iterable: An iterable that yields Updatable objects
         """
         super().__init__(iterable)
         for item in self:
@@ -96,6 +118,12 @@ class UpdatableCollection(UserList):
         """
         for updatable in self:
             updatable.update(params)
+
+    @final
+    def reset(self):
+        """Resets self by calling reset() on each contained item."""
+        for updatable in self:
+            updatable.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:

@@ -71,6 +71,8 @@ class LinearBiasSystematic(NumberCountsSystematic):
     z_piv: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -80,6 +82,10 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+
+    @final
+    def _reset(self) -> None:
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -139,6 +145,8 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     z_m: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -150,6 +158,10 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.eta = params.get_from_prefix_param(self.sacc_tracer, "eta")
         self.z_c = params.get_from_prefix_param(self.sacc_tracer, "z_c")
         self.z_m = params.get_from_prefix_param(self.sacc_tracer, "z_m")
+
+    @final
+    def _reset(self) -> None:
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -199,11 +211,17 @@ class PhotoZShift(NumberCountsSystematic):
     delta_z: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
         self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
+
+    @final
+    def _reset(self) -> None:
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -245,6 +263,8 @@ class NumberCounts(Source):
         scale=1.0,
         systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
         self.has_mag_bias = has_mag_bias
@@ -269,6 +289,10 @@ class NumberCounts(Source):
             self.mag_bias = None
 
         self.systematics.update(params)
+
+    @final
+    def _reset_source(self) -> None:
+        self.systematics.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:

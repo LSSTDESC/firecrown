@@ -17,7 +17,7 @@ from .....updatable import Updatable
 
 
 class Systematic(Updatable):
-    """The systematic (e.g., shear biases, photo-z shifts, etc.).
+    """An abstract systematic class (e.g., shear biases, photo-z shifts, etc.).
 
     This class currently has no methods at all, because the argument types for
     the `apply` method of different subclasses are different."""
@@ -28,7 +28,7 @@ class Systematic(Updatable):
 
 
 class Source(Updatable):
-    """The source (e.g., a sample of lenses).
+    """An abstract source class (e.g., a sample of lenses).
 
     Parameters
     ----------
@@ -60,11 +60,19 @@ class Source(Updatable):
     def _update_source(self, params: ParamsMap):
         pass
 
+    @abstractmethod
+    def _reset_source(self):
+        pass
+
     @final
     def _update(self, params: ParamsMap):
         self.cosmo_hash = None
         self.tracer = None
         self._update_source(params)
+
+    @final
+    def _reset(self) -> None:
+        self._reset_source()
 
     @abstractmethod
     def get_scale(self) -> float:

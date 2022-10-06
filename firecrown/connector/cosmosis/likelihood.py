@@ -74,9 +74,10 @@ class FirecrownLikelihood:
         firecrown_params = self.calculate_firecrown_params(sample)
 
         self.likelihood.update(firecrown_params)
-        lnlike = self.likelihood.compute_loglike(cosmo)
+        loglike = self.likelihood.compute_loglike(cosmo)
+        self.likelihood.reset()
 
-        sample.put_double(section_names.likelihoods, "firecrown_like", lnlike)
+        sample.put_double(section_names.likelihoods, "firecrown_like", loglike)
 
         # Save concatenated data vector and inverse covariance to enable support
         # for the CosmoSIS fisher sampler.
