@@ -11,19 +11,17 @@ import sys
 S = Sacc()
 
 if len(sys.argv) == 4:
-    path  = sys.argv[1]
+    path = sys.argv[1]
     HD = sys.argv[2]
     cov = sys.argv[3]
-    y1dat = np.loadtxt(path+"/"+HD, unpack=True)
-    y1cov = np.loadtxt(path+"/"+cov, unpack=True)
-    #print("1. SUCESS")
-else :
+    y1dat = np.loadtxt(path + "/" + HD, unpack=True)
+    y1cov = np.loadtxt(path + "/" + cov, unpack=True)
+    # print("1. SUCESS")
+else:
     dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
     dirname_year10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
-    url = (
-        "https://zenodo.org/record/2662127/files/LSST_DESC_SRD_v1_release.tar.gz?download=1"
-    )
-    
+    url = "https://zenodo.org/record/2662127/files/LSST_DESC_SRD_v1_release.tar.gz?download=1"
+
     # check if file exists
     if os.path.exists(dirname_year1):
         print("Y1 directory already downloaded")
@@ -45,7 +43,7 @@ else :
         )
         os.chdir("../../")
         print("Done")
-        
+
         if os.path.exists(dirname_year10):
             print("Y10 directory already downloaded")
         else:
@@ -67,12 +65,16 @@ else :
             os.chdir("../../")
             print("Done")
 
-            
             # read in the Y1 data
-            y1dat = np.loadtxt("sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt", unpack=True)
-            y1cov = np.loadtxt("sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True)
-            #print("2. SUCESS")
-            
+            y1dat = np.loadtxt(
+                "sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt",
+                unpack=True,
+            )
+            y1cov = np.loadtxt(
+                "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
+            )
+            # print("2. SUCESS")
+
 
 #  set up the sacc data name for the astrophysical sources involved.
 sources = ["supernova"]
@@ -80,7 +82,7 @@ properties = ["distance"]
 
 # The statistc
 statistic = "mu"
-            
+
 # There is no futher specified needed here - everything is scalar.
 subtype = None
 sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
@@ -95,7 +97,7 @@ print(
     type_details.statistic,
     type_details.subtype,
 )
-            
+
 # Each DataPoint object contains:
 # a data type string
 # a series of strings listing which tracers apply to it
