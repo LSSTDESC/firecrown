@@ -16,7 +16,7 @@ if len(sys.argv) == 4:
     cov = sys.argv[3]
     y1dat = np.loadtxt(path+"/"+HD, unpack=True)
     y1cov = np.loadtxt(path+"/"+cov, unpack=True)
-    print("1. SUCESS")
+    #print("1. SUCESS")
 else :
     dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
     dirname_year10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
@@ -71,7 +71,7 @@ else :
             # read in the Y1 data
             y1dat = np.loadtxt("sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt", unpack=True)
             y1cov = np.loadtxt("sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True)
-            print("2. SUCESS")
+            #print("2. SUCESS")
             
 
 #  set up the sacc data name for the astrophysical sources involved.
