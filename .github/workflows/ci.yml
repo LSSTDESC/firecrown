@@ -73,6 +73,9 @@ jobs:
       - name: Running mypy
         shell: bash -l {0}
         run: mypy -p firecrown --ignore-missing-imports
+      - name: Running pylint-tests
+        shell: bash -l {0}
+        run: pylint --rcfile pylintrc_for_tests --recursive=y tests
       - name: Running pytest
         shell: bash -l {0}
         run: python -m pytest -vv 

@@ -62,6 +62,8 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         ----------
         sacc_tracer : The name of the multiplicative bias parameter.
         """
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -69,6 +71,10 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """Read the corresponding named tracer from the given collection of
         parameters."""
         self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
+
+    @final
+    def _reset(self) -> None:
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -130,6 +136,8 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         z_piv : The pivot redshift parameter for the intrinsic alignment
         parameter.
         """
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -138,6 +146,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+
+    @final
+    def _reset(self) -> None:
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -176,11 +188,17 @@ class PhotoZShift(WeakLensingSystematic):
     delta_z: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
         self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
+
+    @final
+    def _reset(self) -> None:
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -215,6 +233,8 @@ class WeakLensing(Source):
         scale=1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
         self.scale = scale
         self.z_orig: Optional[np.ndarray] = None
@@ -232,6 +252,10 @@ class WeakLensing(Source):
     @final
     def _update_source(self, params: ParamsMap):
         self.systematics.update(params)
+
+    @final
+    def _reset_source(self) -> None:
+        self.systematics.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:

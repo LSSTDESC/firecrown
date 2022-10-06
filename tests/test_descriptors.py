@@ -1,13 +1,10 @@
-import pytest
 import math
-from firecrown.descriptors import TypeFloat, TypeString, TypeLikelihood
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+import pytest
+from firecrown.descriptors import TypeFloat
 
 
 class NotALikelihood:
     """A trivial class that does not inherit from Likelihood."""
-
-    pass
 
 
 class DescriptorTester:
@@ -126,7 +123,7 @@ def test_constrained_required_float():
     d = HasCRF()
     with pytest.raises(TypeError):
         d.x = 3  # not a literal float
-    assert d.x is 2.0
+    assert d.x == 2.0
 
     d.x = 3.0
     assert d.x == 3.0

@@ -7,14 +7,30 @@ class Missing_update(Updatable):
     """A type that is abstract because it does not implement _update."""
 
     def required_parameters(self):  # pragma: no cover
-        return super().required_parameters()
+        pass
+
+    def _reset(self) -> None:
+        pass
+
+
+class Missing_reset(Updatable):
+    """A type that is abstract because it does not implement required_parameters."""
+
+    def _update(self, params):  # pragma: no cover
+        pass
+
+    def required_parameters(self):  # pragma: no cover
+        pass
 
 
 class Missing_required_parameters(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
 
     def _update(self, params):  # pragma: no cover
-        super()._update(params)
+        pass
+
+    def _reset(self) -> None:
+        pass
 
 
 class MinimalUpdatable(Updatable):
@@ -22,10 +38,15 @@ class MinimalUpdatable(Updatable):
 
     def __init__(self):
         """Initialize object with defaulted value."""
+        super().__init__()
+
         self.a = 1.0
 
     def _update(self, params):
         self.a = params.get_from_prefix_param(None, "a")
+
+    def _reset(self) -> None:
+        pass
 
     def required_parameters(self):
         return RequiredParameters(["a"])
@@ -36,6 +57,8 @@ class SimpleUpdatable(Updatable):
 
     def __init__(self):
         """Initialize object with defaulted values."""
+        super().__init__()
+
         self.x = 0.0
         self.y = 2.5
 
@@ -43,15 +66,20 @@ class SimpleUpdatable(Updatable):
         self.x = params.get_from_prefix_param(None, "x")
         self.y = params.get_from_prefix_param(None, "y")
 
+    def _reset(self) -> None:
+        pass
+
     def required_parameters(self):
         return RequiredParameters(["x", "y"])
 
 
 def test_verify_abstract_interface():
     with pytest.raises(TypeError):
-        x = Missing_update()
+        x = Missing_update()  # pylint: disable-msg=E0110,W0612
     with pytest.raises(TypeError):
-        x = Missing_required_parameters()
+        x = Missing_reset()  # pylint: disable-msg=E0110,W0612
+    with pytest.raises(TypeError):
+        x = Missing_required_parameters()  # pylint: disable-msg=E0110,W0612
 
 
 def test_simple_updatable():
@@ -66,6 +94,7 @@ def test_simple_updatable():
     assert obj.y == 5.5
 
 
+#  pylint: disable-msg=E1101
 def test_updatable_collection_appends():
     coll = UpdatableCollection()
     assert len(coll) == 0
@@ -114,7 +143,7 @@ def test_updatable_collection_construction():
 
     bad_list = [1]
     with pytest.raises(TypeError):
-        x = UpdatableCollection(bad_list)
+        x = UpdatableCollection(bad_list)  #  pylint: disable-msg=W0612
 
 
 def test_updatable_collection_insertion():

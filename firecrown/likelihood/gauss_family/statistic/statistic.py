@@ -20,7 +20,7 @@ from .source.source import Systematic
 
 
 class Statistic(Updatable):
-    """A statistic (e.g., two-point function, mass function, etc.)."""
+    """An abstract statistic class (e.g., two-point function, mass function, etc.)."""
 
     systematics: List[Systematic]
     sacc_inds: List[int]

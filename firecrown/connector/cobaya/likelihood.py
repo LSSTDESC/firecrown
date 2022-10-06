@@ -62,7 +62,6 @@ class LikelihoodConnector(Likelihood):
         required parameter, plus "pyccl". All values are None.
         """
         likelihood_requires = {"pyccl": None}
-
         required_params = self.likelihood.required_parameters()
 
         for param_name in required_params.get_params_names():
@@ -77,12 +76,14 @@ class LikelihoodConnector(Likelihood):
         """
 
     def logp(self, **params_values) -> float:
-        """Requried by Cobaya.
+        """Required by Cobaya.
 
         Return the (log) calculated likelihood.
         """
         pyccl = self.provider.get_pyccl()
 
         self.likelihood.update(ParamsMap(params_values))
+        loglike = self.likelihood.compute_loglike(pyccl)
+        self.likelihood.reset()
 
-        return self.likelihood.compute_loglike(pyccl)
+        return loglike
