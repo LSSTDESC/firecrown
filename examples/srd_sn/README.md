@@ -1,18 +1,43 @@
-generate_sn_data.py : creates the sacc file output.
+The structure of input dataset follows the same pattern as
+Pantheon dataset for cosmosis. 
+This consists of a single systematic covariance matrix and 
+the data vector which is the Hubble Diagram data.
 
-For default execution,
-python generate_sn_data.py
+Hubble Diagram : The data format is mostly zeros.
+The only columns that we actually need here are the redshift,
+magnitude, and magnitude error        
+
+The Hubble Diagram data format should contain the following columns :
+#name zcmb zhel dz mb dmb x1 dx1 color dcolor 3rdvar d3rdvar cov_m_s cov_m_c cov_s_c set ra dec biascor
+
+Covariance Matrix : The file format has the first line as an integer
+indicating the number of covariance elements, and the subsequent
+lines being the elements.
+It contains flattened 1-D values of the original square matrix, 
+of dimension  = (N X N), where N = No. of rows in Hubble Diagram.
 
 
-For user defined input files,
-3 arguments are passed
+`generate_sn_data.py` : creates the sacc file output.
 
-SYNTAX:
-python generate_sn_data.py <PATH> <Hubble Diagram> <Covariance Matrix>
+ For default execution,
+        `python generate_sn_data.py`
 
-EXAMPLE:
-python generate_sn_data.py ~/example data.txt sys.txt
+  This will generate a folder `sndata` and download the `LSST_DESC_SRD_v1_release` data. 
+  It will create two sub directories :
+        a) Y1_DDF_FOUNDATION
+   	b) Y10_DDF_WFD_FOUNDATION
 
-REQUIREMENTS:
-Both the files Hubble Diagram and Covariance Matrix should be in the same folder.
-The location of which is then passed as argument <PATH>
+    	It will further generate the `sacc` file using the Y1 data.
+
+ For user defined input files,
+        3 arguments are passed
+
+  SYNTAX:
+	python generate_sn_data.py <PATH> <Hubble Diagram> <Covariance Matrix>
+
+  EXAMPLE:
+	`python generate_sn_data.py ~/example data.txt sys.txt`
+
+  REQUIREMENTS:
+	Both the files Hubble Diagram and Covariance Matrix should be in the same folder.
+	The location of which is then passed as argument <PATH>
