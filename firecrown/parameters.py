@@ -64,7 +64,7 @@ class RequiredParameters:
     """
 
     def __init__(self, params_names: Iterable[str]):
-        """Construct an instance from a list of strings."""
+        """Construct an instance from an Iterable yielding strings."""
         self.params_names: Set[str] = set(params_names)
 
     def __add__(self, other: RequiredParameters):
