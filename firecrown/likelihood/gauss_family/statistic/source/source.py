@@ -1,9 +1,4 @@
-"""
-
-Two Point Statistic Source Module
-=================================
-
-The class in this file define ...
+"""Abstract base classes for GaussianFamily statistics.
 
 """
 
@@ -53,37 +48,49 @@ class Source(Updatable):
 
     @abstractmethod
     def _read(self, sacc_data: sacc.Sacc):
-        """Read the data for this source from the SACC file."""
-        pass
+        """Abstract method to read the data for this source from the SACC file."""
 
     @abstractmethod
     def _update_source(self, params: ParamsMap):
-        pass
+        """Abstract method to update the source from the given ParamsMap."""
 
     @abstractmethod
     def _reset_source(self):
-        pass
+        """Abstract method to reset the source."""
 
     @final
     def _update(self, params: ParamsMap):
+        """Implementation of Updatable interface method `_update`.
+
+        This clears the current hash and tracer, and calls the abstract method
+        `_update_source`, which must be implemented in all subclasses."""
         self.cosmo_hash = None
         self.tracer = None
         self._update_source(params)
 
     @final
     def _reset(self) -> None:
+        """Implementation of the Updatable interface method `_reset`.
+
+        This calls the abstract method `_reset_source`, which must be implemented by
+        all subclasses."""
         self._reset_source()
 
     @abstractmethod
     def get_scale(self) -> float:
-        pass
+        """Abstract method to return the scale for this `Source`."""
 
     @abstractmethod
     def create_tracer(self, cosmo: pyccl.Cosmology):
-        pass
+        """Abstract method to create a tracer for this `Source`, for the given
+        cosmology."""
 
     @final
     def get_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
+        """Return the tracer for the given cosmology.
+
+        This method caches its result, so if called a second time with the same
+        cosmology, no calculation needs to be done."""
         cur_hash = hash(cosmo)
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
             return self.tracer
