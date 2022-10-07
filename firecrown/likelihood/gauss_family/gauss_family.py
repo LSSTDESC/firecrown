@@ -75,25 +75,42 @@ class GaussFamily(Likelihood):
         return np.dot(x, x)
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update(self, params: ParamsMap) -> None:
+        """Implementation of the Likelihood interface method _update.
+
+        This updates all statistics and calls teh abstract method
+        _update_gaussian_family."""
         self.statistics.update(params)
         self._update_gaussian_family(params)
 
     @final
-    def _reset(self):
+    def _reset(self) -> None:
+        """Implementation of Likelihood interface method _reset.
+
+        This resets all statistics and calls the abstract method
+        _reset_gaussian_family."""
         self._reset_gaussian_family()
         self.statistics.reset()
 
     @abstractmethod
-    def _update_gaussian_family(self, params: ParamsMap):
-        pass
+    def _update_gaussian_family(self, params: ParamsMap) -> None:
+        """Abstract method to update GaussianFamily state. Must be implemented by all
+        subclasses."""
 
     @abstractmethod
-    def _reset_gaussian_family(self, params: ParamsMap):
-        pass
+    def _reset_gaussian_family(self) -> None:
+        """Abstract method to reset GaussianFamily state. Must be implemented by all
+        subclasses."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
+        """Return a RequiredParameters object containing the information for
+        this Updatable.
+
+        This includes the required parameters for all statistics, as well as those
+        for the derived class.
+
+        Derived classes must implement required_parameters_gaussian_family."""
         stats_rp = self.statistics.required_parameters()
         stats_rp = self.required_parameters_gaussian_family() + stats_rp
 
@@ -102,4 +119,3 @@ class GaussFamily(Likelihood):
     @abstractmethod
     def required_parameters_gaussian_family(self):
         """Required parameters for GaussFamily subclasses."""
-        pass

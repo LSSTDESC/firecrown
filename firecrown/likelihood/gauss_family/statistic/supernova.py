@@ -1,8 +1,4 @@
-"""
-
-Gaussian Supernova Statistic Module
-===================================
-
+"""Supernova statistic support
 """
 
 from __future__ import annotations
@@ -37,7 +33,11 @@ def _cached_distmod(cosmo, tracers, z):
 
 
 class Supernova(Statistic):
+    """A statistic that applies an additive shift M to a supernova's distance
+    modulus."""
+
     def __init__(self, sacc_tracer):
+        """Initialize this statistic."""
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
@@ -65,6 +65,11 @@ class Supernova(Statistic):
 
     @final
     def required_parameters(self) -> RequiredParameters:
+        """Return a RequiredParameters object containing the information for this
+        statistic.
+
+        The only required parameter is`m`.
+        """
         return RequiredParameters(["m"])
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:

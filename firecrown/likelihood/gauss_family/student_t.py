@@ -1,9 +1,4 @@
-"""
-
-Student-t Likelihood Module
-===========================
-
-Some notes.
+"""The Student-t likelihood.
 
 """
 

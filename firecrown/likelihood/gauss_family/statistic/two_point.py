@@ -1,8 +1,4 @@
-"""
-
-Gaussian Two Point Statistic
-============================
-
+"""Two point statistic support.
 """
 
 from __future__ import annotations
