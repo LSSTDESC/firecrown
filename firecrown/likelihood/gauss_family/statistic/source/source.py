@@ -94,7 +94,7 @@ class Source(Updatable):
         cur_hash = hash(cosmo)
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
             return self.tracer
-        else:
-            self.tracer, _ = self.create_tracer(cosmo)
-            self.cosmo_hash = cur_hash
-            return self.tracer
+
+        self.tracer, _ = self.create_tracer(cosmo)
+        self.cosmo_hash = cur_hash
+        return self.tracer
