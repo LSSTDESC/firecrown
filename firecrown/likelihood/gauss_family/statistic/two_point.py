@@ -33,24 +33,23 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
 
 
-def _ell_for_xi(*, min, mid, max, n_log):
+def _ell_for_xi(*, minimum, midpoint, maximum, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
     return np.concatenate(
         (
-            np.linspace(min, mid - 1, mid - min),
-            np.logspace(np.log10(mid), np.log10(max), n_log),
+            np.linspace(minimum, midpoint - 1, midpoint - minimum),
+            np.logspace(np.log10(midpoint), np.log10(maximum), n_log),
         )
     )
 
 
-def _generate_ell_or_theta(*, min, max, n, binning="log"):
+def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
     if binning == "log":
-        edges = np.logspace(np.log10(min), np.log10(max), n + 1)
+        edges = np.logspace(np.log10(minimum), np.log10(maximum), n + 1)
         return np.sqrt(edges[1:] * edges[:-1])
-    else:
-        edges = np.linspace(min, max, n + 1)
+    edges = np.linspace(minimum, maximum, n + 1)
         return (edges[1:] + edges[:-1]) / 2.0
 
 

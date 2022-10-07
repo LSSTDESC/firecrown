@@ -42,6 +42,8 @@ class Supernova(Statistic):
 
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
+        self.a = None  # pylint: disable-msg=invalid-name
+        self.M = None  # pylint: disable-msg=invalid-name
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -49,9 +51,9 @@ class Supernova(Statistic):
         data_points = sacc_data.get_data_points(
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
-
-        self.z = np.array([dp.get_tag("z") for dp in data_points])
-        self.a = 1.0 / (1.0 + self.z)
+        # pylint: disable-next=invalid-name
+        z = np.array([dp.get_tag("z") for dp in data_points])
+        self.a = 1.0 / (1.0 + z)
         self.data_vector = np.array([dp.value for dp in data_points])
         self.sacc_inds = list(range(0, len(self.data_vector)))
 

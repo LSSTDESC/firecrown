@@ -28,7 +28,7 @@ class StudentT(GaussFamily):
 
     def __init__(self, statistics: List[Statistic], nu: float):
         super().__init__(statistics)
-        self.nu = nu
+        self.nu = nu  # pylint: disable-msg=C0103
 
     def compute_loglike(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood.
