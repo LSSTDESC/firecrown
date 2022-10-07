@@ -50,7 +50,7 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
         edges = np.logspace(np.log10(minimum), np.log10(maximum), n + 1)
         return np.sqrt(edges[1:] * edges[:-1])
     edges = np.linspace(minimum, maximum, n + 1)
-        return (edges[1:] + edges[:-1]) / 2.0
+    return (edges[1:] + edges[:-1]) / 2.0
 
 
 @functools.lru_cache(maxsize=128)
@@ -227,7 +227,7 @@ class TwoPoint(Statistic):
                 f"have no 2pt data in the SACC file and no input ell or "
                 f"theta values were given!"
             )
-        elif (
+        if (
             self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
         ):
             warnings.warn(
