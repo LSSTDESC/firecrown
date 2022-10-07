@@ -3,33 +3,14 @@
 
 from __future__ import annotations
 from typing import Tuple, final
-import functools
 
 import numpy as np
+
 import pyccl
 import sacc
 
 from .statistic import Statistic
 from ....parameters import ParamsMap, RequiredParameters
-
-# only supported types are here, any thing else will throw
-# a value error
-SACC_DATA_TYPE_TO_CCL_KIND = {"supernova": "sn"}
-
-Z_FOR_MU_DEFAULTS = dict(min=0, max=2, n=100)
-
-
-def _z_for_mu(*, min, max, n):
-    """Build an array of z to sample the distance modulus
-    predictions.
-    """
-    return np.linspace(min, max, n)
-
-
-@functools.lru_cache(maxsize=128)
-def _cached_distmod(cosmo, tracers, z):
-    a = 1.0 / (1 + z)
-    return pyccl.background.distance_modulus(cosmo, *tracers, np.array(a))
 
 
 class Supernova(Statistic):
