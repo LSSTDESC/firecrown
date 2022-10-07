@@ -1,14 +1,15 @@
 The structure of input dataset follows the same pattern as
 Pantheon dataset for cosmosis. 
 This consists of a single systematic covariance matrix and 
-the data vector which is the Hubble Diagram data.
+the data vector which is the Hubble Diagram (HD) data.
 
 
 Hubble Diagram : The data format can be mostly zeros.
 The only columns that we actually use values from are:
   zcmb zhel mb dmb
-(redshift in CMB frame, redshift in heliocentric frame, magnitude, and magnitude error).
-Each row corresponds to one SN1A.
+(redshift (z) in CMB frame, redshift in heliocentric frame, magnitude, and magnitude error).
+Each row corresponds to one SN1A in case of unbinned HD or
+each redshift bin in case of z-binned HD.
 
 The Hubble Diagram data format should contain the following columns :
 #name zcmb zhel dz mb dmb x1 dx1 color dcolor 3rdvar d3rdvar cov_m_s cov_m_c cov_s_c set ra dec biascor
