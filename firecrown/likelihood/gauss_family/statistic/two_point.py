@@ -8,9 +8,9 @@ import functools
 import warnings
 
 import numpy as np
-import pyccl
-
 import scipy.interpolate
+
+import pyccl
 
 from .statistic import Statistic
 from .source.source import Source, Systematic

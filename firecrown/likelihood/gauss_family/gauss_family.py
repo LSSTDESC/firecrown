@@ -10,6 +10,8 @@ Some notes.
 from __future__ import annotations
 from typing import List, Optional
 from typing import final
+from abc import abstractmethod
+
 import numpy as np
 import scipy.linalg
 
@@ -20,7 +22,6 @@ from ..likelihood import Likelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters
-from abc import abstractmethod
 
 
 class GaussFamily(Likelihood):
