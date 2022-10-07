@@ -180,9 +180,8 @@ class TwoPoint(Statistic):
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
-            raise ValueError(
-                "The SACC data type '%s' is not supported!" % sacc_data_type
-            )
+            raise ValueError(f"The SACC data type {sacc_data_type}'%s' is not "
+                             f"supported!")
 
 
     @final
@@ -232,8 +231,8 @@ class TwoPoint(Statistic):
             self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
         ):
             warnings.warn(
-                "Tracers '%s' have 2pt data and you have specified `ell_or_theta` "
-                "in the configuration. `ell_or_theta` is being ignored!" % tracers,
+                f"Tracers '{tracers}' have 2pt data and you have specified "
+                "`ell_or_theta` in the configuration. `ell_or_theta` is being ignored!",
                 warnings.UserWarning,
                 stacklevel=2,
             )
