@@ -180,9 +180,9 @@ class TwoPoint(Statistic):
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
-            raise ValueError(f"The SACC data type {sacc_data_type}'%s' is not "
-                             f"supported!")
-
+            raise ValueError(
+                f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
+            )
 
     @final
     def _update(self, params: ParamsMap):
@@ -227,9 +227,7 @@ class TwoPoint(Statistic):
                 f"have no 2pt data in the SACC file and no input ell or "
                 f"theta values were given!"
             )
-        if (
-            self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
-        ):
+        if self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0:
             warnings.warn(
                 f"Tracers '{tracers}' have 2pt data and you have specified "
                 "`ell_or_theta` in the configuration. `ell_or_theta` is being ignored!",
