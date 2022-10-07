@@ -160,6 +160,9 @@ class TwoPoint(Statistic):
     ):
         super().__init__()
 
+        assert isinstance(source0, Source)
+        assert isinstance(source1, Source)
+
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
@@ -181,8 +184,6 @@ class TwoPoint(Statistic):
                 "The SACC data type '%s' is not supported!" % sacc_data_type
             )
 
-        assert isinstance(source0, Source)
-        assert isinstance(source1, Source)
 
     @final
     def _update(self, params: ParamsMap):
