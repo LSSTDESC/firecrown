@@ -30,6 +30,8 @@ class WeakLensingArgs:
 
 
 class WeakLensingSystematic(Systematic):
+    """Abstract base class for all weak lensing systematics."""
+
     @abstractmethod
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
@@ -234,6 +236,7 @@ class WeakLensing(Source):
         scale=1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
+        """Initialize the WeakLensing object."""
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
