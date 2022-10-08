@@ -179,13 +179,13 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
 
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
-        z = tracer_arg.z
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
+        # pylint: disable-next=invalid-name
         s = (
             self.eta / self.r_lim
             - 3.0 * self.z_m / z_bar
-            + 1.5 * self.z_m * np.power(z / z_bar, 1.5) / z_bar
+            + 1.5 * self.z_m * np.power(tracer_arg.z / z_bar, 1.5) / z_bar
         )
 
         return NumberCountsArgs(
