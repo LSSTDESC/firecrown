@@ -233,8 +233,8 @@ class WeakLensing(Source):
     def __init__(
         self,
         *,
-        sacc_tracer,
-        scale=1.0,
+        sacc_tracer: str,
+        scale: float = 1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
         """Initialize the WeakLensing object."""

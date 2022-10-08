@@ -257,10 +257,10 @@ class NumberCounts(Source):
     def __init__(
         self,
         *,
-        sacc_tracer,
-        has_rsd=False,
-        has_mag_bias=False,
-        scale=1.0,
+        sacc_tracer: str,
+        has_rsd: bool = False,
+        has_mag_bias: bool = False,
+        scale: float = 1.0,
         systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
         super().__init__()
