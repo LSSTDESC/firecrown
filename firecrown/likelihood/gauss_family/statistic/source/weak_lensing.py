@@ -245,14 +245,8 @@ class WeakLensing(Source):
         self.z_orig: Optional[np.ndarray] = None
         self.dndz_orig: Optional[np.ndarray] = None
         self.dndz_interp = None
-        self.current_tracer_args = None
-        self.scale_ = None
-        self.tracer_ = None
-
-        self.systematics = UpdatableCollection([])
-        if systematics:
-            for systematic in systematics:
-                self.systematics.append(systematic)
+        self.current_tracer_args: Optional[WeakLensingArgs] = None
+        self.systematics = UpdatableCollection(systematics)
 
     @final
     def _update_source(self, params: ParamsMap):
