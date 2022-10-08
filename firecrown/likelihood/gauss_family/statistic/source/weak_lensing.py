@@ -1,9 +1,4 @@
-"""
-
-Weak Lensing Source Module
-==========================
-
-The classe in this file define ...
+"""Weak lensing source and systematics
 
 """
 
@@ -47,10 +42,10 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
 
-
-    Methods
-    -------
-    apply : apply the systematic to a source
+    Parameters
+    ----------
+    mult_bias : str
+       The name of the multiplicative bias parameter.
     """
 
     params_names = ["mult_bias"]
@@ -74,7 +69,9 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -149,7 +146,9 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -223,6 +222,8 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensing(Source):
+    """Source class for weak lensing."""
+
     systematics: UpdatableCollection
     tracer_arg: WeakLensingArgs
 
@@ -251,6 +252,9 @@ class WeakLensing(Source):
 
     @final
     def _update_source(self, params: ParamsMap):
+        """Implementation of Source interface `_update_source`.
+
+        This updates all the contained systematics."""
         self.systematics.update(params)
 
     @final
