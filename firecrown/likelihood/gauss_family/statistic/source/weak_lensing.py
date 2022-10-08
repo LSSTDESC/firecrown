@@ -67,6 +67,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     def _update(self, params: ParamsMap):
         """Read the corresponding named tracer from the given collection of
         parameters."""
+        # pylint: disable-next=invalid-name
         self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
 
     @final
