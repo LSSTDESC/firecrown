@@ -228,7 +228,7 @@ class WeakLensing(Source):
     """Source class for weak lensing."""
 
     systematics: UpdatableCollection
-    tracer_arg: WeakLensingArgs
+    tracer_args: WeakLensingArgs
 
     def __init__(
         self,
