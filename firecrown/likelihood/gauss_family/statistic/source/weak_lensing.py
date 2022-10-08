@@ -24,7 +24,7 @@ class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
 
     scale: float
-    z: np.ndarray
+    z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     ia_bias: Tuple[np.ndarray, np.ndarray]
 
@@ -275,11 +275,11 @@ class WeakLensing(Source):
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        inds = np.argsort(z)
-        z = z[inds]
-        nz = nz[inds]
+        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
+        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
+        indices = np.argsort(z)
+        z = z[indices]  # pylint: disable-msg=invalid-name
+        nz = nz[indices]  # pylint: disable-msg=invalid-name
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
