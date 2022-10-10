@@ -6,7 +6,7 @@ Gaussian Supernova Statistic Module
 """
 
 from __future__ import annotations
-from typing import Tuple, final
+from typing import Optional, Tuple, final
 import functools
 
 import numpy as np
@@ -14,9 +14,9 @@ import pyccl
 import sacc
 
 from .statistic import Statistic
-from ....parameters import ParamsMap, RequiredParameters
+from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
-# only supported types are here, any thing else will throw
+# only supported types are here, anything else will throw
 # a value error
 SACC_DATA_TYPE_TO_CCL_KIND = {"supernova": "sn"}
 
@@ -42,6 +42,8 @@ class Supernova(Statistic):
 
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
+        self.z: Optional[np.ndarray] = None
+        self.a: Optional[np.ndarray] = None
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -66,6 +68,10 @@ class Supernova(Statistic):
     @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(["m"])
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources."""

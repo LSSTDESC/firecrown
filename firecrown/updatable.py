@@ -14,10 +14,11 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final
+from typing import final, Tuple, Optional
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import ParamsMap, RequiredParameters
+from .parameters import DerivedParameterCollection
 
 
 class Updatable(ABC):
@@ -34,6 +35,7 @@ class Updatable(ABC):
     def __init__(self):
         """Updatable initialization."""
         self._updated: bool = False
+        self._returned_derived: bool = False
 
     @final
     def update(self, params: ParamsMap):
@@ -49,6 +51,7 @@ class Updatable(ABC):
     @final
     def reset(self):
         self._updated = False
+        self._returned_derived = False
         self._reset()
 
     @abstractmethod
@@ -83,6 +86,26 @@ class Updatable(ABC):
         The base class implementation returns an empty RequiredParameters.
         """
         return RequiredParameters([])
+
+    @final
+    def get_derived_parameters(self) -> Tuple[bool, Optional[DerivedParameterCollection]]:
+        """Returns a collection of derived parameters once per iteration of the statistical analysis.
+        First call returns True and the DerivedParameterCollection, further calls return (False, None).
+        """
+        if not self._returned_derived:
+            self._returned_derived = True
+            return True, self._get_derived_parameters()
+
+        return False, None
+
+    @abstractmethod
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Abstract method to be implemented by all concrete classes to return their derived parameters.
+
+        Concrete classes must override this. If no derived parameters are required derived classes must
+        simply return super()._get_derived_parameters().
+        """
+        return DerivedParameterCollection([])
 
 
 class UpdatableCollection(UserList):
@@ -135,6 +158,21 @@ class UpdatableCollection(UserList):
             result = result + updatable.required_parameters()
 
         return result
+
+    @final
+    def get_derived_parameters(self) -> Tuple[bool, Optional[DerivedParameterCollection]]:
+        """Get all derived parameters if any."""
+        has_any_derived = False
+        derived_parameters = DerivedParameterCollection([])
+        for updatable in self:
+            has_derived, derived_parameters0 = updatable.get_derived_parameters()
+            if has_derived:
+                derived_parameters = derived_parameters + derived_parameters0
+                has_any_derived = True
+        if has_any_derived is True:
+            return True, derived_parameters
+        else:
+            return False, None
 
     def append(self, item: Updatable) -> None:
         """Append the given item to self.

@@ -18,7 +18,12 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
-from .....parameters import ParamsMap, RequiredParameters, parameter_get_full_name
+from .....parameters import (
+    ParamsMap,
+    RequiredParameters,
+    parameter_get_full_name,
+    DerivedParameterCollection,
+)
 from .....updatable import UpdatableCollection
 
 __all__ = ["WeakLensing"]
@@ -81,6 +86,10 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply multiplicative shear bias to a source. The `scale_` of the
@@ -157,6 +166,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
 
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
+
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
@@ -205,6 +218,10 @@ class PhotoZShift(WeakLensingSystematic):
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -260,6 +277,10 @@ class WeakLensing(Source):
     @final
     def required_parameters(self) -> RequiredParameters:
         return self.systematics.required_parameters()
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.

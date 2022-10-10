@@ -1,5 +1,11 @@
 import pytest
+import numpy as np
 from firecrown.parameters import RequiredParameters, parameter_get_full_name, ParamsMap
+from firecrown.parameters import (
+    DerivedParameterScalar,
+    DerivedParameterArray,
+    DerivedParameterCollection,
+)
 
 
 def test_get_params_names_does_not_allow_mutation():
@@ -7,9 +13,10 @@ def test_get_params_names_does_not_allow_mutation():
     state of the object on which the call was made."""
     orig = RequiredParameters(["a", "b"])
     names = set(orig.get_params_names())
-    assert names == set(["a", "b"])
+    assert names == {"a", "b"}
+    assert names == {"b", "a"}
     names.add("c")
-    assert set(orig.get_params_names()) == set(["a", "b"])
+    assert set(orig.get_params_names()) == {"a", "b"}
 
 
 def test_params_map():
@@ -19,7 +26,7 @@ def test_params_map():
     with pytest.raises(KeyError):
         _ = my_params.get_from_prefix_param("no_such_prefix", "a")
     with pytest.raises(KeyError):
-        _ = my_params.get_from_prefix_param(None, "nosuchname")
+        _ = my_params.get_from_prefix_param(None, "no_such_name")
 
 
 def test_parameter_get_full_name_reject_empty_name():
@@ -37,5 +44,62 @@ def test_parameter_get_full_name_with_prefix():
 
 
 def test_parameter_get_full_name_without_prefix():
-    full_name = parameter_get_full_name(None, "nomen_mihi")
-    assert full_name == "nomen_mihi"
+    full_name = parameter_get_full_name(None, "nomen_foo")
+    assert full_name == "nomen_foo"
+
+
+def test_derived_parameter_scalar():
+    derived_param = DerivedParameterScalar("sec1", "name1", 3.14)
+
+    assert isinstance(derived_param.get_val(), float)
+    assert derived_param.get_val() == 3.14
+    assert derived_param.get_full_name() == "sec1--name1"
+
+
+def test_derived_parameter_array():
+    derived_param = DerivedParameterArray("sec1", "name1", np.array([1.1, 2.2, 3.3]))
+
+    assert isinstance(derived_param.get_val(), np.ndarray)
+    assert np.array_equal(derived_param.get_val(), np.array([1.1, 2.2, 3.3]))
+    assert derived_param.get_full_name() == "sec1--name1"
+
+
+def test_derived_parameter_wrong_type():
+    """Try instantiating DerivedParameter objects with wrong types."""
+
+    with pytest.raises(TypeError):
+        derived_param = DerivedParameterScalar(
+            "sec1", "name1", "not a float"
+        )  # pylint: disable-msg=E0110,W0612
+    with pytest.raises(TypeError):
+        derived_param = DerivedParameterScalar(
+            "sec1", "name1", [3.14]
+        )  # pylint: disable-msg=E0110,W0612
+    with pytest.raises(TypeError):
+        derived_param = DerivedParameterScalar(
+            "sec1", "name1", np.array([3.14])
+        )  # pylint: disable-msg=E0110,W0612
+
+    with pytest.raises(TypeError):
+        derived_param = DerivedParameterArray(
+            "sec1", "name1", "not a float"
+        )  # pylint: disable-msg=E0110,W0612
+    with pytest.raises(TypeError):
+        derived_param = DerivedParameterArray(
+            "sec1", "name1", 3.14
+        )  # pylint: disable-msg=E0110,W0612
+    with pytest.raises(TypeError):
+        derived_param = DerivedParameterArray(
+            "sec1", "name1", [3.14]
+        )  # pylint: disable-msg=E0110,W0612
+
+
+def test_derived_parameters_collection():
+    olist = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+    ]
+    orig = DerivedParameterCollection(olist)
+    clist = orig.get_derived_list()
+    clist.append(DerivedParameterScalar("sec3", "name3", 0.58))
+    assert orig.get_derived_list() == olist

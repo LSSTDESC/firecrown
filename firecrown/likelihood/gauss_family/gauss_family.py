@@ -19,7 +19,7 @@ import sacc
 from ..likelihood import Likelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import ParamsMap, RequiredParameters
+from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 from abc import abstractmethod
 
 
@@ -72,7 +72,9 @@ class GaussFamily(Likelihood):
         self.predicted_data_vector = np.concatenate(theory_vector)
         self.measured_data_vector = np.concatenate(data_vector)
         x = scipy.linalg.solve_triangular(self.cholesky, r, lower=True)
-        return np.dot(x, x)
+        chisq = np.dot(x, x)
+        assert np.isscalar(chisq)
+        return float(chisq)
 
     @final
     def _update(self, params: ParamsMap):
@@ -84,12 +86,25 @@ class GaussFamily(Likelihood):
         self._reset_gaussian_family()
         self.statistics.reset()
 
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = self._get_derived_parameters_gaussian_family()
+
+        (
+            has_derived_parameters,
+            derived_parameters0,
+        ) = self.statistics.get_derived_parameters()
+        if has_derived_parameters:
+            derived_parameters = derived_parameters + derived_parameters0
+
+        return derived_parameters
+
     @abstractmethod
     def _update_gaussian_family(self, params: ParamsMap):
         pass
 
     @abstractmethod
-    def _reset_gaussian_family(self, params: ParamsMap):
+    def _reset_gaussian_family(self):
         pass
 
     @final
@@ -102,4 +117,7 @@ class GaussFamily(Likelihood):
     @abstractmethod
     def required_parameters_gaussian_family(self):
         """Required parameters for GaussFamily subclasses."""
-        pass
+
+    @abstractmethod
+    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
+        """Get derived parameters for GaussFamily subclasses."""

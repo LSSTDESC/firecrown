@@ -13,7 +13,7 @@ from typing import final
 import pyccl
 
 from .gauss_family import GaussFamily
-from ...parameters import ParamsMap, RequiredParameters
+from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
 class ConstGaussian(GaussFamily):
@@ -35,3 +35,7 @@ class ConstGaussian(GaussFamily):
     @final
     def required_parameters_gaussian_family(self):
         return RequiredParameters([])
+
+    @final
+    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
