@@ -48,6 +48,7 @@ class Updatable(ABC):
 
     @final
     def reset(self):
+        """Reset self by calling the abstract _reset() method, and mark as reset."""
         self._updated = False
         self._reset()
 
