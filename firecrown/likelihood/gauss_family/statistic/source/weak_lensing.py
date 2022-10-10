@@ -1,9 +1,4 @@
-"""
-
-Weak Lensing Source Module
-==========================
-
-The classe in this file define ...
+"""Weak lensing source and systematics
 
 """
 
@@ -34,12 +29,14 @@ class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
 
     scale: float
-    z: np.ndarray
+    z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     ia_bias: Tuple[np.ndarray, np.ndarray]
 
 
 class WeakLensingSystematic(Systematic):
+    """Abstract base class for all weak lensing systematics."""
+
     @abstractmethod
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
@@ -52,10 +49,10 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
 
-
-    Methods
-    -------
-    apply : apply the systematic to a source
+    Parameters
+    ----------
+    mult_bias : str
+       The name of the multiplicative bias parameter.
     """
 
     params_names = ["mult_bias"]
@@ -75,11 +72,14 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     def _update(self, params: ParamsMap):
         """Read the corresponding named tracer from the given collection of
         parameters."""
+        # pylint: disable-next=invalid-name
         self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -158,7 +158,9 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -240,16 +242,19 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensing(Source):
+    """Source class for weak lensing."""
+
     systematics: UpdatableCollection
-    tracer_arg: WeakLensingArgs
+    tracer_args: WeakLensingArgs
 
     def __init__(
         self,
         *,
-        sacc_tracer,
-        scale=1.0,
+        sacc_tracer: str,
+        scale: float = 1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
+        """Initialize the WeakLensing object."""
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
@@ -257,17 +262,14 @@ class WeakLensing(Source):
         self.z_orig: Optional[np.ndarray] = None
         self.dndz_orig: Optional[np.ndarray] = None
         self.dndz_interp = None
-        self.current_tracer_args = None
-        self.scale_ = None
-        self.tracer_ = None
-
-        self.systematics = UpdatableCollection([])
-        if systematics:
-            for systematic in systematics:
-                self.systematics.append(systematic)
+        self.current_tracer_args: Optional[WeakLensingArgs] = None
+        self.systematics = UpdatableCollection(systematics)
 
     @final
     def _update_source(self, params: ParamsMap):
+        """Implementation of Source interface `_update_source`.
+
+        This updates all the contained systematics."""
         self.systematics.update(params)
 
     @final
@@ -292,11 +294,11 @@ class WeakLensing(Source):
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        inds = np.argsort(z)
-        z = z[inds]
-        nz = nz[inds]
+        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
+        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
+        indices = np.argsort(z)
+        z = z[indices]  # pylint: disable-msg=invalid-name
+        nz = nz[indices]  # pylint: disable-msg=invalid-name
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 

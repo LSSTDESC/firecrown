@@ -1,8 +1,4 @@
-"""
-
-Gaussian Two Point Statistic
-============================
-
+"""Two point statistic support.
 """
 
 from __future__ import annotations
@@ -12,9 +8,9 @@ import functools
 import warnings
 
 import numpy as np
-import pyccl
-
 import scipy.interpolate
+
+import pyccl
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
@@ -34,28 +30,27 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
+ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
 
 
-def _ell_for_xi(*, min, mid, max, n_log):
+def _ell_for_xi(*, minimum, midpoint, maximum, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
     return np.concatenate(
         (
-            np.linspace(min, mid - 1, mid - min),
-            np.logspace(np.log10(mid), np.log10(max), n_log),
+            np.linspace(minimum, midpoint - 1, midpoint - minimum),
+            np.logspace(np.log10(midpoint), np.log10(maximum), n_log),
         )
     )
 
 
-def _generate_ell_or_theta(*, min, max, n, binning="log"):
+def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
     if binning == "log":
-        edges = np.logspace(np.log10(min), np.log10(max), n + 1)
+        edges = np.logspace(np.log10(minimum), np.log10(maximum), n + 1)
         return np.sqrt(edges[1:] * edges[:-1])
-    else:
-        edges = np.linspace(min, max, n + 1)
-        return (edges[1:] + edges[:-1]) / 2.0
+    edges = np.linspace(minimum, maximum, n + 1)
+    return (edges[1:] + edges[:-1]) / 2.0
 
 
 @functools.lru_cache(maxsize=128)
@@ -165,6 +160,9 @@ class TwoPoint(Statistic):
     ):
         super().__init__()
 
+        assert isinstance(source0, Source)
+        assert isinstance(source1, Source)
+
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
@@ -183,11 +181,8 @@ class TwoPoint(Statistic):
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
             raise ValueError(
-                "The SACC data type '%s' is not supported!" % sacc_data_type
+                f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
-
-        assert isinstance(source0, Source)
-        assert isinstance(source1, Source)
 
     @final
     def _update(self, params: ParamsMap):
@@ -236,12 +231,10 @@ class TwoPoint(Statistic):
                 f"have no 2pt data in the SACC file and no input ell or "
                 f"theta values were given!"
             )
-        elif (
-            self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
-        ):
+        if self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0:
             warnings.warn(
-                "Tracers '%s' have 2pt data and you have specified `ell_or_theta` "
-                "in the configuration. `ell_or_theta` is being ignored!" % tracers,
+                f"Tracers '{tracers}' have 2pt data and you have specified "
+                "`ell_or_theta` in the configuration. `ell_or_theta` is being ignored!",
                 warnings.UserWarning,
                 stacklevel=2,
             )

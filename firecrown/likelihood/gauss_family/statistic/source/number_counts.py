@@ -1,9 +1,4 @@
-"""
-
-Number Counts Source Module
-===========================
-
-The classe in this file define ...
+"""Number counts source and systematics
 
 """
 
@@ -31,10 +26,10 @@ __all__ = ["NumberCounts"]
 
 @dataclass(frozen=True)
 class NumberCountsArgs:
-    """Class for weak lensing tracer builder argument."""
+    """Class for number counts tracer builder argument."""
 
     scale: float
-    z: np.ndarray
+    z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     bias: np.ndarray
     mag_bias: np.ndarray
@@ -65,9 +60,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
     z_piv : str
         The name of the pivot redshift parameter for the linear bias.
 
-    Methods
-    -------
-    apply : apply the systematic to a source
     """
 
     params_names = ["alphaz", "alphag", "z_piv"]
@@ -90,7 +82,9 @@ class LinearBiasSystematic(NumberCountsSystematic):
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -170,7 +164,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -196,13 +192,13 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
 
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
-        z = tracer_arg.z
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
+        # pylint: disable-next=invalid-name
         s = (
             self.eta / self.r_lim
             - 3.0 * self.z_m / z_bar
-            + 1.5 * self.z_m * np.power(z / z_bar, 1.5) / z_bar
+            + 1.5 * self.z_m * np.power(tracer_arg.z / z_bar, 1.5) / z_bar
         )
 
         return NumberCountsArgs(
@@ -234,7 +230,9 @@ class PhotoZShift(NumberCountsSystematic):
 
     @final
     def _reset(self) -> None:
-        pass
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -264,6 +262,8 @@ class PhotoZShift(NumberCountsSystematic):
 
 
 class NumberCounts(Source):
+    """Source class for number counts."""
+
     params_names = ["bias", "mag_bias"]
     bias: float
     mag_bias: Optional[float]
@@ -274,10 +274,10 @@ class NumberCounts(Source):
     def __init__(
         self,
         *,
-        sacc_tracer,
-        has_rsd=False,
-        has_mag_bias=False,
-        scale=1.0,
+        sacc_tracer: str,
+        has_rsd: bool = False,
+        has_mag_bias: bool = False,
+        scale: float = 1.0,
         systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
         super().__init__()
