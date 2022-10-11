@@ -27,7 +27,6 @@ class Statistic(Updatable):
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
-        pass
 
     @abstractmethod
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:

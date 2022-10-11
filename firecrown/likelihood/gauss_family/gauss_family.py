@@ -10,6 +10,8 @@ Some notes.
 from __future__ import annotations
 from typing import List, Optional
 from typing import final
+from abc import abstractmethod
+
 import numpy as np
 import scipy.linalg
 
@@ -20,7 +22,6 @@ from ..likelihood import Likelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters
-from abc import abstractmethod
 
 
 class GaussFamily(Likelihood):
@@ -58,42 +59,59 @@ class GaussFamily(Likelihood):
     @final
     def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
-
-        r = []
+        residuals = []
         theory_vector = []
         data_vector = []
         for stat in self.statistics:
             data, theory = stat.compute(cosmo)
-            r.append(np.atleast_1d(data - theory))
+            residuals.append(np.atleast_1d(data - theory))
             theory_vector.append(np.atleast_1d(theory))
             data_vector.append(np.atleast_1d(data))
 
-        r = np.concatenate(r, axis=0)
+        residuals = np.concatenate(residuals, axis=0)
         self.predicted_data_vector = np.concatenate(theory_vector)
         self.measured_data_vector = np.concatenate(data_vector)
-        x = scipy.linalg.solve_triangular(self.cholesky, r, lower=True)
+        # pylint: disable-next=C0103
+        x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         return np.dot(x, x)
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update(self, params: ParamsMap) -> None:
+        """Implementation of the Likelihood interface method _update.
+
+        This updates all statistics and calls teh abstract method
+        _update_gaussian_family."""
         self.statistics.update(params)
         self._update_gaussian_family(params)
 
     @final
-    def _reset(self):
+    def _reset(self) -> None:
+        """Implementation of Likelihood interface method _reset.
+
+        This resets all statistics and calls the abstract method
+        _reset_gaussian_family."""
         self._reset_gaussian_family()
         self.statistics.reset()
 
     @abstractmethod
-    def _update_gaussian_family(self, params: ParamsMap):
-        pass
+    def _update_gaussian_family(self, params: ParamsMap) -> None:
+        """Abstract method to update GaussianFamily state. Must be implemented by all
+        subclasses."""
 
     @abstractmethod
-    def _reset_gaussian_family(self, params: ParamsMap):
-        pass
+    def _reset_gaussian_family(self) -> None:
+        """Abstract method to reset GaussianFamily state. Must be implemented by all
+        subclasses."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
+        """Return a RequiredParameters object containing the information for
+        this Updatable.
+
+        This includes the required parameters for all statistics, as well as those
+        for the derived class.
+
+        Derived classes must implement required_parameters_gaussian_family."""
         stats_rp = self.statistics.required_parameters()
         stats_rp = self.required_parameters_gaussian_family() + stats_rp
 
@@ -102,4 +120,3 @@ class GaussFamily(Likelihood):
     @abstractmethod
     def required_parameters_gaussian_family(self):
         """Required parameters for GaussFamily subclasses."""
-        pass
