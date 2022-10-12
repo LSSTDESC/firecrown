@@ -79,4 +79,3 @@ lk.read(sacc_data)
     be used to compute the likelihood.
 """
 likelihood = lk
-
