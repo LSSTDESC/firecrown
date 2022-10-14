@@ -32,12 +32,13 @@ This will create a directory `cosmosis-standard-library` in whatever is your cur
 
 .. code:: bash
 
-    conda create --name firecrown_user -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib
+    cd /directory/where/you/want/to/clone/cosmosis-standard-library
+    conda create --name firecrown_user -c conda-forge cosmosis cosmosis-build-standard-library dill firecrown fuzzywuzzy getdist portalocker pybobyqa
     conda activate firecrown_user
     python -m pip install cobaya
     source ${CONDA_PREFIX}/bin/cosmosis-configure
-    cosmosis-build-standard-library
-    
+    cosmosis-build-standard-library main
+
 
 Setting your environment for development
 ========================================
@@ -50,6 +51,7 @@ Begin by `cd`-ing to the working directory you used above (which should contain 
 
     cd /path/to/directory/used above
     conda activate firecrown_user
+    source ${CONDA_PREFIX}/bin/cosmosis-configure
     export CSL_DIR=${PWD}/cosmosis-standard-library
     export FIRECROWN_SITE_PACKAGES=${COSMOSIS_SRC_DIR}/..
 
