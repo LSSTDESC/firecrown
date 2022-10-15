@@ -224,7 +224,6 @@ class PhotoZShift(WeakLensingSystematic):
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_parameters = DerivedParameterCollection([])
-        derived_parameters = derived_parameters + self.systematics.get_derived_parameters()
 
         return derived_parameters
 
@@ -285,7 +284,11 @@ class WeakLensing(Source):
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
+        derived_parameters = DerivedParameterCollection([])
+        derived_parameters = (
+            derived_parameters + self.systematics.get_derived_parameters()
+        )
+        return derived_parameters
 
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.

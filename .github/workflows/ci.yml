@@ -67,6 +67,11 @@ jobs:
         shell: bash -l {0}
         run: python -m pip install cobaya
         if: steps.cache.outputs.cache-hit != 'true'      
+      - name: Running black check
+        shell: bash -l {0}
+        run: |
+          black --check firecrown
+          black --check tests
       - name: Running flake8
         shell: bash -l {0}
         run: flake8 firecrown

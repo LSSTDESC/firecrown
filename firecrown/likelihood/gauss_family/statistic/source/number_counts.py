@@ -336,6 +336,7 @@ class NumberCounts(Source):
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         if self.derived_scale:
+            assert self.current_tracer_args is not None
             derived_scale = DerivedParameterScalar(
                 "TwoPoint",
                 f"NumberCountsScale_{self.sacc_tracer}",
@@ -344,7 +345,9 @@ class NumberCounts(Source):
             derived_parameters = DerivedParameterCollection([derived_scale])
         else:
             derived_parameters = DerivedParameterCollection([])
-        derived_parameters = derived_parameters + self.systematics.get_derived_parameters()
+        derived_parameters = (
+            derived_parameters + self.systematics.get_derived_parameters()
+        )
 
         return derived_parameters
 

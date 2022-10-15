@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Tuple, Optional
+from typing import final, Optional
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import ParamsMap, RequiredParameters
@@ -92,8 +92,9 @@ class Updatable(ABC):
     def get_derived_parameters(
         self,
     ) -> Optional[DerivedParameterCollection]:
-        """Returns a collection of derived parameters once per iteration of the statistical analysis.
-        First call returns True and the DerivedParameterCollection, further calls return (False, None).
+        """Returns a collection of derived parameters once per iteration of the
+        statistical analysis. First call returns True and the
+        DerivedParameterCollection, further calls return (False, None).
         """
         if not self._returned_derived:
             self._returned_derived = True
@@ -103,10 +104,11 @@ class Updatable(ABC):
 
     @abstractmethod
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        """Abstract method to be implemented by all concrete classes to return their derived parameters.
+        """Abstract method to be implemented by all concrete classes to return their
+        derived parameters.
 
-        Concrete classes must override this. If no derived parameters are required derived classes must
-        simply return super()._get_derived_parameters().
+        Concrete classes must override this. If no derived parameters are required
+        derived classes must simply return super()._get_derived_parameters().
         """
         return DerivedParameterCollection([])
 

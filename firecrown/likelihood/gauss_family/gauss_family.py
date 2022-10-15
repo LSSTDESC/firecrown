@@ -59,24 +59,24 @@ class GaussFamily(Likelihood):
     @final
     def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
-        residuals = []
-        theory_vector = []
-        data_vector = []
+        residuals_list: List[np.ndarray] = []
+        theory_vector_list: List[np.ndarray] = []
+        data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
             data, theory = stat.compute(cosmo)
-            residuals.append(np.atleast_1d(data - theory))
-            theory_vector.append(np.atleast_1d(theory))
-            data_vector.append(np.atleast_1d(data))
+            residuals_list.append(np.atleast_1d(data - theory))
+            theory_vector_list.append(np.atleast_1d(theory))
+            data_vector_list.append(np.atleast_1d(data))
 
-        residuals = np.concatenate(residuals, axis=0)
-        self.predicted_data_vector = np.concatenate(theory_vector)
-        self.measured_data_vector = np.concatenate(data_vector)
+        residuals = np.concatenate(residuals_list, axis=0)
+        self.predicted_data_vector: np.ndarray = np.concatenate(theory_vector_list)
+        self.measured_data_vector: np.ndarray = np.concatenate(data_vector_list)
 
         # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
-        assert np.isscalar(chisq)
-        return float(chisq)
+
+        return chisq
 
     @final
     def _update(self, params: ParamsMap) -> None:

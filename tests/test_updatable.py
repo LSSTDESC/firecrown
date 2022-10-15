@@ -162,7 +162,7 @@ def test_updatable_collection_construction():
 
     bad_list = [1]
     with pytest.raises(TypeError):
-        x = UpdatableCollection(bad_list)  #  pylint: disable-msg=W0612
+        x = UpdatableCollection(bad_list)  # pylint: disable-msg=W0612
 
 
 def test_updatable_collection_insertion():

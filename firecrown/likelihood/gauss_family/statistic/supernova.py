@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 from typing import Optional, Tuple, final
-import functools
 
 import numpy as np
 
