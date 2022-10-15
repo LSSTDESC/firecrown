@@ -59,17 +59,17 @@ def test_derived_parameter_wrong_type():
     """Try instantiating DerivedParameter objects with wrong types."""
 
     with pytest.raises(TypeError):
-        derived_param = DerivedParameterScalar(
+        derived_param = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
             "sec1", "name1", "not a float"
-        )  # pylint: disable-msg=E0110,W0612
+        )
     with pytest.raises(TypeError):
-        derived_param = DerivedParameterScalar(
+        derived_param = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
             "sec1", "name1", [3.14]
-        )  # pylint: disable-msg=E0110,W0612
+        )
     with pytest.raises(TypeError):
-        derived_param = DerivedParameterScalar(
+        derived_param = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
             "sec1", "name1", np.array([3.14])
-        )  # pylint: disable-msg=E0110,W0612
+        )
 
 
 def test_derived_parameters_collection():
