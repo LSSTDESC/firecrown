@@ -17,6 +17,7 @@ from .....parameters import (
     ParamsMap,
     RequiredParameters,
     parameter_get_full_name,
+    DerivedParameterScalar,
     DerivedParameterCollection,
 )
 from .....updatable import UpdatableCollection
@@ -277,6 +278,7 @@ class NumberCounts(Source):
         sacc_tracer: str,
         has_rsd: bool = False,
         has_mag_bias: bool = False,
+        derived_scale: bool = False,
         scale: float = 1.0,
         systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
@@ -285,6 +287,7 @@ class NumberCounts(Source):
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
         self.has_mag_bias = has_mag_bias
+        self.derived_scale = derived_scale
 
         self.systematics = UpdatableCollection([])
         if systematics:
@@ -332,7 +335,18 @@ class NumberCounts(Source):
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
+        if self.derived_scale:
+            derived_scale = DerivedParameterScalar(
+                "TwoPoint",
+                f"NumberCountsScale_{self.sacc_tracer}",
+                self.current_tracer_args.scale,
+            )
+            derived_parameters = DerivedParameterCollection([derived_scale])
+        else:
+            derived_parameters = DerivedParameterCollection([])
+        derived_parameters = derived_parameters + self.systematics.get_derived_parameters()
+
+        return derived_parameters
 
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.

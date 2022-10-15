@@ -22,7 +22,6 @@ from ..likelihood import Likelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
-from abc import abstractmethod
 
 
 class GaussFamily(Likelihood):
@@ -40,7 +39,7 @@ class GaussFamily(Likelihood):
         self.inv_cov: Optional[np.ndarray] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the covariance matrirx for this likelihood from the SACC file."""
+        """Read the covariance matrix for this likelihood from the SACC file."""
 
         _sd = sacc_data.copy()
         inds_list = []
@@ -74,7 +73,7 @@ class GaussFamily(Likelihood):
         self.measured_data_vector = np.concatenate(data_vector)
 
         # pylint: disable-next=C0103
-        x = scipy.linalg.solve_triangular(self.cholesky, r, lower=True)
+        x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
         assert np.isscalar(chisq)
         return float(chisq)
@@ -99,14 +98,10 @@ class GaussFamily(Likelihood):
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = self._get_derived_parameters_gaussian_family()
-
-        (
-            has_derived_parameters,
-            derived_parameters0,
-        ) = self.statistics.get_derived_parameters()
-        if has_derived_parameters:
-            derived_parameters = derived_parameters + derived_parameters0
+        derived_parameters = (
+            self._get_derived_parameters_gaussian_family()
+            + self.statistics.get_derived_parameters()
+        )
 
         return derived_parameters
 

@@ -3,7 +3,6 @@ import numpy as np
 from firecrown.parameters import RequiredParameters, parameter_get_full_name, ParamsMap
 from firecrown.parameters import (
     DerivedParameterScalar,
-    DerivedParameterArray,
     DerivedParameterCollection,
 )
 
@@ -56,14 +55,6 @@ def test_derived_parameter_scalar():
     assert derived_param.get_full_name() == "sec1--name1"
 
 
-def test_derived_parameter_array():
-    derived_param = DerivedParameterArray("sec1", "name1", np.array([1.1, 2.2, 3.3]))
-
-    assert isinstance(derived_param.get_val(), np.ndarray)
-    assert np.array_equal(derived_param.get_val(), np.array([1.1, 2.2, 3.3]))
-    assert derived_param.get_full_name() == "sec1--name1"
-
-
 def test_derived_parameter_wrong_type():
     """Try instantiating DerivedParameter objects with wrong types."""
 
@@ -80,19 +71,6 @@ def test_derived_parameter_wrong_type():
             "sec1", "name1", np.array([3.14])
         )  # pylint: disable-msg=E0110,W0612
 
-    with pytest.raises(TypeError):
-        derived_param = DerivedParameterArray(
-            "sec1", "name1", "not a float"
-        )  # pylint: disable-msg=E0110,W0612
-    with pytest.raises(TypeError):
-        derived_param = DerivedParameterArray(
-            "sec1", "name1", 3.14
-        )  # pylint: disable-msg=E0110,W0612
-    with pytest.raises(TypeError):
-        derived_param = DerivedParameterArray(
-            "sec1", "name1", [3.14]
-        )  # pylint: disable-msg=E0110,W0612
-
 
 def test_derived_parameters_collection():
     olist = [
@@ -103,3 +81,44 @@ def test_derived_parameters_collection():
     clist = orig.get_derived_list()
     clist.append(DerivedParameterScalar("sec3", "name3", 0.58))
     assert orig.get_derived_list() == olist
+
+
+def test_derived_parameters_collection_add():
+    olist = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc1 = DerivedParameterCollection(olist)
+    dpc2 = None
+
+    dpc = dpc1 + dpc2
+
+    for (section, name, val), derived_parameter in zip(dpc, olist):
+        assert section == derived_parameter.section
+        assert name == derived_parameter.name
+        assert val == derived_parameter.get_val()
+
+
+def test_derived_parameters_collection_add_iter():
+    olist1 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc1 = DerivedParameterCollection(olist1)
+
+    olist2 = [
+        DerivedParameterScalar("sec3", "name1", 3.14e1),
+        DerivedParameterScalar("sec3", "name2", 2.72e1),
+        DerivedParameterScalar("sec3", "name3", 0.58e1),
+    ]
+    dpc2 = DerivedParameterCollection(olist2)
+
+    dpc = dpc1 + dpc2
+    olist = olist1 + olist2
+
+    for (section, name, val), derived_parameter in zip(dpc, olist):
+        assert section == derived_parameter.section
+        assert name == derived_parameter.name
+        assert val == derived_parameter.get_val()

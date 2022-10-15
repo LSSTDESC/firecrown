@@ -18,7 +18,6 @@ from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.likelihood import load_likelihood, Likelihood
 from firecrown.parameters import ParamsMap
-from firecrown.parameters import DerivedParameterScalar, DerivedParameterArray
 
 
 def extract_section(sample: cosmosis.datablock, section: str) -> Dict:
@@ -76,32 +75,14 @@ class FirecrownLikelihood:
 
         self.likelihood.update(firecrown_params)
         loglike = self.likelihood.compute_loglike(cosmo)
-        (
-            has_derived,
-            derived_params_collection,
-        ) = self.likelihood.get_derived_parameters()
-        assert has_derived is True
+        derived_params_collection = self.likelihood.get_derived_parameters()
+        assert derived_params_collection is not None
         self.likelihood.reset()
 
         sample.put_double(section_names.likelihoods, "firecrown_like", loglike)
 
-        for derived_parameter in derived_params_collection.get_derived_list():
-            if isinstance(derived_parameter, DerivedParameterScalar):
-                sample.put(
-                    derived_parameter.section,
-                    derived_parameter.name,
-                    derived_parameter.val,
-                )
-            elif isinstance(derived_parameter, DerivedParameterArray):
-                sample.put(
-                    derived_parameter.section,
-                    derived_parameter.name,
-                    derived_parameter.val_array,
-                )
-            else:
-                raise TypeError(
-                    f"DerivedParameter type: {str(type(derived_parameter))} not supported."
-                )
+        for section, name, val in derived_params_collection:
+            sample.put(section, name, val)
 
         # Save concatenated data vector and inverse covariance to enable support
         # for the CosmoSIS fisher sampler.

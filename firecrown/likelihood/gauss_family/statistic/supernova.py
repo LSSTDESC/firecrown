@@ -25,7 +25,7 @@ class Supernova(Statistic):
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
         self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
-        self.M: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
+        self.M = None  # pylint: disable-msg=invalid-name
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""

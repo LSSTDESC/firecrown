@@ -200,7 +200,10 @@ class TwoPoint(Statistic):
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
+        derived_parameters = DerivedParameterCollection([])
+        derived_parameters = derived_parameters + self.source0.get_derived_parameters()
+        derived_parameters = derived_parameters + self.source1.get_derived_parameters()
+        return derived_parameters
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.

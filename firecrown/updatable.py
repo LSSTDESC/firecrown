@@ -89,15 +89,17 @@ class Updatable(ABC):
         return RequiredParameters([])
 
     @final
-    def get_derived_parameters(self) -> Tuple[bool, Optional[DerivedParameterCollection]]:
+    def get_derived_parameters(
+        self,
+    ) -> Optional[DerivedParameterCollection]:
         """Returns a collection of derived parameters once per iteration of the statistical analysis.
         First call returns True and the DerivedParameterCollection, further calls return (False, None).
         """
         if not self._returned_derived:
             self._returned_derived = True
-            return True, self._get_derived_parameters()
+            return self._get_derived_parameters()
 
-        return False, None
+        return None
 
     @abstractmethod
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -161,19 +163,19 @@ class UpdatableCollection(UserList):
         return result
 
     @final
-    def get_derived_parameters(self) -> Tuple[bool, Optional[DerivedParameterCollection]]:
+    def get_derived_parameters(self) -> Optional[DerivedParameterCollection]:
         """Get all derived parameters if any."""
         has_any_derived = False
         derived_parameters = DerivedParameterCollection([])
         for updatable in self:
-            has_derived, derived_parameters0 = updatable.get_derived_parameters()
-            if has_derived:
+            derived_parameters0 = updatable.get_derived_parameters()
+            if derived_parameters0 is not None:
                 derived_parameters = derived_parameters + derived_parameters0
                 has_any_derived = True
-        if has_any_derived is True:
-            return True, derived_parameters
+        if has_any_derived:
+            return derived_parameters
         else:
-            return False, None
+            return None
 
     def append(self, item: Updatable) -> None:
         """Append the given item to self.

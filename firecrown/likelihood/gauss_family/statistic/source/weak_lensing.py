@@ -223,7 +223,10 @@ class PhotoZShift(WeakLensingSystematic):
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
+        derived_parameters = DerivedParameterCollection([])
+        derived_parameters = derived_parameters + self.systematics.get_derived_parameters()
+
+        return derived_parameters
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
