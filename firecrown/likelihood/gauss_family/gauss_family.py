@@ -21,7 +21,7 @@ import sacc
 from ..likelihood import Likelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import ParamsMap, RequiredParameters
+from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
@@ -39,7 +39,7 @@ class GaussFamily(Likelihood):
         self.inv_cov: Optional[np.ndarray] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the covariance matrirx for this likelihood from the SACC file."""
+        """Read the covariance matrix for this likelihood from the SACC file."""
 
         _sd = sacc_data.copy()
         inds_list = []
@@ -59,21 +59,24 @@ class GaussFamily(Likelihood):
     @final
     def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
-        residuals = []
-        theory_vector = []
-        data_vector = []
+        residuals_list: List[np.ndarray] = []
+        theory_vector_list: List[np.ndarray] = []
+        data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
             data, theory = stat.compute(cosmo)
-            residuals.append(np.atleast_1d(data - theory))
-            theory_vector.append(np.atleast_1d(theory))
-            data_vector.append(np.atleast_1d(data))
+            residuals_list.append(np.atleast_1d(data - theory))
+            theory_vector_list.append(np.atleast_1d(theory))
+            data_vector_list.append(np.atleast_1d(data))
 
-        residuals = np.concatenate(residuals, axis=0)
-        self.predicted_data_vector = np.concatenate(theory_vector)
-        self.measured_data_vector = np.concatenate(data_vector)
+        residuals = np.concatenate(residuals_list, axis=0)
+        self.predicted_data_vector: np.ndarray = np.concatenate(theory_vector_list)
+        self.measured_data_vector: np.ndarray = np.concatenate(data_vector_list)
+
         # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
-        return np.dot(x, x)
+        chisq = np.dot(x, x)
+
+        return chisq
 
     @final
     def _update(self, params: ParamsMap) -> None:
@@ -92,6 +95,15 @@ class GaussFamily(Likelihood):
         _reset_gaussian_family."""
         self._reset_gaussian_family()
         self.statistics.reset()
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = (
+            self._get_derived_parameters_gaussian_family()
+            + self.statistics.get_derived_parameters()
+        )
+
+        return derived_parameters
 
     @abstractmethod
     def _update_gaussian_family(self, params: ParamsMap) -> None:
@@ -120,3 +132,7 @@ class GaussFamily(Likelihood):
     @abstractmethod
     def required_parameters_gaussian_family(self):
         """Required parameters for GaussFamily subclasses."""
+
+    @abstractmethod
+    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
+        """Get derived parameters for GaussFamily subclasses."""

@@ -11,7 +11,7 @@ import pyccl
 
 from .gauss_family import GaussFamily
 from .statistic.statistic import Statistic
-from ...parameters import ParamsMap, RequiredParameters
+from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
 class StudentT(GaussFamily):
@@ -50,3 +50,7 @@ class StudentT(GaussFamily):
     @final
     def required_parameters_gaussian_family(self):
         return RequiredParameters([])
+
+    @final
+    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])

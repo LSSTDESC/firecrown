@@ -1,6 +1,10 @@
 import pytest
 from firecrown.updatable import Updatable, UpdatableCollection
-from firecrown.parameters import RequiredParameters, ParamsMap
+from firecrown.parameters import (
+    RequiredParameters,
+    ParamsMap,
+    DerivedParameterCollection,
+)
 
 
 class Missing_update(Updatable):
@@ -12,6 +16,9 @@ class Missing_update(Updatable):
     def _reset(self) -> None:
         pass
 
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
+
 
 class Missing_reset(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
@@ -22,6 +29,9 @@ class Missing_reset(Updatable):
     def required_parameters(self):  # pragma: no cover
         pass
 
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
+
 
 class Missing_required_parameters(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
@@ -31,6 +41,9 @@ class Missing_required_parameters(Updatable):
 
     def _reset(self) -> None:
         pass
+
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
 
 class MinimalUpdatable(Updatable):
@@ -50,6 +63,9 @@ class MinimalUpdatable(Updatable):
 
     def required_parameters(self):
         return RequiredParameters(["a"])
+
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
 
 class SimpleUpdatable(Updatable):
@@ -71,6 +87,9 @@ class SimpleUpdatable(Updatable):
 
     def required_parameters(self):
         return RequiredParameters(["x", "y"])
+
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
 
 def test_verify_abstract_interface():
@@ -111,7 +130,7 @@ def test_updatable_collection_appends():
     assert coll.required_parameters() == RequiredParameters(["x", "y", "a"])
 
 
-def test_updateable_collection_updates():
+def test_updatable_collection_updates():
     coll = UpdatableCollection()
     assert len(coll) == 0
 
@@ -143,7 +162,7 @@ def test_updatable_collection_construction():
 
     bad_list = [1]
     with pytest.raises(TypeError):
-        x = UpdatableCollection(bad_list)  #  pylint: disable-msg=W0612
+        x = UpdatableCollection(bad_list)  # pylint: disable-msg=W0612
 
 
 def test_updatable_collection_insertion():

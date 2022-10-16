@@ -14,7 +14,7 @@ import pyccl
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
-from ....parameters import ParamsMap, RequiredParameters
+from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -197,6 +197,13 @@ class TwoPoint(Statistic):
     @final
     def required_parameters(self) -> RequiredParameters:
         return self.source0.required_parameters() + self.source1.required_parameters()
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = DerivedParameterCollection([])
+        derived_parameters = derived_parameters + self.source0.get_derived_parameters()
+        derived_parameters = derived_parameters + self.source1.get_derived_parameters()
+        return derived_parameters
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.

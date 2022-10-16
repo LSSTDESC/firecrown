@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, final
+from typing import Optional, Tuple, final
 
 import numpy as np
 
@@ -10,7 +10,7 @@ import pyccl
 import sacc
 
 from .statistic import Statistic
-from ....parameters import ParamsMap, RequiredParameters
+from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
 class Supernova(Statistic):
@@ -23,7 +23,7 @@ class Supernova(Statistic):
 
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
-        self.a = None  # pylint: disable-msg=invalid-name
+        self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
         self.M = None  # pylint: disable-msg=invalid-name
 
     def read(self, sacc_data: sacc.Sacc):
@@ -54,6 +54,10 @@ class Supernova(Statistic):
         The only required parameter is`m`.
         """
         return RequiredParameters(["m"])
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources."""

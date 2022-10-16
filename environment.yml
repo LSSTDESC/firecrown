@@ -4,6 +4,7 @@ channels:
 dependencies:
   - cosmosis
   - cosmosis-build-standard-library
+  - black
   - flake8
   - mypy
   - pylint
