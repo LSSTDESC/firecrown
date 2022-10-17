@@ -93,8 +93,8 @@ class Updatable(ABC):
         self,
     ) -> Optional[DerivedParameterCollection]:
         """Returns a collection of derived parameters once per iteration of the
-        statistical analysis. First call returns True and the
-        DerivedParameterCollection, further calls return (False, None).
+        statistical analysis. First call returns the DerivedParameterCollection,
+        further calls return None.
         """
         if not self._returned_derived:
             self._returned_derived = True
