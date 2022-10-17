@@ -2,6 +2,7 @@ import sacc
 from sacc import Sacc
 import os
 import numpy as np
+import pandas as pd
 import tarfile
 import urllib.request
 import datetime
@@ -10,12 +11,61 @@ import sys
 
 S = Sacc()
 
+
+def conversion(h):
+    """
+    CODE TO CONVERT THE NEW DESC HUBBLE DIAGRAM FILE STRUCTURE
+    SIMILAR TO COSMOMC STYLED INPUT HUBBLE DIAGRAM
+    FILE STRUCTURE
+    """
+    col = [
+        "#name",
+        "zcmb",
+        "zhel",
+        "dz",
+        "mb",
+        "dmb",
+        "x1",
+        "dx1",
+        "color",
+        "dcolor",
+        "3rdvar",
+        "d3rdvar",
+        "cov_m_s",
+        "cov_m_c",
+        "cov_s_c",
+        "set",
+        "ra",
+        "dec",
+        "biascor",
+    ]
+    h = pd.DataFrame(y1dat)
+    h.columns = h.iloc[0, :]
+    h = h.iloc[1:, 1:-1]
+    h = h.apply(pd.to_numeric)
+    h.MU -= 19.36
+    h.insert(3, "dz", np.zeros(np.shape(h)[0]))
+    row = np.shape(h)[0]
+    colu = 13
+    join = np.zeros((row, colu))
+    hh = pd.DataFrame(np.concatenate([h, join], axis=1))
+    hh.columns = col
+    h = hh
+    h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
+    h = h.T
+    return h
+
+
 if len(sys.argv) == 4:
     path = sys.argv[1]
     HD = sys.argv[2]
     cov = sys.argv[3]
-    y1dat = np.loadtxt(path + "/" + HD, unpack=True)
-    y1cov = np.loadtxt(path + "/" + cov, unpack=True)
+    y1dat = np.loadtxt(open(path + "/" + HD, "rt"), comments="#", dtype=str)
+    y1cov = np.loadtxt(path + "/" + cov, comments="#", unpack=True)
+    if (y1dat[0][0][0]).isnumeric():
+        y1dat = np.array(y1dat).astype(float).T
+    else:
+        y1dat = conversion(y1dat)
     # print("1. SUCESS")
 else:
     dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
