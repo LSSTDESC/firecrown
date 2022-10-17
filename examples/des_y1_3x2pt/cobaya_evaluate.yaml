@@ -11,6 +11,12 @@ likelihood:
   des_y1_3x2pt:
     external: !!python/name:firecrown.connector.cobaya.likelihood.LikelihoodConnector ''
     firecrownIni: des_y1_3x2pt.py
+    derived_parameters: 
+    - TwoPoint__NumberCountsScale_lens0
+    - TwoPoint__NumberCountsScale_lens1
+    - TwoPoint__NumberCountsScale_lens2
+    - TwoPoint__NumberCountsScale_lens3
+    - TwoPoint__NumberCountsScale_lens4
 params:
   As:
     prior:
@@ -161,6 +167,18 @@ params:
         dist: norm
         loc: 0.012
         scale: 0.023
+
+#   - derived parameters
+  TwoPoint__NumberCountsScale_lens0:
+     derived: True
+  TwoPoint__NumberCountsScale_lens1:
+     derived: True
+  TwoPoint__NumberCountsScale_lens2:
+     derived: True
+  TwoPoint__NumberCountsScale_lens3:
+     derived: True
+  TwoPoint__NumberCountsScale_lens4:
+     derived: True
 
 sampler:
   evaluate: null

@@ -17,6 +17,7 @@ class LikelihoodConnector(Likelihood):
     """A class implementing cobaya.likelihood.Likelihood."""
 
     firecrownIni = None
+    derived_parameters: List[str] = []
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown
@@ -46,7 +47,7 @@ class LikelihoodConnector(Likelihood):
 
         Returns an empty list.
         """
-        return []
+        return self.derived_parameters
 
     def get_allow_agnostic(self):
         """Required by Cobaya.
@@ -84,6 +85,11 @@ class LikelihoodConnector(Likelihood):
 
         self.likelihood.update(ParamsMap(params_values))
         loglike = self.likelihood.compute_loglike(pyccl)
+        derived_params_collection = self.likelihood.get_derived_parameters()
+        assert derived_params_collection is not None
         self.likelihood.reset()
+
+        for section, name, val in derived_params_collection:
+            params_values["_derived"][f"{section}__{name}"] = val
 
         return loglike
