@@ -41,12 +41,14 @@ This includes testing and code verification tools used during the development pr
 It is best to execute these commands while in the same directory as you were in when you cloned the Firecrown repository above.
 The `cosmosis-build-standard-library` command below will clone and then build the CosmoSIS Standard Library.
 This will create a directory `cosmosis-standard-library` in whatever is your current directory when you execute the command.
+The large list of packages is to ensure that the `pip install` of `cobaya` and `autoclasstoc` install nothing other than those packages.
 
 .. code:: bash
 
-    conda create --name firecrown_developer -c conda-forge cosmosis cosmosis-build-standard-library sacc pyccl fitsio fuzzywuzzy urllib3 PyYAML portalocker idna dill charset-normalizer requests matplotlib flake8 pylint black pytest coverage
+    conda create --name firecrown_developer -c conda-forge black charset-normalizer cosmosis cosmosis-build-standard-library coverage dill fitsio flake8 fuzzywuzzy getdist idna matplotlib-base more-itertools portalocker pybobyqa pyccl pylint pytest pyyaml requests sacc urllib3
+
     conda activate firecrown_developer
-    python -m pip install cobaya
+    python -m pip install autoclasstoc cobaya
     source ${CONDA_PREFIX}/bin/cosmosis-configure
     cosmosis-build-standard-library
     
@@ -78,6 +80,26 @@ The tests can be run with :bash:`pytest`, after building:
 
 .. code:: bash
 
-    pytest
+    python setup.py build
+    python -m pytest -vv
 
 Examples can be run by `cd`-ing into the specific examples directory and following the instructions in the local README file.
+
+Before committing code
+======================
+
+We are using several tools to help improve the quality of the Firecrown code.
+Before committing any code, please use the following tools, and address any complaints they raise.
+All of these are used as part of the CI system as part of the checking of all pull requests.
+
+.. code:: bash
+
+    # We are using type hints and mypy to help catch type-related errors.
+    mypy -p firecrown --ignore-missing-imports
+
+    # We are using pylint to enforce a variety of rules.
+    # Not all of firecrown has been cleaned up to pass pylint tests yet.
+    pylint --rcfile pylintrc_for_tests --recursive=y tests
+
+    # We are using black to keep consistent formatting across all python source files.
+    black firecrown
