@@ -18,13 +18,13 @@ the moment.
 
  2.LSST DESC FORMAT : DESC is building its own Hubble diagram file format.
  This file format is as follows :
- # MU        = distance modulus corrected for bias and contamination
- # MUERR     = stat-uncertainty on MU 
- # MUERR_SYS = sqrt(COVSYS_DIAG) for 'ALL' sys (diagnostic)
- # ISDATA_REAL: 0   # flag for cosmology fitter to choose blind option
- #
- VARNAMES: ROW zCMB zHEL MU MUERR MUERR_SYS
- ROW: 1       0.04130 0.04130 36.31576  0.00966   0.00683
+`# MU        = distance modulus corrected for bias and contamination`
+`# MUERR     = stat-uncertainty on MU` 
+`# MUERR_SYS = sqrt(COVSYS_DIAG) for 'ALL' sys (diagnostic)`
+`# ISDATA_REAL: 0   # flag for cosmology fitter to choose blind option`
+`#`
+`VARNAMES: ROW zCMB zHEL MU MUERR MUERR_SYS`
+`ROW: 1       0.04130 0.04130 36.31576  0.00966   0.00683`
 
 Either of the above formats can be passed as argument for input Hubble Diagram.
 
