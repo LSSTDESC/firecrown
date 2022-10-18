@@ -45,7 +45,7 @@ The large list of packages is to ensure that the `pip install` of `cobaya` and `
 
 .. code:: bash
 
-    conda create --name firecrown_developer -c conda-forge black charset-normalizer cosmosis cosmosis-build-standard-library coverage dill fitsio flake8 fuzzywuzzy getdist idna matplotlib-base more-itertools portalocker pybobyqa pyccl pylint pytest pyyaml requests sacc urllib3
+    conda create --name firecrown_developer -c conda-forge black charset-normalizer cosmosis cosmosis-build-standard-library coverage dill fitsio flake8 fuzzywuzzy getdist idna matplotlib-base more-itertools mypy portalocker pybobyqa pyccl pylint pytest pyyaml requests sacc urllib3
 
     conda activate firecrown_developer
     python -m pip install autoclasstoc cobaya
