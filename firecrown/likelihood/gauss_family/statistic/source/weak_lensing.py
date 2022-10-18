@@ -153,7 +153,9 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     def _update(self, params: ParamsMap):
         self.ia_bias = params.get_from_prefix_param(self.sacc_tracer, "ia_bias")
         self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
-        self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
+        self.alphag = params.get_from_prefix_param(
+            self.sacc_tracer, "alphag", default=1.0
+        )
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
     @final
