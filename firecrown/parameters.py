@@ -37,7 +37,9 @@ class ParamsMap(Dict[str, float]):
     with square brackets like x[].
     """
 
-    def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
+    def get_from_prefix_param(
+        self, prefix: Optional[str], param: str, default: Optional[float] = None
+    ) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
 
@@ -48,6 +50,8 @@ class ParamsMap(Dict[str, float]):
 
         if fullname in self.keys():
             return self[fullname]
+        elif default is not None:
+            return default
         raise KeyError(f"Prefix `{prefix}`, key `{param}' not found.")
 
 
