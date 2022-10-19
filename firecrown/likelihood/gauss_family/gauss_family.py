@@ -1,6 +1,17 @@
+"""
+
+Gaussian Family Module
+======================
+
+Some notes.
+
+"""
+
 from __future__ import annotations
 from typing import List, Optional
 from typing import final
+from abc import abstractmethod
+
 import numpy as np
 import scipy.linalg
 
@@ -10,8 +21,7 @@ import sacc
 from ..likelihood import Likelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import ParamsMap, RequiredParameters
-from abc import abstractmethod
+from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
@@ -29,13 +39,8 @@ class GaussFamily(Likelihood):
         self.inv_cov: Optional[np.ndarray] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the covariance matrirx for this likelihood from the SACC file.
+        """Read the covariance matrix for this likelihood from the SACC file."""
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
         _sd = sacc_data.copy()
         inds_list = []
         for stat in self.statistics:
@@ -52,43 +57,73 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology, params: ParamsMap):
-        """Compute the log-likelihood.
-
-        Parameters
-        ----------
-
-        Returns
-        -------
-        loglike : float
-            The log-likelihood.
-        """
-
-        r = []
-        theory_vector = []
-        data_vector = []
+    def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
+        """Calculate and return the chi-squared for the given cosmology."""
+        residuals_list: List[np.ndarray] = []
+        theory_vector_list: List[np.ndarray] = []
+        data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
-            data, theory = stat.compute(cosmo, params)
-            r.append(np.atleast_1d(data - theory))
-            theory_vector.append(np.atleast_1d(theory))
-            data_vector.append(np.atleast_1d(data))
+            data, theory = stat.compute(cosmo)
+            residuals_list.append(np.atleast_1d(data - theory))
+            theory_vector_list.append(np.atleast_1d(theory))
+            data_vector_list.append(np.atleast_1d(data))
 
-        r = np.concatenate(r, axis=0)
-        self.predicted_data_vector = np.concatenate(theory_vector)
-        self.measured_data_vector = np.concatenate(data_vector)
-        x = scipy.linalg.solve_triangular(self.cholesky, r, lower=True)
-        return np.dot(x, x)
+        residuals = np.concatenate(residuals_list, axis=0)
+        self.predicted_data_vector: np.ndarray = np.concatenate(theory_vector_list)
+        self.measured_data_vector: np.ndarray = np.concatenate(data_vector_list)
+
+        # pylint: disable-next=C0103
+        x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
+        chisq = np.dot(x, x)
+
+        return chisq
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update(self, params: ParamsMap) -> None:
+        """Implementation of the Likelihood interface method _update.
+
+        This updates all statistics and calls teh abstract method
+        _update_gaussian_family."""
         self.statistics.update(params)
+        self._update_gaussian_family(params)
+
+    @final
+    def _reset(self) -> None:
+        """Implementation of Likelihood interface method _reset.
+
+        This resets all statistics and calls the abstract method
+        _reset_gaussian_family."""
+        self._reset_gaussian_family()
+        self.statistics.reset()
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = (
+            self._get_derived_parameters_gaussian_family()
+            + self.statistics.get_derived_parameters()
+        )
+
+        return derived_parameters
 
     @abstractmethod
-    def _update_gaussian_family(self, params: ParamsMap):
-        pass
+    def _update_gaussian_family(self, params: ParamsMap) -> None:
+        """Abstract method to update GaussianFamily state. Must be implemented by all
+        subclasses."""
+
+    @abstractmethod
+    def _reset_gaussian_family(self) -> None:
+        """Abstract method to reset GaussianFamily state. Must be implemented by all
+        subclasses."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
+        """Return a RequiredParameters object containing the information for
+        this Updatable.
+
+        This includes the required parameters for all statistics, as well as those
+        for the derived class.
+
+        Derived classes must implement required_parameters_gaussian_family."""
         stats_rp = self.statistics.required_parameters()
         stats_rp = self.required_parameters_gaussian_family() + stats_rp
 
@@ -96,4 +131,8 @@ class GaussFamily(Likelihood):
 
     @abstractmethod
     def required_parameters_gaussian_family(self):
-        pass
+        """Required parameters for GaussFamily subclasses."""
+
+    @abstractmethod
+    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
+        """Get derived parameters for GaussFamily subclasses."""

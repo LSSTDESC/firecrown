@@ -1,23 +1,24 @@
-"""Classes Updatable and UpdatableCollection.
+"""Parameters that can be updated, and collections of them.
 
-Abstract class Updatable is a base class from which any class in Firecrown that
-supports updating from a ParamsMap should inherit. Such classes are expected to
-change state only in through their implementation of _update (including any
-other private methods used to implement _update). Other functions should not
-change the data of Updatable objects.
+Abstract class :class:`Updatable` is the base class from which any class in Firecrown
+that supports updating from a :class:`ParamsMap` should inherit. Such classes are
+expected to change state only in through their implementation of :python:`_update`
+(including any other private methods used to implement :python:`_update`). Other
+functions should not change the data of :class:`Updatable` objects.
 
-UpdatableCollection is a subclass of the built-in list. It implements the
-Updatable interface by calling update() on each element it contains. The
-append() member is overridden to make sure that only objects which are of a
-type that implements Updatable can be appended to the list.
+:class:`UpdatableCollection` is a subclass of the built-in list. It implements the
+:class:`Updatable` interface by calling :python:`update()` on each element it contains.
+The :python:`append()` member is overridden to make sure that only objects which are of
+a type that implements :class:`Updatable` can be appended to the list.
 
 """
 
 from __future__ import annotations
-from typing import final
+from typing import final, Optional
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import ParamsMap, RequiredParameters
+from .parameters import DerivedParameterCollection
 
 
 class Updatable(ABC):
@@ -31,13 +32,31 @@ class Updatable(ABC):
 
     """
 
+    def __init__(self):
+        """Updatable initialization."""
+        self._updated: bool = False
+        self._returned_derived: bool = False
+
     @final
     def update(self, params: ParamsMap):
-        """Update self by calling the abstract _update() method."""
-        self._update(params)
+        """Update self by calling the abstract _update() method.
+
+        :param params: new parameter values
+        """
+
+        if not self._updated:
+            self._update(params)
+            self._updated = True
+
+    @final
+    def reset(self):
+        """Reset self by calling the abstract _reset() method, and mark as reset."""
+        self._updated = False
+        self._returned_derived = False
+        self._reset()
 
     @abstractmethod
-    def _update(self, params: ParamsMap):  # pragma: no cover
+    def _update(self, params: ParamsMap) -> None:  # pragma: no cover
         """Abstract method to be implemented by all concrete classes to update
         self.
 
@@ -46,17 +65,52 @@ class Updatable(ABC):
         an implementation should raise a TypeError.
 
         The base class implementation does nothing.
+
+        :param params: a new set of parameter values
+        """
+
+    @abstractmethod
+    def _reset(self) -> None:  # pragma: no cover
+        """Abstract method to be implemented by all concrete classes to update
+        self.
+
+        Concrete classes must override this, resetting themselves.
+
+        The base class implementation does nothing.
         """
 
     @abstractmethod
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
-
         """Return a RequiredParameters object containing the information for
         this Updatable. This method must be overridden by concrete classes.
 
         The base class implementation returns an empty RequiredParameters.
         """
         return RequiredParameters([])
+
+    @final
+    def get_derived_parameters(
+        self,
+    ) -> Optional[DerivedParameterCollection]:
+        """Returns a collection of derived parameters once per iteration of the
+        statistical analysis. First call returns the DerivedParameterCollection,
+        further calls return None.
+        """
+        if not self._returned_derived:
+            self._returned_derived = True
+            return self._get_derived_parameters()
+
+        return None
+
+    @abstractmethod
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Abstract method to be implemented by all concrete classes to return their
+        derived parameters.
+
+        Concrete classes must override this. If no derived parameters are required
+        derived classes must simply return super()._get_derived_parameters().
+        """
+        return DerivedParameterCollection([])
 
 
 class UpdatableCollection(UserList):
@@ -74,6 +128,8 @@ class UpdatableCollection(UserList):
 
         If the iterable contains any object that is not Updatable, a TypeError
         is raised.
+
+        :param iterable: An iterable that yields Updatable objects
         """
         super().__init__(iterable)
         for item in self:
@@ -84,9 +140,18 @@ class UpdatableCollection(UserList):
 
     @final
     def update(self, params: ParamsMap):
-        """Update self by calling update() on each contained item."""
+        """Update self by calling update() on each contained item.
+
+        :param params: new parameter values
+        """
         for updatable in self:
             updatable.update(params)
+
+    @final
+    def reset(self):
+        """Resets self by calling reset() on each contained item."""
+        for updatable in self:
+            updatable.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -99,10 +164,27 @@ class UpdatableCollection(UserList):
 
         return result
 
+    @final
+    def get_derived_parameters(self) -> Optional[DerivedParameterCollection]:
+        """Get all derived parameters if any."""
+        has_any_derived = False
+        derived_parameters = DerivedParameterCollection([])
+        for updatable in self:
+            derived_parameters0 = updatable.get_derived_parameters()
+            if derived_parameters0 is not None:
+                derived_parameters = derived_parameters + derived_parameters0
+                has_any_derived = True
+        if has_any_derived:
+            return derived_parameters
+        else:
+            return None
+
     def append(self, item: Updatable) -> None:
         """Append the given item to self.
 
         If the item is not Updatable a TypeError is raised.
+
+        :param item: new item to be appended to the list
         """
         if not isinstance(item, Updatable):
             raise TypeError(

@@ -1,3 +1,6 @@
+"""Two point statistic support.
+"""
+
 from __future__ import annotations
 from typing import List, Tuple, Optional, final
 import copy
@@ -5,13 +8,15 @@ import functools
 import warnings
 
 import numpy as np
+import scipy.interpolate
+
 import pyccl
 
 import scipy.interpolate
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
-from ....parameters import ParamsMap, RequiredParameters
+from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -27,28 +32,27 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-ELL_FOR_XI_DEFAULTS = dict(min=2, mid=50, max=6e4, n_log=200)
+ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
 
 
-def _ell_for_xi(*, min, mid, max, n_log):
+def _ell_for_xi(*, minimum, midpoint, maximum, n_log):
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
     """
     return np.concatenate(
         (
-            np.linspace(min, mid - 1, mid - min),
-            np.logspace(np.log10(mid), np.log10(max), n_log),
+            np.linspace(minimum, midpoint - 1, midpoint - minimum),
+            np.logspace(np.log10(midpoint), np.log10(maximum), n_log),
         )
     )
 
 
-def _generate_ell_or_theta(*, min, max, n, binning="log"):
+def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
     if binning == "log":
-        edges = np.logspace(np.log10(min), np.log10(max), n + 1)
+        edges = np.logspace(np.log10(minimum), np.log10(maximum), n + 1)
         return np.sqrt(edges[1:] * edges[:-1])
-    else:
-        edges = np.linspace(min, max, n + 1)
-        return (edges[1:] + edges[:-1]) / 2.0
+    edges = np.linspace(minimum, maximum, n + 1)
+    return (edges[1:] + edges[:-1]) / 2.0
 
 
 @functools.lru_cache(maxsize=128)
@@ -102,6 +106,7 @@ class TwoPoint(Statistic):
            (possibly geometric) midpoint of the bin.
          - binning : str, optional - Pass 'log' to get logarithmic spaced bins and 'lin'
            to get linearly spaced bins. Default is 'log'.
+
     ell_or_theta_min : float, optional
         The minimum ell or theta value to keep. This minimum is applied after
         the ell or theta values are read and/or generated.
@@ -141,6 +146,7 @@ class TwoPoint(Statistic):
     scale_ : float
         The final scale factor applied to the statistic. Set after `compute`
         is called. Note that this scale factor is already applied.
+
     """
 
     def __init__(
@@ -154,6 +160,11 @@ class TwoPoint(Statistic):
         ell_or_theta_min=None,
         ell_or_theta_max=None,
     ):
+        super().__init__()
+
+        assert isinstance(source0, Source)
+        assert isinstance(source1, Source)
+
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
@@ -172,11 +183,8 @@ class TwoPoint(Statistic):
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
             raise ValueError(
-                "The SACC data type '%s' is not supported!" % sacc_data_type
+                f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
-
-        assert isinstance(source0, Source)
-        assert isinstance(source1, Source)
 
     @final
     def _update(self, params: ParamsMap):
@@ -184,8 +192,20 @@ class TwoPoint(Statistic):
         self.source1.update(params)
 
     @final
+    def _reset(self) -> None:
+        self.source0.reset()
+        self.source1.reset()
+
+    @final
     def required_parameters(self) -> RequiredParameters:
         return self.source0.required_parameters() + self.source1.required_parameters()
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = DerivedParameterCollection([])
+        derived_parameters = derived_parameters + self.source0.get_derived_parameters()
+        derived_parameters = derived_parameters + self.source1.get_derived_parameters()
+        return derived_parameters
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
@@ -216,12 +236,10 @@ class TwoPoint(Statistic):
                 f"have no 2pt data in the SACC file and no input ell or "
                 f"theta values were given!"
             )
-        elif (
-            self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0
-        ):
+        if self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0:
             warnings.warn(
-                "Tracers '%s' have 2pt data and you have specified `ell_or_theta` "
-                "in the configuration. `ell_or_theta` is being ignored!" % tracers,
+                f"Tracers '{tracers}' have 2pt data and you have specified "
+                "`ell_or_theta` in the configuration. `ell_or_theta` is being ignored!",
                 warnings.UserWarning,
                 stacklevel=2,
             )
@@ -254,7 +272,9 @@ class TwoPoint(Statistic):
         if self.theory_window_function is not None:
             ell_config = {**ELL_FOR_XI_DEFAULTS}
             ell_config["max"] = self.theory_window_function.values[-1]
-            ell_config["min"] = max(ell_config["min"], self.theory_window_function.values[0])
+            ell_config["min"] = max(
+                ell_config["min"], self.theory_window_function.values[0]
+            )
             _ell_or_theta = _ell_for_xi(**ell_config)
 
         # I don't think we need these copies, but being safe here.
@@ -263,22 +283,12 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a two-point statistic from sources.
-
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        """
+    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+        """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracer0 = self.source0.get_tracer(cosmo, params)
-        tracer1 = self.source1.get_tracer(cosmo, params)
+        tracer0 = self.source0.get_tracer(cosmo)
+        tracer1 = self.source1.get_tracer(cosmo)
         scale = self.source0.get_scale() * self.source1.get_scale()
 
         if self.ccl_kind == "cl":
@@ -299,14 +309,19 @@ class TwoPoint(Statistic):
             )
 
         if self.theory_window_function is not None:
+
             def log_interpolator(x, y):
                 if np.all(y > 0):
                     # use log-log interpolation
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), np.log(y), ext=2)
+                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
+                        np.log(x), np.log(y), ext=2
+                    )
                     return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
                 else:
                     # only use log for x
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
+                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
+                        np.log(x), y, ext=2
+                    )
                     return lambda x_, intp=intp: intp(np.log(x_))
 
             theory_interpolator = log_interpolator(self.ell_or_theta_, theory_vector)
@@ -315,8 +330,14 @@ class TwoPoint(Statistic):
             theory_vector_interpolated = np.zeros(ell.size)
             theory_vector_interpolated[2:] = theory_interpolator(ell[2:])
 
-            theory_vector = np.einsum("lb, l -> b", self.theory_window_function.weight, theory_vector_interpolated)
-            self.ell_or_theta_ = np.einsum("lb, l -> b", self.theory_window_function.weight, ell)
+            theory_vector = np.einsum(
+                "lb, l -> b",
+                self.theory_window_function.weight,
+                theory_vector_interpolated,
+            )
+            self.ell_or_theta_ = np.einsum(
+                "lb, l -> b", self.theory_window_function.weight, ell
+            )
 
         self.predicted_statistic_ = theory_vector
 

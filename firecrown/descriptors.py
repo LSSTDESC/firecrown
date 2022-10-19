@@ -1,24 +1,70 @@
+"""Provides type validation as used in connectors.
+
+
+Validators are created using the constructor for each class.
+Access to the data done through the object name, not through any named function.
+Setting the data is validated with the class's `validate` function; the user does
+not need to call any special functions.
+
+Validators are intended for use in class definitions. An example is a class that
+has a instance variable :python:`x` that is required to be a float in the range
+:python:`[1.0, 3.0]`, but is optional and has a default value of None:
+
+.. code:: python
+
+    class SampleValidatedTHing:
+        x = TypeFloat(1.0, 3.0, allow_none=True)
+
+        def __init__(self):
+            self.x = None
+
+"""
+
+# Validator classes naturally have very few public methods. We silence the
+# warning from pylint that complains about this.
+#
+# pylint: disable=R0903
+
+import math
 from abc import ABC, abstractmethod
 from .likelihood.likelihood import Likelihood
 
 
 class Validator(ABC):
+    """Abstract base class for all validators.
+
+    The base class implements the methods required for setting values, which should
+    not be overridden in derived classes.
+
+    Derived classes must implement the abstract method validate, which is called by
+    the base class when any variable protected by a Validator is set.
+    """
+
     def __set_name__(self, owner, name):
-        self.private_name = "_" + name
+        """Create the name of the private instance variable that will hold the value."""
+        self.private_name = "_" + name  # pylint: disable-msg=W0201
 
     def __get__(self, obj, objtype=None):
+        """Accessor method, which reads controlled value.
+
+        This is invoked whenever the validated variable is read."""
         return getattr(obj, self.private_name)
 
     def __set__(self, obj, value):
+        """Setter for the validated variable.
+
+        This function invokes the `validate` method of the derived class."""
         self.validate(value)
         setattr(obj, self.private_name, value)
 
     @abstractmethod
     def validate(self, value):
-        pass
+        """Abstract method to perform whatever validation is required."""
 
 
 class TypeFloat(Validator):
+    """Floating point number attribute descriptor."""
+
     def __init__(self, minvalue=None, maxvalue=None, allow_none=False):
         self.minvalue = minvalue
         self.maxvalue = maxvalue
@@ -33,9 +79,16 @@ class TypeFloat(Validator):
             raise ValueError(f"Expected {value!r} to be at least {self.minvalue!r}")
         if self.maxvalue is not None and value > self.maxvalue:
             raise ValueError(f"Expected {value!r} to be no more than {self.maxvalue!r}")
+        if self._is_constrained() and math.isnan(value):
+            raise ValueError("NaN is disallowed in a constrained float")
+
+    def _is_constrained(self):
+        return not ((self.minvalue is None) and (self.maxvalue is None))
 
 
 class TypeString(Validator):
+    """String attribute descriptor."""
+
     def __init__(self, minsize=None, maxsize=None, predicate=None):
         self.minsize = minsize
         self.maxsize = maxsize
@@ -57,6 +110,8 @@ class TypeString(Validator):
 
 
 class TypeLikelihood(Validator):
+    """Likelihood attribute descriptor."""
+
     def __init__(self):
         pass
 

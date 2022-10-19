@@ -1,52 +1,40 @@
+"""Supernova statistic support
+"""
+
 from __future__ import annotations
-from typing import Tuple, final
-import functools
+from typing import Optional, Tuple, final
 
 import numpy as np
+
 import pyccl
+import sacc
 
 from .statistic import Statistic
-from ....parameters import ParamsMap, RequiredParameters
-
-# only supported types are here, any thing else will throw
-# a value error
-SACC_DATA_TYPE_TO_CCL_KIND = {"supernova": "sn"}
-
-Z_FOR_MU_DEFAULTS = dict(min=0, max=2, n=100)
-
-
-def _z_for_mu(*, min, max, n):
-    """Build an array of z to sample the distance modulus
-    predictions.
-    """
-    return np.linspace(min, max, n)
-
-
-@functools.lru_cache(maxsize=128)
-def _cached_distmod(cosmo, tracers, z):
-    a = 1.0 / (1 + z)
-    return pyccl.background.distance_modulus(cosmo, *tracers, np.array(a))
+from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
 class Supernova(Statistic):
+    """A statistic that applies an additive shift M to a supernova's distance
+    modulus."""
+
     def __init__(self, sacc_tracer):
+        """Initialize this statistic."""
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
         self.data_vector = None
+        self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
+        self.M = None  # pylint: disable-msg=invalid-name
 
-    def read(self, sacc_data):
-        """Read the data for this statistic from the SACC file.
+    def read(self, sacc_data: sacc.Sacc):
+        """Read the data for this statistic from the SACC file."""
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
         data_points = sacc_data.get_data_points(
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
-
-        self.z = np.array([dp.get_tag("z") for dp in data_points])
-        self.a = 1.0 / (1.0 + self.z)
+        # pylint: disable-next=invalid-name
+        z = np.array([dp.get_tag("z") for dp in data_points])
+        self.a = 1.0 / (1.0 + z)
         self.data_vector = np.array([dp.value for dp in data_points])
         self.sacc_inds = list(range(0, len(self.data_vector)))
 
@@ -55,27 +43,25 @@ class Supernova(Statistic):
         self.M = params["m"]  # CosmoSIS makes everything lowercase
 
     @final
+    def _reset(self):
+        pass
+
+    @final
     def required_parameters(self) -> RequiredParameters:
+        """Return a RequiredParameters object containing the information for this
+        statistic.
+
+        The only required parameter is`m`.
+        """
         return RequiredParameters(["m"])
 
-    def compute(
-        self, cosmo: pyccl.Cosmology, params: ParamsMap
-    ) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a two-point statistic from sources.
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
-        Parameters
-        ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
-        params : dict
-            A dictionary mapping parameter names to their current values.
-        sources : dict
-            A dictionary mapping sources to their objects. The sources must
-            already have been rendered by calling `render` on them.
-        systematics : dict, optional
-            A dictionary mapping systematic names to their objects. The
-            default of `None` corresponds to no systematics.
-        """
+    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+        """Compute a two-point statistic from sources."""
+
         theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
 
         assert self.data_vector is not None

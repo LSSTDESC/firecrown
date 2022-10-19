@@ -1,3 +1,7 @@
+"""Weak lensing source and systematics
+
+"""
+
 from __future__ import annotations
 from typing import List, Tuple, Optional, final
 from dataclasses import dataclass
@@ -9,7 +13,12 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
-from .....parameters import ParamsMap, RequiredParameters, parameter_get_full_name
+from .....parameters import (
+    ParamsMap,
+    RequiredParameters,
+    parameter_get_full_name,
+    DerivedParameterCollection,
+)
 from .....updatable import UpdatableCollection
 
 __all__ = ["WeakLensing"]
@@ -20,17 +29,19 @@ class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
 
     scale: float
-    z: np.ndarray
+    z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     ia_bias: Tuple[np.ndarray, np.ndarray]
 
 
 class WeakLensingSystematic(Systematic):
+    """Abstract base class for all weak lensing systematics."""
+
     @abstractmethod
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        pass
+        """Apply method to include systematics in the tracer_arg."""
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):
@@ -38,10 +49,10 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
 
-
-    Methods
-    -------
-    apply : apply the systematic to a source
+    Parameters
+    ----------
+    mult_bias : str
+       The name of the multiplicative bias parameter.
     """
 
     params_names = ["mult_bias"]
@@ -53,18 +64,32 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         ----------
         sacc_tracer : The name of the multiplicative bias parameter.
         """
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of parameters."""
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
+        # pylint: disable-next=invalid-name
         self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
+
+    @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply multiplicative shear bias to a source. The `scale_` of the
@@ -120,6 +145,8 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         z_piv : The pivot redshift parameter for the intrinsic alignment
         parameter.
         """
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -130,10 +157,20 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
 
     @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
@@ -166,6 +203,8 @@ class PhotoZShift(WeakLensingSystematic):
     delta_z: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -173,10 +212,20 @@ class PhotoZShift(WeakLensingSystematic):
         self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
 
     @final
+    def _reset(self) -> None:
+        pass
+
+    @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = DerivedParameterCollection([])
+
+        return derived_parameters
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -195,37 +244,51 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensing(Source):
+    """Source class for weak lensing."""
+
     systematics: UpdatableCollection
-    tracer_arg: WeakLensingArgs
+    tracer_args: WeakLensingArgs
 
     def __init__(
         self,
         *,
-        sacc_tracer,
-        scale=1.0,
+        sacc_tracer: str,
+        scale: float = 1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
+        """Initialize the WeakLensing object."""
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
         self.scale = scale
         self.z_orig: Optional[np.ndarray] = None
         self.dndz_orig: Optional[np.ndarray] = None
         self.dndz_interp = None
-        self.current_tracer_args = None
-        self.scale_ = None
-        self.tracer_ = None
-
-        self.systematics = UpdatableCollection([])
-        if systematics:
-            for systematic in systematics:
-                self.systematics.append(systematic)
+        self.current_tracer_args: Optional[WeakLensingArgs] = None
+        self.systematics = UpdatableCollection(systematics)
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update_source(self, params: ParamsMap):
+        """Implementation of Source interface `_update_source`.
+
+        This updates all the contained systematics."""
         self.systematics.update(params)
+
+    @final
+    def _reset_source(self) -> None:
+        self.systematics.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:
         return self.systematics.required_parameters()
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        derived_parameters = DerivedParameterCollection([])
+        derived_parameters = (
+            derived_parameters + self.systematics.get_derived_parameters()
+        )
+        return derived_parameters
 
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.
@@ -237,15 +300,15 @@ class WeakLensing(Source):
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        inds = np.argsort(z)
-        z = z[inds]
-        nz = nz[inds]
+        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
+        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
+        indices = np.argsort(z)
+        z = z[indices]  # pylint: disable-msg=invalid-name
+        nz = nz[indices]  # pylint: disable-msg=invalid-name
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def create_tracer(self, cosmo: pyccl.Cosmology):
         """
         Render a source by applying systematics.
 

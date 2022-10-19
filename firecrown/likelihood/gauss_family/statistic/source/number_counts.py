@@ -1,3 +1,7 @@
+"""Number counts source and systematics
+
+"""
+
 from __future__ import annotations
 from typing import List, Optional, final
 from dataclasses import dataclass
@@ -9,7 +13,13 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
-from .....parameters import ParamsMap, RequiredParameters, parameter_get_full_name
+from .....parameters import (
+    ParamsMap,
+    RequiredParameters,
+    parameter_get_full_name,
+    DerivedParameterScalar,
+    DerivedParameterCollection,
+)
 from .....updatable import UpdatableCollection
 
 __all__ = ["NumberCounts"]
@@ -17,21 +27,23 @@ __all__ = ["NumberCounts"]
 
 @dataclass(frozen=True)
 class NumberCountsArgs:
-    """Class for weak lensing tracer builder argument."""
+    """Class for number counts tracer builder argument."""
 
     scale: float
-    z: np.ndarray
+    z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     bias: np.ndarray
     mag_bias: np.ndarray
 
 
 class NumberCountsSystematic(Systematic):
+    """Class implementing systematics for Number Counts sources."""
+
     @abstractmethod
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
-        pass
+        """Apply method to include systematics in the tracer_arg."""
 
 
 class LinearBiasSystematic(NumberCountsSystematic):
@@ -49,9 +61,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
     z_piv : str
         The name of the pivot redshift parameter for the linear bias.
 
-    Methods
-    -------
-    apply : apply the systematic to a source
     """
 
     params_names = ["alphaz", "alphag", "z_piv"]
@@ -60,20 +69,33 @@ class LinearBiasSystematic(NumberCountsSystematic):
     z_piv: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of parameters."""
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
         self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
         self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+
+    @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
 
     @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
@@ -127,11 +149,14 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     z_m: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of parameters."""
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
         self.r_lim = params.get_from_prefix_param(self.sacc_tracer, "r_lim")
         self.sig_c = params.get_from_prefix_param(self.sacc_tracer, "sig_c")
         self.eta = params.get_from_prefix_param(self.sacc_tracer, "eta")
@@ -139,10 +164,20 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = params.get_from_prefix_param(self.sacc_tracer, "z_m")
 
     @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
@@ -158,13 +193,13 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
 
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
-        z = tracer_arg.z
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
+        # pylint: disable-next=invalid-name
         s = (
             self.eta / self.r_lim
             - 3.0 * self.z_m / z_bar
-            + 1.5 * self.z_m * np.power(z / z_bar, 1.5) / z_bar
+            + 1.5 * self.z_m * np.power(tracer_arg.z / z_bar, 1.5) / z_bar
         )
 
         return NumberCountsArgs(
@@ -186,6 +221,8 @@ class PhotoZShift(NumberCountsSystematic):
     delta_z: float
 
     def __init__(self, sacc_tracer: str):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
 
     @final
@@ -193,10 +230,20 @@ class PhotoZShift(NumberCountsSystematic):
         self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
 
     @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
     def required_parameters(self) -> RequiredParameters:
         return RequiredParameters(
             [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
     def apply(self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -216,6 +263,8 @@ class PhotoZShift(NumberCountsSystematic):
 
 
 class NumberCounts(Source):
+    """Source class for number counts."""
+
     params_names = ["bias", "mag_bias"]
     bias: float
     mag_bias: Optional[float]
@@ -226,15 +275,19 @@ class NumberCounts(Source):
     def __init__(
         self,
         *,
-        sacc_tracer,
-        has_rsd=False,
-        has_mag_bias=False,
-        scale=1.0,
+        sacc_tracer: str,
+        has_rsd: bool = False,
+        has_mag_bias: bool = False,
+        derived_scale: bool = False,
+        scale: float = 1.0,
         systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
+        super().__init__()
+
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
         self.has_mag_bias = has_mag_bias
+        self.derived_scale = derived_scale
 
         self.systematics = UpdatableCollection([])
         if systematics:
@@ -247,7 +300,7 @@ class NumberCounts(Source):
         self.tracer_ = None
 
     @final
-    def _update(self, params: ParamsMap):
+    def _update_source(self, params: ParamsMap):
         self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
 
         if self.has_mag_bias:
@@ -256,6 +309,10 @@ class NumberCounts(Source):
             self.mag_bias = None
 
         self.systematics.update(params)
+
+    @final
+    def _reset_source(self) -> None:
+        self.systematics.reset()
 
     @final
     def required_parameters(self) -> RequiredParameters:
@@ -276,6 +333,24 @@ class NumberCounts(Source):
             )
         return rp + self.systematics.required_parameters()
 
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        if self.derived_scale:
+            assert self.current_tracer_args is not None
+            derived_scale = DerivedParameterScalar(
+                "TwoPoint",
+                f"NumberCountsScale_{self.sacc_tracer}",
+                self.current_tracer_args.scale,
+            )
+            derived_parameters = DerivedParameterCollection([derived_scale])
+        else:
+            derived_parameters = DerivedParameterCollection([])
+        derived_parameters = (
+            derived_parameters + self.systematics.get_derived_parameters()
+        )
+
+        return derived_parameters
+
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.
 
@@ -295,7 +370,7 @@ class NumberCounts(Source):
             scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
         )
 
-    def create_tracer(self, cosmo: pyccl.Cosmology, params: ParamsMap):
+    def create_tracer(self, cosmo: pyccl.Cosmology):
         tracer_args = self.tracer_args
 
         bias = np.ones_like(tracer_args.z) * self.bias

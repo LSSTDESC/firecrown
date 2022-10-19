@@ -1,35 +1,42 @@
-"""The module mapping provides facilities for mapping the cosmological
-constants and functions used by one body of code to another. This is done by
-defining one of the codes (pyccl) as being the 'standard', and for all other
-supported code, providing functions from_ccl and to_ccl.
+"""Facilities for mapping cosmological parameters between frameworks.
 
-The supported codes include:
-    pyccl
-    CAMB (Fortran convention)
-    pycamb (similar but not identical to the CAMB Fortran convention)
-    CLASS
-    Cobaya
-    CosmoSIS
+The module :mod:`mapping` provides facilities for mapping the cosmological
+constants and functions used by one body of code to another. This is done by
+defining one of the codes (:mod:`pyccl`) as being the 'standard', and for all
+other supported code, providing functions :python:`from_ccl` and
+:python:`to_ccl`.
+
+Each supported body of code has its own dedicated class.
+
 """
 
 from abc import ABC, abstractmethod
-from typing import List
+from typing import Type, List, Dict, final, Any
+import typing
 import numpy as np
 from pyccl import physical_constants as physics
+import cosmosis.datablock
 from ..descriptors import TypeFloat, TypeString
 
 
 class Mapping(ABC):
-    """
-    Mapping is an abstract base class providing the interface that describes
-    a mapping of cosmological constants from some concrete Boltzmann calculator
-    to the form those constants take in CCL. Each supported Boltzmann calculator
-    will have its own concrete subclass.
+    """Abstract base class defining the interface for each supported code.
+
+    The interface describes a mapping of cosmological constants from some
+    concrete Boltzmann calculator to the form those constants take in CCL. Each
+    supported Boltzmann calculator must have its own concrete subclass.
+
+    The class variables are all :mod:`firecrown.connector.descriptors`. This is
+    to control the allowed types for the instance variables. A descriptor of
+    name 'x' will provide an apparent instance variable of name :python:`x` in
+    each class, as well as an entry :python:`_x` in the object's __dict__.
+
     """
 
     # pylint: disable-msg=R0902
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
+    Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
     sigma8 = TypeFloat(allow_none=True)
@@ -42,8 +49,8 @@ class Mapping(ABC):
     wa = TypeFloat()
     T_CMB = TypeFloat()
 
-    def __init__(self):
-        pass
+    def __init__(self, *, require_nonlinear_pk: bool = False):
+        self.require_nonlinear_pk = require_nonlinear_pk
 
     @abstractmethod
     def get_params_names(self) -> List[str]:
@@ -55,18 +62,16 @@ class Mapping(ABC):
     @abstractmethod
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
-        pass
 
     @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given p_k * h^3 to p_k."""
-        pass
+        """Transform the given :math:`p_k h^3 \\to p_k`."""
 
     @abstractmethod
     def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
-        """Transform distances h to h/h0."""
-        pass
+        """Transform distances h to :math:`h/h_0`."""
 
+    @final
     def set_params(
         self,
         *,
@@ -133,7 +138,8 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self):
+    def asdict(self) -> Dict:
+        """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
@@ -152,24 +158,23 @@ class Mapping(ABC):
         }
 
     def get_H0(self) -> float:  # pylint: disable-msg=C0103
-
+        """Return the value of H0."""
         return self.h * 100.0
 
 
 class MappingCLASS(Mapping):
-    """
-    This class is not yet implemented; this stub is here to satisfy IDEs that
-    complain about using the names of missing classes.
+    """This class is not yet implemented.
+
+    This stub is here to satisfy IDEs that complain about using the names of
+    missing classes.
     """
 
-    pass
+    def get_params_names(self):
+        return []
 
 
 class MappingCosmoSIS(Mapping):
-    """
-    Implementation of the mapping class between CosmoSIS datablock parameters
-    and CCL.
-    """
+    """Mapping support for CosmoSIS."""
 
     def get_params_names(self):
         return [
@@ -231,14 +236,87 @@ class MappingCosmoSIS(Mapping):
             # Modify CosmoSIS to make this available in the datablock
         )
 
+    def calculate_ccl_args(self, sample: cosmosis.datablock):
+        """Calculate the arguments necessary for CCL for this sample."""
+        ccl_args: Dict[str, Any] = {}
+        if sample.has_section("matter_power_lin"):
+            k = self.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
+            z_mpl = sample["matter_power_lin", "z"]
+            scale_mpl = self.redshift_to_scale_factor(z_mpl)
+            p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_lin", "p_k"])
+            p_k = self.redshift_to_scale_factor_p_k(p_k)
+
+            ccl_args["pk_linear"] = {
+                "a": scale_mpl,
+                "k": k,
+                "delta_matter:delta_matter": p_k,
+            }
+
+        if self.require_nonlinear_pk:
+            if sample.has_section("matter_power_nl"):
+                k = self.transform_k_h_to_k(sample["matter_power_nl", "k_h"])
+                z_mpl = sample["matter_power_nl", "z"]
+                scale_mpl = self.redshift_to_scale_factor(z_mpl)
+                p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_nl", "p_k"])
+                p_k = self.redshift_to_scale_factor_p_k(p_k)
+
+                ccl_args["pk_nonlin"] = {
+                    "a": scale_mpl,
+                    "k": k,
+                    "delta_matter:delta_matter": p_k,
+                }
+            else:
+                ccl_args["nonlinear_model"] = "halofit"
+        else:
+            ccl_args["nonlinear_model"] = None
+
+        # TODO: We should have several configurable modes for this module.
+        # In all cases, an exception will be raised (causing a program
+        # shutdown) if something that is to be read from the DataBlock is not
+        # present in the DataBlock.
+        #
+        # background: read only background information from the DataBlock; it
+        # will generate a runtime error if the configured likelihood attempts
+        # to use anything else.
+        #
+        # linear: read also the linear power spectrum from the DataBlock. Any
+        # non-linear power spectrum present will be ignored. It will generate
+        # a runtime error if the configured likelihood attempts to make use
+        # of a non-linear spectrum.
+        #
+        #  nonlinear: read also the nonlinear power spectrum from the DataBlock.
+        #
+        # halofit, halomodel, emu: use CCL to calculate the nonlinear power
+        # spectrum according to the named technique. In all cases, the linear
+        # power spectrum read from the DataBlock is used as input. In all
+        # cases, it is an error if the DataBlock also contains a nonlinear
+        # power spectrum.
+
+        chi = np.flip(sample["distances", "d_m"])
+        scale_distances = self.redshift_to_scale_factor(sample["distances", "z"])
+        # h0 = sample["cosmological_parameters", "h0"]
+        # NOTE: The first value of the h_over_h0 array is non-zero because of the way
+        # CAMB does it calculation. We do not modify this, because we want consistency.
+
+        # hubble_radius_today = (ccl.physical_constants.CLIGHT * 1e-5) / h0
+        # h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
+        h_over_h0 = self.transform_h_to_h_over_h0(sample["distances", "h"])
+
+        ccl_args["background"] = {
+            "a": scale_distances,
+            "chi": chi,
+            "h_over_h0": h_over_h0,
+        }
+
+        return ccl_args
+
 
 class MappingCAMB(Mapping):
-    """
-    A class implementing Mapping for the Python CAMB interface.
-    """
+    """Mapping support for PyCAMB, the Python version of CAMB.
 
-    def __init__(self):
-        pass
+    Note that the Python version of CAMB uses some different conventions from
+    the Fortran version of CAMB. The two are not interchangeable.
+    """
 
     def get_params_names(self) -> List[str]:
         """
@@ -260,18 +338,19 @@ class MappingCAMB(Mapping):
 
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
-        # Not implemented
-        assert False
+        raise NotImplementedError("Method `transform_k_h_to_k` is not implemented.")
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         """Transform the given p_k * h^3 to p_k."""
-        # Not implemented
-        assert False
+        raise NotImplementedError(
+            "Method `transform_p_k_h3_to_p_k` is not implemented."
+        )
 
     def transform_h_to_h_over_h0(self, h):
         """Transform distances h to h/h0."""
-        # Not implemented
-        assert False
+        raise NotImplementedError(
+            "Method `transform_h_to_h_over_h0` is not implemented."
+        )
 
     def set_params_from_camb(self, **params_values):
         """Read the CAMB-style parameters from params_values, translate them to
@@ -324,7 +403,7 @@ class MappingCAMB(Mapping):
         )
 
 
-mapping_classes = {
+mapping_classes: typing.Mapping[str, Type[Mapping]] = {
     "CAMB": MappingCAMB,
     "CLASS": MappingCLASS,
     "CosmoSIS": MappingCosmoSIS,
