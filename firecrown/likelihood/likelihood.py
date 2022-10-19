@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, final
 from abc import abstractmethod
 import importlib
 import importlib.util
@@ -18,7 +18,10 @@ import os
 import sys
 import numpy as np
 import numpy.typing as npt
+
 import pyccl
+import pyccl.nl_pt
+
 import sacc
 
 from ..updatable import Updatable, UpdatableCollection
@@ -84,17 +87,33 @@ class CosmologyContainer:
         return self.ccl_cosmo.get_nonlin_power(name)
 
 
-
 class CosmoSystematicsLikelihood(Likelihood):
     def __init__(self, systematics):
         super().__init__()
         self.systematics = UpdatableCollection(systematics)
 
-    def apply_systematics(self, cosmo: pyccl.Cosmology) -> pyccl.Cosmology:
-        pk = {}
+    @final
+    def apply_systematics(self, cosmo: pyccl.Cosmology) -> CosmologyContainer:
+        cosmo_container = CosmologyContainer(cosmo)
         for systematic in self.systematics:
-            pk = systematic.apply(cosmo, pk)
-        cosmo._pk_nl.update(pk)
+            cosmo_container = systematic.apply(cosmo_container)
+        return cosmo_container
+
+
+# This should probably live somewhere else and derive from some base Systematics
+# calss
+class PTSystematic:
+    def __init__(self, *ptc_args, **ptc_kwargs):
+        self.ptc = pyccl.nl_pt.PTCalculator(*self.ptc_args, **self.ptc_kwargs)
+
+    def apply(self, cosmo_container: CosmologyContainer) -> CosmologyContainer:
+        # P_lin(k) at z=0
+        pk_lin_z0 = pyccl.linear_matter_power(cosmo_container.ccl_cosmo, self.ptc.ks, 1.)
+        # Compute the perturbative quantities
+        self.ptc.update_pk(pk_lin_z0)
+
+        cosmo_container.pt_calculator = self.ptc
+        return cosmo_container
 
 
 def load_likelihood(filename: str) -> Likelihood:
