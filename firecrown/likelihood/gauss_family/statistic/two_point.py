@@ -271,9 +271,9 @@ class TwoPoint(Statistic):
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_inds)
         if self.theory_window_function is not None:
             ell_config = {**ELL_FOR_XI_DEFAULTS}
-            ell_config["max"] = self.theory_window_function.values[-1]
-            ell_config["min"] = max(
-                ell_config["min"], self.theory_window_function.values[0]
+            ell_config["maximum"] = self.theory_window_function.values[-1]
+            ell_config["minimum"] = max(
+                ell_config["minimum"], self.theory_window_function.values[0]
             )
             _ell_or_theta = _ell_for_xi(**ell_config)
 
