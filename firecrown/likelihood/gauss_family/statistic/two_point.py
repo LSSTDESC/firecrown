@@ -11,6 +11,7 @@ import numpy as np
 import scipy.interpolate
 
 import pyccl
+import pyccl.nl_pt
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
@@ -54,8 +55,8 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
 
 
 @functools.lru_cache(maxsize=128)
-def _cached_angular_cl(cosmo, tracers, ells):
-    return pyccl.angular_cl(cosmo, *tracers, np.array(ells))
+def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
+    return pyccl.angular_cl(cosmo, *tracers, np.array(ells), p_of_k_a=p_of_k_a)
 
 
 class TwoPoint(Statistic):
@@ -285,25 +286,41 @@ class TwoPoint(Statistic):
         """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracer0 = self.source0.get_tracer(cosmo)
-        tracer1 = self.source1.get_tracer(cosmo)
-        scale = self.source0.get_scale() * self.source1.get_scale()
+        tracers0 = self.source0.get_tracer(cosmo)
+        tracers1 = self.source1.get_tracer(cosmo)
+        scales0 = self.source0.get_scale()
+        scales1 = self.source1.get_scale()
 
         if self.ccl_kind == "cl":
-            theory_vector = (
-                _cached_angular_cl(
-                    cosmo, (tracer0, tracer1), tuple(self.ell_or_theta_.tolist())
-                )
-                * scale
-            )
+            self.ells = self.ell_or_theta_
         else:
-            ells = _ell_for_xi(**self.ell_for_xi)
-            cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
+            self.ells = _ell_for_xi(**self.ell_for_xi)
+        self.cells = {}
+        for tracer0, scale0 in zip(tracers0, scales0):
+            for tracer1, scale1 in zip(tracers1, scales1):
+                if tracer0.is_pt and tracer1.is_pt:
+                    # Compute perturbation power spectrum
+                    pk = pyccl.nl_pt.get_pt_pk2d(cosmo.ccl_cosmo,
+                                                 tracer0.pt_tracer, tracer2=tracer1.pt_tracer,
+                                                 ptc=cosmo.pt_calculator, update_ptc=False)
+                elif tracer0.is_hm and tracer1.is_hm:
+                    # Compute halo model power spectrum
+                    raise NotImplementedError("Halo model power spectra not supported yet")
+                else:
+                    # Use existing power spectrum
+                    pk = cosmo.get_nonlin_power(f"{tracer0.field}:{tracer1.field}")
+
+                self.cells[(tracer0.field, tracer1.field)] = _cached_angular_cl(
+                    cosmo, (tracer0.ccl_tracer, tracer1.ccl_tracer), tuple(self.ells.tolist()), p_of_k_a=pk
+                ) * scale0 * scale1
+
+        theory_vector = sum(self.cells.values())
+
+        if not self.ccl_kind == "cl":
             theory_vector = (
                 pyccl.correlation(
-                    cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
+                    cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
                 )
-                * scale
             )
 
         if self.theory_window_function is not None:

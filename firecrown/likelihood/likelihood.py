@@ -69,6 +69,34 @@ class Likelihood(Updatable):
         """Compute the log-likelihood of generic CCL data."""
 
 
+class CosmologyContainer:
+    def __init__(self, cosmo: pyccl.Cosmology):
+        self.ccl_cosmo = cosmo
+        self.pt_calculator: pyccl.nl_pt.PTCalculator = None
+        self.hm_calculator: pyccl.halomodel.HMCalculator = None
+
+    def add_pk(self, name: str, pk: pyccl.Pk2D):
+        self.pk[name] = pk
+
+    def get_pk(self, name: str) -> pyccl.Pk2D:
+        if name in self.pk:
+            return self.pk[name]
+        return self.ccl_cosmo.get_nonlin_power(name)
+
+
+
+class CosmoSystematicsLikelihood(Likelihood):
+    def __init__(self, systematics):
+        super().__init__()
+        self.systematics = UpdatableCollection(systematics)
+
+    def apply_systematics(self, cosmo: pyccl.Cosmology) -> pyccl.Cosmology:
+        pk = {}
+        for systematic in self.systematics:
+            pk = systematic.apply(cosmo, pk)
+        cosmo._pk_nl.update(pk)
+
+
 def load_likelihood(filename: str) -> Likelihood:
     """Loads a likelihood script and returns an instance
 
