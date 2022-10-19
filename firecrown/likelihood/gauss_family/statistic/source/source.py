@@ -103,7 +103,7 @@ class Source(Updatable):
 class TracerContainer:
     def __init__(self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None):
         self.ccl_tracer = tracer
-        self.field = None
+        self.field = field
         self.pt_tracer = pt_tracer
 
     @property
