@@ -192,6 +192,102 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
             ia_bias=(tracer_arg.z, ia_bias_array),
         )
 
+class TattAlignmentSystematic(WeakLensingSystematic):
+    """TATT alignment systematic.
+
+    This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
+    Parameters can vary with redshift and the growth function.
+    This also requires PTTracers and a PTCalculator.
+
+
+
+    Methods
+    -------
+    apply : apply the systematic to a source
+    """
+
+    params_names = ["a1", "a2", "ad", "alphaz1", "alphaz2", "alphazd", "alphag", "z_piv"]
+    a1: float
+    a2: float
+    ad: float
+    alphaz1: float
+    alphaz2: float
+    alphazd: float
+    alphag: float
+    z_piv: float
+
+    def __init__(self, sacc_tracer: Optional[str] = None):
+        """Create a TattAlignmentSystematic object, using the specified
+        tracer name.
+
+        Instance data are:
+        
+        [UPDATE THESE PARAMETERS]
+
+        alphaz : The redshift dependence parameter of the intrinsic alignment
+        signal.
+
+        alphag : The growth dependence parameter of the intrinsic alignment
+        signal.
+
+        z_piv : The pivot redshift parameter for the intrinsic alignment
+        parameter.
+        """
+        super().__init__()
+
+        self.sacc_tracer = sacc_tracer
+        self.is_pt = True
+
+    @final
+    def _update(self, params: ParamsMap):
+        self.a1 = params.get_from_prefix_param(self.sacc_tracer, "a1")
+        self.alphaz1 = params.get_from_prefix_param(self.sacc_tracer, "alphaz1")
+        self.a2 = params.get_from_prefix_param(self.sacc_tracer, "a2")
+        self.alphaz2 = params.get_from_prefix_param(self.sacc_tracer, "alphaz2")
+        self.ad = params.get_from_prefix_param(self.sacc_tracer, "ad")
+        self.alphazd = params.get_from_prefix_param(self.sacc_tracer, "alphazd")
+        self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
+        self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+
+    @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
+
+    def apply(
+        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
+        """Return a new linear alignment systematic, based on the given
+        tracer_arg, in the context of the given cosmology."""
+
+       #[UPDATE THIS]
+       
+        pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz1
+        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
+            self.alphag - 1.0
+        )
+
+        ia_a1_array = pref * self.a1
+        ia_a2_array = pref * self.a2
+        ia_ad_array = pref * self.ad
+
+        return WeakLensingArgs(
+            scale=tracer_arg.scale,
+            z=tracer_arg.z,
+            dndz=tracer_arg.dndz,
+            ia_bias=(tracer_arg.z, ia_a1_array, ia_a2_array, ia_ad_array),
+        )
 
 class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
