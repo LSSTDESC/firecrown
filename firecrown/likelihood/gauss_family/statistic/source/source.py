@@ -20,6 +20,10 @@ class Systematic(Updatable):
     def read(self, sacc_data: sacc.Sacc):
         """This method is called to allow the systematic object to read from the
         appropriated sacc data."""
+        
+    self.is_pt = False
+        """ Keep track of which systematics will require calculations in a
+        PTCalculator """
 
 
 class Source(Updatable):
