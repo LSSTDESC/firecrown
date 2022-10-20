@@ -13,7 +13,7 @@ import scipy.interpolate
 import pyccl
 import pyccl.nl_pt
 
-from ....likelihood.likelihood import CosmologyContainer
+from ....likelihood.likelihood import CosmologyBundle
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
@@ -284,14 +284,14 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(self, cosmo: CosmologyContainer) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: CosmologyBundle) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
         tracers0 = self.source0.get_tracers(cosmo)
         tracers1 = self.source1.get_tracers(cosmo)
-        scales0 = [self.source0.get_scales()]*len(tracers0)
-        scales1 = [self.source1.get_scales()]*len(tracers1)
+        scale0 = self.source0.get_scale()
+        scale1 = self.source1.get_scale()
 
         if self.ccl_kind == "cl":
             self.ells = self.ell_or_theta_
@@ -299,9 +299,12 @@ class TwoPoint(Statistic):
             self.ells = _ell_for_xi(**self.ell_for_xi)
         self.cells = {}
 
-        for tracer0, scale0 in zip(tracers0, scales0):
-            for tracer1, scale1 in zip(tracers1, scales1):
+        for tracer0 in tracers0:
+            for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
+                if (tracer0.field, tracer1.field) in self.cells:
+                    # Already computed this combination, skipping
+                    continue
                 if cosmo.has_pk(pk_name):
                     # Use existing power spectrum
                     pk = cosmo.get_pk(pk_name)
@@ -309,20 +312,22 @@ class TwoPoint(Statistic):
                     # Compute perturbation power spectrum
                     pk = pyccl.nl_pt.get_pt_pk2d(cosmo.ccl_cosmo,
                                                  tracer0.pt_tracer, tracer2=tracer1.pt_tracer,
+                                                 nonlin_pk_type="nonlinear",
                                                  ptc=cosmo.pt_calculator, update_ptc=False)
+                elif tracer0.has_pt or tracer1.has_pt:
+                    # Mixed pt and non-pt combination: skip
+                    continue
                 elif tracer0.has_hm and tracer1.has_hm:
                     # Compute halo model power spectrum
                     raise NotImplementedError("Halo model power spectra not supported yet")
-                elif tracer0.has_pt or tracer1.has_pt:
-                    continue
                 else:
-                    raise ValueError(f"No power spectrum for {pk_name} can be found.")                    
+                    raise ValueError(f"No power spectrum for {pk_name} can be found.")
 
                 self.cells[(tracer0.field, tracer1.field)] = _cached_angular_cl(
                     cosmo.ccl_cosmo, (tracer0.ccl_tracer, tracer1.ccl_tracer), tuple(self.ells.tolist()), p_of_k_a=pk
                 ) * scale0 * scale1
-
-        theory_vector = sum(self.cells.values())
+        self.cells["total"] = sum(self.cells.values())
+        theory_vector = self.cells["total"]
 
         if not self.ccl_kind == "cl":
             theory_vector = (

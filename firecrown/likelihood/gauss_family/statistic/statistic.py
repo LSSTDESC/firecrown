@@ -14,7 +14,7 @@ from abc import abstractmethod
 import numpy as np
 import sacc
 
-from ....likelihood.likelihood import CosmologyContainer
+from ....likelihood.likelihood import CosmologyBundle
 
 from ....updatable import Updatable
 from .source.source import Systematic
@@ -30,7 +30,7 @@ class Statistic(Updatable):
         """Read the data for this statistic from the SACC file."""
 
     @abstractmethod
-    def compute(self, cosmo: CosmologyContainer) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: CosmologyBundle) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a statistic from sources, applying any systematics."""
 
         raise NotImplementedError("Method `compute` is not implemented!")

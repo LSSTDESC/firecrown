@@ -12,7 +12,7 @@ import pyccl
 import pyccl.nl_pt
 from scipy.interpolate import Akima1DInterpolator
 
-from .source import Source, TracerContainer
+from .source import Source, TracerBundle
 from .source import Systematic
 from .....parameters import (
     ParamsMap,
@@ -20,7 +20,7 @@ from .....parameters import (
     parameter_get_full_name,
     DerivedParameterCollection,
 )
-from .....likelihood.likelihood import CosmologyContainer
+from .....likelihood.likelihood import CosmologyBundle
 
 from .....updatable import UpdatableCollection
 
@@ -215,7 +215,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     apply : apply the systematic to a source
     """
 
-    params_names = ["a_1", "a_2", "a_d"]
+    params_names = ["ia_a_1", "ia_a_2", "ia_a_d"]
     a_1: float
     a_2: float
     a_d: float
@@ -238,9 +238,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         parameter.
         """
         super().__init__()
-
         self.sacc_tracer = sacc_tracer
-        self.is_pt = True
 
     @final
     def _update(self, params: ParamsMap):
@@ -265,11 +263,10 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         return DerivedParameterCollection([])
 
     def apply(
-        self, cosmo: CosmologyContainer, tracer_arg: WeakLensingArgs
+        self, cosmo: CosmologyBundle, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
-
         z = tracer_arg.z
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
             cosmo.ccl_cosmo, z, a1=self.a_1, a1delta=self.a_d, a2=self.a_2,
@@ -400,7 +397,7 @@ class WeakLensing(Source):
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracers(self, cosmo: CosmologyContainer):
+    def create_tracers(self, cosmo: CosmologyBundle):
         """
         Render a source by applying systematics.
 
@@ -413,7 +410,7 @@ class WeakLensing(Source):
         wl_tracer = pyccl.WeakLensingTracer(
             cosmo.ccl_cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
         )
-        tracer_containers = [TracerContainer(wl_tracer, field="delta_matter")]
+        tracer_containers = [TracerBundle(wl_tracer, field="delta_matter")]
 
         if tracer_args.has_pt:
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
@@ -425,11 +422,11 @@ class WeakLensing(Source):
 
             wl_dummy_tracer = pyccl.WeakLensingTracer(
                 cosmo.ccl_cosmo, has_shear=False, use_A_ia=False,
-                dndz=(tracer_args.z, np.ones_like(tracer_args.z)),
+                dndz=(tracer_args.z, tracer_args.dndz),
                 ia_bias=(tracer_args.z, np.ones_like(tracer_args.z))
             )
-            ia_tracer_container = TracerContainer(wl_dummy_tracer, field="intrinsic", pt_tracer=ia_pt_tracer)
-            matter_pt_tracer_container = TracerContainer(wl_dummy_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer)
+            ia_tracer_container = TracerBundle(wl_dummy_tracer, field="intrinsic_pt", pt_tracer=ia_pt_tracer)
+            matter_pt_tracer_container = TracerBundle(wl_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer)
             tracer_containers.append(ia_tracer_container)
             tracer_containers.append(matter_pt_tracer_container)
 
@@ -437,6 +434,6 @@ class WeakLensing(Source):
 
         return tracer_containers, tracer_args
 
-    def get_scales(self):
+    def get_scale(self):
         assert self.current_tracer_args
         return self.current_tracer_args.scale

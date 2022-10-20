@@ -72,7 +72,7 @@ class Likelihood(Updatable):
         """Compute the log-likelihood of generic CCL data."""
 
 
-class CosmologyContainer:
+class CosmologyBundle:
     def __init__(self, cosmo: pyccl.Cosmology):
         self.ccl_cosmo = cosmo
         self.pt_calculator: pyccl.nl_pt.PTCalculator = None
@@ -102,8 +102,8 @@ class CosmoSystematicsLikelihood(Likelihood):
         self.systematics = UpdatableCollection(systematics)
 
     @final
-    def apply_systematics(self, cosmo: pyccl.Cosmology) -> CosmologyContainer:
-        cosmo_container = CosmologyContainer(cosmo)
+    def apply_systematics(self, cosmo: pyccl.Cosmology) -> CosmologyBundle:
+        cosmo_container = CosmologyBundle(cosmo)
         for systematic in self.systematics:
             cosmo_container = systematic.apply(cosmo_container)
         return cosmo_container
@@ -115,7 +115,7 @@ class PTSystematic(Updatable):
     def __init__(self, *ptc_args, **ptc_kwargs):
         self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
 
-    def apply(self, cosmo_container: CosmologyContainer) -> CosmologyContainer:
+    def apply(self, cosmo_container: CosmologyBundle) -> CosmologyBundle:
         # P_lin(k) at z=0
         pk_lin_z0 = pyccl.linear_matter_power(cosmo_container.ccl_cosmo, self.ptc.ks, 1.)
         # Compute the perturbative quantities

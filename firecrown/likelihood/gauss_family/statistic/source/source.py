@@ -7,7 +7,7 @@ from typing import Optional, Sequence, final
 from abc import abstractmethod
 import sacc
 
-from firecrown.likelihood.likelihood import CosmologyContainer
+from .....likelihood.likelihood import CosmologyBundle
 from .....parameters import ParamsMap
 from .....updatable import Updatable
 
@@ -37,7 +37,7 @@ class Source(Updatable):
 
     systematics: Sequence[Systematic]
     cosmo_hash: Optional[int]
-    tracers: Optional[TracerContainer]
+    tracers: Optional[TracerBundle]
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -78,16 +78,16 @@ class Source(Updatable):
         self._reset_source()
 
     @abstractmethod
-    def get_scales(self) -> Sequence[float]:
+    def get_scale(self) -> float:
         """Abstract method to return the scales for this `Source`."""
 
     @abstractmethod
-    def create_tracers(self, cosmo: CosmologyContainer):
+    def create_tracers(self, cosmo: CosmologyBundle):
         """Abstract method to create tracers for this `Source`, for the given
         cosmology."""
 
     @final
-    def get_tracers(self, cosmo: CosmologyContainer) -> Sequence[TracerContainer]:
+    def get_tracers(self, cosmo: CosmologyBundle) -> Sequence[TracerBundle]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same
@@ -101,7 +101,7 @@ class Source(Updatable):
         return self.tracers
 
 
-class TracerContainer:
+class TracerBundle:
     def __init__(self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None):
         self.ccl_tracer = tracer
         self.field = field
