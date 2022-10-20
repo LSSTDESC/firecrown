@@ -25,7 +25,7 @@ sources = {}
 
 # Define the intrinsic alignment systematic. This will be added to the
 # lensing sources later
-ia_systematic = wl.TATTAlignmentSystematic()
+ia_systematic = wl.TattAlignmentSystematic()
 
 for i in range(n_source):
     # Define the photo-z shift systematic.
@@ -35,7 +35,7 @@ for i in range(n_source):
     # sacc file and a list of systematics
     sources[f"src{i}"] = wl.WeakLensing(
         sacc_tracer=f"src{i}",
-        systematics=[ia_systematic, pzshift]
+        systematics=[ia_systematic]
     )
 
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
-
+    ccl_cosmo.compute_nonlin_power()
     # Set the parameters for our systematics
     systematics_params = ParamsMap({"ia_a_1": 1.0,
                                     "ia_a_2": 0.5,
@@ -100,16 +100,23 @@ if __name__ == "__main__":
     y_err = np.sqrt(np.diag(likelihood.cov))[:len(x)]
     y_theory = likelihood.statistics[0].predicted_statistic_
 
-    ells = likelihood.statistics[0].ells
-    cells_gg = likelihood.statistics[0].cells["delta_matter:delta_matter"]
-    cells_gi = likelihood.statistics[0].cells["delta_matter:intrinsic"]
+    print(list(likelihood.statistics[0].cells.keys()))
 
-    plt.plot(x, y_theory, label="Total")
+    ells = likelihood.statistics[0].ells
+    cells_gg = likelihood.statistics[0].cells[("delta_matter", "delta_matter")]
+    cells_gi = likelihood.statistics[0].cells[("delta_matter", "intrinsic")]
+    cells_ii = likelihood.statistics[0].cells[("intrinsic", "intrinsic")]
+
+    # plt.plot(x, y_theory, label="Total")
     plt.plot(ells, cells_gg, label="GG")
     plt.plot(ells, cells_gi, label="GI")
-    plt.errorbar(x, y_data, y_err, ls="none", marker="o")
+    plt.plot(ells, cells_ii, label="II")
+    # plt.errorbar(x, y_data, y_err, ls="none", marker="o")
     plt.xscale("log")
-    plt.xlabel(r"$\theta$ [arcmin]")
-    plt.ylabel(r"$\xi_+(\theta)$")
+    plt.yscale("log")
+    plt.xlabel(r"$\ell$")
+    plt.ylabel(r"$C_\ell$")
+    plt.legend()
+    plt.savefig("plots/tatt.png", facecolor="white", dpi=300)
 
     plt.show()
