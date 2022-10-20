@@ -3,16 +3,20 @@
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
-from dataclasses import dataclass
+from typing import List, Tuple, Optional, final
+from dataclasses import dataclass, replace
 from abc import abstractmethod
 
 import numpy as np
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
+from .....likelihood.likelihood import CosmologyBundle
+
 from .source import Source
 from .source import Systematic
+from .source import TracerBundle
+
 from .....parameters import (
     ParamsMap,
     RequiredParameters,
@@ -33,7 +37,12 @@ class NumberCountsArgs:
     z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     bias: np.ndarray
-    mag_bias: np.ndarray
+    mag_bias: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    has_pt: bool = False
+    has_hm: bool = False
+    b_1: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    b_2: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    b_s: Optional[Tuple[np.ndarray, np.ndarray]] = None
 
 
 class NumberCountsSystematic(Systematic):
@@ -113,12 +122,68 @@ class LinearBiasSystematic(NumberCountsSystematic):
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** self.alphag
 
-        return NumberCountsArgs(
-            scale=tracer_arg.scale,
-            z=tracer_arg.z,
-            dndz=tracer_arg.dndz,
+        return replace(
+            tracer_arg,
             bias=tracer_arg.bias * pref,
-            mag_bias=tracer_arg.mag_bias,
+        )
+
+
+class PTNonLinearBiasSystematic(NumberCountsSystematic):
+    """Non-linear bias systematic.
+
+    This systematic adds a linear bias model which varies with redshift and
+    the growth function.
+    """
+
+    params_names = ["b_1", "b_2", "b_s"]
+    b_1: float
+    b_2: float
+    b_s: float
+
+    def __init__(self, sacc_tracer: str):
+        super().__init__()
+
+        self.sacc_tracer = sacc_tracer
+
+    @final
+    def _update(self, params: ParamsMap):
+        """Read the corresponding named tracer from the given collection of
+        parameters."""
+        self.b_1 = params.get_from_prefix_param(self.sacc_tracer, "b_1")
+        self.b_2 = params.get_from_prefix_param(self.sacc_tracer, "b_2")
+        self.b_s = params.get_from_prefix_param(self.sacc_tracer, "b_s")
+
+    @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
+
+    def apply(
+        self, cosmo: CosmologyBundle, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
+
+        z = tracer_arg.z
+        b_1_z = self.b_1 * np.ones_like(z)
+        b_2_z = self.b_2 * np.ones_like(z)
+        b_s_z = self.b_s * np.ones_like(z)
+
+        return replace(
+            tracer_arg,
+            has_pt=True,
+            b_1=(z, b_1_z),
+            b_2=(z, b_2_z),
+            b_s=(z, b_s_z),
         )
 
 
@@ -202,12 +267,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
             + 1.5 * self.z_m * np.power(tracer_arg.z / z_bar, 1.5) / z_bar
         )
 
-        return NumberCountsArgs(
-            scale=tracer_arg.scale,
-            z=tracer_arg.z,
-            dndz=tracer_arg.dndz,
-            bias=tracer_arg.bias,
-            mag_bias=tracer_arg.mag_bias * s / np.log(10),
+        return replace(
+            tracer_arg,
+            mag_bias=(tracer_arg.z, tracer_arg.mag_bias * s / np.log(10)),
         )
 
 
@@ -253,12 +315,9 @@ class PhotoZShift(NumberCountsSystematic):
         dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
         dndz[np.isnan(dndz)] = 0.0
 
-        return NumberCountsArgs(
-            scale=tracer_arg.scale,
-            z=tracer_arg.z,
+        return replace(
+            tracer_arg,
             dndz=dndz,
-            bias=tracer_arg.bias,
-            mag_bias=tracer_arg.mag_bias,
         )
 
 
@@ -301,12 +360,12 @@ class NumberCounts(Source):
 
     @final
     def _update_source(self, params: ParamsMap):
-        self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
+        # self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
 
-        if self.has_mag_bias:
-            self.mag_bias = params.get_from_prefix_param(self.sacc_tracer, "mag_bias")
-        else:
-            self.mag_bias = None
+        # if self.has_mag_bias:
+        #     self.mag_bias = params.get_from_prefix_param(self.sacc_tracer, "mag_bias")
+        # else:
+        #     self.mag_bias = None
 
         self.systematics.update(params)
 
@@ -367,52 +426,41 @@ class NumberCounts(Source):
         nz = nz[inds]
 
         self.tracer_args = NumberCountsArgs(
-            scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
+            scale=self.scale, z=z, dndz=nz, bias=np.ones_like(z), mag_bias=None
         )
 
-    def create_tracer(self, cosmo: pyccl.Cosmology):
+    def create_tracers(self, cosmo: CosmologyBundle):
         tracer_args = self.tracer_args
-
-        bias = np.ones_like(tracer_args.z) * self.bias
-        tracer_args = NumberCountsArgs(
-            scale=tracer_args.scale,
-            z=tracer_args.z,
-            dndz=tracer_args.dndz,
-            bias=bias,
-            mag_bias=tracer_args.mag_bias,
-        )
-
-        if self.mag_bias is not None:
-            mag_bias = np.ones_like(tracer_args.z) * self.mag_bias
-            tracer_args = NumberCountsArgs(
-                scale=tracer_args.scale,
-                z=tracer_args.z,
-                dndz=tracer_args.dndz,
-                bias=tracer_args.bias,
-                mag_bias=mag_bias,
-            )
 
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
-        if self.has_mag_bias:
-            tracer = pyccl.NumberCountsTracer(
-                cosmo,
-                has_rsd=self.has_rsd,
+        nc_tracer = pyccl.NumberCountsTracer(
+            cosmo.ccl_cosmo,
+            has_rsd=self.has_rsd,
+            dndz=(tracer_args.z, tracer_args.dndz),
+            bias=(tracer_args.z, tracer_args.bias),
+            mag_bias=tracer_args.mag_bias,
+        )
+        tracer_bundles = []
+
+        if tracer_args.has_pt:
+            nc_pt_tracer = pyccl.nl_pt.PTNumberCountsTracer(
+                b1=tracer_args.b_1, b2=tracer_args.b_2, bs=tracer_args.b_s)
+
+            nc_dummy_tracer = pyccl.NumberCountsTracer(
+                cosmo.ccl_cosmo, has_rsd=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, tracer_args.bias),
-                mag_bias=(tracer_args.z, tracer_args.mag_bias),
+                bias=(tracer_args.z, np.ones_like(tracer_args.z))
             )
+            nc_pt_tracer_bundle = TracerBundle(nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer)
+            tracer_bundles.append(nc_pt_tracer_bundle)
         else:
-            tracer = pyccl.NumberCountsTracer(
-                cosmo,
-                has_rsd=self.has_rsd,
-                dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, tracer_args.bias),
-            )
+            tracer_bundles.append(TracerBundle(nc_tracer, field="galaxies"))
+
         self.current_tracer_args = tracer_args
 
-        return tracer, tracer_args
+        return tracer_bundles, tracer_args
 
     def get_scale(self):
         assert self.current_tracer_args
