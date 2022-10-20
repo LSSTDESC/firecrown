@@ -4,14 +4,15 @@
 
 from __future__ import annotations
 from typing import List, Tuple, Optional, final
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from abc import abstractmethod
 
 import numpy as np
 import pyccl
+import pyccl.nl_pt
 from scipy.interpolate import Akima1DInterpolator
 
-from .source import Source
+from .source import Source, TracerContainer
 from .source import Systematic
 from .....parameters import (
     ParamsMap,
@@ -19,6 +20,8 @@ from .....parameters import (
     parameter_get_full_name,
     DerivedParameterCollection,
 )
+from .....likelihood.likelihood import CosmologyContainer
+
 from .....updatable import UpdatableCollection
 
 __all__ = ["WeakLensing"]
@@ -32,6 +35,13 @@ class WeakLensingArgs:
     z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
     ia_bias: Tuple[np.ndarray, np.ndarray]
+
+    has_pt: bool = False
+    has_hm: bool = False
+
+    ia_pt_c_1: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    ia_pt_c_d: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    ia_pt_c_2: Optional[Tuple[np.ndarray, np.ndarray]] = None
 
 
 class WeakLensingSystematic(Systematic):
@@ -192,6 +202,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
             ia_bias=(tracer_arg.z, ia_bias_array),
         )
 
+
 class TattAlignmentSystematic(WeakLensingSystematic):
     """TATT alignment systematic.
 
@@ -199,22 +210,15 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     Parameters can vary with redshift and the growth function.
     This also requires PTTracers and a PTCalculator.
 
-
-
     Methods
     -------
     apply : apply the systematic to a source
     """
 
-    params_names = ["a1", "a2", "ad", "alphaz1", "alphaz2", "alphazd", "alphag", "z_piv"]
-    a1: float
-    a2: float
-    ad: float
-    alphaz1: float
-    alphaz2: float
-    alphazd: float
-    alphag: float
-    z_piv: float
+    params_names = ["a_1", "a_2", "a_d"]
+    a_1: float
+    a_2: float
+    a_d: float
 
     def __init__(self, sacc_tracer: Optional[str] = None):
         """Create a TattAlignmentSystematic object, using the specified
@@ -240,14 +244,9 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
     @final
     def _update(self, params: ParamsMap):
-        self.a1 = params.get_from_prefix_param(self.sacc_tracer, "a1")
-        self.alphaz1 = params.get_from_prefix_param(self.sacc_tracer, "alphaz1")
-        self.a2 = params.get_from_prefix_param(self.sacc_tracer, "a2")
-        self.alphaz2 = params.get_from_prefix_param(self.sacc_tracer, "alphaz2")
-        self.ad = params.get_from_prefix_param(self.sacc_tracer, "ad")
-        self.alphazd = params.get_from_prefix_param(self.sacc_tracer, "alphazd")
-        self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
-        self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+        self.a_1 = params.get_from_prefix_param(self.sacc_tracer, "ia_a_1")
+        self.a_2 = params.get_from_prefix_param(self.sacc_tracer, "ia_a_2")
+        self.a_d = params.get_from_prefix_param(self.sacc_tracer, "ia_a_d")
 
     @final
     def _reset(self) -> None:
@@ -266,28 +265,25 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         return DerivedParameterCollection([])
 
     def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
+        self, cosmo: CosmologyContainer, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
-       #[UPDATE THIS]
-       
-        pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz1
-        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag - 1.0
+        z = tracer_arg.z
+        c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
+            cosmo.ccl_cosmo, z, a1=self.a_1, a1delta=self.a_d, a2=self.a_2,
+            Om_m2_for_c2=False
         )
 
-        ia_a1_array = pref * self.a1
-        ia_a2_array = pref * self.a2
-        ia_ad_array = pref * self.ad
-
-        return WeakLensingArgs(
-            scale=tracer_arg.scale,
-            z=tracer_arg.z,
-            dndz=tracer_arg.dndz,
-            ia_bias=(tracer_arg.z, ia_a1_array, ia_a2_array, ia_ad_array),
+        return replace(
+            tracer_arg,
+            has_pt=True,
+            ia_pt_c_1=(z, c_1),
+            ia_pt_c_d=(z, c_d),
+            ia_pt_c_2=(z, c_2),
         )
+
 
 class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
@@ -404,7 +400,7 @@ class WeakLensing(Source):
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracer(self, cosmo: pyccl.Cosmology):
+    def create_tracers(self, cosmo: CosmologyContainer):
         """
         Render a source by applying systematics.
 
@@ -414,13 +410,33 @@ class WeakLensing(Source):
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
-        tracer = pyccl.WeakLensingTracer(
-            cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
+        wl_tracer = pyccl.WeakLensingTracer(
+            cosmo.ccl_cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
         )
+        tracer_containers = [TracerContainer(wl_tracer, field="delta_matter")]
+
+        if tracer_args.has_pt:
+            ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
+                c1=tracer_args.ia_pt_c_1,
+                cdelta=tracer_args.ia_pt_c_d,
+                c2=tracer_args.ia_pt_c_2
+            )
+            matter_ia_pt_tracer = pyccl.nl_pt.PTMatterTracer()
+
+            wl_dummy_tracer = pyccl.WeakLensingTracer(
+                cosmo.ccl_cosmo, has_shear=False, use_A_ia=False,
+                dndz=(tracer_args.z, np.ones_like(tracer_args.z)),
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z))
+            )
+            ia_tracer_container = TracerContainer(wl_dummy_tracer, field="intrinsic", pt_tracer=ia_pt_tracer)
+            matter_pt_tracer_container = TracerContainer(wl_dummy_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer)
+            tracer_containers.append(ia_tracer_container)
+            tracer_containers.append(matter_pt_tracer_container)
+
         self.current_tracer_args = tracer_args
 
-        return tracer, tracer_args
+        return tracer_containers, tracer_args
 
-    def get_scale(self):
+    def get_scales(self):
         assert self.current_tracer_args
         return self.current_tracer_args.scale
