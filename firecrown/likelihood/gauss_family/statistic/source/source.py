@@ -99,6 +99,21 @@ class Source(Updatable):
         self.cosmo_hash = cur_hash
         return self.tracer
 
+class SourcePT(Source):
+    pttracer: Optional[pyccl.nl_pt.tracers.PTTracer]
+    @abstractmethod
+    def create_pttracer(self, cosmo: pyccl.Cosmology):
+        """Abstract method to create a tracer for this `Source`, for the given
+        cosmology."""
+    @abstractmethod
+    def get_pttracer(self, cosmo: pyccl.Cosmology) -> pyccl.nl_pt.tracers.PTTracer:
+
+    @abstractmethod
+    def create_pt_tracer(self, cosmo: pyccl.Cosmology):
+        """Abstract method to create a tracer for this `Source`, for the given
+        cosmology."""
+    @abstractmethod
+    def get_pt_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
 
 class TracerContainer:
     def __init__(self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None):
