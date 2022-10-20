@@ -290,8 +290,8 @@ class TwoPoint(Statistic):
 
         tracers0 = self.source0.get_tracers(cosmo)
         tracers1 = self.source1.get_tracers(cosmo)
-        scales0 = self.source0.get_scales()
-        scales1 = self.source1.get_scales()
+        scales0 = [self.source0.get_scales()]*len(tracers0)
+        scales1 = [self.source1.get_scales()]*len(tracers1)
 
         if self.ccl_kind == "cl":
             self.ells = self.ell_or_theta_
@@ -301,7 +301,11 @@ class TwoPoint(Statistic):
 
         for tracer0, scale0 in zip(tracers0, scales0):
             for tracer1, scale1 in zip(tracers1, scales1):
-                if tracer0.has_pt and tracer1.has_pt:
+                pk_name = f"{tracer0.field}:{tracer1.field}"
+                if cosmo.has_pk(pk_name):
+                    # Use existing power spectrum
+                    pk = cosmo.get_pk(pk_name)
+                elif tracer0.has_pt and tracer1.has_pt:
                     # Compute perturbation power spectrum
                     pk = pyccl.nl_pt.get_pt_pk2d(cosmo.ccl_cosmo,
                                                  tracer0.pt_tracer, tracer2=tracer1.pt_tracer,
@@ -309,12 +313,13 @@ class TwoPoint(Statistic):
                 elif tracer0.has_hm and tracer1.has_hm:
                     # Compute halo model power spectrum
                     raise NotImplementedError("Halo model power spectra not supported yet")
+                elif tracer0.has_pt or tracer1.has_pt:
+                    continue
                 else:
-                    # Use existing power spectrum
-                    pk = cosmo.get_pk(f"{tracer0.field}:{tracer1.field}")
+                    raise ValueError(f"No power spectrum for {pk_name} can be found.")                    
 
                 self.cells[(tracer0.field, tracer1.field)] = _cached_angular_cl(
-                    cosmo, (tracer0.ccl_tracer, tracer1.ccl_tracer), tuple(self.ells.tolist()), p_of_k_a=pk
+                    cosmo.ccl_cosmo, (tracer0.ccl_tracer, tracer1.ccl_tracer), tuple(self.ells.tolist()), p_of_k_a=pk
                 ) * scale0 * scale1
 
         theory_vector = sum(self.cells.values())

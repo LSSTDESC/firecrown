@@ -77,6 +77,7 @@ class CosmologyContainer:
         self.ccl_cosmo = cosmo
         self.pt_calculator: pyccl.nl_pt.PTCalculator = None
         self.hm_calculator: pyccl.halomodel.HMCalculator = None
+        self.pk = {}
 
     def add_pk(self, name: str, pk: pyccl.Pk2D):
         self.pk[name] = pk
@@ -86,6 +87,14 @@ class CosmologyContainer:
             return self.pk[name]
         return self.ccl_cosmo.get_nonlin_power(name)
 
+    def has_pk(self, name: str) -> bool:
+        # There should probably a pyccl.Cosmology method to check if a specific
+        # power spectrum exists
+        try:
+            self.get_pk(name)
+        except KeyError:
+            return False
+        return True
 
 class CosmoSystematicsLikelihood(Likelihood):
     def __init__(self, systematics):
@@ -102,9 +111,9 @@ class CosmoSystematicsLikelihood(Likelihood):
 
 # This should probably live somewhere else and derive from some base Systematics
 # calss
-class PTSystematic:
+class PTSystematic(Updatable):
     def __init__(self, *ptc_args, **ptc_kwargs):
-        self.ptc = pyccl.nl_pt.PTCalculator(*self.ptc_args, **self.ptc_kwargs)
+        self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
 
     def apply(self, cosmo_container: CosmologyContainer) -> CosmologyContainer:
         # P_lin(k) at z=0
@@ -114,6 +123,26 @@ class PTSystematic:
 
         cosmo_container.pt_calculator = self.ptc
         return cosmo_container
+
+    @final
+    def _update(self, params: ParamsMap):
+        pass
+
+    @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
+    def required_parameters(self) -> RequiredParameters:
+        return RequiredParameters(
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
+        )
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
 
 
 def load_likelihood(filename: str) -> Likelihood:
