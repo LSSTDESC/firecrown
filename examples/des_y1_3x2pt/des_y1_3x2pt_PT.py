@@ -42,11 +42,12 @@ for i in range(n_source):
 
 for i in range(n_lens):
     pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
 
     nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
     sources[f"lens{i}"] = nc.NumberCounts(
         sacc_tracer=f"lens{i}",
-        systematics=[pzshift, nl_bias]
+        systematics=[pzshift, magnification, nl_bias]
     )
 
 # Define the statistics we like to include in the likelihood
@@ -118,6 +119,8 @@ if __name__ == "__main__":
     b_2 = 1.0
     b_s = 1.0
 
+    mag_bias = 1.0
+
     c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False)
 
     # Code that creates a Pk2D object:
@@ -133,15 +136,18 @@ if __name__ == "__main__":
     # Galaxies
     pk_gm = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
     pk_gg = pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
+    # Magnification
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap({"ia_a_1": a_1,
                                     "ia_a_2": a_2,
                                     "ia_a_d": a_d,
 
-                                    "lens0_b_1": b_1,
+                                    "lens0_bias": b_1,
                                     "lens0_b_2": b_2,
                                     "lens0_b_s": b_s,
+
+                                    "lens0_mag_bias": mag_bias,
 
                                     "src0_delta_z": 0.000,
                                     "lens0_delta_z": 0.000})
@@ -170,22 +176,30 @@ if __name__ == "__main__":
     print(list(likelihood.statistics[2].cells.keys()))
     cells_gG = likelihood.statistics[2].cells[("galaxies", "delta_matter")]
     cells_gI = likelihood.statistics[2].cells[("galaxies", "intrinsic_pt")]
+    cells_mI = likelihood.statistics[2].cells[("magnification", "intrinsic_pt")]
+
 
     print(list(likelihood.statistics[3].cells.keys()))
     cells_gg = likelihood.statistics[3].cells[("galaxies", "galaxies")]
+    cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification")]
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
     t_ia = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz), has_shear=False, ia_bias=(z, np.ones_like(z)), use_A_ia=False)
     t_g = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=False, dndz=(lens_z, lens_nz), bias=(lens_z, np.ones_like(lens_z)))
+    t_m = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=False, dndz=(lens_z, lens_nz), bias=None, mag_bias=(lens_z, mag_bias*np.ones_like(lens_z)))
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
     # The weak gravitational lensing power spectrum
     cl_GG = ccl.angular_cl(ccl_cosmo, t_lens, t_lens, ells)
 
+    # Galaxies
     cl_gG = ccl.angular_cl(ccl_cosmo, t_g, t_lens, ells, p_of_k_a=pk_gm)
     cl_gI = ccl.angular_cl(ccl_cosmo, t_g, t_ia, ells, p_of_k_a=pk_gi)
     cl_gg = ccl.angular_cl(ccl_cosmo, t_g, t_g, ells, p_of_k_a=pk_gg)
+    # Magnification
+    cl_mI = ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells, p_of_k_a=pk_im)
+    cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells, p_of_k_a=pk_gm)
 
     # The observed angular power spectrum is the sum of the two.
     cl_cs_theory = cl_GG + 2*cl_GI + cl_II  # normally we would also have a third term, +cl_II).
@@ -208,6 +222,10 @@ if __name__ == "__main__":
     ax[1].plot(ells, cl_gG, ls="--", label="Gg CCL")
     ax[1].plot(ells, cells_gg, label="gg firecrown")
     ax[1].plot(ells, cl_gg, ls="--", label="gg CCL")
+    ax[1].plot(ells, -cells_mI, label="-mI firecrown")
+    ax[1].plot(ells, -cl_mI, ls="--", label="-mI CCL")
+    ax[1].plot(ells, cells_gm, label="gm firecrown")
+    ax[1].plot(ells, cl_gm, ls="--", label="gm CCL")
 
     # ax[0].errorbar(x, y_data, y_err, ls="none", marker="o")
     ax[0].set_xscale("log")
@@ -217,7 +235,7 @@ if __name__ == "__main__":
     ax[1].set_ylabel(r"$C_\ell$")
     [a.legend(fontsize="small") for a in ax]
 
-    fig.suptitle("PT Cls")
+    fig.suptitle("PT Cls, including IA, galaxy bias, magnification")
     fig.savefig("plots/pt_cls.png", facecolor="white", dpi=300)
 
     plt.show()
