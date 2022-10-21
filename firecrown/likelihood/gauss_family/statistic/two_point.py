@@ -299,6 +299,8 @@ class TwoPoint(Statistic):
             self.ells = _ell_for_xi(**self.ell_for_xi)
         self.cells = {}
 
+        # Loop over the tracers and compute all possible combinations
+        # of them
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
@@ -326,6 +328,8 @@ class TwoPoint(Statistic):
                 self.cells[(tracer0.field, tracer1.field)] = _cached_angular_cl(
                     cosmo.ccl_cosmo, (tracer0.ccl_tracer, tracer1.ccl_tracer), tuple(self.ells.tolist()), p_of_k_a=pk
                 ) * scale0 * scale1
+
+        # Add up all the contributions to the cells
         self.cells["total"] = sum(self.cells.values())
         theory_vector = self.cells["total"]
 

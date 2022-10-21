@@ -25,6 +25,7 @@ import pyccl.nl_pt
 import sacc
 
 from ..updatable import Updatable, UpdatableCollection
+from ..parameters import ParamsMap, DerivedParameterCollection, RequiredParameters
 
 
 class Likelihood(Updatable):
@@ -73,6 +74,8 @@ class Likelihood(Updatable):
 
 
 class CosmologyBundle:
+    """A class that bundles together a pyccl.Cosmology object and associated
+    objects, such as perturbation theory or halo model calculator workspaces."""
     def __init__(self, cosmo: pyccl.Cosmology):
         self.ccl_cosmo = cosmo
         self.pt_calculator: pyccl.nl_pt.PTCalculator = None
@@ -96,7 +99,9 @@ class CosmologyBundle:
             return False
         return True
 
+
 class CosmoSystematicsLikelihood(Likelihood):
+    """A likelihood class that allows the application of cosmology-level systematics"""
     def __init__(self, systematics):
         super().__init__()
         self.systematics = UpdatableCollection(systematics)
@@ -112,6 +117,9 @@ class CosmoSystematicsLikelihood(Likelihood):
 # This should probably live somewhere else and derive from some base Systematics
 # calss
 class PTSystematic(Updatable):
+    """A cosmology-level systematic that provides the workspaces for perturbation
+    theory calculations."""
+
     def __init__(self, *ptc_args, **ptc_kwargs):
         self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
 
@@ -130,15 +138,11 @@ class PTSystematic(Updatable):
 
     @final
     def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
+        pass
 
     @final
     def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:

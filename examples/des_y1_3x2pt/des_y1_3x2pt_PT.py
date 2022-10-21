@@ -178,10 +178,10 @@ if __name__ == "__main__":
     cells_gI = likelihood.statistics[2].cells[("galaxies", "intrinsic_pt")]
     cells_mI = likelihood.statistics[2].cells[("magnification", "intrinsic_pt")]
 
-
     print(list(likelihood.statistics[3].cells.keys()))
     cells_gg = likelihood.statistics[3].cells[("galaxies", "galaxies")]
     cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification")]
+    cells_gg_total = likelihood.statistics[3].cells["total"]
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
@@ -200,9 +200,11 @@ if __name__ == "__main__":
     # Magnification
     cl_mI = ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells, p_of_k_a=pk_im)
     cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells, p_of_k_a=pk_gm)
+    cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells)
 
     # The observed angular power spectrum is the sum of the two.
-    cl_cs_theory = cl_GG + 2*cl_GI + cl_II  # normally we would also have a third term, +cl_II).
+    cl_cs_theory = cl_GG + 2*cl_GI + cl_II
+    cl_gg_theory = cl_gg + 2*cl_gm * cl_mm
 
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 6))
     fig.subplots_adjust(hspace=0)
@@ -213,11 +215,11 @@ if __name__ == "__main__":
     ax[0].plot(ells, -cl_GI, ls="--", label="-GI CCL")
     ax[0].plot(ells, cells_II, label="II firecrown")
     ax[0].plot(ells, cl_II, ls="--", label="II CCL")
+    ax[0].plot(ells, -cells_gI, label="-Ig firecrown")
+    ax[0].plot(ells, -cl_gI, ls="--", label="-Ig CCL")
     ax[0].plot(ells, cells_cs_total, label="total CS firecrown")
     ax[0].plot(ells, cl_cs_theory, ls="--", label="total CS CCL")
 
-    ax[1].plot(ells, -cells_gI, label="-Ig firecrown")
-    ax[1].plot(ells, -cl_gI, ls="--", label="-Ig CCL")
     ax[1].plot(ells, cells_gG, label="Gg firecrown")
     ax[1].plot(ells, cl_gG, ls="--", label="Gg CCL")
     ax[1].plot(ells, cells_gg, label="gg firecrown")
@@ -226,6 +228,8 @@ if __name__ == "__main__":
     ax[1].plot(ells, -cl_mI, ls="--", label="-mI CCL")
     ax[1].plot(ells, cells_gm, label="gm firecrown")
     ax[1].plot(ells, cl_gm, ls="--", label="gm CCL")
+    ax[1].plot(ells, cells_gg_total, label="total gg firecrown")
+    ax[1].plot(ells, cl_gg_theory, ls="--", label="total gg CCL")
 
     # ax[0].errorbar(x, y_data, y_err, ls="none", marker="o")
     ax[0].set_xscale("log")

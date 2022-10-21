@@ -87,7 +87,7 @@ if __name__ == "__main__":
     a_1 = 1.
     a_2 = 0.5
     a_d = 0.5
-    c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2 = False)
+    c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False)
 
     # Code that creates a Pk2D object:
     ptc = pt.PTCalculator(with_NC=True, with_IA=True,
@@ -137,7 +137,7 @@ if __name__ == "__main__":
     # The weak gravitational lensing power spectrum
     cl_GG = ccl.angular_cl(ccl_cosmo, t_lens, t_lens, ells)
     # The observed angular power spectrum is the sum of the two.
-    cl_theory = cl_GG + 2*cl_GI + cl_II # normally we would also have a third term, +cl_II).
+    cl_theory = cl_GG + 2*cl_GI + cl_II  # normally we would also have a third term, +cl_II).
 
     # plt.plot(x, y_theory, label="Total")
     plt.plot(ells, cells_gg, label="GG firecrown")

@@ -18,7 +18,7 @@ import scipy.linalg
 import pyccl
 import sacc
 
-from ..likelihood import Likelihood, CosmoSystematicsLikelihood
+from ..likelihood import CosmoSystematicsLikelihood
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
