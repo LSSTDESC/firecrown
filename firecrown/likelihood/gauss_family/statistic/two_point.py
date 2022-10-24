@@ -312,32 +312,47 @@ class TwoPoint(Statistic):
                     pk = cosmo.get_pk(pk_name)
                 elif tracer0.has_pt and tracer1.has_pt:
                     # Compute perturbation power spectrum
-                    pk = pyccl.nl_pt.get_pt_pk2d(cosmo.ccl_cosmo,
-                                                 tracer0.pt_tracer, tracer2=tracer1.pt_tracer,
-                                                 nonlin_pk_type="nonlinear",
-                                                 ptc=cosmo.pt_calculator, update_ptc=False)
+                    pk = pyccl.nl_pt.get_pt_pk2d(
+                        cosmo.ccl_cosmo,
+                        tracer0.pt_tracer,
+                        tracer2=tracer1.pt_tracer,
+                        nonlin_pk_type="nonlinear",
+                        ptc=cosmo.pt_calculator,
+                        update_ptc=False,
+                    )
                 elif tracer0.has_pt or tracer1.has_pt:
                     # Mixed pt and non-pt combination: skip
                     continue
                 elif tracer0.has_hm and tracer1.has_hm:
                     # Compute halo model power spectrum
-                    raise NotImplementedError("Halo model power spectra not supported yet")
+                    raise NotImplementedError(
+                        "Halo model power spectra not supported yet"
+                    )
                 else:
                     raise ValueError(f"No power spectrum for {pk_name} can be found.")
 
-                self.cells[(tracer0.field, tracer1.field)] = _cached_angular_cl(
-                    cosmo.ccl_cosmo, (tracer0.ccl_tracer, tracer1.ccl_tracer), tuple(self.ells.tolist()), p_of_k_a=pk
-                ) * scale0 * scale1
+                self.cells[(tracer0.field, tracer1.field)] = (
+                    _cached_angular_cl(
+                        cosmo.ccl_cosmo,
+                        (tracer0.ccl_tracer, tracer1.ccl_tracer),
+                        tuple(self.ells.tolist()),
+                        p_of_k_a=pk,
+                    )
+                    * scale0
+                    * scale1
+                )
 
         # Add up all the contributions to the cells
         self.cells["total"] = sum(self.cells.values())
         theory_vector = self.cells["total"]
 
         if not self.ccl_kind == "cl":
-            theory_vector = (
-                pyccl.correlation(
-                    cosmo.ccl_cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
-                )
+            theory_vector = pyccl.correlation(
+                cosmo.ccl_cosmo,
+                self.ells,
+                theory_vector,
+                self.ell_or_theta_ / 60,
+                type=self.ccl_kind,
             )
 
         if self.theory_window_function is not None:

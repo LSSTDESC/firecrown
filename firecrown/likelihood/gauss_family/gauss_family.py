@@ -31,8 +31,7 @@ class GaussFamily(CosmoSystematicsLikelihood):
     compute_loglike, which is inherited from Likelihood.
     """
 
-    def __init__(self, statistics: List[Statistic],
-                 systematics=None):
+    def __init__(self, statistics: List[Statistic], systematics=None):
         super().__init__(systematics=systematics)
         self.statistics = UpdatableCollection(statistics)
         self.cov: Optional[np.ndarray] = None

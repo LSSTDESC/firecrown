@@ -225,7 +225,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         tracer name.
 
         Instance data are:
-        
+
         [UPDATE THESE PARAMETERS]
 
         alphaz : The redshift dependence parameter of the intrinsic alignment
@@ -269,8 +269,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         tracer_arg, in the context of the given cosmology."""
         z = tracer_arg.z
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
-            cosmo.ccl_cosmo, z, a1=self.a_1, a1delta=self.a_d, a2=self.a_2,
-            Om_m2_for_c2=False
+            cosmo.ccl_cosmo,
+            z,
+            a1=self.a_1,
+            a1delta=self.a_d,
+            a2=self.a_2,
+            Om_m2_for_c2=False,
         )
 
         return replace(
@@ -408,7 +412,9 @@ class WeakLensing(Source):
             tracer_args = systematic.apply(cosmo, tracer_args)
 
         wl_tracer = pyccl.WeakLensingTracer(
-            cosmo.ccl_cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=tracer_args.ia_bias
+            cosmo.ccl_cosmo,
+            dndz=(tracer_args.z, tracer_args.dndz),
+            ia_bias=tracer_args.ia_bias,
         )
         tracer_containers = [TracerBundle(wl_tracer, field="delta_matter")]
 
@@ -416,17 +422,23 @@ class WeakLensing(Source):
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
                 c1=tracer_args.ia_pt_c_1,
                 cdelta=tracer_args.ia_pt_c_d,
-                c2=tracer_args.ia_pt_c_2
+                c2=tracer_args.ia_pt_c_2,
             )
             matter_ia_pt_tracer = pyccl.nl_pt.PTMatterTracer()
 
             wl_dummy_tracer = pyccl.WeakLensingTracer(
-                cosmo.ccl_cosmo, has_shear=False, use_A_ia=False,
+                cosmo.ccl_cosmo,
+                has_shear=False,
+                use_A_ia=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z))
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
-            ia_tracer_container = TracerBundle(wl_dummy_tracer, field="intrinsic_pt", pt_tracer=ia_pt_tracer)
-            matter_pt_tracer_container = TracerBundle(wl_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer)
+            ia_tracer_container = TracerBundle(
+                wl_dummy_tracer, field="intrinsic_pt", pt_tracer=ia_pt_tracer
+            )
+            matter_pt_tracer_container = TracerBundle(
+                wl_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer
+            )
             tracer_containers.append(ia_tracer_container)
             tracer_containers.append(matter_pt_tracer_container)
 

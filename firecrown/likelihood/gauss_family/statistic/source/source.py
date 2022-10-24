@@ -104,7 +104,10 @@ class Source(Updatable):
 class TracerBundle:
     """Bundles together a pyccl.Tracer object with optional information about the
     underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
-    def __init__(self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None):
+
+    def __init__(
+        self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None
+    ):
         self.ccl_tracer = tracer
         self.field = field
         self.pt_tracer = pt_tracer

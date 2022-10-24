@@ -312,7 +312,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
 
         return replace(
             tracer_arg,
-            mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z)*self.mag_bias),
+            mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z) * self.mag_bias),
         )
 
 
@@ -410,10 +410,7 @@ class NumberCounts(Source):
     @final
     def required_parameters(self) -> RequiredParameters:
         rp = RequiredParameters(
-            [
-                parameter_get_full_name(self.sacc_tracer, pn)
-                for pn in self.params_names
-            ]
+            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
         )
         return rp + self.systematics.required_parameters()
 
@@ -467,15 +464,18 @@ class NumberCounts(Source):
             nc_pt_tracer = pyccl.nl_pt.PTNumberCountsTracer(
                 b1=(tracer_args.z, tracer_args.bias),
                 b2=tracer_args.b_2,
-                bs=tracer_args.b_s
+                bs=tracer_args.b_s,
             )
 
             nc_dummy_tracer = pyccl.NumberCountsTracer(
-                cosmo.ccl_cosmo, has_rsd=False,
+                cosmo.ccl_cosmo,
+                has_rsd=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, np.ones_like(tracer_args.z))
+                bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
-            nc_pt_tracer_bundle = TracerBundle(nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer)
+            nc_pt_tracer_bundle = TracerBundle(
+                nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer
+            )
             tracer_bundles.append(nc_pt_tracer_bundle)
 
             if tracer_args.mag_bias is not None or self.has_rsd:
@@ -490,7 +490,9 @@ class NumberCounts(Source):
                 field_name = "magnification"
                 if self.has_rsd:
                     field_name += "+rsd"
-                mag_pt_tracer_bundle = TracerBundle(mag_tracer, field=field_name, pt_tracer=matter_pt_tracer)
+                mag_pt_tracer_bundle = TracerBundle(
+                    mag_tracer, field=field_name, pt_tracer=matter_pt_tracer
+                )
                 tracer_bundles.append(mag_pt_tracer_bundle)
         else:
             nc_tracer = pyccl.NumberCountsTracer(

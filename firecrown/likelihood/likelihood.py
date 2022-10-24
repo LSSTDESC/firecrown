@@ -76,6 +76,7 @@ class Likelihood(Updatable):
 class CosmologyBundle:
     """A class that bundles together a pyccl.Cosmology object and associated
     objects, such as perturbation theory or halo model calculator workspaces."""
+
     def __init__(self, cosmo: pyccl.Cosmology):
         self.ccl_cosmo = cosmo
         self.pt_calculator: pyccl.nl_pt.PTCalculator = None
@@ -102,6 +103,7 @@ class CosmologyBundle:
 
 class CosmoSystematicsLikelihood(Likelihood):
     """A likelihood class that allows the application of cosmology-level systematics"""
+
     def __init__(self, systematics):
         super().__init__()
         self.systematics = UpdatableCollection(systematics)
@@ -125,7 +127,9 @@ class PTSystematic(Updatable):
 
     def apply(self, cosmo_container: CosmologyBundle) -> CosmologyBundle:
         # P_lin(k) at z=0
-        pk_lin_z0 = pyccl.linear_matter_power(cosmo_container.ccl_cosmo, self.ptc.ks, 1.)
+        pk_lin_z0 = pyccl.linear_matter_power(
+            cosmo_container.ccl_cosmo, self.ptc.ks, 1.0
+        )
         # Compute the perturbative quantities
         self.ptc.update_pk(pk_lin_z0)
 
