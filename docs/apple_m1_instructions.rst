@@ -1,11 +1,10 @@
-===============================================================
-Instructions for installation of Firecrown on Apple M1 hardware
-===============================================================
-
+======================================================================
+Instructions for installation of Firecrown on Apple M1 and M2 hardware
+======================================================================
 .. role:: bash(code)
    :language: bash
 
-The ability to install Firecrown on Apple M1 hardware (not on Intel hardware) is currently incomplete because of difficulties in obtaining a consistent build of the CosmoSIS Standard Library on M1 Macs, and the unavailability of an M1 build of CosmoSIS through conda.
+The ability to install Firecrown on Apple M1 and M2 hardware (not on Intel hardware) is currently incomplete because of difficulties in obtaining a consistent build of the CosmoSIS Standard Library on M1 and M2 Macs, and the unavailability of an M1 or M2 build of CosmoSIS through conda.
 Until this is fixed, we recommend the following procedure.
     
 .. note::
@@ -21,8 +20,9 @@ Note that this installation procedure will give you an environment in which you 
 To do development work on Firecrown you need both the Firecrown source code and all the packages upon which Firecrown depends or is used with.
 To get the Firecrown source code you will need to clone the Firecrown repository.
 Most (but not all) of the dependencies of Firecrown are available through conda.
-It is not currently possible to build the CosmoSIS Standard Library on M1 Macs.
-However, you will be able to use the portions of the 
+It is not currently possible to build the CosmoSIS Standard Library on M1 or M2 Macs.
+However, you will be able to use the portions of the CosmoSIS Standard Library that do not require compilation.
+This includes CAMB, but does not include many other modules.
 
 These instructions include details on how to obtain the samplers used with Firecrown.
 This is important because if you are doing development it is important to make sure what you change or add works with both of the supported samplers.
