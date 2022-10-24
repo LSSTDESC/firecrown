@@ -5,8 +5,8 @@ Installation Quickstart
 There are several ways to obtain Firecrown for your own use.
 The method you should use to obtain Firecrown depends on how you want to use it.
 
-Currently, the installation instructions for users installing on Mac machines with M1 (also called Apple Silicon) chips are different from other installation instructions.
-If you are installing on such a machine please use the :doc:`Apple M1 installation instructions<apple_m1_instructions>`.
+Currently, the installation instructions for users installing on Mac machines with M1 or M2 (also called Apple Silicon) chips are different from other installation instructions.
+If you are installing on such a machine please use the :doc:`Apple M1 and M2 installation instructions<apple_m1_instructions>`.
 
 * *Developer use*: If you want to modify existing Firecrown code, or if you may produce new code and may produce a `pull request <https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests>`_ to submit your code to Firecrown, use the :doc:`developer installation <developer_installation>`.
 
