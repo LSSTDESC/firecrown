@@ -471,23 +471,26 @@ class NumberCounts(Source):
             )
 
             nc_dummy_tracer = pyccl.NumberCountsTracer(
-                cosmo.ccl_cosmo, has_rsd=self.has_rsd,
+                cosmo.ccl_cosmo, has_rsd=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
                 bias=(tracer_args.z, np.ones_like(tracer_args.z))
             )
             nc_pt_tracer_bundle = TracerBundle(nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer)
             tracer_bundles.append(nc_pt_tracer_bundle)
 
-            if tracer_args.mag_bias is not None:
+            if tracer_args.mag_bias is not None or self.has_rsd:
                 matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
                 mag_tracer = pyccl.NumberCountsTracer(
                     cosmo.ccl_cosmo,
-                    has_rsd=False,
+                    has_rsd=self.has_rsd,
                     dndz=(tracer_args.z, tracer_args.dndz),
                     bias=None,
                     mag_bias=tracer_args.mag_bias,
                 )
-                mag_pt_tracer_bundle = TracerBundle(mag_tracer, field="magnification", pt_tracer=matter_pt_tracer)
+                field_name = "magnification"
+                if self.has_rsd:
+                    field_name += "+rsd"
+                mag_pt_tracer_bundle = TracerBundle(mag_tracer, field=field_name, pt_tracer=matter_pt_tracer)
                 tracer_bundles.append(mag_pt_tracer_bundle)
         else:
             nc_tracer = pyccl.NumberCountsTracer(

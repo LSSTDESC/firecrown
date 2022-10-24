@@ -47,6 +47,7 @@ for i in range(n_lens):
     nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
     sources[f"lens{i}"] = nc.NumberCounts(
         sacc_tracer=f"lens{i}",
+        has_rsd=True,
         systematics=[pzshift, magnification, nl_bias]
     )
 
@@ -176,18 +177,18 @@ if __name__ == "__main__":
     print(list(likelihood.statistics[2].cells.keys()))
     cells_gG = likelihood.statistics[2].cells[("galaxies", "delta_matter")]
     cells_gI = likelihood.statistics[2].cells[("galaxies", "intrinsic_pt")]
-    cells_mI = likelihood.statistics[2].cells[("magnification", "intrinsic_pt")]
+    cells_mI = likelihood.statistics[2].cells[("magnification+rsd", "intrinsic_pt")]
 
     print(list(likelihood.statistics[3].cells.keys()))
     cells_gg = likelihood.statistics[3].cells[("galaxies", "galaxies")]
-    cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification")]
+    cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification+rsd")]
     cells_gg_total = likelihood.statistics[3].cells["total"]
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
     t_ia = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz), has_shear=False, ia_bias=(z, np.ones_like(z)), use_A_ia=False)
     t_g = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=False, dndz=(lens_z, lens_nz), bias=(lens_z, np.ones_like(lens_z)))
-    t_m = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=False, dndz=(lens_z, lens_nz), bias=None, mag_bias=(lens_z, mag_bias*np.ones_like(lens_z)))
+    t_m = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=True, dndz=(lens_z, lens_nz), bias=None, mag_bias=(lens_z, mag_bias*np.ones_like(lens_z)))
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
     # The weak gravitational lensing power spectrum
@@ -204,7 +205,7 @@ if __name__ == "__main__":
 
     # The observed angular power spectrum is the sum of the two.
     cl_cs_theory = cl_GG + 2*cl_GI + cl_II
-    cl_gg_theory = cl_gg + 2*cl_gm * cl_mm
+    cl_gg_theory = cl_gg + 2*cl_gm + cl_mm
 
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 6))
     fig.subplots_adjust(hspace=0)
