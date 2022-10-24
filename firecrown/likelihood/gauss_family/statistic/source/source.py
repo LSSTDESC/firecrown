@@ -107,14 +107,16 @@ class SourcePT(Source):
         cosmology."""
     @abstractmethod
     def get_pttracer(self, cosmo: pyccl.Cosmology) -> pyccl.nl_pt.tracers.PTTracer:
-
+        """Abstract method to create a tracer for this `Source`, for the given
+        cosmology."""
     @abstractmethod
     def create_pt_tracer(self, cosmo: pyccl.Cosmology):
         """Abstract method to create a tracer for this `Source`, for the given
         cosmology."""
     @abstractmethod
     def get_pt_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
-
+        """Abstract method to create a tracer for this `Source`, for the given
+        cosmology."""
 class TracerContainer:
     def __init__(self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None):
         self.ccl_tracer = tracer

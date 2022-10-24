@@ -11,7 +11,7 @@ import numpy as np
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
-from .source import Source
+from .source import Source, SourcePT
 from .source import Systematic
 from .....parameters import (
     ParamsMap,
