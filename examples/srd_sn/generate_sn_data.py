@@ -49,6 +49,10 @@ def conversion(h):
     colu = 13
     join = np.zeros((row, colu))
     hh = pd.DataFrame(np.concatenate([h, join], axis=1))
+    if (np.shape(hh)[1]<19):
+        diff = int(19 - np.shape(hh)[1])
+        for i in reversed(range(diff)):
+            hh.insert(np.shape(hh)[1], " ", np.zeros(np.shape(hh)[0]))
     hh.columns = col
     h = hh
     h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
@@ -66,6 +70,7 @@ if len(sys.argv) == 4:
         y1dat = np.array(y1dat).astype(float).T
     else:
         y1dat = conversion(y1dat)
+    out_name = cov
     # print("1. SUCESS")
 else:
     dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
@@ -123,6 +128,7 @@ else:
             y1cov = np.loadtxt(
                 "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
             )
+            out_name = 'srd-y1-converted'
             # print("2. SUCESS")
 
 
@@ -184,7 +190,6 @@ S.metadata["simulation"] = "Y1_DDF_FOUNDATION"
 S.metadata["covmat"] = "sys_Y1_DDF_FOUNDATION_0"
 S.metadata["creation"] = datetime.datetime.now().isoformat()
 S.metadata["info"] = "SN data sets"
-S.save_fits("srd-y1-converted.sacc", overwrite=True)
-
+S.save_fits(out_name+".sacc", overwrite=True) 
 # modify this to have interpolation hubble diagrams
 # bias corrections depend on cosmology - systematic vector
