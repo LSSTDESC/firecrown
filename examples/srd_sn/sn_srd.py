@@ -3,8 +3,8 @@
 import os
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
 import sacc
+import sys
 
 # Sources
 
@@ -17,10 +17,15 @@ snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
 lk = ConstGaussian(statistics=[snia_stats])
 
 # SACC file
-
-saccfile = os.path.expanduser(
-    os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
-)
+if len(sys.argv) == 1:
+    saccfile = os.path.expanduser(
+        os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
+    )
+else:
+    file = sys.argv[1]  # Input sacc file name
+    saccfile = os.path.expanduser(
+        os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/" + file)
+    )
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
 lk.read(sacc_data)

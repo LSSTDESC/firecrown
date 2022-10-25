@@ -71,7 +71,19 @@ EXAMPLE:
 python generate_sn_data.py ~/example data.txt sys.txt
 ```
 
+This will generate a `sacc` file with the following namenclature : `<Covariance Matrix>.sacc`
+
 REQUIREMENTS:
 
 Both the files Hubble Diagram and Covariance Matrix should be in the same folder.
 The location of which is then passed as argument `<PATH>`
+
+## Likelihood input
+
+`sn_srd.py` : reads in the `sacc` file for generating the SN likelihood object.
+
+User can pass a `sacc` data file as an argument in the following format :
+```
+python sn_srd.py input_SN_sacc_file.sacc
+```
+If no argument is provided, the default `sacc` file `srd-y1-converted.sacc` is read. 
