@@ -97,10 +97,7 @@ def load_likelihood(filename: str) -> Likelihood:
     if spec.loader is None:
         raise ImportError(f"Spec for module '{modname}' has no loader.")
 
-    try:
-        spec.loader.exec_module(mod)
-    except FileNotFoundError as error:
-        raise ImportError(f"{error.strerror}: {filename}") from error
+    spec.loader.exec_module(mod)
 
     if not hasattr(mod, "likelihood"):
         raise ValueError(
