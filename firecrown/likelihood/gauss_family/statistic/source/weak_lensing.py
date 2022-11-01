@@ -17,7 +17,6 @@ from ..... import parameters
 from .....parameters import (
     ParamsMap,
     RequiredParameters,
-    parameter_get_full_name,
     DerivedParameterCollection,
 )
 from .....updatable import UpdatableCollection
@@ -50,14 +49,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
 
-    Parameters
-    ----------
-    mult_bias : str
-       The name of the multiplicative bias parameter.
     """
-
-    params_names = ["mult_bias"]
-    m: float
 
     def __init__(self, sacc_tracer: str):
         """Create a MultiplicativeShearBias object that uses the named tracer.
@@ -67,14 +59,14 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__()
 
+        self.mult_bias = parameters.create()
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of
-        parameters."""
-        # pylint: disable-next=invalid-name
-        self.m = params.get_from_prefix_param(self.sacc_tracer, "mult_bias")
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
@@ -82,11 +74,8 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
         This implementation has nothing to do."""
 
-    @final
-    def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -105,7 +94,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
 
         return WeakLensingArgs(
-            scale=tracer_arg.scale * (1.0 + self.m),
+            scale=tracer_arg.scale * (1.0 + self.mult_bias),
             z=tracer_arg.z,
             dndz=tracer_arg.dndz,
             ia_bias=tracer_arg.ia_bias,
@@ -118,18 +107,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     This systematic adds a linear intrinsic alignment model systematic
     which varies with redshift and the growth function.
 
-
-
     Methods
     -------
     apply : apply the systematic to a source
     """
-
-    params_names = ["ia_bias", "alphaz", "alphag", "z_piv"]
-    ia_bias: float
-    alphaz: float
-    alphag: float
-    z_piv: float
 
     def __init__(self, sacc_tracer: Optional[str] = None, alphag=1.0):
         """Create a LinearAlignmentSystematic object, using the specified
@@ -157,13 +138,19 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
     @final
     def _update(self, params: ParamsMap):
-        pass
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
         """Reset this systematic.
 
         This implementation has nothing to do."""
+
+    @final
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -175,10 +162,9 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
-        alphag = self.alphag
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            alphag - 1.0
+            self.alphag - 1.0
         )
 
         ia_bias_array = pref * self.ia_bias
@@ -197,27 +183,25 @@ class PhotoZShift(WeakLensingSystematic):
     This systematic shifts the photo-z distribution by some amount `delta_z`.
     """
 
-    params_names = ["delta_z"]
-    delta_z: float
-
     def __init__(self, sacc_tracer: str):
         super().__init__()
 
+        self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
         pass
 
     @final
-    def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -277,7 +261,7 @@ class WeakLensing(Source):
         self.systematics.reset()
 
     @final
-    def required_parameters(self) -> RequiredParameters:
+    def _required_parameters(self) -> RequiredParameters:
         return self.systematics.required_parameters()
 
     @final

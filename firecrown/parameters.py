@@ -37,9 +37,7 @@ class ParamsMap(Dict[str, float]):
     with square brackets like x[].
     """
 
-    def get_from_prefix_param(
-        self, prefix: Optional[str], param: str
-    ) -> float:
+    def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
 

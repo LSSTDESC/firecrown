@@ -27,8 +27,6 @@ class Source(Updatable):
 
     Parameters
     ----------
-    scale : 1.0, optional
-        The default scale for this source.
     systematics : list of str, optional
         A list of the source-level systematics to apply to the source. The
         default of `None` implies no systematics.

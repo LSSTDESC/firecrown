@@ -116,7 +116,7 @@ class GaussFamily(Likelihood):
         subclasses."""
 
     @final
-    def required_parameters(self) -> RequiredParameters:
+    def _required_parameters(self) -> RequiredParameters:
         """Return a RequiredParameters object containing the information for
         this Updatable.
 
@@ -125,12 +125,12 @@ class GaussFamily(Likelihood):
 
         Derived classes must implement required_parameters_gaussian_family."""
         stats_rp = self.statistics.required_parameters()
-        stats_rp = self.required_parameters_gaussian_family() + stats_rp
+        stats_rp = self._required_parameters_gaussian_family() + stats_rp
 
         return stats_rp
 
     @abstractmethod
-    def required_parameters_gaussian_family(self):
+    def _required_parameters_gaussian_family(self):
         """Required parameters for GaussFamily subclasses."""
 
     @abstractmethod

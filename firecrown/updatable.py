@@ -106,20 +106,31 @@ class Updatable(ABC):
         The base class implementation does nothing.
         """
 
+    @final
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
+        """Return a RequiredParameters object containing the information for
+        all parameters defined in the implementing class, any additional
+        parameter
+        """
+
+        sampler_parameters = RequiredParameters(
+            [
+                parameter_get_full_name(self.sacc_tracer, parameter)
+                for parameter in self._sampler_parameters
+            ]
+        )
+        additional_parameters = self._required_parameters()
+
+        return sampler_parameters + additional_parameters
+
+    @abstractmethod
+    def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
         """Return a RequiredParameters object containing the information for
         this Updatable. This method must be overridden by concrete classes.
 
         The base class implementation returns a list with all SamplerParameter
         objects properties.
         """
-
-        return RequiredParameters(
-            [
-                parameter_get_full_name(self.sacc_tracer, parameter)
-                for parameter in self._sampler_parameters
-            ]
-        )
 
     @final
     def get_derived_parameters(

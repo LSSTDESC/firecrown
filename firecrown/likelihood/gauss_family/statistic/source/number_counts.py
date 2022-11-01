@@ -13,10 +13,10 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
+from ..... import parameters
 from .....parameters import (
     ParamsMap,
     RequiredParameters,
-    parameter_get_full_name,
     DerivedParameterScalar,
     DerivedParameterCollection,
 )
@@ -63,23 +63,19 @@ class LinearBiasSystematic(NumberCountsSystematic):
 
     """
 
-    params_names = ["alphaz", "alphag", "z_piv"]
-    alphaz: float
-    alphag: float
-    z_piv: float
-
     def __init__(self, sacc_tracer: str):
         super().__init__()
 
+        self.alphaz = parameters.create()
+        self.alphag = parameters.create()
+        self.z_piv = parameters.create()
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of
-        parameters."""
-        self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
-        self.alphag = params.get_from_prefix_param(self.sacc_tracer, "alphag")
-        self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
@@ -88,10 +84,8 @@ class LinearBiasSystematic(NumberCountsSystematic):
         This implementation has nothing to do."""
 
     @final
-    def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -130,9 +124,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 
     Parameters
     ----------
-    r_lim : str
+    r_lim : float
         The name of the limiting magnitude in r band filter.
-    sig_c, eta, z_c, z_m : str
+    sig_c, eta, z_c, z_m : float
         The name of the fitting parameters in Joachimi & Bridle (2010) equation
         (C.1).
 
@@ -141,27 +135,22 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     apply : apply the systematic to a source
     """
 
-    params_names = ["r_lim", "sig_c", "eta", "z_c", "z_m"]
-    r_lim: float
-    sig_c: float
-    eta: float
-    z_c: float
-    z_m: float
-
     def __init__(self, sacc_tracer: str):
         super().__init__()
+
+        self.r_lim = parameters.create()
+        self.sig_c = parameters.create()
+        self.eta = parameters.create()
+        self.z_c = parameters.create()
+        self.z_m = parameters.create()
 
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        """Read the corresponding named tracer from the given collection of
-        parameters."""
-        self.r_lim = params.get_from_prefix_param(self.sacc_tracer, "r_lim")
-        self.sig_c = params.get_from_prefix_param(self.sacc_tracer, "sig_c")
-        self.eta = params.get_from_prefix_param(self.sacc_tracer, "eta")
-        self.z_c = params.get_from_prefix_param(self.sacc_tracer, "z_c")
-        self.z_m = params.get_from_prefix_param(self.sacc_tracer, "z_m")
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
@@ -170,10 +159,8 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         This implementation has nothing to do."""
 
     @final
-    def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -217,17 +204,17 @@ class PhotoZShift(NumberCountsSystematic):
     This systematic shifts the photo-z distribution by some ammount `delta_z`.
     """
 
-    params_names = ["delta_z"]
-    delta_z: float
-
     def __init__(self, sacc_tracer: str):
         super().__init__()
 
+        self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        self.delta_z = params.get_from_prefix_param(self.sacc_tracer, "delta_z")
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
@@ -236,10 +223,8 @@ class PhotoZShift(NumberCountsSystematic):
         This implementation has nothing to do."""
 
     @final
-    def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -265,10 +250,6 @@ class PhotoZShift(NumberCountsSystematic):
 class NumberCounts(Source):
     """Source class for number counts."""
 
-    params_names = ["bias", "mag_bias"]
-    bias: float
-    mag_bias: Optional[float]
-
     systematics: UpdatableCollection
     tracer_arg: NumberCountsArgs
 
@@ -286,8 +267,10 @@ class NumberCounts(Source):
 
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
-        self.has_mag_bias = has_mag_bias
         self.derived_scale = derived_scale
+
+        self.bias = parameters.create()
+        self.mag_bias = parameters.create(None if has_mag_bias else 0.0)
 
         self.systematics = UpdatableCollection([])
         if systematics:
@@ -301,13 +284,9 @@ class NumberCounts(Source):
 
     @final
     def _update_source(self, params: ParamsMap):
-        self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
+        """Perform any updates necessary after the parameters have being updated.
 
-        if self.has_mag_bias:
-            self.mag_bias = params.get_from_prefix_param(self.sacc_tracer, "mag_bias")
-        else:
-            self.mag_bias = None
-
+        This implementation must update all contained Updatable instances."""
         self.systematics.update(params)
 
     @final
@@ -315,23 +294,8 @@ class NumberCounts(Source):
         self.systematics.reset()
 
     @final
-    def required_parameters(self) -> RequiredParameters:
-        if self.has_mag_bias:
-            rp = RequiredParameters(
-                [
-                    parameter_get_full_name(self.sacc_tracer, pn)
-                    for pn in self.params_names
-                ]
-            )
-        else:
-            rp = RequiredParameters(
-                [
-                    parameter_get_full_name(self.sacc_tracer, pn)
-                    for pn in self.params_names
-                    if pn != "mag_bias"
-                ]
-            )
-        return rp + self.systematics.required_parameters()
+    def _required_parameters(self) -> RequiredParameters:
+        return self.systematics.required_parameters()
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -382,7 +346,7 @@ class NumberCounts(Source):
             mag_bias=tracer_args.mag_bias,
         )
 
-        if self.mag_bias is not None:
+        if self.mag_bias != 0.0:
             mag_bias = np.ones_like(tracer_args.z) * self.mag_bias
             tracer_args = NumberCountsArgs(
                 scale=tracer_args.scale,
@@ -395,7 +359,7 @@ class NumberCounts(Source):
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
-        if self.has_mag_bias:
+        if self.mag_bias != 0.0:
             tracer = pyccl.NumberCountsTracer(
                 cosmo,
                 has_rsd=self.has_rsd,
