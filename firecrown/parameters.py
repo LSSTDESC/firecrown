@@ -37,6 +37,13 @@ class ParamsMap(Dict[str, float]):
     with square brackets like x[].
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lower_case: bool = False
+
+    def use_lower_case_keys(self, enable: bool):
+        self.lower_case = enable
+
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
@@ -45,7 +52,10 @@ class ParamsMap(Dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         fullname = parameter_get_full_name(prefix, param)
+        if self.lower_case:
+            fullname = fullname.lower()
 
+        print (f"{fullname} and {self.keys()}")
         if fullname in self.keys():
             return self[fullname]
         raise KeyError(f"Prefix `{prefix}`, key `{param}' not found.")
@@ -204,8 +214,7 @@ class DerivedParameterCollection:
                 f"RequiredParameter named {required_parameter_full_name}"
                 f" is already present in the collection"
             )
-        else:
-            self.derived_parameters[required_parameter_full_name] = derived_parameter
+        self.derived_parameters[required_parameter_full_name] = derived_parameter
 
     def get_derived_list(self) -> List[DerivedParameter]:
         """Implement lazy iteration through the contained parameter names."""
@@ -246,5 +255,4 @@ class InternalParameter:
 def create(value: Optional[float] = None):
     if value is None:
         return SamplerParameter()
-    else:
-        return InternalParameter(value)
+    return InternalParameter(value)

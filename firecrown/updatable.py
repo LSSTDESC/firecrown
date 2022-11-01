@@ -50,15 +50,13 @@ class Updatable(ABC):
         if isinstance(value, SamplerParameter):
             if key in self._sampler_parameters or hasattr(self, key):
                 raise ValueError(f"attribute {key} already set to the object")
-            else:
-                self._sampler_parameters[key] = value
-                super().__setattr__(key, None)
+            self._sampler_parameters[key] = value
+            super().__setattr__(key, None)
         elif isinstance(value, InternalParameter):
             if key in self._internal_parameters or hasattr(self, key):
                 raise ValueError(f"attribute {key} already set to the object")
-            else:
-                self._internal_parameters[key] = value
-                super().__setattr__(key, value.get_value())
+            self._internal_parameters[key] = value
+            super().__setattr__(key, value.get_value())
         else:
             super().__setattr__(key, value)
 
@@ -220,8 +218,7 @@ class UpdatableCollection(UserList):
                 has_any_derived = True
         if has_any_derived:
             return derived_parameters
-        else:
-            return None
+        return None
 
     def append(self, item: Updatable) -> None:
         """Append the given item to self.
