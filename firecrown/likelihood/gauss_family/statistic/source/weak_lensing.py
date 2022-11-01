@@ -13,6 +13,7 @@ from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source
 from .source import Systematic
+from ..... import parameters
 from .....parameters import (
     ParamsMap,
     RequiredParameters,
@@ -31,7 +32,7 @@ class WeakLensingArgs:
     scale: float
     z: np.ndarray  # pylint: disable-msg=invalid-name
     dndz: np.ndarray
-    ia_bias: Tuple[np.ndarray, np.ndarray]
+    ia_bias: Optional[Tuple[np.ndarray, np.ndarray]]
 
 
 class WeakLensingSystematic(Systematic):
@@ -59,7 +60,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     m: float
 
     def __init__(self, sacc_tracer: str):
-        """Create a MultipliciativeShearBias object that uses the named tracer.
+        """Create a MultiplicativeShearBias object that uses the named tracer.
         Parameters
         ----------
         sacc_tracer : The name of the multiplicative bias parameter.
@@ -130,7 +131,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     alphag: float
     z_piv: float
 
-    def __init__(self, sacc_tracer: Optional[str] = None):
+    def __init__(self, sacc_tracer: Optional[str] = None, alphag=1.0):
         """Create a LinearAlignmentSystematic object, using the specified
         tracer name.
 
@@ -147,28 +148,22 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__()
 
+        self.ia_bias = parameters.create()
+        self.alphaz = parameters.create()
+        self.alphag = parameters.create(alphag)
+        self.z_piv = parameters.create()
+
         self.sacc_tracer = sacc_tracer
 
     @final
     def _update(self, params: ParamsMap):
-        self.ia_bias = params.get_from_prefix_param(self.sacc_tracer, "ia_bias")
-        self.alphaz = params.get_from_prefix_param(self.sacc_tracer, "alphaz")
-        self.alphag = params.get_from_prefix_param(
-            self.sacc_tracer, "alphag", default=1.0
-        )
-        self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
+        pass
 
     @final
     def _reset(self) -> None:
         """Reset this systematic.
 
         This implementation has nothing to do."""
-
-    @final
-    def required_parameters(self) -> RequiredParameters:
-        return RequiredParameters(
-            [parameter_get_full_name(self.sacc_tracer, pn) for pn in self.params_names]
-        )
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -180,9 +175,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
+        alphag = self.alphag
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag - 1.0
+            alphag - 1.0
         )
 
         ia_bias_array = pref * self.ia_bias
@@ -198,7 +194,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
 
-    This systematic shifts the photo-z distribution by some ammount `delta_z`.
+    This systematic shifts the photo-z distribution by some amount `delta_z`.
     """
 
     params_names = ["delta_z"]

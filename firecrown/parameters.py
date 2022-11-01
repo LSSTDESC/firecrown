@@ -38,7 +38,7 @@ class ParamsMap(Dict[str, float]):
     """
 
     def get_from_prefix_param(
-        self, prefix: Optional[str], param: str, default: Optional[float] = None
+        self, prefix: Optional[str], param: str
     ) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
@@ -50,8 +50,6 @@ class ParamsMap(Dict[str, float]):
 
         if fullname in self.keys():
             return self[fullname]
-        elif default is not None:
-            return default
         raise KeyError(f"Prefix `{prefix}`, key `{param}' not found.")
 
 
@@ -215,3 +213,40 @@ class DerivedParameterCollection:
         """Implement lazy iteration through the contained parameter names."""
 
         return list(self.derived_parameters.values())
+
+
+class SamplerParameter:
+    """Class to represent a sampler defined parameter."""
+
+    def __init__(self):
+        """Creates a new SamplerParameter instance that represents a parameter
+        having its value defined by the sampler."""
+        self.value = None
+
+    def set_value(self, value: float):
+        self.value = value
+
+    def get_value(self) -> float:
+        return self.value
+
+
+class InternalParameter:
+    """Class to represent an internally defined parameter."""
+
+    def __init__(self, value: float):
+        """Creates a new InternalParameter instance that represents an
+        internal parameter with its value defined by value."""
+        self.value = value
+
+    def set_value(self, value: float):
+        self.value = value
+
+    def get_value(self) -> float:
+        return self.value
+
+
+def create(value: Optional[float] = None):
+    if value is None:
+        return SamplerParameter()
+    else:
+        return InternalParameter(value)
