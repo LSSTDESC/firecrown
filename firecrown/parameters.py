@@ -55,7 +55,7 @@ class ParamsMap(Dict[str, float]):
         if self.lower_case:
             fullname = fullname.lower()
 
-        print (f"{fullname} and {self.keys()}")
+        print(f"{fullname} and {self.keys()}")
         if fullname in self.keys():
             return self[fullname]
         raise KeyError(f"Prefix `{prefix}`, key `{param}' not found.")
