@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, final
+from typing import List, Optional, final
 
 import numpy as np
 
@@ -11,6 +11,7 @@ import pyccl
 
 from .gauss_family import GaussFamily
 from .statistic.statistic import Statistic
+from ... import parameters
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
@@ -26,9 +27,9 @@ class StudentT(GaussFamily):
     :param nu: The Student-t $\\nu$ parameter
     """
 
-    def __init__(self, statistics: List[Statistic], nu: float):
+    def __init__(self, statistics: List[Statistic], nu: Optional[float]):
         super().__init__(statistics)
-        self.nu = nu  # pylint: disable-msg=C0103
+        self.nu = parameters.create(nu)  # pylint: disable-msg=C0103
 
     def compute_loglike(self, cosmo: pyccl.Cosmology):
         """Compute the log-likelihood.
@@ -48,7 +49,7 @@ class StudentT(GaussFamily):
         pass
 
     @final
-    def required_parameters_gaussian_family(self):
+    def _required_parameters_gaussian_family(self):
         return RequiredParameters([])
 
     @final

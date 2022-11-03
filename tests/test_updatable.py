@@ -1,5 +1,6 @@
 import pytest
 from firecrown.updatable import Updatable, UpdatableCollection
+from firecrown import parameters
 from firecrown.parameters import (
     RequiredParameters,
     ParamsMap,
@@ -10,7 +11,7 @@ from firecrown.parameters import (
 class Missing_update(Updatable):
     """A type that is abstract because it does not implement _update."""
 
-    def required_parameters(self):  # pragma: no cover
+    def _required_parameters(self):  # pragma: no cover
         pass
 
     def _reset(self) -> None:
@@ -26,7 +27,7 @@ class Missing_reset(Updatable):
     def _update(self, params):  # pragma: no cover
         pass
 
-    def required_parameters(self):  # pragma: no cover
+    def _required_parameters(self):  # pragma: no cover
         pass
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -53,16 +54,16 @@ class MinimalUpdatable(Updatable):
         """Initialize object with defaulted value."""
         super().__init__()
 
-        self.a = 1.0
+        self.a = parameters.create()
 
     def _update(self, params):
-        self.a = params.get_from_prefix_param(None, "a")
+        pass
 
     def _reset(self) -> None:
         pass
 
-    def required_parameters(self):
-        return RequiredParameters(["a"])
+    def _required_parameters(self):
+        return RequiredParameters([])
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
@@ -75,18 +76,17 @@ class SimpleUpdatable(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        self.x = 0.0
-        self.y = 2.5
+        self.x = parameters.create()
+        self.y = parameters.create()
 
     def _update(self, params):
-        self.x = params.get_from_prefix_param(None, "x")
-        self.y = params.get_from_prefix_param(None, "y")
+        pass
 
     def _reset(self) -> None:
         pass
 
-    def required_parameters(self):
-        return RequiredParameters(["x", "y"])
+    def _required_parameters(self):
+        return RequiredParameters([])
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
@@ -105,8 +105,8 @@ def test_simple_updatable():
     obj = SimpleUpdatable()
     expected_params = RequiredParameters(["x", "y"])
     assert obj.required_parameters() == expected_params
-    assert obj.x == 0.0
-    assert obj.y == 2.5
+    assert obj.x is None
+    assert obj.y is None
     new_params = ParamsMap({"x": -1.0, "y": 5.5})
     obj.update(new_params)
     assert obj.x == -1.0
@@ -120,13 +120,13 @@ def test_updatable_collection_appends():
 
     coll.append(SimpleUpdatable())
     assert len(coll) == 1
-    assert coll[0].x == 0.0
-    assert coll[0].y == 2.5
+    assert coll[0].x is None
+    assert coll[0].y is None
     assert coll.required_parameters() == RequiredParameters(["x", "y"])
 
     coll.append(MinimalUpdatable())
     assert len(coll) == 2
-    assert coll[1].a == 1.0
+    assert coll[1].a is None
     assert coll.required_parameters() == RequiredParameters(["x", "y", "a"])
 
 
@@ -136,8 +136,8 @@ def test_updatable_collection_updates():
 
     coll.append(SimpleUpdatable())
     assert len(coll) == 1
-    assert coll[0].x == 0.0
-    assert coll[0].y == 2.5
+    assert coll[0].x is None
+    assert coll[0].y is None
 
     new_params = {"x": -1.0, "y": 5.5}
     coll.update(ParamsMap(new_params))

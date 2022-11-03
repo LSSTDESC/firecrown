@@ -126,6 +126,7 @@ class FirecrownLikelihood:
             if "firecrown" in section:
                 sec_dict = extract_section(sample, section)
                 firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
+                firecrown_params.use_lower_case_keys(True)
         return firecrown_params
 
 
