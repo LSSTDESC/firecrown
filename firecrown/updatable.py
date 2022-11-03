@@ -50,14 +50,16 @@ class Updatable(ABC):
         if isinstance(value, SamplerParameter):
             if key in self._sampler_parameters or hasattr(self, key):
                 raise ValueError(
-                    f"attribute {key} already set in {self} from a parameter read from the sampler"
+                    f"attribute {key} already set in {self} "
+                    f"from a parameter read from the sampler"
                 )
             self._sampler_parameters[key] = value
             super().__setattr__(key, None)
         elif isinstance(value, InternalParameter):
             if key in self._internal_parameters or hasattr(self, key):
                 raise ValueError(
-                    f"attribute {key} already set in {self} from a parameter supplied in the likelihood factory code"
+                    f"attribute {key} already set in {self} "
+                    f"from a parameter supplied in the likelihood factory code"
                 )
             self._internal_parameters[key] = value
             super().__setattr__(key, value.get_value())
