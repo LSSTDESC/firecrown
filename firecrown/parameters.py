@@ -37,6 +37,13 @@ class ParamsMap(Dict[str, float]):
     with square brackets like x[].
     """
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.lower_case: bool = False
+
+    def use_lower_case_keys(self, enable: bool):
+        self.lower_case = enable
+
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
@@ -45,6 +52,8 @@ class ParamsMap(Dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         fullname = parameter_get_full_name(prefix, param)
+        if self.lower_case:
+            fullname = fullname.lower()
 
         if fullname in self.keys():
             return self[fullname]
@@ -204,10 +213,45 @@ class DerivedParameterCollection:
                 f"RequiredParameter named {required_parameter_full_name}"
                 f" is already present in the collection"
             )
-        else:
-            self.derived_parameters[required_parameter_full_name] = derived_parameter
+        self.derived_parameters[required_parameter_full_name] = derived_parameter
 
     def get_derived_list(self) -> List[DerivedParameter]:
         """Implement lazy iteration through the contained parameter names."""
 
         return list(self.derived_parameters.values())
+
+
+class SamplerParameter:
+    """Class to represent a sampler defined parameter."""
+
+    def __init__(self):
+        """Creates a new SamplerParameter instance that represents a parameter
+        having its value defined by the sampler."""
+        self.value = None
+
+    def set_value(self, value: float):
+        self.value = value
+
+    def get_value(self) -> float:
+        return self.value
+
+
+class InternalParameter:
+    """Class to represent an internally defined parameter."""
+
+    def __init__(self, value: float):
+        """Creates a new InternalParameter instance that represents an
+        internal parameter with its value defined by value."""
+        self.value = value
+
+    def set_value(self, value: float):
+        self.value = value
+
+    def get_value(self) -> float:
+        return self.value
+
+
+def create(value: Optional[float] = None):
+    if value is None:
+        return SamplerParameter()
+    return InternalParameter(value)

@@ -14,7 +14,7 @@ import sacc
 # Sources
 
 
-lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
+lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="", alphag=None)
 
 """
     Creating sources, each one maps to a specific section of a SACC file. In
