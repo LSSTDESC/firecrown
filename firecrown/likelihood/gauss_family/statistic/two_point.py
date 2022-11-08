@@ -195,7 +195,7 @@ class TwoPoint(Statistic):
         self.source1.reset()
 
     @final
-    def required_parameters(self) -> RequiredParameters:
+    def _required_parameters(self) -> RequiredParameters:
         return self.source0.required_parameters() + self.source1.required_parameters()
 
     @final

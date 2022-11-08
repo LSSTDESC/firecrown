@@ -33,7 +33,7 @@ class ConstGaussian(GaussFamily):
         pass
 
     @final
-    def required_parameters_gaussian_family(self):
+    def _required_parameters_gaussian_family(self):
         return RequiredParameters([])
 
     @final

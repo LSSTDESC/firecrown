@@ -22,7 +22,7 @@ class EmptyLikelihood(Likelihood):
     def _reset(self) -> None:
         pass
 
-    def required_parameters(self):
+    def _required_parameters(self):
         return RequiredParameters([])
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
