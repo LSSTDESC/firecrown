@@ -12,9 +12,11 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 sacc.__version__
 
 
-sac_file = sacc.Sacc.load_fits("des_y1_3x2pt_sacc_data.fits")
+sac_file = sacc.Sacc.load_fits("./clusters.sacc")
+sac_file2 = sacc.Sacc.load_fits("/home/eduardo/firecrown/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits")
 #print(sac_file.data)
-stats = NumberCountStat("counts", f"src{1}")
+#print(sac_file2.data)
+stats = NumberCountStat("cluster_mass_count_wl")
 rp = stats.required_parameters()
 lista_t = [stats]
 lk = ConstGaussian(lista_t)

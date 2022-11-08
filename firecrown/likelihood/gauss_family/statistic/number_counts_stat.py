@@ -28,13 +28,13 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 class NumberCountStatsArgs:
     """Class for number counts tracer builder argument."""
 
-    def __init__(self, scale=None, z=None, dndz=None, bias=None, mag_bias=None):
+    def __init__(self, scale=None, tracers=None, z_min=None, z_max=None, nz=None, metadata=None):
 
         self.scale = scale
-        self.z =  z  # pylint: disable-msg=invalid-name
-        self.dndz = dndz
-        self.bias = bias
-        self.mag_bias = mag_bias
+        self.z_min =  z_min
+        self.z_max =  z_max
+        self.nz = nz
+        self.metadata = metadata
 
 class NumberCountStat(Statistic):
     """A Number Count statistic (e.g., halo mass function, multiplicity functions,
@@ -60,7 +60,6 @@ class NumberCountStat(Statistic):
     def __init__(
         self,
         sacc_data_type,
-        sacc_tracer: str,
         systematics: Optional[List[Systematic]] = None,
     ):
 
@@ -70,7 +69,7 @@ class NumberCountStat(Statistic):
         self.sacc_data_type = sacc_data_type
         self.data_vector = None
         self.theory_vector = None
-        self.sacc_tracer = sacc_tracer
+        self.sacc_tracer = None
         self.scale = None
         self.systematics = UpdatableCollection([])
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
@@ -89,8 +88,8 @@ class NumberCountStat(Statistic):
 
         This implementation has nothing to do."""
 
-    def required_parameters(self) -> RequiredParameters:
-        return self.systematics.required_parameters()
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -108,20 +107,30 @@ class NumberCountStat(Statistic):
             The data in the sacc format.
         """
 
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        inds = np.argsort(z)
-        z = z[inds]
-        nz = nz[inds]
+        tracer = []
+        tracer2 = []
+        z_min = []
+        z_max = []
+        nz = []
+        metadata = []
+        inds = []
+        for i in range (0, len(sacc_data.data)):
+            #IM assuming that there is only one tracer. We have to change if there is more. Also Im assuming the entire file is Number Counts
+            tracer.append(sacc_data.data[i].tracers[0])
+            metadata.append(sacc_data.tracers[tracer[i]].metadata)
+            if sacc_data.data[i].data_type == 'cluster_mass_count_wl':
+                z_min.append(metadata[i]["z_min"])
+                z_max.append(metadata[i]["z_max"])
+                nz.append(sacc_data.data[i].value)
+       
         self.tracer_args = NumberCountStatsArgs(
-            scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
-        )
+            scale=self.scale, tracers=tracer, z_min=z_min, z_max=z_max, nz=nz, metadata=metadata)
+
+        self.sacc_tracer = tracer
+        
         self.sacc_inds = np.atleast_1d(
-        sacc_data.indices(self.sacc_data_type, tuple(self.sacc_tracer))
+            sacc_data.indices("cluster_mass_count_wl")
         )
-
-
 
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
