@@ -6,9 +6,6 @@ theoretical prediction of cluster number counts inside bins of redshift
 
 from __future__ import annotations
 from typing import List, Tuple, Optional, final
-import copy
-import functools
-import warnings
 
 import numpy as np
 import scipy.interpolate
@@ -91,7 +88,6 @@ class NumberCountStat(Statistic):
         self.systematics = systematics or []
         self.data_vector = None
         self.theory_vector = None
-        self.systematics = UpdatableCollection([])
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
@@ -104,7 +100,7 @@ class NumberCountStat(Statistic):
 
         This implementation has nothing to do."""
 
-    def _update(self) -> None:
+    def _update(self, params: ParamsMap) -> None:
         """Reset this systematic.
 
         This implementation has nothing to do."""
@@ -115,7 +111,6 @@ class NumberCountStat(Statistic):
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_parameters = DerivedParameterCollection([])
-        derived_parameters = self.systematics.get_derived_parameters()
 
         return derived_parameters
 
