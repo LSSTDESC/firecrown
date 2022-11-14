@@ -15,7 +15,6 @@ import pyccl
 from .statistic import Statistic
 from .source.source import Systematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
-from ....updatable import UpdatableCollection
 
 # only supported types are here, any thing else will throw
 # a value error
