@@ -28,15 +28,19 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "counts": "nz",
 }
 
+
 class NumberCountStatsArgs:
     """Class for number counts tracer builder argument."""
 
-    def __init__(self, tracers=None, z_bins=None, Mproxy_bins=None, nz=None, metadata=None):
+    def __init__(
+        self, tracers=None, z_bins=None, Mproxy_bins=None, nz=None, metadata=None
+    ):
 
-        self.z_bins =  z_bins
-        self.Mproxy_bins =  Mproxy_bins
+        self.z_bins = z_bins
+        self.Mproxy_bins = Mproxy_bins
         self.nz = nz
         self.metadata = metadata
+
 
 class NumberCountStat(Statistic):
     """A Number Count statistic (e.g., halo mass function, multiplicity functions,
@@ -73,7 +77,6 @@ class NumberCountStat(Statistic):
         provided in the SACC file. Set after `read` is called.
     """
 
-
     def __init__(
         self,
         sacc_tracer,
@@ -95,6 +98,7 @@ class NumberCountStat(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
+
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -115,7 +119,7 @@ class NumberCountStat(Statistic):
 
         return derived_parameters
 
-    def _dmdz_dV (self, logm, z, cosmo):
+    def _dmdz_dV(self, logm, z, cosmo):
         """
         parameters
         ----------
@@ -131,18 +135,23 @@ class NumberCountStat(Statistic):
         integrand : float
                     Number Counts pdf at z and logm.
         """
-        a = 1./(1. + z)
-        hmd_200c = pyccl.halos.MassDef(200, 'critical')
-        mass = 10**(logm)
+        a = 1.0 / (1.0 + z)
+        hmd_200c = pyccl.halos.MassDef(200, "critical")
+        mass = 10 ** (logm)
         hmf_200c = pyccl.halos.MassFuncTinker08(cosmo, mass_def=hmd_200c)
         nm = hmf_200c.get_mass_function(cosmo, mass, a)
         da = pyccl.background.angular_diameter_distance(cosmo, a)
         E = pyccl.background.h_over_h0(cosmo, a)
-        dV = ((1.+z)**2)*(da**2)*pyccl.physical_constants.CLIGHT_HMPC/cosmo['h']/E
+        dV = (
+            ((1.0 + z) ** 2)
+            * (da**2)
+            * pyccl.physical_constants.CLIGHT_HMPC
+            / cosmo["h"]
+            / E
+        )
         integrand = nm * dV
 
         return integrand
-
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
@@ -156,25 +165,39 @@ class NumberCountStat(Statistic):
             The data in the sacc format.
         """
 
-        tracer = sacc_data.get_tracer(self.sacc_tracer) #Get tracer passed from the user
-        metadata = tracer.metadata #Given the tracer, here is all the metadata we need.
+        tracer = sacc_data.get_tracer(
+            self.sacc_tracer
+        )  # Get tracer passed from the user
+        metadata = (
+            tracer.metadata
+        )  # Given the tracer, here is all the metadata we need.
 
-        #print(f"a{metadata['z_type']}")
-        dts = sacc_data.get_data_types() #This get the type of data. It is different than the type of tracer
-        #print(dts)
-        tracer_sets = sacc_data.get_tracer_combinations(dts[0]) #All the tracers in the data
-        #print(tracer_sets, type(tracer_sets[0]))
-        nz = sacc_data.get_mean(dts[0], tracer_sets[0]) # The values of the data. THe number count in each bin
-        #print(dat)
-        self.tracer_args = NumberCountStatsArgs(tracers=tracer,
-          z_bins=metadata['z_edges'],
-          Mproxy_bins=metadata['Mproxy_edges'],
-          nz=nz, metadata=metadata)
+        # print(f"a{metadata['z_type']}")
+        dts = (
+            sacc_data.get_data_types()
+        )  # This get the type of data. It is different than the type of tracer
+        # print(dts)
+        tracer_sets = sacc_data.get_tracer_combinations(
+            dts[0]
+        )  # All the tracers in the data
+        # print(tracer_sets, type(tracer_sets[0]))
+        nz = sacc_data.get_mean(
+            dts[0], tracer_sets[0]
+        )  # The values of the data. THe number count in each bin
+        # print(dat)
+        self.tracer_args = NumberCountStatsArgs(
+            tracers=tracer,
+            z_bins=metadata["z_edges"],
+            Mproxy_bins=metadata["Mproxy_edges"],
+            nz=nz,
+            metadata=metadata,
+        )
+
+        tracer_indice = (self.sacc_tracer,)
         self.sacc_inds = np.atleast_1d(
-        sacc_data.indices("cluster_mass_count_wl")
+            sacc_data.indices("cluster_mass_count_wl", tracer_indice)
         )
         self.data_vector = nz
-
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a Number Count statistic using the data from the
@@ -199,14 +222,31 @@ class NumberCountStat(Statistic):
         z_bins = self.tracer_args.z_bins
         logm_bins = np.log10(self.tracer_args.Mproxy_bins)
         theory_vector = []
+
         def integrand(logm, z):
             return self._dmdz_dV(logm, z, cosmo)
-        norm = norm = 1./scipy.integrate.dblquad(integrand, z_bins[0], z_bins[-1],
-        lambda x:logm_bins[0], lambda x:logm_bins[-1], epsrel=1.e-4)[0]
-        for i in range(len(z_bins) -1):
-            for j in range(len(logm_bins)-1):
-                bin_count = scipy.integrate.dblquad(integrand, z_bins[i], z_bins[i+1],
-                lambda x:logm_bins[j], lambda x:logm_bins[j+1], epsrel=1.e-4)[0]
+
+        norm = norm = (
+            1.0
+            / scipy.integrate.dblquad(
+                integrand,
+                z_bins[0],
+                z_bins[-1],
+                lambda x: logm_bins[0],
+                lambda x: logm_bins[-1],
+                epsrel=1.0e-4,
+            )[0]
+        )
+        for i in range(len(z_bins) - 1):
+            for j in range(len(logm_bins) - 1):
+                bin_count = scipy.integrate.dblquad(
+                    integrand,
+                    z_bins[i],
+                    z_bins[i + 1],
+                    lambda x: logm_bins[j],
+                    lambda x: logm_bins[j + 1],
+                    epsrel=1.0e-4,
+                )[0]
                 theory_vector.append(bin_count / norm)
 
         return np.array(self.data_vector), np.array(theory_vector)
