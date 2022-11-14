@@ -14,10 +14,7 @@ sacc.__version__
 cosmo = ccl.Cosmology(Omega_c=0.26, Omega_b=0.04,
                       h=0.7, sigma8=0.8, n_s=0.96, Neff=3.04,  m_nu=1.0e-05, m_nu_type="single")
 sac_file = sacc.Sacc.load_fits("./clusters.sacc")
-sac_file2 = sacc.Sacc.load_fits("/home/eduardo/firecrown/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits")
-#print(sac_file.data)
-#print(sac_file2.data)
-stats = NumberCountStat("cluster_mass_count_wl")
+stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl')
 rp = stats.required_parameters()
 lista_t = [stats]
 lk = ConstGaussian(lista_t)
