@@ -57,7 +57,8 @@ Other than the Number counts data, there should not be other tracers or data in 
 
 ##Compute function
 
-This function utilizes the data from the `read` method to compute a theoretical prediction of the cluster number counts in each bin. This implementation takes a `pyccl.Cosmology` and utilizes the `pyccl.halos.MassFuncTinker08` as the dark matter halo mass function to compute the theoretical prediction.
+This function utilizes the data from the `read` method to compute a theoretical prediction of the cluster number counts in each bin. This implementation takes a `pyccl.Cosmology` and utilizes the
+`pyccl.halos.MassFuncBocquet16` as the dark matter halo mass function to compute the theoretical prediction.
 
 The user shall provide the chosen cosmology and the necessary data in the SACC file so that this method can be used. So far, there is only the Tinker mass function implemented.
 

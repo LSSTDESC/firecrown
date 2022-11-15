@@ -132,7 +132,9 @@ class NumberCountStat(Statistic):
         a = 1.0 / (1.0 + z)
         hmd_200c = pyccl.halos.MassDef(200, "critical")
         mass = 10 ** (logm)
-        hmf_200c = pyccl.halos.MassFuncTinker08(cosmo, mass_def=hmd_200c)
+        hmf_200c = pyccl.halos.MassFuncBocquet16(
+            cosmo, mass_def=hmd_200c, mass_def_strict=True, hydro=False
+        )
         nm = hmf_200c.get_mass_function(cosmo, mass, a)
         da = pyccl.background.angular_diameter_distance(cosmo, a)
         E = pyccl.background.h_over_h0(cosmo, a)
@@ -195,7 +197,7 @@ class NumberCountStat(Statistic):
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a Number Count statistic using the data from the
-        Read method, the cosmology object, and the Tinker halo mass function.
+        Read method, the cosmology object, and the Bocquet16 halo mass function.
                 Check README.MD for a complete description of the method.
 
         Parameters
@@ -212,25 +214,16 @@ class NumberCountStat(Statistic):
             An array with the theoretical prediction of the number of clusters
             in each bin of redsfhit and mass.
         """
-
+        skyarea = self.tracer_args.metadata["sky_area"]
+        DeltaOmega = skyarea * np.pi**2 / 180**2
         z_bins = self.tracer_args.z_bins
-        logm_bins = np.log10(self.tracer_args.Mproxy_bins)
+        logm_bins = self.tracer_args.Mproxy_bins
         theory_vector = []
+        masses = []
 
         def integrand(logm, z):
             return self._dmdz_dV(logm, z, cosmo)
 
-        norm = norm = (
-            1.0
-            / scipy.integrate.dblquad(
-                integrand,
-                z_bins[0],
-                z_bins[-1],
-                lambda x: logm_bins[0],
-                lambda x: logm_bins[-1],
-                epsrel=1.0e-4,
-            )[0]
-        )
         for i in range(len(z_bins) - 1):
             for j in range(len(logm_bins) - 1):
                 bin_count = scipy.integrate.dblquad(
@@ -239,8 +232,9 @@ class NumberCountStat(Statistic):
                     z_bins[i + 1],
                     lambda x: logm_bins[j],
                     lambda x: logm_bins[j + 1],
+                    epsabs=1.0e-4,
                     epsrel=1.0e-4,
                 )[0]
-                theory_vector.append(bin_count / norm)
-
+                theory_vector.append(bin_count * DeltaOmega)
+        print(np.array(self.data_vector), np.array(theory_vector))
         return np.array(self.data_vector), np.array(theory_vector)
