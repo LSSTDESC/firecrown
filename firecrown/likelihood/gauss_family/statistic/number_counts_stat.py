@@ -113,6 +113,19 @@ class NumberCountStat(Statistic):
 
         return derived_parameters
 
+    def _dv(self, z, cosmo):
+        a = 1.0 / (1.0 + z)
+        da = pyccl.background.angular_diameter_distance(cosmo, a)
+        E = pyccl.background.h_over_h0(cosmo, a)
+        dV = (
+            ((1.0 + z) ** 2)
+            * (da**2)
+            * pyccl.physical_constants.CLIGHT_HMPC
+            / cosmo["h"]
+            / E
+        )
+        return dV
+
     def _dmdz_dV(self, logm, z, cosmo):
         """
         parameters
@@ -130,7 +143,7 @@ class NumberCountStat(Statistic):
                     Number Counts pdf at z and logm.
         """
         a = 1.0 / (1.0 + z)
-        hmd_200c = pyccl.halos.MassDef(200, "critical")
+        hmd_200c = pyccl.halos.MassDef200c()
         mass = 10 ** (logm)
         hmf_200c = pyccl.halos.MassFuncBocquet16(
             cosmo, mass_def=hmd_200c, mass_def_strict=True, hydro=False
@@ -146,7 +159,6 @@ class NumberCountStat(Statistic):
             / E
         )
         integrand = nm * dV
-
         return integrand
 
     def read(self, sacc_data):
@@ -236,5 +248,4 @@ class NumberCountStat(Statistic):
                     epsrel=1.0e-4,
                 )[0]
                 theory_vector.append(bin_count * DeltaOmega)
-        print(np.array(self.data_vector), np.array(theory_vector))
         return np.array(self.data_vector), np.array(theory_vector)
