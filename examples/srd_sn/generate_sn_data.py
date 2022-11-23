@@ -56,7 +56,7 @@ def conversion(h):
     hh.columns = col
     h = hh
     h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
-    h = h.T
+    h = np.array(h.T)
     return h
 
 
@@ -120,16 +120,15 @@ else:
             os.chdir("../../")
             print("Done")
 
-            # read in the Y1 data
-            y1dat = np.loadtxt(
-                "sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt",
-                unpack=True,
-            )
-            y1cov = np.loadtxt(
-                "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
-            )
-            out_name = "srd-y1-converted"
-            # print("2. SUCESS")
+        # read in the Y1 data
+    y1dat = np.loadtxt(
+        "sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt",
+        unpack=True,
+    )
+    y1cov = np.loadtxt(
+        "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
+    )
+    # print("2. SUCESS")
 
 
 #  set up the sacc data name for the astrophysical sources involved.
@@ -159,6 +158,7 @@ print(
 # a series of strings listing which tracers apply to it
 # a value of the data point
 # a dictionary of tags, for example describing binning information
+
 
 zhel = y1dat[2]  # redshift
 zcmb = y1dat[1]  # redshift
