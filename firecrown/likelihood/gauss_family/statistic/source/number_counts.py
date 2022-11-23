@@ -15,7 +15,7 @@ from .....likelihood.likelihood import CosmologyBundle
 
 from .source import Source
 from .source import Systematic
-from .source import TracerBundle
+from .source import Tracer
 
 from .....parameters import (
     ParamsMap,
@@ -458,7 +458,7 @@ class NumberCounts(Source):
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
-        tracer_bundles = []
+        tracers = []
 
         if tracer_args.has_pt:
             nc_pt_tracer = pyccl.nl_pt.PTNumberCountsTracer(
@@ -467,20 +467,20 @@ class NumberCounts(Source):
                 bs=tracer_args.b_s,
             )
 
-            nc_dummy_tracer = pyccl.NumberCountsTracer(
+            ccl_nc_dummy_tracer = pyccl.NumberCountsTracer(
                 cosmo.ccl_cosmo,
                 has_rsd=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
                 bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
-            nc_pt_tracer_bundle = TracerBundle(
-                nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer
+            nc_pt_tracer = Tracer(
+                ccl_nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer
             )
-            tracer_bundles.append(nc_pt_tracer_bundle)
+            tracers.append(nc_pt_tracer)
 
             if tracer_args.mag_bias is not None or self.has_rsd:
                 matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
-                mag_tracer = pyccl.NumberCountsTracer(
+                ccl_mag_tracer = pyccl.NumberCountsTracer(
                     cosmo.ccl_cosmo,
                     has_rsd=self.has_rsd,
                     dndz=(tracer_args.z, tracer_args.dndz),
@@ -490,23 +490,23 @@ class NumberCounts(Source):
                 field_name = "magnification"
                 if self.has_rsd:
                     field_name += "+rsd"
-                mag_pt_tracer_bundle = TracerBundle(
-                    mag_tracer, field=field_name, pt_tracer=matter_pt_tracer
+                mag_pt_tracer = Tracer(
+                    ccl_mag_tracer, field=field_name, pt_tracer=matter_pt_tracer
                 )
-                tracer_bundles.append(mag_pt_tracer_bundle)
+                tracers.append(mag_pt_tracer)
         else:
-            nc_tracer = pyccl.NumberCountsTracer(
+            ccl_nc_tracer = pyccl.NumberCountsTracer(
                 cosmo.ccl_cosmo,
                 has_rsd=self.has_rsd,
                 dndz=(tracer_args.z, tracer_args.dndz),
                 bias=(tracer_args.z, tracer_args.bias),
                 mag_bias=tracer_args.mag_bias,
             )
-            tracer_bundles.append(TracerBundle(nc_tracer, field="galaxies"))
+            tracers.append(Tracer(ccl_nc_tracer, field="galaxies"))
 
         self.current_tracer_args = tracer_args
 
-        return tracer_bundles, tracer_args
+        return tracers, tracer_args
 
     def get_scale(self):
         assert self.current_tracer_args

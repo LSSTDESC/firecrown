@@ -12,7 +12,7 @@ import pyccl
 import pyccl.nl_pt
 from scipy.interpolate import Akima1DInterpolator
 
-from .source import Source, TracerBundle
+from .source import Source, Tracer
 from .source import Systematic
 from .....parameters import (
     ParamsMap,
@@ -411,12 +411,12 @@ class WeakLensing(Source):
         for systematic in self.systematics:
             tracer_args = systematic.apply(cosmo, tracer_args)
 
-        wl_tracer = pyccl.WeakLensingTracer(
+        ccl_wl_tracer = pyccl.WeakLensingTracer(
             cosmo.ccl_cosmo,
             dndz=(tracer_args.z, tracer_args.dndz),
             ia_bias=tracer_args.ia_bias,
         )
-        tracer_containers = [TracerBundle(wl_tracer, field="delta_matter")]
+        tracers = [Tracer(ccl_wl_tracer, field="delta_matter")]
 
         if tracer_args.has_pt:
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
@@ -426,25 +426,25 @@ class WeakLensing(Source):
             )
             matter_ia_pt_tracer = pyccl.nl_pt.PTMatterTracer()
 
-            wl_dummy_tracer = pyccl.WeakLensingTracer(
+            ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 cosmo.ccl_cosmo,
                 has_shear=False,
                 use_A_ia=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
                 ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
-            ia_tracer_container = TracerBundle(
-                wl_dummy_tracer, field="intrinsic_pt", pt_tracer=ia_pt_tracer
+            ia_tracer = Tracer(
+                ccl_wl_dummy_tracer, field="intrinsic_pt", pt_tracer=ia_pt_tracer
             )
-            matter_pt_tracer_container = TracerBundle(
-                wl_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer
+            matter_pt_tracer = Tracer(
+                ccl_wl_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer
             )
-            tracer_containers.append(ia_tracer_container)
-            tracer_containers.append(matter_pt_tracer_container)
+            tracers.append(ia_tracer)
+            tracers.append(matter_pt_tracer)
 
         self.current_tracer_args = tracer_args
 
-        return tracer_containers, tracer_args
+        return tracers, tracer_args
 
     def get_scale(self):
         assert self.current_tracer_args

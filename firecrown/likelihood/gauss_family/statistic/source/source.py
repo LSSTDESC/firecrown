@@ -37,7 +37,7 @@ class Source(Updatable):
 
     systematics: Sequence[Systematic]
     cosmo_hash: Optional[int]
-    tracers: Optional[TracerBundle]
+    tracers: Optional[Tracer]
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -87,7 +87,7 @@ class Source(Updatable):
         cosmology."""
 
     @final
-    def get_tracers(self, cosmo: CosmologyBundle) -> Sequence[TracerBundle]:
+    def get_tracers(self, cosmo: CosmologyBundle) -> Sequence[Tracer]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same
@@ -101,7 +101,7 @@ class Source(Updatable):
         return self.tracers
 
 
-class TracerBundle:
+class Tracer:
     """Bundles together a pyccl.Tracer object with optional information about the
     underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
 
