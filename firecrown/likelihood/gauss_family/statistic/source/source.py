@@ -7,7 +7,7 @@ from typing import Optional, Sequence, final
 from abc import abstractmethod
 import sacc
 
-from .....likelihood.likelihood import CosmologyBundle
+from .....likelihood.likelihood import Cosmology
 from .....parameters import ParamsMap
 from .....updatable import Updatable
 
@@ -82,12 +82,12 @@ class Source(Updatable):
         """Abstract method to return the scales for this `Source`."""
 
     @abstractmethod
-    def create_tracers(self, cosmo: CosmologyBundle):
+    def create_tracers(self, cosmo: Cosmology):
         """Abstract method to create tracers for this `Source`, for the given
         cosmology."""
 
     @final
-    def get_tracers(self, cosmo: CosmologyBundle) -> Sequence[Tracer]:
+    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same

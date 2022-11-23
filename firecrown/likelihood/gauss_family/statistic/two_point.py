@@ -13,7 +13,7 @@ import scipy.interpolate
 import pyccl
 import pyccl.nl_pt
 
-from ....likelihood.likelihood import CosmologyBundle
+from ....likelihood.likelihood import Cosmology
 
 from .statistic import Statistic
 from .source.source import Source, Systematic
@@ -284,7 +284,7 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(self, cosmo: CosmologyBundle) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 

@@ -9,7 +9,7 @@ import numpy as np
 import pyccl
 import sacc
 
-from ....likelihood.likelihood import CosmologyBundle
+from ....likelihood.likelihood import Cosmology
 
 from .statistic import Statistic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
@@ -61,7 +61,7 @@ class Supernova(Statistic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def compute(self, cosmo: CosmologyBundle) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a two-point statistic from sources."""
 
         theory_vector = self.M + pyccl.distance_modulus(cosmo.ccl_cosmo, self.a)

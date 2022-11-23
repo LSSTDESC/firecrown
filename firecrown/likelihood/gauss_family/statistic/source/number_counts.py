@@ -11,7 +11,7 @@ import numpy as np
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
-from .....likelihood.likelihood import CosmologyBundle
+from .....likelihood.likelihood import Cosmology
 
 from .source import Source
 from .source import Systematic
@@ -167,7 +167,7 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         return DerivedParameterCollection([])
 
     def apply(
-        self, cosmo: CosmologyBundle, tracer_arg: NumberCountsArgs
+        self, cosmo: Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
 
         z = tracer_arg.z
@@ -240,7 +240,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         return DerivedParameterCollection([])
 
     def apply(
-        self, cosmo: CosmologyBundle, tracer_arg: NumberCountsArgs
+        self, cosmo: Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
@@ -307,7 +307,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         return DerivedParameterCollection([])
 
     def apply(
-        self, cosmo: CosmologyBundle, tracer_arg: NumberCountsArgs
+        self, cosmo: Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
 
         return replace(
@@ -451,7 +451,7 @@ class NumberCounts(Source):
             scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
         )
 
-    def create_tracers(self, cosmo: CosmologyBundle):
+    def create_tracers(self, cosmo: Cosmology):
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
 

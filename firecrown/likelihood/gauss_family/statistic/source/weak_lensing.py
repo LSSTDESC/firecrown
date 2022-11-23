@@ -20,7 +20,7 @@ from .....parameters import (
     parameter_get_full_name,
     DerivedParameterCollection,
 )
-from .....likelihood.likelihood import CosmologyBundle
+from .....likelihood.likelihood import Cosmology
 
 from .....updatable import UpdatableCollection
 
@@ -263,7 +263,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         return DerivedParameterCollection([])
 
     def apply(
-        self, cosmo: CosmologyBundle, tracer_arg: WeakLensingArgs
+        self, cosmo: Cosmology, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
@@ -401,7 +401,7 @@ class WeakLensing(Source):
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracers(self, cosmo: CosmologyBundle):
+    def create_tracers(self, cosmo: Cosmology):
         """
         Render a source by applying systematics.
 
