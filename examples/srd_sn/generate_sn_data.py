@@ -8,7 +8,6 @@ import urllib.request
 import datetime
 import sys
 
-
 S = Sacc()
 
 
@@ -166,25 +165,25 @@ mb = y1dat[4]
 dmb = y1dat[5]
 zmu = np.vstack((zcmb, mb))
 size = int(y1cov[0])  # reading the size of the matrix from the first entry
-cov = np.zeros((size, size))
+covmat = np.zeros((size, size), dtype=float)
+np.savetxt("test_cov.txt", covmat)
 count = 1  # since the cov mat starts with the number of lines
+out_name = "srd-y1-converted"
 
 S.add_tracer("misc", "sn_ddf_sample")
 
 for i in range(size):
-
     # Add the appropriate tracer
     S.add_data_point(
         sndata_type, ("sn_ddf_sample",), mb[i], z=zcmb[i]
     )  # can add absmag=-19.9 or other tags
     for j in range(size):
-        cov[i, j] = y1cov[count]
+        covmat[i, j] = y1cov[count]
         count += 1
-
     for i in range(size):
-        cov[i, i] += (dmb[i]) ** 2
+        covmat[i, i] += (dmb[i]) ** 2
 
-S.add_covariance(cov)
+S.add_covariance(covmat)
 S.metadata["nbin_distmod"] = size
 S.metadata["simulation"] = "Y1_DDF_FOUNDATION"
 S.metadata["covmat"] = "sys_Y1_DDF_FOUNDATION_0"
