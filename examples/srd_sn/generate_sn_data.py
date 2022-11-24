@@ -7,7 +7,6 @@ import tarfile
 import urllib.request
 import datetime
 import sys
-
 S = Sacc()
 
 

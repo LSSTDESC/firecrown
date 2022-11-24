@@ -5,10 +5,11 @@ import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 import sacc
 import sys
+from typing import Dict
 
 # Sources
 
-sources = {}
+sources = {}  # type: Dict
 
 snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
 
