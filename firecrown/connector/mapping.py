@@ -208,6 +208,7 @@ class MappingCosmoSIS(Mapping):
         h = cosmosis_params["h0"]  # pylint: disable-msg=C0103
         Omega_b = cosmosis_params["omega_b"]  # pylint: disable-msg=C0103
         Omega_c = cosmosis_params["omega_c"]  # pylint: disable-msg=C0103
+        As = cosmosis_params["As"]  # pylint: disable-msg=C0103
         sigma8 = cosmosis_params.get("sigma_8", 0.8)
         n_s = cosmosis_params.get("n_s", 0.96)
         Omega_k = cosmosis_params["omega_k"]  # pylint: disable-msg=C0103
@@ -224,6 +225,7 @@ class MappingCosmoSIS(Mapping):
             Omega_c=Omega_c,
             Omega_b=Omega_b,
             h=h,
+            A_s=As,
             sigma8=sigma8,
             n_s=n_s,
             Omega_k=Omega_k,
