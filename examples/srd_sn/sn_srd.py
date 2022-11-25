@@ -1,14 +1,14 @@
 #!/usr/bin/env python
 
 import os
-import firecrown.likelihood.gauss_family.statistic.supernova as sn
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
-import sacc
+import firecrown.likelihood.gauss_family.statistic.supernova as sn  # type: ignore
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian  # type: ignore
+from typing import Dict
+import sacc  # type: ignore
 
 # Sources
 
-sources = {}
+sources = {}  # type: Dict
 
 snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
 
