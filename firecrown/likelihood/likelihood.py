@@ -18,8 +18,8 @@ import os
 import sys
 import numpy as np
 import numpy.typing as npt
-import pyccl
-import sacc
+import pyccl # type: ignore
+import sacc # type: ignore
 
 from ..updatable import Updatable, UpdatableCollection
 

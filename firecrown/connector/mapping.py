@@ -14,8 +14,8 @@ from abc import ABC, abstractmethod
 from typing import Type, List, Dict, final, Any
 import typing
 import numpy as np
-from pyccl import physical_constants as physics
-import cosmosis.datablock
+from pyccl import physical_constants as physics # type: ignore
+import cosmosis.datablock # type: ignore
 from ..descriptors import TypeFloat, TypeString
 
 
@@ -208,7 +208,7 @@ class MappingCosmoSIS(Mapping):
         h = cosmosis_params["h0"]  # pylint: disable-msg=C0103
         Omega_b = cosmosis_params["omega_b"]  # pylint: disable-msg=C0103
         Omega_c = cosmosis_params["omega_c"]  # pylint: disable-msg=C0103
-        As = cosmosis_params["As"]  # pylint: disable-msg=C0103
+        As = cosmosis_params.get("a_s",2.1e-9)  # pylint: disable-msg=C0103
         sigma8 = cosmosis_params.get("sigma_8", 0.8)
         n_s = cosmosis_params.get("n_s", 0.96)
         Omega_k = cosmosis_params["omega_k"]  # pylint: disable-msg=C0103
