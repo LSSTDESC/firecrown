@@ -78,8 +78,8 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: float = None,
-        sigma8: float = None,
+        A_s: float = None,  # type: ignore
+        sigma8: float = None,  # type: ignore
         n_s: float,
         Omega_k: float,
         Neff: float,
