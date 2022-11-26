@@ -69,8 +69,6 @@ if len(sys.argv) == 4:
         y1dat = np.array(y1dat).astype(float).T
     else:
         y1dat = conversion(y1dat)
-    out_name = cov
-    # print("1. SUCESS")
 else:
     dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
     dirname_year10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
@@ -127,7 +125,6 @@ else:
     y1cov = np.loadtxt(
         "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
     )
-    # print("2. SUCESS")
 
 
 #  set up the sacc data name for the astrophysical sources involved.
@@ -166,7 +163,6 @@ dmb = y1dat[5]
 zmu = np.vstack((zcmb, mb))
 size = int(y1cov[0])  # reading the size of the matrix from the first entry
 covmat = np.zeros((size, size), dtype=float)
-np.savetxt("test_cov.txt", covmat)
 count = 1  # since the cov mat starts with the number of lines
 out_name = "srd-y1-converted"
 
