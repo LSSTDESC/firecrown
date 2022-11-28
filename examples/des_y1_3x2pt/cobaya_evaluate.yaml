@@ -17,9 +17,6 @@ likelihood:
     - TwoPoint__NumberCountsScale_lens2
     - TwoPoint__NumberCountsScale_lens3
     - TwoPoint__NumberCountsScale_lens4
-    build_parameters:
-      test_parameter: 1.0
-      anotherthing: True
 params:
   As:
     prior:
