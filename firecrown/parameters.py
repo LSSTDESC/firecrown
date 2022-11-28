@@ -37,11 +37,11 @@ class ParamsMap(Dict[str, float]):
     with square brackets like x[].
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         self.lower_case: bool = False
 
-    def use_lower_case_keys(self, enable: bool):
+    def use_lower_case_keys(self, enable: bool) -> None:
         self.lower_case = enable
 
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:

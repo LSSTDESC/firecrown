@@ -1,3 +1,5 @@
 from . import lkmodule
 
-likelihood = lkmodule.empty_likelihood()
+
+def build_likelihood(_):
+    return lkmodule.empty_likelihood()

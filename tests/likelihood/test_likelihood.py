@@ -10,4 +10,4 @@ def test_load_likelihood_submodule():
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
-    load_likelihood(os.path.join(dir_path, "lkdir/lkscript.py"))
+    load_likelihood(os.path.join(dir_path, "lkdir/lkscript.py"), {})

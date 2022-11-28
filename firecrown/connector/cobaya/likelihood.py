@@ -5,8 +5,9 @@ Module for providing a likelihood for use in Cobaya.
 This module provides the class :class:`LikelihoodConnector`, which is an implementation
 of a Cobaya likelihood.
 """
-from typing import List, Dict
+from typing import List, Dict, Union
 
+import numpy as np
 from cobaya.likelihood import Likelihood
 
 from firecrown.likelihood.likelihood import load_likelihood
@@ -16,13 +17,19 @@ from firecrown.parameters import ParamsMap
 class LikelihoodConnector(Likelihood):
     """A class implementing cobaya.likelihood.Likelihood."""
 
-    firecrownIni = None
+    likelihood: Likelihood
+    firecrownIni: str
     derived_parameters: List[str] = []
+    build_parameters: Dict[str, Union[str, int, bool, float, np.ndarray]]
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown
         configuration."""
-        self.likelihood = load_likelihood(self.firecrownIni)
+        if not hasattr(self, "build_parameters"):
+            build_parameters = {}
+        else:
+            build_parameters = self.build_parameters
+        self.likelihood = load_likelihood(self.firecrownIni, build_parameters)
 
     def get_param(self, p: str):
         """Return the current value of the parameter named 'p'."""
