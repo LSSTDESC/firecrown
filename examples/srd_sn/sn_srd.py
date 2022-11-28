@@ -3,13 +3,12 @@
 import os
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from typing import Dict
 import sacc
 
 
 def build_likelihood(_):
     """
-        Here we instantiate the necessary statistic object to deal with SNIa data.
+    Here we instantiate the necessary statistic object to deal with SNIa data.
     """
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
     """
@@ -38,4 +37,3 @@ def build_likelihood(_):
         will call the factory function that should return a Likelihood instance.
     """
     return lk
-

@@ -62,7 +62,9 @@ def build_likelihood(_):
         """
             The source is created and saved (temporarely in the sources dict).
         """
-        sources[f"lens{i}"] = nc.NumberCounts(sacc_tracer=f"lens{i}", systematics=[pzshift], derived_scale=True)
+        sources[f"lens{i}"] = nc.NumberCounts(
+            sacc_tracer=f"lens{i}", systematics=[pzshift], derived_scale=True
+        )
 
     """
         Now that we have all sources we can instantiate all the two-point

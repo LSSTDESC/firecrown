@@ -1,8 +1,8 @@
-import sacc  # type: ignore
+import sacc
 from sacc import Sacc
 import os
 import numpy as np
-import pandas as pd  # type: ignore
+import pandas as pd
 import tarfile
 import urllib.request
 import datetime
