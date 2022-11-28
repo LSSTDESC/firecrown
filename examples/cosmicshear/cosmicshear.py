@@ -12,9 +12,9 @@ import sacc
 
 def build_likelihood(_):
     """
-        Creating sources, each one maps to a specific section of a SACC file. In
-        this case trc0, trc1 describe weak-lensing probes. The sources are saved
-        in a dictionary since they will be used by one or more two-point function.
+    Creating sources, each one maps to a specific section of a SACC file. In
+    this case trc0, trc1 describe weak-lensing probes. The sources are saved
+    in a dictionary since they will be used by one or more two-point function.
     """
     sources = {}
 
@@ -31,7 +31,9 @@ def build_likelihood(_):
             theoretical prediction for that section of the data, given the
             systematics.
         """
-        sources[f"trc{i}"] = wl.WeakLensing(sacc_tracer=f"trc{i}", systematics=[pzshift])
+        sources[f"trc{i}"] = wl.WeakLensing(
+            sacc_tracer=f"trc{i}", systematics=[pzshift]
+        )
 
     """
         Now that we have all sources we can instantiate all the two-point
