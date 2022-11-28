@@ -38,13 +38,13 @@ class Updatable(ABC):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Updatable initialization."""
         self._updated: bool = False
         self._returned_derived: bool = False
         self._sampler_parameters: Dict[str, SamplerParameter] = {}
         self._internal_parameters: Dict[str, InternalParameter] = {}
-        self.sacc_tracer = None
+        self.sacc_tracer: Optional[str] = None
 
     def __setattr__(self, key, value):
         if isinstance(value, SamplerParameter):

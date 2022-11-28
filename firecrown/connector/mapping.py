@@ -11,7 +11,7 @@ Each supported body of code has its own dedicated class.
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, List, Dict, final, Any
+from typing import Type, List, Dict, Optional, final, Any
 import typing
 import numpy as np
 from pyccl import physical_constants as physics
@@ -78,8 +78,8 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: float = None,
-        sigma8: float = None,
+        A_s: Optional[float] = None,
+        sigma8: Optional[float] = None,
         n_s: float,
         Omega_k: float,
         Neff: float,

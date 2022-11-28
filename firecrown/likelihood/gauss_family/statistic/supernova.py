@@ -18,12 +18,12 @@ class Supernova(Statistic):
     """A statistic that applies an additive shift M to a supernova's distance
     modulus."""
 
-    def __init__(self, sacc_tracer):
+    def __init__(self, sacc_tracer) -> None:
         """Initialize this statistic."""
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
-        self.data_vector = None
+        self.data_vector: Optional[np.ndarray] = None
         self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
         self.M = parameters.create()  # pylint: disable-msg=invalid-name
 

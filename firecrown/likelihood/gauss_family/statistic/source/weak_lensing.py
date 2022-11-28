@@ -51,7 +51,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     """
 
-    def __init__(self, sacc_tracer: str):
+    def __init__(self, sacc_tracer: str) -> None:
         """Create a MultiplicativeShearBias object that uses the named tracer.
         Parameters
         ----------
