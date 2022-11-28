@@ -3,7 +3,7 @@
 import os
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
+from typing import Dict
 import sacc
 
 
@@ -12,7 +12,6 @@ def build_likelihood(_):
         Here we instantiate the necessary statistic object to deal with SNIa data.
     """
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
-
     """
         Here we instantiate the actual likelihood. The statistics argument carry
         the order of the data/theory vector.
