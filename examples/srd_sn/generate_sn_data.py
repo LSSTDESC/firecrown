@@ -8,7 +8,6 @@ import urllib.request
 import datetime
 import sys
 
-
 S = Sacc()
 
 
@@ -49,10 +48,14 @@ def conversion(h):
     colu = 13
     join = np.zeros((row, colu))
     hh = pd.DataFrame(np.concatenate([h, join], axis=1))
+    if np.shape(hh)[1] < 19:
+        diff = int(19 - np.shape(hh)[1])
+        for i in reversed(range(diff)):
+            hh.insert(np.shape(hh)[1], " ", np.zeros(np.shape(hh)[0]))
     hh.columns = col
     h = hh
     h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
-    h = h.T
+    h = np.array(h.T)
     return h
 
 
@@ -66,7 +69,6 @@ if len(sys.argv) == 4:
         y1dat = np.array(y1dat).astype(float).T
     else:
         y1dat = conversion(y1dat)
-    # print("1. SUCESS")
 else:
     dirname_year1 = "sndata/Y1_DDF_FOUNDATION"
     dirname_year10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
@@ -115,15 +117,14 @@ else:
             os.chdir("../../")
             print("Done")
 
-            # read in the Y1 data
-            y1dat = np.loadtxt(
-                "sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt",
-                unpack=True,
-            )
-            y1cov = np.loadtxt(
-                "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
-            )
-            # print("2. SUCESS")
+        # read in the Y1 data
+    y1dat = np.loadtxt(
+        "sndata/Y1_DDF_FOUNDATION/lcparam_Y1_DDF_1.0xFOUNDATION_noScatter.txt",
+        unpack=True,
+    )
+    y1cov = np.loadtxt(
+        "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
+    )
 
 
 #  set up the sacc data name for the astrophysical sources involved.
@@ -154,37 +155,36 @@ print(
 # a value of the data point
 # a dictionary of tags, for example describing binning information
 
+
 zhel = y1dat[2]  # redshift
 zcmb = y1dat[1]  # redshift
 mb = y1dat[4]
 dmb = y1dat[5]
 zmu = np.vstack((zcmb, mb))
 size = int(y1cov[0])  # reading the size of the matrix from the first entry
-cov = np.zeros((size, size))
+covmat = np.zeros((size, size), dtype=float)
 count = 1  # since the cov mat starts with the number of lines
+out_name = "srd-y1-converted"
 
 S.add_tracer("misc", "sn_ddf_sample")
 
 for i in range(size):
-
     # Add the appropriate tracer
     S.add_data_point(
         sndata_type, ("sn_ddf_sample",), mb[i], z=zcmb[i]
     )  # can add absmag=-19.9 or other tags
     for j in range(size):
-        cov[i, j] = y1cov[count]
+        covmat[i, j] = y1cov[count]
         count += 1
-
     for i in range(size):
-        cov[i, i] += (dmb[i]) ** 2
+        covmat[i, i] += (dmb[i]) ** 2
 
-S.add_covariance(cov)
+S.add_covariance(covmat)
 S.metadata["nbin_distmod"] = size
 S.metadata["simulation"] = "Y1_DDF_FOUNDATION"
 S.metadata["covmat"] = "sys_Y1_DDF_FOUNDATION_0"
 S.metadata["creation"] = datetime.datetime.now().isoformat()
 S.metadata["info"] = "SN data sets"
-S.save_fits("srd-y1-converted.sacc", overwrite=True)
-
+S.save_fits(out_name + ".sacc", overwrite=True)
 # modify this to have interpolation hubble diagrams
 # bias corrections depend on cosmology - systematic vector
