@@ -29,6 +29,10 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "counts": "nz",
 }
 
+SACC_TRACER_NAMES = {
+    "cluster_counts_true_mass": "tm",
+}
+
 
 class NumberCountStatsArgs:
     """Class for number counts tracer builder argument."""
@@ -73,7 +77,7 @@ class NumberCountStat(Statistic):
     theory_vector
         A list with the theoretical prediction of the number of clusters in each bin
         of redshift and Mproxy. Set after `compute` is called.
-    inds : list of str
+    sacc_inds : list of str
         A list with the indices for the data vector that corresponds to the type of data
         provided in the SACC file. Set after `read` is called.
     """
@@ -94,11 +98,19 @@ class NumberCountStat(Statistic):
         self.data_vector = None
         self.theory_vector = None
         self.massfunc = massfunc
+
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
+            )
+
+        if self.sacc_tracer in SACC_TRACER_NAMES:
+            self.tracer_name = SACC_TRACER_NAMES[self.sacc_tracer]
+        else:
+            raise ValueError(
+                f"The SACC tracer name {sacc_tracer}'%s' is not " f"supported!"
             )
 
     def _reset(self) -> None:
@@ -208,26 +220,12 @@ class NumberCountStat(Statistic):
             The data in the sacc format.
         """
 
-        tracer = sacc_data.get_tracer(
-            self.sacc_tracer
-        )  # Get tracer passed from the user
-        metadata = (
-            tracer.metadata
-        )  # Given the tracer, here is all the metadata we need.
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        metadata = tracer.metadata
 
-        # print(f"a{metadata['z_type']}")
-        dts = (
-            sacc_data.get_data_types()
-        )  # This get the type of data. It is different than the type of tracer
-        # print(dts)
-        tracer_sets = sacc_data.get_tracer_combinations(
-            dts[0]
-        )  # All the tracers in the data
-        # print(tracer_sets, type(tracer_sets[0]))
         nz = sacc_data.get_mean(
-            dts[0], tracer_sets[0]
-        )  # The values of the data. THe number count in each bin
-        # print(dat)
+            data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
+        )
         self.tracer_args = NumberCountStatsArgs(
             tracers=tracer,
             z_bins=metadata["z_edges"],
@@ -236,11 +234,10 @@ class NumberCountStat(Statistic):
             metadata=metadata,
         )
 
-        tracer_indice = (self.sacc_tracer,)
-        self.sacc_inds = np.atleast_1d(
-            sacc_data.indices("cluster_mass_count_wl", tracer_indice)
-        )
         self.data_vector = nz
+        self.sacc_inds = sacc_data.indices(
+            data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
+        )
 
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
         """Compute a Number Count statistic using the data from the

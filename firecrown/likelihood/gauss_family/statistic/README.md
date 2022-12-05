@@ -2,21 +2,24 @@
 
 The Number Counts statistics object needs to be initialized with a SACC file in the right format. An example of how to create a file in such format can be found in `firecrown/examples/number_counts/Generating Cluster Data.ipynb`. Here we discuss how the file must be created.
 
-The user must provide a SACC file that only has one tracer, which shall be called `cluster_counts_true_mass`. So far, firecrown only has the implementation for real mass and real redshift. More options will be provided in the future. The tracer must be added as being the type `misc` and should be created with a directory to be added under `metadata`.
+The user must provide a SACC file that has at least one tracer that shall be called `cluster_counts_true_mass`. So far, firecrown only has the implementation for real mass and real redshift. More options will be provided in the future. The tracer must be added as being the type `misc` and should be created with a directory to be added under `metadata`.
 
 The metadata dictionary must be created with:
 *`Mproxy_type: 'true_mass'`. A `str` that represents the type of proxy. So far there is only the `true_mass` option.
-*`Mproxy_edges : m_edges`. A `list` of `floats` with the proxy bins.
+*`Mproxy_edges : m_edges`. A `list` of `floats` with the proxy bins. The mass should be in
+logaritimic scale, that is, log(M), being M in units of solar mass.
 *`z_type : 'true_redshift'`. A string that represents the type of redshift. So far there is only the `true_redshift` option.
 *`z_edges : z_edges`. A `list` of `floats` with the redshift bins.
-*`sky_area: 439.78986`. A `float` with the sky area.  
+*`sky_area: 439.78986`. A `float` with the sky area. Units of degrees. 
 
 With the metadata, the `add_tracer` function must be called as
 ```
 s_count.add_tracer('misc', 'cluster_counts_true_mass', metadata=metadata).
 ```
 
- Having the tracer, the user must call the `add_data` function for all the data points using the same tracer. The data should be the number of clusters in each bin of redsfhit and proxy. The order of the data is really important: the user must add the data for each redshift bin and then for the proxy bins. Example, for 3 bins of mass: data1 = (z_bin=0, proxy_bin = 0), data2 = (z_bin=0, proxy_bin = 1), data3 =(z_bin=0, proxy_bin = 2), data4 = (z_bin=1, proxy_bin = 0), etc.
+ Having the tracer, the user must call the `add_data` function for all the data points using the same tracer. The data should be the number of clusters in each bin of redsfhit and proxy. The order of the data is really important: the user
+must add the data for each redshift bin iterating then over the proxy bins, that is, filling a row-major (z, proxy) matrix.
+
 The function to call the data must be such as
 ```
 cluster_count = sacc.standard_types.cluster_mass_count_wl
@@ -34,7 +37,6 @@ In the above, the `cluster_count` variable represents the type of data point. Th
  s_count.to_canonical_order()
  s_count.save_fits("clusters.sacc", overwrite=True)
  ```
-Other than the Number counts data, there should not be other tracers or data in the file.
 
 # Documentation for number_counts_stats.py
 
@@ -55,7 +57,7 @@ After the information is extracted, the `data.value` is stored as the `self.data
 
 Other than the Number counts data, there should not be other tracers or data in the file.
 
-##Compute function
+## Compute function
 
 This function utilizes the data from the `read` method to compute a theoretical prediction of the cluster number counts in each bin. This implementation takes a `pyccl.Cosmology` and utilizes the
 `pyccl.halos.MassFuncBocquet16` as the dark matter halo mass function to compute the theoretical prediction.
