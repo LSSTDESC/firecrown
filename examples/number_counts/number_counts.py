@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
 import os
-
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 
@@ -11,8 +10,7 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
-
-stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl')
+stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc=['bocquet16', True])
 stats = [stats]
 """
     Here we instantiate the actual likelihood. The statistics argument carry
