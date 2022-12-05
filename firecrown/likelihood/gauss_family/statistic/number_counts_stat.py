@@ -148,8 +148,8 @@ class NumberCountStat(Statistic):
         integrand : float
                     Number Counts pdf at z and logm.
         """
-        s = 0# 0.037 #-0.1080622 
-        q = 1#1.008 #0.98730224
+        s = 0  # 0.037 #-0.1080622
+        q = 1  # 1.008 #0.98730224
         a = 1.0 / (1.0 + z)
         mass = 10 ** (logm)
         if self.massfunc[0] == "emulator":
@@ -268,30 +268,30 @@ class NumberCountStat(Statistic):
         logm_bins = self.tracer_args.Mproxy_bins
         theory_vector = []
 
-#        def integrand(x):
-#            test = []
-#            for a in x:
-#                logm = a[0].item()
-#                z = a[1].item()
-#                value = self._dmdz_dV(logm, z, cosmo)
-#                test.append(torch.tensor(value))
-#            return test
+        #        def integrand(x):
+        #            test = []
+        #            for a in x:
+        #                logm = a[0].item()
+        #                z = a[1].item()
+        #                value = self._dmdz_dV(logm, z, cosmo)
+        #                test.append(torch.tensor(value))
+        #            return test
 
-#        sp = Simpson()
-#        for i in range(len(z_bins) - 1):
-#            for j in range(len(logm_bins) - 1):
-#                bin_count = sp.integrate(
-#                    integrand,
-#                    N=11,
-#                    dim=2,
-#                    integration_domain=[
-#                        [logm_bins[j], logm_bins[j + 1]],
-#                        [z_bins[i], z_bins[i + 1]],
-#                    ],
-#                    backend="torch",
-#                )
-#                bin_count = bin_count.item()
-#                theory_vector.append(bin_count * DeltaOmega)
+        #        sp = Simpson()
+        #        for i in range(len(z_bins) - 1):
+        #            for j in range(len(logm_bins) - 1):
+        #                bin_count = sp.integrate(
+        #                    integrand,
+        #                    N=11,
+        #                    dim=2,
+        #                    integration_domain=[
+        #                        [logm_bins[j], logm_bins[j + 1]],
+        #                        [z_bins[i], z_bins[i + 1]],
+        #                    ],
+        #                    backend="torch",
+        #                )
+        #                bin_count = bin_count.item()
+        #                theory_vector.append(bin_count * DeltaOmega)
         def integrand(logm, z):
             return self._dmdz_dV(logm, z, cosmo)
 
