@@ -58,7 +58,7 @@ class CriticalDensity(NumberDensity):
         nm = hmf_200c.get_mass_function(cosmo, mass, a)
         return nm
 
-    def compute_volume(self, cosmo: pyccl.Cosmology, z) -> float:
+    def compute_volume_density(self, cosmo: pyccl.Cosmology, z) -> float:
         """
         parameters
 

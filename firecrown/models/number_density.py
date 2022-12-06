@@ -15,7 +15,6 @@ from __future__ import annotations
 import pyccl
 from abc import ABC, abstractmethod
 
-
 class NumberDensity(ABC):
     def __init__(self) -> None:
         self.density_func_type: str = None
