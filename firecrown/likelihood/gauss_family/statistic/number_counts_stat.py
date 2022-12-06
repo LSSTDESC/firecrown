@@ -184,7 +184,7 @@ class NumberCountStat(Statistic):
         theory_vector = []
 
         def integrand(logm, z):
-            nm = self.number_density_func.compute_number_density(cosmo,logm, z)
+            nm = self.number_density_func.compute_number_density(cosmo, logm, z)
             dv = self.number_density_func.compute_volume(cosmo, z)
             return nm * dv
 
