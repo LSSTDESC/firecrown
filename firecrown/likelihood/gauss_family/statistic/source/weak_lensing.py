@@ -290,23 +290,7 @@ class TATTSystematic(WeakLensingPTSystematic):
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingPTArgs
     ) -> WeakLensingPTArgs:
-        """Return a new linear alignment systematic, based on the given
-        tracer_arg, in the context of the given cosmology."""
-
-        pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag - 1.0
-        )
-        c1_array = pref * self.ia_bias
-        cdelta_array = c1_array * self.ia_bias_ta
-        
-        pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz_2
-        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag_2 - 2.0
-        )
-
-        c2_array = pref * self.ia_bias_2
-
+        c1_array, cdelta_array, c2_array = pyccl.nl_pt.translate_IA_norm(cosmo, tracer_arg.z, a1=self.ia_bias, a1delta=self.ia_bias_ta, a2=self.ia_bias_2, Om_m2_for_c2=False)
         return WeakLensingPTArgs(
             scale=tracer_arg.scale,
             z=tracer_arg.z,
@@ -463,10 +447,10 @@ class WeakLensingPT(SourcePT):
         tracer_args = self.tracer_args
 
         for systematic in self.systematics:
-            if not isinstance(WeakLensingPTSystematic):
+            if not isinstance(systematic, WeakLensingPTSystematic):
                 tracer_args = systematic.apply(cosmo, tracer_args)
 
-        tracer = pyccl.WeakLensingTracer(cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=None)
+        tracer = pyccl.WeakLensingTracer(cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=None,use_A_ia=False)
 
         self.current_tracer_args = tracer_args
 
@@ -481,10 +465,10 @@ class WeakLensingPT(SourcePT):
         pttracer_args = self.pttracer_args
 
         for systematic in self.systematics:
-            if  isinstance(WeakLensingPTSystematic):
+            if  isinstance(systematic,WeakLensingPTSystematic):
                 pttracer_args = systematic.apply(cosmo, pttracer_args)
 
-        pttracer = pyccl.PTIntrinsicAlignmentTracer( c1=tracer_args.c1, c2 = tracer_args.c2, cdelta=tracer_args.cdelta)
+        pttracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer( c1=pttracer_args.c1, c2 = pttracer_args.c2, cdelta=pttracer_args.cdelta)
 
         self.current_pttracer_args = pttracer_args
 
@@ -500,10 +484,10 @@ class WeakLensingPT(SourcePT):
 
 
         for systematic in self.systematics:
-            if not isinstance(WeakLensingPTSystematic):
-                pt_tracer_args = systematic.apply(cosmo, tracer_args)
+            if not isinstance(systematic,WeakLensingPTSystematic):
+                pt_tracer_args = systematic.apply(cosmo, pt_tracer_args)
 
-        pt_tracer = pyccl.WeakLensingTracer(cosmo, has_shear=False, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=(z, np.ones_like(z)))
+        pt_tracer = pyccl.WeakLensingTracer(cosmo, has_shear=False, dndz=(pt_tracer_args.z, pt_tracer_args.dndz), ia_bias=(pt_tracer_args.z, np.ones_like(pt_tracer_args.z)),use_A_ia=False)
 
         self.current_pt_tracer_args = pt_tracer_args
 

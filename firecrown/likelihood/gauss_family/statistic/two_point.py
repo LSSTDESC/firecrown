@@ -14,7 +14,7 @@ import pyccl
 import pyccl.nl_pt
 
 from .statistic import Statistic
-from .source.source import Source, Systematic
+from .source.source import Source, Systematic, SourcePT
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, any thing else will throw
@@ -165,15 +165,15 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.pt_calc=pt.calc
+        self.pt_calc=pt_calc
 
-        if (self.pt_calc==None and ((isinstance(source0, SourcePT)) or (isinstance(source0, SourcePT)) )):
+        if (self.pt_calc==None and ((isinstance(source0, SourcePT)) or (isinstance(source1, SourcePT)) )):
             raise ValueError(
                 f"Calling PT calculations without passing a PTCalculator"
             )
 
 
-        if (self.pt_calc != None and ((not isinstance(source0, SourcePT)) or (not isinstance(source0, SourcePT)))):
+        if (self.pt_calc != None and ((not isinstance(source0, SourcePT)) and (not isinstance(source1, SourcePT)))):
             raise ValueError(
                 f"Passing a PTCalculator without specifying which sources calculate PT (i.e. need to set either/both source_0_pt and source_1_pt to True)"
             )
@@ -308,12 +308,12 @@ class TwoPoint(Statistic):
             self.ells = _ell_for_xi(**self.ell_for_xi)
         self.cells = {}
         
+        print(isinstance(self.source0, SourcePT),isinstance(self.source1, SourcePT))
 
+        if (((not isinstance(self.source0, SourcePT)) and (not isinstance(self.source1, SourcePT)))):
 
-        if (((not isinstance(source0, SourcePT)) and (not isinstance(source0, SourcePT)))):
-
-            tracers0 = self.source0.get_tracer(cosmo)
-            tracers1 = self.source1.get_tracer(cosmo)
+            tracer0 = self.source0.get_tracer(cosmo)
+            tracer1 = self.source1.get_tracer(cosmo)
             scale = self.source0.get_scale() * self.source1.get_scale()
         
             if self.ccl_kind == "cl":
@@ -326,7 +326,7 @@ class TwoPoint(Statistic):
                     )
 
             else:
-                ells = _ell_for_xi(**self.ell_for_xi)
+                ells = self.ells
                 cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
                 theory_vector = (
                     pyccl.correlation(
@@ -335,44 +335,79 @@ class TwoPoint(Statistic):
                     * scale
                 )        
 
-        elif (((isinstance(source0, SourcePT)) or (isinstance(source0, SourcePT)))):
-
+        elif (((isinstance(self.source0, SourcePT)) and (not isinstance(self.source1, SourcePT))) or ((isinstance(self.source1, SourcePT)) and (not isinstance(self.source0, SourcePT))) ):
             #changing notation such that source0 is always the SourcePT object
-            if isinstance(source1, SourcePT):
-                temp_source = self.source0
-                self.source0 = self.source1
-                self.source1 = temp_source
+            print("testing swap", isinstance(self.source0, SourcePT), isinstance(self.source1, SourcePT))
+            if isinstance(self.source0, SourcePT):
 
-            ptt_m = pyccl.nl_pt.PTMatterTracer()
+                ptt_m = pyccl.nl_pt.PTMatterTracer()
 
-            tracers0 = self.source0.get_tracer(cosmo)
-            tracers1 = self.source1.get_tracer(cosmo)
-            scale0 = self.source0.get_scale(cosmo)
-            scale1 = self.source1.get_scale(cosmo)
+                tracers0 = self.source0.get_tracer(cosmo)
+                tracers1 = self.source1.get_tracer(cosmo)
+                scale0 = self.source0.get_scale()
+                scale1 = self.source1.get_scale()
 
-            pt_tracers0 = self.source0.get_pt_tracer(cosmo)
-            pt_scale0 = self.source0.get_pt_scale(cosmo)
+                pt_tracers0 = self.source0.get_pt_tracer(cosmo)
+                pt_scale0 = self.source0.get_pt_scale()
 
-        
-            pttracers0 = self.source0.get_pttracer(cosmo)
-            ptscale0 = self.source0.get_ptscale(cosmo)
+            
+                pttracers0 = self.source0.get_pttracer(cosmo)
+                ptscale0 = self.source0.get_ptscale()
 
-            withNC = False
-            withIA = False
-            if (pttracers0.type == 'NC'): withNC=True
-            if (pttracers0.type == 'IA'): withIA=True
-            ptc = pt_calc(with_NC=withNC, with_IA=withIA,
-                      log10k_min=-4, log10k_max=2, nk_per_decade=20)
-            pk_0m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, tracer2=ptt_m, ptc=ptc)
+                withNC = False
+                withIA = False
+                if (pttracers0.type == 'NC'): withNC=True
+                if (pttracers0.type == 'IA'): withIA=True
+                #ptc = self.pt_calc(with_NC=withNC, with_IA=withIA,
+                #          log10k_min=-4, log10k_max=2, nk_per_decade=20)
+                pk_0m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, tracer2=ptt_m, ptc=self.pt_calc)
 
 
-            if self.ccl_kind == "cl":
-                theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers0, tracers1, ell, p_of_k_a=pk_0m))*pt_scale0*ptscale0*scale1
-                theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, ell))*scale0*scale1       
+                
+                theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers0, tracers1, self.ells, p_of_k_a=pk_0m))*pt_scale0*ptscale0*scale1
+                theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, self.ells))*scale0*scale1       
 
+                if not self.ccl_kind == "cl":
+                    theory_vector = (
+                        pyccl.correlation(
+                            cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
+                        )
+                    )
             else:
-                raise ValueError("Not yet implemented!")
 
+                ptt_m = pyccl.nl_pt.PTMatterTracer()
+
+                tracers1 = self.source1.get_tracer(cosmo)
+                tracers0 = self.source0.get_tracer(cosmo)
+                scale1 = self.source1.get_scale()
+                scale0 = self.source0.get_scale()
+
+                pt_tracers1 = self.source1.get_pt_tracer(cosmo)
+                pt_scale1 = self.source1.get_pt_scale()
+
+            
+                pttracers1 = self.source1.get_pttracer(cosmo)
+                ptscale1 = self.source1.get_ptscale()
+
+                withNC = False
+                withIA = False
+                if (pttracers1.type == 'NC'): withNC=True
+                if (pttracers1.type == 'IA'): withIA=True
+                #ptc = self.pt_calc(with_NC=withNC, with_IA=withIA,
+                #          log10k_min=-4, log10k_max=2, nk_per_decade=20)
+                pk_1m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers1, tracer2=ptt_m, ptc=self.pt_calc)
+
+
+                
+                theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers1, tracers0, self.ells, p_of_k_a=pk_1m))*pt_scale1*ptscale1*scale0
+                theory_vector += np.array(pyccl.angular_cl(cosmo, tracers1, tracers0, self.ells))*scale0*scale1
+
+                if not self.ccl_kind == "cl":
+                    theory_vector = (
+                        pyccl.correlation(
+                            cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
+                        )
+                    )
         else:
 
             ptt_m = pyccl.nl_pt.PTMatterTracer()
@@ -380,40 +415,44 @@ class TwoPoint(Statistic):
 
             tracers0 = self.source0.get_tracer(cosmo)
             tracers1 = self.source1.get_tracer(cosmo)
-            scale0 = self.source0.get_scale(cosmo)
-            scale1 = self.source1.get_scale(cosmo)
+            scale0 = self.source0.get_scale()
+            scale1 = self.source1.get_scale()
 
             pt_tracers0 = self.source0.get_pt_tracer(cosmo)
             pt_tracers1 = self.source1.get_pt_tracer(cosmo)
-            pt_scale0 = self.source0.get_pt_scale(cosmo)
-            pt_scale1 = self.source1.get_pt_scale(cosmo)
+            pt_scale0 = self.source0.get_pt_scale()
+            pt_scale1 = self.source1.get_pt_scale()
 
         
             pttracers0 = self.source0.get_pttracer(cosmo)
-            ptracers1 = self.source1.get_pttracer(cosmo)
-            ptscale0 = self.source0.get_ptscale(cosmo)
-            ptscale1 = self.source1.get_ptscale(cosmo)
+            pttracers1 = self.source1.get_pttracer(cosmo)
+            ptscale0 = self.source0.get_ptscale()
+            ptscale1 = self.source1.get_ptscale()
 
             withNC = False
             withIA = False
             if (pttracers0.type == 'NC' or pttracers1.type == 'NC'): withNC=True
             if (pttracers0.type == 'IA' or pttracers1.type == 'IA'): withIA=True
-            ptc = pt_calc(with_NC=withNC, with_IA=withIA,
-                      log10k_min=-4, log10k_max=2, nk_per_decade=20)
-            pk_0m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, tracer2=ptt_m, ptc=ptc)
-            pk_1m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers1, tracer2=ptt_m, ptc=ptc)
-            pk_01 = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, pttracers1, ptc=ptc)
+            #ptc = self.pt_calc(with_NC=withNC, with_IA=withIA,
+            #          log10k_min=-4, log10k_max=2, nk_per_decade=20)
+            pk_0m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, tracer2=ptt_m, ptc=self.pt_calc)
+            pk_1m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers1, tracer2=ptt_m, ptc=self.pt_calc)
+            pk_01 = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, pttracers1, ptc=self.pt_calc)
 
-            if self.ccl_kind == "cl":
+            #if self.ccl_kind == "cl":
 
-                theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers0, pt_tracers1, ell, p_of_k_a=pk_01))*pt_scale0*ptscale0*pt_scale1*ptscale1
-                theory_vector += np.array(pyccl.angular_cl(cosmo, pt_tracers0, tracers1, ell, p_of_k_a=pk_0m))*pt_scale0*ptscale0*scale1
-                theory_vector += np.array(pyccl.angular_cl(cosmo, pt_tracers1, tracers0, ell, p_of_k_a=pk_1m))*pt_scale1*ptscale1*scale0
-                theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, ell))*scale0*scale1
+            theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers0, pt_tracers1, self.ells, p_of_k_a=pk_01))*pt_scale0*ptscale0*pt_scale1*ptscale1
+            theory_vector += np.array(pyccl.angular_cl(cosmo, pt_tracers0, tracers1, self.ells, p_of_k_a=pk_0m))*pt_scale0*ptscale0*scale1
+            theory_vector += np.array(pyccl.angular_cl(cosmo, pt_tracers1, tracers0, self.ells, p_of_k_a=pk_1m))*pt_scale1*ptscale1*scale0
+            theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, self.ells))*scale0*scale1
 
 
-            else:
-                raise ValueError("Not yet implemented!")
+            if not self.ccl_kind == "cl":
+                theory_vector = (
+                    pyccl.correlation(
+                        cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
+                    )
+                )
 
 
 
