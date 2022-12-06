@@ -13,13 +13,15 @@ in comoving units for a given redshift.
 
 from __future__ import annotations
 import pyccl
+from abc import ABC, abstractmethod
 
 
-class NumberDensity:
+class NumberDensity(ABC):
     def __init__(self) -> None:
-        self.density_func_type = None
-        self.use_baryons = None
+        self.density_func_type: str = None
+        self.use_baryons: bool = False
 
+    @abstractmethod
     def compute_number_density(self, cosmo: pyccl.Cosmology, logm, z) -> float:
         """
         parameters
@@ -38,6 +40,7 @@ class NumberDensity:
         """
         raise NotImplementedError("Method `compute_number_density` is not implemented!")
 
+    @abstractmethod
     def compute_volume_density(self, cosmo: pyccl.Cosmology, z) -> float:
         """
         parameters
