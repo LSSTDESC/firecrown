@@ -1,45 +1,39 @@
 #!/usr/bin/env python
 import os
-import cProfile as profile
-import pstats
 import numpy as np
 import pyccl as ccl
 import sacc
 from firecrown.likelihood.gauss_family.statistic.number_counts_stat import *
-
+from firecrown.models.critical_mass import CriticalDensity
+from firecrown.models.mean_mass import MeanDensity
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 sacc.__version__
-import torchquad
-import six
-torchquad._deployment_test()
+
+
+
+#In here we define the cosmology to be used to compute the statistics.
 cosmo = ccl.Cosmology(Omega_c=0.22, Omega_b=0.0448,
                       h=0.71, sigma8=0.8, n_s=0.963, Neff=3.04)
-print(cosmo)
-#sac_file = sacc.Sacc.load_fits("./clusters.sacc")
-sac_file = sacc.Sacc.load_fits("./clusters_real_data.sacc")
-stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc = ['bocquet16', True])
-#stats2 = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc = ['tinker08'])
-lista_t = [stats]
-#lista_t2 = [stats2]
-lk = ConstGaussian(lista_t)
+
+#This is the sacc file to be used. It contains a simulation of clusters with their mass and redshift.
+sac_file = sacc.Sacc.load_fits("./clusters_simulated_data.sacc")
+
+#We then initiate the massfunction object. It can be a critical mass function or mean mass funcion.
+#Some mass functions have the possibility of using dark matter + baryonic matter to compute the cluster mass,
+#which is set by the True entry in the function below. This is optional. Otherwise, only dark matter is used
+#as default
+
+massfunc = CriticalDensity('Bocquet16', True)
+#massfunc = MeanDensity('Tinker10')
+
+
+#Initiate the statics object
+stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc)
+list_stats = [stats]
+
+#Initiate the likelihood object, which will read the sacc file and then compute the log(Likelihood).
+lk = ConstGaussian(list_stats)
 lk.read(sac_file)
-lk.reset()
-lk.get_derived_parameters()
-prof = profile.Profile()
-prof.enable()
-
 log  = lk.compute_loglike(cosmo)
-print(log)
-#lk2 = ConstGaussian(lista_t2)
-#lk2.read(sac_file)
-#lk2.reset()
-#lk2.get_derived_parameters()
-
-#log2  = lk2.compute_loglike(cosmo)
-#print(log2)
-prof.disable()
-stats = pstats.Stats(prof).strip_dirs().sort_stats("cumtime")
-stats.print_stats(20)
-#print(sacc.standard_types)
-#print(sac_file.data)
+print(f'The log(L) is: {log}')

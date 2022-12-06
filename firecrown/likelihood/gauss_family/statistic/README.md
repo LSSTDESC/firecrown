@@ -7,10 +7,11 @@ The user must provide a SACC file that has at least one tracer that shall be cal
 The metadata dictionary must be created with:
 *`Mproxy_type: 'true_mass'`. A `str` that represents the type of proxy. So far there is only the `true_mass` option.
 *`Mproxy_edges : m_edges`. A `list` of `floats` with the proxy bins. The mass should be in
-logaritimic scale, that is, log(M), being M in units of solar mass.
+logaritimic scale, that is, log10(M), being M in units of solar
+mass(comoving).
 *`z_type : 'true_redshift'`. A string that represents the type of redshift. So far there is only the `true_redshift` option.
 *`z_edges : z_edges`. A `list` of `floats` with the redshift bins.
-*`sky_area: 439.78986`. A `float` with the sky area. Units of degrees. 
+*`sky_area: 439.78986`. A `float` with the sky area. Units of squared degrees. 
 
 With the metadata, the `add_tracer` function must be called as
 ```

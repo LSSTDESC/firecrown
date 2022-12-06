@@ -11,15 +11,10 @@ import numpy as np
 import scipy.interpolate
 
 import pyccl
-import MiraTitanHMFemulator
 
 from .statistic import Statistic
 from .source.source import Systematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
-import torch
-from torchquad import Simpson, set_up_backend, MonteCarlo
-
-set_up_backend("torch", data_type="float64")
 
 # only supported types are here, any thing else will throw
 # a value error
@@ -86,8 +81,8 @@ class NumberCountStat(Statistic):
         self,
         sacc_tracer,
         sacc_data_type,
+        number_density_func,
         systematics: Optional[List[Systematic]] = None,
-        massfunc=None,
     ):
 
         super().__init__()
@@ -97,7 +92,7 @@ class NumberCountStat(Statistic):
         self.systematics = systematics or []
         self.data_vector = None
         self.theory_vector = None
-        self.massfunc = massfunc
+        self.number_density_func = number_density_func
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -131,82 +126,6 @@ class NumberCountStat(Statistic):
         derived_parameters = DerivedParameterCollection([])
 
         return derived_parameters
-
-    def _dv(self, z, cosmo):
-        a = 1.0 / (1.0 + z)
-        da = pyccl.background.angular_diameter_distance(cosmo, a)
-        E = pyccl.background.h_over_h0(cosmo, a)
-        dV = (
-            ((1.0 + z) ** 2)
-            * (da**2)
-            * pyccl.physical_constants.CLIGHT_HMPC
-            / cosmo["h"]
-            / E
-        )
-        return dV
-
-    def _dmdz_dV(self, logm, z, cosmo):
-        """
-        parameters
-        logm: float
-            Cluster mass
-        z : float
-            Cluster Redshift
-        cosmo : pyccl Cosmology
-
-        reuturn
-        -------
-
-        integrand : float
-                    Number Counts pdf at z and logm.
-        """
-        s = 0  # 0.037 #-0.1080622
-        q = 1  # 1.008 #0.98730224
-        a = 1.0 / (1.0 + z)
-        mass = 10 ** (logm)
-        if self.massfunc[0] == "emulator":
-            HMFemu = MiraTitanHMFemulator.Emulator()
-            emu_cosmo = {
-                "Ommh2": ((cosmo["Omega_c"] + cosmo["Omega_b"]) * cosmo["h"] ** 2),
-                "Ombh2": (cosmo["Omega_b"] * (cosmo["h"] ** 2)),
-                "Omnuh2": pyccl.neutrinos.Omeganuh2(a, cosmo["m_nu"]),
-                "n_s": cosmo["n_s"],
-                "h": cosmo["h"],
-                "w_0": cosmo["w0"],
-                "w_a": cosmo["wa"],
-                "sigma_8": cosmo["sigma8"],
-            }
-            res = HMFemu.predict(emu_cosmo, z, mass)
-            nm = res[0][0][0]
-        else:
-            hmd_200c = pyccl.halos.MassDef200c()
-            if self.massfunc[0] == "despali16":
-                hmf_200c = pyccl.halos.MassFuncDespali16(
-                    cosmo, mass_def=hmd_200c, mass_def_strict=True
-                )
-            elif self.massfunc[0] == "bocquet16":
-                hmf_200c = pyccl.halos.MassFuncBocquet16(
-                    cosmo,
-                    mass_def=hmd_200c,
-                    mass_def_strict=True,
-                    hydro=self.massfunc[1],
-                )
-            elif self.massfunc[0] == "tinker08":
-                hmf_200c = pyccl.halos.MassFuncTinker08(
-                    cosmo, mass_def=hmd_200c, mass_def_strict=True
-                )
-            nm = hmf_200c.get_mass_function(cosmo, mass, a) * (s * logm / 13.8 + q)
-        da = pyccl.background.angular_diameter_distance(cosmo, a)
-        E = pyccl.background.h_over_h0(cosmo, a)
-        dV = (
-            ((1.0 + z) ** 2)
-            * (da**2)
-            * pyccl.physical_constants.CLIGHT_HMPC
-            / cosmo["h"]
-            / E
-        )
-        integrand = float(nm) * dV
-        return integrand
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
@@ -258,39 +177,16 @@ class NumberCountStat(Statistic):
             An array with the theoretical prediction of the number of clusters
             in each bin of redsfhit and mass.
         """
-        set_up_backend("torch", data_type="float32")
         skyarea = self.tracer_args.metadata["sky_area"]
         DeltaOmega = skyarea * np.pi**2 / 180**2
         z_bins = self.tracer_args.z_bins
         logm_bins = self.tracer_args.Mproxy_bins
         theory_vector = []
 
-        #        def integrand(x):
-        #            test = []
-        #            for a in x:
-        #                logm = a[0].item()
-        #                z = a[1].item()
-        #                value = self._dmdz_dV(logm, z, cosmo)
-        #                test.append(torch.tensor(value))
-        #            return test
-
-        #        sp = Simpson()
-        #        for i in range(len(z_bins) - 1):
-        #            for j in range(len(logm_bins) - 1):
-        #                bin_count = sp.integrate(
-        #                    integrand,
-        #                    N=11,
-        #                    dim=2,
-        #                    integration_domain=[
-        #                        [logm_bins[j], logm_bins[j + 1]],
-        #                        [z_bins[i], z_bins[i + 1]],
-        #                    ],
-        #                    backend="torch",
-        #                )
-        #                bin_count = bin_count.item()
-        #                theory_vector.append(bin_count * DeltaOmega)
         def integrand(logm, z):
-            return self._dmdz_dV(logm, z, cosmo)
+            nm = self.number_density_func.compute_number_density(cosmo,logm, z)
+            dv = self.number_density_func.compute_volume(cosmo, z)
+            return nm * dv
 
         for i in range(len(z_bins) - 1):
             for j in range(len(logm_bins) - 1):
