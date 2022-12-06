@@ -5,12 +5,13 @@ import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 
 from firecrown.likelihood.gauss_family.statistic.number_counts_stat import *
-
+from firecrown.models.critical_mass import CriticalDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
-stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc=['bocquet16', True])
+massfunc = CriticalDensity('Bocquet16', False)
+stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc)
 stats = [stats]
 """
     Here we instantiate the actual likelihood. The statistics argument carry
@@ -23,7 +24,7 @@ lk = ConstGaussian(stats)
 """
 saccfile = os.path.expanduser(
     os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/number_counts/clusters_real_data.sacc"
+        "${FIRECROWN_DIR}/examples/number_counts/clusters_simulated_data.sacc"
     )
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
