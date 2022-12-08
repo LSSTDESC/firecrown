@@ -184,9 +184,12 @@ class NumberCountStat(Statistic):
         theory_vector = []
 
         def integrand(logm, z):
+            s = 1.0
+            q = 0.0
+            nuisance = (logm - 13.8) * s + q
             nm = self.number_density_func.compute_number_density(cosmo, logm, z)
             dv = self.number_density_func.compute_volume_density(cosmo, z)
-            return nm * dv
+            return nm * dv * nuisance
 
         for i in range(len(z_bins) - 1):
             for j in range(len(logm_bins) - 1):
