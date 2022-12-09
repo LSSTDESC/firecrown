@@ -94,11 +94,11 @@ class SimpleUpdatable(Updatable):
 
 def test_verify_abstract_interface():
     with pytest.raises(TypeError):
-        x = Missing_update()  # pylint: disable-msg=E0110,W0612
+        _ = Missing_update()  # pylint: disable-msg=E0110,W0612
     with pytest.raises(TypeError):
-        x = Missing_reset()  # pylint: disable-msg=E0110,W0612
+        _ = Missing_reset()  # pylint: disable-msg=E0110,W0612
     with pytest.raises(TypeError):
-        x = Missing_required_parameters()  # pylint: disable-msg=E0110,W0612
+        _ = Missing_required_parameters()  # pylint: disable-msg=E0110,W0612
 
 
 def test_simple_updatable():
@@ -162,7 +162,7 @@ def test_updatable_collection_construction():
 
     bad_list = [1]
     with pytest.raises(TypeError):
-        x = UpdatableCollection(bad_list)  # pylint: disable-msg=W0612
+        _ = UpdatableCollection(bad_list)  # pylint: disable-msg=W0612
 
 
 def test_updatable_collection_insertion():
