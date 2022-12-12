@@ -161,8 +161,8 @@ class DerivedParameterCollection:
 
         self.derived_parameters: Dict[str, DerivedParameter] = {}
 
-        for dp in derived_parameters:
-            self.add_required_parameter(dp)
+        for parameter in derived_parameters:
+            self.add_required_parameter(parameter)
 
     def __add__(self, other: Optional[DerivedParameterCollection]):
         """Return a new DerivedParameterCollection with the lists of DerivedParameter
