@@ -72,12 +72,19 @@ jobs:
         run: |
           black --check firecrown
           black --check tests
+          black --check examples
       - name: Running flake8
         shell: bash -l {0}
-        run: flake8 firecrown
+        run: |
+          flake8 firecrown
+          flake8 examples
+          flake8 tests
       - name: Running mypy
         shell: bash -l {0}
-        run: mypy -p firecrown --ignore-missing-imports
+        run: |
+          mypy -p firecrown --ignore-missing-imports
+          mypy -p examples --ignore-missing-imports
+          mypy -p tests --ignore-missing-imports
       - name: Running pylint-tests
         shell: bash -l {0}
         run: pylint --rcfile pylintrc_for_tests --recursive=y tests
