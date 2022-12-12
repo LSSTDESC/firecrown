@@ -45,7 +45,6 @@ class NumberCountsPTArgs:
     bias: np.ndarray
     bias_2: np.ndarray
     bias_s: np.ndarray
-    mag_bias: np.ndarray
 
 class NumberCountsSystematic(Systematic):
     """Class implementing systematics for Number Counts sources."""
@@ -356,7 +355,7 @@ class NLBiasSystematic(NumberCountsPTSystematic):
             bias=tracer_arg.bias * np.ones_like(tracer_arg.z),
             bias_2=tracer_arg.bias_2 * np.ones_like(tracer_arg.z),
             bias_s=tracer_arg.bias_s * np.ones_like(tracer_arg.z),
-            mag_bias=tracer_arg.mag_bias,
+            #mag_bias=tracer_arg.mag_bias,
         )
 
 
@@ -653,7 +652,7 @@ class NumberCountsPT(SourcePT):
         z = z[inds]
         nz = nz[inds]
 
-        self.pttracer_args = NumberCountsPTArgs(scale=self.scale, z=z, dndz=nz, bias=None, bias_2=None, bias_s=None,mag_bias=None)
+        self.pttracer_args = NumberCountsPTArgs(scale=self.scale, z=z, dndz=nz, bias=None, bias_2=None, bias_s=None)
         self.tracer_args = NumberCountsArgs(scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None)
         self.pt_tracer_args = NumberCountsArgs(scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None)
 
@@ -723,20 +722,9 @@ class NumberCountsPT(SourcePT):
             bias=bias,
             bias_2 = bias_2,
             bias_s=bias_s,
-            mag_bias=pttracer_args.mag_bias,
+            #mag_bias=pttracer_args.mag_bias,
         )
 
-        if self.mag_bias is not None:
-            mag_bias = np.ones_like(pttracer_args.z) * self.mag_bias
-            pttracer_args = NumberCountsPTArgs(
-                scale=pttracer_args.scale,
-                z=pttracer_args.z,
-                dndz=pttracer_args.dndz,
-                bias=pttracer_args.bias,
-                bias_2 = pttracer_args.bias_2,
-                bias_s=pttracer_args.bias_s,
-                mag_bias=mag_bias,
-            )
 
         for systematic in self.systematics:
             if  isinstance(systematic,NumberCountsPTSystematic):
