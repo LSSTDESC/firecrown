@@ -4,9 +4,7 @@ import numpy as np
 import pyccl as ccl
 import sacc
 from firecrown.likelihood.gauss_family.statistic.number_counts_stat import *
-from firecrown.models.critical_mass import CriticalDensity
-from firecrown.models.mean_mass import MeanDensity
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 sacc.__version__
 
@@ -24,8 +22,7 @@ sac_file = sacc.Sacc.load_fits("./clusters_simulated_data.sacc")
 #which is set by the True entry in the function below. This is optional. Otherwise, only dark matter is used
 #as default
 
-massfunc = CriticalDensity('Bocquet16', True)
-#massfunc = MeanDensity('Tinker10')
+massfunc = CCLDensity('critical','Bocquet16', False)
 
 
 #Initiate the statics object

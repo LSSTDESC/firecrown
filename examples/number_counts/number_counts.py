@@ -1,17 +1,15 @@
 #!/usr/bin/env python
 
 import os
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 
 from firecrown.likelihood.gauss_family.statistic.number_counts_stat import *
-from firecrown.models.critical_mass import CriticalDensity
+from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
 def build_likelihood(_):
-    massfunc = CriticalDensity('Bocquet16', False)
+    massfunc = CCLDensity('critical', 'Bocquet16', False)
     stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc)
     stats = [stats]
     """
