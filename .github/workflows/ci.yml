@@ -32,6 +32,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           miniforge-version: latest
           use-only-tar-bz2: true
+          update-conda: true
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
