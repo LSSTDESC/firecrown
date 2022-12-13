@@ -107,6 +107,11 @@ jobs:
         run: |
           cd examples/des_y1_3x2pt
           cobaya-run cobaya_evaluate.yaml
+      - name: Running example - NumCosmo - des-y1-3x2pt
+        shell: bash -l {0}
+        run: |
+          cd examples/des_y1_3x2pt
+          python numcosmo_run.py
       - name: Running example - cosmosis - srd_sn
         shell: bash -l {0}
         run: |
