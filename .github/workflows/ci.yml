@@ -46,6 +46,7 @@ jobs:
         id: cache
       - name: Update environment
         run: |
+          conda install "numcosmo >=0.16.0"
           conda env update -n firecrown -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
