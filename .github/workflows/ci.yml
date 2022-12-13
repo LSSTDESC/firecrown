@@ -27,6 +27,7 @@ jobs:
       - name: Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           activate-environment: firecrown
           python-version: ${{ matrix.python-version }}
           miniforge-version: latest
@@ -45,7 +46,6 @@ jobs:
         id: cache
       - name: Update environment
         run: |
-          conda update
           conda env update -n firecrown -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
