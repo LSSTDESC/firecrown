@@ -6,7 +6,7 @@ dependencies:
   - charset-normalizer
   - cosmosis
   - cosmosis-build-standard-library
-  - numcosmo
+  - numcosmo >=0.16.0
   - coverage
   - dill
   - fitsio
