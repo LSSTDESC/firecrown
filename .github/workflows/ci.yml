@@ -42,7 +42,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
         env:
-          CACHE_NUMBER: 1
+          CACHE_NUMBER: 0
         id: cache
       - name: Update environment
         run: |
@@ -52,7 +52,6 @@ jobs:
         shell: bash -l {0}
         run: |
           export FIRECROWN_DIR=${PWD}
-          conda update
           conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           conda activate firecrown
           pip install --no-deps -e .
