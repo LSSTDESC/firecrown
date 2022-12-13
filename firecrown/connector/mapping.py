@@ -11,7 +11,7 @@ Each supported body of code has its own dedicated class.
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, List, Dict, Optional, final, Any
+from typing import Type, List, Dict, Optional, final, Any, Union
 import typing
 import numpy as np
 from pyccl import physical_constants as physics
@@ -43,7 +43,7 @@ class Mapping(ABC):
     n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
-    m_nu = TypeFloat(minvalue=0.0)
+    # m_nu = TypeFloat(minvalue=0.0)
     m_nu_type = TypeString()
     w0 = TypeFloat()
     wa = TypeFloat()
@@ -51,6 +51,7 @@ class Mapping(ABC):
 
     def __init__(self, *, require_nonlinear_pk: bool = False):
         self.require_nonlinear_pk = require_nonlinear_pk
+        self.m_nu: Optional[Union[float, List[float]]] = None
 
     @abstractmethod
     def get_params_names(self) -> List[str]:
@@ -83,7 +84,7 @@ class Mapping(ABC):
         n_s: float,
         Omega_k: float,
         Neff: float,
-        m_nu: float,
+        m_nu: Union[float, List[float]],
         m_nu_type: str,
         w0: float,
         wa: float,

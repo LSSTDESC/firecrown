@@ -9,7 +9,7 @@ data and theory vectors for a GaussianFamily subclass.
 """
 
 from __future__ import annotations
-from typing import List, Tuple
+from typing import List
 from abc import abstractmethod
 import numpy as np
 import pyccl
@@ -29,7 +29,11 @@ class Statistic(Updatable):
         """Read the data for this statistic from the SACC file."""
 
     @abstractmethod
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a statistic from sources, applying any systematics."""
+    def get_data_vector(self) -> np.ndarray:
+        """Gets the statistic data vector."""
+        raise NotImplementedError("Method `get_data_vector` is not implemented!")
 
-        raise NotImplementedError("Method `compute` is not implemented!")
+    @abstractmethod
+    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> np.ndarray:
+        """Compute a statistic from sources, applying any systematics."""
+        raise NotImplementedError("Method `compute_theory_vector` is not implemented!")

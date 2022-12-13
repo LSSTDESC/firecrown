@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, final
+from typing import Optional, List, final
 
 import numpy as np
 
@@ -26,6 +26,7 @@ class Supernova(Statistic):
         self.data_vector: Optional[np.ndarray] = None
         self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
         self.M = parameters.create()  # pylint: disable-msg=invalid-name
+        self.sacc_indices: Optional[List[int]] = None
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -37,7 +38,7 @@ class Supernova(Statistic):
         z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = 1.0 / (1.0 + z)
         self.data_vector = np.array([dp.value for dp in data_points])
-        self.sacc_inds = list(
+        self.sacc_indices = list(
             range(0, len(self.data_vector))
         )  # pylint: disable-msg=invalid-name
 
@@ -59,11 +60,13 @@ class Supernova(Statistic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a two-point statistic from sources."""
+    def get_data_vector(self) -> np.ndarray:
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> np.ndarray:
+        """Compute SNIa distance statistic using CCL."""
 
         theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
 
-        assert self.data_vector is not None
-
-        return np.array(self.data_vector), np.array(theory_vector)
+        return np.array(theory_vector)
