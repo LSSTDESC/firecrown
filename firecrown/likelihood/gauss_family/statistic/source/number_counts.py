@@ -251,7 +251,7 @@ class NumberCounts(Source):
     """Source class for number counts."""
 
     systematics: UpdatableCollection
-    tracer_arg: NumberCountsArgs
+    tracer_args: NumberCountsArgs
 
     def __init__(
         self,
