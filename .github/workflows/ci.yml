@@ -50,6 +50,7 @@ jobs:
         shell: bash -l {0}
         run: |
           export FIRECROWN_DIR=${PWD}
+          conda update
           conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           conda activate firecrown
           pip install --no-deps -e .
