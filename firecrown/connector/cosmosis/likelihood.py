@@ -55,7 +55,7 @@ class FirecrownLikelihood:
 
         build_parameters = extract_section(config, option_section)
 
-        sections = config[option_section, "sampling_parameters_sections"]
+        sections = config.get_string(option_section, "sampling_parameters_sections", "")
         sections = sections.split()
 
         self.firecrown_module_name = option_section

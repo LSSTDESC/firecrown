@@ -1,3 +1,4 @@
+from typing import Dict, Tuple
 import fitsio
 import numpy as np
 import sacc
@@ -81,7 +82,11 @@ angles = """\
 #   (3, 3): [20.0, 250.0],
 #   ...
 
-bin_limits = {}
+# Type specifications for the bin information.
+Bin = Tuple[float, float]
+BinIndex = Tuple[int, int]
+
+bin_limits: Dict[str, Dict[BinIndex, Bin]] = {}
 for line in angles.split("\n"):
     items = line.split()
     keys = items[1].replace("angle_range_", "").split("_")
@@ -90,6 +95,7 @@ for line in angles.split("\n"):
     if topkey not in bin_limits:
         bin_limits[topkey] = {}
     bin_limits[topkey][binkeys] = (float(items[-2]), float(items[-1]))
+
 
 # finally we read the data, cut each part, and write to disk
 # the order of the covmat is xip, xim, gammat, wtheta
