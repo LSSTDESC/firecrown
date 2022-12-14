@@ -109,16 +109,15 @@ def load_likelihood(
                 f"Firecrown initialization script {filename} does not define "
                 f"a `build_likelihood` factory function."
             )
-        else:
-            warnings.simplefilter("always", DeprecationWarning)
-            warnings.warn(
-                "The use of a likelihood variable in Firecrown's initialization "
-                "script is deprecated. Any parameters passed to the likelihood "
-                "will be ignored. The script should define a `build_likelihood` "
-                "factory function.",
-                category=DeprecationWarning,
-            )
-            likelihood = mod.likelihood
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "The use of a likelihood variable in Firecrown's initialization "
+            "script is deprecated. Any parameters passed to the likelihood "
+            "will be ignored. The script should define a `build_likelihood` "
+            "factory function.",
+            category=DeprecationWarning,
+        )
+        likelihood = mod.likelihood
     else:
         if not callable(mod.build_likelihood):
             raise TypeError(

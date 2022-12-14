@@ -42,6 +42,10 @@ class ParamsMap(Dict[str, float]):
         self.lower_case: bool = False
 
     def use_lower_case_keys(self, enable: bool) -> None:
+        """Enable or disable the use of lower case only keys.
+
+        :param enable: whether to enable or disable this option
+        """
         self.lower_case = enable
 
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
@@ -161,8 +165,8 @@ class DerivedParameterCollection:
 
         self.derived_parameters: Dict[str, DerivedParameter] = {}
 
-        for dp in derived_parameters:
-            self.add_required_parameter(dp)
+        for derived_parameter in derived_parameters:
+            self.add_required_parameter(derived_parameter)
 
     def __add__(self, other: Optional[DerivedParameterCollection]):
         """Return a new DerivedParameterCollection with the lists of DerivedParameter
@@ -230,9 +234,13 @@ class SamplerParameter:
         self.value = None
 
     def set_value(self, value: float):
+        """Sets the parameter's value.
+        :param value: new value
+        """
         self.value = value
 
     def get_value(self) -> float:
+        """Gets the current parameter's value."""
         return self.value
 
 
@@ -245,13 +253,22 @@ class InternalParameter:
         self.value = value
 
     def set_value(self, value: float):
+        """Sets the parameter's value.
+        :param value: new value
+        """
         self.value = value
 
     def get_value(self) -> float:
+        """Gets the current parameter's value."""
         return self.value
 
 
 def create(value: Optional[float] = None):
+    """Creates a new sampler parameter. If value is None create a
+    SamplerParameter, otherwise assume it is an internal parameter.
+
+    :param value: value for the created parameter
+    """
     if value is None:
         return SamplerParameter()
     return InternalParameter(value)

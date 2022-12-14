@@ -74,6 +74,10 @@ class GaussFamily(Likelihood):
 
     @final
     def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> np.ndarray:
+        """Computes the theory vector using the current instance of pyccl.Cosmology.
+
+        :param cosmo: CCL cosmology object to be used to compute the likelihood
+        """
         theory_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
             theory = stat.compute_theory_vector(cosmo)

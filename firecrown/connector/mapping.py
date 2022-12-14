@@ -19,6 +19,11 @@ import cosmosis.datablock
 from ..descriptors import TypeFloat, TypeString
 
 
+def build_ccl_background_dict(*, a: np.ndarray, chi: np.ndarray, h_over_h0: np.ndarray):
+    """Builds the CCL dictionary of background quantities."""
+    return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
+
+
 class Mapping(ABC):
     """Abstract base class defining the interface for each supported code.
 
@@ -221,6 +226,7 @@ class MappingCosmoSIS(Mapping):
         w0 = cosmosis_params["w"]  # pylint: disable-msg=C0103
         wa = cosmosis_params["wa"]  # pylint: disable-msg=C0103
 
+        # pylint: disable=duplicate-code
         self.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
@@ -236,6 +242,7 @@ class MappingCosmoSIS(Mapping):
             T_CMB=2.7255,
             # Modify CosmoSIS to make this available in the datablock
         )
+        # pylint: enable=duplicate-code
 
     def calculate_ccl_args(self, sample: cosmosis.datablock):
         """Calculate the arguments necessary for CCL for this sample."""
@@ -302,11 +309,9 @@ class MappingCosmoSIS(Mapping):
         # h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
         h_over_h0 = self.transform_h_to_h_over_h0(sample["distances", "h"])
 
-        ccl_args["background"] = {
-            "a": scale_distances,
-            "chi": chi,
-            "h_over_h0": h_over_h0,
-        }
+        ccl_args["background"] = build_ccl_background_dict(
+            a=scale_distances, chi=chi, h_over_h0=h_over_h0
+        )
 
         return ccl_args
 
