@@ -447,10 +447,14 @@ class TwoPoint(Statistic):
             theory_vector_prime = theory_vector.copy()
 
             theory_vector+=(_cached_angular_cl(cosmo, (pt_tracers0, tracers1), tuple(self.ells), p_of_k_a=pk_0m))*pt_scale0*scale1
+            print(theory_vector-theory_vector_prime, (tracers1._trc))
+
             theory_vector+=(_cached_angular_cl(cosmo, (pt_tracers1, tracers0), tuple(self.ells), p_of_k_a=pk_1m))*pt_scale1*scale0
+            print(theory_vector-theory_vector_prime, (tracers1._trc))
+
             theory_vector+=(_cached_angular_cl(cosmo, (tracers0, tracers1), tuple(self.ells))
                         *scale0*scale1)
-            #print(theory_vector-theory_vector_prime, (tracers1._trc))
+            print(theory_vector-theory_vector_prime, (tracers1._trc))
 
             print(_cached_matter_tracer.cache_info().hits,_cached_pk.cache_info().hits, _cached_angular_cl.cache_info().hits)
             print("scales", scale1, pt_scale1, ptscale1, scale0, pt_scale0, ptscale0)

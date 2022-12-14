@@ -675,7 +675,7 @@ class NumberCountsPT(SourcePT):
                 scale=tracer_args.scale,
                 z=tracer_args.z,
                 dndz=tracer_args.dndz,
-                bias=tracer_args.bias,
+                bias=bias,
                 mag_bias=mag_bias,
             )
 
@@ -688,7 +688,7 @@ class NumberCountsPT(SourcePT):
                 cosmo,
                 has_rsd=self.has_rsd,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, tracer_args.bias),
+                bias=(tracer_args.z, bias),
                 mag_bias=(tracer_args.z, tracer_args.mag_bias),
             )
         else:
@@ -696,7 +696,7 @@ class NumberCountsPT(SourcePT):
                 cosmo,
                 has_rsd=self.has_rsd,
                 dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, tracer_args.bias),
+                bias=(tracer_args.z, bias),
             )
         self.current_tracer_args = tracer_args
 
@@ -733,7 +733,6 @@ class NumberCountsPT(SourcePT):
         pttracer = pyccl.nl_pt.PTNumberCountsTracer( b1=(pttracer_args.z, pttracer_args.bias), b2 = (pttracer_args.z, pttracer_args.bias_2), bs=(pttracer_args.z, pttracer_args.bias_s))
 
         self.current_pttracer_args = pttracer_args
-
         return pttracer, pttracer_args
 
     def create_pt_tracer(self, cosmo: pyccl.Cosmology):

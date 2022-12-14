@@ -56,7 +56,7 @@ for i in range(n_lens):
     nl_bias = nc.NLBiasSystematic(sacc_tracer=f"lens{i}")
     sources[f"lens{i}"] = nc.NumberCountsPT(
         sacc_tracer=f"lens{i}",
-        systematics=[pzshift, nl_bias], has_mag_bias=False, scale=3.0
+        systematics=[pzshift, nl_bias], has_mag_bias=True, scale=3.0
     )
 
 # Define the statistics we like to include in the likelihood
@@ -121,7 +121,7 @@ if __name__ == "__main__":
                                     "alphag_2":0.0,
                                     "src0_mult_bias": 0.0,
                                     
-                                    "lens0_mag_bias":0.0,
+                                    "lens0_mag_bias":1.0,
                                     "lens0_bias":2.0,
                                     "lens0_bias_2":1.0,
                                     "lens0_bias_s":1.0,
@@ -129,6 +129,8 @@ if __name__ == "__main__":
                                     "lens0_alphaz":0.0,
                                     "lens0_alphag":0.0,
                                     "lens0_z_piv":0.62,
+                                    "lens0_delta_z":0.000,
+
 
                                     "src0_delta_z": 0.000,
                                     "src1_delta_z": 0.000,
@@ -171,7 +173,7 @@ if __name__ == "__main__":
         b_2 = 1.0
         b_s = 1.0
 
-        mag_bias = 0.0
+        mag_bias = 1.0
 
         c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False)
 
@@ -227,10 +229,10 @@ if __name__ == "__main__":
         cl_gI = ccl.angular_cl(ccl_cosmo, t_g, t_ia, ells_ggl, p_of_k_a=pk_gi) * 6.0
         cl_gg = ccl.angular_cl(ccl_cosmo, t_g, t_g, ells_nc, p_of_k_a=pk_gg) * 9.0
         # Magnification
-        cl_mI = 0.0#ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells_ggl, p_of_k_a=pk_im)
-        cl_gm = 0.0#ccl.angular_cl(ccl_cosmo, t_g, t_m, ells_nc, p_of_k_a=pk_gm)
-        cl_mm = 0.0#ccl.angular_cl(ccl_cosmo, t_m, t_m, ells_nc)
-        cl_mG = 0.0#ccl.angular_cl(ccl_cosmo, t_m, t_lens, ells_ggl)
+        cl_mI = ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells_ggl, p_of_k_a=pk_im)* 6.0
+        cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells_nc, p_of_k_a=pk_gm) * 9.0
+        cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells_nc) * 9.0
+        cl_mG = ccl.angular_cl(ccl_cosmo, t_m, t_lens, ells_ggl) * 6.0
 
         # The observed angular power spectrum is the sum of the two.
         cl_cs_theory = cl_GG + 2*cl_GI + cl_II  # normally we would also have a third term, +cl_II).
@@ -256,20 +258,20 @@ if __name__ == "__main__":
     #ax[0].plot(ells, cells_cs_total, label="total CS firecrown")
     #ax[0].plot(ells, cl_cs_theory, ls="--", label="total CS CCL")
 
-    ax[0].plot(x, y_theory, label="my code xi_+")
-    ax[0].plot(x_minus, y_theory_minus, label="my code xi_-")
-    ax[0].plot(x_ggl, y_theory_ggl, label="my code ggl")
-    ax[0].plot(x_nc, y_theory_nc, label="my code nc")
-    ax[0].plot(x, ang, label="direct calculation xi_+")
-    ax[0].plot(x_minus, ang_minus, label="direct calculation xi_+")
-    ax[0].plot(x_ggl, ang_ggl, label="direct calculation ggl")
-    ax[0].plot(x_nc, ang_nc, label="direct calculation nc")
+    ax[0].plot(x, y_theory, label="firecrown xi_+")
+    ax[0].plot(x_minus, y_theory_minus, label="firecrown xi_-")
+    ax[0].plot(x_ggl, y_theory_ggl, label="firecrown ggl")
+    ax[0].plot(x_nc, y_theory_nc, label="firecrown nc")
+    ax[0].plot(x, ang, label="CCL xi_+", linestyle='--')
+    ax[0].plot(x_minus, ang_minus, label="CCL xi_+", linestyle='--')
+    ax[0].plot(x_ggl, ang_ggl, label="CCL ggl", linestyle='--')
+    ax[0].plot(x_nc, ang_nc, label="CCL nc", linestyle='--')
 
     #ax[0].errorbar(x, y_data, y_err, ls="none", marker="o")
     ax[0].set_xscale("log")
     ax[0].set_yscale("log")
     ax[0].set_xlabel(r"$\theta$ [arcmin]")
-    ax[0].set_ylabel(r"$\xi_+(\theta)$")
+    ax[0].set_ylabel(r"$\xi(\theta)$")
     ax[0].legend()
 
     ax[1].plot(x, (y_theory-ang)/ang, label="xi_+ residual")
