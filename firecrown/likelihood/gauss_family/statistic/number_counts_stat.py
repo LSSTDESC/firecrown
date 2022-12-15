@@ -9,13 +9,14 @@ from typing import List, Tuple, Optional, final
 
 import numpy as np
 import scipy.interpolate
-
+from scipy.integrate import simps
 import pyccl
 
 from .statistic import Statistic
 from .source.source import Systematic
-from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
-
+from ....parameters import SamplerParameter, ParamsMap, RequiredParameters, DerivedParameterCollection
+from ....models.number_counts.mass_proxy.richness_proxy import *
+from .... import parameters
 # only supported types are here, any thing else will throw
 # a value error
 SACC_DATA_TYPE_TO_CCL_KIND = {
@@ -26,6 +27,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 
 SACC_TRACER_NAMES = {
     "cluster_counts_true_mass": "tm",
+    "cluster_counts_richness_proxy" : "rp",
 }
 
 
@@ -93,7 +95,12 @@ class NumberCountStat(Statistic):
         self.data_vector = None
         self.theory_vector = None
         self.number_density_func = number_density_func
-
+        self.mu_p0 = None
+        self.mu_p1 = None
+        self.mu_p2 = None
+        self.sigma_p0 = None
+        self.sigma_p1 = None
+        self.sigma_p2 = None
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
@@ -126,6 +133,45 @@ class NumberCountStat(Statistic):
         derived_parameters = DerivedParameterCollection([])
 
         return derived_parameters
+
+    def _compute_grids(self, cosmo, lnN_tuple, logm_tuple, z_tuple, n_intervals = 20):
+        mu_p0 = self.mu_p0
+        mu_p1 = self.mu_p1
+        mu_p2 = self.mu_p2
+        sigma_p0 = self.sigma_p0
+        sigma_p1 = self.sigma_p1
+        sigma_p2 = self.sigma_p2
+        RMP = RMProxy()
+        lnN_grid = np.linspace(lnN_tuple[0], lnN_tuple[1], n_intervals)
+
+        logm_grid = np.linspace(logm_tuple[0], logm_tuple[1], n_intervals)
+        z_grid = np.linspace(z_tuple[0], z_tuple[1], n_intervals)
+        Nmz_grid = np.zeros([len(lnN_grid), len(logm_grid), len(z_grid)])
+        for i,z in enumerate(z_grid):
+            dv = self.number_density_func.compute_volume_density(cosmo, z)
+            for k,logm in enumerate(logm_grid):
+                nm = self.number_density_func.compute_number_density(cosmo, logm, z)
+                for j,lnN in enumerate(lnN_grid):
+                    lk_rm = RMP.mass_proxy_likelihood (lnN, logm, z, mu_p0, mu_p1, mu_p2, sigma_p0,
+                                            sigma_p1, sigma_p2)
+                    pdf = nm * dv * lk_rm
+                    Nmz_grid[i,j,k] = pdf
+        return Nmz_grid, z_grid, lnN_grid, logm_grid
+
+    def _richness_proxy_integral(self, cosmo, lnN_bins, logm_interval, z_bins):
+        logm_tuple = logm_interval
+        bin_counts = []
+        for i in range(0, len(z_bins)-1):
+            for j in range(0, len(lnN_bins)-1):
+                z_tuple = (z_bins[i], z_bins[i+1])
+                lnN_tuple = (lnN_bins[j], lnN_bins[j+1])
+                Nmz_grid, z_grid, lnN_grid, logm_grid = self._compute_grids(cosmo,
+                                                                    lnN_tuple, logm_tuple, z_tuple)
+                integral = simps(simps(simps(Nmz_grid, z_grid, axis=0),
+                                 lnN_grid,axis=0),
+                                 logm_grid, axis=0)
+                bin_counts.append(integral)
+        return bin_counts
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
@@ -180,24 +226,27 @@ class NumberCountStat(Statistic):
         skyarea = self.tracer_args.metadata["sky_area"]
         DeltaOmega = skyarea * np.pi**2 / 180**2
         z_bins = self.tracer_args.z_bins
-        logm_bins = self.tracer_args.Mproxy_bins
+        proxy_bins = self.tracer_args.Mproxy_bins
         theory_vector = []
+        if self.sacc_tracer == 'cluster_counts_true_mass':
+            def integrand(logm, z):
+                nm = self.number_density_func.compute_number_density(cosmo, logm, z)
+                dv = self.number_density_func.compute_volume_density(cosmo, z)
+                return nm * dv
 
-        def integrand(logm, z):
-            nm = self.number_density_func.compute_number_density(cosmo, logm, z)
-            dv = self.number_density_func.compute_volume_density(cosmo, z)
-            return nm * dv
-
-        for i in range(len(z_bins) - 1):
-            for j in range(len(logm_bins) - 1):
-                bin_count = scipy.integrate.dblquad(
-                    integrand,
-                    z_bins[i],
-                    z_bins[i + 1],
-                    lambda x: logm_bins[j],
-                    lambda x: logm_bins[j + 1],
-                    epsabs=1.0e-4,
-                    epsrel=1.0e-4,
-                )[0]
-                theory_vector.append(bin_count * DeltaOmega)
+            for i in range(len(z_bins) - 1):
+                for j in range(len(proxy_bins) - 1):
+                    bin_count = scipy.integrate.dblquad(
+                        integrand,
+                        z_bins[i],
+                        z_bins[i + 1],
+                        lambda x: proxy_bins[j],
+                        lambda x: proxy_bins[j + 1],
+                        epsabs=1.0e-4,
+                        epsrel=1.0e-4,
+                        )[0]
+                    theory_vector.append(bin_count * DeltaOmega)
+        else:
+             logm_interval = (np.log10(1.0e13), np.log10(1.0e15))
+             theory_vector = self._richness_proxy_integral(cosmo, proxy_bins, logm_interval, z_bins)
         return np.array(self.data_vector), np.array(theory_vector)
