@@ -12,6 +12,9 @@ from gi.repository import GObject  # noqa: E402
 from gi.repository import NumCosmo as Nc  # noqa: E402
 from gi.repository import NumCosmoMath as Ncm  # noqa: E402
 
+import matplotlib.pyplot as plt
+from scipy.stats import chi2
+
 Ncm.cfg_init()
 
 mb = Ncm.ModelBuilder.new(Ncm.Model, "NcFirecrown", "Firecrown model interface")
@@ -36,6 +39,12 @@ cosmo.param_set_by_name("ENnu", 2.0328)
 cosmo.param_set_by_name("Yp", 0.2454)
 cosmo.param_set_by_name("w", -1.0)
 
+_, H0_i = cosmo.param_index_from_name("H0")
+cosmo.param_set_ftype(H0_i, Ncm.ParamType.FREE)
+
+_, Omegac_i = cosmo.param_index_from_name("Omegac")
+cosmo.param_set_ftype(Omegac_i, Ncm.ParamType.FREE)
+
 prim = Nc.HIPrimPowerLaw.new()
 prim.param_set_by_name("ln10e10ASA", math.log(1.0e10 * 2.0e-09))
 prim.param_set_by_name("n_SA", 0.971)
@@ -46,16 +55,12 @@ reion.set_z_from_tau(cosmo, 0.0561)
 cosmo.add_submodel(prim)
 cosmo.add_submodel(reion)
 
-p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
-p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
 dist = Nc.Distance.new(6.0)
 dist.comoving_distance_spline.set_reltol(1.0e-5)
 
-map_cosmo = MappingNumCosmo(
-    require_nonlinear_pk=True, p_ml=p_ml, p_mnl=p_mnl, dist=dist
-)
+map_cosmo = MappingNumCosmo(require_nonlinear_pk=False, dist=dist)
 
-nc_factory = NumCosmoFactory("des_y1_3x2pt.py", {}, ["NcFirecrown"], map_cosmo)
+nc_factory = NumCosmoFactory("sn_srd.py", {}, ["NcFirecrown"], map_cosmo)
 
 fc = NcFirecrown()
 # fc.params_set_default_ftype()
@@ -71,25 +76,33 @@ dset.append_data(fc_data)
 
 lh = Ncm.Likelihood(dataset=dset)
 
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_delta_z", -0.001, 0.016)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src1_delta_z", -0.019, 0.013)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src2_delta_z", +0.009, 0.011)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src3_delta_z", -0.018, 0.022)
-
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:lens0_delta_z", +0.001, 0.008)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:lens1_delta_z", +0.002, 0.007)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:lens2_delta_z", +0.001, 0.007)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:lens3_delta_z", +0.003, 0.010)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:lens4_delta_z", +0.000, 0.010)
-
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023)
-
 fit = Ncm.Fit.new(
     Ncm.FitType.NLOPT, "ln-neldermead", lh, mset, Ncm.FitGradType.NUMDIFF_FORWARD
 )
 
 mset.pretty_log()
-fit.run_restart(Ncm.FitRunMsgs.FULL, 1.0e-3, 0.0, None, None)
+fit.run_restart(Ncm.FitRunMsgs.SIMPLE, 1.0e-3, 0.0, None, None)
+fit.fisher()
+fit.log_covar()
+
+p1 = Ncm.MSetPIndex.new(cosmo.id(), H0_i)
+p2 = Ncm.MSetPIndex.new(cosmo.id(), Omegac_i)
+
+lhr2d = Ncm.LHRatio2d.new(fit, p1, p2, 1.0e-3)
+
+plt.title("Confidence regions")
+
+for clevel in [chi2.cdf(l**2, df=1) for l in [1, 2, 3]]:
+    fisher_rg = lhr2d.fisher_border(clevel, 300.0, Ncm.FitRunMsgs.SIMPLE)
+    plt.plot(
+        fisher_rg.p1.dup_array(),
+        fisher_rg.p2.dup_array(),
+        label=f"Fisher Matrix -- {fisher_rg.clevel*100:.2f}%",
+    )
+
+plt.xlabel(f"${cosmo.param_symbol(H0_i)}$")
+plt.ylabel(f"${cosmo.param_symbol(Omegac_i)}$")
+
+plt.legend(loc="best")
+
+plt.show()

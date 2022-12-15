@@ -33,8 +33,8 @@ class MappingNumCosmo(Mapping):
         self,
         *,
         require_nonlinear_pk: bool = False,
-        p_ml: Optional[Nc.PowspecML],
-        p_mnl: Optional[Nc.PowspecMNL],
+        p_ml: Optional[Nc.PowspecML] = None,
+        p_mnl: Optional[Nc.PowspecMNL] = None,
         dist: Nc.Distance,
     ):
         super().__init__(require_nonlinear_pk=require_nonlinear_pk)
