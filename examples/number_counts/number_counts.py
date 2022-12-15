@@ -10,7 +10,7 @@ import sacc
 
 def build_likelihood(_):
     massfunc = CCLDensity('critical', 'Bocquet16', False)
-    stats = NumberCountStat('cluster_counts_richness_proxy', 'cluster_mass_count_wl', massfunc)
+    stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc)
     stats = [stats]
     """
         Here we instantiate the actual likelihood. The statistics argument carry
@@ -23,7 +23,7 @@ def build_likelihood(_):
     """
     saccfile = os.path.expanduser(
     os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/number_counts/clusters_simulated_richness_data.sacc"
+        "${FIRECROWN_DIR}/examples/number_counts/clusters_simulated_data.sacc"
     )
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)
