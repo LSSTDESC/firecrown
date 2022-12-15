@@ -15,158 +15,19 @@ from gi.repository import NumCosmoMath as Ncm  # noqa: E402
 Ncm.cfg_init()
 
 mb = Ncm.ModelBuilder.new(Ncm.Model, "NcFirecrown", "Firecrown model interface")
+ser = Ncm.Serialize.new (Ncm.SerializeOpt.NONE)
+sparams = Ncm.ObjArray.load("numcosmo_firecrown_model.oa", ser)
 
-mb.add_sparam(
-    r"ia_\mathrm{bias}", "ia_bias", -5.0, 5.0, 0.1, 0.0, 0.5, Ncm.ParamType.FREE
-)
-mb.add_sparam(r"\alpha_z", "alphaz", -5.0, 5.0, 0.1, 0.0, 0.0, Ncm.ParamType.FREE)
+for i in range(sparams.len()):
+    mb.add_sparam_obj(sparams.get(i))
 
-mb.add_sparam(r"\alpha_g", "alphag", -5.0, 5.0, 0.1, 0.0, -1.0, Ncm.ParamType.FIXED)
-mb.add_sparam(r"z_\mathrm{piv}", "z_piv", 0.0, 5.0, 0.1, 0.0, 0.62, Ncm.ParamType.FIXED)
-
-mb.add_sparam(r"lens0_bias", "lens0_bias", 0.8, 3.0, 0.1, 0.0, 1.4, Ncm.ParamType.FREE)
-mb.add_sparam(r"lens1_bias", "lens1_bias", 0.8, 3.0, 0.1, 0.0, 1.6, Ncm.ParamType.FREE)
-mb.add_sparam(r"lens2_bias", "lens2_bias", 0.8, 3.0, 0.1, 0.0, 1.6, Ncm.ParamType.FREE)
-mb.add_sparam(r"lens3_bias", "lens3_bias", 0.8, 3.0, 0.1, 0.0, 1.9, Ncm.ParamType.FREE)
-mb.add_sparam(r"lens4_bias", "lens4_bias", 0.8, 3.0, 0.1, 0.0, 2.0, Ncm.ParamType.FREE)
-
-mb.add_sparam(
-    r"src0_delta_z",
-    "src0_delta_z",
-    -0.16,
-    +0.16,
-    0.001,
-    0.0,
-    -0.001,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"src1_delta_z",
-    "src1_delta_z",
-    -0.13,
-    +0.13,
-    0.001,
-    0.0,
-    -0.019,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"src2_delta_z",
-    "src2_delta_z",
-    -0.11,
-    +0.11,
-    0.001,
-    0.0,
-    +0.009,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"src3_delta_z",
-    "src3_delta_z",
-    -0.22,
-    +0.22,
-    0.001,
-    0.0,
-    -0.018,
-    Ncm.ParamType.FREE,
-)
-
-mb.add_sparam(
-    r"lens0_delta_z",
-    "lens0_delta_z",
-    -0.1,
-    +0.1,
-    0.001,
-    0.0,
-    +0.001,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"lens1_delta_z",
-    "lens1_delta_z",
-    -0.1,
-    +0.1,
-    0.001,
-    0.0,
-    +0.002,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"lens2_delta_z",
-    "lens2_delta_z",
-    -0.1,
-    +0.1,
-    0.001,
-    0.0,
-    +0.001,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"lens3_delta_z",
-    "lens3_delta_z",
-    -0.1,
-    +0.1,
-    0.001,
-    0.0,
-    +0.003,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"lens4_delta_z",
-    "lens4_delta_z",
-    -0.1,
-    +0.1,
-    0.001,
-    0.0,
-    +0.000,
-    Ncm.ParamType.FREE,
-)
-
-mb.add_sparam(
-    r"src0_mult_bias",
-    "src0_mult_bias",
-    -0.23,
-    +0.23,
-    0.001,
-    0.0,
-    +0.000,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"src1_mult_bias",
-    "src1_mult_bias",
-    -0.23,
-    +0.23,
-    0.001,
-    0.0,
-    +0.000,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"src2_mult_bias",
-    "src2_mult_bias",
-    -0.23,
-    +0.23,
-    0.001,
-    0.0,
-    +0.000,
-    Ncm.ParamType.FREE,
-)
-mb.add_sparam(
-    r"src3_mult_bias",
-    "src3_mult_bias",
-    -0.23,
-    +0.23,
-    0.001,
-    0.0,
-    +0.000,
-    Ncm.ParamType.FREE,
-)
-
-GNcFirecrown = mb.create()
-GObject.new(GNcFirecrown)
-NcFirecrown = GNcFirecrown.pytype
+NcTypeFirecrown = mb.create()
+GObject.new(NcTypeFirecrown)
+NcFirecrown = NcTypeFirecrown.pytype
 GObject.type_register(NcFirecrown)
+
+print(dir(NcTypeFirecrown))
+print(NcTypeFirecrown, NcFirecrown)
 
 cosmo = Nc.HICosmo.new_from_name(Nc.HICosmo, "NcHICosmoDEXcdm{'massnu-length':<1>}")
 cosmo.omega_x2omega_k()
