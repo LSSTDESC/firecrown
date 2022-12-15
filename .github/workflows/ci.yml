@@ -47,7 +47,7 @@ jobs:
         id: cache
       - name: Update environment
         run: |
-          conda update conda
+          conda clean --all
           conda search numcosmo -vvv
           conda env update -n firecrown -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
