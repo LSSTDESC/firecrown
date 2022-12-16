@@ -42,6 +42,10 @@ class ParamsMap(Dict[str, float]):
         self.lower_case: bool = False
 
     def use_lower_case_keys(self, enable: bool) -> None:
+        """Control whether keys will be translated into lower case.
+        If `enable` is True, such translation will be done.
+        This can help make sure code works with CosmoSIS, because such translation
+        is done inside CosmoSIS itself."""
         self.lower_case = enable
 
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
@@ -161,8 +165,8 @@ class DerivedParameterCollection:
 
         self.derived_parameters: Dict[str, DerivedParameter] = {}
 
-        for dp in derived_parameters:
-            self.add_required_parameter(dp)
+        for parameter in derived_parameters:
+            self.add_required_parameter(parameter)
 
     def __add__(self, other: Optional[DerivedParameterCollection]):
         """Return a new DerivedParameterCollection with the lists of DerivedParameter
@@ -230,9 +234,11 @@ class SamplerParameter:
         self.value = None
 
     def set_value(self, value: float):
+        """Set the value of this parameter."""
         self.value = value
 
     def get_value(self) -> float:
+        """Get the current value of this parameter."""
         return self.value
 
 
@@ -245,13 +251,25 @@ class InternalParameter:
         self.value = value
 
     def set_value(self, value: float):
+        """Set the value of this parameter."""
         self.value = value
 
     def get_value(self) -> float:
+        """Return the current value of this parameter."""
         return self.value
 
 
 def create(value: Optional[float] = None):
+    """Create a new parameter.
+
+    If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
+    will expect this value to be supplied by the sampling framwork. If `value`
+    is a `float` quantity, then Firecrown will expect this parameter to *not*
+    be supplied by the sampling framework, and instead the provided value will
+    be used for every sample.
+
+    Only `None` or a `float` value is allowed.
+    """
     if value is None:
         return SamplerParameter()
     return InternalParameter(value)
