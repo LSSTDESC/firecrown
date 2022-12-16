@@ -13,7 +13,7 @@ import pyccl.nl_pt
 from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source, Tracer
-from .source import Systematic
+from .source import SourceSystematic
 from .....parameters import (
     ParamsMap,
     RequiredParameters,
@@ -44,7 +44,7 @@ class WeakLensingArgs:
     ia_pt_c_2: Optional[Tuple[np.ndarray, np.ndarray]] = None
 
 
-class WeakLensingSystematic(Systematic):
+class WeakLensingSystematic(SourceSystematic):
     """Abstract base class for all weak lensing systematics."""
 
     @abstractmethod

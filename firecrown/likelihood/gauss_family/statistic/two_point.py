@@ -16,7 +16,7 @@ import pyccl.nl_pt
 from ....likelihood.likelihood import Cosmology
 
 from .statistic import Statistic
-from .source.source import Source, Systematic
+from .source.source import Source, SourceSystematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, any thing else will throw
@@ -155,7 +155,7 @@ class TwoPoint(Statistic):
         sacc_data_type,
         source0: Source,
         source1: Source,
-        systematics: Optional[List[Systematic]] = None,
+        systematics: Optional[List[SourceSystematic]] = None,
         ell_for_xi=None,
         ell_or_theta=None,
         ell_or_theta_min=None,

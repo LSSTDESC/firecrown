@@ -17,13 +17,13 @@ import sacc
 from ....likelihood.likelihood import Cosmology
 
 from ....updatable import Updatable
-from .source.source import Systematic
+from .source.source import SourceSystematic
 
 
 class Statistic(Updatable):
     """An abstract statistic class (e.g., two-point function, mass function, etc.)."""
 
-    systematics: List[Systematic]
+    systematics: List[SourceSystematic]
     sacc_inds: List[int]
 
     def read(self, sacc_data: sacc.Sacc) -> None:

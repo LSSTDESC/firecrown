@@ -12,7 +12,7 @@ from .....parameters import ParamsMap
 from .....updatable import Updatable
 
 
-class Systematic(Updatable):
+class SourceSystematic(Updatable):
     """An abstract systematic class (e.g., shear biases, photo-z shifts, etc.).
 
     This class currently has no methods at all, because the argument types for
@@ -35,7 +35,7 @@ class Source(Updatable):
         default of `None` implies no systematics.
     """
 
-    systematics: Sequence[Systematic]
+    systematics: Sequence[SourceSystematic]
     cosmo_hash: Optional[int]
     tracers: Optional[Tracer]
 

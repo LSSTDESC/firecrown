@@ -14,7 +14,7 @@ from scipy.interpolate import Akima1DInterpolator
 from .....likelihood.likelihood import Cosmology
 
 from .source import Source
-from .source import Systematic
+from .source import SourceSystematic
 from .source import Tracer
 
 from .....parameters import (
@@ -44,7 +44,7 @@ class NumberCountsArgs:
     b_s: Optional[Tuple[np.ndarray, np.ndarray]] = None
 
 
-class NumberCountsSystematic(Systematic):
+class NumberCountsSystematic(SourceSystematic):
     """Class implementing systematics for Number Counts sources."""
 
     @abstractmethod
