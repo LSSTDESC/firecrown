@@ -110,7 +110,8 @@ class Cosmology:
 
 
 class LikelihoodSystematic(Updatable):
-    pass
+    def __init__(self):
+        super().__init__()
 
 
 class PTSystematic(LikelihoodSystematic):
@@ -118,6 +119,7 @@ class PTSystematic(LikelihoodSystematic):
     theory calculations."""
 
     def __init__(self, *ptc_args, **ptc_kwargs):
+        super().__init__()
         self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
 
     def apply(self, cosmo_container: Cosmology) -> Cosmology:
