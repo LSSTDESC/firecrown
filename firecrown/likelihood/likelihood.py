@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import List, Dict, Optional, final
 from abc import abstractmethod
 import importlib
 import importlib.util
@@ -89,7 +89,7 @@ class Cosmology:
         self.ccl_cosmo = cosmo
         self.pt_calculator: pyccl.nl_pt.PTCalculator = None
         self.hm_calculator: pyccl.halomodel.HMCalculator = None
-        self.pk = {}
+        self.pk: Dict[str, pyccl.Pk2D] = {}
 
     def add_pk(self, name: str, pk: pyccl.Pk2D):
         self.pk[name] = pk

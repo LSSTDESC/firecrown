@@ -37,7 +37,7 @@ class Source(Updatable):
 
     systematics: Sequence[SourceSystematic]
     cosmo_hash: Optional[int]
-    tracers: Optional[Tracer]
+    tracers: Sequence[Tracer] | None
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -87,7 +87,7 @@ class Source(Updatable):
         cosmology."""
 
     @final
-    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer]:
+    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer] | None:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same

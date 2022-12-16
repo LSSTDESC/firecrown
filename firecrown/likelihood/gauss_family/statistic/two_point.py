@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Dict, Tuple, Optional, final
 import copy
 import functools
 import warnings
@@ -181,6 +181,7 @@ class TwoPoint(Statistic):
 
         self.data_vector = None
         self.theory_vector = None
+        self.cells: Dict[Tuple[str, str] | str, np.ndarray] = {}
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -324,6 +325,7 @@ class TwoPoint(Statistic):
                     )
                 elif tracer0.has_pt or tracer1.has_pt:
                     # Mixed pt and non-pt combination: skip
+                    # Todo: create dummy PTMatter tracer to allow pt x non-pt 2pt
                     continue
                 elif tracer0.has_hm and tracer1.has_hm:
                     # Compute halo model power spectrum

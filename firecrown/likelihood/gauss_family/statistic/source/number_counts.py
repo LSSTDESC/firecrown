@@ -121,9 +121,15 @@ class LinearBiasSystematic(NumberCountsSystematic):
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** self.alphag
 
+        if tracer_arg.bias is None:
+            bias = np.ones_like(tracer_arg.z)
+        else:
+            bias = tracer_arg.bias
+        bias = bias * pref
+
         return replace(
             tracer_arg,
-            bias=tracer_arg.bias * pref,
+            bias=bias,
         )
 
 
@@ -262,9 +268,15 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
             + 1.5 * self.z_m * np.power(tracer_arg.z / z_bar, 1.5) / z_bar
         )
 
+        if tracer_arg.mag_bias is None:
+            mag_bias = np.ones_like(tracer_arg.z)
+        else:
+            mag_bias = tracer_arg.mag_bias[1]
+        mag_bias = mag_bias * s / np.log(10)
+
         return replace(
             tracer_arg,
-            mag_bias=(tracer_arg.z, tracer_arg.mag_bias * s / np.log(10)),
+            mag_bias=(tracer_arg.z, mag_bias),
         )
 
 
