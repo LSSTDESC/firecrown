@@ -3,12 +3,13 @@
 """
 
 from __future__ import annotations
-from typing import List, final
+from typing import Optional, List, final
 
 import numpy as np
 
 import pyccl
 
+from ..likelihood import LikelihoodSystematic
 from .gauss_family import GaussFamily
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
@@ -26,8 +27,11 @@ class StudentT(GaussFamily):
     :param nu: The Student-t $\\nu$ parameter
     """
 
-    def __init__(self, statistics: List[Statistic], nu: float):
-        super().__init__(statistics)
+    def __init__(self,
+                 statistics: List[Statistic],
+                 nu: float,
+                 systematics: Optional[List[LikelihoodSystematic]] = None):
+        super().__init__(statistics, systematics)
         self.nu = nu  # pylint: disable-msg=C0103
 
     def compute_loglike(self, cosmo: pyccl.Cosmology):

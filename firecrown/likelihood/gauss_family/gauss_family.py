@@ -18,22 +18,25 @@ import scipy.linalg
 import pyccl
 import sacc
 
-from ..likelihood import CosmoSystematicsLikelihood
+from ..likelihood import Likelihood, LikelihoodSystematic
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
-class GaussFamily(CosmoSystematicsLikelihood):
+class GaussFamily(Likelihood):
     """GaussFamily is an abstract class. It is the base class for all likelihoods
     based on a chi-squared calculation. It provides an implementation of
     Likelihood.compute_chisq. Derived classes must implement the abstract method
     compute_loglike, which is inherited from Likelihood.
     """
 
-    def __init__(self, statistics: List[Statistic], systematics=None):
-        super().__init__(systematics=systematics)
+    def __init__(self,
+                 statistics: List[Statistic],
+                 systematics: Optional[List[LikelihoodSystematic]] = None):
+        super().__init__()
         self.statistics = UpdatableCollection(statistics)
+        self.systematics = UpdatableCollection(systematics or [])
         self.cov: Optional[np.ndarray] = None
         self.cholesky: Optional[np.ndarray] = None
         self.inv_cov: Optional[np.ndarray] = None
@@ -57,15 +60,15 @@ class GaussFamily(CosmoSystematicsLikelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
+    def compute_chisq(self, ccl_cosmo: pyccl.Cosmology) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
-        cosmo_container = self.apply_systematics(cosmo)
+        cosmo = self.apply_systematics(ccl_cosmo)
 
         residuals_list: List[np.ndarray] = []
         theory_vector_list: List[np.ndarray] = []
         data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
-            data, theory = stat.compute(cosmo_container)
+            data, theory = stat.compute(cosmo)
             residuals_list.append(np.atleast_1d(data - theory))
             theory_vector_list.append(np.atleast_1d(theory))
             data_vector_list.append(np.atleast_1d(data))
@@ -87,6 +90,7 @@ class GaussFamily(CosmoSystematicsLikelihood):
         This updates all statistics and calls teh abstract method
         _update_gaussian_family."""
         self.statistics.update(params)
+        self.systematics.update(params)
         self._update_gaussian_family(params)
 
     @final
@@ -97,12 +101,14 @@ class GaussFamily(CosmoSystematicsLikelihood):
         _reset_gaussian_family."""
         self._reset_gaussian_family()
         self.statistics.reset()
+        self.systematics.reset()
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_parameters = (
             self._get_derived_parameters_gaussian_family()
             + self.statistics.get_derived_parameters()
+            + self.systematics.get_derived_parameters()
         )
 
         return derived_parameters
@@ -127,7 +133,8 @@ class GaussFamily(CosmoSystematicsLikelihood):
 
         Derived classes must implement required_parameters_gaussian_family."""
         stats_rp = self.statistics.required_parameters()
-        stats_rp = self.required_parameters_gaussian_family() + stats_rp
+        syst_rp = self.systematics.required_parameters()
+        stats_rp = self.required_parameters_gaussian_family() + stats_rp + syst_rp
 
         return stats_rp
 

@@ -47,6 +47,7 @@ class Likelihood(Updatable):
         self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
         self.inv_cov: Optional[npt.NDArray[np.double]] = None
         self.statistics: UpdatableCollection = UpdatableCollection()
+        self.systematics: UpdatableCollection = UpdatableCollection()
 
     def set_params_names(self, params_names: List[str]) -> None:
         """Set the parameter names for this Likelihood."""
@@ -63,6 +64,13 @@ class Likelihood(Updatable):
         if hasattr(self, "params_names"):
             return self.params_names
         return []
+
+    def apply_systematics(self, ccl_cosmo: pyccl.Cosmology) -> Cosmology:
+        """Apply the systematics defined for this likelihood to the CCL Cosmology object."""
+        cosmo = Cosmology(ccl_cosmo)
+        for systematic in self.systematics:
+            cosmo = systematic.apply(cosmo)
+        return cosmo
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc):
@@ -101,24 +109,11 @@ class Cosmology:
         return True
 
 
-class CosmoSystematicsLikelihood(Likelihood):
-    """A likelihood class that allows the application of cosmology-level systematics"""
-
-    def __init__(self, systematics):
-        super().__init__()
-        self.systematics = UpdatableCollection(systematics)
-
-    @final
-    def apply_systematics(self, cosmo: pyccl.Cosmology) -> Cosmology:
-        cosmo_container = Cosmology(cosmo)
-        for systematic in self.systematics:
-            cosmo_container = systematic.apply(cosmo_container)
-        return cosmo_container
+class LikelihoodSystematic(Updatable):
+    pass
 
 
-# This should probably live somewhere else and derive from some base Systematics
-# calss
-class PTSystematic(Updatable):
+class PTSystematic(LikelihoodSystematic):
     """A cosmology-level systematic that provides the workspaces for perturbation
     theory calculations."""
 
