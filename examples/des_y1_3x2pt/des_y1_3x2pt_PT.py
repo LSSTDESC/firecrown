@@ -137,7 +137,8 @@ if __name__ == "__main__":
     # Galaxies
     pk_gm = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
     pk_gg = pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
-    # Magnification
+    # Magnification: just a matter-matter P(k)
+    pk_mm = pt.get_pt_pk2d(ccl_cosmo, ptt_m, tracer2=ptt_m, ptc=ptc)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap({"ia_a_1": a_1,
@@ -201,7 +202,7 @@ if __name__ == "__main__":
     # Magnification
     cl_mI = ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells, p_of_k_a=pk_im)
     cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells, p_of_k_a=pk_gm)
-    cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells)
+    cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells, p_of_k_a=pk_mm)
 
     # The observed angular power spectrum is the sum of the two.
     cl_cs_theory = cl_GG + 2*cl_GI + cl_II
