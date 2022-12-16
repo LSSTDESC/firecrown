@@ -113,11 +113,9 @@ class MultiplicativeShearBias(WeakLensingSystematic):
             The WeakLensingArgs to which apply the shear bias.
         """
 
-        return WeakLensingArgs(
+        return replace(
+            tracer_arg,
             scale=tracer_arg.scale * (1.0 + self.m),
-            z=tracer_arg.z,
-            dndz=tracer_arg.dndz,
-            ia_bias=tracer_arg.ia_bias,
         )
 
 
@@ -195,10 +193,8 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
         ia_bias_array = pref * self.ia_bias
 
-        return WeakLensingArgs(
-            scale=tracer_arg.scale,
-            z=tracer_arg.z,
-            dndz=tracer_arg.dndz,
+        return replace(
+            tracer_arg,
             ia_bias=(tracer_arg.z, ia_bias_array),
         )
 
@@ -289,7 +285,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
 
-    This systematic shifts the photo-z distribution by some ammount `delta_z`.
+    This systematic shifts the photo-z distribution by some amount `delta_z`.
     """
 
     params_names = ["delta_z"]
@@ -328,11 +324,9 @@ class PhotoZShift(WeakLensingSystematic):
         dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
         dndz[np.isnan(dndz)] = 0.0
 
-        return WeakLensingArgs(
-            scale=tracer_arg.scale,
-            z=tracer_arg.z,
+        return replace(
+            tracer_arg,
             dndz=dndz,
-            ia_bias=tracer_arg.ia_bias,
         )
 
 
