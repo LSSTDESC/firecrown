@@ -93,7 +93,7 @@ class TwoPoint(Statistic):
         The second sources needed to compute this statistic.
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
-        The default of `None` implies no systematics.
+        The default of `None` implies no systematics. Currently this does nothing.
     ell_or_theta : dict, optional
         A dictionary of options for generating the ell or theta values at which
         to compute the statistics. This option can be used to have firecrown
@@ -170,6 +170,8 @@ class TwoPoint(Statistic):
         self.source0 = source0
         self.source1 = source1
         self.systematics = systematics or []
+        if len(self.systematics) > 0:
+            warnings.warn("TwoPoint currently does not support systematics.")
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
