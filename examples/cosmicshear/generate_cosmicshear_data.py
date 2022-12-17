@@ -29,7 +29,6 @@ for i, mn in enumerate([0.25, 0.75]):
     tracers.append(ccl.WeakLensingTracer(COSMO, dndz=(Z, dndz)))
 
 dv = []
-ndv = []
 
 for i in range(len(tracers)):
     for j in range(i, len(tracers)):
@@ -37,7 +36,6 @@ for i in range(len(tracers)):
         npell = pell + rng.normal(size=pell.shape[0]) * EPS * pell
         sacc_data.add_ell_cl("galaxy_shear_cl_ee", "trc%d" % i, "trc%d" % j, ELL, npell)
         dv.append(pell)
-        ndv.append(npell)
 
 # a fake covariance matrix
 dv = np.concatenate(dv, axis=0)
