@@ -183,6 +183,15 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
+        self.theory_window_function = None
+        # TODO: Why do we have both _ell_or_theta and ell_or_theta_ ?
+        # What would be better names for these?
+        self._ell_or_theta = None
+        self.ell_or_theta_ = None
+        self.measured_statistic_ = None
+        self.sacc_tracers = None
+        self.predicted_statistic_ = None
+
 
     @final
     def _update(self, params: ParamsMap):
@@ -252,6 +261,7 @@ class TwoPoint(Statistic):
             )
 
         if self.ell_or_theta_min is not None:
+            # pylint: disable-next=invalid-name
             q = np.where(_ell_or_theta >= self.ell_or_theta_min)
             _ell_or_theta = _ell_or_theta[q]
             _stat = _stat[q]
@@ -259,6 +269,7 @@ class TwoPoint(Statistic):
                 self.sacc_inds = self.sacc_inds[q]
 
         if self.ell_or_theta_max is not None:
+            # pylint: disable-next=invalid-name
             q = np.where(_ell_or_theta <= self.ell_or_theta_max)
             _ell_or_theta = _ell_or_theta[q]
             _stat = _stat[q]
@@ -307,7 +318,7 @@ class TwoPoint(Statistic):
 
         if self.theory_window_function is not None:
 
-            def log_interpolator(x, y):
+            def log_interpolator(x, y): # pylint: disable-msg=invalid-name
                 if np.all(y > 0):
                     # use log-log interpolation
                     intp = scipy.interpolate.InterpolatedUnivariateSpline(
