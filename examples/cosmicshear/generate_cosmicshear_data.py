@@ -48,9 +48,7 @@ for i in range(len(tracers)):
 
 # a fake covariance matrix
 dv = np.concatenate(dv, axis=0)
-cov = np.zeros((len(dv), len(dv)))
-for i in range(len(dv)):
-    cov[i, i] = (EPS * dv[i]) ** 2
+cov = np.diag((EPS * dv) ** 2)
 
 sacc_data.add_covariance(cov)
 
