@@ -60,8 +60,8 @@ class NumberCountsPTSystematic(Systematic):
 
     @abstractmethod
     def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsPTArgs
+    ) -> NumberCountsPTArgs:
         """Apply method to include systematics in the tracer_arg."""
 
 
@@ -538,9 +538,6 @@ class NumberCountsPT(SourcePT):
     bias: float
     mag_bias: Optional[float]
 
-    systematics: UpdatableCollection
-    tracer_arg: NumberCountsArgs
-
     def __init__(
         self,
         *,
@@ -564,7 +561,7 @@ class NumberCountsPT(SourcePT):
                 self.systematics.append(systematic)
 
         self.scale = scale
-        self.current_tracer_args = None
+        self.current_tracer_args:NumberCountsArgs
         self.scale_ = None
         self.tracer_ = None
 
@@ -615,27 +612,6 @@ class NumberCountsPT(SourcePT):
                 ]
             )
         return rp + self.systematics.required_parameters()
-    def _read(self, sacc_data):
-        """Read the data for this source from the SACC file.
-
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
-
-        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
-        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
-        indices = np.argsort(z)
-        z = z[indices]  # pylint: disable-msg=invalid-name
-        nz = nz[indices]  # pylint: disable-msg=invalid-name
-
-        self.pttracer_args = NumberCountsPTArgs(scale=self.scale, z=z, dndz=nz, bias=None, bias_2=None, bias_s=None)
-        self.tracer_args = NumberCountsArgs(scale=self.scale, z=z, dndz=nz, bias=None)
-        self.pt_tracer_args = NumberCountsArgs(scale=self.scale, z=z, dndz=nz, bias=None)
-
-
 
     def _read(self, sacc_data):
         """Read the data for this source from the SACC file.

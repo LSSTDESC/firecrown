@@ -58,7 +58,7 @@ class WeakLensingSystematic(Systematic):
         """Apply method to include systematics in the tracer_arg."""
 
 
-class WeakLensingPTSystematic(WeakLensingSystematic):
+class WeakLensingPTSystematic(Systematic):
     """Abstract base class for all weak lensing systematics."""
 
     @abstractmethod

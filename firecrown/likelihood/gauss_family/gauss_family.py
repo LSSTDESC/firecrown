@@ -62,12 +62,8 @@ class GaussFamily(Likelihood):
         residuals_list: List[np.ndarray] = []
         theory_vector_list: List[np.ndarray] = []
         data_vector_list: List[np.ndarray] = []
-        import time
         for stat in self.statistics:
-            start = time.time()
             data, theory = stat.compute(cosmo)
-            end = time.time()
-            print("time ",end-start, "\n")
             residuals_list.append(np.atleast_1d(data - theory))
             theory_vector_list.append(np.atleast_1d(theory))
             data_vector_list.append(np.atleast_1d(data))

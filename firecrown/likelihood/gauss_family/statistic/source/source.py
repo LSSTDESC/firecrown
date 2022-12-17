@@ -99,30 +99,50 @@ class Source(Updatable):
         self.cosmo_hash = cur_hash
         return self.tracer
 
+
 class SourcePT(Source):
+    """An abstract source subclass (e.g., a sample of lenses)
+    used for PT calculations.
+
+    Parameters
+    ----------
+    scale : 1.0, optional
+        The default scale for this source.
+    systematics : list of str, optional
+        A list of the source-level systematics to apply to the source. The
+        default of `None` implies no systematics.
+    """
+
     pttracer: Optional[pyccl.nl_pt.tracers.PTTracer]
+
     @abstractmethod
     def create_pttracer(self, cosmo: pyccl.Cosmology):
-        """Abstract method to create a tracer for this `Source`, for the given
+        """Abstract method to create a pttracer for this `Source`, for the given
         cosmology."""
+
     @abstractmethod
     def get_pttracer(self, cosmo: pyccl.Cosmology) -> pyccl.nl_pt.tracers.PTTracer:
-        """Abstract method to create a tracer for this `Source`, for the given
-        cosmology."""
+        """Return the pttracer for the given cosmology.
+
+        This method caches its result, so if called a second time with the same
+        cosmology, no calculation needs to be done."""
+
     @abstractmethod
     def create_pt_tracer(self, cosmo: pyccl.Cosmology):
-        """Abstract method to create a tracer for this `Source`, for the given
+        """Abstract method to create a pt_tracer for this `Source`, for the given
         cosmology."""
+
     @abstractmethod
     def get_pt_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
-        """Abstract method to create a tracer for this `Source`, for the given
-        cosmology."""
-class TracerContainer:
-    def __init__(self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None):
-        self.ccl_tracer = tracer
-        self.field = None
-        self.pt_tracer = pt_tracer
+        """Return the pt_tracer for the given cosmology.
 
-    @property
-    def has_pt(self):
-        return self.pt_tracer is not None
+        This method caches its result, so if called a second time with the same
+        cosmology, no calculation needs to be done."""
+
+    @abstractmethod
+    def get_ptscale(self) -> float:
+        """Abstract method to return the ptscale for this `Source`."""
+
+    @abstractmethod
+    def get_pt_scale(self) -> float:
+        """Abstract method to return the pt_scale for this `Source`."""

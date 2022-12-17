@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Dict
 from abc import abstractmethod
 import importlib
 import importlib.util
@@ -20,6 +20,7 @@ import numpy as np
 import numpy.typing as npt
 import pyccl
 import sacc
+
 
 from ..updatable import Updatable, UpdatableCollection
 
@@ -67,34 +68,6 @@ class Likelihood(Updatable):
     @abstractmethod
     def compute_loglike(self, cosmo: pyccl.Cosmology) -> float:
         """Compute the log-likelihood of generic CCL data."""
-
-
-class CosmologyContainer:
-    def __init__(self, cosmo: pyccl.Cosmology):
-        self.ccl_cosmo = cosmo
-        self.pt_calculator: pyccl.nl_pt.PTCalculator = None
-        self.hm_calculator: pyccl.halomodel.HMCalculator = None
-
-    def add_pk(self, name: str, pk: pyccl.Pk2D):
-        self.pk[name] = pk
-
-    def get_pk(self, name: str) -> pyccl.Pk2D:
-        if name in self.pk:
-            return self.pk[name]
-        return self.ccl_cosmo.get_nonlin_power(name)
-
-
-
-class CosmoSystematicsLikelihood(Likelihood):
-    def __init__(self, systematics):
-        super().__init__()
-        self.systematics = UpdatableCollection(systematics)
-
-    def apply_systematics(self, cosmo: pyccl.Cosmology) -> pyccl.Cosmology:
-        pk = {}
-        for systematic in self.systematics:
-            pk = systematic.apply(cosmo, pk)
-        cosmo._pk_nl.update(pk)
 
 
 def load_likelihood(filename: str) -> Likelihood:

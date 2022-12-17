@@ -12,8 +12,8 @@ import scipy.interpolate
 
 import pyccl
 import pyccl.nl_pt
-import time
 
+from pyccl.nl_pt import PTCalculator
 from .statistic import Statistic
 from .source.source import Source, Systematic, SourcePT
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
@@ -59,9 +59,11 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
 def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
     return pyccl.angular_cl(cosmo, *tracers, np.array(ells), p_of_k_a=p_of_k_a)
 
+
 @functools.lru_cache(maxsize=128)
 def _cached_pk(cosmo, tracers, ptc_calc):
     return pyccl.nl_pt.get_pt_pk2d(cosmo, *tracers, ptc=ptc_calc)
+
 
 @functools.lru_cache(maxsize=128)
 def _cached_matter_tracer(cosmo):
@@ -137,7 +139,8 @@ class TwoPoint(Statistic):
            wavenumber samples between `mid` and `max`. Default is 200.
     pt_calc : PT Calculator, required when using PT Sources
     calc_hm_1, calc_hm_2: int, optional
-        An integer indicating the calculation of the Halo Model Power Spectrum, one to be set for each tracer
+        An integer indicating the calculation of the Halo Model Power Spectrum,
+            a value to be set for each tracer
         0 : No calculation, use linear theory
         1 : Calculate the 1-halo term only
         2 : Calculate the 2-halo term only
@@ -175,25 +178,31 @@ class TwoPoint(Statistic):
         ell_or_theta_min=None,
         ell_or_theta_max=None,
         pt_calc: PTCalculator = None,
-        calc_hm_1= 0,
-        calc_hm_2= 0,
+        calc_hm_1=0,
+        calc_hm_2=0,
     ):
         super().__init__()
 
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.pt_calc=pt_calc
+        self.pt_calc = pt_calc
         self.calc_hm_1 = calc_hm_1
         self.calc_hm_2 = calc_hm_2
 
-        if (self.pt_calc==None and ((isinstance(source0, SourcePT)) or (isinstance(source1, SourcePT)) )):
+        if (
+            self.pt_calc is None and ((isinstance(source0, SourcePT))
+            or (isinstance(source1, SourcePT)))
+            ):
             raise ValueError(
                 f"Calling PT calculations without passing a PTCalculator"
             )
 
 
-        if (self.pt_calc != None and ((not isinstance(source0, SourcePT)) and (not isinstance(source1, SourcePT)))):
+        if (
+            self.pt_calc is not None and ((not isinstance(source0, SourcePT))
+            and (not isinstance(source1, SourcePT)))
+            ):
             raise ValueError(
                 f"Passing a PTCalculator without specifying which sources calculate PT (i.e. need to set either/both source_0_pt and source_1_pt to True)"
             )
@@ -320,16 +329,10 @@ class TwoPoint(Statistic):
         """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        #scale = self.source0.get_scale() * self.source1.get_scale()
-
         if self.ccl_kind == "cl":
             self.ells = self.ell_or_theta_
         else:
             self.ells = _ell_for_xi(**self.ell_for_xi)
-        self.cells = {}
-        
-        #print(isinstance(self.source0, SourcePT),isinstance(self.source1, SourcePT))
-        #print(self.source0, self.source1)
 
         if (self.calc_hm_1 or self.calc_hm_2):
             raise NotImplementedError(
@@ -337,39 +340,51 @@ class TwoPoint(Statistic):
                     )
 
 
-        if (((not isinstance(self.source0, SourcePT)) and (not isinstance(self.source1, SourcePT)))):
 
-            tracer0 = self.source0.get_tracer(cosmo)
-            tracer1 = self.source1.get_tracer(cosmo)
-            scale = self.source0.get_scale() * self.source1.get_scale()
+        if (isinstance(self.source0, SourcePT)) and (isinstance(self.source1, SourcePT)):
+            ptt_m = _cached_matter_tracer(cosmo)
+
+            tracers0 = self.source0.get_tracer(cosmo)
+            tracers1 = self.source1.get_tracer(cosmo)
+            scale0 = self.source0.get_scale()
+            scale1 = self.source1.get_scale()
+
+            pt_tracers0 = self.source0.get_pt_tracer(cosmo)
+            pt_tracers1 = self.source1.get_pt_tracer(cosmo)
+            pt_scale0 = self.source0.get_pt_scale()
+            pt_scale1 = self.source1.get_pt_scale()
+
         
-            if self.ccl_kind == "cl":
-                
-                    theory_vector = (
-                        _cached_angular_cl(
-                            cosmo, (tracer0, tracer1), tuple(self.ell_or_theta_.tolist())
-                        )
-                        * scale
-                    )
+            pttracers0 = self.source0.get_pttracer(cosmo)
+            pttracers1 = self.source1.get_pttracer(cosmo)
+            ptscale0 = self.source0.get_ptscale()
+            ptscale1 = self.source1.get_ptscale()
 
-            else:
-                ells = self.ells
-                cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
+            pk_0m = _cached_pk(cosmo, (pttracers0, ptt_m), self.pt_calc) 
+            pk_1m = _cached_pk(cosmo, (pttracers1, ptt_m), self.pt_calc)
+            pk_01 = _cached_pk(cosmo, (pttracers0, pttracers1), self.pt_calc)
+
+
+
+            theory_vector = (_cached_angular_cl(cosmo, (pt_tracers0, pt_tracers1), tuple(self.ells), p_of_k_a=pk_01))*pt_scale0*pt_scale1
+
+            theory_vector+=(_cached_angular_cl(cosmo, (pt_tracers0, tracers1), tuple(self.ells), p_of_k_a=pk_0m))*pt_scale0*scale1
+
+            theory_vector+=(_cached_angular_cl(cosmo, (pt_tracers1, tracers0), tuple(self.ells), p_of_k_a=pk_1m))*pt_scale1*scale0
+
+            theory_vector+=(_cached_angular_cl(cosmo, (tracers0, tracers1), tuple(self.ells))
+                        *scale0*scale1)
+
+
+            if not self.ccl_kind == "cl":
                 theory_vector = (
                     pyccl.correlation(
-                        cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
+                        cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
                     )
-                    * scale
-                )        
+                )
+      
 
-        elif (((isinstance(self.source0, SourcePT)) and (not isinstance(self.source1, SourcePT))) or ((isinstance(self.source1, SourcePT)) and (not isinstance(self.source0, SourcePT))) ):
-            #changing notation such that source0 is always the SourcePT object
-            if isinstance(self.source1, SourcePT):
-                temp_source = self.source0
-                self.source0 = self.source1
-                self.source1 = temp_source
-
-
+        elif (isinstance(self.source0, SourcePT)) and (not isinstance(self.source1, SourcePT)):
             ptt_m = _cached_matter_tracer(cosmo)
 
             tracers0 = self.source0.get_tracer(cosmo)
@@ -393,7 +408,7 @@ class TwoPoint(Statistic):
             theory_vector = (                        
                         _cached_angular_cl(
                             cosmo, (pt_tracers0, tracers1), tuple(self.ells), p_of_k_a=pk_0m)
-                        )*pt_scale0*ptscale0*scale1
+                        )*ptscale0*scale1
             #equivalent to theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, self.ells))*scale0*scale1  
             theory_vector += (                        
                         _cached_angular_cl(
@@ -409,60 +424,38 @@ class TwoPoint(Statistic):
                     )
                 )
 
-        else:
+        elif (isinstance(self.source1, SourcePT)) and (not isinstance(self.source0, SourcePT)):
             ptt_m = _cached_matter_tracer(cosmo)
 
-            #print(self.source0, self.source1, ptt_m)
-
-            tracers0 = self.source0.get_tracer(cosmo)
             tracers1 = self.source1.get_tracer(cosmo)
-            scale0 = self.source0.get_scale()
+            tracers0 = self.source0.get_tracer(cosmo)
             scale1 = self.source1.get_scale()
+            scale0 = self.source0.get_scale()
 
-            pt_tracers0 = self.source0.get_pt_tracer(cosmo)
             pt_tracers1 = self.source1.get_pt_tracer(cosmo)
-            pt_scale0 = self.source0.get_pt_scale()
             pt_scale1 = self.source1.get_pt_scale()
 
-        
-            pttracers0 = self.source0.get_pttracer(cosmo)
+            
             pttracers1 = self.source1.get_pttracer(cosmo)
-            ptscale0 = self.source0.get_ptscale()
             ptscale1 = self.source1.get_ptscale()
-
-            start = time.time()
-            print(_cached_matter_tracer.cache_info().hits,_cached_pk.cache_info().hits, _cached_angular_cl.cache_info().hits)
-            pk_0m = _cached_pk(cosmo, (pttracers0, ptt_m), self.pt_calc) 
+            
+            #equivalent to pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, tracer2=ptt_m, ptc=self.pt_calc)
             pk_1m = _cached_pk(cosmo, (pttracers1, ptt_m), self.pt_calc)
-            pk_01 = _cached_pk(cosmo, (pttracers0, pttracers1), self.pt_calc)
-            end = time.time()
-            print(_cached_matter_tracer.cache_info().hits,_cached_pk.cache_info().hits, _cached_angular_cl.cache_info().hits, end-start)
 
-            #pk_0m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, tracer2=ptt_m, ptc=self.pt_calc)
-            #pk_1m = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers1, tracer2=ptt_m, ptc=self.pt_calc)
-            #pk_01 = pyccl.nl_pt.get_pt_pk2d(cosmo, pttracers0, pttracers1, ptc=self.pt_calc)
+            
+            #equivalent to theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers0, tracers1, self.ells, p_of_k_a=pk_0m))*pt_scale0*ptscale0*scale1
 
-
-            theory_vector = (_cached_angular_cl(cosmo, (pt_tracers0, pt_tracers1), tuple(self.ells), p_of_k_a=pk_01))*pt_scale0*pt_scale1
-            theory_vector_prime = theory_vector.copy()
-
-            theory_vector+=(_cached_angular_cl(cosmo, (pt_tracers0, tracers1), tuple(self.ells), p_of_k_a=pk_0m))*pt_scale0*scale1
-            print(theory_vector-theory_vector_prime, (tracers1._trc))
-
-            theory_vector+=(_cached_angular_cl(cosmo, (pt_tracers1, tracers0), tuple(self.ells), p_of_k_a=pk_1m))*pt_scale1*scale0
-            print(theory_vector-theory_vector_prime, (tracers1._trc))
-
-            theory_vector+=(_cached_angular_cl(cosmo, (tracers0, tracers1), tuple(self.ells))
-                        *scale0*scale1)
-            print(theory_vector-theory_vector_prime, (tracers1._trc))
-
-            print(_cached_matter_tracer.cache_info().hits,_cached_pk.cache_info().hits, _cached_angular_cl.cache_info().hits)
-            print("scales", scale1, pt_scale1, ptscale1, scale0, pt_scale0, ptscale0)
-            #theory_vector = np.array(pyccl.angular_cl(cosmo, pt_tracers0, pt_tracers1, self.ells, p_of_k_a=pk_01))*pt_scale0*ptscale0*pt_scale1*ptscale1
-            #theory_vector += np.array(pyccl.angular_cl(cosmo, pt_tracers0, tracers1, self.ells, p_of_k_a=pk_0m))*pt_scale0*ptscale0*scale1
-            #theory_vector += np.array(pyccl.angular_cl(cosmo, pt_tracers1, tracers0, self.ells, p_of_k_a=pk_1m))*pt_scale1*ptscale1*scale0
-            #theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, self.ells))*scale0*scale1
-
+            theory_vector = (                        
+                        _cached_angular_cl(
+                            cosmo, (pt_tracers1, tracers0), tuple(self.ells), p_of_k_a=pk_0m)
+                        )*ptscale1*scale0
+            #equivalent to theory_vector += np.array(pyccl.angular_cl(cosmo, tracers0, tracers1, self.ells))*scale0*scale1  
+            theory_vector += (                        
+                        _cached_angular_cl(
+                            cosmo, (tracers0, tracers1), tuple(self.ells)
+                        )
+                        *scale0*scale1
+                    )
 
             if not self.ccl_kind == "cl":
                 theory_vector = (
@@ -470,6 +463,34 @@ class TwoPoint(Statistic):
                         cosmo, self.ells, theory_vector, self.ell_or_theta_ / 60, type=self.ccl_kind
                     )
                 )
+
+
+
+        else:
+
+            tracer0 = self.source0.get_tracer(cosmo)
+            tracer1 = self.source1.get_tracer(cosmo)
+            scale = self.source0.get_scale() * self.source1.get_scale()
+        
+            if self.ccl_kind == "cl":
+                
+                    theory_vector = (
+                        _cached_angular_cl(
+                            cosmo, (tracer0, tracer1), tuple(self.ell_or_theta_.tolist())
+                        )
+                        * scale
+                    )
+
+            else:
+                ells = self.ells
+                cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
+                theory_vector = (
+                    pyccl.correlation(
+                        cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
+                    )
+                    * scale
+                )  
+
 
 
         if self.theory_window_function is not None:
