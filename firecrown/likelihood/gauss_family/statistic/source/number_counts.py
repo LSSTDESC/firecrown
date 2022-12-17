@@ -324,14 +324,12 @@ class NumberCounts(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
+        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
+        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
         inds = np.argsort(z)
-        z = z[inds]
-        nz = nz[inds]
 
         self.tracer_args = NumberCountsArgs(
-            scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
+            scale=self.scale, z=z[inds], dndz=nz[inds], bias=None, mag_bias=None
         )
 
     def create_tracer(self, cosmo: pyccl.Cosmology):
