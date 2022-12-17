@@ -25,16 +25,16 @@ tracers = []
 
 for i, mn in enumerate([0.25, 0.75]):
     dndz = np.exp(-0.5 * (Z - mn) ** 2 / 0.25 / 0.25)
-    sacc_data.add_tracer("NZ", "trc%d" % i, Z, dndz)
+    sacc_data.add_tracer("NZ", f"trc{i}", Z, dndz)
     tracers.append(ccl.WeakLensingTracer(COSMO, dndz=(Z, dndz)))
 
 dv = []
 
-for i in range(len(tracers)):
-    for j in range(i, len(tracers)):
-        pell = ccl.angular_cl(COSMO, tracers[i], tracers[j], ELL)
+for i, traceri in enumerate(tracers):
+    for j, tracerj in enumerate(tracers[i:]):
+        pell = ccl.angular_cl(COSMO, traceri, tracerj, ELL)
         npell = pell + rng.normal(size=pell.shape[0]) * EPS * pell
-        sacc_data.add_ell_cl("galaxy_shear_cl_ee", "trc%d" % i, "trc%d" % j, ELL, npell)
+        sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"trc{i}", f"trc{j+i}", ELL, npell)
         dv.append(pell)
 
 # a fake covariance matrix
