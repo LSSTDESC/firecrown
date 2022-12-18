@@ -30,12 +30,13 @@ for i, mn in enumerate([0.25, 0.75]):
 
 dv = []
 
-for i, traceri in enumerate(tracers):
-    for j, tracerj in enumerate(tracers[i:]):
-        pell = ccl.angular_cl(COSMO, traceri, tracerj, ELL)
-        npell = pell + rng.normal(size=pell.shape[0]) * EPS * pell
-        sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"trc{i}", f"trc{j+i}", ELL, npell)
-        dv.append(pell)
+# Fill in the upper triangular indices for dv.
+for i, j in zip(*np.triu_indices(len(tracers))):
+    pell = ccl.angular_cl(COSMO, tracers[i], tracers[j], ELL)
+    npell = pell + rng.normal(size=pell.shape[0]) * EPS * pell
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"trc{i}", f"trc{j}", ELL, npell)
+    dv.append(pell)
+
 
 # a fake covariance matrix
 dv = np.concatenate(dv, axis=0)
