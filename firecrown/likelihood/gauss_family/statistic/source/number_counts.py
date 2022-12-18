@@ -35,6 +35,7 @@ class NumberCountsArgs:
     bias: np.ndarray
     mag_bias: np.ndarray
 
+
 @dataclass(frozen=True)
 class NumberCountsPTArgs:
     """Class for number counts tracer builder argument."""
@@ -46,6 +47,7 @@ class NumberCountsPTArgs:
     bias_2: np.ndarray
     bias_s: np.ndarray
 
+
 class NumberCountsSystematic(Systematic):
     """Class implementing systematics for Number Counts sources."""
 
@@ -54,6 +56,7 @@ class NumberCountsSystematic(Systematic):
         self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         """Apply method to include systematics in the tracer_arg."""
+
 
 class NumberCountsPTSystematic(Systematic):
     """Class implementing systematics for Number Counts sources."""
@@ -345,9 +348,6 @@ class NLBiasSystematic(NumberCountsPTSystematic):
             The source to which apply the shear bias.
         """
 
-        #pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        #pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** self.alphag
-        #print(tracer_arg.bias, tracer_arg.z)
         return NumberCountsPTArgs(
             scale=tracer_arg.scale,
             z=tracer_arg.z,
@@ -355,7 +355,6 @@ class NLBiasSystematic(NumberCountsPTSystematic):
             bias=tracer_arg.bias * np.ones_like(tracer_arg.z),
             bias_2=tracer_arg.bias_2 * np.ones_like(tracer_arg.z),
             bias_s=tracer_arg.bias_s * np.ones_like(tracer_arg.z),
-            #mag_bias=tracer_arg.mag_bias,
         )
 
 
@@ -518,22 +517,24 @@ class NumberCounts(Source):
 
 class NumberCountsPT(SourcePT):
     systematics: UpdatableCollection
-    #tracer corresponds to the portion of the 'Source' which has no PT calculations, type Tracer
-    #pttracer corresponds to the PTTracer used to calculate PT calculations
-    #pt_tracer is a Tracer object that must be made for pyccl to calculate Cls from the PTTracer power spectrum
+    # tracer corresponds to the portion of the 'Source'
+    # which has no PT calculations, type Tracer
+    # pttracer corresponds to the PTTracer used to calculate PT calculations
+    # pt_tracer is a Tracer object that must be made for pyccl to
+    # calculate Cls from the PTTracer power spectrum
 
     tracer: Optional[pyccl.tracers.Tracer]
     pttracer: Optional[pyccl.nl_pt.tracers.PTTracer]
     pt_tracer: Optional[pyccl.tracers.Tracer]
-    
+
     tracer_args: NumberCountsArgs
     pttracer_args: NumberCountsPTArgs
     pt_tracer_args: NumberCountsArgs
-    
+
     cosmo_hash: Optional[int]
     ptcosmo_hash: Optional[int]
     pt_cosmo_hash: Optional[int]
-    
+
     params_names = ["bias", "bias_2", "bias_s" "mag_bias"]
     bias: float
     mag_bias: Optional[float]
@@ -561,7 +562,7 @@ class NumberCountsPT(SourcePT):
                 self.systematics.append(systematic)
 
         self.scale = scale
-        self.current_tracer_args:NumberCountsArgs
+        self.current_tracer_args: NumberCountsArgs
         self.scale_ = None
         self.tracer_ = None
 
@@ -572,7 +573,7 @@ class NumberCountsPT(SourcePT):
             derived_parameters + self.systematics.get_derived_parameters()
         )
         return derived_parameters
-    
+
     @final
     def _update_source(self, params: ParamsMap):
         self.bias = params.get_from_prefix_param(self.sacc_tracer, "bias")
@@ -628,10 +629,15 @@ class NumberCountsPT(SourcePT):
         z = z[inds]
         nz = nz[inds]
 
-        self.pttracer_args = NumberCountsPTArgs(scale=self.scale, z=z, dndz=nz, bias=None, bias_2=None, bias_s=None)
-        self.tracer_args = NumberCountsArgs(scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None)
-        self.pt_tracer_args = NumberCountsArgs(scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None)
-
+        self.pttracer_args = NumberCountsPTArgs(
+            scale=self.scale, z=z, dndz=nz, bias=None, bias_2=None, bias_s=None
+        )
+        self.tracer_args = NumberCountsArgs(
+            scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
+        )
+        self.pt_tracer_args = NumberCountsArgs(
+            scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
+        )
 
     def create_tracer(self, cosmo: pyccl.Cosmology):
         tracer_args = self.tracer_args
@@ -677,16 +683,13 @@ class NumberCountsPT(SourcePT):
         self.current_tracer_args = tracer_args
 
         return tracer, tracer_args
-    
-    
+
     def create_pttracer(self, cosmo: pyccl.Cosmology):
         """
         Render a source by applying systematics.
 
         """
         pttracer_args = self.pttracer_args
-
-
 
         bias = np.ones_like(pttracer_args.z) * self.bias
         bias_2 = np.ones_like(pttracer_args.z) * self.bias_2
@@ -696,17 +699,19 @@ class NumberCountsPT(SourcePT):
             z=pttracer_args.z,
             dndz=pttracer_args.dndz,
             bias=bias,
-            bias_2 = bias_2,
+            bias_2=bias_2,
             bias_s=bias_s,
-            #mag_bias=pttracer_args.mag_bias,
         )
 
-
         for systematic in self.systematics:
-            if  isinstance(systematic,NumberCountsPTSystematic):
+            if isinstance(systematic, NumberCountsPTSystematic):
                 pttracer_args = systematic.apply(cosmo, pttracer_args)
 
-        pttracer = pyccl.nl_pt.PTNumberCountsTracer( b1=(pttracer_args.z, pttracer_args.bias), b2 = (pttracer_args.z, pttracer_args.bias_2), bs=(pttracer_args.z, pttracer_args.bias_s))
+        pttracer = pyccl.nl_pt.PTNumberCountsTracer(
+            b1=(pttracer_args.z, pttracer_args.bias),
+            b2=(pttracer_args.z, pttracer_args.bias_2),
+            bs=(pttracer_args.z, pttracer_args.bias_s),
+        )
 
         self.current_pttracer_args = pttracer_args
         return pttracer, pttracer_args
@@ -716,15 +721,19 @@ class NumberCountsPT(SourcePT):
         Render a source by applying systematics.
 
         """
-        pttracer_args = self.pttracer_args
         pt_tracer_args = self.pt_tracer_args
 
-
         for systematic in self.systematics:
-            if not isinstance(systematic,NumberCountsPTSystematic):
+            if not isinstance(systematic, NumberCountsPTSystematic):
                 pt_tracer_args = systematic.apply(cosmo, pt_tracer_args)
 
-        pt_tracer = pyccl.NumberCountsTracer(cosmo, has_rsd=False, dndz=(pt_tracer_args.z, pt_tracer_args.dndz), bias=(pt_tracer_args.z, np.ones_like(pt_tracer_args.z)),mag_bias=None)
+        pt_tracer = pyccl.NumberCountsTracer(
+            cosmo,
+            has_rsd=False,
+            dndz=(pt_tracer_args.z, pt_tracer_args.dndz),
+            bias=(pt_tracer_args.z, np.ones_like(pt_tracer_args.z)),
+            mag_bias=None,
+        )
 
         self.current_pt_tracer_args = pt_tracer_args
 
@@ -742,7 +751,7 @@ class NumberCountsPT(SourcePT):
         self.pttracer, _ = self.create_pttracer(cosmo)
         self.ptcosmo_hash = cur_hash
         return self.pttracer
- 
+
     def get_pt_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
         """Return the tracer for the given cosmology.
 
@@ -755,7 +764,6 @@ class NumberCountsPT(SourcePT):
         self.pt_tracer, _ = self.create_pt_tracer(cosmo)
         self.pt_cosmo_hash = cur_hash
         return self.pt_tracer
-
 
     def get_scale(self):
         assert self.current_tracer_args

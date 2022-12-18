@@ -46,8 +46,6 @@ class WeakLensingPTArgs:
     cdelta: Tuple[np.ndarray, np.ndarray]
 
 
-
-
 class WeakLensingSystematic(Systematic):
     """Abstract base class for all weak lensing systematics."""
 
@@ -202,7 +200,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
-        pref = -((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
+        pref = -(((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz)
         pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
             self.alphag - 1.0
         )
@@ -223,14 +221,21 @@ class TATTSystematic(WeakLensingPTSystematic):
     This systematic adds the TATT intrinsic alignment model systematic
     which varies with redshift and the growth function.
 
-
-
     Methods
     -------
     apply : apply the systematic to a source
     """
 
-    params_names = ["ia_bias", "alphaz", "ia_bias_ta", "alphag", "z_piv", "ia_bias_2", "alphaz_2", "alphag_2"]
+    params_names = [
+        "ia_bias",
+        "alphaz",
+        "ia_bias_ta",
+        "alphag",
+        "z_piv",
+        "ia_bias_2",
+        "alphaz_2",
+        "alphag_2",
+    ]
     ia_bias: float
     alphaz: float
     alphag: float
@@ -269,7 +274,7 @@ class TATTSystematic(WeakLensingPTSystematic):
         self.z_piv = params.get_from_prefix_param(self.sacc_tracer, "z_piv")
         self.ia_bias_2 = params.get_from_prefix_param(self.sacc_tracer, "ia_bias_2")
         self.alphaz_2 = params.get_from_prefix_param(self.sacc_tracer, "alphaz_2")
-        self.alphag_2 = params.get_from_prefix_param(self.sacc_tracer, "alphag_2")       
+        self.alphag_2 = params.get_from_prefix_param(self.sacc_tracer, "alphag_2")
 
     @final
     def _reset(self) -> None:
@@ -290,7 +295,15 @@ class TATTSystematic(WeakLensingPTSystematic):
     def apply(
         self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingPTArgs
     ) -> WeakLensingPTArgs:
-        c1_array, cdelta_array, c2_array = pyccl.nl_pt.translate_IA_norm(cosmo, tracer_arg.z, a1=self.ia_bias, a1delta=self.ia_bias_ta, a2=self.ia_bias_2, Om_m2_for_c2=False)
+        c1_array, cdelta_array, c2_array = pyccl.nl_pt.translate_IA_norm(
+            cosmo,
+            tracer_arg.z,
+            a1=self.ia_bias,
+            a1delta=self.ia_bias_ta,
+            a2=self.ia_bias_2,
+            Om_m2_for_c2=False,
+        )
+
         return WeakLensingPTArgs(
             scale=tracer_arg.scale,
             z=tracer_arg.z,
@@ -299,7 +312,6 @@ class TATTSystematic(WeakLensingPTSystematic):
             c2=(tracer_arg.z, c2_array),
             cdelta=(tracer_arg.z, cdelta_array),
         )
-
 
 
 class PhotoZShift(WeakLensingSystematic):
@@ -353,19 +365,19 @@ class PhotoZShift(WeakLensingSystematic):
 
 
 class WeakLensingPT(SourcePT):
-    systematics: UpdatableCollection
-    #tracer corresponds to the portion of the 'Source' which has no PT calculations, type Tracer
-    #pttracer corresponds to the PTTracer used to calculate PT calculations
-    #pt_tracer is a Tracer object that must be made for pyccl to calculate Cls from the PTTracer power spectrum
+    # tracer corresponds to the portion of the 'Source' which
+    # has no PT calculations, type Tracer
+    # pttracer corresponds to the PTTracer used to calculate PT calculations
+    # pt_tracer is a Tracer object that must be made for pyccl
+    # to calculate Cls from the PTTracer power spectrum
 
+    systematics: UpdatableCollection
     tracer: Optional[pyccl.tracers.Tracer]
     pttracer: Optional[pyccl.nl_pt.tracers.PTTracer]
     pt_tracer: Optional[pyccl.tracers.Tracer]
-    
     tracer_args: WeakLensingArgs
     pttracer_args: WeakLensingPTArgs
     pt_tracer_args: WeakLensingArgs
-    
     cosmo_hash: Optional[int]
     ptcosmo_hash: Optional[int]
     pt_cosmo_hash: Optional[int]
@@ -376,7 +388,6 @@ class WeakLensingPT(SourcePT):
         sacc_tracer: str,
         scale: float = 1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
-
     ):
         """Initialize the WeakLensingPT object."""
         super().__init__()
@@ -434,10 +445,13 @@ class WeakLensingPT(SourcePT):
         z = z[indices]  # pylint: disable-msg=invalid-name
         nz = nz[indices]  # pylint: disable-msg=invalid-name
 
-        self.pttracer_args = WeakLensingPTArgs(scale=self.scale, z=z, dndz=nz, c1=None, c2=None, cdelta=None)
+        self.pttracer_args = WeakLensingPTArgs(
+            scale=self.scale, z=z, dndz=nz, c1=None, c2=None, cdelta=None
+        )
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
-        self.pt_tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
-
+        self.pt_tracer_args = WeakLensingArgs(
+            scale=self.scale, z=z, dndz=nz, ia_bias=None
+        )
 
     def create_tracer(self, cosmo: pyccl.Cosmology):
         """
@@ -450,13 +464,14 @@ class WeakLensingPT(SourcePT):
             if not isinstance(systematic, WeakLensingPTSystematic):
                 tracer_args = systematic.apply(cosmo, tracer_args)
 
-        tracer = pyccl.WeakLensingTracer(cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=None,use_A_ia=False)
+        tracer = pyccl.WeakLensingTracer(
+            cosmo, dndz=(tracer_args.z, tracer_args.dndz), ia_bias=None, use_A_ia=False
+        )
 
         self.current_tracer_args = tracer_args
 
         return tracer, tracer_args
-    
-    
+
     def create_pttracer(self, cosmo: pyccl.Cosmology):
         """
         Render a source by applying systematics.
@@ -465,10 +480,12 @@ class WeakLensingPT(SourcePT):
         pttracer_args = self.pttracer_args
 
         for systematic in self.systematics:
-            if  isinstance(systematic,WeakLensingPTSystematic):
+            if isinstance(systematic, WeakLensingPTSystematic):
                 pttracer_args = systematic.apply(cosmo, pttracer_args)
 
-        pttracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer( c1=pttracer_args.c1, c2 = pttracer_args.c2, cdelta=pttracer_args.cdelta)
+        pttracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
+            c1=pttracer_args.c1, c2=pttracer_args.c2, cdelta=pttracer_args.cdelta
+        )
 
         self.current_pttracer_args = pttracer_args
 
@@ -479,15 +496,19 @@ class WeakLensingPT(SourcePT):
         Render a source by applying systematics.
 
         """
-        pttracer_args = self.pttracer_args
         pt_tracer_args = self.pt_tracer_args
 
-
         for systematic in self.systematics:
-            if not isinstance(systematic,WeakLensingPTSystematic):
+            if not isinstance(systematic, WeakLensingPTSystematic):
                 pt_tracer_args = systematic.apply(cosmo, pt_tracer_args)
 
-        pt_tracer = pyccl.WeakLensingTracer(cosmo, has_shear=False, dndz=(pt_tracer_args.z, pt_tracer_args.dndz), ia_bias=(pt_tracer_args.z, np.ones_like(pt_tracer_args.z)),use_A_ia=False)
+        pt_tracer = pyccl.WeakLensingTracer(
+            cosmo,
+            has_shear=False,
+            dndz=(pt_tracer_args.z, pt_tracer_args.dndz),
+            ia_bias=(pt_tracer_args.z, np.ones_like(pt_tracer_args.z)),
+            use_A_ia=False,
+        )
 
         self.current_pt_tracer_args = pt_tracer_args
 
@@ -505,7 +526,7 @@ class WeakLensingPT(SourcePT):
         self.pttracer, _ = self.create_pttracer(cosmo)
         self.ptcosmo_hash = cur_hash
         return self.pttracer
- 
+
     def get_pt_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
         """Return the tracer for the given cosmology.
 
@@ -519,7 +540,6 @@ class WeakLensingPT(SourcePT):
         self.pt_cosmo_hash = cur_hash
         return self.pt_tracer
 
-
     def get_scale(self):
         assert self.current_tracer_args
         return self.current_tracer_args.scale
@@ -531,6 +551,7 @@ class WeakLensingPT(SourcePT):
     def get_pt_scale(self):
         assert self.current_pt_tracer_args
         return self.current_pt_tracer_args.scale
+
 
 class WeakLensing(Source):
     """Source class for weak lensing."""
@@ -544,7 +565,6 @@ class WeakLensing(Source):
         sacc_tracer: str,
         scale: float = 1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
-
     ):
         """Initialize the WeakLensing object."""
         super().__init__()

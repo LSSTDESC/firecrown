@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Optional, Dict
+from typing import List, Optional
 from abc import abstractmethod
 import importlib
 import importlib.util

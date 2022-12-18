@@ -49,8 +49,7 @@ for i in range(n_source):
     # Create the weak lensing source, specifying the name of the tracer in the
     # sacc file and a list of systematics
     sources[f"src{i}"] = wl.WeakLensingPT(
-        sacc_tracer=f"src{i}",
-        systematics=[ia_systematic, pzshift], scale=2.0
+        sacc_tracer=f"src{i}", systematics=[ia_systematic, pzshift], scale=2.0
     )
 
 for i in range(n_lens):
@@ -58,7 +57,9 @@ for i in range(n_lens):
     nl_bias = nc.NLBiasSystematic(sacc_tracer=f"lens{i}")
     sources[f"lens{i}"] = nc.NumberCountsPT(
         sacc_tracer=f"lens{i}",
-        systematics=[pzshift, nl_bias], has_mag_bias=True, scale=3.0
+        systematics=[pzshift, nl_bias],
+        has_mag_bias=True,
+        scale=3.0,
     )
 
 # Define the statistics we like to include in the likelihood
@@ -74,21 +75,24 @@ for stat, sacc_stat in [
             stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
                 source0=sources[f"src{i}"],
                 source1=sources[f"src{j}"],
-                sacc_data_type=sacc_stat, pt_calc=PTC
+                sacc_data_type=sacc_stat,
+                pt_calc=PTC,
             )
 for j in range(n_source):
     for i in range(n_lens):
         stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
             source0=sources[f"lens{j}"],
             source1=sources[f"src{i}"],
-            sacc_data_type="galaxy_shearDensity_xi_t", pt_calc=PTC
+            sacc_data_type="galaxy_shearDensity_xi_t",
+            pt_calc=PTC,
         )
 
 for i in range(n_lens):
     stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
         source0=sources[f"lens{i}"],
         source1=sources[f"lens{i}"],
-        sacc_data_type="galaxy_density_xi", pt_calc=PTC
+        sacc_data_type="galaxy_density_xi",
+        pt_calc=PTC,
     )
 
 # Create the likelihood from the statistics
@@ -113,25 +117,29 @@ if __name__ == "__main__":
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap({"ia_bias": 1.0,
-                                    "alphaz": 0.0,
-                                    "alphag": 0,
-                                    "z_piv": 0.62,
-                                    "ia_bias_ta": 0.5,
-                                    "ia_bias_2": 0.5,
-                                    "alphaz_2": 0.0,
-                                    "alphag_2": 0.0,
-                                    "src0_mult_bias": 0.0,
-                                    "lens0_mag_bias": 1.0,
-                                    "lens0_bias": 2.0,
-                                    "lens0_bias_2": 1.0,
-                                    "lens0_bias_s": 1.0,
-                                    "lens0_delta_z": 0.0,
-                                    "lens0_alphaz": 0.0,
-                                    "lens0_alphag": 0.0,
-                                    "lens0_z_piv": 0.62,
-                                    "lens0_delta_z": 0.000,
-                                    "src0_delta_z": 0.000})
+    systematics_params = ParamsMap(
+        {
+            "ia_bias": 1.0,
+            "alphaz": 0.0,
+            "alphag": 0,
+            "z_piv": 0.62,
+            "ia_bias_ta": 0.5,
+            "ia_bias_2": 0.5,
+            "alphaz_2": 0.0,
+            "alphag_2": 0.0,
+            "src0_mult_bias": 0.0,
+            "lens0_mag_bias": 1.0,
+            "lens0_bias": 2.0,
+            "lens0_bias_2": 1.0,
+            "lens0_bias_s": 1.0,
+            "lens0_delta_z": 0.0,
+            "lens0_alphaz": 0.0,
+            "lens0_alphag": 0.0,
+            "lens0_z_piv": 0.62,
+            "lens0_delta_z": 0.000,
+            "src0_delta_z": 0.000,
+        }
+    )
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
@@ -142,7 +150,7 @@ if __name__ == "__main__":
     # Plot the predicted and measured statistic
     x = likelihood.statistics[0].ell_or_theta_
     y_data = likelihood.statistics[0].measured_statistic_
-    y_err = np.sqrt(np.diag(likelihood.cov))[:len(x)]
+    y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     y_theory = likelihood.statistics[0].predicted_statistic_
 
     src0_tracer = sacc_data.get_tracer("src0")
@@ -153,7 +161,7 @@ if __name__ == "__main__":
     # Define a ccl.Cosmology object using default parameters
 
     # Bare CCL setup
-    a_1 = 1.
+    a_1 = 1.0
     a_2 = 0.5
     a_d = 0.5
 
@@ -163,16 +171,19 @@ if __name__ == "__main__":
 
     mag_bias = 1.0
 
-    c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo,
-                                         z,
-                                         a1=a_1,
-                                         a1delta=a_d,
-                                         a2=a_2,
-                                         Om_m2_for_c2=False)
+    c_1, c_d, c_2 = pt.translate_IA_norm(
+        ccl_cosmo,
+        z,
+        a1=a_1,
+        a1delta=a_d,
+        a2=a_2,
+        Om_m2_for_c2=False,
+    )
 
     # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(with_NC=True, with_IA=True,
-                          log10k_min=-4, log10k_max=2, nk_per_decade=20)
+    ptc = pt.PTCalculator(
+        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
+    )
     ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
     ptt_m = pt.PTMatterTracer()
     ptt_g = pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
@@ -192,7 +203,7 @@ if __name__ == "__main__":
     x_ggl = likelihood.statistics[2].ell_or_theta_
     x_nc = likelihood.statistics[3].ell_or_theta_
     y_data = likelihood.statistics[0].measured_statistic_
-    y_err = np.sqrt(np.diag(likelihood.cov))[:len(x)]
+    y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     y_theory = likelihood.statistics[0].predicted_statistic_
     y_theory_minus = likelihood.statistics[1].predicted_statistic_
     y_theory_ggl = likelihood.statistics[2].predicted_statistic_
@@ -205,20 +216,26 @@ if __name__ == "__main__":
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
-    t_ia = ccl.WeakLensingTracer(ccl_cosmo,
-                                 dndz=(z, nz),
-                                 has_shear=False,
-                                 ia_bias=(z, np.ones_like(z)),
-                                 use_A_ia=False)
-    t_g = ccl.NumberCountsTracer(ccl_cosmo,
-                                 has_rsd=False,
-                                 dndz=(lens_z, lens_nz),
-                                 bias=(lens_z, np.ones_like(lens_z)))
-    t_m = ccl.NumberCountsTracer(ccl_cosmo,
-                                 has_rsd=False,
-                                 dndz=(lens_z, lens_nz),
-                                 bias=None,
-                                 mag_bias=(lens_z, np.ones_like(lens_z)*mag_bias))
+    t_ia = ccl.WeakLensingTracer(
+        ccl_cosmo,
+        dndz=(z, nz),
+        has_shear=False,
+        ia_bias=(z, np.ones_like(z)),
+        use_A_ia=False,
+    )
+    t_g = ccl.NumberCountsTracer(
+        ccl_cosmo,
+        has_rsd=False,
+        dndz=(lens_z, lens_nz),
+        bias=(lens_z, np.ones_like(lens_z)),
+    )
+    t_m = ccl.NumberCountsTracer(
+        ccl_cosmo,
+        has_rsd=False,
+        dndz=(lens_z, lens_nz),
+        bias=None,
+        mag_bias=(lens_z, np.ones_like(lens_z) * mag_bias),
+    )
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im) * 4.0
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii) * 4.0
     # The weak gravitational lensing power spectrum
@@ -235,24 +252,36 @@ if __name__ == "__main__":
     cl_mG = ccl.angular_cl(ccl_cosmo, t_m, t_lens, ells_ggl) * 6.0
 
     # The observed angular power spectrum is the sum of the two.
-    cl_cs_theory = cl_GG + 2*cl_GI + cl_II
+    cl_cs_theory = cl_GG + 2 * cl_GI + cl_II
 
-    ang = ccl.correlation(ccl_cosmo, ells,
-                          cl_cs_theory,
-                          likelihood.statistics[0].ell_or_theta_ / 60,
-                          type="GG+")
-    ang_minus = ccl.correlation(ccl_cosmo, ells_minus,
-                                cl_cs_theory,
-                                likelihood.statistics[1].ell_or_theta_ / 60,
-                                type="GG-")
-    ang_ggl = ccl.correlation(ccl_cosmo, ells_ggl,
-                              cl_gI + cl_gG + cl_mI + cl_mG,
-                              likelihood.statistics[2].ell_or_theta_ / 60,
-                              type="NG")
-    ang_nc = ccl.correlation(ccl_cosmo, ells_nc,
-                             cl_gg + 2 * cl_gm + cl_mm,
-                             likelihood.statistics[3].ell_or_theta_ / 60,
-                             type="NN")
+    ang = ccl.correlation(
+        ccl_cosmo,
+        ells,
+        cl_cs_theory,
+        likelihood.statistics[0].ell_or_theta_ / 60,
+        type="GG+",
+    )
+    ang_minus = ccl.correlation(
+        ccl_cosmo,
+        ells_minus,
+        cl_cs_theory,
+        likelihood.statistics[1].ell_or_theta_ / 60,
+        type="GG-",
+    )
+    ang_ggl = ccl.correlation(
+        ccl_cosmo,
+        ells_ggl,
+        cl_gI + cl_gG + cl_mI + cl_mG,
+        likelihood.statistics[2].ell_or_theta_ / 60,
+        type="NG",
+    )
+    ang_nc = ccl.correlation(
+        ccl_cosmo,
+        ells_nc,
+        cl_gg + 2 * cl_gm + cl_mm,
+        likelihood.statistics[3].ell_or_theta_ / 60,
+        type="NN",
+    )
 
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 6))
     fig.subplots_adjust(hspace=0)
