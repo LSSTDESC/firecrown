@@ -42,8 +42,8 @@ for i, j in zip(*np.triu_indices(len(tracers))):
 
 
 # a fake covariance matrix
-dv = np.concatenate(dv, axis=0)
-cov = np.diag((EPS * dv) ** 2)
+delta_v = np.concatenate(dv, axis=0)
+cov = np.diag((EPS * delta_v) ** 2)
 
 sacc_data.add_covariance(cov)
 sacc_data.save_fits("cosmicshear.fits", overwrite=True)
