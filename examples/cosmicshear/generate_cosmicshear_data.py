@@ -1,6 +1,9 @@
+""" Generate the cosmicshear.fits file.
+"""
 import numpy as np
 import sacc
 import pyccl as ccl
+
 
 COSMO = ccl.Cosmology(
     Omega_c=0.27,
@@ -19,7 +22,7 @@ EPS = 0.01
 Z = np.linspace(0, 2, 50) + 0.05
 ELL = np.logspace(1, 4, 10)
 
-rng = np.random.RandomState(seed=SEED)
+rng = np.random.seed(SEED)
 sacc_data = sacc.Sacc()
 tracers = []
 
@@ -33,7 +36,7 @@ dv = []
 # Fill in the upper triangular indices for dv.
 for i, j in zip(*np.triu_indices(len(tracers))):
     pell = ccl.angular_cl(COSMO, tracers[i], tracers[j], ELL)
-    npell = pell + rng.normal(size=pell.shape[0]) * EPS * pell
+    npell = pell + np.random.normal(size=pell.shape[0]) * EPS * pell
     sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"trc{i}", f"trc{j}", ELL, npell)
     dv.append(pell)
 
