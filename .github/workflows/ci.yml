@@ -31,7 +31,6 @@ jobs:
           activate-environment: firecrown
           python-version: ${{ matrix.python-version }}
           miniforge-variant: Mambaforge
-          use-only-tar-bz2: true
           show-channel-urls: true
           use-mamba: true
       - name: Cache date
