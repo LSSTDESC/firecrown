@@ -124,8 +124,8 @@ if __name__ == "__main__":
     print(list(likelihood.statistics[0].cells.keys()))
 
     ells = likelihood.statistics[0].ells
-    cells_gg = likelihood.statistics[0].cells[("delta_matter", "delta_matter")]
-    cells_gi = likelihood.statistics[0].cells[("delta_matter", "intrinsic_pt")]
+    cells_gg = likelihood.statistics[0].cells[("shear", "shear")]
+    cells_gi = likelihood.statistics[0].cells[("shear", "intrinsic_pt")]
     cells_ii = likelihood.statistics[0].cells[("intrinsic_pt", "intrinsic_pt")]
     cells_total = likelihood.statistics[0].cells["total"]
 
