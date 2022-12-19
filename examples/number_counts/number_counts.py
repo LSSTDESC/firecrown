@@ -2,15 +2,20 @@
 
 import os
 
-from firecrown.likelihood.gauss_family.statistic.number_counts_stat import *
+from firecrown.likelihood.gauss_family.statistic.number_counts_stat import (
+    NumberCountStat,
+)
 from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 import sacc
 
+
 def build_likelihood(_):
+
     massfunc = CCLDensity('critical', 'Bocquet16', False)
-    stats = NumberCountStat('cluster_counts_true_mass', 'cluster_mass_count_wl', massfunc)
+    stats = NumberCountStat('cluster_counts_true_mass',
+                            'cluster_mass_count_wl', massfunc)
     stats = [stats]
     """
         Here we instantiate the actual likelihood. The statistics argument carry
@@ -22,9 +27,9 @@ def build_likelihood(_):
         We load the correct SACC file.
     """
     saccfile = os.path.expanduser(
-    os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/number_counts/clusters_simulated_data.sacc"
-    )
+        os.path.expandvars(
+            "${FIRECROWN_DIR}/examples/number_counts/clusters_simulated_data.sacc"
+        )
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)
 

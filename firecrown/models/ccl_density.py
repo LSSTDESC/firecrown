@@ -31,11 +31,12 @@ class CCLDensity(NumberDensity):
             self.pyccl_mass_func = SUPPORTED_CRIT_DENS_FUNC_NAMES[density_func_name]
             if density_func_definition == "mean":
                 raise ValueError(
-                    f"The number density function definition {density_func_definition}'%s'"
-                    f"does not match the function type {density_func_name}'%s'"
+                    f"The number density function definition"
+                    f"{density_func_definition}'%s' does not "
+                    f"match the function type {density_func_name}'%s'"
                 )
         elif density_func_name in SUPPORTED_MEAN_DENS_FUNC_NAMES:
-            self.density_func_type = density_func_name
+            self.density_func_name = density_func_name
             self.pyccl_mass_func = SUPPORTED_MEAN_DENS_FUNC_NAMES[density_func_name]
             if density_func_definition == "critical":
                 raise ValueError(
@@ -44,7 +45,7 @@ class CCLDensity(NumberDensity):
                 )
         else:
             raise ValueError(
-                f"The number density function type {density_func_type}'%s' is not "
+                f"The number density function type {density_func_name}'%s' is not "
                 f"supported!"
             )
 

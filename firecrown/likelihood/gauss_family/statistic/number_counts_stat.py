@@ -15,13 +15,12 @@ import pyccl
 from .statistic import Statistic
 from .source.source import Systematic
 from ....parameters import (
-    SamplerParameter,
     ParamsMap,
     RequiredParameters,
     DerivedParameterCollection,
 )
-from ....models.number_counts.mass_proxy.richness_proxy import *
-from .... import parameters
+from ....models.number_counts.mass_proxy.richness_proxy import RMProxy
+
 
 # only supported types are here, any thing else will throw
 # a value error
