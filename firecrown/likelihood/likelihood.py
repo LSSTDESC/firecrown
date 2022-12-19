@@ -67,7 +67,8 @@ class Likelihood(Updatable):
         return []
 
     def apply_systematics(self, ccl_cosmo: pyccl.Cosmology) -> Cosmology:
-        """Apply the systematics defined for this likelihood to the CCL Cosmology object."""
+        """Apply the systematics defined for this likelihood to the
+        CCL Cosmology object."""
         cosmo = Cosmology(ccl_cosmo)
         for systematic in self.systematics:
             cosmo = systematic.apply(cosmo)
