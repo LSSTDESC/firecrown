@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pyccl as ccl
 import pyccl.nl_pt as pt
+import sacc
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
@@ -11,12 +12,13 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.likelihood import PTSystematic
 from firecrown.parameters import ParamsMap
 
-import sacc
-
 
 def test_pt_systematics():
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-statements
+
     saccfile = os.path.join(
         os.path.split(__file__)[0],
         "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
@@ -167,7 +169,7 @@ def test_pt_systematics():
     _ = likelihood.compute_loglike(ccl_cosmo)
 
     # print(list(likelihood.statistics[0].cells.keys()))
-
+    # pylint: disable=no-member
     ells = likelihood.statistics[0].ells
     cells_GG = likelihood.statistics[0].cells[("shear", "shear")]
     cells_GI = likelihood.statistics[0].cells[("shear", "intrinsic_pt")]
@@ -186,7 +188,7 @@ def test_pt_systematics():
         ("magnification+rsd", "magnification+rsd")
     ]
     cells_gg_total = likelihood.statistics[3].cells["total"]
-
+    # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
     t_ia = ccl.WeakLensingTracer(
@@ -242,6 +244,8 @@ def test_pt_systematics():
 def test_pt_mixed_systematics():
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
+    # pylint: disable-msg=too-many-locals
+
     saccfile = os.path.join(
         os.path.split(__file__)[0],
         "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
@@ -328,6 +332,7 @@ def test_pt_mixed_systematics():
     _ = likelihood.compute_loglike(ccl_cosmo)
 
     # print(list(likelihood.statistics[0].cells.keys()))
+    # pylint: disable=no-member
 
     ells = likelihood.statistics[0].ells
 
@@ -336,6 +341,7 @@ def test_pt_mixed_systematics():
     cells_gI = likelihood.statistics[0].cells[
         ("galaxies+magnification+rsd", "intrinsic_pt")
     ]
+    # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
