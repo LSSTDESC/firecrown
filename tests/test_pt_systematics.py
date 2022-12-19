@@ -3,7 +3,7 @@ import os
 import numpy as np
 import pyccl as ccl
 import pyccl.nl_pt as pt
-    
+
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
@@ -17,7 +17,10 @@ import sacc
 def test_pt_systematics():
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
-    saccfile = os.path.join(os.path.split(__file__)[0], "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits")
+    saccfile = os.path.join(
+        os.path.split(__file__)[0],
+        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
+    )
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # Define sources
@@ -36,8 +39,7 @@ def test_pt_systematics():
         # Create the weak lensing source, specifying the name of the tracer in the
         # sacc file and a list of systematics
         sources[f"src{i}"] = wl.WeakLensing(
-            sacc_tracer=f"src{i}",
-            systematics=[pzshift, ia_systematic]
+            sacc_tracer=f"src{i}", systematics=[pzshift, ia_systematic]
         )
 
     for i in range(n_lens):
@@ -48,7 +50,7 @@ def test_pt_systematics():
         sources[f"lens{i}"] = nc.NumberCounts(
             sacc_tracer=f"lens{i}",
             has_rsd=True,
-            systematics=[pzshift, magnification, nl_bias]
+            systematics=[pzshift, magnification, nl_bias],
         )
 
     # Define the statistics we like to include in the likelihood
@@ -82,8 +84,14 @@ def test_pt_systematics():
         )
 
     # Create the likelihood from the statistics
-    pt_systematic = PTSystematic(with_NC=True, with_IA=True, with_dd=False,
-                                 log10k_min=-4, log10k_max=2, nk_per_decade=4)
+    pt_systematic = PTSystematic(
+        with_NC=True,
+        with_IA=True,
+        with_dd=False,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=4,
+    )
     lk = ConstGaussian(statistics=list(stats.values()), systematics=[pt_systematic])
 
     # Read the two-point data from the sacc file
@@ -104,7 +112,7 @@ def test_pt_systematics():
     ccl_cosmo.compute_nonlin_power()
 
     # Bare CCL setup
-    a_1 = 1.
+    a_1 = 1.0
     a_2 = 0.5
     a_d = 0.5
 
@@ -114,11 +122,14 @@ def test_pt_systematics():
 
     mag_bias = 1.0
 
-    c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False)
+    c_1, c_d, c_2 = pt.translate_IA_norm(
+        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
+    )
 
     # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(with_NC=True, with_IA=True,
-                          log10k_min=-4, log10k_max=2, nk_per_decade=4)
+    ptc = pt.PTCalculator(
+        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=4
+    )
     ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
     ptt_m = pt.PTMatterTracer()
     ptt_g = pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
@@ -131,18 +142,19 @@ def test_pt_systematics():
     pk_gg = pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap({"ia_a_1": a_1,
-                                    "ia_a_2": a_2,
-                                    "ia_a_d": a_d,
-
-                                    "lens0_bias": b_1,
-                                    "lens0_b_2": b_2,
-                                    "lens0_b_s": b_s,
-
-                                    "lens0_mag_bias": mag_bias,
-
-                                    "src0_delta_z": 0.000,
-                                    "lens0_delta_z": 0.000})
+    systematics_params = ParamsMap(
+        {
+            "ia_a_1": a_1,
+            "ia_a_2": a_2,
+            "ia_a_d": a_d,
+            "lens0_bias": b_1,
+            "lens0_b_2": b_2,
+            "lens0_b_s": b_s,
+            "lens0_mag_bias": mag_bias,
+            "src0_delta_z": 0.000,
+            "lens0_delta_z": 0.000,
+        }
+    )
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
@@ -170,18 +182,33 @@ def test_pt_systematics():
     # print(list(likelihood.statistics[3].cells.keys()))
     cells_gg = likelihood.statistics[3].cells[("galaxies", "galaxies")]
     cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification+rsd")]
-    cells_mm = likelihood.statistics[3].cells[("magnification+rsd", "magnification+rsd")]
+    cells_mm = likelihood.statistics[3].cells[
+        ("magnification+rsd", "magnification+rsd")
+    ]
     cells_gg_total = likelihood.statistics[3].cells["total"]
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
-    t_ia = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz), has_shear=False, ia_bias=(z, np.ones_like(z)), use_A_ia=False)
-    t_g = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=False, dndz=(lens_z, lens_nz), bias=(lens_z, np.ones_like(lens_z)))
-    t_m = ccl.NumberCountsTracer(ccl_cosmo,
-                                 has_rsd=True,
-                                 dndz=(lens_z, lens_nz),
-                                 bias=None,
-                                 mag_bias=(lens_z, mag_bias*np.ones_like(lens_z)))
+    t_ia = ccl.WeakLensingTracer(
+        ccl_cosmo,
+        dndz=(z, nz),
+        has_shear=False,
+        ia_bias=(z, np.ones_like(z)),
+        use_A_ia=False,
+    )
+    t_g = ccl.NumberCountsTracer(
+        ccl_cosmo,
+        has_rsd=False,
+        dndz=(lens_z, lens_nz),
+        bias=(lens_z, np.ones_like(lens_z)),
+    )
+    t_m = ccl.NumberCountsTracer(
+        ccl_cosmo,
+        has_rsd=True,
+        dndz=(lens_z, lens_nz),
+        bias=None,
+        mag_bias=(lens_z, mag_bias * np.ones_like(lens_z)),
+    )
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
     # The weak gravitational lensing power spectrum
@@ -196,8 +223,8 @@ def test_pt_systematics():
     cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells, p_of_k_a=pk_gm)
     cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells)
 
-    cl_cs_theory = cl_GG + 2*cl_GI + cl_II
-    cl_gg_theory = cl_gg + 2*cl_gm + cl_mm
+    cl_cs_theory = cl_GG + 2 * cl_GI + cl_II
+    cl_gg_theory = cl_gg + 2 * cl_gm + cl_mm
 
     assert np.allclose(cl_GG, cells_GG, atol=0, rtol=1e-7)
     assert np.allclose(cl_GI, cells_GI, atol=0, rtol=1e-7)
@@ -215,20 +242,18 @@ def test_pt_systematics():
 def test_pt_mixed_systematics():
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
-    saccfile = os.path.join(os.path.split(__file__)[0], "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits")
+    saccfile = os.path.join(
+        os.path.split(__file__)[0],
+        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
+    )
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     ia_systematic = wl.TattAlignmentSystematic()
-    wl_source = wl.WeakLensing(
-        sacc_tracer="src0",
-        systematics=[ia_systematic]
-    )
+    wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
     nc_source = nc.NumberCounts(
-        sacc_tracer="lens0",
-        has_rsd=True,
-        systematics=[magnification]
+        sacc_tracer="lens0", has_rsd=True, systematics=[magnification]
     )
 
     stat = TwoPoint(
@@ -238,8 +263,14 @@ def test_pt_mixed_systematics():
     )
 
     # Create the likelihood from the statistics
-    pt_systematic = PTSystematic(with_NC=True, with_IA=True, with_dd=False,
-                                 log10k_min=-4, log10k_max=2, nk_per_decade=4)
+    pt_systematic = PTSystematic(
+        with_NC=True,
+        with_IA=True,
+        with_dd=False,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=4,
+    )
     lk = ConstGaussian(statistics=[stat], systematics=[pt_systematic])
 
     lk.read(sacc_data)
@@ -255,30 +286,36 @@ def test_pt_mixed_systematics():
     ccl_cosmo.compute_nonlin_power()
 
     # Bare CCL setup
-    a_1 = 1.
+    a_1 = 1.0
     a_2 = 0.5
     a_d = 0.5
 
     bias = 2.0
     mag_bias = 1.0
 
-    c_1, c_d, c_2 = pt.translate_IA_norm(ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False)
+    c_1, c_d, c_2 = pt.translate_IA_norm(
+        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
+    )
 
     # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(with_NC=True, with_IA=True,
-                          log10k_min=-4, log10k_max=2, nk_per_decade=4)
+    ptc = pt.PTCalculator(
+        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=4
+    )
     ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
     ptt_m = pt.PTMatterTracer()
     # IA
     pk_mi = pt.get_pt_pk2d(ccl_cosmo, ptt_m, tracer2=ptt_i, ptc=ptc)
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap({"ia_a_1": a_1,
-                                    "ia_a_2": a_2,
-                                    "ia_a_d": a_d,
-
-                                    "lens0_bias": bias,
-                                    "lens0_mag_bias": mag_bias})
+    systematics_params = ParamsMap(
+        {
+            "ia_a_1": a_1,
+            "ia_a_2": a_2,
+            "ia_a_d": a_d,
+            "lens0_bias": bias,
+            "lens0_mag_bias": mag_bias,
+        }
+    )
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
@@ -296,19 +333,26 @@ def test_pt_mixed_systematics():
 
     # print(list(likelihood.statistics[2].cells.keys()))
     cells_gG = likelihood.statistics[0].cells[("galaxies+magnification+rsd", "shear")]
-    cells_gI = likelihood.statistics[0].cells[("galaxies+magnification+rsd", "intrinsic_pt")]
+    cells_gI = likelihood.statistics[0].cells[
+        ("galaxies+magnification+rsd", "intrinsic_pt")
+    ]
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
-    t_ia = ccl.WeakLensingTracer(ccl_cosmo,
-                                 dndz=(z, nz),
-                                 has_shear=False,
-                                 ia_bias=(z, np.ones_like(z)),
-                                 use_A_ia=False)
-    t_g = ccl.NumberCountsTracer(ccl_cosmo, has_rsd=True,
-                                 dndz=(lens_z, lens_nz),
-                                 bias=(lens_z, bias*np.ones_like(lens_z)),
-                                 mag_bias=(lens_z, mag_bias*np.ones_like(lens_z)))
+    t_ia = ccl.WeakLensingTracer(
+        ccl_cosmo,
+        dndz=(z, nz),
+        has_shear=False,
+        ia_bias=(z, np.ones_like(z)),
+        use_A_ia=False,
+    )
+    t_g = ccl.NumberCountsTracer(
+        ccl_cosmo,
+        has_rsd=True,
+        dndz=(lens_z, lens_nz),
+        bias=(lens_z, bias * np.ones_like(lens_z)),
+        mag_bias=(lens_z, mag_bias * np.ones_like(lens_z)),
+    )
 
     # Galaxies
     cl_gG = ccl.angular_cl(ccl_cosmo, t_g, t_lens, ells)
