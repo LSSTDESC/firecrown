@@ -116,10 +116,13 @@ class Tracer:
         halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
         self.ccl_tracer = tracer
-        self.tracer_name = tracer_name
+        self.tracer_name: str = tracer_name or tracer.__class__.__name__
         self.field = field
         if self.field is None:
-            self.field = tracer_name
+            if tracer_name is not None:
+                self.field = tracer_name
+            else:
+                self.field = "delta_mater"
         self.pt_tracer = pt_tracer
         self.halo_profile = halo_profile
 
