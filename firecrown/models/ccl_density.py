@@ -17,8 +17,11 @@ SUPPORTED_MEAN_DENS_FUNC_NAMES = {
     "Tinker10": pyccl.halos.MassFuncTinker10,
 }
 
+
 class CCLDensity(NumberDensity):
-    def __init__(self, density_func_definition, density_func_name, use_baryons=False) -> None:
+    def __init__(
+        self, density_func_definition, density_func_name, use_baryons=False
+    ) -> None:
         """Default initialization for a base number density object."""
         super().__init__()
         self.use_baryons = use_baryons
@@ -26,7 +29,7 @@ class CCLDensity(NumberDensity):
         if density_func_name in SUPPORTED_CRIT_DENS_FUNC_NAMES:
             self.density_func_name = density_func_name
             self.pyccl_mass_func = SUPPORTED_CRIT_DENS_FUNC_NAMES[density_func_name]
-            if density_func_definition == 'mean':
+            if density_func_definition == "mean":
                 raise ValueError(
                     f"The number density function definition {density_func_definition}'%s'"
                     f"does not match the function type {density_func_name}'%s'"
@@ -34,7 +37,7 @@ class CCLDensity(NumberDensity):
         elif density_func_name in SUPPORTED_MEAN_DENS_FUNC_NAMES:
             self.density_func_type = density_func_name
             self.pyccl_mass_func = SUPPORTED_MEAN_DENS_FUNC_NAMES[density_func_name]
-            if density_func_definition == 'critical':
+            if density_func_definition == "critical":
                 raise ValueError(
                     f"The number density function definition {density_func_definition}"
                     f"does not match the function type {density_func_name}'%s'"
@@ -65,17 +68,17 @@ class CCLDensity(NumberDensity):
         hmd_200c = pyccl.halos.MassDef200c()
         if self.density_func_type == "Bocquet16":
             hmf_200c = self.pyccl_mass_func(
-                            cosmo,
-                            mass_def=hmd_200c,
-                            mass_def_strict=True,
-                            hydro=self.use_baryons,
-                        )
+                cosmo,
+                mass_def=hmd_200c,
+                mass_def_strict=True,
+                hydro=self.use_baryons,
+            )
         else:
             hmf_200c = self.pyccl_mass_func(
-                            cosmo,
-                            mass_def=hmd_200c,
-                            mass_def_strict=True,
-                            )
+                cosmo,
+                mass_def=hmd_200c,
+                mass_def_strict=True,
+            )
         nm = hmf_200c.get_mass_function(cosmo, mass, a)
         return nm
 
