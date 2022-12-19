@@ -120,3 +120,8 @@ jobs:
         run: |
           cd examples/srd_sn
           cosmosis sn_srd.ini
+      - name: Running example - NumCosmo - srd_sn
+        shell: bash -l {0}
+        run: |
+          cd examples/srd_sn
+          python numcosmo_run.py
