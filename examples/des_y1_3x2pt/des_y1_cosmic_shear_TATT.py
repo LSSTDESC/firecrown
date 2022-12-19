@@ -129,6 +129,9 @@ if __name__ == "__main__":
     # Plot the predicted and measured statistic
     x = likelihood.statistics[0].ell_or_theta_
     y_data = likelihood.statistics[0].measured_statistic_
+    
+    assert likelihood.cov is not None
+    
     y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     y_theory = likelihood.statistics[0].predicted_statistic_
 

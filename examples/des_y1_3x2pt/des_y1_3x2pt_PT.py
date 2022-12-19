@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 
-from typing import Dict
+from typing import Dict, Union
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
@@ -25,7 +25,7 @@ sacc_data = sacc.Sacc.load_fits(saccfile)
 # Define sources
 n_source = 1
 n_lens = 1
-sources: Dict[str, wl.WeakLensing | nc.NumberCounts] = {}
+sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
 # Define the intrinsic alignment systematic. This will be added to the
 # lensing sources later
@@ -175,6 +175,9 @@ if __name__ == "__main__":
     # Plot the predicted and measured statistic
     x = likelihood.statistics[0].ell_or_theta_
     y_data = likelihood.statistics[0].measured_statistic_
+
+    assert likelihood.cov is not None
+
     y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     y_theory = likelihood.statistics[0].predicted_statistic_
 
