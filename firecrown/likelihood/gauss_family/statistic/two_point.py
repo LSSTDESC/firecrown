@@ -238,7 +238,6 @@ class TwoPoint(Statistic):
             warnings.warn(
                 f"Tracers '{tracers}' have 2pt data and you have specified "
                 "`ell_or_theta` in the configuration. `ell_or_theta` is being ignored!",
-                warnings.UserWarning,
                 stacklevel=2,
             )
 
@@ -315,12 +314,11 @@ class TwoPoint(Statistic):
                         np.log(x), np.log(y), ext=2
                     )
                     return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
-                else:
-                    # only use log for x
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
-                        np.log(x), y, ext=2
-                    )
-                    return lambda x_, intp=intp: intp(np.log(x_))
+                # only use log for x
+                intp = scipy.interpolate.InterpolatedUnivariateSpline(
+                    np.log(x), y, ext=2
+                )
+                return lambda x_, intp=intp: intp(np.log(x_))
 
             theory_interpolator = log_interpolator(self.ell_or_theta_, theory_vector)
             ell = self.theory_window_function.values
