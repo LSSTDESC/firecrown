@@ -25,19 +25,19 @@ sac_file = sacc.Sacc.load_fits("./clusters_simulated_data.sacc")
 """
 sac_file = sacc.Sacc.load_fits("./clusters_simulated_richness_data.sacc")
 """
-We then initiate the massfunction object. It can be a critical mass function
-or mean mass funcion. Some mass functions have the possibility of using
-dark matter + baryonic matter to compute the cluster mass, which is set by
+We then initiate the mass-function object. It can be a critical mass function
+or mean mass function. Some mass functions have the possibility of using
+dark matter + Baryonic matter to compute the cluster mass, which is set by
 the True entry in the function below. This is optional.
 Otherwise, only dark matter is used as default.
 """
-massfunc = CCLDensity("critical", "Bocquet16", False)
+mass_func = CCLDensity("critical", "Bocquet16", False)
 
 """
 Initiate the statics object
 """
 stats = NumberCountStat(
-    "cluster_counts_richness_proxy", "cluster_mass_count_wl", massfunc
+    "cluster_counts_richness_proxy", "cluster_mass_count_wl", mass_func
 )
 list_stats: List[Statistic] = [stats]
 
