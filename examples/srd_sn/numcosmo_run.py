@@ -5,6 +5,9 @@ from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo, NumCosmoFacto
 import math
 import gi
 
+import matplotlib.pyplot as plt
+from scipy.stats import chi2
+
 gi.require_version("NumCosmo", "1.0")
 gi.require_version("NumCosmoMath", "1.0")
 
@@ -12,8 +15,6 @@ from gi.repository import GObject  # noqa: E402
 from gi.repository import NumCosmo as Nc  # noqa: E402
 from gi.repository import NumCosmoMath as Ncm  # noqa: E402
 
-import matplotlib.pyplot as plt
-from scipy.stats import chi2
 
 Ncm.cfg_init()
 
@@ -93,7 +94,7 @@ lhr2d = Ncm.LHRatio2d.new(fit, p1, p2, 1.0e-3)
 plt.figure(figsize=(8, 4))
 plt.title("Confidence regions")
 
-for clevel in [chi2.cdf(l**2, df=1) for l in [1, 2, 3]]:
+for clevel in [chi2.cdf(chi**2, df=1) for chi in [1, 2, 3]]:
     fisher_rg = lhr2d.fisher_border(clevel, 300.0, Ncm.FitRunMsgs.SIMPLE)
     plt.plot(
         fisher_rg.p1.dup_array(),
