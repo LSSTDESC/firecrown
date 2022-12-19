@@ -143,7 +143,7 @@ class PTSystematic(LikelihoodSystematic):
         pass
 
     @final
-    def required_parameters(self) -> RequiredParameters:
+    def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 
     @final

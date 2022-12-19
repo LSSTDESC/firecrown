@@ -200,21 +200,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
         Instance data are:
 
-        [UPDATE THESE PARAMETERS]
-
-        alphaz : The redshift dependence parameter of the intrinsic alignment
-        signal.
-
-        alphag : The growth dependence parameter of the intrinsic alignment
-        signal.
-
-        z_piv : The pivot redshift parameter for the intrinsic alignment
-        parameter.
+        ia_a_1, ia_a_2, ia_a_d
         """
         super().__init__()
-        self.a_1 = parameters.create()
-        self.a_2 = parameters.create()
-        self.a_d = parameters.create()
+        self.ia_a_1 = parameters.create()
+        self.ia_a_2 = parameters.create()
+        self.ia_a_d = parameters.create()
 
         self.sacc_tracer = sacc_tracer
 
@@ -247,9 +238,9 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
             cosmo.ccl_cosmo,
             z,
-            a1=self.a_1,
-            a1delta=self.a_d,
-            a2=self.a_2,
+            a1=self.ia_a_1,
+            a1delta=self.ia_a_d,
+            a2=self.ia_a_2,
             Om_m2_for_c2=False,
         )
 
