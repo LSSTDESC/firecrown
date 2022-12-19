@@ -8,9 +8,10 @@ Some notes.
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from typing import final
 from abc import abstractmethod
+import warnings
 
 import numpy as np
 import scipy.linalg
@@ -86,11 +87,38 @@ class GaussFamily(Likelihood):
         return np.concatenate(theory_vector_list)
 
     @final
+    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+        """Calculate and return the chi-squared for the given cosmology."""
+        theory_vector_list: List[np.ndarray] = []
+        data_vector_list: List[np.ndarray] = []
+
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "The use of the `compute` method on Statistic is deprecated."
+            "The Statistic objects should implement `get_data` and "
+            "`compute_theory_vector` instead.",
+            category=DeprecationWarning,
+        )
+
+        for stat in self.statistics:
+            data, theory = stat.compute(cosmo)
+            theory_vector_list.append(np.atleast_1d(theory))
+            data_vector_list.append(np.atleast_1d(data))
+
+        return np.concatenate(data_vector_list), np.concatenate(theory_vector_list)
+
+    @final
     def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
-        theory_vector: np.ndarray = self.compute_theory_vector(cosmo)
-        data_vector: np.ndarray = self.get_data_vector()
-        residuals: np.ndarray = data_vector - theory_vector
+        theory_vector: np.ndarray
+        data_vector: np.ndarray
+        residuals: np.ndarray
+        try:
+            theory_vector = self.compute_theory_vector(cosmo)
+            data_vector = self.get_data_vector()
+        except NotImplementedError:
+            data_vector, theory_vector = self.compute(cosmo)
+        residuals = data_vector - theory_vector
 
         self.predicted_data_vector: np.ndarray = theory_vector
         self.measured_data_vector: np.ndarray = data_vector

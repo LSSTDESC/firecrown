@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, List, final
+from typing import Optional, final
 
 import numpy as np
 
@@ -26,7 +26,6 @@ class Supernova(Statistic):
         self.data_vector: Optional[np.ndarray] = None
         self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
         self.M = parameters.create()  # pylint: disable-msg=invalid-name
-        self.sacc_indices: Optional[List[int]] = None
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""

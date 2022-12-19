@@ -178,7 +178,6 @@ class TwoPoint(Statistic):
         self.measured_statistic_: Optional[np.ndarray] = None
         self.ell_or_theta_: Optional[np.ndarray] = None
 
-        self.sacc_indices: Optional[List[int]] = None
         self.sacc_tracers: Optional[List[str]] = None
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
