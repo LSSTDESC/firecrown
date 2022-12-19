@@ -7,6 +7,9 @@ from typing import Optional, Sequence, final
 from abc import abstractmethod
 import sacc
 
+import pyccl
+import pyccl.nl_pt
+
 from .....likelihood.likelihood import Cosmology
 from .....parameters import ParamsMap
 from .....updatable import Updatable
@@ -104,17 +107,26 @@ class Tracer:
     underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
 
     def __init__(
-        self, tracer, field=None, pt_tracer=None, halo_profile=None, halo_2pt=None
+        self,
+        tracer: pyccl.Tracer,
+        tracer_name: Optional[str] = None,
+        field: Optional[str] = None,
+        pt_tracer: Optional[pyccl.nl_pt.PTTracer] = None,
+        halo_profile: Optional[pyccl.halos.HaloProfile] = None,
+        halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
         self.ccl_tracer = tracer
+        self.tracer_name = tracer_name
         self.field = field
+        if self.field is None:
+            self.field = tracer_name
         self.pt_tracer = pt_tracer
         self.halo_profile = halo_profile
 
     @property
-    def has_pt(self):
+    def has_pt(self) -> bool:
         return self.pt_tracer is not None
 
     @property
-    def has_hm(self):
+    def has_hm(self) -> bool:
         return self.halo_profile is not None

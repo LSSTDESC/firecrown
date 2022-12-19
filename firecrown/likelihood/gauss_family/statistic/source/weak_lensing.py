@@ -186,8 +186,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     """TATT alignment systematic.
 
     This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
-    Parameters can vary with redshift and the growth function.
-    This also requires PTTracers and a PTCalculator.
+
+    Parameters
+    ----------
+    ia_a_1: float
+    ia_a_2: float
+    ia_a_d: float
 
     Methods
     -------
@@ -195,13 +199,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None):
-        """Create a TattAlignmentSystematic object, using the specified
-        tracer name.
-
-        Instance data are:
-
-        ia_a_1, ia_a_2, ia_a_d
-        """
         super().__init__()
         self.ia_a_1 = parameters.create()
         self.ia_a_2 = parameters.create()
@@ -377,7 +374,7 @@ class WeakLensing(Source):
             dndz=(tracer_args.z, tracer_args.dndz),
             ia_bias=tracer_args.ia_bias,
         )
-        tracers = [Tracer(ccl_wl_tracer, field="delta_matter")]
+        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field="delta_matter")]
 
         if tracer_args.has_pt:
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
@@ -385,7 +382,6 @@ class WeakLensing(Source):
                 cdelta=tracer_args.ia_pt_c_d,
                 c2=tracer_args.ia_pt_c_2,
             )
-            matter_ia_pt_tracer = pyccl.nl_pt.PTMatterTracer()
 
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 cosmo.ccl_cosmo,
@@ -395,13 +391,9 @@ class WeakLensing(Source):
                 ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
             ia_tracer = Tracer(
-                ccl_wl_dummy_tracer, field="intrinsic_pt", pt_tracer=ia_pt_tracer
-            )
-            matter_pt_tracer = Tracer(
-                ccl_wl_tracer, field="delta_matter", pt_tracer=matter_ia_pt_tracer
+                ccl_wl_dummy_tracer, tracer_name="intrinsic_pt", pt_tracer=ia_pt_tracer
             )
             tracers.append(ia_tracer)
-            tracers.append(matter_pt_tracer)
 
         self.current_tracer_args = tracer_args
 

@@ -93,14 +93,18 @@ class Cosmology:
         self.pk: Dict[str, pyccl.Pk2D] = {}
 
     def add_pk(self, name: str, pk: pyccl.Pk2D):
+        """Add a pyccl.Pk2D to the table of power spectra."""
         self.pk[name] = pk
 
     def get_pk(self, name: str) -> pyccl.Pk2D:
+        """Retrive a pyccl.Pk2D from the table of power spectra, or fall back
+        to what the pyccl.Cosmology object can provide."""
         if name in self.pk:
             return self.pk[name]
         return self.ccl_cosmo.get_nonlin_power(name)
 
     def has_pk(self, name: str) -> bool:
+        """Check if a power spectrum with name `name' is available."""
         # There should probably a pyccl.Cosmology method to check if a specific
         # power spectrum exists
         try:
@@ -120,6 +124,15 @@ class PTSystematic(LikelihoodSystematic):
     theory calculations."""
 
     def __init__(self, *ptc_args, **ptc_kwargs):
+        """Initialise the PTSystematic.
+
+        Arguments
+        ---------
+        *ptc_args: tuple
+            Positional arguments for the call to pyccl.nl_pt.PTCalculator.
+        *ptc_kwargs: tuple
+            Keyword arguments for the call to pyccl.nl_pt.PTCalculator.
+        """
         super().__init__()
         self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
 

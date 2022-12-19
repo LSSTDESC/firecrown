@@ -172,13 +172,13 @@ if __name__ == "__main__":
     print(list(likelihood.statistics[0].cells.keys()))
 
     ells = likelihood.statistics[0].ells
-    cells_GG = likelihood.statistics[0].cells[("delta_matter", "delta_matter")]
-    cells_GI = likelihood.statistics[0].cells[("delta_matter", "intrinsic_pt")]
+    cells_GG = likelihood.statistics[0].cells[("shear", "shear")]
+    cells_GI = likelihood.statistics[0].cells[("shear", "intrinsic_pt")]
     cells_II = likelihood.statistics[0].cells[("intrinsic_pt", "intrinsic_pt")]
     cells_cs_total = likelihood.statistics[0].cells["total"]
 
     print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = likelihood.statistics[2].cells[("galaxies", "delta_matter")]
+    cells_gG = likelihood.statistics[2].cells[("galaxies", "shear")]
     cells_gI = likelihood.statistics[2].cells[("galaxies", "intrinsic_pt")]
     cells_mI = likelihood.statistics[2].cells[("magnification+rsd", "intrinsic_pt")]
 

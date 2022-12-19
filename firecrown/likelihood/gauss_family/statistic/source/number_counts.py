@@ -61,7 +61,7 @@ class LinearBiasSystematic(NumberCountsSystematic):
     Parameters
     ----------
     alphaz : str
-        The mame of redshift dependence parameter of the linear bias.
+        The name of redshift dependence parameter of the linear bias.
     alphag : str
         The name of the growth dependence parameter of the linear bias.
     z_piv : str
@@ -129,7 +129,11 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     """Non-linear bias systematic.
 
     This systematic adds a linear bias model which varies with redshift and
-    the growth function.
+
+    Parameters
+    ----------
+    b_2: float
+    b_s: float
     """
 
     def __init__(self, sacc_tracer: str):
@@ -438,6 +442,36 @@ class NumberCounts(Source):
 
         tracers = []
 
+        if not tracer_args.has_pt or tracer_args.mag_bias is not None or self.has_rsd:
+            # Create a normal pyccl.NumberCounts tracer if there's no PT, or
+            # in case there's magnification or RSD.
+            tracer_names = []
+            if tracer_args.has_pt:
+                # use PT for galaxy bias
+                bias = None
+            else:
+                bias = (tracer_args.z, tracer_args.bias)
+                tracer_names += ["galaxies"]
+            if tracer_args.mag_bias is not None:
+                tracer_names += ["magnification"]
+            if self.has_rsd:
+                tracer_names += ["rsd"]
+
+            ccl_mag_tracer = pyccl.NumberCountsTracer(
+                cosmo.ccl_cosmo,
+                has_rsd=self.has_rsd,
+                dndz=(tracer_args.z, tracer_args.dndz),
+                bias=bias,
+                mag_bias=tracer_args.mag_bias,
+            )
+
+            tracers.append(
+                Tracer(
+                    ccl_mag_tracer,
+                    tracer_name="+".join(tracer_names),
+                    field="delta_matter",
+                )
+            )
         if tracer_args.has_pt:
             nc_pt_tracer = pyccl.nl_pt.PTNumberCountsTracer(
                 b1=(tracer_args.z, tracer_args.bias),
@@ -452,35 +486,9 @@ class NumberCounts(Source):
                 bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
             nc_pt_tracer = Tracer(
-                ccl_nc_dummy_tracer, field="galaxies", pt_tracer=nc_pt_tracer
+                ccl_nc_dummy_tracer, tracer_name="galaxies", pt_tracer=nc_pt_tracer
             )
             tracers.append(nc_pt_tracer)
-
-            if tracer_args.mag_bias is not None or self.has_rsd:
-                matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
-                ccl_mag_tracer = pyccl.NumberCountsTracer(
-                    cosmo.ccl_cosmo,
-                    has_rsd=self.has_rsd,
-                    dndz=(tracer_args.z, tracer_args.dndz),
-                    bias=None,
-                    mag_bias=tracer_args.mag_bias,
-                )
-                field_name = "magnification"
-                if self.has_rsd:
-                    field_name += "+rsd"
-                mag_pt_tracer = Tracer(
-                    ccl_mag_tracer, field=field_name, pt_tracer=matter_pt_tracer
-                )
-                tracers.append(mag_pt_tracer)
-        else:
-            ccl_nc_tracer = pyccl.NumberCountsTracer(
-                cosmo.ccl_cosmo,
-                has_rsd=self.has_rsd,
-                dndz=(tracer_args.z, tracer_args.dndz),
-                bias=(tracer_args.z, tracer_args.bias),
-                mag_bias=tracer_args.mag_bias,
-            )
-            tracers.append(Tracer(ccl_nc_tracer, field="galaxies"))
 
         self.current_tracer_args = tracer_args
 

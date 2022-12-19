@@ -306,13 +306,21 @@ class TwoPoint(Statistic):
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
-                if (tracer0.field, tracer1.field) in self.cells:
+                if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
                     # Already computed this combination, skipping
                     continue
                 if cosmo.has_pk(pk_name):
                     # Use existing power spectrum
                     pk = cosmo.get_pk(pk_name)
-                elif tracer0.has_pt and tracer1.has_pt:
+                elif tracer0.has_pt or tracer1.has_pt:
+                    if not tracer0.has_pt and tracer1.has_pt:
+                        # Mixture of PT and non-PT tracers
+                        # Create a dummy matter PT tracer for the non-PT part
+                        matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
+                        if not tracer0.has_pt:
+                            tracer0.pt_tracer = matter_pt_tracer
+                        else:
+                            tracer1.pt_tracer = matter_pt_tracer
                     # Compute perturbation power spectrum
                     pk = pyccl.nl_pt.get_pt_pk2d(
                         cosmo.ccl_cosmo,
@@ -322,11 +330,7 @@ class TwoPoint(Statistic):
                         ptc=cosmo.pt_calculator,
                         update_ptc=False,
                     )
-                elif tracer0.has_pt or tracer1.has_pt:
-                    # Mixed pt and non-pt combination: skip
-                    # Todo: create dummy PTMatter tracer to allow pt x non-pt 2pt
-                    continue
-                elif tracer0.has_hm and tracer1.has_hm:
+                elif tracer0.has_hm or tracer1.has_hm:
                     # Compute halo model power spectrum
                     raise NotImplementedError(
                         "Halo model power spectra not supported yet"
@@ -334,7 +338,7 @@ class TwoPoint(Statistic):
                 else:
                     raise ValueError(f"No power spectrum for {pk_name} can be found.")
 
-                self.cells[(tracer0.field, tracer1.field)] = (
+                self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
                     _cached_angular_cl(
                         cosmo.ccl_cosmo,
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
