@@ -90,7 +90,7 @@ p2 = Ncm.MSetPIndex.new(cosmo.id(), Omegac_i)
 
 lhr2d = Ncm.LHRatio2d.new(fit, p1, p2, 1.0e-3)
 
-plt.figure(figsize=(8,4))
+plt.figure(figsize=(8, 4))
 plt.title("Confidence regions")
 
 for clevel in [chi2.cdf(l**2, df=1) for l in [1, 2, 3]]:
@@ -106,4 +106,4 @@ plt.ylabel(f"${cosmo.param_symbol(Omegac_i)}$")
 
 plt.legend(loc="best")
 
-plt.savefig ("srd_sn_fisher_example.pdf")
+plt.savefig("srd_sn_fisher_example.pdf")
