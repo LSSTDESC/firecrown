@@ -28,10 +28,12 @@ class StudentT(GaussFamily):
     :param nu: The Student-t $\\nu$ parameter
     """
 
-    def __init__(self,
-                 statistics: List[Statistic],
-                 nu: Optional[float],
-                 systematics: Optional[List[LikelihoodSystematic]] = None):
+    def __init__(
+        self,
+        statistics: List[Statistic],
+        nu: Optional[float],
+        systematics: Optional[List[LikelihoodSystematic]] = None,
+    ):
         super().__init__(statistics, systematics)
         self.nu = parameters.create(nu)  # pylint: disable-msg=C0103
 

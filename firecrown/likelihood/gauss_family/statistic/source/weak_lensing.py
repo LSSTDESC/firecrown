@@ -229,9 +229,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(
-        self, cosmo: Cosmology, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
         z = tracer_arg.z

@@ -31,9 +31,11 @@ class GaussFamily(Likelihood):
     compute_loglike, which is inherited from Likelihood.
     """
 
-    def __init__(self,
-                 statistics: List[Statistic],
-                 systematics: Optional[List[LikelihoodSystematic]] = None):
+    def __init__(
+        self,
+        statistics: List[Statistic],
+        systematics: Optional[List[LikelihoodSystematic]] = None,
+    ):
         super().__init__()
         self.statistics = UpdatableCollection(statistics)
         self.systematics = UpdatableCollection(systematics or [])

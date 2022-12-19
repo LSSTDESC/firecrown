@@ -159,9 +159,7 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(
-        self, cosmo: Cosmology, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
 
         z = tracer_arg.z
         b_2_z = self.b_2 * np.ones_like(z)
@@ -225,9 +223,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(
-        self, cosmo: Cosmology, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
         Parameters
@@ -294,9 +290,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(
-        self, cosmo: Cosmology, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
 
         return replace(
             tracer_arg,
