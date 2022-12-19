@@ -10,8 +10,9 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Optional, final
+from typing import List, Dict, Union, Optional, final
 from abc import abstractmethod
+import warnings
 import importlib
 import importlib.util
 import os
@@ -38,7 +39,7 @@ class Likelihood(Updatable):
     these methods, and provide other abstract methods for their subclasses to implement.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Default initialization for a base Likelihood object."""
         super().__init__()
 
@@ -150,10 +151,13 @@ class PTSystematic(LikelihoodSystematic):
         return DerivedParameterCollection([])
 
 
-def load_likelihood(filename: str) -> Likelihood:
+def load_likelihood(
+    filename: str, build_parameters: Dict[str, Union[str, int, bool, float, np.ndarray]]
+) -> Likelihood:
     """Loads a likelihood script and returns an instance
 
     :param filename: script filename
+    :param build_parameters: a dictionary containing the factory function parameters
     """
     _, file_extension = os.path.splitext(filename)
 
@@ -178,17 +182,34 @@ def load_likelihood(filename: str) -> Likelihood:
     if spec.loader is None:
         raise ImportError(f"Spec for module '{modname}' has no loader.")
 
-    try:
-        spec.loader.exec_module(mod)
-    except FileNotFoundError as error:
-        raise ImportError(f"{error.strerror}: {filename}") from error
+    spec.loader.exec_module(mod)
 
-    if not hasattr(mod, "likelihood"):
-        raise ValueError(
-            f"Firecrown initialization file {filename} does not define a likelihood."
+    if not hasattr(mod, "build_likelihood"):
+        if not hasattr(mod, "likelihood"):
+            raise AttributeError(
+                f"Firecrown initialization script {filename} does not define "
+                f"a `build_likelihood` factory function."
+            )
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "The use of a likelihood variable in Firecrown's initialization "
+            "script is deprecated. Any parameters passed to the likelihood "
+            "will be ignored. The script should define a `build_likelihood` "
+            "factory function.",
+            category=DeprecationWarning,
         )
+        likelihood = mod.likelihood
+    else:
+        if not callable(mod.build_likelihood):
+            raise TypeError(
+                "The factory function `build_likelihood` must be a callable."
+            )
+        likelihood = mod.build_likelihood(build_parameters)
 
-    likelihood = mod.likelihood
-    assert isinstance(likelihood, Likelihood)
+    if not isinstance(likelihood, Likelihood):
+        raise TypeError(
+            f"The returned likelihood must be a Firecrown's `Likelihood` type, "
+            f"received {type(likelihood)} instead."
+        )
 
     return likelihood

@@ -2,15 +2,32 @@ name: firecrown
 channels:
   - conda-forge
 dependencies:
+  - black
+  - charset-normalizer
   - cosmosis
   - cosmosis-build-standard-library
-  - black
+  - coverage
+  - dill
+  - fitsio
   - flake8
+  - fuzzywuzzy
+  - getdist
+  - idna
+  - matplotlib-base
+  - more-itertools
   - mypy
-  - pylint
-  - numpy>=1.16
+  - numpy
   - pip
-  - pyccl>=2.0
+  - pip:
+    - autoclasstoc
+    - cobaya
+  - portalocker
+  - pybobyqa
+  - pyccl
+  - pylint
   - pytest
-  - sacc>=0.3
+  - pyyaml
+  - requests
+  - sacc
   - scipy
+  - urllib3

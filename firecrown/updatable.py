@@ -14,10 +14,16 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Optional
+from typing import final, Dict, Optional
 from abc import ABC, abstractmethod
 from collections import UserList
-from .parameters import ParamsMap, RequiredParameters
+from .parameters import (
+    ParamsMap,
+    RequiredParameters,
+    SamplerParameter,
+    InternalParameter,
+    parameter_get_full_name,
+)
 from .parameters import DerivedParameterCollection
 
 
@@ -32,10 +38,33 @@ class Updatable(ABC):
 
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Updatable initialization."""
         self._updated: bool = False
         self._returned_derived: bool = False
+        self._sampler_parameters: Dict[str, SamplerParameter] = {}
+        self._internal_parameters: Dict[str, InternalParameter] = {}
+        self.sacc_tracer: Optional[str] = None
+
+    def __setattr__(self, key, value):
+        if isinstance(value, SamplerParameter):
+            if key in self._sampler_parameters or hasattr(self, key):
+                raise ValueError(
+                    f"attribute {key} already set in {self} "
+                    f"from a parameter read from the sampler"
+                )
+            self._sampler_parameters[key] = value
+            super().__setattr__(key, None)
+        elif isinstance(value, InternalParameter):
+            if key in self._internal_parameters or hasattr(self, key):
+                raise ValueError(
+                    f"attribute {key} already set in {self} "
+                    f"from a parameter supplied in the likelihood factory code"
+                )
+            self._internal_parameters[key] = value
+            super().__setattr__(key, value.get_value())
+        else:
+            super().__setattr__(key, value)
 
     @final
     def update(self, params: ParamsMap):
@@ -43,8 +72,10 @@ class Updatable(ABC):
 
         :param params: new parameter values
         """
-
         if not self._updated:
+            for parameter in self._sampler_parameters:
+                value = params.get_from_prefix_param(self.sacc_tracer, parameter)
+                setattr(self, parameter, value)
             self._update(params)
             self._updated = True
 
@@ -79,14 +110,31 @@ class Updatable(ABC):
         The base class implementation does nothing.
         """
 
-    @abstractmethod
+    @final
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
+        """Return a RequiredParameters object containing the information for
+        all parameters defined in the implementing class, any additional
+        parameter
+        """
+
+        sampler_parameters = RequiredParameters(
+            [
+                parameter_get_full_name(self.sacc_tracer, parameter)
+                for parameter in self._sampler_parameters
+            ]
+        )
+        additional_parameters = self._required_parameters()
+
+        return sampler_parameters + additional_parameters
+
+    @abstractmethod
+    def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
         """Return a RequiredParameters object containing the information for
         this Updatable. This method must be overridden by concrete classes.
 
-        The base class implementation returns an empty RequiredParameters.
+        The base class implementation returns a list with all SamplerParameter
+        objects properties.
         """
-        return RequiredParameters([])
 
     @final
     def get_derived_parameters(
@@ -176,8 +224,7 @@ class UpdatableCollection(UserList):
                 has_any_derived = True
         if has_any_derived:
             return derived_parameters
-        else:
-            return None
+        return None
 
     def append(self, item: Updatable) -> None:
         """Append the given item to self.

@@ -23,6 +23,8 @@ from firecrown.parameters import ParamsMap
 def extract_section(sample: cosmosis.datablock, section: str) -> Dict:
     """Extract the all the parameters from the name datablock section into a
     dictionary."""
+    if not sample.has_section(section):
+        raise RuntimeError(f"Datablock section `{section}' does not exist.")
     sec_dict = {name: sample[section, name] for _, name in sample.keys(section=section)}
     return sec_dict
 
@@ -32,7 +34,7 @@ class FirecrownLikelihood:
 
     In this simplest implementation, we have only a single module. This module
     is responsible for calling CCL to perform theory calculations, based on the
-    output of CAMB, and also for calculating the data likelihood baesd on this
+    output of CAMB, and also for calculating the data likelihood based on this
     theory.
 
     :param config: current CosmoSIS datablock
@@ -51,7 +53,14 @@ class FirecrownLikelihood:
             option_section, "require_nonlinear_pk", False
         )
 
-        self.likelihood = load_likelihood(likelihood_source)
+        build_parameters = extract_section(config, option_section)
+
+        sections = config.get_string(option_section, "sampling_parameters_sections", "")
+        sections = sections.split()
+
+        self.firecrown_module_name = option_section
+        self.sampling_sections = sections
+        self.likelihood = load_likelihood(likelihood_source, build_parameters)
         self.map = mapping_builder(
             input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
         )
@@ -121,16 +130,26 @@ class FirecrownLikelihood:
 
     def calculate_firecrown_params(self, sample: cosmosis.datablock) -> ParamsMap:
         """Calculate the ParamsMap for this sample."""
+
         firecrown_params = ParamsMap()
-        for section in sample.sections():
-            if "firecrown" in section:
-                sec_dict = extract_section(sample, section)
-                firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
+        for section in self.sampling_sections:
+            sec_dict = extract_section(sample, section)
+            shared_keys = set(sec_dict).intersection(firecrown_params)
+            if len(shared_keys) > 0:
+                raise RuntimeError(
+                    f"The following keys `{shared_keys}' appear "
+                    f"in more than one section used by the "
+                    f"module {self.firecrown_module_name}."
+                )
+
+            firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
+
+        firecrown_params.use_lower_case_keys(True)
         return firecrown_params
 
 
 def setup(config: cosmosis.datablock) -> FirecrownLikelihood:
-    """Setup hoook for a CosmoSIS module. Returns an instance of
+    """Setup hook for a CosmoSIS module. Returns an instance of
     class FirecrownLikelihood. The same object will be passed to the CosmoSIS
     execute hook."""
     return FirecrownLikelihood(config)

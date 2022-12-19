@@ -37,6 +37,17 @@ class ParamsMap(Dict[str, float]):
     with square brackets like x[].
     """
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.lower_case: bool = False
+
+    def use_lower_case_keys(self, enable: bool) -> None:
+        """Control whether keys will be translated into lower case.
+        If `enable` is True, such translation will be done.
+        This can help make sure code works with CosmoSIS, because such translation
+        is done inside CosmoSIS itself."""
+        self.lower_case = enable
+
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
@@ -45,6 +56,8 @@ class ParamsMap(Dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         fullname = parameter_get_full_name(prefix, param)
+        if self.lower_case:
+            fullname = fullname.lower()
 
         if fullname in self.keys():
             return self[fullname]
@@ -152,8 +165,8 @@ class DerivedParameterCollection:
 
         self.derived_parameters: Dict[str, DerivedParameter] = {}
 
-        for dp in derived_parameters:
-            self.add_required_parameter(dp)
+        for parameter in derived_parameters:
+            self.add_required_parameter(parameter)
 
     def __add__(self, other: Optional[DerivedParameterCollection]):
         """Return a new DerivedParameterCollection with the lists of DerivedParameter
@@ -204,10 +217,59 @@ class DerivedParameterCollection:
                 f"RequiredParameter named {required_parameter_full_name}"
                 f" is already present in the collection"
             )
-        else:
-            self.derived_parameters[required_parameter_full_name] = derived_parameter
+        self.derived_parameters[required_parameter_full_name] = derived_parameter
 
     def get_derived_list(self) -> List[DerivedParameter]:
         """Implement lazy iteration through the contained parameter names."""
 
         return list(self.derived_parameters.values())
+
+
+class SamplerParameter:
+    """Class to represent a sampler defined parameter."""
+
+    def __init__(self):
+        """Creates a new SamplerParameter instance that represents a parameter
+        having its value defined by the sampler."""
+        self.value = None
+
+    def set_value(self, value: float):
+        """Set the value of this parameter."""
+        self.value = value
+
+    def get_value(self) -> float:
+        """Get the current value of this parameter."""
+        return self.value
+
+
+class InternalParameter:
+    """Class to represent an internally defined parameter."""
+
+    def __init__(self, value: float):
+        """Creates a new InternalParameter instance that represents an
+        internal parameter with its value defined by value."""
+        self.value = value
+
+    def set_value(self, value: float):
+        """Set the value of this parameter."""
+        self.value = value
+
+    def get_value(self) -> float:
+        """Return the current value of this parameter."""
+        return self.value
+
+
+def create(value: Optional[float] = None):
+    """Create a new parameter.
+
+    If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
+    will expect this value to be supplied by the sampling framwork. If `value`
+    is a `float` quantity, then Firecrown will expect this parameter to *not*
+    be supplied by the sampling framework, and instead the provided value will
+    be used for every sample.
+
+    Only `None` or a `float` value is allowed.
+    """
+    if value is None:
+        return SamplerParameter()
+    return InternalParameter(value)

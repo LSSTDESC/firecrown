@@ -12,6 +12,7 @@ import sacc
 from ....likelihood.likelihood import Cosmology
 
 from .statistic import Statistic
+from .... import parameters
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 
@@ -19,14 +20,14 @@ class Supernova(Statistic):
     """A statistic that applies an additive shift M to a supernova's distance
     modulus."""
 
-    def __init__(self, sacc_tracer):
+    def __init__(self, sacc_tracer) -> None:
         """Initialize this statistic."""
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
-        self.data_vector = None
+        self.data_vector: Optional[np.ndarray] = None
         self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
-        self.M = None  # pylint: disable-msg=invalid-name
+        self.M = parameters.create()  # pylint: disable-msg=invalid-name
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -38,24 +39,23 @@ class Supernova(Statistic):
         z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = 1.0 / (1.0 + z)
         self.data_vector = np.array([dp.value for dp in data_points])
-        self.sacc_inds = list(range(0, len(self.data_vector)))
+        self.sacc_inds = list(
+            range(0, len(self.data_vector))
+        )  # pylint: disable-msg=invalid-name
 
     @final
     def _update(self, params: ParamsMap):
-        self.M = params["m"]  # CosmoSIS makes everything lowercase
+        """Perform any updates necessary after the parameters have being updated.
+
+        This implementation has nothing to do."""
 
     @final
     def _reset(self):
         pass
 
     @final
-    def required_parameters(self) -> RequiredParameters:
-        """Return a RequiredParameters object containing the information for this
-        statistic.
-
-        The only required parameter is`m`.
-        """
-        return RequiredParameters(["m"])
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:

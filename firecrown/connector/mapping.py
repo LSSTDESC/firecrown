@@ -11,7 +11,7 @@ Each supported body of code has its own dedicated class.
 """
 
 from abc import ABC, abstractmethod
-from typing import Type, List, Dict, final, Any
+from typing import Type, List, Dict, Optional, final, Any
 import typing
 import numpy as np
 from pyccl import physical_constants as physics
@@ -78,8 +78,8 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: float = None,
-        sigma8: float = None,
+        A_s: Optional[float] = None,
+        sigma8: Optional[float] = None,
         n_s: float,
         Omega_k: float,
         Neff: float,
@@ -252,21 +252,20 @@ class MappingCosmoSIS(Mapping):
                 "delta_matter:delta_matter": p_k,
             }
 
-        if self.require_nonlinear_pk:
-            if sample.has_section("matter_power_nl"):
-                k = self.transform_k_h_to_k(sample["matter_power_nl", "k_h"])
-                z_mpl = sample["matter_power_nl", "z"]
-                scale_mpl = self.redshift_to_scale_factor(z_mpl)
-                p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_nl", "p_k"])
-                p_k = self.redshift_to_scale_factor_p_k(p_k)
+        if sample.has_section("matter_power_nl"):
+            k = self.transform_k_h_to_k(sample["matter_power_nl", "k_h"])
+            z_mpl = sample["matter_power_nl", "z"]
+            scale_mpl = self.redshift_to_scale_factor(z_mpl)
+            p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_nl", "p_k"])
+            p_k = self.redshift_to_scale_factor_p_k(p_k)
 
-                ccl_args["pk_nonlin"] = {
-                    "a": scale_mpl,
-                    "k": k,
-                    "delta_matter:delta_matter": p_k,
-                }
-            else:
-                ccl_args["nonlinear_model"] = "halofit"
+            ccl_args["pk_nonlin"] = {
+                "a": scale_mpl,
+                "k": k,
+                "delta_matter:delta_matter": p_k,
+            }
+        elif self.require_nonlinear_pk:
+            ccl_args["nonlinear_model"] = "halofit"
         else:
             ccl_args["nonlinear_model"] = None
 
