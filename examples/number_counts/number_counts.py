@@ -13,9 +13,10 @@ import sacc
 
 def build_likelihood(_):
 
-    massfunc = CCLDensity('critical', 'Bocquet16', False)
-    stats = NumberCountStat('cluster_counts_true_mass',
-                            'cluster_mass_count_wl', massfunc)
+    massfunc = CCLDensity("critical", "Bocquet16", False)
+    stats = NumberCountStat(
+        "cluster_counts_true_mass", "cluster_mass_count_wl", massfunc
+    )
     stats = [stats]
     """
         Here we instantiate the actual likelihood. The statistics argument carry

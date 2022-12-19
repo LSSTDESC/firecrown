@@ -4,16 +4,18 @@ import pyccl as ccl
 import sacc
 from firecrown.likelihood.gauss_family.statistic.number_counts_stat import (
     NumberCountStat,
-    )
+)
 from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+
 sacc.__version__
 
 """
 In here we define the cosmology to be used to compute the statistics.
 """
-cosmo = ccl.Cosmology(Omega_c=0.22, Omega_b=0.0448,
-                      h=0.71, sigma8=0.8, n_s=0.963, Neff=3.04)
+cosmo = ccl.Cosmology(
+    Omega_c=0.22, Omega_b=0.0448, h=0.71, sigma8=0.8, n_s=0.963, Neff=3.04
+)
 
 """
 This is the sacc file to be used. It contains a simulation of
@@ -28,13 +30,14 @@ dark matter + baryonic matter to compute the cluster mass, which is set by
 the True entry in the function below. This is optional.
 Otherwise, only dark matter is used as default.
 """
-massfunc = CCLDensity('critical', 'Bocquet16', False)
+massfunc = CCLDensity("critical", "Bocquet16", False)
 
 """
 Initiate the statics object
 """
-stats = NumberCountStat('cluster_counts_richness_proxy',
-                        'cluster_mass_count_wl', massfunc)
+stats = NumberCountStat(
+    "cluster_counts_richness_proxy", "cluster_mass_count_wl", massfunc
+)
 list_stats = [stats]
 
 """
@@ -44,4 +47,4 @@ Initiate the likelihood object, which will read the sacc file and then
 lk = ConstGaussian(list_stats)
 lk.read(sac_file)
 log = lk.compute_loglike(cosmo)
-print(f'The log(L) is: {log}')
+print(f"The log(L) is: {log}")
