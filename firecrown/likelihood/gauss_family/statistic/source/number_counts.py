@@ -251,7 +251,7 @@ class NumberCounts(Source):
     """Source class for number counts."""
 
     systematics: UpdatableCollection
-    tracer_arg: NumberCountsArgs
+    tracer_args: NumberCountsArgs
 
     def __init__(
         self,
@@ -278,7 +278,7 @@ class NumberCounts(Source):
                 self.systematics.append(systematic)
 
         self.scale = scale
-        self.current_tracer_args = None
+        self.current_tracer_args: Optional[NumberCountsArgs] = None
         self.scale_ = None
         self.tracer_ = None
 

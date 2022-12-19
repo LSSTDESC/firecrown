@@ -42,7 +42,10 @@ class ParamsMap(Dict[str, float]):
         self.lower_case: bool = False
 
     def use_lower_case_keys(self, enable: bool) -> None:
-        """Enable or disable the use of lower case only keys.
+        """Control whether keys will be translated into lower case.
+        If `enable` is True, such translation will be done.
+        This can help make sure code works with CosmoSIS, because such translation
+        is done inside CosmoSIS itself.
 
         :param enable: whether to enable or disable this option
         """
@@ -234,13 +237,14 @@ class SamplerParameter:
         self.value = None
 
     def set_value(self, value: float):
-        """Sets the parameter's value.
+        """Set the value of this parameter.
+
         :param value: new value
         """
         self.value = value
 
     def get_value(self) -> float:
-        """Gets the current parameter's value."""
+        """Get the current value of this parameter."""
         return self.value
 
 
@@ -253,19 +257,27 @@ class InternalParameter:
         self.value = value
 
     def set_value(self, value: float):
-        """Sets the parameter's value.
+        """Set the value of this parameter.
+
         :param value: new value
         """
         self.value = value
 
     def get_value(self) -> float:
-        """Gets the current parameter's value."""
+        """Return the current value of this parameter."""
         return self.value
 
 
 def create(value: Optional[float] = None):
-    """Creates a new sampler parameter. If value is None create a
-    SamplerParameter, otherwise assume it is an internal parameter.
+    """Create a new parameter.
+
+    If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
+    will expect this value to be supplied by the sampling framwork. If `value`
+    is a `float` quantity, then Firecrown will expect this parameter to *not*
+    be supplied by the sampling framework, and instead the provided value will
+    be used for every sample.
+
+    Only `None` or a `float` value is allowed.
 
     :param value: value for the created parameter
     """
