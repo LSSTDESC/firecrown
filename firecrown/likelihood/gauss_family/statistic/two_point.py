@@ -346,7 +346,7 @@ class TwoPoint(Statistic):
                 )
 
         # Add up all the contributions to the cells
-        self.cells["total"] = sum(self.cells.values())
+        self.cells["total"] = np.array(sum(self.cells.values()))
         theory_vector = self.cells["total"]
 
         if not self.ccl_kind == "cl":

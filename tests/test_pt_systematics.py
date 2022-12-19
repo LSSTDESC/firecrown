@@ -1,5 +1,3 @@
-import pytest
-
 import os
 
 import numpy as np
@@ -156,9 +154,7 @@ def test_pt_systematics():
         s.ell_for_xi = dict(minimum=2, midpoint=5, maximum=6e4, n_log=10)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
-    log_like = likelihood.compute_loglike(ccl_cosmo)
-
-    # print(f"Log-like = {log_like:.1f}")
+    _ = likelihood.compute_loglike(ccl_cosmo)
 
     # print(list(likelihood.statistics[0].cells.keys()))
 

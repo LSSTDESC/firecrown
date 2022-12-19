@@ -35,7 +35,7 @@ class Source(Updatable):
 
     systematics: Sequence[SourceSystematic]
     cosmo_hash: Optional[int]
-    tracers: Sequence[Tracer] | None
+    tracers: Sequence[Tracer]
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -64,7 +64,7 @@ class Source(Updatable):
         This clears the current hash and tracer, and calls the abstract method
         `_update_source`, which must be implemented in all subclasses."""
         self.cosmo_hash = None
-        self.tracers = None
+        self.tracers = []
         self._update_source(params)
 
     @final
@@ -85,7 +85,7 @@ class Source(Updatable):
         cosmology."""
 
     @final
-    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer] | None:
+    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same

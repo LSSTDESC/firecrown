@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 import os
 
+from typing import Dict
+
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
@@ -23,7 +25,7 @@ sacc_data = sacc.Sacc.load_fits(saccfile)
 # Define sources
 n_source = 1
 n_lens = 1
-sources = {}
+sources: Dict[str, wl.WeakLensing | nc.NumberCounts] = {}
 
 # Define the intrinsic alignment systematic. This will be added to the
 # lensing sources later
@@ -31,24 +33,24 @@ ia_systematic = wl.TattAlignmentSystematic()
 
 for i in range(n_source):
     # Define the photo-z shift systematic.
-    pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+    src_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
 
     # Create the weak lensing source, specifying the name of the tracer in the
     # sacc file and a list of systematics
     sources[f"src{i}"] = wl.WeakLensing(
         sacc_tracer=f"src{i}",
-        systematics=[pzshift, ia_systematic]
+        systematics=[src_pzshift, ia_systematic]
     )
 
 for i in range(n_lens):
-    pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
+    lens_pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
 
     nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
     sources[f"lens{i}"] = nc.NumberCounts(
         sacc_tracer=f"lens{i}",
         has_rsd=True,
-        systematics=[pzshift, magnification, nl_bias]
+        systematics=[lens_pzshift, magnification, nl_bias]
     )
 
 # Define the statistics we like to include in the likelihood
