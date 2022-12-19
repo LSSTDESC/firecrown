@@ -2,13 +2,14 @@
 
 import pyccl as ccl
 import sacc
+from typing import List
+
 from firecrown.likelihood.gauss_family.statistic.number_counts_stat import (
     NumberCountStat,
 )
 from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
-sacc.__version__
+from firecrown.likelihood.gauss_family.statistic.statistic import Statistic
 
 """
 In here we define the cosmology to be used to compute the statistics.
@@ -38,7 +39,7 @@ Initiate the statics object
 stats = NumberCountStat(
     "cluster_counts_richness_proxy", "cluster_mass_count_wl", massfunc
 )
-list_stats = [stats]
+list_stats: List[Statistic] = [stats]
 
 """
 Initiate the likelihood object, which will read the sacc file and then

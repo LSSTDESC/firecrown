@@ -14,11 +14,12 @@ in comoving units for a given redshift.
 from __future__ import annotations
 import pyccl
 from abc import ABC, abstractmethod
+from typing import Optional
 
 
 class NumberDensity(ABC):
     def __init__(self) -> None:
-        self.density_func_type: str = None
+        self.density_func_type: Optional[str] = None
         self.use_baryons: bool = False
 
     @abstractmethod
