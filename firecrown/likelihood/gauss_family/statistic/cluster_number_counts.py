@@ -1,4 +1,4 @@
-"""Number Count statistic support.
+"""Cluster Number Count statistic support.
 This module reads the necessary data from a SACC file to compute the
 theoretical prediction of cluster number counts inside bins of redshift
  and a mass proxy. For further information, check README.md.
@@ -14,29 +14,21 @@ import pyccl
 
 from .statistic import Statistic
 from .source.source import Systematic
+from .... import parameters
 from ....parameters import (
     ParamsMap,
     RequiredParameters,
     DerivedParameterCollection,
 )
-from ....models.number_counts.mass_proxy.richness_proxy import RMProxy
+from ....models.richness_proxy import RMProxy
+from .cluster_number_counts_enum import (
+    SupportedTracerNames,
+    SupportedDataTypes,
+    SupportedProxyTypes,
+)
 
 
-# only supported types are here, any thing else will throw
-# a value error
-SACC_DATA_TYPE_TO_CCL_KIND = {
-    "cluster_mass_count_wl": "wl",
-    "cluster_mass_count_xray": "xr",
-    "counts": "nz",
-}
-
-SACC_TRACER_NAMES = {
-    "cluster_counts_true_mass": "tm",
-    "cluster_counts_richness_proxy": "rp",
-}
-
-
-class NumberCountStatsArgs:
+class ClusterNumberCountsArgs:
     """Class for number counts tracer builder argument."""
 
     def __init__(
@@ -49,9 +41,10 @@ class NumberCountStatsArgs:
         self.metadata = metadata
 
 
-class NumberCountStat(Statistic):
-    """A Number Count statistic (e.g., halo mass function, multiplicity functions,
-     volume element,  etc.). This subclass implements the read and computes method for
+class ClusterNumberCounts(Statistic):
+    """A Cluster Number Count statistic (e.g., halo mass function,
+     multiplicity functions, volume element,  etc.).
+     This subclass implements the read and computes method for
      the Statistic class. It is used to compute the theoretical prediction of
      cluster number counts given a SACC file and a cosmology. For further information
      on how the SACC file shall be created, check README.md.
@@ -90,6 +83,12 @@ class NumberCountStat(Statistic):
         sacc_data_type,
         number_density_func,
         systematics: Optional[List[Systematic]] = None,
+        mu_p0: Optional[float] = 1.0,
+        mu_p1: Optional[float] = 1.0,
+        mu_p2: Optional[float] = 1.0,
+        sigma_p0: Optional[float] = 1.0,
+        sigma_p1: Optional[float] = 1.0,
+        sigma_p2: Optional[float] = 1.0,
     ):
 
         super().__init__()
@@ -100,25 +99,31 @@ class NumberCountStat(Statistic):
         self.data_vector = None
         self.theory_vector = None
         self.number_density_func = number_density_func
-        self.mu_p0 = None
-        self.mu_p1 = None
-        self.mu_p2 = None
-        self.sigma_p0 = None
-        self.sigma_p1 = None
-        self.sigma_p2 = None
-        if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
-            self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
-        else:
-            raise ValueError(
-                f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
-            )
-
-        if self.sacc_tracer in SACC_TRACER_NAMES:
-            self.tracer_name = SACC_TRACER_NAMES[self.sacc_tracer]
-        else:
-            raise ValueError(
-                f"The SACC tracer name {sacc_tracer}'%s' is not " f"supported!"
-            )
+        if SupportedTracerNames[sacc_tracer].value == 2:
+            self.mu_p0 = parameters.create()
+            self.mu_p1 = parameters.create()
+            self.mu_p2 = parameters.create()
+            self.sigma_p0 = parameters.create()
+            self.sigma_p1 = parameters.create()
+            self.sigma_p2 = parameters.create()
+        try:
+            self.ccl_kind = SupportedDataTypes[sacc_data_type].name
+        except KeyError:
+            supported_data = [data.name for data in SupportedDataTypes]
+            raise KeyError(
+                f"The SACC data type '{sacc_data_type}' is not "
+                f"supported!"
+                f"Supported names are: {supported_data}"
+            ) from None
+        try:
+            self.tracer_name = SupportedTracerNames[sacc_tracer].name
+        except KeyError:
+            supported_tracers = [tracer.name for tracer in SupportedTracerNames]
+            raise KeyError(
+                f"The SACC tracer name '{sacc_tracer}' is not "
+                f"supported!"
+                f"Supported names are: {supported_tracers}"
+            ) from None
 
     def _reset(self) -> None:
         """Reset this systematic.
@@ -193,14 +198,22 @@ class NumberCountStat(Statistic):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-
         tracer = sacc_data.get_tracer(self.sacc_tracer)
         metadata = tracer.metadata
+        proxy_type = metadata["Mproxy_type"]
+        if (
+            SupportedTracerNames[self.sacc_tracer].value
+            != SupportedProxyTypes[proxy_type].value
+        ):
+            raise TypeError(
+                f"The proxy {proxy_type} is not supported"
+                f"by the tracer {self.sacc_tracer}"
+            )
 
         nz = sacc_data.get_mean(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
         )
-        self.tracer_args = NumberCountStatsArgs(
+        self.tracer_args = ClusterNumberCountsArgs(
             tracers=tracer,
             z_bins=metadata["z_edges"],
             Mproxy_bins=metadata["Mproxy_edges"],
@@ -256,7 +269,7 @@ class NumberCountStat(Statistic):
                         epsrel=1.0e-4,
                     )[0]
                     theory_vector.append(bin_count * DeltaOmega)
-        else:
+        elif self.sacc_tracer == "cluster_counts_richness_proxy":
             logm_interval = (np.log10(1.0e13), np.log10(1.0e15))
             theory_vector = self._richness_proxy_integral(
                 cosmo, proxy_bins, logm_interval, z_bins

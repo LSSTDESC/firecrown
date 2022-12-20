@@ -1,15 +1,9 @@
 #!/usr/bin/env python
 
 import pyccl as ccl
-import sacc
-from typing import List
 
-from firecrown.likelihood.gauss_family.statistic.number_counts_stat import (
-    NumberCountStat,
-)
-from firecrown.models.ccl_density import CCLDensity
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family.statistic.statistic import Statistic
+from number_counts import build_likelihood
+
 
 """
 In here we define the cosmology to be used to compute the statistics.
@@ -19,33 +13,10 @@ cosmo = ccl.Cosmology(
 )
 
 """
-This is the sacc file to be used. It contains a simulation of
-clusters with their mass and redshift.
-sac_file = sacc.Sacc.load_fits("./clusters_simulated_data.sacc")
-"""
-sac_file = sacc.Sacc.load_fits("./clusters_simulated_richness_data.sacc")
-"""
-We then initiate the mass-function object. It can be a critical mass function
-or mean mass function. Some mass functions have the possibility of using
-dark matter + Baryonic matter to compute the cluster mass, which is set by
-the True entry in the function below. This is optional.
-Otherwise, only dark matter is used as default.
-"""
-mass_func = CCLDensity("critical", "Bocquet16", False)
-
-"""
-Initiate the statics object
-"""
-stats = NumberCountStat(
-    "cluster_counts_richness_proxy", "cluster_mass_count_wl", mass_func
-)
-list_stats: List[Statistic] = [stats]
-
-"""
 Initiate the likelihood object, which will read the sacc file and then
- compute the log(Likelihood).
+compute the log(Likelihood). To change the data file and
+the mass function type, check number_counts.py
 """
-lk = ConstGaussian(list_stats)
-lk.read(sac_file)
+lk = build_likelihood(None)
 log = lk.compute_loglike(cosmo)
 print(f"The log(L) is: {log}")
