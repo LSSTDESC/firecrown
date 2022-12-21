@@ -38,8 +38,8 @@ def build_likelihood(_):
 
     """
         The read likelihood method is called passing the loaded SACC file, the
-        two-point functions will receive the appropriated sections of the SACC
-        file and the sources their respective dndz.
+        cluster number count functions will receive the appropriated sections
+        of the SACC file.
     """
     lk.read(sacc_data)
 

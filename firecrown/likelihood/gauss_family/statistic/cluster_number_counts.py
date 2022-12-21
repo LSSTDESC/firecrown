@@ -158,7 +158,7 @@ class ClusterNumberCounts(Statistic):
         z_grid = np.linspace(z_tuple[0], z_tuple[1], n_intervals)
         Nmz_grid = np.zeros([len(lnN_grid), len(logm_grid), len(z_grid)])
         for i, z in enumerate(z_grid):
-            dv = self.number_density_func.compute_volume_density(cosmo, z)
+            dv = self.number_density_func.compute_differential_comoving_volume(cosmo, z)
             for k, logm in enumerate(logm_grid):
                 nm = self.number_density_func.compute_number_density(cosmo, logm, z)
                 for j, lnN in enumerate(lnN_grid):
@@ -254,7 +254,9 @@ class ClusterNumberCounts(Statistic):
 
             def integrand(logm, z):
                 nm = self.number_density_func.compute_number_density(cosmo, logm, z)
-                dv = self.number_density_func.compute_volume_density(cosmo, z)
+                dv = self.number_density_func.compute_differential_comoving_volume(
+                    cosmo, z
+                )
                 return nm * dv
 
             for i in range(len(z_bins) - 1):

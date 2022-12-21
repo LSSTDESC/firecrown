@@ -42,7 +42,7 @@ class NumberDensity(ABC):
         raise NotImplementedError("Method `compute_number_density` is not implemented!")
 
     @abstractmethod
-    def compute_volume_density(self, cosmo: pyccl.Cosmology, z) -> float:
+    def compute_differential_comoving_volume(self, cosmo: pyccl.Cosmology, z) -> float:
         """
         parameters
 
@@ -54,6 +54,8 @@ class NumberDensity(ABC):
         -------
 
         dv : float
-            Volume Density pdf at z in units of Mpc^3 (comoving).
+            Differential Comoving Volume at z in units of Mpc^3 (comoving).
         """
-        raise NotImplementedError("Method `compute_volume_density` is not implemented!")
+        raise NotImplementedError(
+            "Method `compute_differential_comoving_volume`" + " is not implemented!"
+        )

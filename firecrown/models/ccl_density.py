@@ -83,7 +83,7 @@ class CCLDensity(NumberDensity):
         nm = hmf_200c.get_mass_function(cosmo, mass, a)
         return nm
 
-    def compute_volume_density(self, cosmo: pyccl.Cosmology, z) -> float:
+    def compute_differential_comoving_volume(self, cosmo: pyccl.Cosmology, z) -> float:
         """
         parameters
 
@@ -93,7 +93,7 @@ class CCLDensity(NumberDensity):
         reuturn
         -------
         dv : float
-            Volume Density pdf at z in units of Mpc^3 (comoving).
+            Differential Comoving Volume at z in units of Mpc^3 (comoving).
         """
         a = 1.0 / (1.0 + z)
         da = pyccl.background.angular_diameter_distance(cosmo, a)
