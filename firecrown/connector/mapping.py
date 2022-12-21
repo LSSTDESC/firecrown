@@ -10,9 +10,10 @@ Each supported body of code has its own dedicated class.
 
 """
 
-from abc import ABC, abstractmethod
+from abc import ABC
 from typing import Type, List, Dict, Optional, final, Any, Union
 import typing
+import warnings
 import numpy as np
 from pyccl import physical_constants as physics
 import cosmosis.datablock
@@ -58,24 +59,48 @@ class Mapping(ABC):
         self.require_nonlinear_pk = require_nonlinear_pk
         self.m_nu: Optional[Union[float, List[float]]] = None
 
-    @abstractmethod
     def get_params_names(self) -> List[str]:
         """Return the names of the cosmological parameters that this
         mapping is expected to deliver.
         """
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
         return []
 
-    @abstractmethod
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
 
-    @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         """Transform the given :math:`p_k h^3 \\to p_k`."""
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
 
-    @abstractmethod
     def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
         """Transform distances h to :math:`h/h_0`."""
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
 
     @final
     def set_params(
@@ -340,22 +365,6 @@ class MappingCAMB(Mapping):
             "w",
             "wa",
         ]
-
-    def transform_k_h_to_k(self, k_h):
-        """Transform the given k_h (k over h) to k."""
-        raise NotImplementedError("Method `transform_k_h_to_k` is not implemented.")
-
-    def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given p_k * h^3 to p_k."""
-        raise NotImplementedError(
-            "Method `transform_p_k_h3_to_p_k` is not implemented."
-        )
-
-    def transform_h_to_h_over_h0(self, h):
-        """Transform distances h to h/h0."""
-        raise NotImplementedError(
-            "Method `transform_h_to_h_over_h0` is not implemented."
-        )
 
     def set_params_from_camb(self, **params_values):
         """Read the CAMB-style parameters from params_values, translate them to

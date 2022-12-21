@@ -42,18 +42,6 @@ class MappingNumCosmo(Mapping):
         self.p_mnl = p_mnl
         self.dist = dist
 
-    def get_params_names(self):
-        pass
-
-    def transform_k_h_to_k(self, k_h):
-        pass
-
-    def transform_p_k_h3_to_p_k(self, p_k_h3):
-        pass
-
-    def transform_h_to_h_over_h0(self, h):
-        pass
-
     def set_params_from_numcosmo(
         self, mset: Ncm.MSet
     ):  # pylint: disable-msg=too-many-locals
@@ -147,10 +135,10 @@ class MappingNumCosmo(Mapping):
 
         if self.p_mnl:
             p_mnl_spline = self.p_mnl.get_spline_2d(hi_cosmo)
-            z = np.array(  # pylint: disable-msg=invalid-name
-                np.array(p_mnl_spline.xv.dup_array())
-            )
-            k = np.array(np.array(p_mnl_spline.yv.dup_array()))
+            z = np.array(
+                p_mnl_spline.xv.dup_array()
+            )  # pylint: disable-msg=invalid-name
+            k = np.array(p_mnl_spline.yv.dup_array())
 
             scale_mpnl = self.redshift_to_scale_factor(z)
             p_mnl = np.transpose(

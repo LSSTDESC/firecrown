@@ -65,8 +65,8 @@ class GaussFamily(Likelihood):
 
     @final
     def get_data_vector(self) -> np.ndarray:
-        """Get the data vector from all statistics
-        and concatenate in the right order."""
+        """Get the data vector from all statistics and concatenate in the right
+        order."""
         data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
             data = stat.get_data_vector()
@@ -88,7 +88,7 @@ class GaussFamily(Likelihood):
 
     @final
     def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Calculate and return the chi-squared for the given cosmology."""
+        """Calculate and return both the data and theory vectors."""
         theory_vector_list: List[np.ndarray] = []
         data_vector_list: List[np.ndarray] = []
 
