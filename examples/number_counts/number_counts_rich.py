@@ -2,8 +2,8 @@
 
 import os
 
-from firecrown.likelihood.gauss_family.statistic.number_counts_stat import (
-    NumberCountStat,
+from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
+    ClusterNumberCounts,
 )
 from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
@@ -16,7 +16,7 @@ def build_likelihood(_):
     Here we instantiate the number density (or mass function) object.
     """
     massfunc = CCLDensity("critical", "Bocquet16", False)
-    stats = NumberCountStat(
+    stats = ClusterNumberCounts(
         "cluster_counts_richness_proxy", "cluster_mass_count_wl", massfunc
     )
     stats = [stats]
