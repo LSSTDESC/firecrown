@@ -192,7 +192,6 @@ class TwoPoint(Statistic):
         self.sacc_tracers = None
         self.predicted_statistic_ = None
 
-
     @final
     def _update(self, params: ParamsMap):
         self.source0.update(params)
@@ -318,7 +317,7 @@ class TwoPoint(Statistic):
 
         if self.theory_window_function is not None:
 
-            def log_interpolator(x, y): # pylint: disable-msg=invalid-name
+            def log_interpolator(x, y):  # pylint: disable-msg=invalid-name
                 if np.all(y > 0):
                     # use log-log interpolation
                     intp = scipy.interpolate.InterpolatedUnivariateSpline(
