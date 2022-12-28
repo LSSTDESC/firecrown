@@ -191,6 +191,7 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = None
         self.sacc_tracers = None
         self.predicted_statistic_ = None
+        self.sacc_inds: List[int] = []
 
     @final
     def _update(self, params: ParamsMap):
