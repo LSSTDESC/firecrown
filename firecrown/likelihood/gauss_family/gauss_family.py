@@ -63,10 +63,10 @@ class GaussFamily(Likelihood):
         theory_vector_list: List[np.ndarray] = []
         data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
-            data, theory = stat.compute(cosmo)
-            residuals_list.append(np.atleast_1d(data - theory))
-            theory_vector_list.append(np.atleast_1d(theory))
-            data_vector_list.append(np.atleast_1d(data))
+            result = stat.compute(cosmo)
+            residuals_list.append(np.atleast_1d(result.residuals()))
+            theory_vector_list.append(np.atleast_1d(result.theory))
+            data_vector_list.append(np.atleast_1d(result.data))
 
         residuals = np.concatenate(residuals_list, axis=0)
         self.predicted_data_vector: np.ndarray = np.concatenate(theory_vector_list)

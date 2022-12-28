@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Optional, final
 import copy
 import functools
 import warnings
@@ -12,7 +12,7 @@ import scipy.interpolate
 
 import pyccl
 
-from .statistic import Statistic
+from .statistic import Statistic, StatisticsResult
 from .source.source import Source, Systematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
@@ -291,7 +291,7 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: pyccl.Cosmology) -> StatisticsResult:
         """Compute a two-point statistic from sources."""
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
@@ -350,4 +350,4 @@ class TwoPoint(Statistic):
 
         assert self.data_vector is not None
 
-        return np.array(self.data_vector), np.array(theory_vector)
+        return StatisticsResult(np.array(self.data_vector), np.array(theory_vector))

@@ -2,14 +2,14 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, final
+from typing import Optional, final
 
 import numpy as np
 
 import pyccl
 import sacc
 
-from .statistic import Statistic
+from .statistic import Statistic, StatisticsResult
 from .... import parameters
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
@@ -59,11 +59,11 @@ class Supernova(Statistic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(self, cosmo: pyccl.Cosmology) -> StatisticsResult:
         """Compute a two-point statistic from sources."""
 
         theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
 
         assert self.data_vector is not None
 
-        return np.array(self.data_vector), np.array(theory_vector)
+        return StatisticsResult(np.array(self.data_vector), np.array(theory_vector))
