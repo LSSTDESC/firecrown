@@ -8,4 +8,4 @@ def test_upper_triangle_indices_nonzero():
 
 def test_upper_triangle_indices_zero():
     indices = list(upper_triangle_indices(0))
-    assert indices == []
+    assert not indices
