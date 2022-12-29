@@ -12,6 +12,8 @@ from __future__ import annotations
 from typing import List
 from dataclasses import dataclass
 from abc import abstractmethod
+import warnings
+
 import numpy as np
 import pyccl
 import sacc
@@ -31,7 +33,22 @@ class StatisticsResult:
         assert self.data.shape == self.theory.shape
 
     def residuals(self):
+        """Return the residuals -- the difference between data and theory."""
         return self.data - self.theory
+
+    def __iter__(self):
+        """Iterate through the data members. This is to allow automatic unpacking, as
+        if the StatisticsResult were a tuple of (data, theory).
+
+        This method is a temporary measure to help code migrate to the newer,
+        safer interface for Statistic.compute()."""
+        warnings.warn(
+            "Iteration and tuple unpacking for StatisticsResult is "
+            "deprecated.\nPlease use the StatisticsResult class accessors"
+            ".data and .theory by name."
+        )
+        yield self.data
+        yield self.theory
 
 
 class Statistic(Updatable):
