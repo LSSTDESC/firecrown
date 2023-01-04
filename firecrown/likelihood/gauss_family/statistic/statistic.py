@@ -25,6 +25,7 @@ from .source.source import Systematic
 @dataclass
 class StatisticsResult:
     """This is the type returned by the `compute` method of any `Statistic`."""
+
     data: np.ndarray
     theory: np.ndarray
 

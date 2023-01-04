@@ -153,10 +153,10 @@ class TwoPoint(Statistic):
         source0: Source,
         source1: Source,
         systematics: Optional[List[Systematic]] = None,
-        ell_for_xi=None,
-        ell_or_theta=None,
-        ell_or_theta_min=None,
-        ell_or_theta_max=None,
+        ell_for_xi: Optional[List[Systematic]] = None,
+        ell_or_theta: Optional[List[Systematic]] = None,
+        ell_or_theta_min: Optional[List[Systematic]] = None,
+        ell_or_theta_max: Optional[List[Systematic]] = None,
     ):
         super().__init__()
 
@@ -186,7 +186,7 @@ class TwoPoint(Statistic):
         self.theory_window_function = None
         # TODO: Why do we have both _ell_or_theta and ell_or_theta_ ?
         # What would be better names for these?
-        self._ell_or_theta = None
+        self._ell_or_theta: Optional[np.ndarray] = None
         self.ell_or_theta_ = None
         self.measured_statistic_ = None
         self.sacc_tracers = None
