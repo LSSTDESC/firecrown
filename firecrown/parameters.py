@@ -45,7 +45,10 @@ class ParamsMap(Dict[str, float]):
         """Control whether keys will be translated into lower case.
         If `enable` is True, such translation will be done.
         This can help make sure code works with CosmoSIS, because such translation
-        is done inside CosmoSIS itself."""
+        is done inside CosmoSIS itself.
+
+        :param enable: whether to enable or disable this option
+        """
         self.lower_case = enable
 
     def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
@@ -165,8 +168,8 @@ class DerivedParameterCollection:
 
         self.derived_parameters: Dict[str, DerivedParameter] = {}
 
-        for parameter in derived_parameters:
-            self.add_required_parameter(parameter)
+        for derived_parameter in derived_parameters:
+            self.add_required_parameter(derived_parameter)
 
     def __add__(self, other: Optional[DerivedParameterCollection]):
         """Return a new DerivedParameterCollection with the lists of DerivedParameter
@@ -234,7 +237,10 @@ class SamplerParameter:
         self.value = None
 
     def set_value(self, value: float):
-        """Set the value of this parameter."""
+        """Set the value of this parameter.
+
+        :param value: new value
+        """
         self.value = value
 
     def get_value(self) -> float:
@@ -251,7 +257,10 @@ class InternalParameter:
         self.value = value
 
     def set_value(self, value: float):
-        """Set the value of this parameter."""
+        """Set the value of this parameter.
+
+        :param value: new value
+        """
         self.value = value
 
     def get_value(self) -> float:
@@ -269,6 +278,8 @@ def create(value: Optional[float] = None):
     be used for every sample.
 
     Only `None` or a `float` value is allowed.
+
+    :param value: value for the created parameter
     """
     if value is None:
         return SamplerParameter()
