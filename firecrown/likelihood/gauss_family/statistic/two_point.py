@@ -12,7 +12,7 @@ import scipy.interpolate
 
 import pyccl
 
-from .statistic import Statistic
+from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Systematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
@@ -171,11 +171,11 @@ class TwoPoint(Statistic):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
 
-        self.data_vector: Optional[np.ndarray] = None
-        self.theory_vector: Optional[np.ndarray] = None
+        self.data_vector: Optional[DataVector] = None
+        self.theory_vector: Optional[TheoryVector] = None
         self._ell_or_theta: Optional[np.ndarray] = None
-        self.predicted_statistic_: Optional[np.ndarray] = None
-        self.measured_statistic_: Optional[np.ndarray] = None
+        self.predicted_statistic_: Optional[TheoryVector] = None
+        self.measured_statistic_: Optional[DataVector] = None
         self.ell_or_theta_: Optional[np.ndarray] = None
 
         self.sacc_tracers: Optional[List[str]] = None
@@ -281,15 +281,15 @@ class TwoPoint(Statistic):
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
-        self.data_vector = np.array(_stat.copy())
+        self.data_vector = DataVector.create(_stat)
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def get_data_vector(self) -> np.ndarray:
+    def get_data_vector(self) -> DataVector:
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> np.ndarray:
+    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> TheoryVector:
         """Compute a two-point statistic from sources."""
 
         assert self._ell_or_theta is not None
@@ -346,8 +346,8 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory_window_function.weight, ell
             )
 
-        self.predicted_statistic_ = theory_vector
+        self.predicted_statistic_ = TheoryVector.create(theory_vector)
 
         assert self.data_vector is not None
 
-        return np.array(theory_vector)
+        return TheoryVector.create(theory_vector)
