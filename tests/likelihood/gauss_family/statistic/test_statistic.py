@@ -70,4 +70,6 @@ def test_vector_residuals():
     theory = stat.TheoryVector.from_list([1.0, 2.0, 3.0])
     data = stat.DataVector.from_list([1.1, 2.1, 3.1])
     difference = stat.residuals(data, theory)
-    assert type(difference) is np.ndarray
+    assert isinstance(difference, np.ndarray)
+    for cls in VECTOR_CLASSES:
+        assert not isinstance(difference, cls)
