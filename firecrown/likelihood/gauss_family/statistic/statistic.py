@@ -47,6 +47,13 @@ class TheoryVector(np.ndarray):
         return cls.create(array)
 
 
+def residuals(d: DataVector, t: TheoryVector) -> np.ndarray:
+    """Return a bare np.ndarray with the difference between data d and theory t.
+    This is to be preferred to using arithmetic on the vectors directly."""
+    assert isinstance(d, DataVector)
+    assert isinstance(t, TheoryVector)
+    return (d-t).view(np.ndarray)
+
 @dataclass
 class StatisticsResult:
     """This is the type returned by the `compute` method of any `Statistic`."""

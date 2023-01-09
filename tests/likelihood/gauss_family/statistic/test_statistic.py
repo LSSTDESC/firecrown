@@ -65,3 +65,8 @@ def test_ufunc_on_vector():
         assert isinstance(result, cls)
         assert np.array_equal(result, expected)
 
+def test_vector_residuals():
+    theory = stat.TheoryVector.from_list([1., 2., 3.0])
+    data = stat.DataVector.from_list([1.1, 2.1, 3.1])
+    difference = stat.residuals(data, theory)
+    assert type(difference) is np.ndarray
