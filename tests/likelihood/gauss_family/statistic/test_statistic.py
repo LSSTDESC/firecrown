@@ -50,14 +50,14 @@ def test_vector_copying():
 
 def test_excplicit_vector_construction():
     for cls in VECTOR_CLASSES:
-        vec = cls(shape = (4,), dtype = np.float64)
+        vec = cls(shape=(4,), dtype=np.float64)
         assert isinstance(vec, cls)
         assert vec.shape == (4,)
         assert vec.dtype == np.float64
 
 
 def test_ufunc_on_vector():
-    data = np.array([0., 0.25, 0.50])
+    data = np.array([0.0, 0.25, 0.50])
     expected = np.sin(data)
     for cls in VECTOR_CLASSES:
         vec = cls.create(data)
@@ -65,8 +65,9 @@ def test_ufunc_on_vector():
         assert isinstance(result, cls)
         assert np.array_equal(result, expected)
 
+
 def test_vector_residuals():
-    theory = stat.TheoryVector.from_list([1., 2., 3.0])
+    theory = stat.TheoryVector.from_list([1.0, 2.0, 3.0])
     data = stat.DataVector.from_list([1.1, 2.1, 3.1])
     difference = stat.residuals(data, theory)
     assert type(difference) is np.ndarray

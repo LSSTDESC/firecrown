@@ -52,7 +52,8 @@ def residuals(d: DataVector, t: TheoryVector) -> np.ndarray:
     This is to be preferred to using arithmetic on the vectors directly."""
     assert isinstance(d, DataVector)
     assert isinstance(t, TheoryVector)
-    return (d-t).view(np.ndarray)
+    return (d - t).view(np.ndarray)
+
 
 @dataclass
 class StatisticsResult:
