@@ -42,17 +42,18 @@ class GaussFamily(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
-        _sd = sacc_data.copy()
-        indices_list = []
+        covariance = sacc_data.covariance.dense
         for stat in self.statistics:
             stat.read(sacc_data)
-            indices_list.append(stat.sacc_indices.copy())
 
-        indices = np.concatenate(indices_list, axis=0)
+        indices_list = [stat.sacc_indices.copy() for stat in self.statistics]
+        indices = np.concatenate(indices_list)
         cov = np.zeros((len(indices), len(indices)))
+
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):
-                cov[new_i, new_j] = _sd.covariance.dense[old_i, old_j]
+                cov[new_i, new_j] = covariance[old_i, old_j]
+
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
         self.inv_cov = np.linalg.inv(cov)
