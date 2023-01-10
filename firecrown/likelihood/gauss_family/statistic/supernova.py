@@ -10,8 +10,6 @@ import pyccl
 import sacc
 
 from ....likelihood.likelihood import Cosmology
-
-from ....likelihood.likelihood import Cosmology
 from .statistic import Statistic, DataVector, TheoryVector
 from .... import parameters
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
