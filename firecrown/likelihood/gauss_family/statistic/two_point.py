@@ -58,7 +58,9 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
 
 @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
-    return pyccl.angular_cl(cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a)
+    return pyccl.angular_cl(
+        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
+    )
 
 
 class TwoPoint(Statistic):
