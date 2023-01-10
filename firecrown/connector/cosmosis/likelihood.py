@@ -108,6 +108,7 @@ class FirecrownLikelihood:
         # Write out theory and data vectors to the data block the ease debugging.
         for stat in self.likelihood.statistics:
             if isinstance(stat, TwoPoint):
+                assert stat.sacc_tracers is not None
                 tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
 
                 sample.put(

@@ -1,8 +1,12 @@
+""" Generate the cosmicshear.fits file.
+"""
+from firecrown.utils import upper_triangle_indices
 import numpy as np
 import sacc
 import pyccl as ccl
 
-cosmo = ccl.Cosmology(
+
+COSMO = ccl.Cosmology(
     Omega_c=0.27,
     Omega_b=0.045,
     Omega_k=0.0,
@@ -13,39 +17,34 @@ cosmo = ccl.Cosmology(
     h=0.67,
 )
 
-seed = 42
-rng = np.random.RandomState(seed=seed)
-eps = 0.01
+SEED = 42
+EPS = 0.01
 
+Z = np.linspace(0, 2, 50) + 0.05
+ELL = np.logspace(1, 4, 10)
+
+rng = np.random.seed(SEED)
 sacc_data = sacc.Sacc()
-
 tracers = []
+
 for i, mn in enumerate([0.25, 0.75]):
-    z = np.linspace(0, 2, 50) + 0.05
-    dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.25 / 0.25)
-
-    sacc_data.add_tracer("NZ", "trc%d" % i, z, dndz)
-
-    tracers.append(ccl.WeakLensingTracer(cosmo, dndz=(z, dndz)))
+    dndz = np.exp(-0.5 * (Z - mn) ** 2 / 0.25 / 0.25)
+    sacc_data.add_tracer("NZ", f"trc{i}", Z, dndz)
+    tracers.append(ccl.WeakLensingTracer(COSMO, dndz=(Z, dndz)))
 
 dv = []
-ndv = []
-for i in range(len(tracers)):
-    for j in range(i, len(tracers)):
-        ell = np.logspace(1, 4, 10)
-        pell = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell)
-        npell = pell + rng.normal(size=pell.shape[0]) * eps * pell
 
-        sacc_data.add_ell_cl("galaxy_shear_cl_ee", "trc%d" % i, "trc%d" % j, ell, npell)
-        dv.append(pell)
-        ndv.append(npell)
+# Fill in the upper triangular indices for dv.
+for i, j in upper_triangle_indices(len(tracers)):
+    pell = ccl.angular_cl(COSMO, tracers[i], tracers[j], ELL)
+    npell = pell + np.random.normal(size=pell.shape[0]) * EPS * pell
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"trc{i}", f"trc{j}", ELL, npell)
+    dv.append(pell)
+
 
 # a fake covariance matrix
-dv = np.concatenate(dv, axis=0)
-cov = np.zeros((len(dv), len(dv)))
-for i in range(len(dv)):
-    cov[i, i] = (eps * dv[i]) ** 2
+delta_v = np.concatenate(dv, axis=0)
+cov = np.diag((EPS * delta_v) ** 2)
 
 sacc_data.add_covariance(cov)
-
 sacc_data.save_fits("cosmicshear.fits", overwrite=True)

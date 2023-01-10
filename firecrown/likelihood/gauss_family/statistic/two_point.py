@@ -15,11 +15,11 @@ import pyccl.nl_pt
 
 from ....likelihood.likelihood import Cosmology
 
-from .statistic import Statistic
+from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, SourceSystematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
-# only supported types are here, any thing else will throw
+# only supported types are here, anything else will throw
 # a value error
 SACC_DATA_TYPE_TO_CCL_KIND = {
     "galaxy_density_cl": "cl",
@@ -58,7 +58,7 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
 
 @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
-    return pyccl.angular_cl(cosmo, *tracers, np.array(ells), p_of_k_a=p_of_k_a)
+    return pyccl.angular_cl(cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a)
 
 
 class TwoPoint(Statistic):
@@ -118,7 +118,7 @@ class TwoPoint(Statistic):
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
 
-         - min : int, optional - The minimum angulare wavenumber to use for
+         - min : int, optional - The minimum angular wavenumber to use for
            real-space integrations. Default is 2.
          - mid : int, optional - The midpoint angular wavenumber to use for
            real-space integrations. The angular wavenumber samples are linearly
@@ -144,9 +144,6 @@ class TwoPoint(Statistic):
         The measured value for the statistic.
     predicted_statistic_ : np.ndarray
         The final prediction for the statistic. Set after `compute` is called.
-    scale_ : float
-        The final scale factor applied to the statistic. Set after `compute`
-        is called. Note that this scale factor is already applied.
 
     """
 
@@ -179,8 +176,14 @@ class TwoPoint(Statistic):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
 
-        self.data_vector = None
-        self.theory_vector = None
+        self.data_vector: Optional[DataVector] = None
+        self.theory_vector: Optional[TheoryVector] = None
+        self._ell_or_theta: Optional[np.ndarray] = None
+        self.predicted_statistic_: Optional[TheoryVector] = None
+        self.measured_statistic_: Optional[DataVector] = None
+        self.ell_or_theta_: Optional[np.ndarray] = None
+
+        self.sacc_tracers: Optional[List[str]] = None
         self.cells: Dict[Tuple[str, str] | str, np.ndarray] = {}
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
@@ -251,9 +254,9 @@ class TwoPoint(Statistic):
         if len(_ell_or_theta) == 0 or len(_stat) == 0:
             _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
             _stat = np.zeros_like(_ell_or_theta)
-            self.sacc_inds = None
+            self.sacc_indices = None
         else:
-            self.sacc_inds = np.atleast_1d(
+            self.sacc_indices = np.atleast_1d(
                 sacc_data.indices(self.sacc_data_type, tuple(tracers))
             )
 
@@ -261,20 +264,22 @@ class TwoPoint(Statistic):
             q = np.where(_ell_or_theta >= self.ell_or_theta_min)
             _ell_or_theta = _ell_or_theta[q]
             _stat = _stat[q]
-            if self.sacc_inds is not None:
-                self.sacc_inds = self.sacc_inds[q]
+            if self.sacc_indices is not None:
+                self.sacc_indices = self.sacc_indices[q]
 
         if self.ell_or_theta_max is not None:
             q = np.where(_ell_or_theta <= self.ell_or_theta_max)
             _ell_or_theta = _ell_or_theta[q]
             _stat = _stat[q]
-            if self.sacc_inds is not None:
-                self.sacc_inds = self.sacc_inds[q]
+            if self.sacc_indices is not None:
+                self.sacc_indices = self.sacc_indices[q]
 
-        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_inds)
+        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
-            ell_config = {**ELL_FOR_XI_DEFAULTS}
-            ell_config["maximum"] = self.theory_window_function.values[-1]
+            ell_config = {
+                **ELL_FOR_XI_DEFAULTS,
+                "maximum": self.theory_window_function.values[-1],
+            }
             ell_config["minimum"] = max(
                 ell_config["minimum"], self.theory_window_function.values[0]
             )
@@ -282,12 +287,18 @@ class TwoPoint(Statistic):
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
-        self.data_vector = _stat.copy()
+        self.data_vector = DataVector.create(_stat)
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(self, cosmo: Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+    def get_data_vector(self) -> DataVector:
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
         """Compute a two-point statistic from sources."""
+
+        assert self._ell_or_theta is not None
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
         tracers0 = self.source0.get_tracers(cosmo)
@@ -392,8 +403,8 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory_window_function.weight, ell
             )
 
-        self.predicted_statistic_ = theory_vector
+        self.predicted_statistic_ = TheoryVector.create(theory_vector)
 
         assert self.data_vector is not None
 
-        return np.array(self.data_vector), np.array(theory_vector)
+        return TheoryVector.create(theory_vector)

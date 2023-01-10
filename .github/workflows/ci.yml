@@ -23,28 +23,31 @@ jobs:
         os: ["ubuntu", "macos"]
         python-version: ["3.8", "3.9", "3.10"]
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
+          auto-update-conda: true
           activate-environment: firecrown
           python-version: ${{ matrix.python-version }}
-          miniforge-version: latest
-          use-only-tar-bz2: true
+          miniforge-variant: Mambaforge
+          show-channel-urls: true
+          use-mamba: true
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ${{ env.CONDA }}/envs
           key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
         env:
-          CACHE_NUMBER: 1
+          CACHE_NUMBER: 0
         id: cache
       - name: Update environment
-        run: conda env update -n firecrown -f environment.yml
+        run: |
+          conda env update -n firecrown -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
@@ -107,8 +110,18 @@ jobs:
         run: |
           cd examples/des_y1_3x2pt
           cobaya-run cobaya_evaluate.yaml
+      - name: Running example - NumCosmo - des-y1-3x2pt
+        shell: bash -l {0}
+        run: |
+          cd examples/des_y1_3x2pt
+          python numcosmo_run.py
       - name: Running example - cosmosis - srd_sn
         shell: bash -l {0}
         run: |
           cd examples/srd_sn
           cosmosis sn_srd.ini
+      - name: Running example - NumCosmo - srd_sn
+        shell: bash -l {0}
+        run: |
+          cd examples/srd_sn
+          python numcosmo_run.py

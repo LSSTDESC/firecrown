@@ -8,9 +8,10 @@ Some notes.
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Tuple
 from typing import final
 from abc import abstractmethod
+import warnings
 
 import numpy as np
 import scipy.linalg
@@ -18,7 +19,7 @@ import scipy.linalg
 import pyccl
 import sacc
 
-from ..likelihood import Likelihood, LikelihoodSystematic
+from ..likelihood import Likelihood, LikelihoodSystematic, Cosmology
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
@@ -46,38 +47,93 @@ class GaussFamily(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
-        _sd = sacc_data.copy()
-        inds_list = []
+        covariance = sacc_data.covariance.dense
         for stat in self.statistics:
             stat.read(sacc_data)
-            inds_list.append(stat.sacc_inds.copy())
 
-        inds = np.concatenate(inds_list, axis=0)
-        cov = np.zeros((len(inds), len(inds)))
-        for new_i, old_i in enumerate(inds):
-            for new_j, old_j in enumerate(inds):
-                cov[new_i, new_j] = _sd.covariance.dense[old_i, old_j]
+        indices_list = [stat.sacc_indices.copy() for stat in self.statistics]
+        indices = np.concatenate(indices_list)
+        cov = np.zeros((len(indices), len(indices)))
+
+        for new_i, old_i in enumerate(indices):
+            for new_j, old_j in enumerate(indices):
+                cov[new_i, new_j] = covariance[old_i, old_j]
+
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def compute_chisq(self, ccl_cosmo: pyccl.Cosmology) -> float:
-        """Calculate and return the chi-squared for the given cosmology."""
-        cosmo = self.apply_systematics(ccl_cosmo)
+    def get_cov(self) -> np.ndarray:
+        """Gets the current covariance matrix."""
+        assert self.cov is not None
+        return self.cov
 
-        residuals_list: List[np.ndarray] = []
-        theory_vector_list: List[np.ndarray] = []
+    @final
+    def get_data_vector(self) -> np.ndarray:
+        """Get the data vector from all statistics and concatenate in the right
+        order."""
         data_vector_list: List[np.ndarray] = []
         for stat in self.statistics:
+            data = stat.get_data_vector()
+            data_vector_list.append(np.atleast_1d(data))
+        return np.concatenate(data_vector_list)
+
+    @final
+    def compute_theory_vector(self, ccl_cosmo: pyccl.Cosmology) -> np.ndarray:
+        """Computes the theory vector using the current instance of pyccl.Cosmology.
+
+        :param cosmo: CCL cosmology object to be used to compute the likelihood
+        """
+
+        cosmo: Cosmology = self.apply_systematics(ccl_cosmo)
+
+        theory_vector_list: List[np.ndarray] = []
+        for stat in self.statistics:
+            theory = stat.compute_theory_vector(cosmo)
+            theory_vector_list.append(np.atleast_1d(theory))
+
+        return np.concatenate(theory_vector_list)
+
+    @final
+    def compute(self, ccl_cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+        """Calculate and return both the data and theory vectors."""
+
+        cosmo: Cosmology = self.apply_systematics(ccl_cosmo)
+
+        theory_vector_list: List[np.ndarray] = []
+        data_vector_list: List[np.ndarray] = []
+
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "The use of the `compute` method on Statistic is deprecated."
+            "The Statistic objects should implement `get_data` and "
+            "`compute_theory_vector` instead.",
+            category=DeprecationWarning,
+        )
+
+        for stat in self.statistics:
             data, theory = stat.compute(cosmo)
-            residuals_list.append(np.atleast_1d(data - theory))
             theory_vector_list.append(np.atleast_1d(theory))
             data_vector_list.append(np.atleast_1d(data))
 
-        residuals = np.concatenate(residuals_list, axis=0)
-        self.predicted_data_vector: np.ndarray = np.concatenate(theory_vector_list)
-        self.measured_data_vector: np.ndarray = np.concatenate(data_vector_list)
+        return np.concatenate(data_vector_list), np.concatenate(theory_vector_list)
+
+    @final
+    def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
+        """Calculate and return the chi-squared for the given cosmology."""
+        theory_vector: np.ndarray
+        data_vector: np.ndarray
+        residuals: np.ndarray
+        try:
+            theory_vector = self.compute_theory_vector(cosmo)
+            data_vector = self.get_data_vector()
+        except NotImplementedError:
+            data_vector, theory_vector = self.compute(cosmo)
+        residuals = data_vector - theory_vector
+
+        self.predicted_data_vector: np.ndarray = theory_vector
+        self.measured_data_vector: np.ndarray = data_vector
 
         # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
