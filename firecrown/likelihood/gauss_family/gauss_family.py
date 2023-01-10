@@ -120,16 +120,16 @@ class GaussFamily(Likelihood):
         return np.concatenate(data_vector_list), np.concatenate(theory_vector_list)
 
     @final
-    def compute_chisq(self, cosmo: pyccl.Cosmology) -> float:
+    def compute_chisq(self, ccl_cosmo: pyccl.Cosmology) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
         theory_vector: np.ndarray
         data_vector: np.ndarray
         residuals: np.ndarray
         try:
-            theory_vector = self.compute_theory_vector(cosmo)
+            theory_vector = self.compute_theory_vector(ccl_cosmo)
             data_vector = self.get_data_vector()
         except NotImplementedError:
-            data_vector, theory_vector = self.compute(cosmo)
+            data_vector, theory_vector = self.compute(ccl_cosmo)
         residuals = data_vector - theory_vector
 
         self.predicted_data_vector: np.ndarray = theory_vector

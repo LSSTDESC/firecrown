@@ -46,9 +46,7 @@ class NumberCountsSystematic(SourceSystematic):
     """Class implementing systematics for Number Counts sources."""
 
     @abstractmethod
-    def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
         """Apply method to include systematics in the tracer_arg."""
 
 
@@ -97,21 +95,22 @@ class LinearBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
         """Apply a linear bias systematic.
 
         Parameters
         ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
+        cosmo : Cosmology
+            A Cosmology object.
         tracer_arg : NumberCountsArgs
             The source to which apply the shear bias.
         """
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** self.alphag
+        pref *= (
+            pyccl.growth_factor(cosmo.ccl_cosmo, 1.0 / (1.0 + tracer_arg.z))
+            ** self.alphag
+        )
 
         if tracer_arg.bias is None:
             bias = np.ones_like(tracer_arg.z)
@@ -232,8 +231,8 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 
         Parameters
         ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
+        cosmo : Cosmology
+            A Cosmology object.
         tracer_arg : NumberCountsArgs
             The source to which apply the shear bias.
         """
@@ -334,7 +333,7 @@ class PhotoZShift(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: NumberCountsArgs):
+    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
 
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)

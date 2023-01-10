@@ -47,9 +47,7 @@ class WeakLensingSystematic(SourceSystematic):
     """Abstract base class for all weak lensing systematics."""
 
     @abstractmethod
-    def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
 
 
@@ -90,14 +88,14 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
+    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs):
         """Apply multiplicative shear bias to a source. The `scale_` of the
         source is multiplied by `(1 + m)`.
 
         Parameters
         ----------
-        cosmo : pyccl.Cosmology
-            A pyccl.Cosmology object.
+        cosmo : Cosmology
+            A Cosmology object.
         tracer_arg : a WeakLensingArgs object
             The WeakLensingArgs to which apply the shear bias.
         """
@@ -163,14 +161,12 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(
-        self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
+    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= pyccl.growth_factor(cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
+        pref *= pyccl.growth_factor(cosmo.ccl_cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
             self.alphag - 1.0
         )
 
@@ -280,7 +276,7 @@ class PhotoZShift(WeakLensingSystematic):
 
         return derived_parameters
 
-    def apply(self, cosmo: pyccl.Cosmology, tracer_arg: WeakLensingArgs):
+    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
 
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
