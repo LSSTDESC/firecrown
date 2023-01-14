@@ -33,16 +33,21 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
 
 
-def _ell_for_xi(*, minimum, midpoint, maximum, n_log):
+def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> np.ndarray:
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
+
+    The result will contain each integral value from min to mid.
+    Starting from mid, and going up to max, there will be n_log
+    logarithmically spaced values. All values are rounded to the nearest
+    integer.
     """
-    return np.concatenate(
-        (
-            np.linspace(minimum, midpoint - 1, midpoint - minimum),
-            np.logspace(np.log10(midpoint), np.log10(maximum), n_log),
-        )
-    )
+    lower_range = np.linspace(minimum, midpoint - 1, midpoint - minimum)
+    upper_range = np.logspace(np.log10(midpoint), np.log10(maximum), n_log)
+    concatenated = np.concatenate((lower_range, upper_range))
+    # Round the results to the nearest integer values.
+    # N.B. the dtype of the result is np.dtype[float64]
+    return np.around(concatenated)
 
 
 def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
