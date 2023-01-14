@@ -279,8 +279,6 @@ class NumberCounts(Source):
 
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
-        self.scale_ = None
-        self.tracer_ = None
 
     @final
     def _update_source(self, params: ParamsMap):
