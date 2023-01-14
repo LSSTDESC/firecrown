@@ -88,12 +88,13 @@ jobs:
           mypy -p firecrown --ignore-missing-imports
           mypy -p examples --ignore-missing-imports
           mypy -p tests --ignore-missing-imports
-      - name: Running pylint-tests
+      - name: Running pylint
         shell: bash -l {0}
-        run: pylint --rcfile pylintrc_for_tests --recursive=y tests
-      - name: Running pylint-connectors
-        shell: bash -l {0}
-        run: pylint --recursive=y firecrown/connector
+        run: |
+          pylint --rcfile pylintrc_for_tests --recursive=y tests
+          pylint --recursive=y firecrown/connector
+          pylint --recursive=y firecrown/*.py
+
       - name: Running pytest
         shell: bash -l {0}
         run: python -m pytest -vv 
