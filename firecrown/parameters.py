@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator
+from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator, Union
 from abc import ABC, abstractmethod
 
 
@@ -268,8 +268,10 @@ class InternalParameter:
         return self.value
 
 
-def create(value: Optional[float] = None):
-    """Create a new parameter.
+# The function create() is intentionally not type-annotated because its use is subtle.
+# See Updatable.__setatrr__ for details.
+def create(value: Optional[float] = None) -> Union[SamplerParameter, InternalParameter]:
+    """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
     will expect this value to be supplied by the sampling framwork. If `value`
@@ -278,8 +280,6 @@ def create(value: Optional[float] = None):
     be used for every sample.
 
     Only `None` or a `float` value is allowed.
-
-    :param value: value for the created parameter
     """
     if value is None:
         return SamplerParameter()
