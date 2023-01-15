@@ -283,4 +283,9 @@ def create(value: Optional[float] = None):
     """
     if value is None:
         return SamplerParameter()
+    if not isinstance(value, float):
+        raise TypeError(
+            f"parameter.create() requires a float parameter or none, "
+            f"not {type(value)}"
+        )
     return InternalParameter(value)
