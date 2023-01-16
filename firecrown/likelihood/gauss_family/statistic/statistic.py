@@ -25,10 +25,12 @@ class DataVector(np.ndarray):
 
     @classmethod
     def create(cls, vals: np.ndarray) -> DataVector:
+        """Create a DataVector that wraps a copy of the given array vals."""
         return vals.view(cls)
 
     @classmethod
     def from_list(cls, vals: List[float]) -> DataVector:
+        """Create a DataVector from the given list of floats."""
         array = np.array(vals)
         return cls.create(array)
 
@@ -39,20 +41,22 @@ class TheoryVector(np.ndarray):
 
     @classmethod
     def create(cls, vals: np.ndarray) -> TheoryVector:
+        """Create a TheoryVector that wraps a copy of the given array vals."""
         return vals.view(cls)
 
     @classmethod
     def from_list(cls, vals: List[float]) -> TheoryVector:
+        """Create a TheoryVector from the given list of floats."""
         array = np.array(vals)
         return cls.create(array)
 
 
-def residuals(d: DataVector, t: TheoryVector) -> np.ndarray:
-    """Return a bare np.ndarray with the difference between data d and theory t.
+def residuals(data: DataVector, theory: TheoryVector) -> np.ndarray:
+    """Return a bare np.ndarray with the difference between `data` and `theory`.
     This is to be preferred to using arithmetic on the vectors directly."""
-    assert isinstance(d, DataVector)
-    assert isinstance(t, TheoryVector)
-    return (d - t).view(np.ndarray)
+    assert isinstance(data, DataVector)
+    assert isinstance(theory, TheoryVector)
+    return (data - theory).view(np.ndarray)
 
 
 @dataclass

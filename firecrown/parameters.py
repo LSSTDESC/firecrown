@@ -268,8 +268,10 @@ class InternalParameter:
         return self.value
 
 
+# The function create() is intentionally not type-annotated because its use is subtle.
+# See Updatable.__setatrr__ for details.
 def create(value: Optional[float] = None):
-    """Create a new parameter.
+    """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
     will expect this value to be supplied by the sampling framwork. If `value`
@@ -278,9 +280,12 @@ def create(value: Optional[float] = None):
     be used for every sample.
 
     Only `None` or a `float` value is allowed.
-
-    :param value: value for the created parameter
     """
     if value is None:
         return SamplerParameter()
+    if not isinstance(value, float):
+        raise TypeError(
+            f"parameter.create() requires a float parameter or none, "
+            f"not {type(value)}"
+        )
     return InternalParameter(value)

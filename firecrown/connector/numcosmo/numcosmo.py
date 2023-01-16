@@ -135,9 +135,8 @@ class MappingNumCosmo(Mapping):
 
         if self.p_mnl:
             p_mnl_spline = self.p_mnl.get_spline_2d(hi_cosmo)
-            z = np.array(
-                p_mnl_spline.xv.dup_array()
-            )  # pylint: disable-msg=invalid-name
+            # pylint: disable-next=invalid-name
+            z = np.array(p_mnl_spline.xv.dup_array())
             k = np.array(p_mnl_spline.yv.dup_array())
 
             scale_mpnl = self.redshift_to_scale_factor(z)
@@ -263,6 +262,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def __init__(
         self, likelihood: ConstGaussian, mapping: MappingNumCosmo, model_list: List[str]
     ):
+        """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
+        with a constant covariance."""
         cov = likelihood.get_cov()
         nrows, ncols = cov.shape
         assert nrows == ncols
