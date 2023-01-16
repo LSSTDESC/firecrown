@@ -270,7 +270,7 @@ class InternalParameter:
 
 # The function create() is intentionally not type-annotated because its use is subtle.
 # See Updatable.__setatrr__ for details.
-def create(value: Optional[float] = None) -> Union[SamplerParameter, InternalParameter]:
+def create(value: Optional[float] = None)
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
