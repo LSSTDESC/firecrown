@@ -94,6 +94,8 @@ jobs:
           pylint --rcfile pylintrc_for_tests --recursive=y tests
           pylint --recursive=y firecrown/connector
           pylint --recursive=y firecrown/*.py
+          pylint --recursive=y firecrown/likelihood/*.py
+          pylint --recursive=y firecrown/likelihood/gauss_family/*.py
 
       - name: Running pytest
         shell: bash -l {0}
