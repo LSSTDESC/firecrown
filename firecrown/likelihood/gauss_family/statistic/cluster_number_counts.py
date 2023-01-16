@@ -100,12 +100,12 @@ class ClusterNumberCounts(Statistic):
         self.theory_vector = None
         self.number_density_func = number_density_func
         if SupportedTracerNames[sacc_tracer].value == 2:
-            self.mu_p0 = parameters.create()
-            self.mu_p1 = parameters.create()
-            self.mu_p2 = parameters.create()
-            self.sigma_p0 = parameters.create()
-            self.sigma_p1 = parameters.create()
-            self.sigma_p2 = parameters.create()
+            self.mu_p0 = parameters.create(mu_p0)
+            self.mu_p1 = parameters.create(mu_p1)
+            self.mu_p2 = parameters.create(mu_p2)
+            self.sigma_p0 = parameters.create(sigma_p0)
+            self.sigma_p1 = parameters.create(sigma_p1)
+            self.sigma_p2 = parameters.create(sigma_p2)
         try:
             self.ccl_kind = SupportedDataTypes[sacc_data_type].name
         except KeyError:
@@ -144,7 +144,7 @@ class ClusterNumberCounts(Statistic):
 
         return derived_parameters
 
-    def _compute_grids(self, cosmo, lnN_tuple, logm_tuple, z_tuple, n_intervals=20):
+    def _compute_grids(self, cosmo, lnN_tuple, logm_tuple, z_tuple, n_intervals=50):
         mu_p0 = self.mu_p0
         mu_p1 = self.mu_p1
         mu_p2 = self.mu_p2
@@ -220,7 +220,7 @@ class ClusterNumberCounts(Statistic):
             nz=nz,
             metadata=metadata,
         )
-
+        print(f"z{metadata['z_edges']},{metadata['Mproxy_edges']}")
         self.data_vector = nz
         self.sacc_inds = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
