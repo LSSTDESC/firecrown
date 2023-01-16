@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator, Union
+from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator
 from abc import ABC, abstractmethod
 
 
@@ -270,7 +270,7 @@ class InternalParameter:
 
 # The function create() is intentionally not type-annotated because its use is subtle.
 # See Updatable.__setatrr__ for details.
-def create(value: Optional[float] = None)
+def create(value: Optional[float] = None):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
