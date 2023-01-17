@@ -3,8 +3,8 @@ import numpy as np
 
 class RMProxy:
     def __init__(self):
-        self.pivot_mass = 3.0e14
-        self.pivot_redshift = 0.6
+        self.pivot_mass = 104516977892721.36
+        self.pivot_redshift = 0.7259996508853891
         self.log_pivot_mass = np.log(self.pivot_mass)
         self.log_1_p_pivot_redshift = np.log(1.0 + self.pivot_redshift)
         self.likelihood_parameters = None
@@ -22,7 +22,7 @@ class RMProxy:
         sigma = (
             sigma_p0
             + sigma_p1 * (lnm - self.log_pivot_mass)
-            + sigma_p2 * (np.log10(1.0 + z) - self.log_1_p_pivot_redshift)
+            + sigma_p2 * (np.log(1.0 + z) - self.log_1_p_pivot_redshift)
         )
         return [x, sigma]
 
