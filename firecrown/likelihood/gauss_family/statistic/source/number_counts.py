@@ -271,16 +271,9 @@ class NumberCounts(Source):
 
         self.bias = parameters.create()
         self.mag_bias = parameters.create(None if has_mag_bias else 0.0)
-
-        self.systematics = UpdatableCollection([])
-        if systematics:
-            for systematic in systematics:
-                self.systematics.append(systematic)
-
+        self.systematics = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
-        self.scale_ = None
-        self.tracer_ = None
 
     @final
     def _update_source(self, params: ParamsMap):

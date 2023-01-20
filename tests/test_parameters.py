@@ -4,7 +4,32 @@ from firecrown.parameters import RequiredParameters, parameter_get_full_name, Pa
 from firecrown.parameters import (
     DerivedParameterScalar,
     DerivedParameterCollection,
+    create,
+    InternalParameter,
+    SamplerParameter,
 )
+
+
+def test_create_with_no_arg():
+    """Calling parameters.create() with no argument should return an
+    SamplerParameter"""
+    a_parameter = create()
+    assert isinstance(a_parameter, SamplerParameter)
+
+
+def test_create_with_float_arg():
+    """Calling parameters.create() with a float argument should return a
+    InternalParameter ."""
+    a_parameter = create(1.5)
+    assert isinstance(a_parameter, InternalParameter)
+    assert a_parameter.value == 1.5
+
+
+def test_create_with_wrong_arg():
+    """Calling parameters.create() with an org that is neither float nor None should
+    raise a TypeError."""
+    with pytest.raises(TypeError):
+        _ = create("cow")
 
 
 def test_get_params_names_does_not_allow_mutation():

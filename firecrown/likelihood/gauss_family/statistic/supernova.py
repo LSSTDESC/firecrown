@@ -2,14 +2,14 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Tuple, final
+from typing import Optional, final
 
 import numpy as np
 
 import pyccl
 import sacc
 
-from .statistic import Statistic
+from .statistic import Statistic, DataVector, TheoryVector
 from .... import parameters
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
@@ -23,7 +23,7 @@ class Supernova(Statistic):
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
-        self.data_vector: Optional[np.ndarray] = None
+        self.data_vector: Optional[DataVector] = None
         self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
         self.M = parameters.create()  # pylint: disable-msg=invalid-name
 
@@ -36,8 +36,8 @@ class Supernova(Statistic):
         # pylint: disable-next=invalid-name
         z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = 1.0 / (1.0 + z)
-        self.data_vector = np.array([dp.value for dp in data_points])
-        self.sacc_inds = list(
+        self.data_vector = DataVector.from_list([dp.value for dp in data_points])
+        self.sacc_indices = list(
             range(0, len(self.data_vector))
         )  # pylint: disable-msg=invalid-name
 
@@ -49,21 +49,24 @@ class Supernova(Statistic):
 
     @final
     def _reset(self):
-        pass
+        """Reset this statistic. This implementation has nothing to do."""
 
     @final
     def _required_parameters(self) -> RequiredParameters:
+        """Return an empty RequiredParameters."""
         return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Return an empty DerivedParameterCollection."""
         return DerivedParameterCollection([])
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
-        """Compute a two-point statistic from sources."""
-
-        theory_vector = self.M + pyccl.distance_modulus(cosmo, self.a)
-
+    def get_data_vector(self) -> DataVector:
+        """Return the data vector; raise exception if there is none."""
         assert self.data_vector is not None
+        return self.data_vector
 
-        return np.array(self.data_vector), np.array(theory_vector)
+    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> TheoryVector:
+        """Compute SNIa distance statistic using CCL."""
+        prediction = self.M + pyccl.distance_modulus(cosmo, self.a)
+        return TheoryVector.create(prediction)

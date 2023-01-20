@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Optional, final
 import copy
 import functools
 import warnings
@@ -12,11 +12,11 @@ import scipy.interpolate
 
 import pyccl
 
-from .statistic import Statistic
+from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Systematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
-# only supported types are here, any thing else will throw
+# only supported types are here, anything else will throw
 # a value error
 SACC_DATA_TYPE_TO_CCL_KIND = {
     "galaxy_density_cl": "cl",
@@ -33,16 +33,21 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
 
 
-def _ell_for_xi(*, minimum, midpoint, maximum, n_log):
+def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> np.ndarray:
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
+
+    The result will contain each integral value from min to mid.
+    Starting from mid, and going up to max, there will be n_log
+    logarithmically spaced values. All values are rounded to the nearest
+    integer.
     """
-    return np.concatenate(
-        (
-            np.linspace(minimum, midpoint - 1, midpoint - minimum),
-            np.logspace(np.log10(midpoint), np.log10(maximum), n_log),
-        )
-    )
+    lower_range = np.linspace(minimum, midpoint - 1, midpoint - minimum)
+    upper_range = np.logspace(np.log10(midpoint), np.log10(maximum), n_log)
+    concatenated = np.concatenate((lower_range, upper_range))
+    # Round the results to the nearest integer values.
+    # N.B. the dtype of the result is np.dtype[float64]
+    return np.around(concatenated)
 
 
 def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
@@ -55,7 +60,7 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
 
 @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells):
-    return pyccl.angular_cl(cosmo, *tracers, np.array(ells))
+    return pyccl.angular_cl(cosmo, tracers[0], tracers[1], np.array(ells))
 
 
 class TwoPoint(Statistic):
@@ -115,7 +120,7 @@ class TwoPoint(Statistic):
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
 
-         - min : int, optional - The minimum angulare wavenumber to use for
+         - min : int, optional - The minimum angular wavenumber to use for
            real-space integrations. Default is 2.
          - mid : int, optional - The midpoint angular wavenumber to use for
            real-space integrations. The angular wavenumber samples are linearly
@@ -141,9 +146,6 @@ class TwoPoint(Statistic):
         The measured value for the statistic.
     predicted_statistic_ : np.ndarray
         The final prediction for the statistic. Set after `compute` is called.
-    scale_ : float
-        The final scale factor applied to the statistic. Set after `compute`
-        is called. Note that this scale factor is already applied.
 
     """
 
@@ -174,8 +176,14 @@ class TwoPoint(Statistic):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
 
-        self.data_vector = None
-        self.theory_vector = None
+        self.data_vector: Optional[DataVector] = None
+        self.theory_vector: Optional[TheoryVector] = None
+        self._ell_or_theta: Optional[np.ndarray] = None
+        self.predicted_statistic_: Optional[TheoryVector] = None
+        self.measured_statistic_: Optional[DataVector] = None
+        self.ell_or_theta_: Optional[np.ndarray] = None
+
+        self.sacc_tracers: Optional[List[str]] = None
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -245,9 +253,9 @@ class TwoPoint(Statistic):
         if len(_ell_or_theta) == 0 or len(_stat) == 0:
             _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
             _stat = np.zeros_like(_ell_or_theta)
-            self.sacc_inds = None
+            self.sacc_indices = None
         else:
-            self.sacc_inds = np.atleast_1d(
+            self.sacc_indices = np.atleast_1d(
                 sacc_data.indices(self.sacc_data_type, tuple(tracers))
             )
 
@@ -255,20 +263,22 @@ class TwoPoint(Statistic):
             q = np.where(_ell_or_theta >= self.ell_or_theta_min)
             _ell_or_theta = _ell_or_theta[q]
             _stat = _stat[q]
-            if self.sacc_inds is not None:
-                self.sacc_inds = self.sacc_inds[q]
+            if self.sacc_indices is not None:
+                self.sacc_indices = self.sacc_indices[q]
 
         if self.ell_or_theta_max is not None:
             q = np.where(_ell_or_theta <= self.ell_or_theta_max)
             _ell_or_theta = _ell_or_theta[q]
             _stat = _stat[q]
-            if self.sacc_inds is not None:
-                self.sacc_inds = self.sacc_inds[q]
+            if self.sacc_indices is not None:
+                self.sacc_indices = self.sacc_indices[q]
 
-        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_inds)
+        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
-            ell_config = {**ELL_FOR_XI_DEFAULTS}
-            ell_config["maximum"] = self.theory_window_function.values[-1]
+            ell_config = {
+                **ELL_FOR_XI_DEFAULTS,
+                "maximum": self.theory_window_function.values[-1],
+            }
             ell_config["minimum"] = max(
                 ell_config["minimum"], self.theory_window_function.values[0]
             )
@@ -276,12 +286,18 @@ class TwoPoint(Statistic):
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
-        self.data_vector = _stat.copy()
+        self.data_vector = DataVector.create(_stat)
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+    def get_data_vector(self) -> DataVector:
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> TheoryVector:
         """Compute a two-point statistic from sources."""
+
+        assert self._ell_or_theta is not None
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
         tracer0 = self.source0.get_tracer(cosmo)
@@ -335,8 +351,8 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory_window_function.weight, ell
             )
 
-        self.predicted_statistic_ = theory_vector
+        self.predicted_statistic_ = TheoryVector.create(theory_vector)
 
         assert self.data_vector is not None
 
-        return np.array(self.data_vector), np.array(theory_vector)
+        return TheoryVector.create(theory_vector)

@@ -10,13 +10,19 @@ Each supported body of code has its own dedicated class.
 
 """
 
-from abc import ABC, abstractmethod
-from typing import Type, List, Dict, Optional, final, Any
+from abc import ABC
+from typing import Type, List, Dict, Optional, final, Any, Union
 import typing
+import warnings
 import numpy as np
 from pyccl import physical_constants as physics
 import cosmosis.datablock
 from ..descriptors import TypeFloat, TypeString
+
+
+def build_ccl_background_dict(*, a: np.ndarray, chi: np.ndarray, h_over_h0: np.ndarray):
+    """Builds the CCL dictionary of background quantities."""
+    return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
 
 class Mapping(ABC):
@@ -43,7 +49,7 @@ class Mapping(ABC):
     n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
-    m_nu = TypeFloat(minvalue=0.0)
+    # m_nu = TypeFloat(minvalue=0.0)
     m_nu_type = TypeString()
     w0 = TypeFloat()
     wa = TypeFloat()
@@ -51,25 +57,53 @@ class Mapping(ABC):
 
     def __init__(self, *, require_nonlinear_pk: bool = False):
         self.require_nonlinear_pk = require_nonlinear_pk
+        self.m_nu: Optional[Union[float, List[float]]] = None
 
-    @abstractmethod
     def get_params_names(self) -> List[str]:
         """Return the names of the cosmological parameters that this
         mapping is expected to deliver.
         """
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
         return []
 
-    @abstractmethod
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
+        assert k_h is not None  # use assertion to silence pylint warning
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
 
-    @abstractmethod
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         """Transform the given :math:`p_k h^3 \\to p_k`."""
+        assert p_k_h3 is not None  # use assertion to silence pylint warning
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
 
-    @abstractmethod
     def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
         """Transform distances h to :math:`h/h_0`."""
+        assert h is not None  # use assertion to silence pylint warning
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "This method is implementation specific and should only be "
+            "implemented on the appropriated subclasses. This method"
+            "is going to be removed in the next major release.",
+            category=DeprecationWarning,
+        )
 
     @final
     def set_params(
@@ -83,7 +117,7 @@ class Mapping(ABC):
         n_s: float,
         Omega_k: float,
         Neff: float,
-        m_nu: float,
+        m_nu: Union[float, List[float]],
         m_nu_type: str,
         w0: float,
         wa: float,
@@ -220,6 +254,7 @@ class MappingCosmoSIS(Mapping):
         w0 = cosmosis_params["w"]  # pylint: disable-msg=C0103
         wa = cosmosis_params["wa"]  # pylint: disable-msg=C0103
 
+        # pylint: disable=duplicate-code
         self.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
@@ -235,6 +270,7 @@ class MappingCosmoSIS(Mapping):
             T_CMB=2.7255,
             # Modify CosmoSIS to make this available in the datablock
         )
+        # pylint: enable=duplicate-code
 
     def calculate_ccl_args(self, sample: cosmosis.datablock):
         """Calculate the arguments necessary for CCL for this sample."""
@@ -301,11 +337,9 @@ class MappingCosmoSIS(Mapping):
         # h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
         h_over_h0 = self.transform_h_to_h_over_h0(sample["distances", "h"])
 
-        ccl_args["background"] = {
-            "a": scale_distances,
-            "chi": chi,
-            "h_over_h0": h_over_h0,
-        }
+        ccl_args["background"] = build_ccl_background_dict(
+            a=scale_distances, chi=chi, h_over_h0=h_over_h0
+        )
 
         return ccl_args
 
@@ -334,22 +368,6 @@ class MappingCAMB(Mapping):
             "w",
             "wa",
         ]
-
-    def transform_k_h_to_k(self, k_h):
-        """Transform the given k_h (k over h) to k."""
-        raise NotImplementedError("Method `transform_k_h_to_k` is not implemented.")
-
-    def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given p_k * h^3 to p_k."""
-        raise NotImplementedError(
-            "Method `transform_p_k_h3_to_p_k` is not implemented."
-        )
-
-    def transform_h_to_h_over_h0(self, h):
-        """Transform distances h to h/h0."""
-        raise NotImplementedError(
-            "Method `transform_h_to_h_over_h0` is not implemented."
-        )
 
     def set_params_from_camb(self, **params_values):
         """Read the CAMB-style parameters from params_values, translate them to
