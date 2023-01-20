@@ -308,9 +308,6 @@ class WeakLensing(Source):
 
         self.sacc_tracer = sacc_tracer
         self.scale = scale
-        self.z_orig: Optional[np.ndarray] = None
-        self.dndz_orig: Optional[np.ndarray] = None
-        self.dndz_interp = None
         self.current_tracer_args: Optional[WeakLensingArgs] = None
         self.systematics = UpdatableCollection(systematics)
 

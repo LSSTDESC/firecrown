@@ -51,7 +51,6 @@ class Supernova(Statistic):
     @final
     def _reset(self):
         """Reset this statistic. This implementation has nothing to do."""
-        pass
 
     @final
     def _required_parameters(self) -> RequiredParameters:
