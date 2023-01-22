@@ -8,6 +8,7 @@ import functools
 import warnings
 
 import numpy as np
+import sacc.windows
 import scipy.interpolate
 
 import pyccl
@@ -191,6 +192,7 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
+        self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
 
     @final
     def _update(self, params: ParamsMap):
@@ -260,18 +262,18 @@ class TwoPoint(Statistic):
             )
 
         if self.ell_or_theta_min is not None:
-            q = np.where(_ell_or_theta >= self.ell_or_theta_min)
-            _ell_or_theta = _ell_or_theta[q]
-            _stat = _stat[q]
+            locations = np.where(_ell_or_theta >= self.ell_or_theta_min)
+            _ell_or_theta = _ell_or_theta[locations]
+            _stat = _stat[locations]
             if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[q]
+                self.sacc_indices = self.sacc_indices[locations]
 
         if self.ell_or_theta_max is not None:
-            q = np.where(_ell_or_theta <= self.ell_or_theta_max)
-            _ell_or_theta = _ell_or_theta[q]
-            _stat = _stat[q]
+            locations = np.where(_ell_or_theta <= self.ell_or_theta_max)
+            _ell_or_theta = _ell_or_theta[locations]
+            _stat = _stat[locations]
             if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[q]
+                self.sacc_indices = self.sacc_indices[locations]
 
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
@@ -323,7 +325,7 @@ class TwoPoint(Statistic):
 
         if self.theory_window_function is not None:
 
-            def log_interpolator(x, y):
+            def log_interpolator(x, y):  #  pylint: disable-msg=invalid-name
                 if np.all(y > 0):
                     # use log-log interpolation
                     intp = scipy.interpolate.InterpolatedUnivariateSpline(
