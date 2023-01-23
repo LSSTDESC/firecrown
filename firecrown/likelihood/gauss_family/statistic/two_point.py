@@ -183,7 +183,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        self.theory_window_function = None
+        self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -202,7 +202,6 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
-        self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
 
     @final
     def _update(self, params: ParamsMap):
@@ -386,7 +385,7 @@ class TwoPoint(Statistic):
 
         if self.theory_window_function is not None:
 
-            def log_interpolator(x, y):  #  pylint: disable-msg=invalid-name
+            def log_interpolator(x, y):  # pylint: disable-msg=invalid-name
                 if np.all(y > 0):
                     # use log-log interpolation
                     intp = scipy.interpolate.InterpolatedUnivariateSpline(
