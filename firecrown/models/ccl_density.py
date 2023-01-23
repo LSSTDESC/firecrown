@@ -19,6 +19,8 @@ SUPPORTED_MEAN_DENS_FUNC_NAMES = {
 
 
 class CCLDensity(NumberDensity):
+    """Critical and Mean Density Mass Module."""
+
     def __init__(
         self, density_func_definition, density_func_name, use_baryons=False
     ) -> None:
@@ -64,7 +66,7 @@ class CCLDensity(NumberDensity):
         nm : float
             Number Density  pdf at z and logm in units of Mpc^-3 (comoving).
         """
-        a = 1.0 / (1.0 + z)
+        a = 1.0 / (1.0 + z)  # pylint: disable=invalid-name
         mass = 10 ** (logm)
         hmd_200c = pyccl.halos.MassDef200c()
         if self.density_func_type == "Bocquet16":
@@ -80,7 +82,7 @@ class CCLDensity(NumberDensity):
                 mass_def=hmd_200c,
                 mass_def_strict=True,
             )
-        nm = hmf_200c.get_mass_function(cosmo, mass, a)
+        nm = hmf_200c.get_mass_function(cosmo, mass, a)  # pylint: disable=invalid-name
         return nm
 
     def compute_differential_comoving_volume(self, cosmo: pyccl.Cosmology, z) -> float:
@@ -95,10 +97,11 @@ class CCLDensity(NumberDensity):
         dv : float
             Differential Comoving Volume at z in units of Mpc^3 (comoving).
         """
-        a = 1.0 / (1.0 + z)
+        a = 1.0 / (1.0 + z)  # pylint: disable=invalid-name
+        # pylint: disable-next=invalid-name
         da = pyccl.background.angular_diameter_distance(cosmo, a)
-        E = pyccl.background.h_over_h0(cosmo, a)
-        dV = (
+        E = pyccl.background.h_over_h0(cosmo, a)  # pylint: disable=invalid-name
+        dV = (  # pylint: disable=invalid-name
             ((1.0 + z) ** 2)
             * (da**2)
             * pyccl.physical_constants.CLIGHT_HMPC
