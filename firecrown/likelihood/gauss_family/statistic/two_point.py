@@ -332,7 +332,7 @@ class TwoPoint(Statistic):
                     continue
                 if cosmo.has_pk(pk_name):
                     # Use existing power spectrum
-                    pk = cosmo.get_pk(pk_name)
+                    pk = cosmo.get_pk(pk_name)  # pylint: disable-msg=invalid-name
                 elif tracer0.has_pt or tracer1.has_pt:
                     if not tracer0.has_pt and tracer1.has_pt:
                         # Mixture of PT and non-PT tracers
@@ -343,7 +343,7 @@ class TwoPoint(Statistic):
                         else:
                             tracer1.pt_tracer = matter_pt_tracer
                     # Compute perturbation power spectrum
-                    pk = pyccl.nl_pt.get_pt_pk2d(
+                    pk = pyccl.nl_pt.get_pt_pk2d(  # pylint: disable-msg=invalid-name
                         cosmo.ccl_cosmo,
                         tracer0.pt_tracer,
                         tracer2=tracer1.pt_tracer,
