@@ -129,8 +129,10 @@ class Tracer:
 
     @property
     def has_pt(self) -> bool:
+        """Return True if we have a pt_tracer, and False if not."""
         return self.pt_tracer is not None
 
     @property
     def has_hm(self) -> bool:
+        """Return True if we have a halo_profile, and False if not."""
         return self.halo_profile is not None
