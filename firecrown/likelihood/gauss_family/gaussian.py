@@ -19,10 +19,10 @@ from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollect
 class ConstGaussian(GaussFamily):
     """A Gaussian log-likelihood with a constant covariance matrix."""
 
-    def compute_loglike(self, cosmo: pyccl.Cosmology):
+    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology):
         """Compute the log-likelihood."""
 
-        return -0.5 * self.compute_chisq(cosmo)
+        return -0.5 * self.compute_chisq(ccl_cosmo)
 
     @final
     def _update_gaussian_family(self, params: ParamsMap):

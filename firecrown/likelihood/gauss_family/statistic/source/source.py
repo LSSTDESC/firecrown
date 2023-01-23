@@ -5,13 +5,17 @@
 from __future__ import annotations
 from typing import Optional, Sequence, final
 from abc import abstractmethod
-import pyccl
 import sacc
+
+import pyccl
+import pyccl.nl_pt
+
+from .....likelihood.likelihood import Cosmology
 from .....parameters import ParamsMap
 from .....updatable import Updatable
 
 
-class Systematic(Updatable):
+class SourceSystematic(Updatable):
     """An abstract systematic class (e.g., shear biases, photo-z shifts, etc.).
 
     This class currently has no methods at all, because the argument types for
@@ -32,9 +36,9 @@ class Source(Updatable):
         default of `None` implies no systematics.
     """
 
-    systematics: Sequence[Systematic]
+    systematics: Sequence[SourceSystematic]
     cosmo_hash: Optional[int]
-    tracer: Optional[pyccl.tracers.Tracer]
+    tracers: Sequence[Tracer]
 
     @final
     def read(self, sacc_data: sacc.Sacc):
@@ -63,7 +67,7 @@ class Source(Updatable):
         This clears the current hash and tracer, and calls the abstract method
         `_update_source`, which must be implemented in all subclasses."""
         self.cosmo_hash = None
-        self.tracer = None
+        self.tracers = []
         self._update_source(params)
 
     @final
@@ -76,23 +80,59 @@ class Source(Updatable):
 
     @abstractmethod
     def get_scale(self) -> float:
-        """Abstract method to return the scale for this `Source`."""
+        """Abstract method to return the scales for this `Source`."""
 
     @abstractmethod
-    def create_tracer(self, cosmo: pyccl.Cosmology):
-        """Abstract method to create a tracer for this `Source`, for the given
+    def create_tracers(self, cosmo: Cosmology):
+        """Abstract method to create tracers for this `Source`, for the given
         cosmology."""
 
     @final
-    def get_tracer(self, cosmo: pyccl.Cosmology) -> pyccl.tracers.Tracer:
+    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same
         cosmology, no calculation needs to be done."""
         cur_hash = hash(cosmo)
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
-            return self.tracer
+            return self.tracers
 
-        self.tracer, _ = self.create_tracer(cosmo)
+        self.tracers, _ = self.create_tracers(cosmo)
         self.cosmo_hash = cur_hash
-        return self.tracer
+        return self.tracers
+
+
+class Tracer:
+    """Bundles together a pyccl.Tracer object with optional information about the
+    underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
+
+    def __init__(
+        self,
+        tracer: pyccl.Tracer,
+        tracer_name: Optional[str] = None,
+        field: Optional[str] = None,
+        pt_tracer: Optional[pyccl.nl_pt.PTTracer] = None,
+        halo_profile: Optional[pyccl.halos.HaloProfile] = None,
+        halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
+    ):
+        self.ccl_tracer = tracer
+        self.tracer_name: str = tracer_name or tracer.__class__.__name__
+        self.field = field
+        if self.field is None:
+            if tracer_name is not None:
+                self.field = tracer_name
+            else:
+                self.field = "delta_mater"
+        self.pt_tracer = pt_tracer
+        self.halo_profile = halo_profile
+        self.halo_2pt = halo_2pt
+
+    @property
+    def has_pt(self) -> bool:
+        """Return True if we have a pt_tracer, and False if not."""
+        return self.pt_tracer is not None
+
+    @property
+    def has_hm(self) -> bool:
+        """Return True if we have a halo_profile, and False if not."""
+        return self.halo_profile is not None

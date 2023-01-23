@@ -28,7 +28,7 @@ class EmptyLikelihood(Likelihood):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def compute_loglike(self, cosmo: pyccl.Cosmology) -> float:
+    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology) -> float:
         return -3.0 * self.placeholder
 
 
