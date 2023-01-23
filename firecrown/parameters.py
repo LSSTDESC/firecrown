@@ -64,7 +64,9 @@ class ParamsMap(Dict[str, float]):
 
         if fullname in self.keys():
             return self[fullname]
-        raise KeyError(f"Prefix `{prefix}`, key `{param}' not found.")
+        raise KeyError(
+            f"Prefix `{prefix}`, param `{param}', key `{fullname}' not found."
+        )
 
 
 class RequiredParameters:

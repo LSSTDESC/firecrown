@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import List, Dict, Tuple, Optional, final
 import copy
 import functools
 import warnings
@@ -11,9 +11,12 @@ import numpy as np
 import scipy.interpolate
 
 import pyccl
+import pyccl.nl_pt
+
+from ....likelihood.likelihood import Cosmology
 
 from .statistic import Statistic, DataVector, TheoryVector
-from .source.source import Source, Systematic
+from .source.source import Source, SourceSystematic
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, anything else will throw
@@ -59,8 +62,10 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
 
 
 @functools.lru_cache(maxsize=128)
-def _cached_angular_cl(cosmo, tracers, ells):
-    return pyccl.angular_cl(cosmo, tracers[0], tracers[1], np.array(ells))
+def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
+    return pyccl.angular_cl(
+        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
+    )
 
 
 class TwoPoint(Statistic):
@@ -95,7 +100,7 @@ class TwoPoint(Statistic):
         The second sources needed to compute this statistic.
     systematics : list of str, optional
         A list of the statistics-level systematics to apply to the statistic.
-        The default of `None` implies no systematics.
+        The default of `None` implies no systematics. Currently this does nothing.
     ell_or_theta : dict, optional
         A dictionary of options for generating the ell or theta values at which
         to compute the statistics. This option can be used to have firecrown
@@ -154,7 +159,7 @@ class TwoPoint(Statistic):
         sacc_data_type,
         source0: Source,
         source1: Source,
-        systematics: Optional[List[Systematic]] = None,
+        systematics: Optional[List[SourceSystematic]] = None,
         ell_for_xi=None,
         ell_or_theta=None,
         ell_or_theta_min=None,
@@ -169,12 +174,15 @@ class TwoPoint(Statistic):
         self.source0 = source0
         self.source1 = source1
         self.systematics = systematics or []
+        if len(self.systematics) > 0:
+            warnings.warn("TwoPoint currently does not support systematics.")
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
+        self.theory_window_function = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -184,6 +192,8 @@ class TwoPoint(Statistic):
         self.ell_or_theta_: Optional[np.ndarray] = None
 
         self.sacc_tracers: Optional[List[str]] = None
+        self.ells: Optional[np.ndarray] = None
+        self.cells: Dict[Tuple[str, str] | str, np.ndarray] = {}
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -294,31 +304,82 @@ class TwoPoint(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> TheoryVector:
+    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
         """Compute a two-point statistic from sources."""
 
         assert self._ell_or_theta is not None
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracer0 = self.source0.get_tracer(cosmo)
-        tracer1 = self.source1.get_tracer(cosmo)
-        scale = self.source0.get_scale() * self.source1.get_scale()
+        tracers0 = self.source0.get_tracers(cosmo)
+        tracers1 = self.source1.get_tracers(cosmo)
+        scale0 = self.source0.get_scale()
+        scale1 = self.source1.get_scale()
 
         if self.ccl_kind == "cl":
-            theory_vector = (
-                _cached_angular_cl(
-                    cosmo, (tracer0, tracer1), tuple(self.ell_or_theta_.tolist())
-                )
-                * scale
-            )
+            self.ells = self.ell_or_theta_
         else:
-            ells = _ell_for_xi(**self.ell_for_xi)
-            cells = _cached_angular_cl(cosmo, (tracer0, tracer1), tuple(ells.tolist()))
-            theory_vector = (
-                pyccl.correlation(
-                    cosmo, ells, cells, self.ell_or_theta_ / 60, type=self.ccl_kind
+            self.ells = _ell_for_xi(**self.ell_for_xi)
+        self.cells = {}
+
+        # Loop over the tracers and compute all possible combinations
+        # of them
+        for tracer0 in tracers0:
+            for tracer1 in tracers1:
+                pk_name = f"{tracer0.field}:{tracer1.field}"
+                if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
+                    # Already computed this combination, skipping
+                    continue
+                if cosmo.has_pk(pk_name):
+                    # Use existing power spectrum
+                    pk = cosmo.get_pk(pk_name)
+                elif tracer0.has_pt or tracer1.has_pt:
+                    if not tracer0.has_pt and tracer1.has_pt:
+                        # Mixture of PT and non-PT tracers
+                        # Create a dummy matter PT tracer for the non-PT part
+                        matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
+                        if not tracer0.has_pt:
+                            tracer0.pt_tracer = matter_pt_tracer
+                        else:
+                            tracer1.pt_tracer = matter_pt_tracer
+                    # Compute perturbation power spectrum
+                    pk = pyccl.nl_pt.get_pt_pk2d(
+                        cosmo.ccl_cosmo,
+                        tracer0.pt_tracer,
+                        tracer2=tracer1.pt_tracer,
+                        nonlin_pk_type="nonlinear",
+                        ptc=cosmo.pt_calculator,
+                        update_ptc=False,
+                    )
+                elif tracer0.has_hm or tracer1.has_hm:
+                    # Compute halo model power spectrum
+                    raise NotImplementedError(
+                        "Halo model power spectra not supported yet"
+                    )
+                else:
+                    raise ValueError(f"No power spectrum for {pk_name} can be found.")
+
+                self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
+                    _cached_angular_cl(
+                        cosmo.ccl_cosmo,
+                        (tracer0.ccl_tracer, tracer1.ccl_tracer),
+                        tuple(self.ells.tolist()),
+                        p_of_k_a=pk,
+                    )
+                    * scale0
+                    * scale1
                 )
-                * scale
+
+        # Add up all the contributions to the cells
+        self.cells["total"] = np.array(sum(self.cells.values()))
+        theory_vector = self.cells["total"]
+
+        if not self.ccl_kind == "cl":
+            theory_vector = pyccl.correlation(
+                cosmo.ccl_cosmo,
+                self.ells,
+                theory_vector,
+                self.ell_or_theta_ / 60,
+                type=self.ccl_kind,
             )
 
         if self.theory_window_function is not None:

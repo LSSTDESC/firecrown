@@ -73,7 +73,7 @@ class FirecrownLikelihood:
 
         ccl_args = self.map.calculate_ccl_args(sample)
 
-        cosmo = ccl.CosmologyCalculator(**self.map.asdict(), **ccl_args)
+        ccl_cosmo = ccl.CosmologyCalculator(**self.map.asdict(), **ccl_args)
 
         # TODO: Future development will need to capture elements that get put into the
         # datablock. This probably will be in a different "physics module" and not in
@@ -83,7 +83,7 @@ class FirecrownLikelihood:
         firecrown_params = self.calculate_firecrown_params(sample)
 
         self.likelihood.update(firecrown_params)
-        loglike = self.likelihood.compute_loglike(cosmo)
+        loglike = self.likelihood.compute_loglike(ccl_cosmo)
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
         self.likelihood.reset()
