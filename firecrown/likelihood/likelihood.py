@@ -79,7 +79,7 @@ class Likelihood(Updatable):
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     @abstractmethod
-    def compute_loglike(self, cosmo: pyccl.Cosmology) -> float:
+    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology) -> float:
         """Compute the log-likelihood of generic CCL data."""
 
 
