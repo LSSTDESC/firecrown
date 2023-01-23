@@ -1,15 +1,21 @@
+"""Enumerations for cluster number counts likelihoods.
+"""
+
 from enum import Enum
 
 
 class SupportedTracerNames(Enum):
-    cluster_counts_true_mass = 1
-    cluster_counts_richness_proxy = 2
+    """Supported tracer names for cluster number counts likelihoods."""
+    CLUSTER_COUNTS_TRUE_MASS = 1
+    CLUSTER_COUNTS_RICHNESS_PROXY = 2
 
 
 class SupportedDataTypes(Enum):
-    cluster_mass_count_wl = 1
+    """Supported data types for cluster number counts likelihoods."""
+    CLUSTER_MASS_COUNT_WL = 1
 
 
 class SupportedProxyTypes(Enum):
-    true_mass = 1
-    richness_proxy = 2
+    """Supported proxy types for cluster number counts likelihoods."""""
+    TRUE_MASS = 1
+    RICHNESS_PROXY = 2
