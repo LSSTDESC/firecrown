@@ -33,7 +33,12 @@ class ClusterNumberCountsArgs:
 
     def __init__(
         # pylint: disable-next=invalid-name
-        self, tracers=None, z_bins=None, Mproxy_bins=None, nz=None, metadata=None
+        self,
+        tracers=None,
+        z_bins=None,
+        Mproxy_bins=None,
+        nz=None,
+        metadata=None,
     ):
 
         self.z_bins = z_bins

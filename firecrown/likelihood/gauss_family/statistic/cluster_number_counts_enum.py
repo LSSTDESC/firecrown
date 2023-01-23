@@ -6,16 +6,19 @@ from enum import Enum
 
 class SupportedTracerNames(Enum):
     """Supported tracer names for cluster number counts likelihoods."""
+
     CLUSTER_COUNTS_TRUE_MASS = 1
     CLUSTER_COUNTS_RICHNESS_PROXY = 2
 
 
 class SupportedDataTypes(Enum):
     """Supported data types for cluster number counts likelihoods."""
+
     CLUSTER_MASS_COUNT_WL = 1
 
 
 class SupportedProxyTypes(Enum):
-    """Supported proxy types for cluster number counts likelihoods."""""
+    """Supported proxy types for cluster number counts likelihoods.""" ""
+
     TRUE_MASS = 1
     RICHNESS_PROXY = 2
