@@ -8,6 +8,7 @@ import functools
 import warnings
 
 import numpy as np
+import sacc.windows
 import scipy.interpolate
 
 import pyccl
@@ -182,7 +183,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        self.theory_window_function = None
+        self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -270,18 +271,18 @@ class TwoPoint(Statistic):
             )
 
         if self.ell_or_theta_min is not None:
-            q = np.where(_ell_or_theta >= self.ell_or_theta_min)
-            _ell_or_theta = _ell_or_theta[q]
-            _stat = _stat[q]
+            locations = np.where(_ell_or_theta >= self.ell_or_theta_min)
+            _ell_or_theta = _ell_or_theta[locations]
+            _stat = _stat[locations]
             if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[q]
+                self.sacc_indices = self.sacc_indices[locations]
 
         if self.ell_or_theta_max is not None:
-            q = np.where(_ell_or_theta <= self.ell_or_theta_max)
-            _ell_or_theta = _ell_or_theta[q]
-            _stat = _stat[q]
+            locations = np.where(_ell_or_theta <= self.ell_or_theta_max)
+            _ell_or_theta = _ell_or_theta[locations]
+            _stat = _stat[locations]
             if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[q]
+                self.sacc_indices = self.sacc_indices[locations]
 
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
@@ -331,7 +332,7 @@ class TwoPoint(Statistic):
                     continue
                 if cosmo.has_pk(pk_name):
                     # Use existing power spectrum
-                    pk = cosmo.get_pk(pk_name)
+                    pk = cosmo.get_pk(pk_name)  # pylint: disable-msg=invalid-name
                 elif tracer0.has_pt or tracer1.has_pt:
                     if not tracer0.has_pt and tracer1.has_pt:
                         # Mixture of PT and non-PT tracers
@@ -342,7 +343,7 @@ class TwoPoint(Statistic):
                         else:
                             tracer1.pt_tracer = matter_pt_tracer
                     # Compute perturbation power spectrum
-                    pk = pyccl.nl_pt.get_pt_pk2d(
+                    pk = pyccl.nl_pt.get_pt_pk2d(  # pylint: disable-msg=invalid-name
                         cosmo.ccl_cosmo,
                         tracer0.pt_tracer,
                         tracer2=tracer1.pt_tracer,
@@ -384,7 +385,7 @@ class TwoPoint(Statistic):
 
         if self.theory_window_function is not None:
 
-            def log_interpolator(x, y):
+            def log_interpolator(x, y):  # pylint: disable-msg=invalid-name
                 if np.all(y > 0):
                     # use log-log interpolation
                     intp = scipy.interpolate.InterpolatedUnivariateSpline(

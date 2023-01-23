@@ -164,7 +164,7 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
 
     def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
 
-        z = tracer_arg.z
+        z = tracer_arg.z  # pylint: disable-msg=invalid-name
         b_2_z = self.b_2 * np.ones_like(z)
         b_s_z = self.b_s * np.ones_like(z)
         # b_1 uses the "bias" field
@@ -415,11 +415,11 @@ class NumberCounts(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        inds = np.argsort(z)
-        z = z[inds]
-        nz = nz[inds]
+        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
+        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
+        indices = np.argsort(z)
+        z = z[indices]  # pylint: disable-msg=invalid-name
+        nz = nz[indices]  # pylint: disable-msg=invalid-name
 
         self.tracer_args = NumberCountsArgs(
             scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None

@@ -225,7 +225,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
-        z = tracer_arg.z
+        z = tracer_arg.z  # pylint: disable-msg=invalid-name
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
             cosmo.ccl_cosmo,
             z,
