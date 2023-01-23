@@ -91,9 +91,9 @@ class Cosmology:
         self.ccl_cosmo = cosmo
         self.pt_calculator: pyccl.nl_pt.PTCalculator = None
         self.hm_calculator: pyccl.halomodel.HMCalculator = None
-        self.pk: Dict[str, pyccl.Pk2D] = {}
+        self.pk: Dict[str, pyccl.Pk2D] = {}  # pylint: disable-msg=C0103
 
-    def add_pk(self, name: str, pk: pyccl.Pk2D):
+    def add_pk(self, name: str, pk: pyccl.Pk2D):  # pylint: disable-msg=C0103
         """Add a pyccl.Pk2D to the table of power spectra."""
         self.pk[name] = pk
 
@@ -116,8 +116,7 @@ class Cosmology:
 
 
 class LikelihoodSystematic(Updatable):
-    def __init__(self):
-        super().__init__()
+    """A systematic that can be applied to a Cosmology object."""
 
 
 class PTSystematic(LikelihoodSystematic):
@@ -138,6 +137,7 @@ class PTSystematic(LikelihoodSystematic):
         self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
 
     def apply(self, cosmo_container: Cosmology) -> Cosmology:
+        """Apply the perturbation theory systematic to the Cosmology object."""
         # P_lin(k) at z=0
         pk_lin_z0 = pyccl.linear_matter_power(
             cosmo_container.ccl_cosmo, self.ptc.ks, 1.0
