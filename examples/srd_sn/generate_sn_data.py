@@ -1,17 +1,21 @@
-import sacc
-from sacc import Sacc
+"""Generate SN data for SRD SN likelihoods"""
+
+import datetime
 import os
-import numpy as np
-import pandas as pd
+import sys
 import tarfile
 import urllib.request
-import datetime
-import sys
+
+import numpy as np
+import pandas as pd
+
+import sacc
+from sacc import Sacc
 
 S = Sacc()
 
 
-def conversion(h):
+def conversion(snia_data_array: np.ndarray):
     """
     CODE TO CONVERT THE NEW DESC HUBBLE DIAGRAM FILE STRUCTURE
     SIMILAR TO COSMOMC STYLED INPUT HUBBLE DIAGRAM
@@ -38,25 +42,29 @@ def conversion(h):
         "dec",
         "biascor",
     ]
-    h = pd.DataFrame(y1dat)
-    h.columns = h.iloc[0, :]
-    h = h.iloc[1:, 1:-1]
-    h = h.apply(pd.to_numeric)
-    h.MU -= 19.36
-    h.insert(3, "dz", np.zeros(np.shape(h)[0]))
-    row = np.shape(h)[0]
+    snia_data_frame = pd.DataFrame(snia_data_array)
+    snia_data_frame.columns = snia_data_frame.iloc[0, :]
+    snia_data_frame = snia_data_frame.iloc[1:, 1:-1]
+    snia_data_frame = snia_data_frame.apply(pd.to_numeric)
+    snia_data_frame.MU -= 19.36
+    snia_data_frame.insert(3, "dz", np.zeros(np.shape(snia_data_frame)[0]))
+    row = np.shape(snia_data_frame)[0]
     colu = 13
     join = np.zeros((row, colu))
-    hh = pd.DataFrame(np.concatenate([h, join], axis=1))
+    hh = pd.DataFrame(  # pylint: disable=invalid-name
+        np.concatenate([snia_data_frame, join], axis=1)
+    )
     if np.shape(hh)[1] < 19:
         diff = int(19 - np.shape(hh)[1])
         for i in reversed(range(diff)):
             hh.insert(np.shape(hh)[1], " ", np.zeros(np.shape(hh)[0]))
     hh.columns = col
-    h = hh
-    h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
-    h = np.array(h.T)
-    return h
+    snia_data_frame = hh
+    snia_data_frame["#name"] = np.linspace(
+        0, np.shape(snia_data_frame)[0] - 1, np.shape(snia_data_frame)[0]
+    ).astype(int)
+    snia_data_frame = np.array(snia_data_frame.T)
+    return snia_data_frame
 
 
 if len(sys.argv) == 4:
@@ -135,8 +143,7 @@ properties = ["distance"]
 statistic = "mu"
 
 # There is no futher specified needed here - everything is scalar.
-subtype = None
-sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
+sndata_type = sacc.build_data_type_name(sources, properties, statistic)
 
 type_details = sacc.parse_data_type_name(sndata_type)
 print(

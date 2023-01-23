@@ -1,9 +1,10 @@
-""" Generate the cosmicshear.fits file.
+""" Generate the cosmicshear.fits file simulating a simple cosmology.
 """
-from firecrown.utils import upper_triangle_indices
 import numpy as np
 import sacc
 import pyccl as ccl
+
+from firecrown.utils import upper_triangle_indices
 
 
 COSMO = ccl.Cosmology(
@@ -23,7 +24,7 @@ EPS = 0.01
 Z = np.linspace(0, 2, 50) + 0.05
 ELL = np.logspace(1, 4, 10)
 
-rng = np.random.seed(SEED)
+np.random.seed(SEED)
 sacc_data = sacc.Sacc()
 tracers = []
 

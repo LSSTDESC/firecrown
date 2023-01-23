@@ -32,12 +32,11 @@ class ClusterNumberCountsArgs:
     """Class for number counts tracer builder argument."""
 
     def __init__(
-        # pylint: disable-next=invalid-name
         self,
         tracers=None,
         z_bins=None,
-        Mproxy_bins=None,
-        nz=None,
+        Mproxy_bins=None,  # pylint: disable-msg=invalid-name
+        nz=None,  # pylint: disable-msg=invalid-name
         metadata=None,
     ):
 
@@ -106,7 +105,10 @@ class ClusterNumberCounts(Statistic):
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
         self.number_density_func = number_density_func
-        if SupportedTracerNames[sacc_tracer].value == 2:
+        if (
+            SupportedTracerNames[sacc_tracer]
+            == SupportedTracerNames.CLUSTER_COUNTS_RICHNESS_PROXY
+        ):
             self.mu_p0 = parameters.create(mu_p0)
             self.mu_p1 = parameters.create(mu_p1)
             self.mu_p2 = parameters.create(mu_p2)
@@ -222,9 +224,9 @@ class ClusterNumberCounts(Statistic):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        tracer = sacc_data.get_tracer(self.sacc_tracer.lower())
         metadata = tracer.metadata
-        proxy_type = metadata["Mproxy_type"]
+        proxy_type = metadata["Mproxy_type"].upper()
         if (
             SupportedTracerNames[self.sacc_tracer].value
             != SupportedProxyTypes[proxy_type].value

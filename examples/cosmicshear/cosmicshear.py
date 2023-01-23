@@ -1,13 +1,13 @@
-#!/usr/bin/env python
+"""Example of a likelihood script for FireCrown cosmic shear likelihood.
+"""
 
 import os
+import sacc
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
-import sacc
 
 
 def build_likelihood(_):
@@ -19,32 +19,24 @@ def build_likelihood(_):
     sources = {}
 
     for i in range(2):
-        """
-        We include a photo-z shift bias (a constant shift in dndz). We also
-        have a different parameter for each bin, so here again we use the
-        src{i}_ prefix.
-        """
+        # We include a photo-z shift bias (a constant shift in dndz). We also
+        # have a different parameter for each bin, so here again we use the
+        # src{i}_ prefix.
         pzshift = wl.PhotoZShift(sacc_tracer=f"trc{i}")
 
-        """
-            Now we can finally create the weak-lensing source that will compute the
-            theoretical prediction for that section of the data, given the
-            systematics.
-        """
+        # Now we can finally create the weak-lensing source that will compute the
+        # theoretical prediction for that section of the data, given the
+        # systematics.
         sources[f"trc{i}"] = wl.WeakLensing(
             sacc_tracer=f"trc{i}", systematics=[pzshift]
         )
 
-    """
-        Now that we have all sources we can instantiate all the two-point
-        functions. For each one we create a new two-point function object.
-    """
+        # Now that we have all sources we can instantiate all the two-point
+        # functions. For each one we create a new two-point function object.
     stats = {}
 
-    """
-        Creating all auto/cross-correlations two-point function objects for
-        the weak-lensing probes.
-    """
+    # Creating all auto/cross-correlations two-point function objects for
+    # the weak-lensing probes.
     for i in range(2):
         for j in range(i, 2):
             stats[f"trc{i}_trc{j}"] = TwoPoint(
@@ -53,29 +45,21 @@ def build_likelihood(_):
                 sacc_data_type="galaxy_shear_cl_ee",
             )
 
-    """
-        Here we instantiate the actual likelihood. The statistics argument carry
-        the order of the data/theory vector.
-    """
-    lk = ConstGaussian(statistics=list(stats.values()))
+    # Here we instantiate the actual likelihood. The statistics argument carry
+    # the order of the data/theory vector.
+    lk = ConstGaussian(statistics=list(stats.values()))  # pylint: disable=invalid-name
 
-    """
-        We load the correct SACC file.
-    """
+    # We load the correct SACC file.
     saccfile = os.path.expanduser(
         os.path.expandvars("${FIRECROWN_DIR}/examples/cosmicshear/cosmicshear.fits")
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
-    """
-        The read likelihood method is called passing the loaded SACC file, the
-        two-point functions will receive the appropriated sections of the SACC
-        file and the sources their respective dndz.
-    """
+    # The read likelihood method is called passing the loaded SACC file, the
+    # two-point functions will receive the appropriated sections of the SACC
+    # file and the sources their respective dndz.
     lk.read(sacc_data)
 
-    """
-        This script will be loaded by the appropriated connector. The framework
-        will call the factory function that should return a Likelihood instance.
-    """
+    # This script will be loaded by the appropriated connector. The framework
+    # will call the factory function that should return a Likelihood instance.
     return lk
