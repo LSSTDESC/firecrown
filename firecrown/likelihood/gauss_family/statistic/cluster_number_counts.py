@@ -5,14 +5,14 @@ theoretical prediction of cluster number counts inside bins of redshift
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Optional, final
 
 import numpy as np
 import scipy.interpolate
 from scipy.integrate import simps
 import pyccl
 
-from .statistic import Statistic
+from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Systematic
 from .... import parameters
 from ....parameters import (
@@ -72,7 +72,7 @@ class ClusterNumberCounts(Statistic):
     theory_vector
         A list with the theoretical prediction of the number of clusters in each bin
         of redshift and Mproxy. Set after `compute` is called.
-    sacc_inds : list of str
+    sacc_indices : list of str
         A list with the indices for the data vector that corresponds to the type of data
         provided in the SACC file. Set after `read` is called.
     """
@@ -96,8 +96,8 @@ class ClusterNumberCounts(Statistic):
         self.sacc_tracer = sacc_tracer
         self.sacc_data_type = sacc_data_type
         self.systematics = systematics or []
-        self.data_vector = None
-        self.theory_vector = None
+        self.data_vector: Optional[DataVector] = None
+        self.theory_vector: Optional[TheoryVector] = None
         self.number_density_func = number_density_func
         if SupportedTracerNames[sacc_tracer].value == 2:
             self.mu_p0 = parameters.create(mu_p0)
@@ -125,26 +125,31 @@ class ClusterNumberCounts(Statistic):
                 f"Supported names are: {supported_tracers}"
             ) from None
 
+    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
         This implementation has nothing to do."""
 
+    @final
     def _update(self, params: ParamsMap) -> None:
         """Reset this systematic.
 
         This implementation has nothing to do."""
 
+    @final
     def _required_parameters(self) -> RequiredParameters:
+        """Return an empty RequiredParameters."""
         return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Return an empty DerivedParameterCollection."""
         derived_parameters = DerivedParameterCollection([])
 
         return derived_parameters
 
-    def _compute_grids(self, cosmo, lnN_tuple, logm_tuple, z_tuple, n_intervals=50):
+    def _compute_grids(self, cosmo, lnN_tuple, logm_tuple, z_tuple, n_intervals=20):
         mu_p0 = self.mu_p0
         mu_p1 = self.mu_p1
         mu_p2 = self.mu_p2
@@ -220,13 +225,18 @@ class ClusterNumberCounts(Statistic):
             nz=nz,
             metadata=metadata,
         )
-        print(f"z{metadata['z_edges']},{metadata['Mproxy_edges']}")
-        self.data_vector = nz
-        self.sacc_inds = sacc_data.indices(
+
+        self.data_vector = DataVector.from_list(nz)
+        self.sacc_indices = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
         )
 
-    def compute(self, cosmo: pyccl.Cosmology) -> Tuple[np.ndarray, np.ndarray]:
+    def get_data_vector(self) -> DataVector:
+        """Return the data vector; raise exception if there is none."""
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> TheoryVector:
         """Compute a Number Count statistic using the data from the
         Read method, the cosmology object, and the Bocquet16 halo mass function.
                 Check README.MD for a complete description of the method.
@@ -238,9 +248,6 @@ class ClusterNumberCounts(Statistic):
 
         return
         --------
-        data_vector : Numpy Array of floats
-            An array with the number of clusters in each bin of redshift and proxy.
-            Set after the read method is called.
         theory_vector : Numpy Array of floats
             An array with the theoretical prediction of the number of clusters
             in each bin of redsfhit and mass.
@@ -276,4 +283,5 @@ class ClusterNumberCounts(Statistic):
             theory_vector = self._richness_proxy_integral(
                 cosmo, proxy_bins, logm_interval, z_bins
             )
-        return np.array(self.data_vector), np.array(theory_vector)
+
+        return TheoryVector.from_list(theory_vector)
