@@ -182,6 +182,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
+        self.theory_window_function = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -191,6 +192,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta_: Optional[np.ndarray] = None
 
         self.sacc_tracers: Optional[List[str]] = None
+        self.ells: Optional[np.ndarray] = None
         self.cells: Dict[Tuple[str, str] | str, np.ndarray] = {}
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:

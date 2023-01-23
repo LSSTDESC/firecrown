@@ -125,6 +125,7 @@ class Tracer:
                 self.field = "delta_mater"
         self.pt_tracer = pt_tracer
         self.halo_profile = halo_profile
+        self.halo_2pt = halo_2pt
 
     @property
     def has_pt(self) -> bool:
