@@ -26,18 +26,20 @@ pull requests in a timely fashion.
 However, it is also important that we be able to maintain stability in released
 interfaces, in accordance with our versioning policy.
 
-To best statisfy both requirements, the
+To best statisfy both requirements, backward compatibility as denoted by the semantic
+versioning is promised only for tagged releases.
+The head of the `master` branch of `the repository on GitHub <https://github
+.com/LSSTDESC/firecrown>`_ is not subject to the same constraint.
+This is to allow us to merge pull requests into `master` as quickly as possible,
+without taking the extra time necessary to be sure they are following a design
+suitable for longer-term stability.
 
-d
-To run the current version, one needs to *build* (but not yet install) Firecrown.
-In this directory, run:
-
-    python3 setup.py build
-
-This will put modules into the subdirectory :bash:`build/lib`.
-Set the environment variable :bash:`FIRECROWN_DIR` to the full path to that directory.
-Set the environment variable :bash:`FIRECROWN_EXAMPLES_DIR` to be the full path to the :bash:`examples` subdirectory.
-
-These environment variables are needed by the example :bash:`ini` files.
-The directory :bash:`$FIRECROWN_DIR` should also be on :bash:`PYTHONPATH`.
-
+We recommend that projects which do *not* involve new development of Firecrown should
+use tagged releases as distributed on Conda Forge.
+We recommend that projects which do involve new development of Firecrown work on a
+branch started from `master`.
+For the most stability, it may be useful to start a branch from the most recent tag
+on the `master` branch.
+However, before making a pull request from such a branch, it is necessary to first
+update the branch from which the pull request will be made to conform with the
+current `HEAD` of the `master` branch.
