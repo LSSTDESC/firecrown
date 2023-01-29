@@ -236,7 +236,7 @@ class SamplerParameter:
     def __init__(self):
         """Creates a new SamplerParameter instance that represents a parameter
         having its value defined by the sampler."""
-        self.value : Optional[float] = None
+        self.value: Optional[float] = None
 
     def set_value(self, value: float):
         """Set the value of this parameter.
