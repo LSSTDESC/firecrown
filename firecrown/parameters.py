@@ -247,7 +247,7 @@ class SamplerParameter:
 
     def get_value(self) -> float:
         """Get the current value of this parameter."""
-        assert self.value
+        assert self.value is not None
         return self.value
 
 
