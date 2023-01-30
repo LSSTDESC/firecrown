@@ -177,8 +177,8 @@ class MappingNumCosmo(Mapping):
 
 class NumCosmoData(Ncm.Data):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix :python:`do_`. This class implement a general
-    likelihood."""
+    object virtual methods using the prefix :python:`do_`. This class implement
+    a general likelihood."""
 
     def __init__(
         self, likelihood: Likelihood, mapping: MappingNumCosmo, model_list: List[str]
@@ -256,8 +256,8 @@ class NumCosmoData(Ncm.Data):
 
 class NumCosmoGaussCov(Ncm.DataGaussCov):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix :python:`do_`. This class implement a Gaussian
-    likelihood."""
+    object virtual methods using the prefix :python:`do_`. This class implement
+    a Gaussian likelihood."""
 
     def __init__(
         self, likelihood: ConstGaussian, mapping: MappingNumCosmo, model_list: List[str]
