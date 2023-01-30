@@ -84,8 +84,11 @@ class Likelihood(Updatable):
 
 
 class Cosmology:
-    """A class that bundles together a pyccl.Cosmology object and associated
-    objects, such as perturbation theory or halo model calculator workspaces."""
+    """Bundles together a :python:`pyccl.Cosmology` and associated tools.
+
+
+    Some example tools are perturbation theory and halo model calculator workspaces.
+    """
 
     def __init__(self, cosmo: pyccl.Cosmology):
         self.ccl_cosmo = cosmo
@@ -105,7 +108,7 @@ class Cosmology:
         return self.ccl_cosmo.get_nonlin_power(name)
 
     def has_pk(self, name: str) -> bool:
-        """Check if a power spectrum with name `name' is available."""
+        """Check if a power spectrum with name `name` is available."""
         # There should probably a pyccl.Cosmology method to check if a specific
         # power spectrum exists
         try:

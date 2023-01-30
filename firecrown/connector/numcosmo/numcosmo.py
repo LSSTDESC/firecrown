@@ -177,7 +177,7 @@ class MappingNumCosmo(Mapping):
 
 class NumCosmoData(Ncm.Data):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix 'do_'. This class implement a general
+    object virtual methods using the prefix :python:`do_`. This class implement a general
     likelihood."""
 
     def __init__(
@@ -205,11 +205,11 @@ class NumCosmoData(Ncm.Data):
 
     def do_begin(self):  # pylint: disable-msg=arguments-differ
         """
-        # Implements the virtual Ncm.Data method `begin'.
+        # Implements the virtual Ncm.Data method `begin`.
         # This method usually do some groundwork in the data
         # before the actual calculations. For example, if the likelihood
         # involves the decomposition of a constant matrix, it can be done
-        # during `begin' once and then used afterwards.
+        # during `begin` once and then used afterwards.
         """
 
     def do_prepare(self, mset: Ncm.MSet):  # pylint: disable-msg=arguments-differ
@@ -235,7 +235,7 @@ class NumCosmoData(Ncm.Data):
             shared_keys = set(model_dict).intersection(firecrown_params)
             if len(shared_keys) > 0:
                 raise RuntimeError(
-                    f"The following keys `{shared_keys}' appear "
+                    f"The following keys `{shared_keys}` appear "
                     f"in more than one model used by the "
                     f"module {self.model_list}."
                 )
@@ -245,9 +245,9 @@ class NumCosmoData(Ncm.Data):
 
     def do_m2lnL_val(self, _):  # pylint: disable-msg=arguments-differ
         """
-        Implements the virtual method `m2lnL'.
+        Implements the virtual method `m2lnL`.
         This method should calculate the value of the likelihood for
-        the model set `mset'.
+        the model set `mset`.
         """
         loglike = self.likelihood.compute_loglike(self.ccl_cosmo)
         self.likelihood.reset()
@@ -256,7 +256,7 @@ class NumCosmoData(Ncm.Data):
 
 class NumCosmoGaussCov(Ncm.DataGaussCov):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix 'do_'. This class implement a Gaussian
+    object virtual methods using the prefix :python:`do_`. This class implement a Gaussian
     likelihood."""
 
     def __init__(
@@ -327,7 +327,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             shared_keys = set(model_dict).intersection(firecrown_params)
             if len(shared_keys) > 0:
                 raise RuntimeError(
-                    f"The following keys `{shared_keys}' appear "
+                    f"The following keys `{shared_keys}` appear "
                     f"in more than one model used by the "
                     f"module {self.model_list}."
                 )
