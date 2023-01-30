@@ -24,7 +24,6 @@ Firecrown does not *require* the installation of a sampler.
    :caption: Getting Started
    :name: getstart
 
-   Introduction<intro.rst>
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
 
