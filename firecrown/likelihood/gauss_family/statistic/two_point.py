@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional, final
+from typing import List, Dict, Tuple, Optional, final, Union
 import copy
 import functools
 import warnings
@@ -194,7 +194,7 @@ class TwoPoint(Statistic):
 
         self.sacc_tracers: Optional[List[str]] = None
         self.ells: Optional[np.ndarray] = None
-        self.cells: Dict[Tuple[str, str] | str, np.ndarray] = {}
+        self.cells: Dict[Union[Tuple[str, str], str], np.ndarray] = {}
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
