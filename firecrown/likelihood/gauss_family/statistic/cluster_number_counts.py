@@ -21,6 +21,7 @@ from ....parameters import (
     DerivedParameterCollection,
 )
 from ....models.richness_proxy import RMProxy
+from ....likelihood.likelihood import Cosmology
 from .cluster_number_counts_enum import (
     SupportedTracerNames,
     SupportedDataTypes,
@@ -106,7 +107,7 @@ class ClusterNumberCounts(Statistic):
         self.theory_vector: Optional[TheoryVector] = None
         self.number_density_func = number_density_func
         if (
-            SupportedTracerNames[sacc_tracer]
+            SupportedTracerNames[sacc_tracer.upper()]
             == SupportedTracerNames.CLUSTER_COUNTS_RICHNESS_PROXY
         ):
             self.mu_p0 = parameters.create(mu_p0)
@@ -116,7 +117,7 @@ class ClusterNumberCounts(Statistic):
             self.sigma_p1 = parameters.create(sigma_p1)
             self.sigma_p2 = parameters.create(sigma_p2)
         try:
-            self.ccl_kind = SupportedDataTypes[sacc_data_type].name
+            self.ccl_kind = SupportedDataTypes[sacc_data_type.upper()].name
         except KeyError:
             supported_data = [data.name for data in SupportedDataTypes]
             raise KeyError(
@@ -125,7 +126,7 @@ class ClusterNumberCounts(Statistic):
                 f"Supported names are: {supported_data}"
             ) from None
         try:
-            self.tracer_name = SupportedTracerNames[sacc_tracer].name
+            self.tracer_name = SupportedTracerNames[sacc_tracer.upper()].name
         except KeyError:
             supported_tracers = [tracer.name for tracer in SupportedTracerNames]
             raise KeyError(
@@ -228,8 +229,8 @@ class ClusterNumberCounts(Statistic):
         metadata = tracer.metadata
         proxy_type = metadata["Mproxy_type"].upper()
         if (
-            SupportedTracerNames[self.sacc_tracer].value
-            != SupportedProxyTypes[proxy_type].value
+            SupportedTracerNames[self.sacc_tracer.upper()].value
+            != SupportedProxyTypes[proxy_type.upper()].value
         ):
             raise TypeError(
                 f"The proxy {proxy_type} is not supported"
@@ -274,6 +275,7 @@ class ClusterNumberCounts(Statistic):
             An array with the theoretical prediction of the number of clusters
             in each bin of redsfhit and mass.
         """
+        ccl_cosmo = cosmo.ccl_cosmo
         skyarea = self.tracer_args.metadata["sky_area"]
         # pylint: disable-next=invalid-name
         DeltaOmega = skyarea * np.pi**2 / 180**2
@@ -285,10 +287,10 @@ class ClusterNumberCounts(Statistic):
             # pylint: disable-next=invalid-name
             def integrand(logm, z):
                 # pylint: disable-next=invalid-name
-                nm = self.number_density_func.compute_number_density(cosmo, logm, z)
+                nm = self.number_density_func.compute_number_density(ccl_cosmo, logm, z)
                 # pylint: disable-next=invalid-name
                 dv = self.number_density_func.compute_differential_comoving_volume(
-                    cosmo, z
+                    ccl_cosmo, z
                 )
                 return nm * dv
 
@@ -309,7 +311,7 @@ class ClusterNumberCounts(Statistic):
         elif self.sacc_tracer == "cluster_counts_richness_proxy":
             logm_interval = (np.log10(1.0e13), np.log10(1.0e15))
             theory_vector = self._richness_proxy_integral(
-                cosmo, proxy_bins, logm_interval, z_bins
+                ccl_cosmo, proxy_bins, logm_interval, z_bins
             )
 
         return TheoryVector.from_list(theory_vector)

@@ -27,7 +27,7 @@ class CCLDensity(NumberDensity):
         """Default initialization for a base number density object."""
         super().__init__()
         self.use_baryons = use_baryons
-
+        self.density_func_definition = density_func_definition
         if density_func_name in SUPPORTED_CRIT_DENS_FUNC_NAMES:
             self.density_func_name = density_func_name
             self.pyccl_mass_func = SUPPORTED_CRIT_DENS_FUNC_NAMES[density_func_name]
@@ -68,21 +68,31 @@ class CCLDensity(NumberDensity):
         """
         a = 1.0 / (1.0 + z)  # pylint: disable=invalid-name
         mass = 10 ** (logm)
-        hmd_200c = pyccl.halos.MassDef200c()
+        hmd_200 = None
+        if self.density_func_definition == 'mean':
+            hdm_200 = pyccl.halos.MassDef200m()
+        elif self.density_func_definition == 'critical':    
+            hmd_200 = pyccl.halos.MassDef200c()
+        else:
+            raise ValueError(
+                f"The number density function definition"
+                f"{density_func_definition}'%s' is not "
+                f"supported.'%s'"
+                )
         if self.density_func_type == "Bocquet16":
-            hmf_200c = self.pyccl_mass_func(
+            hmf_200 = self.pyccl_mass_func(
                 cosmo,
-                mass_def=hmd_200c,
+                mass_def=hmd_200,
                 mass_def_strict=True,
                 hydro=self.use_baryons,
             )
         else:
-            hmf_200c = self.pyccl_mass_func(
+            hmf_200 = self.pyccl_mass_func(
                 cosmo,
-                mass_def=hmd_200c,
+                mass_def=hmd_200,
                 mass_def_strict=True,
             )
-        nm = hmf_200c.get_mass_function(cosmo, mass, a)  # pylint: disable=invalid-name
+        nm = hmf_200.get_mass_function(cosmo, mass, a)  # pylint: disable=invalid-name
         return nm
 
     def compute_differential_comoving_volume(self, cosmo: pyccl.Cosmology, z) -> float:
