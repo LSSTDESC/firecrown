@@ -69,16 +69,16 @@ class CCLDensity(NumberDensity):
         a = 1.0 / (1.0 + z)  # pylint: disable=invalid-name
         mass = 10 ** (logm)
         hmd_200 = None
-        if self.density_func_definition == 'mean':
-            hdm_200 = pyccl.halos.MassDef200m()
-        elif self.density_func_definition == 'critical':    
+        if self.density_func_definition == "mean":
+            hmd_200 = pyccl.halos.MassDef200m()
+        elif self.density_func_definition == "critical":
             hmd_200 = pyccl.halos.MassDef200c()
         else:
             raise ValueError(
                 f"The number density function definition"
-                f"{density_func_definition}'%s' is not "
+                f"{self.density_func_definition}'%s' is not "
                 f"supported.'%s'"
-                )
+            )
         if self.density_func_type == "Bocquet16":
             hmf_200 = self.pyccl_mass_func(
                 cosmo,

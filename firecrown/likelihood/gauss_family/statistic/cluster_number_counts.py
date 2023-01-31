@@ -10,7 +10,6 @@ from typing import List, Optional, final
 import numpy as np
 import scipy.interpolate
 from scipy.integrate import simps
-import pyccl
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
@@ -259,15 +258,15 @@ class ClusterNumberCounts(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, cosmo: pyccl.Cosmology) -> TheoryVector:
+    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
         """Compute a Number Count statistic using the data from the
         Read method, the cosmology object, and the Bocquet16 halo mass function.
                 Check README.MD for a complete description of the method.
 
         Parameters
         ----------
-        cosmo : pyccl.Cosmology object
-            The cosmology object that corresponds to the data in the SACC file.
+        cosmo : Cosmology object
+            The firecrown cosmology object.
 
         return
         --------
