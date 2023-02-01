@@ -30,30 +30,15 @@ def test_pt_systematics():
     n_lens = 1
     sources = {}
 
-    # Define the intrinsic alignment systematic. This will be added to the
-    # lensing sources later
     ia_systematic = wl.TattAlignmentSystematic()
+    pzshift = wl.PhotoZShift(sacc_tracer="src0")
+    sources["src0"] = wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
 
-    for i in range(n_source):
-        # Define the photo-z shift systematic.
-        pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
-
-        # Create the weak lensing source, specifying the name of the tracer in the
-        # sacc file and a list of systematics
-        sources[f"src{i}"] = wl.WeakLensing(
-            sacc_tracer=f"src{i}", systematics=[pzshift, ia_systematic]
-        )
-
-    for i in range(n_lens):
-        pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
-        magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
-
-        nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
-        sources[f"lens{i}"] = nc.NumberCounts(
-            sacc_tracer=f"lens{i}",
-            has_rsd=True,
-            systematics=[pzshift, magnification, nl_bias],
-        )
+    pzshift = nc.PhotoZShift(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
+    sources["lens0"] = nc.NumberCounts(sacc_tracer="lens0", has_rsd=True,
+                                       systematics=[pzshift, magnification, nl_bias])
 
     # Define the statistics we like to include in the likelihood
     stats = {}
