@@ -13,7 +13,24 @@ from firecrown.likelihood.likelihood import PTSystematic
 from firecrown.parameters import ParamsMap
 
 
-def test_pt_systematics():
+@pytest.fixture(name="weak_lensing_source")
+def fixture_weak_lensing_source():
+    ia_systematic = wl.TattAlignmentSystematic()
+    pzshift = wl.PhotoZShift(sacc_tracer="src0")
+    return wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
+
+
+@pytest.fixture(name="number_counts_source")
+def fixture_number_counts_source():
+    pzshift = nc.PhotoZShift(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
+    return nc.NumberCounts(
+        sacc_tracer="lens0", has_rsd=True, systematics=[pzshift, magnification, nl_bias]
+    )
+
+
+def test_pt_systematics(weak_lensing_source, number_counts_source):
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     # pylint: disable-msg=too-many-locals
@@ -25,20 +42,7 @@ def test_pt_systematics():
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
-    # Define sources
-    n_source = 1
-    n_lens = 1
-    sources = {}
-
-    ia_systematic = wl.TattAlignmentSystematic()
-    pzshift = wl.PhotoZShift(sacc_tracer="src0")
-    sources["src0"] = wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
-
-    pzshift = nc.PhotoZShift(sacc_tracer="lens0")
-    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
-    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
-    sources["lens0"] = nc.NumberCounts(sacc_tracer="lens0", has_rsd=True,
-                                       systematics=[pzshift, magnification, nl_bias])
+    sources = {"src0": weak_lensing_source, "lens0": number_counts_source}
 
     # Define the statistics we like to include in the likelihood
     stats = {}
@@ -46,8 +50,8 @@ def test_pt_systematics():
         ("xip", "galaxy_shear_xi_plus"),
         ("xim", "galaxy_shear_xi_minus"),
     ]:
-        for i in range(n_source):
-            for j in range(i, n_source):
+        for i in range(1):
+            for j in range(i, 1):
                 # Define two-point statistics, given two sources (from above) and
                 # the type of statistic.
                 stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
@@ -55,15 +59,15 @@ def test_pt_systematics():
                     source1=sources[f"src{j}"],
                     sacc_data_type=sacc_stat,
                 )
-    for j in range(n_source):
-        for i in range(n_lens):
+    for j in range(1):
+        for i in range(1):
             stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
                 source0=sources[f"lens{j}"],
                 source1=sources[f"src{i}"],
                 sacc_data_type="galaxy_shearDensity_xi_t",
             )
 
-    for i in range(n_lens):
+    for i in range(1):
         stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
             source0=sources[f"lens{i}"],
             source1=sources[f"lens{i}"],
