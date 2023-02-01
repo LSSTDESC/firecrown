@@ -236,6 +236,8 @@ class TwoPoint(Statistic):
         self.source0.read(sacc_data)
         self.source1.read(sacc_data)
 
+        assert self.source0.sacc_tracer is not None
+        assert self.source1.sacc_tracer is not None
         tracers = [self.source0.sacc_tracer, self.source1.sacc_tracer]
 
         if self.ccl_kind == "cl":
