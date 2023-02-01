@@ -44,19 +44,19 @@ def test_pt_systematics(weak_lensing_source, number_counts_source):
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
-    sources = {"src0": weak_lensing_source, "lens0": number_counts_source}
-
     # Define the statistics we like to include in the likelihood
     stats = {}
-    for stat, sacc_stat in [
-        ("xip", "galaxy_shear_xi_plus"),
-        ("xim", "galaxy_shear_xi_minus"),
-    ]:
-        stats[f"{stat}_src0_src0"] = TwoPoint(
-            source0=weak_lensing_source,
-            source1=weak_lensing_source,
-            sacc_data_type=sacc_stat,
-        )
+    stats["xip_src0_src0"] = TwoPoint(
+        source0=weak_lensing_source,
+        source1=weak_lensing_source,
+        sacc_data_type="galaxy_shear_xi_plus",
+    )
+    stats["xim_src0_src0"] = TwoPoint(
+        source0=weak_lensing_source,
+        source1=weak_lensing_source,
+        sacc_data_type="galaxy_shear_xi_minus",
+    )
+
     stats["gammat_lens0_src0"] = TwoPoint(
         source0=number_counts_source,
         source1=weak_lensing_source,
@@ -68,7 +68,6 @@ def test_pt_systematics(weak_lensing_source, number_counts_source):
         source1=number_counts_source,
         sacc_data_type="galaxy_density_xi",
     )
-
     # Create the likelihood from the statistics
     pt_systematic = PTSystematic(
         with_NC=True,
