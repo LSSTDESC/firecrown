@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 import numpy as np
 import pyccl as ccl
 import pyccl.nl_pt as pt
@@ -50,29 +52,22 @@ def test_pt_systematics(weak_lensing_source, number_counts_source):
         ("xip", "galaxy_shear_xi_plus"),
         ("xim", "galaxy_shear_xi_minus"),
     ]:
-        for i in range(1):
-            for j in range(i, 1):
-                # Define two-point statistics, given two sources (from above) and
-                # the type of statistic.
-                stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
-                    source0=sources[f"src{i}"],
-                    source1=sources[f"src{j}"],
-                    sacc_data_type=sacc_stat,
-                )
-    for j in range(1):
-        for i in range(1):
-            stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
-                source0=sources[f"lens{j}"],
-                source1=sources[f"src{i}"],
-                sacc_data_type="galaxy_shearDensity_xi_t",
-            )
-
-    for i in range(1):
-        stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
-            source0=sources[f"lens{i}"],
-            source1=sources[f"lens{i}"],
-            sacc_data_type="galaxy_density_xi",
+        stats[f"{stat}_src0_src0"] = TwoPoint(
+            source0=weak_lensing_source,
+            source1=weak_lensing_source,
+            sacc_data_type=sacc_stat,
         )
+    stats["gammat_lens0_src0"] = TwoPoint(
+        source0=number_counts_source,
+        source1=weak_lensing_source,
+        sacc_data_type="galaxy_shearDensity_xi_t",
+    )
+
+    stats[f"wtheta_lens0_lens0"] = TwoPoint(
+        source0=number_counts_source,
+        source1=number_counts_source,
+        sacc_data_type="galaxy_density_xi",
+    )
 
     # Create the likelihood from the statistics
     pt_systematic = PTSystematic(
