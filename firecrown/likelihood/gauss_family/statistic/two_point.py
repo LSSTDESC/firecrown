@@ -192,7 +192,7 @@ class TwoPoint(Statistic):
         self.measured_statistic_: Optional[DataVector] = None
         self.ell_or_theta_: Optional[np.ndarray] = None
 
-        self.sacc_tracers: Optional[List[str]] = None
+        self.sacc_tracers: List[str]
         self.ells: Optional[np.ndarray] = None
         self.cells: Dict[Union[Tuple[str, str], str], np.ndarray] = {}
 
