@@ -45,28 +45,36 @@ def test_pt_systematics(weak_lensing_source, number_counts_source):
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # Define the statistics we like to include in the likelihood
-    stats = {}
-    stats["xip_src0_src0"] = TwoPoint(
-        source0=weak_lensing_source,
-        source1=weak_lensing_source,
-        sacc_data_type="galaxy_shear_xi_plus",
+    stats = []
+    stats.append(
+        TwoPoint(
+            source0=weak_lensing_source,
+            source1=weak_lensing_source,
+            sacc_data_type="galaxy_shear_xi_plus",
+        )
     )
-    stats["xim_src0_src0"] = TwoPoint(
-        source0=weak_lensing_source,
-        source1=weak_lensing_source,
-        sacc_data_type="galaxy_shear_xi_minus",
-    )
-
-    stats["gammat_lens0_src0"] = TwoPoint(
-        source0=number_counts_source,
-        source1=weak_lensing_source,
-        sacc_data_type="galaxy_shearDensity_xi_t",
+    stats.append(
+        TwoPoint(
+            source0=weak_lensing_source,
+            source1=weak_lensing_source,
+            sacc_data_type="galaxy_shear_xi_minus",
+        )
     )
 
-    stats[f"wtheta_lens0_lens0"] = TwoPoint(
-        source0=number_counts_source,
-        source1=number_counts_source,
-        sacc_data_type="galaxy_density_xi",
+    stats.append(
+        TwoPoint(
+            source0=number_counts_source,
+            source1=weak_lensing_source,
+            sacc_data_type="galaxy_shearDensity_xi_t",
+        )
+    )
+
+    stats.append(
+        TwoPoint(
+            source0=number_counts_source,
+            source1=number_counts_source,
+            sacc_data_type="galaxy_density_xi",
+        )
     )
     # Create the likelihood from the statistics
     pt_systematic = PTSystematic(
@@ -77,7 +85,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source):
         log10k_max=2,
         nk_per_decade=4,
     )
-    lk = ConstGaussian(statistics=list(stats.values()), systematics=[pt_systematic])
+    lk = ConstGaussian(statistics=stats, systematics=[pt_systematic])
 
     # Read the two-point data from the sacc file
     lk.read(sacc_data)
