@@ -15,7 +15,6 @@ import sacc
 
 
 def build_likelihood(_):
-
     lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="", alphag=None)
 
     """
