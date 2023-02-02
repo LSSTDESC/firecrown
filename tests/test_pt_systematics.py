@@ -324,8 +324,3 @@ def test_pt_mixed_systematics():
 
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
-
-
-if __name__ == "__main__":
-    test_pt_systematics()
-    test_pt_mixed_systematics()
