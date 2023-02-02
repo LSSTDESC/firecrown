@@ -199,17 +199,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     assert np.allclose(cl_gg_theory, cells_gg_total, atol=0, rtol=1e-7)
 
 
-def test_pt_mixed_systematics():
-    # Load sacc file
-    # This shouldn't be necessary, since we only use the n(z) from the sacc file
-    # pylint: disable-msg=too-many-locals
-
-    saccfile = os.path.join(
-        os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
-    )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
-
+def test_pt_mixed_systematics(sacc_data):
     ia_systematic = wl.TattAlignmentSystematic()
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
@@ -233,10 +223,9 @@ def test_pt_mixed_systematics():
         log10k_max=2,
         nk_per_decade=4,
     )
-    lk = ConstGaussian(statistics=[stat], systematics=[pt_systematic])
 
-    lk.read(sacc_data)
-    likelihood = lk
+    likelihood = ConstGaussian(statistics=[stat], systematics=[pt_systematic])
+    likelihood.read(sacc_data)
 
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")
