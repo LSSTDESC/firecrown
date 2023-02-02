@@ -32,26 +32,25 @@ def fixture_number_counts_source():
     )
 
 
-def test_pt_systematics(weak_lensing_source, number_counts_source):
+@pytest.fixture(name="sacc_data")
+def fixture_sacc_data():
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
-    # pylint: disable-msg=too-many-locals
-    # pylint: disable-msg=too-many-statements
-
     saccfile = os.path.join(
         os.path.split(__file__)[0],
         "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
     )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    return sacc.Sacc.load_fits(saccfile)
 
-    # Define the statistics we like to include in the likelihood
+
+def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     stats = [
         TwoPoint("galaxy_shear_xi_plus", weak_lensing_source, weak_lensing_source),
         TwoPoint("galaxy_shear_xi_minus", weak_lensing_source, weak_lensing_source),
         TwoPoint("galaxy_shearDensity_xi_t", number_counts_source, weak_lensing_source),
         TwoPoint("galaxy_density_xi", number_counts_source, number_counts_source),
     ]
-    # Create the likelihood from the statistics
+
     pt_systematic = PTSystematic(
         with_NC=True,
         with_IA=True,
@@ -60,16 +59,9 @@ def test_pt_systematics(weak_lensing_source, number_counts_source):
         log10k_max=2,
         nk_per_decade=4,
     )
-    lk = ConstGaussian(statistics=stats, systematics=[pt_systematic])
 
-    # Read the two-point data from the sacc file
-    lk.read(sacc_data)
-
-    # To allow this likelihood to be used in cobaya or cosmosis, define a
-    # an object called "likelihood" must be defined
-    likelihood = lk
-    # print("Using parameters:", list(lk.required_parameters().get_params_names()))
-
+    likelihood = ConstGaussian(statistics=stats, systematics=[pt_systematic])
+    likelihood.read(sacc_data)
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")
     z, nz = src0_tracer.z, src0_tracer.nz
