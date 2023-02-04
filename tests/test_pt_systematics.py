@@ -44,6 +44,12 @@ def fixture_sacc_data():
 
 
 def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
+    # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
+    # generally not a good practice. In this case, the warnings are indicating that this
+    # test is too complicated.
+    #
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-statements
     stats = [
         TwoPoint("galaxy_shear_xi_plus", weak_lensing_source, weak_lensing_source),
         TwoPoint("galaxy_shear_xi_minus", weak_lensing_source, weak_lensing_source),
@@ -200,6 +206,12 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
 
 
 def test_pt_mixed_systematics(sacc_data):
+    # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
+    # generally not a good practice. In this case, the warnings are indicating that this
+    # test is too complicated.
+    #
+    # pylint: disable-msg=too-many-locals
+
     ia_systematic = wl.TattAlignmentSystematic()
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
