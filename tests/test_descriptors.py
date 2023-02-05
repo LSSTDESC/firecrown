@@ -7,13 +7,6 @@ class NotALikelihood:
     """A trivial class that does not inherit from Likelihood."""
 
 
-class DescriptorTester:
-    unconstrained_optional_float = TypeFloat(allow_none=True)
-    unconstrained_required_float = TypeFloat()
-    constrained_optional_float = TypeFloat(1.0, 2.5, allow_none=True)
-    constrained_required_float = TypeFloat(10.0, 100.0)
-
-
 class HasUOF:
     """Test harness for unconstrained optional float"""
 
