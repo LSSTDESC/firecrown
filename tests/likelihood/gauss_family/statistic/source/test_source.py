@@ -25,6 +25,8 @@ def test_trivial_tracer_construction(empty_pyccl_tracer):
     assert trivial.pt_tracer is None
     assert trivial.halo_profile is None
     assert trivial.halo_2pt is None
+    assert not trivial.has_pt
+    assert not trivial.has_hm
 
 
 def test_tracer_construction_with_name(empty_pyccl_tracer):
@@ -35,3 +37,5 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
     assert named.pt_tracer is None
     assert named.halo_profile is None
     assert named.halo_2pt is None
+    assert not named.has_pt
+    assert not named.has_hm
