@@ -1,6 +1,6 @@
 import math
 import pytest
-from firecrown.descriptors import TypeFloat
+from firecrown.descriptors import TypeFloat, TypeString
 
 
 class NotALikelihood:
@@ -59,6 +59,43 @@ class HasUpperBound:
 
     def __init__(self):
         self.x = 1.0
+
+
+class NotStringy:
+    """A class that can not be turned into a string."""
+
+    def __str__(self):
+        """Does not return a string"""
+
+
+class HasString:
+    """Test harness for string descriptors."""
+
+    x = TypeString()
+
+
+class HasShortBound:
+    """Test harness for minimum length string."""
+
+    x = TypeString(minsize=4)
+
+
+class HasLongBound:
+    """Test harness for maximum length string."""
+
+    x = TypeString(maxsize=2)
+
+
+class HasLongAndShortBounds:
+    """Test harness for both minimum and maximum length string."""
+
+    x = TypeString(minsize=3, maxsize=5)
+
+
+class StartsWithCow:
+    """Test harness that only accepts strings that start with 'cow'."""
+
+    x = TypeString(predicate=lambda s: s.startswith("cow"))
 
 
 def test_unconstrained_optional_float():
@@ -165,3 +202,28 @@ def test_upper_bound_float():
 
     d.x = -math.inf
     assert d.x == -math.inf
+
+
+def test_string_conversion_failure():
+    d = HasString()
+    with pytest.raises(TypeError):
+        d.x = NotStringy()
+
+def test_string_too_short():
+    d = HasShortBound()
+    d.x = "walrus"
+    with pytest.raises(ValueError):
+        d.x = "cow"
+
+
+def test_string_too_long():
+    d = HasLongBound()
+    d.x = "ou"
+    with pytest.raises(ValueError):
+        d.x = "cow"
+
+def test_string_predicate():
+    d = StartsWithCow()
+    d.x = "cowabunga"
+    with pytest.raises(ValueError):
+        d.x = "dog"
