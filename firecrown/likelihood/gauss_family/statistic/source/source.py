@@ -115,6 +115,7 @@ class Tracer:
         halo_profile: Optional[pyccl.halos.HaloProfile] = None,
         halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
+        assert tracer is not None
         self.ccl_tracer = tracer
         self.tracer_name: str = tracer_name or tracer.__class__.__name__
         self.field = field
