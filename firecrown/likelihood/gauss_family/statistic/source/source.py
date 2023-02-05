@@ -106,6 +106,20 @@ class Tracer:
     """Bundles together a pyccl.Tracer object with optional information about the
     underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
 
+    @staticmethod
+    def determine_field_name(field: Optional[str], tracer: Optional[str]) -> str:
+        """This function encapsulates the policy for determining the value to be
+        assigned to the :python:`field` member variable of a :python:`Tracer`.
+
+        It is a static method only to keep it grouped with the class for which it is
+        defining the initialization policy.
+        """
+        if field is not None:
+            return field
+        if tracer is not None:
+            return tracer
+        return "delta_matter"
+
     def __init__(
         self,
         tracer: pyccl.Tracer,
@@ -130,12 +144,7 @@ class Tracer:
         assert tracer is not None
         self.ccl_tracer = tracer
         self.tracer_name: str = tracer_name or tracer.__class__.__name__
-        self.field = field
-        if self.field is None:
-            if tracer_name is not None:
-                self.field = tracer_name
-            else:
-                self.field = "delta_matter"
+        self.field = Tracer.determine_field_name(field, tracer_name)
         self.pt_tracer = pt_tracer
         self.halo_profile = halo_profile
         self.halo_2pt = halo_2pt
