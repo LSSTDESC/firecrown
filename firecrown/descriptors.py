@@ -27,7 +27,6 @@ has a instance variable :python:`x` that is required to be a float in the range
 
 import math
 from abc import ABC, abstractmethod
-from .likelihood.likelihood import Likelihood
 
 
 class Validator(ABC):
