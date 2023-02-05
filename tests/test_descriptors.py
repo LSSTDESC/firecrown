@@ -209,6 +209,7 @@ def test_string_conversion_failure():
     with pytest.raises(TypeError):
         d.x = NotStringy()
 
+
 def test_string_too_short():
     d = HasShortBound()
     d.x = "walrus"
@@ -221,6 +222,7 @@ def test_string_too_long():
     d.x = "ou"
     with pytest.raises(ValueError):
         d.x = "cow"
+
 
 def test_string_predicate():
     d = StartsWithCow()
