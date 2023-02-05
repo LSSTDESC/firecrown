@@ -107,17 +107,3 @@ class TypeString(Validator):
             )
         if self.predicate is not None and not self.predicate(value):
             raise ValueError(f"Expected {self.predicate} to be true for {value!r}")
-
-
-class TypeLikelihood(Validator):
-    """Likelihood attribute descriptor."""
-
-    def __init__(self):
-        pass
-
-    def validate(self, value):
-        if not isinstance(value, Likelihood):
-            raise TypeError(
-                f"Expected {value!r} {value} {self} to be a "
-                f"firecrown.likelihood.likelihood.Likelihood"
-            )
