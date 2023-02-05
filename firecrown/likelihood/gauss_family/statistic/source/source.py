@@ -115,6 +115,18 @@ class Tracer:
         halo_profile: Optional[pyccl.halos.HaloProfile] = None,
         halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
+        """Initialize a new Tracer based on the given pyccl.Tracer which must not be
+        None.
+
+        Note that the :python:`pyccl.Tracer` is not copied; we store a reference to the
+        original tracer. Be careful not to accidentally share :python:`pyccl.Tracer`s.
+
+        If no tracer_name is supplied, then the tracer_name is set to the name of the
+        :python:`pyccl.Tracer` class that was used.
+
+        If no field is given, then field is set to either (1) the tracer_name, if one
+        was given,, or (2) 'delta_matter'.
+        """
         assert tracer is not None
         self.ccl_tracer = tracer
         self.tracer_name: str = tracer_name or tracer.__class__.__name__
