@@ -122,7 +122,7 @@ class Tracer:
             if tracer_name is not None:
                 self.field = tracer_name
             else:
-                self.field = "delta_mater"
+                self.field = "delta_matter"
         self.pt_tracer = pt_tracer
         self.halo_profile = halo_profile
         self.halo_2pt = halo_2pt
