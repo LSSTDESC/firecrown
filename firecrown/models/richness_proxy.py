@@ -9,17 +9,17 @@ class RMProxy:
     """A class for the richness proxy for the number counts likelihood."""
 
     def __init__(self):
-        self.pivot_mass = 104516977892721.36
-        self.pivot_redshift = 0.7259996508853891
+        self.pivot_mass = 4.2253521e14
+        self.pivot_redshift = 0.6
         self.log_pivot_mass = np.log(self.pivot_mass)
         self.log_1_p_pivot_redshift = np.log(1.0 + self.pivot_redshift)
         self.likelihood_parameters = None
 
     # pylint: disable-next=invalid-name
-    def compute_theory_vector(self, lnN, logm, z):
+    def compute_theory_vector(self, logN, logm, z):
         """Compute the theory vector for the richness proxy likelihood."""
         mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2 = self.likelihood_parameters
-        lnN = np.array(lnN)
+        lnN = np.log(10**logm)
         lnm = np.log(10.0**logm)
         x_mu = (
             mu_p0
@@ -36,7 +36,7 @@ class RMProxy:
 
     def mass_proxy_likelihood(
         self,
-        lnN,  # pylint: disable=invalid-name
+        logN,  # pylint: disable=invalid-name
         logm,
         z,  # pylint: disable=invalid-name
         mu_p0=1.0,
@@ -50,7 +50,7 @@ class RMProxy:
         self.likelihood_parameters = [mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2]
         # pylint: disable-next=invalid-name
         x, sigma = self.compute_theory_vector(
-            lnN,
+            logN,
             logm,
             z,
         )

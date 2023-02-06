@@ -18,7 +18,7 @@ def build_likelihood(_):
     """
     massfunc = CCLDensity("critical", "Bocquet16", False)
     stats = ClusterNumberCounts(
-        "CLUSTER_COUNTS_TRUE_MASS", "CLUSTER_MASS_COUNT_WL", massfunc
+        "cluster_counts_true_mass", "cluster_mass_count_wl", massfunc
     )
     stats = [stats]
 

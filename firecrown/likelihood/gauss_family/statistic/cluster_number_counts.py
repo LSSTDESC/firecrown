@@ -160,7 +160,7 @@ class ClusterNumberCounts(Statistic):
         return derived_parameters
 
     # pylint: disable-next=invalid-name
-    def _compute_grids(self, cosmo, lnN_tuple, logm_tuple, z_tuple, n_intervals=20):
+    def _compute_grids(self, cosmo, logN_tuple, logm_tuple, z_tuple, n_intervals=20):
         mu_p0 = self.mu_p0
         mu_p1 = self.mu_p1
         mu_p2 = self.mu_p2
@@ -169,12 +169,12 @@ class ClusterNumberCounts(Statistic):
         sigma_p2 = self.sigma_p2
         richess_mass_proxy = RMProxy()
         # pylint: disable-next=invalid-name
-        lnN_grid = np.linspace(lnN_tuple[0], lnN_tuple[1], n_intervals)
+        logN_grid = np.linspace(logN_tuple[0], logN_tuple[1], n_intervals)
 
         logm_grid = np.linspace(logm_tuple[0], logm_tuple[1], n_intervals)
         z_grid = np.linspace(z_tuple[0], z_tuple[1], n_intervals)
         # pylint: disable-next=invalid-name
-        Nmz_grid = np.zeros([len(lnN_grid), len(logm_grid), len(z_grid)])
+        Nmz_grid = np.zeros([len(logN_grid), len(logm_grid), len(z_grid)])
         # pylint: disable-next=invalid-name
         for i, z in enumerate(z_grid):
             # pylint: disable-next=invalid-name
@@ -184,29 +184,29 @@ class ClusterNumberCounts(Statistic):
                 # pylint: disable-next=invalid-name
                 nm = self.number_density_func.compute_number_density(cosmo, logm, z)
                 # pylint: disable-next=invalid-name
-                for j, lnN in enumerate(lnN_grid):
+                for j, logN in enumerate(logN_grid):
                     lk_rm = richess_mass_proxy.mass_proxy_likelihood(
-                        lnN, logm, z, mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2
+                        logN, logm, z, mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2
                     )
                     pdf = nm * dv * lk_rm
                     Nmz_grid[i, j, k] = pdf
-        return Nmz_grid, z_grid, lnN_grid, logm_grid
+        return Nmz_grid, z_grid, logN_grid, logm_grid
 
     # pylint: disable-next=invalid-name
-    def _richness_proxy_integral(self, cosmo, lnN_bins, logm_interval, z_bins):
+    def _richness_proxy_integral(self, cosmo, logN_bins, logm_interval, z_bins):
         logm_tuple = logm_interval
         bin_counts = []
         for i in range(0, len(z_bins) - 1):
-            for j in range(0, len(lnN_bins) - 1):
+            for j in range(0, len(logN_bins) - 1):
                 z_tuple = (z_bins[i], z_bins[i + 1])
                 # pylint: disable-next=invalid-name
-                lnN_tuple = (lnN_bins[j], lnN_bins[j + 1])
+                logN_tuple = (logN_bins[j], logN_bins[j + 1])
                 # pylint: disable-next=invalid-name
-                Nmz_grid, z_grid, lnN_grid, logm_grid = self._compute_grids(
-                    cosmo, lnN_tuple, logm_tuple, z_tuple
+                Nmz_grid, z_grid, logN_grid, logm_grid = self._compute_grids(
+                    cosmo, logN_tuple, logm_tuple, z_tuple
                 )
                 integral = simps(
-                    simps(simps(Nmz_grid, z_grid, axis=0), lnN_grid, axis=0),
+                    simps(simps(Nmz_grid, z_grid, axis=0), logN_grid, axis=0),
                     logm_grid,
                     axis=0,
                 )
@@ -247,7 +247,6 @@ class ClusterNumberCounts(Statistic):
             nz=nz,
             metadata=metadata,
         )
-
         self.data_vector = DataVector.from_list(nz)
         self.sacc_indices = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
@@ -312,5 +311,4 @@ class ClusterNumberCounts(Statistic):
             theory_vector = self._richness_proxy_integral(
                 ccl_cosmo, proxy_bins, logm_interval, z_bins
             )
-
         return TheoryVector.from_list(theory_vector)
