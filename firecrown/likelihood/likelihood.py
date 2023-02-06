@@ -84,44 +84,6 @@ class Likelihood(Updatable):
         """Compute the log-likelihood of generic CCL data."""
 
 
-<<<<<<< Updated upstream
-class Cosmology:
-    """Bundles together a :python:`pyccl.Cosmology` and associated tools.
-
-
-    Some example tools are perturbation theory and halo model calculator workspaces.
-    """
-
-    def __init__(self, cosmo: pyccl.Cosmology):
-        self.ccl_cosmo = cosmo
-        self.pt_calculator: pyccl.nl_pt.PTCalculator = None
-        self.hm_calculator: pyccl.halomodel.HMCalculator = None
-        self.pk: Dict[str, pyccl.Pk2D] = {}  # pylint: disable-msg=C0103
-
-    def add_pk(self, name: str, pk: pyccl.Pk2D):  # pylint: disable-msg=C0103
-        """Add a pyccl.Pk2D to the table of power spectra."""
-        self.pk[name] = pk
-
-    def get_pk(self, name: str) -> pyccl.Pk2D:
-        """Retrive a pyccl.Pk2D from the table of power spectra, or fall back
-        to what the pyccl.Cosmology object can provide."""
-        if name in self.pk:
-            return self.pk[name]
-        return self.ccl_cosmo.get_nonlin_power(name)
-
-    def has_pk(self, name: str) -> bool:
-        """Check if a power spectrum with name `name` is available."""
-        # There should probably a pyccl.Cosmology method to check if a specific
-        # power spectrum exists
-        try:
-            self.get_pk(name)
-        except KeyError:
-            return False
-        return True
-
-
-=======
->>>>>>> Stashed changes
 class LikelihoodSystematic(Updatable):
     """A systematic that can be applied to a Cosmology object."""
 
