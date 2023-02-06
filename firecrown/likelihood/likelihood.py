@@ -27,6 +27,7 @@ import sacc
 
 from ..updatable import Updatable, UpdatableCollection
 from ..parameters import ParamsMap, DerivedParameterCollection, RequiredParameters
+from ..cosmology import Cosmology
 
 
 class Likelihood(Updatable):
@@ -83,6 +84,7 @@ class Likelihood(Updatable):
         """Compute the log-likelihood of generic CCL data."""
 
 
+<<<<<<< Updated upstream
 class Cosmology:
     """Bundles together a :python:`pyccl.Cosmology` and associated tools.
 
@@ -118,6 +120,8 @@ class Cosmology:
         return True
 
 
+=======
+>>>>>>> Stashed changes
 class LikelihoodSystematic(Updatable):
     """A systematic that can be applied to a Cosmology object."""
 
