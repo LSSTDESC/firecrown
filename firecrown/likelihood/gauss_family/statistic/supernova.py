@@ -38,9 +38,7 @@ class Supernova(Statistic):
         z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = 1.0 / (1.0 + z)
         self.data_vector = DataVector.from_list([dp.value for dp in data_points])
-        self.sacc_indices = list(
-            range(0, len(self.data_vector))
-        )  # pylint: disable-msg=invalid-name
+        self.sacc_indices = np.arange(len(self.data_vector))
 
     @final
     def _update(self, params: ParamsMap):

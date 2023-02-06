@@ -106,6 +106,20 @@ class Tracer:
     """Bundles together a pyccl.Tracer object with optional information about the
     underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
 
+    @staticmethod
+    def determine_field_name(field: Optional[str], tracer: Optional[str]) -> str:
+        """This function encapsulates the policy for determining the value to be
+        assigned to the :python:`field` member variable of a :python:`Tracer`.
+
+        It is a static method only to keep it grouped with the class for which it is
+        defining the initialization policy.
+        """
+        if field is not None:
+            return field
+        if tracer is not None:
+            return tracer
+        return "delta_matter"
+
     def __init__(
         self,
         tracer: pyccl.Tracer,
@@ -115,14 +129,22 @@ class Tracer:
         halo_profile: Optional[pyccl.halos.HaloProfile] = None,
         halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
+        """Initialize a new Tracer based on the given pyccl.Tracer which must not be
+        None.
+
+        Note that the :python:`pyccl.Tracer` is not copied; we store a reference to the
+        original tracer. Be careful not to accidentally share :python:`pyccl.Tracer`s.
+
+        If no tracer_name is supplied, then the tracer_name is set to the name of the
+        :python:`pyccl.Tracer` class that was used.
+
+        If no field is given, then field is set to either (1) the tracer_name, if one
+        was given,, or (2) 'delta_matter'.
+        """
+        assert tracer is not None
         self.ccl_tracer = tracer
         self.tracer_name: str = tracer_name or tracer.__class__.__name__
-        self.field = field
-        if self.field is None:
-            if tracer_name is not None:
-                self.field = tracer_name
-            else:
-                self.field = "delta_mater"
+        self.field = Tracer.determine_field_name(field, tracer_name)
         self.pt_tracer = pt_tracer
         self.halo_profile = halo_profile
         self.halo_2pt = halo_2pt

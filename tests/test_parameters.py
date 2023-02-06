@@ -29,7 +29,7 @@ def test_create_with_wrong_arg():
     """Calling parameters.create() with an org that is neither float nor None should
     raise a TypeError."""
     with pytest.raises(TypeError):
-        _ = create("cow")
+        _ = create("cow")  # type: ignore
 
 
 def test_get_params_names_does_not_allow_mutation():
@@ -85,15 +85,15 @@ def test_derived_parameter_wrong_type():
 
     with pytest.raises(TypeError):
         _ = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
-            "sec1", "name1", "not a float"
+            "sec1", "name1", "not a float"  # type: ignore
         )
     with pytest.raises(TypeError):
         _ = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
-            "sec1", "name1", [3.14]
+            "sec1", "name1", [3.14]  # type: ignore
         )
     with pytest.raises(TypeError):
         _ = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
-            "sec1", "name1", np.array([3.14])
+            "sec1", "name1", np.array([3.14])  # type: ignore
         )
 
 
