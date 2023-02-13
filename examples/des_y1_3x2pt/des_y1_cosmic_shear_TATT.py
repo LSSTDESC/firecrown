@@ -4,10 +4,12 @@ import os
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import PTSystematic
 from firecrown.parameters import ParamsMap
+from firecrown.modeling_tools import ModelingTools
 
 import sacc
+import pyccl as ccl
+import pyccl.nl_pt
 
 
 # Load sacc file
@@ -55,7 +57,7 @@ for stat, sacc_stat in [
             )
 
 # Create the likelihood from the statistics
-pt_systematic = PTSystematic(
+pt_calculator = pyccl.nl_pt.PTCalculator(
     with_NC=False,
     with_IA=True,
     with_dd=True,
@@ -63,15 +65,17 @@ pt_systematic = PTSystematic(
     log10k_max=2,
     nk_per_decade=20,
 )
-lk = ConstGaussian(statistics=list(stats.values()), systematics=[pt_systematic])
+
+modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+likelihood = ConstGaussian(statistics=list(stats.values()))
 
 # Read the two-point data from the sacc file
-lk.read(sacc_data)
+likelihood.read(sacc_data)
 
 # To allow this likelihood to be used in cobaya or cosmosis, define a
 # an object called "likelihood" must be defined
-likelihood = lk
-print("Using parameters:", list(lk.required_parameters().get_params_names()))
+likelihood = likelihood
+print("Using parameters:", list(likelihood.required_parameters().get_params_names()))
 
 
 # We can also run the likelihood directly

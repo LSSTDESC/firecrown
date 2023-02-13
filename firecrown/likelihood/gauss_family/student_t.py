@@ -9,7 +9,6 @@ import numpy as np
 
 import pyccl
 
-from ..likelihood import LikelihoodSystematic
 from .gauss_family import GaussFamily
 from .statistic.statistic import Statistic
 from ... import parameters
@@ -32,9 +31,8 @@ class StudentT(GaussFamily):
         self,
         statistics: List[Statistic],
         nu: Optional[float],
-        systematics: Optional[List[LikelihoodSystematic]] = None,
     ):
-        super().__init__(statistics, systematics)
+        super().__init__(statistics)
         self.nu = parameters.create(nu)  # pylint: disable-msg=C0103
 
     def compute_loglike(self, ccl_cosmo: pyccl.Cosmology):

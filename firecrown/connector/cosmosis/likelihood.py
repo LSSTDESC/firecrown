@@ -60,7 +60,9 @@ class FirecrownLikelihood:
 
         self.firecrown_module_name = option_section
         self.sampling_sections = sections
-        self.likelihood = load_likelihood(likelihood_source, build_parameters)
+        self.likelihood, self.tools = load_likelihood(
+            likelihood_source, build_parameters
+        )
         self.map = mapping_builder(
             input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
         )
@@ -83,10 +85,12 @@ class FirecrownLikelihood:
         firecrown_params = self.calculate_firecrown_params(sample)
 
         self.likelihood.update(firecrown_params)
-        loglike = self.likelihood.compute_loglike(ccl_cosmo)
+        self.tools.prepare(ccl_cosmo)
+        loglike = self.likelihood.compute_loglike(self.tools)
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
         self.likelihood.reset()
+        self.tools.reset()
 
         sample.put_double(section_names.likelihoods, "firecrown_like", loglike)
 

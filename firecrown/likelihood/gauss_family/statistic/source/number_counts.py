@@ -11,11 +11,10 @@ import numpy as np
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
-from .....likelihood.likelihood import Cosmology
-
 from .source import Source, Tracer, SourceSystematic
 from ..... import parameters
 
+from .....modeling_tools import ModelingTools
 from .....parameters import (
     ParamsMap,
     RequiredParameters,
@@ -46,7 +45,9 @@ class NumberCountsSystematic(SourceSystematic):
     """Class implementing systematics for Number Counts sources."""
 
     @abstractmethod
-    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
         """Apply method to include systematics in the tracer_arg."""
 
 
@@ -95,7 +96,9 @@ class LinearBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
         """Apply a linear bias systematic.
 
         Parameters
@@ -106,10 +109,10 @@ class LinearBiasSystematic(NumberCountsSystematic):
             The source to which apply the shear bias.
         """
 
+        ccl_cosmo = tools.get_ccl_cosmology()
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= (
-            pyccl.growth_factor(cosmo.ccl_cosmo, 1.0 / (1.0 + tracer_arg.z))
-            ** self.alphag
+            pyccl.growth_factor(ccl_cosmo, 1.0 / (1.0 + tracer_arg.z)) ** self.alphag
         )
 
         if tracer_arg.bias is None:
@@ -162,7 +165,9 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
 
         z = tracer_arg.z  # pylint: disable-msg=invalid-name
         b_2_z = self.b_2 * np.ones_like(z)
@@ -226,15 +231,15 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
-        Parameters
-        ----------
-        cosmo : Cosmology
-            A Cosmology object.
-        tracer_arg : NumberCountsArgs
-            The source to which apply the shear bias.
+        :param tools: a ModelingTools object
+        :param tracer_arg: a NumberCountsArgs object
+
+        :return: a NumberCountsArgs object
         """
 
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
@@ -293,7 +298,9 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs) -> NumberCountsArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
 
         return replace(
             tracer_arg,
@@ -333,7 +340,7 @@ class PhotoZShift(NumberCountsSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: NumberCountsArgs):
+    def apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
 
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
@@ -425,12 +432,13 @@ class NumberCounts(Source):
             scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
         )
 
-    def create_tracers(self, cosmo: Cosmology):
+    def create_tracers(self, tools: ModelingTools):
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
 
+        ccl_cosmo = tools.get_ccl_cosmology()
         for systematic in self.systematics:
-            tracer_args = systematic.apply(cosmo, tracer_args)
+            tracer_args = systematic.apply(tools, tracer_args)
 
         tracers = []
 
@@ -450,7 +458,7 @@ class NumberCounts(Source):
                 tracer_names += ["rsd"]
 
             ccl_mag_tracer = pyccl.NumberCountsTracer(
-                cosmo.ccl_cosmo,
+                ccl_cosmo,
                 has_rsd=self.has_rsd,
                 dndz=(tracer_args.z, tracer_args.dndz),
                 bias=bias,
@@ -472,7 +480,7 @@ class NumberCounts(Source):
             )
 
             ccl_nc_dummy_tracer = pyccl.NumberCountsTracer(
-                cosmo.ccl_cosmo,
+                ccl_cosmo,
                 has_rsd=False,
                 dndz=(tracer_args.z, tracer_args.dndz),
                 bias=(tracer_args.z, np.ones_like(tracer_args.z)),

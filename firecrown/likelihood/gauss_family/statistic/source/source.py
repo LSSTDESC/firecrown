@@ -10,7 +10,7 @@ import sacc
 import pyccl
 import pyccl.nl_pt
 
-from .....likelihood.likelihood import Cosmology
+from .....modeling_tools import ModelingTools
 from .....parameters import ParamsMap
 from .....updatable import Updatable
 
@@ -83,21 +83,24 @@ class Source(Updatable):
         """Abstract method to return the scales for this `Source`."""
 
     @abstractmethod
-    def create_tracers(self, cosmo: Cosmology):
+    def create_tracers(self, tools: ModelingTools):
         """Abstract method to create tracers for this `Source`, for the given
         cosmology."""
 
     @final
-    def get_tracers(self, cosmo: Cosmology) -> Sequence[Tracer]:
+    def get_tracers(self, tools: ModelingTools) -> Sequence[Tracer]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same
         cosmology, no calculation needs to be done."""
-        cur_hash = hash(cosmo)
+
+        ccl_cosmo = tools.get_ccl_cosmology()
+
+        cur_hash = hash(ccl_cosmo)
         if hasattr(self, "cosmo_hash") and self.cosmo_hash == cur_hash:
             return self.tracers
 
-        self.tracers, _ = self.create_tracers(cosmo)
+        self.tracers, _ = self.create_tracers(tools)
         self.cosmo_hash = cur_hash
         return self.tracers
 
