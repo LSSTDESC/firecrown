@@ -39,7 +39,6 @@ class ClusterNumberCountsArgs:
         nz=None,  # pylint: disable-msg=invalid-name
         metadata=None,
     ):
-
         self.z_bins = z_bins
         self.Mproxy_bins = Mproxy_bins  # pylint: disable-msg=invalid-name
         self.nz = nz  # pylint: disable-msg=invalid-name
@@ -96,7 +95,6 @@ class ClusterNumberCounts(Statistic):
         sigma_p1: Optional[float] = -0.03474355855,
         sigma_p2: Optional[float] = 0.0,
     ):
-
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
@@ -282,7 +280,6 @@ class ClusterNumberCounts(Statistic):
         proxy_bins = self.tracer_args.Mproxy_bins
         theory_vector = []
         if self.sacc_tracer == "cluster_counts_true_mass":
-
             # pylint: disable-next=invalid-name
             def integrand(logm, z):
                 # pylint: disable-next=invalid-name
