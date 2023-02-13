@@ -93,7 +93,7 @@ class Statistic(Updatable):
     """An abstract statistic class (e.g., two-point function, mass function, etc.)."""
 
     systematics: List[SourceSystematic]
-    sacc_indices: List[int]
+    sacc_indices: np.ndarray
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
