@@ -19,7 +19,7 @@ class RMProxy:
     def compute_theory_vector(self, logN, logm, z):
         """Compute the theory vector for the richness proxy likelihood."""
         mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2 = self.likelihood_parameters
-        lnN = np.log(10**logm)
+        lnN = np.log(10**logN)
         lnm = np.log(10.0**logm)
         x_mu = (
             mu_p0
@@ -56,5 +56,5 @@ class RMProxy:
         )
         chisq = np.dot(x, x) / (2 * sigma**2)
         # pylint: disable-next=invalid-name
-        lk = 1.0 / (np.sqrt(2.0 * np.pi) * sigma) * np.exp(-chisq)
+        lk = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
         return lk

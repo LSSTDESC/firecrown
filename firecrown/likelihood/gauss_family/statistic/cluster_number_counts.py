@@ -89,12 +89,12 @@ class ClusterNumberCounts(Statistic):
         sacc_data_type,
         number_density_func,
         systematics: Optional[List[SourceSystematic]] = None,
-        mu_p0: Optional[float] = 1.0,
-        mu_p1: Optional[float] = 1.0,
-        mu_p2: Optional[float] = 1.0,
-        sigma_p0: Optional[float] = 1.0,
-        sigma_p1: Optional[float] = 1.0,
-        sigma_p2: Optional[float] = 1.0,
+        mu_p0: Optional[float] = 3.19,
+        mu_p1: Optional[float] = 0.8685889638,
+        mu_p2: Optional[float] = -0.30400613733,
+        sigma_p0: Optional[float] = 0.33,
+        sigma_p1: Optional[float] = -0.03474355855,
+        sigma_p2: Optional[float] = 0.0,
     ):
 
         super().__init__()
@@ -174,8 +174,9 @@ class ClusterNumberCounts(Statistic):
         logm_grid = np.linspace(logm_tuple[0], logm_tuple[1], n_intervals)
         z_grid = np.linspace(z_tuple[0], z_tuple[1], n_intervals)
         # pylint: disable-next=invalid-name
-        Nmz_grid = np.zeros([len(logN_grid), len(logm_grid), len(z_grid)])
+        Nmz_grid = np.zeros([len(z_grid), len(logN_grid), len(logm_grid)])
         # pylint: disable-next=invalid-name
+        dlnN_dlog10N = np.log(10.0) / np.log10(10.0)
         for i, z in enumerate(z_grid):
             # pylint: disable-next=invalid-name
             dv = self.number_density_func.compute_differential_comoving_volume(cosmo, z)
@@ -189,7 +190,7 @@ class ClusterNumberCounts(Statistic):
                         logN, logm, z, mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2
                     )
                     pdf = nm * dv * lk_rm
-                    Nmz_grid[i, j, k] = pdf
+                    Nmz_grid[i, j, k] = pdf * dlnN_dlog10N
         return Nmz_grid, z_grid, logN_grid, logm_grid
 
     # pylint: disable-next=invalid-name
@@ -311,4 +312,5 @@ class ClusterNumberCounts(Statistic):
             theory_vector = self._richness_proxy_integral(
                 ccl_cosmo, proxy_bins, logm_interval, z_bins
             )
+            theory_vector = [nz * DeltaOmega for nz in theory_vector]
         return TheoryVector.from_list(theory_vector)

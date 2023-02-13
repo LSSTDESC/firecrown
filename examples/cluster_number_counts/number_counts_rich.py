@@ -16,9 +16,9 @@ def build_likelihood(_):
     """
     Here we instantiate the number density (or mass function) object.
     """
-    massfunc = CCLDensity("critical", "Bocquet16", False)
+    massfunc = CCLDensity("mean", "Tinker08")
     stats = ClusterNumberCounts(
-        "CLUSTER_COUNTS_RICHNESS_PROXY", "CLUSTER_MASS_COUNT_WL", massfunc
+        "cluster_counts_richness_proxy", "cluster_mass_count_wl", massfunc
     )
     stats = [stats]
     # Here we instantiate the actual likelihood. The statistics argument carry
