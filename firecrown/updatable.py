@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Dict, Optional
+from typing import final, Dict, Optional, Any
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import (
@@ -46,25 +46,39 @@ class Updatable(ABC):
         self._internal_parameters: Dict[str, InternalParameter] = {}
         self.sacc_tracer: Optional[str] = None
 
-    def __setattr__(self, key, value):
+    def __setattr__(self, key: str, value: Any) -> None:
+        """Set the attribute named :python:`key` to the supplied :python:`value`.
+
+        Note that there is special handling for two types: :python:`SamplerParameter`
+        and :python:`InternalParameter`
+        """
         if isinstance(value, SamplerParameter):
-            if key in self._sampler_parameters or hasattr(self, key):
-                raise ValueError(
-                    f"attribute {key} already set in {self} "
-                    f"from a parameter read from the sampler"
-                )
-            self._sampler_parameters[key] = value
-            super().__setattr__(key, None)
+            self.set_sampler_parameter(key, value)
         elif isinstance(value, InternalParameter):
-            if key in self._internal_parameters or hasattr(self, key):
-                raise ValueError(
-                    f"attribute {key} already set in {self} "
-                    f"from a parameter supplied in the likelihood factory code"
-                )
-            self._internal_parameters[key] = value
-            super().__setattr__(key, value.get_value())
+            self.set_internal_parameter(key, value)
         else:
             super().__setattr__(key, value)
+
+    def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
+        """Assure this InternalParameter has not already been set, and then set it.
+        """
+        if key in self._internal_parameters or hasattr(self, key):
+            raise ValueError(
+                f"attribute {key} already set in {self} "
+                f"from a parameter supplied in the likelihood factory code"
+            )
+        self._internal_parameters[key] = value
+        super().__setattr__(key, value.get_value())
+
+    def set_sampler_parameter(self, key: str, value: SamplerParameter) -> None:
+        """Assure this SamplerParameter has not already been set, and then set it."""
+        if key in self._sampler_parameters or hasattr(self, key):
+            raise ValueError(
+                f"attribute {key} already set in {self} "
+                f"from a parameter read from the sampler"
+            )
+        self._sampler_parameters[key] = value
+        super().__setattr__(key, None)
 
     @final
     def update(self, params: ParamsMap):
