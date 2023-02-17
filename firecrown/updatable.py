@@ -60,8 +60,7 @@ class Updatable(ABC):
             super().__setattr__(key, value)
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
-        """Assure this InternalParameter has not already been set, and then set it.
-        """
+        """Assure this InternalParameter has not already been set, and then set it."""
         if key in self._internal_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
