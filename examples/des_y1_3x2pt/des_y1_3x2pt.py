@@ -23,20 +23,18 @@ def build_likelihood(_):
     # sources are saved in a dictionary since they will be used by one or more
     # two-point function.
 
-
-    sources: Dict[str, Union[nc.NumberCounts, wl.WeakLensing]] = {}    
-
+    sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
     for i in range(4):
         # Each weak-lensing section has its own multiplicative bias. Parameters
         # reflect this by using src{i}_ prefix.
         mbias = wl.MultiplicativeShearBias(sacc_tracer=f"src{i}")
 
-
         # We also include a photo-z shift bias (a constant shift in dndz). We
         # also have a different parameter for each bin, so here again we use the
         # src{i}_ prefix.
-        wl_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")        
+
+        wl_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
 
         # Now we can finally create the weak-lensing source that will compute the
         # theoretical prediction for that section of the data, given the
@@ -48,7 +46,6 @@ def build_likelihood(_):
         # Creating the number counting sources. There are five sources each one
         # labeled by lens{i}.
     for i in range(5):
-
         # We also include a photo-z shift for the dndz.
         nc_pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
 

@@ -14,6 +14,7 @@ from abc import abstractmethod
 import warnings
 
 import numpy as np
+import numpy.typing as npt
 import scipy.linalg
 
 import sacc
@@ -38,9 +39,9 @@ class GaussFamily(Likelihood):
     ):
         super().__init__()
         self.statistics = UpdatableCollection(statistics)
-        self.cov: Optional[np.ndarray] = None
-        self.cholesky: Optional[np.ndarray] = None
-        self.inv_cov: Optional[np.ndarray] = None
+        self.cov: Optional[npt.NDArray[np.float64]] = None
+        self.cholesky: Optional[npt.NDArray[np.float64]] = None
+        self.inv_cov: Optional[npt.NDArray[np.float64]] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
@@ -62,35 +63,37 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @final
-    def get_cov(self) -> np.ndarray:
+    def get_cov(self) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix."""
         assert self.cov is not None
         return self.cov
 
     @final
-    def get_data_vector(self) -> np.ndarray:
+    def get_data_vector(self) -> npt.NDArray[np.float64]:
         """Get the data vector from all statistics and concatenate in the right
         order."""
 
-        data_vector_list: List[np.ndarray] = [
+        data_vector_list: List[npt.NDArray[np.float64]] = [
             stat.get_data_vector() for stat in self.statistics
         ]
         return np.concatenate(data_vector_list)
 
     @final
-    def compute_theory_vector(self, tools: ModelingTools) -> np.ndarray:
+    def compute_theory_vector(self, tools: ModelingTools) -> npt.NDArray[np.float64]:
         """Computes the theory vector using the current instance of pyccl.Cosmology.
 
         :param tools: Current ModelingTools object
         """
 
-        theory_vector_list: List[np.ndarray] = [
+        theory_vector_list: List[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
         ]
         return np.concatenate(theory_vector_list)
 
     @final
-    def compute(self, tools: ModelingTools) -> Tuple[np.ndarray, np.ndarray]:
+    def compute(
+        self, tools: ModelingTools
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Calculate and return both the data and theory vectors."""
 
         warnings.simplefilter("always", DeprecationWarning)
@@ -106,9 +109,9 @@ class GaussFamily(Likelihood):
     @final
     def compute_chisq(self, tools: ModelingTools) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
-        theory_vector: np.ndarray
-        data_vector: np.ndarray
-        residuals: np.ndarray
+        theory_vector: npt.NDArray[np.float64]
+        data_vector: npt.NDArray[np.float64]
+        residuals: npt.NDArray[np.float64]
         try:
             theory_vector = self.compute_theory_vector(tools)
             data_vector = self.get_data_vector()
@@ -116,8 +119,8 @@ class GaussFamily(Likelihood):
             data_vector, theory_vector = self.compute(tools)
         residuals = data_vector - theory_vector
 
-        self.predicted_data_vector: np.ndarray = theory_vector
-        self.measured_data_vector: np.ndarray = data_vector
+        self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
+        self.measured_data_vector: npt.NDArray[np.float64] = data_vector
 
         # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)

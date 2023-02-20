@@ -8,6 +8,7 @@ of a Cobaya likelihood.
 from typing import List, Dict, Union
 
 import numpy as np
+import numpy.typing as npt
 from cobaya.likelihood import Likelihood
 
 from firecrown.likelihood.likelihood import load_likelihood
@@ -20,7 +21,7 @@ class LikelihoodConnector(Likelihood):
     likelihood: Likelihood
     firecrownIni: str
     derived_parameters: List[str] = []
-    build_parameters: Dict[str, Union[str, int, bool, float, np.ndarray]]
+    build_parameters: Dict[str, Union[str, int, bool, float, npt.NDArray[np.float64]]]
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown
@@ -52,7 +53,7 @@ class LikelihoodConnector(Likelihood):
 
         self.provider = provider
 
-    def get_can_provide_params(self) -> List:
+    def get_can_provide_params(self) -> List[str]:
         """Required by Cobaya.
 
         Returns an empty list.
@@ -66,13 +67,17 @@ class LikelihoodConnector(Likelihood):
         """
         return False
 
-    def get_requirements(self) -> Dict:
+    def get_requirements(
+        self,
+    ) -> Dict[str, Union[None, Dict[str, npt.NDArray[np.float64]], Dict[str, object]]]:
         """Required by Cobaya.
 
         Returns a dictionary with keys corresponding the contained likelihood's
         required parameter, plus "pyccl". All values are None.
         """
-        likelihood_requires = {"pyccl": None}
+        likelihood_requires: Dict[
+            str, Union[None, Dict[str, npt.NDArray[np.float64]], Dict[str, object]]
+        ] = {"pyccl": None}
         required_params = self.likelihood.required_parameters()
 
         for param_name in required_params.get_params_names():

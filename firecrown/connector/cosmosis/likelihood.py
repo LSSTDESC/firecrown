@@ -8,7 +8,9 @@ likelihood abstract base class; it the implementation of a CosmoSIS module,
 not a specific likelihood.
 """
 
-from typing import Dict
+from typing import Dict, Union
+import numpy as np
+import numpy.typing as npt
 
 import cosmosis.datablock
 from cosmosis.datablock import option_section
@@ -20,7 +22,11 @@ from firecrown.likelihood.likelihood import load_likelihood, Likelihood
 from firecrown.parameters import ParamsMap
 
 
-def extract_section(sample: cosmosis.datablock, section: str) -> Dict:
+def extract_section(
+    sample: cosmosis.datablock, section: str
+) -> Dict[
+    str, Union[str, int, bool, float, npt.NDArray[np.int64], npt.NDArray[np.float64]]
+]:
     """Extract the all the parameters from the name datablock section into a
     dictionary."""
     if not sample.has_section(section):

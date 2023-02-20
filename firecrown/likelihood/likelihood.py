@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Union, Optional
+from typing import List, Mapping, Tuple, Union, Optional
 from abc import abstractmethod
 import warnings
 import importlib
@@ -72,7 +72,11 @@ class Likelihood(Updatable):
 
 
 def load_likelihood(
-    filename: str, build_parameters: Dict[str, Union[str, int, bool, float, np.ndarray]]
+    filename: str,
+    build_parameters: Mapping[
+        str,
+        Union[str, int, bool, float, npt.NDArray[np.int64], npt.NDArray[np.float64]],
+    ],
 ) -> Tuple[Likelihood, ModelingTools]:
     """Loads a likelihood script and returns an instance
 

@@ -7,6 +7,7 @@ be used without an installation of NumCosmo.
 
 from typing import Dict, Union, List, Any, Optional
 import numpy as np
+import numpy.typing as npt
 import pyccl as ccl
 
 import gi
@@ -370,7 +371,9 @@ class NumCosmoFactory:
     def __init__(
         self,
         likelihood_source: str,
-        build_parameters: Dict[str, Union[str, int, bool, float, np.ndarray]],
+        build_parameters: Dict[
+            str, Union[str, int, bool, float, npt.NDArray[np.float64]]
+        ],
         model_list: List[str],
         mapping: MappingNumCosmo,
     ):
