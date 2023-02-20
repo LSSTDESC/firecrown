@@ -1,0 +1,115 @@
+---
+title: An Introduction to Firecrown
+authors:
+  - Marc Paterno
+  - Sandro Vitenti
+date: last-modified
+format:
+  revealjs:
+    footer: An Introduction to Firecrown
+    margin: 0.05
+    slide-number: true
+    theme: [default, custom.scss]
+---
+
+## Introducing Firecrown
+
+* Firecrown is the DESC *framework* for implementing likelihoods.
+* It can be used as a *standalone library* to calculate a likelihood.
+* It can be used with any of the supported *MCMC sampling frameworks* for inference.
+  Currently supported sampling frameworks are:
+    * [Cobaya](https://github.com/CobayaSampler/cobaya)
+    * [CosmoSIS](https://github.com/joezuntz/cosmosis)
+    * [NumCosmo](https://github.com/NumCosmo/NumCosmo)
+
+
+## Installation modes
+
+Firecrown supports a few different installation modes.
+
+* *Developer use*:
+  If you want to modify existing Firecrown code, or if you may produce new code and may produce a pull request to submit your code to Firecrown, use the developer installation.
+
+* *Non-developer use*:
+  If you want to write your own likelihood script or even create subclasses of classes already in Firecrown, but do not intend to submit code back to Firecrown, you can use the non-development installation.
+  If you choose this installation and decide later that you do want to submit your code back to Firecrown you will need to copy the new code files you write into a developer-usage environment at a later date.
+
+Firecrown is still under rapid development: we expect most users to be *developers*.
+
+## Developer installation 
+
+::: aside
+There are special instructions for [installation on an M1 Mac](https://firecrown.readthedocs.io/en/latest/apple_m1_instructions.html).
+:::
+
+* The following commands will:
+    1. create a *conda* environment
+    2. clone the Firecrown repository
+    3. build the CosmoSIS standard library for use with Firecrown
+* This only needs to be done once, to install Firecrown.
+
+```{{bash}}
+cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
+git clone https://github.com/LSSTDESC/firecrown.git
+# conda env update, when run as suggested, is able to create a new environment, as
+# well as updating an existing environment.
+conda env update -n firecrown_developer -f environment.yml
+conda activate firecrown_developer
+source ${CONDA_PREFIX}/bin/cosmosis-configure
+cosmosis-build-standard-library  # this may take a few minutes
+export CSL_DIR=${PWD}/cosmosis-standard-library
+export FIRECROWN_DIR=${PWD}/firecrown
+export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+```
+
+## Setting up a shell session for development
+
+* This assumes that you have already (once, presumably in a previous shell session) done the installation described [on the previous slide](#developer-installation).
+
+```{{bash}}
+cd THE_DIRECTORY_INTO_WHICH_YOU_DID_INSTALL_THINGS
+conda activate firecrown_developer
+export CSL_DIR=${PWD}/cosmosis-standard-library
+export FIRECROWN_DIR=${PWD}/firecrown
+export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+```
+
+* `CSL_DIR` is used in CosmoSIS *ini* files to allow relocatability.
+* `FIRECROWN_DIR` is used in examples.
+* `PYTHONPATH` is used by Python itself to find Firecrown modules.
+
+## Building Firecrown
+
+* We recommend against using a "developer install" using *pip* because that installation does not deal gracefully with the removal of files during development.
+* We recommend instead building directly using `setup.py`.
+
+```{{bash}}
+cd ${FIRECROWN_DIR}
+# We clean up any previous build to ensure stale code is never found by python.
+rm -rf build/*
+python setup.py build
+```
+
+## Code development hygiene
+
+* We are using a variety of tools to help with "code hygiene".
+* The Continuous Integration (CI) system will enforce these.
+
+```{{bash}}
+# We are using type hints and mypy to help catch type-related errors.
+mypy -p firecrown -p examples -p tests
+
+# We are using flake8 to help verify PEP8 compliance.
+flake8 firecrown examples tests
+
+# We are using pylint to enforce a variety of rules.
+# Not all of the code is "clean" according to pylint; this is a work in progress
+pylint --rcfile pylintrc_for_tests --recursive=y tests
+pylint --recursive=y firecrown examples
+
+# We are using black to keep consistent formatting across all python source files.
+black --check firecrown/ examples/ tests/
+
+# Note that this use of black does not actually change any file. If files other than
+# those you edited are complained about by black, please file an issue.
+```
