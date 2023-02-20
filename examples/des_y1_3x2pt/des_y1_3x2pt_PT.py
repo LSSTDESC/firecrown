@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 import os
 
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
@@ -9,6 +9,7 @@ from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
+from firecrown.likelihood.likelihood import Likelihood
 
 import sacc
 import pyccl as ccl
@@ -21,7 +22,7 @@ saccfile = os.path.expanduser(
 )
 
 
-def build_likelihood(_):
+def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
 
     # Load sacc file
@@ -114,7 +115,7 @@ def build_likelihood(_):
 
 
 # We can also run the likelihood directly
-def run_likelihood():
+def run_likelihood() ->  None:
     import numpy as np
     import matplotlib.pyplot as plt
 
@@ -196,6 +197,7 @@ def run_likelihood():
     x = likelihood.statistics[0].ell_or_theta_
     y_data = likelihood.statistics[0].measured_statistic_
 
+    assert isinstance(likelihood, ConstGaussian)
     assert likelihood.cov is not None
 
     y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
@@ -296,6 +298,7 @@ def run_likelihood():
     fig.savefig("plots/pt_cls.png", facecolor="white", dpi=300)
 
     plt.show()
+
 
 if __name__ == "__main__":
     run_likelihood()

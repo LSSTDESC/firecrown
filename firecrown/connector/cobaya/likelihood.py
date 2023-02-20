@@ -29,7 +29,8 @@ class LikelihoodConnector(Likelihood):
             build_parameters = {}
         else:
             build_parameters = self.build_parameters
-        self.likelihood = load_likelihood(self.firecrownIni, build_parameters)
+
+        self.likelihood, self.tools = load_likelihood(self.firecrownIni, build_parameters)
 
     def get_param(self, p: str):
         """Return the current value of the parameter named 'p'."""
@@ -91,10 +92,13 @@ class LikelihoodConnector(Likelihood):
         pyccl = self.provider.get_pyccl()
 
         self.likelihood.update(ParamsMap(params_values))
-        loglike = self.likelihood.compute_loglike(pyccl)
+        self.tools.prepare(pyccl)
+
+        loglike = self.likelihood.compute_loglike(self.tools)
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
         self.likelihood.reset()
+        self.tools.reset()
 
         for section, name, val in derived_params_collection:
             params_values["_derived"][f"{section}__{name}"] = val

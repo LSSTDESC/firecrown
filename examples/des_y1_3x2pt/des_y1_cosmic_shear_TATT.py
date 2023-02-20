@@ -1,92 +1,106 @@
-#!/usr/bin/env python
+"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
+
 import os
+from typing import Tuple, Any
+import sacc
+import pyccl as ccl
+import pyccl.nl_pt
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
-
-import sacc
-import pyccl as ccl
-import pyccl.nl_pt
+from firecrown.likelihood.likelihood import Likelihood
 
 
-# Load sacc file
 saccfile = os.path.expanduser(
     os.path.expandvars(
         "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
     )
 )
-sacc_data = sacc.Sacc.load_fits(saccfile)
 
 
-# Define sources
-n_source = 1
-sources = {}
+def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+    """Build the likelihood for the DES Y1 cosmic shear data TATT."""
+    # Load sacc file
+    sacc_data = sacc.Sacc.load_fits(saccfile)
 
-# Define the intrinsic alignment systematic. This will be added to the
-# lensing sources later
-ia_systematic = wl.TattAlignmentSystematic()
+    # Define sources
+    n_source = 1
+    sources = {}
 
-for i in range(n_source):
-    # Define the photo-z shift systematic.
-    pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+    # Define the intrinsic alignment systematic. This will be added to the
+    # lensing sources later
+    ia_systematic = wl.TattAlignmentSystematic()
 
-    # Create the weak lensing source, specifying the name of the tracer in the
-    # sacc file and a list of systematics
-    sources[f"src{i}"] = wl.WeakLensing(
-        sacc_tracer=f"src{i}", systematics=[pzshift, ia_systematic]
+    for i in range(n_source):
+        # Define the photo-z shift systematic.
+        pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+
+        # Create the weak lensing source, specifying the name of the tracer in the
+        # sacc file and a list of systematics
+        sources[f"src{i}"] = wl.WeakLensing(
+            sacc_tracer=f"src{i}", systematics=[pzshift, ia_systematic]
+        )
+
+    # Define the statistics we like to include in the likelihood
+    stats = {}
+    for stat, sacc_stat in [
+        ("xip", "galaxy_shear_xi_plus"),
+        ("xim", "galaxy_shear_xi_minus"),
+    ]:
+        for i in range(n_source):
+            for j in range(i, n_source):
+                # Define two-point statistics, given two sources (from above) and
+                # the type of statistic.
+                stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
+                    source0=sources[f"src{i}"],
+                    source1=sources[f"src{j}"],
+                    sacc_data_type=sacc_stat,
+                )
+
+    # Create the likelihood from the statistics
+    pt_calculator = pyccl.nl_pt.PTCalculator(
+        with_NC=False,
+        with_IA=True,
+        with_dd=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
     )
 
+    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    likelihood = ConstGaussian(statistics=list(stats.values()))
 
-# Define the statistics we like to include in the likelihood
-stats = {}
-for stat, sacc_stat in [
-    ("xip", "galaxy_shear_xi_plus"),
-    ("xim", "galaxy_shear_xi_minus"),
-]:
-    for i in range(n_source):
-        for j in range(i, n_source):
-            # Define two-point statistics, given two sources (from above) and
-            # the type of statistic.
-            stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
-                source0=sources[f"src{i}"],
-                source1=sources[f"src{j}"],
-                sacc_data_type=sacc_stat,
-            )
+    # Read the two-point data from the sacc file
+    likelihood.read(sacc_data)
 
-# Create the likelihood from the statistics
-pt_calculator = pyccl.nl_pt.PTCalculator(
-    with_NC=False,
-    with_IA=True,
-    with_dd=True,
-    log10k_min=-4,
-    log10k_max=2,
-    nk_per_decade=20,
-)
+    # To allow this likelihood to be used in cobaya or cosmosis, define a
+    # an object called "likelihood" must be defined
+    print(
+        "Using parameters:", list(likelihood.required_parameters().get_params_names())
+    )
 
-modeling_tools = ModelingTools(pt_calculator=pt_calculator)
-likelihood = ConstGaussian(statistics=list(stats.values()))
-
-# Read the two-point data from the sacc file
-likelihood.read(sacc_data)
-
-# To allow this likelihood to be used in cobaya or cosmosis, define a
-# an object called "likelihood" must be defined
-likelihood = likelihood
-print("Using parameters:", list(likelihood.required_parameters().get_params_names()))
+    return likelihood, modeling_tools
 
 
 # We can also run the likelihood directly
-if __name__ == "__main__":
-    import numpy as np
-    import pyccl as ccl
-    import pyccl.nl_pt as pt
-    import matplotlib.pyplot as plt
+def run_likelihood() -> None:
+    """Run the likelihood."""
+
+    import numpy as np  # pylint: disable-msg=import-outside-toplevel
+    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
+
+    like_and_tools = build_likelihood(None)
+    likelihood: Likelihood = like_and_tools[0]
+    tools: ModelingTools = like_and_tools[1]
+
+    # Load sacc file
+    sacc_data = sacc.Sacc.load_fits(saccfile)
 
     src0_tracer = sacc_data.get_tracer("src0")
-    z, nz = src0_tracer.z, src0_tracer.nz
+    z, nz = src0_tracer.z, src0_tracer.nz  # pylint: disable-msg=invalid-name
 
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
@@ -96,19 +110,21 @@ if __name__ == "__main__":
     a_1 = 1.0
     a_2 = 0.5
     a_d = 0.5
-    c_1, c_d, c_2 = pt.translate_IA_norm(
+    c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
         ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
     # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(
+    ptc = pyccl.nl_pt.PTCalculator(
         with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
     )
-    ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
-    ptt_m = pt.PTMatterTracer()
+    ptt_i = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
+        c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d)
+    )
+    ptt_m = pyccl.nl_pt.PTMatterTracer()
     # IAs x matter
-    pk_im = pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
+    pk_im = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
+    pk_ii = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -125,27 +141,38 @@ if __name__ == "__main__":
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
+
+    # Prepare the cosmology object
+    tools.prepare(ccl_cosmo)
+
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
-    log_like = likelihood.compute_loglike(ccl_cosmo)
+    log_like = likelihood.compute_loglike(tools)
 
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
-    x = likelihood.statistics[0].ell_or_theta_
-    y_data = likelihood.statistics[0].measured_statistic_
 
+    two_point_0 = likelihood.statistics[0]
+    assert isinstance(two_point_0, TwoPoint)
+
+    # x = two_point_0.ell_or_theta_
+    # y_data = two_point_0.measured_statistic_
+
+    assert isinstance(likelihood, ConstGaussian)
     assert likelihood.cov is not None
 
-    y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
-    y_theory = likelihood.statistics[0].predicted_statistic_
+    # y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
+    # y_theory = two_point_0.predicted_statistic_
 
-    print(list(likelihood.statistics[0].cells.keys()))
+    # pylint: disable=no-member
+    print(list(two_point_0.cells.keys()))
 
-    ells = likelihood.statistics[0].ells
-    cells_gg = likelihood.statistics[0].cells[("shear", "shear")]
-    cells_gi = likelihood.statistics[0].cells[("shear", "intrinsic_pt")]
-    cells_ii = likelihood.statistics[0].cells[("intrinsic_pt", "intrinsic_pt")]
-    cells_total = likelihood.statistics[0].cells["total"]
+    ells = two_point_0.ells
+    cells_gg = two_point_0.cells[("shear", "shear")]
+    cells_gi = two_point_0.cells[("shear", "intrinsic_pt")]
+    cells_ii = two_point_0.cells[("intrinsic_pt", "intrinsic_pt")]
+    cells_total = two_point_0.cells["total"]
+    # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
@@ -156,6 +183,7 @@ if __name__ == "__main__":
         ia_bias=(z, np.ones_like(z)),
         use_A_ia=False,
     )
+    # pylint: disable=invalid-name
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
     # The weak gravitational lensing power spectrum
@@ -164,6 +192,7 @@ if __name__ == "__main__":
     cl_theory = (
         cl_GG + 2 * cl_GI + cl_II
     )  # normally we would also have a third term, +cl_II).
+    # pylint: enable=invalid-name
 
     # plt.plot(x, y_theory, label="Total")
     plt.plot(ells, cells_gg, label="GG firecrown")
@@ -187,3 +216,7 @@ if __name__ == "__main__":
     plt.savefig("plots/tatt.png", facecolor="white", dpi=300)
 
     plt.show()
+
+
+if __name__ == "__main__":
+    run_likelihood()
