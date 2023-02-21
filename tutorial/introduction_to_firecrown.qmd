@@ -1,54 +1,103 @@
 ---
 title: An Introduction to Firecrown
+subtitle: release version 1.4.0
 authors:
   - Marc Paterno
   - Sandro Vitenti
 date: last-modified
 format:
   revealjs:
-    footer: An Introduction to Firecrown
+    footer: "An Introduction to Firecrown | Paterno and Vitenti"
     margin: 0.05
     slide-number: true
     theme: [default, custom.scss]
+    title-slide-attributes:
+      data-background-color: black
+      data-background-image: logo-dark-mode.png
+      data-background-size: 40%
+      data-background-position: right bottom
+    include-after-body: clean_title_slide.html
 ---
+
+# What is Firecrown?
 
 ## Introducing Firecrown
 
-* Firecrown is the DESC *framework* for implementing likelihoods.
-* It can be used as a *standalone library* to calculate a likelihood.
-* It can be used with any of the supported *MCMC sampling frameworks* for inference.
-  Currently supported sampling frameworks are:
-    * [Cobaya](https://github.com/CobayaSampler/cobaya)
-    * [CosmoSIS](https://github.com/joezuntz/cosmosis)
-    * [NumCosmo](https://github.com/NumCosmo/NumCosmo)
+-   Firecrown is the DESC *framework* for implementing likelihoods.
+-   It can be used as a *standalone library* to calculate a likelihood.
+-   It can be used with any of the supported *MCMC sampling frameworks* for inference. Currently supported sampling frameworks are:
+    -   [Cobaya](https://github.com/CobayaSampler/cobaya)
+    -   [CosmoSIS](https://github.com/joezuntz/cosmosis)
+    -   [NumCosmo](https://github.com/NumCosmo/NumCosmo)
 
+## Basic Firecrown concepts
+
+-   Likelihoods
+-   Statistics
+-   Sources
+-   Systematics
+
+## Workflow
+
+::: columns
+::: {.column width="50%"}
+In a factory function:
+
+-   Define source systematics
+-   Create `Source` objects
+-   Create `Statistics` objects
+-   Create the `Likelihood` and `Toolset` objects
+-   Load SACC data into the `Likelihood` object
+-   Return the `Likelihood` and `Toolset`
+:::
+
+::: {.column width="50%"}
+Optionally, add a demo program:
+
+-   Use your factory function to create a likelihood and toolset
+-   Create a `pyccl.Cosmology`
+-   Update the likelihood and toolset using the cosmology
+-   Evaluate your likelihood using the toolset
+:::
+:::
+
+## Examples in the repository
+
+-   Simplified DES Y1 cosmic shear
+    -   Only for CosmoSIS
+-   DES Y1 3x2pt
+    -   For Cobaya, CosmoSIS and NumCosmo
+    -   basic version
+    -   version perturbation theory systematics
+-   SRD Supernova
+    -   For CosmoSIS and NumCosmo
+
+# Installation and setup
 
 ## Installation modes
 
 Firecrown supports a few different installation modes.
 
-* *Developer use*:
-  If you want to modify existing Firecrown code, or if you may produce new code and may produce a pull request to submit your code to Firecrown, use the developer installation.
+-   *Developer use*: If you want to modify existing Firecrown code, or if you may produce new code and may produce a pull request to submit your code to Firecrown, use the developer installation.
 
-* *Non-developer use*:
-  If you want to write your own likelihood script or even create subclasses of classes already in Firecrown, but do not intend to submit code back to Firecrown, you can use the non-development installation.
-  If you choose this installation and decide later that you do want to submit your code back to Firecrown you will need to copy the new code files you write into a developer-usage environment at a later date.
+-   *Non-developer use*: If you want to write your own likelihood class or create subclasses of classes already in Firecrown, but do not intend to submit code back to Firecrown, you can use the non-development installation.
+    If you choose this installation and decide later that you do want to submit your code back to Firecrown you will need to copy the new code files you write into a developer-usage environment at a later date.
 
-Firecrown is still under rapid development: we expect most users to be *developers*.
+Firecrown is still under rapid development: we expect most users to be developers.
 
-## Developer installation 
+## Developer installation {#developer-installation}
 
 ::: aside
 There are special instructions for [installation on an M1 Mac](https://firecrown.readthedocs.io/en/latest/apple_m1_instructions.html).
 :::
 
-* The following commands will:
-    1. create a *conda* environment
-    2. clone the Firecrown repository
-    3. build the CosmoSIS standard library for use with Firecrown
-* This only needs to be done once, to install Firecrown.
+-   The following commands will:
+    1.  create a *conda* environment
+    2.  clone the Firecrown repository
+    3.  build the CosmoSIS standard library for use with Firecrown
+-   Installation only needs to be done once.
 
-```{{bash}}
+``` {{bash}}
 cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
 git clone https://github.com/LSSTDESC/firecrown.git
 # conda env update, when run as suggested, is able to create a new environment, as
@@ -64,9 +113,9 @@ export PYTHONPATH=${FIRECROWN_DIR}/build/lib
 
 ## Setting up a shell session for development
 
-* This assumes that you have already (once, presumably in a previous shell session) done the installation described [on the previous slide](#developer-installation).
+-   This assumes that you have already (once, presumably in a previous shell session) done the installation described [on the previous slide](#developer-installation).
 
-```{{bash}}
+``` {{bash}}
 cd THE_DIRECTORY_INTO_WHICH_YOU_DID_INSTALL_THINGS
 conda activate firecrown_developer
 export CSL_DIR=${PWD}/cosmosis-standard-library
@@ -74,16 +123,16 @@ export FIRECROWN_DIR=${PWD}/firecrown
 export PYTHONPATH=${FIRECROWN_DIR}/build/lib
 ```
 
-* `CSL_DIR` is used in CosmoSIS *ini* files to allow relocatability.
-* `FIRECROWN_DIR` is used in examples.
-* `PYTHONPATH` is used by Python itself to find Firecrown modules.
+-   `CSL_DIR` is used in CosmoSIS *ini* files to allow CosmoSIS to be run from any directory.
+-   `FIRECROWN_DIR` is used in examples.
+-   `PYTHONPATH` is used by Python itself to find Firecrown modules.
 
 ## Building Firecrown
 
-* We recommend against using a "developer install" using *pip* because that installation does not deal gracefully with the removal of files during development.
-* We recommend instead building directly using `setup.py`.
+-   We recommend against using a "developer install" using `pip install -e` because that installation does not deal gracefully with the removal of files during development.
+-   We recommend instead building directly using `setup.py`.
 
-```{{bash}}
+``` {{bash}}
 cd ${FIRECROWN_DIR}
 # We clean up any previous build to ensure stale code is never found by python.
 rm -rf build/*
@@ -92,10 +141,10 @@ python setup.py build
 
 ## Code development hygiene
 
-* We are using a variety of tools to help with "code hygiene".
-* The Continuous Integration (CI) system will enforce these.
+-   We are using a variety of tools to help with "code hygiene".
+-   The Continuous Integration (CI) system will enforce these.
 
-```{{bash}}
+``` {{bash}}
 # We are using type hints and mypy to help catch type-related errors.
 mypy -p firecrown -p examples -p tests
 
