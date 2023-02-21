@@ -5,7 +5,7 @@
 	quarto render $<
 
 all: introduction_to_firecrown.html
-introduction_to_firecrown.html: custom.scss
+introduction_to_firecrown.html: custom.scss clean_title_slide.html
 
 clean:
-	rm -f *.html
+	rm -rf introduction_to_firecrown.html introduction_to_firecrown_files/
