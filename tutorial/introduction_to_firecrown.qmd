@@ -8,15 +8,18 @@ date: last-modified
 format:
   revealjs:
     footer: "An Introduction to Firecrown | Paterno and Vitenti"
+    highlight-style: arrow
+    include-after-body: clean_title_slide.html
     margin: 0.05
+    navigation-mode: linear
     slide-number: true
-    theme: [default, custom.scss]
+    theme: [serif, custom.scss]
     title-slide-attributes:
       data-background-color: black
       data-background-image: logo-dark-mode.png
       data-background-size: 40%
       data-background-position: right bottom
-    include-after-body: clean_title_slide.html
+
 ---
 
 # What is Firecrown?
