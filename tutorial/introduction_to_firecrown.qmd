@@ -148,20 +148,19 @@ python setup.py build
 -   The Continuous Integration (CI) system will enforce these.
 
 ``` {{bash}}
-# We are using type hints and mypy to help catch type-related errors.
-mypy -p firecrown -p examples -p tests
+# We are using black to keep consistent formatting across all python source files.
+# Note that this use of 'black --check' does not actually change any file. If files other
+# than those you edited are complained about by black, please file an issue.
+black --check firecrown/ examples/ tests/
 
 # We are using flake8 to help verify PEP8 compliance.
 flake8 firecrown examples tests
+
+# We are using type hints and mypy to help catch type-related errors.
+mypy -p firecrown -p examples -p tests
 
 # We are using pylint to enforce a variety of rules.
 # Not all of the code is "clean" according to pylint; this is a work in progress
 pylint --rcfile pylintrc_for_tests --recursive=y tests
 pylint --recursive=y firecrown examples
-
-# We are using black to keep consistent formatting across all python source files.
-black --check firecrown/ examples/ tests/
-
-# Note that this use of black does not actually change any file. If files other than
-# those you edited are complained about by black, please file an issue.
 ```
