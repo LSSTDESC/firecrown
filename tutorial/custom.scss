@@ -17,3 +17,13 @@ $presentation-font-size-root: 32px;
   font-size: 0.8em !important;
   text-align: center !important;
 }
+
+.reveal code {
+  // Monospaced fonts typically are larger than
+  font-size: smaller;
+}
+
+.reveal .sourceCode {
+  // This is used for code blocks, not inline code
+  font-size: large;
+}
