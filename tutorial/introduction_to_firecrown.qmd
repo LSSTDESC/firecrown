@@ -19,7 +19,6 @@ format:
       data-background-image: logo-dark-mode.png
       data-background-size: 40%
       data-background-position: right bottom
-
 ---
 
 # What is Firecrown?
@@ -35,9 +34,27 @@ format:
 
 ## Basic Firecrown concepts
 
+-   Cosmology
+-   Modeling tools
 -   Likelihoods
--   Statistics
--   Sources
+-   Statistics (for Gaussian-family likelihoods)
+-   Sources (for two-point statistics)
+-   Systematics
+
+## High-level Firecrown concepts
+
+-   Cosmology (`pyccl.Cosmology`): represents a parameterized cosmological model.
+-   Modeling tools (`firecrown.likelihood.ModelingTools`): associates a set of theoretical models for physical effects with a cosmology.
+    -   specific physical effects will get added as they are invented.\
+-   Likelihoods: calculates the probability of observing some given (presumably DESC) *data*, based on a certain set of parameters used in predictions of that data.
+    -   `calculate_loglike(tools) -> float`
+
+## Building blocks for likelihoods
+
+-   Statistics: provide access to observations (a *data vector*) and to calculate predictions (a *theory vector*) based on a set of parameters (a *cosmology*).
+    -   `get_data_vector() -> DataVector`
+    -   `compute_theory_vector(tools) -> TheoryVector`
+-   Sources:
 -   Systematics
 
 ## Workflow
@@ -164,3 +181,28 @@ mypy -p firecrown -p examples -p tests
 pylint --rcfile pylintrc_for_tests --recursive=y tests
 pylint --recursive=y firecrown examples
 ```
+
+# Implementing a new [`ConstGaussian`]{.fragment} likelihood
+
+## Organize your data
+
+-   Firecrown expects data to be in [SACC](https://sacc.readthedocs.io) format.
+-   Tracers: these are what you have observed
+-   Covariance: correlations between observations
+
+## Select your statistics
+
+-   How do you predict what you expect to observe, given a cosmology?
+-   What are your nuisance parameters?
+  -   Encapsulate these as statistics
+  -   Are they fixed values, or are you sampling over them?
+
+## Write tests as you go along
+
+-   You are more likely to write easy-to-use code if you actually use it as you write.
+-   You are more likely to write code that achieves your purposes if you know what your purpose is as you write.
+-   Writing tests as you design your code achieves both of these goals.
+
+## Write your factory function
+
+-   Structuring your factory function well helps make it easier for you, and others, to understand what you have written.
