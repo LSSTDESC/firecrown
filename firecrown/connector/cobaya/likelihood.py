@@ -30,7 +30,9 @@ class LikelihoodConnector(Likelihood):
         else:
             build_parameters = self.build_parameters
 
-        self.likelihood, self.tools = load_likelihood(self.firecrownIni, build_parameters)
+        self.likelihood, self.tools = load_likelihood(
+            self.firecrownIni, build_parameters
+        )
 
     def get_param(self, p: str):
         """Return the current value of the parameter named 'p'."""
