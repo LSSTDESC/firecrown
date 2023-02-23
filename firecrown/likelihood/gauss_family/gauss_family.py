@@ -35,7 +35,6 @@ class GaussFamily(Likelihood):
     def __init__(
         self,
         statistics: Sequence[Statistic],
-        systematics: Optional[List[LikelihoodSystematic]] = None,
     ):
         super().__init__()
         self.statistics = UpdatableCollection(statistics)
