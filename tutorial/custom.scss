@@ -8,8 +8,13 @@ $font-family-serif: "Crimson Pro", serif;
 $presentation-heading-font: "Crimson Pro", serif;
 $font-family-serif: "Crimson Pro", serif;
 $link-color: #1111ff;
+$red: #dc1111;
 
 /*-- scss:rules --*/
+
+.reveal .alert {
+  color: $red;
+}
 
 .reveal .slide-number {
   // color: $link-color;

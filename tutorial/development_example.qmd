@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: current development head
+subtitle: release version 1.4.0
 authors:
   - Marc Paterno
   - Sandro Vitenti
@@ -195,7 +195,7 @@ black --check firecrown/ examples/ tests/
 flake8 firecrown examples tests
 
 # We are using type hints and mypy to help catch type-related errors.
-mypy --ignore-missing-imports -p firecrown -p examples -p tests
+mypy -p firecrown -p examples -p tests
 
 # We are using pylint to enforce a variety of rules.
 # Not all of the code is "clean" according to pylint; this is a work in progress
@@ -209,3 +209,52 @@ pylint --recursive=y firecrown/likelihood/gauss_family/*.py
 python -m pytest -v tests
 ```
 
+# Implementing a new [`ConstGaussian`]{.fragment} likelihood
+
+## Overview
+
+-   We will write a new *factory function* that will generate a likelihood that can be used with any of the supported samplers.
+-   This likelihood will use some new data.
+-   It will use some existing statistics and systematics.
+-   The only new code will be our factory function, which assembles the specific instance of `ConstGaussian` that we want to use for our (toy) analysis.
+
+## Organize your data
+
+-   Firecrown expects data to be in [SACC](https://sacc.readthedocs.io) format.
+-   Tracers: these are what you have observed
+-   Covariance: correlations between observations
+
+## Select your statistics
+
+-   How do you predict what you expect to observe, given a cosmology?
+-   What are your nuisance parameters?
+  -   Encapsulate these as statistics
+  -   Are they fixed values, or are you sampling over them?
+
+## Write tests as you go along
+
+-   You are more likely to write easy-to-use code if you actually use it as you write.
+-   You are more likely to write code that achieves your purposes if you know what your purpose is as you write.
+-   Writing tests as you design your code achieves both of these goals.
+
+## Write your factory function
+
+-   Structuring your factory function well helps make it easier for you, and others, to understand what you have written.
+
+```{{python}}
+from os.path 
+import firecrown.likelihood.gauss_family.statistic.supernova as sn
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+import sacc
+
+SACC_FILENAME =
+    os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
+
+def build_likelihood(_):
+    snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
+    likelihood = ConstGaussian(statistics=[snia_stats])
+    sacc_data = sacc.Sacc.load_fits(SACC_FILENAME)
+    likelihood.read(sacc_data)
+    # This simple likelihood has no associated ModelingTools
+    return likelihood, None
+```
