@@ -115,7 +115,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 
 
 # We can also run the likelihood directly
-def run_likelihood() ->  None:
+def run_likelihood() -> None:
     import numpy as np
     import matplotlib.pyplot as plt
 
