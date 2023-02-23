@@ -168,7 +168,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
-
         z = tracer_arg.z  # pylint: disable-msg=invalid-name
         b_2_z = self.b_2 * np.ones_like(z)
         b_s_z = self.b_s * np.ones_like(z)
@@ -301,7 +300,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
-
         return replace(
             tracer_arg,
             mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z) * self.mag_bias),
