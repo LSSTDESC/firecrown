@@ -94,11 +94,14 @@ class SimpleUpdatable(Updatable):
 
 def test_verify_abstract_interface():
     with pytest.raises(TypeError):
-        _ = Missing_update()  # pylint: disable-msg=E0110,W0612
+        # pylint: disable-next=E0110,W0612
+        _ = Missing_update()  # type: ignore
     with pytest.raises(TypeError):
-        _ = Missing_reset()  # pylint: disable-msg=E0110,W0612
+        # pylint: disable-next=E0110,W0612
+        _ = Missing_reset()  # type: ignore
     with pytest.raises(TypeError):
-        _ = Missing_required_parameters()  # pylint: disable-msg=E0110,W0612
+        # pylint: disable-next=E0110,W0612
+        _ = Missing_required_parameters()  # type: ignore
 
 
 def test_simple_updatable():
@@ -151,7 +154,7 @@ def test_updatable_collection_rejects_nonupdatables():
     assert len(coll) == 0
 
     with pytest.raises(TypeError):
-        coll.append(3)  # int is not a subtype of Updatable
+        coll.append(3)  # type: ignore
     assert len(coll) == 0
 
 

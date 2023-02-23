@@ -192,7 +192,7 @@ class TwoPoint(Statistic):
         self.measured_statistic_: Optional[DataVector] = None
         self.ell_or_theta_: Optional[np.ndarray] = None
 
-        self.sacc_tracers: Optional[List[str]] = None
+        self.sacc_tracers: List[str]
         self.ells: Optional[np.ndarray] = None
         self.cells: Dict[Union[Tuple[str, str], str], np.ndarray] = {}
 
@@ -236,6 +236,8 @@ class TwoPoint(Statistic):
         self.source0.read(sacc_data)
         self.source1.read(sacc_data)
 
+        assert self.source0.sacc_tracer is not None
+        assert self.source1.sacc_tracer is not None
         tracers = [self.source0.sacc_tracer, self.source1.sacc_tracer]
 
         if self.ccl_kind == "cl":
@@ -264,7 +266,6 @@ class TwoPoint(Statistic):
         if len(_ell_or_theta) == 0 or len(_stat) == 0:
             _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
             _stat = np.zeros_like(_ell_or_theta)
-            self.sacc_indices = None
         else:
             self.sacc_indices = np.atleast_1d(
                 sacc_data.indices(self.sacc_data_type, tuple(tracers))

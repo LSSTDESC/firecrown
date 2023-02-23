@@ -8,7 +8,7 @@ Some notes.
 """
 
 from __future__ import annotations
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Sequence
 from typing import final
 from abc import abstractmethod
 import warnings
@@ -34,7 +34,8 @@ class GaussFamily(Likelihood):
 
     def __init__(
         self,
-        statistics: List[Statistic],
+        statistics: Sequence[Statistic],
+        systematics: Optional[List[LikelihoodSystematic]] = None,
     ):
         super().__init__()
         self.statistics = UpdatableCollection(statistics)

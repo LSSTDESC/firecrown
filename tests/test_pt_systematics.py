@@ -1,5 +1,7 @@
 import os
 
+import pytest
+
 import numpy as np
 import pyccl as ccl
 import pyccl.nl_pt as pt
@@ -12,79 +14,48 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 
 
-def test_pt_systematics():
+@pytest.fixture(name="weak_lensing_source")
+def fixture_weak_lensing_source():
+    ia_systematic = wl.TattAlignmentSystematic()
+    pzshift = wl.PhotoZShift(sacc_tracer="src0")
+    return wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
+
+
+@pytest.fixture(name="number_counts_source")
+def fixture_number_counts_source():
+    pzshift = nc.PhotoZShift(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
+    return nc.NumberCounts(
+        sacc_tracer="lens0", has_rsd=True, systematics=[pzshift, magnification, nl_bias]
+    )
+
+
+@pytest.fixture(name="sacc_data")
+def fixture_sacc_data():
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
-    # pylint: disable-msg=too-many-locals
-    # pylint: disable-msg=too-many-statements
-
     saccfile = os.path.join(
         os.path.split(__file__)[0],
         "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
     )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    return sacc.Sacc.load_fits(saccfile)
 
-    # Define sources
-    n_source = 1
-    n_lens = 1
-    sources = {}
 
-    # Define the intrinsic alignment systematic. This will be added to the
-    # lensing sources later
-    ia_systematic = wl.TattAlignmentSystematic()
+def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
+    # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
+    # generally not a good practice. In this case, the warnings are indicating that this
+    # test is too complicated.
+    #
+    # pylint: disable-msg=too-many-locals
+    # pylint: disable-msg=too-many-statements
+    stats = [
+        TwoPoint("galaxy_shear_xi_plus", weak_lensing_source, weak_lensing_source),
+        TwoPoint("galaxy_shear_xi_minus", weak_lensing_source, weak_lensing_source),
+        TwoPoint("galaxy_shearDensity_xi_t", number_counts_source, weak_lensing_source),
+        TwoPoint("galaxy_density_xi", number_counts_source, number_counts_source),
+    ]
 
-    for i in range(n_source):
-        # Define the photo-z shift systematic.
-        pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
-
-        # Create the weak lensing source, specifying the name of the tracer in the
-        # sacc file and a list of systematics
-        sources[f"src{i}"] = wl.WeakLensing(
-            sacc_tracer=f"src{i}", systematics=[pzshift, ia_systematic]
-        )
-
-    for i in range(n_lens):
-        pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
-        magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
-
-        nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
-        sources[f"lens{i}"] = nc.NumberCounts(
-            sacc_tracer=f"lens{i}",
-            has_rsd=True,
-            systematics=[pzshift, magnification, nl_bias],
-        )
-
-    # Define the statistics we like to include in the likelihood
-    stats = {}
-    for stat, sacc_stat in [
-        ("xip", "galaxy_shear_xi_plus"),
-        ("xim", "galaxy_shear_xi_minus"),
-    ]:
-        for i in range(n_source):
-            for j in range(i, n_source):
-                # Define two-point statistics, given two sources (from above) and
-                # the type of statistic.
-                stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
-                    source0=sources[f"src{i}"],
-                    source1=sources[f"src{j}"],
-                    sacc_data_type=sacc_stat,
-                )
-    for j in range(n_source):
-        for i in range(n_lens):
-            stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
-                source0=sources[f"lens{j}"],
-                source1=sources[f"src{i}"],
-                sacc_data_type="galaxy_shearDensity_xi_t",
-            )
-
-    for i in range(n_lens):
-        stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
-            source0=sources[f"lens{i}"],
-            source1=sources[f"lens{i}"],
-            sacc_data_type="galaxy_density_xi",
-        )
-
-    # Create the likelihood from the statistics
     pt_systematic = PTSystematic(
         with_NC=True,
         with_IA=True,
@@ -93,16 +64,9 @@ def test_pt_systematics():
         log10k_max=2,
         nk_per_decade=4,
     )
-    lk = ConstGaussian(statistics=list(stats.values()), systematics=[pt_systematic])
 
-    # Read the two-point data from the sacc file
-    lk.read(sacc_data)
-
-    # To allow this likelihood to be used in cobaya or cosmosis, define a
-    # an object called "likelihood" must be defined
-    likelihood = lk
-    # print("Using parameters:", list(lk.required_parameters().get_params_names()))
-
+    likelihood = ConstGaussian(statistics=stats, systematics=[pt_systematic])
+    likelihood.read(sacc_data)
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")
     z, nz = src0_tracer.z, src0_tracer.nz
@@ -162,7 +126,7 @@ def test_pt_systematics():
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
-        s.ell_for_xi = dict(minimum=2, midpoint=5, maximum=6e4, n_log=10)
+        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     _ = likelihood.compute_loglike(ccl_cosmo)
@@ -240,16 +204,12 @@ def test_pt_systematics():
     assert np.allclose(cl_gg_theory, cells_gg_total, atol=0, rtol=1e-7)
 
 
-def test_pt_mixed_systematics():
-    # Load sacc file
-    # This shouldn't be necessary, since we only use the n(z) from the sacc file
+def test_pt_mixed_systematics(sacc_data):
+    # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
+    # generally not a good practice. In this case, the warnings are indicating that this
+    # test is too complicated.
+    #
     # pylint: disable-msg=too-many-locals
-
-    saccfile = os.path.join(
-        os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
-    )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
 
     ia_systematic = wl.TattAlignmentSystematic()
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
@@ -274,10 +234,9 @@ def test_pt_mixed_systematics():
         log10k_max=2,
         nk_per_decade=4,
     )
-    lk = ConstGaussian(statistics=[stat], systematics=[pt_systematic])
 
-    lk.read(sacc_data)
-    likelihood = lk
+    likelihood = ConstGaussian(statistics=[stat], systematics=[pt_systematic])
+    likelihood.read(sacc_data)
 
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")
@@ -325,7 +284,7 @@ def test_pt_mixed_systematics():
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
-        s.ell_for_xi = dict(minimum=2, midpoint=5, maximum=6e4, n_log=10)
+        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     _ = likelihood.compute_loglike(ccl_cosmo)
@@ -365,8 +324,3 @@ def test_pt_mixed_systematics():
 
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
-
-
-if __name__ == "__main__":
-    test_pt_systematics()
-    test_pt_mixed_systematics()

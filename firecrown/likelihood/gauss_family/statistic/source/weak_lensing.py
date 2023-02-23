@@ -10,6 +10,7 @@ from abc import abstractmethod
 import numpy as np
 import pyccl
 import pyccl.nl_pt
+import sacc
 from scipy.interpolate import Akima1DInterpolator
 
 from .source import Source, Tracer, SourceSystematic
@@ -343,13 +344,11 @@ class WeakLensing(Source):
         )
         return derived_parameters
 
-    def _read(self, sacc_data):
+    def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this source from the SACC file.
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
+        This sets self.tracer_args, based on the data in `sacc_data` associated with
+        this object's `sacc_tracer` name.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
@@ -370,6 +369,7 @@ class WeakLensing(Source):
         ccl_cosmo = tools.get_ccl_cosmology()
         tracer_args = self.tracer_args
 
+        assert self.systematics is not None
         for systematic in self.systematics:
             tracer_args = systematic.apply(tools, tracer_args)
 

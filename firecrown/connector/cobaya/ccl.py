@@ -29,6 +29,7 @@ class CCLConnector(Theory):
         Cobaya does not allow us to override __init__.
         """
 
+        assert self.input_style
         self.map = mapping_builder(input_style=self.input_style)
 
         self.a_bg = np.linspace(0.1, 1.0, 50)  # pylint: disable-msg=C0103

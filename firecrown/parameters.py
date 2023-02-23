@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator
+from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator, Sequence
 from abc import ABC, abstractmethod
 
 
@@ -159,8 +159,8 @@ class DerivedParameterScalar(DerivedParameter):
 class DerivedParameterCollection:
     """Represents a list of DerivedParameter objects."""
 
-    def __init__(self, derived_parameters: List[DerivedParameter]):
-        """Construct an instance from a List of DerivedParameter objects."""
+    def __init__(self, derived_parameters: Sequence[DerivedParameter]):
+        """Construct an instance from a sequence of DerivedParameter objects."""
 
         if not all(isinstance(x, DerivedParameter) for x in derived_parameters):
             raise TypeError(
@@ -236,7 +236,7 @@ class SamplerParameter:
     def __init__(self):
         """Creates a new SamplerParameter instance that represents a parameter
         having its value defined by the sampler."""
-        self.value = None
+        self.value: Optional[float] = None
 
     def set_value(self, value: float):
         """Set the value of this parameter.
@@ -247,6 +247,7 @@ class SamplerParameter:
 
     def get_value(self) -> float:
         """Get the current value of this parameter."""
+        assert self.value is not None
         return self.value
 
 
