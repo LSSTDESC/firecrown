@@ -1,7 +1,7 @@
 """Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
 
 import os
-from typing import Tuple, Any
+from typing import Tuple
 import sacc
 import pyccl as ccl
 import pyccl.nl_pt

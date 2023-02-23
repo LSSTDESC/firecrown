@@ -194,14 +194,14 @@ def run_likelihood() -> None:
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
-    x = likelihood.statistics[0].ell_or_theta_
-    y_data = likelihood.statistics[0].measured_statistic_
+    # x = likelihood.statistics[0].ell_or_theta_
+    # y_data = likelihood.statistics[0].measured_statistic_
 
     assert isinstance(likelihood, ConstGaussian)
     assert likelihood.cov is not None
 
-    y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
-    y_theory = likelihood.statistics[0].predicted_statistic_
+    # y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
+    # y_theory = likelihood.statistics[0].predicted_statistic_
 
     print(list(likelihood.statistics[0].cells.keys()))
 
