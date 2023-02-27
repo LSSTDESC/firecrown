@@ -96,7 +96,7 @@ params:
 sampler:
   evaluate: null
 stop_at_error: true
-output: cobaya_evaluate_output
+output: cobaya_evaluate_output_PT
 packages_path: null
 test: false
 debug: false
