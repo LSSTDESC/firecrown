@@ -87,15 +87,15 @@ class FirecrownLikelihood:
         self.likelihood.update(firecrown_params)
         self.tools.prepare(ccl_cosmo)
         loglike = self.likelihood.compute_loglike(self.tools)
+
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
-        self.likelihood.reset()
-        self.tools.reset()
-
         sample.put_double(section_names.likelihoods, "firecrown_like", loglike)
-
         for section, name, val in derived_params_collection:
             sample.put(section, name, val)
+
+        self.likelihood.reset()
+        self.tools.reset()
 
         # Save concatenated data vector and inverse covariance to enable support
         # for the CosmoSIS fisher sampler.

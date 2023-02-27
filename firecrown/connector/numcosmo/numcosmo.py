@@ -226,6 +226,8 @@ class NumCosmoData(Ncm.Data):
         """
         self.dof = self.len - mset.fparams_len()
         firecrown_params = ParamsMap()
+        self.likelihood.reset()
+        self.tools.reset()
 
         self.mapping.set_params_from_numcosmo(mset)
         ccl_args = self.mapping.calculate_ccl_args(mset)
@@ -257,8 +259,6 @@ class NumCosmoData(Ncm.Data):
         the model set `mset`.
         """
         loglike = self.likelihood.compute_loglike(self.tools)
-        self.likelihood.reset()
-        self.tools.reset()
         return -2.0 * loglike
 
 
@@ -325,6 +325,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         """
         self.dof = self.len - mset.fparams_len()
         firecrown_params = ParamsMap()
+        self.likelihood.reset()
+        self.tools.reset()
 
         self.mapping.set_params_from_numcosmo(mset)
         ccl_args = self.mapping.calculate_ccl_args(mset)
@@ -359,10 +361,6 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         theory_vector = self.likelihood.compute_theory_vector(self.tools)
         mean_vector.set_array(theory_vector)
-
-        # This need to happen after all calls to likelihood.
-        self.likelihood.reset()
-        self.tools.reset()
 
 
 class NumCosmoFactory:

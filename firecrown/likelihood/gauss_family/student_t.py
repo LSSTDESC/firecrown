@@ -7,9 +7,8 @@ from typing import List, Optional, final
 
 import numpy as np
 
-import pyccl
-
 from .gauss_family import GaussFamily
+from ...modeling_tools import ModelingTools
 from .statistic.statistic import Statistic
 from ... import parameters
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
@@ -35,12 +34,13 @@ class StudentT(GaussFamily):
         super().__init__(statistics)
         self.nu = parameters.create(nu)  # pylint: disable-msg=C0103
 
-    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology):
+    def compute_loglike(self, tools: ModelingTools):
         """Compute the log-likelihood.
 
         :param cosmo: Current Cosmology object
         """
 
+        ccl_cosmo = tools.get_ccl_cosmology()
         chi2 = self.compute_chisq(ccl_cosmo)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
 

@@ -97,12 +97,13 @@ class LikelihoodConnector(Likelihood):
         self.tools.prepare(pyccl)
 
         loglike = self.likelihood.compute_loglike(self.tools)
+
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
-        self.likelihood.reset()
-        self.tools.reset()
-
         for section, name, val in derived_params_collection:
             params_values["_derived"][f"{section}__{name}"] = val
+
+        self.likelihood.reset()
+        self.tools.reset()
 
         return loglike
