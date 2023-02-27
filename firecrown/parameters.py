@@ -106,7 +106,7 @@ class RequiredParameters:
             return NotImplemented
         return self.params_names == other.params_names
 
-    def get_params_names(self):
+    def get_params_names(self) -> Iterator[str]:
         """Implement lazy iteration through the contained parameter names."""
         params_names_set = set(self.params_names)
 
