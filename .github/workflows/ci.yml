@@ -4,7 +4,7 @@ name: firecrown-ci
 on:
   push:
     branches:
-      - '*'
+      - 'master'
 
   pull_request:
     branches:
