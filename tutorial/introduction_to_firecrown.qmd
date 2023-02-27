@@ -208,4 +208,3 @@ pylint --recursive=y firecrown/likelihood/gauss_family/*.py
 # Run the unit test suite. Note that the coverage is incomplete.
 python -m pytest -v tests
 ```
-
