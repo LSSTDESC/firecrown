@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Union, Optional, final
+from typing import List, Dict, Tuple, Union, Optional
 from abc import abstractmethod
 import warnings
 import importlib
@@ -20,13 +20,10 @@ import sys
 import numpy as np
 import numpy.typing as npt
 
-import pyccl
-import pyccl.nl_pt
-
 import sacc
 
 from ..updatable import Updatable, UpdatableCollection
-from ..parameters import ParamsMap, DerivedParameterCollection, RequiredParameters
+from ..modeling_tools import ModelingTools
 
 
 class Likelihood(Updatable):
@@ -48,7 +45,6 @@ class Likelihood(Updatable):
         self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
         self.inv_cov: Optional[npt.NDArray[np.double]] = None
         self.statistics: UpdatableCollection = UpdatableCollection()
-        self.systematics: UpdatableCollection = UpdatableCollection()
 
     def set_params_names(self, params_names: List[str]) -> None:
         """Set the parameter names for this Likelihood."""
@@ -66,111 +62,18 @@ class Likelihood(Updatable):
             return self.params_names
         return []
 
-    def apply_systematics(self, ccl_cosmo: pyccl.Cosmology) -> Cosmology:
-        """Apply the systematics defined for this likelihood to the
-        CCL Cosmology object."""
-        cosmo = Cosmology(ccl_cosmo)
-        for systematic in self.systematics:
-            cosmo = systematic.apply(cosmo)
-        return cosmo
-
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc):
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     @abstractmethod
-    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology) -> float:
+    def compute_loglike(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood of generic CCL data."""
-
-
-class Cosmology:
-    """Bundles together a :python:`pyccl.Cosmology` and associated tools.
-
-
-    Some example tools are perturbation theory and halo model calculator workspaces.
-    """
-
-    def __init__(self, cosmo: pyccl.Cosmology):
-        self.ccl_cosmo = cosmo
-        self.pt_calculator: pyccl.nl_pt.PTCalculator = None
-        self.hm_calculator: pyccl.halomodel.HMCalculator = None
-        self.pk: Dict[str, pyccl.Pk2D] = {}  # pylint: disable-msg=C0103
-
-    def add_pk(self, name: str, pk: pyccl.Pk2D):  # pylint: disable-msg=C0103
-        """Add a pyccl.Pk2D to the table of power spectra."""
-        self.pk[name] = pk
-
-    def get_pk(self, name: str) -> pyccl.Pk2D:
-        """Retrive a pyccl.Pk2D from the table of power spectra, or fall back
-        to what the pyccl.Cosmology object can provide."""
-        if name in self.pk:
-            return self.pk[name]
-        return self.ccl_cosmo.get_nonlin_power(name)
-
-    def has_pk(self, name: str) -> bool:
-        """Check if a power spectrum with name `name` is available."""
-        # There should probably a pyccl.Cosmology method to check if a specific
-        # power spectrum exists
-        try:
-            self.get_pk(name)
-        except KeyError:
-            return False
-        return True
-
-
-class LikelihoodSystematic(Updatable):
-    """A systematic that can be applied to a Cosmology object."""
-
-
-class PTSystematic(LikelihoodSystematic):
-    """A cosmology-level systematic that provides the workspaces for perturbation
-    theory calculations."""
-
-    def __init__(self, *ptc_args, **ptc_kwargs):
-        """Initialise the PTSystematic.
-
-        Arguments
-        ---------
-        *ptc_args: tuple
-            Positional arguments for the call to pyccl.nl_pt.PTCalculator.
-        *ptc_kwargs: tuple
-            Keyword arguments for the call to pyccl.nl_pt.PTCalculator.
-        """
-        super().__init__()
-        self.ptc = pyccl.nl_pt.PTCalculator(*ptc_args, **ptc_kwargs)
-
-    def apply(self, cosmo_container: Cosmology) -> Cosmology:
-        """Apply the perturbation theory systematic to the Cosmology object."""
-        # P_lin(k) at z=0
-        pk_lin_z0 = pyccl.linear_matter_power(
-            cosmo_container.ccl_cosmo, self.ptc.ks, 1.0
-        )
-        # Compute the perturbative quantities
-        self.ptc.update_pk(pk_lin_z0)
-
-        cosmo_container.pt_calculator = self.ptc
-        return cosmo_container
-
-    @final
-    def _update(self, params: ParamsMap):
-        pass
-
-    @final
-    def _reset(self) -> None:
-        pass
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
 
 def load_likelihood(
     filename: str, build_parameters: Dict[str, Union[str, int, bool, float, np.ndarray]]
-) -> Likelihood:
+) -> Tuple[Likelihood, ModelingTools]:
     """Loads a likelihood script and returns an instance
 
     :param filename: script filename
@@ -221,7 +124,12 @@ def load_likelihood(
             raise TypeError(
                 "The factory function `build_likelihood` must be a callable."
             )
-        likelihood = mod.build_likelihood(build_parameters)
+        build_return = mod.build_likelihood(build_parameters)
+        if isinstance(build_return, tuple):
+            likelihood, tools = build_return
+        else:
+            likelihood = build_return
+            tools = ModelingTools()
 
     if not isinstance(likelihood, Likelihood):
         raise TypeError(
@@ -229,4 +137,4 @@ def load_likelihood(
             f"received {type(likelihood)} instead."
         )
 
-    return likelihood
+    return likelihood, tools

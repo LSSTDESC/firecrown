@@ -1,113 +1,128 @@
 #!/usr/bin/env python
 import os
 
-from typing import Dict, Union
+from typing import Dict, Union, Tuple
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import PTSystematic
 from firecrown.parameters import ParamsMap
+from firecrown.modeling_tools import ModelingTools
+from firecrown.likelihood.likelihood import Likelihood
 
 import sacc
+import pyccl as ccl
+import pyccl.nl_pt
 
-
-# Load sacc file
 saccfile = os.path.expanduser(
     os.path.expandvars(
         "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
     )
 )
-sacc_data = sacc.Sacc.load_fits(saccfile)
 
 
-# Define sources
-n_source = 1
-n_lens = 1
-sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
+def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+    """Likelihood factory function for DES Y1 3x2pt analysis."""
 
-# Define the intrinsic alignment systematic. This will be added to the
-# lensing sources later
-ia_systematic = wl.TattAlignmentSystematic()
+    # Load sacc file
+    sacc_data = sacc.Sacc.load_fits(saccfile)
 
-for i in range(n_source):
-    # Define the photo-z shift systematic.
-    src_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+    # Define sources
+    n_source = 1
+    n_lens = 1
+    sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
-    # Create the weak lensing source, specifying the name of the tracer in the
-    # sacc file and a list of systematics
-    sources[f"src{i}"] = wl.WeakLensing(
-        sacc_tracer=f"src{i}", systematics=[src_pzshift, ia_systematic]
-    )
+    # Define the intrinsic alignment systematic. This will be added to the
+    # lensing sources later
+    ia_systematic = wl.TattAlignmentSystematic()
 
-for i in range(n_lens):
-    lens_pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
-    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
-
-    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
-    sources[f"lens{i}"] = nc.NumberCounts(
-        sacc_tracer=f"lens{i}",
-        has_rsd=True,
-        systematics=[lens_pzshift, magnification, nl_bias],
-    )
-
-# Define the statistics we like to include in the likelihood
-stats = {}
-for stat, sacc_stat in [
-    ("xip", "galaxy_shear_xi_plus"),
-    ("xim", "galaxy_shear_xi_minus"),
-]:
     for i in range(n_source):
-        for j in range(i, n_source):
-            # Define two-point statistics, given two sources (from above) and
-            # the type of statistic.
-            stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
-                source0=sources[f"src{i}"],
-                source1=sources[f"src{j}"],
-                sacc_data_type=sacc_stat,
-            )
-for j in range(n_source):
-    for i in range(n_lens):
-        stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
-            source0=sources[f"lens{j}"],
-            source1=sources[f"src{i}"],
-            sacc_data_type="galaxy_shearDensity_xi_t",
+        # Define the photo-z shift systematic.
+        src_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+
+        # Create the weak lensing source, specifying the name of the tracer in the
+        # sacc file and a list of systematics
+        sources[f"src{i}"] = wl.WeakLensing(
+            sacc_tracer=f"src{i}", systematics=[src_pzshift, ia_systematic]
         )
 
-for i in range(n_lens):
-    stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
-        source0=sources[f"lens{i}"],
-        source1=sources[f"lens{i}"],
-        sacc_data_type="galaxy_density_xi",
+    for i in range(n_lens):
+        lens_pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
+        magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
+
+        nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
+        sources[f"lens{i}"] = nc.NumberCounts(
+            sacc_tracer=f"lens{i}",
+            has_rsd=True,
+            systematics=[lens_pzshift, magnification, nl_bias],
+        )
+
+    # Define the statistics we like to include in the likelihood
+    stats = {}
+    for stat, sacc_stat in [
+        ("xip", "galaxy_shear_xi_plus"),
+        ("xim", "galaxy_shear_xi_minus"),
+    ]:
+        for i in range(n_source):
+            for j in range(i, n_source):
+                # Define two-point statistics, given two sources (from above) and
+                # the type of statistic.
+                stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
+                    source0=sources[f"src{i}"],
+                    source1=sources[f"src{j}"],
+                    sacc_data_type=sacc_stat,
+                )
+    for j in range(n_source):
+        for i in range(n_lens):
+            stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
+                source0=sources[f"lens{j}"],
+                source1=sources[f"src{i}"],
+                sacc_data_type="galaxy_shearDensity_xi_t",
+            )
+
+    for i in range(n_lens):
+        stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
+            source0=sources[f"lens{i}"],
+            source1=sources[f"lens{i}"],
+            sacc_data_type="galaxy_density_xi",
+        )
+
+    # Create the likelihood from the statistics
+    pt_calculator = pyccl.nl_pt.PTCalculator(
+        with_NC=True,
+        with_IA=True,
+        with_dd=False,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
     )
 
-# Create the likelihood from the statistics
-pt_systematic = PTSystematic(
-    with_NC=True,
-    with_IA=True,
-    with_dd=False,
-    log10k_min=-4,
-    log10k_max=2,
-    nk_per_decade=20,
-)
-lk = ConstGaussian(statistics=list(stats.values()), systematics=[pt_systematic])
+    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    likelihood = ConstGaussian(statistics=list(stats.values()))
 
-# Read the two-point data from the sacc file
-lk.read(sacc_data)
+    # Read the two-point data from the sacc file
+    likelihood.read(sacc_data)
 
-# To allow this likelihood to be used in cobaya or cosmosis, define a
-# an object called "likelihood" must be defined
-likelihood = lk
-print("Using parameters:", list(lk.required_parameters().get_params_names()))
+    # an object called "likelihood" must be defined
+    print(
+        "Using parameters:", list(likelihood.required_parameters().get_params_names())
+    )
+
+    # To allow this likelihood to be used in cobaya or cosmosis,
+    # return the likelihood object
+    return likelihood, modeling_tools
 
 
 # We can also run the likelihood directly
-if __name__ == "__main__":
+def run_likelihood() -> None:
     import numpy as np
-    import pyccl as ccl
-    import pyccl.nl_pt as pt
     import matplotlib.pyplot as plt
+
+    likelihood, tools = build_likelihood(None)
+
+    # Load sacc file
+    sacc_data = sacc.Sacc.load_fits(saccfile)
 
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")
@@ -129,26 +144,28 @@ if __name__ == "__main__":
 
     mag_bias = 1.0
 
-    c_1, c_d, c_2 = pt.translate_IA_norm(
+    c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
         ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
     # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(
+    ptc = pyccl.nl_pt.PTCalculator(
         with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
     )
-    ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
-    ptt_m = pt.PTMatterTracer()
-    ptt_g = pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
+    ptt_i = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
+        c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d)
+    )
+    ptt_m = pyccl.nl_pt.PTMatterTracer()
+    ptt_g = pyccl.nl_pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
     # IA
-    pk_im = pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
-    pk_gi = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_i, ptc=ptc)
+    pk_im = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
+    pk_ii = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
+    pk_gi = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_i, ptc=ptc)
     # Galaxies
-    pk_gm = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
-    pk_gg = pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
+    pk_gm = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
+    pk_gg = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
     # Magnification: just a matter-matter P(k)
-    pk_mm = pt.get_pt_pk2d(ccl_cosmo, ptt_m, tracer2=ptt_m, ptc=ptc)
+    pk_mm = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_m, tracer2=ptt_m, ptc=ptc)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -167,19 +184,24 @@ if __name__ == "__main__":
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
+
+    # Prepare the cosmology object
+    tools.prepare(ccl_cosmo)
+
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
-    log_like = likelihood.compute_loglike(ccl_cosmo)
+    log_like = likelihood.compute_loglike(tools)
 
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
-    x = likelihood.statistics[0].ell_or_theta_
-    y_data = likelihood.statistics[0].measured_statistic_
+    # x = likelihood.statistics[0].ell_or_theta_
+    # y_data = likelihood.statistics[0].measured_statistic_
 
+    assert isinstance(likelihood, ConstGaussian)
     assert likelihood.cov is not None
 
-    y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
-    y_theory = likelihood.statistics[0].predicted_statistic_
+    # y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
+    # y_theory = likelihood.statistics[0].predicted_statistic_
 
     print(list(likelihood.statistics[0].cells.keys()))
 
@@ -276,3 +298,7 @@ if __name__ == "__main__":
     fig.savefig("plots/pt_cls.png", facecolor="white", dpi=300)
 
     plt.show()
+
+
+if __name__ == "__main__":
+    run_likelihood()
