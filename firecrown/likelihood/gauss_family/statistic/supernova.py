@@ -9,7 +9,7 @@ import numpy as np
 import pyccl
 import sacc
 
-from ....likelihood.likelihood import Cosmology
+from ....modeling_tools import ModelingTools
 from .statistic import Statistic, DataVector, TheoryVector
 from .... import parameters
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
@@ -65,7 +65,9 @@ class Supernova(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
+    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute SNIa distance statistic using CCL."""
-        prediction = self.M + pyccl.distance_modulus(cosmo.ccl_cosmo, self.a)
+
+        ccl_cosmo = tools.get_ccl_cosmology()
+        prediction = self.M + pyccl.distance_modulus(ccl_cosmo, self.a)
         return TheoryVector.create(prediction)
