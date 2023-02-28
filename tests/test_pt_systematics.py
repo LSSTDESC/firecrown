@@ -11,7 +11,7 @@ import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import PTSystematic
+from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
 
@@ -57,7 +57,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         TwoPoint("galaxy_density_xi", number_counts_source, number_counts_source),
     ]
 
-    pt_systematic = PTSystematic(
+    pt_calculator = pt.PTCalculator(
         with_NC=True,
         with_IA=True,
         with_dd=False,
@@ -66,7 +66,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         nk_per_decade=4,
     )
 
-    likelihood = ConstGaussian(statistics=stats, systematics=[pt_systematic])
+    likelihood = ConstGaussian(statistics=stats)
     likelihood.read(sacc_data)
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")
@@ -76,6 +76,9 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
     ccl_cosmo.compute_nonlin_power()
+
+    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools.prepare(ccl_cosmo)
 
     # Bare CCL setup
     a_1 = 1.0
@@ -130,7 +133,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
-    _ = likelihood.compute_loglike(ccl_cosmo)
+    _ = likelihood.compute_loglike(modeling_tools)
 
     # print(list(likelihood.statistics[0].cells.keys()))
     # pylint: disable=no-member
@@ -227,7 +230,7 @@ def test_pt_mixed_systematics(sacc_data):
     )
 
     # Create the likelihood from the statistics
-    pt_systematic = PTSystematic(
+    pt_calculator = pt.PTCalculator(
         with_NC=True,
         with_IA=True,
         with_dd=False,
@@ -236,7 +239,7 @@ def test_pt_mixed_systematics(sacc_data):
         nk_per_decade=4,
     )
 
-    likelihood = ConstGaussian(statistics=[stat], systematics=[pt_systematic])
+    likelihood = ConstGaussian(statistics=[stat])
     likelihood.read(sacc_data)
 
     src0_tracer = sacc_data.get_tracer("src0")
@@ -247,6 +250,9 @@ def test_pt_mixed_systematics(sacc_data):
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
     ccl_cosmo.compute_nonlin_power()
+
+    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools.prepare(ccl_cosmo)
 
     # Bare CCL setup
     a_1 = 1.0
@@ -288,7 +294,7 @@ def test_pt_mixed_systematics(sacc_data):
         s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
-    _ = likelihood.compute_loglike(ccl_cosmo)
+    _ = likelihood.compute_loglike(modeling_tools)
 
     # print(list(likelihood.statistics[0].cells.keys()))
     # pylint: disable=no-member

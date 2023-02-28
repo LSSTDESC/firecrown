@@ -1,11 +1,11 @@
 import sacc
-import pyccl
 from firecrown.parameters import (
     ParamsMap,
     RequiredParameters,
     DerivedParameterCollection,
 )
 from firecrown.likelihood.likelihood import Likelihood
+from firecrown.modeling_tools import ModelingTools
 
 
 class EmptyLikelihood(Likelihood):
@@ -28,7 +28,7 @@ class EmptyLikelihood(Likelihood):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology) -> float:
+    def compute_loglike(self, tools: ModelingTools) -> float:
         return -3.0 * self.placeholder
 
 

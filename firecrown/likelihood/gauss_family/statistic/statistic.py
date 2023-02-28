@@ -15,7 +15,7 @@ import warnings
 import numpy as np
 import sacc
 
-from ....likelihood.likelihood import Cosmology
+from ....modeling_tools import ModelingTools
 from ....updatable import Updatable
 from .source.source import SourceSystematic
 
@@ -102,11 +102,11 @@ class Statistic(Updatable):
         """Gets the statistic data vector."""
         raise NotImplementedError("Method `get_data_vector` is not implemented!")
 
-    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
+    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
         raise NotImplementedError("Method `compute_theory_vector` is not implemented!")
 
-    def compute(self, cosmo: Cosmology) -> StatisticsResult:
+    def compute(self, tools: ModelingTools) -> StatisticsResult:
         """Compute a statistic from sources, applying any systematics."""
 
         raise NotImplementedError("Method `compute` is not implemented!")

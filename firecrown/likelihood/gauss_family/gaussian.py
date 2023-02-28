@@ -7,22 +7,21 @@ Some notes.
 
 """
 
-
 from __future__ import annotations
 from typing import final
-import pyccl
 
 from .gauss_family import GaussFamily
 from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ...modeling_tools import ModelingTools
 
 
 class ConstGaussian(GaussFamily):
     """A Gaussian log-likelihood with a constant covariance matrix."""
 
-    def compute_loglike(self, ccl_cosmo: pyccl.Cosmology):
+    def compute_loglike(self, tools: ModelingTools):
         """Compute the log-likelihood."""
 
-        return -0.5 * self.compute_chisq(ccl_cosmo)
+        return -0.5 * self.compute_chisq(tools)
 
     @final
     def _update_gaussian_family(self, params: ParamsMap):

@@ -1,5 +1,6 @@
 import os
 from setuptools import setup, find_packages
+from typing import Optional
 
 
 def _munge_req(r):
@@ -8,7 +9,7 @@ def _munge_req(r):
     return r
 
 
-__version__ = None
+__version__: Optional[str] = None
 pth = os.path.join(
     os.path.dirname(os.path.realpath(__file__)), "firecrown", "version.py"
 )
