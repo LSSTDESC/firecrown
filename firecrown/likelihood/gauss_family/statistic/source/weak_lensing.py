@@ -20,8 +20,7 @@ from .....parameters import (
     RequiredParameters,
     DerivedParameterCollection,
 )
-from .....likelihood.likelihood import Cosmology
-
+from .....modeling_tools import ModelingTools
 from .....updatable import UpdatableCollection
 
 __all__ = ["WeakLensing"]
@@ -48,7 +47,9 @@ class WeakLensingSystematic(SourceSystematic):
     """Abstract base class for all weak lensing systematics."""
 
     @abstractmethod
-    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
 
 
@@ -89,16 +90,16 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs):
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
         """Apply multiplicative shear bias to a source. The `scale_` of the
         source is multiplied by `(1 + m)`.
 
-        Parameters
-        ----------
-        cosmo : Cosmology
-            A Cosmology object.
-        tracer_arg : a WeakLensingArgs object
-            The WeakLensingArgs to which apply the shear bias.
+        :param tools: A ModelingTools object.
+        :param tracer_arg: The WeakLensingArgs to which apply the shear bias.
+
+        :returns: A new WeakLensingArgs object with the shear bias applied.
         """
 
         return replace(
@@ -162,12 +163,16 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
 
+        ccl_cosmo = tools.get_ccl_cosmology()
+
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= pyccl.growth_factor(cosmo.ccl_cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
+        pref *= pyccl.growth_factor(ccl_cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
             self.alphag - 1.0
         )
 
@@ -223,12 +228,16 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
         """Return a new linear alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
+
+        ccl_cosmo = tools.get_ccl_cosmology()
         z = tracer_arg.z  # pylint: disable-msg=invalid-name
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
-            cosmo.ccl_cosmo,
+            ccl_cosmo,
             z,
             a1=self.ia_a_1,
             a1delta=self.ia_a_d,
@@ -277,7 +286,7 @@ class PhotoZShift(WeakLensingSystematic):
 
         return derived_parameters
 
-    def apply(self, cosmo: Cosmology, tracer_arg: WeakLensingArgs):
+    def apply(self, tools: ModelingTools, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
 
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
@@ -351,19 +360,21 @@ class WeakLensing(Source):
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 
-    def create_tracers(self, cosmo: Cosmology):
+    def create_tracers(self, tools: ModelingTools):
         """
         Render a source by applying systematics.
 
         """
+
+        ccl_cosmo = tools.get_ccl_cosmology()
         tracer_args = self.tracer_args
 
         assert self.systematics is not None
         for systematic in self.systematics:
-            tracer_args = systematic.apply(cosmo, tracer_args)
+            tracer_args = systematic.apply(tools, tracer_args)
 
         ccl_wl_tracer = pyccl.WeakLensingTracer(
-            cosmo.ccl_cosmo,
+            ccl_cosmo,
             dndz=(tracer_args.z, tracer_args.dndz),
             ia_bias=tracer_args.ia_bias,
         )
@@ -377,7 +388,7 @@ class WeakLensing(Source):
             )
 
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
-                cosmo.ccl_cosmo,
+                ccl_cosmo,
                 has_shear=False,
                 use_A_ia=False,
                 dndz=(tracer_args.z, tracer_args.dndz),

@@ -14,7 +14,7 @@ import scipy.interpolate
 import pyccl
 import pyccl.nl_pt
 
-from ....likelihood.likelihood import Cosmology
+from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, SourceSystematic
@@ -306,14 +306,14 @@ class TwoPoint(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
+    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic from sources."""
 
         assert self._ell_or_theta is not None
         self.ell_or_theta_ = self._ell_or_theta.copy()
 
-        tracers0 = self.source0.get_tracers(cosmo)
-        tracers1 = self.source1.get_tracers(cosmo)
+        tracers0 = self.source0.get_tracers(tools)
+        tracers1 = self.source1.get_tracers(tools)
         scale0 = self.source0.get_scale()
         scale1 = self.source1.get_scale()
 
@@ -323,6 +323,8 @@ class TwoPoint(Statistic):
             self.ells = _ell_for_xi(**self.ell_for_xi)
         self.cells = {}
 
+        ccl_cosmo = tools.get_ccl_cosmology()
+
         # Loop over the tracers and compute all possible combinations
         # of them
         for tracer0 in tracers0:
@@ -331,9 +333,9 @@ class TwoPoint(Statistic):
                 if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
                     # Already computed this combination, skipping
                     continue
-                if cosmo.has_pk(pk_name):
+                if tools.has_pk(pk_name):
                     # Use existing power spectrum
-                    pk = cosmo.get_pk(pk_name)  # pylint: disable-msg=invalid-name
+                    pk = tools.get_pk(pk_name)  # pylint: disable-msg=invalid-name
                 elif tracer0.has_pt or tracer1.has_pt:
                     if not tracer0.has_pt and tracer1.has_pt:
                         # Mixture of PT and non-PT tracers
@@ -344,12 +346,14 @@ class TwoPoint(Statistic):
                         else:
                             tracer1.pt_tracer = matter_pt_tracer
                     # Compute perturbation power spectrum
+
+                    pt_calculator = tools.get_pt_calculator()
                     pk = pyccl.nl_pt.get_pt_pk2d(  # pylint: disable-msg=invalid-name
-                        cosmo.ccl_cosmo,
+                        ccl_cosmo,
                         tracer0.pt_tracer,
                         tracer2=tracer1.pt_tracer,
                         nonlin_pk_type="nonlinear",
-                        ptc=cosmo.pt_calculator,
+                        ptc=pt_calculator,
                         update_ptc=False,
                     )
                 elif tracer0.has_hm or tracer1.has_hm:
@@ -362,7 +366,7 @@ class TwoPoint(Statistic):
 
                 self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
                     _cached_angular_cl(
-                        cosmo.ccl_cosmo,
+                        ccl_cosmo,
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
                         tuple(self.ells.tolist()),
                         p_of_k_a=pk,
@@ -377,7 +381,7 @@ class TwoPoint(Statistic):
 
         if not self.ccl_kind == "cl":
             theory_vector = pyccl.correlation(
-                cosmo.ccl_cosmo,
+                ccl_cosmo,
                 self.ells,
                 theory_vector,
                 self.ell_or_theta_ / 60,

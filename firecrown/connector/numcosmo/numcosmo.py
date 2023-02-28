@@ -22,6 +22,7 @@ from firecrown.likelihood.likelihood import load_likelihood, Likelihood  # noqa:
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian  # noqa: E402
 from firecrown.parameters import ParamsMap  # noqa: E402
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict  # noqa: E402
+from firecrown.modeling_tools import ModelingTools  # noqa: E402
 
 # pylint: enable=wrong-import-position
 
@@ -181,10 +182,15 @@ class NumCosmoData(Ncm.Data):
     a general likelihood."""
 
     def __init__(
-        self, likelihood: Likelihood, mapping: MappingNumCosmo, model_list: List[str]
+        self,
+        likelihood: Likelihood,
+        tools: ModelingTools,
+        mapping: MappingNumCosmo,
+        model_list: List[str],
     ):
         super().__init__()
         self.likelihood: Likelihood = likelihood
+        self.tools: ModelingTools = tools
         self.dof: int = 100
         self.len: int = 100
         self.mapping = mapping
@@ -220,6 +226,8 @@ class NumCosmoData(Ncm.Data):
         """
         self.dof = self.len - mset.fparams_len()
         firecrown_params = ParamsMap()
+        self.likelihood.reset()
+        self.tools.reset()
 
         self.mapping.set_params_from_numcosmo(mset)
         ccl_args = self.mapping.calculate_ccl_args(mset)
@@ -242,6 +250,7 @@ class NumCosmoData(Ncm.Data):
             firecrown_params = ParamsMap({**firecrown_params, **model_dict})
 
         self.likelihood.update(firecrown_params)
+        self.tools.prepare(self.ccl_cosmo)
 
     def do_m2lnL_val(self, _):  # pylint: disable-msg=arguments-differ
         """
@@ -249,8 +258,7 @@ class NumCosmoData(Ncm.Data):
         This method should calculate the value of the likelihood for
         the model set `mset`.
         """
-        loglike = self.likelihood.compute_loglike(self.ccl_cosmo)
-        self.likelihood.reset()
+        loglike = self.likelihood.compute_loglike(self.tools)
         return -2.0 * loglike
 
 
@@ -260,7 +268,11 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     a Gaussian likelihood."""
 
     def __init__(
-        self, likelihood: ConstGaussian, mapping: MappingNumCosmo, model_list: List[str]
+        self,
+        likelihood: ConstGaussian,
+        tools: ModelingTools,
+        mapping: MappingNumCosmo,
+        model_list: List[str],
     ):
         """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
         with a constant covariance."""
@@ -271,6 +283,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         super().__init__(n_points=nrows)
 
         self.likelihood: ConstGaussian = likelihood
+        self.tools: ModelingTools = tools
         self.mapping = mapping
         self.model_list: List[str] = model_list
         self.ccl_cosmo: Optional[ccl.Cosmology] = None
@@ -312,6 +325,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         """
         self.dof = self.len - mset.fparams_len()
         firecrown_params = ParamsMap()
+        self.likelihood.reset()
+        self.tools.reset()
 
         self.mapping.set_params_from_numcosmo(mset)
         ccl_args = self.mapping.calculate_ccl_args(mset)
@@ -334,16 +349,18 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             firecrown_params = ParamsMap({**firecrown_params, **model_dict})
 
         self.likelihood.update(firecrown_params)
+        self.tools.prepare(self.ccl_cosmo)
 
-    def do_mean_func(self, _, vp):  # pylint: disable-msg=arguments-differ
+    # pylint: disable-next=invalid-name,arguments-differ
+    def do_mean_func(self, _, mean_vector):
         """
         Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
         This method should compute the theoretical mean for the gaussian
         distribution.
         """
 
-        theory_vector = self.likelihood.compute_theory_vector(self.ccl_cosmo)
-        vp.set_array(theory_vector)
+        theory_vector = self.likelihood.compute_theory_vector(self.tools)
+        mean_vector.set_array(theory_vector)
 
 
 class NumCosmoFactory:
@@ -357,13 +374,15 @@ class NumCosmoFactory:
         model_list: List[str],
         mapping: MappingNumCosmo,
     ):
-        likelihood = load_likelihood(likelihood_source, build_parameters)
+        likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
         self.mapping: MappingNumCosmo = mapping
         if isinstance(likelihood, ConstGaussian):
-            self.data: Ncm.Data = NumCosmoGaussCov(likelihood, mapping, model_list)
+            self.data: Ncm.Data = NumCosmoGaussCov(
+                likelihood, tools, mapping, model_list
+            )
         else:
-            self.data = NumCosmoData(likelihood, mapping, model_list)
+            self.data = NumCosmoData(likelihood, tools, mapping, model_list)
         self.data.set_init(True)
 
     def get_data(self) -> Ncm.Data:
