@@ -9,7 +9,8 @@ class SupportedTracerNames(Enum):
 
     CLUSTER_COUNTS_TRUE_MASS = 1
     CLUSTER_COUNTS_RICHNESS_PROXY = 2
-
+    CLUSTER_COUNTS_RICHNESS_PROXY_PLUSMEAN = 3
+    CLUSTER_COUNTS_RICHNESS_MEANONLY_PROXY = 4
 
 class SupportedDataTypes(Enum):
     """Supported data types for cluster number counts likelihoods."""
@@ -22,3 +23,4 @@ class SupportedProxyTypes(Enum):
 
     TRUE_MASS = 1
     RICHNESS_PROXY = 2
+

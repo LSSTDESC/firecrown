@@ -138,7 +138,6 @@ class GaussFamily(Likelihood):
         # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
-
         return chisq
 
     @final

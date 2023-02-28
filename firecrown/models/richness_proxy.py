@@ -56,5 +56,6 @@ class RMProxy:
         )
         chisq = np.dot(x, x) / (2 * sigma**2)
         # pylint: disable-next=invalid-name
-        lk = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
+        lnnorm = np.log(np.sqrt(2.0 * np.pi * sigma**2))
+        lk = np.exp(-chisq - lnnorm)
         return lk
