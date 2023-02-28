@@ -2,7 +2,7 @@
 
 import pyccl as ccl
 
-from number_counts import build_likelihood
+from number_counts_rich import build_likelihood
 
 
 """

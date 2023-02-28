@@ -4,7 +4,7 @@
 import os
 
 import sacc
-
+from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
 )
@@ -34,13 +34,12 @@ def build_likelihood(_):
         )
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)
-
+    modeling_tools = ModelingTools()
     # The read likelihood method is called passing the loaded SACC file, the
     # cluster number count functions will receive the appropriated sections
     # of the SACC file.
     lk.read(sacc_data)
-
     # This script will be loaded by the appropriated connector. The framework
     # then looks for the `likelihood` variable to find the instance that will
     # be used to compute the likelihood.
-    return lk
+    return lk, modeling_tools
