@@ -20,7 +20,7 @@ from ....parameters import (
     DerivedParameterCollection,
 )
 from ....models.richness_proxy import RMProxy
-from ....likelihood.likelihood import Cosmology
+from ....modeling_tools import ModelingTools
 from .cluster_number_counts_enum import (
     SupportedTracerNames,
     SupportedDataTypes,
@@ -310,7 +310,7 @@ class ClusterNumberCounts(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, cosmo: Cosmology) -> TheoryVector:
+    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a Number Count statistic using the data from the
         Read method, the cosmology object, and the Bocquet16 halo mass function.
                 Check README.MD for a complete description of the method.
@@ -326,7 +326,7 @@ class ClusterNumberCounts(Statistic):
             An array with the theoretical prediction of the number of clusters
             in each bin of redsfhit and mass.
         """
-        ccl_cosmo = cosmo.ccl_cosmo
+        ccl_cosmo = tools.get_ccl_cosmology()
         skyarea = self.tracer_args.metadata["sky_area"]
         # pylint: disable-next=invalid-name
         DeltaOmega = skyarea * np.pi**2 / 180**2

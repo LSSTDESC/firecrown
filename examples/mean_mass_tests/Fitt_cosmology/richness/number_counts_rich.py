@@ -7,7 +7,7 @@ from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
 )
 from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
+from firecrown.modeling_tools import ModelingTools
 import sacc
 
 
@@ -48,4 +48,5 @@ def build_likelihood(_):
         then looks for the `likelihood` variable to find the instance that will
         be used to compute the likelihood.
     """
-    return lk
+    modeling = ModelingTools()
+    return lk, modeling
