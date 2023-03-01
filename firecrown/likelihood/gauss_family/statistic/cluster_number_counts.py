@@ -51,23 +51,26 @@ class ClusterNumberCounts(Statistic):
      multiplicity functions, volume element,  etc.).
      This subclass implements the read and computes method for
      the Statistic class. It is used to compute the theoretical prediction of
-     cluster number counts given a SACC file and a cosmology. For further information
-     on how the SACC file shall be created, check README.md.
+     cluster number counts given a SACC file and a cosmology. For
+     further information on how the SACC file shall be created,
+     check README.md.
 
     Parameters
     ----------
     sacc_tracer : str
-        The SACC tracer. There must be only one tracer for all the number Counts
-        data points. Following the SACC file documentation README.md, this string
-        should be 'cluster_counts_true_mass'.
+        The SACC tracer. There must be only one tracer for all
+        the number Counts data points. Following the SACC file
+        documentation README.md, this string should be
+        'cluster_counts_true_mass'.
     sacc_data_type : str
-        The kind of number count statistic. This must be a valid SACC data type that
-        maps to one of the CCL correlation function kinds or a power spectra.
-        So far, the only possible option is "cluster_mass_count_wl", which is a standard
+        The kind of number count statistic. This must be a valid
+        SACC data type that maps to one of the CCL correlation
+        function kinds or a power spectra. So far, the only
+        possible option is "cluster_mass_count_wl", which is a standard
         type in the SACC library.
     systematics : list of str, optional
-        A list of the statistics-level systematics to apply to the statistic.
-        The default of `None` implies no systematics.
+        A list of the statistics-level systematics to apply to
+        the statistic. The default of `None` implies no systematics.
 
     Attributes
     ----------
@@ -75,11 +78,13 @@ class ClusterNumberCounts(Statistic):
         A list with the number of clusters in each bin of redshift and Mproxy.
         Set after `read` is called.
     theory_vector
-        A list with the theoretical prediction of the number of clusters in each bin
-        of redshift and Mproxy. Set after `compute` is called.
+        A list with the theoretical prediction of the number of
+        clusters in each bin of redshift and Mproxy.
+        Set after `compute` is called.
     sacc_indices : list of str
-        A list with the indices for the data vector that corresponds to the type of data
-        provided in the SACC file. Set after `read` is called.
+        A list with the indices for the data vector that
+        corresponds to the type of data provided in
+        the SACC file. Set after `read` is called.
     """
 
     def __init__(
@@ -212,64 +217,6 @@ class ClusterNumberCounts(Statistic):
                 bin_counts.append(integral)
         return bin_counts
 
-    def _compute_mass_grids(
-        self, cosmo, logN_tuple, logm_tuple, z_tuple, n_intervals=20
-    ):
-        mu_p0 = self.mu_p0
-        mu_p1 = self.mu_p1
-        mu_p2 = self.mu_p2
-        sigma_p0 = self.sigma_p0
-        sigma_p1 = self.sigma_p1
-        sigma_p2 = self.sigma_p2
-        richess_mass_proxy = RMProxy()
-        # pylint: disable-next=invalid-name
-        logN_grid = np.linspace(logN_tuple[0], logN_tuple[1], n_intervals)
-
-        logm_grid = np.linspace(logm_tuple[0], logm_tuple[1], n_intervals)
-        z_grid = np.linspace(z_tuple[0], z_tuple[1], n_intervals)
-        # pylint: disable-next=invalid-name
-        Nmz_grid = np.zeros([len(z_grid), len(logN_grid), len(logm_grid)])
-        # pylint: disable-next=invalid-name
-        dlnN_dlog10N = np.log(10.0) / np.log10(10.0)
-        for i, z in enumerate(z_grid):
-            # pylint: disable-next=invalid-name
-            dv = self.number_density_func.compute_differential_comoving_volume(cosmo, z)
-            # pylint: disable-next=invalid-name
-            for k, logm in enumerate(logm_grid):
-                # pylint: disable-next=invalid-name
-                nm = self.number_density_func.compute_number_density(cosmo, logm, z)
-                # pylint: disable-next=invalid-name
-                for j, logN in enumerate(logN_grid):
-                    lk_rm = richess_mass_proxy.mass_proxy_likelihood(
-                        logN, logm, z, mu_p0, mu_p1, mu_p2, sigma_p0, sigma_p1, sigma_p2
-                    )
-                    pdf = nm * dv * lk_rm * logm
-                    Nmz_grid[i, j, k] = pdf * dlnN_dlog10N
-
-        return Nmz_grid, z_grid, logN_grid, logm_grid
-
-    # pylint: disable-next=invalid-name
-    def _mean_mass_integral(self, cosmo, logN_bins, logm_interval, z_bins):
-        logm_tuple = logm_interval
-        bin_counts = []
-        for i in range(0, len(z_bins) - 1):
-            for j in range(0, len(logN_bins) - 1):
-                z_tuple = (z_bins[i], z_bins[i + 1])
-                # pylint: disable-next=invalid-name
-                logN_tuple = (logN_bins[j], logN_bins[j + 1])
-                # pylint: disable-next=invalid-name
-                Nmz_grid, z_grid, logN_grid, logm_grid = self._compute_mass_grids(
-                    cosmo, logN_tuple, logm_tuple, z_tuple
-                )
-                integral = simps(
-                    simps(simps(Nmz_grid, z_grid, axis=0), logN_grid, axis=0),
-                    logm_grid,
-                    axis=0,
-                )
-                bin_counts.append(integral)
-
-        return bin_counts
-
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
         This function takes the SACC file and extract the necessary
@@ -284,14 +231,14 @@ class ClusterNumberCounts(Statistic):
         tracer = sacc_data.get_tracer(self.sacc_tracer.lower())
         metadata = tracer.metadata
         proxy_type = metadata["Mproxy_type"].upper()
-        #         if (
-        #             SupportedTracerNames[self.sacc_tracer.upper()].value
-        #             != SupportedProxyTypes[proxy_type.upper()].value
-        #         ):
-        #             raise TypeError(
-        #                 f"The proxy {proxy_type} is not supported"
-        #                 f"by the tracer {self.sacc_tracer}"
-        #             )
+        if (
+            SupportedTracerNames[self.sacc_tracer.upper()].value
+            != SupportedProxyTypes[proxy_type.upper()].value
+        ):
+            raise TypeError(
+                f"The proxy {proxy_type} is not supported"
+                f"by the tracer {self.sacc_tracer}"
+            )
 
         # pylint: disable-next=invalid-name
         nz = sacc_data.get_mean(
@@ -304,9 +251,8 @@ class ClusterNumberCounts(Statistic):
             nz=nz,
             metadata=metadata,
         )
-        # self.data_vector = DataVector.from_list(nz)
-
         self.data_vector = DataVector.from_list(nz)
+
         self.sacc_indices = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
         )
@@ -370,27 +316,4 @@ class ClusterNumberCounts(Statistic):
                 ccl_cosmo, proxy_bins, logm_interval, z_bins
             )
             theory_vector = [nz * DeltaOmega for nz in nz_theory_vector]
-        elif self.sacc_tracer == "cluster_counts_richness_meanonly_proxy":
-            logm_interval = (np.log10(1.0e13), np.log10(1.0e15))
-            m_theory_vector = self._mean_mass_integral(
-                ccl_cosmo, proxy_bins, logm_interval, z_bins
-            )
-            nz_theory_vector = self._richness_proxy_integral(
-                ccl_cosmo, proxy_bins, logm_interval, z_bins
-            )
-            theory_vector = []
-            for i in range(0, len(nz_theory_vector)):
-                theory_vector.append(m_theory_vector[i] / nz_theory_vector[i])
-        elif self.sacc_tracer == "cluster_counts_richness_proxy_plusmean":
-            logm_interval = (np.log10(1.0e13), np.log10(1.0e15))
-            nz_theory_vector = self._richness_proxy_integral(
-                ccl_cosmo, proxy_bins, logm_interval, z_bins
-            )
-            m_theory_vector = self._mean_mass_integral(
-                ccl_cosmo, proxy_bins, logm_interval, z_bins
-            )
-            theory_vector = [nz * DeltaOmega for nz in nz_theory_vector]
-
-            for i in range(0, len(nz_theory_vector)):
-                theory_vector.append(m_theory_vector[i] / nz_theory_vector[i])
         return TheoryVector.from_list(theory_vector)
