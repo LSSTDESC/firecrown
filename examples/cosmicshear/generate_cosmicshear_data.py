@@ -1,10 +1,10 @@
 """ Generate the cosmicshear.fits file.
 """
-from firecrown.utils import upper_triangle_indices
 import numpy as np
 import sacc
 import pyccl as ccl
 
+from firecrown.utils import upper_triangle_indices
 
 COSMO = ccl.Cosmology(
     Omega_c=0.27,
