@@ -71,7 +71,6 @@ Begin by `cd`-ing to the working directory you used during the installation (whi
     export CSL_DIR=${PWD}/cosmosis-standard-library
     export FIRECROWN_DIR=${PWD}/firecrown
     export PYTHONPATH=${FIRECROWN_DIR}/build/lib
-    export FIRECROWN_SITE_PACKAGES=${COSMOSIS_SRC_DIR}/..
 
 To build the Firecrown code you should be in the Firecrown directory:
 
