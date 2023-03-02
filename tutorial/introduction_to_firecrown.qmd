@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: current development head
+subtitle: Version 1.4
 authors:
   - Marc Paterno
   - Sandro Vitenti
@@ -9,7 +9,11 @@ format:
     footer: "An Introduction to Firecrown | Paterno and Vitenti"
     highlight-style: arrow
     include-after-body: clean_title_slide.html
+    height: 1080
+    width: 1920
     margin: 0.05
+    max-scale: 4.0
+    min-scale: 0.05
     navigation-mode: linear
     slide-number: true
     theme: [serif, custom.scss]
@@ -127,9 +131,6 @@ Firecrown supports a few different installation modes.
 
 ## Developer installation {#developer-installation}
 
-::: aside
-There are special instructions for [installation on an M1 Mac](https://firecrown.readthedocs.io/en/latest/apple_m1_instructions.html).
-:::
 
 -   The following commands will:
     1.  create a *conda* environment
@@ -150,6 +151,8 @@ export CSL_DIR=${PWD}/cosmosis-standard-library
 export FIRECROWN_DIR=${PWD}/firecrown
 export PYTHONPATH=${FIRECROWN_DIR}/build/lib
 ```
+
+There are special instructions for [installation on an M1 Mac](https://firecrown.readthedocs.io/en/latest/apple_m1_instructions.html).
 
 ## Setting up a shell session for development
 
