@@ -6,7 +6,6 @@ import pyccl as ccl
 
 from firecrown.utils import upper_triangle_indices
 
-
 COSMO = ccl.Cosmology(
     Omega_c=0.27,
     Omega_b=0.045,
