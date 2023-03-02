@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: release version 1.4.0
+subtitle: Version 1.4.0
 authors:
   - Marc Paterno
   - Sandro Vitenti
@@ -9,7 +9,11 @@ format:
     footer: "An Introduction to Firecrown | Paterno and Vitenti"
     highlight-style: arrow
     include-after-body: clean_title_slide.html
+    height: 1080
+    width: 1920
     margin: 0.05
+    max-scale: 4.0
+    min-scale: 0.05
     navigation-mode: linear
     slide-number: true
     theme: [serif, custom.scss]
