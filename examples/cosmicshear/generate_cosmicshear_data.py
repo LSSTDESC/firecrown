@@ -1,4 +1,4 @@
-""" Generate the cosmicshear.fits file simulating a simple cosmology.
+""" Generate the cosmicshear.fits file.
 """
 import numpy as np
 import sacc
@@ -23,7 +23,7 @@ EPS = 0.01
 Z = np.linspace(0, 2, 50) + 0.05
 ELL = np.logspace(1, 4, 10)
 
-np.random.seed(SEED)
+rng = np.random.seed(SEED)
 sacc_data = sacc.Sacc()
 tracers = []
 

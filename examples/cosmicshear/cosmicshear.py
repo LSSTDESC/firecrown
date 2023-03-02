@@ -1,7 +1,6 @@
 """Define the likelihood factory function for the cosmic shear example.
 """
 import os
-import sacc
 
 import sacc
 
