@@ -118,15 +118,6 @@ class ClusterNumberCounts(Statistic):
                 f"supported!"
                 f"Supported names are: {supported_data}"
             ) from None
-        try:
-            self.tracer_name = SupportedTracerNames[sacc_tracer.upper()].name
-        except KeyError:
-            supported_tracers = [tracer.name for tracer in SupportedTracerNames]
-            raise KeyError(
-                f"The SACC tracer name '{sacc_tracer}' is not "
-                f"supported!"
-                f"Supported names are: {supported_tracers}"
-            ) from None
         self.tracer_args: ClusterNumberCountsArgs
 
     @final
