@@ -54,7 +54,6 @@ params:
         max: +5.0
 
 #   - these parameters are fixed
-  alphag: -1
   z_piv: 0.62
 
 #   - linear bias for lenses
