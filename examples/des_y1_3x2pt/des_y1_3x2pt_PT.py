@@ -295,6 +295,7 @@ def run_likelihood() -> None:
     [a.legend(fontsize="small") for a in ax]
 
     fig.suptitle("PT Cls, including IA, galaxy bias, magnification")
+    if not os.path.exists('plots'): os.makedirs('plots')
     fig.savefig("plots/pt_cls.png", facecolor="white", dpi=300)
 
     plt.show()

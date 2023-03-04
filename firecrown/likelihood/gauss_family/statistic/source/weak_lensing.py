@@ -38,6 +38,7 @@ class WeakLensingArgs:
     has_pt: bool = False
     has_hm: bool = False
 
+    ia_a_1h: Optional[np.float] = None#Optional[Tuple[np.ndarray, np.ndarray]] = None
     ia_pt_c_1: Optional[Tuple[np.ndarray, np.ndarray]] = None
     ia_pt_c_d: Optional[Tuple[np.ndarray, np.ndarray]] = None
     ia_pt_c_2: Optional[Tuple[np.ndarray, np.ndarray]] = None
@@ -254,6 +255,64 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         )
 
 
+class HMAlignmentSystematic(WeakLensingSystematic):
+    """TATT alignment systematic.
+
+    This systematic tries to add a halo model-based
+     (nonlinear) intrinsic alignment systematic.
+
+    Parameters
+    ----------
+    ia_a_1h: float
+
+    Methods
+    -------
+    apply : apply the systematic to a source
+    """
+
+    def __init__(self, sacc_tracer: Optional[str] = None):
+        super().__init__()
+        self.ia_a_1h = parameters.create()
+
+        self.sacc_tracer = sacc_tracer
+
+    @final
+    def _update(self, params: ParamsMap):
+        """Update the parameters of this systematic
+
+        This implementation has nothing to do."""
+
+    @final
+    def _reset(self) -> None:
+        """Reset this systematic.
+
+        This implementation has nothing to do."""
+
+    @final
+    def _required_parameters(self) -> RequiredParameters:
+        return RequiredParameters([])
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection([])
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
+        """Return a new linear alignment systematic, based on the given
+        tracer_arg, in the context of the given cosmology."""
+
+        ccl_cosmo = tools.get_ccl_cosmology() # No purpose now.
+        z = tracer_arg.z  # pylint: disable-msg=invalid-name
+        a_1h = np.full(z.shape, self.ia_a_1h)
+
+        return replace(
+            tracer_arg,
+            has_hm=True,
+            ia_a_1h=self.ia_a_1h#(z, a_1h),
+        )
+
+
 class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
 
@@ -396,6 +455,22 @@ class WeakLensing(Source):
             )
             ia_tracer = Tracer(
                 ccl_wl_dummy_tracer, tracer_name="intrinsic_pt", pt_tracer=ia_pt_tracer
+            )
+            tracers.append(ia_tracer)
+
+        if tracer_args.has_hm:
+            cM = tools.get_cM_relation()
+            halo_profile = pyccl.halos.SatelliteShearHOD(cM,
+                a1h=tracer_args.ia_a_1h)
+            ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
+                ccl_cosmo,
+                has_shear=False,
+                use_A_ia=False,
+                dndz=(tracer_args.z, tracer_args.dndz),
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
+            )
+            ia_tracer = Tracer(
+                ccl_wl_dummy_tracer, tracer_name="intrinsic_hm", halo_profile=halo_profile
             )
             tracers.append(ia_tracer)
 

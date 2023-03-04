@@ -1,10 +1,10 @@
-"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
+"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data and
+the halo model for intrinsic alignments."""
 
 import os
 from typing import Tuple
 import sacc
 import pyccl as ccl
-import pyccl.nl_pt
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
@@ -12,7 +12,6 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
-
 
 saccfile = os.path.expanduser(
     os.path.expandvars(
@@ -32,7 +31,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later
-    ia_systematic = wl.TattAlignmentSystematic()
+    ia_systematic = wl.HMAlignmentSystematic()
 
     for i in range(n_source):
         # Define the photo-z shift systematic.
@@ -61,16 +60,16 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
                 )
 
     # Create the likelihood from the statistics
-    pt_calculator = pyccl.nl_pt.PTCalculator(
-        with_NC=False,
-        with_IA=True,
-        with_dd=True,
-        log10k_min=-4,
-        log10k_max=2,
-        nk_per_decade=20,
-    )
+    # Define the halo model components. This is one solution but maybe not the best!
+    hmd_200m = ccl.halos.MassDef200m()
+    cM = 'Duffy08'
+    nM = 'Tinker10'
+    bM = 'Tinker10'
 
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools = ModelingTools(hm_definition=hmd_200m,
+                                   hm_function=nM,
+                                   bias_function=bM,
+                                   cM_relation=cM)
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
     # Read the two-point data from the sacc file
@@ -87,10 +86,12 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 
 # We can also run the likelihood directly
 def run_likelihood() -> None:
-    """Run the likelihood."""
-
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
+    import matplotlib as mpl
+    mpl.use('TkAgg')  # !IMPORTANT
+
+    # Run the likelihood.
 
     like_and_tools = build_likelihood(None)
     likelihood: Likelihood = like_and_tools[0]
@@ -107,31 +108,29 @@ def run_likelihood() -> None:
     ccl_cosmo.compute_nonlin_power()
 
     # Bare CCL setup
-    a_1 = 1.0
-    a_2 = 0.5
-    a_d = 0.5
-    c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
-        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
-    )
+    a_1h = 1e-3 # 1-halo alignment amplitude.
 
     # Code that creates a Pk2D object:
-    ptc = pyccl.nl_pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
-    )
-    ptt_i = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
-        c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d)
-    )
-    ptt_m = pyccl.nl_pt.PTMatterTracer()
-    # IAs x matter
-    pk_im = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
+    k_arr = np.geomspace(1E-3, 1e3, 128)  # For evaluating
+    a_arr = np.linspace(0.1, 1, 16)
+    hmd_200m = ccl.halos.MassDef200m()
+    cM = ccl.halos.ConcentrationDuffy08(hmd_200m)
+    nM = ccl.halos.MassFuncTinker10(ccl_cosmo, mass_def=hmd_200m)
+    bM = ccl.halos.HaloBiasTinker10(ccl_cosmo, mass_def=hmd_200m)
+    hmc = ccl.halos.HMCalculator(ccl_cosmo, nM, bM, hmd_200m)
+    sat_gamma_HOD = ccl.halos.SatelliteShearHOD(cM, a1h=a_1h)
+    # NFW profile for matter (G)
+    NFW = ccl.halos.HaloProfileNFW(cM, truncated=True, fourier_analytic=True)
+    pk_GI_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, NFW,
+                                      normprof1=True, prof2=sat_gamma_HOD, get_2h=False,
+                                      lk_arr=np.log(k_arr), a_arr=a_arr)
+    pk_II_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, sat_gamma_HOD,
+                                      get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
         {
-            "ia_a_1": a_1,
-            "ia_a_2": a_2,
-            "ia_a_d": a_d,
+            "ia_a_1h": a_1h,
             "src0_delta_z": 0.000,
             "src1_delta_z": 0.003,
             "src2_delta_z": -0.001,
@@ -169,8 +168,8 @@ def run_likelihood() -> None:
 
     ells = two_point_0.ells
     cells_gg = two_point_0.cells[("shear", "shear")]
-    cells_gi = two_point_0.cells[("shear", "intrinsic_pt")]
-    cells_ii = two_point_0.cells[("intrinsic_pt", "intrinsic_pt")]
+    cells_gi = two_point_0.cells[("shear", "intrinsic_hm")]
+    cells_ii = two_point_0.cells[("intrinsic_hm", "intrinsic_hm")]
     cells_total = two_point_0.cells["total"]
     # pylint: enable=no-member
 
@@ -184,8 +183,8 @@ def run_likelihood() -> None:
         use_A_ia=False,
     )
     # pylint: disable=invalid-name
-    cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
-    cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
+    cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_GI_1h)
+    cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_II_1h)
     # The weak gravitational lensing power spectrum
     cl_GG = ccl.angular_cl(ccl_cosmo, t_lens, t_lens, ells)
     # The observed angular power spectrum is the sum of the two.
@@ -201,8 +200,8 @@ def run_likelihood() -> None:
     plt.plot(ells, -cl_GI, ls="--", label="-GI CCL")
     plt.plot(ells, cells_ii, label="II firecrown")
     plt.plot(ells, cl_II, ls="--", label="II CCL")
-    plt.plot(ells, cells_total, label="total firecrown")
-    plt.plot(ells, cl_theory, ls="--", label="total CCL")
+#    plt.plot(ells, cells_total, label="total firecrown")
+#    plt.plot(ells, cl_theory, ls="--", label="total CCL")
 
     # plt.errorbar(x, y_data, y_err, ls="none", marker="o")
     plt.xscale("log")
@@ -212,9 +211,9 @@ def run_likelihood() -> None:
     plt.legend()
     # plt.xlim(right=5e3)
     # plt.ylim(bottom=1e-12)
-    plt.title("TATT IA")
+    plt.title("Halo model IA")
     if not os.path.exists('plots'): os.makedirs('plots')
-    plt.savefig("plots/tatt.png", facecolor="white", dpi=300)
+    plt.savefig("plots/halo_model.png", facecolor="white", dpi=300)
 
     plt.show()
 
