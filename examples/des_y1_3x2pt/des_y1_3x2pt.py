@@ -16,7 +16,7 @@ import sacc
 
 
 def build_likelihood(_):
-    lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="", alphag=None)
+    lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
 
     """
         Creating sources, each one maps to a specific section of a SACC file. In
