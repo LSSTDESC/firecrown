@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import os
+from typing import Dict, Union
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
@@ -15,7 +16,7 @@ import sacc
 
 
 def build_likelihood(_):
-    lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="", alphag=None)
+    lai_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
 
     """
         Creating sources, each one maps to a specific section of a SACC file. In
@@ -23,7 +24,7 @@ def build_likelihood(_):
         sources are saved in a dictionary since they will be used by one or more
         two-point function.
     """
-    sources = {}
+    sources: Dict[str, Union[nc.NumberCounts, wl.WeakLensing]] = {}
 
     for i in range(4):
         """
@@ -37,7 +38,7 @@ def build_likelihood(_):
             also have a different parameter for each bin, so here again we use the
             src{i}_ prefix.
         """
-        pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+        wl_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
 
         """
             Now we can finally create the weak-lensing source that will compute the
@@ -45,7 +46,7 @@ def build_likelihood(_):
             systematics.
         """
         sources[f"src{i}"] = wl.WeakLensing(
-            sacc_tracer=f"src{i}", systematics=[lai_systematic, mbias, pzshift]
+            sacc_tracer=f"src{i}", systematics=[lai_systematic, mbias, wl_pzshift]
         )
 
     """
@@ -56,13 +57,13 @@ def build_likelihood(_):
         """
         We also include a photo-z shift for the dndz.
         """
-        pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
+        nc_pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
 
         """
             The source is created and saved (temporarely in the sources dict).
         """
         sources[f"lens{i}"] = nc.NumberCounts(
-            sacc_tracer=f"lens{i}", systematics=[pzshift], derived_scale=True
+            sacc_tracer=f"lens{i}", systematics=[nc_pzshift], derived_scale=True
         )
 
     """
