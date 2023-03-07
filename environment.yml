@@ -4,7 +4,7 @@ channels:
 dependencies:
   - black
   - charset-normalizer
-  - cosmosis
+   cosmosis >= 2.2.0
   - cosmosis-build-standard-library
   - numcosmo >=0.16.0
   - coverage
@@ -17,7 +17,7 @@ dependencies:
   - matplotlib-base
   - more-itertools
   - mypy
-  - numpy
+  - numpy >= 1.21.0
   - pip
   - pip:
     - autoclasstoc
