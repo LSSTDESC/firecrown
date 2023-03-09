@@ -4,7 +4,7 @@ channels:
 dependencies:
   - black
   - charset-normalizer
-   cosmosis >= 2.2.0
+  - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
   - numcosmo >=0.16.0
   - coverage
