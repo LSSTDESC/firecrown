@@ -8,9 +8,6 @@ likelihood abstract base class; it the implementation of a CosmoSIS module,
 not a specific likelihood.
 """
 
-from typing import Dict, Union
-import numpy as np
-import numpy.typing as npt
 
 import cosmosis.datablock
 from cosmosis.datablock import option_section
@@ -18,21 +15,17 @@ from cosmosis.datablock import names as section_names
 import pyccl as ccl
 from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
-from firecrown.likelihood.likelihood import load_likelihood, Likelihood
+from firecrown.likelihood.likelihood import load_likelihood, Likelihood, NamedParameters
 from firecrown.parameters import ParamsMap
 
 
-def extract_section(
-    sample: cosmosis.datablock, section: str
-) -> Dict[
-    str, Union[str, int, bool, float, npt.NDArray[np.int64], npt.NDArray[np.float64]]
-]:
+def extract_section(sample: cosmosis.datablock, section: str) -> NamedParameters:
     """Extract the all the parameters from the name datablock section into a
     dictionary."""
     if not sample.has_section(section):
         raise RuntimeError(f"Datablock section `{section}' does not exist.")
     sec_dict = {name: sample[section, name] for _, name in sample.keys(section=section)}
-    return sec_dict
+    return NamedParameters(sec_dict)
 
 
 class FirecrownLikelihood:
@@ -144,8 +137,8 @@ class FirecrownLikelihood:
 
         firecrown_params = ParamsMap()
         for section in self.sampling_sections:
-            sec_dict = extract_section(sample, section)
-            shared_keys = set(sec_dict).intersection(firecrown_params)
+            section_params = extract_section(sample, section)
+            shared_keys = section_params.to_set().intersection(firecrown_params)
             if len(shared_keys) > 0:
                 raise RuntimeError(
                     f"The following keys `{shared_keys}' appear "
@@ -153,7 +146,7 @@ class FirecrownLikelihood:
                     f"module {self.firecrown_module_name}."
                 )
 
-            firecrown_params = ParamsMap({**firecrown_params, **sec_dict})
+            firecrown_params = ParamsMap({**firecrown_params, **section_params.data})
 
         firecrown_params.use_lower_case_keys(True)
         return firecrown_params

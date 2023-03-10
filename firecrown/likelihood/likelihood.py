@@ -71,12 +71,90 @@ class Likelihood(Updatable):
         """Compute the log-likelihood of generic CCL data."""
 
 
+class NamedParameters:
+    """Provides access to a set of parameters of a given set of types.
+
+    Access to the parameters is provided by a type-safe interface. Each of the
+    access functions assures that the parameter value it returns is of the
+    specified type.
+
+    """
+
+    def __init__(
+        self,
+        mapping: Optional[
+            Mapping[
+                str,
+                Union[
+                    str,
+                    int,
+                    bool,
+                    float,
+                    npt.NDArray[np.int64],
+                    npt.NDArray[np.float64],
+                ],
+            ]
+        ] = None,
+    ):
+        """Initialize the object from the supplied mapping of values."""
+        if mapping is None:
+            self.data = {}
+        else:
+            self.data = dict(mapping)
+
+    def get_string(self, name: str, default_value: Optional[str] = None) -> str:
+        """Return the named parameter as a string."""
+        if default_value is None:
+            val = self.data[name]
+        else:
+            val = self.data.get(name, default_value)
+
+        assert isinstance(val, str)
+        return val
+
+    def get_int(self, name: str, default_value: Optional[int] = None) -> int:
+        """Return the named parameter as an int."""
+        if default_value is None:
+            val = self.data[name]
+        else:
+            val = self.data.get(name, default_value)
+
+        assert isinstance(val, int)
+        return val
+
+    def get_float(self, name: str, default_value: Optional[float] = None) -> float:
+        """Return the named parameter as a float."""
+        if default_value is None:
+            val = self.data[name]
+        else:
+            val = self.data.get(name, default_value)
+
+        assert isinstance(val, float)
+        return val
+
+    def get_int_array(self, name: str) -> npt.NDArray[np.int64]:
+        """Return the named parameter as a numpy array of int."""
+        tmp = self.data[name]
+        assert isinstance(tmp, np.ndarray)
+        val = tmp.view(dtype=np.int64)
+        assert val.dtype == np.int64
+        return val
+
+    def get_float_array(self, name: str) -> npt.NDArray[np.float64]:
+        """Return the named parameter as a numpy array of float."""
+        tmp = self.data[name]
+        assert isinstance(tmp, np.ndarray)
+        val = tmp.view(dtype=np.float64)
+        assert val.dtype == np.float64
+        return val
+
+    def to_set(self):
+        """Return the contained data as a set."""
+        return set(self.data)
+
+
 def load_likelihood(
-    filename: str,
-    build_parameters: Mapping[
-        str,
-        Union[str, int, bool, float, npt.NDArray[np.int64], npt.NDArray[np.float64]],
-    ],
+    filename: str, build_parameters: NamedParameters
 ) -> Tuple[Likelihood, ModelingTools]:
     """Loads a likelihood script and returns an instance
 

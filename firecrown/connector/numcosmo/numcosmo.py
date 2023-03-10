@@ -7,7 +7,6 @@ be used without an installation of NumCosmo.
 
 from typing import Dict, Union, List, Any, Optional
 import numpy as np
-import numpy.typing as npt
 import pyccl as ccl
 
 import gi
@@ -19,7 +18,9 @@ gi.require_version("NumCosmoMath", "1.0")
 from gi.repository import NumCosmo as Nc  # noqa: E402
 from gi.repository import NumCosmoMath as Ncm  # noqa: E402
 
-from firecrown.likelihood.likelihood import load_likelihood, Likelihood  # noqa: E402
+from firecrown.likelihood.likelihood import load_likelihood  # noqa: E402
+from firecrown.likelihood.likelihood import Likelihood  # noqa: E402
+from firecrown.likelihood.likelihood import NamedParameters  # noqa: E402
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian  # noqa: E402
 from firecrown.parameters import ParamsMap  # noqa: E402
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict  # noqa: E402
@@ -371,9 +372,7 @@ class NumCosmoFactory:
     def __init__(
         self,
         likelihood_source: str,
-        build_parameters: Dict[
-            str, Union[str, int, bool, float, npt.NDArray[np.float64]]
-        ],
+        build_parameters: NamedParameters,
         model_list: List[str],
         mapping: MappingNumCosmo,
     ):

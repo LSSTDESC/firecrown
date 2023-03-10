@@ -11,7 +11,7 @@ import numpy as np
 import numpy.typing as npt
 from cobaya.likelihood import Likelihood
 
-from firecrown.likelihood.likelihood import load_likelihood
+from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
 from firecrown.parameters import ParamsMap
 
 
@@ -21,13 +21,13 @@ class LikelihoodConnector(Likelihood):
     likelihood: Likelihood
     firecrownIni: str
     derived_parameters: List[str] = []
-    build_parameters: Dict[str, Union[str, int, bool, float, npt.NDArray[np.float64]]]
+    build_parameters: NamedParameters
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown
         configuration."""
         if not hasattr(self, "build_parameters"):
-            build_parameters = {}
+            build_parameters = NamedParameters()
         else:
             build_parameters = self.build_parameters
 
