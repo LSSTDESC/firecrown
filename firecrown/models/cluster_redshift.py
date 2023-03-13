@@ -18,8 +18,8 @@ class ClusterRedshift():
         self,
     ):
         self.zl = 0.0
-        self.zu = np.inf
-
+        self.zu = 50
+        self.use_proxy = False
 
     def compute_differential_comoving_volume(self, ccl_cosmo: ccl.Cosmology, z) -> float:
         """
