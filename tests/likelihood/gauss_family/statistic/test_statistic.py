@@ -49,7 +49,7 @@ def test_vector_copying():
 
 def test_excplicit_vector_construction():
     for cls in VECTOR_CLASSES:
-        vec = cls(shape=(4,), dtype=np.float64)  # type: ignore
+        vec = cls(shape=(4,), dtype=np.float64)
         assert isinstance(vec, cls)
         assert vec.shape == (4,)
         assert vec.dtype == np.float64

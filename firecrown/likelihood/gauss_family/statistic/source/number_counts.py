@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from abc import abstractmethod
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 from scipy.interpolate import Akima1DInterpolator
 
@@ -31,14 +32,14 @@ class NumberCountsArgs:
     """Class for number counts tracer builder argument."""
 
     scale: float
-    z: np.ndarray  # pylint: disable-msg=invalid-name
-    dndz: np.ndarray
-    bias: Optional[np.ndarray] = None
-    mag_bias: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    z: npt.NDArray[np.float64]  # pylint: disable-msg=invalid-name
+    dndz: npt.NDArray[np.float64]
+    bias: Optional[npt.NDArray[np.float64]] = None
+    mag_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     has_pt: bool = False
     has_hm: bool = False
-    b_2: Optional[Tuple[np.ndarray, np.ndarray]] = None
-    b_s: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    b_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    b_s: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
 
 class NumberCountsSystematic(SourceSystematic):

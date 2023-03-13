@@ -8,6 +8,8 @@ import gi
 import matplotlib.pyplot as plt
 from scipy.stats import chi2
 
+from firecrown.likelihood.likelihood import NamedParameters
+
 gi.require_version("NumCosmo", "1.0")
 gi.require_version("NumCosmoMath", "1.0")
 
@@ -61,7 +63,7 @@ dist.comoving_distance_spline.set_reltol(1.0e-5)
 
 map_cosmo = MappingNumCosmo(require_nonlinear_pk=False, dist=dist)
 
-nc_factory = NumCosmoFactory("sn_srd.py", {}, ["NcFirecrown"], map_cosmo)
+nc_factory = NumCosmoFactory("sn_srd.py", NamedParameters(), ["NcFirecrown"], map_cosmo)
 
 fc = NcFirecrown()
 # fc.params_set_default_ftype()

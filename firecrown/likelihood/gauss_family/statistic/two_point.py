@@ -8,6 +8,7 @@ import functools
 import warnings
 
 import numpy as np
+import numpy.typing as npt
 import sacc.windows
 import scipy.interpolate
 
@@ -37,7 +38,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
 
 
-def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> np.ndarray:
+def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> npt.NDArray[np.float64]:
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
 
@@ -145,12 +146,12 @@ class TwoPoint(Statistic):
     sacc_tracers : 2-tuple of str
         A tuple of the SACC tracer names for this 2pt statistic. Set after a
         call to read.
-    ell_or_theta_ : np.ndarray
+    ell_or_theta_ : npt.NDArray[np.float64]
         The final array of ell/theta values for the statistic. Set after
         `compute` is called.
-    measured_statistic_ : np.ndarray
+    measured_statistic_ : npt.NDArray[np.float64]
         The measured value for the statistic.
-    predicted_statistic_ : np.ndarray
+    predicted_statistic_ : npt.NDArray[np.float64]
         The final prediction for the statistic. Set after `compute` is called.
 
     """
@@ -187,14 +188,14 @@ class TwoPoint(Statistic):
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
-        self._ell_or_theta: Optional[np.ndarray] = None
+        self._ell_or_theta: Optional[npt.NDArray[np.float64]] = None
         self.predicted_statistic_: Optional[TheoryVector] = None
         self.measured_statistic_: Optional[DataVector] = None
-        self.ell_or_theta_: Optional[np.ndarray] = None
+        self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
 
         self.sacc_tracers: List[str]
-        self.ells: Optional[np.ndarray] = None
-        self.cells: Dict[Union[Tuple[str, str], str], np.ndarray] = {}
+        self.ells: Optional[npt.NDArray[np.float64]] = None
+        self.cells: Dict[Union[Tuple[str, str], str], npt.NDArray[np.float64]] = {}
 
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]

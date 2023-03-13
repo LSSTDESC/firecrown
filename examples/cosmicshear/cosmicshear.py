@@ -11,7 +11,6 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 
 def build_likelihood(_):
     """Create a firecrown likelihood for a cosmic shear analysis."""
-
     # Creating sources, each one maps to a specific section of a SACC file. In
     # this case trc0, trc1 describe weak-lensing probes. The sources are saved
     # in a dictionary since they will be used by one or more two-point function.

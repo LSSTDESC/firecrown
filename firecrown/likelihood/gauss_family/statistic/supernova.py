@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import Optional, final
 
 import numpy as np
+import numpy.typing as npt
 
 import pyccl
 import sacc
@@ -25,7 +26,8 @@ class Supernova(Statistic):
 
         self.sacc_tracer = sacc_tracer
         self.data_vector: Optional[DataVector] = None
-        self.a: Optional[np.ndarray] = None  # pylint: disable-msg=invalid-name
+        # pylint: disable-next=invalid-name
+        self.a: Optional[npt.NDArray[np.float64]] = None
         self.M = parameters.create()  # pylint: disable-msg=invalid-name
 
     def read(self, sacc_data: sacc.Sacc):

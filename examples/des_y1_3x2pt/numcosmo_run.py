@@ -5,6 +5,9 @@ from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo, NumCosmoFacto
 import math
 import gi
 
+from firecrown.likelihood.likelihood import NamedParameters
+
+
 gi.require_version("NumCosmo", "1.0")
 gi.require_version("NumCosmoMath", "1.0")
 
@@ -55,7 +58,9 @@ map_cosmo = MappingNumCosmo(
     require_nonlinear_pk=True, p_ml=p_ml, p_mnl=p_mnl, dist=dist
 )
 
-nc_factory = NumCosmoFactory("des_y1_3x2pt.py", {}, ["NcFirecrown"], map_cosmo)
+nc_factory = NumCosmoFactory(
+    "des_y1_3x2pt.py", NamedParameters(), ["NcFirecrown"], map_cosmo
+)
 
 fc = NcFirecrown()
 # fc.params_set_default_ftype()
