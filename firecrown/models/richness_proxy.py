@@ -9,7 +9,7 @@ class RMProxy:
     """A class for the richness proxy for the number counts likelihood."""
 
     def __init__(self):
-        self.pivot_mass = 4.2253521e14
+        self.pivot_mass = 1.0e14
         self.pivot_redshift = 0.6
         self.log_pivot_mass = np.log(self.pivot_mass)
         self.log_1_p_pivot_redshift = np.log(1.0 + self.pivot_redshift)

@@ -20,13 +20,13 @@ class ClusterMass():
         ccl_hmf,
         hmf_args: Optional[List[str]] = None
     ):
-       
+
         self.ccl_hmd = ccl_hmd
         self.ccl_hmf = ccl_hmf
         self.hmf_args = hmf_args
-        self.logMl = 10.0
-        self.logMu = 17.0	
-        self.use_proxy = False 
+        self.logMl = 13.0
+        self.logMu = 15.0
+        self.use_proxy = False
     def compute_mass_function(self, ccl_cosmo: ccl.Cosmology, logM, z) -> float:
         """
         parameters
@@ -50,7 +50,7 @@ class ClusterMass():
             hmf = self.ccl_hmf(ccl_cosmo,self.ccl_hmd)
         nm = hmf.get_mass_function(ccl_cosmo, mass, a)  # pylint: disable=invalid-name
         return nm
-    
+
     def set_logM_limits(self, logMl, logMu):
         self.logMl = logMl
         self.logMu = logMu

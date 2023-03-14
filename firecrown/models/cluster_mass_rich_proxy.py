@@ -29,7 +29,7 @@ class ClusterMassRich(ClusterMass):
         self.use_proxy = True
         self.pivot_mass = pivot_mass
         self.pivot_redshift = pivot_redshift
-        self.log_pivot_mass = np.log(self.pivot_mass)
+        self.log_pivot_mass = np.log(10**pivot_mass)
         self.log_1_p_pivot_redshift = np.log(1.0 + self.pivot_redshift)
 
         self.logM_obs_min = 0.0
@@ -45,34 +45,33 @@ class ClusterMassRich(ClusterMass):
             + mu_p1 * (lnM - self.log_pivot_mass)
             + mu_p2 * (np.log(1.0 + z) - self.log_1_p_pivot_redshift)
         )
-
         sigma = (
             sigma_p0
             + sigma_p1 * (lnM - self.log_pivot_mass)
             + sigma_p2 * (np.log(1.0 + z) - self.log_1_p_pivot_redshift)
         )
-        
+        sigma = abs(sigma)
         return [lnM_obs_mu, sigma]
 
 
 
     def cluster_logM_p(self,logM, z, logM_obs):
-        
+
         lnM_obs = np.log(10**logM_obs)
         lnM_mu, sigma = self._cluster_mass_lnM_obs_mu_sigma(logM, z)
         x = lnM_obs - lnM_mu
         chisq = np.dot(x, x) / (2 * sigma**2)
         lk = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
-        return lk
+        return lk * np.log(10)
 
     def cluster_logM_intp(self,logM, z):
-        
+
         lnM_obs_mu, sigma = self._cluster_mass_lnM_obs_mu_sigma(logM, z)
         x_min = (lnM_obs_mu - np.log(10**self.logM_obs_min)) / (np.sqrt(2.0) * sigma)
         x_max = (lnM_obs_mu - np.log(10**self.logM_obs_max)) / (np.sqrt(2.0) * sigma)
 
         if (x_max > 4.0):
-            return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
+            return -(special.erfc (x_min) - special.erfc (x_max)) / 2.0
         else:
             return (special.erf (x_min) - special.erf (x_max)) / 2.0
 
@@ -82,8 +81,7 @@ class ClusterMassRich(ClusterMass):
         x_min = (lnM_obs_mu - np.log(10**logM_obs_lower)) / (np.sqrt(2.0) * sigma)
         x_max = (lnM_obs_mu - np.log(10**logM_obs_upper)) / (np.sqrt(2.0) * sigma)
 
-        if (x_max > 4.0):
-            return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
+        if (x_max > 4.0 ):
+            return -(special.erfc (x_min) - special.erfc (x_max)) / 2.0
         else:
             return (special.erf (x_min) - special.erf (x_max)) / 2.0
-

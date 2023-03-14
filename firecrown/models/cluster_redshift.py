@@ -18,7 +18,7 @@ class ClusterRedshift():
         self,
     ):
         self.zl = 0.0
-        self.zu = 50
+        self.zu = 2.0
         self.use_proxy = False
 
     def compute_differential_comoving_volume(self, ccl_cosmo: ccl.Cosmology, z) -> float:
@@ -57,13 +57,3 @@ class ClusterRedshift():
     @abstractmethod
     def cluster_z_intp(self, ccl_cosmo,logM, z, z_obs, z_obs_params):
         """Computes the logM proxy"""
-
-
-
-
-
-
-
-
-
-

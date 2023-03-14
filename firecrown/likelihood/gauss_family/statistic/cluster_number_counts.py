@@ -93,12 +93,12 @@ class ClusterNumberCounts(Statistic):
         sacc_data_type,
         number_density_func,
         systematics: Optional[List[SourceSystematic]] = None,
-        mu_p0: Optional[float] = 3.19,
-        mu_p1: Optional[float] = 0.8685889638,
-        mu_p2: Optional[float] = -0.30400613733,
-        sigma_p0: Optional[float] = 0.33,
-        sigma_p1: Optional[float] = -0.03474355855,
-        sigma_p2: Optional[float] = 0.0,
+        mu_p0: Optional[float] = None,
+        mu_p1: Optional[float] = None,
+        mu_p2: Optional[float] = None,
+        sigma_p0: Optional[float] = None,
+        sigma_p1: Optional[float] = None,
+        sigma_p2: Optional[float] = None,
     ):
         super().__init__()
 
@@ -112,12 +112,12 @@ class ClusterNumberCounts(Statistic):
             SupportedTracerNames[sacc_tracer.upper()].name
             == "CLUSTER_COUNTS_RICHNESS_PROXY"
         ):
-            self.mu_p0 = parameters.create()
-            self.mu_p1 = parameters.create()
-            self.mu_p2 = parameters.create()
-            self.sigma_p0 = parameters.create()
-            self.sigma_p1 = parameters.create()
-            self.sigma_p2 = parameters.create()
+            self.mu_p0 = parameters.create(mu_p0)
+            self.mu_p1 = parameters.create(mu_p1)
+            self.mu_p2 = parameters.create(mu_p2)
+            self.sigma_p0 = parameters.create(sigma_p0)
+            self.sigma_p1 = parameters.create(sigma_p1)
+            self.sigma_p2 = parameters.create(sigma_p2)
         try:
             self.ccl_kind = SupportedDataTypes[sacc_data_type.upper()].name
         except KeyError:
