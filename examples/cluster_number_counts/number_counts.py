@@ -10,15 +10,23 @@ from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
 )
 from firecrown.models.ccl_density import CCLDensity
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-
+from firecrown.models.cluster_mass import ClusterMass
+from firecrown.models.cluster_redshift import ClusterRedshift
+import pyccl as ccl
 
 def build_likelihood(_):
     """
     Here we instantiate the number density (or mass function) object.
     """
-    massfunc = CCLDensity("critical", "Bocquet16", False)
+    hmd_200 = ccl.halos.MassDef200c()
+    hmf_args = [True, True]
+    hmf_200 = ccl.halos.MassFuncBocquet16
+    cluster_m = ClusterMass(hmd_200, hmf_200, hmf_args=hmf_args)
+    cluster_z = ClusterRedshift()
+
+
     stats = ClusterNumberCounts(
-        "cluster_counts_true_mass", "cluster_mass_count_wl", massfunc
+        "cluster_counts_true_mass", "cluster_mass_count_wl", cluster_m, cluster_z
     )
     stats = [stats]
 

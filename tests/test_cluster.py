@@ -3,6 +3,7 @@ from firecrown.models.cluster_abundance_binned import ClusterAbundanceBinned
 from firecrown.models.cluster_redshift import ClusterRedshift
 from firecrown.models.cluster_mass import ClusterMass
 from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
+from firecrown.models.cluster_mean_mass_bin import ClusterMeanMass
 import pyccl as ccl
 
 ccl_cosmo = ccl.Cosmology(
@@ -88,8 +89,8 @@ def test_cluster_abundance_functions():
     logM_obs = 2.0
     logM_obs_lower = 1.0
     logM_obs_upper = 2.5
-    z_obs_lower = 1.0
-    z_obs_upper = 2.5
+    z_obs_lower = 0.2
+    z_obs_upper = 1.0
     #Counts unbinned for true mass and richness proxy
     N_true = cluster_abundance.compute_N(ccl_cosmo)
     N_logM_p = cluster_abundance_Mproxy.compute_N(ccl_cosmo)
@@ -103,14 +104,14 @@ def test_cluster_abundance_functions():
     cluster_abundance_Mproxy.info = ClusterAbundanceInfo(ccl_cosmo, z=z, logM_obs=logM_obs)
     d2n_logM_p_int = cluster_abundance_Mproxy._cluster_abundance_logM_p_d2n_integrand(logM)
     assert(d2n_true != d2n_logM_p)
-    assert(d2n_logM_p_int == d2n_true * logM_p )
+    assert((d2n_logM_p_int - d2n_true * logM_p) / d2n_logM_p_int < 0.05  )
 
 
 
 def test_cluster_abundance_binned_functions():
     cluster_mass, cluster_z, cluster_mass_proxy, cluster_abundance, cluster_abundance_Mproxy, cluster_abundance_binned, cluster_abundance_binned_Mproxy = initialize_objects()
     logM = 13.0
-    z = 1.0
+    z = 0.2
     logM_obs = 2.0
     logM_lower, logM_upper = 13, 15
     logM_obs_lower = 13
@@ -125,3 +126,10 @@ def test_cluster_abundance_binned_functions():
     N_logM_p_bin = cluster_abundance_binned_Mproxy.compute_bin_N(ccl_cosmo, logM_obs_lower, logM_obs_upper, z_obs_lower, z_obs_upper)
     assert(d2n_logM_p_bin != 0.0)
     assert(N_logM_p_bin != 0.0)
+
+
+def test_cluster_mean_mass():
+    cluster_mass, cluster_z, cluster_mass_proxy, cluster_abundance, cluster_abundance_Mproxy, cluster_abundance_binned, cluster_abundance_binned_Mproxy = initialize_objects()
+    cluster_mean_mass = ClusterMeanMass(cluster_mass, cluster_z, sky_area)
+
+

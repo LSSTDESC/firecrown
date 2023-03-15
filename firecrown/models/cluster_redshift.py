@@ -11,9 +11,9 @@ import pyccl as ccl
 import numpy as np
 
 
-
-class ClusterRedshift():
+class ClusterRedshift:
     """Cluster Redshift module."""
+
     def __init__(
         self,
     ):
@@ -21,7 +21,9 @@ class ClusterRedshift():
         self.zu = 2.0
         self.use_proxy = False
 
-    def compute_differential_comoving_volume(self, ccl_cosmo: ccl.Cosmology, z) -> float:
+    def compute_differential_comoving_volume(
+        self, ccl_cosmo: ccl.Cosmology, z
+    ) -> float:
         """
         parameters
         ccl_cosmo : pyccl Cosmology
@@ -46,14 +48,15 @@ class ClusterRedshift():
         return dV
 
     def set_redshift_limits(self, zl, zu):
+        """Method to set the integration limits of the true redshift."""
         self.zl = zl
         self.zu = zu
         return None
 
     @abstractmethod
-    def cluster_z_p(self, ccl_cosmo,logM, z, z_obs, z_obs_params):
+    def cluster_z_p(self, ccl_cosmo, logM, z, z_obs, z_obs_params):
         """Computes the logM proxy"""
 
     @abstractmethod
-    def cluster_z_intp(self, ccl_cosmo,logM, z, z_obs, z_obs_params):
+    def cluster_z_intp(self, ccl_cosmo, logM, z, z_obs, z_obs_params):
         """Computes the logM proxy"""

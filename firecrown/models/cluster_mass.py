@@ -11,23 +11,20 @@ import pyccl as ccl
 import numpy as np
 
 
-
-class ClusterMass():
+class ClusterMass:
     """Cluster Mass module."""
-    def __init__(
-        self,
-        ccl_hmd,
-        ccl_hmf,
-        hmf_args: Optional[List[str]] = None
-    ):
 
+    def __init__(self, ccl_hmd, ccl_hmf, hmf_args: Optional[List[str]] = None):
         self.ccl_hmd = ccl_hmd
         self.ccl_hmf = ccl_hmf
         self.hmf_args = hmf_args
         self.logMl = 13.0
-        self.logMu = 15.0
+        self.logMu = 16.0
         self.use_proxy = False
-    def compute_mass_function(self, ccl_cosmo: ccl.Cosmology, logM, z) -> float:
+
+    def compute_mass_function(
+        self, ccl_cosmo: ccl.Cosmology, logM: float, z: float
+    ) -> float:
         """
         parameters
 
@@ -45,24 +42,26 @@ class ClusterMass():
         a = 1.0 / (1.0 + z)  # pylint: disable=invalid-name
         mass = 10 ** (logM)
         if self.hmf_args != None:
-            hmf = self.ccl_hmf(ccl_cosmo,self.ccl_hmd,self.hmf_args)
+            hmf = self.ccl_hmf(ccl_cosmo, self.ccl_hmd, self.hmf_args)
         else:
-            hmf = self.ccl_hmf(ccl_cosmo,self.ccl_hmd)
+            hmf = self.ccl_hmf(ccl_cosmo, self.ccl_hmd)
         nm = hmf.get_mass_function(ccl_cosmo, mass, a)  # pylint: disable=invalid-name
         return nm
 
     def set_logM_limits(self, logMl, logMu):
+        """Method to set the integration limits of the true mass."""
         self.logMl = logMl
         self.logMu = logMu
         return None
 
     @abstractmethod
-    def cluster_logM_p(self,logM, z, logM_obs):
+    def cluster_logM_p(self, logM, z, logM_obs):
         """Computes the logM proxytractmethod"""
 
     @abstractmethod
-    def cluster_logM_intp(self,logM, z):
+    def cluster_logM_intp(self, logM, z):
         """Computes the logM proxy"""
+
     @abstractmethod
-    def cluster_logM_intp_bin(self,logM, z, logM_obs_lower, logM_obs_upper):
+    def cluster_logM_intp_bin(self, logM, z, logM_obs_lower, logM_obs_upper):
         """Computes logMintp"""

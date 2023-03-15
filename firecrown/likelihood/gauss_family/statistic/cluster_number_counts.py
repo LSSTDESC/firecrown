@@ -20,6 +20,9 @@ from ....parameters import (
     DerivedParameterCollection,
 )
 from ....models.richness_proxy import RMProxy
+from ....models.cluster_abundance_binned import ClusterAbundanceBinned
+from ....models.cluster_mass import ClusterMass
+from ....models.cluster_mass_rich_proxy import ClusterMassRich
 from ....modeling_tools import ModelingTools
 from .cluster_number_counts_enum import (
     SupportedTracerNames,
@@ -91,14 +94,9 @@ class ClusterNumberCounts(Statistic):
         self,
         sacc_tracer,
         sacc_data_type,
-        number_density_func,
+        cluster_mass,
+        cluster_redshift,
         systematics: Optional[List[SourceSystematic]] = None,
-        mu_p0: Optional[float] = None,
-        mu_p1: Optional[float] = None,
-        mu_p2: Optional[float] = None,
-        sigma_p0: Optional[float] = None,
-        sigma_p1: Optional[float] = None,
-        sigma_p2: Optional[float] = None,
     ):
         super().__init__()
 
@@ -107,17 +105,19 @@ class ClusterNumberCounts(Statistic):
         self.systematics = systematics or []
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
-        self.number_density_func = number_density_func
+        self.cluster_mass = cluster_mass
+        self.cluster_z = cluster_redshift
+        self.cluster_abundance_binned = None
         if (
             SupportedTracerNames[sacc_tracer.upper()].name
             == "CLUSTER_COUNTS_RICHNESS_PROXY"
         ):
-            self.mu_p0 = parameters.create(mu_p0)
-            self.mu_p1 = parameters.create(mu_p1)
-            self.mu_p2 = parameters.create(mu_p2)
-            self.sigma_p0 = parameters.create(sigma_p0)
-            self.sigma_p1 = parameters.create(sigma_p1)
-            self.sigma_p2 = parameters.create(sigma_p2)
+            self.mu_p0 = parameters.create()
+            self.mu_p1 = parameters.create()
+            self.mu_p2 = parameters.create()
+            self.sigma_p0 = parameters.create()
+            self.sigma_p1 = parameters.create()
+            self.sigma_p2 = parameters.create()
         try:
             self.ccl_kind = SupportedDataTypes[sacc_data_type.upper()].name
         except KeyError:
@@ -256,6 +256,9 @@ class ClusterNumberCounts(Statistic):
         self.sacc_indices = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
         )
+        self.cluster_abundance_binned = ClusterAbundanceBinned(
+            self.cluster_mass, self.cluster_z, metadata["sky_area"]
+        )
 
     def get_data_vector(self) -> DataVector:
         """Return the data vector; raise exception if there is none."""
@@ -279,41 +282,39 @@ class ClusterNumberCounts(Statistic):
             in each bin of redsfhit and mass.
         """
         ccl_cosmo = tools.get_ccl_cosmology()
-        skyarea = self.tracer_args.metadata["sky_area"]
-        # pylint: disable-next=invalid-name
-        DeltaOmega = skyarea * np.pi**2 / 180**2
         z_bins = self.tracer_args.z_bins
         proxy_bins = self.tracer_args.Mproxy_bins
         theory_vector = []
         if self.sacc_tracer == "cluster_counts_true_mass":
-            # pylint: disable-next=invalid-name
-            def integrand(logm, z):
-                # pylint: disable-next=invalid-name
-                nm = self.number_density_func.compute_number_density(ccl_cosmo, logm, z)
-                # pylint: disable-next=invalid-name
-                dv = self.number_density_func.compute_differential_comoving_volume(
-                    ccl_cosmo, z
-                )
-                return nm * dv
-
             for i in range(len(z_bins) - 1):
                 for j in range(len(proxy_bins) - 1):
-                    bin_count = scipy.integrate.dblquad(
-                        integrand,
+                    bin_count = self.cluster_abundance_binned.compute_bin_N(
+                        ccl_cosmo,
+                        proxy_bins[j],
+                        proxy_bins[j + 1],
                         z_bins[i],
                         z_bins[i + 1],
-                        # pylint: disable-next=cell-var-from-loop
-                        lambda x: proxy_bins[j],
-                        # pylint: disable-next=cell-var-from-loop
-                        lambda x: proxy_bins[j + 1],
-                        epsabs=1.0e-4,
-                        epsrel=1.0e-4,
-                    )[0]
-                    theory_vector.append(bin_count * DeltaOmega)
+                    )
+
+                    theory_vector.append(bin_count)
         elif self.sacc_tracer == "cluster_counts_richness_proxy":
-            logm_interval = (np.log10(1.0e13), np.log10(1.0e15))
-            nz_theory_vector = self._richness_proxy_integral(
-                ccl_cosmo, proxy_bins, logm_interval, z_bins
-            )
-            theory_vector = [nz * DeltaOmega for nz in nz_theory_vector]
+            if self.cluster_abundance_binned.cluster_m.proxy_params == None:
+                self.cluster_abundance_binned.cluster_m.proxy_params = [
+                    self.mu_p0,
+                    self.mu_p1,
+                    self.mu_p2,
+                    self.sigma_p0,
+                    self.sigma_p1,
+                    self.sigma_p2,
+                ]
+            for i in range(0, len(z_bins) - 1):
+                for j in range(0, len(proxy_bins) - 1):
+                    bin_count = self.cluster_abundance_binned.compute_bin_N(
+                        ccl_cosmo,
+                        proxy_bins[j],
+                        proxy_bins[j + 1],
+                        z_bins[i],
+                        z_bins[i + 1],
+                    )
+                    theory_vector.append(bin_count)
         return TheoryVector.from_list(theory_vector)
