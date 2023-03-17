@@ -21,6 +21,7 @@ from ....parameters import (
 )
 from ....models.richness_proxy import RMProxy
 from ....models.cluster_abundance_binned import ClusterAbundanceBinned
+from ....models.cluster_mean_mass_bin import ClusterMeanMass
 from ....models.cluster_mass import ClusterMass
 from ....models.cluster_mass_rich_proxy import ClusterMassRich
 from ....modeling_tools import ModelingTools
@@ -109,8 +110,8 @@ class ClusterNumberCounts(Statistic):
         self.cluster_z = cluster_redshift
         self.cluster_abundance_binned = None
         if (
-            SupportedTracerNames[sacc_tracer.upper()].name
-            == "CLUSTER_COUNTS_RICHNESS_PROXY"
+            type(self.cluster_mass).__name__
+            == "ClusterMassRich"
         ):
             self.mu_p0 = parameters.create()
             self.mu_p1 = parameters.create()
@@ -230,15 +231,15 @@ class ClusterNumberCounts(Statistic):
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer.lower())
         metadata = tracer.metadata
-        proxy_type = metadata["Mproxy_type"].upper()
-        if (
-            SupportedTracerNames[self.sacc_tracer.upper()].value
-            != SupportedProxyTypes[proxy_type.upper()].value
-        ):
-            raise TypeError(
-                f"The proxy {proxy_type} is not supported"
-                f"by the tracer {self.sacc_tracer}"
-            )
+#         proxy_type = metadata["Mproxy_type"].upper()
+#         if (
+#             SupportedTracerNames[self.sacc_tracer.upper()].value
+#             != SupportedProxyTypes[proxy_type.upper()].value
+#         ):
+#             raise TypeError(
+#                 f"The proxy {proxy_type} is not supported"
+#                 f"by the tracer {self.sacc_tracer}"
+#             )
 
         # pylint: disable-next=invalid-name
         nz = sacc_data.get_mean(
@@ -317,4 +318,61 @@ class ClusterNumberCounts(Statistic):
                         z_bins[i + 1],
                     )
                     theory_vector.append(bin_count)
+                    
+                    
+        elif self.sacc_tracer == "cluster_counts_richness_proxy_plusmean":
+            if self.cluster_abundance_binned.cluster_m.proxy_params == None:
+                self.cluster_abundance_binned.cluster_m.proxy_params = [
+                    self.mu_p0,
+                    self.mu_p1,
+                    self.mu_p2,
+                    self.sigma_p0,
+                    self.sigma_p1,
+                    self.sigma_p2,
+                ]
+            mean_mass_obj = ClusterMeanMass(self.cluster_mass, self.cluster_z, self.tracer_args.metadata["sky_area"], [True, False])
+            mean_mass = []
+            for i in range(0, len(z_bins) - 1):
+                for j in range(0, len(proxy_bins) - 1):
+                    bin_count = self.cluster_abundance_binned.compute_bin_N(
+                        ccl_cosmo,
+                        proxy_bins[j],
+                        proxy_bins[j + 1],
+                        z_bins[i],
+                        z_bins[i + 1],
+                    )
+                    theory_vector.append(bin_count)
+                    mass_count = mean_mass_obj.compute_bin_logM(
+                        ccl_cosmo,
+                        proxy_bins[j],
+                        proxy_bins[j + 1],
+                        z_bins[i],
+                        z_bins[i + 1],
+                    )
+                    mean_mass.append(mass_count)
+            theory_vector = theory_vector + mean_mass
+
+        elif self.sacc_tracer == "cluster_counts_richness_meanonly_proxy":
+            if self.cluster_abundance_binned.cluster_m.proxy_params == None:
+                self.cluster_abundance_binned.cluster_m.proxy_params = [
+                    self.mu_p0,
+                    self.mu_p1,
+                    self.mu_p2,
+                    self.sigma_p0,
+                    self.sigma_p1,
+                    self.sigma_p2,
+                ]
+            mean_mass_obj = ClusterMeanMass(self.cluster_mass, self.cluster_z, self.tracer_args.metadata["sky_area"], [True, False])
+                
+            for i in range(0, len(z_bins) - 1):
+                for j in range(0, len(proxy_bins) - 1):
+                    mass_count = mean_mass_obj.compute_bin_logM(
+                        ccl_cosmo,
+                        proxy_bins[j],
+                        proxy_bins[j + 1],
+                        z_bins[i],
+                        z_bins[i + 1],
+                    )
+                    theory_vector.append(mass_count)
+
         return TheoryVector.from_list(theory_vector)

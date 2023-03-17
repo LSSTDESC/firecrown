@@ -40,6 +40,7 @@ cluster_mass_r = ClusterMassRich(
     pivot_redshift=pivot_redshift,
     hmf_args=hmf_args,
 )
+print(type(cluster_mass_r).__name__)
 cluster_mass = ClusterMass(hmd_200, hmf_200, hmf_args=hmf_args)
 cluster_z = ClusterRedshift()
 cluster_abundance_bin = ClusterAbundanceBinned(cluster_mass_r, cluster_z, sky_area)

@@ -363,7 +363,7 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_z_intp_d2n(self, ccl_cosmo, logM: float, z: float):
-       """Computes d2n for the case when we have proxy for redshift and true mass.
+        """Computes d2n for the case when we have proxy for redshift and true mass.
         The integrand is given by
         .. math::
             d2n(logM, z) = \int_{z_obs_min}^{z_obs_max}\frac{d2n}{dlogMdz}  P(z_obs|logM, z)  \frac{dv}{dz} dz_obs.
@@ -411,12 +411,12 @@ class ClusterAbundance():
         N: float
             Cluster number counts in the interval [logM_lower, logM_upper], [z_lower, z_min] and [z_obs_lower, zobs__min].
         """
-       self.info = ClusterAbundanceInfo(ccl_cosmo)
+        self.info = ClusterAbundanceInfo(ccl_cosmo)
 
-       integrand = self._cluster_abundance_z_intp_d2n_integrand
-       DeltaOmega = self.sky_area * np.pi**2 / 180**2
+        integrand = self._cluster_abundance_z_intp_d2n_integrand
+        DeltaOmega = self.sky_area * np.pi**2 / 180**2
 
-       N = scipy.integrate.dblquad(
+        N = scipy.integrate.dblquad(
                         integrand,
                         self.cluster_z.zl,
                         self.cluster_z.zu,
@@ -428,7 +428,7 @@ class ClusterAbundance():
                         epsrel=1.0e-4,
                     )[0]
 
-       return N * DeltaOmega
+        return N * DeltaOmega
 
 
     def _cluster_abundance_logM_intp_d2n(self, ccl_cosmo, logM: float, z: float):

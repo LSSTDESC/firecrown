@@ -19,6 +19,7 @@ proxy_params = [3.091, 0.8, 0, 0.3, 0.8, 0]
 cl_m_r = cluster_mass_rich_proxy.ClusterMassRich(
     hmd_200, hmf_200, proxy_params, np.log10(4.2253521e14), 0.6, args
 )
+print(type(cl_m_r).__name__)
 cl_abundance = cluster_abundance.ClusterAbundance(cl_m_r, cl_z, 489)
 
 cl_abundance_bin = cluster_abundance_binned.ClusterAbundanceBinned(cl_m, cl_z, 489)
