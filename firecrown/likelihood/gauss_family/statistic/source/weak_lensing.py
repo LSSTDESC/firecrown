@@ -309,7 +309,7 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         return replace(
             tracer_arg,
             has_hm=True,
-            ia_a_1h=self.ia_a_1h#(z, a_1h),
+            ia_a_1h=self.ia_a_1h
         )
 
 

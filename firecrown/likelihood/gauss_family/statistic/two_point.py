@@ -354,18 +354,22 @@ class TwoPoint(Statistic):
                         tracer2=tracer1.pt_tracer,
                         nonlin_pk_type="nonlinear",
                         ptc=pt_calculator,
-                        # TODO: Need this or not?
-                        #update_ptc=False,
+                        update_ptc=False,
                     )
                 elif tracer0.has_hm or tracer1.has_hm:
+                    # Need to know what the tracer is:
+                    # delta_matter:delta_matter -> should be GG, should be automatic
+                    # delta_matter:intrinsic_hm -> should be GI
+                    # intrinsic_hm:delta_matter -> should be IG
+                    # intrinsic_hm:intrinsic_hm -> should be II
+                    # galaxies:intrinsic_hm -> should be gI
+                    # etc...
                     # Compute halo model power spectrum
                     # TODO: Somehow take care of k,a sampling when generating Pk2D object?
-                    # How is this done in the PT module? How can I do it internally?
                     k_arr = np.geomspace(1E-3, 1e3, 128)
                     a_arr = np.linspace(0.1, 1, 16)
                     pk_name = f"{tracer0.field}:{tracer1.field}"
-                    # I must know what the tracers are to know whether to return GI or II.
-                    if tracer0.has_hm and tracer0.has_hm:
+                    if tracer0.has_hm and tracer1.has_hm:
                         # If both halo model tracers, get the II power sepctrum.
                         profile0 = tracer0.halo_profile
                         profile1 = tracer1.halo_profile
@@ -374,8 +378,10 @@ class TwoPoint(Statistic):
                             ccl_cosmo, hmc, profile0,
                             prof2=profile1, get_2h=False,
                             lk_arr=np.log(k_arr), a_arr=a_arr)
-                    elif tracer0.has_hm and not tracer1.has_hm:
-                        # if only one has halo model, get the GI power spectrum.
+                    # TODO: I have to manually check here for all the tracer combinations
+                    # I should make this more streamlined, somehow.
+                    elif tracer0.has_hm and tracer1.field == 'delta_matter':
+                        # get the IG power spectrum.
                         # FIXME: The GI power spectrum does not seem to be what it should, need to look at this.
                         profile0 = tracer0.halo_profile
                         profile1 = pyccl.halos.HaloProfileNFW(tools.get_cM_relation(),
@@ -385,10 +391,11 @@ class TwoPoint(Statistic):
                             ccl_cosmo, hmc, profile0,
                             prof2=profile1, get_2h=False, normprof2=True,
                             lk_arr=np.log(k_arr), a_arr=a_arr)
-                    elif not tracer0.has_hm and tracer1.has_hm:
+                    elif tracer0.field == 'delta_matter' and tracer1.has_hm:
+                        # get the GI power spectrum.
                         profile0 = pyccl.halos.HaloProfileNFW(tools.get_cM_relation(),
                                                               truncated=True, fourier_analytic=True)
-                        profile1 = tracer0.halo_profile
+                        profile1 = tracer1.halo_profile
                         hmc = tools.get_hm_calculator()
                         pk = pyccl.halos.halomod_Pk2D(
                             ccl_cosmo, hmc, profile0,

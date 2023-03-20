@@ -169,6 +169,7 @@ def run_likelihood() -> None:
     ells = two_point_0.ells
     cells_gg = two_point_0.cells[("shear", "shear")]
     cells_gi = two_point_0.cells[("shear", "intrinsic_hm")]
+    cells_ig = two_point_0.cells[("intrinsic_hm", "shear")]
     cells_ii = two_point_0.cells[("intrinsic_hm", "intrinsic_hm")]
     cells_total = two_point_0.cells["total"]
     # pylint: enable=no-member
@@ -177,10 +178,10 @@ def run_likelihood() -> None:
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
     t_ia = ccl.WeakLensingTracer(
         ccl_cosmo,
-        dndz=(z, nz),
         has_shear=False,
-        ia_bias=(z, np.ones_like(z)),
         use_A_ia=False,
+        dndz=(z, nz),
+        ia_bias=(z, np.ones_like(z)),
     )
     # pylint: disable=invalid-name
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_GI_1h)
@@ -200,8 +201,8 @@ def run_likelihood() -> None:
     plt.plot(ells, -cl_GI, ls="--", label="-GI CCL")
     plt.plot(ells, cells_ii, label="II firecrown")
     plt.plot(ells, cl_II, ls="--", label="II CCL")
-#    plt.plot(ells, cells_total, label="total firecrown")
-#    plt.plot(ells, cl_theory, ls="--", label="total CCL")
+    plt.plot(ells, cells_total, label="total firecrown")
+    plt.plot(ells, cl_theory, ls="--", label="total CCL")
 
     # plt.errorbar(x, y_data, y_err, ls="none", marker="o")
     plt.xscale("log")
