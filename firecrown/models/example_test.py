@@ -44,8 +44,12 @@ print(type(cluster_mass_r).__name__)
 
 cluster_mass = ClusterMass(hmd_200, hmf_200, hmf_args=hmf_args)
 cluster_z = ClusterRedshift()
-cluster_abundance_bin = ClusterAbundanceBinned(cluster_mass_r, cluster_z, sky_area, [True, True])
-cluster_abundance_bin_p = ClusterAbundanceBinned(cluster_mass, cluster_z, sky_area, [True, True])
+cluster_abundance_bin = ClusterAbundanceBinned(
+    cluster_mass_r, cluster_z, sky_area, [True, True]
+)
+cluster_abundance_bin_p = ClusterAbundanceBinned(
+    cluster_mass, cluster_z, sky_area, [True, True]
+)
 print(cluster_abundance_bin_p.selection_error)
 cluster_mean_bin = ClusterMeanMass(cluster_mass_r, cluster_z, sky_area)
 test = []

@@ -1,14 +1,14 @@
-"""Cluster Abundance Module
+r"""Cluster Abundance Module
 abstract class to compute cluster abundance.
 ========================================
 The implemented functions use PyCCL library as backend.
 """
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import List, Optional
 
-import pyccl as ccl
 import numpy as np
 import scipy.integrate
+
 
 class ClusterAbundanceInfo():
     def __init__(
@@ -34,14 +34,28 @@ class ClusterAbundanceInfo():
         self.z_obs_lower = z_obs_lower
         self.z_obs_upper = z_obs_upper
 
+
 class ClusterAbundance():
-    """Cluster Abundance module."""
+    r"""Cluster Abundance module.
+        Atributes
+        __________
+        cluster_mass: ClusterMass object
+            Dictates whether to use a mass proxy or not,\
+            which mass function and other cluster functions\
+            that mostly depend on the cluster mass.
+        cluster_redshift: Cluster Redshift object
+            Dictates whether to use a redshift proxy or not,\
+            how to compute the comoving volume and other cluster functions\
+            that mostly depend on the cluster redshift.
+        sky_area: float
+            Area of the sky from the survey.
+    """
     def __init__(
-    	self,
-    	cluster_mass,
-		cluster_redshift,
-		sky_area: Optional[float] = None
-    ):
+        self,
+        cluster_mass,
+        cluster_redshift,
+        sky_area: Optional[float] = None
+        ):
         self.cluster_m = cluster_mass
         self.cluster_z = cluster_redshift
         self.sky_area = sky_area
@@ -52,9 +66,9 @@ class ClusterAbundance():
         self.info = None
 
 
-
     def _cluster_abundance_z_p_logM_p_d2n_integrand(self, logM: float, z: float):
-        """Define integrand for the case when we have proxy for redshift and mass.
+        r"""Define integrand for the case when we have proxy for
+        redshift and mass.
         The integrand is given by
         .. math::
             d2n(logM, logM_obs, z, z_obs) = \frac{d2n}{dlogMdz}  P(z_obs|logM, z)  P(logM_obs|logM, z) \frac{dv}{dz} dlogM dz.
@@ -73,20 +87,19 @@ class ClusterAbundance():
         """
 
         ccl_cosmo = self.info.ccl_cosmo
-        logM_obs_params = self.cluster_m.logM_obs_params
-        z_obs_params = self.cluster_z.z_obs_params
         z_obs = self.info.z_obs
         logM_obs = self.info.logM_obs
 
         p_z = self.cluster_z.cluster_redshift_p(logM, z, z_obs)
         p_logM = self.cluster_m.cluster_logM_p(logM, z, logM_obs)
-        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo,logM,z)
+        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return p_z * p_logM * d2NdzdlogM * dvdz
 
     def cluster_abundance_z_p_logM_p_d2n(self, ccl_cosmo, logM_obs: float, z_obs: float):
-        """Computes the integral of $d2n(logM, logM_obs, z, z_obs)$ over the true values of mass and redshift, that is
+        r"""Computes the integral of $d2n(logM, logM_obs, z, z_obs)$ over
+        the true values of mass and redshift, that is
         .. math::
             d2n(logM_obs, z_obs) = \int_{logM_min}^{logM_max}\int_{z_min}^{z_max}\frac{d2n}{dlogMdz}  P(z_obs|logM, z)  P(logM_obs|logM, z) \frac{dv}{dz} dlogM dz.
 
@@ -95,7 +108,8 @@ class ClusterAbundance():
         ccl_cosmo: Cosmology
             Pyccl cosmology
         logM_obs: float
-            Observed cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Observed cluster mass given by log10(M) where\
+            M is in units of M_sun (comoving).
         z_obs : float
             Observed cluster redshift.
 
@@ -123,8 +137,8 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_z_p_d2n_integrand(self, z: float):
-        """Define integrand for the case when we have proxy for redshift and true mass.
-        The integrand is given by
+        r"""Define integrand for the case when we have proxy\
+        for redshift and true mass. The integrand is given by\
         .. math::
             d2n(logM, z, z_obs) = \frac{d2n}{dlogMdz}  P(z_obs|logM, z) \frac{dv}{dz} dz.
 
@@ -154,7 +168,8 @@ class ClusterAbundance():
 
 
     def cluster_abundance_z_p_d2n(self, ccl_cosmo, logM: float, z_obs: float):
-        """Computes the integral of $d2n(logM, z, z_obs)$ over the true values of redshift, that is
+        r"""Computes the integral of $d2n(logM, z, z_obs)$ over\
+        the true values of redshift, that is
         .. math::
             d2n(logM, z_obs) = \int_{z_min}^{z_max}\frac{d2n}{dlogMdz}  P(z_obs|logM, z)  \frac{dv}{dz} dz.
 
@@ -164,7 +179,8 @@ class ClusterAbundance():
         ccl_cosmo: Cosmology
             Pyccl cosmology
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is\
+            in units of M_sun (comoving).
         z_obs : float
             Observed Cluster Redshift.
 
@@ -185,7 +201,8 @@ class ClusterAbundance():
         return nm
 
     def _cluster_abundance_logM_p_d2n_integrand(self, logM: float):
-        """Define integrand for the case when we have proxy for mass and true redshift.
+        r"""Define integrand for the case when we have proxy for\
+        mass and true redshift.
         The integrand is given by
         .. math::
             d2n(logM, logM_obs, z) = \frac{d2n}{dlogMdz} P(logM_obs|logM, z) \frac{dv}{dz} dlogM.
@@ -193,7 +210,8 @@ class ClusterAbundance():
         parameters
         __________
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -208,13 +226,14 @@ class ClusterAbundance():
         logM_obs = self.info.logM_obs
 
         p_logM = self.cluster_m.cluster_logM_p(logM, z, logM_obs)
-        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo,logM,z)
+        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return p_logM * d2NdzdlogM * dvdz
 
     def cluster_abundance_logM_p_d2n(self, ccl_cosmo, logM_obs: float, z: float):
-        """Computes the integral of $d2n(logM, logM_obs, z)$ over the true values of mass, that is
+        r"""Computes the integral of $d2n(logM, logM_obs, z)$ over\
+        the true values of mass, that is
         .. math::
             d2n(logM_obs, z) = \int_{logM_min}^{logM_max}\frac{d2n}{dlogMdz}  P(logM_obs|logM, z) \frac{dv}{dz} dlogM.
 
@@ -223,7 +242,8 @@ class ClusterAbundance():
         ccl_cosmo: Cosmology
             Pyccl cosmology
         logM_obs: float
-            Observed cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Observed cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -244,7 +264,8 @@ class ClusterAbundance():
         return nm
 
     def _cluster_abundance_d2n_integrand(self, logM: float, z: float):
-        """Define integrand for the case when we have true redshift and mass.
+        r"""Define integrand for the case when we have\
+        true redshift and mass.
         The integrand is given by
         .. math::
             d2n(logM, z) = \frac{d2n}{dlogMdz} \frac{dv}{dz}.
@@ -252,7 +273,8 @@ class ClusterAbundance():
         parameters
         __________
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -263,12 +285,12 @@ class ClusterAbundance():
         """
 
         ccl_cosmo = self.info.ccl_cosmo
-        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo,logM,z)
+        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
         return d2NdzdlogM * dvdz
 
     def _cluster_abundance_d2n(self, ccl_cosmo, logM: float, z: float):
-        """Computes $d2n(logM, z)$ over the true values of mass, that is
+        r"""Computes $d2n(logM, z)$ over the true values of mass, that is
         .. math::
             d2n(logM_obs, z) = \frac{d2n}{dlogMdz}  \frac{dv}{dz}.
 
@@ -277,7 +299,8 @@ class ClusterAbundance():
         ccl_cosmo: Cosmology
             Pyccl cosmology object.
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -288,10 +311,10 @@ class ClusterAbundance():
         """
 
         self.info = ClusterAbundanceInfo(ccl_cosmo)
-        return self._cluster_abundance_d2n_integrand( logM, z)
+        return self._cluster_abundance_d2n_integrand(logM, z)
 
     def _cluster_abundance_z_intp_logM_intp_d2n(self, ccl_cosmo, logM: float, z: float):
-        """Compute d2n for the case when we have proxy for redshift and mass.
+        r"""Compute d2n for the case when we have proxy for redshift and mass.
         The integrand is given by
         .. math::
             d2n(logM, z) = \int_{logM_obs_min}^{logM_obs_max}\int_{z_obs_min}^{z_obs_max}\frac{d2n}{dlogMdz}  P(z_obs|logM, z)  P(logM_obs|logM, z) \frac{dv}{dz} dlogM_obs dz_obs.
@@ -301,7 +324,8 @@ class ClusterAbundance():
         ccl_cosmo: Cosmology
             Pyccl cosmology.
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -312,7 +336,7 @@ class ClusterAbundance():
         """
         intp_z = self.cluster_z.cluster_redshift_intp(logM, z)
         intp_logM = self.cluster_m.cluster_logM_intp(logM, z)
-        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo,logM,z)
+        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return intp_z * intp_logM * d2NdzdlogM * dvdz
@@ -325,7 +349,9 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_z_intp_logM_intp_N(self, ccl_cosmo):
-        """Computes the integral of $d2n(logM, z)$ over the true values of mass and redshift, that is         .. math::
+        r"""Computes the integral of $d2n(logM, z)$ over\
+        the true values of mass and redshift, that is
+        .. math::
             N = \Omega \int_{logM_min}^{logM_max}\int_{z_min}^{z_max}\frac{d2n}{dlogMdz} \frac{dv}{dz} dlogM dz.
 
         In the above, we utilize the analitical integral of the proxies.
@@ -341,7 +367,7 @@ class ClusterAbundance():
         return
         ______
         N: float
-            Cluster number counts in the interval [logM_lower, logM_upper], [z_lower, z_min], [logM_obs_lower, logM_obs_upper] and [z_obs_lower, zobs__min].
+            Cluster number counts in the interval [logM_lower, logM_upper], [z_lower, z_min], [logM_obs_lower, logM_obs_upper] and [z_obs_lower, zobs_min].
         """
 
         self.info = ClusterAbundanceInfo(ccl_cosmo)
@@ -363,8 +389,8 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_z_intp_d2n(self, ccl_cosmo, logM: float, z: float):
-        """Computes d2n for the case when we have proxy for redshift and true mass.
-        The integrand is given by
+        r"""Computes d2n for the case when we have proxy for\
+        redshift and true mass. The integrand is given by
         .. math::
             d2n(logM, z) = \int_{z_obs_min}^{z_obs_max}\frac{d2n}{dlogMdz}  P(z_obs|logM, z)  \frac{dv}{dz} dz_obs.
 
@@ -374,7 +400,8 @@ class ClusterAbundance():
             Pyccl cosmology
 
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -385,7 +412,7 @@ class ClusterAbundance():
         """
 
         intp_z = self.cluster_z.cluster_redshift_intp(logM, z)
-        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo,logM,z)
+        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return intp_z * d2NdzdlogM * dvdz
@@ -397,7 +424,9 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_z_intp_N(self, ccl_cosmo):
-        """Computes the integral of $d2n(logM, z)$ over the true values of mass and redshift, that is         .. math::
+        r"""Computes the integral of $d2n(logM, z)$ over\
+        the true values of mass and redshift, that is
+        .. math::
             N = \Omega \int_{logM_min}^{logM_max}\int_{z_min}^{z_max}\frac{d2n}{dlogMdz} \frac{dv}{dz} dlogM dz.
 
         In the above, we utilize the analitical integral of the redshift proxy.
@@ -409,7 +438,8 @@ class ClusterAbundance():
         return
         ______
         N: float
-            Cluster number counts in the interval [logM_lower, logM_upper], [z_lower, z_min] and [z_obs_lower, zobs__min].
+            Cluster number counts in the interval [logM_lower, logM_upper],\
+            [z_lower, z_min] and [z_obs_lower, zobs_min].
         """
         self.info = ClusterAbundanceInfo(ccl_cosmo)
 
@@ -432,8 +462,8 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_logM_intp_d2n(self, ccl_cosmo, logM: float, z: float):
-        """Define integrand for the case when we have proxy for mass and true redshift.
-        The integrand is given by
+        r"""Define integrand for the case when we have proxy\
+        for mass and true redshift. The integrand is given by
         .. math::
             d2n(logM, z) = \int_{logM_obs_min}^{logM_obs_max}\frac{d2n}{dlogMdz}  P(z_obs|logM, z)  \frac{dv}{dz} dlogM_obs.
 
@@ -442,7 +472,8 @@ class ClusterAbundance():
         ccl_cosmo: Cosmology
             Pyccl Cosmology.
         logM: float
-            Cluster mass given by log10(M) where M is in units of M_sun (comoving).
+            Cluster mass given by log10(M) where M is in\
+            units of M_sun (comoving).
         z : float
             Cluster Redshift.
 
@@ -453,7 +484,7 @@ class ClusterAbundance():
         """
 
         intp_logM = self.cluster_m.cluster_logM_intp(logM, z)
-        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM,z)
+        d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return intp_logM * d2NdzdlogM * dvdz
@@ -464,7 +495,8 @@ class ClusterAbundance():
         return self._cluster_abundance_logM_intp_d2n(ccl_cosmo, logM, z)
 
     def _cluster_abundance_logM_intp_N(self, ccl_cosmo):
-        """Computes the integral of $d2n(logM, z)$ over the true values of mass and redshift, that is
+        r"""Computes the integral of $d2n(logM, z)$ over\
+        the true values of mass and redshift, that is
         .. math::
             N = \Omega \int_{logM_min}^{logM_max}\int_{z_min}^{z_max}\frac{d2n}{dlogMdz} \frac{dv}{dz} dlogM dz.
         
@@ -477,7 +509,8 @@ class ClusterAbundance():
         return
         ______
         N: float
-            Cluster number counts in the interval [logM_lower, logM_upper], [z_lower, z_min] and [logM_obs_lower, logM_obs_upper].
+            Cluster number counts in the interval [logM_lower, logM_upper],\
+            [z_lower, z_min] and [logM_obs_lower, logM_obs_upper].
         """
 
         self.info = ClusterAbundanceInfo(ccl_cosmo)
@@ -498,7 +531,9 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_N(self, ccl_cosmo):
-        """Computes the integral of $d2n(logM, z)$ over the true values of mass and redshift, that is         .. math::
+        r"""Computes the integral of $d2n(logM, z)$ over\
+        the true values of mass and redshift, that is
+        .. math::
             N = \Omega \int_{logM_min}^{logM_max}\int_{z_min}^{z_max}\frac{d2n}{dlogMdz} \frac{dv}{dz} dlogM dz.
 
         parameters
@@ -510,7 +545,8 @@ class ClusterAbundance():
         return
         ______
         N: float
-            Cluster number counts in the interval [logM_lower, logM_upper] and [z_lower, z_min].
+            Cluster number counts in the interval [logM_lower, logM_upper]\
+            and [z_lower, z_min].
         """
 
         self.info = ClusterAbundanceInfo(ccl_cosmo)
@@ -531,15 +567,15 @@ class ClusterAbundance():
 
 
     def _cluster_abundance_funcs(self):
-        if self.cluster_m.use_proxy == False: 
-            if self.cluster_z.use_proxy == False:
+        if self.cluster_m.use_proxy is False: 
+            if self.cluster_z.use_proxy is False:
                 self._compute_N = self._cluster_abundance_N
                 self._compute_intp_d2n = self._cluster_abundance_d2n
             else:
                 self._compute_N = self._cluster_abundance_z_intp_N
                 self._compute_intp_d2n = self._cluster_abundance_z_intp_d2n
         else:
-            if self.cluster_z.use_proxy == False:
+            if self.cluster_z.use_proxy is False:
                 self._compute_N = self._cluster_abundance_logM_intp_N
                 self._compute_intp_d2n = self._cluster_abundance_logM_intp_d2n
             else:
