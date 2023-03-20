@@ -299,8 +299,7 @@ class ClusterNumberCounts(Statistic):
 
                     theory_vector.append(bin_count)
         elif self.sacc_tracer == "cluster_counts_richness_proxy":
-            if self.cluster_abundance_binned.cluster_m.proxy_params == None:
-                self.cluster_abundance_binned.cluster_m.proxy_params = [
+            self.cluster_abundance_binned.cluster_m.proxy_params = [
                     self.mu_p0,
                     self.mu_p1,
                     self.mu_p2,
@@ -321,8 +320,7 @@ class ClusterNumberCounts(Statistic):
                     
                     
         elif self.sacc_tracer == "cluster_counts_richness_proxy_plusmean":
-            if self.cluster_abundance_binned.cluster_m.proxy_params == None:
-                self.cluster_abundance_binned.cluster_m.proxy_params = [
+            self.cluster_abundance_binned.cluster_m.proxy_params = [
                     self.mu_p0,
                     self.mu_p1,
                     self.mu_p2,
@@ -350,11 +348,11 @@ class ClusterNumberCounts(Statistic):
                         z_bins[i + 1],
                     )
                     mean_mass.append(mass_count)
-            theory_vector = theory_vector + mean_mass
+            print(mean_mass, mean_mass_obj.cluster_m.proxy_params)        
+            theory_vector = theory_vector.extend(mean_mass)
 
         elif self.sacc_tracer == "cluster_counts_richness_meanonly_proxy":
-            if self.cluster_abundance_binned.cluster_m.proxy_params == None:
-                self.cluster_abundance_binned.cluster_m.proxy_params = [
+            self.cluster_abundance_binned.cluster_m.proxy_params = [
                     self.mu_p0,
                     self.mu_p1,
                     self.mu_p2,

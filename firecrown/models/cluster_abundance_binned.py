@@ -16,7 +16,7 @@ class ClusterAbundanceBinned(ClusterAbundance):
     """Cluster Abundance Binned module."""
 
     def __init__(
-        self, cluster_mass, cluster_redshift, sky_area: Optional[float] = None, selection_error: Optional[list[bool]] = [False, False]
+        self, cluster_mass, cluster_redshift, sky_area: Optional[float] = None, selection_error = [False, False]
     ):
         super(ClusterAbundanceBinned, self).__init__(
             cluster_mass, cluster_redshift, sky_area
@@ -339,11 +339,11 @@ class ClusterAbundanceBinned(ClusterAbundance):
                         self._compute_intp_bin_d2n = self._cluster_abundance_logM_intp_bin_d2n
                 else:
                     if self.selection_error[1] == True:
-                        self._compute_bin_N = self._cluster_abundance_logM_intp_bin_cp_N
-                        self._compute_intp_bin_d2n = self._cluster_abundance_logM_intp_bin_cp_d2n
-                    else:
                         self._compute_bin_N = self._cluster_abundance_logM_intp_bin_c_N
                         self._compute_intp_bin_d2n = self._cluster_abundance_logM_intp_bin_c_d2n
+                    else:
+                        self._compute_bin_N = self._cluster_abundance_logM_intp_bin_cp_N
+                        self._compute_intp_bin_d2n = self._cluster_abundance_logM_intp_bin_cp_d2n
             else:
                 self._compute_bin_N = self._cluster_abundance_z_intp_logM_intp_bin_N
                 self._compute_intp_bin_d2n = (

@@ -244,7 +244,7 @@ class ClusterMeanMass:
         d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
         complete = self._cluster_mass_compute_completeness(logM,z)
-
+        print(complete)
         return complete * intp_logM * d2NdzdlogM * dvdz * logM
 
     def _cluster_mean_mass_logM_intp_bin_c_d2logM_integrand(self, logM: float, z: float):
@@ -284,6 +284,7 @@ class ClusterMeanMass:
         N = self.cluster_abundance_bin.compute_bin_N(
             ccl_cosmo, logM_obs_lower, logM_obs_upper, z_lower, z_upper
         )
+        print(N, logM)
 
         return logM * DeltaOmega / N
     def _cluster_mean_mass_d2logM_integrand(self, logM: float, z: float):

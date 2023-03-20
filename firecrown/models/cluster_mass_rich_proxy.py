@@ -65,7 +65,6 @@ class ClusterMassRich(ClusterMass):
         lnM_obs_mu, sigma = self._cluster_mass_lnM_obs_mu_sigma(logM, z)
         x_min = (lnM_obs_mu - np.log(10**self.logM_obs_min)) / (np.sqrt(2.0) * sigma)
         x_max = (lnM_obs_mu - np.log(10**self.logM_obs_max)) / (np.sqrt(2.0) * sigma)
-
         if x_max > 4.0:
             return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
         else:
