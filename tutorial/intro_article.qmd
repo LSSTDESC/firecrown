@@ -1,0 +1,174 @@
+---
+title: "An Introduction to Firecrown"
+subtitle: "version 1.4.0"
+author:
+  - Marc Paterno
+  - Sandro Vitenti
+execute:
+  eval: false
+format:
+  html:
+    toc: true
+    theme: [serif, custom.scss]
+reference-location: margin
+citation-location: margin
+---
+
+## Prologue
+
+This document is based on the Firecrown tutorial given at the Feb 2023 DESC Meeting Sprint Session.
+A [recording of this talk](https://stanford.zoom.us/rec/play/L5kfslcPirRmw2-9_75LwU796mHKm7GFAXqKIeF63PFQ7hOd31FbPYWkaLKVIIScflbD45hQJjYcuiQS.MdJLz5hbgThzouy7?continueMode=true&_x_zm_rtaid=pNHwX_FqRpS5HdZOJi3SwA.1679252612462.2f1b7c989ab44f7d7bcf282addeaa789&_x_zm_rhtaid=945) is available.
+
+## What is Firecrown?
+
+Firecrown[^firecrown] is a *software framework*[^framework] that allows you to write *likelihoods* in a way that will enable you to integrate those likelihoods with statistical frameworks for parameter estimation, forecasting, or any other purpose.
+In principle, we could choose one statistical framework and just use that.
+But we want to do more for other projects, which may have reasons to prefer one statistical framework to another.
+So Firecrown provides a single framework for writing likelihoods that allows DESC scientists to use those likelihoods with any of the supported statistical frameworks.
+Firecrown is intended to provide a well-defined environment in which all the DESC tools needed for likelihood-dependent analysis tasks are present.
+Firecrown directly uses the DESC Core Cosmology Library [CCL](https://github.com/LSSTDESC/CCL) and the [SACC](https://github.com/LSSTDESC/SACC) data format library.
+
+[^firecrown]: A firecrown is a hummingbird native to Chile and Argentina.
+The reasons this software is named Firecrown are now lost to the mists of history.
+![](green-backed-firecrown.jpg){fig-alt="A green-backed firecrown."}
+
+[^framework]: A software framework is an abstraction in which software providing generic functionality can be selectively changed by additional user-written code, thus providing application-specific software. [Definition from Wikipedia](https://en.wikipedia.org/wiki/Software_framework).
+
+Firecrown can also be used as a tool inside another framework.
+For example, it is directly used by the DESC forecasting and inference tool [Augur](https://github.com/LSSTDESC/augur).
+Augur uses Firecrown to calculate observations predicted by theory ("theory vectors") and likelihoods for those observations, and from these Augur calculates Fisher matrices.
+Augur can also use Firecrown to create mock data and to run Markov Chain Monte Carlo (MCMC) parameter estimation on those data.
+
+There are three statistical frameworks currently supported by Firecrown: [Cobaya](https://github.com/CobayaSampler/cobaya)[^cobaya], [CosmoSIS](https://github.com/joezuntz/cosmosis)[^cosmosis], and [NumCosmo](https://github.com/NumCosmo/NumCosmo)[^numcosmo].
+Firecrown guarantees that the variety of DESC tools that it uses are instantiated correctly to be consistent with the use of any of these frameworks.
+
+[^cobaya]: Cobaya (code for bayesian analysis, and Spanish for Guinea Pig) is a framework for sampling and statistical modeling: it allows you to explore an arbitrary prior or posterior using a range of Monte Carlo samplers (including the advanced MCMC sampler from CosmoMC, and the advanced nested sampler PolyChord).
+The results of the sampling can be analyzed with GetDist.
+It supports MPI parallelization (and very soon HPC containerization with Docker/Shifter and Singularity).
+
+[^cosmosis]: CosmoSIS is a cosmological parameter estimation code.
+It is a framework for structuring cosmological parameter estimation with a focus on flexibility, re-usability, debugging, verifiability, and code sharing in the form of calculation modules.
+It consolidates and connects together existing code for predicting cosmic observables, and makes mapping out experimental likelihoods with a range of different techniques much more accessible.
+
+[^numcosmo]: NumCosmo is a free software C library whose main purposes are to test cosmological models using observational data and to provide a set of tools to perform cosmological calculations.
+Particularly, the current version has implemented three different probes: cosmic microwave background (CMB), supernovae type Ia (SNeIa) and large scale structure (LSS) information, such as baryonic acoustic oscillations (BAO) and galaxy cluster abundance.
+The code supports a joint analysis of these data and the parameter space can include cosmological and phenomenological parameters.
+It is worth emphasizing that NumCosmo matter power spectrum and CMB codes were written independently of other implementations such as CMBFAST, CAMB, etc.
+
+
+## Basic Firecrown concepts 
+
+The three most important concepts represented in Firecrown are *cosmology*, *modeling tools*, and *likelihoods*.
+Each of these concepts are represented by some software artifact in Firecrown.
+
+Firecrown's concept of cosmology is actually provided by CCL.
+CCL provides all the necessary tools for calculating basic cosmological quantities.
+So everything that is general in cosmology is calculated by CCL, and not by Firecrown itself.
+This cosmology plays a central role in the set of tools provided to the user.
+
+We also have the concept of modeling tools.
+These are a set of extra tools which, together with the CCL cosmology, allow one to calculate likelihoods.
+For example, one can have a halo profile that is used in several places in calculations.
+This halo profile would be included in the modeling tools so that the same halo profile is used consistently wherever it is needed.
+If one needs a different way to calculate power spectra, for example perturbation theory or halo models, then those tools would also be available with the cosmology.
+All the available tools are presented, along with the cosmology, for calculation of the likelihood.
+Whenever the likelihood is called, all the objects in the modeling tools have already been updated to represent the "current cosmology" with which they are associated.
+All are given together to the likelihood for calculation.
+For the user who want to calculate a likelihood that is not a Gaussian distribution, these are the only concepts in Firecrown that are needed.
+But since we are frequently working with Gaussian likelihoods, there are more software tools available for their support.
+These tools include more constrained *likelihoods*,  *statistics*, *sources*, and *systematics*.
+
+First, we have support for the Gaussian family of likelihoods.
+These are all the likelihoods that can be expressed as a function of the distance between the expected value of some observable quantity and the observed value of that quantity, where the measure of that distance is characterized by a covariance matrix.
+These are likelihoods of the form:
+$$P(\vec{x}|\vec{\mu},\widetilde{M}) = f(\chi^2)$$
+where
+$$\chi^2 = \sum_{i,j} (x_i - \mu_i) M_{i,j} (x_j - \mu_j)$$
+and where $x_i$ are the components of the observed data vector $\vec{x}$, $\mu_i$ are the components of the predicted theory vector $\vec{\mu}$, and $M_{i,j}$ is the components of the inverse of the covariance matrix.
+In the Gaussian family, we currently have implemented the multivariate Gaussian distribution and the multivariate Student's T distribution.
+
+To build a Gaussian distribution, all one needs is to create a *theory vector* (the $mu_i$ above), and to get the *data vector* ($x_i$ above) and covariance matrix $\widetilde{\sigma} = \widetilde{M}^{-1}$.
+The data vector and covariance matrix are typically read from a SACC file.
+But if one wants to build a likelihood based on a two-point function, there are classes representing such things already available in Firecrown.
+The two-point function is a variety of statistic that is in turn dependent on *sources*.
+Sources are a tool available for combining two observables (possibly the same observable, used twice) to create a two-point function, either a cross-correlation or an auto-correlation.
+These are a simple layer to call the relevant CCL functions that will calculate the necessary integrals and so on when the source is used to compute the observables.
+So a statistic is a general concept, a two-point statistic is a specific kind of statistic, and sources are the means to calculate the observables for two-point statistics.
+
+The *systematic* is a concept that is not yet so clearly defined.
+Currently, systematics are a way of modifying the behavior of a theory prediction calculator.
+For example, if one has a distribution $f(z) = dN/dz$ of some object in the sky as a function of redshift $z$, and one wants to make a shift of this distribution (a *bias*) to the left or to the right, this can be done using a systematic.
+One can put as many systematics as desired into the calculation of any statistic.
+Of course, one needs to take care that they are compatible and that the result makes sense.
+This is one of the parts of Firecrown that needs more development[^invitation]; we are working to identify the set of types and functions that will help make sure that only meaningful combinations of systematics are created, and that systematic effects are not double-counted.
+
+[^invitation]: We invite contributions to the effort of defining the means of handling systematic effects.
+The Firecrown [issues list](https://github.com/LSSTDESC/firecrown/issues) can be used to discuss ideas for contributions.
+
+
+## High-level Firecrown classes
+
+Each of these main Firecrown concepts is represented by one (or several) types in Firecrown.
+
+The type used to represent a cosmology in Firecrown comes from CCL: [`pyccl.Cosmology`](https://ccl.readthedocs.io/en/latest/api/pyccl.html?highlight=pyccl.Cosmology#pyccl.Cosmology).
+This class represents a parameterized cosmology.
+
+The modeling tools are represented by `firecrown.modeling_tools.ModelingTools`.
+A `ModelingTools` object associates a cosmology with a set of objects representing theoretical models that can be used in a likelihood.
+Each of these may be used more than once in the evaluation of the likelihood.
+This is why they are gathered together in one location: to help assure that different parts of a likelihood calculation that require the same theoretical calculation get the identical theoretical calculation for a given cosmology.
+
+:::{.callout-note}
+Bruno and Jonathan asked similar questions about systematics at time marker 8:25.
+
+The answer covered both what is currently present in the code and what we hope to add.
+The issue is at least partly about there being two different types of systematic, both of which are currently handled by the same code.
+
+We should work the answer into this material.
+:::
+
+The likelihoods are represented by a base class `firecrown.likelihood.Likelihood`, and a variety of classes that inherit from that base class.
+The minimum implementation for a likelihood implements two methods:
+
+```{python}
+read(sacc: sacc.SACC) -> None
+calculate_loglike(tools: ModelingTools) -> float
+```
+
+The method `read` reads the necessary data (data vectors and covariances) from the provided `sacc.SACC` object.
+This specifies the data for which we are calculating the likelihood.
+The method `calculate_loglike` return the (natural) logarithm of the likelihood for the data given the cosmology and models in `tools`.
+Gaussian-related likelihoods are subclasses of `firecrown.likelihood.gauss_family.GaussFamily`.
+Currently-implemented subclasses include `ConstGaussian` and `StudentT`.
+`ConstGaussian` assumes a Gaussian distribution in which the covariance of the data is constant.
+
+## Building blocks for the `GaussFamily` likelihoods
+
+For the Gaussian family of likelhoods, we have the base class `GaussFamily`.
+
+
+This is an abstract class [^abstract-class] that provides several features:
+
+[^abstract-class]: An [abstract class](https://en.wikipedia.org/wiki/Abstract_type) provides either methods or data (or both) for derived classes, but is not complete.
+It is not possible to create an object whose type is an abstract class.
+Rather, one derives concrete classes from the abstract class, and creates instances of those concrete types.
+
+1. All `GausFamily` likelihoods have an implementation of the `read` method that reads data vector and covariance information from the provided `sacc.SACC` object.
+2. other stuff
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
