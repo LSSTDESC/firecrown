@@ -13,6 +13,7 @@ from typing import List
 from dataclasses import dataclass
 import warnings
 import numpy as np
+import numpy.typing as npt
 import sacc
 
 from ....modeling_tools import ModelingTools
@@ -20,11 +21,11 @@ from ....updatable import Updatable
 from .source.source import SourceSystematic
 
 
-class DataVector(np.ndarray):
+class DataVector(npt.NDArray[np.float64]):
     """This class wraps a np.ndarray that represents some observed data values."""
 
     @classmethod
-    def create(cls, vals: np.ndarray) -> DataVector:
+    def create(cls, vals: npt.NDArray[np.float64]) -> DataVector:
         """Create a DataVector that wraps a copy of the given array vals."""
         return vals.view(cls)
 
@@ -35,12 +36,12 @@ class DataVector(np.ndarray):
         return cls.create(array)
 
 
-class TheoryVector(np.ndarray):
+class TheoryVector(npt.NDArray[np.float64]):
     """This class wraps a np.ndarray that represents an observation predicted by
     some theory."""
 
     @classmethod
-    def create(cls, vals: np.ndarray) -> TheoryVector:
+    def create(cls, vals: npt.NDArray[np.float64]) -> TheoryVector:
         """Create a TheoryVector that wraps a copy of the given array vals."""
         return vals.view(cls)
 
@@ -51,7 +52,7 @@ class TheoryVector(np.ndarray):
         return cls.create(array)
 
 
-def residuals(data: DataVector, theory: TheoryVector) -> np.ndarray:
+def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]:
     """Return a bare np.ndarray with the difference between `data` and `theory`.
     This is to be preferred to using arithmetic on the vectors directly."""
     assert isinstance(data, DataVector)
@@ -70,7 +71,7 @@ class StatisticsResult:
         """Make sure the data and theory vectors are of the same shape."""
         assert self.data.shape == self.theory.shape
 
-    def residuals(self) -> np.ndarray:
+    def residuals(self) -> npt.NDArray[np.float64]:
         """Return the residuals -- the difference between data and theory."""
         return self.data - self.theory
 
@@ -93,7 +94,7 @@ class Statistic(Updatable):
     """An abstract statistic class (e.g., two-point function, mass function, etc.)."""
 
     systematics: List[SourceSystematic]
-    sacc_indices: np.ndarray
+    sacc_indices: npt.NDArray[np.int64]
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""

@@ -8,6 +8,7 @@ from dataclasses import dataclass, replace
 from abc import abstractmethod
 
 import numpy as np
+import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc
@@ -31,17 +32,17 @@ class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
 
     scale: float
-    z: np.ndarray  # pylint: disable-msg=invalid-name
-    dndz: np.ndarray
-    ia_bias: Optional[Tuple[np.ndarray, np.ndarray]]
+    z: npt.NDArray[np.float64]  # pylint: disable-msg=invalid-name
+    dndz: npt.NDArray[np.float64]
+    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
 
     has_pt: bool = False
     has_hm: bool = False
 
-    ia_a_1h: Optional[np.float] = None#Optional[Tuple[np.ndarray, np.ndarray]] = None
-    ia_pt_c_1: Optional[Tuple[np.ndarray, np.ndarray]] = None
-    ia_pt_c_d: Optional[Tuple[np.ndarray, np.ndarray]] = None
-    ia_pt_c_2: Optional[Tuple[np.ndarray, np.ndarray]] = None
+    ia_pt_c_1: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_pt_c_d: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_pt_c_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_a_1h: Optional[np.float] = None
 
 
 class WeakLensingSystematic(SourceSystematic):

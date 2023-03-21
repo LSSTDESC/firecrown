@@ -1,5 +1,6 @@
 import pytest
 from firecrown.connector import mapping
+from firecrown.likelihood.likelihood import NamedParameters
 
 
 # TODO: Refactor these test functions to use a sensible fixture.
@@ -31,9 +32,9 @@ def test_conversion_from_cosmosis_camb():
         "wa": 0.0,
         "yhe": 0.23999999463558197,
     }
-
+    named_params = NamedParameters(cosmosis_params)
     p = mapping.mapping_builder(input_style="CosmoSIS")
-    p.set_params_from_cosmosis(cosmosis_params)
+    p.set_params_from_cosmosis(named_params)
     assert p.Omega_c == cosmosis_params["omega_c"]
     assert p.Omega_b == cosmosis_params["omega_b"]
     assert p.h == cosmosis_params["h0"]
@@ -79,6 +80,7 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
         "wa": 0.0,
         "yhe": 0.23999999463558197,
     }
+    named_params = NamedParameters(cosmosis_params)
     p = mapping.mapping_builder(input_style="CosmoSIS")
-    p.set_params_from_cosmosis(cosmosis_params)
+    p.set_params_from_cosmosis(named_params)
     assert p.Neff == pytest.approx(3.171)

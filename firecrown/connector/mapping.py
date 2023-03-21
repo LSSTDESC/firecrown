@@ -15,12 +15,19 @@ from typing import Type, List, Dict, Optional, final, Any, Union
 import typing
 import warnings
 import numpy as np
+import numpy.typing as npt
 from pyccl import physical_constants as physics
 import cosmosis.datablock
+from firecrown.likelihood.likelihood import NamedParameters
 from ..descriptors import TypeFloat, TypeString
 
 
-def build_ccl_background_dict(*, a: np.ndarray, chi: np.ndarray, h_over_h0: np.ndarray):
+def build_ccl_background_dict(
+    *,
+    a: npt.NDArray[np.float64],
+    chi: npt.NDArray[np.float64],
+    h_over_h0: npt.NDArray[np.float64],
+):
     """Builds the CCL dictionary of background quantities."""
     return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
@@ -39,7 +46,7 @@ class Mapping(ABC):
 
     """
 
-    # pylint: disable-msg=R0902
+    # pylint: disable-msg=too-many-instance-attributes
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_g = TypeFloat(allow_none=True)
@@ -172,7 +179,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> Dict:
+    def asdict(self) -> Dict[str, Union[Optional[float], List[float]]]:
         """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,
@@ -234,25 +241,29 @@ class MappingCosmoSIS(Mapping):
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
         return np.flip(h) * hubble_radius_today
 
-    def set_params_from_cosmosis(self, cosmosis_params: dict):
+    def set_params_from_cosmosis(self, cosmosis_params: NamedParameters):
         """Return a PyCCLCosmologyConstants object with parameters equivalent to
         those read from CosmoSIS when using CAMB."""
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
-        h = cosmosis_params["h0"]  # pylint: disable-msg=C0103
-        Omega_b = cosmosis_params["omega_b"]  # pylint: disable-msg=C0103
-        Omega_c = cosmosis_params["omega_c"]  # pylint: disable-msg=C0103
-        sigma8 = cosmosis_params.get("sigma_8", 0.8)
-        n_s = cosmosis_params.get("n_s", 0.96)
-        Omega_k = cosmosis_params["omega_k"]  # pylint: disable-msg=C0103
+
+        # pylint: disable=invalid-name
+        h = cosmosis_params.get_float("h0")
+        Omega_b = cosmosis_params.get_float("omega_b")
+        Omega_c = cosmosis_params.get_float("omega_c")
+        sigma8 = cosmosis_params.get_float("sigma_8", 0.8)
+        n_s = cosmosis_params.get_float("n_s", 0.96)
+        Omega_k = cosmosis_params.get_float("omega_k")
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
         # Read m_nu from CosmoSIS (in newer CosmoSIS)
-        delta_neff = cosmosis_params.get("delta_neff", 0.0)
-        Neff = delta_neff + 3.046  # pylint: disable-msg=C0103
-        m_nu = cosmosis_params["omega_nu"] * h * h * 93.14
+        delta_neff = cosmosis_params.get_float("delta_neff", 0.0)
+        Neff = delta_neff + 3.046
+        omega_nu = cosmosis_params.get_float("omega_nu")
+        m_nu = omega_nu * h * h * 93.14
         m_nu_type = "normal"
-        w0 = cosmosis_params["w"]  # pylint: disable-msg=C0103
-        wa = cosmosis_params["wa"]  # pylint: disable-msg=C0103
+        w0 = cosmosis_params.get_float("w")
+        wa = cosmosis_params.get_float("wa")
+        # pylint: enable=invalid-name
 
         # pylint: disable=duplicate-code
         self.set_params(
