@@ -382,7 +382,6 @@ class TwoPoint(Statistic):
                     # I should make this more streamlined, somehow.
                     elif tracer0.has_hm and tracer1.field == 'delta_matter':
                         # get the IG power spectrum.
-                        # FIXME: The GI power spectrum does not seem to be what it should, need to look at this.
                         profile0 = tracer0.halo_profile
                         profile1 = pyccl.halos.HaloProfileNFW(tools.get_cM_relation(),
                                                               truncated=True, fourier_analytic=True)
