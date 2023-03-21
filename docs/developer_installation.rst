@@ -51,7 +51,7 @@ This will create a directory `cosmosis-standard-library` in whatever is your cur
 
     # conda env update, when run as suggested, is able to create a new environment, as
     # well as updating an existing environment.
-    conda env update -n firecrown_developer -f environment.yml
+    conda env update -f firecrown/environment.yml
     conda activate firecrown_developer
     source ${CONDA_PREFIX}/bin/cosmosis-configure
     cosmosis-build-standard-library
@@ -102,7 +102,7 @@ All of these are used as part of the CI system as part of the checking of all pu
 .. code:: bash
 
     # We are using type hints and mypy to help catch type-related errors.
-    mypy -p firecrown -p examples -p tests --ignore-missing-imports
+    mypy -p firecrown -p examples -p tests
 
     # We are using flake8 to help verify PEP8 compliance.
     flake8 firecrown examples tests
