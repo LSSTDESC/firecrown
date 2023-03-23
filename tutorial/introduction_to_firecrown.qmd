@@ -143,7 +143,7 @@ cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
 git clone https://github.com/LSSTDESC/firecrown.git
 # conda env update, when run as suggested, is able to create a new environment, as
 # well as updating an existing environment.
-conda env update -n firecrown_developer -f environment.yml
+conda env update -f firecrown/environment.yml
 conda activate firecrown_developer
 source ${CONDA_PREFIX}/bin/cosmosis-configure
 cosmosis-build-standard-library  # this may take a few minutes
