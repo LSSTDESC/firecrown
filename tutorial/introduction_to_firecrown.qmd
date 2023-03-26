@@ -54,8 +54,8 @@ format:
     -   Specific physical effects will get added as they are invented.
     -   Each is usable by different parts of the same likelihood; the cosmology is the most obvious example.
 -   Likelihoods: calculates the probability of observing some given (presumably DESC) *data*, based on a certain set of parameters used in predictions of that data.
-    -   `calculate_loglike(tools: ModelingTools) -> float`
     -   Reads data from a SACC object: `read(sacc: sacc.Sacc) -> None`
+    -   `calculate_loglike(tools: ModelingTools) -> float`
     -   Currently, only `GaussFamily` is implemented.
 
 ## Building blocks for `GaussFamily` likelihoods
