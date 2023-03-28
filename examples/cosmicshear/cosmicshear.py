@@ -13,7 +13,8 @@ def build_likelihood(_):
     """Create a firecrown likelihood for a cosmic shear analysis."""
     # Creating sources, each one maps to a specific section of a SACC file. In
     # this case trc0, trc1 describe weak-lensing probes. The sources are saved
-    # in a dictionary since they will be used by one or more two-point function.
+    # in a dictionary since they will be used by one or more two-point
+    # functions.
 
     # We include a photo-z shift bias (a constant shift in dndz). We also
     # have a different parameter for each bin, so here again we use the
@@ -50,6 +51,6 @@ def build_likelihood(_):
     # file and the sources their respective dndz.
     likelihood.read(sacc_data)
 
-    # This script will be loaded by the appropriated connector. The framework
+    # This script will be loaded by the appropriate connector. The framework
     # will call the factory function that should return a Likelihood instance.
     return likelihood
