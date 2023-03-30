@@ -59,9 +59,5 @@ class ClusterMass:
         """Computes the logM proxytractmethod"""
 
     @abstractmethod
-    def cluster_logM_intp(self, logM, z):
-        """Computes the logM proxy"""
-
-    @abstractmethod
-    def cluster_logM_intp_bin(self, logM, z, logM_obs_lower, logM_obs_upper):
+    def cluster_logM_intp(self, logM, z, logM_obs_lower, logM_obs_upper):
         """Computes logMintp"""

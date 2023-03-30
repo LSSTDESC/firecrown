@@ -61,16 +61,8 @@ class ClusterMassRich(ClusterMass):
         lk = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
         return lk * np.log(10)
 
-    def cluster_logM_intp(self, logM, z):
-        lnM_obs_mu, sigma = self._cluster_mass_lnM_obs_mu_sigma(logM, z)
-        x_min = (lnM_obs_mu - np.log(10**self.logM_obs_min)) / (np.sqrt(2.0) * sigma)
-        x_max = (lnM_obs_mu - np.log(10**self.logM_obs_max)) / (np.sqrt(2.0) * sigma)
-        if x_max > 4.0:
-            return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
-        else:
-            return (special.erf(x_min) - special.erf(x_max)) / 2.0
 
-    def cluster_logM_intp_bin(self, logM, z, logM_obs_lower, logM_obs_upper):
+    def cluster_logM_intp(self, logM, z, logM_obs_lower, logM_obs_upper):
         lnM_obs_mu, sigma = self._cluster_mass_lnM_obs_mu_sigma(logM, z)
         x_min = (lnM_obs_mu - np.log(10**logM_obs_lower)) / (np.sqrt(2.0) * sigma)
         x_max = (lnM_obs_mu - np.log(10**logM_obs_upper)) / (np.sqrt(2.0) * sigma)
