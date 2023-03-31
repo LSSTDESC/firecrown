@@ -764,23 +764,3 @@ class ClusterAbundance():
                 self._compute_d2n = self._cluster_abundance_d2n
                 self._compute_N = self._cluster_abundance_N
         return True
-
-    def compute_counts_integrand(self, ccl_cosmo, logM, z, **kargs):
-        return self._compute_d2n(ccl_cosmo, logM, z, kargs)
-
-    def compute_d2n(self, ccl_cosmo, logM, z):
-        return self._compute_d2n(ccl_cosmo, logM, z)
-
-    def compute_intp_d2n(self, ccl_cosmo, logM, z, **kargs):
-        return self._compute_intp_d2n(ccl_cosmo, kargs)
-
-    def compute_N(self, ccl_cosmo, logM_interval, z_interval):
-        return self._compute_N(ccl_cosmo, logM_interval[0], logM_interval[1], z_interval[0], z_interval[1])
-
-    def compute_intp_N(self, ccl_cosmo, logM_interval, z_interval):
-        return self._compute_intp_N(ccl_cosmo, logM_interval[0], logM_interval[1], z_interval[0], z_interval[1])
-
-    def compute_intp_cp_d2n(self, ccl_cosmo, logM, z):
-        return self._compute_intp_d2n(ccl_cosmo, logM, z)
-    def compute_intp_cp_N(self, ccl_cosmo):
-        return self._compute_intp_N(ccl_cosmo)
