@@ -28,7 +28,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v2
         with:
           auto-update-conda: true
-          activate-environment: firecrown
+          activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           miniforge-variant: Mambaforge
           show-channel-urls: true
@@ -47,14 +47,14 @@ jobs:
         id: cache
       - name: Update environment
         run: |
-          conda env update -n firecrown -f environment.yml
+          conda env update -n firecrown_developer -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
           export FIRECROWN_DIR=${PWD}
           conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
-          conda activate firecrown
+          conda activate firecrown_developer
           pip install --no-deps -e .
       - name: Setting up CosmoSIS    
         shell: bash -l {0}
@@ -64,7 +64,7 @@ jobs:
           cosmosis-build-standard-library
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
-          conda activate firecrown
+          conda activate firecrown_developer
         if: steps.cache.outputs.cache-hit != 'true'      
       - name: Setting up Cobaya
         shell: bash -l {0}
