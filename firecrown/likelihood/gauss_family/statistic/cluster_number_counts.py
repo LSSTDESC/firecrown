@@ -350,7 +350,7 @@ class ClusterNumberCounts(Statistic):
             theory_vector = theory_vector + mean_mass
 
         elif self.sacc_tracer == "cluster_counts_richness_meanonly_proxy":
-            self.cluster_abundance_binned.cluster_m.proxy_params = [
+            self.cluster_abundance.cluster_m.proxy_params = [
                     self.mu_p0,
                     self.mu_p1,
                     self.mu_p2,

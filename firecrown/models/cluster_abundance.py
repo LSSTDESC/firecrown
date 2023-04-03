@@ -543,7 +543,7 @@ class ClusterAbundance():
     ):
 
         def integrand(logM, z):
-            return _cluster_abundance_logM_intp_c_d2n(ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper)
+            return self._cluster_abundance_logM_intp_c_d2n(ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper)
 
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         N = scipy.integrate.dblquad(
@@ -578,7 +578,7 @@ class ClusterAbundance():
         self, ccl_cosmo, logM_obs_lower, logM_obs_upper, z_lower, z_upper
     ):
         def integrand(logM, z):
-            return _cluster_abundance_logM_intp_cp_d2n(ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper)
+            return self._cluster_abundance_logM_intp_cp_d2n(ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper)
 
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         N = scipy.integrate.dblquad(
@@ -748,11 +748,24 @@ class ClusterAbundance():
                 self.compute_intp_N = self._cluster_abundance_z_intp_logM_intp_N
                 self.compute_N = self._cluster_abundance_N
             else:
-                self.compute_counts_integrand = self._cluster_abundance_logM_p_counts_integrand
-                self.compute_d2n = self._cluster_abundance_logM_p_d2n
-                self.compute_intp_d2n = self._cluster_abundance_logM_intp_d2n
-                self.compute_intp_N = self._cluster_abundance_logM_intp_N
-                self.compute_N = self._cluster_abundance_N
+                if self.selection_error[0] == False:
+                    self.compute_counts_integrand = self._cluster_abundance_logM_p_counts_integrand
+                    self.compute_d2n = self._cluster_abundance_logM_p_d2n
+                    self.compute_intp_d2n = self._cluster_abundance_logM_intp_d2n
+                    self.compute_intp_N = self._cluster_abundance_logM_intp_N
+                    self.compute_N = self._cluster_abundance_N
+                elif self.selection_error[0] == True and self.selection_error[1] == False:
+                    self.compute_counts_integrand = self._cluster_abundance_logM_p_counts_integrand
+                    self.compute_d2n = self._cluster_abundance_logM_p_d2n
+                    self.compute_intp_d2n = self._cluster_abundance_logM_intp_c_d2n
+                    self.compute_intp_N = self._cluster_abundance_logM_intp_c_N
+                    self.compute_N = self._cluster_abundance_N
+                else:
+                    self.compute_counts_integrand = self._cluster_abundance_logM_p_counts_integrand
+                    self.compute_d2n = self._cluster_abundance_logM_p_d2n
+                    self.compute_intp_d2n = self._cluster_abundance_logM_intp_cp_d2n
+                    self.compute_intp_N = self._cluster_abundance_logM_intp_cp_N
+                    self.compute_N = self._cluster_abundance_N
         else:
             if self.cluster_z.use_proxy is True:
                 self.compute_counts_integrand = self._cluster_abundance_z_p_counts_integrand
