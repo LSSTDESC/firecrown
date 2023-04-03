@@ -18,7 +18,7 @@ from ....parameters import (
     RequiredParameters,
     DerivedParameterCollection,
 )
-from ....models.cluster_abundance_binned import ClusterAbundanceBinned
+from ....models.cluster_abundance import ClusterAbundance
 from ....models.cluster_mean_mass_bin import ClusterMeanMass
 from ....models.cluster_mass import ClusterMass
 from ....models.cluster_mass_rich_proxy import ClusterMassRich
@@ -254,7 +254,7 @@ class ClusterNumberCounts(Statistic):
         self.sacc_indices = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
         )
-        self.cluster_abundance_binned = ClusterAbundanceBinned(
+        self.cluster_abundance_binned = ClusterAbundance(
             self.cluster_mass, self.cluster_z, metadata["sky_area"]
         )
 
@@ -286,7 +286,7 @@ class ClusterNumberCounts(Statistic):
         if self.sacc_tracer == "cluster_counts_true_mass":
             for i in range(len(z_bins) - 1):
                 for j in range(len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance_binned.compute_bin_N(
+                    bin_count = self.cluster_abundance_binned.compute_N(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
@@ -306,7 +306,7 @@ class ClusterNumberCounts(Statistic):
                 ]
             for i in range(0, len(z_bins) - 1):
                 for j in range(0, len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance_binned.compute_bin_N(
+                    bin_count = self.cluster_abundance_binned.compute_intp_N(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
@@ -330,7 +330,7 @@ class ClusterNumberCounts(Statistic):
             mean_mass = []
             for i in range(0, len(z_bins) - 1):
                 for j in range(0, len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance_binned.compute_bin_N(
+                    bin_count = self.cluster_abundance_binned.compute_intp_N(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],

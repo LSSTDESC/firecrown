@@ -55,7 +55,7 @@ test = []
 for i in range(len(z_bins) - 1):
     for j in range(len(proxy_bins) - 1):
         result = cluster_abundance_bin.compute_intp_N(
-                ccl_cosmo, [proxy_bins[j],proxy_bins[j+1]], [z_bins[i], z_bins[i+1]]
+                ccl_cosmo, proxy_bins[j],proxy_bins[j+1], z_bins[i], z_bins[i+1]
                     )
         test.append(result)
 print(test)
@@ -64,7 +64,7 @@ test = []
 for i in range(len(z_bins) - 1):
     for j in range(len(mass_bins) - 1):
         result = cluster_abundance_bin_p.compute_N(
-            ccl_cosmo, [mass_bins[j], mass_bins[j+1]], [z_bins[i], z_bins[i+1]]
+            ccl_cosmo, mass_bins[j], mass_bins[j+1], z_bins[i], z_bins[i+1]
         )
         test.append(result)
 print(test)
