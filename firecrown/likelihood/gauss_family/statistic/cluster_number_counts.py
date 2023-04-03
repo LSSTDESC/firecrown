@@ -19,7 +19,7 @@ from ....parameters import (
     DerivedParameterCollection,
 )
 from ....models.cluster_abundance import ClusterAbundance
-from ....models.cluster_mean_mass_bin import ClusterMeanMass
+from ....models.cluster_mean_mass import ClusterMeanMass
 from ....models.cluster_mass import ClusterMass
 from ....models.cluster_mass_rich_proxy import ClusterMassRich
 from ....modeling_tools import ModelingTools
@@ -105,7 +105,7 @@ class ClusterNumberCounts(Statistic):
         self.theory_vector: Optional[TheoryVector] = None
         self.cluster_mass = cluster_mass
         self.cluster_z = cluster_redshift
-        self.cluster_abundance_binned = None
+        self.cluster_abundance = None
         if (
             type(self.cluster_mass).__name__
             == "ClusterMassRich"
@@ -254,7 +254,7 @@ class ClusterNumberCounts(Statistic):
         self.sacc_indices = sacc_data.indices(
             data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
         )
-        self.cluster_abundance_binned = ClusterAbundance(
+        self.cluster_abundance = ClusterAbundance(
             self.cluster_mass, self.cluster_z, metadata["sky_area"]
         )
 
@@ -286,7 +286,7 @@ class ClusterNumberCounts(Statistic):
         if self.sacc_tracer == "cluster_counts_true_mass":
             for i in range(len(z_bins) - 1):
                 for j in range(len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance_binned.compute_N(
+                    bin_count = self.cluster_abundance.compute_N(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
@@ -296,7 +296,7 @@ class ClusterNumberCounts(Statistic):
 
                     theory_vector.append(bin_count)
         elif self.sacc_tracer == "cluster_counts_richness_proxy":
-            self.cluster_abundance_binned.cluster_m.proxy_params = [
+            self.cluster_abundance.cluster_m.proxy_params = [
                     self.mu_p0,
                     self.mu_p1,
                     self.mu_p2,
@@ -306,7 +306,7 @@ class ClusterNumberCounts(Statistic):
                 ]
             for i in range(0, len(z_bins) - 1):
                 for j in range(0, len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance_binned.compute_intp_N(
+                    bin_count = self.cluster_abundance.compute_intp_N(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
@@ -317,7 +317,7 @@ class ClusterNumberCounts(Statistic):
 
 
         elif self.sacc_tracer == "cluster_counts_richness_proxy_plusmean":
-            self.cluster_abundance_binned.cluster_m.proxy_params = [
+            self.cluster_abundance.cluster_m.proxy_params = [
                     self.mu_p0,
                     self.mu_p1,
                     self.mu_p2,
@@ -330,7 +330,7 @@ class ClusterNumberCounts(Statistic):
             mean_mass = []
             for i in range(0, len(z_bins) - 1):
                 for j in range(0, len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance_binned.compute_intp_N(
+                    bin_count = self.cluster_abundance.compute_intp_N(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
@@ -338,7 +338,7 @@ class ClusterNumberCounts(Statistic):
                         z_bins[i + 1],
                     )
                     theory_vector.append(bin_count)
-                    mass_count = mean_mass_obj.compute_bin_logM(
+                    mass_count = mean_mass_obj.compute_intp_logM(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
@@ -363,7 +363,7 @@ class ClusterNumberCounts(Statistic):
 
             for i in range(0, len(z_bins) - 1):
                 for j in range(0, len(proxy_bins) - 1):
-                    mass_count = mean_mass_obj.compute_bin_logM(
+                    mass_count = mean_mass_obj.compute_intp_logM(
                         ccl_cosmo,
                         proxy_bins[j],
                         proxy_bins[j + 1],
