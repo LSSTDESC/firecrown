@@ -10,6 +10,7 @@ format:
   html:
     toc: true
     theme: [serif, custom.scss]
+    code-overflow: wrap
 reference-location: margin
 citation-location: margin
 ---
@@ -48,10 +49,10 @@ It supports MPI parallelization (and very soon HPC containerization with Docker/
 
 [^cosmosis]: CosmoSIS is a cosmological parameter estimation code.
 It is a framework for structuring cosmological parameter estimation with a focus on flexibility, re-usability, debugging, verifiability, and code sharing in the form of calculation modules.
-It consolidates and connects together existing code for predicting cosmic observables, and makes mapping out experimental likelihoods with a range of different techniques much more accessible.
+It consolidates and connects existing code for predicting cosmic observables, and makes mapping out experimental likelihoods with a range of different techniques much more accessible.
 
 [^numcosmo]: NumCosmo is a free software C library whose main purposes are to test cosmological models using observational data and to provide a set of tools to perform cosmological calculations.
-Particularly, the current version has implemented three different probes: cosmic microwave background (CMB), supernovae type Ia (SNeIa) and large scale structure (LSS) information, such as baryonic acoustic oscillations (BAO) and galaxy cluster abundance.
+Particularly, the current version has implemented three different probes: cosmic microwave background (CMB), supernovae type Ia (SNeIa), and large-scale structure (LSS) information, such as baryonic acoustic oscillations (BAO) and galaxy cluster abundance.
 The code supports a joint analysis of these data and the parameter space can include cosmological and phenomenological parameters.
 It is worth emphasizing that NumCosmo matter power spectrum and CMB codes were written independently of other implementations such as CMBFAST, CAMB, etc.
 
@@ -59,9 +60,9 @@ It is worth emphasizing that NumCosmo matter power spectrum and CMB codes were w
 ## Basic Firecrown concepts 
 
 The three most important concepts represented in Firecrown are *cosmology*, *modeling tools*, and *likelihoods*.
-Each of these concepts are represented by some software artifact in Firecrown.
+Each of these concepts is represented by some software artifact in Firecrown.
 
-Firecrown's concept of cosmology is actually provided by CCL.
+Firecrown's concept of cosmology is provided by CCL.
 CCL provides all the necessary tools for calculating basic cosmological quantities.
 So everything that is general in cosmology is calculated by CCL, and not by Firecrown itself.
 This cosmology plays a central role in the set of tools provided to the user.
@@ -70,11 +71,11 @@ We also have the concept of modeling tools.
 These are a set of extra tools which, together with the CCL cosmology, allow one to calculate likelihoods.
 For example, one can have a halo profile that is used in several places in calculations.
 This halo profile would be included in the modeling tools so that the same halo profile is used consistently wherever it is needed.
-If one needs a different way to calculate power spectra, for example perturbation theory or halo models, then those tools would also be available with the cosmology.
+If one needs a different way to calculate power spectra, for example, perturbation theory or halo models, then those tools would also be available with the cosmology.
 All the available tools are presented, along with the cosmology, for calculation of the likelihood.
 Whenever the likelihood is called, all the objects in the modeling tools have already been updated to represent the "current cosmology" with which they are associated.
 All are given together to the likelihood for calculation.
-For the user who want to calculate a likelihood that is not a Gaussian distribution, these are the only concepts in Firecrown that are needed.
+For the user who wants to calculate a likelihood that is not a Gaussian distribution, these are the only concepts in Firecrown that are needed.
 But since we are frequently working with Gaussian likelihoods, there are more software tools available for their support.
 These tools include more constrained *likelihoods*,  *statistics*, *sources*, and *systematics*.
 
@@ -97,7 +98,7 @@ So a statistic is a general concept, a two-point statistic is a specific kind of
 
 The *systematic* is a concept that is not yet so clearly defined.
 Currently, systematics are a way of modifying the behavior of a theory prediction calculator.
-For example, if one has a distribution $f(z) = dN/dz$ of some object in the sky as a function of redshift $z$, and one wants to make a shift of this distribution (a *bias*) to the left or to the right, this can be done using a systematic.
+For example, if one has a distribution $f(z) = dN/dz$ of some object in the sky as a function of redshift $z$, and one wants to make a shift of this distribution (a *bias*) to the left or the right, this can be done using a systematic.
 One can put as many systematics as desired into the calculation of any statistic.
 Of course, one needs to take care that they are compatible and that the result makes sense.
 This is one of the parts of Firecrown that needs more development[^invitation]; we are working to identify the set of types and functions that will help make sure that only meaningful combinations of systematics are created, and that systematic effects are not double-counted.
@@ -130,7 +131,7 @@ We should work the answer into this material.
 The likelihoods are represented by a base class `firecrown.likelihood.Likelihood`, and a variety of classes that inherit from that base class.
 The minimum implementation for a likelihood implements two methods:
 
-```{python}
+```{.python}
 read(sacc: sacc.SACC) -> None
 calculate_loglike(tools: ModelingTools) -> float
 ```
@@ -144,12 +145,12 @@ Currently-implemented subclasses include `ConstGaussian` and `StudentT`.
 
 ## Building blocks for the `GaussFamily` likelihoods
 
-For the Gaussian family of likelhoods, we have the base class `GaussFamily`.
+For the Gaussian family of likelihoods, we have the base class `GaussFamily`.
 This is an abstract class [^abstract-class] that provides several features:
 
-[^abstract-class]: An [abstract class](https://en.wikipedia.org/wiki/Abstract_type) provides either methods or data (or both) for derived classes, but is not complete.
+[^abstract-class]: An [abstract class](https://en.wikipedia.org/wiki/Abstract_type) provides either methods or data (or both) for derived classes but is not complete.
 It is not possible to create an object whose type is an abstract class.
-Rather, one derives concrete classes from the abstract class, and creates instances of those concrete types.
+Rather, one derives concrete classes from the abstract class and creates instances of those concrete types.
 All `GausFamily` likelihoods have an implementation of the `read` method that reads data vector and covariance information from the provided `sacc.SACC` object.
 
 `GausFamily` currently has two subclasses: `ConstGaussian` and `StudentT`.
@@ -159,8 +160,8 @@ For any `GausFamily` likelihood, one must have one or more `Statistic`s.
 `Statistic` is an abstract base class for `TwoPoint` and `Supernova`.
 A `Statistic` provides access to observations (a *data vector*) and calculates predictions (a *theory vector*) based on a set of parameters (a *cosmology*).
 A `Statistic` is responsible for reading its data from a `sacc.SACC` object.
-A `Statistic` also has indices which are used to identify what blocks of covariance matrices in the `SACC` object will be read.
-The `GausFamily` object then uses the indices from all of its (possibly many) `Statistic`s to read the right blocks from the `SACC` object, and to create from them a block-diagonal covariance matrix.
+A `Statistic` also has indices that are used to identify what blocks of covariance matrices in the `SACC` object will be read.
+The `GausFamily` object then uses the indices from all of its (possibly many) `Statistic`s to read the right blocks from the `SACC` object and to create from them a block-diagonal covariance matrix.
 A given `SACC` object may contain information from observations in many bins, but only those indicated by the indices in a `Statistic` will be read.
 `Statistic`s may also contain *systematics* that modify the theory vector it calculates.
 
@@ -176,16 +177,16 @@ Each `Source`  will produce one or more [`pyccl.Tracer`s](https://ccl.readthedoc
     An ell-dependent prefactor: normally associated with angular derivatives of a given fundamental quantity.
     The order of the derivative of the Bessel functions with which they enter the computation of the angular power spectrum.
 
-Sometimes a source many have several tracers, because it reflects a combination of different effects for the same kind of measurement.
+Sometimes a source may have several tracers because it reflects a combination of different effects for the same kind of measurement.
 
 ::: {.callout-note}
 We should put an example here.
 :::
 
-Systematics objects for Sources have a simple interface: for each source there is a *data class*[^dataclass] that has all the necessary information to build the sources and tracers.
+Systematics objects for Sources have a simple interface: for each source, there is a *data class*[^dataclass] that has all the necessary information to build the sources and tracers.
 A source can have a list of systematics.
 When the source is evaluated, the list of systematics is iterated over, and the `apply` method of each is called, in order, given the previous value of the source and yielding a new value.
-If, for example, if you have a source for weak lensing, and you want to move the distribution of $dN/dz$, to apply a bias, this can be done with a systematic.
+If, for example, you have a source for weak lensing, and you want to move the distribution of $dN/dz$, to apply a bias, this can be done with a systematic.
 
 [^dataclass]: A [data class](https://docs.python.org/3/library/dataclasses.html?highlight=dataclass) is a class that contains mainly data, and which has several methods (such as those for printing, or equality testing) automatically generated by Python.
 
@@ -196,46 +197,204 @@ We are working on improving this.
 
 All these tools provided in Firecrown exist to help you to create an instance of a likelihood for your analysis.
 The thing that is used to create this likelihood is called a *factory function*.
-Note that this likelihood function is not creating a new type; it is responsibe for creating an instance of the type (e.g. `ConstGaussian`) you have chosen for your analysis.
+Note that this likelihood function is not creating a new type; it is responsible for creating an instance of the type (e.g. `ConstGaussian`) you have chosen for your analysis.
 The purpose of this factory function is to assemble the artifacts representing the data, modeling effects, systematic effects, etc., into a likelihood object, and to return that likelihood object (and the related modeling tools).
 
 We will concentrate here on the workflow for creating a likelihood that uses `TwoPoint` statistics.
-Before creating the statistcs, we have to create the sources, then the statistics.
+Before creating the statistics, we have to create the sources, then the statistics.
 One typically creates several sources, both weak lensing sources and number count sources.
 
 ::: {.callout-note}
-This was a several minute discussion that I could not find a good way to translate to this more formal prose.
+This was a several-minute discussion that I could not find a good way to translate to this more formal prose.
 I think we need to write a description of what went into one of our existing examples.
 We should probably pick the simplest that uses a two-point function.
 :::
 
 ## Examples in the repository
 
-In the `examples` directory we have subirectories, each of which contains one or more related example uses of Firecrown.
+In the `examples` directory, we have subdirectories, each of which contains one or more related example uses of Firecrown.
 These examples are generally configured to run quickly.
 Thus they generally do not run any real MCMC sampling.
-In each of the directories there is a README file that contains a short description of the example, and includes directions on how to run it.
+In each of the directories, there is a README file that contains a short description of the example and includes directions on how to run it.
 Some of the examples also include a program to generate additional files needed to run the example.
 
 Currently, all the examples use the `ConstGaussian` likelihood.
 
-* The `cosmicshear` directory we have a DES Y1 cosmic shear analysis.
+* In the `cosmicshear` directory we have a DES Y1 cosmic shear analysis.
   This example demonstrates only the use of CosmoSIS with Firecrown.
-  The likelihood function created demonstrates the use of the `ConstGaussian` likelihood with `TwoPoint` statistic, and the `WeakLensing` source with a `PhotoZShift` systematic.
+  The likelihood function created demonstrates the use of the `ConstGaussian` likelihood with `TwoPoint` statistic and the `WeakLensing` source with a `PhotoZShift` systematic.
 
 * The `des_y1_3x2pt` directory demonstrates several related likelihoods, each created by a different factory function.
   This simplest is `des)_y1_3x2pt.py`.
   This uses a `ConstGaussian` likelihood containing a multiplicity of `TwoPoint` statistics, built from all combinations of several weak lensing sources and several number counts sources.
-  It demonstrates the use of multiple systematics for a source (specifically for the weak lensing sources).
+  It demonstrates the use of multiple systematics for a source (specifically for weak lensing sources).
 
   The two other likelihoods demonstrate the use of some advanced systematics.
   Perturbation theory corrections are demonstrated in `des_y1_3x2pt_PT.py`.
   TATT corrections are demonstrated in `des_y1_3x2pt_TATT.py`.
 
-  The samples in this directory work with Cobaya, CosmoSIS and NumCosmo.
+  The samples in this directory work with Cobaya, CosmoSIS, and NumCosmo.
 
 * The `srd_sn` directory contains an example of the use of the `Supernova` statistic.
   It includes both CosmoSIS and NumCosmo examples.
+  The NumCosmo example demonstrates the construction of a Fisher matrix, using an adaptive algorithm for the calculation of derivatives.
 
+## Installation modes
 
+The installation methods for Firecrown support two different user roles: *developers* and *non-developers*.
+One is acting as a non-developer when using Firecrown only through installed packages, and making no additions to or modifications of the Firecrown code.
+One is acting as a developer when either modifying existing code, adding new code, or both.
+Because Firecrown is under rapid development, we expect most users to be acting in the developer role.
+That is the role we will discuss in more depth.
 
+Developers require access to the Firecrown source code.
+They also require access to the complete set of software upon which Firecrown depends, as well as the development tools we use with Firecrown.
+All the software packages upon which Firecrown and its development environment rely will be installed with `conda` when possible, or with `pip` when a `conda` installation is not possible.
+The Firecrown source code will be cloned from the repository on GitHub.
+
+## Developer installation
+
+The developer installation instructions (below) will:
+
+1. Clone the Firecrown repository.
+2. Create a Conda environment into which all the packages will be installed.
+   This includes both the packages installed using `conda` and those that are installed using `pip`.
+3. Build the CosmoSIS standard library (CSL) for use with Firecrown.
+   The CSL can not, because of licensing issues, be installed with `conda`.
+   It can be built into an already-existing Conda environment.
+
+This installation only needs to be done once.
+
+Note that for Apple computers using M1 chips, special instructions are necessary.
+When Conda support for M1 hardware catches up to the support for Intel hardware this should no longer be needed.
+These are available at [https://firecrown.readthedocs.io/en/stable/apple_m1_instructions.html](https://firecrown.readthedocs.io/en/stable/apple_m1_instructions.html).
+
+```{.bash}
+cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
+git clone https://github.com/LSSTDESC/firecrown.git
+# conda env update, when run as suggested, is able to create a new environment,
+# as well as updating an existing environment.
+conda env update -f firecrown/environment.yml
+conda activate firecrown_developer
+source ${CONDA_PREFIX}/bin/cosmosis-configure
+cosmosis-build-standard-library  # this may take a few minutes
+export CSL_DIR=${PWD}/cosmosis-standard-library
+export FIRECROWN_DIR=${PWD}/firecrown
+export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+```
+
+If you do not wish to build the CosmoSIS standard library, perhaps because you intend either to not use it or to use only those parts that do not require compilation, you can instead just clone the CSL repository:
+
+```{.bash}
+# Make sure you are doing this in the same directory as you run the rest of the
+# commands above
+git clone https://github.com/joezuntz/cosmosis-standard-library
+```
+
+## Setting up a shell session for development
+
+These instructions assume you have already done the installation, above, presumably in an earlier shell session.
+If you have just completed the installation and are in the same shell session, you do not need to execute these commands --- you have already done so!
+
+```{.bash}
+cd THE_DIRECTORY_INTO_WHICH_YOU_DID_INSTALL_THINGS
+conda activate firecrown_developer
+export CSL_DIR=${PWD}/cosmosis-standard-library
+export FIRECROWN_DIR=${PWD}/firecrown
+export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+```
+
+Each of the three defined environment variables is used for a different purpose:
+
+1. `CSL_DIR` is used in CosmoSIS *ini* files to allow the `cosmosis` command to be run from any directory.
+2. `FIRECROWN_DIR` is used in the examples that come with Firecrown.
+3. `PYTHONPATH` is used by Python itself to find Firecrown modules
+   Note that `PYTHONPATH` refers not to the top of the Firecrown repository, but to the subdirectory `build/lib` where later instructions will build the Firecrown code.
+
+## Building Firecrown
+
+There are two options for working on the Firecrown code.
+One is to do an *editable installation* using `pip install -e`; the other is to directly use the `setup.py` script.
+We caution against using the editable installation because it does not deal gracefully with the removal of files during development.
+We recommend instead building by directly using the `setup.py` script.
+We also recommend removing any previous build before making a new build; this assures that no old artifacts are ever used.
+The steps below thus guarantee a clean build:
+
+```{.bash}
+cd ${FIRECROWN_DIR}
+# We clean up any previous build to ensure stale code is never found
+# by python.
+rm -rf build/*
+python setup.py build
+```
+Remember to do these steps after each set of modifications to the code.
+
+## Code development hygiene
+
+We use a variety of tools to help improve the quality of the Firecrown code.
+Note that as of this release, we are still improving and expanding our use of these tools.
+The continuous integration (CI) system used for Firecrown applies all of these tools automatically and will reject any pull request that fails on one or more of the tools.
+
+Some of the tools we use help to keep the Firecrown code in conformance with the PEP 8[^pep8] style guidelines.
+
+[^pep8]: Python Enhance Proposal (PEP) 8 is the official (from the Python development team) style guide for Python code.
+  This style guide is used for code in the Python distribution itself.
+  It can be read at [https://peps.python.org/pep-0008/](https://peps.python.org/pep-0008/).
+
+We use `black`[^black] as our code formatter.
+In addition to helping to make the Firecrown code easier to read through consistent formatting, this also makes it easier to understand pull requests, since they will not generally contain changes that only change the formatting.
+When used with the `--check` flag, `black` does not modify the code --- it merely reports whether the code layout matches its requirements.
+To reformat code, run `black` without the `--check` flag.
+
+[^black]: Black is a PEP 8 compliant opinionated formatter with its own style.
+  Documentation for black is available at [https://black.readthedocs.io](https://black.readthedocs.io).
+
+We use `flake8`[^flake8] to more completely verify PEP 8 compliance.
+This tool identifies some issues that are not code formatting issues and which are not identified and repaired by `black`.
+Two examples are the PEP 8 specified ordering of `import` statements and identification of unused `import` statements.
+
+[^flake8]: `flake8` is a *linting* tool that helps to identify deviations from the recommended PEP 8 Python coding guidelines.
+  Its documentation is available at [https://flake8.pycqa.org](https://flake8.pycqa.org).
+
+We are using type annotations in Firecrown for several reasons.
+They help in the automatic generation of documentation, and when used with a tool like `mypy` they help make sure the type information in the documentation does not diverge from the code itself.
+They help many different integrated development environments (IDEs) provide better code completion options.
+They also can be used by static type checking tools to identify some types of coding error that otherwise could only be identified through exhaustive testing.
+We strongly recommend that new code added to Firecrown should have appropriate type annotations.
+We use `mypy`[^mypy] as our static type checking tool.
+
+[^mypy]: Mypy is a static type checker for Python.
+  Documentation for it is found at [https://mypy.readthedocs.io](https://mypy.readthedocs.io).
+
+We use `pylint`[^pylint] to help identify additional categories of errors that are not detected by the other tools.
+
+[^pylint]: Pylint is a static code analyzer for Python.
+  Documentation for it is available at [https://pylint.readthedocs.io](https://pylint.readthedocs.io).
+
+We also have unit tests that unfortunately cover only a part of the Firecrown code.
+We use `pytest`[^pytest] to run these tests.
+We are actively working on improving the coverage of the Firecrown unit tests.
+We strongly recommend that any new code be accompanied by unit tests, in addition to examples of use.
+
+[^pytest]: The `pytest` framework makes it easy to write small, readable tests, and can scale to support complex functional testing for applications and libraries.
+  The documentation for `pytest` is available at [https://docs.pytest.org](https://docs.pytest.org).
+
+All of these tools are included in the Conda environment created by the development installation instructions.
+
+The following is the set of commands using these tools that are used by the CI system.
+Since a pull request that fails any of these will be automatically rejected by the CI system, we strongly recommend running them before committing and pushing your code.
+Note that we have not yet completed the cleanup of the whole Firecrown repository, and so we do not yet apply `pylint` to all of the code.
+We strongly recommend that any new code you write *should* be checked with `pytlint` before it is committed to the repository.
+We are actively working toward full coverage of the code, and will activate additional checking in the CI system as this work progresses.
+
+```{.bash}
+black --check firecrown tests examples
+flake8 firecrown tests examples
+mypy firecrown tests examples
+pylint --rcfile pylintrc_for_tests --recursive=y tests
+pylint --recursive=y firecrown/connector
+pylint --recursive=y firecrown/*.py
+pylint --recursive=y firecrown/likelihood/*.py
+pylint --recursive=y firecrown/likelihood/gauss_family/*.py
+python -m pytest -v tests
+```
