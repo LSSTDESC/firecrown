@@ -138,11 +138,11 @@ Firecrown supports a few different installation modes.
     3.  build the CosmoSIS standard library for use with Firecrown
 -   Installation only needs to be done once.
 
-``` {{bash}}
+```{{bash}}
 cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
 git clone https://github.com/LSSTDESC/firecrown.git
-# conda env update, when run as suggested, is able to create a new environment, as
-# well as updating an existing environment.
+# conda env update, when run as suggested, is able to create a new environment,
+# as well as updating an existing environment.
 conda env update -f firecrown/environment.yml
 conda activate firecrown_developer
 source ${CONDA_PREFIX}/bin/cosmosis-configure
