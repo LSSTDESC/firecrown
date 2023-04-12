@@ -292,7 +292,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         self.dof = nrows
         self.len = nrows
-        self.cov.set_from_array(cov.flatten())  # pylint: disable-msg=no-member
+        self.peek_cov().set_from_array(cov.flatten())  # pylint: disable-msg=no-member
 
         data_vector = likelihood.get_data_vector()
         assert len(data_vector) == ncols
