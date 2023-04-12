@@ -296,7 +296,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         data_vector = likelihood.get_data_vector()
         assert len(data_vector) == ncols
-        self.y.set_array(data_vector)  # pylint: disable-msg=no-member
+        self.peek_mean().set_array(data_vector)  # pylint: disable-msg=no-member
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
         """
