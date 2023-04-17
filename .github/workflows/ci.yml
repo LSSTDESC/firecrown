@@ -11,17 +11,16 @@ on:
       - '*'
 
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '47 1 * * *'
 
 jobs:
   firecrown-miniforge:
-    continue-on-error: true
     name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
         os: ["ubuntu", "macos"]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Setup miniforge
