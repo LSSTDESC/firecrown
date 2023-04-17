@@ -228,10 +228,7 @@ class TwoPoint(Statistic):
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
+        :param sacc_data: The data in the sacc format.
         """
 
         self.source0.read(sacc_data)

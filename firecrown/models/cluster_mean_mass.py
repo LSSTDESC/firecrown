@@ -92,9 +92,7 @@ class ClusterMeanMass:
         d2m^{\alpha \beta}: float
             integrand of the cluster mean mass integral in bins of observed mass and observed redshift.
         """
-        intp_z = self.cluster_z.cluster_redshift_intp(
-            logM, z, z_obs_lower, z_obs_upper
-        )
+        intp_z = self.cluster_z.cluster_redshift_intp(logM, z, z_obs_lower, z_obs_upper)
         intp_logM = self.cluster_m.cluster_logM_intp(
             logM, z, logM_obs_lower, logM_obs_upper
         )
@@ -102,7 +100,6 @@ class ClusterMeanMass:
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return intp_z * intp_logM * d2NdzdlogM * dvdz * logM
-
 
     def _cluster_mean_mass_z_intp_logM_intp_logM(
         self, ccl_cosmo, logM_obs_lower, logM_obs_upper, z_obs_lower, z_obs_upper
@@ -128,11 +125,17 @@ class ClusterMeanMass:
         logM^{\alpha \beta}: float
             Cluster mean mass in the interval [logM_lower, logM_upper], [z_lower, z_min], [logM_obs^{\alpha}, logM_obs^{\alpha+1}] and [z_obs^{\beta}, z_obs^{\beta}].
         """
-        def integrand(logM, z):
 
+        def integrand(logM, z):
             return self._cluster_mean_mass_z_intp_logM_intp_d2logM(
-            ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper, z_obs_lower, z_obs_upper
-                )
+                ccl_cosmo,
+                logM,
+                z,
+                logM_obs_lower,
+                logM_obs_upper,
+                z_obs_lower,
+                z_obs_upper,
+            )
 
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         logM = scipy.integrate.dblquad(
@@ -173,14 +176,11 @@ class ClusterMeanMass:
         d2m^\beta: float
             integrand of the cluster mean mass integral in bin of observed redshift.
         """
-        intp_z = self.cluster_z.cluster_redshift_intp(
-            logM, z, z_obs_lower, z_obs_upper
-        )
+        intp_z = self.cluster_z.cluster_redshift_intp(logM, z, z_obs_lower, z_obs_upper)
         d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
 
         return intp_z * d2NdzdlogM * dvdz * logM
-
 
     def _cluster_mean_mass_z_intp_logM(
         self, ccl_cosmo, logM_lower, logM_upper, z_obs_lower, z_obs_upper
@@ -204,8 +204,9 @@ class ClusterMeanMass:
 
         def integrand(logM, z):
             return self._cluster_mean_mass_z_intp_d2logM(
-            ccl_cosmo, logM, z, z_obs_lower, z_obs_upper
-        )
+                ccl_cosmo, logM, z, z_obs_lower, z_obs_upper
+            )
+
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         logM = scipy.integrate.dblquad(
             integrand,
@@ -254,7 +255,6 @@ class ClusterMeanMass:
 
         return intp_logM * d2NdzdlogM * dvdz * logM
 
-
     def _cluster_mean_mass_logM_intp_logM(
         self, ccl_cosmo, logM_obs_lower, logM_obs_upper, z_lower, z_upper
     ):
@@ -274,10 +274,11 @@ class ClusterMeanMass:
         logM^{\alpha \beta}: float
             Cluster mean mass in the interval [logM_obs^\alpha, logM_obs^{\alpha+1}], [logM_lower, logM_min] and [z^{\beta}, z^{\beta +1 }].
         """
+
         def integrand(self, logM: float, z: float):
             return self._cluster_mean_mass_logM_intp_d2logM(
-        ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper
-        )
+                ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper
+            )
 
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         logM = scipy.integrate.dblquad(
@@ -312,8 +313,10 @@ class ClusterMeanMass:
     def _cluster_mean_mass_logM_intp_c_logM(
         self, ccl_cosmo, logM_obs_lower, logM_obs_upper, z_lower, z_upper
     ):
-        def integrand(logM: float, z: float    ):
-            return self._cluster_mean_mass_logM_intp_c_d2logM(ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper)
+        def integrand(logM: float, z: float):
+            return self._cluster_mean_mass_logM_intp_c_d2logM(
+                ccl_cosmo, logM, z, logM_obs_lower, logM_obs_upper
+            )
 
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         logM = scipy.integrate.dblquad(
@@ -334,7 +337,6 @@ class ClusterMeanMass:
         return logM * DeltaOmega / N
 
     def _cluster_mean_mass_d2logM(self, ccl_cosmo, logM: float, z: float):
-
         d2NdzdlogM = self.cluster_m.compute_mass_function(ccl_cosmo, logM, z)
         dvdz = self.cluster_z.compute_differential_comoving_volume(ccl_cosmo, z)
         return d2NdzdlogM * dvdz * logM
@@ -357,9 +359,17 @@ class ClusterMeanMass:
         logM^{\alpha \beta}: float
             Cluster mean mass in the interval [logM^\alpha, logM^{\alpha+1}] and [z^{\beta}, z^{\beta +1 }].
         """
+
         # calls the above with logM_obs and z
         def integrand(logM, z):
-            return self._cluster_mean_mass_d2logM(ccl_cosmo, logM_lower, logM_upper, z_lower, z_upper,)
+            return self._cluster_mean_mass_d2logM(
+                ccl_cosmo,
+                logM_lower,
+                logM_upper,
+                z_lower,
+                z_upper,
+            )
+
         DeltaOmega = self.sky_area * np.pi**2 / 180**2
         logM = scipy.integrate.dblquad(
             integrand,
@@ -381,14 +391,18 @@ class ClusterMeanMass:
     def _cluster_mean_mass_funcs(self):
         if self.cluster_m.use_proxy is True:
             if self.cluster_z.use_proxy is True:
-                self.compute_intp_d2logM = self._cluster_mean_mass_z_intp_logM_intp_d2logM
+                self.compute_intp_d2logM = (
+                    self._cluster_mean_mass_z_intp_logM_intp_d2logM
+                )
                 self.compute_intp_logM = self._cluster_mean_mass_z_intp_logM_intp_logM
             else:
                 if self.selection_error[0] == False:
                     self.compute_intp_d2logM = self._cluster_mean_mass_logM_intp_d2logM
                     self.compute_intp_logM = self._cluster_mean_mass_logM_intp_logM
                 else:
-                    self.compute_intp_d2logM = self._cluster_mean_mass_logM_intp_c_d2logM
+                    self.compute_intp_d2logM = (
+                        self._cluster_mean_mass_logM_intp_c_d2logM
+                    )
                     self.compute_intp_logM = self._cluster_mean_mass_logM_intp_c_logM
         else:
             if self.cluster_z.use_proxy is True:

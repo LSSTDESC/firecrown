@@ -3,55 +3,38 @@ abstract class to compute cluster redshift functions.
 ========================================
 The implemented functions use PyCCL library as backend.
 """
-from __future__ import annotations
-from typing import List, Optional, final
+
+from typing import final
 from abc import abstractmethod
 
-import pyccl as ccl
-import numpy as np
+from ..updatable import Updatable
+from ..parameters import ParamsMap
 
 
-class ClusterRedshift:
-    """Cluster Redshift module."""
+class ClusterRedshift(Updatable):
+    """Cluster Redshift class."""
 
-    def __init__(
-        self,
-    ):
-        self.zl = 0.0
-        self.zu = 2.0
-        self.use_proxy = False
+    @abstractmethod
+    def _update_cluster_redshift(self, params: ParamsMap):
+        """Abstract method to update the ClusterRedshift from the given ParamsMap."""
 
-    def compute_differential_comoving_volume(
-        self, ccl_cosmo: ccl.Cosmology, z
-    ) -> float:
-        """
-        parameters
-        ccl_cosmo : pyccl Cosmology
-        z : float
-            Cluster Redshift.
-        reuturn
-        -------
-        dv : float
-            Differential Comoving Volume at z in units of Mpc^3 (comoving).
-        """
-        a = 1.0 / (1.0 + z)  # pylint: disable=invalid-name
-        # pylint: disable-next=invalid-name
-        da = ccl.background.angular_diameter_distance(ccl_cosmo, a)
-        E = ccl.background.h_over_h0(ccl_cosmo, a)  # pylint: disable=invalid-name
-        dV = (  # pylint: disable=invalid-name
-            ((1.0 + z) ** 2)
-            * (da**2)
-            * ccl.physical_constants.CLIGHT_HMPC
-            / ccl_cosmo["h"]
-            / E
-        )
-        return dV
+    @abstractmethod
+    def _reset_cluster_redshift(self):
+        """Abstract method to reset the ClusterRedshift."""
 
-    def set_redshift_limits(self, zl, zu):
-        """Method to set the integration limits of the true redshift."""
-        self.zl = zl
-        self.zu = zu
-        return None
+    @final
+    def _update(self, params: ParamsMap):
+        """Implementation of Updatable interface method `_update`."""
+
+        self._update_cluster_redshift(params)
+
+    @final
+    def _reset(self) -> None:
+        """Implementation of the Updatable interface method `_reset`.
+
+        This calls the abstract method `_reset_cluster_redshift`, which must be
+        implemented by all subclasses."""
+        self._reset_cluster_redshift()
 
     @abstractmethod
     def cluster_z_p(self, ccl_cosmo, logM, z, z_obs, z_obs_params):

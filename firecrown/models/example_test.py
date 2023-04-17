@@ -5,7 +5,8 @@ from firecrown.models.cluster_abundance import ClusterAbundance
 from firecrown.models.cluster_redshift import ClusterRedshift
 from firecrown.models.cluster_mass import ClusterMass
 from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
-#from firecrown.models.cluster_mean_mass_bin import ClusterMeanMass
+
+# from firecrown.models.cluster_mean_mass_bin import ClusterMeanMass
 import numpy as np
 
 ccl_cosmo = ccl.Cosmology(
@@ -50,13 +51,13 @@ cluster_abundance_bin_p = ClusterAbundance(
     cluster_mass, cluster_z, sky_area, [True, True]
 )
 print(cluster_abundance_bin_p.selection_error)
-#cluster_mean_bin = ClusterMeanMass(cluster_mass_r, cluster_z, sky_area)
+# cluster_mean_bin = ClusterMeanMass(cluster_mass_r, cluster_z, sky_area)
 test = []
 for i in range(len(z_bins) - 1):
     for j in range(len(proxy_bins) - 1):
         result = cluster_abundance_bin.compute_intp_N(
-                ccl_cosmo, proxy_bins[j],proxy_bins[j+1], z_bins[i], z_bins[i+1]
-                    )
+            ccl_cosmo, proxy_bins[j], proxy_bins[j + 1], z_bins[i], z_bins[i + 1]
+        )
         test.append(result)
 print(test)
 mass_bins = [13, 14, 15]
@@ -64,17 +65,21 @@ test = []
 for i in range(len(z_bins) - 1):
     for j in range(len(mass_bins) - 1):
         result = cluster_abundance_bin_p.compute_N(
-            ccl_cosmo, mass_bins[j], mass_bins[j+1], z_bins[i], z_bins[i+1]
+            ccl_cosmo, mass_bins[j], mass_bins[j + 1], z_bins[i], z_bins[i + 1]
         )
         test.append(result)
 print(test)
 
-print(cluster_abundance_bin.cluster_abundance_logM_intp(ccl_cosmo, [13.0,16.0], [0.2000146, 0.31251036], [0.41, 0.82]))
-#test = []
-#for i in range(len(z_bins) - 1):
+print(
+    cluster_abundance_bin.cluster_abundance_logM_intp(
+        ccl_cosmo, [13.0, 16.0], [0.2000146, 0.31251036], [0.41, 0.82]
+    )
+)
+# test = []
+# for i in range(len(z_bins) - 1):
 #    for j in range(len(proxy_bins) - 1):
 #        result = cluster_mean_bin.compute_bin_logM(
 #            ccl_cosmo, proxy_bins[j], proxy_bins[j + 1], z_bins[i], z_bins[i + 1]
 #        )
 #        test.append(result)
-#print(test)
+# print(test)
