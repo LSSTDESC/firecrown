@@ -100,7 +100,7 @@ def run_likelihood() -> None:
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     src0_tracer = sacc_data.get_tracer("src0")
-    z, nz = src0_tracer.z, src0_tracer.nz  # pylint: disable-msg=invalid-name
+    z, nz = src0_tracer.z, src0_tracer.nz
 
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
@@ -183,7 +183,6 @@ def run_likelihood() -> None:
         ia_bias=(z, np.ones_like(z)),
         use_A_ia=False,
     )
-    # pylint: disable=invalid-name
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
     # The weak gravitational lensing power spectrum
@@ -192,7 +191,6 @@ def run_likelihood() -> None:
     cl_theory = (
         cl_GG + 2 * cl_GI + cl_II
     )  # normally we would also have a third term, +cl_II).
-    # pylint: enable=invalid-name
 
     # plt.plot(x, y_theory, label="Total")
     plt.plot(ells, cells_gg, label="GG firecrown")

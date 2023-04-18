@@ -33,10 +33,10 @@ class CCLConnector(Theory):
         assert self.input_style
         self.map = mapping_builder(input_style=self.input_style)
 
-        self.a_bg = np.linspace(0.1, 1.0, 50)  # pylint: disable-msg=C0103
-        self.z_bg = 1.0 / self.a_bg - 1.0  # pylint: disable-msg=C0103
-        self.z_Pk = np.arange(0.2, 6.0, 1)  # pylint: disable-msg=C0103
-        self.Pk_kmax = 1.0  # pylint: disable-msg=C0103
+        self.a_bg = np.linspace(0.1, 1.0, 50)
+        self.z_bg = 1.0 / self.a_bg - 1.0
+        self.z_Pk = np.arange(0.2, 6.0, 1)
+        self.Pk_kmax = 1.0
 
     def get_param(self, p: str) -> None:
         """Return the current value of the parameter named 'p'.
@@ -119,9 +119,12 @@ class CCLConnector(Theory):
 
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
-        k, z, pk = self.provider.get_Pk_grid()  # pylint: disable-msg=C0103
+        k, z, pk = self.provider.get_Pk_grid()
 
-        # pylint: disable-next=W0201,C0103
+        # Note: we havae to define self.a_Pk here because Cobaya does not allow
+        # us to override the __init__ method.
+        #
+        # pylint: disable-next=attribute-defined-outside-init
         self.a_Pk = self.map.redshift_to_scale_factor(z)
         pk_a = self.map.redshift_to_scale_factor_p_k(pk)
 
