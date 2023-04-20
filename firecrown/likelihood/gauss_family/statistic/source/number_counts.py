@@ -32,7 +32,7 @@ class NumberCountsArgs:
     """Class for number counts tracer builder argument."""
 
     scale: float
-    z: npt.NDArray[np.float64]  # pylint: disable-msg=invalid-name
+    z: npt.NDArray[np.float64]
     dndz: npt.NDArray[np.float64]
     bias: Optional[npt.NDArray[np.float64]] = None
     mag_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
@@ -169,7 +169,7 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
-        z = tracer_arg.z  # pylint: disable-msg=invalid-name
+        z = tracer_arg.z
         b_2_z = self.b_2 * np.ones_like(z)
         b_s_z = self.b_s * np.ones_like(z)
         # b_1 uses the "bias" field
@@ -245,7 +245,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
-        # pylint: disable-next=invalid-name
         s = (
             self.eta / self.r_lim
             - 3.0 * self.z_m / z_bar
@@ -421,11 +420,11 @@ class NumberCounts(Source):
             The data in the sacc format.
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
-        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
+        z = getattr(tracer, "z").copy().flatten()
+        nz = getattr(tracer, "nz").copy().flatten()
         indices = np.argsort(z)
-        z = z[indices]  # pylint: disable-msg=invalid-name
-        nz = nz[indices]  # pylint: disable-msg=invalid-name
+        z = z[indices]
+        nz = nz[indices]
 
         self.tracer_args = NumberCountsArgs(
             scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
