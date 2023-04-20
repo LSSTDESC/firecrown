@@ -32,7 +32,7 @@ class StudentT(GaussFamily):
         nu: Optional[float],
     ):
         super().__init__(statistics)
-        self.nu = parameters.create(nu)  # pylint: disable-msg=C0103
+        self.nu = parameters.create(nu)
 
     def compute_loglike(self, tools: ModelingTools):
         """Compute the log-likelihood.

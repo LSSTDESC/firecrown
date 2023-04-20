@@ -122,7 +122,6 @@ class GaussFamily(Likelihood):
         self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
         self.measured_data_vector: npt.NDArray[np.float64] = data_vector
 
-        # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
 

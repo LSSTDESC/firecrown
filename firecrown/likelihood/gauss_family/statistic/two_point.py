@@ -333,7 +333,7 @@ class TwoPoint(Statistic):
                     continue
                 if tools.has_pk(pk_name):
                     # Use existing power spectrum
-                    pk = tools.get_pk(pk_name)  # pylint: disable-msg=invalid-name
+                    pk = tools.get_pk(pk_name)
                 elif tracer0.has_pt or tracer1.has_pt:
                     if not tracer0.has_pt and tracer1.has_pt:
                         # Mixture of PT and non-PT tracers
@@ -346,7 +346,7 @@ class TwoPoint(Statistic):
                     # Compute perturbation power spectrum
 
                     pt_calculator = tools.get_pt_calculator()
-                    pk = pyccl.nl_pt.get_pt_pk2d(  # pylint: disable-msg=invalid-name
+                    pk = pyccl.nl_pt.get_pt_pk2d(
                         ccl_cosmo,
                         tracer0.pt_tracer,
                         tracer2=tracer1.pt_tracer,
@@ -388,7 +388,7 @@ class TwoPoint(Statistic):
 
         if self.theory_window_function is not None:
 
-            def log_interpolator(x, y):  # pylint: disable-msg=invalid-name
+            def log_interpolator(x, y):
                 if np.all(y > 0):
                     # use log-log interpolation
                     intp = scipy.interpolate.InterpolatedUnivariateSpline(

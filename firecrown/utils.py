@@ -2,7 +2,7 @@
 """
 
 
-def upper_triangle_indices(n: int):  # pylint: disable-msg=invalid-name
+def upper_triangle_indices(n: int):
     """generator that yields a sequence of tuples that carry the indices for an
     (n x n) upper-triangular matrix. This is a replacement for the nested loops:
 
