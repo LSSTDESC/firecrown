@@ -4,15 +4,66 @@ abstract class to compute cluster mass function.
 The implemented functions use PyCCL library as backend.
 """
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import final, List, Tuple, Optional
 from abc import abstractmethod
+
+import sacc
 
 from ..updatable import Updatable
 from ..parameters import ParamsMap
 
 
+class ClusterMassArgument:
+    """Cluster Mass argument class."""
+
+    def __init__(self, logMl: float, logMu: float):
+        self.logMl: float = logMl
+        self.logMu: float = logMu
+        self.logM: Optional[float] = None
+        self.dirac_delta: bool = False
+
+        if logMl > logMu:
+            raise ValueError("logMl must be smaller than logMu")
+        elif logMl == logMu:
+            self.dirac_delta = True
+            self.logM = logMl
+
+    def is_dirac_delta(self) -> bool:
+        """Check if the argument is a dirac delta."""
+
+        return self.dirac_delta
+
+    def get_logM(self) -> float:
+        """Return the logM value if the argument is a dirac delta."""
+
+        if self.logM is not None:
+            return self.logM
+        raise ValueError("Argument is not a Dirac delta")
+
+    @property
+    @abstractmethod
+    def dim(self) -> int:
+        """Return the dimension of the argument."""
+
+    @abstractmethod
+    def get_logM_bounds(self) -> Tuple[float, float]:
+        """Return the bounds of the cluster mass argument."""
+
+    @abstractmethod
+    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
+        """Return the bounds of the cluster mass proxy argument."""
+
+    @abstractmethod
+    def p(self, logM: float, z: float, *proxy_args) -> float:
+        """Return the probability of the argument."""
+
+
 class ClusterMass(Updatable):
     """Cluster Mass module."""
+
+    @abstractmethod
+    def read(self, sacc_data: sacc.Sacc):
+        """Abstract method to read the data for this source from the SACC file."""
 
     @abstractmethod
     def _update_cluster_mass(self, params: ParamsMap):
@@ -36,10 +87,6 @@ class ClusterMass(Updatable):
         by all subclasses."""
         self._reset_cluster_mass()
 
-    @abstractmethod  # pylint: disable-next=invalid-name
-    def cluster_logM_p(self, logM, z, logM_obs):
-        """Computes the logM proxytractmethod"""
-
-    @abstractmethod  # pylint: disable-next=invalid-name
-    def cluster_logM_intp(self, logM, z, logM_obs_lower, logM_obs_upper):
-        """Computes logMintp"""
+    @abstractmethod
+    def get_args(self) -> List[ClusterMassArgument]:
+        """Return the argument generator of the cluster mass function."""

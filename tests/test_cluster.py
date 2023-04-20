@@ -1,14 +1,46 @@
-from firecrown.models.cluster_abundance import ClusterAbundance, ClusterAbundanceInfo
-from firecrown.models.cluster_abundance_binned import ClusterAbundanceBinned
-from firecrown.models.cluster_redshift import ClusterRedshift
-from firecrown.models.cluster_mass import ClusterMass
-from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
-from firecrown.models.cluster_mean_mass_bin import ClusterMeanMass
-import pyccl as ccl
+"""Tests for the cluster module."""
 
-ccl_cosmo = ccl.Cosmology(
-    Omega_c=0.22, Omega_b=0.0448, h=0.71, sigma8=0.8, n_s=0.963, Neff=3.04
-)
+import pytest
+import pyccl as ccl
+import numpy as np
+
+from firecrown.models.cluster_abundance import ClusterAbundance
+from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
+from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
+from firecrown.parameters import ParamsMap
+
+
+@pytest.fixture(name="ccl_cosmo")
+def fixture_ccl_cosmo():
+    return ccl.Cosmology(Omega_c=0.22, Omega_b=0.0448, h=0.71, sigma8=0.8, n_s=0.963, Neff=3.04)
+
+@pytest.fixture(name="cluster_abundance")
+def fixed_cluster_redshift():
+    z_bins = np.array([0.2000146, 0.31251036, 0.42500611, 0.53750187, 0.64999763])
+    cluster_z = ClusterRedshiftSpec()
+    cluster_z.set_bins_by_array(z_bins)
+
+    proxy_bins = np.array([0.45805137, 0.81610273, 1.1741541, 1.53220547, 1.89025684])
+    cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
+    cluster_mass_r.set_bins_by_array(proxy_bins)
+
+    parameters = ParamsMap(
+        {
+            "mu_p0": 3.19,
+            "mu_p1": 0.8685889638,
+            "mu_p2": -0.30400613733,
+            "sigma_p0": 0.33,
+            "sigma_p1": -0.03474355855,
+            "sigma_p2": 0.0,
+        }
+    )
+    cluster_abundance = ClusterAbundance(
+        hmd_200, hmf_name, hmf_args, cluster_mass_r, cluster_z, sky_area
+    )
+    cluster_abundance.update(parameters)
+
+
+
 hmd_200 = ccl.halos.MassDef200c()
 hmf_args = [False, True]
 hmf_200 = ccl.halos.MassFuncBocquet16
