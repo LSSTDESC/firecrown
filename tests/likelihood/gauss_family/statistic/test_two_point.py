@@ -1,3 +1,6 @@
+"""
+Tests for the TwoPoint module.
+"""
 import numpy as np
 
 from firecrown.likelihood.gauss_family.statistic.two_point import _ell_for_xi
