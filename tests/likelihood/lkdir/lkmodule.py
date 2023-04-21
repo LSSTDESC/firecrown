@@ -13,12 +13,13 @@ from firecrown.modeling_tools import ModelingTools
 
 class EmptyLikelihood(Likelihood):
     """Initialize the object with a placeholder value of 1."""
+
     def __init__(self) -> None:
         super().__init__()
         self.placeholder = 1.0
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """This class has nothing to read. """
+        """This class has nothing to read."""
 
     def _update(self, params: ParamsMap) -> None:
         """This class has no parameters to update."""
