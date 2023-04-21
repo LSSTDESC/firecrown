@@ -1,3 +1,6 @@
+"""
+Tests for the Updatable class.
+"""
 import pytest
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters

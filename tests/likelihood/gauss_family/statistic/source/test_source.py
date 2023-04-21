@@ -1,3 +1,6 @@
+"""
+Tests for the module firecrown.likelihood.gauss_family.statistic.source.source.
+"""
 import pytest
 import pyccl
 from firecrown.likelihood.gauss_family.statistic.source.source import Tracer
