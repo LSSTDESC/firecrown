@@ -35,7 +35,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
+ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 6e4, "n_log": 200}
 
 
 def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> npt.NDArray[np.float64]:
