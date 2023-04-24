@@ -3,7 +3,7 @@
 Define the Cluster Mass Richness proxy module and its arguments.
 """
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Tuple, final
 import itertools
 
 import numpy as np
@@ -121,7 +121,6 @@ class ClusterMassRich(ClusterMass):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
         self.logMl = logMl
         self.logMu = logMu
-        self.logM_obs_bins: Optional[List[Tuple[float, float]]] = None
 
         # Updatable parameters
         self.mu_p0 = parameters.create()
@@ -175,23 +174,20 @@ class ClusterMassRich(ClusterMass):
         # sigma = abs(sigma)
         return [lnM_obs_mu, sigma]
 
-    def set_bins_by_array(self, logM_obs_bins: np.ndarray):
-        """Set the bins by an array of bin edges."""
+    def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
+        """Generate bins by an array of bin edges."""
 
         if len(logM_obs_bins) < 2:
             raise ValueError("logM_obs_bins must have at least two elements")
-
-        self.logM_obs_bins = list(itertools.pairwise(logM_obs_bins))
-
-    def get_args(self) -> List[ClusterMassArgument]:
-        """Return the argument generator of the cluster mass function."""
-
-        if self.logM_obs_bins is None:
-            raise ValueError("logM_obs_bins must be set")
 
         return [
             ClusterMassRichBinArgument(
                 self, self.logMl, self.logMu, logM_obs_lower, logM_obs_upper
             )
-            for logM_obs_lower, logM_obs_upper in self.logM_obs_bins
+            for logM_obs_lower, logM_obs_upper in itertools.pairwise(logM_obs_bins)
         ]
+
+    def point_arg(self, logM_obs: float) -> ClusterMassArgument:
+        """Return the argument generator of the cluster mass function."""
+
+        return ClusterMassRichPointArgument(self, self.logMl, self.logMu, logM_obs)

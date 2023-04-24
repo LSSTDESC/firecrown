@@ -5,7 +5,6 @@ The implemented functions use PyCCL library as backend.
 """
 from __future__ import annotations
 from typing import Optional, Any, Dict, List, Tuple, final
-import itertools
 
 import numpy as np
 import scipy.integrate
@@ -13,8 +12,8 @@ import pyccl as ccl
 
 from ..updatable import Updatable
 from ..parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
-from .cluster_mass import ClusterMass
-from .cluster_redshift import ClusterRedshift
+from .cluster_mass import ClusterMassArgument
+from .cluster_redshift import ClusterRedshiftArgument
 
 
 class ClusterAbundance(Updatable):
@@ -25,18 +24,13 @@ class ClusterAbundance(Updatable):
         halo_mass_definition: ccl.halos.MassDef,
         halo_mass_function_name: str,
         halo_mass_function_args: Dict[str, Any],
-        cluster_mass: ClusterMass,
-        cluster_redshift: ClusterRedshift,
         sky_area: float,
         use_completness: bool = False,
         use_purity: bool = False,
     ):
         """Initialize the ClusterAbundance class."""
         super().__init__()
-        self.cluster_m = cluster_mass
-        self.cluster_z = cluster_redshift
         self.sky_area = sky_area
-        self.sky_area_rad = self.sky_area * (np.pi / 180.0) ** 2
         self.halo_mass_definition = halo_mass_definition
         self.halo_mass_function_name = halo_mass_function_name
         self.halo_mass_function_args = halo_mass_function_args
@@ -48,44 +42,38 @@ class ClusterAbundance(Updatable):
         else:
             self.base_mf_d2N_dz_dlnM = self.mf_d2N_dz_dlnM
 
+    @property
+    def sky_area(self) -> float:
+        """Return the sky area."""
+        return self.sky_area_rad * (180.0 / np.pi) ** 2
+
+    @sky_area.setter
+    def sky_area(self, sky_area: float) -> None:
+        """Set the sky area."""
+        self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
+
     @final
     def _update(self, params: ParamsMap):
         """Implementation of Updatable interface method `_update`."""
-        self.cluster_m.update(params)
-        self.cluster_z.update(params)
 
     @final
     def _reset(self) -> None:
         """Implementation of the Updatable interface method `_reset`."""
-        self.cluster_m.reset()
-        self.cluster_z.reset()
         self.halo_mass_function = None
 
     @final
     def _required_parameters(self) -> RequiredParameters:
-        return (
-            self.cluster_m.required_parameters() + self.cluster_z.required_parameters()
-        )
+        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = DerivedParameterCollection([])
-        derived_parameters = (
-            derived_parameters + self.cluster_m.get_derived_parameters()
-        )
-        derived_parameters = (
-            derived_parameters + self.cluster_z.get_derived_parameters()
-        )
-        return derived_parameters
+        return DerivedParameterCollection([])
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
 
         :param sacc_data: The data in the sacc format.
         """
-
-        self.cluster_m.read(sacc_data)
-        self.cluster_z.read(sacc_data)
 
     def dV_dz(self, ccl_cosmo: ccl.Cosmology, z) -> float:
         """Differential Comoving Volume at z.
@@ -183,17 +171,14 @@ class ClusterAbundance(Updatable):
 
     def _process_args(self, args):
         x = np.array(args[0:-5])
-        index_map = args[-5]
-        arg = args[-4]
-        ccl_cosmo = args[-3]
-        mass_arg = args[-2]
-        redshift_arg = args[-1]
+        index_map, arg, ccl_cosmo, mass_arg, redshift_arg = args[-5:]
 
         arg[index_map] = x
+        redshift_start_index = 2 + redshift_arg.dim
 
         logM, z = arg[0:2]
-        proxy_z = arg[2: 2 + redshift_arg.dim]
-        proxy_m = arg[2 + redshift_arg.dim:]
+        proxy_z = arg[2:redshift_start_index]
+        proxy_m = arg[redshift_start_index:]
 
         return logM, z, proxy_z, proxy_m, ccl_cosmo, mass_arg, redshift_arg
 
@@ -221,6 +206,7 @@ class ClusterAbundance(Updatable):
             * redshift_arg.p(logM, z, *proxy_z)
         )
 
+    # As above but for the mean mass
     def _compute_integrand_mean_logM(self, *args):
         (
             logM,
@@ -239,82 +225,74 @@ class ClusterAbundance(Updatable):
             * logM
         )
 
-    def _compute_any(self, integrand, ccl_cosmo: ccl.Cosmology) -> np.ndarray:
-        """Computes the cluster abundance in all bins defined
-        by the cluster mass and redshift proxy bins."""
+    def _compute_any_from_args(
+        self,
+        integrand,
+        ccl_cosmo: ccl.Cosmology,
+        mass_arg: ClusterMassArgument,
+        redshift_arg: ClusterRedshiftArgument,
+    ):
+        last_index = 0
 
-        mass_args = self.cluster_m.get_args()
-        redshift_args = self.cluster_z.get_args()
+        arg = np.zeros(2 + mass_arg.dim + redshift_arg.dim)
+        index_map: List[int] = []
+        bounds_list: List[Tuple[float, float]] = []
 
-        # Compute the cluster abundance in each argument.
-        if len(mass_args) != len(redshift_args):
-            raise ValueError(
-                "The number of mass and redshift arguments must be the same."
+        if mass_arg.is_dirac_delta():
+            arg[0] = mass_arg.get_logM()
+        else:
+            index_map.append(last_index)
+            bounds_list.append(mass_arg.get_logM_bounds())
+        last_index += 1
+
+        if redshift_arg.is_dirac_delta():
+            arg[1] = redshift_arg.get_z()
+        else:
+            index_map.append(last_index)
+            bounds_list.append(redshift_arg.get_z_bounds())
+        last_index += 1
+
+        if mass_arg.dim > 0:
+            index_map += list(range(last_index, last_index + mass_arg.dim))
+            bounds_list += mass_arg.get_proxy_bounds()
+
+        last_index += mass_arg.dim
+
+        if redshift_arg.dim > 0:
+            index_map += list(range(last_index, last_index + redshift_arg.dim))
+            bounds_list += redshift_arg.get_proxy_bounds()
+        last_index += redshift_arg.dim
+
+        if len(index_map) == 0:
+            # No proxy bins
+            return (
+                self.mf_d2N_dz_dlnM(ccl_cosmo, arg[0], arg[1])
+                * mass_arg.p(arg[0], arg[1])
+                * redshift_arg.p(arg[0], arg[1])
             )
+        return scipy.integrate.nquad(
+            integrand,
+            args=(index_map, arg, ccl_cosmo, mass_arg, redshift_arg),
+            ranges=bounds_list,
+            opts={"epsabs": 0.0, "epsrel": 1.0e-4},
+        )[0]
 
-        res = []
-        for mass_arg, redshift_arg in itertools.product(mass_args, redshift_args):
-            # Compute the cluster abundance in each bin.
-            last_index = 0
+    def compute(
+        self,
+        ccl_cosmo: ccl.Cosmology,
+        mass_arg: ClusterMassArgument,
+        redshift_arg: ClusterRedshiftArgument,
+    ):
+        return self._compute_any_from_args(
+            self._compute_integrand, ccl_cosmo, mass_arg, redshift_arg
+        )
 
-            print(mass_arg, redshift_arg)
-
-            arg = np.zeros(2 + mass_arg.dim + redshift_arg.dim)
-            index_map: List[int] = []
-            bounds_list: List[Tuple[float, float]] = []
-
-            if mass_arg.is_dirac_delta():
-                arg[0] = mass_arg.get_logM()
-            else:
-                index_map.append(last_index)
-                bounds_list.append(mass_arg.get_logM_bounds())
-            last_index += 1
-
-            if redshift_arg.is_dirac_delta():
-                arg[1] = redshift_arg.get_z()
-            else:
-                index_map.append(last_index)
-                bounds_list.append(redshift_arg.get_z_bounds())
-            last_index += 1
-
-            if mass_arg.dim > 0:
-                index_map += list(range(last_index, last_index + mass_arg.dim))
-                bounds_list += mass_arg.get_proxy_bounds()
-
-            last_index += mass_arg.dim
-
-            if redshift_arg.dim > 0:
-                index_map += list(range(last_index, last_index + redshift_arg.dim))
-                bounds_list += redshift_arg.get_proxy_bounds()
-            last_index += redshift_arg.dim
-
-            if len(index_map) == 0:
-                # No proxy bins
-                res.append(
-                    self.mf_d2N_dz_dlnM(ccl_cosmo, arg[0], arg[1])
-                    * mass_arg.p(arg[0], arg[1])
-                    * redshift_arg.p(arg[0], arg[1])
-                )
-            else:
-                res.append(
-                    scipy.integrate.nquad(
-                        integrand,
-                        args=(index_map, arg, ccl_cosmo, mass_arg, redshift_arg),
-                        ranges=bounds_list,
-                        opts={"epsabs": 0.0, "epsrel": 1.0e-4},
-                    )[0]
-                )
-
-        return np.array(res)
-
-    def compute(self, ccl_cosmo: ccl.Cosmology) -> np.ndarray:
-        """Computes the cluster abundance in all bins defined
-        by the cluster mass and redshift proxy bins."""
-
-        return self._compute_any(self._compute_integrand, ccl_cosmo)
-
-    def compute_unormalized_mean_logM(self, ccl_cosmo: ccl.Cosmology) -> np.ndarray:
-        """Computes the cluster abundance in all bins defined
-        by the cluster mass and redshift proxy bins."""
-
-        return self._compute_any(self._compute_integrand_mean_logM, ccl_cosmo)
+    def compute_unormalized_mean_logM(
+        self,
+        ccl_cosmo: ccl.Cosmology,
+        mass_arg: ClusterMassArgument,
+        redshift_arg: ClusterRedshiftArgument,
+    ):
+        return self._compute_any_from_args(
+            self._compute_integrand_mean_logM, ccl_cosmo, mass_arg, redshift_arg
+        )

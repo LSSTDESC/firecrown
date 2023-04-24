@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import final, List, Tuple, Optional
 from abc import abstractmethod
 
+import numpy as np
 import sacc
 
 from ..updatable import Updatable
@@ -88,5 +89,5 @@ class ClusterMass(Updatable):
         self._reset_cluster_mass()
 
     @abstractmethod
-    def get_args(self) -> List[ClusterMassArgument]:
-        """Return the argument generator of the cluster mass function."""
+    def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
+        """Generate bins by an array of bin edges."""

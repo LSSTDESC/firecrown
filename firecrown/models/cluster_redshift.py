@@ -7,6 +7,7 @@ The implemented functions use PyCCL library as backend.
 from typing import final, List, Tuple, Optional
 from abc import abstractmethod
 
+import numpy as np
 import sacc
 
 from ..updatable import Updatable
@@ -88,5 +89,5 @@ class ClusterRedshift(Updatable):
         self._reset_cluster_redshift()
 
     @abstractmethod
-    def get_args(self) -> List[ClusterRedshiftArgument]:
-        """Return the argument generator of the cluster mass function."""
+    def gen_bins_by_array(self, z_bins: np.ndarray) -> List[ClusterRedshiftArgument]:
+        """Generate the bins by an array of bin edges."""

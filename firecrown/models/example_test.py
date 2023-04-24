@@ -2,6 +2,7 @@
 """Example test for cluster abundance model."""
 
 from typing import Any, Dict
+import itertools
 
 import pyccl as ccl
 import numpy as np
@@ -36,19 +37,22 @@ sky_area = 439.0
 
 proxy_bins = np.array([0.45805137, 0.81610273, 1.1741541, 1.53220547, 1.89025684])
 cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
-cluster_mass_r.set_bins_by_array(proxy_bins)
+mass_bin_args = cluster_mass_r.gen_bins_by_array(proxy_bins)
 
 z_bins = np.array([0.2000146, 0.31251036, 0.42500611, 0.53750187, 0.64999763])
 cluster_z = ClusterRedshiftSpec()
-cluster_z.set_bins_by_array(z_bins)
+z_bin_args = cluster_z.gen_bins_by_array(z_bins)
 
-cluster_abundance = ClusterAbundance(
-    hmd_200, hmf_name, hmf_args, cluster_mass_r, cluster_z, sky_area
-)
+cluster_abundance = ClusterAbundance(hmd_200, hmf_name, hmf_args, sky_area)
+
 cluster_abundance.update(parameters)
+cluster_mass_r.update(parameters)
+cluster_z.update(parameters)
 
-ca = cluster_abundance.compute(ccl_cosmo)
-print(ca)
-
-ca_logM = cluster_abundance.compute_unormalized_mean_logM(ccl_cosmo)
-print(ca_logM / ca)
+for mass_arg, z_arg in itertools.product(mass_bin_args, z_bin_args):
+    print(mass_arg, z_arg)
+    ca = cluster_abundance.compute(ccl_cosmo, mass_arg, z_arg)
+    ca_logM = cluster_abundance.compute_unormalized_mean_logM(
+        ccl_cosmo, mass_arg, z_arg
+    )
+    print(f"ca {ca} mean logM {ca_logM/ca}")
