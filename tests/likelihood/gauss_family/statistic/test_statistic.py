@@ -1,3 +1,6 @@
+"""
+Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
+"""
 import numpy as np
 import firecrown.likelihood.gauss_family.statistic.statistic as stat
 

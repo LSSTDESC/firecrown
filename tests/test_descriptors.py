@@ -1,3 +1,6 @@
+"""
+Tests for the module firecrown.descriptors.
+"""
 import math
 import pytest
 from firecrown.descriptors import TypeFloat, TypeString
@@ -13,6 +16,7 @@ class HasUOF:
     x = TypeFloat(allow_none=True)
 
     def __init__(self):
+        """Initialize a HasUOF object with default value `self.x=None`."""
         self.x = None
 
 
@@ -22,6 +26,7 @@ class HasCOF:
     x = TypeFloat(1.0, 3.0, allow_none=True)
 
     def __init__(self):
+        """Initialize a HasCOF object with default value of `self.x=None`."""
         self.x = None
 
 
@@ -31,6 +36,7 @@ class HasURF:
     x = TypeFloat()
 
     def __init__(self):
+        """Initialize a HasURF object with default value `self.x=0.0`."""
         self.x = 0.0
 
 
@@ -40,6 +46,7 @@ class HasCRF:
     x = TypeFloat(1.0, 3.0)
 
     def __init__(self):
+        """Initialize a HasCRF with the default value `self.x=2.0`."""
         self.x = 2.0
 
 
@@ -49,6 +56,8 @@ class HasLowerBound:
     x = TypeFloat(minvalue=0.0)
 
     def __init__(self):
+        """Initialize a HasLowerBound object with the default value
+        `self.x=0.0`."""
         self.x = 0.0
 
 
@@ -58,6 +67,8 @@ class HasUpperBound:
     x = TypeFloat(maxvalue=1.0)
 
     def __init__(self):
+        """Initialize a HasUpperBound object with the default value
+        `self.x=1.0`."""
         self.x = 1.0
 
 
