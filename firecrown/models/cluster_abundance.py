@@ -29,7 +29,7 @@ class ClusterAbundance(Updatable):
         use_purity: bool = False,
     ):
         """Initialize the ClusterAbundance class.
-        
+
         :param halo_mass_definition: Halo mass definition.
         :param halo_mass_function_name: Halo mass function name.
         :param halo_mass_function_args: Halo mass function arguments.
