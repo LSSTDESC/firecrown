@@ -5,7 +5,6 @@ Class to compute cluster redshift spectroscopy functions.
 """
 
 from typing import final, List, Tuple
-import itertools
 
 from .. import sacc_support
 from ..sacc_support import sacc
@@ -68,9 +67,11 @@ class ClusterRedshiftSpec(ClusterRedshift):
         if len(z_bins) < 2:
             raise ValueError("z_bins must have at least two elements")
 
+        # itertools.pairwise is only available in Python 3.10
+        # using zip instead
         return [
             ClusterRedshiftSpecArgument(z_lower, z_upper)
-            for z_lower, z_upper in itertools.pairwise(z_bins)
+            for z_lower, z_upper in zip(z_bins[:-1], z_bins[1:])
         ]
 
     def point_arg(self, z: float) -> ClusterRedshiftArgument:

@@ -4,7 +4,6 @@ Define the Cluster Mass Richness proxy module and its arguments.
 """
 from __future__ import annotations
 from typing import List, Tuple, final
-import itertools
 
 import numpy as np
 from scipy import special
@@ -181,11 +180,15 @@ class ClusterMassRich(ClusterMass):
         if len(logM_obs_bins) < 2:
             raise ValueError("logM_obs_bins must have at least two elements")
 
+        # itertools.pairwise is only available in Python 3.10
+        # using zip instead
         return [
             ClusterMassRichBinArgument(
                 self, self.logMl, self.logMu, logM_obs_lower, logM_obs_upper
             )
-            for logM_obs_lower, logM_obs_upper in itertools.pairwise(logM_obs_bins)
+            for logM_obs_lower, logM_obs_upper in zip(
+                logM_obs_bins[:-1], logM_obs_bins[1:]
+            )
         ]
 
     def point_arg(self, logM_obs: float) -> ClusterMassArgument:
