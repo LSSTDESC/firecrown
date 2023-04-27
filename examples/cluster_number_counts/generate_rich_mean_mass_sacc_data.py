@@ -163,13 +163,13 @@ def generate_sacc_file():
     survey_name = "numcosmo_simulated_redshift_richness"
     s_count.add_tracer("cluster_survey", survey_name, area)
 
-    for i, z_bin in enumerate(itertools.pairwise(z_edges)):
+    for i, z_bin in enumerate(zip(z_edges[:-1], z_edges[1:])):
         z_lower, z_upper = z_bin
         bin_z_label = f"bin_z_{i}"
         s_count.add_tracer("bin_z", bin_z_label, z_lower, z_upper)
         bin_z_labels.append(bin_z_label)
 
-    for i, richness_bin in enumerate(itertools.pairwise(richness_edges)):
+    for i, richness_bin in enumerate(zip(richness_edges[:-1], richness_edges[1:])):
         richness_lower, richness_upper = richness_bin
         bin_richness_label = f"rich_{i}"
         s_count.add_tracer(
