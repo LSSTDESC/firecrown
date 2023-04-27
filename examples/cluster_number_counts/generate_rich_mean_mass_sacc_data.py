@@ -62,9 +62,7 @@ def generate_sacc_file():
     prim.props.n_SA = n_s
 
     old_amplitude = math.exp(prim.props.ln10e10ASA)
-    prim.props.ln10e10ASA = math.log(
-        (sigma8 / cosmo.sigma8(psf)) ** 2 * old_amplitude
-    )
+    prim.props.ln10e10ASA = math.log((sigma8 / cosmo.sigma8(psf)) ** 2 * old_amplitude)
 
     # CosmoSim_proxy model
     # M_0, z_0
@@ -107,9 +105,7 @@ def generate_sacc_file():
 
     # Number Counts object
     ncount = Nc.DataClusterNCount.new(
-        ca,
-        "NcClusterRedshiftNodist",
-        "NcClusterMassAscaso"
+        ca, "NcClusterRedshiftNodist", "NcClusterMassAscaso"
     )
     ca.prepare(cosmo, cluster_z, cluster_m)
     mset = Ncm.MSet.new_array([cosmo, cluster_z, cluster_m])
@@ -144,7 +140,7 @@ def generate_sacc_file():
         cluster_richness,
         cluster_logM,
         "mean",
-        bins=[z_edges, richness_edges]
+        bins=[z_edges, richness_edges],
     ).statistic
 
     std_logM = stats.binned_statistic_2d(
@@ -203,7 +199,7 @@ def generate_sacc_file():
         s_count.add_data_point(
             cluster_mean_mass,
             (survey_name, bin_z_label, bin_richness_label),
-            bin_mean_logM
+            bin_mean_logM,
         )
 
     # ### Then the add the covariance and save the file
