@@ -5,10 +5,11 @@ theoretical prediction of cluster number counts inside bins of redshift
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import List, Dict, Tuple, Optional, final
 
 import numpy as np
-from scipy.integrate import simps
+
+from ....sacc_support import sacc, ClusterSurveyTracer
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
@@ -18,31 +19,9 @@ from ....parameters import (
     DerivedParameterCollection,
 )
 from ....models.cluster_abundance import ClusterAbundance
-from ....models.cluster_mass import ClusterMass
-from ....models.cluster_redshift import ClusterRedshift
+from ....models.cluster_mass import ClusterMass, ClusterMassArgument
+from ....models.cluster_redshift import ClusterRedshift, ClusterRedshiftArgument
 from ....modeling_tools import ModelingTools
-from .cluster_number_counts_enum import (
-    SupportedTracerNames,
-    SupportedDataTypes,
-)
-
-
-class ClusterNumberCountsArgs:
-    """Class for number counts tracer builder argument."""
-
-    def __init__(
-        self,
-        tracers=None,
-        z_bins=None,
-        Mproxy_bins=None,  # pylint: disable-msg=invalid-name
-        nz=None,  # pylint: disable-msg=invalid-name
-        metadata=None,
-    ):
-        self.z_bins = z_bins
-        self.Mproxy_bins = Mproxy_bins  # pylint: disable-msg=invalid-name
-        self.nz = nz  # pylint: disable-msg=invalid-name
-        self.metadata = metadata
-        self.tracers = tracers
 
 
 class ClusterNumberCounts(Statistic):
@@ -58,11 +37,12 @@ class ClusterNumberCounts(Statistic):
     def __init__(
         self,
         sacc_tracer: str,
-        sacc_data_type,
         cluster_abundance: ClusterAbundance,
         cluster_mass: ClusterMass,
         cluster_redshift: ClusterRedshift,
         systematics: Optional[List[SourceSystematic]] = None,
+        use_cluster_counts: bool = True,
+        use_mean_mass: bool = False,
     ):
         """Initialize the ClusterNumberCounts object.
         Parameters
@@ -71,11 +51,6 @@ class ClusterNumberCounts(Statistic):
             the number Counts data points. Following the SACC file
             documentation README.md, this string should be
             'cluster_counts_true_mass'.
-        :param sacc_data_type: The kind of number count statistic. This must be a valid
-            SACC data type that maps to one of the CCL correlation
-            function kinds or a power spectra. So far, the only
-            possible option is "cluster_mass_count_wl", which is a standard
-            type in the SACC library.
         :param cluster_abundance: The cluster abundance model to use.
         :param systematics: A list of the statistics-level systematics to apply to
             the statistic. The default of `None` implies no systematics.
@@ -84,32 +59,20 @@ class ClusterNumberCounts(Statistic):
         super().__init__()
 
         self.sacc_tracer = sacc_tracer
-        self.sacc_data_type = sacc_data_type
         self.systematics = systematics or []
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
         self.cluster_abundance: ClusterAbundance = cluster_abundance
         self.cluster_mass: ClusterMass = cluster_mass
         self.cluster_redshift: ClusterRedshift = cluster_redshift
-        try:
-            self.ccl_kind = SupportedDataTypes[sacc_data_type.upper()].name
-        except KeyError:
-            supported_data = [data.name for data in SupportedDataTypes]
-            raise KeyError(
-                f"The SACC data type '{sacc_data_type}' is not "
-                f"supported!"
-                f"Supported names are: {supported_data}"
-            ) from None
-        try:
-            self.tracer_name = SupportedTracerNames[sacc_tracer.upper()].name
-        except KeyError:
-            supported_tracers = [tracer.name for tracer in SupportedTracerNames]
-            raise KeyError(
-                f"The SACC tracer name '{sacc_tracer}' is not "
-                f"supported!"
-                f"Supported names are: {supported_tracers}"
-            ) from None
-        self.tracer_args: ClusterNumberCountsArgs
+        self.tracer_args: List[Tuple[ClusterRedshiftArgument, ClusterMassArgument]] = []
+        self.use_cluster_counts: bool = use_cluster_counts
+        self.use_mean_mass: bool = use_mean_mass
+
+        if not self.use_cluster_counts and not self.use_mean_mass:
+            raise ValueError(
+                "At least one of use_cluster_counts and use_mean_mass must be True."
+            )
 
     @final
     def _reset(self) -> None:
@@ -144,6 +107,69 @@ class ClusterNumberCounts(Statistic):
 
         return derived_parameters
 
+    def _read_data_type(self, sacc_data, data_type):
+        """Internal function to read the data from the SACC file."""
+        tracers_combinations = np.array(
+            sacc_data.get_tracer_combinations(data_type=data_type)
+        )
+
+        if len(tracers_combinations) == 0:
+            raise ValueError(
+                f"The SACC file does not contain any tracers for the "
+                f"{data_type} data type."
+            )
+
+        if tracers_combinations.shape[1] != 3:
+            raise ValueError(
+                "The SACC file must contain 3 tracers for the "
+                "cluster_counts data type: cluster_survey, "
+                "redshift argument and mass argument tracers."
+            )
+
+        cluster_survey_tracers = tracers_combinations[:, 0]
+
+        if self.sacc_tracer not in cluster_survey_tracers:
+            raise ValueError(
+                f"The SACC tracer {self.sacc_tracer} is not "
+                f"present in the SACC file."
+            )
+
+        survey_selection = cluster_survey_tracers == self.sacc_tracer
+
+        z_tracers = np.unique(tracers_combinations[survey_selection, 1])
+        logM_tracers = np.unique(tracers_combinations[survey_selection, 2])
+
+        z_tracer_bins: Dict[str, ClusterRedshiftArgument] = {
+            z_tracer: self.cluster_redshift.gen_bin_from_tracer(
+                sacc_data.get_tracer(z_tracer)
+            )
+            for z_tracer in z_tracers
+        }
+        logM_tracer_bins: Dict[str, ClusterMassArgument] = {
+            logM_tracer: self.cluster_mass.gen_bin_from_tracer(
+                sacc_data.get_tracer(logM_tracer)
+            )
+            for logM_tracer in logM_tracers
+        }
+
+        self.tracer_args = [
+            (z_tracer_bins[z_tracer], logM_tracer_bins[logM_tracer])
+            for _, z_tracer, logM_tracer in tracers_combinations[survey_selection]
+        ]
+
+        self.cluster_abundance.read(sacc_data)
+        self.cluster_mass.read(sacc_data)
+        self.cluster_redshift.read(sacc_data)
+
+        data_vector_list = list(
+            sacc_data.get_mean(data_type=data_type)[survey_selection]
+        )
+        sacc_indices_list = list(
+            sacc_data.indices(data_type=data_type)[survey_selection]
+        )
+
+        return data_vector_list, sacc_indices_list
+
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.
         This function takes the SACC file and extract the necessary
@@ -153,45 +179,45 @@ class ClusterNumberCounts(Statistic):
         :param sacc_data: The data in the sacc format.
         """
 
-        assert self.sacc_tracer is not None
-        tracer = sacc_data.get_tracer(self.sacc_tracer.lower())
-        metadata = tracer.metadata
-        #         proxy_type = metadata["Mproxy_type"].upper()
-        #         if (
-        #             SupportedTracerNames[self.sacc_tracer.upper()].value
-        #             != SupportedProxyTypes[proxy_type.upper()].value
-        #         ):
-        #             raise TypeError(
-        #                 f"The proxy {proxy_type} is not supported"
-        #                 f"by the tracer {self.sacc_tracer}"
-        #             )
+        survey_tracer: ClusterSurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
+        if survey_tracer is None:
+            raise ValueError(
+                f"The SACC file does not contain the ClusterSurveyTracer "
+                f"{self.sacc_tracer}."
+            )
+        elif not isinstance(survey_tracer, ClusterSurveyTracer):
+            raise ValueError(
+                f"The SACC tracer {self.sacc_tracer} is not a ClusterSurveyTracer."
+            )
 
-        # pylint: disable-next=invalid-name
-        nz = sacc_data.get_mean(
-            data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
-        )
-        self.tracer_args = ClusterNumberCountsArgs(
-            tracers=tracer,
-            z_bins=metadata["z_edges"],
-            Mproxy_bins=metadata["Mproxy_edges"],
-            nz=nz,
-            metadata=metadata,
-        )
-        self.cluster_abundance.read(sacc_data)
-        self.cluster_mass.read(sacc_data)
-        self.cluster_redshift.read(sacc_data)
+        self.cluster_abundance.sky_area = survey_tracer.sky_area
 
-        self.z_bin_args = self.cluster_redshift.gen_bins_by_array(metadata["z_edges"])
-        self.proxy_bin_args = self.cluster_mass.gen_bins_by_array(
-            metadata["Mproxy_edges"]
-        )
+        data_vector_list = []
+        sacc_indices_list = []
 
-        self.data_vector = DataVector.from_list(nz)
+        if self.use_cluster_counts:
+            # pylint: disable-next=no-member
+            cluster_counts = sacc.standard_types.cluster_counts
+            (
+                cluster_counts_data_vector_list,
+                cluster_counts_sacc_indices_list,
+            ) = self._read_data_type(sacc_data, cluster_counts)
+            data_vector_list += cluster_counts_data_vector_list
+            sacc_indices_list += cluster_counts_sacc_indices_list
 
-        self.sacc_indices = sacc_data.indices(
-            data_type="cluster_mass_count_wl", tracers=(self.sacc_tracer,)
-        )
-        self.cluster_abundance.sky_area = metadata["sky_area"]
+        if self.use_mean_mass:
+            # pylint: disable-next=no-member
+            cluster_mean_mass = sacc.standard_types.cluster_mean_mass
+            (
+                mean_mass_data_vector_list,
+                mean_mass_sacc_indices_list,
+            ) = self._read_data_type(sacc_data, cluster_mean_mass)
+
+            data_vector_list += mean_mass_data_vector_list
+            sacc_indices_list += mean_mass_sacc_indices_list
+
+        self.data_vector = DataVector.from_list(data_vector_list)
+        self.sacc_indices = np.array(sacc_indices_list)
 
     def get_data_vector(self) -> DataVector:
         """Return the data vector; raise exception if there is none."""
@@ -211,80 +237,26 @@ class ClusterNumberCounts(Statistic):
             in each bin of redsfhit and mass.
         """
         ccl_cosmo = tools.get_ccl_cosmology()
-        z_bins = self.tracer_args.z_bins
-        proxy_bins = self.tracer_args.Mproxy_bins
-        theory_vector = []
+        theory_vector_list = []
+        cluster_counts_list = []
 
-        if self.sacc_tracer == "cluster_counts_true_mass":
-            for i in range(len(z_bins) - 1):
-                for j in range(len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance.compute_N(
-                        ccl_cosmo,
-                        proxy_bins[j],
-                        proxy_bins[j + 1],
-                        z_bins[i],
-                        z_bins[i + 1],
-                    )
+        if self.use_cluster_counts or self.use_mean_mass:
+            cluster_counts_list = [
+                self.cluster_abundance.compute(ccl_cosmo, logM_tracer_arg, z_tracer_arg)
+                for z_tracer_arg, logM_tracer_arg in self.tracer_args
+            ]
+            if self.use_cluster_counts:
+                theory_vector_list += cluster_counts_list
 
-                    theory_vector.append(bin_count)
-        elif self.sacc_tracer == "cluster_counts_richness_proxy":
-            for i in range(0, len(z_bins) - 1):
-                for j in range(0, len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance.compute_intp_N(
-                        ccl_cosmo,
-                        proxy_bins[j],
-                        proxy_bins[j + 1],
-                        z_bins[i],
-                        z_bins[i + 1],
-                    )
-                    theory_vector.append(bin_count)
-
-        elif self.sacc_tracer == "cluster_counts_richness_proxy_plusmean":
-            mean_mass_obj = ClusterMeanMass(
-                self.cluster_mass,
-                self.cluster_z,
-                self.tracer_args.metadata["sky_area"],
-                [True, False],
-            )
-            mean_mass = []
-            for i in range(0, len(z_bins) - 1):
-                for j in range(0, len(proxy_bins) - 1):
-                    bin_count = self.cluster_abundance.compute_intp_N(
-                        ccl_cosmo,
-                        proxy_bins[j],
-                        proxy_bins[j + 1],
-                        z_bins[i],
-                        z_bins[i + 1],
-                    )
-                    theory_vector.append(bin_count)
-                    mass_count = mean_mass_obj.compute_intp_logM(
-                        ccl_cosmo,
-                        proxy_bins[j],
-                        proxy_bins[j + 1],
-                        z_bins[i],
-                        z_bins[i + 1],
-                    )
-                    mean_mass.append(mass_count)
-
-            theory_vector = theory_vector + mean_mass
-
-        elif self.sacc_tracer == "cluster_counts_richness_meanonly_proxy":
-            mean_mass_obj = ClusterMeanMass(
-                self.cluster_mass,
-                self.cluster_z,
-                self.tracer_args.metadata["sky_area"],
-                [True, False],
-            )
-
-            for i in range(0, len(z_bins) - 1):
-                for j in range(0, len(proxy_bins) - 1):
-                    mass_count = mean_mass_obj.compute_intp_logM(
-                        ccl_cosmo,
-                        proxy_bins[j],
-                        proxy_bins[j + 1],
-                        z_bins[i],
-                        z_bins[i + 1],
-                    )
-                    theory_vector.append(mass_count)
-
-        return TheoryVector.from_list(theory_vector)
+        if self.use_mean_mass:
+            mean_mass_list = [
+                self.cluster_abundance.compute_unormalized_mean_logM(
+                    ccl_cosmo, logM_tracer_arg, z_tracer_arg
+                )
+                / counts
+                for (z_tracer_arg, logM_tracer_arg), counts in zip(
+                    self.tracer_args, cluster_counts_list
+                )
+            ]
+            theory_vector_list += mean_mass_list
+        return TheoryVector.from_list(theory_vector_list)

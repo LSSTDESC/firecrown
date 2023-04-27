@@ -24,11 +24,21 @@ class ClusterAbundance(Updatable):
         halo_mass_definition: ccl.halos.MassDef,
         halo_mass_function_name: str,
         halo_mass_function_args: Dict[str, Any],
-        sky_area: float,
+        sky_area: float = 100.0,
         use_completness: bool = False,
         use_purity: bool = False,
     ):
-        """Initialize the ClusterAbundance class."""
+        """Initialize the ClusterAbundance class.
+        
+        :param halo_mass_definition: Halo mass definition.
+        :param halo_mass_function_name: Halo mass function name.
+        :param halo_mass_function_args: Halo mass function arguments.
+        :param sky_area: Sky area in square degrees, defaults to 100 sq deg.
+        :param use_completness: Use completeness function, defaults to False.
+        :param use_purity: Use purity function, defaults to False.
+
+        :return: ClusterAbundance object.
+        """
         super().__init__()
         self.sky_area = sky_area
         self.halo_mass_definition = halo_mass_definition

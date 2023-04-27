@@ -8,7 +8,8 @@ import itertools
 
 import numpy as np
 from scipy import special
-import sacc
+from .. import sacc_support
+from ..sacc_support import sacc
 
 from ..parameters import (
     ParamsMap,
@@ -191,3 +192,13 @@ class ClusterMassRich(ClusterMass):
         """Return the argument generator of the cluster mass function."""
 
         return ClusterMassRichPointArgument(self, self.logMl, self.logMu, logM_obs)
+
+    def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterMassArgument:
+        """Return the argument for the given tracer."""
+
+        if not isinstance(tracer, sacc_support.BinRichnessTracer):
+            raise ValueError("Tracer must be a BinRichnessTracer")
+
+        return ClusterMassRichBinArgument(
+            self, self.logMl, self.logMu, tracer.richness_lower, tracer.richness_upper
+        )

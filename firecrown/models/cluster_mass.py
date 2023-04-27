@@ -8,8 +8,8 @@ from typing import final, List, Tuple, Optional
 from abc import abstractmethod
 
 import numpy as np
-import sacc
 
+from ..sacc_support import sacc
 from ..updatable import Updatable
 from ..parameters import ParamsMap
 
@@ -91,3 +91,7 @@ class ClusterMass(Updatable):
     @abstractmethod
     def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
         """Generate bins by an array of bin edges."""
+
+    @abstractmethod
+    def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterMassArgument:
+        """Return the bin for the given tracer."""
