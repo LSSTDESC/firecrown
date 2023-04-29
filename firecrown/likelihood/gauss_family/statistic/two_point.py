@@ -319,6 +319,7 @@ class TwoPoint(Statistic):
         self.sacc_tracers = tracers
 
     def calculate_ell_or_theta(self):
+        assert self.theory_window_function is not None
         ell_config = {
             **ELL_FOR_XI_DEFAULTS,
             "maximum": self.theory_window_function.values[-1],
