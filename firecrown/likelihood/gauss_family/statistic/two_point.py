@@ -316,20 +316,23 @@ class TwoPoint(Statistic):
 
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
-            ell_config = {
-                **ELL_FOR_XI_DEFAULTS,
-                "maximum": self.theory_window_function.values[-1],
-            }
-            ell_config["minimum"] = max(
-                ell_config["minimum"], self.theory_window_function.values[0]
-            )
-            _ell_or_theta = _ell_for_xi(**ell_config)
+            _ell_or_theta = self.calculate_ell_or_theta()
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
         self.data_vector = DataVector.create(_stat)
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
+
+    def calculate_ell_or_theta(self):
+        ell_config = {
+            **ELL_FOR_XI_DEFAULTS,
+            "maximum": self.theory_window_function.values[-1],
+        }
+        ell_config["minimum"] = max(
+            ell_config["minimum"], self.theory_window_function.values[0]
+        )
+        return _ell_for_xi(**ell_config)
 
     def get_data_vector(self) -> DataVector:
         assert self.data_vector is not None
