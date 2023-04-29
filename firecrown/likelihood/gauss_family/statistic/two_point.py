@@ -253,17 +253,11 @@ class TwoPoint(Statistic):
         derived_parameters = derived_parameters + self.source1.get_derived_parameters()
         return derived_parameters
 
-    def read(self, sacc_data):
-        """Read the data for this statistic from the SACC file.
-
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
-        """
-
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the data for this statistic from the SACC file."""
         self.source0.read(sacc_data)
-        self.source1.read(sacc_data)
+        if self.source0 is not self.source1:
+            self.source1.read(sacc_data)
 
         assert self.source0.sacc_tracer is not None
         assert self.source1.sacc_tracer is not None
