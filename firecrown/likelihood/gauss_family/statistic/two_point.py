@@ -70,6 +70,26 @@ def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
     )
 
 
+def make_log_interpolator(x, y):
+    """Return a function object that does 1D spline interpolation.
+
+    If all the y values are greater than 0, the function
+    interpolates log(y) as a function of log(x).
+    Otherwise, the function interpolates y as a function of log(x).
+    The resulting interpolater will not extrapolate; if called with
+    an out-of-range argument it will raise a ValueError.
+    """
+    if np.all(y > 0):
+        # use log-log interpolation
+        intp = scipy.interpolate.InterpolatedUnivariateSpline(
+            np.log(x), np.log(y), ext=2
+        )
+        return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
+    # only use log for x
+    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
+    return lambda x_, intp=intp: intp(np.log(x_))
+
+
 class TwoPoint(Statistic):
     """A two-point statistic (e.g., shear correlation function, galaxy-shear
     correlation function, etc.).
@@ -390,21 +410,9 @@ class TwoPoint(Statistic):
             )
 
         if self.theory_window_function is not None:
-
-            def log_interpolator(x, y):
-                if np.all(y > 0):
-                    # use log-log interpolation
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
-                        np.log(x), np.log(y), ext=2
-                    )
-                    return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
-                # only use log for x
-                intp = scipy.interpolate.InterpolatedUnivariateSpline(
-                    np.log(x), y, ext=2
-                )
-                return lambda x_, intp=intp: intp(np.log(x_))
-
-            theory_interpolator = log_interpolator(self.ell_or_theta_, theory_vector)
+            theory_interpolator = make_log_interpolator(
+                self.ell_or_theta_, theory_vector
+            )
             ell = self.theory_window_function.values
             # Deal with ell=0 and ell=1
             theory_vector_interpolated = np.zeros(ell.size)
