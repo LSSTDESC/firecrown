@@ -79,6 +79,8 @@ def make_log_interpolator(x, y):
     The resulting interpolater will not extrapolate; if called with
     an out-of-range argument it will raise a ValueError.
     """
+    # TODO: There is no code in Firecrown, neither test nor example, that uses
+    # this in any way.
     if np.all(y > 0):
         # use log-log interpolation
         intp = scipy.interpolate.InterpolatedUnivariateSpline(
@@ -395,6 +397,8 @@ class TwoPoint(Statistic):
             )
 
         if self.theory_window_function is not None:
+            # TODO: There is no code in Firecrown, neither test nor example,
+            # that exercises a theory window function in any way.
             theory_interpolator = make_log_interpolator(
                 self.ell_or_theta_, theory_vector
             )
