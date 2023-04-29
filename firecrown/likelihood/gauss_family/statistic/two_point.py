@@ -373,36 +373,7 @@ class TwoPoint(Statistic):
                 if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
                     # Already computed this combination, skipping
                     continue
-                if tools.has_pk(pk_name):
-                    # Use existing power spectrum
-                    pk = tools.get_pk(pk_name)
-                elif tracer0.has_pt or tracer1.has_pt:
-                    if not tracer0.has_pt and tracer1.has_pt:
-                        # Mixture of PT and non-PT tracers
-                        # Create a dummy matter PT tracer for the non-PT part
-                        matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
-                        if not tracer0.has_pt:
-                            tracer0.pt_tracer = matter_pt_tracer
-                        else:
-                            tracer1.pt_tracer = matter_pt_tracer
-                    # Compute perturbation power spectrum
-
-                    pt_calculator = tools.get_pt_calculator()
-                    pk = pyccl.nl_pt.get_pt_pk2d(
-                        ccl_cosmo,
-                        tracer0.pt_tracer,
-                        tracer2=tracer1.pt_tracer,
-                        nonlin_pk_type="nonlinear",
-                        ptc=pt_calculator,
-                        update_ptc=False,
-                    )
-                elif tracer0.has_hm or tracer1.has_hm:
-                    # Compute halo model power spectrum
-                    raise NotImplementedError(
-                        "Halo model power spectra not supported yet"
-                    )
-                else:
-                    raise ValueError(f"No power spectrum for {pk_name} can be found.")
+                pk = self.calculate_pk(ccl_cosmo, pk_name, tools, tracer0, tracer1)
 
                 self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
                     _cached_angular_cl(
@@ -451,3 +422,34 @@ class TwoPoint(Statistic):
         assert self.data_vector is not None
 
         return TheoryVector.create(theory_vector)
+
+    def calculate_pk(self, ccl_cosmo, pk_name, tools, tracer0, tracer1):
+        if tools.has_pk(pk_name):
+            # Use existing power spectrum
+            pk = tools.get_pk(pk_name)
+        elif tracer0.has_pt or tracer1.has_pt:
+            if not tracer0.has_pt and tracer1.has_pt:
+                # Mixture of PT and non-PT tracers
+                # Create a dummy matter PT tracer for the non-PT part
+                matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
+                if not tracer0.has_pt:
+                    tracer0.pt_tracer = matter_pt_tracer
+                else:
+                    tracer1.pt_tracer = matter_pt_tracer
+            # Compute perturbation power spectrum
+
+            pt_calculator = tools.get_pt_calculator()
+            pk = pyccl.nl_pt.get_pt_pk2d(
+                ccl_cosmo,
+                tracer0.pt_tracer,
+                tracer2=tracer1.pt_tracer,
+                nonlin_pk_type="nonlinear",
+                ptc=pt_calculator,
+                update_ptc=False,
+            )
+        elif tracer0.has_hm or tracer1.has_hm:
+            # Compute halo model power spectrum
+            raise NotImplementedError("Halo model power spectra not supported yet")
+        else:
+            raise ValueError(f"No power spectrum for {pk_name} can be found.")
+        return pk
