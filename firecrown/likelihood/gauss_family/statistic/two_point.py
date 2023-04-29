@@ -201,6 +201,10 @@ class TwoPoint(Statistic):
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
+        # What is the difference between the following 3 instance variables?
+        #        ell_or_theta
+        #        _ell_or_theta
+        #        ell_or_theta_
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
@@ -231,8 +235,12 @@ class TwoPoint(Statistic):
 
     @final
     def _reset(self) -> None:
+        """Prepared to be called again for a new cosmology."""
         self.source0.reset()
         self.source1.reset()
+        # TODO: Why is self.predicted_statistic_ not re-set to None here?
+        # If we do that, then the CosmoSIS module fails -- because this data
+        # is accessed from that code.
 
     @final
     def _required_parameters(self) -> RequiredParameters:
@@ -342,6 +350,14 @@ class TwoPoint(Statistic):
             self.ells = self.ell_or_theta_
         else:
             self.ells = _ell_for_xi(**self.ell_for_xi)
+
+        # TODO: we should not be adding a new instance variable outside of
+        # __init__. Why is `self.cells` an instance variable rather than a
+        # local variable? It is used in at least two of the example codes:
+        # both the PT and the TATT examples in des_y1_3x2pt access this data
+        # member to print out results when the likelihood is "run directly"
+        # by calling `run_likelihood`.
+
         self.cells = {}
 
         ccl_cosmo = tools.get_ccl_cosmology()
