@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional, final, Union
+from typing import Dict, Tuple, Optional, final, Union
 import copy
 import functools
 import warnings
@@ -18,7 +18,7 @@ import pyccl.nl_pt
 from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
-from .source.source import Source, SourceSystematic
+from .source.source import Source, Tracer
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, anything else will throw
@@ -35,7 +35,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-ELL_FOR_XI_DEFAULTS = dict(minimum=2, midpoint=50, maximum=6e4, n_log=200)
+ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 6e4, "n_log": 200}
 
 
 def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> npt.NDArray[np.float64]:
@@ -70,6 +70,28 @@ def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
     )
 
 
+def make_log_interpolator(x, y):
+    """Return a function object that does 1D spline interpolation.
+
+    If all the y values are greater than 0, the function
+    interpolates log(y) as a function of log(x).
+    Otherwise, the function interpolates y as a function of log(x).
+    The resulting interpolater will not extrapolate; if called with
+    an out-of-range argument it will raise a ValueError.
+    """
+    # TODO: There is no code in Firecrown, neither test nor example, that uses
+    # this in any way.
+    if np.all(y > 0):
+        # use log-log interpolation
+        intp = scipy.interpolate.InterpolatedUnivariateSpline(
+            np.log(x), np.log(y), ext=2
+        )
+        return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
+    # only use log for x
+    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
+    return lambda x_, intp=intp: intp(np.log(x_))
+
+
 class TwoPoint(Statistic):
     """A two-point statistic (e.g., shear correlation function, galaxy-shear
     correlation function, etc.).
@@ -100,9 +122,6 @@ class TwoPoint(Statistic):
         The first sources needed to compute this statistic.
     source1 : Source
         The second sources needed to compute this statistic.
-    systematics : list of str, optional
-        A list of the statistics-level systematics to apply to the statistic.
-        The default of `None` implies no systematics. Currently this does nothing.
     ell_or_theta : dict, optional
         A dictionary of options for generating the ell or theta values at which
         to compute the statistics. This option can be used to have firecrown
@@ -161,7 +180,6 @@ class TwoPoint(Statistic):
         sacc_data_type,
         source0: Source,
         source1: Source,
-        systematics: Optional[List[SourceSystematic]] = None,
         ell_for_xi=None,
         ell_or_theta=None,
         ell_or_theta_min=None,
@@ -175,12 +193,13 @@ class TwoPoint(Statistic):
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
-        self.systematics = systematics or []
-        if len(self.systematics) > 0:
-            warnings.warn("TwoPoint currently does not support systematics.")
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
+        # What is the difference between the following 3 instance variables?
+        #        ell_or_theta
+        #        _ell_or_theta
+        #        ell_or_theta_
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
@@ -193,7 +212,7 @@ class TwoPoint(Statistic):
         self.measured_statistic_: Optional[DataVector] = None
         self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
 
-        self.sacc_tracers: List[str]
+        self.sacc_tracers: Tuple[str, str]
         self.ells: Optional[npt.NDArray[np.float64]] = None
         self.cells: Dict[Union[Tuple[str, str], str], npt.NDArray[np.float64]] = {}
 
@@ -211,8 +230,12 @@ class TwoPoint(Statistic):
 
     @final
     def _reset(self) -> None:
+        """Prepared to be called again for a new cosmology."""
         self.source0.reset()
         self.source1.reset()
+        # TODO: Why is self.predicted_statistic_ not re-set to None here?
+        # If we do that, then the CosmoSIS module fails -- because this data
+        # is accessed from that code.
 
     @final
     def _required_parameters(self) -> RequiredParameters:
@@ -225,18 +248,19 @@ class TwoPoint(Statistic):
         derived_parameters = derived_parameters + self.source1.get_derived_parameters()
         return derived_parameters
 
-    def read(self, sacc_data):
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
 
         :param sacc_data: The data in the sacc format.
         """
 
         self.source0.read(sacc_data)
-        self.source1.read(sacc_data)
+        if self.source0 is not self.source1:
+            self.source1.read(sacc_data)
 
         assert self.source0.sacc_tracer is not None
         assert self.source1.sacc_tracer is not None
-        tracers = [self.source0.sacc_tracer, self.source1.sacc_tracer]
+        tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
 
         if self.ccl_kind == "cl":
             _ell_or_theta, _stat = sacc_data.get_ell_cl(
@@ -266,7 +290,7 @@ class TwoPoint(Statistic):
             _stat = np.zeros_like(_ell_or_theta)
         else:
             self.sacc_indices = np.atleast_1d(
-                sacc_data.indices(self.sacc_data_type, tuple(tracers))
+                sacc_data.indices(self.sacc_data_type, tracers)
             )
 
         if self.ell_or_theta_min is not None:
@@ -285,14 +309,7 @@ class TwoPoint(Statistic):
 
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
-            ell_config = {
-                **ELL_FOR_XI_DEFAULTS,
-                "maximum": self.theory_window_function.values[-1],
-            }
-            ell_config["minimum"] = max(
-                ell_config["minimum"], self.theory_window_function.values[0]
-            )
-            _ell_or_theta = _ell_for_xi(**ell_config)
+            _ell_or_theta = self.calculate_ell_or_theta()
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
@@ -300,7 +317,31 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
+    def calculate_ell_or_theta(self):
+        """See _ell_for_xi.
+
+        This method mixes together:
+           1. the default parameters in ELL_FOR_XI_DEFAULTS
+           2. the first and last values in self.theory_window_function.values
+        and then calls _ell_for_xi with those arguments, returning whatever it
+        returns.
+
+        It is an error to call this function if self.theory_window_function has
+        not been set. That is done in `read`, but might result in the value
+        being re-set to None.:w
+        """
+        assert self.theory_window_function is not None
+        ell_config = {
+            **ELL_FOR_XI_DEFAULTS,
+            "maximum": self.theory_window_function.values[-1],
+        }
+        ell_config["minimum"] = max(
+            ell_config["minimum"], self.theory_window_function.values[0]
+        )
+        return _ell_for_xi(**ell_config)
+
     def get_data_vector(self) -> DataVector:
+        """Return this statistic's data vector."""
         assert self.data_vector is not None
         return self.data_vector
 
@@ -319,9 +360,15 @@ class TwoPoint(Statistic):
             self.ells = self.ell_or_theta_
         else:
             self.ells = _ell_for_xi(**self.ell_for_xi)
-        self.cells = {}
 
-        ccl_cosmo = tools.get_ccl_cosmology()
+        # TODO: we should not be adding a new instance variable outside of
+        # __init__. Why is `self.cells` an instance variable rather than a
+        # local variable? It is used in at least two of the example codes:
+        # both the PT and the TATT examples in des_y1_3x2pt access this data
+        # member to print out results when the likelihood is "run directly"
+        # by calling `run_likelihood`.
+
+        self.cells = {}
 
         # Loop over the tracers and compute all possible combinations
         # of them
@@ -331,40 +378,11 @@ class TwoPoint(Statistic):
                 if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
                     # Already computed this combination, skipping
                     continue
-                if tools.has_pk(pk_name):
-                    # Use existing power spectrum
-                    pk = tools.get_pk(pk_name)
-                elif tracer0.has_pt or tracer1.has_pt:
-                    if not tracer0.has_pt and tracer1.has_pt:
-                        # Mixture of PT and non-PT tracers
-                        # Create a dummy matter PT tracer for the non-PT part
-                        matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
-                        if not tracer0.has_pt:
-                            tracer0.pt_tracer = matter_pt_tracer
-                        else:
-                            tracer1.pt_tracer = matter_pt_tracer
-                    # Compute perturbation power spectrum
-
-                    pt_calculator = tools.get_pt_calculator()
-                    pk = pyccl.nl_pt.get_pt_pk2d(
-                        ccl_cosmo,
-                        tracer0.pt_tracer,
-                        tracer2=tracer1.pt_tracer,
-                        nonlin_pk_type="nonlinear",
-                        ptc=pt_calculator,
-                        update_ptc=False,
-                    )
-                elif tracer0.has_hm or tracer1.has_hm:
-                    # Compute halo model power spectrum
-                    raise NotImplementedError(
-                        "Halo model power spectra not supported yet"
-                    )
-                else:
-                    raise ValueError(f"No power spectrum for {pk_name} can be found.")
+                pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
 
                 self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
                     _cached_angular_cl(
-                        ccl_cosmo,
+                        tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
                         tuple(self.ells.tolist()),
                         p_of_k_a=pk,
@@ -379,7 +397,7 @@ class TwoPoint(Statistic):
 
         if not self.ccl_kind == "cl":
             theory_vector = pyccl.correlation(
-                ccl_cosmo,
+                tools.get_ccl_cosmology(),
                 self.ells,
                 theory_vector,
                 self.ell_or_theta_ / 60,
@@ -387,21 +405,11 @@ class TwoPoint(Statistic):
             )
 
         if self.theory_window_function is not None:
-
-            def log_interpolator(x, y):
-                if np.all(y > 0):
-                    # use log-log interpolation
-                    intp = scipy.interpolate.InterpolatedUnivariateSpline(
-                        np.log(x), np.log(y), ext=2
-                    )
-                    return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
-                # only use log for x
-                intp = scipy.interpolate.InterpolatedUnivariateSpline(
-                    np.log(x), y, ext=2
-                )
-                return lambda x_, intp=intp: intp(np.log(x_))
-
-            theory_interpolator = log_interpolator(self.ell_or_theta_, theory_vector)
+            # TODO: There is no code in Firecrown, neither test nor example,
+            # that exercises a theory window function in any way.
+            theory_interpolator = make_log_interpolator(
+                self.ell_or_theta_, theory_vector
+            )
             ell = self.theory_window_function.values
             # Deal with ell=0 and ell=1
             theory_vector_interpolated = np.zeros(ell.size)
@@ -421,3 +429,37 @@ class TwoPoint(Statistic):
         assert self.data_vector is not None
 
         return TheoryVector.create(theory_vector)
+
+    def calculate_pk(
+        self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
+    ):
+        """Return the power spectrum named by pk_name."""
+        if tools.has_pk(pk_name):
+            # Use existing power spectrum
+            pk = tools.get_pk(pk_name)
+        elif tracer0.has_pt or tracer1.has_pt:
+            if not tracer0.has_pt and tracer1.has_pt:
+                # Mixture of PT and non-PT tracers
+                # Create a dummy matter PT tracer for the non-PT part
+                matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
+                if not tracer0.has_pt:
+                    tracer0.pt_tracer = matter_pt_tracer
+                else:
+                    tracer1.pt_tracer = matter_pt_tracer
+            # Compute perturbation power spectrum
+
+            pt_calculator = tools.get_pt_calculator()
+            pk = pyccl.nl_pt.get_pt_pk2d(
+                tools.get_ccl_cosmology(),
+                tracer0.pt_tracer,
+                tracer2=tracer1.pt_tracer,
+                nonlin_pk_type="nonlinear",
+                ptc=pt_calculator,
+                update_ptc=False,
+            )
+        elif tracer0.has_hm or tracer1.has_hm:
+            # Compute halo model power spectrum
+            raise NotImplementedError("Halo model power spectra not supported yet")
+        else:
+            raise ValueError(f"No power spectrum for {pk_name} can be found.")
+        return pk

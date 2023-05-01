@@ -2,8 +2,25 @@
 Tests for the TwoPoint module.
 """
 import numpy as np
+import pytest
 
-from firecrown.likelihood.gauss_family.statistic.two_point import _ell_for_xi
+from firecrown.modeling_tools import ModelingTools
+from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+    NumberCounts,
+)
+from firecrown.likelihood.gauss_family.statistic.two_point import _ell_for_xi, TwoPoint
+
+
+@pytest.fixture(name="source_0")
+def fixture_source_0() -> NumberCounts:
+    """Return an almost-default NumberCounts source."""
+    return NumberCounts(sacc_tracer="lens_0")
+
+
+@pytest.fixture(name="tools")
+def fixture_tools() -> ModelingTools:
+    """Return a trivial ModelingTools object."""
+    return ModelingTools()
 
 
 def test_ell_for_xi_no_rounding():
@@ -17,3 +34,14 @@ def test_ell_for_xi_doing_rounding():
     res = _ell_for_xi(minimum=1, midpoint=3, maximum=100, n_log=5)
     expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.allclose(expected, res)
+
+
+def test_compute_theory_vector(source_0: NumberCounts):
+    # To create the TwoPoint object we need at least one source.
+    statistic = TwoPoint("galaxy_density_xi", source_0, source_0)
+    assert isinstance(statistic, TwoPoint)
+
+    # Before calling compute_theory_vector, we must get the TwoPoint object
+    # into the correct state.
+    # prediction = statistic.compute_theory_vector(tools)
+    # assert isinstance(prediction, TheoryVector)
