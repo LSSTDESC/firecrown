@@ -2,7 +2,6 @@
 
 Define the Cluster Mass Richness proxy module and its arguments.
 """
-from __future__ import annotations
 from typing import List, Tuple, final
 
 import numpy as np
