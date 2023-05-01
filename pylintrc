@@ -36,6 +36,8 @@ attr-naming-style=any
 # Naming style matching correct variable names.
 variable-naming-style=any
 
+# Naming style matching correct module level constants names.
+const-naming-style=any
 
 [STRING]
 

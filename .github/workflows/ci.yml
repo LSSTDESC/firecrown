@@ -145,3 +145,11 @@ jobs:
         run: |
           cd examples/srd_sn
           python numcosmo_run.py
+      - name: Running example - cosmosis - cluster_number_counts
+        shell: bash -l {0}
+        run: |
+          cd examples/cluster_number_counts
+          python generate_rich_mean_mass_sacc_data.py
+          cosmosis cluster_counts_redshift_richness.ini
+          cosmosis cluster_mean_mass_redshift_richness.ini
+          cosmosis cluster_counts_mean_mass_redshift_richness.ini
