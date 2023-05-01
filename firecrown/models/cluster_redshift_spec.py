@@ -1,4 +1,4 @@
-"""Cluster Redshift Spectrocopy Module
+"""Cluster Redshift Spectroscopy Module
 
 Class to compute cluster redshift spectroscopy functions.
 
