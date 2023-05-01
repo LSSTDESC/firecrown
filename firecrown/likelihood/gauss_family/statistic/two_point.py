@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional, final, Union
+from typing import Dict, Tuple, Optional, final, Union
 import copy
 import functools
 import warnings
@@ -122,9 +122,6 @@ class TwoPoint(Statistic):
         The first sources needed to compute this statistic.
     source1 : Source
         The second sources needed to compute this statistic.
-    systematics : list of str, optional
-        A list of the statistics-level systematics to apply to the statistic.
-        The default of `None` implies no systematics. Currently this does nothing.
     ell_or_theta : dict, optional
         A dictionary of options for generating the ell or theta values at which
         to compute the statistics. This option can be used to have firecrown
@@ -183,7 +180,6 @@ class TwoPoint(Statistic):
         sacc_data_type,
         source0: Source,
         source1: Source,
-        systematics: Optional[List[SourceSystematic]] = None,
         ell_for_xi=None,
         ell_or_theta=None,
         ell_or_theta_min=None,
@@ -197,9 +193,6 @@ class TwoPoint(Statistic):
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
-        self.systematics = systematics or []
-        if len(self.systematics) > 0:
-            warnings.warn("TwoPoint currently does not support systematics.")
         self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
