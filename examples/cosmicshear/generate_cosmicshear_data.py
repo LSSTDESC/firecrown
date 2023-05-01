@@ -23,7 +23,7 @@ EPS = 0.01
 Z = np.linspace(0, 2, 50) + 0.05
 ELL = np.logspace(1, 4, 10)
 
-rng = np.random.seed(SEED)
+np.random.seed(SEED)
 sacc_data = sacc.Sacc()
 tracers = []
 
