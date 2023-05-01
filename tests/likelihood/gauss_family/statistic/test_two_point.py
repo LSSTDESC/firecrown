@@ -5,7 +5,6 @@ import numpy as np
 import pytest
 
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.gauss_family.statistic.statistic import TheoryVector
 from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
     NumberCounts,
 )
@@ -37,7 +36,7 @@ def test_ell_for_xi_doing_rounding():
     assert np.allclose(expected, res)
 
 
-def test_compute_theory_vector(source_0: NumberCounts, tools: ModelingTools):
+def test_compute_theory_vector(source_0: NumberCounts):
     # To create the TwoPoint object we need at least one source.
     statistic = TwoPoint("galaxy_density_xi", source_0, source_0)
     assert isinstance(statistic, TwoPoint)
