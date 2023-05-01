@@ -18,7 +18,7 @@ import pyccl.nl_pt
 from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
-from .source.source import Source, SourceSystematic
+from .source.source import Source, Tracer
 from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, anything else will throw
@@ -314,6 +314,18 @@ class TwoPoint(Statistic):
         self.sacc_tracers = tracers
 
     def calculate_ell_or_theta(self):
+        """See _ell_for_xi.
+
+        This method mixes together:
+           1. the default parameters in ELL_FOR_XI_DEFAULTS
+           2. the first and last values in self.theory_window_function.values
+        and then calls _ell_for_xi with those arguments, returning whatever it
+        returns.
+
+        It is an error to call this function if self.theory_window_function has
+        not been set. That is done in `read`, but might result in the value
+        being re-set to None.:w
+        """
         assert self.theory_window_function is not None
         ell_config = {
             **ELL_FOR_XI_DEFAULTS,
@@ -325,6 +337,7 @@ class TwoPoint(Statistic):
         return _ell_for_xi(**ell_config)
 
     def get_data_vector(self) -> DataVector:
+        """Return this statistic's data vector."""
         assert self.data_vector is not None
         return self.data_vector
 
@@ -353,8 +366,6 @@ class TwoPoint(Statistic):
 
         self.cells = {}
 
-        ccl_cosmo = tools.get_ccl_cosmology()
-
         # Loop over the tracers and compute all possible combinations
         # of them
         for tracer0 in tracers0:
@@ -363,11 +374,11 @@ class TwoPoint(Statistic):
                 if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
                     # Already computed this combination, skipping
                     continue
-                pk = self.calculate_pk(ccl_cosmo, pk_name, tools, tracer0, tracer1)
+                pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
 
                 self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
                     _cached_angular_cl(
-                        ccl_cosmo,
+                        tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
                         tuple(self.ells.tolist()),
                         p_of_k_a=pk,
@@ -382,7 +393,7 @@ class TwoPoint(Statistic):
 
         if not self.ccl_kind == "cl":
             theory_vector = pyccl.correlation(
-                ccl_cosmo,
+                tools.get_ccl_cosmology(),
                 self.ells,
                 theory_vector,
                 self.ell_or_theta_ / 60,
@@ -415,7 +426,10 @@ class TwoPoint(Statistic):
 
         return TheoryVector.create(theory_vector)
 
-    def calculate_pk(self, ccl_cosmo, pk_name, tools, tracer0, tracer1):
+    def calculate_pk(
+        self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
+    ):
+        """Return the power spectrum named by pk_name."""
         if tools.has_pk(pk_name):
             # Use existing power spectrum
             pk = tools.get_pk(pk_name)
@@ -432,7 +446,7 @@ class TwoPoint(Statistic):
 
             pt_calculator = tools.get_pt_calculator()
             pk = pyccl.nl_pt.get_pt_pk2d(
-                ccl_cosmo,
+                tools.get_ccl_cosmology(),
                 tracer0.pt_tracer,
                 tracer2=tracer1.pt_tracer,
                 nonlin_pk_type="nonlinear",
