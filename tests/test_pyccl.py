@@ -1,3 +1,7 @@
+"""
+Test a few of the features of pyccl upon which we rely, but which might change in
+future release of pyccl.
+"""
 import pytest
 import pyccl
 

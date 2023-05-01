@@ -1,3 +1,6 @@
+"""
+Unit testing for the mapping module.
+"""
 import pytest
 from firecrown.connector import mapping
 from firecrown.likelihood.likelihood import NamedParameters

@@ -90,11 +90,11 @@ jobs:
       - name: Running pylint
         shell: bash -l {0}
         run: |
-          pylint --rcfile pylintrc_for_tests tests
-          pylint --rcfile pylintrc firecrown/connector
-          pylint --rcfile pylintrc firecrown/*.py
-          pylint --rcfile pylintrc firecrown/likelihood/*.py
-          pylint --rcfile pylintrc firecrown/likelihood/gauss_family/*.py
+          pylint --rcfile tests/pylintrc  tests
+          pylint firecrown/connector
+          pylint firecrown/*.py
+          pylint firecrown/likelihood/*.py
+          pylint firecrown/likelihood/gauss_family/*.py
 
       - name: Running pytest
         shell: bash -l {0}
@@ -145,3 +145,11 @@ jobs:
         run: |
           cd examples/srd_sn
           python numcosmo_run.py
+      - name: Running example - cosmosis - cluster_number_counts
+        shell: bash -l {0}
+        run: |
+          cd examples/cluster_number_counts
+          python generate_rich_mean_mass_sacc_data.py
+          cosmosis cluster_counts_redshift_richness.ini
+          cosmosis cluster_mean_mass_redshift_richness.ini
+          cosmosis cluster_counts_mean_mass_redshift_richness.ini

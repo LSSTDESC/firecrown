@@ -1,3 +1,6 @@
+"""
+Tests for the module firecrown.likelihood.likelihood.
+"""
 import os
 
 

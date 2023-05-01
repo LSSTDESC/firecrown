@@ -36,8 +36,13 @@ attr-naming-style=any
 # Naming style matching correct variable names.
 variable-naming-style=any
 
-# Naming style matching correct module level constants names.
-const-naming-style=any
+# Do not require docstrings in test functions
+no-docstring-rgx=^(test|fixture)
+
+[DESIGN]
+
+# Classes used for unit testing can be very weird, so we're very lenient.
+min-public-methods=0
 
 [STRING]
 
