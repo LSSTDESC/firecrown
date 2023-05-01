@@ -6,9 +6,10 @@ Class to compute cluster redshift spectroscopy functions.
 
 from typing import final, List, Tuple
 
+import numpy as np
 from .. import sacc_support
 from ..sacc_support import sacc
-import numpy as np
+
 
 from ..parameters import (
     ParamsMap,
@@ -16,27 +17,6 @@ from ..parameters import (
     DerivedParameterCollection,
 )
 from .cluster_redshift import ClusterRedshift, ClusterRedshiftArgument
-
-
-class ClusterRedshiftSpecArgument(ClusterRedshiftArgument):
-    """Cluster Redshift spectroscopy argument class."""
-
-    @property
-    def dim(self) -> int:
-        """Return the dimension of the argument."""
-        return 0
-
-    def get_z_bounds(self) -> Tuple[float, float]:
-        """Return the bounds of the cluster redshift argument."""
-        return (self.zl, self.zu)
-
-    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
-        """Return the bounds of the cluster redshift proxy argument."""
-        return []
-
-    def p(self, logM: float, z: float, *args) -> float:
-        """Return the probability of the argument."""
-        return 1.0
 
 
 class ClusterRedshiftSpec(ClusterRedshift):
@@ -86,3 +66,24 @@ class ClusterRedshiftSpec(ClusterRedshift):
             raise ValueError("Tracer must be a BinZTracer")
 
         return ClusterRedshiftSpecArgument(tracer.z_lower, tracer.z_upper)
+
+
+class ClusterRedshiftSpecArgument(ClusterRedshiftArgument):
+    """Cluster Redshift spectroscopy argument class."""
+
+    @property
+    def dim(self) -> int:
+        """Return the dimension of the argument."""
+        return 0
+
+    def get_z_bounds(self) -> Tuple[float, float]:
+        """Return the bounds of the cluster redshift argument."""
+        return (self.zl, self.zu)
+
+    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
+        """Return the bounds of the cluster redshift proxy argument."""
+        return []
+
+    def p(self, logM: float, z: float, *args) -> float:
+        """Return the probability of the argument."""
+        return 1.0

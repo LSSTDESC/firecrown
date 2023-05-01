@@ -18,93 +18,6 @@ from .cluster_mass import ClusterMass, ClusterMassArgument
 from .. import parameters
 
 
-class ClusterMassRichPointArgument(ClusterMassArgument):
-    """Argument for the Cluster Mass Richness proxy."""
-
-    def __init__(
-        self,
-        richness: ClusterMassRich,
-        logMl: float,
-        logMu: float,
-        logM_obs: float,
-    ):
-        super().__init__(logMl, logMu)
-        self.richness: ClusterMassRich = richness
-        self.logM_obs: float = logM_obs
-
-    @property
-    def dim(self) -> int:
-        """Return the dimension of the argument."""
-        return 0
-
-    def get_logM_bounds(self) -> Tuple[float, float]:
-        """Return the bounds of the cluster mass argument."""
-        return (self.logMl, self.logMu)
-
-    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
-        """Return the bounds of the cluster mass proxy argument."""
-        return []
-
-    def p(self, logM: float, z: float, *_) -> float:
-        """Return the probability of the point argument."""
-
-        lnM_obs = self.logM_obs * np.log(10.0)
-
-        lnM_mu, sigma = self.richness.cluster_mass_lnM_obs_mu_sigma(logM, z)
-        x = lnM_obs - lnM_mu
-        chisq = np.dot(x, x) / (2.0 * sigma**2)
-        likelihood = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
-        return likelihood * np.log(10.0)
-
-
-class ClusterMassRichBinArgument(ClusterMassArgument):
-    """Argument for the Cluster Mass Richness proxy."""
-
-    def __init__(
-        self,
-        richness: ClusterMassRich,
-        logMl: float,
-        logMu: float,
-        logM_obs_lower: float,
-        logM_obs_upper: float,
-    ):
-        super().__init__(logMl, logMu)
-        self.richness: ClusterMassRich = richness
-        self.logM_obs_lower: float = logM_obs_lower
-        self.logM_obs_upper: float = logM_obs_upper
-
-    @property
-    def dim(self) -> int:
-        """Return the dimension of the argument."""
-        return 0
-
-    def get_logM_bounds(self) -> Tuple[float, float]:
-        """Return the bounds of the cluster mass argument."""
-        return (self.logMl, self.logMu)
-
-    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
-        """Return the bounds of the cluster mass proxy argument."""
-        return []
-
-    def p(self, logM: float, z: float, *_) -> float:
-        """Return the probability of the binned argument."""
-
-        lnM_obs_mu, sigma = self.richness.cluster_mass_lnM_obs_mu_sigma(logM, z)
-        x_min = (lnM_obs_mu - self.logM_obs_lower * np.log(10.0)) / (
-            np.sqrt(2.0) * sigma
-        )
-        x_max = (lnM_obs_mu - self.logM_obs_upper * np.log(10.0)) / (
-            np.sqrt(2.0) * sigma
-        )
-
-        if x_max > 4.0:
-            #  pylint: disable-next=no-member
-            return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
-        else:
-            #  pylint: disable-next=no-member
-            return (special.erf(x_min) - special.erf(x_max)) / 2.0
-
-
 class ClusterMassRich(ClusterMass):
     """Cluster Mass Richness proxy."""
 
@@ -204,3 +117,90 @@ class ClusterMassRich(ClusterMass):
         return ClusterMassRichBinArgument(
             self, self.logMl, self.logMu, tracer.richness_lower, tracer.richness_upper
         )
+
+
+class ClusterMassRichPointArgument(ClusterMassArgument):
+    """Argument for the Cluster Mass Richness proxy."""
+
+    def __init__(
+        self,
+        richness: ClusterMassRich,
+        logMl: float,
+        logMu: float,
+        logM_obs: float,
+    ):
+        super().__init__(logMl, logMu)
+        self.richness: ClusterMassRich = richness
+        self.logM_obs: float = logM_obs
+
+    @property
+    def dim(self) -> int:
+        """Return the dimension of the argument."""
+        return 0
+
+    def get_logM_bounds(self) -> Tuple[float, float]:
+        """Return the bounds of the cluster mass argument."""
+        return (self.logMl, self.logMu)
+
+    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
+        """Return the bounds of the cluster mass proxy argument."""
+        return []
+
+    def p(self, logM: float, z: float, *_) -> float:
+        """Return the probability of the point argument."""
+
+        lnM_obs = self.logM_obs * np.log(10.0)
+
+        lnM_mu, sigma = self.richness.cluster_mass_lnM_obs_mu_sigma(logM, z)
+        x = lnM_obs - lnM_mu
+        chisq = np.dot(x, x) / (2.0 * sigma**2)
+        likelihood = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
+        return likelihood * np.log(10.0)
+
+
+class ClusterMassRichBinArgument(ClusterMassArgument):
+    """Argument for the Cluster Mass Richness proxy."""
+
+    def __init__(
+        self,
+        richness: ClusterMassRich,
+        logMl: float,
+        logMu: float,
+        logM_obs_lower: float,
+        logM_obs_upper: float,
+    ):
+        super().__init__(logMl, logMu)
+        self.richness: ClusterMassRich = richness
+        self.logM_obs_lower: float = logM_obs_lower
+        self.logM_obs_upper: float = logM_obs_upper
+
+    @property
+    def dim(self) -> int:
+        """Return the dimension of the argument."""
+        return 0
+
+    def get_logM_bounds(self) -> Tuple[float, float]:
+        """Return the bounds of the cluster mass argument."""
+        return (self.logMl, self.logMu)
+
+    def get_proxy_bounds(self) -> List[Tuple[float, float]]:
+        """Return the bounds of the cluster mass proxy argument."""
+        return []
+
+    def p(self, logM: float, z: float, *_) -> float:
+        """Return the probability of the binned argument."""
+
+        lnM_obs_mu, sigma = self.richness.cluster_mass_lnM_obs_mu_sigma(logM, z)
+        x_min = (lnM_obs_mu - self.logM_obs_lower * np.log(10.0)) / (
+            np.sqrt(2.0) * sigma
+        )
+        x_max = (lnM_obs_mu - self.logM_obs_upper * np.log(10.0)) / (
+            np.sqrt(2.0) * sigma
+        )
+
+        if x_max > 4.0:
+            #  pylint: disable-next=no-member
+            return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
+        else:
+            #  pylint: disable-next=no-member
+            return (special.erf(x_min) - special.erf(x_max)) / 2.0
