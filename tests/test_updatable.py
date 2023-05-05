@@ -1,3 +1,6 @@
+"""
+Tests for the Updatable class.
+"""
 import pytest
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
@@ -8,7 +11,7 @@ from firecrown.parameters import (
 )
 
 
-class Missing_update(Updatable):
+class MissingUpdate(Updatable):
     """A type that is abstract because it does not implement _update."""
 
     def _required_parameters(self):  # pragma: no cover
@@ -21,7 +24,7 @@ class Missing_update(Updatable):
         return DerivedParameterCollection([])
 
 
-class Missing_reset(Updatable):
+class MissingReset(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
 
     def _update(self, params):  # pragma: no cover
@@ -34,7 +37,7 @@ class Missing_reset(Updatable):
         return DerivedParameterCollection([])
 
 
-class Missing_required_parameters(Updatable):
+class MissingRequiredParameters(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
 
     def _update(self, params):  # pragma: no cover
@@ -95,13 +98,13 @@ class SimpleUpdatable(Updatable):
 def test_verify_abstract_interface():
     with pytest.raises(TypeError):
         # pylint: disable-next=E0110,W0612
-        _ = Missing_update()  # type: ignore
+        _ = MissingUpdate()  # type: ignore
     with pytest.raises(TypeError):
         # pylint: disable-next=E0110,W0612
-        _ = Missing_reset()  # type: ignore
+        _ = MissingReset()  # type: ignore
     with pytest.raises(TypeError):
         # pylint: disable-next=E0110,W0612
-        _ = Missing_required_parameters()  # type: ignore
+        _ = MissingRequiredParameters()  # type: ignore
 
 
 def test_simple_updatable():

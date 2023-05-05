@@ -108,7 +108,12 @@ class FirecrownLikelihood:
             "data_vector", "firecrown_inverse_covariance", self.likelihood.inv_cov
         )
 
-        # Write out theory and data vectors to the data block the ease debugging.
+        # Write out theory and data vectors to the data block the ease
+        # debugging.
+        # TODO: This logic should be moved into the TwoPoint statistic, and
+        # some method in the Statistic base class should be called here. For
+        # statistics other than TwoPoint, the base class implementation should
+        # do nothing.
         for stat in self.likelihood.statistics:
             if isinstance(stat, TwoPoint):
                 assert stat.sacc_tracers is not None

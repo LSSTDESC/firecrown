@@ -59,12 +59,12 @@ class MappingNumCosmo(Mapping):
             self.p_mnl.prepare_if_needed(hi_cosmo)
         self.dist.prepare_if_needed(hi_cosmo)
 
-        h = hi_cosmo.h()  # pylint: disable-msg=C0103
-        Omega_b = hi_cosmo.Omega_b0()  # pylint: disable-msg=invalid-name
-        Omega_c = hi_cosmo.Omega_c0()  # pylint: disable-msg=invalid-name
-        Omega_k = hi_cosmo.Omega_k0()  # pylint: disable-msg=invalid-name
-        Neff = hi_cosmo.Neff()  # pylint: disable-msg=invalid-name
-        T_gamma0 = hi_cosmo.T_gamma0()  # pylint: disable-msg=invalid-name
+        h = hi_cosmo.h()
+        Omega_b = hi_cosmo.Omega_b0()
+        Omega_c = hi_cosmo.Omega_c0()
+        Omega_k = hi_cosmo.Omega_k0()
+        Neff = hi_cosmo.Neff()
+        T_gamma0 = hi_cosmo.T_gamma0()
 
         m_nu: Union[float, List[float]] = 0.0
         if hi_cosmo.NMassNu() == 0:
@@ -78,11 +78,11 @@ class MappingNumCosmo(Mapping):
                 m_nu[i] = nu_info[0]
 
         if isinstance(hi_cosmo, Nc.HICosmoDEXcdm):
-            w0 = hi_cosmo.props.w  # pylint: disable-msg=C0103
-            wa = 0.0  # pylint: disable-msg=C0103
+            w0 = hi_cosmo.props.w
+            wa = 0.0
         elif isinstance(hi_cosmo, Nc.HICosmoDECpl):
-            w0 = hi_cosmo.props.w0  # pylint: disable-msg=C0103
-            wa = hi_cosmo.props.w1  # pylint: disable-msg=C0103
+            w0 = hi_cosmo.props.w0
+            wa = hi_cosmo.props.w1
         else:
             raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
@@ -94,8 +94,8 @@ class MappingNumCosmo(Mapping):
                 f"NumCosmo HIPrim object type {type(hiprim)} not supported."
             )
 
-        A_s = hiprim.SA_Ampl()  # pylint: disable-msg=invalid-name
-        n_s = hiprim.props.n_SA  # pylint: disable-msg=invalid-name
+        A_s = hiprim.SA_Ampl()
+        n_s = hiprim.props.n_SA
 
         # pylint: disable=duplicate-code
         self.set_params(
@@ -121,7 +121,7 @@ class MappingNumCosmo(Mapping):
 
         if self.p_ml:
             p_m_spline = self.p_ml.get_spline_2d(hi_cosmo)
-            z = np.array(p_m_spline.xv.dup_array())  # pylint: disable-msg=invalid-name
+            z = np.array(p_m_spline.xv.dup_array())
             k = np.array(p_m_spline.yv.dup_array())
 
             scale = self.redshift_to_scale_factor(z)
@@ -138,7 +138,6 @@ class MappingNumCosmo(Mapping):
 
         if self.p_mnl:
             p_mnl_spline = self.p_mnl.get_spline_2d(hi_cosmo)
-            # pylint: disable-next=invalid-name
             z = np.array(p_mnl_spline.xv.dup_array())
             k = np.array(p_mnl_spline.yv.dup_array())
 
@@ -292,11 +291,11 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         self.dof = nrows
         self.len = nrows
-        self.cov.set_from_array(cov.flatten())  # pylint: disable-msg=no-member
+        self.peek_cov().set_from_array(cov.flatten())  # pylint: disable-msg=no-member
 
         data_vector = likelihood.get_data_vector()
         assert len(data_vector) == ncols
-        self.y.set_array(data_vector)  # pylint: disable-msg=no-member
+        self.peek_mean().set_array(data_vector)  # pylint: disable-msg=no-member
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
         """
@@ -353,7 +352,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.likelihood.update(firecrown_params)
         self.tools.prepare(self.ccl_cosmo)
 
-    # pylint: disable-next=invalid-name,arguments-differ
+    # pylint: disable-next=arguments-differ
     def do_mean_func(self, _, mean_vector):
         """
         Implements the virtual `Ncm.DataGaussCov` method `mean_func`.

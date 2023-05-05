@@ -1,3 +1,10 @@
+"""Unit testing for firecrown's CosmoSIS module.
+
+As a unit test, what this can test is very limited.
+This test do not invoke the `cosmosis` executable.
+"""
+
+
 import cosmosis.datablock
 import pytest
 from firecrown.connector.cosmosis.likelihood import FirecrownLikelihood
