@@ -25,7 +25,7 @@ class ClusterRedshiftArgument:
 
         if zl > zu:
             raise ValueError("zl must be smaller than zu")
-        elif zl == zu:
+        if zl == zu:
             self.dirac_delta = True
             self.z = zl
 
