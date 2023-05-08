@@ -1,6 +1,8 @@
-"""Generate a SACC file from the DESC SRD supernova data."""
-
+"""Generate SACC data into file srd-y1-converted.sacc.
+"""
 from typing import Any, Optional
+import sacc
+from sacc import Sacc
 import os
 
 import tarfile

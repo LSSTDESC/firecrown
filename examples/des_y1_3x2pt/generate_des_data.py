@@ -1,3 +1,10 @@
+""" Generate the firecrown input from the DES Y1 3x2pt data products.
+
+Before running this script, you must first download the DES Y1 3x2pt data
+products from:
+   http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits
+
+"""
 from typing import Dict, Tuple
 import fitsio
 import numpy as np
