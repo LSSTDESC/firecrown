@@ -39,6 +39,9 @@ variable-naming-style=any
 # Naming style matching correct module level constants names.
 const-naming-style=any
 
+# Naming stule matching correct method names.
+method-naming-style=any
+
 [STRING]
 
 # This flag controls whether inconsistent-quotes generates a warning when the

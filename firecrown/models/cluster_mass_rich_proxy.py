@@ -42,8 +42,8 @@ class ClusterMassRich(ClusterMass):
         self.sigma_p1 = parameters.create()
         self.sigma_p2 = parameters.create()
 
-        self.logM_obs_min = 0.0  # pylint: disable-msg=invalid-name
-        self.logM_obs_max = np.inf  # pylint: disable-msg=invalid-name
+        self.logM_obs_min = 0.0
+        self.logM_obs_max = np.inf
 
     @final
     def _update_cluster_mass(self, params: ParamsMap):
@@ -201,6 +201,5 @@ class ClusterMassRichBinArgument(ClusterMassArgument):
         if x_max > 4.0:
             #  pylint: disable-next=no-member
             return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
-        else:
-            #  pylint: disable-next=no-member
-            return (special.erf(x_min) - special.erf(x_max)) / 2.0
+        #  pylint: disable-next=no-member
+        return (special.erf(x_min) - special.erf(x_max)) / 2.0
