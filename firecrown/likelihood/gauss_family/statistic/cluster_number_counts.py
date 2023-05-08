@@ -185,7 +185,7 @@ class ClusterNumberCounts(Statistic):
                 f"The SACC file does not contain the ClusterSurveyTracer "
                 f"{self.sacc_tracer}."
             )
-        elif not isinstance(survey_tracer, ClusterSurveyTracer):
+        if not isinstance(survey_tracer, ClusterSurveyTracer):
             raise ValueError(
                 f"The SACC tracer {self.sacc_tracer} is not a ClusterSurveyTracer."
             )

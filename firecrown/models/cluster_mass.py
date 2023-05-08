@@ -25,7 +25,7 @@ class ClusterMassArgument:
 
         if logMl > logMu:
             raise ValueError("logMl must be smaller than logMu")
-        elif logMl == logMu:
+        if logMl == logMu:
             self.dirac_delta = True
             self.logM = logMl
 

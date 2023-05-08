@@ -198,7 +198,7 @@ class Mapping(ABC):
             "T_CMB": self.T_CMB,
         }
 
-    def get_H0(self) -> float:  # pylint: disable-msg=invalid-name
+    def get_H0(self) -> float:
         """Return the value of H0."""
         return self.h * 100.0
 
