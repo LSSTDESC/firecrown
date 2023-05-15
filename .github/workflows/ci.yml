@@ -155,7 +155,6 @@ jobs:
           cosmosis cluster_counts_mean_mass_redshift_richness.ini
       - name: Code coverage
         if: matrix.os == "ubuntu" and matrix.python-version == "3.11"
-        uses: coverallsapp/github-action@v2
         shell: bash -l {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
