@@ -154,7 +154,7 @@ jobs:
           cosmosis cluster_mean_mass_redshift_richness.ini
           cosmosis cluster_counts_mean_mass_redshift_richness.ini
       - name: Code coverage
-        if: matrix.os == "ubuntu" and matrix.python-version == "3.11"
+        if: ${{ (matrix.os == "ubuntu") && (matrix.python-version == "3.11") }}
         shell: bash -l {0}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
