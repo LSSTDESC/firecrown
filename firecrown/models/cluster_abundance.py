@@ -217,7 +217,7 @@ class ClusterAbundance(Updatable):
         )
 
     # As above but for the mean mass
-    def _compute_integrand_mean_logM(self, *args):
+    def _compute_integrand_mean_logM(self, *args) -> float:
         (
             logM,
             z,
@@ -241,7 +241,7 @@ class ClusterAbundance(Updatable):
         ccl_cosmo: ccl.Cosmology,
         mass_arg: ClusterMassArgument,
         redshift_arg: ClusterRedshiftArgument,
-    ):
+    ) -> float:
         last_index = 0
 
         arg = np.zeros(2 + mass_arg.dim + redshift_arg.dim)
@@ -292,7 +292,9 @@ class ClusterAbundance(Updatable):
         ccl_cosmo: ccl.Cosmology,
         mass_arg: ClusterMassArgument,
         redshift_arg: ClusterRedshiftArgument,
-    ):
+    ) -> float:
+        """Compute the integrand for the given cosmology at the given mass
+        and redshift."""
         return self._compute_any_from_args(
             self._compute_integrand, ccl_cosmo, mass_arg, redshift_arg
         )
@@ -303,6 +305,9 @@ class ClusterAbundance(Updatable):
         mass_arg: ClusterMassArgument,
         redshift_arg: ClusterRedshiftArgument,
     ):
+        """Compute the mean log(M) * integrand for the given cosmology at the
+        given mass and redshift.
+        """
         return self._compute_any_from_args(
             self._compute_integrand_mean_logM, ccl_cosmo, mass_arg, redshift_arg
         )
