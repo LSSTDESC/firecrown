@@ -98,7 +98,7 @@ jobs:
 
       - name: Running pytest
         shell: bash -l {0}
-        run: python -m pytest -vv 
+        run: python -m pytest -vv
       - name: Running example - cosmosis - cosmic-shear
         shell: bash -l {0}
         run: |
@@ -153,3 +153,14 @@ jobs:
           cosmosis cluster_counts_redshift_richness.ini
           cosmosis cluster_mean_mass_redshift_richness.ini
           cosmosis cluster_counts_mean_mass_redshift_richness.ini
+      - name: Code coverage
+        if: matrix.os == "ubuntu" and matrix.python-version == "3.11"
+        uses: coverallsapp/github-action@v2
+        shell: bash -l {0}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m pip install -y coveralls
+          coverage run --source=firecrown -m pytest tests/
+          coveralls --service=github
+
