@@ -85,20 +85,21 @@ class Updatable(ABC):
 
         :param params: new parameter values
         """
-        if not self._updated:
-            for parameter in self._sampler_parameters:
-                try:
-                    value = params.get_from_prefix_param(self.sacc_tracer, parameter)
-                except KeyError as exc:
-                    raise RuntimeError(
-                        f"Missing required parameter "
-                        f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
-                        f" the sampling framework should provide this parameter."
-                        f" The object requiring this parameter is {self}."
-                    ) from exc
-                setattr(self, parameter, value)
-            self._update(params)
-            self._updated = True
+        if self._updated:
+            return
+        for parameter in self._sampler_parameters:
+            try:
+                value = params.get_from_prefix_param(self.sacc_tracer, parameter)
+            except KeyError as exc:
+                raise RuntimeError(
+                    f"Missing required parameter "
+                    f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
+                    f" the sampling framework should provide this parameter."
+                    f" The object requiring this parameter is {self}."
+                ) from exc
+            setattr(self, parameter, value)
+        self._update(params)
+        self._updated = True
 
     @final
     def reset(self):
