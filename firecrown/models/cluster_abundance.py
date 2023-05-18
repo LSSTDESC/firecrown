@@ -11,7 +11,7 @@ import scipy.integrate
 import pyccl as ccl
 
 from ..updatable import Updatable
-from ..parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ..parameters import RequiredParameters, DerivedParameterCollection
 from .cluster_mass import ClusterMassArgument
 from .cluster_redshift import ClusterRedshiftArgument
 
@@ -61,10 +61,6 @@ class ClusterAbundance(Updatable):
     def sky_area(self, sky_area: float) -> None:
         """Set the sky area."""
         self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
-
-    @final
-    def _update(self, params: ParamsMap):
-        """Implementation of Updatable interface method `_update`."""
 
     @final
     def _reset(self) -> None:

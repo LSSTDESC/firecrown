@@ -73,12 +73,6 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -145,12 +139,6 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -210,12 +198,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Update the parameters of this systematic
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -266,12 +248,6 @@ class PhotoZShift(WeakLensingSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
