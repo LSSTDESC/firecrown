@@ -211,7 +211,7 @@ def run_likelihood() -> None:
     # plt.xlim(right=5e3)
     # plt.ylim(bottom=1e-12)
     plt.title("TATT IA")
-    plt.savefig("plots/tatt.png", facecolor="white", dpi=300)
+    plt.savefig("tatt.png", facecolor="white", dpi=300)
 
     plt.show()
 
