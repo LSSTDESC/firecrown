@@ -80,7 +80,7 @@ class Updatable(ABC):
         super().__setattr__(key, None)
 
     @final
-    def update(self, params: ParamsMap):
+    def update(self, params: ParamsMap) -> None:
         """Update self by calling the abstract _update() method.
 
         :param params: new parameter values
@@ -99,10 +99,12 @@ class Updatable(ABC):
                 ) from exc
             setattr(self, parameter, value)
         self._update(params)
+        # We mark self as updated only after all the internal updates have
+        # worked.
         self._updated = True
 
     @final
-    def reset(self):
+    def reset(self) -> None:
         """Reset self by calling the abstract _reset() method, and mark as reset."""
         self._updated = False
         self._returned_derived = False
@@ -166,11 +168,11 @@ class Updatable(ABC):
         statistical analysis. First call returns the DerivedParameterCollection,
         further calls return None.
         """
-        if not self._returned_derived:
-            self._returned_derived = True
-            return self._get_derived_parameters()
+        if self._returned_derived:
+            return None
 
-        return None
+        self._returned_derived = True
+        return self._get_derived_parameters()
 
     @abstractmethod
     def _get_derived_parameters(self) -> DerivedParameterCollection:
