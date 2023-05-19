@@ -66,9 +66,10 @@ class ClusterMass(Updatable):
     def read(self, sacc_data: sacc.Sacc):
         """Abstract method to read the data for this source from the SACC file."""
 
-    @abstractmethod
     def _update_cluster_mass(self, params: ParamsMap):
-        """Abstract method to update the ClusterMass from the given ParamsMap."""
+        """Method to update the ClusterMass from the given ParamsMap.
+        Subclasses that need to do more than update their contained
+        :python:`Updatable` instance variables should implement this method."""
 
     @abstractmethod
     def _reset_cluster_mass(self):

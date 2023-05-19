@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Dict, Optional, Any
+from typing import final, Dict, Optional, Any, List
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import (
@@ -45,13 +45,20 @@ class Updatable(ABC):
         self._sampler_parameters: Dict[str, SamplerParameter] = {}
         self._internal_parameters: Dict[str, InternalParameter] = {}
         self.sacc_tracer: Optional[str] = None
+        self._updatables: List[Updatable] = []
 
     def __setattr__(self, key: str, value: Any) -> None:
         """Set the attribute named :python:`key` to the supplied :python:`value`.
 
-        Note that there is special handling for two types: :python:`SamplerParameter`
-        and :python:`InternalParameter`
+        There is special handling for two types: :python:`SamplerParameter`
+        and :python:`InternalParameter`.
+
+        We also keep track of all :python:`Updatable` instance variables added,
+        appending a reference to each to :python:`self._updatables` as well as
+        storing the attribute directly.
         """
+        if isinstance(value, Updatable):
+            self._updatables.append(value)
         if isinstance(value, SamplerParameter):
             self.set_sampler_parameter(key, value)
         elif isinstance(value, InternalParameter):
@@ -80,43 +87,49 @@ class Updatable(ABC):
         super().__setattr__(key, None)
 
     @final
-    def update(self, params: ParamsMap):
+    def update(self, params: ParamsMap) -> None:
         """Update self by calling the abstract _update() method.
 
         :param params: new parameter values
         """
-        if not self._updated:
-            for parameter in self._sampler_parameters:
-                try:
-                    value = params.get_from_prefix_param(self.sacc_tracer, parameter)
-                except KeyError as exc:
-                    raise RuntimeError(
-                        f"Missing required parameter "
-                        f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
-                        f" the sampling framework should provide this parameter."
-                        f" The object requiring this parameter is {self}."
-                    ) from exc
-                setattr(self, parameter, value)
-            self._update(params)
-            self._updated = True
+        if self._updated:
+            return
+        for parameter in self._sampler_parameters:
+            try:
+                value = params.get_from_prefix_param(self.sacc_tracer, parameter)
+            except KeyError as exc:
+                raise RuntimeError(
+                    f"Missing required parameter "
+                    f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
+                    f" the sampling framework should provide this parameter."
+                    f" The object requiring this parameter is {self}."
+                ) from exc
+            setattr(self, parameter, value)
+
+        for item in self._updatables:
+            item.update(params)
+
+        self._update(params)
+        # We mark self as updated only after all the internal updates have
+        # worked.
+        self._updated = True
 
     @final
-    def reset(self):
+    def reset(self) -> None:
         """Reset self by calling the abstract _reset() method, and mark as reset."""
         self._updated = False
         self._returned_derived = False
         self._reset()
 
-    @abstractmethod
-    def _update(self, params: ParamsMap) -> None:  # pragma: no cover
-        """Abstract method to be implemented by all concrete classes to update
-        self.
+    def _update(self, params: ParamsMap) -> None:
+        """Do any updating other than calling :python:`update` on contained
+        :python:`Updatable` objects.
 
-        Concrete classes must override this, updating themselves from the given
-        ParamsMap. If the supplied ParamsMap is lacking a required parameter,
+        Implement this method in a subclass only when it has something to do.
+        If the supplied ParamsMap is lacking a required parameter,
         an implementation should raise a TypeError.
 
-        The base class implementation does nothing.
+        This default implementation does nothing.
 
         :param params: a new set of parameter values
         """
@@ -165,11 +178,11 @@ class Updatable(ABC):
         statistical analysis. First call returns the DerivedParameterCollection,
         further calls return None.
         """
-        if not self._returned_derived:
-            self._returned_derived = True
-            return self._get_derived_parameters()
+        if self._returned_derived:
+            return None
 
-        return None
+        self._returned_derived = True
+        return self._get_derived_parameters()
 
     @abstractmethod
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -185,7 +198,8 @@ class Updatable(ABC):
 class UpdatableCollection(UserList):
 
     """UpdatableCollection is a list of Updatable objects and is itself
-    Updatable.
+    supports :python:`update` (although it does not inherit from
+    :python:`Updatable`).
 
     Every item in an UpdatableCollection must itself be Updatable. Calling
     update on the collection results in every item in the collection being

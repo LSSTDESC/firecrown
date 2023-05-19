@@ -3,7 +3,6 @@ Provides a trivial likelihood class and factory function for testing purposes.
 """
 import sacc
 from firecrown.parameters import (
-    ParamsMap,
     RequiredParameters,
     DerivedParameterCollection,
 )
@@ -20,9 +19,6 @@ class EmptyLikelihood(Likelihood):
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
-
-    def _update(self, params: ParamsMap) -> None:
-        """This class has no parameters to update."""
 
     def _reset(self) -> None:
         """This class has no state to reset."""

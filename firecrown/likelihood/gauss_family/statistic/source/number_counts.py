@@ -78,12 +78,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -147,12 +141,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -210,12 +198,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = parameters.create()
 
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
@@ -278,12 +260,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -317,12 +293,6 @@ class PhotoZShift(NumberCountsSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:

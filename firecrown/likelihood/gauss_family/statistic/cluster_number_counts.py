@@ -14,7 +14,6 @@ from ....sacc_support import sacc, ClusterSurveyTracer
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
 from ....parameters import (
-    ParamsMap,
     RequiredParameters,
     DerivedParameterCollection,
 )
@@ -80,13 +79,6 @@ class ClusterNumberCounts(Statistic):
         self.cluster_abundance.reset()
         self.cluster_mass.reset()
         self.cluster_redshift.reset()
-
-    @final
-    def _update(self, params: ParamsMap) -> None:
-        """Update all contained Updatable objects."""
-        self.cluster_abundance.update(params)
-        self.cluster_mass.update(params)
-        self.cluster_redshift.update(params)
 
     @final
     def _required_parameters(self) -> RequiredParameters:

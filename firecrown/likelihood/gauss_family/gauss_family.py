@@ -131,8 +131,8 @@ class GaussFamily(Likelihood):
     def _update(self, params: ParamsMap) -> None:
         """Implementation of the Likelihood interface method _update.
 
-        This updates all statistics and calls teh abstract method
-        _update_gaussian_family."""
+        This updates all statistics and calls the abstract method
+        :python:`_update_gaussian_family`."""
         self.statistics.update(params)
         self._update_gaussian_family(params)
 
@@ -154,10 +154,10 @@ class GaussFamily(Likelihood):
 
         return derived_parameters
 
-    @abstractmethod
     def _update_gaussian_family(self, params: ParamsMap) -> None:
-        """Abstract method to update GaussianFamily state. Must be implemented by all
-        subclasses."""
+        """Method to update GaussianFamily state. Subclasses should implement
+        this if they have to do work other than updating their contained
+        statistics objects."""
 
     @abstractmethod
     def _reset_gaussian_family(self) -> None:

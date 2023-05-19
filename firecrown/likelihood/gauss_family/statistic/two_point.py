@@ -19,7 +19,7 @@ from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Tracer
-from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ....parameters import RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, anything else will throw
 # a value error
@@ -222,11 +222,6 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
-
-    @final
-    def _update(self, params: ParamsMap):
-        self.source0.update(params)
-        self.source1.update(params)
 
     @final
     def _reset(self) -> None:
