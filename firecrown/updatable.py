@@ -90,7 +90,16 @@ class Updatable(ABC):
 
     @final
     def update(self, params: ParamsMap) -> None:
-        """Update self by calling the abstract _update() method.
+        """Update self by calling to prepare for the next MCMC sample.
+
+        We first update the values of sampler parameters from the values in
+        :python:`params`. An error will be raised if any of self's sampler
+        parameters can not be found in :python:`params`.
+
+        We then use the :python:`params` to update each contained Updatable or
+        UpdatableCollection object. The method _update is called to give
+        subclasses an opportunity to do any other preparation for the next
+        MCMC sample.
 
         :param params: new parameter values
         """
@@ -118,7 +127,12 @@ class Updatable(ABC):
 
     @final
     def reset(self) -> None:
-        """Reset self by calling the abstract _reset() method, and mark as reset."""
+        """Clean up self by clearing the _updated status and reseting all
+        internals. We call the abstract method _reset to allow derived classes
+        to clean up any additional internals.
+
+        Each MCMC framework connector should call this after handling an MCMC
+        sample."""
         self._updated = False
         self._returned_derived = False
         self._reset()
@@ -200,7 +214,8 @@ class Updatable(ABC):
 class UpdatableCollection(UserList):
 
     """UpdatableCollection is a list of Updatable objects and is itself
-    supports :python:`update` (although it does not inherit from
+    supports :python:`update` and :python:`reset` (although it does not inherit
+    from
     :python:`Updatable`).
 
     Every item in an UpdatableCollection must itself be Updatable. Calling
