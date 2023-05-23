@@ -1,7 +1,7 @@
 """Cluster Number Count statistic support.
 This module reads the necessary data from a SACC file to compute the
 theoretical prediction of cluster number counts inside bins of redshift
- and a mass proxy. For further information, check README.md.
+and a mass proxy. For further information, check README.md.
 """
 
 from __future__ import annotations
@@ -219,7 +219,7 @@ class ClusterNumberCounts(Statistic):
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a Number Count statistic using the data from the
         Read method, the cosmology object, and the Bocquet16 halo mass function.
-                Check README.MD for a complete description of the method.
+        Check README.MD for a complete description of the method.
 
         :param tools: ModelingTools firecrown object
             Firecrown object used to load the required cosmology.
