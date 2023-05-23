@@ -1,0 +1,20 @@
+"""Tests for the CosmoSIS likelihood module."""
+from pytest import fixture
+from cosmosis.datablock import DataBlock
+import firecrown.connector.cosmosis.likelihood as l
+
+@fixture(name="config")
+def make_config() -> DataBlock:
+    db = DataBlock()
+    db.put("module_options", "firecrown_config",
+           "tests/likelihood/lkdir/lkscript.py")
+    return db
+
+def test_module_cleanup():
+    """The module's cleanup function just returns zero."""
+    status = l.cleanup(None)
+    assert status == 0
+
+def test_module_init(config: DataBlock):
+    module = l.setup(config)
+    assert isinstance(module, l.FirecrownLikelihood)
