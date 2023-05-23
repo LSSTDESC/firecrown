@@ -1,9 +1,4 @@
-"""
-
-Gaussian Likelihood Module
-==========================
-
-Some notes.
+"""Provides GaussFamily concrete types.
 
 """
 
@@ -11,7 +6,7 @@ from __future__ import annotations
 from typing import final
 
 from .gauss_family import GaussFamily
-from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ...parameters import RequiredParameters, DerivedParameterCollection
 from ...modeling_tools import ModelingTools
 
 
@@ -22,10 +17,6 @@ class ConstGaussian(GaussFamily):
         """Compute the log-likelihood."""
 
         return -0.5 * self.compute_chisq(tools)
-
-    @final
-    def _update_gaussian_family(self, params: ParamsMap):
-        pass
 
     @final
     def _reset_gaussian_family(self):
