@@ -44,7 +44,6 @@ class StudentT(GaussFamily):
         chi2 = self.compute_chisq(ccl_cosmo)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
 
-
     @final
     def _reset_gaussian_family(self):
         pass

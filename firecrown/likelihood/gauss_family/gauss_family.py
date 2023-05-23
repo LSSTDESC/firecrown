@@ -127,7 +127,6 @@ class GaussFamily(Likelihood):
 
         return chisq
 
-
     @final
     def _reset(self) -> None:
         """Implementation of Likelihood interface method _reset.
@@ -145,7 +144,6 @@ class GaussFamily(Likelihood):
         )
 
         return derived_parameters
-
 
     @abstractmethod
     def _reset_gaussian_family(self) -> None:
