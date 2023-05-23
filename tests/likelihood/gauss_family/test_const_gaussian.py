@@ -83,6 +83,7 @@ def make_sacc_data():
 
 @pytest.fixture(name="trivial_params")
 def make_trivial_params() -> ParamsMap:
+    """Return a ParamsMap with one parameter."""
     return ParamsMap({"mean": 1.0})
 
 
