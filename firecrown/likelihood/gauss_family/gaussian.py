@@ -1,9 +1,4 @@
-"""
-
-Gaussian Likelihood Module
-==========================
-
-Some notes.
+"""Provides GaussFamily concrete types.
 
 """
 
