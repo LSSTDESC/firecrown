@@ -12,17 +12,18 @@
 #
 import os
 import sys
-sys.path.insert(0, os.path.abspath('..'))
+
+sys.path.insert(0, os.path.abspath(".."))
 
 
 # -- Project information -----------------------------------------------------
 
-project = 'firecrown'
-copyright = '2022, LSST DESC Firecrown Contributors'
-author = 'LSST DESC Firecrown Contributors'
+project = "firecrown"
+copyright = "2022, LSST DESC Firecrown Contributors"
+author = "LSST DESC Firecrown Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = '1.1'
+release = "1.1"
 
 
 # -- General configuration ---------------------------------------------------
@@ -31,57 +32,57 @@ release = '1.1'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-    'autoclasstoc',
-    'sphinx.ext.autodoc',
-    'sphinx.ext.autosummary',
-    'sphinx.ext.coverage',
-    'sphinx.ext.doctest',
-    'sphinx.ext.mathjax',
-    'sphinx.ext.napoleon',
-    'sphinx.ext.todo',
-    'sphinx.ext.viewcode',
-    'sphinx_autodoc_typehints',
+    "autoclasstoc",
+    "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.coverage",
+    "sphinx.ext.doctest",
+    "sphinx.ext.mathjax",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    "sphinx_autodoc_typehints",
 ]
 
 # Add any paths that contain templates here, relative to this directory.
-templates_path = ['_templates']
+templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 
 # Attempt to generate a sidebar
-html_sidebars = {'**': ['localtoc.html', 'sourcelink.html', 'searchbox.html']}
+html_sidebars = {"**": ["localtoc.html", "sourcelink.html", "searchbox.html"]}
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme'
+html_theme = "sphinx_rtd_theme"
 
-html_theme_options = {
-    "collapse_navigation" : False
-}
+html_theme_options = {"collapse_navigation": False}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
-#html_static_path = []
+# html_static_path = []
 
 # -- Extension configuration -------------------------------------------------
 
 # mathjax
-mathjax_path="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+mathjax_path = (
+    "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
+)
 
 # autosummary
 autosummary_generate = True
 
 # Some style options
-highlight_language = 'python3'
-pygments_style = 'sphinx'
+highlight_language = "python3"
+pygments_style = "sphinx"
 todo_include_todos = True
 add_function_parentheses = True
 add_module_names = True
@@ -90,7 +91,14 @@ set_type_checking_flag = True
 typehints_fully_qualified = False
 always_document_param_types = True
 typehints_document_rtype = True
-autodoc_mock_imports = ["ccl", "pyccl", "numpy.typing._ufunc", "pandas._typing", "pandas", "numpy._typing._ufunc"]
+autodoc_mock_imports = [
+    "ccl",
+    "pyccl",
+    "numpy.typing._ufunc",
+    "pandas._typing",
+    "pandas",
+    "numpy._typing._ufunc",
+]
 
 # Napoleon compiles the docstrings into .rst
 
@@ -120,13 +128,14 @@ sphinx_apidoc_options = [
 os.environ["SPHINX_APIDOC_OPTIONS"] = ",".join(sphinx_apidoc_options)
 
 autoclasstoc_sections = [
-        'public-methods',
-        'private-methods',
+    "public-methods",
+    "private-methods",
 ]
 
 # Copied from github.com/sanderslab/magellanmapper:
 ## automate building API .rst files, necessary for ReadTheDocs, as inspired by:
 ## https://github.com/readthedocs/readthedocs.org/issues/1139#issuecomment-398083449
+
 
 def run_apidoc(_):
     ignore_paths = []
@@ -138,21 +147,26 @@ def run_apidoc(_):
         "-e",
         "-E",
         "-T",
-#        "--implicit-namespaces",
-        "-d", "1",
-        "-o", "_api",
-        "../firecrown"
+        #        "--implicit-namespaces",
+        "-d",
+        "1",
+        "-o",
+        "_api",
+        "../firecrown",
     ] + ignore_paths
 
     try:
         # Sphinx >= 1.7
         from sphinx.ext import apidoc
+
         apidoc.main(argv)
     except ImportError:
         # Sphinx  < 1.7
         from sphinx import apidoc
+
         argv.insert(0, apidoc.__file__)
         apidoc.main(argv)
 
-#def setup(app):
+
+# def setup(app):
 #    app.connect('builder-inited', run_apidoc)

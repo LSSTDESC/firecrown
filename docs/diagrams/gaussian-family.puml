@@ -11,20 +11,12 @@ Updatable <|-down- Likelihood
 abstract class GaussianFamily {
   +GaussianFamily(stats : Statistics)
   +{final} compute_chisq(cosmo : ccl.Cosmology) : double
-  - {final} _update(params : ParamsDict)
-  - {abstract} _update_gaussian_family(params : ParamsDict)
   + {final} required_parameters() : RequiredParameters
 }
 
 note right of GaussianFamily::compute_chisq
   //compute_chisq// is to be called by derived
   classes in their implementation of //compute//
-end note
-
-note left of GaussianFamily::_update
-  //_update// updates //statisticcs//.
-  Derived classes must implement
-  //_update_gaussian_family//.
 end note
 
 note left of GaussianFamily::required_parameters
@@ -41,16 +33,11 @@ Likelihood <|-down- GaussianFamily
 
 class ConstGaussian {
   + {final} compute(cosmo : ccl.Cosmology)
-  - {final} _update_gaussian_family(params : ParamsDict)
 }
-note left of ConstGaussian::_update_gaussian_family
-  This function does nothing.
-end note
 
 class StudentT {
   + StudentT(stats : Statistics, nu : double)
   + {final} compute(cosmo : ccl.Cosmology)
-  - {final} _update_gaussian_family(params : ParamsDict)
   + {final} required_parameters_gaussian_family() : RequiredParameters
 }
 
