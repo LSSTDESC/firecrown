@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Dict, Optional, Any, List
+from typing import final, Dict, Optional, Any, List, Union
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import (
@@ -25,6 +25,8 @@ from .parameters import (
     parameter_get_full_name,
 )
 from .parameters import DerivedParameterCollection
+
+GeneralUpdatable = Union["Updatable", "UpdatableCollection"]
 
 
 class Updatable(ABC):
@@ -45,7 +47,7 @@ class Updatable(ABC):
         self._sampler_parameters: Dict[str, SamplerParameter] = {}
         self._internal_parameters: Dict[str, InternalParameter] = {}
         self.sacc_tracer: Optional[str] = None
-        self._updatables: List[Updatable] = []
+        self._updatables: List[GeneralUpdatable] = []
 
     def __setattr__(self, key: str, value: Any) -> None:
         """Set the attribute named :python:`key` to the supplied :python:`value`.
