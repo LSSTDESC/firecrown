@@ -84,6 +84,18 @@ def test_require_nonempty_statistics():
         _ = ConstGaussian(statistics=[])
 
 
+def test_get_cov_fails_before_read(stats):
+    likelihood = ConstGaussian(statistics=stats)
+    with pytest.raises(AssertionError):
+        _ = likelihood.get_cov()
+
+
+def test_get_cov_works_after_read(stats, sacc_data):
+    likelihood = ConstGaussian(statistics=stats)
+    likelihood.read(sacc_data)
+    assert np.all(likelihood.get_cov() == np.diag([4.0, 9.0, 16.0]))
+
+
 def test_chisquared(stats, sacc_data):
     likelihood = ConstGaussian(statistics=stats)
     likelihood.read(sacc_data)
