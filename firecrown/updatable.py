@@ -57,7 +57,7 @@ class Updatable(ABC):
         appending a reference to each to :python:`self._updatables` as well as
         storing the attribute directly.
         """
-        if isinstance(value, Updatable):
+        if isinstance(value, (Updatable, UpdatableCollection)):
             self._updatables.append(value)
         if isinstance(value, SamplerParameter):
             self.set_sampler_parameter(key, value)

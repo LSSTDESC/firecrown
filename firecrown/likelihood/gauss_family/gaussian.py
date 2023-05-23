@@ -23,9 +23,6 @@ class ConstGaussian(GaussFamily):
 
         return -0.5 * self.compute_chisq(tools)
 
-    @final
-    def _update_gaussian_family(self, params: ParamsMap):
-        pass
 
     @final
     def _reset_gaussian_family(self):
