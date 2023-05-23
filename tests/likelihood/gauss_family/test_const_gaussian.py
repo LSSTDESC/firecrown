@@ -29,6 +29,7 @@ class TrivialStatistic(Statistic):
         super().__init__()
         self.data_vector: Optional[DataVector] = None
         self.mean = parameters.create()
+        self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc):
         """This trivial class does not actually need to read anything."""
@@ -40,6 +41,7 @@ class TrivialStatistic(Statistic):
     @final
     def _reset(self):
         """Reset this statistic. This implementation has nothing to do."""
+        self.computed_theory_vector = False
 
     @final
     def _required_parameters(self) -> RequiredParameters:
@@ -58,7 +60,7 @@ class TrivialStatistic(Statistic):
 
     def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
         """Return a fixed theory vector."""
-
+        self.computed_theory_vector = True
         return TheoryVector.from_list([self.mean, self.mean, self.mean])
 
 
@@ -79,6 +81,11 @@ def make_sacc_data():
     return result
 
 
+@pytest.fixture(name="trivial_params")
+def make_trivial_params() -> ParamsMap:
+    return ParamsMap({"mean": 1.0})
+
+
 def test_require_nonempty_statistics():
     with pytest.raises(ValueError):
         _ = ConstGaussian(statistics=[])
@@ -96,8 +103,35 @@ def test_get_cov_works_after_read(stats, sacc_data):
     assert np.all(likelihood.get_cov() == np.diag([4.0, 9.0, 16.0]))
 
 
-def test_chisquared(stats, sacc_data):
+def test_chisquared(stats, sacc_data, trivial_params):
     likelihood = ConstGaussian(statistics=stats)
     likelihood.read(sacc_data)
-    likelihood.update(ParamsMap({"mean": 1.0}))
+    likelihood.update(trivial_params)
     assert likelihood.compute_chisq(ModelingTools()) == 2.0
+
+
+def test_required_parameters(stats, sacc_data, trivial_params):
+    likelihood = ConstGaussian(statistics=stats)
+    likelihood.read(sacc_data)
+    likelihood.update(trivial_params)
+    expected_params = RequiredParameters(params_names=["mean"])
+    assert likelihood.required_parameters() == expected_params
+
+
+def test_derived_parameters(stats, sacc_data, trivial_params):
+    likelihood = ConstGaussian(statistics=stats)
+    likelihood.read(sacc_data)
+    likelihood.update(trivial_params)
+    expected_params = DerivedParameterCollection([])
+    assert likelihood.get_derived_parameters() == expected_params
+
+
+def test_reset(stats, sacc_data, trivial_params):
+    likelihood = ConstGaussian(statistics=stats)
+    likelihood.read(sacc_data)
+    likelihood.update(trivial_params)
+    assert not stats[0].computed_theory_vector
+    assert likelihood.compute_chisq(ModelingTools()) == 2.0
+    assert stats[0].computed_theory_vector
+    likelihood.reset()
+    assert not stats[0].computed_theory_vector
