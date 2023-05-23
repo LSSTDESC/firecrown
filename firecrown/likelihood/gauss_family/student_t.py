@@ -11,7 +11,7 @@ from .gauss_family import GaussFamily
 from ...modeling_tools import ModelingTools
 from .statistic.statistic import Statistic
 from ... import parameters
-from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ...parameters import RequiredParameters, DerivedParameterCollection
 
 
 class StudentT(GaussFamily):

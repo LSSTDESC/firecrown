@@ -11,7 +11,7 @@ from __future__ import annotations
 from typing import final
 
 from .gauss_family import GaussFamily
-from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ...parameters import RequiredParameters, DerivedParameterCollection
 from ...modeling_tools import ModelingTools
 
 

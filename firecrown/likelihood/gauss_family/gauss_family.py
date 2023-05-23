@@ -23,7 +23,7 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ...parameters import RequiredParameters, DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
