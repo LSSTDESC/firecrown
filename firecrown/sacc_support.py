@@ -10,6 +10,7 @@ from sacc.tracers import BaseTracer
 
 sacc.data_types.required_tags["cluster_counts"] = []
 sacc.data_types.required_tags["cluster_mean_mass"] = []
+sacc.data_types.required_tags["cluster_shear_profile"] = []
 
 sacc.data_types.standard_types = Namespace(*sacc.data_types.required_tags.keys())
 
@@ -144,6 +145,74 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
                     quantity=quantity,
                     richness_lower=richness_lower,
                     richness_upper=richness_upper,
+                )
+        return tracers
+
+
+class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
+    """A tracer for a single radial bin."""
+
+    def __init__(self, name: str, r_lower: float, r_upper: float, **kwargs):
+        """
+        Create a tracer corresponding to a single radial bin.
+
+        :param name: The name of the tracer
+        :param r_lower: The lower bound of the radius bin
+        :param r_upper: The upper bound of the radius bin
+        """
+        super().__init__(name, **kwargs)
+        self.r_lower = r_lower
+        self.r_upper = r_upper
+
+    @classmethod
+    def to_tables(cls, instance_list):
+        """Convert a list of BinRadiusTracers to a single astropy table
+
+        This is used when saving data to a file.
+        One table is generated with the information for all the tracers.
+
+        :param instance_list: List of tracer instances
+        :return: List with a single astropy table
+        """
+
+        names = ["name", "quantity", "r_lower", "r_upper"]
+
+        cols = [
+            [obj.name for obj in instance_list],
+            [obj.quantity for obj in instance_list],
+            [obj.r_lower for obj in instance_list],
+            [obj.r_upper for obj in instance_list],
+        ]
+
+        table = Table(data=cols, names=names)
+        table.meta["SACCTYPE"] = "tracer"
+        table.meta["SACCCLSS"] = cls.tracer_type
+        table.meta["EXTNAME"] = f"tracer:{cls.tracer_type}"
+        return [table]
+    
+    @classmethod
+    def from_tables(cls, table_list):
+        """Convert an astropy table into a dictionary of tracers
+
+        This is used when loading data from a file.
+        A single tracer object is read from the table.
+
+        :param table_list: List of astropy tables
+        :return: Dictionary of tracers
+        """
+        tracers = {}
+
+        for table in table_list:
+            for row in table:
+                name = row["name"]
+                quantity = row["quantity"]
+                radius_lower = row["radius_lower"]
+                radius_upper = row["radius_upper"]
+                tracers[name] = cls(
+                    name,
+                    quantity=quantity,
+                    radius_lower=radius_lower,
+                    radius_upper=radius_upper,
                 )
         return tracers
 
