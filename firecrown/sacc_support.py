@@ -218,11 +218,11 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
 
 
 class ClusterSurveyTracer(BaseTracer, tracer_type="cluster_survey"):  # type: ignore
-    """A tracer for a single richness bin."""
+    """A tracer for the survey definition."""
 
     def __init__(self, name: str, sky_area: float, **kwargs):
         """
-        Create a tracer corresponding to a single richness bin.
+        Create a tracer corresponding to the survey definition.
 
         :param name: The name of the tracer
         :param sky_area: The survey's sky area in square degrees
@@ -232,7 +232,7 @@ class ClusterSurveyTracer(BaseTracer, tracer_type="cluster_survey"):  # type: ig
 
     @classmethod
     def to_tables(cls, instance_list):
-        """Convert a list of BinZTracers to a list of astropy tables
+        """Convert a list of ClusterSurveyTracers to a list of astropy tables
 
         This is used when saving data to a file.
         One table is generated per tracer.
