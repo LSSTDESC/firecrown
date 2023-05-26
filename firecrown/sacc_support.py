@@ -9,8 +9,8 @@ from sacc.utils import Namespace
 from sacc.tracers import BaseTracer
 
 sacc.data_types.required_tags["cluster_counts"] = []
-sacc.data_types.required_tags["cluster_mean_mass"] = []
-sacc.data_types.required_tags["cluster_shear_profile"] = []
+sacc.data_types.required_tags["cluster_mass"] = []
+sacc.data_types.required_tags["cluster_shear"] = []
 
 sacc.data_types.standard_types = Namespace(*sacc.data_types.required_tags.keys())
 
@@ -152,7 +152,7 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
 class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
     """A tracer for a single radial bin."""
 
-    def __init__(self, name: str, r_lower: float, r_upper: float, **kwargs):
+    def __init__(self, name: str, r_lower: float, r_upper: float, r_center: float, **kwargs):
         """
         Create a tracer corresponding to a single radial bin.
 
@@ -163,6 +163,7 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
         super().__init__(name, **kwargs)
         self.r_lower = r_lower
         self.r_upper = r_upper
+        self.r_center = r_center
 
     @classmethod
     def to_tables(cls, instance_list):
@@ -175,13 +176,14 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
         :return: List with a single astropy table
         """
 
-        names = ["name", "quantity", "r_lower", "r_upper"]
+        names = ["name", "quantity", "r_lower", "r_upper", "r_center"]
 
         cols = [
             [obj.name for obj in instance_list],
             [obj.quantity for obj in instance_list],
             [obj.r_lower for obj in instance_list],
             [obj.r_upper for obj in instance_list],
+            [obj.r_center for obj in instance_list],
         ]
 
         table = Table(data=cols, names=names)
@@ -208,11 +210,13 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
                 quantity = row["quantity"]
                 radius_lower = row["radius_lower"]
                 radius_upper = row["radius_upper"]
+                radius_center = row["radius_center"]
                 tracers[name] = cls(
                     name,
                     quantity=quantity,
                     radius_lower=radius_lower,
                     radius_upper=radius_upper,
+                    radius_center=radius_center,
                 )
         return tracers
 
@@ -232,7 +236,7 @@ class ClusterSurveyTracer(BaseTracer, tracer_type="cluster_survey"):  # type: ig
 
     @classmethod
     def to_tables(cls, instance_list):
-        """Convert a list of ClusterSurveyTracers to a list of astropy tables
+        """Convert a list of ClusterSurveyTracer to a list of astropy tables
 
         This is used when saving data to a file.
         One table is generated per tracer.
