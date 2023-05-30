@@ -30,6 +30,19 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
         self.z_lower = z_lower
         self.z_upper = z_upper
 
+    def __eq__(self, other) -> bool:
+        """Test for equality.  If :python:`other` is not a
+        :python:`BinZTracer`, then it is not equal to :python:`self`.
+        Otherwise, they are equal if names, and the z-range of the bins,
+        are equal."""
+        if not isinstance(other, BinZTracer):
+            return False
+        return (
+            self.name == other.name
+            and self.z_lower == other.z_lower
+            and self.z_upper == self.z_upper
+        )
+
     @classmethod
     def to_tables(cls, instance_list):
         """Convert a list of BinZTracers to a single astropy table
@@ -61,7 +74,7 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
         """Convert an astropy table into a dictionary of tracers
 
         This is used when loading data from a file.
-        A single tracer object is read from the table.
+        One tracer object is created for each "row" in each table.
 
         :param table_list: List of astropy tables
         :return: Dictionary of tracers
@@ -83,6 +96,19 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
 class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
     """A tracer for a single richness bin."""
 
+    def __eq__(self, other) -> bool:
+        """Test for equality. If :python:`other` is not a
+        :python:`BinRichnessTracer`, then it is not equal to :python:`self`.
+        Otherwise, they are equal if na,es and the richness-range of the
+        bins, are equal."""
+        if not isinstance(other, BinRichnessTracer):
+            return False
+        return (
+            self.name == other.name
+            and self.richness_lower == other.richness_lower
+            and self.richness_upper == other.richness_upper
+        )
+
     def __init__(
         self, name: str, richness_lower: float, richness_upper: float, **kwargs
     ):
@@ -102,10 +128,10 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
         """Convert a list of BinZTracers to a list of astropy tables
 
         This is used when saving data to a file.
-        One table is generated per tracer.
+        One table is generated with the information for all the tracers.
 
         :param instance_list: List of tracer instances
-        :return: List of astropy tables
+        :return: List with a single astropy table
         """
         names = ["name", "quantity", "richness_lower", "richness_upper"]
 
@@ -127,7 +153,7 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
         """Convert an astropy table into a dictionary of tracers
 
         This is used when loading data from a file.
-        A single tracer object is read from the table.
+        One tracer object is created for each "row" in each table.
 
         :param table_list: List of astropy tables
         :return: Dictionary of tracers
@@ -151,6 +177,20 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
 
 class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
     """A tracer for a single radial bin."""
+
+    def __eq__(self, other) -> bool:
+        """Test for equality. If :python:`other` is not a
+        :python:`BinRadiusTracer`, then it is not equal to :python:`self`.
+        Otherwise, they are equal if na,es and the r-range and centers of the
+        bins, are equal."""
+        if not isinstance(other, BinRadiusTracer):
+            return False
+        return (
+            self.name == other.name
+            and self.r_lower == other.r_lower
+            and self.r_center == other.r_center
+            and self.r_upper == other.r_upper
+        )
 
     def __init__(
         self, name: str, r_lower: float, r_upper: float, r_center: float, **kwargs
@@ -199,7 +239,7 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
         """Convert an astropy table into a dictionary of tracers
 
         This is used when loading data from a file.
-        A single tracer object is read from the table.
+        One tracer object is created for each "row" in each table.
 
         :param table_list: List of astropy tables
         :return: Dictionary of tracers
