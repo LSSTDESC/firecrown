@@ -43,7 +43,9 @@ class NumberCountsArgs:
 
 
 class NumberCountsSystematic(SourceSystematic):
-    """Class implementing systematics for Number Counts sources."""
+    """Abstract base class for systematics for Number Counts sources.
+
+    Derived classes must implement :python`apply` with the correct signature."""
 
     @abstractmethod
     def apply(
