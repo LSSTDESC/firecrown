@@ -9,7 +9,7 @@ from sacc.utils import Namespace
 from sacc.tracers import BaseTracer
 
 sacc.data_types.required_tags["cluster_counts"] = []
-sacc.data_types.required_tags["cluster_mass"] = []
+sacc.data_types.required_tags["cluster_mean_log_mass"] = []
 sacc.data_types.required_tags["cluster_shear"] = []
 
 sacc.data_types.standard_types = Namespace(*sacc.data_types.required_tags.keys())
@@ -152,7 +152,9 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
 class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
     """A tracer for a single radial bin."""
 
-    def __init__(self, name: str, r_lower: float, r_upper: float, r_center: float, **kwargs):
+    def __init__(
+        self, name: str, r_lower: float, r_upper: float, r_center: float, **kwargs
+    ):
         """
         Create a tracer corresponding to a single radial bin.
 
@@ -191,7 +193,7 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
         table.meta["SACCCLSS"] = cls.tracer_type
         table.meta["EXTNAME"] = f"tracer:{cls.tracer_type}"
         return [table]
-    
+
     @classmethod
     def from_tables(cls, table_list):
         """Convert an astropy table into a dictionary of tracers
@@ -208,15 +210,15 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
             for row in table:
                 name = row["name"]
                 quantity = row["quantity"]
-                radius_lower = row["radius_lower"]
-                radius_upper = row["radius_upper"]
-                radius_center = row["radius_center"]
+                r_lower = row["r_lower"]
+                r_upper = row["r_upper"]
+                r_center = row["r_center"]
                 tracers[name] = cls(
                     name,
                     quantity=quantity,
-                    radius_lower=radius_lower,
-                    radius_upper=radius_upper,
-                    radius_center=radius_center,
+                    r_lower=r_lower,
+                    r_upper=r_upper,
+                    r_center=r_center,
                 )
         return tracers
 
