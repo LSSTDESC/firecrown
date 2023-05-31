@@ -1,31 +1,24 @@
 #!/usr/bin/env python
 
-from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo, NumCosmoFactory
+"""Example of running the DES Y1 3x2pt likelihood using NumCosmo."""
 
 import math
-import gi
 
+import yaml
+
+from numcosmo_py import Nc, Ncm
+
+from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo, NumCosmoFactory
+from firecrown.connector.numcosmo.model import define_numcosmo_model
 from firecrown.likelihood.likelihood import NamedParameters
 
-gi.require_version("NumCosmo", "1.0")
-gi.require_version("NumCosmoMath", "1.0")
-
-from gi.repository import GObject  # noqa: E402
-from gi.repository import NumCosmo as Nc  # noqa: E402
-from gi.repository import NumCosmoMath as Ncm  # noqa: E402
 
 Ncm.cfg_init()
 
-mb = Ncm.ModelBuilder.new(Ncm.Model, "NcFirecrown", "Firecrown model interface")
-ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
-sparams = Ncm.ObjArray.load("numcosmo_firecrown_model_PT.oa", ser)
-for i in range(sparams.len()):
-    mb.add_sparam_obj(sparams.get(i))
+with open(r"numcosmo_firecrown_model.yml", "r", encoding="utf8") as modelfile:
+    ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
-NcTypeFirecrown = mb.create()
-GObject.new(NcTypeFirecrown)
-NcFirecrown = NcTypeFirecrown.pytype
-GObject.type_register(NcFirecrown)
+NcFirecrown = define_numcosmo_model(ncmodel)
 
 cosmo = Nc.HICosmo.new_from_name(Nc.HICosmo, "NcHICosmoDEXcdm{'massnu-length':<1>}")
 cosmo.omega_x2omega_k()

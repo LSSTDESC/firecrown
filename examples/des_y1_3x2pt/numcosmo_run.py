@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""Run the DES Y1 3x2pt likelihood using NumCosmo."""
+"""Example of running the DES Y1 3x2pt likelihood using NumCosmo."""
 
 import math
 
@@ -19,7 +19,7 @@ with open(r"numcosmo_firecrown_model.yml", "r", encoding="utf8") as modelfile:
 
 NcFirecrown = define_numcosmo_model(ncmodel)
 
-cosmo = Nc.HICosmo.new_from_name(Nc.HICosmo, "NcHICosmoDEXcdm{'massnu-length':<1>}")
+cosmo = Nc.HICosmoDEXcdm(massnu_length=1)
 cosmo.omega_x2omega_k()
 cosmo.param_set_by_name("H0", 68.2)
 cosmo.param_set_by_name("Omegak", 0.0)

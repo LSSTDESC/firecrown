@@ -61,9 +61,7 @@ class NumCosmoModel(yaml.YAMLObject):
 
 def param_type_representer(dumper, ftype):
     """Representer for NumCosmo parameter types."""
-    return dumper.represent_scalar(
-        "!NcmParamType", Ncm.ParamType(ftype).value_nick
-    )
+    return dumper.represent_scalar("!NcmParamType", Ncm.ParamType(ftype).value_nick)
 
 
 def param_type_constructor(loader, node):
