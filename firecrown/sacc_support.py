@@ -40,7 +40,7 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
         return (
             self.name == other.name
             and self.z_lower == other.z_lower
-            and self.z_upper == self.z_upper
+            and self.z_upper == other.z_upper
         )
 
     @classmethod

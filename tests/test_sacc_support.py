@@ -14,6 +14,19 @@ def test_make_binztracer():
     assert tracer.z_upper == 1.0
 
 
+def test_binztracer_equality():
+    a = BinZTracer.make("bin_z", name="fred", z_lower=0.5, z_upper=1.0)
+    b = BinZTracer.make("bin_z", name="fred", z_lower=0.5, z_upper=1.0)
+    c = BinZTracer.make("bin_z", name="wilma", z_lower=0.5, z_upper=1.0)
+    d = BinZTracer.make("bin_z", name="fred", z_lower=0.6, z_upper=1.0)
+    e = BinZTracer.make("bin_z", name="fred", z_lower=0.5, z_upper=1.1)
+    assert a == b
+    assert a != "fred"
+    assert a != c
+    assert a != d
+    assert a != e
+
+
 def test_binztracer_tables():
     a = BinZTracer.make("bin_z", name="fred", z_lower=0.5, z_upper=1.0)
     b = BinZTracer.make("bin_z", name="wilma", z_lower=1.0, z_upper=1.5)
@@ -38,6 +51,29 @@ def test_make_binrichness_tracer():
     assert tracer.name == "barney"
     assert tracer.richness_upper == 1.0
     assert tracer.richness_lower == 0.25
+
+
+def test_binrichnesstracer_equality():
+    a = BinRichnessTracer.make(
+        "bin_richness", name="fred", richness_lower=0.5, richness_upper=1.0
+    )
+    b = BinRichnessTracer.make(
+        "bin_richness", name="fred", richness_lower=0.5, richness_upper=1.0
+    )
+    c = BinRichnessTracer.make(
+        "bin_richness", name="wilma", richness_lower=0.5, richness_upper=1.0
+    )
+    d = BinRichnessTracer.make(
+        "bin_richness", name="fred", richness_lower=0.6, richness_upper=1.0
+    )
+    e = BinRichnessTracer.make(
+        "bin_richness", name="fred", richness_lower=0.5, richness_upper=1.1
+    )
+    assert a == b
+    assert a != "fred"
+    assert a != c
+    assert a != d
+    assert a != e
 
 
 def test_binrichnesstracer_tables():
@@ -65,6 +101,33 @@ def test_make_binradiustracer():
     assert tracer.r_lower == 1.0
     assert tracer.r_center == 2.0
     assert tracer.r_upper == 3.0
+
+
+def test_binradiustracer_equality():
+    a = BinRadiusTracer.make(
+        "bin_radius", name="fred", r_lower=0.5, r_center=0.75, r_upper=1.0
+    )
+    b = BinRadiusTracer.make(
+        "bin_radius", name="fred", r_lower=0.5, r_center=0.75, r_upper=1.0
+    )
+    c = BinRadiusTracer.make(
+        "bin_radius", name="wilma", r_lower=0.5, r_center=0.75, r_upper=1.0
+    )
+    d = BinRadiusTracer.make(
+        "bin_radius", name="fred", r_lower=0.6, r_center=0.75, r_upper=1.0
+    )
+    e = BinRadiusTracer.make(
+        "bin_radius", name="fred", r_lower=0.5, r_center=0.8, r_upper=1.0
+    )
+    f = BinRadiusTracer.make(
+        "bin_radius", name="fred", r_lower=0.5, r_center=0.75, r_upper=1.1
+    )
+    assert a == b
+    assert a != "fred"
+    assert a != c
+    assert a != d
+    assert a != e
+    assert a != f
 
 
 def test_binradiustracer_tables():
