@@ -1,3 +1,7 @@
+"""
+Tests for function supporting SACC.
+
+"""
 from firecrown.sacc_support import BinZTracer, BinRichnessTracer, BinRadiusTracer
 
 
