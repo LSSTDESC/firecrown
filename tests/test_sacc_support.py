@@ -2,7 +2,12 @@
 Tests for function supporting SACC.
 
 """
-from firecrown.sacc_support import BinZTracer, BinRichnessTracer, BinRadiusTracer
+from firecrown.sacc_support import (
+    BinZTracer,
+    BinRichnessTracer,
+    BinRadiusTracer,
+    ClusterSurveyTracer,
+)
 
 
 def test_make_binztracer():
@@ -143,3 +148,34 @@ def test_binradiustracer_tables():
     assert len(d) == 2
     assert d["pebbles"] == a
     assert d["bambam"] == b
+
+
+def test_make_clustersurveytracer():
+    tracer = ClusterSurveyTracer.make("cluster_survey", name="bullwinkle", sky_area=1.0)
+    assert isinstance(tracer, ClusterSurveyTracer)
+    assert tracer.quantity == "generic"
+    assert tracer.name == "bullwinkle"
+    assert tracer.sky_area == 1.0
+
+
+def test_clustersurveytracer_equality():
+    a = ClusterSurveyTracer.make("cluster_survey", name="bullwinkle", sky_area=1.0)
+    b = ClusterSurveyTracer.make("cluster_survey", name="bullwinkle", sky_area=1.0)
+    c = ClusterSurveyTracer.make("cluster_survey", name="rocky", sky_area=1.0)
+    d = ClusterSurveyTracer.make("cluster_survey", name="boris", sky_area=2.0)
+
+    assert a == b
+    assert a != "bullwinkle"
+    assert a != c
+    assert a != d
+
+
+def test_clustersurveytracer_tables():
+    a = ClusterSurveyTracer.make("cluster_survey", name="bullwinkle", sky_area=1.0)
+    b = ClusterSurveyTracer.make("cluster_survey", name="rocky", sky_area=2.0)
+    tables = ClusterSurveyTracer.to_tables([a, b])
+    assert len(tables) == 1
+    d = ClusterSurveyTracer.from_tables(tables)
+    assert len(d) == 2
+    assert d["bullwinkle"] == a
+    assert d["rocky"] == b

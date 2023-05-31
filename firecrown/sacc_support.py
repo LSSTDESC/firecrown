@@ -99,7 +99,7 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
     def __eq__(self, other) -> bool:
         """Test for equality. If :python:`other` is not a
         :python:`BinRichnessTracer`, then it is not equal to :python:`self`.
-        Otherwise, they are equal if na,es and the richness-range of the
+        Otherwise, they are equal if names and the richness-range of the
         bins, are equal."""
         if not isinstance(other, BinRichnessTracer):
             return False
@@ -181,7 +181,7 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
     def __eq__(self, other) -> bool:
         """Test for equality. If :python:`other` is not a
         :python:`BinRadiusTracer`, then it is not equal to :python:`self`.
-        Otherwise, they are equal if na,es and the r-range and centers of the
+        Otherwise, they are equal if names and the r-range and centers of the
         bins, are equal."""
         if not isinstance(other, BinRadiusTracer):
             return False
@@ -266,6 +266,14 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
 class ClusterSurveyTracer(BaseTracer, tracer_type="cluster_survey"):  # type: ignore
     """A tracer for the survey definition."""
 
+    def __eq__(self, other) -> bool:
+        """Test for equality. If :python:`other` is not a
+        :python:`ClusterSurveyTracer`, then it is not equal to :python:`self`.
+        Otherwise, they are equal if names and the sky-areas are equal."""
+        if not isinstance(other, ClusterSurveyTracer):
+            return False
+        return self.name == other.name and self.sky_area == other.sky_area
+
     def __init__(self, name: str, sky_area: float, **kwargs):
         """
         Create a tracer corresponding to the survey definition.
@@ -281,10 +289,10 @@ class ClusterSurveyTracer(BaseTracer, tracer_type="cluster_survey"):  # type: ig
         """Convert a list of ClusterSurveyTracer to a list of astropy tables
 
         This is used when saving data to a file.
-        One table is generated per tracer.
+        One table is generated with the information for all the tracers.
 
         :param instance_list: List of tracer instances
-        :return: List of astropy tables
+        :return: List of astropy tables with one table
         """
         names = ["name", "quantity", "sky_area"]
 
@@ -305,7 +313,7 @@ class ClusterSurveyTracer(BaseTracer, tracer_type="cluster_survey"):  # type: ig
         """Convert an astropy table into a dictionary of tracers
 
         This is used when loading data from a file.
-        A single tracer object is read from the table.
+        One tracer object is created for each "row" in each table.
 
         :param table_list: List of astropy tables
         :return: Dictionary of tracers
