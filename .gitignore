@@ -8,6 +8,7 @@ examples/srd_sn/sndata/
 .idea
 .project
 .pydevproject
+.vscode
 
 *.csv
 *.txt

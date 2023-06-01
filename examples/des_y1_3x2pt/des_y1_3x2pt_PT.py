@@ -1,7 +1,14 @@
 #!/usr/bin/env python
+
+"""Example factory function for DES Y1 3x2pt likelihood."""
+
 import os
 
 from typing import Dict, Union, Tuple
+
+import sacc
+import pyccl as ccl
+import pyccl.nl_pt
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
@@ -11,9 +18,6 @@ from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
 
-import sacc
-import pyccl as ccl
-import pyccl.nl_pt
 
 saccfile = os.path.expanduser(
     os.path.expandvars(
@@ -145,7 +149,7 @@ def run_likelihood() -> None:
     mag_bias = 1.0
 
     c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
-        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
+        ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
     # Code that creates a Pk2D object:

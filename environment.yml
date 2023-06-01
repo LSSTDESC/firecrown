@@ -28,6 +28,7 @@ dependencies:
   - pylint
   - pytest
   - pyyaml
+  - types-pyyaml
   - requests
   - sacc
   - scipy

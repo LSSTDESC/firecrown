@@ -221,7 +221,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         z = tracer_arg.z
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
             ccl_cosmo,
-            z,
+            z=z,
             a1=self.ia_a_1,
             a1delta=self.ia_a_d,
             a2=self.ia_a_2,
