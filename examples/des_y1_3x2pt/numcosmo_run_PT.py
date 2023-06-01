@@ -15,12 +15,12 @@ from firecrown.likelihood.likelihood import NamedParameters
 
 Ncm.cfg_init()
 
-with open(r"numcosmo_firecrown_model.yml", "r", encoding="utf8") as modelfile:
+with open(r"numcosmo_firecrown_model_PT.yml", "r", encoding="utf8") as modelfile:
     ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
-NcFirecrown = define_numcosmo_model(ncmodel)
+NcFirecrownPT = define_numcosmo_model(ncmodel)
 
-cosmo = Nc.HICosmo.new_from_name(Nc.HICosmo, "NcHICosmoDEXcdm{'massnu-length':<1>}")
+cosmo = Nc.HICosmoDEXcdm(massnu_length=1)
 cosmo.omega_x2omega_k()
 cosmo.param_set_by_name("H0", 68.2)
 cosmo.param_set_by_name("Omegak", 0.0)
@@ -51,12 +51,12 @@ map_cosmo = MappingNumCosmo(
     p_ml=p_ml,
     p_mnl=p_mnl,
     dist=dist,
-    model_list=["NcFirecrown"],
+    model_list=["NcFirecrownPT"],
 )
 
 nc_factory = NumCosmoFactory("des_y1_3x2pt_PT.py", NamedParameters(), map_cosmo)
 
-fc = NcFirecrown()
+fc = NcFirecrownPT()
 # fc.params_set_default_ftype()
 
 mset = Ncm.MSet()
@@ -70,8 +70,8 @@ dset.append_data(fc_data)
 
 lh = Ncm.Likelihood(dataset=dset)
 
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_delta_z", -0.001, 0.016)
-lh.priors_add_gauss_param_name(mset, "NcFirecrown:lens0_delta_z", +0.001, 0.008)
+lh.priors_add_gauss_param_name(mset, "NcFirecrownPT:src0_delta_z", -0.001, 0.016)
+lh.priors_add_gauss_param_name(mset, "NcFirecrownPT:lens0_delta_z", +0.001, 0.008)
 
 fit = Ncm.Fit.new(
     Ncm.FitType.NLOPT, "ln-neldermead", lh, mset, Ncm.FitGradType.NUMDIFF_FORWARD
