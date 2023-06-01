@@ -14,6 +14,7 @@ from firecrown.connector.numcosmo.numcosmo import (
 
 from firecrown.connector.numcosmo.model import (
     NumCosmoModel,
+    ScalarParameter,
     define_numcosmo_model,
 )
 
@@ -69,6 +70,55 @@ def test_numcosmo_mapping_create_params_map_absent_model():
     with pytest.raises(
         RuntimeError,
         match="Model MyModel was not found in the model set.",
+    ):
+        map_cosmo.create_params_map(mset)
+
+
+def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
+    """Test the NumCosmo mapping connector create_params_map
+    with an existing type but not present in the model set."""
+
+    cosmo = Nc.HICosmoDEXcdm()
+
+    map_cosmo = MappingNumCosmo(
+        require_nonlinear_pk=True,
+        dist=Nc.Distance.new(6.0),
+        model_list=["MyModel1", "MyModel2"],
+    )
+
+    mset = Ncm.MSet()
+    mset.set(cosmo)
+
+    my_model1_dc = NumCosmoModel(
+        name="MyModel1",
+        description="MyModel1 desc",
+        scalar_params=[
+            ScalarParameter(symbol="symbol1", name="param1", default_value=1.0),
+            ScalarParameter(symbol="symbol2", name="param2", default_value=1.0),
+        ],
+        vector_params=[],
+    )
+    my_model2_dc = NumCosmoModel(
+        name="MyModel2",
+        description="MyModel2 desc",
+        scalar_params=[
+            ScalarParameter(symbol="symbol2", name="param2", default_value=1.0),
+        ],
+        vector_params=[],
+    )
+
+    MyModel1 = define_numcosmo_model(my_model1_dc)
+    MyModel2 = define_numcosmo_model(my_model2_dc)
+
+    my_model1 = MyModel1()
+    my_model2 = MyModel2()
+
+    mset.set(my_model1)
+    mset.set(my_model2)
+
+    with pytest.raises(
+        RuntimeError,
+        match="The following keys .* appear in more than one model used by the module",
     ):
         map_cosmo.create_params_map(mset)
 
