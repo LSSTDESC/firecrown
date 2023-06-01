@@ -39,7 +39,7 @@ def build_likelihood(build_parameters):
         cluster_mass_r,
         cluster_z,
         use_cluster_counts=build_parameters.get_bool("use_cluster_counts", True),
-        use_mean_mass=build_parameters.get_bool("use_mean_mass", False),
+        use_mean_log_mass=build_parameters.get_bool("use_mean_log_mass", False),
     )
     stats_list = [stats]
 
