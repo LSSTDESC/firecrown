@@ -61,9 +61,11 @@ cosmo.add_submodel(reion)
 dist = Nc.Distance.new(6.0)
 dist.comoving_distance_spline.set_reltol(1.0e-5)
 
-map_cosmo = MappingNumCosmo(require_nonlinear_pk=False, dist=dist)
+map_cosmo = MappingNumCosmo(
+    require_nonlinear_pk=False, dist=dist, model_list=["NcFirecrown"]
+)
 
-nc_factory = NumCosmoFactory("sn_srd.py", NamedParameters(), ["NcFirecrown"], map_cosmo)
+nc_factory = NumCosmoFactory("sn_srd.py", NamedParameters(), map_cosmo)
 
 fc = NcFirecrown()
 # fc.params_set_default_ftype()

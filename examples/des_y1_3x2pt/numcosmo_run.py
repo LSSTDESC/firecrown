@@ -46,12 +46,14 @@ dist = Nc.Distance.new(6.0)
 dist.comoving_distance_spline.set_reltol(1.0e-5)
 
 map_cosmo = MappingNumCosmo(
-    require_nonlinear_pk=True, p_ml=p_ml, p_mnl=p_mnl, dist=dist
+    require_nonlinear_pk=True,
+    p_ml=p_ml,
+    p_mnl=p_mnl,
+    dist=dist,
+    model_list=["NcFirecrown"],
 )
 
-nc_factory = NumCosmoFactory(
-    "des_y1_3x2pt.py", NamedParameters(), ["NcFirecrown"], map_cosmo
-)
+nc_factory = NumCosmoFactory("des_y1_3x2pt.py", NamedParameters(), map_cosmo)
 
 fc = NcFirecrown()
 # fc.params_set_default_ftype()
