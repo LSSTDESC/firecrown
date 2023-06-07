@@ -166,3 +166,12 @@ def test_updatable_collection_insertion():
 
     with pytest.raises(TypeError):
         x[0] = 1
+
+
+def test_update_rejects_internal_parameters():
+    my_updatable = MinimalUpdatable()
+    my_updatable.foo = parameters.create(1.2)
+
+    params = ParamsMap({"a": None, "foo": 2.1})
+    with pytest.raises(TypeError):
+        my_updatable.update(params)
