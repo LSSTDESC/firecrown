@@ -170,9 +170,9 @@ def test_updatable_collection_insertion():
 
 def test_update_rejects_internal_parameters():
     my_updatable = MinimalUpdatable()
-    my_updatable.foo = parameters.create(1.2)
+    my_updatable.set_internal_parameter("internal_param", parameters.create(1.2))
 
-    params = ParamsMap({"a": None, "foo": 2.1})
+    params = ParamsMap({"a": None, "internal_param": 2.1})
     with pytest.raises(
         TypeError,
         match="Items of type InternalParameter cannot be modified through update",
