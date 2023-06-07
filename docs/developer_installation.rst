@@ -109,7 +109,7 @@ All of these are used as part of the CI system as part of the checking of all pu
 
     # We are using pylint to enforce a variety of rules.
     # Not all of the code is "clean" according to pylint; this is a work in progress
-    pylint --rcfile pylintrc_for_tests --recursive=y tests
+    pylint --rcfile pylintrc --recursive=y tests
 
     # We are using black to keep consistent formatting across all python source files.
     black --check firecrown/ examples/ tests/
