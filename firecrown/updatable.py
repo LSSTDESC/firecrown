@@ -105,6 +105,14 @@ class Updatable(ABC):
         """
         if self._updated:
             return
+
+        internal_params = self._internal_parameters.keys() & params.keys()
+        if internal_params:
+            raise TypeError(
+                f"Items of type InternalParameter cannot be modified through "
+                f"update, but {','.join(internal_params)} was specified."
+            )
+
         for parameter in self._sampler_parameters:
             try:
                 value = params.get_from_prefix_param(self.sacc_tracer, parameter)

@@ -173,5 +173,8 @@ def test_update_rejects_internal_parameters():
     my_updatable.foo = parameters.create(1.2)
 
     params = ParamsMap({"a": None, "foo": 2.1})
-    with pytest.raises(TypeError):
+    with pytest.raises(
+        TypeError,
+        match="Items of type InternalParameter cannot be modified through update",
+    ):
         my_updatable.update(params)
