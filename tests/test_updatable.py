@@ -168,13 +168,71 @@ def test_updatable_collection_insertion():
         x[0] = 1
 
 
+def test_set_sampler_parameter():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+
+    assert hasattr(my_updatable, "the_meaning_of_life")
+    assert my_updatable.the_meaning_of_life is None
+
+
+def test_set_sampler_parameter_rejects_internal_parameter():
+    my_updatable = MinimalUpdatable()
+
+    with pytest.raises(TypeError):
+        my_updatable.set_sampler_parameter(
+            "the_meaning_of_life", parameters.create(42.0)
+        )
+
+
+def test_set_sampler_parameter_rejects_duplicates():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+
+    with pytest.raises(ValueError):
+        my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+
+
+def test_set_internal_parameter():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+
+    assert hasattr(my_updatable, "the_meaning_of_life")
+    assert my_updatable.the_meaning_of_life == 42.0
+
+
+def test_set_internal_parameter_rejects_sampler_parameter():
+    my_updatable = MinimalUpdatable()
+    with pytest.raises(TypeError):
+        my_updatable.set_internal_parameter("sampler_param", parameters.create())
+
+
+def test_set_internal_parameter_rejects_duplicates():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+
+    with pytest.raises(ValueError):
+        my_updatable.set_internal_parameter(
+            "the_meaning_of_life", parameters.create(42.0)
+        )
+
+    with pytest.raises(ValueError):
+        my_updatable.set_internal_parameter(
+            "the_meaning_of_life", parameters.create(41.0)
+        )
+
+
 def test_update_rejects_internal_parameters():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_internal_parameter("internal_param", parameters.create(1.2))
+    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+    assert hasattr(my_updatable, "the_meaning_of_life")
 
-    params = ParamsMap({"a": None, "internal_param": 2.1})
+    params = ParamsMap({"a": 1.1, "the_meaning_of_life": 34.0})
     with pytest.raises(
         TypeError,
         match="Items of type InternalParameter cannot be modified through update",
     ):
         my_updatable.update(params)
+
+    assert my_updatable.a is None
+    assert my_updatable.the_meaning_of_life == 42.0
