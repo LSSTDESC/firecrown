@@ -393,9 +393,9 @@ class TwoPoint(Statistic):
         if not self.ccl_kind == "cl":
             theory_vector = pyccl.correlation(
                 tools.get_ccl_cosmology(),
-                self.ells,
-                theory_vector,
-                self.ell_or_theta_ / 60,
+                ell=self.ells,
+                C_ell=theory_vector,
+                theta=self.ell_or_theta_ / 60,
                 type=self.ccl_kind,
             )
 

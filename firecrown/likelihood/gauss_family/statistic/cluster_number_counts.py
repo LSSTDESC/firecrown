@@ -41,7 +41,7 @@ class ClusterNumberCounts(Statistic):
         cluster_redshift: ClusterRedshift,
         systematics: Optional[List[SourceSystematic]] = None,
         use_cluster_counts: bool = True,
-        use_mean_mass: bool = False,
+        use_mean_log_mass: bool = False,
     ):
         """Initialize the ClusterNumberCounts object.
         Parameters
@@ -66,11 +66,11 @@ class ClusterNumberCounts(Statistic):
         self.cluster_redshift: ClusterRedshift = cluster_redshift
         self.tracer_args: List[Tuple[ClusterRedshiftArgument, ClusterMassArgument]] = []
         self.use_cluster_counts: bool = use_cluster_counts
-        self.use_mean_mass: bool = use_mean_mass
+        self.use_mean_log_mass: bool = use_mean_log_mass
 
-        if not self.use_cluster_counts and not self.use_mean_mass:
+        if not self.use_cluster_counts and not self.use_mean_log_mass:
             raise ValueError(
-                "At least one of use_cluster_counts and use_mean_mass must be True."
+                "At least one of use_cluster_counts and use_mean_log_mass must be True."
             )
 
     @final
@@ -197,16 +197,16 @@ class ClusterNumberCounts(Statistic):
             data_vector_list += cluster_counts_data_vector_list
             sacc_indices_list += cluster_counts_sacc_indices_list
 
-        if self.use_mean_mass:
+        if self.use_mean_log_mass:
             # pylint: disable-next=no-member
-            cluster_mean_mass = sacc.standard_types.cluster_mean_mass
+            cluster_mean_log_mass = sacc.standard_types.cluster_mean_log_mass
             (
-                mean_mass_data_vector_list,
-                mean_mass_sacc_indices_list,
-            ) = self._read_data_type(sacc_data, cluster_mean_mass)
+                mean_log_mass_data_vector_list,
+                mean_log_mass_sacc_indices_list,
+            ) = self._read_data_type(sacc_data, cluster_mean_log_mass)
 
-            data_vector_list += mean_mass_data_vector_list
-            sacc_indices_list += mean_mass_sacc_indices_list
+            data_vector_list += mean_log_mass_data_vector_list
+            sacc_indices_list += mean_log_mass_sacc_indices_list
 
         self.data_vector = DataVector.from_list(data_vector_list)
         self.sacc_indices = np.array(sacc_indices_list)
@@ -232,7 +232,7 @@ class ClusterNumberCounts(Statistic):
         theory_vector_list = []
         cluster_counts_list = []
 
-        if self.use_cluster_counts or self.use_mean_mass:
+        if self.use_cluster_counts or self.use_mean_log_mass:
             cluster_counts_list = [
                 self.cluster_abundance.compute(ccl_cosmo, logM_tracer_arg, z_tracer_arg)
                 for z_tracer_arg, logM_tracer_arg in self.tracer_args
@@ -240,8 +240,8 @@ class ClusterNumberCounts(Statistic):
             if self.use_cluster_counts:
                 theory_vector_list += cluster_counts_list
 
-        if self.use_mean_mass:
-            mean_mass_list = [
+        if self.use_mean_log_mass:
+            mean_log_mass_list = [
                 self.cluster_abundance.compute_unormalized_mean_logM(
                     ccl_cosmo, logM_tracer_arg, z_tracer_arg
                 )
@@ -250,5 +250,5 @@ class ClusterNumberCounts(Statistic):
                     self.tracer_args, cluster_counts_list
                 )
             ]
-            theory_vector_list += mean_mass_list
+            theory_vector_list += mean_log_mass_list
         return TheoryVector.from_list(theory_vector_list)

@@ -1,12 +1,18 @@
-import sacc
-from sacc import Sacc
+"""Generate a SACC file from the DESC SRD supernova data."""
+
+from typing import Any, Optional
 import os
-import numpy as np
-import pandas as pd
+
 import tarfile
 import urllib.request
 import datetime
 import sys
+import numpy as np
+import pandas as pd
+
+from sacc import Sacc
+from firecrown.sacc_support import sacc
+
 
 S = Sacc()
 
@@ -135,7 +141,7 @@ properties = ["distance"]
 statistic = "mu"
 
 # There is no futher specified needed here - everything is scalar.
-subtype = None
+subtype: Optional[Any] = None
 sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
 
 type_details = sacc.parse_data_type_name(sndata_type)

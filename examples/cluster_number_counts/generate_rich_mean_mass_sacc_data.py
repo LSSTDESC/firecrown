@@ -180,7 +180,7 @@ def generate_sacc_file():
     #  pylint: disable-next=no-member
     cluster_count = sacc.standard_types.cluster_counts
     #  pylint: disable-next=no-member
-    cluster_mean_mass = sacc.standard_types.cluster_mean_mass
+    cluster_mean_log_mass = sacc.standard_types.cluster_mean_log_mass
 
     counts_and_edges = zip(
         cluster_counts.flatten(), itertools.product(bin_z_labels, bin_richness_labels)
@@ -197,7 +197,7 @@ def generate_sacc_file():
 
     for bin_mean_logM, (bin_z_label, bin_richness_label) in mean_logM_and_edges:
         s_count.add_data_point(
-            cluster_mean_mass,
+            cluster_mean_log_mass,
             (survey_name, bin_z_label, bin_richness_label),
             bin_mean_logM,
         )
