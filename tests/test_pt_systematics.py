@@ -96,7 +96,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     mag_bias = 1.0
 
     c_1, c_d, c_2 = pt.translate_IA_norm(
-        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
+        ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
     # Code that creates a Pk2D object:
@@ -267,7 +267,7 @@ def test_pt_mixed_systematics(sacc_data):
     mag_bias = 1.0
 
     c_1, c_d, c_2 = pt.translate_IA_norm(
-        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
+        ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
     # Code that creates a Pk2D object:
