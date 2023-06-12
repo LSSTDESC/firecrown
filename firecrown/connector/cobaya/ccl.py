@@ -35,7 +35,7 @@ class CCLConnector(Theory):
 
         self.a_bg = np.linspace(0.1, 1.0, 50)
         self.z_bg = 1.0 / self.a_bg - 1.0
-        self.z_Pk = np.arange(0.2, 6.0, 1)
+        self.z_Pk = np.arange(0.0, 6.0, 1)
         self.Pk_kmax = 1.0
 
     def get_param(self, p: str) -> None:
