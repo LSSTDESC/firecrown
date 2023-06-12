@@ -50,8 +50,8 @@ class ClusterRedshiftSpec(ClusterRedshift):
         # itertools.pairwise is only available in Python 3.10
         # using zip instead
         return [
-            ClusterRedshiftSpecArgument(z_lower, z_upper)
-            for z_lower, z_upper in zip(z_bins[:-1], z_bins[1:])
+            ClusterRedshiftSpecArgument(lower, upper)
+            for lower, upper in zip(z_bins[:-1], z_bins[1:])
         ]
 
     def point_arg(self, z: float) -> ClusterRedshiftArgument:
@@ -65,7 +65,7 @@ class ClusterRedshiftSpec(ClusterRedshift):
         if not isinstance(tracer, sacc_support.BinZTracer):
             raise ValueError("Tracer must be a BinZTracer")
 
-        return ClusterRedshiftSpecArgument(tracer.z_lower, tracer.z_upper)
+        return ClusterRedshiftSpecArgument(tracer.lower, tracer.upper)
 
 
 class ClusterRedshiftSpecArgument(ClusterRedshiftArgument):

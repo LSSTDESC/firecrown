@@ -115,7 +115,7 @@ class ClusterMassRich(ClusterMass):
             raise ValueError("Tracer must be a BinRichnessTracer")
 
         return ClusterMassRichBinArgument(
-            self, self.logMl, self.logMu, tracer.richness_lower, tracer.richness_upper
+            self, self.logMl, self.logMu, tracer.lower, tracer.upper
         )
 
 
