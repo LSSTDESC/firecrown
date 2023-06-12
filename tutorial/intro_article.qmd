@@ -88,7 +88,7 @@ In the Gaussian family, we currently have implemented the multivariate Gaussian 
 
 To build a Gaussian distribution, all one needs is to create a *theory vector* (the $\mu_i$ above), and to get the *data vector* ($x_i$ above) and covariance matrix $\widetilde{C} = \widetilde{M}^{-1}$.
 The data vector and covariance matrix are typically read from a SACC file.
-The theoretical prediction associated with the data vector is computed by a *statatistic* array.
+The theoretical prediction associated with the data vector is computed by a *statistic* array.
 Users have the flexibility to either implement their own statistics objects or utilize existing ones already available within Firecrown.
 For instance, in the case of constructing a likelihood based on a two-point function, Firecrown provides pre-existing classes that represent such entities, readily accessible for utilization.
 The two-point function is a variety of statistic that is in turn dependent on *sources*.
@@ -404,17 +404,14 @@ All of these tools are included in the Conda environment created by the developm
 The following is the set of commands using these tools that are used by the CI system.
 Since a pull request that fails any of these will be automatically rejected by the CI system, we strongly recommend running them before committing and pushing your code.
 Note that we have not yet completed the cleanup of the whole Firecrown repository, and so we do not yet apply `pylint` to all of the code.
-We strongly recommend that any new code you write *should* be checked with `pytlint` before it is committed to the repository.
+We strongly recommend that any new code you write *should* be checked with `pylint` before it is committed to the repository.
 We are actively working toward full coverage of the code, and will activate additional checking in the CI system as this work progresses.
 
 ```{.bash}
 black --check firecrown tests examples
 flake8 firecrown tests examples
 mypy firecrown tests examples
-pylint --rcfile pylintrc_for_tests --recursive=y tests
-pylint --recursive=y firecrown/connector
-pylint --recursive=y firecrown/*.py
-pylint --recursive=y firecrown/likelihood/*.py
-pylint --recursive=y firecrown/likelihood/gauss_family/*.py
+pylint --rcfile tests/pylintrc tests
+pylint firecrown/connector firecrown/*.py firecrown/likelihood/*.py firecrown/likelihood/gauss_family/*.py
 python -m pytest -v tests
 ```
