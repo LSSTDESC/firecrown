@@ -18,17 +18,17 @@ sacc.data_types.standard_types = Namespace(*sacc.data_types.required_tags.keys()
 class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
     """A tracer for a single redshift bin."""
 
-    def __init__(self, name: str, z_lower: float, z_upper: float, **kwargs):
+    def __init__(self, name: str, lower: float, upper: float, **kwargs):
         """
         Create a tracer corresponding to a single redshift bin.
 
         :param name: The name of the tracer
-        :param z_lower: The lower bound of the redshift bin
-        :param z_upper: The upper bound of the redshift bin
+        :param lower: The lower bound of the redshift bin
+        :param upper: The upper bound of the redshift bin
         """
         super().__init__(name, **kwargs)
-        self.z_lower = z_lower
-        self.z_upper = z_upper
+        self.lower = lower
+        self.upper = upper
 
     def __eq__(self, other) -> bool:
         """Test for equality.  If :python:`other` is not a
@@ -39,8 +39,8 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
             return False
         return (
             self.name == other.name
-            and self.z_lower == other.z_lower
-            and self.z_upper == other.z_upper
+            and self.lower == other.lower
+            and self.upper == other.upper
         )
 
     @classmethod
@@ -54,13 +54,13 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
         :return: List with a single astropy table
         """
 
-        names = ["name", "quantity", "z_lower", "z_upper"]
+        names = ["name", "quantity", "lower", "upper"]
 
         cols = [
             [obj.name for obj in instance_list],
             [obj.quantity for obj in instance_list],
-            [obj.z_lower for obj in instance_list],
-            [obj.z_upper for obj in instance_list],
+            [obj.lower for obj in instance_list],
+            [obj.upper for obj in instance_list],
         ]
 
         table = Table(data=cols, names=names)
@@ -85,11 +85,9 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
             for row in table:
                 name = row["name"]
                 quantity = row["quantity"]
-                z_lower = row["z_lower"]
-                z_upper = row["z_upper"]
-                tracers[name] = cls(
-                    name, quantity=quantity, z_lower=z_lower, z_upper=z_upper
-                )
+                lower = row["lower"]
+                upper = row["upper"]
+                tracers[name] = cls(name, quantity=quantity, lower=lower, upper=upper)
         return tracers
 
 
@@ -105,23 +103,21 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
             return False
         return (
             self.name == other.name
-            and self.richness_lower == other.richness_lower
-            and self.richness_upper == other.richness_upper
+            and self.lower == other.lower
+            and self.upper == other.upper
         )
 
-    def __init__(
-        self, name: str, richness_lower: float, richness_upper: float, **kwargs
-    ):
+    def __init__(self, name: str, lower: float, upper: float, **kwargs):
         """
         Create a tracer corresponding to a single richness bin.
 
         :param name: The name of the tracer
-        :param richness_lower: The lower bound of the redshift bin
-        :param richness_upper: The upper bound of the redshift bin
+        :param lower: The lower bound of the redshift bin
+        :param upper: The upper bound of the redshift bin
         """
         super().__init__(name, **kwargs)
-        self.richness_lower = richness_lower
-        self.richness_upper = richness_upper
+        self.lower = lower
+        self.upper = upper
 
     @classmethod
     def to_tables(cls, instance_list):
@@ -133,13 +129,13 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
         :param instance_list: List of tracer instances
         :return: List with a single astropy table
         """
-        names = ["name", "quantity", "richness_lower", "richness_upper"]
+        names = ["name", "quantity", "lower", "upper"]
 
         cols = [
             [obj.name for obj in instance_list],
             [obj.quantity for obj in instance_list],
-            [obj.richness_lower for obj in instance_list],
-            [obj.richness_upper for obj in instance_list],
+            [obj.lower for obj in instance_list],
+            [obj.upper for obj in instance_list],
         ]
 
         table = Table(data=cols, names=names)
@@ -164,13 +160,13 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
             for row in table:
                 name = row["name"]
                 quantity = row["quantity"]
-                richness_lower = row["richness_lower"]
-                richness_upper = row["richness_upper"]
+                lower = row["lower"]
+                upper = row["upper"]
                 tracers[name] = cls(
                     name,
                     quantity=quantity,
-                    richness_lower=richness_lower,
-                    richness_upper=richness_upper,
+                    lower=lower,
+                    upper=upper,
                 )
         return tracers
 
@@ -187,25 +183,27 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
             return False
         return (
             self.name == other.name
-            and self.r_lower == other.r_lower
-            and self.r_center == other.r_center
-            and self.r_upper == other.r_upper
+            and self.lower == other.lower
+            and self.center == other.center
+            and self.upper == other.upper
         )
 
-    def __init__(
-        self, name: str, r_lower: float, r_upper: float, r_center: float, **kwargs
-    ):
+    def __init__(self, name: str, lower: float, upper: float, center: float, **kwargs):
         """
         Create a tracer corresponding to a single radial bin.
 
         :param name: The name of the tracer
-        :param r_lower: The lower bound of the radius bin
-        :param r_upper: The upper bound of the radius bin
+        :param lower: The lower bound of the radius bin
+        :param upper: The upper bound of the radius bin
+        :param center: The value to use if a single point-estimate is needed.
+
+        Note that :python:`center` need not be the midpoint between
+        :python:`lower` and :python:`upper`'.
         """
         super().__init__(name, **kwargs)
-        self.r_lower = r_lower
-        self.r_upper = r_upper
-        self.r_center = r_center
+        self.lower = lower
+        self.upper = upper
+        self.center = center
 
     @classmethod
     def to_tables(cls, instance_list):
@@ -218,14 +216,14 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
         :return: List with a single astropy table
         """
 
-        names = ["name", "quantity", "r_lower", "r_upper", "r_center"]
+        names = ["name", "quantity", "lower", "upper", "center"]
 
         cols = [
             [obj.name for obj in instance_list],
             [obj.quantity for obj in instance_list],
-            [obj.r_lower for obj in instance_list],
-            [obj.r_upper for obj in instance_list],
-            [obj.r_center for obj in instance_list],
+            [obj.lower for obj in instance_list],
+            [obj.upper for obj in instance_list],
+            [obj.center for obj in instance_list],
         ]
 
         table = Table(data=cols, names=names)
@@ -250,15 +248,15 @@ class BinRadiusTracer(BaseTracer, tracer_type="bin_radius"):  # type: ignore
             for row in table:
                 name = row["name"]
                 quantity = row["quantity"]
-                r_lower = row["r_lower"]
-                r_upper = row["r_upper"]
-                r_center = row["r_center"]
+                lower = row["lower"]
+                upper = row["upper"]
+                center = row["center"]
                 tracers[name] = cls(
                     name,
                     quantity=quantity,
-                    r_lower=r_lower,
-                    r_upper=r_upper,
-                    r_center=r_center,
+                    lower=lower,
+                    upper=upper,
+                    center=center,
                 )
         return tracers
 
