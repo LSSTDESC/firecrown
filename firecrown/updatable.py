@@ -70,6 +70,12 @@ class Updatable(ABC):
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
         """Assure this InternalParameter has not already been set, and then set it."""
+
+        if not isinstance(value, InternalParameter):
+            raise TypeError(
+                "Can only add InternalParameter objects to internal_parameters"
+            )
+
         if key in self._internal_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
@@ -80,6 +86,12 @@ class Updatable(ABC):
 
     def set_sampler_parameter(self, key: str, value: SamplerParameter) -> None:
         """Assure this SamplerParameter has not already been set, and then set it."""
+
+        if not isinstance(value, SamplerParameter):
+            raise TypeError(
+                "Can only add SamplerParameter objects to sampler_parameters"
+            )
+
         if key in self._sampler_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
@@ -94,7 +106,8 @@ class Updatable(ABC):
 
         We first update the values of sampler parameters from the values in
         :python:`params`. An error will be raised if any of self's sampler
-        parameters can not be found in :python:`params`.
+        parameters can not be found in :python:`params` or if any internal
+        parameters are provided in :python:`params`.
 
         We then use the :python:`params` to update each contained Updatable or
         UpdatableCollection object. The method _update is called to give
@@ -105,6 +118,14 @@ class Updatable(ABC):
         """
         if self._updated:
             return
+
+        internal_params = self._internal_parameters.keys() & params.keys()
+        if internal_params:
+            raise TypeError(
+                f"Items of type InternalParameter cannot be modified through "
+                f"update, but {','.join(internal_params)} was specified."
+            )
+
         for parameter in self._sampler_parameters:
             try:
                 value = params.get_from_prefix_param(self.sacc_tracer, parameter)
