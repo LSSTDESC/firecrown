@@ -114,11 +114,14 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 # We can also run the likelihood directly
 def run_likelihood() -> None:
     """Produce some plots using the likelihood function built by
-    :pytyon:`build_likelihood`.
     :python:`build_likelihood`.
     """
+    # We do imports here to save a bit of time when importing this module but
+    # not using the run_likelihood function.
+    # pylint: disable=import-outside-toplevel
     import numpy as np
     import matplotlib.pyplot as plt
+    # pylint: enable=import-outside-toplevel
 
     likelihood, tools = build_likelihood(None)
 
