@@ -292,11 +292,12 @@ def run_likelihood() -> None:
 
     # ax[0].errorbar(x, y_data, y_err, ls="none", marker="o")
     ax[0].set_xscale("log")
-    [a.set_yscale("log") for a in ax]
     ax[1].set_xlabel(r"$\ell$")
-    [a.set_ylabel(r"$C_\ell$") for a in ax]
     ax[1].set_ylabel(r"$C_\ell$")
-    [a.legend(fontsize="small") for a in ax]
+    for a in ax:
+        a.set_yscale("log")
+        a.set_ylabel(r"$C_\ell$")
+        a.legend(fontsize="small")
 
     fig.suptitle("PT Cls, including IA, galaxy bias, magnification")
     fig.savefig("pt_cls.png", facecolor="white", dpi=300)
