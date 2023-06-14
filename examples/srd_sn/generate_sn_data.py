@@ -1,20 +1,17 @@
 """Generate SACC data into file srd-y1-converted.sacc.
 """
 from typing import Any, Optional
-import sacc
-from sacc import Sacc
 import os
-
 import tarfile
 import urllib.request
 import datetime
 import sys
+
 import numpy as np
 import pandas as pd
 
 from sacc import Sacc
 from firecrown.sacc_support import sacc
-
 
 S = Sacc()
 
@@ -71,8 +68,8 @@ if len(sys.argv) == 4:
     path = sys.argv[1]
     HD = sys.argv[2]
     cov = sys.argv[3]
-    y1dat = np.loadtxt(open(path + "/" + HD, "rt"), comments="#", dtype=str)
-    y1cov = np.loadtxt(path + "/" + cov, comments="#", unpack=True)
+    y1dat = np.loadtxt(f"{path}/{HD}", comments="#", dtype=str)
+    y1cov = np.loadtxt(f"{path}/{cov}", comments="#", unpack=True)
     if (y1dat[0][0][0]).isnumeric():
         y1dat = np.array(y1dat).astype(float).T
     else:
@@ -91,8 +88,8 @@ else:
         urllib.request.urlretrieve(url, "sndata/LSST_DESC_SRD_v1_release.tar.gz")
         os.chdir("./sndata/")
         print("Extracting full DESC SRD release files")
-        tf = tarfile.open("LSST_DESC_SRD_v1_release.tar.gz")
-        tf.extractall()
+        with tarfile.open("LSST_DESC_SRD_v1_release.tar.gz") as tf:
+            tf.extractall()
         os.rename(
             "LSST_DESC_SRD_v1_release/forecasting/SN/LikelihoodFiles/Y1_DDF_FOUNDATION/",
             "Y1_DDF_FOUNDATION",
@@ -112,8 +109,8 @@ else:
             urllib.request.urlretrieve(url, "sndata/LSST_DESC_SRD_v1_release.tar.gz")
             os.chdir("./sndata/")
             print("Extracting full DESC SRD release files")
-            tf = tarfile.open("LSST_DESC_SRD_v1_release.tar.gz")
-            tf.extractall()
+            with tarfile.open("LSST_DESC_SRD_v1_release.tar.gz") as tf:
+                tf.extractall()
             os.rename(
                 "LSST_DESC_SRD_v1_release/forecasting/SN/LikelihoodFiles/Y1_DDF_FOUNDATION/",
                 "Y1_DDF_FOUNDATION",
