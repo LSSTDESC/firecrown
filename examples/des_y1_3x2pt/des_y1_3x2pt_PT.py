@@ -121,6 +121,7 @@ def run_likelihood() -> None:
     # pylint: disable=import-outside-toplevel
     import numpy as np
     import matplotlib.pyplot as plt
+
     # pylint: enable=import-outside-toplevel
 
     likelihood, tools = build_likelihood(None)
