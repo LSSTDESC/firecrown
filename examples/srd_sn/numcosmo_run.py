@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Numcosmo example using the :python:`sn_srd` likelihood.
+"""
 
 import math
 import yaml
