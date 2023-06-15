@@ -13,8 +13,6 @@ import pandas as pd
 from sacc import Sacc
 from firecrown.sacc_support import sacc
 
-S = Sacc()
-
 
 def conversion(hdg):
     """
@@ -170,11 +168,12 @@ covmat = np.zeros((size, size), dtype=float)
 count = 1  # since the cov mat starts with the number of lines
 out_name = "srd-y1-converted"
 
-S.add_tracer("misc", "sn_ddf_sample")
+sacc_data = Sacc()
+sacc_data.add_tracer("misc", "sn_ddf_sample")
 
 for i in range(size):
     # Add the appropriate tracer
-    S.add_data_point(
+    sacc_data.add_data_point(
         sndata_type, ("sn_ddf_sample",), mb[i], z=zcmb[i]
     )  # can add absmag=-19.9 or other tags
     for j in range(size):
@@ -183,12 +182,12 @@ for i in range(size):
     for i in range(size):
         covmat[i, i] += (dmb[i]) ** 2
 
-S.add_covariance(covmat)
-S.metadata["nbin_distmod"] = size
-S.metadata["simulation"] = "Y1_DDF_FOUNDATION"
-S.metadata["covmat"] = "sys_Y1_DDF_FOUNDATION_0"
-S.metadata["creation"] = datetime.datetime.now().isoformat()
-S.metadata["info"] = "SN data sets"
-S.save_fits(out_name + ".sacc", overwrite=True)
+sacc_data.add_covariance(covmat)
+sacc_data.metadata["nbin_distmod"] = size
+sacc_data.metadata["simulation"] = "Y1_DDF_FOUNDATION"
+sacc_data.metadata["covmat"] = "sys_Y1_DDF_FOUNDATION_0"
+sacc_data.metadata["creation"] = datetime.datetime.now().isoformat()
+sacc_data.metadata["info"] = "SN data sets"
+sacc_data.save_fits(out_name + ".sacc", overwrite=True)
 # modify this to have interpolation hubble diagrams
 # bias corrections depend on cosmology - systematic vector
