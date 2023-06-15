@@ -16,7 +16,7 @@ from firecrown.sacc_support import sacc
 S = Sacc()
 
 
-def conversion(h):
+def conversion(hdg):
     """
     CODE TO CONVERT THE NEW DESC HUBBLE DIAGRAM FILE STRUCTURE
     SIMILAR TO COSMOMC STYLED INPUT HUBBLE DIAGRAM
@@ -43,25 +43,24 @@ def conversion(h):
         "dec",
         "biascor",
     ]
-    h = pd.DataFrame(y1dat)
-    h.columns = h.iloc[0, :]
-    h = h.iloc[1:, 1:-1]
-    h = h.apply(pd.to_numeric)
-    h.MU -= 19.36
-    h.insert(3, "dz", np.zeros(np.shape(h)[0]))
-    row = np.shape(h)[0]
+    hub = pd.DataFrame(hdg)
+    hub.columns = hub.iloc[0, :]
+    hub = hub[
+        ["ROW", "zCMB", "zHEL", "MU", "MUERR"]
+    ]  # takes only "ROW,zCMB,zHEL,MU,MUERR" cols
+    hub = hub.iloc[1:, :]
+    hub = hub.apply(pd.to_numeric)
+    hub.MU -= 19.36
+    hub.insert(3, "dz", np.zeros(np.shape(hub)[0]))
+    row = np.shape(hub)[0]
     colu = 13
     join = np.zeros((row, colu))
-    hh = pd.DataFrame(np.concatenate([h, join], axis=1))
-    if np.shape(hh)[1] < 19:
-        diff = int(19 - np.shape(hh)[1])
-        for i in reversed(range(diff)):
-            hh.insert(np.shape(hh)[1], " ", np.zeros(np.shape(hh)[0]))
-    hh.columns = col
-    h = hh
-    h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
-    h = np.array(h.T)
-    return h
+    hhub = pd.DataFrame(np.concatenate([hub, join], axis=1))
+    hhub.columns = col
+    hub = hhub
+    hub["#name"] = np.linspace(0, np.shape(hub)[0] - 1, np.shape(hub)[0]).astype(int)
+    hub = np.array(hub.T)
+    return hub
 
 
 if len(sys.argv) == 4:
