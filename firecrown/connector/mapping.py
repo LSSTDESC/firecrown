@@ -15,10 +15,15 @@ from typing import Type, List, Dict, Optional, final, Any, Union
 import typing
 import warnings
 import numpy as np
+<<<<<<< HEAD
 import numpy.typing as npt
 from pyccl import physical_constants as physics
 import cosmosis.datablock
 from firecrown.likelihood.likelihood import NamedParameters
+=======
+from pyccl import physical_constants as physics  # type: ignore
+import cosmosis.datablock  # type: ignore
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 from ..descriptors import TypeFloat, TypeString
 
 
@@ -119,8 +124,13 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
+<<<<<<< HEAD
         A_s: Optional[float] = None,
         sigma8: Optional[float] = None,
+=======
+        A_s: float,
+        sigma8: float,
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
         n_s: float,
         Omega_k: float,
         Neff: float,
@@ -246,6 +256,7 @@ class MappingCosmoSIS(Mapping):
         those read from CosmoSIS when using CAMB."""
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
+<<<<<<< HEAD
 
         h = cosmosis_params.get_float("h0")
         Omega_b = cosmosis_params.get_float("omega_b")
@@ -253,6 +264,15 @@ class MappingCosmoSIS(Mapping):
         sigma8 = cosmosis_params.get_float("sigma_8", 0.8)
         n_s = cosmosis_params.get_float("n_s", 0.96)
         Omega_k = cosmosis_params.get_float("omega_k")
+=======
+        h = cosmosis_params["h0"]  # pylint: disable-msg=C0103
+        Omega_b = cosmosis_params["omega_b"]  # pylint: disable-msg=C0103
+        Omega_c = cosmosis_params["omega_c"]  # pylint: disable-msg=C0103
+        As = cosmosis_params.get("a_s", 2.1e-9)  # pylint: disable-msg=C0103
+        sigma8 = cosmosis_params.get("sigma_8", 0.8)
+        n_s = cosmosis_params.get("n_s", 0.96)
+        Omega_k = cosmosis_params["omega_k"]  # pylint: disable-msg=C0103
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
         # Read m_nu from CosmoSIS (in newer CosmoSIS)
         delta_neff = cosmosis_params.get_float("delta_neff", 0.0)
@@ -268,6 +288,7 @@ class MappingCosmoSIS(Mapping):
             Omega_c=Omega_c,
             Omega_b=Omega_b,
             h=h,
+            A_s=As,
             sigma8=sigma8,
             n_s=n_s,
             Omega_k=Omega_k,

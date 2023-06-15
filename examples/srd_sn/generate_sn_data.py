@@ -7,6 +7,7 @@ import tarfile
 import urllib.request
 import datetime
 import sys
+<<<<<<< HEAD
 import numpy as np
 import pandas as pd
 
@@ -14,6 +15,8 @@ from sacc import Sacc
 from firecrown.sacc_support import sacc
 
 
+=======
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 S = Sacc()
 
 
@@ -56,12 +59,25 @@ def conversion(hdg):
     row = np.shape(hub)[0]
     colu = 13
     join = np.zeros((row, colu))
+<<<<<<< HEAD
     hhub = pd.DataFrame(np.concatenate([hub, join], axis=1))
     hhub.columns = col
     hub = hhub
     hub["#name"] = np.linspace(0, np.shape(hub)[0] - 1, np.shape(hub)[0]).astype(int)
     hub = np.array(hub.T)
     return hub
+=======
+    hh = pd.DataFrame(np.concatenate([h, join], axis=1))
+    if np.shape(hh)[1] < 19:
+        diff = int(19 - np.shape(hh)[1])
+        for i in reversed(range(diff)):
+            hh.insert(np.shape(hh)[1], " ", np.zeros(np.shape(hh)[0]))
+    hh.columns = col
+    h = hh
+    h["#name"] = np.linspace(0, np.shape(h)[0] - 1, np.shape(h)[0]).astype(int)
+    h = np.array(h.T)
+    return h
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 
 
 if len(sys.argv) == 4:
@@ -74,6 +90,11 @@ if len(sys.argv) == 4:
         y1dat = np.array(y1dat).astype(float).T
     else:
         y1dat = conversion(y1dat)
+<<<<<<< HEAD
+=======
+    out_name = cov
+    # print("1. SUCESS")
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 else:
     DIRNAME_YEAR1 = "sndata/Y1_DDF_FOUNDATION"
     DIRNAME_YEAR10 = "sndata/Y10_DDF_WFD_FOUNDATION/"
@@ -130,6 +151,10 @@ else:
     y1cov = np.loadtxt(
         "sndata/Y1_DDF_FOUNDATION/sys_Y1_DDF_FOUNDATION_0.txt", unpack=True
     )
+<<<<<<< HEAD
+=======
+    # print("2. SUCESS")
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 
 
 #  set up the sacc data name for the astrophysical sources involved.
@@ -168,8 +193,14 @@ dmb = y1dat[5]
 zmu = np.vstack((zcmb, mb))
 size = int(y1cov[0])  # reading the size of the matrix from the first entry
 covmat = np.zeros((size, size), dtype=float)
+<<<<<<< HEAD
 COUNT = 1  # since the cov mat starts with the number of lines
 OUT_NAME = "srd-y1-converted"
+=======
+np.savetxt("test_cov.txt", covmat)
+count = 1  # since the cov mat starts with the number of lines
+out_name = "srd-y1-converted"
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 
 S.add_tracer("misc", "sn_ddf_sample")
 
@@ -179,8 +210,13 @@ for i in range(size):
         sndata_type, ("sn_ddf_sample",), mb[i], z=zcmb[i]
     )  # can add absmag=-19.9 or other tags
     for j in range(size):
+<<<<<<< HEAD
         covmat[i, j] = y1cov[COUNT]
         COUNT += 1
+=======
+        covmat[i, j] = y1cov[count]
+        count += 1
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
     for i in range(size):
         covmat[i, i] += (dmb[i]) ** 2
 
@@ -190,6 +226,10 @@ S.metadata["simulation"] = "Y1_DDF_FOUNDATION"
 S.metadata["covmat"] = "sys_Y1_DDF_FOUNDATION_0"
 S.metadata["creation"] = datetime.datetime.now().isoformat()
 S.metadata["info"] = "SN data sets"
+<<<<<<< HEAD
 S.save_fits(OUT_NAME + ".sacc", overwrite=True)
+=======
+S.save_fits(out_name + ".sacc", overwrite=True)
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 # modify this to have interpolation hubble diagrams
 # bias corrections depend on cosmology - systematic vector

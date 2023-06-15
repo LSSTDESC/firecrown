@@ -19,8 +19,13 @@ import os
 import sys
 import numpy as np
 import numpy.typing as npt
+<<<<<<< HEAD
 
 import sacc
+=======
+import pyccl  # type: ignore
+import sacc  # type: ignore
+>>>>>>> 51c545aec15706df1776d47169639b5e57a6745a
 
 from ..updatable import Updatable, UpdatableCollection
 from ..modeling_tools import ModelingTools
