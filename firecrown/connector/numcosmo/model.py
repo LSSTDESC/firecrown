@@ -1,7 +1,7 @@
 """Helper function to create NumCosmo models."""
 
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Type
 import sys
 
 import yaml
@@ -75,7 +75,7 @@ yaml.add_constructor("!NcmParamType", param_type_constructor)
 yaml.add_representer(Ncm.ParamType, param_type_representer)
 
 
-def define_numcosmo_model(numcosmo_model: NumCosmoModel) -> Ncm.Model:
+def define_numcosmo_model(numcosmo_model: NumCosmoModel) -> Type[Ncm.Model]:
     """Define a NumCosmo model.
 
     :param numcosmo_model: NumCosmo model to define.
@@ -114,9 +114,9 @@ def define_numcosmo_model(numcosmo_model: NumCosmoModel) -> Ncm.Model:
             vparam.fit_type,
         )
 
-    numcosmo_model = mb.create()
-    GObject.new(numcosmo_model)
-    py_numcosmo_model = numcosmo_model.pytype  # type: ignore
+    numcosmo_model_class = mb.create()
+    GObject.new(numcosmo_model_class)
+    py_numcosmo_model = numcosmo_model_class.pytype  # type: ignore
     GObject.type_register(py_numcosmo_model)
 
     return py_numcosmo_model

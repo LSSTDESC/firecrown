@@ -9,14 +9,7 @@ from typing import Dict, Union, List, Any, Optional
 import numpy as np
 import pyccl as ccl
 
-import gi
-
-gi.require_version("NumCosmo", "1.0")
-gi.require_version("NumCosmoMath", "1.0")
-
-# pylint: disable=wrong-import-position
-from gi.repository import NumCosmo as Nc  # noqa: E402
-from gi.repository import NumCosmoMath as Ncm  # noqa: E402
+from numcosmo_py import Nc, Ncm
 
 from firecrown.likelihood.likelihood import load_likelihood  # noqa: E402
 from firecrown.likelihood.likelihood import Likelihood  # noqa: E402
@@ -56,6 +49,7 @@ class MappingNumCosmo(Mapping):
         those read from NumCosmo."""
 
         hi_cosmo = mset.peek(Nc.HICosmo.id())
+        assert isinstance(hi_cosmo, Nc.HICosmo)
 
         if self.p_ml is not None:
             self.p_ml.prepare_if_needed(hi_cosmo)
@@ -122,6 +116,7 @@ class MappingNumCosmo(Mapping):
         """Calculate the arguments necessary for CCL for this sample."""
         ccl_args: Dict[str, Any] = {}
         hi_cosmo = mset.peek(Nc.HICosmo.id())
+        assert isinstance(hi_cosmo, Nc.HICosmo)
 
         if self.p_ml:
             p_m_spline = self.p_ml.get_spline_2d(hi_cosmo)
@@ -304,11 +299,15 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         self.dof = nrows
         self.len = nrows
-        self.peek_cov().set_from_array(cov.flatten())  # pylint: disable-msg=no-member
+        self.peek_cov().set_from_array(
+            cov.flatten().tolist()
+        )  # pylint: disable-msg=no-member
 
         data_vector = likelihood.get_data_vector()
         assert len(data_vector) == ncols
-        self.peek_mean().set_array(data_vector)  # pylint: disable-msg=no-member
+        self.peek_mean().set_array(
+            data_vector.tolist()
+        )  # pylint: disable-msg=no-member
 
         self.set_init(True)
 
