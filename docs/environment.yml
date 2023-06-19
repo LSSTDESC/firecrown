@@ -6,6 +6,7 @@ dependencies:
   - python>=3.8
   - cosmosis
   - cosmosis-build-standard-library
+  - deno
   - flake8
   - mypy
   - numpy>=1.16
