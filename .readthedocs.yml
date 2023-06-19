@@ -12,8 +12,6 @@ conda:
 
 build:
   os: ubuntu-22.04
-  apt_packages:
-    - plantuml
   tools:
     python: mambaforge-4.10
   jobs:
