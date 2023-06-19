@@ -116,7 +116,7 @@ def define_numcosmo_model(numcosmo_model: NumCosmoModel) -> Type[Ncm.Model]:
 
     numcosmo_model_class = mb.create()
     GObject.new(numcosmo_model_class)
-    py_numcosmo_model = numcosmo_model_class.pytype  # type: ignore
+    py_numcosmo_model = numcosmo_model_class.pytype
     GObject.type_register(py_numcosmo_model)
 
     return py_numcosmo_model
