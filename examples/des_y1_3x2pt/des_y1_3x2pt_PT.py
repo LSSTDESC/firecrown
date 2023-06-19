@@ -33,64 +33,57 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # Define sources
-    n_source = 1
-    n_lens = 1
     sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later
     ia_systematic = wl.TattAlignmentSystematic()
 
-    for i in range(n_source):
-        # Define the photo-z shift systematic.
-        src_pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")
+    # Define the photo-z shift systematic.
+    src_pzshift = wl.PhotoZShift(sacc_tracer="src0")
 
-        # Create the weak lensing source, specifying the name of the tracer in the
-        # sacc file and a list of systematics
-        sources[f"src{i}"] = wl.WeakLensing(
-            sacc_tracer=f"src{i}", systematics=[src_pzshift, ia_systematic]
-        )
+    # Create the weak lensing source, specifying the name of the tracer in the
+    # sacc file and a list of systematics
+    sources["src0"] = wl.WeakLensing(
+        sacc_tracer="src0", systematics=[src_pzshift, ia_systematic]
+    )
 
-    for i in range(n_lens):
-        lens_pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
-        magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=f"lens{i}")
-
-        nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
-        sources[f"lens{i}"] = nc.NumberCounts(
-            sacc_tracer=f"lens{i}",
-            has_rsd=True,
-            systematics=[lens_pzshift, magnification, nl_bias],
-        )
+    lens_pzshift = nc.PhotoZShift(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
+    sources["lens0"] = nc.NumberCounts(
+        sacc_tracer="lens0",
+        has_rsd=True,
+        systematics=[lens_pzshift, magnification, nl_bias],
+    )
 
     # Define the statistics we like to include in the likelihood
+    # The only place the dict 'stats' gets used, other than setting values in
+    # it, is to call 'values' on it. Thus we don't need a dict, we need a list
+    # of the values. The keys assigned to the dict are never used.
     stats = {}
     for stat, sacc_stat in [
         ("xip", "galaxy_shear_xi_plus"),
         ("xim", "galaxy_shear_xi_minus"),
     ]:
-        for i in range(n_source):
-            for j in range(i, n_source):
-                # Define two-point statistics, given two sources (from above) and
-                # the type of statistic.
-                stats[f"{stat}_src{i}_src{j}"] = TwoPoint(
-                    source0=sources[f"src{i}"],
-                    source1=sources[f"src{j}"],
-                    sacc_data_type=sacc_stat,
-                )
-    for j in range(n_source):
-        for i in range(n_lens):
-            stats[f"gammat_lens{j}_src{i}"] = TwoPoint(
-                source0=sources[f"lens{j}"],
-                source1=sources[f"src{i}"],
-                sacc_data_type="galaxy_shearDensity_xi_t",
-            )
-
-    for i in range(n_lens):
-        stats[f"wtheta_lens{i}_lens{i}"] = TwoPoint(
-            source0=sources[f"lens{i}"],
-            source1=sources[f"lens{i}"],
-            sacc_data_type="galaxy_density_xi",
+        # Define two-point statistics, given two sources (from above) and
+        # the type of statistic.
+        stats[f"{stat}_src0_src0"] = TwoPoint(
+            source0=sources["src0"],
+            source1=sources["src0"],
+            sacc_data_type=sacc_stat,
         )
+    stats["gammat_lens0_src0"] = TwoPoint(
+        source0=sources["lens0"],
+        source1=sources["src0"],
+        sacc_data_type="galaxy_shearDensity_xi_t",
+    )
+
+    stats["wtheta_lens0_lens0"] = TwoPoint(
+        source0=sources["lens0"],
+        source1=sources["lens0"],
+        sacc_data_type="galaxy_density_xi",
+    )
 
     # Create the likelihood from the statistics
     pt_calculator = pyccl.nl_pt.PTCalculator(
@@ -120,8 +113,16 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 
 # We can also run the likelihood directly
 def run_likelihood() -> None:
+    """Produce some plots using the likelihood function built by
+    :python:`build_likelihood`.
+    """
+    # We do imports here to save a bit of time when importing this module but
+    # not using the run_likelihood function.
+    # pylint: disable=import-outside-toplevel
     import numpy as np
     import matplotlib.pyplot as plt
+
+    # pylint: enable=import-outside-toplevel
 
     likelihood, tools = build_likelihood(None)
 
@@ -292,11 +293,12 @@ def run_likelihood() -> None:
 
     # ax[0].errorbar(x, y_data, y_err, ls="none", marker="o")
     ax[0].set_xscale("log")
-    [a.set_yscale("log") for a in ax]
     ax[1].set_xlabel(r"$\ell$")
-    [a.set_ylabel(r"$C_\ell$") for a in ax]
     ax[1].set_ylabel(r"$C_\ell$")
-    [a.legend(fontsize="small") for a in ax]
+    for a in ax:
+        a.set_yscale("log")
+        a.set_ylabel(r"$C_\ell$")
+        a.legend(fontsize="small")
 
     fig.suptitle("PT Cls, including IA, galaxy bias, magnification")
     fig.savefig("pt_cls.png", facecolor="white", dpi=300)
