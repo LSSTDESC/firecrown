@@ -11,15 +11,13 @@ import pyccl as ccl
 
 from numcosmo_py import Nc, Ncm
 
-from firecrown.likelihood.likelihood import load_likelihood  # noqa: E402
-from firecrown.likelihood.likelihood import Likelihood  # noqa: E402
-from firecrown.likelihood.likelihood import NamedParameters  # noqa: E402
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian  # noqa: E402
-from firecrown.parameters import ParamsMap  # noqa: E402
-from firecrown.connector.mapping import Mapping, build_ccl_background_dict  # noqa: E402
-from firecrown.modeling_tools import ModelingTools  # noqa: E402
-
-# pylint: enable=wrong-import-position
+from firecrown.likelihood.likelihood import load_likelihood
+from firecrown.likelihood.likelihood import Likelihood
+from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.parameters import ParamsMap
+from firecrown.connector.mapping import Mapping, build_ccl_background_dict
+from firecrown.modeling_tools import ModelingTools
 
 
 class MappingNumCosmo(Mapping):
