@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+"""
+Numcosmo example using the :python:`sn_srd` likelihood.
+"""
 
 import math
 import yaml
@@ -7,7 +10,10 @@ import matplotlib.pyplot as plt
 from scipy.stats import chi2
 from numcosmo_py import Nc, Ncm
 
-from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo, NumCosmoFactory
+from firecrown.connector.numcosmo.numcosmo import (
+    MappingNumCosmo,
+    NumCosmoFactory,
+)
 from firecrown.connector.numcosmo.model import define_numcosmo_model
 from firecrown.likelihood.likelihood import NamedParameters
 
@@ -69,7 +75,11 @@ dset.append_data(fc_data)
 lh = Ncm.Likelihood(dataset=dset)
 
 fit = Ncm.Fit.new(
-    Ncm.FitType.NLOPT, "ln-neldermead", lh, mset, Ncm.FitGradType.NUMDIFF_FORWARD
+    Ncm.FitType.NLOPT,
+    "ln-neldermead",
+    lh,
+    mset,
+    Ncm.FitGradType.NUMDIFF_FORWARD,
 )
 
 mset.pretty_log()
