@@ -13,6 +13,7 @@ dependencies:
   - pip
   - pyccl>=2.0
   - pytest
+  - quarto
   - sacc>=0.3
   - scipy
   - sphinx

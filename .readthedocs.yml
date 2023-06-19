@@ -18,3 +18,4 @@ build:
     pre_build:
       - echo $PATH
       - cd docs/diagrams && make 
+      - cd tutorial && make
