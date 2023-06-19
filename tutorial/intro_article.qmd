@@ -68,9 +68,11 @@ This cosmology plays a central role in the set of tools provided to the user.
 
 We also have the concept of modeling tools.
 These are a set of extra tools which, together with the CCL cosmology, allow one to calculate likelihoods.
-For example, one can have a halo profile that is used in several places in calculations.
-This halo profile would be included in the modeling tools so that the same halo profile is used consistently wherever one is needed.
-If one needs a different way to calculate power spectra, for example, perturbation theory or halo models, then those tools would also be available with the cosmology in the modeling tools.
+For example, modeling tools has a member called pt_calculator. 
+When the `ModelingTools` is instantiated in the likelihood initialization, the pt_calculator is also instantiated and configured.
+Then, the same object can be used by different parts of the likelihood.
+The `des_y1_3x2pt_PT` example uses the pt_calculator to calculate the power spectra that are used in the likelihood. 
+Thus, every `source` that requires power spectra can use the same pt_calculator object.
 All the available tools are presented, along with the cosmology, for calculation of the likelihood.
 Therefore, during a statistical analysis, whenever the likelihood is called, all the objects in the modeling tools have already been updated to represent the "current cosmology" with which they are associated.
 For the user who wants to calculate a likelihood that is not a Gaussian distribution, these are the only concepts in Firecrown that are needed.
