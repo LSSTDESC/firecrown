@@ -7,9 +7,12 @@ dependencies:
   - cosmosis
   - cosmosis-build-standard-library
   - deno
+  - deno-dom
+  - esbuild
   - flake8
   - mypy
   - numpy>=1.16
+  - pandoc
   - plantuml
   - pip
   - pyccl>=2.0
