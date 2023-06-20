@@ -1,6 +1,7 @@
 """Cluster Mass True Module
 
-Class to compute cluster true mass functions.
+Class to compute cluster mass functions with no proxy,
+i.e., assuming we have the true masses of the clusters.
 
 """
 
@@ -20,7 +21,7 @@ from .cluster_mass import ClusterMass, ClusterMassArgument
 
 
 class ClusterMassTrue(ClusterMass):
-    """Cluster Redshift class."""
+    """Cluster Mass class."""
 
     @final
     def _update_cluster_mass(self, params: ParamsMap):
@@ -69,7 +70,7 @@ class ClusterMassTrue(ClusterMass):
 
 
 class ClusterMassTrueArgument(ClusterMassArgument):
-    """Cluster Redshift spectroscopy argument class."""
+    """Cluster mass true argument class."""
 
     @property
     def dim(self) -> int:
