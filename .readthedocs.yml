@@ -17,5 +17,6 @@ build:
   jobs:
     pre_build:
       - echo $PATH
-      - cd docs/diagrams && make 
+      - cd docs/diagrams && make
+      - mamba install quarto 
       - cd tutorial && make
