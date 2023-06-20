@@ -39,6 +39,9 @@ variable-naming-style=any
 # Naming style matching correct method names.
 method-naming-style=any
 
+# Naming style matching correct function names.
+function-naming-style=any
+
 # Do not require docstrings in test functions
 no-docstring-rgx=^(test|fixture)
 
