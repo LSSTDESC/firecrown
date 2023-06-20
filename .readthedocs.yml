@@ -18,6 +18,7 @@ build:
     pre_build:
       - echo $PATH
       - cd docs/diagrams && make
+      - conda activate "$(basename $CONDA_PREFIX)"
       - echo $DENO_DOM
       - echo $DENO_DOM_VERSION
       - echo $DENO_INSTALL_ROOT
