@@ -27,6 +27,7 @@ Firecrown does not *require* the installation of a sampler.
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
 
+- `Tutorial Article <_static/intro_article.html>`_
 
 .. toctree::
    :maxdepth: 1
@@ -51,11 +52,6 @@ Firecrown does not *require* the installation of a sampler.
    :name: license
 
    termcond
-
-Tutorial article 
-================
-
-See the tutorial article here: `click here <_static/intro_article.html>`_
 
 Indices and tables
 ==================
