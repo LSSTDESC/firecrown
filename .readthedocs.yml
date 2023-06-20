@@ -18,5 +18,10 @@ build:
     pre_build:
       - echo $PATH
       - cd docs/diagrams && make
-      - set | grep DENO
+      - echo $DENO_DOM
+      - echo $DENO_DOM_VERSION
+      - echo $DENO_INSTALL_ROOT
+      - echo $QUARTO_DENO
+      - echo $QUARTO_DENO_DOM
       - cd tutorial && make
+
