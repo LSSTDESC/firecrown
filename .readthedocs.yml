@@ -17,6 +17,6 @@ build:
   jobs:
     pre_build:
       - echo $PATH
-      - wget -O quarto_pkg.deb 'https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.361/quarto-1.3.361-linux-amd64.deb' && sudo dpkg -i quarto_pkg.deb
+      - wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.361/quarto-1.3.361-linux-amd64.tar.gz && mkdir ~/opt && tar -C ~/opt -xvzf quarto-1.3.361-linux-amd64.tar.gz
       - cd docs/diagrams && make
-      - cd tutorial && make
+      - cd tutorial && PATH="$HOME/opt/quarto-1.3.361/bin:$PATH" make
