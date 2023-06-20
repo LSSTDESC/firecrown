@@ -14,6 +14,8 @@ build:
   os: ubuntu-22.04
   tools:
     python: mambaforge-4.10
+  commands:
+    - wget -O quarto_pkg.deb 'https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.361/quarto-1.3.361-linux-amd64.deb' && sudo dpkg -i quarto_pkg.deb
   jobs:
     pre_build:
       - echo $PATH
