@@ -18,6 +18,4 @@ build:
     pre_build:
       - echo $PATH
       - cd docs/diagrams && make
-      - export QUARTO_DENO=$(which deno)
-      - echo $QUARTO_DENO
-      - cd tutorial && QUARTO_DENO=$(which deno) make
+      - cd tutorial && make
