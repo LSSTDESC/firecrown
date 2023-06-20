@@ -21,4 +21,4 @@ build:
       - cd docs/diagrams && make
       - cd tutorial && PATH="$HOME/opt/quarto-1.3.361/bin:$PATH" make
       - mkdir -p docs/_static
-      - cp -rf tutorial/intro_article.html tutorial/intro_article_files tutorial/introduction_to_firecrown.html tutorial/introduction_to_firecrown_files docs/_static
+      - cp -rf tutorial/intro_article.html tutorial/intro_article_files tutorial/introduction_to_firecrown.html tutorial/introduction_to_firecrown_files *.png *.jpg docs/_static
