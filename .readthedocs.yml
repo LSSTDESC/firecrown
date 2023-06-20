@@ -19,4 +19,5 @@ build:
       - echo $PATH
       - cd docs/diagrams && make
       - export QUARTO_DENO=$(which deno)
-      - cd tutorial && make
+      - echo $QUARTO_DENO
+      - cd tutorial && QUARTO_DENO=$(which deno) make
