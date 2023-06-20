@@ -55,7 +55,7 @@ Firecrown does not *require* the installation of a sampler.
 Tutorial article 
 ================
 
-See the tutorial article here: `click here </_static/intro_article.html>`_
+See the tutorial article here: `click here <_static/intro_article.html>`_
 
 Indices and tables
 ==================
