@@ -18,5 +18,5 @@ build:
     pre_build:
       - echo $PATH
       - cd docs/diagrams && make
-      - mamba install --yes quarto 
+      - set | grep DENO
       - cd tutorial && make

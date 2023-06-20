@@ -9,6 +9,7 @@ dependencies:
   - flake8
   - mypy
   - numpy>=1.16
+  - quarto
   - plantuml
   - pip
   - pyccl>=2.0
