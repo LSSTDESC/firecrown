@@ -1,0 +1,29 @@
+In the `examples` directory, we have subdirectories, each of which contains one or more related example uses of Firecrown.
+These examples are generally configured to run quickly.
+Thus they generally do not run any real MCMC sampling.
+In each of the directories, there is a README file that contains a short description of the example and includes directions on how to run it.
+Some of the examples also include a program to generate additional files needed to run the example.
+
+Currently, all the examples use the `ConstGaussian` likelihood.
+
+* In the `cosmicshear` directory we have a DES Y1 cosmic shear analysis.
+  This example demonstrates only the use of CosmoSIS with Firecrown.
+  The likelihood function created demonstrates the use of the `ConstGaussian` likelihood with `TwoPoint` statistic and the `WeakLensing` source with a `PhotoZShift` systematic.
+
+* The `des_y1_3x2pt` directory demonstrates several related likelihoods, each created by a different factory function.
+  This simplest is `des)_y1_3x2pt.py`.
+  This uses a `ConstGaussian` likelihood containing a multiplicity of `TwoPoint` statistics, built from all combinations of several weak lensing sources and several number counts sources.
+  It demonstrates the use of multiple systematics for a source (specifically for weak lensing sources).
+
+  The two other likelihoods demonstrate the use of some advanced systematics.
+  Perturbation theory corrections are demonstrated in `des_y1_3x2pt_PT.py`.
+  TATT corrections are demonstrated in `des_y1_3x2pt_TATT.py`.
+
+  The samples in this directory work with Cobaya, CosmoSIS, and NumCosmo.
+
+* The `srd_sn` directory contains an example of the use of the `Supernova` statistic.
+  It includes both CosmoSIS and NumCosmo examples.
+  The NumCosmo example demonstrates the construction of a Fisher matrix, using an adaptive algorithm for the calculation of derivatives.
+
+* The `cluster_number_counts` directory contains an example of the use of the `ClusterNumberCounts` statistic.
+  It includes both CosmoSIS and NumCosmo examples.

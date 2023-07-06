@@ -1,0 +1,17 @@
+These instructions assume you have already done the installation, above, presumably in an earlier shell session.
+If you have just completed the installation and are in the same shell session, you do not need to execute these commands --- you have already done so!
+
+```{.bash}
+cd THE_DIRECTORY_INTO_WHICH_YOU_DID_INSTALL_THINGS
+conda activate firecrown_developer
+export CSL_DIR=${PWD}/cosmosis-standard-library
+export FIRECROWN_DIR=${PWD}/firecrown
+export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+```
+
+Each of the three defined environment variables is used for a different purpose:
+
+1. `CSL_DIR` is used in CosmoSIS *ini* files to allow the `cosmosis` command to be run from any directory.
+2. `FIRECROWN_DIR` is used in the examples that come with Firecrown.
+3. `PYTHONPATH` is used by Python itself to find Firecrown modules
+   Note that `PYTHONPATH` refers not to the top of the Firecrown repository, but to the subdirectory `build/lib` where later instructions will build the Firecrown code.
