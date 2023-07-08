@@ -1,4 +1,4 @@
-name: firecrown_developer
+name: ccl_nonlimber_dev
 channels:
   - conda-forge
 dependencies:

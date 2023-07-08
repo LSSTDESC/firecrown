@@ -61,15 +61,6 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         TwoPoint("galaxy_density_xi", number_counts_source, number_counts_source),
     ]
 
-    pt_calculator = pt.PTCalculator(
-        with_NC=True,
-        with_IA=True,
-        with_dd=False,
-        log10k_min=-4,
-        log10k_max=2,
-        nk_per_decade=4,
-    )
-
     likelihood = ConstGaussian(statistics=stats)
     likelihood.read(sacc_data)
     src0_tracer = sacc_data.get_tracer("src0")
@@ -81,6 +72,14 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
     ccl_cosmo.compute_nonlin_power()
 
+    pt_calculator = pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=4,
+        cosmo=ccl_cosmo,
+    )
     modeling_tools = ModelingTools(pt_calculator=pt_calculator)
     modeling_tools.prepare(ccl_cosmo)
 
@@ -99,20 +98,17 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
-    # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=4
-    )
+    # Code that creates Pk2D objects:
     ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
     ptt_m = pt.PTMatterTracer()
     ptt_g = pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
     # IA
-    pk_im = pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
-    pk_gi = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_i, ptc=ptc)
+    pk_im = pt_calculator.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_m)
+    pk_ii = pt_calculator.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_i)
+    pk_gi = pt_calculator.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_i)
     # Galaxies
-    pk_gm = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
-    pk_gg = pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
+    pk_gm = pt_calculator.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_m)
+    pk_gg = pt_calculator.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_g)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -234,15 +230,6 @@ def test_pt_mixed_systematics(sacc_data):
     )
 
     # Create the likelihood from the statistics
-    pt_calculator = pt.PTCalculator(
-        with_NC=True,
-        with_IA=True,
-        with_dd=False,
-        log10k_min=-4,
-        log10k_max=2,
-        nk_per_decade=4,
-    )
-
     likelihood = ConstGaussian(statistics=[stat])
     likelihood.read(sacc_data)
 
@@ -255,6 +242,14 @@ def test_pt_mixed_systematics(sacc_data):
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
     ccl_cosmo.compute_nonlin_power()
 
+    pt_calculator = pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=4,
+        cosmo=ccl_cosmo,
+    )
     modeling_tools = ModelingTools(pt_calculator=pt_calculator)
     modeling_tools.prepare(ccl_cosmo)
 
@@ -270,14 +265,11 @@ def test_pt_mixed_systematics(sacc_data):
         ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
-    # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=4
-    )
+    # Code that creates Pk2D objects:
     ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
     ptt_m = pt.PTMatterTracer()
     # IA
-    pk_mi = pt.get_pt_pk2d(ccl_cosmo, ptt_m, tracer2=ptt_i, ptc=ptc)
+    pk_mi = pt_calculator.get_biased_pk2d(tracer1=ptt_m, tracer2=ptt_i)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(

@@ -96,7 +96,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     pt_calculator = pyccl.nl_pt.PTCalculator(
         with_NC=True,
         with_IA=True,
-        with_dd=False,
+        # with_dd=False,
         log10k_min=-4,
         log10k_max=2,
         nk_per_decade=20,
@@ -154,7 +154,12 @@ def run_likelihood() -> None:
 
     # Code that creates a Pk2D object:
     ptc = pyccl.nl_pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
+        with_NC=True,
+        with_IA=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
+        cosmo=ccl_cosmo,
     )
     ptt_i = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
         c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d)
@@ -162,14 +167,14 @@ def run_likelihood() -> None:
     ptt_m = pyccl.nl_pt.PTMatterTracer()
     ptt_g = pyccl.nl_pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
     # IA
-    pk_im = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
-    pk_gi = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_i, ptc=ptc)
+    pk_im = ptc.get_biased_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m)
+    pk_ii = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_i, tracer2=ptt_i)
+    pk_gi = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_g, tracer2=ptt_i)
     # Galaxies
-    pk_gm = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
-    pk_gg = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
+    pk_gm = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_g, tracer2=ptt_m)
+    pk_gg = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_g, tracer2=ptt_g)
     # Magnification: just a matter-matter P(k)
-    pk_mm = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_m, tracer2=ptt_m, ptc=ptc)
+    pk_mm = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_m, tracer2=ptt_m)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(

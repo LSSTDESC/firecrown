@@ -16,10 +16,10 @@ class ModelingTools:
     def __init__(
         self,
         *,
-        pt_calculator: Optional[pyccl.nl_pt.PTCalculator] = None,
+        pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
     ):
         self.ccl_cosmo: Optional[pyccl.Cosmology] = None
-        self.pt_calculator: Optional[pyccl.nl_pt.PTCalculator] = pt_calculator
+        self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
@@ -68,8 +68,7 @@ class ModelingTools:
         self.ccl_cosmo = ccl_cosmo
 
         if self.pt_calculator is not None:
-            pk_lin_z0 = pyccl.linear_matter_power(ccl_cosmo, self.pt_calculator.ks, 1.0)
-            self.pt_calculator.update_pk(pk_lin_z0)
+            self.pt_calculator.update_ingredients(ccl_cosmo)
 
     @final
     def reset(self) -> None:
@@ -84,7 +83,7 @@ class ModelingTools:
             raise RuntimeError("Cosmology has not been set")
         return self.ccl_cosmo
 
-    def get_pt_calculator(self) -> pyccl.nl_pt.PTCalculator:
+    def get_pt_calculator(self) -> pyccl.nl_pt.EulerianPTCalculator:
         """Return the perturbation theory calculator object."""
 
         if self.pt_calculator is None:
