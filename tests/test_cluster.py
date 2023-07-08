@@ -26,18 +26,6 @@ def fixture_ccl_cosmo():
     )
 
 
-@pytest.fixture(name="cluster_objects")
-def fixture_cluster_objects():
-    """Fixture for cluster objects."""
-
-    hmd_200 = ccl.halos.MassDef200c
-    hmf_args: Dict[str, Any] = {}
-    hmf_name = "Bocquet16"
-    pivot_mass = 14.0
-    pivot_redshift = 0.6
-    sky_area = 489
-
-
 @pytest.fixture(name="parameters")
 def fixture_parameters():
     """Fixture for a parameter map."""
