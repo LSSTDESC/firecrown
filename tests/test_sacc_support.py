@@ -4,6 +4,7 @@ Tests for function supporting SACC.
 """
 from firecrown.sacc_support import (
     BinZTracer,
+    BinLogMTracer,
     BinRichnessTracer,
     BinRadiusTracer,
     ClusterSurveyTracer,
@@ -40,6 +41,40 @@ def test_binztracer_tables():
 
     d = BinZTracer.from_tables(tables)
     assert len(d) == 2  # this list of tables recovers both BinZTracers
+    assert d["fred"] == a
+    assert d["wilma"] == b
+
+
+def test_make_binlogmtracer():
+    tracer = BinLogMTracer.make("bin_logm", name="fred", lower=13.0, upper=15.0)
+    assert isinstance(tracer, BinLogMTracer)
+    assert tracer.quantity == "generic"
+    assert tracer.name == "fred"
+    assert tracer.lower == 13.0
+    assert tracer.upper == 15.0
+
+
+def test_binlogmtracer_equality():
+    a = BinLogMTracer.make("bin_logm", name="fred", lower=13.0, upper=15.0)
+    b = BinLogMTracer.make("bin_logm", name="fred", lower=13.0, upper=15.0)
+    c = BinLogMTracer.make("bin_logm", name="wilma", lower=13.0, upper=15.0)
+    d = BinLogMTracer.make("bin_logm", name="fred", lower=14.0, upper=15.0)
+    e = BinLogMTracer.make("bin_logm", name="fred", lower=13.0, upper=15.1)
+    assert a == b
+    assert a != "fred"
+    assert a != c
+    assert a != d
+    assert a != e
+
+
+def test_binlogmtracer_tables():
+    a = BinLogMTracer.make("bin_logm", name="fred", lower=13.0, upper=15.0)
+    b = BinLogMTracer.make("bin_logm", name="wilma", lower=14.0, upper=15.5)
+    tables = BinLogMTracer.to_tables([a, b])
+    assert len(tables) == 1  # all BinLogMTracers are written to a single table
+
+    d = BinLogMTracer.from_tables(tables)
+    assert len(d) == 2  # this list of tables recovers both BinLogMTracers
     assert d["fred"] == a
     assert d["wilma"] == b
 

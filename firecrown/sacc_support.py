@@ -91,6 +91,82 @@ class BinZTracer(BaseTracer, tracer_type="bin_z"):  # type: ignore
         return tracers
 
 
+class BinLogMTracer(BaseTracer, tracer_type="bin_logM"):  # type: ignore
+    """A tracer for a single log-mass bin."""
+
+    def __init__(self, name: str, lower: float, upper: float, **kwargs):
+        """
+        Create a tracer corresponding to a single log-mass bin.
+
+        :param name: The name of the tracer
+        :param lower: The lower bound of the log-mass bin
+        :param upper: The upper bound of the log-mass bin
+        """
+        super().__init__(name, **kwargs)
+        self.lower = lower
+        self.upper = upper
+
+    def __eq__(self, other) -> bool:
+        """Test for equality.  If :python:`other` is not a
+        :python:`BinLogMTracer`, then it is not equal to :python:`self`.
+        Otherwise, they are equal if names, and the z-range of the bins,
+        are equal."""
+        if not isinstance(other, BinLogMTracer):
+            return False
+        return (
+            self.name == other.name
+            and self.lower == other.lower
+            and self.upper == other.upper
+        )
+
+    @classmethod
+    def to_tables(cls, instance_list):
+        """Convert a list of BinLogMTracers to a single astropy table
+
+        This is used when saving data to a file.
+        One table is generated with the information for all the tracers.
+
+        :param instance_list: List of tracer instances
+        :return: List with a single astropy table
+        """
+
+        names = ["name", "quantity", "lower", "upper"]
+
+        cols = [
+            [obj.name for obj in instance_list],
+            [obj.quantity for obj in instance_list],
+            [obj.lower for obj in instance_list],
+            [obj.upper for obj in instance_list],
+        ]
+
+        table = Table(data=cols, names=names)
+        table.meta["SACCTYPE"] = "tracer"
+        table.meta["SACCCLSS"] = cls.tracer_type
+        table.meta["EXTNAME"] = f"tracer:{cls.tracer_type}"
+        return [table]
+
+    @classmethod
+    def from_tables(cls, table_list):
+        """Convert an astropy table into a dictionary of tracers
+
+        This is used when loading data from a file.
+        One tracer object is created for each "row" in each table.
+
+        :param table_list: List of astropy tables
+        :return: Dictionary of tracers
+        """
+        tracers = {}
+
+        for table in table_list:
+            for row in table:
+                name = row["name"]
+                quantity = row["quantity"]
+                lower = row["lower"]
+                upper = row["upper"]
+                tracers[name] = cls(name, quantity=quantity, lower=lower, upper=upper)
+        return tracers
+
+
 class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
     """A tracer for a single richness bin."""
 
@@ -112,8 +188,8 @@ class BinRichnessTracer(BaseTracer, tracer_type="bin_richness"):  # type: ignore
         Create a tracer corresponding to a single richness bin.
 
         :param name: The name of the tracer
-        :param lower: The lower bound of the redshift bin
-        :param upper: The upper bound of the redshift bin
+        :param lower: The lower bound of the richness bin
+        :param upper: The upper bound of the richness bin
         """
         super().__init__(name, **kwargs)
         self.lower = lower
