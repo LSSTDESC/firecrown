@@ -1,0 +1,10 @@
+The installation methods for Firecrown support two different user roles: *developers* and *non-developers*.
+One is acting as a non-developer when using Firecrown only through installed packages, and making no additions to or modifications of the Firecrown code.
+One is acting as a developer when either modifying existing code, adding new code, or both.
+Because Firecrown is under rapid development, we expect most users to be acting in the developer role.
+That is the role we will discuss in more depth.
+
+Developers require access to the Firecrown source code.
+They also require access to the complete set of software upon which Firecrown depends, as well as the development tools we use with Firecrown.
+All the software packages upon which Firecrown and its development environment rely will be installed with `conda` when possible, or with `pip` when a `conda` installation is not possible.
+The Firecrown source code will be cloned from the repository on GitHub.

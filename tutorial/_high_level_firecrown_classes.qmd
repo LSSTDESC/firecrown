@@ -1,0 +1,37 @@
+
+
+Each of these main Firecrown concepts is represented by one (or several) types in Firecrown.
+
+The type used to represent a cosmology in Firecrown comes from CCL: [`pyccl.Cosmology`](https://ccl.readthedocs.io/en/latest/api/pyccl.html?highlight=pyccl.Cosmology#pyccl.Cosmology).
+This class represents a parameterized cosmology.
+
+The modeling tools are represented by `firecrown.modeling_tools.ModelingTools`.
+A `ModelingTools` object associates a cosmology with a set of objects representing theoretical models that can be used in a likelihood.
+Each of these may be used more than once in the evaluation of the likelihood.
+This is why they are gathered together in one location: to help assure that different parts of a likelihood calculation that require the same theoretical calculation get the identical theoretical calculation for a given cosmology.
+
+Moreover, we define for `ModelingTools` an abstract class [^abstract-class] for each additional tool that can be used in the likelihood calculation. 
+Thus, the same tool can have different implementations, and the user can choose which one to use. 
+This is intended to partially address the issue of systematic effects, as we can have different implementations of the same tool, each one representing a different systematic effect.
+For example, we can have different implementations of the halo model, each one including a different effects.
+This is in contrast to the current implementation, where we would have a single halo model that needs to have its results modified by `Systematic` objects.
+
+[^abstract-class]: An [abstract class](https://en.wikipedia.org/wiki/Abstract_type) provides either methods or data (or both) for derived classes but is not complete.
+It is not possible to create an object whose type is an abstract class.
+Rather, one derives concrete classes from the abstract class and creates instances of those concrete types.
+
+The likelihoods are represented by a base class `firecrown.likelihood.Likelihood`, and a variety of classes that inherit from that base class.
+The minimum implementation for a likelihood implements two methods:
+
+```{.python}
+read(sacc: sacc.SACC) -> None
+calculate_loglike(tools: ModelingTools) -> float
+```
+
+The method `read` reads the necessary data (data vectors and covariances) from the provided `sacc.SACC` object.
+This specifies the data for which we are calculating the likelihood.
+The method `calculate_loglike` return the (natural) logarithm of the likelihood for the data given the cosmology and models in `tools`.
+Gaussian-related likelihoods are subclasses of `firecrown.likelihood.gauss_family.GaussFamily`.
+Currently-implemented subclasses include `ConstGaussian` and `StudentT`.
+`ConstGaussian` assumes a Gaussian distribution in which the covariance of the data is constant.
+

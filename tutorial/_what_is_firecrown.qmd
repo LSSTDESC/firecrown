@@ -1,0 +1,33 @@
+Firecrown[^firecrown] is a *software framework*[^framework] that allows you to write *likelihoods* in a way that will enable you to integrate those likelihoods with statistical frameworks for parameter estimation, forecasting, or any other purpose.
+In considering our options, one possibility is to choose a single statistical framework and exclusively rely on it. 
+However, different analyses may present distinct requirements that can only be effectively addressed by utilizing different statistical frameworks.
+So Firecrown provides a single framework for writing likelihoods that allows DESC scientists to use those likelihoods with any of the supported statistical frameworks.
+Moreover, Firecrown is intended to provide a well-defined environment in which all the DESC tools needed for likelihood-dependent analysis tasks are present.
+To accomplish this objective, Firecrown directly uses the DESC Core Cosmology Library [CCL](https://github.com/LSSTDESC/CCL) and the [SACC](https://github.com/LSSTDESC/SACC) data format library.
+
+[^firecrown]: A firecrown is a hummingbird native to Chile and Argentina.
+The reasons this software is named Firecrown are now lost to the mists of history.
+![](green-backed-firecrown.jpg){fig-alt="A green-backed firecrown."}
+
+[^framework]: A software framework is an abstraction in which software providing generic functionality can be selectively changed by additional user-written code, thus providing application-specific software. [Definition from Wikipedia](https://en.wikipedia.org/wiki/Software_framework).
+
+Firecrown can also be used as a tool inside another framework.
+For example, it is directly used by the DESC forecasting and inference tool [Augur](https://github.com/LSSTDESC/augur).
+Augur uses Firecrown to calculate observations predicted by theory ("theory vectors") and likelihoods for those observations, and from these Augur calculates Fisher matrices.
+Augur can also use Firecrown to create mock data and to run Markov Chain Monte Carlo (MCMC) parameter estimation on those data.
+
+Firecrown currently supports three statistical frameworks: [Cobaya](https://github.com/CobayaSampler/cobaya)[^cobaya], [CosmoSIS](https://github.com/joezuntz/cosmosis)[^cosmosis], and [NumCosmo](https://github.com/NumCosmo/NumCosmo)[^numcosmo].
+Firecrown guarantees that the variety of DESC tools that it uses are instantiated correctly to be consistent with the use of any of these frameworks.
+
+[^cobaya]: Cobaya (code for bayesian analysis, and Spanish for Guinea Pig) is a framework for sampling and statistical modeling: it allows you to explore an arbitrary prior or posterior using a range of Monte Carlo samplers (including the advanced MCMC sampler from CosmoMC, and the advanced nested sampler PolyChord).
+The results of the sampling can be analyzed with GetDist.
+It supports MPI parallelization (and very soon HPC containerization with Docker/Shifter and Singularity).
+
+[^cosmosis]: CosmoSIS is a cosmological parameter estimation code.
+It is a framework for structuring cosmological parameter estimation with a focus on flexibility, re-usability, debugging, verifiability, and code sharing in the form of calculation modules.
+It consolidates and connects existing code for predicting cosmic observables, and makes mapping out experimental likelihoods with a range of different techniques much more accessible.
+
+[^numcosmo]: NumCosmo is a free software C library whose main purposes are to test cosmological models using observational data and to provide a set of tools to perform cosmological calculations.
+Particularly, the current version has implemented three different probes: cosmic microwave background (CMB), supernovae type Ia (SNeIa), and large-scale structure (LSS) information, such as baryonic acoustic oscillations (BAO) and galaxy cluster abundance.
+The code supports joint analyses of these data and the parameter space can include cosmological and phenomenological parameters.
+
