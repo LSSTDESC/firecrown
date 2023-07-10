@@ -1,0 +1,50 @@
+The three most important concepts represented in Firecrown are *cosmology*, *modeling tools*, and *likelihoods*.
+Each of these concepts is represented by some software artifact in Firecrown.
+
+Firecrown's concept of cosmology is provided by CCL.
+CCL provides all the necessary tools for calculating basic cosmological quantities.
+So everything that is general in cosmology is calculated by CCL, and not by Firecrown itself.
+This cosmology plays a central role in the set of tools provided to the user.
+
+We also have the concept of modeling tools.
+These are a set of extra tools which, together with the CCL cosmology, allow one to calculate likelihoods.
+For example, modeling tools has a member called pt_calculator. 
+When the `ModelingTools` is instantiated in the likelihood initialization, the pt_calculator is also instantiated and configured.
+Then, the same object can be used by different parts of the likelihood.
+The `des_y1_3x2pt_PT` example uses the pt_calculator to calculate the power spectra that are used in the likelihood. 
+Thus, every `source` that requires power spectra can use the same pt_calculator object.
+All the available tools are presented, along with the cosmology, for calculation of the likelihood.
+Therefore, during a statistical analysis, whenever the likelihood is called, all the objects in the modeling tools have already been updated to represent the "current cosmology" with which they are associated.
+For the user who wants to calculate a likelihood that is not a Gaussian distribution, these are the only concepts in Firecrown that are needed.
+But since we are frequently working with Gaussian likelihoods, there are more software tools available for their support.
+These tools include more constrained *likelihoods*,  *statistics*, *sources*, and *systematics*.
+
+First, we have support for the Gaussian family of likelihoods.
+These are all the likelihoods that can be expressed as a function of the distance between the expected value of some observable quantity and the observed value of that quantity, where the measure of that distance is characterized by a covariance matrix.
+These are likelihoods of the form:
+$$P(\vec{x}|\vec{\mu},\widetilde{M}) = f(\chi^2)$$
+where
+$$\chi^2 = \sum_{i,j} (x_i - \mu_i) M_{i,j} (x_j - \mu_j)$$
+and where $x_i$ are the components of the observed data vector $\vec{x}$, $\mu_i$ are the components of the predicted theory vector $\vec{\mu}$, and $M_{i,j}$ is the components of the inverse of the covariance matrix.
+In the Gaussian family, we currently have implemented the multivariate Gaussian distribution and the multivariate Student's T distribution.
+
+To build a Gaussian distribution, all one needs is to create a *theory vector* (the $\mu_i$ above), and to get the *data vector* ($x_i$ above) and covariance matrix $\widetilde{C} = \widetilde{M}^{-1}$.
+The data vector and covariance matrix are typically read from a SACC file.
+The theoretical prediction associated with the data vector is computed by a *statistic* array.
+Users have the flexibility to either implement their own statistics objects or utilize existing ones already available within Firecrown.
+For instance, in the case of constructing a likelihood based on a two-point function, Firecrown provides pre-existing classes that represent such entities, readily accessible for utilization.
+The two-point function is a variety of statistic that is in turn dependent on *sources*.
+Sources are tools available for combining two observables (possibly the same observable, used twice) to create a two-point function, either a cross-correlation or an auto-correlation.
+These are simple layers to call the relevant CCL functions that will calculate the necessary integrals, whereas sources are used to compute integrands for the associated observables.
+So a statistic is a general concept, a two-point statistic is a specific kind of statistic, and sources are the means to calculate the observables for two-point statistics.
+
+The *systematic* is a concept that is not yet so fully defined.
+Currently, systematics are a way of modifying the behavior of a theory prediction calculator.
+For example, if one has a distribution $f(z) = dN/dz$ of some object in the sky as a function of redshift $z$, and one wants to make a shift of this distribution (a *bias*) to the left or the right, this can be done using a systematic.
+One can put as many systematics as desired into the calculation of any statistic.
+Of course, one needs to take care that they are compatible and that the result makes sense.
+This is one of the parts of Firecrown that needs more development[^invitation]; we are working to identify the set of types and functions that will help make sure that only meaningful combinations of systematics are created, and that systematic effects are not double-counted.
+
+[^invitation]: We invite contributions to the effort of defining the means of handling systematic effects.
+The Firecrown [issues list](https://github.com/LSSTDESC/firecrown/issues) can be used to discuss ideas for contributions.
+
