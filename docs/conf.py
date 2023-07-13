@@ -147,7 +147,6 @@ def run_apidoc(_):
         "-e",
         "-E",
         "-T",
-        #        "--implicit-namespaces",
         "-d",
         "1",
         "-o",
@@ -166,7 +165,3 @@ def run_apidoc(_):
 
         argv.insert(0, apidoc.__file__)
         apidoc.main(argv)
-
-
-# def setup(app):
-#    app.connect('builder-inited', run_apidoc)
