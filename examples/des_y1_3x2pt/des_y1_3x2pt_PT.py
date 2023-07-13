@@ -86,10 +86,9 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     )
 
     # Create the likelihood from the statistics
-    pt_calculator = pyccl.nl_pt.PTCalculator(
+    pt_calculator = pyccl.nl_pt.EulerianPTCalculator(
         with_NC=True,
         with_IA=True,
-        # with_dd=False,
         log10k_min=-4,
         log10k_max=2,
         nk_per_decade=20,
@@ -154,7 +153,7 @@ def run_likelihood() -> None:
     )
 
     # Code that creates a Pk2D object:
-    ptc = pyccl.nl_pt.PTCalculator(
+    ptc = pyccl.nl_pt.EulerianPTCalculator(
         with_NC=True,
         with_IA=True,
         log10k_min=-4,
