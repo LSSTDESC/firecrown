@@ -253,6 +253,7 @@ class UpdatableCollection(UserList):
         :param iterable: An iterable that yields Updatable objects
         """
         super().__init__(iterable)
+        self._updated: bool = False
         for item in self:
             if not isinstance(item, Updatable):
                 raise TypeError(
