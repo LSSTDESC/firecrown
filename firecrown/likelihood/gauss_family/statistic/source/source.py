@@ -75,8 +75,8 @@ class Source(Updatable):
     def _reset(self) -> None:
         """Implementation of the Updatable interface method `_reset`.
 
-        This calls the abstract method `_reset_source`, which must be implemented by
-        all subclasses."""
+        This calls the abstract method `_reset_source`, which must be implemented
+        by all subclasses."""
         self._reset_source()
 
     @abstractmethod
