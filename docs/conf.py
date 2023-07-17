@@ -133,8 +133,8 @@ autoclasstoc_sections = [
 ]
 
 # Copied from github.com/sanderslab/magellanmapper:
-## automate building API .rst files, necessary for ReadTheDocs, as inspired by:
-## https://github.com/readthedocs/readthedocs.org/issues/1139#issuecomment-398083449
+# automate building API .rst files, necessary for ReadTheDocs, as inspired by:
+# https://github.com/readthedocs/readthedocs.org/issues/1139#issuecomment-398083449
 
 
 def run_apidoc(_):
@@ -147,7 +147,6 @@ def run_apidoc(_):
         "-e",
         "-E",
         "-T",
-        #        "--implicit-namespaces",
         "-d",
         "1",
         "-o",
@@ -166,7 +165,3 @@ def run_apidoc(_):
 
         argv.insert(0, apidoc.__file__)
         apidoc.main(argv)
-
-
-# def setup(app):
-#    app.connect('builder-inited', run_apidoc)

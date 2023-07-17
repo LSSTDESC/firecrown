@@ -192,7 +192,7 @@ class Mapping(ABC):
             "Omega_g": self.Omega_g,
             "Neff": self.Neff,
             "m_nu": self.m_nu,
-            "m_nu_type": self.m_nu_type,
+            "mass_split": self.m_nu_type,
             "w0": self.w0,
             "wa": self.wa,
             "T_CMB": self.T_CMB,

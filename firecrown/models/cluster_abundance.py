@@ -117,8 +117,8 @@ class ClusterAbundance(Updatable):
         if self.halo_mass_function is None:
             self.halo_mass_function = ccl.halos.MassFunc.from_name(
                 self.halo_mass_function_name
-            )(ccl_cosmo, **self.halo_mass_function_args)
-        nm = self.halo_mass_function.get_mass_function(ccl_cosmo, mass, a)
+            )(**self.halo_mass_function_args)
+        nm = self.halo_mass_function(ccl_cosmo, mass, a)
         return nm
 
     def mf_d2N_dz_dlnM(self, ccl_cosmo: ccl.Cosmology, logM: float, z: float) -> float:

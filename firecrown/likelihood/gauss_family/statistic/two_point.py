@@ -444,13 +444,9 @@ class TwoPoint(Statistic):
             # Compute perturbation power spectrum
 
             pt_calculator = tools.get_pt_calculator()
-            pk = pyccl.nl_pt.get_pt_pk2d(
-                tools.get_ccl_cosmology(),
-                tracer0.pt_tracer,
+            pk = pt_calculator.get_biased_pk2d(
+                tracer1=tracer0.pt_tracer,
                 tracer2=tracer1.pt_tracer,
-                nonlin_pk_type="nonlinear",
-                ptc=pt_calculator,
-                update_ptc=False,
             )
         elif tracer0.has_hm or tracer1.has_hm:
             # Compute halo model power spectrum

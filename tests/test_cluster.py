@@ -22,7 +22,7 @@ def fixture_ccl_cosmo():
     """Fixture for a CCL cosmology object."""
 
     return ccl.Cosmology(
-        Omega_c=0.22, Omega_b=0.0448, h=0.71, sigma8=0.8, n_s=0.963, Neff=3.04
+        Omega_c=0.22, Omega_b=0.0448, h=0.71, sigma8=0.8, n_s=0.963, Neff=3.44
     )
 
 
@@ -90,7 +90,7 @@ def fixture_cluster_mass_rich_args(parameters):
 def fixture_cluster_abundance(parameters):
     """Fixture for cluster objects."""
 
-    hmd_200 = ccl.halos.MassDef200c()
+    hmd_200 = ccl.halos.MassDef200c
     hmf_args: Dict[str, Any] = {}
     hmf_name = "Bocquet16"
     sky_area = 489

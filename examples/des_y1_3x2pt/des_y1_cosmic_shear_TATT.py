@@ -61,10 +61,10 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
                 )
 
     # Create the likelihood from the statistics
-    pt_calculator = pyccl.nl_pt.PTCalculator(
+    pt_calculator = pyccl.nl_pt.EulerianPTCalculator(
         with_NC=False,
         with_IA=True,
-        with_dd=True,
+        # with_dd=True,
         log10k_min=-4,
         log10k_max=2,
         nk_per_decade=20,
@@ -115,16 +115,21 @@ def run_likelihood() -> None:
     )
 
     # Code that creates a Pk2D object:
-    ptc = pyccl.nl_pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
+    ptc = pyccl.nl_pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
+        cosmo=ccl_cosmo,
     )
     ptt_i = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
         c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d)
     )
     ptt_m = pyccl.nl_pt.PTMatterTracer()
     # IAs x matter
-    pk_im = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
+    pk_im = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_m)
+    pk_ii = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_i)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
