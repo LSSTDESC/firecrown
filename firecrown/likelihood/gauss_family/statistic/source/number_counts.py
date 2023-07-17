@@ -81,9 +81,10 @@ class LinearBiasSystematic(NumberCountsSystematic):
 
     @final
     def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
+        """Reset this systematic."""
+        self.alphaz = None
+        self.alphag = None
+        self.z_piv = None
 
     @final
     def _required_parameters(self) -> RequiredParameters:
