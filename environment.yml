@@ -8,6 +8,7 @@ dependencies:
   - cosmosis-build-standard-library
   - numcosmo >=0.16.0
   - coverage
+  - cython < 3.0.0
   - dill
   - fitsio
   - flake8
