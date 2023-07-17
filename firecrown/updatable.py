@@ -146,6 +146,13 @@ class Updatable(ABC):
         # worked.
         self._updated = True
 
+    def is_updated(self) -> bool:
+        """Return True if the object is currently updated, and False if not.
+        A default-constructed Updatable has not been updated. After `update`,
+        but before `reset`, has been called the object is updated. After
+        `reset` has been called, the object is not currently updated."""
+        return self._updated
+
     @final
     def reset(self) -> None:
         """Clean up self by clearing the _updated status and reseting all
@@ -266,12 +273,26 @@ class UpdatableCollection(UserList):
 
         :param params: new parameter values
         """
+        if self._updated:
+            return
+
         for updatable in self:
             updatable.update(params)
+
+        self._updated = True
+
+
+    def is_updated(self) -> bool:
+        """Return True if the object is currently updated, and False if not.
+        A default-constructed Updatable has not been updated. After `update`,
+        but before `reset`, has been called the object is updated. After
+        `reset` has been called, the object is not currently updated."""
+        return self._updated
 
     @final
     def reset(self):
         """Resets self by calling reset() on each contained item."""
+        self._updated = False
         for updatable in self:
             updatable.reset()
 
