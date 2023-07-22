@@ -319,7 +319,7 @@ class ClusterAbundance(Updatable):
             bound_l.append(item[0])
             bound_u.append(item[1])
         int_nd.eval(Ncm.Vector.new_array(bound_l), Ncm.Vector.new_array(bound_u), res, err)
-        return res.dup_array()
+        return res.dup_array()[0]
 
     def compute(
         self,
