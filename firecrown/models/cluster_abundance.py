@@ -14,6 +14,35 @@ from ..updatable import Updatable
 from ..parameters import RequiredParameters, DerivedParameterCollection
 from .cluster_mass import ClusterMassArgument
 from .cluster_redshift import ClusterRedshiftArgument
+from numcosmo_py import Ncm
+
+Ncm.cfg_init()
+
+class CountsIntegralND(Ncm.Integralnd):
+    """Test class for IntegralND."""
+    def __init__(self, dim, fun, *args):
+        super().__init__()
+        self.dim = dim
+        self.fun = fun
+        self.args = args
+
+    
+    def do_get_dimensions(self) -> Tuple[int, int]:
+        """Get number of dimensions."""
+        return self.dim, 1
+    
+    def do_integrand(
+        self,
+        x_vec: Ncm.Vector,
+        dim: int,
+        npoints: int,
+        fdim: int,
+        fval_vec: Ncm.Vector
+    ) -> None:
+        """Integrand function."""
+        x = np.array(x_vec.dup_array())
+        fval = [self.fun(x, *self.args)]
+        fval_vec.set_array(fval)
 
 
 class ClusterAbundance(Updatable):
@@ -178,7 +207,6 @@ class ClusterAbundance(Updatable):
     def _process_args(self, args):
         x = np.array(args[0:-5])
         index_map, arg, ccl_cosmo, mass_arg, redshift_arg = args[-5:]
-
         arg[index_map] = x
         redshift_start_index = 2 + redshift_arg.dim
 
@@ -276,12 +304,18 @@ class ClusterAbundance(Updatable):
                 * mass_arg.p(arg[0], arg[1])
                 * redshift_arg.p(arg[0], arg[1])
             )
-        return scipy.integrate.nquad(
-            integrand,
-            args=(index_map, arg, ccl_cosmo, mass_arg, redshift_arg),
-            ranges=bounds_list,
-            opts={"epsabs": 0.0, "epsrel": 1.0e-4},
-        )[0]
+
+        int_nd = CountsIntegralND(len(index_map), integrand, index_map, arg, ccl_cosmo, mass_arg, redshift_arg)
+        res = Ncm.Vector.new(1)
+        err = Ncm.Vector.new(1)
+        int_nd.set_method(Ncm.IntegralndMethod.P)
+        bound_l = []
+        bound_u = []
+        for item in bounds_list:
+            bound_l.append(item[0])
+            bound_u.append(item[1])
+        int_nd.eval(Ncm.Vector.new_array(bound_l), Ncm.Vector.new_array(bound_u), res, err)
+        return res.dup_array()
 
     def compute(
         self,
