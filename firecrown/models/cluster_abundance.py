@@ -40,10 +40,13 @@ class CountsIntegralND(Ncm.Integralnd):
         fval_vec: Ncm.Vector
     ) -> None:
         """Integrand function."""
+        results = []
         x = np.array(x_vec.dup_array())
-        fval = [self.fun(x, *self.args)]
-        fval_vec.set_array(fval)
-
+        for a in range(0, int(len(x) / dim)):
+            y = np.array(x[2*a:2*a+dim])
+            fval = self.fun(y, *self.args)
+            results.append(fval)
+        fval_vec.set_array(results)
 
 class ClusterAbundance(Updatable):
     r"""Cluster Abundance class"""
@@ -56,6 +59,7 @@ class ClusterAbundance(Updatable):
         sky_area: float = 100.0,
         use_completness: bool = False,
         use_purity: bool = False,
+        integ_method: str = Ncm.IntegralndMethod.P_V,
     ):
         """Initialize the ClusterAbundance class.
 
@@ -75,7 +79,7 @@ class ClusterAbundance(Updatable):
         self.halo_mass_function_args = halo_mass_function_args
         self.halo_mass_function: Optional[ccl.halos.MassFunc] = None
         self.use_purity = use_purity
-
+        self.integ_method = integ_method
         if use_completness:
             self.base_mf_d2N_dz_dlnM = self.mf_d2N_dz_dlnM_completeness
         else:
@@ -308,7 +312,7 @@ class ClusterAbundance(Updatable):
         int_nd = CountsIntegralND(len(index_map), integrand, index_map, arg, ccl_cosmo, mass_arg, redshift_arg)
         res = Ncm.Vector.new(1)
         err = Ncm.Vector.new(1)
-        int_nd.set_method(Ncm.IntegralndMethod.P)
+        int_nd.set_method(self.integ_method)
         bound_l = []
         bound_u = []
         for item in bounds_list:
