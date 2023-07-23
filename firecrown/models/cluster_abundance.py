@@ -7,46 +7,42 @@ from __future__ import annotations
 from typing import Optional, Any, Dict, List, Tuple, final
 
 import numpy as np
-import scipy.integrate
 import pyccl as ccl
+from numcosmo_py import Ncm
 
 from ..updatable import Updatable
 from ..parameters import RequiredParameters, DerivedParameterCollection
 from .cluster_mass import ClusterMassArgument
 from .cluster_redshift import ClusterRedshiftArgument
-from numcosmo_py import Ncm
 
-Ncm.cfg_init()
 
-class CountsIntegralND(Ncm.Integralnd):
+class CountsIntegralND(Ncm.IntegralND):
     """Test class for IntegralND."""
+
     def __init__(self, dim, fun, *args):
         super().__init__()
         self.dim = dim
         self.fun = fun
         self.args = args
 
-    
+    # pylint: disable-next=arguments-differ
     def do_get_dimensions(self) -> Tuple[int, int]:
         """Get number of dimensions."""
         return self.dim, 1
-    
+
+    # pylint: disable-next=arguments-differ
     def do_integrand(
         self,
         x_vec: Ncm.Vector,
         dim: int,
         npoints: int,
-        fdim: int,
-        fval_vec: Ncm.Vector
+        _fdim: int,
+        fval_vec: Ncm.Vector,
     ) -> None:
         """Integrand function."""
-        results = []
-        x = np.array(x_vec.dup_array())
-        for a in range(0, int(len(x) / dim)):
-            y = np.array(x[2*a:2*a+dim])
-            fval = self.fun(y, *self.args)
-            results.append(fval)
-        fval_vec.set_array(results)
+        x = np.array(x_vec.dup_array()).reshape(npoints, dim)
+        fval_vec.set_array([self.fun(x_i, *self.args) for x_i in x])
+
 
 class ClusterAbundance(Updatable):
     r"""Cluster Abundance class"""
@@ -59,7 +55,8 @@ class ClusterAbundance(Updatable):
         sky_area: float = 100.0,
         use_completness: bool = False,
         use_purity: bool = False,
-        integ_method: str = Ncm.IntegralndMethod.P_V,
+        integ_method: Ncm.IntegralNDMethod = Ncm.IntegralNDMethod.P_V,
+        reltol: float = 1.0e-4,
     ):
         """Initialize the ClusterAbundance class.
 
@@ -80,6 +77,7 @@ class ClusterAbundance(Updatable):
         self.halo_mass_function: Optional[ccl.halos.MassFunc] = None
         self.use_purity = use_purity
         self.integ_method = integ_method
+        self.reltol = reltol
         if use_completness:
             self.base_mf_d2N_dz_dlnM = self.mf_d2N_dz_dlnM_completeness
         else:
@@ -309,7 +307,11 @@ class ClusterAbundance(Updatable):
                 * redshift_arg.p(arg[0], arg[1])
             )
 
-        int_nd = CountsIntegralND(len(index_map), integrand, index_map, arg, ccl_cosmo, mass_arg, redshift_arg)
+        Ncm.cfg_init()
+        int_nd = CountsIntegralND(
+            len(index_map), integrand, index_map, arg, ccl_cosmo, mass_arg, redshift_arg
+        )
+        int_nd.set_reltol(self.reltol)
         res = Ncm.Vector.new(1)
         err = Ncm.Vector.new(1)
         int_nd.set_method(self.integ_method)
@@ -318,8 +320,10 @@ class ClusterAbundance(Updatable):
         for item in bounds_list:
             bound_l.append(item[0])
             bound_u.append(item[1])
-        int_nd.eval(Ncm.Vector.new_array(bound_l), Ncm.Vector.new_array(bound_u), res, err)
-        return res.dup_array()[0]
+        int_nd.eval(
+            Ncm.Vector.new_array(bound_l), Ncm.Vector.new_array(bound_u), res, err
+        )
+        return res.get(0)
 
     def compute(
         self,

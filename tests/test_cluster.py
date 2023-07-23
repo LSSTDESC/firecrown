@@ -90,7 +90,11 @@ def fixture_cluster_mass_rich_args(parameters):
 def fixture_cluster_abundance(parameters):
     """Fixture for cluster objects."""
 
-    hmd_200 = ccl.halos.MassDef200c
+    try:
+        hmd_200 = ccl.halos.MassDef200c()
+    except TypeError:
+        hmd_200 = ccl.halos.MassDef200c
+
     hmf_args: Dict[str, Any] = {}
     hmf_name = "Bocquet16"
     sky_area = 489
