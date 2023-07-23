@@ -198,8 +198,8 @@ class ClusterMassRichBinArgument(ClusterMassArgument):
             np.sqrt(2.0) * sigma
         )
 
-        if x_max > 4.0:
+        if x_max > 3.0 or x_min < -3.0:
             #  pylint: disable-next=no-member
-            return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
+            return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
         #  pylint: disable-next=no-member
         return (special.erf(x_min) - special.erf(x_max)) / 2.0

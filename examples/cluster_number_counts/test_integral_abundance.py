@@ -1,25 +1,21 @@
-import os
-import pyccl as ccl
+"""Test integral methods for cluster abundance."""
+
 from typing import Any, Dict
+import time
+
+import pyccl as ccl
 import numpy as np
+from numcosmo_py import Ncm
 
 from firecrown.models.cluster_abundance import ClusterAbundance
 from firecrown.models.cluster_mass_rich_proxy import (
     ClusterMassRich,
     ClusterMassRichBinArgument,
-    ClusterMassRichPointArgument,
 )
 from firecrown.models.cluster_redshift_spec import (
     ClusterRedshiftSpec,
     ClusterRedshiftSpecArgument,
 )
-from firecrown.models.cluster_mass import ClusterMassArgument
-from firecrown.models.cluster_redshift import ClusterRedshiftArgument
-import matplotlib.pyplot as plt
-import scipy
-from scipy.interpolate import interp1d
-import time
-from numcosmo_py import Ncm
 
 Omega_c = 0.262
 Omega_b = 0.049
@@ -51,12 +47,12 @@ pivot_redshift = 0.6
 
 cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
 
-cluster_mass_r.__setattr__("mu_p0", 3.0)
-cluster_mass_r.__setattr__("mu_p1", 0.86)
-cluster_mass_r.__setattr__("mu_p2", 0.0)
-cluster_mass_r.__setattr__("sigma_p0", 3.0)
-cluster_mass_r.__setattr__("sigma_p1", 0.7)
-cluster_mass_r.__setattr__("sigma_p2", 0.0)
+cluster_mass_r.mu_p0 = 3.0
+cluster_mass_r.mu_p1 = 0.86
+cluster_mass_r.mu_p2 = 0.0
+cluster_mass_r.sigma_p0 = 3.0
+cluster_mass_r.sigma_p1 = 0.7
+cluster_mass_r.sigma_p2 = 0.0
 
 cluster_z = ClusterRedshiftSpec()
 
@@ -97,5 +93,6 @@ for integ_method in integ_options:
     t2 = time.time()
 
     print(
-        f"The time for {integ_method} is {t2-t1}\n\n The counts value is {test_m_list}\n\n"
+        f"The time for {integ_method} is {t2-t1}\n\n"
+        f"The counts value is {test_m_list}\n\n"
     )

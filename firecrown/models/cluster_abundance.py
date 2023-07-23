@@ -9,6 +9,7 @@ from typing import Optional, Any, Dict, List, Tuple, final
 import numpy as np
 import pyccl as ccl
 from numcosmo_py import Ncm
+import scipy.integrate
 
 from ..updatable import Updatable
 from ..parameters import RequiredParameters, DerivedParameterCollection
@@ -56,6 +57,7 @@ class ClusterAbundance(Updatable):
         use_completness: bool = False,
         use_purity: bool = False,
         integ_method: Ncm.IntegralNDMethod = Ncm.IntegralNDMethod.P_V,
+        prefer_scipy_integration: bool = False,
         reltol: float = 1.0e-4,
     ):
         """Initialize the ClusterAbundance class.
@@ -78,6 +80,7 @@ class ClusterAbundance(Updatable):
         self.use_purity = use_purity
         self.integ_method = integ_method
         self.reltol = reltol
+        self.prefer_scipy_integration = prefer_scipy_integration
         if use_completness:
             self.base_mf_d2N_dz_dlnM = self.mf_d2N_dz_dlnM_completeness
         else:
@@ -307,23 +310,37 @@ class ClusterAbundance(Updatable):
                 * redshift_arg.p(arg[0], arg[1])
             )
 
-        Ncm.cfg_init()
-        int_nd = CountsIntegralND(
-            len(index_map), integrand, index_map, arg, ccl_cosmo, mass_arg, redshift_arg
-        )
-        int_nd.set_reltol(self.reltol)
-        res = Ncm.Vector.new(1)
-        err = Ncm.Vector.new(1)
-        int_nd.set_method(self.integ_method)
-        bound_l = []
-        bound_u = []
-        for item in bounds_list:
-            bound_l.append(item[0])
-            bound_u.append(item[1])
-        int_nd.eval(
-            Ncm.Vector.new_array(bound_l), Ncm.Vector.new_array(bound_u), res, err
-        )
-        return res.get(0)
+        if self.prefer_scipy_integration:
+            return scipy.integrate.nquad(
+                integrand,
+                args=(index_map, arg, ccl_cosmo, mass_arg, redshift_arg),
+                ranges=bounds_list,
+                opts={"epsabs": 0.0, "epsrel": self.reltol},
+            )[0]
+        else:
+            Ncm.cfg_init()
+            int_nd = CountsIntegralND(
+                len(index_map),
+                integrand,
+                index_map,
+                arg,
+                ccl_cosmo,
+                mass_arg,
+                redshift_arg,
+            )
+            int_nd.set_reltol(self.reltol)
+            res = Ncm.Vector.new(1)
+            err = Ncm.Vector.new(1)
+            int_nd.set_method(self.integ_method)
+            bound_l = []
+            bound_u = []
+            for item in bounds_list:
+                bound_l.append(item[0])
+                bound_u.append(item[1])
+            int_nd.eval(
+                Ncm.Vector.new_array(bound_l), Ncm.Vector.new_array(bound_u), res, err
+            )
+            return res.get(0)
 
     def compute(
         self,
