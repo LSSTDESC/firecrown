@@ -17,8 +17,9 @@ from .cluster_mass import ClusterMassArgument
 from .cluster_redshift import ClusterRedshiftArgument
 
 
-class CountsIntegralND(Ncm.IntegralND):
-    """Test class for IntegralND."""
+class CountsIntegralND(Ncm.IntegralND):  # type: ignore
+    """Integral subclass used by the ClusterAbundance
+    to compute the integrals using numcosmo."""
 
     def __init__(self, dim, fun, *args):
         super().__init__()
@@ -328,10 +329,10 @@ class ClusterAbundance(Updatable):
                 mass_arg,
                 redshift_arg,
             )
+            int_nd.set_method(self.integ_method)
             int_nd.set_reltol(self.reltol)
             res = Ncm.Vector.new(1)
             err = Ncm.Vector.new(1)
-            int_nd.set_method(self.integ_method)
             bound_l = []
             bound_u = []
             for item in bounds_list:
