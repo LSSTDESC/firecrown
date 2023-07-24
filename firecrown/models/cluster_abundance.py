@@ -17,7 +17,7 @@ from .cluster_mass import ClusterMassArgument
 from .cluster_redshift import ClusterRedshiftArgument
 
 
-class CountsIntegralND(Ncm.IntegralND):  # type: ignore
+class CountsIntegralND(Ncm.IntegralND):
     """Integral subclass used by the ClusterAbundance
     to compute the integrals using numcosmo."""
 

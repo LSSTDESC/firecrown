@@ -19,7 +19,7 @@ from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 
-reveal_type(Ncm.Data)
+
 class MappingNumCosmo(Mapping):
     """Mapping support for NumCosmo, this is a subclass of Mapping that
     provides a mapping from a NumCosmo Cosmological model to a CCL cosmology.
