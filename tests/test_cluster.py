@@ -90,6 +90,7 @@ def fixture_cluster_mass_rich_args(parameters):
 def fixture_cluster_abundance(parameters):
     """Fixture for cluster objects."""
 
+    # TODO: remove try/except when pyccl 3.0 is released
     try:
         hmd_200 = ccl.halos.MassDef200c()
     except TypeError:
