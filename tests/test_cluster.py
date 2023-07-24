@@ -1,6 +1,6 @@
 """Tests for the cluster module."""
 
-from typing import Any, Dict
+from typing import Any, Dict, List
 import itertools
 import math
 
@@ -36,7 +36,7 @@ def fixture_parameters():
             "mu_p1": 0.8,
             "mu_p2": 0.0,
             "sigma_p0": 0.3,
-            "sigma_p1": 0.8,
+            "sigma_p1": 0.08,
             "sigma_p2": 0.0,
         }
     )
@@ -90,7 +90,12 @@ def fixture_cluster_mass_rich_args(parameters):
 def fixture_cluster_abundance(parameters):
     """Fixture for cluster objects."""
 
-    hmd_200 = ccl.halos.MassDef200c
+    # TODO: remove try/except when pyccl 3.0 is released
+    try:
+        hmd_200 = ccl.halos.MassDef200c()
+    except TypeError:
+        hmd_200 = ccl.halos.MassDef200c
+
     hmf_args: Dict[str, Any] = {}
     hmf_name = "Bocquet16"
     sky_area = 489
@@ -122,16 +127,41 @@ def test_initialize_objects(
 
 
 def test_cluster_mass_function_compute(
-    ccl_cosmo: ccl.Cosmology, cluster_abundance, z_args, logM_args, rich_args
+    ccl_cosmo: ccl.Cosmology,
+    cluster_abundance: ClusterAbundance,
+    z_args: List[ClusterRedshiftArgument],
+    logM_args: List[ClusterMassArgument],
+    rich_args: List[ClusterMassArgument],
 ):
     """Test cluster mass function computations."""
 
     for redshift_arg, logM_arg, rich_arg in itertools.product(
         z_args, logM_args, rich_args
     ):
-        assert math.isfinite(
-            cluster_abundance.compute(ccl_cosmo, rich_arg, redshift_arg)
-        )
-        assert math.isfinite(
-            cluster_abundance.compute(ccl_cosmo, logM_arg, redshift_arg)
-        )
+        count_rich = cluster_abundance.compute(ccl_cosmo, rich_arg, redshift_arg)
+        assert math.isfinite(count_rich)
+        assert count_rich > 0.0
+        count_mass = cluster_abundance.compute(ccl_cosmo, logM_arg, redshift_arg)
+        assert math.isfinite(count_mass)
+        assert count_mass > 0.0
+
+
+def test_cluster_mass_function_compute_scipy(
+    ccl_cosmo: ccl.Cosmology,
+    cluster_abundance: ClusterAbundance,
+    z_args: List[ClusterRedshiftArgument],
+    logM_args: List[ClusterMassArgument],
+    rich_args: List[ClusterMassArgument],
+):
+    """Test cluster mass function computations."""
+
+    for redshift_arg, logM_arg, rich_arg in itertools.product(
+        z_args, logM_args, rich_args
+    ):
+        cluster_abundance.prefer_scipy_integration = True
+        count_rich = cluster_abundance.compute(ccl_cosmo, rich_arg, redshift_arg)
+        assert math.isfinite(count_rich)
+        assert count_rich > 0.0
+        count_mass = cluster_abundance.compute(ccl_cosmo, logM_arg, redshift_arg)
+        assert math.isfinite(count_mass)
+        assert count_mass > 0.0

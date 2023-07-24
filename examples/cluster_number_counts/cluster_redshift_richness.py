@@ -27,7 +27,12 @@ def build_likelihood(build_parameters):
     cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
     cluster_z = ClusterRedshiftSpec()
 
-    hmd_200 = ccl.halos.MassDef200m()
+    # TODO: remove try/except when pyccl 3.0 is released
+    try:
+        hmd_200 = ccl.halos.MassDef200m()
+    except TypeError:
+        hmd_200 = ccl.halos.MassDef200m
+
     hmf_args: Dict[str, Any] = {}
     hmf_name = "Tinker08"
 
