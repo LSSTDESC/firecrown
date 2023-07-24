@@ -320,26 +320,26 @@ class ClusterAbundance(Updatable):
                 ranges=bounds_list,
                 opts={"epsabs": self.abstol, "epsrel": self.reltol},
             )[0]
-        else:
-            Ncm.cfg_init()
-            int_nd = CountsIntegralND(
-                len(index_map),
-                integrand,
-                index_map,
-                arg,
-                ccl_cosmo,
-                mass_arg,
-                redshift_arg,
-            )
-            int_nd.set_method(self.integ_method)
-            int_nd.set_reltol(self.reltol)
-            int_nd.set_abstol(self.abstol)
-            res = Ncm.Vector.new(1)
-            err = Ncm.Vector.new(1)
 
-            bl, bu = zip(*bounds_list)
-            int_nd.eval(Ncm.Vector.new_array(bl), Ncm.Vector.new_array(bu), res, err)
-            return res.get(0)
+        Ncm.cfg_init()
+        int_nd = CountsIntegralND(
+            len(index_map),
+            integrand,
+            index_map,
+            arg,
+            ccl_cosmo,
+            mass_arg,
+            redshift_arg,
+        )
+        int_nd.set_method(self.integ_method)
+        int_nd.set_reltol(self.reltol)
+        int_nd.set_abstol(self.abstol)
+        res = Ncm.Vector.new(1)
+        err = Ncm.Vector.new(1)
+
+        bl, bu = zip(*bounds_list)
+        int_nd.eval(Ncm.Vector.new_array(bl), Ncm.Vector.new_array(bu), res, err)
+        return res.get(0)
 
     def compute(
         self,
