@@ -13,7 +13,7 @@ import sacc
 from ....modeling_tools import ModelingTools
 from .statistic import Statistic, DataVector, TheoryVector
 from .... import parameters
-from ....parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ....parameters import RequiredParameters, DerivedParameterCollection
 
 
 class Supernova(Statistic):
@@ -26,9 +26,8 @@ class Supernova(Statistic):
 
         self.sacc_tracer = sacc_tracer
         self.data_vector: Optional[DataVector] = None
-        # pylint: disable-next=invalid-name
         self.a: Optional[npt.NDArray[np.float64]] = None
-        self.M = parameters.create()  # pylint: disable-msg=invalid-name
+        self.M = parameters.create()
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -36,17 +35,10 @@ class Supernova(Statistic):
         data_points = sacc_data.get_data_points(
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
-        # pylint: disable-next=invalid-name
         z = np.array([dp.get_tag("z") for dp in data_points])
         self.a = 1.0 / (1.0 + z)
         self.data_vector = DataVector.from_list([dp.value for dp in data_points])
         self.sacc_indices = np.arange(len(self.data_vector))
-
-    @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
 
     @final
     def _reset(self):

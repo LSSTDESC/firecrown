@@ -9,6 +9,7 @@ dependencies:
   - flake8
   - mypy
   - numpy>=1.16
+  - plantuml
   - pip
   - pyccl>=2.0
   - pytest

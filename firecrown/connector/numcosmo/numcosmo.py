@@ -9,28 +9,21 @@ from typing import Dict, Union, List, Any, Optional
 import numpy as np
 import pyccl as ccl
 
-import gi
+from numcosmo_py import Nc, Ncm
 
-gi.require_version("NumCosmo", "1.0")
-gi.require_version("NumCosmoMath", "1.0")
-
-# pylint: disable=wrong-import-position
-from gi.repository import NumCosmo as Nc  # noqa: E402
-from gi.repository import NumCosmoMath as Ncm  # noqa: E402
-
-from firecrown.likelihood.likelihood import load_likelihood  # noqa: E402
-from firecrown.likelihood.likelihood import Likelihood  # noqa: E402
-from firecrown.likelihood.likelihood import NamedParameters  # noqa: E402
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian  # noqa: E402
-from firecrown.parameters import ParamsMap  # noqa: E402
-from firecrown.connector.mapping import Mapping, build_ccl_background_dict  # noqa: E402
-from firecrown.modeling_tools import ModelingTools  # noqa: E402
-
-# pylint: enable=wrong-import-position
+from firecrown.likelihood.likelihood import load_likelihood
+from firecrown.likelihood.likelihood import Likelihood
+from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.parameters import ParamsMap
+from firecrown.connector.mapping import Mapping, build_ccl_background_dict
+from firecrown.modeling_tools import ModelingTools
 
 
 class MappingNumCosmo(Mapping):
-    """Mapping support for NumCosmo."""
+    """Mapping support for NumCosmo, this is a subclass of Mapping that
+    provides a mapping from a NumCosmo Cosmological model to a CCL cosmology.
+    It alsos convert NumCosmo models to `ParamsMap`s."""
 
     def __init__(
         self,
@@ -39,11 +32,13 @@ class MappingNumCosmo(Mapping):
         p_ml: Optional[Nc.PowspecML] = None,
         p_mnl: Optional[Nc.PowspecMNL] = None,
         dist: Nc.Distance,
+        model_list: List[str],
     ):
         super().__init__(require_nonlinear_pk=require_nonlinear_pk)
         self.p_ml = p_ml
         self.p_mnl = p_mnl
         self.dist = dist
+        self.model_list = model_list
 
     def set_params_from_numcosmo(
         self, mset: Ncm.MSet
@@ -52,6 +47,7 @@ class MappingNumCosmo(Mapping):
         those read from NumCosmo."""
 
         hi_cosmo = mset.peek(Nc.HICosmo.id())
+        assert isinstance(hi_cosmo, Nc.HICosmo)
 
         if self.p_ml is not None:
             self.p_ml.prepare_if_needed(hi_cosmo)
@@ -59,12 +55,12 @@ class MappingNumCosmo(Mapping):
             self.p_mnl.prepare_if_needed(hi_cosmo)
         self.dist.prepare_if_needed(hi_cosmo)
 
-        h = hi_cosmo.h()  # pylint: disable-msg=C0103
-        Omega_b = hi_cosmo.Omega_b0()  # pylint: disable-msg=invalid-name
-        Omega_c = hi_cosmo.Omega_c0()  # pylint: disable-msg=invalid-name
-        Omega_k = hi_cosmo.Omega_k0()  # pylint: disable-msg=invalid-name
-        Neff = hi_cosmo.Neff()  # pylint: disable-msg=invalid-name
-        T_gamma0 = hi_cosmo.T_gamma0()  # pylint: disable-msg=invalid-name
+        h = hi_cosmo.h()
+        Omega_b = hi_cosmo.Omega_b0()
+        Omega_c = hi_cosmo.Omega_c0()
+        Omega_k = hi_cosmo.Omega_k0()
+        Neff = hi_cosmo.Neff()
+        T_gamma0 = hi_cosmo.T_gamma0()
 
         m_nu: Union[float, List[float]] = 0.0
         if hi_cosmo.NMassNu() == 0:
@@ -78,11 +74,11 @@ class MappingNumCosmo(Mapping):
                 m_nu[i] = nu_info[0]
 
         if isinstance(hi_cosmo, Nc.HICosmoDEXcdm):
-            w0 = hi_cosmo.props.w  # pylint: disable-msg=C0103
-            wa = 0.0  # pylint: disable-msg=C0103
+            w0 = hi_cosmo.props.w
+            wa = 0.0
         elif isinstance(hi_cosmo, Nc.HICosmoDECpl):
-            w0 = hi_cosmo.props.w0  # pylint: disable-msg=C0103
-            wa = hi_cosmo.props.w1  # pylint: disable-msg=C0103
+            w0 = hi_cosmo.props.w0
+            wa = hi_cosmo.props.w1
         else:
             raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
@@ -94,8 +90,8 @@ class MappingNumCosmo(Mapping):
                 f"NumCosmo HIPrim object type {type(hiprim)} not supported."
             )
 
-        A_s = hiprim.SA_Ampl()  # pylint: disable-msg=invalid-name
-        n_s = hiprim.props.n_SA  # pylint: disable-msg=invalid-name
+        A_s = hiprim.SA_Ampl()
+        n_s = hiprim.props.n_SA
 
         # pylint: disable=duplicate-code
         self.set_params(
@@ -118,10 +114,11 @@ class MappingNumCosmo(Mapping):
         """Calculate the arguments necessary for CCL for this sample."""
         ccl_args: Dict[str, Any] = {}
         hi_cosmo = mset.peek(Nc.HICosmo.id())
+        assert isinstance(hi_cosmo, Nc.HICosmo)
 
         if self.p_ml:
             p_m_spline = self.p_ml.get_spline_2d(hi_cosmo)
-            z = np.array(p_m_spline.xv.dup_array())  # pylint: disable-msg=invalid-name
+            z = np.array(p_m_spline.xv.dup_array())
             k = np.array(p_m_spline.yv.dup_array())
 
             scale = self.redshift_to_scale_factor(z)
@@ -138,7 +135,6 @@ class MappingNumCosmo(Mapping):
 
         if self.p_mnl:
             p_mnl_spline = self.p_mnl.get_spline_2d(hi_cosmo)
-            # pylint: disable-next=invalid-name
             z = np.array(p_mnl_spline.xv.dup_array())
             k = np.array(p_mnl_spline.yv.dup_array())
 
@@ -177,6 +173,34 @@ class MappingNumCosmo(Mapping):
 
         return ccl_args
 
+    def create_params_map(self, mset: Ncm.MSet) -> ParamsMap:
+        """Create a ParamsMap from a NumCosmo MSet."""
+
+        params_map = ParamsMap()
+        for model_ns in self.model_list:
+            mid = mset.get_id_by_ns(model_ns)
+            if mid < 0:
+                raise RuntimeError(
+                    f"Model name {model_ns} was not found in the model set."
+                )
+            model = mset.peek(mid)
+            if model is None:
+                raise RuntimeError(f"Model {model_ns} was not found in the model set.")
+            param_names = model.param_names()
+            model_dict = {
+                param: model.param_get_by_name(param) for param in param_names
+            }
+            shared_keys = set(model_dict).intersection(params_map)
+            if len(shared_keys) > 0:
+                raise RuntimeError(
+                    f"The following keys `{shared_keys}` appear "
+                    f"in more than one model used by the "
+                    f"module {self.model_list}."
+                )
+            params_map = ParamsMap({**params_map, **model_dict})
+
+        return params_map
+
 
 class NumCosmoData(Ncm.Data):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
@@ -188,7 +212,6 @@ class NumCosmoData(Ncm.Data):
         likelihood: Likelihood,
         tools: ModelingTools,
         mapping: MappingNumCosmo,
-        model_list: List[str],
     ):
         super().__init__()
         self.likelihood: Likelihood = likelihood
@@ -196,8 +219,8 @@ class NumCosmoData(Ncm.Data):
         self.dof: int = 100
         self.len: int = 100
         self.mapping = mapping
-        self.model_list: List[str] = model_list
         self.ccl_cosmo: Optional[ccl.Cosmology] = None
+        self.set_init(True)
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
         """
@@ -213,11 +236,11 @@ class NumCosmoData(Ncm.Data):
 
     def do_begin(self):  # pylint: disable-msg=arguments-differ
         """
-        # Implements the virtual Ncm.Data method `begin`.
-        # This method usually do some groundwork in the data
-        # before the actual calculations. For example, if the likelihood
-        # involves the decomposition of a constant matrix, it can be done
-        # during `begin` once and then used afterwards.
+        Implements the virtual Ncm.Data method `begin`.
+        This method usually do some groundwork in the data
+        before the actual calculations. For example, if the likelihood
+        involves the decomposition of a constant matrix, it can be done
+        during `begin` once and then used afterwards.
         """
 
     def do_prepare(self, mset: Ncm.MSet):  # pylint: disable-msg=arguments-differ
@@ -227,31 +250,15 @@ class NumCosmoData(Ncm.Data):
         to be able to calculate the likelihood afterwards.
         """
         self.dof = self.len - mset.fparams_len()
-        firecrown_params = ParamsMap()
         self.likelihood.reset()
         self.tools.reset()
 
         self.mapping.set_params_from_numcosmo(mset)
         ccl_args = self.mapping.calculate_ccl_args(mset)
         self.ccl_cosmo = ccl.CosmologyCalculator(**self.mapping.asdict(), **ccl_args)
+        params_map = self.mapping.create_params_map(mset)
 
-        for model_ns in self.model_list:
-            mid = mset.get_id_by_ns(model_ns)
-            model = mset.peek(mid)
-            param_names = model.param_names()
-            model_dict = {
-                param: model.param_get_by_name(param) for param in param_names
-            }
-            shared_keys = set(model_dict).intersection(firecrown_params)
-            if len(shared_keys) > 0:
-                raise RuntimeError(
-                    f"The following keys `{shared_keys}` appear "
-                    f"in more than one model used by the "
-                    f"module {self.model_list}."
-                )
-            firecrown_params = ParamsMap({**firecrown_params, **model_dict})
-
-        self.likelihood.update(firecrown_params)
+        self.likelihood.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
 
     def do_m2lnL_val(self, _):  # pylint: disable-msg=arguments-differ
@@ -274,7 +281,6 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         likelihood: ConstGaussian,
         tools: ModelingTools,
         mapping: MappingNumCosmo,
-        model_list: List[str],
     ):
         """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
         with a constant covariance."""
@@ -287,16 +293,21 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.likelihood: ConstGaussian = likelihood
         self.tools: ModelingTools = tools
         self.mapping = mapping
-        self.model_list: List[str] = model_list
         self.ccl_cosmo: Optional[ccl.Cosmology] = None
 
         self.dof = nrows
         self.len = nrows
-        self.cov.set_from_array(cov.flatten())  # pylint: disable-msg=no-member
+        self.peek_cov().set_from_array(
+            cov.flatten().tolist()
+        )  # pylint: disable-msg=no-member
 
         data_vector = likelihood.get_data_vector()
         assert len(data_vector) == ncols
-        self.y.set_array(data_vector)  # pylint: disable-msg=no-member
+        self.peek_mean().set_array(
+            data_vector.tolist()
+        )  # pylint: disable-msg=no-member
+
+        self.set_init(True)
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
         """
@@ -326,34 +337,18 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         to be able to calculate the likelihood afterwards.
         """
         self.dof = self.len - mset.fparams_len()
-        firecrown_params = ParamsMap()
         self.likelihood.reset()
         self.tools.reset()
 
         self.mapping.set_params_from_numcosmo(mset)
         ccl_args = self.mapping.calculate_ccl_args(mset)
         self.ccl_cosmo = ccl.CosmologyCalculator(**self.mapping.asdict(), **ccl_args)
+        params_map = self.mapping.create_params_map(mset)
 
-        for model_ns in self.model_list:
-            mid = mset.get_id_by_ns(model_ns)
-            model = mset.peek(mid)
-            param_names = model.param_names()
-            model_dict = {
-                param: model.param_get_by_name(param) for param in param_names
-            }
-            shared_keys = set(model_dict).intersection(firecrown_params)
-            if len(shared_keys) > 0:
-                raise RuntimeError(
-                    f"The following keys `{shared_keys}` appear "
-                    f"in more than one model used by the "
-                    f"module {self.model_list}."
-                )
-            firecrown_params = ParamsMap({**firecrown_params, **model_dict})
-
-        self.likelihood.update(firecrown_params)
+        self.likelihood.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
 
-    # pylint: disable-next=invalid-name,arguments-differ
+    # pylint: disable-next=arguments-differ
     def do_mean_func(self, _, mean_vector):
         """
         Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
@@ -373,19 +368,15 @@ class NumCosmoFactory:
         self,
         likelihood_source: str,
         build_parameters: NamedParameters,
-        model_list: List[str],
         mapping: MappingNumCosmo,
     ):
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
         self.mapping: MappingNumCosmo = mapping
         if isinstance(likelihood, ConstGaussian):
-            self.data: Ncm.Data = NumCosmoGaussCov(
-                likelihood, tools, mapping, model_list
-            )
+            self.data: Ncm.Data = NumCosmoGaussCov(likelihood, tools, mapping)
         else:
-            self.data = NumCosmoData(likelihood, tools, mapping, model_list)
-        self.data.set_init(True)
+            self.data = NumCosmoData(likelihood, tools, mapping)
 
     def get_data(self) -> Ncm.Data:
         """This method return the appropriated Ncm.Data class to be used by NumCosmo."""

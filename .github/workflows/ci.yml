@@ -11,24 +11,23 @@ on:
       - '*'
 
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '47 1 * * *'
 
 jobs:
   firecrown-miniforge:
-    continue-on-error: true
     name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
     runs-on: ${{ matrix.os }}-latest
     strategy:
       matrix:
         os: ["ubuntu", "macos"]
-        python-version: ["3.8", "3.9", "3.10"]
+        python-version: ["3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - name: Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-          auto-update-conda: true
-          activate-environment: firecrown
+          aut o-update-conda: true
+          activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           miniforge-variant: Mambaforge
           show-channel-urls: true
@@ -47,14 +46,14 @@ jobs:
         id: cache
       - name: Update environment
         run: |
-          conda env update -n firecrown -f environment.yml
+          conda env update -n firecrown_developer -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
           export FIRECROWN_DIR=${PWD}
           conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
-          conda activate firecrown
+          conda activate firecrown_developer
           pip install --no-deps -e .
       - name: Setting up CosmoSIS    
         shell: bash -l {0}
@@ -64,12 +63,14 @@ jobs:
           cosmosis-build-standard-library
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
-          conda activate firecrown
+          conda activate firecrown_developer
         if: steps.cache.outputs.cache-hit != 'true'      
       - name: Setting up Cobaya
         shell: bash -l {0}
         run: python -m pip install cobaya
         if: steps.cache.outputs.cache-hit != 'true'      
+      - name: Ensure clear Jupyter Notebooks
+        uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
       - name: Running black check
         shell: bash -l {0}
         run: |
@@ -91,15 +92,15 @@ jobs:
       - name: Running pylint
         shell: bash -l {0}
         run: |
-          pylint --rcfile pylintrc_for_tests --recursive=y tests
-          pylint --recursive=y firecrown/connector
-          pylint --recursive=y firecrown/*.py
-          pylint --recursive=y firecrown/likelihood/*.py
-          pylint --recursive=y firecrown/likelihood/gauss_family/*.py
+          pylint --rcfile tests/pylintrc  tests
+          pylint firecrown/connector
+          pylint firecrown/*.py
+          pylint firecrown/likelihood/*.py
+          pylint firecrown/likelihood/gauss_family/*.py
 
       - name: Running pytest
         shell: bash -l {0}
-        run: python -m pytest -vv 
+        run: python -m pytest -vv
       - name: Running example - cosmosis - cosmic-shear
         shell: bash -l {0}
         run: |
@@ -146,3 +147,21 @@ jobs:
         run: |
           cd examples/srd_sn
           python numcosmo_run.py
+      - name: Running example - cosmosis - cluster_number_counts
+        shell: bash -l {0}
+        run: |
+          cd examples/cluster_number_counts
+          python generate_rich_mean_mass_sacc_data.py
+          cosmosis cluster_counts_redshift_richness.ini
+          cosmosis cluster_mean_mass_redshift_richness.ini
+          cosmosis cluster_counts_mean_mass_redshift_richness.ini
+      - name: Code coverage
+        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
+        shell: bash -l {0}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python -m pip install --no-input coveralls
+          coverage run --source=firecrown -m pytest tests/
+          coveralls --service=github
+

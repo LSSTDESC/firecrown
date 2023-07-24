@@ -23,7 +23,7 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import ParamsMap, RequiredParameters, DerivedParameterCollection
+from ...parameters import RequiredParameters, DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
@@ -38,6 +38,8 @@ class GaussFamily(Likelihood):
         statistics: Sequence[Statistic],
     ):
         super().__init__()
+        if len(statistics) == 0:
+            raise ValueError("GaussFamily requires at least one statistic")
         self.statistics = UpdatableCollection(statistics)
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
@@ -122,20 +124,10 @@ class GaussFamily(Likelihood):
         self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
         self.measured_data_vector: npt.NDArray[np.float64] = data_vector
 
-        # pylint: disable-next=C0103
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
 
         return chisq
-
-    @final
-    def _update(self, params: ParamsMap) -> None:
-        """Implementation of the Likelihood interface method _update.
-
-        This updates all statistics and calls teh abstract method
-        _update_gaussian_family."""
-        self.statistics.update(params)
-        self._update_gaussian_family(params)
 
     @final
     def _reset(self) -> None:
@@ -154,11 +146,6 @@ class GaussFamily(Likelihood):
         )
 
         return derived_parameters
-
-    @abstractmethod
-    def _update_gaussian_family(self, params: ParamsMap) -> None:
-        """Abstract method to update GaussianFamily state. Must be implemented by all
-        subclasses."""
 
     @abstractmethod
     def _reset_gaussian_family(self) -> None:

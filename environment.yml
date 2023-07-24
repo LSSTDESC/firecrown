@@ -1,4 +1,4 @@
-name: firecrown
+name: firecrown_developer
 channels:
   - conda-forge
 dependencies:
@@ -8,6 +8,7 @@ dependencies:
   - cosmosis-build-standard-library
   - numcosmo >=0.16.0
   - coverage
+  - cython < 3.0.0
   - dill
   - fitsio
   - flake8
@@ -24,10 +25,11 @@ dependencies:
     - cobaya
   - portalocker
   - pybobyqa
-  - pyccl
+  - pyccl >= 2.8.0
   - pylint
   - pytest
   - pyyaml
+  - types-pyyaml
   - requests
   - sacc
   - scipy

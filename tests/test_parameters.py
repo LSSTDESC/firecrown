@@ -1,3 +1,6 @@
+"""
+Tests for the module firecrown.parameters.
+"""
 import pytest
 import numpy as np
 from firecrown.parameters import RequiredParameters, parameter_get_full_name, ParamsMap

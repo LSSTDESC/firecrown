@@ -101,7 +101,7 @@ class Mapping(ABC):
             category=DeprecationWarning,
         )
 
-    def transform_h_to_h_over_h0(self, h):  # pylint: disable-msg=C0103
+    def transform_h_to_h_over_h0(self, h):
         """Transform distances h to :math:`h/h_0`."""
         assert h is not None  # use assertion to silence pylint warning
         warnings.simplefilter("always", DeprecationWarning)
@@ -139,31 +139,31 @@ class Mapping(ABC):
         # Typecheck is done automatically using the descriptors and is done to
         # avoid void very confusing error messages at a later time in case of
         # error.
-        self.Omega_c = Omega_c  # pylint: disable-msg=C0103
-        self.Omega_b = Omega_b  # pylint: disable-msg=C0103
-        self.h = h  # pylint: disable-msg=C0103
+        self.Omega_c = Omega_c
+        self.Omega_b = Omega_b
+        self.h = h
 
         if A_s is not None and sigma8 is not None:
             raise ValueError("Exactly one of A_s and sigma8 must be supplied")
         if sigma8 is None:
-            self.A_s = A_s  # pylint: disable-msg=C0103
-            self.sigma8 = None  # pylint: disable-msg=C0103
+            self.A_s = A_s
+            self.sigma8 = None
         else:
-            self.A_s = None  # pylint: disable-msg=C0103
-            self.sigma8 = sigma8  # pylint: disable-msg=C0103
+            self.A_s = None
+            self.sigma8 = sigma8
 
         self.n_s = n_s
-        self.Omega_k = Omega_k  # pylint: disable-msg=C0103
-        self.Omega_g = None  # pylint: disable-msg=C0103
-        self.Neff = Neff  # pylint: disable-msg=C0103
+        self.Omega_k = Omega_k
+        self.Omega_g = None
+        self.Neff = Neff
         self.m_nu = m_nu
         self.m_nu_type = m_nu_type
-        self.w0 = w0  # pylint: disable-msg=C0103
-        self.wa = wa  # pylint: disable-msg=C0103
-        self.T_CMB = T_CMB  # pylint: disable-msg=C0103
+        self.w0 = w0
+        self.wa = wa
+        self.T_CMB = T_CMB
 
     @staticmethod
-    def redshift_to_scale_factor(z):  # pylint: disable-msg=C0103
+    def redshift_to_scale_factor(z):
         """Given arrays of redshift returns an array of scale factor with the
         inverse order."""
 
@@ -192,13 +192,13 @@ class Mapping(ABC):
             "Omega_g": self.Omega_g,
             "Neff": self.Neff,
             "m_nu": self.m_nu,
-            "m_nu_type": self.m_nu_type,
+            "mass_split": self.m_nu_type,
             "w0": self.w0,
             "wa": self.wa,
             "T_CMB": self.T_CMB,
         }
 
-    def get_H0(self) -> float:  # pylint: disable-msg=C0103
+    def get_H0(self) -> float:
         """Return the value of H0."""
         return self.h * 100.0
 
@@ -247,7 +247,6 @@ class MappingCosmoSIS(Mapping):
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
 
-        # pylint: disable=invalid-name
         h = cosmosis_params.get_float("h0")
         Omega_b = cosmosis_params.get_float("omega_b")
         Omega_c = cosmosis_params.get_float("omega_c")
@@ -263,7 +262,6 @@ class MappingCosmoSIS(Mapping):
         m_nu_type = "normal"
         w0 = cosmosis_params.get_float("w")
         wa = cosmosis_params.get_float("wa")
-        # pylint: enable=invalid-name
 
         # pylint: disable=duplicate-code
         self.set_params(
@@ -388,23 +386,23 @@ class MappingCAMB(Mapping):
         # CAMB can use different parameters in place of H0, we must deal with this
         # possibility here.
 
-        H0 = params_values["H0"]  # pylint: disable-msg=C0103
-        As = params_values["As"]  # pylint: disable-msg=C0103
-        ns = params_values["ns"]  # pylint: disable-msg=C0103
+        H0 = params_values["H0"]
+        As = params_values["As"]
+        ns = params_values["ns"]
         ombh2 = params_values["ombh2"]
         omch2 = params_values["omch2"]
-        Neff = params_values["nnu"]  # pylint: disable-msg=C0103
+        Neff = params_values["nnu"]
         m_nu = params_values["mnu"]
-        Omega_k0 = params_values["omk"]  # pylint: disable-msg=C0103
+        Omega_k0 = params_values["omk"]
 
         m_nu_type = "normal"
-        h0 = H0 / 100.0  # pylint: disable-msg=C0103
+        h0 = H0 / 100.0
         h02 = h0 * h0
-        Omega_b0 = ombh2 / h02  # pylint: disable-msg=C0103
-        Omega_c0 = omch2 / h02  # pylint: disable-msg=C0103
+        Omega_b0 = ombh2 / h02
+        Omega_c0 = omch2 / h02
 
-        w = params_values.get("w", -1.0)  # pylint: disable-msg=C0103
-        wa = params_values.get("wa", 0.0)  # pylint: disable-msg=C0103
+        w = params_values.get("w", -1.0)
+        wa = params_values.get("wa", 0.0)
 
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default

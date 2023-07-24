@@ -61,10 +61,10 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
                 )
 
     # Create the likelihood from the statistics
-    pt_calculator = pyccl.nl_pt.PTCalculator(
+    pt_calculator = pyccl.nl_pt.EulerianPTCalculator(
         with_NC=False,
         with_IA=True,
-        with_dd=True,
+        # with_dd=True,
         log10k_min=-4,
         log10k_max=2,
         nk_per_decade=20,
@@ -100,7 +100,7 @@ def run_likelihood() -> None:
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     src0_tracer = sacc_data.get_tracer("src0")
-    z, nz = src0_tracer.z, src0_tracer.nz  # pylint: disable-msg=invalid-name
+    z, nz = src0_tracer.z, src0_tracer.nz
 
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
@@ -111,20 +111,25 @@ def run_likelihood() -> None:
     a_2 = 0.5
     a_d = 0.5
     c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
-        ccl_cosmo, z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
+        ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
 
     # Code that creates a Pk2D object:
-    ptc = pyccl.nl_pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
+    ptc = pyccl.nl_pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
+        cosmo=ccl_cosmo,
     )
     ptt_i = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
         c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d)
     )
     ptt_m = pyccl.nl_pt.PTMatterTracer()
     # IAs x matter
-    pk_im = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pyccl.nl_pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
+    pk_im = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_m)
+    pk_ii = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_i)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -183,7 +188,6 @@ def run_likelihood() -> None:
         ia_bias=(z, np.ones_like(z)),
         use_A_ia=False,
     )
-    # pylint: disable=invalid-name
     cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_im)
     cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_ii)
     # The weak gravitational lensing power spectrum
@@ -192,7 +196,6 @@ def run_likelihood() -> None:
     cl_theory = (
         cl_GG + 2 * cl_GI + cl_II
     )  # normally we would also have a third term, +cl_II).
-    # pylint: enable=invalid-name
 
     # plt.plot(x, y_theory, label="Total")
     plt.plot(ells, cells_gg, label="GG firecrown")
@@ -213,8 +216,7 @@ def run_likelihood() -> None:
     # plt.xlim(right=5e3)
     # plt.ylim(bottom=1e-12)
     plt.title("TATT IA")
-    if not os.path.exists('plots'): os.makedirs('plots')
-    plt.savefig("plots/tatt.png", facecolor="white", dpi=300)
+    plt.savefig("tatt.png", facecolor="white", dpi=300)
 
     plt.show()
 

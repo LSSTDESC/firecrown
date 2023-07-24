@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Dict, Optional, Any
+from typing import final, Dict, Optional, Any, List, Union
 from abc import ABC, abstractmethod
 from collections import UserList
 from .parameters import (
@@ -25,6 +25,8 @@ from .parameters import (
     parameter_get_full_name,
 )
 from .parameters import DerivedParameterCollection
+
+GeneralUpdatable = Union["Updatable", "UpdatableCollection"]
 
 
 class Updatable(ABC):
@@ -45,13 +47,20 @@ class Updatable(ABC):
         self._sampler_parameters: Dict[str, SamplerParameter] = {}
         self._internal_parameters: Dict[str, InternalParameter] = {}
         self.sacc_tracer: Optional[str] = None
+        self._updatables: List[GeneralUpdatable] = []
 
     def __setattr__(self, key: str, value: Any) -> None:
         """Set the attribute named :python:`key` to the supplied :python:`value`.
 
-        Note that there is special handling for two types: :python:`SamplerParameter`
-        and :python:`InternalParameter`
+        There is special handling for two types: :python:`SamplerParameter`
+        and :python:`InternalParameter`.
+
+        We also keep track of all :python:`Updatable` instance variables added,
+        appending a reference to each to :python:`self._updatables` as well as
+        storing the attribute directly.
         """
+        if isinstance(value, (Updatable, UpdatableCollection)):
+            self._updatables.append(value)
         if isinstance(value, SamplerParameter):
             self.set_sampler_parameter(key, value)
         elif isinstance(value, InternalParameter):
@@ -61,6 +70,12 @@ class Updatable(ABC):
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
         """Assure this InternalParameter has not already been set, and then set it."""
+
+        if not isinstance(value, InternalParameter):
+            raise TypeError(
+                "Can only add InternalParameter objects to internal_parameters"
+            )
+
         if key in self._internal_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
@@ -71,6 +86,12 @@ class Updatable(ABC):
 
     def set_sampler_parameter(self, key: str, value: SamplerParameter) -> None:
         """Assure this SamplerParameter has not already been set, and then set it."""
+
+        if not isinstance(value, SamplerParameter):
+            raise TypeError(
+                "Can only add SamplerParameter objects to sampler_parameters"
+            )
+
         if key in self._sampler_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
@@ -80,43 +101,72 @@ class Updatable(ABC):
         super().__setattr__(key, None)
 
     @final
-    def update(self, params: ParamsMap):
-        """Update self by calling the abstract _update() method.
+    def update(self, params: ParamsMap) -> None:
+        """Update self by calling to prepare for the next MCMC sample.
+
+        We first update the values of sampler parameters from the values in
+        :python:`params`. An error will be raised if any of self's sampler
+        parameters can not be found in :python:`params` or if any internal
+        parameters are provided in :python:`params`.
+
+        We then use the :python:`params` to update each contained Updatable or
+        UpdatableCollection object. The method _update is called to give
+        subclasses an opportunity to do any other preparation for the next
+        MCMC sample.
 
         :param params: new parameter values
         """
-        if not self._updated:
-            for parameter in self._sampler_parameters:
-                try:
-                    value = params.get_from_prefix_param(self.sacc_tracer, parameter)
-                except KeyError as exc:
-                    raise RuntimeError(
-                        f"Missing required parameter "
-                        f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
-                        f" the sampling framework should provide this parameter."
-                        f" The object requiring this parameter is {self}."
-                    ) from exc
-                setattr(self, parameter, value)
-            self._update(params)
-            self._updated = True
+        if self._updated:
+            return
+
+        internal_params = self._internal_parameters.keys() & params.keys()
+        if internal_params:
+            raise TypeError(
+                f"Items of type InternalParameter cannot be modified through "
+                f"update, but {','.join(internal_params)} was specified."
+            )
+
+        for parameter in self._sampler_parameters:
+            try:
+                value = params.get_from_prefix_param(self.sacc_tracer, parameter)
+            except KeyError as exc:
+                raise RuntimeError(
+                    f"Missing required parameter "
+                    f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
+                    f" the sampling framework should provide this parameter."
+                    f" The object requiring this parameter is {self}."
+                ) from exc
+            setattr(self, parameter, value)
+
+        for item in self._updatables:
+            item.update(params)
+
+        self._update(params)
+        # We mark self as updated only after all the internal updates have
+        # worked.
+        self._updated = True
 
     @final
-    def reset(self):
-        """Reset self by calling the abstract _reset() method, and mark as reset."""
+    def reset(self) -> None:
+        """Clean up self by clearing the _updated status and reseting all
+        internals. We call the abstract method _reset to allow derived classes
+        to clean up any additional internals.
+
+        Each MCMC framework connector should call this after handling an MCMC
+        sample."""
         self._updated = False
         self._returned_derived = False
         self._reset()
 
-    @abstractmethod
-    def _update(self, params: ParamsMap) -> None:  # pragma: no cover
-        """Abstract method to be implemented by all concrete classes to update
-        self.
+    def _update(self, params: ParamsMap) -> None:
+        """Do any updating other than calling :python:`update` on contained
+        :python:`Updatable` objects.
 
-        Concrete classes must override this, updating themselves from the given
-        ParamsMap. If the supplied ParamsMap is lacking a required parameter,
+        Implement this method in a subclass only when it has something to do.
+        If the supplied ParamsMap is lacking a required parameter,
         an implementation should raise a TypeError.
 
-        The base class implementation does nothing.
+        This default implementation does nothing.
 
         :param params: a new set of parameter values
         """
@@ -165,11 +215,11 @@ class Updatable(ABC):
         statistical analysis. First call returns the DerivedParameterCollection,
         further calls return None.
         """
-        if not self._returned_derived:
-            self._returned_derived = True
-            return self._get_derived_parameters()
+        if self._returned_derived:
+            return None
 
-        return None
+        self._returned_derived = True
+        return self._get_derived_parameters()
 
     @abstractmethod
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -185,7 +235,9 @@ class Updatable(ABC):
 class UpdatableCollection(UserList):
 
     """UpdatableCollection is a list of Updatable objects and is itself
-    Updatable.
+    supports :python:`update` and :python:`reset` (although it does not inherit
+    from
+    :python:`Updatable`).
 
     Every item in an UpdatableCollection must itself be Updatable. Calling
     update on the collection results in every item in the collection being

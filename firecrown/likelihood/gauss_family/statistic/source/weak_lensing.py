@@ -32,7 +32,7 @@ class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
 
     scale: float
-    z: npt.NDArray[np.float64]  # pylint: disable-msg=invalid-name
+    z: npt.NDArray[np.float64]
     dndz: npt.NDArray[np.float64]
     ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
 
@@ -72,12 +72,6 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
         self.mult_bias = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
 
     @final
     def _reset(self) -> None:
@@ -146,12 +140,6 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -211,12 +199,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Update the parameters of this systematic
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         """Reset this systematic.
 
@@ -237,10 +219,10 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         tracer_arg, in the context of the given cosmology."""
 
         ccl_cosmo = tools.get_ccl_cosmology()
-        z = tracer_arg.z  # pylint: disable-msg=invalid-name
+        z = tracer_arg.z
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
             ccl_cosmo,
-            z,
+            z=z,
             a1=self.ia_a_1,
             a1delta=self.ia_a_d,
             a2=self.ia_a_2,
@@ -327,12 +309,6 @@ class PhotoZShift(WeakLensingSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _update(self, params: ParamsMap):
-        """Perform any updates necessary after the parameters have being updated.
-
-        This implementation has nothing to do."""
-
-    @final
     def _reset(self) -> None:
         pass
 
@@ -412,11 +388,11 @@ class WeakLensing(Source):
         """
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
-        z = getattr(tracer, "z").copy().flatten()  # pylint: disable-msg=invalid-name
-        nz = getattr(tracer, "nz").copy().flatten()  # pylint: disable-msg=invalid-name
+        z = getattr(tracer, "z").copy().flatten()
+        nz = getattr(tracer, "nz").copy().flatten()
         indices = np.argsort(z)
-        z = z[indices]  # pylint: disable-msg=invalid-name
-        nz = nz[indices]  # pylint: disable-msg=invalid-name
+        z = z[indices]
+        nz = nz[indices]
 
         self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
 

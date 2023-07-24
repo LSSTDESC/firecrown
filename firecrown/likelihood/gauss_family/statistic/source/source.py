@@ -52,9 +52,10 @@ class Source(Updatable):
     def _read(self, sacc_data: sacc.Sacc):
         """Abstract method to read the data for this source from the SACC file."""
 
-    @abstractmethod
     def _update_source(self, params: ParamsMap):
-        """Abstract method to update the source from the given ParamsMap."""
+        """Method to update the source from the given ParamsMap. Any subclass
+        that needs to do more than update its contained :python:`Updatable`
+        objects should implement this method."""
 
     @abstractmethod
     def _reset_source(self):

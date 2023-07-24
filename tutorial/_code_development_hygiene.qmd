@@ -1,0 +1,64 @@
+We use a variety of tools to help improve the quality of the Firecrown code.
+Note that as of this release, we are still improving and expanding our use of these tools.
+The continuous integration (CI) system used for Firecrown applies all of these tools automatically and will reject any pull request that fails on one or more of the tools.
+
+Some of the tools we use help to keep the Firecrown code in conformance with the PEP 8[^pep8] style guidelines.
+
+[^pep8]: Python Enhance Proposal (PEP) 8 is the official (from the Python development team) style guide for Python code.
+  This style guide is used for code in the Python distribution itself.
+  It can be read at [https://peps.python.org/pep-0008/](https://peps.python.org/pep-0008/).
+
+We use `black`[^black] as our code formatter.
+In addition to helping to make the Firecrown code easier to read through consistent formatting, this also makes it easier to understand pull requests, since they will not generally contain changes that only change the formatting.
+When used with the `--check` flag, `black` does not modify the code --- it merely reports whether the code layout matches its requirements.
+To reformat code, run `black` without the `--check` flag.
+
+[^black]: Black is a PEP 8 compliant opinionated formatter with its own style.
+  Documentation for black is available at [https://black.readthedocs.io](https://black.readthedocs.io).
+
+We use `flake8`[^flake8] to more completely verify PEP 8 compliance.
+This tool identifies some issues that are not code formatting issues and which are not identified and repaired by `black`.
+Two examples are the PEP 8 specified ordering of `import` statements and identification of unused `import` statements.
+
+[^flake8]: `flake8` is a *linting* tool that helps to identify deviations from the recommended PEP 8 Python coding guidelines.
+  Its documentation is available at [https://flake8.pycqa.org](https://flake8.pycqa.org).
+
+We are using type annotations in Firecrown for several reasons.
+They help in the automatic generation of documentation, and when used with a tool like `mypy` they help make sure the type information in the documentation does not diverge from the code itself.
+They help many different integrated development environments (IDEs) provide better code completion options.
+They also can be used by static type checking tools to identify some types of coding error that otherwise could only be identified through exhaustive testing.
+We strongly recommend that new code added to Firecrown should have appropriate type annotations.
+We use `mypy`[^mypy] as our static type checking tool.
+
+[^mypy]: Mypy is a static type checker for Python.
+  Documentation for it is found at [https://mypy.readthedocs.io](https://mypy.readthedocs.io).
+
+We use `pylint`[^pylint] to help identify additional categories of errors that are not detected by the other tools.
+
+[^pylint]: Pylint is a static code analyzer for Python.
+  Documentation for it is available at [https://pylint.readthedocs.io](https://pylint.readthedocs.io).
+
+We also have unit tests that unfortunately cover only a part of the Firecrown code.
+We use `pytest`[^pytest] to run these tests.
+We are actively working on improving the coverage of the Firecrown unit tests.
+We strongly recommend that any new code be accompanied by unit tests, in addition to examples of use.
+
+[^pytest]: The `pytest` framework makes it easy to write small, readable tests, and can scale to support complex functional testing for applications and libraries.
+  The documentation for `pytest` is available at [https://docs.pytest.org](https://docs.pytest.org).
+
+All of these tools are included in the Conda environment created by the development installation instructions.
+
+The following is the set of commands using these tools that are used by the CI system.
+Since a pull request that fails any of these will be automatically rejected by the CI system, we strongly recommend running them before committing and pushing your code.
+Note that we have not yet completed the cleanup of the whole Firecrown repository, and so we do not yet apply `pylint` to all of the code.
+We strongly recommend that any new code you write *should* be checked with `pylint` before it is committed to the repository.
+We are actively working toward full coverage of the code, and will activate additional checking in the CI system as this work progresses.
+
+```{.bash}
+black --check firecrown tests examples
+flake8 firecrown tests examples
+mypy firecrown tests examples
+pylint --rcfile tests/pylintrc tests
+pylint firecrown/connector firecrown/*.py firecrown/likelihood/*.py firecrown/likelihood/gauss_family/*.py
+python -m pytest -v tests
+```

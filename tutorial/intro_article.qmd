@@ -1,0 +1,54 @@
+---
+title: "An Introduction to Firecrown"
+subtitle: "version 1.4.0"
+author:
+  - Marc Paterno
+  - Sandro Vitenti
+execute:
+  eval: false
+format:
+  html:
+    toc: true
+    theme: [serif, custom.scss]
+    code-overflow: wrap
+reference-location: margin
+citation-location: margin
+---
+
+## Prologue
+
+This document is based on the Firecrown tutorial given at the Feb 2023 DESC Meeting Sprint Session.
+A [recording of this talk](https://stanford.zoom.us/rec/play/L5kfslcPirRmw2-9_75LwU796mHKm7GFAXqKIeF63PFQ7hOd31FbPYWkaLKVIIScflbD45hQJjYcuiQS.MdJLz5hbgThzouy7?continueMode=true&_x_zm_rtaid=pNHwX_FqRpS5HdZOJi3SwA.1679252612462.2f1b7c989ab44f7d7bcf282addeaa789&_x_zm_rhtaid=945) is available.
+
+## What is Firecrown?
+{{< include _what_is_firecrown.qmd >}}
+
+## Basic Firecrown concepts
+{{< include _basic_firecrown_concepts.qmd >}}
+
+## High-level Firecrown classes
+{{< include _high_level_firecrown_classes.qmd >}}
+
+## Building blocks for the `GaussFamily` likelihoods
+{{< include _building_blocks_for_the_gaussfamily_likelihoods.qmd >}}
+
+## Development workflow
+{{< include _development_workflow.qmd >}}
+
+## Examples in the repository
+{{< include _examples_in_the_repository.qmd >}}
+
+## Installation modes
+{{< include _installation_modes.qmd >}}
+
+## Developer installation
+{{< include _developer_installation.qmd >}}
+
+## Setting up a shell session for development
+{{< include _setting_up_a_shell_session_for_development.qmd >}}
+
+## Building Firecrown
+{{< include _building_firecrown.qmd >}}
+
+## Code development hygiene
+{{< include _code_development_hygiene.qmd >}}

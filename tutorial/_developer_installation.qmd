@@ -1,0 +1,44 @@
+The developer installation instructions (below) will:
+
+1. Clone the Firecrown repository.
+2. Create a Conda environment into which all the packages will be installed.
+   This includes both the packages installed using `conda` and those that are installed using `pip`.
+3. Build the CosmoSIS standard library (CSL) for use with Firecrown.
+   The CSL can not, because of licensing issues, be installed with `conda`.
+   It can be built into an already-existing Conda environment.
+
+This installation only needs to be done once.
+
+Note that for Apple computers using M1 chips, special instructions are necessary.
+When Conda support for M1 hardware catches up to the support for Intel hardware this should no longer be needed.
+These are available at [https://firecrown.readthedocs.io/en/stable/apple_m1_instructions.html](https://firecrown.readthedocs.io/en/stable/apple_m1_instructions.html).
+
+```{.bash}
+cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
+git clone https://github.com/LSSTDESC/firecrown.git
+# conda env update, when run as suggested, is able to create a new environment,
+# as well as updating an existing environment.
+conda env update -f firecrown/environment.yml
+conda activate firecrown_developer
+source ${CONDA_PREFIX}/bin/cosmosis-configure
+cosmosis-build-standard-library  # this may take a few minutes
+export CSL_DIR=${PWD}/cosmosis-standard-library
+export FIRECROWN_DIR=${PWD}/firecrown
+export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+```
+
+Since conda V4.8 you can use the following command to include these environment variables in your conda environment:
+
+```{.bash}
+conda env config vars set CSL_DIR="${PWD}/cosmosis-standard-library" FIRECROWN_DIR="${PWD}/firecrown" PYTHONPATH="${PWD}/firecrown/build/lib"
+```
+
+Thus, every time you activate the environment, these variables will be set.
+
+If you do not wish to build the CosmoSIS standard library, perhaps because you intend either to not use it or to use only those parts that do not require compilation, you can instead just clone the CSL repository:
+
+```{.bash}
+# Make sure you are doing this in the same directory as you run the rest of the
+# commands above
+git clone https://github.com/joezuntz/cosmosis-standard-library
+```

@@ -1,37 +1,30 @@
 #!/usr/bin/env python
-
-from firecrown.connector.numcosmo.numcosmo import MappingNumCosmo, NumCosmoFactory
+"""
+Numcosmo example using the :python:`sn_srd` likelihood.
+"""
 
 import math
-import gi
+import yaml
 
 import matplotlib.pyplot as plt
 from scipy.stats import chi2
+from numcosmo_py import Nc, Ncm
 
+from firecrown.connector.numcosmo.numcosmo import (
+    MappingNumCosmo,
+    NumCosmoFactory,
+)
+from firecrown.connector.numcosmo.model import define_numcosmo_model
 from firecrown.likelihood.likelihood import NamedParameters
-
-gi.require_version("NumCosmo", "1.0")
-gi.require_version("NumCosmoMath", "1.0")
-
-from gi.repository import GObject  # noqa: E402
-from gi.repository import NumCosmo as Nc  # noqa: E402
-from gi.repository import NumCosmoMath as Ncm  # noqa: E402
-
 
 Ncm.cfg_init()
 
-mb = Ncm.ModelBuilder.new(Ncm.Model, "NcFirecrown", "Firecrown model interface")
-ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
-sparams = Ncm.ObjArray.load("numcosmo_firecrown_model.oa", ser)
-for i in range(sparams.len()):
-    mb.add_sparam_obj(sparams.get(i))
+with open(r"numcosmo_firecrown_model_snia.yml", "r", encoding="utf8") as modelfile:
+    ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
-NcTypeFirecrown = mb.create()
-GObject.new(NcTypeFirecrown)
-NcFirecrown = NcTypeFirecrown.pytype
-GObject.type_register(NcFirecrown)
+NcFirecrownSNIa = define_numcosmo_model(ncmodel)
 
-cosmo = Nc.HICosmo.new_from_name(Nc.HICosmo, "NcHICosmoDEXcdm{'massnu-length':<1>}")
+cosmo = Nc.HICosmoDEXcdm(massnu_length=1)
 cosmo.omega_x2omega_k()
 cosmo.param_set_by_name("H0", 68.2)
 cosmo.param_set_by_name("Omegak", 0.0)
@@ -61,11 +54,13 @@ cosmo.add_submodel(reion)
 dist = Nc.Distance.new(6.0)
 dist.comoving_distance_spline.set_reltol(1.0e-5)
 
-map_cosmo = MappingNumCosmo(require_nonlinear_pk=False, dist=dist)
+map_cosmo = MappingNumCosmo(
+    require_nonlinear_pk=False, dist=dist, model_list=["NcFirecrownSNIa"]
+)
 
-nc_factory = NumCosmoFactory("sn_srd.py", NamedParameters(), ["NcFirecrown"], map_cosmo)
+nc_factory = NumCosmoFactory("sn_srd.py", NamedParameters(), map_cosmo)
 
-fc = NcFirecrown()
+fc = NcFirecrownSNIa()
 # fc.params_set_default_ftype()
 
 mset = Ncm.MSet()
@@ -80,7 +75,11 @@ dset.append_data(fc_data)
 lh = Ncm.Likelihood(dataset=dset)
 
 fit = Ncm.Fit.new(
-    Ncm.FitType.NLOPT, "ln-neldermead", lh, mset, Ncm.FitGradType.NUMDIFF_FORWARD
+    Ncm.FitType.NLOPT,
+    "ln-neldermead",
+    lh,
+    mset,
+    Ncm.FitGradType.NUMDIFF_FORWARD,
 )
 
 mset.pretty_log()

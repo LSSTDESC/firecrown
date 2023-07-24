@@ -1,0 +1,21 @@
+All these tools provided in Firecrown exist to help you to create an instance of a likelihood for your analysis.
+The function that is used to create this likelihood is called a *factory function*.
+Note that this likelihood function is not creating a new type; it is responsible for creating an instance of the type (e.g. `ConstGaussian`) you have chosen for your analysis.
+The purpose of this factory function is to assemble the artifacts representing the data, modeling effects, systematic effects, etc., into a likelihood object, and to return that likelihood object (and the related modeling tools).
+
+We will concentrate here on the workflow for creating a likelihood that uses `TwoPoint` statistics.
+Before creating the statistics, we have to create the sources, then the statistics.
+One typically creates several sources, both weak lensing sources and number count sources.
+
+Once all the sources are created, we create a `TwoPoint` statistic for each pair of source combinations that we want to use. 
+Naturally, these combinations must be present in the `SACC` object.
+One is free to use just a subset of the available combinations.
+
+Note that, each source has a list of systematics that are applied to it. 
+These systematics can be shared between sources, or they can be specific to a given source.
+When specific to a given source, any parameter name that is used in the systematic is prefixed with the name of the source.
+In contrast, when a systematic is shared between sources, the parameter names are not prefixed.
+
+Currently, the `TwoPoint` statistic caches the `pyccl.Tracer`s that are created for each source.
+This is done to avoid creating the same `Tracer` multiple times.
+We are planning to change this behavior in the future in order to avoid the need to cache the `Tracer`s.

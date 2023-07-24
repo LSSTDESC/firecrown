@@ -102,6 +102,16 @@ class NamedParameters:
         else:
             self.data = dict(mapping)
 
+    def get_bool(self, name: str, default_value: Optional[bool] = None) -> bool:
+        """Return the named parameter as a bool."""
+        if default_value is None:
+            val = self.data[name]
+        else:
+            val = self.data.get(name, default_value)
+
+        assert isinstance(val, bool)
+        return val
+
     def get_string(self, name: str, default_value: Optional[str] = None) -> str:
         """Return the named parameter as a string."""
         if default_value is None:

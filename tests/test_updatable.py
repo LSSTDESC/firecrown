@@ -1,3 +1,6 @@
+"""
+Tests for the Updatable class.
+"""
 import pytest
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
@@ -8,20 +11,7 @@ from firecrown.parameters import (
 )
 
 
-class Missing_update(Updatable):
-    """A type that is abstract because it does not implement _update."""
-
-    def _required_parameters(self):  # pragma: no cover
-        pass
-
-    def _reset(self) -> None:
-        pass
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
-
-class Missing_reset(Updatable):
+class MissingReset(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
 
     def _update(self, params):  # pragma: no cover
@@ -34,7 +24,7 @@ class Missing_reset(Updatable):
         return DerivedParameterCollection([])
 
 
-class Missing_required_parameters(Updatable):
+class MissingRequiredParameters(Updatable):
     """A type that is abstract because it does not implement required_parameters."""
 
     def _update(self, params):  # pragma: no cover
@@ -95,13 +85,10 @@ class SimpleUpdatable(Updatable):
 def test_verify_abstract_interface():
     with pytest.raises(TypeError):
         # pylint: disable-next=E0110,W0612
-        _ = Missing_update()  # type: ignore
+        _ = MissingReset()  # type: ignore
     with pytest.raises(TypeError):
         # pylint: disable-next=E0110,W0612
-        _ = Missing_reset()  # type: ignore
-    with pytest.raises(TypeError):
-        # pylint: disable-next=E0110,W0612
-        _ = Missing_required_parameters()  # type: ignore
+        _ = MissingRequiredParameters()  # type: ignore
 
 
 def test_simple_updatable():
@@ -179,3 +166,73 @@ def test_updatable_collection_insertion():
 
     with pytest.raises(TypeError):
         x[0] = 1
+
+
+def test_set_sampler_parameter():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+
+    assert hasattr(my_updatable, "the_meaning_of_life")
+    assert my_updatable.the_meaning_of_life is None
+
+
+def test_set_sampler_parameter_rejects_internal_parameter():
+    my_updatable = MinimalUpdatable()
+
+    with pytest.raises(TypeError):
+        my_updatable.set_sampler_parameter(
+            "the_meaning_of_life", parameters.create(42.0)
+        )
+
+
+def test_set_sampler_parameter_rejects_duplicates():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+
+    with pytest.raises(ValueError):
+        my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+
+
+def test_set_internal_parameter():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+
+    assert hasattr(my_updatable, "the_meaning_of_life")
+    assert my_updatable.the_meaning_of_life == 42.0
+
+
+def test_set_internal_parameter_rejects_sampler_parameter():
+    my_updatable = MinimalUpdatable()
+    with pytest.raises(TypeError):
+        my_updatable.set_internal_parameter("sampler_param", parameters.create())
+
+
+def test_set_internal_parameter_rejects_duplicates():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+
+    with pytest.raises(ValueError):
+        my_updatable.set_internal_parameter(
+            "the_meaning_of_life", parameters.create(42.0)
+        )
+
+    with pytest.raises(ValueError):
+        my_updatable.set_internal_parameter(
+            "the_meaning_of_life", parameters.create(41.0)
+        )
+
+
+def test_update_rejects_internal_parameters():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+    assert hasattr(my_updatable, "the_meaning_of_life")
+
+    params = ParamsMap({"a": 1.1, "the_meaning_of_life": 34.0})
+    with pytest.raises(
+        TypeError,
+        match="Items of type InternalParameter cannot be modified through update",
+    ):
+        my_updatable.update(params)
+
+    assert my_updatable.a is None
+    assert my_updatable.the_meaning_of_life == 42.0
