@@ -6,7 +6,7 @@ dependencies:
   - charset-normalizer
   - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
-  - numcosmo >=0.18.1
+  - numcosmo >=0.18.2
   - coverage
   - cython < 3.0.0
   - dill

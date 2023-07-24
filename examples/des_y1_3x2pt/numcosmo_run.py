@@ -86,12 +86,12 @@ lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023
 lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023)
 
 fit = Ncm.Fit.new(
-    Ncm.FitType(Ncm.FitType.NLOPT),
+    Ncm.FitType.NLOPT,
     "ln-neldermead",
     lh,
     mset,
-    Ncm.FitGradType(Ncm.FitGradType.NUMDIFF_FORWARD),
+    Ncm.FitGradType.NUMDIFF_FORWARD,
 )
 
 mset.pretty_log()
-fit.run_restart(Ncm.FitRunMsgs(Ncm.FitRunMsgs.FULL), 1.0e-3, 0.0, None, None)
+fit.run_restart(Ncm.FitRunMsgs.FULL, 1.0e-3, 0.0, None, None)
