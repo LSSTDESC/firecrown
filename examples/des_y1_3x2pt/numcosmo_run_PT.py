@@ -74,8 +74,12 @@ lh.priors_add_gauss_param_name(mset, "NcFirecrownPT:src0_delta_z", -0.001, 0.016
 lh.priors_add_gauss_param_name(mset, "NcFirecrownPT:lens0_delta_z", +0.001, 0.008)
 
 fit = Ncm.Fit.new(
-    Ncm.FitType.NLOPT, "ln-neldermead", lh, mset, Ncm.FitGradType.NUMDIFF_FORWARD
+    Ncm.FitType(Ncm.FitType.NLOPT),
+    "ln-neldermead",
+    lh,
+    mset,
+    Ncm.FitGradType(Ncm.FitGradType.NUMDIFF_FORWARD),
 )
 
 mset.pretty_log()
-fit.run_restart(Ncm.FitRunMsgs.FULL, 1.0e-3, 0.0, None, None)
+fit.run_restart(Ncm.FitRunMsgs(Ncm.FitRunMsgs.FULL), 1.0e-3, 0.0, None, None)

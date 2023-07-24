@@ -57,7 +57,9 @@ class ClusterAbundance(Updatable):
         sky_area: float = 100.0,
         use_completness: bool = False,
         use_purity: bool = False,
-        integ_method: Ncm.IntegralNDMethod = Ncm.IntegralNDMethod.P_V,
+        integ_method: Ncm.IntegralNDMethod = Ncm.IntegralNDMethod(
+            Ncm.IntegralNDMethod.P_V
+        ),
         prefer_scipy_integration: bool = False,
         reltol: float = 1.0e-4,
     ):

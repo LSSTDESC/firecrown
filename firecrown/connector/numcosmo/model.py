@@ -23,7 +23,7 @@ class ScalarParameter(yaml.YAMLObject):  # pylint: disable=too-many-instance-att
     scale: float = 1.0
     absolute_tolerance: float = 0.0
     default_value: float = 0.0
-    fit_type: Ncm.ParamType = Ncm.ParamType.FREE
+    fit_type: Ncm.ParamType = Ncm.ParamType(Ncm.ParamType.FREE)
 
 
 @dataclass
@@ -42,7 +42,7 @@ class VectorParameter(yaml.YAMLObject):  # pylint: disable=too-many-instance-att
     scale: float = 1.0
     absolute_tolerance: float = 0.0
     default_value: float = 0.0
-    fit_type: Ncm.ParamType = Ncm.ParamType.FREE
+    fit_type: Ncm.ParamType = Ncm.ParamType(Ncm.ParamType.FREE)
 
 
 @dataclass

@@ -68,10 +68,10 @@ r_bins = np.linspace(1.0, 2.5, 5)
 
 
 integ_options = [
-    Ncm.IntegralNDMethod.P,
-    Ncm.IntegralNDMethod.P_V,
-    Ncm.IntegralNDMethod.H,
-    Ncm.IntegralNDMethod.H_V,
+    Ncm.IntegralNDMethod(Ncm.IntegralNDMethod.P),
+    Ncm.IntegralNDMethod(Ncm.IntegralNDMethod.P_V),
+    Ncm.IntegralNDMethod(Ncm.IntegralNDMethod.H),
+    Ncm.IntegralNDMethod(Ncm.IntegralNDMethod.H_V),
 ]
 for integ_method in integ_options:
     abundance_test = ClusterAbundance(

@@ -49,7 +49,9 @@ def generate_sacc_file():
     psml.require_kmin(1.0e-6)
     psml.require_kmax(1.0e3)
 
-    psf = Ncm.PowspecFilter.new(psml, Ncm.PowspecFilterType.TOPHAT)
+    psf = Ncm.PowspecFilter.new(
+        psml, Ncm.PowspecFilterType(Ncm.PowspecFilterType.TOPHAT)
+    )
     psf.set_best_lnr0()
 
     cosmo.props.H0 = H0
@@ -93,7 +95,7 @@ def generate_sacc_file():
     # First we need to define the multiplicity function here we will use the tinker
     mulf = Nc.MultiplicityFuncTinker.new()
     mulf.set_linear_interp(True)  # This reproduces the linear interpolation done in CCL
-    mulf.set_mdef(Nc.MultiplicityFuncMassDef.MEAN)
+    mulf.set_mdef(Nc.MultiplicityFuncMassDef(Nc.MultiplicityFuncMassDef.MEAN))
     mulf.set_Delta(200)
 
     # Second we need to construct a filtered power spectrum

@@ -75,15 +75,15 @@ dset.append_data(fc_data)
 lh = Ncm.Likelihood(dataset=dset)
 
 fit = Ncm.Fit.new(
-    Ncm.FitType.NLOPT,
+    Ncm.FitType(Ncm.FitType.NLOPT),
     "ln-neldermead",
     lh,
     mset,
-    Ncm.FitGradType.NUMDIFF_FORWARD,
+    Ncm.FitGradType(Ncm.FitGradType.NUMDIFF_FORWARD),
 )
 
 mset.pretty_log()
-fit.run_restart(Ncm.FitRunMsgs.SIMPLE, 1.0e-3, 0.0, None, None)
+fit.run_restart(Ncm.FitRunMsgs(Ncm.FitRunMsgs.SIMPLE), 1.0e-3, 0.0, None, None)
 fit.fisher()
 fit.log_covar()
 
@@ -96,7 +96,9 @@ plt.figure(figsize=(8, 4))
 plt.title("Confidence regions")
 
 for clevel in [chi2.cdf(chi**2, df=1) for chi in [1, 2, 3]]:
-    fisher_rg = lhr2d.fisher_border(clevel, 300.0, Ncm.FitRunMsgs.SIMPLE)
+    fisher_rg = lhr2d.fisher_border(
+        clevel, 300.0, Ncm.FitRunMsgs(Ncm.FitRunMsgs.SIMPLE)
+    )
     plt.plot(
         fisher_rg.p1.dup_array(),
         fisher_rg.p2.dup_array(),
