@@ -239,7 +239,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
 
 class HMAlignmentSystematic(WeakLensingSystematic):
-    """TATT alignment systematic.
+    """Halo model alignment systematic.
 
     This systematic tries to add a halo model-based
      (nonlinear) intrinsic alignment systematic.
@@ -437,7 +437,8 @@ class WeakLensing(Source):
 
         if tracer_args.has_hm:
             cM = tools.get_cM_relation()
-            halo_profile = pyccl.halos.SatelliteShearHOD(cM,
+            halo_profile = pyccl.halos.SatelliteShearHOD(mass_def=tools.hm_definition,
+                concentration=cM,
                 a1h=tracer_args.ia_a_1h)
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 ccl_cosmo,

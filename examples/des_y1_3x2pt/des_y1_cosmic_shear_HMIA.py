@@ -86,10 +86,10 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 
 # We can also run the likelihood directly
 def run_likelihood() -> None:
+    """Run the likelihood."""
+
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
-    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
-    import matplotlib as mpl
-    mpl.use('TkAgg')  # !IMPORTANT
+    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-topleve
 
     # Run the likelihood.
 
@@ -113,19 +113,15 @@ def run_likelihood() -> None:
     # Code that creates a Pk2D object:
     k_arr = np.geomspace(1E-3, 1e3, 128)  # For evaluating
     a_arr = np.linspace(0.1, 1, 16)
-    hmd_200m = ccl.halos.MassDef200m()
-    cM = ccl.halos.ConcentrationDuffy08(hmd_200m)
-    nM = ccl.halos.MassFuncTinker10(ccl_cosmo, mass_def=hmd_200m)
-    bM = ccl.halos.HaloBiasTinker10(ccl_cosmo, mass_def=hmd_200m)
-    hmc = ccl.halos.HMCalculator(ccl_cosmo, nM, bM, hmd_200m)
-    sat_gamma_HOD = ccl.halos.SatelliteShearHOD(cM, a1h=a_1h)
+    cM = ccl.halos.ConcentrationDuffy08(mass_def="200m")
+    nM = ccl.halos.MassFuncTinker10(mass_def="200m")
+    bM = ccl.halos.HaloBiasTinker10(mass_def="200m")
+    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def="200m", nM=64)
+    sat_gamma_HOD = ccl.halos.SatelliteShearHOD(mass_def="200m", concentration=cM, a1h=a_1h, b=-2)
     # NFW profile for matter (G)
-    NFW = ccl.halos.HaloProfileNFW(cM, truncated=True, fourier_analytic=True)
-    pk_GI_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, NFW,
-                                      normprof1=True, prof2=sat_gamma_HOD, get_2h=False,
-                                      lk_arr=np.log(k_arr), a_arr=a_arr)
-    pk_II_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, sat_gamma_HOD,
-                                      get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
+    NFW = ccl.halos.HaloProfileNFW(mass_def="200m", concentration=cM, truncated=True, fourier_analytic=True)
+    pk_GI_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, NFW, prof2=sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
+    pk_II_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -213,8 +209,7 @@ def run_likelihood() -> None:
     # plt.xlim(right=5e3)
     # plt.ylim(bottom=1e-12)
     plt.title("Halo model IA")
-    if not os.path.exists('plots'): os.makedirs('plots')
-    plt.savefig("plots/halo_model.png", facecolor="white", dpi=300)
+    plt.savefig("halo_model.png", facecolor="white", dpi=300)
 
     plt.show()
 

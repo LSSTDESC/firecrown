@@ -433,7 +433,7 @@ class TwoPoint(Statistic):
             # Use existing power spectrum
             pk = tools.get_pk(pk_name)
         elif tracer0.has_pt or tracer1.has_pt:
-            if not tracer0.has_pt and tracer1.has_pt:
+            if not (tracer0.has_pt and tracer1.has_pt):
                 # Mixture of PT and non-PT tracers
                 # Create a dummy matter PT tracer for the non-PT part
                 matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
@@ -448,52 +448,29 @@ class TwoPoint(Statistic):
                 tracer1=tracer0.pt_tracer,
                 tracer2=tracer1.pt_tracer,
             )
-
-
         elif tracer0.has_hm or tracer1.has_hm:
-            # Need to know what the tracer is:
-            # delta_matter:delta_matter -> should be GG, should be automatic
-            # delta_matter:intrinsic_hm -> should be GI
-            # intrinsic_hm:delta_matter -> should be IG
-            # intrinsic_hm:intrinsic_hm -> should be II
-            # galaxies:intrinsic_hm -> should be gI
-            # etc...
             # Compute halo model power spectrum
-            # TODO: Somehow take care of k,a sampling when generating Pk2D object?
-            k_arr = np.geomspace(1E-3, 1e3, 128)
-            a_arr = np.linspace(0.1, 1, 16)
-            pk_name = f"{tracer0.field}:{tracer1.field}"
-            if tracer0.has_hm and tracer1.has_hm:
-                # If both halo model tracers, get the II power sepctrum.
-                profile0 = tracer0.halo_profile
-                profile1 = tracer1.halo_profile
-                hmc = tools.get_hm_calculator()
-                pk = pyccl.halos.halomod_Pk2D(
-                    ccl_cosmo, hmc, profile0,
-                    prof2=profile1, get_2h=False,
-                    lk_arr=np.log(k_arr), a_arr=a_arr)
-            # TODO: I have to manually check here for all the tracer combinations
-            # I should make this more streamlined, somehow.
-            elif tracer0.has_hm and tracer1.field == 'delta_matter':
-                # get the IG power spectrum.
-                profile0 = tracer0.halo_profile
-                profile1 = pyccl.halos.HaloProfileNFW(tools.get_cM_relation(),
-                                                      truncated=True, fourier_analytic=True)
-                hmc = tools.get_hm_calculator()
-                pk = pyccl.halos.halomod_Pk2D(
-                    ccl_cosmo, hmc, profile0,
-                    prof2=profile1, get_2h=False, normprof2=True,
-                    lk_arr=np.log(k_arr), a_arr=a_arr)
-            elif tracer0.field == 'delta_matter' and tracer1.has_hm:
-                # get the GI power spectrum.
-                profile0 = pyccl.halos.HaloProfileNFW(tools.get_cM_relation(),
-                                                      truncated=True, fourier_analytic=True)
-                profile1 = tracer1.halo_profile
-                hmc = tools.get_hm_calculator()
-                pk = pyccl.halos.halomod_Pk2D(
-                    ccl_cosmo, hmc, profile0,
-                    prof2=profile1, get_2h=False, normprof1=True,
-                    lk_arr=np.log(k_arr), a_arr=a_arr)
+            a_arr = np.linspace(0.1, 1, 16) # Fix a_arr because normalization is zero for a<~0.07
+            ccl_cosmo = tools.get_ccl_cosmology()
+            hmc = tools.get_hm_calculator()
+            if not (tracer0.has_hm and tracer1.has_hm):
+                if 'galaxies' in [tracer0.field, tracer1.field]:
+                    other_profile = pyccl.halos.HaloProfileHOD(mass_def=tools.hm_definition,
+                                                               concentration=tools.get_cM_relation(),
+                                                               truncated=True, fourier_analytic=True)
+                else:
+                    other_profile = pyccl.halos.HaloProfileNFW(mass_def=tools.hm_definition,
+                                                               concentration=tools.get_cM_relation(),
+                                                               truncated=True, fourier_analytic=True)
+                if not tracer0.has_hm:
+                    tracer0.halo_profile = other_profile
+                else:
+                    tracer1.halo_profile = other_profile
+            profile0 = tracer0.halo_profile
+            profile1 = tracer1.halo_profile
+            pk = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
+                                          prof=profile0, prof2=profile1,
+                                          get_2h=False, a_arr=a_arr)
         else:
             raise ValueError(f"No power spectrum for {pk_name} can be found.")
         return pk

@@ -110,11 +110,9 @@ class ModelingTools:
             raise RuntimeError("A halo mass function has not been set")
         if self.bias_function is None:
             raise RuntimeError("A halo bias function has not been set")
-        cosmo = self.get_ccl_cosmology()
-        nM = pyccl.halos.mass_function_from_name(self.hm_function)(cosmo, mass_def=self.hm_definition)
-        bM = pyccl.halos.halo_bias_from_name(self.bias_function)(cosmo, mass_def=self.hm_definition)
-
-        return pyccl.halos.HMCalculator(cosmo, nM, bM, self.hm_definition)
+        nM = pyccl.halos.mass_function_from_name(self.hm_function)(mass_def=self.hm_definition)
+        bM = pyccl.halos.halo_bias_from_name(self.bias_function)(mass_def=self.hm_definition)
+        return pyccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=self.hm_definition, nlog10M=64)
 
     def get_cM_relation(self) -> pyccl.halos.Concentration:
         """Return the concentration-mass relation."""
