@@ -59,9 +59,16 @@ class FirecrownLikelihood:
 
         self.firecrown_module_name = option_section
         self.sampling_sections = sections
-        self.likelihood, self.tools = load_likelihood(
-            likelihood_source, build_parameters
-        )
+        try:
+            self.likelihood, self.tools = load_likelihood(
+                likelihood_source, build_parameters
+            )
+        except KeyError as err:
+            print("*" * 30)
+            print(f"The Firecrown likelihood needs a required parameter: {err}")
+            print("*" * 30)
+            raise
+
         self.map = mapping_builder(
             input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
         )
