@@ -169,7 +169,8 @@ def load_likelihood(
     """Loads a likelihood script and returns an instance
 
     :param filename: script filename
-    :param build_parameters: a dictionary containing the factory function parameters
+    :param build_parameters: a NamedParameters object containing the factory
+    function parameters
     """
     _, file_extension = os.path.splitext(filename)
 
