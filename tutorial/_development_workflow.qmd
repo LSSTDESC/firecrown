@@ -1,4 +1,4 @@
-All these tools provided in Firecrown exist to help you to create an instance of a likelihood for your analysis.
+All the tools provided in Firecrown exist to help you to create an instance of a likelihood for your analysis.
 The function that is used to create this likelihood is called a *factory function*.
 Note that this likelihood function is not creating a new type; it is responsible for creating an instance of the type (e.g. `ConstGaussian`) you have chosen for your analysis.
 The purpose of this factory function is to assemble the artifacts representing the data, modeling effects, systematic effects, etc., into a likelihood object, and to return that likelihood object (and the related modeling tools).

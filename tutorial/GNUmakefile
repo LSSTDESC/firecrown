@@ -4,7 +4,7 @@
 .qmd.html:
 	quarto render $<
 
-all: introduction_to_firecrown.html intro_article.html
+all: introduction_to_firecrown.html intro_article.html development_example.qmd
 introduction_to_firecrown.html: custom.scss clean_title_slide.html introduction_to_firecrown.qmd \
 	_what_is_firecrown.qmd \
 	_basic_firecrown_concepts.qmd \
