@@ -166,10 +166,12 @@ class NamedParameters:
 def load_likelihood(
     filename: str, build_parameters: NamedParameters
 ) -> Tuple[Likelihood, ModelingTools]:
-    """Loads a likelihood script and returns an instance
+    """Loads a likelihood script and returns a tuple of the likelihood and
+    the modeling tools.
 
     :param filename: script filename
-    :param build_parameters: a dictionary containing the factory function parameters
+    :param build_parameters: a NamedParameters object containing the factory
+        function parameters
     """
     _, file_extension = os.path.splitext(filename)
 

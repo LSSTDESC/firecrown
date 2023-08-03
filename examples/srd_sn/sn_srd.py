@@ -1,12 +1,12 @@
 """Demonstration of the use of the :python:`Supernova` statistics object.
 """
-import os
 import sacc
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.likelihood.likelihood import NamedParameters
 
 
-def build_likelihood(_):
+def build_likelihood(params: NamedParameters):
     """Build the Firecrown likelihood object. We have no extra tools for this
     example."""
     # Here we instantiate the necessary statistic object to deal with SNIa data.
@@ -17,9 +17,7 @@ def build_likelihood(_):
     lk = ConstGaussian(statistics=[snia_stats])
 
     #    We load the correct SACC file.
-    saccfile = os.path.expanduser(
-        os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
-    )
+    saccfile = params.get_string("sacc_file")
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # The read likelihood method is called passing the loaded SACC file, the
