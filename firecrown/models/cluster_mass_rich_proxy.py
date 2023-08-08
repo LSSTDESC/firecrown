@@ -65,26 +65,40 @@ class ClusterMassRich(ClusterMass):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
-    def read(self, sacc_data: sacc.Sacc):
+    def read(self, _: sacc.Sacc):
         """Method to read the data for this source from the SACC file."""
+
+    @staticmethod
+    def cluster_mass_parameters_function(
+        log_pivot_mass, log1p_pivot_redshift, p: Tuple[float, float, float], logM, z
+    ):
+        """Return observed quantity corrected by redshift and mass."""
+
+        lnM = logM * np.log(10)
+        Delta_lnM = lnM - log_pivot_mass
+        Delta_z = np.log1p(z) - log1p_pivot_redshift
+
+        return p[0] + p[1] * Delta_lnM + p[2] * Delta_z
 
     def cluster_mass_lnM_obs_mu_sigma(self, logM, z):
         """Return the mean and standard deviation of the observed mass."""
 
-        lnM = logM * np.log(10)
-
-        lnM_obs_mu = (
-            self.mu_p0
-            + self.mu_p1 * (lnM - self.log_pivot_mass)
-            + self.mu_p2 * (np.log1p(z) - self.log1p_pivot_redshift)
-        )
-        sigma = (
-            self.sigma_p0
-            + self.sigma_p1 * (lnM - self.log_pivot_mass)
-            + self.sigma_p2 * (np.log1p(z) - self.log1p_pivot_redshift)
-        )
-        # sigma = abs(sigma)
-        return [lnM_obs_mu, sigma]
+        return [
+            ClusterMassRich.cluster_mass_parameters_function(
+                self.log_pivot_mass,
+                self.log1p_pivot_redshift,
+                (self.mu_p0, self.mu_p1, self.mu_p2),
+                logM,
+                z,
+            ),
+            ClusterMassRich.cluster_mass_parameters_function(
+                self.log_pivot_mass,
+                self.log1p_pivot_redshift,
+                (self.sigma_p0, self.sigma_p1, self.sigma_p2),
+                logM,
+                z,
+            ),
+        ]
 
     def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
         """Generate bins by an array of bin edges."""
@@ -173,6 +187,8 @@ class ClusterMassRichBinArgument(ClusterMassArgument):
         self.richness: ClusterMassRich = richness
         self.logM_obs_lower: float = logM_obs_lower
         self.logM_obs_upper: float = logM_obs_upper
+        if logM_obs_lower >= logM_obs_upper:
+            raise ValueError("logM_obs_lower must be less than logM_obs_upper")
 
     @property
     def dim(self) -> int:
