@@ -31,6 +31,6 @@ dependencies:
   - pyyaml
   - types-pyyaml
   - requests
-  - sacc
+  - sacc >= 0.11
   - scipy
   - urllib3
