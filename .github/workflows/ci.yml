@@ -26,7 +26,7 @@ jobs:
       - name: Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-          aut o-update-conda: true
+          auto-update-conda: true
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           miniforge-variant: Mambaforge
