@@ -8,8 +8,7 @@ i.e., assuming we have the true masses of the clusters.
 from typing import final, List, Tuple
 
 import numpy as np
-from .. import sacc_support
-from ..sacc_support import sacc
+import sacc
 
 
 from ..parameters import (
@@ -63,7 +62,7 @@ class ClusterMassTrue(ClusterMass):
     def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterMassArgument:
         """Return the argument for the given tracer."""
 
-        if not isinstance(tracer, sacc_support.BinLogMTracer):
+        if not isinstance(tracer, sacc.BinLogMTracer):
             raise ValueError("Tracer must be a BinLogMTracer")
 
         return ClusterMassTrueArgument(tracer.lower, tracer.upper)

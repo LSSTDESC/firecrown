@@ -9,7 +9,8 @@ from typing import List, Dict, Tuple, Optional, final
 
 import numpy as np
 
-from ....sacc_support import sacc, ClusterSurveyTracer
+import sacc
+from sacc.tracers import SurveyTracer
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
@@ -171,15 +172,15 @@ class ClusterNumberCounts(Statistic):
         :param sacc_data: The data in the sacc format.
         """
 
-        survey_tracer: ClusterSurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
+        survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
         if survey_tracer is None:
             raise ValueError(
-                f"The SACC file does not contain the ClusterSurveyTracer "
+                f"The SACC file does not contain the SurveyTracer "
                 f"{self.sacc_tracer}."
             )
-        if not isinstance(survey_tracer, ClusterSurveyTracer):
+        if not isinstance(survey_tracer, SurveyTracer):
             raise ValueError(
-                f"The SACC tracer {self.sacc_tracer} is not a ClusterSurveyTracer."
+                f"The SACC tracer {self.sacc_tracer} is not a SurveyTracer."
             )
 
         self.cluster_abundance.sky_area = survey_tracer.sky_area

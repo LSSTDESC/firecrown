@@ -6,8 +6,7 @@ from typing import List, Tuple, final
 
 import numpy as np
 from scipy import special
-from .. import sacc_support
-from ..sacc_support import sacc
+import sacc
 
 from ..parameters import (
     ParamsMap,
@@ -111,7 +110,7 @@ class ClusterMassRich(ClusterMass):
     def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterMassArgument:
         """Return the argument for the given tracer."""
 
-        if not isinstance(tracer, sacc_support.BinRichnessTracer):
+        if not isinstance(tracer, sacc.tracers.BinRichnessTracer):
             raise ValueError("Tracer must be a BinRichnessTracer")
 
         return ClusterMassRichBinArgument(

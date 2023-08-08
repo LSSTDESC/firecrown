@@ -4,6 +4,7 @@ import os
 from typing import Any, Dict
 
 import pyccl as ccl
+import sacc
 
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
@@ -13,7 +14,6 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster_abundance import ClusterAbundance
 from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
 from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
-from firecrown.sacc_support import sacc
 
 
 def build_likelihood(build_parameters):

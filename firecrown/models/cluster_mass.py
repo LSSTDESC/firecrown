@@ -8,8 +8,8 @@ from typing import final, List, Tuple, Optional
 from abc import abstractmethod
 
 import numpy as np
+import sacc
 
-from ..sacc_support import sacc
 from ..updatable import Updatable
 from ..parameters import ParamsMap
 

@@ -9,7 +9,8 @@ from abc import abstractmethod
 
 import numpy as np
 
-from ..sacc_support import sacc
+import sacc
+
 from ..updatable import Updatable
 from ..parameters import ParamsMap
 
