@@ -7,9 +7,7 @@ Class to compute cluster redshift spectroscopy functions.
 from typing import final, List, Tuple
 
 import numpy as np
-from .. import sacc_support
-from ..sacc_support import sacc
-
+import sacc
 
 from ..parameters import (
     ParamsMap,
@@ -62,7 +60,7 @@ class ClusterRedshiftSpec(ClusterRedshift):
     def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterRedshiftArgument:
         """Return the argument for the given tracer."""
 
-        if not isinstance(tracer, sacc_support.BinZTracer):
+        if not isinstance(tracer, sacc.tracers.BinZTracer):
             raise ValueError("Tracer must be a BinZTracer")
 
         return ClusterRedshiftSpecArgument(tracer.lower, tracer.upper)

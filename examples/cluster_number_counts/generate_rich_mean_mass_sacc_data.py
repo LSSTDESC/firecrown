@@ -20,7 +20,7 @@ from astropy.table import Table
 from astropy.io import fits
 from scipy import stats
 
-from firecrown.sacc_support import sacc
+import sacc
 
 
 def generate_sacc_file():
@@ -161,7 +161,7 @@ def generate_sacc_file():
     bin_richness_labels = []
 
     survey_name = "numcosmo_simulated_redshift_richness"
-    s_count.add_tracer("cluster_survey", survey_name, area)
+    s_count.add_tracer("survey", survey_name, area)
 
     for i, z_bin in enumerate(zip(z_edges[:-1], z_edges[1:])):
         lower, upper = z_bin

@@ -10,8 +10,7 @@ import sys
 import numpy as np
 import pandas as pd
 
-from sacc import Sacc
-from firecrown.sacc_support import sacc
+import sacc
 
 
 def conversion(hdg):
@@ -173,7 +172,7 @@ def main(args):
     covmat = np.zeros((size, size), dtype=float)
     count = 1  # since the cov mat starts with the number of lines
     out_name = "srd-y1-converted"
-    sacc_data = Sacc()
+    sacc_data = sacc.Sacc()
     sacc_data.add_tracer("misc", "sn_ddf_sample")
     for i in range(size):
         # Add the appropriate tracer
