@@ -29,14 +29,12 @@ class ClusterNumberCounts(Statistic):
     multiplicity functions, volume element,  etc.).
     This subclass implements the read and computes method for
     the Statistic class. It is used to compute the theoretical prediction of
-    cluster number counts given a SACC file and a cosmology. For
-    further information on how the SACC file shall be created,
-    check README.md.
+    cluster number counts given a SACC file and a cosmology.
     """
 
     def __init__(
         self,
-        sacc_tracer: str,
+        survey_tracer: str,
         cluster_abundance: ClusterAbundance,
         cluster_mass: ClusterMass,
         cluster_redshift: ClusterRedshift,
@@ -47,18 +45,13 @@ class ClusterNumberCounts(Statistic):
         """Initialize the ClusterNumberCounts object.
         Parameters
 
-        :param sacc_tracer: The SACC tracer. There must be only one tracer for all
-            the number Counts data points. Following the SACC file
-            documentation README.md, this string should be
-            'cluster_counts_true_mass'.
+        :param survey_tracer: name of the survey tracer in the SACC data.
         :param cluster_abundance: The cluster abundance model to use.
         :param systematics: A list of the statistics-level systematics to apply to
             the statistic. The default of `None` implies no systematics.
-
         """
         super().__init__()
-
-        self.sacc_tracer = sacc_tracer
+        self.sacc_tracer = survey_tracer
         self.systematics = systematics or []
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -163,7 +156,7 @@ class ClusterNumberCounts(Statistic):
 
         return data_vector_list, sacc_indices_list
 
-    def read(self, sacc_data):
+    def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file.
         This function takes the SACC file and extract the necessary
         parameters needed to compute the number counts likelihood.
@@ -223,7 +216,7 @@ class ClusterNumberCounts(Statistic):
         Check README.MD for a complete description of the method.
 
         :param tools: ModelingTools firecrown object
-            Firecrown object used to load the required cosmology.
+            used to load the required cosmology.
 
         :return: Numpy Array of floats
             An array with the theoretical prediction of the number of clusters
