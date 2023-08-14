@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: Version 1.4.0
+subtitle: "Version 1.5.0"
 authors:
   - Marc Paterno
   - Sandro Vitenti
@@ -207,11 +207,12 @@ python setup.py build
 black --check firecrown/ examples/ tests/
 flake8 firecrown examples tests
 mypy --ignore-missing-imports -p firecrown -p examples -p tests
-pylint --rcfile pylintrc_for_tests --recursive=y tests
-pylint --recursive=y firecrown/connector
-pylint --recursive=y firecrown/*.py
-pylint --recursive=y firecrown/likelihood/*.py
-pylint --recursive=y firecrown/likelihood/gauss_family/*.py
+pylint --rcfile pylintrc_for_tests tests
+pylint --rcfile firecrown/models/pylintrc firecrown/models
+pylint firecrown/connector
+pylint firecrown/*.py
+pylint firecrown/likelihood/*.py
+pylint firecrown/likelihood/gauss_family/*.py
 python -m pytest -v tests
 ```
 :::
