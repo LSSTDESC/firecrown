@@ -45,6 +45,14 @@ method-naming-style=any
 # Naming style matching correct function names.
 function-naming-style=any
 
+[DESIGN]
+
+# Maximum number of arguments for function / method.
+max-args=11
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=14
+
 [STRING]
 
 # This flag controls whether inconsistent-quotes generates a warning when the
