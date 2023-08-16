@@ -7,6 +7,7 @@ reusable objects, such as perturbation theory or halo model calculators.
 
 from typing import Dict, Optional, final
 import pyccl.nl_pt
+from .models.cluster_theory import ClusterAbundance
 
 
 class ModelingTools:
@@ -17,10 +18,12 @@ class ModelingTools:
         self,
         *,
         pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
+        cluster_abundance: Optional[ClusterAbundance] = None,
     ):
         self.ccl_cosmo: Optional[pyccl.Cosmology] = None
         self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
+        self.cluster_abundance = cluster_abundance
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
@@ -69,6 +72,9 @@ class ModelingTools:
 
         if self.pt_calculator is not None:
             self.pt_calculator.update_ingredients(ccl_cosmo)
+
+        if self.cluster_abundance is not None:
+            self.cluster_abundance.update_ingredients(ccl_cosmo)
 
     @final
     def reset(self) -> None:
