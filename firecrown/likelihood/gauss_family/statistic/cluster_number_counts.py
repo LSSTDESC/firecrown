@@ -162,8 +162,9 @@ class ClusterNumberCounts(Statistic):
         :param sacc_data: The data in the SACC format.
         """
 
-        survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
-        if survey_tracer is None:
+        try:
+            survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
+        except KeyError:
             raise ValueError(
                 f"The SACC file does not contain the SurveyTracer "
                 f"{self.sacc_tracer}."
