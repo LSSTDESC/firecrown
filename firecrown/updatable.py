@@ -281,7 +281,6 @@ class UpdatableCollection(UserList):
 
         self._updated = True
 
-
     def is_updated(self) -> bool:
         """Return True if the object is currently updated, and False if not.
         A default-constructed Updatable has not been updated. After `update`,
