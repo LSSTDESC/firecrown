@@ -6,7 +6,10 @@ import sacc
 
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
+    ClusterAbundance,
 )
+from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
+from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
 
 
 @pytest.fixture(name="minimal_stat")
@@ -14,9 +17,13 @@ def fixture_minimal_stat() -> ClusterNumberCounts:
     """Return a correctly initialized :python:`ClusterNumberCounts` object."""
     stat = ClusterNumberCounts(
         survey_tracer="SDSS",
-        cluster_abundance=None,
-        cluster_mass=None,
-        cluster_redshift=None,
+        cluster_abundance=ClusterAbundance(
+            halo_mass_definition=None,
+            halo_mass_function_name="hmf_func",
+            halo_mass_function_args={},
+        ),
+        cluster_mass=ClusterMassRich(pivot_mass=10.0, pivot_redshift=1.25),
+        cluster_redshift=ClusterRedshiftSpec(),
     )
     return stat
 
@@ -45,7 +52,7 @@ def test_missing_survey_tracer(
         minimal_stat.read(missing_survey_tracer)
 
 
-def test_read_works(minimal_stat: ClusterNumberCounts, good_sacc_data: sacc.Sacc):
+def test_read_works():
     """After read() is called, we should be able to get the statistic's
 
     :python:`DataVector` and also should be able to call
