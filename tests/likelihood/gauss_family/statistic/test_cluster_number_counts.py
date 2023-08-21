@@ -1,11 +1,9 @@
 """Tests for ClusterNumberCounts.
 """
-import numpy as np
 import pytest
 
 import sacc
 
-from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
 )
