@@ -272,3 +272,4 @@ def test_nesting_updatables_derived_parameters(nested_updatables):
     derived_parameters = DerivedParameterCollection([derived_scale])
 
     assert base.get_derived_parameters() == derived_parameters
+    assert base.get_derived_parameters() is None
