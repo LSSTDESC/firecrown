@@ -78,10 +78,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.z_piv = parameters.create()
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
@@ -131,10 +127,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         self.b_s = parameters.create()
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
@@ -179,10 +171,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = parameters.create()
 
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -230,10 +218,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         self.mag_bias = parameters.create()
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
@@ -254,10 +238,6 @@ class PhotoZShift(NumberCountsSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -318,9 +298,6 @@ class NumberCounts(Source):
             derived_parameters = DerivedParameterCollection([derived_scale])
         else:
             derived_parameters = DerivedParameterCollection([])
-        derived_parameters = (
-            derived_parameters + self.systematics.get_derived_parameters()
-        )
 
         return derived_parameters
 

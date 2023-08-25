@@ -3,10 +3,8 @@
 """
 
 from __future__ import annotations
-from typing import final
 
 from .gauss_family import GaussFamily
-from ...parameters import DerivedParameterCollection
 from ...modeling_tools import ModelingTools
 
 
@@ -17,7 +15,3 @@ class ConstGaussian(GaussFamily):
         """Compute the log-likelihood."""
 
         return -0.5 * self.compute_chisq(tools)
-
-    @final
-    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])

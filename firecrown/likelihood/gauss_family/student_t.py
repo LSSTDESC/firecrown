@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import List, Optional
 
 import numpy as np
 
@@ -11,7 +11,6 @@ from .gauss_family import GaussFamily
 from ...modeling_tools import ModelingTools
 from .statistic.statistic import Statistic
 from ... import parameters
-from ...parameters import DerivedParameterCollection
 
 
 class StudentT(GaussFamily):
@@ -43,7 +42,3 @@ class StudentT(GaussFamily):
         ccl_cosmo = tools.get_ccl_cosmology()
         chi2 = self.compute_chisq(ccl_cosmo)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
-
-    @final
-    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])

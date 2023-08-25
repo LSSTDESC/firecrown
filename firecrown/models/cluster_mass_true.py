@@ -13,7 +13,6 @@ import sacc
 
 from ..parameters import (
     ParamsMap,
-    DerivedParameterCollection,
 )
 from .cluster_mass import ClusterMass, ClusterMassArgument
 
@@ -24,10 +23,6 @@ class ClusterMassTrue(ClusterMass):
     @final
     def _update_cluster_mass(self, params: ParamsMap):
         """Method to update the ClusterMassTrue from the given ParamsMap."""
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def read(self, sacc_data: sacc.Sacc):
         """Method to read the data for this source from the SACC file."""

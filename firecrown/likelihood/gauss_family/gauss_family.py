@@ -10,7 +10,6 @@ Some notes.
 from __future__ import annotations
 from typing import List, Optional, Tuple, Sequence
 from typing import final
-from abc import abstractmethod
 import warnings
 
 import numpy as np
@@ -23,7 +22,6 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
@@ -128,16 +126,3 @@ class GaussFamily(Likelihood):
         chisq = np.dot(x, x)
 
         return chisq
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = (
-            self._get_derived_parameters_gaussian_family()
-            + self.statistics.get_derived_parameters()
-        )
-
-        return derived_parameters
-
-    @abstractmethod
-    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
-        """Get derived parameters for GaussFamily subclasses."""

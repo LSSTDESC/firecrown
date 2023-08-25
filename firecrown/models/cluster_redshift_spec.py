@@ -11,7 +11,6 @@ import sacc
 
 from ..parameters import (
     ParamsMap,
-    DerivedParameterCollection,
 )
 from .cluster_redshift import ClusterRedshift, ClusterRedshiftArgument
 
@@ -22,10 +21,6 @@ class ClusterRedshiftSpec(ClusterRedshift):
     @final
     def _update_cluster_redshift(self, params: ParamsMap):
         """Method to update the ClusterRedshiftSpec from the given ParamsMap."""
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def read(self, sacc_data: sacc.Sacc):
         """Method to read the data for this source from the SACC file."""

@@ -20,15 +20,6 @@ class MinimalUpdatable(Updatable):
 
         self.a = parameters.create()
 
-    def _update(self, params):
-        pass
-
-    def _reset(self) -> None:
-        pass
-
-    def _required_parameters(self):
-        return RequiredParameters([])
-
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 

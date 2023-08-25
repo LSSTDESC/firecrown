@@ -5,7 +5,7 @@ and a mass proxy.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional, final
+from typing import List, Dict, Tuple, Optional
 
 import numpy as np
 
@@ -14,9 +14,6 @@ from sacc.tracers import SurveyTracer
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
-from ....parameters import (
-    DerivedParameterCollection,
-)
 from ....models.cluster_abundance import ClusterAbundance
 from ....models.cluster_mass import ClusterMass, ClusterMassArgument
 from ....models.cluster_redshift import ClusterRedshift, ClusterRedshiftArgument
@@ -65,16 +62,6 @@ class ClusterNumberCounts(Statistic):
             raise ValueError(
                 "At least one of use_cluster_counts and use_mean_log_mass must be True."
             )
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        """Return an empty DerivedParameterCollection."""
-        derived_parameters = DerivedParameterCollection([])
-        derived_parameters += self.cluster_abundance.get_derived_parameters()
-        derived_parameters += self.cluster_mass.get_derived_parameters()
-        derived_parameters += self.cluster_redshift.get_derived_parameters()
-
-        return derived_parameters
 
     def _read_data_type(self, sacc_data, data_type):
         """Internal function to read the data from the SACC file."""
