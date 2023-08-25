@@ -18,7 +18,6 @@ from ..... import parameters
 from .....modeling_tools import ModelingTools
 from .....parameters import (
     ParamsMap,
-    RequiredParameters,
     DerivedParameterScalar,
     DerivedParameterCollection,
 )
@@ -80,10 +79,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
@@ -137,10 +132,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
@@ -188,10 +179,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = parameters.create()
 
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -244,10 +231,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
 
@@ -271,10 +254,6 @@ class PhotoZShift(NumberCountsSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
@@ -326,10 +305,6 @@ class NumberCounts(Source):
 
         This implementation must update all contained Updatable instances."""
         self.systematics.update(params)
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return self.systematics.required_parameters()
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:

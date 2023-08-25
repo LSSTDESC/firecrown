@@ -13,7 +13,7 @@ import sacc
 from ....modeling_tools import ModelingTools
 from .statistic import Statistic, DataVector, TheoryVector
 from .... import parameters
-from ....parameters import RequiredParameters, DerivedParameterCollection
+from ....parameters import DerivedParameterCollection
 
 
 class Supernova(Statistic):
@@ -39,11 +39,6 @@ class Supernova(Statistic):
         self.a = 1.0 / (1.0 + z)
         self.data_vector = DataVector.from_list([dp.value for dp in data_points])
         self.sacc_indices = np.arange(len(self.data_vector))
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        """Return an empty RequiredParameters."""
-        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:

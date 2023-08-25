@@ -11,19 +11,6 @@ from firecrown.parameters import (
 )
 
 
-class MissingRequiredParameters(Updatable):
-    """A type that is abstract because it does not implement required_parameters."""
-
-    def _update(self, params):  # pragma: no cover
-        pass
-
-    def _reset(self) -> None:
-        pass
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
-
 class MinimalUpdatable(Updatable):
     """A concrete time that implements Updatable."""
 
@@ -67,12 +54,6 @@ class SimpleUpdatable(Updatable):
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection([])
-
-
-def test_verify_abstract_interface():
-    with pytest.raises(TypeError):
-        # pylint: disable-next=E0110,W0612
-        _ = MissingRequiredParameters()  # type: ignore
 
 
 def test_simple_updatable():

@@ -11,7 +11,7 @@ from .gauss_family import GaussFamily
 from ...modeling_tools import ModelingTools
 from .statistic.statistic import Statistic
 from ... import parameters
-from ...parameters import RequiredParameters, DerivedParameterCollection
+from ...parameters import DerivedParameterCollection
 
 
 class StudentT(GaussFamily):
@@ -43,10 +43,6 @@ class StudentT(GaussFamily):
         ccl_cosmo = tools.get_ccl_cosmology()
         chi2 = self.compute_chisq(ccl_cosmo)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
-
-    @final
-    def _required_parameters_gaussian_family(self):
-        return RequiredParameters([])
 
     @final
     def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:

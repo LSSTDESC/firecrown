@@ -23,7 +23,7 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import RequiredParameters, DerivedParameterCollection
+from ...parameters import DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
@@ -137,24 +137,6 @@ class GaussFamily(Likelihood):
         )
 
         return derived_parameters
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        """Return a RequiredParameters object containing the information for
-        this Updatable.
-
-        This includes the required parameters for all statistics, as well as those
-        for the derived class.
-
-        Derived classes must implement required_parameters_gaussian_family."""
-        stats_rp = self.statistics.required_parameters()
-        stats_rp = self._required_parameters_gaussian_family() + stats_rp
-
-        return stats_rp
-
-    @abstractmethod
-    def _required_parameters_gaussian_family(self):
-        """Required parameters for GaussFamily subclasses."""
 
     @abstractmethod
     def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:

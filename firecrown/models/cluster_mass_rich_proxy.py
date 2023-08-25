@@ -10,7 +10,6 @@ import sacc
 
 from ..parameters import (
     ParamsMap,
-    RequiredParameters,
     DerivedParameterCollection,
 )
 from .cluster_mass import ClusterMass, ClusterMassArgument
@@ -49,10 +48,6 @@ class ClusterMassRich(ClusterMass):
         """Perform any updates necessary after the parameters have being updated.
 
         This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:

@@ -19,7 +19,7 @@ from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Tracer
-from ....parameters import RequiredParameters, DerivedParameterCollection
+from ....parameters import DerivedParameterCollection
 
 # only supported types are here, anything else will throw
 # a value error
@@ -229,10 +229,6 @@ class TwoPoint(Statistic):
         # TODO: Why is self.predicted_statistic_ not re-set to None here?
         # If we do that, then the CosmoSIS module fails -- because this data
         # is accessed from that code.
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return self.source0.required_parameters() + self.source1.required_parameters()
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:

@@ -205,7 +205,7 @@ class Updatable(ABC):
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
         """Return a RequiredParameters object containing the information for
         all parameters defined in the implementing class, any additional
-        parameter
+        parameter.
         """
 
         sampler_parameters = RequiredParameters(
@@ -216,16 +216,22 @@ class Updatable(ABC):
         )
         additional_parameters = self._required_parameters()
 
+        for item in self._updatables:
+            additional_parameters = additional_parameters + item.required_parameters()
+
         return sampler_parameters + additional_parameters
 
-    @abstractmethod
     def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
         """Return a RequiredParameters object containing the information for
-        this Updatable. This method must be overridden by concrete classes.
+        this Updatable. This method can be overridden by subclasses to add
+        additional parameters. The default implementation returns an empty
+        RequiredParameters object. This is only implemented to allow
 
         The base class implementation returns a list with all SamplerParameter
         objects properties.
         """
+
+        return RequiredParameters([])
 
     @final
     def get_derived_parameters(

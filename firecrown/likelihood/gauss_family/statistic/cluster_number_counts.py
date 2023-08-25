@@ -15,7 +15,6 @@ from sacc.tracers import SurveyTracer
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
 from ....parameters import (
-    RequiredParameters,
     DerivedParameterCollection,
 )
 from ....models.cluster_abundance import ClusterAbundance
@@ -66,15 +65,6 @@ class ClusterNumberCounts(Statistic):
             raise ValueError(
                 "At least one of use_cluster_counts and use_mean_log_mass must be True."
             )
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        """Return an empty RequiredParameters."""
-        return (
-            self.cluster_abundance.required_parameters()
-            + self.cluster_mass.required_parameters()
-            + self.cluster_redshift.required_parameters()
-        )
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
