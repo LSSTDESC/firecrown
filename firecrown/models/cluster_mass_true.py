@@ -27,10 +27,6 @@ class ClusterMassTrue(ClusterMass):
         """Method to update the ClusterMassTrue from the given ParamsMap."""
 
     @final
-    def _reset_cluster_mass(self):
-        """Method to reset the ClusterMassTrue."""
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 

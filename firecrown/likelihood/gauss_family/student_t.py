@@ -45,10 +45,6 @@ class StudentT(GaussFamily):
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
 
     @final
-    def _reset_gaussian_family(self):
-        pass
-
-    @final
     def _required_parameters_gaussian_family(self):
         return RequiredParameters([])
 

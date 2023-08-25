@@ -68,13 +68,6 @@ class ClusterNumberCounts(Statistic):
             )
 
     @final
-    def _reset(self) -> None:
-        """Reset all contained Updatable objects."""
-        self.cluster_abundance.reset()
-        self.cluster_mass.reset()
-        self.cluster_redshift.reset()
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         """Return an empty RequiredParameters."""
         return (

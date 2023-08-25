@@ -41,10 +41,6 @@ class Supernova(Statistic):
         self.sacc_indices = np.arange(len(self.data_vector))
 
     @final
-    def _reset(self):
-        """Reset this statistic. This implementation has nothing to do."""
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         """Return an empty RequiredParameters."""
         return RequiredParameters([])

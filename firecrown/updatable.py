@@ -161,6 +161,20 @@ class Updatable(ABC):
 
         Each MCMC framework connector should call this after handling an MCMC
         sample."""
+
+        # If we have not been updated, there is nothing to do.
+        if not self._updated:
+            return
+
+        # We reset in the inverse order, first the contained updatables, then
+        # the current object.
+        for item in self._updatables:
+            item.reset()
+
+        # Reset the sampler parameters to None.
+        for parameter in self._sampler_parameters:
+            setattr(self, parameter, None)
+
         self._updated = False
         self._returned_derived = False
         self._reset()
@@ -178,7 +192,6 @@ class Updatable(ABC):
         :param params: a new set of parameter values
         """
 
-    @abstractmethod
     def _reset(self) -> None:  # pragma: no cover
         """Abstract method to be implemented by all concrete classes to update
         self.

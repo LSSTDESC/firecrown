@@ -51,12 +51,6 @@ class ClusterMassRich(ClusterMass):
         This implementation has nothing to do."""
 
     @final
-    def _reset_cluster_mass(self) -> None:
-        """Reset the ClusterMass object.
-
-        This implementation has nothing to do."""
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 

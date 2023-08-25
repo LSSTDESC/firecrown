@@ -25,10 +25,6 @@ class ClusterRedshiftSpec(ClusterRedshift):
         """Method to update the ClusterRedshiftSpec from the given ParamsMap."""
 
     @final
-    def _reset_cluster_redshift(self):
-        """Method to reset the ClusterRedshiftSpec."""
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 

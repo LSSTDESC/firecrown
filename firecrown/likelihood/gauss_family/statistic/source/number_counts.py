@@ -80,13 +80,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _reset(self) -> None:
-        """Reset this systematic."""
-        self.alphaz = None
-        self.alphag = None
-        self.z_piv = None
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 
@@ -144,12 +137,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 
@@ -201,12 +188,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = parameters.create()
 
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
 
     @final
     def _required_parameters(self) -> RequiredParameters:
@@ -263,12 +244,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         return RequiredParameters([])
 
@@ -296,12 +271,6 @@ class PhotoZShift(NumberCountsSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
 
     @final
     def _required_parameters(self) -> RequiredParameters:
@@ -357,10 +326,6 @@ class NumberCounts(Source):
 
         This implementation must update all contained Updatable instances."""
         self.systematics.update(params)
-
-    @final
-    def _reset_source(self) -> None:
-        self.systematics.reset()
 
     @final
     def _required_parameters(self) -> RequiredParameters:

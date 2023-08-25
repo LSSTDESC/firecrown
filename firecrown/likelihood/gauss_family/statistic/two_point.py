@@ -226,8 +226,6 @@ class TwoPoint(Statistic):
     @final
     def _reset(self) -> None:
         """Prepared to be called again for a new cosmology."""
-        self.source0.reset()
-        self.source1.reset()
         # TODO: Why is self.predicted_statistic_ not re-set to None here?
         # If we do that, then the CosmoSIS module fails -- because this data
         # is accessed from that code.
