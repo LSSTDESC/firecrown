@@ -2,7 +2,7 @@
 """
 import pytest
 
-import ccl.halos
+import pyccl.halos
 import sacc
 
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
@@ -19,7 +19,7 @@ def fixture_minimal_stat() -> ClusterNumberCounts:
     stat = ClusterNumberCounts(
         survey_tracer="SDSS",
         cluster_abundance=ClusterAbundance(
-            halo_mass_definition=ccl.halos.MassDef(0.5, "matter"),
+            halo_mass_definition=pyccl.halos.MassDef(0.5, "matter"),
             halo_mass_function_name="200m",
             halo_mass_function_args={},
         ),
