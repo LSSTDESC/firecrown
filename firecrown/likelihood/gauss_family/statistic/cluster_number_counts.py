@@ -134,11 +134,11 @@ class ClusterNumberCounts(Statistic):
 
         try:
             survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
-        except KeyError:
+        except KeyError as exc:
             raise ValueError(
                 f"The SACC file does not contain the SurveyTracer "
                 f"{self.sacc_tracer}."
-            )
+            ) from exc
         if not isinstance(survey_tracer, SurveyTracer):
             raise ValueError(
                 f"The SACC tracer {self.sacc_tracer} is not a SurveyTracer."
