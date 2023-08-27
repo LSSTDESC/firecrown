@@ -1,8 +1,8 @@
 """
 Provides a trivial likelihood class and factory function for testing purposes.
 """
-from firecrown.parameters import DerivedParameterCollection, DerivedParameterScalar
 import sacc
+from firecrown.parameters import DerivedParameterCollection, DerivedParameterScalar
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown import parameters
