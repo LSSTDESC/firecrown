@@ -29,7 +29,14 @@ class LikelihoodConnector(Likelihood):
         if not hasattr(self, "build_parameters"):
             build_parameters = NamedParameters()
         else:
-            build_parameters = self.build_parameters
+            if isinstance(self.build_parameters, dict):
+                build_parameters = NamedParameters(self.build_parameters)
+            else:
+                if not isinstance(self.build_parameters, NamedParameters):
+                    raise TypeError(
+                        "build_parameters must be a NamedParameters or dict"
+                    )
+                build_parameters = self.build_parameters
 
         self.likelihood, self.tools = load_likelihood(
             self.firecrownIni, build_parameters

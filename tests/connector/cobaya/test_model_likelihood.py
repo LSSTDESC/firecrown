@@ -3,8 +3,10 @@
 import pytest
 import pyccl as ccl
 from cobaya.model import get_model, Model
+from cobaya.log import LoggedError
 from firecrown.connector.cobaya.ccl import CCLConnector
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
+from firecrown.likelihood.likelihood import NamedParameters
 
 
 def test_cobaya_ccl_initialize():
@@ -45,6 +47,7 @@ def test_cobaya_likelihood_initialize_with_params():
 
 @pytest.fixture(name="fiducial_params")
 def fixture_fiducial_params():
+    # Fiducial parameters for CAMB
     fiducial_params = {
         "ombh2": 0.022,
         "omch2": 0.12,
@@ -59,7 +62,7 @@ def fixture_fiducial_params():
     return fiducial_params
 
 
-def test_cobaya_ccl_with_model(fiducial_params):
+def test_cobaya_ccl_model(fiducial_params):
     # Fiducial parameters for CAMB
     info_fiducial = {
         "params": fiducial_params,
@@ -99,8 +102,7 @@ def test_cobaya_ccl_with_model(fiducial_params):
     # assert cosmo["m_nu"] == pytest.approx(0.06, rel=1.0e-5)
 
 
-def test_cobaya_ccl_with_likelihood(fiducial_params):
-    # Fiducial parameters for CAMB
+def test_cobaya_ccl_likelihood(fiducial_params):
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
@@ -118,3 +120,130 @@ def test_cobaya_ccl_with_likelihood(fiducial_params):
     model_fiducial = get_model(info_fiducial)
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -3.0
+
+
+def test_parameterized_likelihood_missing(fiducial_params):
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    with pytest.raises(KeyError):
+        _ = get_model(info_fiducial)
+
+
+def test_parameterized_likelihood_wrong_type(fiducial_params):
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "build_parameters": 1.0,
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    with pytest.raises(
+        TypeError, match="build_parameters must be a NamedParameters or dict"
+    ):
+        _ = get_model(info_fiducial)
+
+
+def test_parameterized_likelihood_dict(fiducial_params):
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "build_parameters": {"sacc_filename": "this_sacc_does_not_exist.fits"},
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+    assert model_fiducial.logposterior({}).logpost == -1.5
+
+
+def test_parameterized_likelihood_namedparameters(fiducial_params):
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "build_parameters": NamedParameters(
+                    {"sacc_filename": "this_sacc_does_not_exist.fits"}
+                ),
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+    assert model_fiducial.logposterior({}).logpost == -1.5
+
+
+def test_sampler_parameter_likelihood_missing(fiducial_params):
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_sampler_parameter.py",
+                "build_parameters": NamedParameters({"sacc_tracer": "my_prefix"}),
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    with pytest.raises(LoggedError, match="my_prefix_sampler_param0"):
+        _ = get_model(info_fiducial)
+
+
+def test_sampler_parameter_likelihood(fiducial_params):
+    fiducial_params.update({"my_prefix_sampler_param0": 1.0})
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_sampler_parameter.py",
+                "build_parameters": NamedParameters({"sacc_tracer": "my_prefix"}),
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+    assert model_fiducial.logposterior({}).logpost == -2.1

@@ -2,12 +2,9 @@
 Provides a trivial likelihood class and factory function for testing purposes.
 """
 import sacc
-from firecrown.parameters import (
-    RequiredParameters,
-    DerivedParameterCollection,
-)
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
+from firecrown import parameters
 
 
 class EmptyLikelihood(Likelihood):
@@ -20,17 +17,6 @@ class EmptyLikelihood(Likelihood):
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
-
-    def _reset(self) -> None:
-        """This class has no state to reset."""
-
-    def _required_parameters(self) -> RequiredParameters:
-        """Return an empty RequiredParameters object."""
-        return RequiredParameters([])
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        """Return an empty DerivedParameterCollection."""
-        return DerivedParameterCollection([])
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood, determined by the value
@@ -56,22 +42,35 @@ class ParamaterizedLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def _reset(self) -> None:
-        """This class has no state to reset"""
-
-    def _required_parameters(self) -> RequiredParameters:
-        """Return an empty RequiredParameters object."""
-        return RequiredParameters([])
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        """Return an empty DerivedParameterCollection."""
-        return DerivedParameterCollection([])
-
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""
         return -1.5
 
 
+class SamplerParameterLikelihood(Likelihood):
+    """A minimal likelihood for testing. This likelihood requires a parameter
+    named 'sacc_filename'."""
+
+    def __init__(self, params: NamedParameters):
+        """Initialize the ParameterizedLikelihood by reading the specificed
+        sacc_filename value."""
+        super().__init__()
+        self.sacc_tracer = params.get_string("sacc_tracer")
+        self.sampler_param0 = parameters.create()
+
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """This class has nothing to read."""
+
+    def compute_loglike(self, tools: ModelingTools) -> float:
+        """Return a constant value of the likelihood."""
+        return -2.1
+
+
 def parameterized_likelihood(params: NamedParameters):
     """Return a ParameterizedLikelihood object."""
     return ParamaterizedLikelihood(params)
+
+
+def sampler_parameter_likelihood(params: NamedParameters):
+    """Return a SamplerParameterLikelihood object."""
+    return SamplerParameterLikelihood(params)
