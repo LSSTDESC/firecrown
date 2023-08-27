@@ -1,6 +1,7 @@
 """
 Provides a trivial likelihood class and factory function for testing purposes.
 """
+from firecrown.parameters import DerivedParameterCollection, DerivedParameterScalar
 import sacc
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
@@ -52,8 +53,9 @@ class SamplerParameterLikelihood(Likelihood):
     named 'sacc_filename'."""
 
     def __init__(self, params: NamedParameters):
-        """Initialize the ParameterizedLikelihood by reading the specificed
-        sacc_filename value."""
+        """Initialize the SamplerParameterLikelihood by reading the specificed
+        sacc_tracer value and creates a sampler parameter called "sampler_param0".
+        """
         super().__init__()
         self.sacc_tracer = params.get_string("sacc_tracer")
         self.sampler_param0 = parameters.create()
@@ -66,6 +68,30 @@ class SamplerParameterLikelihood(Likelihood):
         return -2.1
 
 
+class DerivedParameterLikelihood(Likelihood):
+    """A minimal likelihood for testing. This likelihood requires a parameter
+    named 'sacc_filename'."""
+
+    def __init__(self):
+        """Initialize the DerivedParameterLikelihood where _get_derived_parameters
+        creates a derived parameter called "derived_param0".
+        """
+        super().__init__()
+        self.placeholder = 1.0
+
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        return DerivedParameterCollection(
+            [DerivedParameterScalar("derived_section", "derived_param0", 1.0)]
+        )
+
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """This class has nothing to read."""
+
+    def compute_loglike(self, tools: ModelingTools) -> float:
+        """Return a constant value of the likelihood."""
+        return -3.14
+
+
 def parameterized_likelihood(params: NamedParameters):
     """Return a ParameterizedLikelihood object."""
     return ParamaterizedLikelihood(params)
@@ -74,3 +100,8 @@ def parameterized_likelihood(params: NamedParameters):
 def sampler_parameter_likelihood(params: NamedParameters):
     """Return a SamplerParameterLikelihood object."""
     return SamplerParameterLikelihood(params)
+
+
+def derived_parameter_likelihood():
+    """Return a DerivedParameterLikelihood object."""
+    return DerivedParameterLikelihood()

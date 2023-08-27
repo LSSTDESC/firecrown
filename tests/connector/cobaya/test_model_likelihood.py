@@ -247,3 +247,27 @@ def test_sampler_parameter_likelihood(fiducial_params):
     model_fiducial = get_model(info_fiducial)
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -2.1
+
+
+def test_derived_parameter_likelihood(fiducial_params):
+    fiducial_params.update({"derived_section__derived_param0": {"derived": True}})
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lk_derived_parameter.py",
+                "derived_parameters": ["derived_section__derived_param0"],
+            }
+        },
+        "theory": {
+            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
+            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
+        },
+    }
+
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+    logpost = model_fiducial.logposterior({})
+    assert logpost.logpost == -3.14
+    assert logpost.derived[0] == 1.0
