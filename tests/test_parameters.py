@@ -150,3 +150,55 @@ def test_derived_parameters_collection_add_iter():
         assert section == derived_parameter.section
         assert name == derived_parameter.name
         assert val == derived_parameter.get_val()
+
+
+def test_derived_parameter_eq():
+    dv1 = DerivedParameterScalar("sec1", "name1", 3.14)
+    dv2 = DerivedParameterScalar("sec1", "name1", 3.14)
+
+    assert dv1 == dv2
+
+
+def test_derived_parameter_eq_invalid():
+    dv1 = DerivedParameterScalar("sec1", "name1", 3.14)
+
+    with pytest.raises(
+        NotImplementedError,
+        match="DerivedParameterScalar comparison is only "
+        "implemented for DerivedParameterScalar objects",
+    ):
+        _ = dv1 == 1.0
+
+
+def test_derived_parameters_collection_eq():
+    olist1 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc1 = DerivedParameterCollection(olist1)
+
+    olist2 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc2 = DerivedParameterCollection(olist2)
+
+    assert dpc1 == dpc2
+
+
+def test_derived_parameters_collection_eq_invalid():
+    olist1 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc1 = DerivedParameterCollection(olist1)
+
+    with pytest.raises(
+        NotImplementedError,
+        match="DerivedParameterCollection comparison is only "
+        "implemented for DerivedParameterCollection objects",
+    ):
+        _ = dpc1 == 1.0
