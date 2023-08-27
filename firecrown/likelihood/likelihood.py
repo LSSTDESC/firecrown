@@ -171,14 +171,22 @@ def load_likelihood(
         modname, filename, submodule_search_locations=[script_path]
     )
 
-    if spec is None:
-        raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
+    # Apparently, the spec can be None if the file extension is not .py
+    # However, we already checked for that, so this should never happen.
+    # if spec is None:
+    #    raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
+    # Instead, we just assert that it is not None.
+    assert spec is not None
     mod = importlib.util.module_from_spec(spec)
     sys.modules[modname] = mod
 
-    if spec.loader is None:
-        raise ImportError(f"Spec for module '{modname}' has no loader.")
-
+    # Apparently, the spec.loader can be None if the file extension is not
+    # recognized. However, we already checked for that, so this should never
+    # happen.
+    # if spec.loader is None:
+    #     raise ImportError(f"Spec for module '{modname}' has no loader.")
+    # Instead, we just assert that it is not None.
+    assert spec.loader is not None
     spec.loader.exec_module(mod)
 
     if not hasattr(mod, "build_likelihood"):
