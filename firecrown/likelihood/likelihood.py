@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Mapping, Tuple, Union, Optional
+from typing import Mapping, Tuple, Union, Optional
 from abc import abstractmethod
 import warnings
 import importlib
@@ -40,27 +40,10 @@ class Likelihood(Updatable):
         """Default initialization for a base Likelihood object."""
         super().__init__()
 
-        self.params_names: Optional[List[str]] = None
         self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
         self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
         self.inv_cov: Optional[npt.NDArray[np.double]] = None
         self.statistics: UpdatableCollection = UpdatableCollection()
-
-    def set_params_names(self, params_names: List[str]) -> None:
-        """Set the parameter names for this Likelihood."""
-        self.params_names = params_names
-
-    def get_params_names(self) -> Optional[List[str]]:
-        """Return the parameter names of this Likelihood."""
-
-        # TODO: This test for the presence of the instance variable
-        # params_names seems unnecessary; we set the instance variable
-        # to None in the initializer. Since we would return an empty list
-        # if we did *not* have an instance variable, should we just make
-        # the default value used in the initializer an empty list?
-        if hasattr(self, "params_names"):
-            return self.params_names
-        return []
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc):
