@@ -38,13 +38,6 @@ class CCLConnector(Theory):
         self.z_Pk = np.arange(0.0, 6.0, 1)
         self.Pk_kmax = 1.0
 
-    def get_param(self, p: str) -> None:
-        """Return the current value of the parameter named 'p'.
-
-        This implementation always returns None.
-        """
-        return None
-
     def initialize_with_params(self):
         """Required by Cobaya.
 

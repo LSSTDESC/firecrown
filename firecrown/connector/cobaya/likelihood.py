@@ -42,10 +42,6 @@ class LikelihoodConnector(Likelihood):
             self.firecrownIni, build_parameters
         )
 
-    def get_param(self, p: str):
-        """Return the current value of the parameter named 'p'."""
-        return self._current_state["derived"][p]
-
     def initialize_with_params(self) -> None:
         """Required by Cobaya.
 
