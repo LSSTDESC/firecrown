@@ -204,6 +204,7 @@ def load_likelihood(
             category=DeprecationWarning,
         )
         likelihood = mod.likelihood
+        tools = ModelingTools()
     else:
         if not callable(mod.build_likelihood):
             raise TypeError(
@@ -220,6 +221,12 @@ def load_likelihood(
         raise TypeError(
             f"The returned likelihood must be a Firecrown's `Likelihood` type, "
             f"received {type(likelihood)} instead."
+        )
+
+    if not isinstance(tools, ModelingTools):
+        raise TypeError(
+            f"The returned tools must be a Firecrown's `ModelingTools` type, "
+            f"received {type(tools)} instead."
         )
 
     return likelihood, tools

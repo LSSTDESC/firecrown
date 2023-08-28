@@ -8,18 +8,12 @@ from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
 
 
 def test_load_likelihood_submodule():
-    """The likelihood script should be able to load other modules from its
-    directory using relative import."""
-
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     load_likelihood(os.path.join(dir_path, "lkdir/lkscript.py"), NamedParameters())
 
 
 def test_load_likelihood_submodule_invalid():
-    """The likelihood script should be able to load other modules from its
-    directory using relative import."""
-
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(ValueError, match="Unrecognized Firecrown initialization file"):
@@ -29,9 +23,6 @@ def test_load_likelihood_submodule_invalid():
 
 
 def test_load_likelihood_submodule_no_build_likelihood():
-    """The likelihood script should be able to load other modules from its
-    directory using relative import."""
-
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -43,9 +34,6 @@ def test_load_likelihood_submodule_no_build_likelihood():
 
 
 def test_load_likelihood_submodule_not_a_function():
-    """The likelihood script should be able to load other modules from its
-    directory using relative import."""
-
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -58,9 +46,6 @@ def test_load_likelihood_submodule_not_a_function():
 
 
 def test_load_likelihood_submodule_returns_wrong_type():
-    """The likelihood script should be able to load other modules from its
-    directory using relative import."""
-
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     with pytest.raises(
@@ -71,3 +56,35 @@ def test_load_likelihood_submodule_returns_wrong_type():
             os.path.join(dir_path, "lkdir/lkscript_returns_wrong_type.py"),
             NamedParameters(),
         )
+
+
+def test_load_likelihood_submodule_returns_wrong_type_tools():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    with pytest.raises(
+        TypeError,
+        match="The returned tools must be a Firecrown's `ModelingTools` type",
+    ):
+        load_likelihood(
+            os.path.join(dir_path, "lkdir/lkscript_returns_wrong_type_tools.py"),
+            NamedParameters(),
+        )
+
+
+def test_load_likelihood_submodule_old():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    load_likelihood(
+        os.path.join(dir_path, "lkdir/lkscript_old.py"),
+        NamedParameters(),
+    )
+
+
+def test_load_likelihood_correct_tools():
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    _, tools = load_likelihood(
+        os.path.join(dir_path, "lkdir/lkscript.py"), NamedParameters()
+    )
+
+    assert tools.test_attribute == "test"  # type: ignore
