@@ -1,9 +1,12 @@
 """
 Provides a trivial likelihood factory function for testing purposes.
 """
+from firecrown.modeling_tools import ModelingTools
 from . import lkmodule
 
 
 def build_likelihood(_):
     """Return an EmptyLikelihood object."""
-    return lkmodule.empty_likelihood()
+    tools = ModelingTools()
+    tools.test_attribute = "test"  # type: ignore
+    return (lkmodule.empty_likelihood(), tools)

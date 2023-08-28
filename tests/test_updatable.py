@@ -1,40 +1,18 @@
 """
 Tests for the Updatable class.
 """
+from itertools import permutations
 import pytest
+import numpy as np
+
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
 from firecrown.parameters import (
     RequiredParameters,
     ParamsMap,
+    DerivedParameterScalar,
     DerivedParameterCollection,
 )
-
-
-class MissingReset(Updatable):
-    """A type that is abstract because it does not implement required_parameters."""
-
-    def _update(self, params):  # pragma: no cover
-        pass
-
-    def _required_parameters(self):  # pragma: no cover
-        pass
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
-
-class MissingRequiredParameters(Updatable):
-    """A type that is abstract because it does not implement required_parameters."""
-
-    def _update(self, params):  # pragma: no cover
-        pass
-
-    def _reset(self) -> None:
-        pass
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
 
 class MinimalUpdatable(Updatable):
@@ -45,18 +23,6 @@ class MinimalUpdatable(Updatable):
         super().__init__()
 
         self.a = parameters.create()
-
-    def _update(self, params):
-        pass
-
-    def _reset(self) -> None:
-        pass
-
-    def _required_parameters(self):
-        return RequiredParameters([])
-
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
 
 class SimpleUpdatable(Updatable):
@@ -69,26 +35,22 @@ class SimpleUpdatable(Updatable):
         self.x = parameters.create()
         self.y = parameters.create()
 
-    def _update(self, params):
-        pass
 
-    def _reset(self) -> None:
-        pass
+class UpdatableWithDerived(Updatable):
+    """A concrete type that implements Updatable that implements derived parameters."""
 
-    def _required_parameters(self):
-        return RequiredParameters([])
+    def __init__(self):
+        """Initialize object with defaulted values."""
+        super().__init__()
+
+        self.A = parameters.create()
+        self.B = parameters.create()
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
+        derived_scale = DerivedParameterScalar("Section", "Name", self.A + self.B)
+        derived_parameters = DerivedParameterCollection([derived_scale])
 
-
-def test_verify_abstract_interface():
-    with pytest.raises(TypeError):
-        # pylint: disable-next=E0110,W0612
-        _ = MissingReset()  # type: ignore
-    with pytest.raises(TypeError):
-        # pylint: disable-next=E0110,W0612
-        _ = MissingRequiredParameters()  # type: ignore
+        return derived_parameters
 
 
 def test_simple_updatable():
@@ -236,3 +198,78 @@ def test_update_rejects_internal_parameters():
 
     assert my_updatable.a is None
     assert my_updatable.the_meaning_of_life == 42.0
+
+
+@pytest.fixture(name="nested_updatables", params=permutations(range(3)))
+def fixture_nested_updatables(request):
+    updatables = np.array(
+        [MinimalUpdatable(), SimpleUpdatable(), UpdatableWithDerived()]
+    )
+
+    # Reorder the updatables and set up the nesting
+    updatables = updatables[list(request.param)]
+    updatables[0].sub_updatable = updatables[1]
+    updatables[1].sub_updatable = updatables[2]
+
+    return updatables
+
+
+def test_nesting_updatables_missing_parameters(nested_updatables):
+    base = nested_updatables[0]
+    assert isinstance(base, Updatable)
+
+    params = ParamsMap({})
+
+    with pytest.raises(
+        RuntimeError,
+    ):
+        base.update(params)
+
+    params = ParamsMap({"a": 1.1})
+
+    with pytest.raises(
+        RuntimeError,
+    ):
+        base.update(params)
+
+    params = ParamsMap({"a": 1.1, "x": 2.0, "y": 3.0})
+
+    with pytest.raises(
+        RuntimeError,
+    ):
+        base.update(params)
+
+    params = ParamsMap({"a": 1.1, "x": 2.0, "y": 3.0, "A": 4.0, "B": 5.0})
+
+    base.update(params)
+
+    for updatable in nested_updatables:
+        assert updatable.is_updated()
+
+
+def test_nesting_updatables_required_parameters(nested_updatables):
+    base = nested_updatables[0]
+    assert isinstance(base, Updatable)
+
+    assert base.required_parameters() == RequiredParameters(["a", "x", "y", "A", "B"])
+
+
+def test_nesting_updatables_derived_parameters(nested_updatables):
+    base = nested_updatables[0]
+    assert isinstance(base, Updatable)
+
+    with pytest.raises(
+        RuntimeError,
+        match="Derived parameters can only be obtained after update has been called.",
+    ):
+        base.get_derived_parameters()
+
+    params = ParamsMap({"a": 1.1, "x": 2.0, "y": 3.0, "A": 4.0, "B": 5.0})
+
+    base.update(params)
+
+    derived_scale = DerivedParameterScalar("Section", "Name", 9.0)
+    derived_parameters = DerivedParameterCollection([derived_scale])
+
+    assert base.get_derived_parameters() == derived_parameters
+    assert base.get_derived_parameters() is None

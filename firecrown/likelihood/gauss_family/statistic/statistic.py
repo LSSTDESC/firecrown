@@ -91,7 +91,14 @@ class StatisticsResult:
 
 
 class Statistic(Updatable):
-    """An abstract statistic class (e.g., two-point function, mass function, etc.)."""
+    """An abstract statistic class.
+
+    Statistics read data from a SACC object as part of a multi-phase
+    initialization. The manage a :python:`DataVector` and, given a
+    :python:`ModelingTools` object, can compute a :python:`TheoryVector`.
+
+    Statistics represent things like two-point functions and mass functinos.
+    """
 
     systematics: List[SourceSystematic]
     sacc_indices: npt.NDArray[np.int64]

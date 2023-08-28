@@ -57,10 +57,6 @@ class Source(Updatable):
         that needs to do more than update its contained :python:`Updatable`
         objects should implement this method."""
 
-    @abstractmethod
-    def _reset_source(self):
-        """Abstract method to reset the source."""
-
     @final
     def _update(self, params: ParamsMap):
         """Implementation of Updatable interface method `_update`.
@@ -70,14 +66,6 @@ class Source(Updatable):
         self.cosmo_hash = None
         self.tracers = []
         self._update_source(params)
-
-    @final
-    def _reset(self) -> None:
-        """Implementation of the Updatable interface method `_reset`.
-
-        This calls the abstract method `_reset_source`, which must be implemented by
-        all subclasses."""
-        self._reset_source()
 
     @abstractmethod
     def get_scale(self) -> float:

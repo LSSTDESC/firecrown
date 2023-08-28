@@ -18,8 +18,6 @@ from .source import Source, Tracer, SourceSystematic
 from ..... import parameters
 from .....parameters import (
     ParamsMap,
-    RequiredParameters,
-    DerivedParameterCollection,
 )
 from .....modeling_tools import ModelingTools
 from .....updatable import UpdatableCollection
@@ -71,19 +69,6 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
         self.mult_bias = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -138,20 +123,6 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
@@ -197,20 +168,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
@@ -248,20 +205,6 @@ class PhotoZShift(WeakLensingSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        pass
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = DerivedParameterCollection([])
-
-        return derived_parameters
 
     def apply(self, tools: ModelingTools, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -304,22 +247,6 @@ class WeakLensing(Source):
 
         This updates all the contained systematics."""
         self.systematics.update(params)
-
-    @final
-    def _reset_source(self) -> None:
-        self.systematics.reset()
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return self.systematics.required_parameters()
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = DerivedParameterCollection([])
-        derived_parameters = (
-            derived_parameters + self.systematics.get_derived_parameters()
-        )
-        return derived_parameters
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this source from the SACC file.

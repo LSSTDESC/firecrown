@@ -10,7 +10,6 @@ Some notes.
 from __future__ import annotations
 from typing import List, Optional, Tuple, Sequence
 from typing import final
-from abc import abstractmethod
 import warnings
 
 import numpy as np
@@ -23,7 +22,6 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic
-from ...parameters import RequiredParameters, DerivedParameterCollection
 
 
 class GaussFamily(Likelihood):
@@ -128,48 +126,3 @@ class GaussFamily(Likelihood):
         chisq = np.dot(x, x)
 
         return chisq
-
-    @final
-    def _reset(self) -> None:
-        """Implementation of Likelihood interface method _reset.
-
-        This resets all statistics and calls the abstract method
-        _reset_gaussian_family."""
-        self._reset_gaussian_family()
-        self.statistics.reset()
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = (
-            self._get_derived_parameters_gaussian_family()
-            + self.statistics.get_derived_parameters()
-        )
-
-        return derived_parameters
-
-    @abstractmethod
-    def _reset_gaussian_family(self) -> None:
-        """Abstract method to reset GaussianFamily state. Must be implemented by all
-        subclasses."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        """Return a RequiredParameters object containing the information for
-        this Updatable.
-
-        This includes the required parameters for all statistics, as well as those
-        for the derived class.
-
-        Derived classes must implement required_parameters_gaussian_family."""
-        stats_rp = self.statistics.required_parameters()
-        stats_rp = self._required_parameters_gaussian_family() + stats_rp
-
-        return stats_rp
-
-    @abstractmethod
-    def _required_parameters_gaussian_family(self):
-        """Required parameters for GaussFamily subclasses."""
-
-    @abstractmethod
-    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
-        """Get derived parameters for GaussFamily subclasses."""

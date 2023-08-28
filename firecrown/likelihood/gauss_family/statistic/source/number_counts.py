@@ -18,7 +18,6 @@ from ..... import parameters
 from .....modeling_tools import ModelingTools
 from .....parameters import (
     ParamsMap,
-    RequiredParameters,
     DerivedParameterScalar,
     DerivedParameterCollection,
 )
@@ -43,7 +42,9 @@ class NumberCountsArgs:
 
 
 class NumberCountsSystematic(SourceSystematic):
-    """Class implementing systematics for Number Counts sources."""
+    """Abstract base class for systematics for Number Counts sources.
+
+    Derived classes must implement :python`apply` with the correct signature."""
 
     @abstractmethod
     def apply(
@@ -76,20 +77,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
         self.alphag = parameters.create()
         self.z_piv = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -140,20 +127,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         self.b_s = parameters.create()
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
@@ -198,20 +171,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         self.z_m = parameters.create()
 
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -259,20 +218,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         self.mag_bias = parameters.create()
         self.sacc_tracer = sacc_tracer
 
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
@@ -293,20 +238,6 @@ class PhotoZShift(NumberCountsSystematic):
 
         self.delta_z = parameters.create()
         self.sacc_tracer = sacc_tracer
-
-    @final
-    def _reset(self) -> None:
-        """Reset this systematic.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -356,14 +287,6 @@ class NumberCounts(Source):
         self.systematics.update(params)
 
     @final
-    def _reset_source(self) -> None:
-        self.systematics.reset()
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return self.systematics.required_parameters()
-
-    @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         if self.derived_scale:
             assert self.current_tracer_args is not None
@@ -375,9 +298,6 @@ class NumberCounts(Source):
             derived_parameters = DerivedParameterCollection([derived_scale])
         else:
             derived_parameters = DerivedParameterCollection([])
-        derived_parameters = (
-            derived_parameters + self.systematics.get_derived_parameters()
-        )
 
         return derived_parameters
 

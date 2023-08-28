@@ -12,7 +12,6 @@ from numcosmo_py import Ncm
 import scipy.integrate
 
 from ..updatable import Updatable
-from ..parameters import RequiredParameters, DerivedParameterCollection
 from .cluster_mass import ClusterMassArgument
 from .cluster_redshift import ClusterRedshiftArgument
 
@@ -103,14 +102,6 @@ class ClusterAbundance(Updatable):
     def _reset(self) -> None:
         """Implementation of the Updatable interface method `_reset`."""
         self.halo_mass_function = None
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
 
     def read(self, sacc_data):
         """Read the data for this statistic from the SACC file.

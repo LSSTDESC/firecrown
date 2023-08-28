@@ -4,6 +4,8 @@ Tests for the module firecrown.likelihood.gauss_family.statistic.source.source.
 import pytest
 import pyccl
 from firecrown.likelihood.gauss_family.statistic.source.source import Tracer
+import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
+from firecrown.parameters import ParamsMap
 
 
 class TrivialTracer(Tracer):
@@ -42,3 +44,34 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
     assert named.halo_2pt is None
     assert not named.has_pt
     assert not named.has_hm
+
+
+def test_linear_bias_systematic():
+    a = nc.LinearBiasSystematic("xxx")
+    assert isinstance(a, nc.LinearBiasSystematic)
+    assert a.sacc_tracer == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None
+    assert not a.is_updated()
+
+    a.update(ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 2.0, "xxx_z_piv": 1.5}))
+    assert a.is_updated()
+    assert a.alphag == 1.0
+    assert a.alphaz == 2.0
+    assert a.z_piv == 1.5
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.sacc_tracer == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None
+
+
+def test_weak_lensing_source():
+    pass
+
+
+def test_number_counts_source():
+    pass

@@ -72,23 +72,11 @@ class ClusterRedshift(Updatable):
         Subclasses that need to do more than update their contained
         :python:`Updatable` instance variables should implement this method."""
 
-    @abstractmethod
-    def _reset_cluster_redshift(self):
-        """Abstract method to reset the ClusterRedshift."""
-
     @final
     def _update(self, params: ParamsMap):
         """Implementation of Updatable interface method `_update`."""
 
         self._update_cluster_redshift(params)
-
-    @final
-    def _reset(self) -> None:
-        """Implementation of the Updatable interface method `_reset`.
-
-        This calls the abstract method `_reset_cluster_redshift`, which must be
-        implemented by all subclasses."""
-        self._reset_cluster_redshift()
 
     @abstractmethod
     def gen_bins_by_array(self, z_bins: np.ndarray) -> List[ClusterRedshiftArgument]:

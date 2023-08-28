@@ -1,11 +1,11 @@
 """Cluster Number Count statistic support.
 This module reads the necessary data from a SACC file to compute the
 theoretical prediction of cluster number counts inside bins of redshift
-and a mass proxy. For further information, check README.md.
+and a mass proxy.
 """
 
 from __future__ import annotations
-from typing import List, Dict, Tuple, Optional, final
+from typing import List, Dict, Tuple, Optional
 
 import numpy as np
 
@@ -14,10 +14,6 @@ from sacc.tracers import SurveyTracer
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
-from ....parameters import (
-    RequiredParameters,
-    DerivedParameterCollection,
-)
 from ....models.cluster_abundance import ClusterAbundance
 from ....models.cluster_mass import ClusterMass, ClusterMassArgument
 from ....models.cluster_redshift import ClusterRedshift, ClusterRedshiftArgument
@@ -29,14 +25,12 @@ class ClusterNumberCounts(Statistic):
     multiplicity functions, volume element,  etc.).
     This subclass implements the read and computes method for
     the Statistic class. It is used to compute the theoretical prediction of
-    cluster number counts given a SACC file and a cosmology. For
-    further information on how the SACC file shall be created,
-    check README.md.
+    cluster number counts.
     """
 
     def __init__(
         self,
-        sacc_tracer: str,
+        survey_tracer: str,
         cluster_abundance: ClusterAbundance,
         cluster_mass: ClusterMass,
         cluster_redshift: ClusterRedshift,
@@ -47,18 +41,13 @@ class ClusterNumberCounts(Statistic):
         """Initialize the ClusterNumberCounts object.
         Parameters
 
-        :param sacc_tracer: The SACC tracer. There must be only one tracer for all
-            the number Counts data points. Following the SACC file
-            documentation README.md, this string should be
-            'cluster_counts_true_mass'.
+        :param survey_tracer: name of the survey tracer in the SACC data.
         :param cluster_abundance: The cluster abundance model to use.
         :param systematics: A list of the statistics-level systematics to apply to
             the statistic. The default of `None` implies no systematics.
-
         """
         super().__init__()
-
-        self.sacc_tracer = sacc_tracer
+        self.sacc_tracer = survey_tracer
         self.systematics = systematics or []
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -73,32 +62,6 @@ class ClusterNumberCounts(Statistic):
             raise ValueError(
                 "At least one of use_cluster_counts and use_mean_log_mass must be True."
             )
-
-    @final
-    def _reset(self) -> None:
-        """Reset all contained Updatable objects."""
-        self.cluster_abundance.reset()
-        self.cluster_mass.reset()
-        self.cluster_redshift.reset()
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        """Return an empty RequiredParameters."""
-        return (
-            self.cluster_abundance.required_parameters()
-            + self.cluster_mass.required_parameters()
-            + self.cluster_redshift.required_parameters()
-        )
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        """Return an empty DerivedParameterCollection."""
-        derived_parameters = DerivedParameterCollection([])
-        derived_parameters += self.cluster_abundance.get_derived_parameters()
-        derived_parameters += self.cluster_mass.get_derived_parameters()
-        derived_parameters += self.cluster_redshift.get_derived_parameters()
-
-        return derived_parameters
 
     def _read_data_type(self, sacc_data, data_type):
         """Internal function to read the data from the SACC file."""
@@ -163,21 +126,19 @@ class ClusterNumberCounts(Statistic):
 
         return data_vector_list, sacc_indices_list
 
-    def read(self, sacc_data):
+    def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file.
-        This function takes the SACC file and extract the necessary
-        parameters needed to compute the number counts likelihood.
-        Check README.MD for a complete description of the method.
 
-        :param sacc_data: The data in the sacc format.
+        :param sacc_data: The data in the SACC format.
         """
 
-        survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
-        if survey_tracer is None:
+        try:
+            survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
+        except KeyError as exc:
             raise ValueError(
                 f"The SACC file does not contain the SurveyTracer "
                 f"{self.sacc_tracer}."
-            )
+            ) from exc
         if not isinstance(survey_tracer, SurveyTracer):
             raise ValueError(
                 f"The SACC tracer {self.sacc_tracer} is not a SurveyTracer."
@@ -220,10 +181,9 @@ class ClusterNumberCounts(Statistic):
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a Number Count statistic using the data from the
         Read method, the cosmology object, and the Bocquet16 halo mass function.
-        Check README.MD for a complete description of the method.
 
         :param tools: ModelingTools firecrown object
-            Firecrown object used to load the required cosmology.
+            used to load the required cosmology.
 
         :return: Numpy Array of floats
             An array with the theoretical prediction of the number of clusters
