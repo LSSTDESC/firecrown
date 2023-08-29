@@ -21,7 +21,7 @@ from firecrown.likelihood.likelihood import NamedParameters
 
 Ncm.cfg_init()
 
-with open(r"numcosmo_firecrown_model_snia.yml", "r", encoding="utf8") as modelfile:
+with open(r"numcosmo_firecrown_model_snia.yml", "r", encoding="utf-8") as modelfile:
     ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
 NcFirecrownSNIa = define_numcosmo_model(ncmodel)

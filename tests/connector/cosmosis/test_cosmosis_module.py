@@ -74,7 +74,7 @@ def fixture_sample_with_cosmo() -> DataBlock:
 
 @pytest.fixture(name="minimal_sample", scope="module")
 def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
-    with open("tests/distances.yml") as stream:
+    with open("tests/distances.yml", encoding="utf-8") as stream:
         rawdata = yaml.load(stream, yaml.CLoader)
     sample = sample_with_cosmo
     for section_name, section_data in rawdata.items():
