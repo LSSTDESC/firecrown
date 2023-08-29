@@ -33,7 +33,7 @@ def fixture_defective_module_config() -> DataBlock:
     block.put_string(
         option_section,
         "likelihood_source",
-        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param" ".py"),
+        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param.py"),
     )
     return block
 
@@ -87,7 +87,7 @@ def test_extract_section_gets_named_parameters(defective_module_config: DataBloc
     params = extract_section(defective_module_config, "module_options")
     assert isinstance(params, NamedParameters)
     assert params.get_string("likelihood_source") == expandvars(
-        "${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param" ".py"
+        "${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param.py"
     )
 
 
