@@ -13,7 +13,10 @@ import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
 import pyccl as ccl
+
+import firecrown.likelihood.gauss_family.gauss_family
 from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
+from firecrown.likelihood.gauss_family.gauss_family import GaussFamily
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
 from firecrown.likelihood.likelihood import load_likelihood, Likelihood, NamedParameters
 from firecrown.parameters import ParamsMap
@@ -105,16 +108,19 @@ class FirecrownLikelihood:
         self.tools.reset()
 
         # Save concatenated data vector and inverse covariance to enable support
-        # for the CosmoSIS fisher sampler.
-        sample.put(
-            "data_vector", "firecrown_theory", self.likelihood.predicted_data_vector
-        )
-        sample.put(
-            "data_vector", "firecrown_data", self.likelihood.measured_data_vector
-        )
-        sample.put(
-            "data_vector", "firecrown_inverse_covariance", self.likelihood.inv_cov
-        )
+        # for the CosmoSIS Fisher sampler. This can only work for likelihoods
+        # that have these quantities. Currently, this is only GaussFamily.
+
+        if isinstance(self.likelihood, GaussFamily):
+            sample.put(
+                "data_vector", "firecrown_theory", self.likelihood.predicted_data_vector
+            )
+            sample.put(
+                "data_vector", "firecrown_data", self.likelihood.measured_data_vector
+            )
+            sample.put(
+                "data_vector", "firecrown_inverse_covariance", self.likelihood.inv_cov
+            )
 
         # Write out theory and data vectors to the data block the ease
         # debugging.

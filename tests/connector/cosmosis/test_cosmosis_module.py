@@ -3,10 +3,12 @@
 As a unit test, what this can test is very limited.
 This test do not invoke the `cosmosis` executable.
 """
-
-
-from cosmosis.datablock import DataBlock, option_section
+from os.path import expandvars
+import yaml
 import pytest
+import numpy as np
+from cosmosis.datablock import DataBlock, option_section
+
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import FirecrownLikelihood, extract_section
 
@@ -31,7 +33,7 @@ def fixture_defective_module_config() -> DataBlock:
     block.put_string(
         option_section,
         "likelihood_source",
-        "tests/likelihood/lkdir/lk_needing_param.py",
+        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param" ".py"),
     )
     return block
 
@@ -40,7 +42,9 @@ def fixture_defective_module_config() -> DataBlock:
 def fixture_minimal_config() -> DataBlock:
     result = DataBlock()
     result.put_string(
-        option_section, "likelihood_source", "tests/likelihood/lkdir/lkscript.py"
+        option_section,
+        "likelihood_source",
+        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lkscript.py"),
     )
     return result
 
@@ -50,12 +54,40 @@ def fixture_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
     return FirecrownLikelihood(minimal_config)
 
 
+@pytest.fixture(name="sample_with_cosmo", scope="module")
+def fixture_sample_with_cosmo() -> DataBlock:
+    """Return a DataBlock that contains some cosmological parameters."""
+    result = DataBlock()
+    params = {
+        "h0": 0.83,
+        "omega_b": 0.22,
+        "omega_c": 0.120,
+        "omega_k": 0.0,
+        "omega_nu": 0.0,
+        "w": -1.0,
+        "wa": 0.0,
+    }
+    for name, val in params.items():
+        result.put_double("cosmological_parameters", name, val)
+    return result
+
+
+@pytest.fixture(name="minimal_sample", scope="module")
+def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
+    with open("tests/distances.yml") as stream:
+        rawdata = yaml.load(stream, yaml.CLoader)
+    sample = sample_with_cosmo
+    for section_name, section_data in rawdata.items():
+        for parameter_name, value in section_data.items():
+            sample.put(section_name, parameter_name, np.array(value))
+    return sample
+
+
 def test_extract_section_gets_named_parameters(defective_module_config: DataBlock):
     params = extract_section(defective_module_config, "module_options")
     assert isinstance(params, NamedParameters)
-    assert (
-        params.get_string("likelihood_source")
-        == "tests/likelihood/lkdir/lk_needing_param.py"
+    assert params.get_string("likelihood_source") == expandvars(
+        "${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_needing_param" ".py"
     )
 
 
@@ -89,3 +121,9 @@ def test_execute_missing_cosmological_parameters(firecrown_mod: FirecrownLikelih
         match="Datablock section " "`cosmological_parameters' does " "not exist.",
     ):
         _ = firecrown_mod.execute(no_cosmo_params)
+
+
+def test_execute_with_cosmo(
+    firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock
+):
+    assert firecrown_mod.execute(minimal_sample) == 0
