@@ -55,9 +55,7 @@ def fixture_config_with_derived_parameters() -> DataBlock:
     result.put_string(
         option_section,
         "Likelihood_source",
-        expandvars(
-            "${FIRECROWN_DIR}/tests/likelihood/lkdir" "/lk_derived_parameter.py"
-        ),
+        expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_derived_parameter.py"),
     )
     result.put_double("sample_parameters_sections", "derived_param0", 12.5)
     return result
@@ -141,7 +139,7 @@ def test_execute_missing_cosmological_parameters(
     no_cosmo_params = DataBlock()
     with pytest.raises(
         RuntimeError,
-        match="Datablock section " "`cosmological_parameters' does " "not exist.",
+        match="Datablock section `cosmological_parameters' does not exist.",
     ):
         _ = minimal_firecrown_mod.execute(no_cosmo_params)
 
