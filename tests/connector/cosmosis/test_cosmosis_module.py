@@ -7,7 +7,7 @@ from os.path import expandvars
 import yaml
 import pytest
 import numpy as np
-from cosmosis.datablock import DataBlock, option_section
+from cosmosis.datablock import DataBlock, option_section, names as section_names
 
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import FirecrownLikelihood, extract_section
@@ -49,12 +49,33 @@ def fixture_minimal_config() -> DataBlock:
     return result
 
 
+@pytest.fixture(name="config_with_derived_parameters")
+def fixture_config_with_derived_parameters() -> DataBlock:
+    result = DataBlock()
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(
+            "${FIRECROWN_DIR}/tests/likelihood/lkdir" "/lk_derived_parameter.py"
+        ),
+    )
+    result.put_double("sample_parameters_sections", "derived_param0", 12.5)
+    return result
+
+
 @pytest.fixture(name="minimal_firecrown_mod")
 def fixture_minimal_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
     return FirecrownLikelihood(minimal_config)
 
 
-@pytest.fixture(name="sample_with_cosmo", scope="module")
+@pytest.fixture(name="firecrown_mod_with_derived_parameters")
+def fixture_firecrown_mod_with_derived_parameters(
+    config_with_derived_parameters: DataBlock,
+) -> FirecrownLikelihood:
+    return FirecrownLikelihood(config_with_derived_parameters)
+
+
+@pytest.fixture(name="sample_with_cosmo")
 def fixture_sample_with_cosmo() -> DataBlock:
     """Return a DataBlock that contains some cosmological parameters."""
     result = DataBlock()
@@ -72,7 +93,7 @@ def fixture_sample_with_cosmo() -> DataBlock:
     return result
 
 
-@pytest.fixture(name="minimal_sample", scope="module")
+@pytest.fixture(name="minimal_sample")
 def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
     with open("tests/distances.yml", encoding="utf-8") as stream:
         rawdata = yaml.load(stream, yaml.CLoader)
@@ -129,3 +150,12 @@ def test_execute_with_cosmo(
     minimal_firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock
 ):
     assert minimal_firecrown_mod.execute(minimal_sample) == 0
+    assert minimal_sample[section_names.likelihoods, "firecrown_like"] == -3.0
+
+
+def test_execute_with_derived_parameters(
+    firecrown_mod_with_derived_parameters: FirecrownLikelihood,
+    minimal_sample: DataBlock,
+):
+    assert firecrown_mod_with_derived_parameters.execute(minimal_sample) == 0
+    assert minimal_sample.get_double("derived_section", "derived_param0") == 1.0
