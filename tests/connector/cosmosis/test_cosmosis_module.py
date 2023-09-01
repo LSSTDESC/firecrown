@@ -49,8 +49,8 @@ def fixture_minimal_config() -> DataBlock:
     return result
 
 
-@pytest.fixture(name="firecrown_mod")
-def fixture_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
+@pytest.fixture(name="minimal_firecrown_mod")
+def fixture_minimal_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
     return FirecrownLikelihood(minimal_config)
 
 
@@ -110,20 +110,22 @@ def test_missing_required_parameter(defective_module_config):
         _ = FirecrownLikelihood(defective_module_config)
 
 
-def test_initialize_minimal_module(firecrown_mod: FirecrownLikelihood):
-    assert isinstance(firecrown_mod, FirecrownLikelihood)
+def test_initialize_minimal_module(minimal_firecrown_mod: FirecrownLikelihood):
+    assert isinstance(minimal_firecrown_mod, FirecrownLikelihood)
 
 
-def test_execute_missing_cosmological_parameters(firecrown_mod: FirecrownLikelihood):
+def test_execute_missing_cosmological_parameters(
+    minimal_firecrown_mod: FirecrownLikelihood,
+):
     no_cosmo_params = DataBlock()
     with pytest.raises(
         RuntimeError,
         match="Datablock section " "`cosmological_parameters' does " "not exist.",
     ):
-        _ = firecrown_mod.execute(no_cosmo_params)
+        _ = minimal_firecrown_mod.execute(no_cosmo_params)
 
 
 def test_execute_with_cosmo(
-    firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock
+    minimal_firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock
 ):
-    assert firecrown_mod.execute(minimal_sample) == 0
+    assert minimal_firecrown_mod.execute(minimal_sample) == 0
