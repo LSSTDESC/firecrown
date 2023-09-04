@@ -60,6 +60,20 @@ def fixture_config_with_derived_parameters() -> DataBlock:
     return result
 
 
+@pytest.fixture(name="config_with_const_gaussian")
+def fixture_config_with_const_gaussian() -> DataBlock:
+    result = DataBlock()
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_const_gaussian.py"
+        ),
+    )
+    # result.put_string(option_section, )
+    return result
+
+
 @pytest.fixture(name="minimal_firecrown_mod")
 def fixture_minimal_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
     return FirecrownLikelihood(minimal_config)
@@ -70,6 +84,13 @@ def fixture_firecrown_mod_with_derived_parameters(
     config_with_derived_parameters: DataBlock,
 ) -> FirecrownLikelihood:
     return FirecrownLikelihood(config_with_derived_parameters)
+
+
+@pytest.fixture(name="firecrown_mod_with_const_gaussian")
+def fixture_firecrown_mod_with_const_gaussian(
+    config_with_const_gaussian: DataBlock,
+) -> FirecrownLikelihood:
+    return FirecrownLikelihood(config_with_const_gaussian)
 
 
 @pytest.fixture(name="sample_with_cosmo")
@@ -99,6 +120,12 @@ def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
         for parameter_name, value in section_data.items():
             sample.put(section_name, parameter_name, np.array(value))
     return sample
+
+
+@pytest.fixture(name="sample_with_M")
+def fixture_sample_with_M(minimal_sample: DataBlock) -> DataBlock:
+    minimal_sample.put("sampler_parameters", "pantheon_M", 4.5)
+    return minimal_sample
 
 
 def test_extract_section_gets_named_parameters(defective_module_config: DataBlock):
@@ -156,3 +183,10 @@ def test_execute_with_derived_parameters(
 ):
     assert firecrown_mod_with_derived_parameters.execute(minimal_sample) == 0
     assert minimal_sample.get_double("derived_section", "derived_param0") == 1.0
+
+
+def test_module_init_with_missing_sampling_sections(
+    config_with_const_gaussian: DataBlock,
+):
+    with pytest.raises(RuntimeError, match=r"\['pantheon_M'\]"):
+        _ = FirecrownLikelihood(config_with_const_gaussian)
