@@ -57,7 +57,6 @@ def fixture_config_with_derived_parameters() -> DataBlock:
         "Likelihood_source",
         expandvars("${FIRECROWN_DIR}/tests/likelihood/lkdir/lk_derived_parameter.py"),
     )
-    result.put_double("sample_parameters_sections", "derived_param0", 12.5)
     return result
 
 
