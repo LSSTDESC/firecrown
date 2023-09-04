@@ -11,7 +11,7 @@ from firecrown.likelihood.gauss_family.statistic.statistic import DataVector
 
 
 def build_likelihood(_):
-    """Return an EmptyLikelihood object."""
+    """Return a ConstGaussian (likelihood) object."""
     statistic = Supernova(sacc_tracer="no-tracer")
     likelihood = ConstGaussian(statistics=[statistic])
     likelihood.cov = np.array([1.0])
