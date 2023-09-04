@@ -35,6 +35,15 @@ def test_create_with_wrong_arg():
         _ = create("cow")  # type: ignore
 
 
+def test_required_parameters_length():
+    empty = RequiredParameters([])
+    assert len(empty) == 0
+    a = RequiredParameters(["a"])
+    assert len(a) == 1
+    b = RequiredParameters(["a", "b"])
+    assert len(b) == 2
+
+
 def test_get_params_names_does_not_allow_mutation():
     """The caller of RequiredParameters.get_params_names should not be able to modify
     the state of the object on which the call was made."""
