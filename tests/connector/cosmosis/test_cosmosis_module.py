@@ -3,7 +3,6 @@
 As a unit test, what this can test is very limited.
 This test do not invoke the `cosmosis` executable.
 """
-import re
 from os.path import expandvars
 import yaml
 import pytest
@@ -250,7 +249,8 @@ def test_module_exec_missing_parameter_in_sampling_sections(
     with pytest.raises(RuntimeError, match="`supernova_parameters`") as exc:
         _ = firecrown_mod_with_const_gaussian.execute(sample_without_M)
     outer_execption = exc.value
-    inner_exception: MissingSamplerParameterError = outer_execption.__cause__
+    inner_exception = outer_execption.__cause__
+    assert isinstance(inner_exception, MissingSamplerParameterError)
     assert inner_exception.parameter == "pantheon_M"
 
 
