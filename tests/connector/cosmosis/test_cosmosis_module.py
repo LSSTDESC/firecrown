@@ -3,6 +3,7 @@
 As a unit test, what this can test is very limited.
 This test do not invoke the `cosmosis` executable.
 """
+import re
 from os.path import expandvars
 import yaml
 import pytest
@@ -10,7 +11,11 @@ import numpy as np
 from cosmosis.datablock import DataBlock, option_section, names as section_names
 
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.connector.cosmosis.likelihood import FirecrownLikelihood, extract_section
+from firecrown.connector.cosmosis.likelihood import (
+    FirecrownLikelihood,
+    extract_section,
+    MissingSamplerParameterError,
+)
 
 
 @pytest.fixture(name="minimal_module_config")
@@ -60,8 +65,10 @@ def fixture_config_with_derived_parameters() -> DataBlock:
     return result
 
 
-@pytest.fixture(name="config_with_const_gaussian")
-def fixture_config_with_const_gaussian() -> DataBlock:
+@pytest.fixture(name="config_with_const_gaussian_missing_sampling_parameters_sections")
+def fixture_config_with_const_gaussian_missing_sampling_parameters_sections() -> (
+    DataBlock
+):
     result = DataBlock()
     result.put_string(
         option_section,
@@ -88,9 +95,9 @@ def fixture_firecrown_mod_with_derived_parameters(
 
 @pytest.fixture(name="firecrown_mod_with_const_gaussian")
 def fixture_firecrown_mod_with_const_gaussian(
-    config_with_const_gaussian: DataBlock,
+    working_config_for_const_gaussian: DataBlock,
 ) -> FirecrownLikelihood:
-    return FirecrownLikelihood(config_with_const_gaussian)
+    return FirecrownLikelihood(working_config_for_const_gaussian)
 
 
 @pytest.fixture(name="sample_with_cosmo")
@@ -124,7 +131,13 @@ def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
 
 @pytest.fixture(name="sample_with_M")
 def fixture_sample_with_M(minimal_sample: DataBlock) -> DataBlock:
-    minimal_sample.put("sampler_parameters", "pantheon_M", 4.5)
+    minimal_sample.put("supernova_parameters", "pantheon_M", 4.5)
+    return minimal_sample
+
+
+@pytest.fixture(name="sample_without_M")
+def fixture_sample_without_M(minimal_sample: DataBlock) -> DataBlock:
+    minimal_sample.put("supernova_parameters", "nobody_loves_me", 4.5)
     return minimal_sample
 
 
@@ -186,7 +199,62 @@ def test_execute_with_derived_parameters(
 
 
 def test_module_init_with_missing_sampling_sections(
-    config_with_const_gaussian: DataBlock,
+    config_with_const_gaussian_missing_sampling_parameters_sections: DataBlock,
 ):
     with pytest.raises(RuntimeError, match=r"\['pantheon_M'\]"):
-        _ = FirecrownLikelihood(config_with_const_gaussian)
+        _ = FirecrownLikelihood(
+            config_with_const_gaussian_missing_sampling_parameters_sections
+        )
+
+
+@pytest.fixture(name="config_with_wrong_sampling_sections")
+def fixture_config_with_wrong_sampling_sections(
+    config_with_const_gaussian_missing_sampling_parameters_sections: DataBlock,
+) -> DataBlock:
+    # The giant name is good documentation, but I can't type that correctly
+    # twice.
+    config = config_with_const_gaussian_missing_sampling_parameters_sections
+    config[option_section, "sampling_parameters_sections"] = "this_is_wrong"
+    return config
+
+
+@pytest.fixture(name="working_config_for_const_gaussian")
+def fixture_working_config_for_const_gaussian(
+    config_with_const_gaussian_missing_sampling_parameters_sections: DataBlock,
+) -> DataBlock:
+    config = config_with_const_gaussian_missing_sampling_parameters_sections
+    config[option_section, "sampling_parameters_sections"] = "supernova_parameters"
+    return config
+
+
+def test_module_init_with_wrong_sampling_sections(
+    config_with_wrong_sampling_sections: DataBlock,
+):
+    mod = FirecrownLikelihood(config_with_wrong_sampling_sections)
+    assert isinstance(mod, FirecrownLikelihood)
+
+
+def test_module_exec_with_wrong_sampling_sections(
+    config_with_wrong_sampling_sections: DataBlock, sample_with_M: DataBlock
+):
+    mod = FirecrownLikelihood(config_with_wrong_sampling_sections)
+    with pytest.raises(
+        RuntimeError, match="Datablock section `this_is_wrong' does not exist"
+    ):
+        _ = mod.execute(sample_with_M)
+
+
+def test_module_exec_missing_parameter_in_sampling_sections(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_without_M: DataBlock
+):
+    with pytest.raises(RuntimeError, match="`supernova_parameters`") as exc:
+        _ = firecrown_mod_with_const_gaussian.execute(sample_without_M)
+    outer_execption = exc.value
+    inner_exception: MissingSamplerParameterError = outer_execption.__cause__
+    assert inner_exception.parameter == "pantheon_M"
+
+
+def test_module_exec_working(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
+):
+    assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0

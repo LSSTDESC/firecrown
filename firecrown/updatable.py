@@ -34,8 +34,9 @@ class MissingSamplerParameterError(RuntimeError):
     ParamsMap supplied for the update is missing a parameter that should have
     been provided by the sampler."""
 
-    def __init__(self, parameter: str, context: str):
+    def __init__(self, parameter: str):
         """Create the error, with a meaning error message."""
+        self.parameter = parameter
         msg = (
             f"The parameter `{parameter}` is required to update "
             "something in this likelihood.\nIt should have been supplied"
@@ -147,7 +148,7 @@ class Updatable(ABC):
                 value = params.get_from_prefix_param(self.sacc_tracer, parameter)
             except KeyError as exc:
                 raise MissingSamplerParameterError(
-                    parameter_get_full_name(self.sacc_tracer, parameter), str(self)
+                    parameter_get_full_name(self.sacc_tracer, parameter)
                 ) from exc
             setattr(self, parameter, value)
 

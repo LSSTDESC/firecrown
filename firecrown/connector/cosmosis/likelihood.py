@@ -110,22 +110,10 @@ class FirecrownLikelihood:
         # calculations. e.g., data_vector/firecrown_theory  data_vector/firecrown_data
 
         firecrown_params = self.calculate_firecrown_params(sample)
-
         try:
             self.likelihood.update(firecrown_params)
         except MissingSamplerParameterError as exc:
-            msg = (
-                "The required parameter was not found in any of the "
-                "sections searched on DataBlock.\n"
-                "These are specified by the space-separated string "
-                "`sampling_parameter_sections`.\n"
-                "The supplied value was"
-            )
-            sampling_parameters_sections = " ".join(self.sampling_sections)
-            if sampling_parameters_sections:
-                msg += f": `{sampling_parameters_sections}`"
-            else:
-                msg += " an empty string."
+            msg = self.form_error_message(exc)
             raise RuntimeError(msg) from exc
 
         self.tools.prepare(ccl_cosmo)
@@ -183,6 +171,25 @@ class FirecrownLikelihood:
                 )
 
         return 0
+
+    def form_error_message(self, exc):
+        """Form the error message that will be used to report a missing
+        parameter, when that parameter should have been supplied by the
+        sampler."""
+        msg = (
+            "A required parameter was not found in any of the "
+            "sections searched on DataBlock.\n"
+            "These are specified by the space-separated string "
+            "`sampling_parameter_sections`.\n"
+            "The supplied value was"
+        )
+        sampling_parameters_sections = " ".join(self.sampling_sections)
+        if sampling_parameters_sections:
+            msg += f": `{sampling_parameters_sections}`"
+        else:
+            msg += " an empty string."
+        msg += f"\nThe missing parameter is named: `{exc.parameter}`\n"
+        return msg
 
     def calculate_firecrown_params(self, sample: cosmosis.datablock) -> ParamsMap:
         """Calculate the ParamsMap for this sample."""
