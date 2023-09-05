@@ -1,7 +1,6 @@
 """Tests for the Supernova statistic.
 """
 import pytest
-import numpy as np
 
 import sacc
 
