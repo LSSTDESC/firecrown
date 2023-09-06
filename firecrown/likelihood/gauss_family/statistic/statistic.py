@@ -11,6 +11,7 @@ data and theory vectors for a GaussianFamily subclass.
 from __future__ import annotations
 from typing import List
 from dataclasses import dataclass
+from abc import abstractmethod
 import warnings
 import numpy as np
 import numpy.typing as npt
@@ -106,15 +107,10 @@ class Statistic(Updatable):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
 
+    @abstractmethod
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector."""
-        raise NotImplementedError("Method `get_data_vector` is not implemented!")
 
+    @abstractmethod
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
-        raise NotImplementedError("Method `compute_theory_vector` is not implemented!")
-
-    def compute(self, tools: ModelingTools) -> StatisticsResult:
-        """Compute a statistic from sources, applying any systematics."""
-
-        raise NotImplementedError("Method `compute` is not implemented!")
