@@ -98,7 +98,7 @@ class Statistic(Updatable):
     initialization. The manage a :python:`DataVector` and, given a
     :python:`ModelingTools` object, can compute a :python:`TheoryVector`.
 
-    Statistics represent things like two-point functions and mass functinos.
+    Statistics represent things like two-point functions and mass functions.
     """
 
     systematics: List[SourceSystematic]
