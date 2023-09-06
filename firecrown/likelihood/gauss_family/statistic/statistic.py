@@ -91,6 +91,16 @@ class StatisticsResult:
         yield self.theory
 
 
+class StatisticUnreadError(RuntimeError):
+    def __init__(self, stat: Statistic):
+        msg = (
+            f"The statistic {stat} was used for calculation before `read` "
+            f"was called"
+        )
+        super().__init__(msg)
+        self.statstic = stat
+
+
 class Statistic(Updatable):
     """An abstract statistic class.
 
