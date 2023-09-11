@@ -68,7 +68,7 @@ class TrivialStatistic(Statistic):
         self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc):
-        """This trivial class does not actually need to read anything."""
+        """Read the necessary items from the sacc data."""
 
         our_data = sacc_data.get_mean(data_type="count")
         self.data_vector = DataVector.from_list(our_data)
@@ -76,7 +76,7 @@ class TrivialStatistic(Statistic):
 
     @final
     def _reset(self):
-        """Reset this statistic. This implementation has nothing to do."""
+        """Reset this statistic."""
         self.computed_theory_vector = False
 
     @final
