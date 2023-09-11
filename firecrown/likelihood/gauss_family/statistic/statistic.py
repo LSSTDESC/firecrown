@@ -20,6 +20,7 @@ import sacc
 from ....modeling_tools import ModelingTools
 from ....updatable import Updatable
 from .source.source import SourceSystematic
+from firecrown.parameters import ParamsMap
 
 
 class DataVector(npt.NDArray[np.float64]):
@@ -95,7 +96,8 @@ class StatisticUnreadError(RuntimeError):
     def __init__(self, stat: Statistic):
         msg = (
             f"The statistic {stat} was used for calculation before `read` "
-            f"was called."
+            f"was called.\nIt may be that a likelihood factory function did not"
+            f"call `read` before returning the likelihood."
         )
         super().__init__(msg)
         self.statstic = stat
@@ -126,12 +128,13 @@ class Statistic(Updatable):
         """Compute a statistic from sources, applying any systematics."""
 
 
-class GuardedStatistic:
+class GuardedStatistic(Updatable):
     """:python:`GuardedStatistic` is used by the framework to maintain and
     validate the state of instances of classes derived from
     :python:`Statistic`."""
 
     def __init__(self, stat: Statistic):
+        super().__init__()
         self.statistic = stat
         self.ready = False
 
@@ -150,3 +153,11 @@ class GuardedStatistic:
         if not self.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.compute_theory_vector(tools)
+
+    def _update(self, params: ParamsMap):
+        """Update the contained Statistic."""
+        self.statistic.update(params)
+
+    def _reset(self):
+        """Reset the contained Statistic."""
+        self.statistic.reset()

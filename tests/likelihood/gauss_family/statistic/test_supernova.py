@@ -3,8 +3,11 @@
 import pytest
 
 import sacc
+import pyccl
 
 from firecrown.likelihood.gauss_family.statistic.supernova import Supernova
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
 
 
 @pytest.fixture(name="minimal_stat")
@@ -72,3 +75,12 @@ def test_read_works(minimal_stat: Supernova, good_sacc_data: sacc.Sacc):
     data_vector = minimal_stat.get_data_vector()
     assert len(data_vector) == 1
     assert data_vector[0] == 16.95
+
+    tools = ModelingTools()
+    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = ParamsMap({"sn_fake_sample_M": 1.1})
+    minimal_stat.update(params)
+    theory_vector = minimal_stat.compute_theory_vector(tools)
+    assert len(theory_vector) == 1
+    # How do we test the implementation of compute_theory_vector() without
+    # repeating the implementation here?

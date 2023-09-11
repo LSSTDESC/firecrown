@@ -21,7 +21,7 @@ import sacc
 from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
-from .statistic.statistic import Statistic
+from .statistic.statistic import Statistic, GuardedStatistic
 
 
 class GaussFamily(Likelihood):
@@ -38,7 +38,7 @@ class GaussFamily(Likelihood):
         super().__init__()
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
-        self.statistics = UpdatableCollection(statistics)
+        self.statistics = UpdatableCollection(GuardedStatistic(s) for s in statistics)
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
@@ -50,7 +50,7 @@ class GaussFamily(Likelihood):
         for stat in self.statistics:
             stat.read(sacc_data)
 
-        indices_list = [stat.sacc_indices.copy() for stat in self.statistics]
+        indices_list = [s.statistic.sacc_indices.copy() for s in self.statistics]
         indices = np.concatenate(indices_list)
         cov = np.zeros((len(indices), len(indices)))
 
