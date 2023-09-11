@@ -92,9 +92,7 @@ def run_likelihood() -> None:
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
-    like_and_tools = build_likelihood(None)
-    likelihood: Likelihood = like_and_tools[0]
-    tools: ModelingTools = like_and_tools[1]
+    likelihood, tools = build_likelihood(None)
 
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
