@@ -95,14 +95,14 @@ class StatisticUnreadError(RuntimeError):
     def __init__(self, stat: Statistic):
         msg = (
             f"The statistic {stat} was used for calculation before `read` "
-            f"was called"
+            f"was called."
         )
         super().__init__(msg)
         self.statstic = stat
 
 
 class Statistic(Updatable):
-    """An abstract statistic class.
+    """The abstract base class for all physics-related statistics.
 
     Statistics read data from a SACC object as part of a multi-phase
     initialization. The manage a :python:`DataVector` and, given a
@@ -124,3 +124,29 @@ class Statistic(Updatable):
     @abstractmethod
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
+
+
+class GuardedStatistic:
+    """:python:`GuardedStatistic` is used by the framework to maintain and
+    validate the state of instances of classes derived from
+    :python:`Statistic`."""
+
+    def __init__(self, stat: Statistic):
+        self.statistic = stat
+        self.ready = False
+
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        if self.ready:
+            raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
+        self.statistic.read(sacc_data)
+        self.ready = True
+
+    def get_data_vector(self) -> DataVector:
+        if not self.ready:
+            raise StatisticUnreadError(self.statistic)
+        return self.statistic.get_data_vector()
+
+    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        if not self.ready:
+            raise StatisticUnreadError(self.statistic)
+        return self.statistic.compute_theory_vector(tools)
