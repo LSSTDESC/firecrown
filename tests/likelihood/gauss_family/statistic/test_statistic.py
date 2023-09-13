@@ -85,6 +85,7 @@ def test_guarded_statistic_read_only_once(trivial_stats):
     gs = stat.GuardedStatistic(trivial_stats.pop())
     assert not gs.statistic.ready
     gs.read(sacc_data)
+    assert gs.ready
     with pytest.raises(
         RuntimeError, match="Firecrown has called read twice on a GuardedStatistic"
     ):

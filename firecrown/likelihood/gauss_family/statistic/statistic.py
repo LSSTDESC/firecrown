@@ -159,10 +159,10 @@ class GuardedStatistic(Updatable):
             raise StatisticUnreadError(self.statistic)
         return self.statistic.compute_theory_vector(tools)
 
-    def _update(self, params: ParamsMap):
-        """Update the contained Statistic."""
-        self.statistic.update(params)
-
-    def _reset(self):
-        """Reset the contained Statistic."""
-        self.statistic.reset()
+    # def _update(self, params: ParamsMap):
+    #     """Update the contained Statistic."""
+    #     self.statistic.update(params)
+    #
+    # def _reset(self):
+    #     """Reset the contained Statistic."""
+    #     self.statistic.reset()
