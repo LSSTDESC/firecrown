@@ -83,7 +83,7 @@ def test_vector_residuals():
 def test_guarded_statistic_read_only_once(trivial_stats):
     sacc_data = sacc.Sacc()
     gs = stat.GuardedStatistic(trivial_stats.pop())
-    assert not gs.ready
+    assert not gs.statistic.ready
     gs.read(sacc_data)
     with pytest.raises(
         RuntimeError, match="Firecrown has called read twice on a GuardedStatistic"

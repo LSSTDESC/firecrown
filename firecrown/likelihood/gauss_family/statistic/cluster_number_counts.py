@@ -172,6 +172,7 @@ class ClusterNumberCounts(Statistic):
 
         self.data_vector = DataVector.from_list(data_vector_list)
         self.sacc_indices = np.array(sacc_indices_list)
+        super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
         """Return the data vector; raise exception if there is none."""

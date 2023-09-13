@@ -73,6 +73,7 @@ class TrivialStatistic(Statistic):
         our_data = sacc_data.get_mean(data_type="count")
         self.data_vector = DataVector.from_list(our_data)
         self.sacc_indices = np.arange(len(self.data_vector))
+        super().read(sacc_data)
 
     @final
     def _reset(self):

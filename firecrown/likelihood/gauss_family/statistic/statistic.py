@@ -9,7 +9,7 @@ data and theory vectors for a GaussianFamily subclass.
 """
 
 from __future__ import annotations
-from typing import List
+from typing import List, Optional
 from dataclasses import dataclass
 from abc import abstractmethod
 import warnings
@@ -19,7 +19,6 @@ import sacc
 
 from ....modeling_tools import ModelingTools
 from ....updatable import Updatable
-from .source.source import SourceSystematic
 from firecrown.parameters import ParamsMap
 
 
@@ -113,11 +112,19 @@ class Statistic(Updatable):
     Statistics represent things like two-point functions and mass functions.
     """
 
-    systematics: List[SourceSystematic]
-    sacc_indices: npt.NDArray[np.int64]
+    def __init__(self):
+        super().__init__()
+        self.sacc_indices: Optional[npt.NDArray[np.int64]]
+        self.ready = False
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this statistic from the SACC file."""
+        """Read the data for this statistic from the SACC data, and mark it
+        as ready for use. Derived classes that override this function
+        should make sure to call the base class method using:
+            super().read(sacc_data)
+        as the last thing they do in `__init__`.
+        """
+        self.ready = True
 
     @abstractmethod
     def get_data_vector(self) -> DataVector:
@@ -136,21 +143,19 @@ class GuardedStatistic(Updatable):
     def __init__(self, stat: Statistic):
         super().__init__()
         self.statistic = stat
-        self.ready = False
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        if self.ready:
+        if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
         self.statistic.read(sacc_data)
-        self.ready = True
 
     def get_data_vector(self) -> DataVector:
-        if not self.ready:
+        if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.get_data_vector()
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        if not self.ready:
+        if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.compute_theory_vector(tools)
 

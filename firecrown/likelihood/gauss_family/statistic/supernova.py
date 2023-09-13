@@ -55,6 +55,7 @@ class Supernova(Statistic):
         self.a = 1.0 / (1.0 + z)
         self.data_vector = DataVector.from_list([dp.value for dp in data_points])
         self.sacc_indices = np.arange(len(self.data_vector))
+        super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
         """Return the data vector; raise exception if there is none."""
