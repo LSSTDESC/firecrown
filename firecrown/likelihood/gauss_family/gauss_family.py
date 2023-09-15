@@ -46,6 +46,13 @@ class GaussFamily(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
+        if sacc_data.covariance is None:
+            msg = (
+                f"The {type(self).__name__} likelihood requires a covariance, "
+                f"but the SACC data object being read does not have one."
+            )
+            raise RuntimeError(msg)
+
         covariance = sacc_data.covariance.dense
         for stat in self.statistics:
             stat.read(sacc_data)
@@ -117,6 +124,8 @@ class GaussFamily(Likelihood):
             data_vector = self.get_data_vector()
         except NotImplementedError:
             data_vector, theory_vector = self.compute(tools)
+
+        assert len(data_vector) == len(theory_vector)
         residuals = data_vector - theory_vector
 
         self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
