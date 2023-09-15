@@ -9,7 +9,7 @@ data and theory vectors for a GaussianFamily subclass.
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, final
 from dataclasses import dataclass
 from abc import abstractmethod
 import warnings
@@ -17,9 +17,10 @@ import numpy as np
 import numpy.typing as npt
 import sacc
 
-from ....modeling_tools import ModelingTools
-from ....updatable import Updatable
-from firecrown.parameters import ParamsMap
+import firecrown.parameters
+from firecrown.parameters import DerivedParameterCollection, RequiredParameters
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import Updatable
 
 
 class DataVector(npt.NDArray[np.float64]):
@@ -125,6 +126,11 @@ class Statistic(Updatable):
         as the last thing they do in `__init__`.
         """
         self.ready = True
+        if len(self.get_data_vector()) == 0:
+            raise RuntimeError(
+                "the statistic {self} has read a data vector "
+                "of length 0; the length must be positive"
+            )
 
     @abstractmethod
     def get_data_vector(self) -> DataVector:
@@ -159,10 +165,54 @@ class GuardedStatistic(Updatable):
             raise StatisticUnreadError(self.statistic)
         return self.statistic.compute_theory_vector(tools)
 
-    # def _update(self, params: ParamsMap):
-    #     """Update the contained Statistic."""
-    #     self.statistic.update(params)
-    #
-    # def _reset(self):
-    #     """Reset the contained Statistic."""
-    #     self.statistic.reset()
+
+class TrivialStatistic(Statistic):
+    """A minimal statistic for testing Gaussian likelihoods.
+
+    It returns a :python:`DataVector` and :python:`TheoryVector` that is three
+    elements long. The SACC data provided to :python:`TrivialStatistic.read`
+    must supply the necessary values.
+    """
+
+    def __init__(self) -> None:
+        """Initialize this statistic."""
+        super().__init__()
+        # Data and theory will both be of length self.count
+        self.count = 3
+        self.data_vector: Optional[DataVector] = None
+        self.mean = firecrown.parameters.create()
+        self.computed_theory_vector = False
+
+    def read(self, sacc_data: sacc.Sacc):
+        """Read the necessary items from the sacc data."""
+
+        our_data = sacc_data.get_mean(data_type="count")
+        assert len(our_data) == self.count
+        self.data_vector = DataVector.from_list(our_data)
+        self.sacc_indices = np.arange(len(self.data_vector))
+        super().read(sacc_data)
+
+    @final
+    def _reset(self):
+        """Reset this statistic."""
+        self.computed_theory_vector = False
+
+    @final
+    def _required_parameters(self) -> RequiredParameters:
+        """Return an empty RequiredParameters."""
+        return RequiredParameters([])
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Return an empty DerivedParameterCollection."""
+        return DerivedParameterCollection([])
+
+    def get_data_vector(self) -> DataVector:
+        """Return the data vector; raise exception if there is none."""
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
+        """Return a fixed theory vector."""
+        self.computed_theory_vector = True
+        return TheoryVector.from_list([self.mean] * self.count)
