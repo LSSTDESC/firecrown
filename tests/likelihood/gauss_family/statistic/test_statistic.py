@@ -1,11 +1,13 @@
 """
 Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
 """
+from typing import List
 import numpy as np
 import pytest
 import sacc
 
 import firecrown.likelihood.gauss_family.statistic.statistic as stat
+
 
 VECTOR_CLASSES = (stat.TheoryVector, stat.DataVector)
 
@@ -80,16 +82,17 @@ def test_vector_residuals():
         assert not isinstance(difference, cls)
 
 
-def test_guarded_statistic_read_only_once(trivial_stats):
-    sacc_data = sacc.Sacc()
+def test_guarded_statistic_read_only_once(
+    sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: List[stat.TrivialStatistic]
+):
     gs = stat.GuardedStatistic(trivial_stats.pop())
     assert not gs.statistic.ready
-    gs.read(sacc_data)
-    assert gs.ready
+    gs.read(sacc_data_for_trivial_stat)
+    assert gs.statistic.ready
     with pytest.raises(
         RuntimeError, match="Firecrown has called read twice on a GuardedStatistic"
     ):
-        gs.read(sacc_data)
+        gs.read(sacc_data_for_trivial_stat)
 
 
 def test_guarded_statistic_get_data_before_read(trivial_stats):

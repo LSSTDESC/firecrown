@@ -96,7 +96,8 @@ def fixture_firecrown_mod_with_derived_parameters(
 def fixture_firecrown_mod_with_const_gaussian(
     working_config_for_const_gaussian: DataBlock,
 ) -> FirecrownLikelihood:
-    return FirecrownLikelihood(working_config_for_const_gaussian)
+    result = FirecrownLikelihood(working_config_for_const_gaussian)
+    return result
 
 
 @pytest.fixture(name="sample_with_cosmo")
@@ -201,6 +202,8 @@ def test_module_init_with_missing_sampling_sections(
     config_with_const_gaussian_missing_sampling_parameters_sections: DataBlock,
 ):
     with pytest.raises(RuntimeError, match=r"\['pantheon_M'\]"):
+        s = config_with_const_gaussian_missing_sampling_parameters_sections.to_string()
+        assert s is not None
         _ = FirecrownLikelihood(
             config_with_const_gaussian_missing_sampling_parameters_sections
         )
