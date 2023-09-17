@@ -94,11 +94,7 @@ jobs:
         run: |
           pylint --rcfile tests/pylintrc  tests
           pylint --rcfile firecrown/models/pylintrc firecrown/models
-          pylint firecrown/connector
-          pylint firecrown/*.py
-          pylint firecrown/likelihood/*.py
-          pylint firecrown/likelihood/gauss_family/*.py
-
+          pylint firecrown
       - name: Running pytest
         shell: bash -l {0}
         run: python -m pytest -vv
