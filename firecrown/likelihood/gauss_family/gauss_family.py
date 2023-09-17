@@ -38,7 +38,9 @@ class GaussFamily(Likelihood):
         super().__init__()
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
-        self.statistics = UpdatableCollection(GuardedStatistic(s) for s in statistics)
+        self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
+            GuardedStatistic(s) for s in statistics
+        )
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None

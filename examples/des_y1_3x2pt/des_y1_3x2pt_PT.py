@@ -167,14 +167,14 @@ def run_likelihood() -> None:
     ptt_m = pyccl.nl_pt.PTMatterTracer()
     ptt_g = pyccl.nl_pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
     # IA
-    pk_im = ptc.get_biased_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m)
-    pk_ii = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_i, tracer2=ptt_i)
-    pk_gi = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_g, tracer2=ptt_i)
+    pk_im = ptc.get_biased_pk2d(ptt_i, tracer2=ptt_m)
+    pk_ii = ptc.get_biased_pk2d(ptt_i, tracer2=ptt_i)
+    pk_gi = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_i)
     # Galaxies
-    pk_gm = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_g, tracer2=ptt_m)
-    pk_gg = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_g, tracer2=ptt_g)
+    pk_gm = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_m)
+    pk_gg = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_g)
     # Magnification: just a matter-matter P(k)
-    pk_mm = ptc.get_biased_pk2d(ccl_cosmo, tracer1=ptt_m, tracer2=ptt_m)
+    pk_mm = ptc.get_biased_pk2d(ptt_m, tracer2=ptt_m)
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -210,25 +210,29 @@ def run_likelihood() -> None:
     assert likelihood.cov is not None
 
     # y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
+    stat0 = likelihood.statistics[0].statistic
     # y_theory = likelihood.statistics[0].predicted_statistic_
 
-    print(list(likelihood.statistics[0].cells.keys()))
+    print(list(stat0.cells.keys()))
 
-    ells = likelihood.statistics[0].ells
-    cells_GG = likelihood.statistics[0].cells[("shear", "shear")]
-    cells_GI = likelihood.statistics[0].cells[("shear", "intrinsic_pt")]
-    cells_II = likelihood.statistics[0].cells[("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total = likelihood.statistics[0].cells["total"]
+    ells = stat0.ells
+    cells_GG = stat0.cells[("shear", "shear")]
+    cells_GI = stat0.cells[("shear", "intrinsic_pt")]
+    cells_II = stat0.cells[("intrinsic_pt", "intrinsic_pt")]
+    cells_cs_total = stat0.cells["total"]
 
-    print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = likelihood.statistics[2].cells[("galaxies", "shear")]
-    cells_gI = likelihood.statistics[2].cells[("galaxies", "intrinsic_pt")]
-    cells_mI = likelihood.statistics[2].cells[("magnification+rsd", "intrinsic_pt")]
+    stat2 = likelihood.statistics[2].statistic
+    assert isinstance(stat2, TwoPoint)
+    print(list(stat2.cells.keys()))
+    cells_gG = stat2.cells[("galaxies", "shear")]
+    cells_gI = stat2.cells[("galaxies", "intrinsic_pt")]
+    cells_mI = stat2.cells[("magnification+rsd", "intrinsic_pt")]
 
-    print(list(likelihood.statistics[3].cells.keys()))
-    cells_gg = likelihood.statistics[3].cells[("galaxies", "galaxies")]
-    cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification+rsd")]
-    cells_gg_total = likelihood.statistics[3].cells["total"]
+    stat3 = likelihood.statistics[3].statistic
+    print(list(stat3.cells.keys()))
+    cells_gg = stat3.cells[("galaxies", "galaxies")]
+    cells_gm = stat3.cells[("galaxies", "magnification+rsd")]
+    cells_gg_total = stat3.cells["total"]
 
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))

@@ -177,6 +177,7 @@ def run_likelihood() -> None:
 
 
 def make_plot(ccl_cosmo, nz, pk_ii, pk_im, two_point_0, z):
+    """Create and show a diagnostic plot."""
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
