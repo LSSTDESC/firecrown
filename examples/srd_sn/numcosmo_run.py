@@ -60,9 +60,7 @@ map_cosmo = MappingNumCosmo(
     require_nonlinear_pk=False, dist=dist, model_list=["NcFirecrownSNIa"]
 )
 
-sacc_file = os.path.expandvars(
-    "${FIRECROWN_DIR}" "/examples/srd_sn/srd-y1-converted.sacc"
-)
+sacc_file = os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
 
 nc_factory = NumCosmoFactory(
     "sn_srd.py", NamedParameters({"sacc_file": sacc_file}), map_cosmo

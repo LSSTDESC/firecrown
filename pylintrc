@@ -63,5 +63,5 @@ ignore-none=false
 expected-line-ending-format=LF
 
 [DESIGN]
-max-args=15
+max-args=20
 max-attributes=20

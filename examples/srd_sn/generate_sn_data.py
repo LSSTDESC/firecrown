@@ -1,6 +1,5 @@
 """Generate SACC data into file srd-y1-converted.sacc.
 """
-from typing import Any, Optional
 import os
 import tarfile
 import urllib.request
@@ -142,17 +141,15 @@ def ensure_local_data_files(dirname_year10, url):
 def main(args):
     """Generate the file srd-y1-converted.sacc."""
     y1cov, y1dat = read_hubble_data(args)
-    #  set up the sacc data name for the astrophysical sources involved.
-    sources = ["supernova"]
-    properties = ["distance"]
-    # The statistc
-    statistic = "mu"
+
     # There is no futher specified needed here - everything is scalar.
-    subtype: Optional[Any] = None
-    sndata_type = sacc.build_data_type_name(sources, properties, statistic, subtype)
+    sndata_type = sacc.build_data_type_name(
+        sources=["supernova"], properties=["distance"], statistic="mu", subtype=None
+    )
     type_details = sacc.parse_data_type_name(sndata_type)
     print(
-        "type_details.sources, type_details.properties, type_details.statistic, type_details.subtype"
+        "type_details.sources, type_details.properties, "
+        "type_details.statistic, type_details.subtype"
     )
     print(
         type_details.sources,
