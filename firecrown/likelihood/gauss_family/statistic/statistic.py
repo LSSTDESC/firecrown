@@ -93,6 +93,9 @@ class StatisticsResult:
 
 
 class StatisticUnreadError(RuntimeError):
+    """Run-time error indicating an attempt has been made to use a statistic
+    that has not had `read` called in it."""
+
     def __init__(self, stat: Statistic):
         msg = (
             f"The statistic {stat} was used for calculation before `read` "
@@ -118,12 +121,15 @@ class Statistic(Updatable):
         self.sacc_indices: Optional[npt.NDArray[np.int64]]
         self.ready = False
 
-    def read(self, sacc_data: sacc.Sacc) -> None:
+    def read(self, _: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC data, and mark it
         as ready for use. Derived classes that override this function
         should make sure to call the base class method using:
             super().read(sacc_data)
         as the last thing they do in `__init__`.
+
+        Note that currently the argument is not used; it is present so that this
+        method will have the correct argument type for the override.
         """
         self.ready = True
         if len(self.get_data_vector()) == 0:
@@ -147,20 +153,37 @@ class GuardedStatistic(Updatable):
     :python:`Statistic`."""
 
     def __init__(self, stat: Statistic):
+        """Initialize the GuardedStatistic to contain the given
+        :python:`Statistic`."""
         super().__init__()
         self.statistic = stat
 
     def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read whatever data is needed from the given :python:`sacc.Sacc
+        object.
+
+        After this function is called, the object should be prepared for the
+        calling of the methods :python:`get_data_vector` and
+        :python:`compute_theory_vector`.
+        """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
         self.statistic.read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
+        """Return the contained :python:`Statistic`'s data vector.
+
+        :python:`GuardedStatistic` ensures that :python:`read` has been read
+        first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.get_data_vector()
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Return the contained :python:`Statistic`'s computed theory vector.
+
+        :python:`GuardedStatistic` ensures that :python:`read` has been read
+        first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.compute_theory_vector(tools)
