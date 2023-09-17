@@ -128,8 +128,8 @@ class Statistic(Updatable):
         self.ready = True
         if len(self.get_data_vector()) == 0:
             raise RuntimeError(
-                "the statistic {self} has read a data vector "
-                "of length 0; the length must be positive"
+                f"the statistic {self} has read a data vector "
+                f"of length 0; the length must be positive"
             )
 
     @abstractmethod
