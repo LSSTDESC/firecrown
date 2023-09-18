@@ -173,7 +173,7 @@ class GuardedStatistic(Updatable):
     def get_data_vector(self) -> DataVector:
         """Return the contained :python:`Statistic`'s data vector.
 
-        :python:`GuardedStatistic` ensures that :python:`read` has been read
+        :python:`GuardedStatistic` ensures that :python:`read` has been called.
         first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -182,7 +182,7 @@ class GuardedStatistic(Updatable):
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Return the contained :python:`Statistic`'s computed theory vector.
 
-        :python:`GuardedStatistic` ensures that :python:`read` has been read
+        :python:`GuardedStatistic` ensures that :python:`read` has been called.
         first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -190,7 +190,7 @@ class GuardedStatistic(Updatable):
 
 
 class TrivialStatistic(Statistic):
-    """A minimal statistic for testing Gaussian likelihoods.
+    """A minimal statistic only to be used for testing Gaussian likelihoods.
 
     It returns a :python:`DataVector` and :python:`TheoryVector` that is three
     elements long. The SACC data provided to :python:`TrivialStatistic.read`
