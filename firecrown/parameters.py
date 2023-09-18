@@ -86,6 +86,10 @@ class RequiredParameters:
         """Construct an instance from an Iterable yielding strings."""
         self.params_names: Set[str] = set(params_names)
 
+    def __len__(self):
+        """Return the number of parameters contained."""
+        return len(self.params_names)
+
     def __add__(self, other: RequiredParameters):
         """Return a new RequiredParameters with the concatenated names.
 

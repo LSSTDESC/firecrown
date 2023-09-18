@@ -266,7 +266,11 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
 def test_numcosmo_data(
-    numcosmo_cosmo_fixture, trivial_stats, sacc_data, nc_model_trivial, request
+    numcosmo_cosmo_fixture,
+    trivial_stats,
+    sacc_data_for_trivial_stat,
+    nc_model_trivial,
+    request,
 ):
     """Test the NumCosmo data connector for NcmData."""
 
@@ -282,7 +286,7 @@ def test_numcosmo_data(
     )
 
     likelihood = ConstGaussian(statistics=trivial_stats)
-    likelihood.read(sacc_data)
+    likelihood.read(sacc_data_for_trivial_stat)
 
     fc_data = NumCosmoData(
         likelihood=likelihood,
@@ -314,7 +318,11 @@ def test_numcosmo_data(
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
 def test_numcosmo_gauss_cov(
-    numcosmo_cosmo_fixture, trivial_stats, sacc_data, nc_model_trivial, request
+    numcosmo_cosmo_fixture,
+    trivial_stats,
+    sacc_data_for_trivial_stat,
+    nc_model_trivial,
+    request,
 ):
     """Test the NumCosmo data connector for NcmDataGaussCov."""
 
@@ -330,7 +338,7 @@ def test_numcosmo_gauss_cov(
     )
 
     likelihood = ConstGaussian(statistics=trivial_stats)
-    likelihood.read(sacc_data)
+    likelihood.read(sacc_data_for_trivial_stat)
 
     fc_data = NumCosmoGaussCov(
         likelihood=likelihood,

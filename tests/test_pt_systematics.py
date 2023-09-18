@@ -137,24 +137,28 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
 
     # print(list(likelihood.statistics[0].cells.keys()))
     # pylint: disable=no-member
-    ells = likelihood.statistics[0].ells
-    cells_GG = likelihood.statistics[0].cells[("shear", "shear")]
-    cells_GI = likelihood.statistics[0].cells[("shear", "intrinsic_pt")]
-    cells_II = likelihood.statistics[0].cells[("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total = likelihood.statistics[0].cells["total"]
+
+    # TODO:  We need to have a way to test systematics without requiring
+    #  digging  into the innards of a likelihood object.
+    s0 = likelihood.statistics[0].statistic
+    ells = s0.ells
+    cells_GG = s0.cells[("shear", "shear")]
+    cells_GI = s0.cells[("shear", "intrinsic_pt")]
+    cells_II = s0.cells[("intrinsic_pt", "intrinsic_pt")]
+    cells_cs_total = s0.cells["total"]
 
     # print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = likelihood.statistics[2].cells[("galaxies", "shear")]
-    cells_gI = likelihood.statistics[2].cells[("galaxies", "intrinsic_pt")]
-    cells_mI = likelihood.statistics[2].cells[("magnification+rsd", "intrinsic_pt")]
+    s2 = likelihood.statistics[2].statistic
+    cells_gG = s2.cells[("galaxies", "shear")]
+    cells_gI = s2.cells[("galaxies", "intrinsic_pt")]
+    cells_mI = s2.cells[("magnification+rsd", "intrinsic_pt")]
 
     # print(list(likelihood.statistics[3].cells.keys()))
-    cells_gg = likelihood.statistics[3].cells[("galaxies", "galaxies")]
-    cells_gm = likelihood.statistics[3].cells[("galaxies", "magnification+rsd")]
-    cells_mm = likelihood.statistics[3].cells[
-        ("magnification+rsd", "magnification+rsd")
-    ]
-    cells_gg_total = likelihood.statistics[3].cells["total"]
+    s3 = likelihood.statistics[3].statistic
+    cells_gg = s3.cells[("galaxies", "galaxies")]
+    cells_gm = s3.cells[("galaxies", "magnification+rsd")]
+    cells_mm = s3.cells[("magnification+rsd", "magnification+rsd")]
+    cells_gg_total = s3.cells["total"]
     # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
@@ -295,13 +299,12 @@ def test_pt_mixed_systematics(sacc_data):
     # print(list(likelihood.statistics[0].cells.keys()))
     # pylint: disable=no-member
 
-    ells = likelihood.statistics[0].ells
+    s0 = likelihood.statistics[0].statistic
+    ells = s0.ells
 
     # print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = likelihood.statistics[0].cells[("galaxies+magnification+rsd", "shear")]
-    cells_gI = likelihood.statistics[0].cells[
-        ("galaxies+magnification+rsd", "intrinsic_pt")
-    ]
+    cells_gG = s0.cells[("galaxies+magnification+rsd", "shear")]
+    cells_gI = s0.cells[("galaxies+magnification+rsd", "intrinsic_pt")]
     # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object

@@ -29,6 +29,23 @@ from .parameters import DerivedParameterCollection
 GeneralUpdatable = Union["Updatable", "UpdatableCollection"]
 
 
+class MissingSamplerParameterError(RuntimeError):
+    """Error class raised when an Updatable failes to be updated because the
+    ParamsMap supplied for the update is missing a parameter that should have
+    been provided by the sampler."""
+
+    def __init__(self, parameter: str):
+        """Create the error, with a meaning error message."""
+        self.parameter = parameter
+        msg = (
+            f"The parameter `{parameter}` is required to update "
+            "something in this likelihood.\nIt should have been supplied"
+            "by the sampling framework.\nThe object being updated was:\n"
+            "{context}\n"
+        )
+        super().__init__(msg)
+
+
 class Updatable(ABC):
     """Abstract class Updatable is the base class for Updatable objects in Firecrown.
 
@@ -130,11 +147,8 @@ class Updatable(ABC):
             try:
                 value = params.get_from_prefix_param(self.sacc_tracer, parameter)
             except KeyError as exc:
-                raise RuntimeError(
-                    f"Missing required parameter "
-                    f"`{parameter_get_full_name(self.sacc_tracer, parameter)}`,"
-                    f" the sampling framework should provide this parameter."
-                    f" The object requiring this parameter is {self}."
+                raise MissingSamplerParameterError(
+                    parameter_get_full_name(self.sacc_tracer, parameter)
                 ) from exc
             setattr(self, parameter, value)
 

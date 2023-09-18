@@ -1,4 +1,4 @@
-"""Tests for ClusterNumberCounts.
+"""Tests for the ClusterNumberCounts statistic.
 """
 import pytest
 

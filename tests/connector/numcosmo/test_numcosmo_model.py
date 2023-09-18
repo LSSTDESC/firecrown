@@ -42,12 +42,12 @@ def test_model_save_load(tmp_path, nc_model):
     """Test saving and loading a NumCosmo model."""
 
     with open(
-        tmp_path / r"numcosmo_firecrown_model.yml", "w", encoding="utf8"
+        tmp_path / r"numcosmo_firecrown_model.yml", "w", encoding="utf-8"
     ) as modelfile:
         yaml.dump(nc_model, modelfile, Dumper=yaml.Dumper)
 
     with open(
-        tmp_path / r"numcosmo_firecrown_model.yml", "r", encoding="utf8"
+        tmp_path / r"numcosmo_firecrown_model.yml", "r", encoding="utf-8"
     ) as modelfile:
         model_copy = yaml.load(modelfile, Loader=yaml.Loader)
 

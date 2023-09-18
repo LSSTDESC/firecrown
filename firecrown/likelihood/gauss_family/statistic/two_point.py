@@ -298,6 +298,8 @@ class TwoPoint(Statistic):
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
 
+        super().read(sacc_data)
+
     def calculate_ell_or_theta(self):
         """See _ell_for_xi.
 
