@@ -17,10 +17,11 @@ def build_likelihood(_):
     # We need the Sacc object to contain everything that the Supernova stat wil
     # read.
     sacc_data = sacc.Sacc()
-    sacc_data.add_tracer("misc", "pantheon")
-    sacc_data.add_data_point("supernova_distance_mu", (), 1.0)
-    sacc_data.add_data_point("supernova_distance_mu", (), 4.0)
-    sacc_data.add_data_point("supernova_distance_mu", (), -3.0)
+    tracer_tuple = ("pantheon",)
+    sacc_data.add_tracer("misc", tracer_tuple[0])
+    sacc_data.add_data_point("supernova_distance_mu", tracer_tuple, 1.0, z=0.1)
+    sacc_data.add_data_point("supernova_distance_mu", tracer_tuple, 4.0, z=0.2)
+    sacc_data.add_data_point("supernova_distance_mu", tracer_tuple, -3.0, z=0.3)
     sacc_data.add_covariance([4.0, 9.0, 16.0])
     likelihood.read(sacc_data)
     return likelihood
