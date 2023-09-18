@@ -168,7 +168,15 @@ class GuardedStatistic(Updatable):
         """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
-        self.statistic.read(sacc_data)
+        try:
+            self.statistic.read(sacc_data)
+        except TypeError as exc:
+            msg = (
+                f"A statistic of type {type(self.statistic).__name__} has raised "
+                f"an exception during `read`.\nThe problem may be a malformed "
+                f"SACC data object."
+            )
+            raise RuntimeError(msg) from exc
 
     def get_data_vector(self) -> DataVector:
         """Return the contained :python:`Statistic`'s data vector.
