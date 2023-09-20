@@ -1,6 +1,6 @@
 """
 Provides a trivial likelihood factory function for testing purposes.
-The likelihood created requires a string parameter named "sacc_tracer"
+The likelihood created requires a string parameter named "parameter_prefix"
 and has a sampler parameter named "sampler_param0".
 """
 from firecrown.likelihood.likelihood import NamedParameters
