@@ -46,8 +46,8 @@ class ClusterNumberCounts(Statistic):
         :param systematics: A list of the statistics-level systematics to apply to
             the statistic. The default of `None` implies no systematics.
         """
-        super().__init__()
-        self.sacc_tracer = survey_tracer
+        super().__init__(parameter_prefix=survey_tracer)
+        self.survey_tracer = survey_tracer
         self.systematics = systematics or []
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -84,13 +84,13 @@ class ClusterNumberCounts(Statistic):
 
         cluster_survey_tracers = tracers_combinations[:, 0]
 
-        if self.sacc_tracer not in cluster_survey_tracers:
+        if self.survey_tracer not in cluster_survey_tracers:
             raise ValueError(
-                f"The SACC tracer {self.sacc_tracer} is not "
+                f"The SACC tracer {self.survey_tracer} is not "
                 f"present in the SACC file."
             )
 
-        survey_selection = cluster_survey_tracers == self.sacc_tracer
+        survey_selection = cluster_survey_tracers == self.survey_tracer
 
         z_tracers = np.unique(tracers_combinations[survey_selection, 1])
         logM_tracers = np.unique(tracers_combinations[survey_selection, 2])
@@ -133,15 +133,15 @@ class ClusterNumberCounts(Statistic):
         """
 
         try:
-            survey_tracer: SurveyTracer = sacc_data.get_tracer(self.sacc_tracer)
+            survey_tracer: SurveyTracer = sacc_data.get_tracer(self.survey_tracer)
         except KeyError as exc:
             raise ValueError(
                 f"The SACC file does not contain the SurveyTracer "
-                f"{self.sacc_tracer}."
+                f"{self.survey_tracer}."
             ) from exc
         if not isinstance(survey_tracer, SurveyTracer):
             raise ValueError(
-                f"The SACC tracer {self.sacc_tracer} is not a SurveyTracer."
+                f"The SACC tracer {self.survey_tracer} is not a SurveyTracer."
             )
 
         self.cluster_abundance.sky_area = survey_tracer.sky_area

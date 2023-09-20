@@ -49,7 +49,7 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
 def test_linear_bias_systematic():
     a = nc.LinearBiasSystematic("xxx")
     assert isinstance(a, nc.LinearBiasSystematic)
-    assert a.sacc_tracer == "xxx"
+    assert a.parameter_prefix == "xxx"
     assert a.alphag is None
     assert a.alphaz is None
     assert a.z_piv is None
@@ -63,7 +63,7 @@ def test_linear_bias_systematic():
 
     a.reset()
     assert not a.is_updated()
-    assert a.sacc_tracer == "xxx"
+    assert a.parameter_prefix == "xxx"
     assert a.alphag is None
     assert a.alphaz is None
     assert a.z_piv is None

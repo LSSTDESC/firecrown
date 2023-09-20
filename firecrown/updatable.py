@@ -57,14 +57,22 @@ class Updatable(ABC):
 
     """
 
-    def __init__(self) -> None:
-        """Updatable initialization."""
+    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
+        """Updatable initialization.
+
+        :param prefix: prefix for all parameters in this Updatable
+
+        Parameters created by firecrown.parameters.create will have a prefix
+        that is given by the prefix argument to the Updatable constructor. This
+        prefix is used to create the full name of the parameter. If `parameter_prefix`
+        is None, then the parameter will have no prefix.
+        """
         self._updated: bool = False
         self._returned_derived: bool = False
         self._sampler_parameters: Dict[str, SamplerParameter] = {}
         self._internal_parameters: Dict[str, InternalParameter] = {}
-        self.sacc_tracer: Optional[str] = None
         self._updatables: List[GeneralUpdatable] = []
+        self.parameter_prefix: Optional[str] = parameter_prefix
 
     def __setattr__(self, key: str, value: Any) -> None:
         """Set the attribute named :python:`key` to the supplied :python:`value`.
@@ -145,10 +153,10 @@ class Updatable(ABC):
 
         for parameter in self._sampler_parameters:
             try:
-                value = params.get_from_prefix_param(self.sacc_tracer, parameter)
+                value = params.get_from_prefix_param(self.parameter_prefix, parameter)
             except KeyError as exc:
                 raise MissingSamplerParameterError(
-                    parameter_get_full_name(self.sacc_tracer, parameter)
+                    parameter_get_full_name(self.parameter_prefix, parameter)
                 ) from exc
             setattr(self, parameter, value)
 
@@ -224,7 +232,7 @@ class Updatable(ABC):
 
         sampler_parameters = RequiredParameters(
             [
-                parameter_get_full_name(self.sacc_tracer, parameter)
+                parameter_get_full_name(self.parameter_prefix, parameter)
                 for parameter in self._sampler_parameters
             ]
         )
