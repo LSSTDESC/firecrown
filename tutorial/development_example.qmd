@@ -68,7 +68,9 @@ import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 import sacc
 
-SACC_FILENAME = os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
+SACC_FILENAME = os.path.expandvars( \
+    "${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc" \
+    )
 
 def build_likelihood(_):
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
