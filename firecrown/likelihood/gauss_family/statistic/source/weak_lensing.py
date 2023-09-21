@@ -60,6 +60,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
+
     :ivar mult_bias: the multiplicative shear bias parameter.
     """
 
@@ -100,6 +101,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
+
     :ivar ia_bias: the intrinsic alignment bias parameter.
     :ivar alphaz: the redshift dependence of the intrinsic alignment bias.
     :ivar alphag: the growth function dependence of the intrinsic alignment bias.
@@ -150,10 +152,10 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
+
     :ivar ia_a_1: the amplitude of the linear alignment model.
     :ivar ia_a_2: the amplitude of the quadratic alignment model.
     :ivar ia_a_d: the amplitude of the density-dependent alignment model.
-
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None):
@@ -202,6 +204,7 @@ class PhotoZShift(WeakLensingSystematic):
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
     prefix for the parameters:
+
     :ivar delta_z: the photo-z shift.
     """
 

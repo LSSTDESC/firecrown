@@ -19,7 +19,8 @@ class ClusterMassRich(ClusterMass):
     """Cluster Mass Richness proxy.
 
     The following parameters are special Updatable parameters, which means that
-    they can be updated by the sampler.
+    they can be updated by the sampler:
+
     :ivar mu_p0: mu parameter 0
     :ivar mu_p1: mu parameter 1
     :ivar mu_p2: mu parameter 2
