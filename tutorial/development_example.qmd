@@ -5,7 +5,7 @@ authors:
   - Marc Paterno
   - Sandro Vitenti
 execute:
-  eval: false
+  EFL: false
 format:
   html:
     toc: true
@@ -17,8 +17,8 @@ citation-location: margin
 
 ## Prologue
 
-For the purposes of this example, by "developing a new likelihood" we mean writing the code that uses existing software element in the Firecrown package to define a likelihood for some specific data, taking into account the set of physical effects of interest for the analysis that will use this likelihood.
-Technically, in Firecrown, this means writing a new *likelihood factory function*.
+For the purposes of this example, by *developing a new likelihood* we mean writing the code that uses existing software element in the Firecrown package to define a likelihood for some specific data, taking into account the set of physical effects of interest for the analysis that will use this likelihood.
+In Firecrown, this means writing a new *likelihood factory function* -- the function that actually creates a Python object representing a likelihood.
 
 ## Development workflow
 {{< include _development_workflow.qmd >}}
@@ -28,30 +28,7 @@ Technically, in Firecrown, this means writing a new *likelihood factory function
 
 ## Code development hygiene
 
-OLD STUFF TO RE-EVALUATE
-
--   The Continuous Integration (CI) system will enforce these.
-
-``` {{bash}}
-# We are using black to keep consistent formatting across all python source files.
-# Note that this use of 'black --check' does not actually change any file. If files other
-# than those you edited are complained about by black, please file an issue.
-black --check firecrown/ examples/ tests/
-
-# We are using flake8 to help verify PEP8 compliance.
-flake8 firecrown examples tests
-
-# We are using type hints and mypy to help catch type-related errors.
-mypy -p firecrown -p examples -p tests
-
-# We are using pylint to enforce a variety of rules.
-pylint firecrown
-pylint --rcfile pylintrc_for_tests tests
-pylint --rcfile firecrown/models/pylintrc firecrown/models
-
-# Run the unit test suite. Note that the coverage is incomplete.
-python -m pytest -v tests
-```
+{{< include _code_development_hygiene.qmd >}}
 
 # Implementing a new [`ConstGaussian`]{.fragment} likelihood
 
@@ -85,14 +62,13 @@ python -m pytest -v tests
 
 -   Structuring your factory function well helps make it easier for you, and others, to understand what you have written.
 
-```{{python}}
-from os.path 
+```{python}
+import os.path 
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 import sacc
 
-SACC_FILENAME =
-    os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
+SACC_FILENAME = os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
 
 def build_likelihood(_):
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
@@ -102,7 +78,3 @@ def build_likelihood(_):
     # This simple likelihood has no associated ModelingTools
     return likelihood, None
 ```
-
-NEW STUFF MAYBE REPLACING THE OLD
-
-{{< include _code_development_hygiene.qmd >}}
