@@ -40,6 +40,15 @@ class Source(Updatable):
     cosmo_hash: Optional[int]
     tracers: Sequence[Tracer]
 
+    def __init__(self, sacc_tracer: str) -> None:
+        """Create a Source object that uses the named tracer.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
+        self.sacc_tracer = sacc_tracer
+
     @final
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this source from the SACC file."""

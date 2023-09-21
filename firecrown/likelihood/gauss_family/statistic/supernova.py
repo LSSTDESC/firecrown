@@ -22,7 +22,7 @@ class Supernova(Statistic):
 
     def __init__(self, sacc_tracer) -> None:
         """Initialize this statistic."""
-        super().__init__()
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
         self.data_vector: Optional[DataVector] = None

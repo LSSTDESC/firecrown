@@ -16,7 +16,18 @@ from .. import parameters
 
 
 class ClusterMassRich(ClusterMass):
-    """Cluster Mass Richness proxy."""
+    """Cluster Mass Richness proxy.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler:
+
+    :ivar mu_p0: mu parameter 0
+    :ivar mu_p1: mu parameter 1
+    :ivar mu_p2: mu parameter 2
+    :ivar sigma_p0: sigma parameter 0
+    :ivar sigma_p1: sigma parameter 1
+    :ivar sigma_p2: sigma parameter 2
+    """
 
     def __init__(
         self, pivot_mass, pivot_redshift, logMl: float = 13.0, logMu: float = 16.0

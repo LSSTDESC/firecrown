@@ -59,24 +59,27 @@ class LinearBiasSystematic(NumberCountsSystematic):
     This systematic adds a linear bias model which varies with redshift and
     the growth function.
 
-    Parameters
-    ----------
-    alphaz : str
-        The name of redshift dependence parameter of the linear bias.
-    alphag : str
-        The name of the growth dependence parameter of the linear bias.
-    z_piv : str
-        The name of the pivot redshift parameter for the linear bias.
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
 
+    :ivar alphaz: the redshift exponent of the bias.
+    :ivar alphag: the growth function exponent of the bias.
+    :ivar z_piv: the pivot redshift of the bias.
     """
 
     def __init__(self, sacc_tracer: str):
-        super().__init__()
+        """Initialize the LinearBiasSystematic.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.alphaz = parameters.create()
         self.alphag = parameters.create()
         self.z_piv = parameters.create()
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -113,19 +116,27 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     """Non-linear bias systematic.
 
     This systematic adds a linear bias model which varies with redshift and
+    the growth function.
 
-    Parameters
-    ----------
-    b_2: float
-    b_s: float
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar b_2: the quadratic bias.
+    :ivar b_s: the stochastic bias.
     """
 
     def __init__(self, sacc_tracer: str):
-        super().__init__()
+        """Initialize the PTNonLinearBiasSystematic.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.b_2 = parameters.create()
         self.b_s = parameters.create()
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -148,29 +159,30 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     This systematic adds a magnification bias model for galaxy number contrast
     following Joachimi & Bridle (2010), arXiv:0911.2454.
 
-    Parameters
-    ----------
-    r_lim : float
-        The name of the limiting magnitude in r band filter.
-    sig_c, eta, z_c, z_m : float
-        The name of the fitting parameters in Joachimi & Bridle (2010) equation
-        (C.1).
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
 
-    Methods
-    -------
-    apply : apply the systematic to a source
+    :ivar r_lim: the limiting magnitude.
+    :ivar sig_c: the intrinsic dispersion of the source redshift distribution.
+    :ivar eta: the slope of the luminosity function.
+    :ivar z_c: the characteristic redshift of the source distribution.
+    :ivar z_m: the slope of the source redshift distribution.
     """
 
     def __init__(self, sacc_tracer: str):
-        super().__init__()
+        """Initialize the MagnificationBiasSystematic.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.r_lim = parameters.create()
         self.sig_c = parameters.create()
         self.eta = parameters.create()
         self.z_c = parameters.create()
         self.z_m = parameters.create()
-
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -207,16 +219,25 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     """Simple constant magnification bias systematic.
 
-    Methods
-    -------
-    apply : apply the systematic to a source
+    This systematic adds a constant magnification bias model for galaxy number
+    contrast.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar mag_bias: the magnification bias.
     """
 
     def __init__(self, sacc_tracer: str):
-        super().__init__()
+        """Initialize the ConstantMagnificationBiasSystematic.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.mag_bias = parameters.create()
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -231,13 +252,23 @@ class PhotoZShift(NumberCountsSystematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some ammount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar delta_z: the photo-z shift.
     """
 
     def __init__(self, sacc_tracer: str):
-        super().__init__()
+        """Create a PhotoZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.delta_z = parameters.create()
-        self.sacc_tracer = sacc_tracer
 
     def apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -268,7 +299,17 @@ class NumberCounts(Source):
         scale: float = 1.0,
         systematics: Optional[List[NumberCountsSystematic]] = None,
     ):
-        super().__init__()
+        """Initialize the NumberCounts object.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        :param has_rsd: whether to include RSD in the tracer.
+        :param derived_scale: whether to include a derived parameter for the scale
+            of the tracer.
+        :param scale: the initial scale of the tracer.
+        :param systematics: a list of systematics to apply to the tracer.
+        """
+        super().__init__(sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd

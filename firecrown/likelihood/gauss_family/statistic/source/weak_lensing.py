@@ -57,18 +57,22 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
 
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar mult_bias: the multiplicative shear bias parameter.
     """
 
     def __init__(self, sacc_tracer: str) -> None:
         """Create a MultiplicativeShearBias object that uses the named tracer.
-        Parameters
-        ----------
-        sacc_tracer : The name of the multiplicative bias parameter.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
         """
-        super().__init__()
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.mult_bias = parameters.create()
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -94,34 +98,30 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     This systematic adds a linear intrinsic alignment model systematic
     which varies with redshift and the growth function.
 
-    Methods
-    -------
-    apply : apply the systematic to a source
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar ia_bias: the intrinsic alignment bias parameter.
+    :ivar alphaz: the redshift dependence of the intrinsic alignment bias.
+    :ivar alphag: the growth function dependence of the intrinsic alignment bias.
+    :ivar z_piv: the pivot redshift for the intrinsic alignment bias.
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None, alphag=1.0):
         """Create a LinearAlignmentSystematic object, using the specified
         tracer name.
 
-        Instance data are:
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
 
-        alphaz : The redshift dependence parameter of the intrinsic alignment
-        signal.
-
-        alphag : The growth dependence parameter of the intrinsic alignment
-        signal.
-
-        z_piv : The pivot redshift parameter for the intrinsic alignment
-        parameter.
         """
-        super().__init__()
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.ia_bias = parameters.create()
         self.alphaz = parameters.create()
         self.alphag = parameters.create(alphag)
         self.z_piv = parameters.create()
-
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -149,24 +149,26 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
     This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
 
-    Parameters
-    ----------
-    ia_a_1: float
-    ia_a_2: float
-    ia_a_d: float
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
 
-    Methods
-    -------
-    apply : apply the systematic to a source
+    :ivar ia_a_1: the amplitude of the linear alignment model.
+    :ivar ia_a_2: the amplitude of the quadratic alignment model.
+    :ivar ia_a_d: the amplitude of the density-dependent alignment model.
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None):
-        super().__init__()
+        """Create a TattAlignmentSystematic object, using the specified
+        tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
         self.ia_a_1 = parameters.create()
         self.ia_a_2 = parameters.create()
         self.ia_a_d = parameters.create()
-
-        self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -198,13 +200,23 @@ class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some amount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar delta_z: the photo-z shift.
     """
 
     def __init__(self, sacc_tracer: str):
-        super().__init__()
+        """Create a PhotoZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.delta_z = parameters.create()
-        self.sacc_tracer = sacc_tracer
 
     def apply(self, tools: ModelingTools, tracer_arg: WeakLensingArgs):
         """Apply a shift to the photo-z distribution of a source."""
@@ -233,8 +245,17 @@ class WeakLensing(Source):
         scale: float = 1.0,
         systematics: Optional[List[WeakLensingSystematic]] = None,
     ):
-        """Initialize the WeakLensing object."""
-        super().__init__()
+        """Initialize the WeakLensing object.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        :param scale: the scale of the source. This is used to scale the shear
+            power spectrum.
+        :param systematics: a list of WeakLensingSystematic objects to apply to
+            this source.
+
+        """
+        super().__init__(sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
         self.scale = scale

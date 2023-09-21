@@ -54,10 +54,9 @@ class SamplerParameterLikelihood(Likelihood):
 
     def __init__(self, params: NamedParameters):
         """Initialize the SamplerParameterLikelihood by reading the specificed
-        sacc_tracer value and creates a sampler parameter called "sampler_param0".
+        parameter_prefix value and creates a sampler parameter called "sampler_param0".
         """
-        super().__init__()
-        self.sacc_tracer = params.get_string("sacc_tracer")
+        super().__init__(parameter_prefix=params.get_string("parameter_prefix"))
         self.sampler_param0 = parameters.create()
 
     def read(self, sacc_data: sacc.Sacc) -> None:

@@ -116,8 +116,8 @@ class Statistic(Updatable):
     Statistics represent things like two-point functions and mass functions.
     """
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parameter_prefix: Optional[str] = None):
+        super().__init__(parameter_prefix=parameter_prefix)
         self.sacc_indices: Optional[npt.NDArray[np.int64]]
         self.ready = False
 

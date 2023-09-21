@@ -214,7 +214,7 @@ def test_sampler_parameter_likelihood_missing(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_sampler_parameter.py",
-                "build_parameters": NamedParameters({"sacc_tracer": "my_prefix"}),
+                "build_parameters": NamedParameters({"parameter_prefix": "my_prefix"}),
             }
         },
         "theory": {
@@ -235,7 +235,7 @@ def test_sampler_parameter_likelihood(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_sampler_parameter.py",
-                "build_parameters": NamedParameters({"sacc_tracer": "my_prefix"}),
+                "build_parameters": NamedParameters({"parameter_prefix": "my_prefix"}),
             }
         },
         "theory": {

@@ -36,9 +36,9 @@ class Likelihood(Updatable):
     these methods, and provide other abstract methods for their subclasses to implement.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
         """Default initialization for a base Likelihood object."""
-        super().__init__()
+        super().__init__(parameter_prefix=parameter_prefix)
 
         self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
         self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
