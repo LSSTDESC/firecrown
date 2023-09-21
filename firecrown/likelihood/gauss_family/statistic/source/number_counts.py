@@ -58,6 +58,14 @@ class LinearBiasSystematic(NumberCountsSystematic):
 
     This systematic adds a linear bias model which varies with redshift and
     the growth function.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar alphaz: the redshift exponent of the bias.
+    :ivar alphag: the growth function exponent of the bias.
+    :ivar z_piv: the pivot redshift of the bias.
+
     """
 
     def __init__(self, sacc_tracer: str):
@@ -109,6 +117,12 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
 
     This systematic adds a linear bias model which varies with redshift and
     the growth function.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar b_2: the quadratic bias.
+    :ivar b_s: the stochastic bias.
     """
 
     def __init__(self, sacc_tracer: str):
@@ -143,6 +157,16 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 
     This systematic adds a magnification bias model for galaxy number contrast
     following Joachimi & Bridle (2010), arXiv:0911.2454.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar r_lim: the limiting magnitude.
+    :ivar sig_c: the intrinsic dispersion of the source redshift distribution.
+    :ivar eta: the slope of the luminosity function.
+    :ivar z_c: the characteristic redshift of the source distribution.
+    :ivar z_m: the slope of the source redshift distribution.
+
     """
 
     def __init__(self, sacc_tracer: str):
@@ -196,6 +220,12 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
 
     This systematic adds a constant magnification bias model for galaxy number
     contrast.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar mag_bias: the magnification bias.
+
     """
 
     def __init__(self, sacc_tracer: str):
@@ -221,6 +251,12 @@ class PhotoZShift(NumberCountsSystematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some ammount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar delta_z: the photo-z shift.
+
     """
 
     def __init__(self, sacc_tracer: str):

@@ -56,6 +56,11 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     """Multiplicative shear bias systematic.
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar mult_bias: the multiplicative shear bias parameter.
     """
 
     def __init__(self, sacc_tracer: str) -> None:
@@ -91,6 +96,14 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
     This systematic adds a linear intrinsic alignment model systematic
     which varies with redshift and the growth function.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar ia_bias: the intrinsic alignment bias parameter.
+    :ivar alphaz: the redshift dependence of the intrinsic alignment bias.
+    :ivar alphag: the growth function dependence of the intrinsic alignment bias.
+    :ivar z_piv: the pivot redshift for the intrinsic alignment bias.
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None, alphag=1.0):
@@ -133,6 +146,14 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     """TATT alignment systematic.
 
     This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar ia_a_1: the amplitude of the linear alignment model.
+    :ivar ia_a_2: the amplitude of the quadratic alignment model.
+    :ivar ia_a_d: the amplitude of the density-dependent alignment model.
+
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None):
@@ -177,6 +198,11 @@ class PhotoZShift(WeakLensingSystematic):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some amount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+    :ivar delta_z: the photo-z shift.
     """
 
     def __init__(self, sacc_tracer: str):
