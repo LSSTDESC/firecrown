@@ -8,7 +8,7 @@ import pyccl as ccl
 import numpy as np
 from numcosmo_py import Ncm
 
-from firecrown.models.cluster_abundance import ClusterAbundance
+from firecrown.models.cluster_abundance_old import ClusterAbundance
 from firecrown.models.cluster_mass_rich_proxy import (
     ClusterMassRich,
     ClusterMassRichBinArgument,

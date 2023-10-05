@@ -11,7 +11,7 @@ import numpy as np
 from firecrown.models.cluster_mass import ClusterMass, ClusterMassArgument
 from firecrown.models.cluster_redshift import ClusterRedshift, ClusterRedshiftArgument
 from firecrown.models.cluster_mass_true import ClusterMassTrue
-from firecrown.models.cluster_abundance import ClusterAbundance
+from firecrown.models.cluster_abundance_old import ClusterAbundance
 from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
 from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
 from firecrown.parameters import ParamsMap

@@ -12,8 +12,9 @@ from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster_abundance import ClusterAbundance
-from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
-from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
+from firecrown.models.mass_observable import MassObservableFactory, MassObservableType
+from firecrown.models.redshift import RedshiftFactory, RedshiftType
+from firecrown.parameters import ParamsMap
 
 
 def build_likelihood(build_parameters):
@@ -21,31 +22,9 @@ def build_likelihood(build_parameters):
     Here we instantiate the number density (or mass function) object.
     """
 
-    pivot_mass = 14.625862906
-    pivot_redshift = 0.6
-
-    cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
-    cluster_z = ClusterRedshiftSpec()
-
-    # TODO: remove try/except when pyccl 3.0 is released
-    try:
-        hmd_200 = ccl.halos.MassDef200m()
-    except TypeError:
-        hmd_200 = ccl.halos.MassDef200m
-
-    hmf_args: Dict[str, Any] = {}
-    hmf_name = "Tinker08"
-
-    cluster_abundance = ClusterAbundance(hmd_200, hmf_name, hmf_args)
-
-    stats = ClusterNumberCounts(
-        "numcosmo_simulated_redshift_richness",
-        cluster_abundance,
-        cluster_mass_r,
-        cluster_z,
-        use_cluster_counts=build_parameters.get_bool("use_cluster_counts", True),
-        use_mean_log_mass=build_parameters.get_bool("use_mean_log_mass", False),
-    )
+    stats = ClusterNumberCounts(survey_name="numcosmo_simulated_redshift_richness")
+    stats.use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
+    stats.use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
     stats_list = [stats]
 
     # Here we instantiate the actual likelihood. The statistics argument carry
@@ -70,6 +49,25 @@ def build_likelihood(build_parameters):
     # This script will be loaded by the appropriated connector. The framework
     # then looks for the `likelihood` variable to find the instance that will
     # be used to compute the likelihood.
-    modeling = ModelingTools()
+    hmf = ccl.halos.MassFuncTinker08()
+    cluster_abundance = ClusterAbundance(hmf)
+
+    mass_observable = MassObservableFactory.create(
+        MassObservableType.MU_SIGMA,
+        ParamsMap(
+            {
+                "pivot_mass": 14.625862906,
+                "pivot_redshift": 0.6,
+                "min_mass": 13.0,
+                "max_mass": 15.0,
+            }
+        ),
+    )
+    cluster_abundance.add_kernel(mass_observable)
+
+    redshift = RedshiftFactory.create(RedshiftType.SPEC)
+    cluster_abundance.add_kernel(redshift)
+
+    modeling = ModelingTools(cluster_abundance=cluster_abundance)
 
     return lk, modeling
