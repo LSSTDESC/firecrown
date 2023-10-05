@@ -5,19 +5,22 @@ from firecrown.updatable import Updatable
 
 
 class Kernel(Updatable):
-    def __init__():
+    def __init__(self, bounds=[]):
         super().__init__()
+        # Number of differentials dx, dy, etc in the kernel
+        self.bounds = bounds  # 2x dimension
+        self.dimension = len(bounds)
 
-    def distribution(self, mass, z, mass_proxy, z_proxy):
+    def probability(self, differentials):
         return 1.0
 
 
 class Completeness(Kernel):
-    def __init__():
+    def __init__(self):
         super().__init__()
 
     # TODO get better names here
-    def distribution(self, mass, z, mass_proxy, z_proxy):
+    def probability(self, mass, z, differentials):
         a_nc = 1.1321
         b_nc = 0.7751
         a_mc = 13.31
@@ -29,12 +32,12 @@ class Completeness(Kernel):
 
 
 class Purity(Kernel):
-    def __init__():
+    def __init__(self):
         super().__init__()
 
     # TODO get better names here
-    def distribution(mass, z, mass_proxy, z_proxy):
-        ln_r = np.log(10**mass_proxy)
+    def probability(self, mass, z):
+        ln_r = np.log(10**mass)
         a_nc = np.log(10) * 0.8612
         b_nc = np.log(10) * 0.3527
         a_rc = 2.2183

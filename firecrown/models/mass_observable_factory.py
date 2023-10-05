@@ -12,16 +12,16 @@ MassObservableType = Enum("MassObservableType", "TRUE MU_SIGMA MURATA COSTANZI")
 
 class MassObservableFactory:
     @staticmethod
-    def create(mass_observable_type: MassObservableType, params: ParamsMap):
+    def create(mass_observable_type: MassObservableType, params: ParamsMap, bounds):
         if mass_observable_type == MassObservableType.TRUE:
-            return TrueMass(params)
+            return TrueMass(params, bounds)
         elif mass_observable_type == MassObservableType.MU_SIGMA:
-            return MassRichnessMuSigma(params)
+            return MassRichnessMuSigma(params, bounds)
         elif mass_observable_type == MassObservableType.MURATA:
-            # return MurataMass(params)
+            # return MurataMass(params, bounds)
             raise NotImplementedError("Murata mass observable not implemented.")
         elif mass_observable_type == MassObservableType.COSTANZI:
-            # return CostanziMass(params)
+            # return CostanziMass(params, bounds)
             raise NotImplementedError("Costanzi mass observable not implemented.")
         else:
             raise ValueError(

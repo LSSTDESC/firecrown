@@ -9,21 +9,33 @@ class SaccAdapter:
     _mass_index = 1
     _redshift_index = 2
 
-    def __init__(self, sacc_data: sacc.Sacc):
+    def __init__(
+        self, sacc_data: sacc.Sacc, survey_nm: str, cluster_counts, mean_log_mass
+    ):
         self.sacc_data = sacc_data
+        self.cluster_counts = cluster_counts
+        self.mean_log_mass = mean_log_mass
+        try:
+            self.survey_tracer: SurveyTracer = sacc_data.get_tracer(survey_nm)
+        except KeyError as exc:
+            raise ValueError(
+                f"The SACC file does not contain the SurveyTracer " f"{survey_nm}."
+            ) from exc
+        if not isinstance(self.survey_tracer, SurveyTracer):
+            raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
 
-    def get_data_and_indices(self, data_type, survey_tracer):
+    def filter_tracers(self, data_type):
         tracers_combinations = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
-        self.validate_tracers(tracers_combinations, survey_tracer, data_type)
+        self.validate_tracers(tracers_combinations, data_type)
 
-        cluster_survey_tracers = tracers_combinations[:, self._survey_index]
+        self.z_tracers = np.unique(tracers_combinations[:, self._redshift_index])
+        self.mass_tracers = np.unique(tracers_combinations[:, self._mass_index])
+        self.survey_z_mass_tracers = tracers_combinations[self.survey_tracer]
 
-        self.z_tracers = tracers_combinations[:, self._redshift_index]
-        self.mass_tracers = tracers_combinations[:, self._mass_index]
-        self.survey_tracer = cluster_survey_tracers == survey_tracer
-
+    def get_data_and_indices(self, data_type):
+        self.filter_tracers(data_type)
         data_vector_list = list(
             self.sacc_data.get_mean(data_type=data_type)[self.survey_tracer]
         )
@@ -32,7 +44,7 @@ class SaccAdapter:
         )
         return data_vector_list, sacc_indices_list
 
-    def validate_tracers(self, tracers_combinations, survey_tracer, data_type):
+    def validate_tracers(self, tracers_combinations, data_type):
         if len(tracers_combinations) == 0:
             raise ValueError(
                 f"The SACC file does not contain any tracers for the "
@@ -45,25 +57,22 @@ class SaccAdapter:
                 "cluster_counts data type: cluster_survey, "
                 "redshift argument and mass argument tracers."
             )
-        cluster_survey_tracers = tracers_combinations[:, self._survey_index]
-        if survey_tracer not in cluster_survey_tracers:
-            raise ValueError(
-                f"The SACC tracer {self.survey_tracer} is not "
-                f"present in the SACC file."
-            )
 
-    def get_z_bins(self):
-        z_bins = {}
+    def get_tracer_bounds(self, data_type):
+        self.filter_tracers(data_type)
+
+        z_bounds = {}
         for z_tracer_nm in self.z_tracers:
             tracer_data = self.sacc_data.get_tracer(z_tracer_nm)
-            z_bins[z_tracer_nm] = (tracer_data.lower, tracer_data.upper)
+            z_bounds[z_tracer_nm] = (tracer_data.lower, tracer_data.upper)
 
-        return z_bins
-
-    def get_mass_bins(self):
-        mass_bins = {}
+        mass_bounds = {}
         for mass_tracer_nm in self.mass_tracers:
             tracer_data = self.sacc_data.get_tracer(mass_tracer_nm)
-            mass_bins[mass_tracer_nm] = (tracer_data.lower, tracer_data.upper)
+            mass_bounds[mass_tracer_nm] = (tracer_data.lower, tracer_data.upper)
 
-        return mass_bins
+        tracer_bounds = [
+            (z_bounds[z_tracer], mass_bounds[mass_tracer])
+            for _, z_tracer, mass_tracer in self.survey_z_mass_tracers
+        ]
+        return tracer_bounds

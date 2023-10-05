@@ -7,7 +7,7 @@ reusable objects, such as perturbation theory or halo model calculators.
 
 from typing import Dict, Optional, final
 import pyccl.nl_pt
-from .models.cluster_theory import ClusterAbundance
+from .models.cluster_abundance import ClusterAbundance
 
 
 class ModelingTools:

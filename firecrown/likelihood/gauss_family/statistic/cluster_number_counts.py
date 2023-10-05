@@ -14,63 +14,48 @@ from ....models.sacc_adapter import SaccAdapter
 
 
 class ClusterNumberCounts(Statistic):
-    @property
-    def use_cluster_counts(self) -> bool:
-        return self._use_cluster_counts
-
-    @property
-    def use_mean_log_mass(self) -> bool:
-        return self._use_mean_log_mass
-
-    @use_cluster_counts.setter
-    def use_cluster_counts(self, value: bool):
-        self._use_cluster_counts = value
-
-    @use_mean_log_mass.setter
-    def use_mean_log_mass(self, value: bool):
-        self._use_mean_log_mass = value
-
     def __init__(
         self,
+        survey_name: str,
+        cluster_counts: bool,
+        mean_log_mass: bool,
         systematics: Optional[List[SourceSystematic]] = None,
-        survey_nm: str = "numcosmo_simulated_redshift_richness",
     ):
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
-        self.survey_nm = survey_nm
+        self.survey_nm = survey_name
+        self.use_cluster_counts = cluster_counts
+        self.use_mean_log_mass = mean_log_mass
 
     def read(self, sacc_data: sacc.Sacc):
-        try:
-            survey_tracer: SurveyTracer = sacc_data.get_tracer(self.survey_nm)
-        except KeyError as exc:
-            raise ValueError(
-                f"The SACC file does not contain the SurveyTracer " f"{self.survey_nm}."
-            ) from exc
-        if not isinstance(survey_tracer, SurveyTracer):
-            raise ValueError(f"The SACC tracer {self.survey_nm} is not a SurveyTracer.")
-
         sacc_types = sacc.data_types.standard_types
-        sa = SaccAdapter(sacc_data)
+        sa = SaccAdapter(
+            sacc_data, self.survey_nm, self.use_cluster_counts, self.use_mean_log_mass
+        )
 
         data_vector_list = []
         sacc_indices_list = []
+        tracer_bounds = []
 
         if self.use_cluster_counts:
             dtype = sacc_types.cluster_counts
-            data, indices = sa.get_data_and_indices(dtype, survey_tracer)
+            data, indices = sa.get_data_and_indices(dtype)
             data_vector_list += data
             sacc_indices_list += indices
+            tracer_bounds += sa.get_tracer_bounds(dtype)
 
         if self.use_mean_log_mass:
             dtype = sacc_types.cluster_mean_log_mass
             data, indices = sa.get_data_and_indices(dtype, survey_tracer)
             data_vector_list += data
             sacc_indices_list += indices
+            tracer_bounds += sa.get_tracer_bounds(dtype, survey_tracer)
 
         self.sky_area = sa.survey_tracer.sky_area
         self.data_vector = DataVector.from_list(data_vector_list)
         self.sacc_indices = np.array(sacc_indices_list)
+        self.tracer_bounds = np.array(tracer_bounds)
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
@@ -80,17 +65,17 @@ class ClusterNumberCounts(Statistic):
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         tools.cluster_abundance.sky_area = self.sky_area
         ccl_cosmo = tools.get_ccl_cosmology()
-        # tools.cluster_abundance.etc()
+
         theory_vector_list = []
         cluster_counts_list = []
 
-        if self.use_cluster_counts or self.use_mean_log_mass:
-            cluster_counts_list = [
-                self.cluster_abundance.compute(ccl_cosmo, logM_tracer_arg, z_tracer_arg)
-                for z_tracer_arg, logM_tracer_arg in self.tracer_args
-            ]
-            if self.use_cluster_counts:
-                theory_vector_list += cluster_counts_list
+        if self.use_cluster_counts:
+            for (z_min, z_max), (mproxy_min, mproxy_max) in self.tracer_bounds:
+                integrand = tools.cluster_abundance.get_abundance_integrand(
+                    mass_min, z_min, mass_max, z_max
+                )
+
+            theory_vector_list += cluster_counts_list
 
         if self.use_mean_log_mass:
             mean_log_mass_list = [

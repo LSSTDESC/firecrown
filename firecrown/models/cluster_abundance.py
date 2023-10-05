@@ -16,10 +16,7 @@ class ClusterAbundance(object):
     def sky_area(self, sky_area: float) -> None:
         self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
-    def __init__(
-        self,
-        halo_mass_function: pyccl.halos.MassFunc,
-    ):
+    def __init__(self, halo_mass_function: pyccl.halos.MassFunc):
         self.kernels: List[Kernel] = []
         self.cosmo = None
         self.halo_mass_function = halo_mass_function
@@ -57,10 +54,24 @@ class ClusterAbundance(object):
         hmf = self.halo_mass_function(self.cosmo, 10**mass, scale_factor)
         return hmf
 
-    def build_integrand(self, mass, z):
-        integrand = self.comoving_volume(z) * self.mass_function(mass, z)
-        for kernel in self.kernels:
-            integrand *= kernel.distribution(mass, z)
+    def get_abundance_integrand(self, mass, z):
+        def integrand():
+            integrand = self.comoving_volume(z) * self.mass_function(mass, z)
+            for kernel in self.kernels:
+                integrand *= kernel.probability(mass, z)
+            return integrand
 
-    def compute(self):
-        integrand = self.build_integrand()
+        return integrand
+
+    # Firecrown specific
+    def _process_args(self, args):
+        x = np.array(args[0:-5])
+        index_map, arg, ccl_cosmo, mass_arg, redshift_arg = args[-5:]
+        arg[index_map] = x
+        redshift_start_index = 2 + redshift_arg.dim
+
+        logM, z = arg[0:2]
+        proxy_z = arg[2:redshift_start_index]
+        proxy_m = arg[redshift_start_index:]
+
+        return logM, z, proxy_z, proxy_m, ccl_cosmo, mass_arg, redshift_arg
