@@ -39,7 +39,7 @@ variable-naming-style=any
 # Naming style matching correct module level constants names.
 const-naming-style=any
 
-# Naming stule matching correct method names.
+# Naming style matching correct method names.
 method-naming-style=any
 
 # Naming style matching correct function names.
@@ -61,3 +61,7 @@ ignore-none=false
 
 # Expected format of line ending, e.g. empty (any line ending), LF or CRLF.
 expected-line-ending-format=LF
+
+[DESIGN]
+max-args=20
+max-attributes=20

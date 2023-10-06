@@ -6,20 +6,28 @@ from typing import List, Tuple, final
 
 import numpy as np
 from scipy import special
-from .. import sacc_support
-from ..sacc_support import sacc
+import sacc
 
 from ..parameters import (
     ParamsMap,
-    RequiredParameters,
-    DerivedParameterCollection,
 )
 from .cluster_mass import ClusterMass, ClusterMassArgument
 from .. import parameters
 
 
 class ClusterMassRich(ClusterMass):
-    """Cluster Mass Richness proxy."""
+    """Cluster Mass Richness proxy.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler:
+
+    :ivar mu_p0: mu parameter 0
+    :ivar mu_p1: mu parameter 1
+    :ivar mu_p2: mu parameter 2
+    :ivar sigma_p0: sigma parameter 0
+    :ivar sigma_p1: sigma parameter 1
+    :ivar sigma_p2: sigma parameter 2
+    """
 
     def __init__(
         self, pivot_mass, pivot_redshift, logMl: float = 13.0, logMu: float = 16.0
@@ -51,40 +59,40 @@ class ClusterMassRich(ClusterMass):
 
         This implementation has nothing to do."""
 
-    @final
-    def _reset_cluster_mass(self) -> None:
-        """Reset the ClusterMass object.
-
-        This implementation has nothing to do."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
-    def read(self, sacc_data: sacc.Sacc):
+    def read(self, _: sacc.Sacc):
         """Method to read the data for this source from the SACC file."""
+
+    @staticmethod
+    def cluster_mass_parameters_function(
+        log_pivot_mass, log1p_pivot_redshift, p: Tuple[float, float, float], logM, z
+    ):
+        """Return observed quantity corrected by redshift and mass."""
+
+        lnM = logM * np.log(10)
+        Delta_lnM = lnM - log_pivot_mass
+        Delta_z = np.log1p(z) - log1p_pivot_redshift
+
+        return p[0] + p[1] * Delta_lnM + p[2] * Delta_z
 
     def cluster_mass_lnM_obs_mu_sigma(self, logM, z):
         """Return the mean and standard deviation of the observed mass."""
 
-        lnM = logM * np.log(10)
-
-        lnM_obs_mu = (
-            self.mu_p0
-            + self.mu_p1 * (lnM - self.log_pivot_mass)
-            + self.mu_p2 * (np.log1p(z) - self.log1p_pivot_redshift)
-        )
-        sigma = (
-            self.sigma_p0
-            + self.sigma_p1 * (lnM - self.log_pivot_mass)
-            + self.sigma_p2 * (np.log1p(z) - self.log1p_pivot_redshift)
-        )
-        # sigma = abs(sigma)
-        return [lnM_obs_mu, sigma]
+        return [
+            ClusterMassRich.cluster_mass_parameters_function(
+                self.log_pivot_mass,
+                self.log1p_pivot_redshift,
+                (self.mu_p0, self.mu_p1, self.mu_p2),
+                logM,
+                z,
+            ),
+            ClusterMassRich.cluster_mass_parameters_function(
+                self.log_pivot_mass,
+                self.log1p_pivot_redshift,
+                (self.sigma_p0, self.sigma_p1, self.sigma_p2),
+                logM,
+                z,
+            ),
+        ]
 
     def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
         """Generate bins by an array of bin edges."""
@@ -111,7 +119,7 @@ class ClusterMassRich(ClusterMass):
     def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterMassArgument:
         """Return the argument for the given tracer."""
 
-        if not isinstance(tracer, sacc_support.BinRichnessTracer):
+        if not isinstance(tracer, sacc.tracers.BinRichnessTracer):
             raise ValueError("Tracer must be a BinRichnessTracer")
 
         return ClusterMassRichBinArgument(
@@ -173,6 +181,8 @@ class ClusterMassRichBinArgument(ClusterMassArgument):
         self.richness: ClusterMassRich = richness
         self.logM_obs_lower: float = logM_obs_lower
         self.logM_obs_upper: float = logM_obs_upper
+        if logM_obs_lower >= logM_obs_upper:
+            raise ValueError("logM_obs_lower must be less than logM_obs_upper")
 
     @property
     def dim(self) -> int:
@@ -198,8 +208,8 @@ class ClusterMassRichBinArgument(ClusterMassArgument):
             np.sqrt(2.0) * sigma
         )
 
-        if x_max > 4.0:
+        if x_max > 3.0 or x_min < -3.0:
             #  pylint: disable-next=no-member
-            return (special.erfc(x_min) - special.erfc(x_max)) / 2.0
+            return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
         #  pylint: disable-next=no-member
         return (special.erf(x_min) - special.erf(x_max)) / 2.0

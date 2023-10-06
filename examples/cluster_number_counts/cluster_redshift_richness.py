@@ -4,6 +4,7 @@ import os
 from typing import Any, Dict
 
 import pyccl as ccl
+import sacc
 
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
@@ -13,7 +14,6 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster_abundance import ClusterAbundance
 from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
 from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
-from firecrown.sacc_support import sacc
 
 
 def build_likelihood(build_parameters):
@@ -27,7 +27,12 @@ def build_likelihood(build_parameters):
     cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
     cluster_z = ClusterRedshiftSpec()
 
-    hmd_200 = ccl.halos.MassDef200m()
+    # TODO: remove try/except when pyccl 3.0 is released
+    try:
+        hmd_200 = ccl.halos.MassDef200m()
+    except TypeError:
+        hmd_200 = ccl.halos.MassDef200m
+
     hmf_args: Dict[str, Any] = {}
     hmf_name = "Tinker08"
 

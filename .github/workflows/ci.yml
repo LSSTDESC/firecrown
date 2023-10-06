@@ -26,7 +26,7 @@ jobs:
       - name: Setup miniforge
         uses: conda-incubator/setup-miniconda@v2
         with:
-          aut o-update-conda: true
+          auto-update-conda: true
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           miniforge-variant: Mambaforge
@@ -46,7 +46,7 @@ jobs:
         id: cache
       - name: Update environment
         run: |
-          conda env update -n firecrown_developer -f environment.yml
+          conda env update -q -v -n firecrown_developer -f environment.yml
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
@@ -86,18 +86,15 @@ jobs:
       - name: Running mypy
         shell: bash -l {0}
         run: |
-          mypy -p firecrown --ignore-missing-imports
-          mypy -p examples --ignore-missing-imports
-          mypy -p tests --ignore-missing-imports
+          mypy -p firecrown
+          mypy -p examples
+          mypy -p tests
       - name: Running pylint
         shell: bash -l {0}
         run: |
           pylint --rcfile tests/pylintrc  tests
-          pylint firecrown/connector
-          pylint firecrown/*.py
-          pylint firecrown/likelihood/*.py
-          pylint firecrown/likelihood/gauss_family/*.py
-
+          pylint --rcfile firecrown/models/pylintrc firecrown/models
+          pylint firecrown
       - name: Running pytest
         shell: bash -l {0}
         run: python -m pytest -vv

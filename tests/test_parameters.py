@@ -35,6 +35,15 @@ def test_create_with_wrong_arg():
         _ = create("cow")  # type: ignore
 
 
+def test_required_parameters_length():
+    empty = RequiredParameters([])
+    assert len(empty) == 0
+    a = RequiredParameters(["a"])
+    assert len(a) == 1
+    b = RequiredParameters(["a", "b"])
+    assert len(b) == 2
+
+
 def test_get_params_names_does_not_allow_mutation():
     """The caller of RequiredParameters.get_params_names should not be able to modify
     the state of the object on which the call was made."""
@@ -150,3 +159,55 @@ def test_derived_parameters_collection_add_iter():
         assert section == derived_parameter.section
         assert name == derived_parameter.name
         assert val == derived_parameter.get_val()
+
+
+def test_derived_parameter_eq():
+    dv1 = DerivedParameterScalar("sec1", "name1", 3.14)
+    dv2 = DerivedParameterScalar("sec1", "name1", 3.14)
+
+    assert dv1 == dv2
+
+
+def test_derived_parameter_eq_invalid():
+    dv1 = DerivedParameterScalar("sec1", "name1", 3.14)
+
+    with pytest.raises(
+        NotImplementedError,
+        match="DerivedParameterScalar comparison is only "
+        "implemented for DerivedParameterScalar objects",
+    ):
+        _ = dv1 == 1.0
+
+
+def test_derived_parameters_collection_eq():
+    olist1 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc1 = DerivedParameterCollection(olist1)
+
+    olist2 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc2 = DerivedParameterCollection(olist2)
+
+    assert dpc1 == dpc2
+
+
+def test_derived_parameters_collection_eq_invalid():
+    olist1 = [
+        DerivedParameterScalar("sec1", "name1", 3.14),
+        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameterScalar("sec2", "name3", 0.58),
+    ]
+    dpc1 = DerivedParameterCollection(olist1)
+
+    with pytest.raises(
+        NotImplementedError,
+        match="DerivedParameterCollection comparison is only "
+        "implemented for DerivedParameterCollection objects",
+    ):
+        _ = dpc1 == 1.0

@@ -86,6 +86,10 @@ class RequiredParameters:
         """Construct an instance from an Iterable yielding strings."""
         self.params_names: Set[str] = set(params_names)
 
+    def __len__(self):
+        """Return the number of parameters contained."""
+        return len(self.params_names)
+
     def __add__(self, other: RequiredParameters):
         """Return a new RequiredParameters with the concatenated names.
 
@@ -155,6 +159,26 @@ class DerivedParameterScalar(DerivedParameter):
     def get_val(self) -> float:
         return self.val
 
+    def __eq__(self, other: object) -> bool:
+        """Compare two DerivedParameterScalar objects for equality.
+
+        This implementation raises a NotImplemented exception unless both
+        objects are DerivedParameterScalar objects.
+
+        Two DerivedParameterScalar objects are equal if they have the same
+        section, name and value.
+        """
+        if not isinstance(other, DerivedParameterScalar):
+            raise NotImplementedError(
+                "DerivedParameterScalar comparison is only implemented for "
+                "DerivedParameterScalar objects"
+            )
+        return (
+            self.section == other.section
+            and self.name == other.name
+            and self.val == other.val
+        )
+
 
 class DerivedParameterCollection:
     """Represents a list of DerivedParameter objects."""
@@ -199,8 +223,12 @@ class DerivedParameterCollection:
         Two DerivedParameterCollection objects are equal if they contain the same
         DerivedParameter objects.
         """
+
         if not isinstance(other, DerivedParameterCollection):
-            return NotImplemented
+            raise NotImplementedError(
+                "DerivedParameterCollection comparison is only implemented for "
+                "DerivedParameterCollection objects"
+            )
         return self.derived_parameters == other.derived_parameters
 
     def __iter__(self) -> Iterator[Tuple[str, str, float]]:

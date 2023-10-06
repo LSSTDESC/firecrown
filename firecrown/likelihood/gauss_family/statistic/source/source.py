@@ -40,6 +40,15 @@ class Source(Updatable):
     cosmo_hash: Optional[int]
     tracers: Sequence[Tracer]
 
+    def __init__(self, sacc_tracer: str) -> None:
+        """Create a Source object that uses the named tracer.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
+        self.sacc_tracer = sacc_tracer
+
     @final
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this source from the SACC file."""
@@ -57,10 +66,6 @@ class Source(Updatable):
         that needs to do more than update its contained :python:`Updatable`
         objects should implement this method."""
 
-    @abstractmethod
-    def _reset_source(self):
-        """Abstract method to reset the source."""
-
     @final
     def _update(self, params: ParamsMap):
         """Implementation of Updatable interface method `_update`.
@@ -70,14 +75,6 @@ class Source(Updatable):
         self.cosmo_hash = None
         self.tracers = []
         self._update_source(params)
-
-    @final
-    def _reset(self) -> None:
-        """Implementation of the Updatable interface method `_reset`.
-
-        This calls the abstract method `_reset_source`, which must be implemented by
-        all subclasses."""
-        self._reset_source()
 
     @abstractmethod
     def get_scale(self) -> float:

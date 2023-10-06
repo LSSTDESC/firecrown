@@ -26,7 +26,7 @@ Please run:
 
 .. code:: bash
 
-    mypy firecrown/ --ignore-missing-imports 
+    mypy -p firecrown -p examples -p tests
 
 and fix any errors reported before pushing commits to the GitHub repository.
 

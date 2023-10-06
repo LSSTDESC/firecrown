@@ -9,16 +9,18 @@ data and theory vectors for a GaussianFamily subclass.
 """
 
 from __future__ import annotations
-from typing import List
+from typing import List, Optional, final
 from dataclasses import dataclass
+from abc import abstractmethod
 import warnings
 import numpy as np
 import numpy.typing as npt
 import sacc
 
-from ....modeling_tools import ModelingTools
-from ....updatable import Updatable
-from .source.source import SourceSystematic
+import firecrown.parameters
+from firecrown.parameters import DerivedParameterCollection, RequiredParameters
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import Updatable
 
 
 class DataVector(npt.NDArray[np.float64]):
@@ -90,24 +92,158 @@ class StatisticsResult:
         yield self.theory
 
 
+class StatisticUnreadError(RuntimeError):
+    """Run-time error indicating an attempt has been made to use a statistic
+    that has not had `read` called in it."""
+
+    def __init__(self, stat: Statistic):
+        msg = (
+            f"The statistic {stat} was used for calculation before `read` "
+            f"was called.\nIt may be that a likelihood factory function did not"
+            f"call `read` before returning the likelihood."
+        )
+        super().__init__(msg)
+        self.statstic = stat
+
+
 class Statistic(Updatable):
-    """An abstract statistic class (e.g., two-point function, mass function, etc.)."""
+    """The abstract base class for all physics-related statistics.
 
-    systematics: List[SourceSystematic]
-    sacc_indices: npt.NDArray[np.int64]
+    Statistics read data from a SACC object as part of a multi-phase
+    initialization. The manage a :python:`DataVector` and, given a
+    :python:`ModelingTools` object, can compute a :python:`TheoryVector`.
 
-    def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this statistic from the SACC file."""
+    Statistics represent things like two-point functions and mass functions.
+    """
 
+    def __init__(self, parameter_prefix: Optional[str] = None):
+        super().__init__(parameter_prefix=parameter_prefix)
+        self.sacc_indices: Optional[npt.NDArray[np.int64]]
+        self.ready = False
+
+    def read(self, _: sacc.Sacc) -> None:
+        """Read the data for this statistic from the SACC data, and mark it
+        as ready for use. Derived classes that override this function
+        should make sure to call the base class method using:
+            super().read(sacc_data)
+        as the last thing they do in `__init__`.
+
+        Note that currently the argument is not used; it is present so that this
+        method will have the correct argument type for the override.
+        """
+        self.ready = True
+        if len(self.get_data_vector()) == 0:
+            raise RuntimeError(
+                f"the statistic {self} has read a data vector "
+                f"of length 0; the length must be positive"
+            )
+
+    @abstractmethod
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector."""
-        raise NotImplementedError("Method `get_data_vector` is not implemented!")
 
+    @abstractmethod
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
-        raise NotImplementedError("Method `compute_theory_vector` is not implemented!")
 
-    def compute(self, tools: ModelingTools) -> StatisticsResult:
-        """Compute a statistic from sources, applying any systematics."""
 
-        raise NotImplementedError("Method `compute` is not implemented!")
+class GuardedStatistic(Updatable):
+    """:python:`GuardedStatistic` is used by the framework to maintain and
+    validate the state of instances of classes derived from
+    :python:`Statistic`."""
+
+    def __init__(self, stat: Statistic):
+        """Initialize the GuardedStatistic to contain the given
+        :python:`Statistic`."""
+        super().__init__()
+        self.statistic = stat
+
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read whatever data is needed from the given :python:`sacc.Sacc
+        object.
+
+        After this function is called, the object should be prepared for the
+        calling of the methods :python:`get_data_vector` and
+        :python:`compute_theory_vector`.
+        """
+        if self.statistic.ready:
+            raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
+        try:
+            self.statistic.read(sacc_data)
+        except TypeError as exc:
+            msg = (
+                f"A statistic of type {type(self.statistic).__name__} has raised "
+                f"an exception during `read`.\nThe problem may be a malformed "
+                f"SACC data object."
+            )
+            raise RuntimeError(msg) from exc
+
+    def get_data_vector(self) -> DataVector:
+        """Return the contained :python:`Statistic`'s data vector.
+
+        :python:`GuardedStatistic` ensures that :python:`read` has been called.
+        first."""
+        if not self.statistic.ready:
+            raise StatisticUnreadError(self.statistic)
+        return self.statistic.get_data_vector()
+
+    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Return the contained :python:`Statistic`'s computed theory vector.
+
+        :python:`GuardedStatistic` ensures that :python:`read` has been called.
+        first."""
+        if not self.statistic.ready:
+            raise StatisticUnreadError(self.statistic)
+        return self.statistic.compute_theory_vector(tools)
+
+
+class TrivialStatistic(Statistic):
+    """A minimal statistic only to be used for testing Gaussian likelihoods.
+
+    It returns a :python:`DataVector` and :python:`TheoryVector` that is three
+    elements long. The SACC data provided to :python:`TrivialStatistic.read`
+    must supply the necessary values.
+    """
+
+    def __init__(self) -> None:
+        """Initialize this statistic."""
+        super().__init__()
+        # Data and theory will both be of length self.count
+        self.count = 3
+        self.data_vector: Optional[DataVector] = None
+        self.mean = firecrown.parameters.create()
+        self.computed_theory_vector = False
+
+    def read(self, sacc_data: sacc.Sacc):
+        """Read the necessary items from the sacc data."""
+
+        our_data = sacc_data.get_mean(data_type="count")
+        assert len(our_data) == self.count
+        self.data_vector = DataVector.from_list(our_data)
+        self.sacc_indices = np.arange(len(self.data_vector))
+        super().read(sacc_data)
+
+    @final
+    def _reset(self):
+        """Reset this statistic."""
+        self.computed_theory_vector = False
+
+    @final
+    def _required_parameters(self) -> RequiredParameters:
+        """Return an empty RequiredParameters."""
+        return RequiredParameters([])
+
+    @final
+    def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Return an empty DerivedParameterCollection."""
+        return DerivedParameterCollection([])
+
+    def get_data_vector(self) -> DataVector:
+        """Return the data vector; raise exception if there is none."""
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
+        """Return a fixed theory vector."""
+        self.computed_theory_vector = True
+        return TheoryVector.from_list([self.mean] * self.count)

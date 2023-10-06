@@ -10,7 +10,6 @@ Some notes.
 from __future__ import annotations
 from typing import List, Optional, Tuple, Sequence
 from typing import final
-from abc import abstractmethod
 import warnings
 
 import numpy as np
@@ -22,8 +21,7 @@ import sacc
 from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
-from .statistic.statistic import Statistic
-from ...parameters import RequiredParameters, DerivedParameterCollection
+from .statistic.statistic import Statistic, GuardedStatistic
 
 
 class GaussFamily(Likelihood):
@@ -40,7 +38,9 @@ class GaussFamily(Likelihood):
         super().__init__()
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
-        self.statistics = UpdatableCollection(statistics)
+        self.statistics: UpdatableCollection = UpdatableCollection(
+            GuardedStatistic(s) for s in statistics
+        )
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
@@ -48,11 +48,18 @@ class GaussFamily(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
+        if sacc_data.covariance is None:
+            msg = (
+                f"The {type(self).__name__} likelihood requires a covariance, "
+                f"but the SACC data object being read does not have one."
+            )
+            raise RuntimeError(msg)
+
         covariance = sacc_data.covariance.dense
         for stat in self.statistics:
             stat.read(sacc_data)
 
-        indices_list = [stat.sacc_indices.copy() for stat in self.statistics]
+        indices_list = [s.statistic.sacc_indices.copy() for s in self.statistics]
         indices = np.concatenate(indices_list)
         cov = np.zeros((len(indices), len(indices)))
 
@@ -119,6 +126,8 @@ class GaussFamily(Likelihood):
             data_vector = self.get_data_vector()
         except NotImplementedError:
             data_vector, theory_vector = self.compute(tools)
+
+        assert len(data_vector) == len(theory_vector)
         residuals = data_vector - theory_vector
 
         self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
@@ -128,48 +137,3 @@ class GaussFamily(Likelihood):
         chisq = np.dot(x, x)
 
         return chisq
-
-    @final
-    def _reset(self) -> None:
-        """Implementation of Likelihood interface method _reset.
-
-        This resets all statistics and calls the abstract method
-        _reset_gaussian_family."""
-        self._reset_gaussian_family()
-        self.statistics.reset()
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = (
-            self._get_derived_parameters_gaussian_family()
-            + self.statistics.get_derived_parameters()
-        )
-
-        return derived_parameters
-
-    @abstractmethod
-    def _reset_gaussian_family(self) -> None:
-        """Abstract method to reset GaussianFamily state. Must be implemented by all
-        subclasses."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        """Return a RequiredParameters object containing the information for
-        this Updatable.
-
-        This includes the required parameters for all statistics, as well as those
-        for the derived class.
-
-        Derived classes must implement required_parameters_gaussian_family."""
-        stats_rp = self.statistics.required_parameters()
-        stats_rp = self._required_parameters_gaussian_family() + stats_rp
-
-        return stats_rp
-
-    @abstractmethod
-    def _required_parameters_gaussian_family(self):
-        """Required parameters for GaussFamily subclasses."""
-
-    @abstractmethod
-    def _get_derived_parameters_gaussian_family(self) -> DerivedParameterCollection:
-        """Get derived parameters for GaussFamily subclasses."""

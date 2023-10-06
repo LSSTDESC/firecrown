@@ -59,6 +59,7 @@ black --check firecrown tests examples
 flake8 firecrown tests examples
 mypy firecrown tests examples
 pylint --rcfile tests/pylintrc tests
+pylint --rcfile firecrown/models/pylintrc firecrown/models
 pylint firecrown/connector firecrown/*.py firecrown/likelihood/*.py firecrown/likelihood/gauss_family/*.py
 python -m pytest -v tests
 ```

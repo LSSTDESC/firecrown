@@ -19,7 +19,6 @@ from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Tracer
-from ....parameters import RequiredParameters, DerivedParameterCollection
 
 # only supported types are here, anything else will throw
 # a value error
@@ -226,22 +225,9 @@ class TwoPoint(Statistic):
     @final
     def _reset(self) -> None:
         """Prepared to be called again for a new cosmology."""
-        self.source0.reset()
-        self.source1.reset()
         # TODO: Why is self.predicted_statistic_ not re-set to None here?
         # If we do that, then the CosmoSIS module fails -- because this data
         # is accessed from that code.
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return self.source0.required_parameters() + self.source1.required_parameters()
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_parameters = DerivedParameterCollection([])
-        derived_parameters = derived_parameters + self.source0.get_derived_parameters()
-        derived_parameters = derived_parameters + self.source1.get_derived_parameters()
-        return derived_parameters
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
@@ -311,6 +297,8 @@ class TwoPoint(Statistic):
         self.data_vector = DataVector.create(_stat)
         self.measured_statistic_ = self.data_vector
         self.sacc_tracers = tracers
+
+        super().read(sacc_data)
 
     def calculate_ell_or_theta(self):
         """See _ell_for_xi.

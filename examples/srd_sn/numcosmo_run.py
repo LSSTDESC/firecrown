@@ -4,6 +4,8 @@ Numcosmo example using the :python:`sn_srd` likelihood.
 """
 
 import math
+import os.path
+
 import yaml
 
 import matplotlib.pyplot as plt
@@ -19,7 +21,7 @@ from firecrown.likelihood.likelihood import NamedParameters
 
 Ncm.cfg_init()
 
-with open(r"numcosmo_firecrown_model_snia.yml", "r", encoding="utf8") as modelfile:
+with open(r"numcosmo_firecrown_model_snia.yml", "r", encoding="utf-8") as modelfile:
     ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
 NcFirecrownSNIa = define_numcosmo_model(ncmodel)
@@ -58,7 +60,11 @@ map_cosmo = MappingNumCosmo(
     require_nonlinear_pk=False, dist=dist, model_list=["NcFirecrownSNIa"]
 )
 
-nc_factory = NumCosmoFactory("sn_srd.py", NamedParameters(), map_cosmo)
+sacc_file = os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
+
+nc_factory = NumCosmoFactory(
+    "sn_srd.py", NamedParameters({"sacc_file": sacc_file}), map_cosmo
+)
 
 fc = NcFirecrownSNIa()
 # fc.params_set_default_ftype()

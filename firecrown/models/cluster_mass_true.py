@@ -8,14 +8,11 @@ i.e., assuming we have the true masses of the clusters.
 from typing import final, List, Tuple
 
 import numpy as np
-from .. import sacc_support
-from ..sacc_support import sacc
+import sacc
 
 
 from ..parameters import (
     ParamsMap,
-    RequiredParameters,
-    DerivedParameterCollection,
 )
 from .cluster_mass import ClusterMass, ClusterMassArgument
 
@@ -27,32 +24,20 @@ class ClusterMassTrue(ClusterMass):
     def _update_cluster_mass(self, params: ParamsMap):
         """Method to update the ClusterMassTrue from the given ParamsMap."""
 
-    @final
-    def _reset_cluster_mass(self):
-        """Method to reset the ClusterMassTrue."""
-
-    @final
-    def _required_parameters(self) -> RequiredParameters:
-        return RequiredParameters([])
-
-    @final
-    def _get_derived_parameters(self) -> DerivedParameterCollection:
-        return DerivedParameterCollection([])
-
     def read(self, sacc_data: sacc.Sacc):
         """Method to read the data for this source from the SACC file."""
 
-    def gen_bins_by_array(self, logM_bins: np.ndarray) -> List[ClusterMassArgument]:
+    def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
         """Generate the bins by an array of bin edges."""
 
-        if len(logM_bins) < 2:
+        if len(logM_obs_bins) < 2:
             raise ValueError("logM_bins must have at least two elements")
 
         # itertools.pairwise is only available in Python 3.10
         # using zip instead
         return [
             ClusterMassTrueArgument(lower, upper)
-            for lower, upper in zip(logM_bins[:-1], logM_bins[1:])
+            for lower, upper in zip(logM_obs_bins[:-1], logM_obs_bins[1:])
         ]
 
     def point_arg(self, logM: float) -> ClusterMassArgument:
@@ -63,7 +48,7 @@ class ClusterMassTrue(ClusterMass):
     def gen_bin_from_tracer(self, tracer: sacc.BaseTracer) -> ClusterMassArgument:
         """Return the argument for the given tracer."""
 
-        if not isinstance(tracer, sacc_support.BinLogMTracer):
+        if not isinstance(tracer, sacc.tracers.BinLogMTracer):
             raise ValueError("Tracer must be a BinLogMTracer")
 
         return ClusterMassTrueArgument(tracer.lower, tracer.upper)
@@ -85,6 +70,6 @@ class ClusterMassTrueArgument(ClusterMassArgument):
         """Return the bounds of the cluster mass proxy argument."""
         return []
 
-    def p(self, logM: float, z: float, *args) -> float:
+    def p(self, logM: float, z: float, *_) -> float:
         """Return the probability of the argument."""
         return 1.0

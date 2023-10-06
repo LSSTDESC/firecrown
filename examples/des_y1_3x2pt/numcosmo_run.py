@@ -14,7 +14,7 @@ from firecrown.likelihood.likelihood import NamedParameters
 
 Ncm.cfg_init()
 
-with open(r"numcosmo_firecrown_model.yml", "r", encoding="utf8") as modelfile:
+with open(r"numcosmo_firecrown_model.yml", "r", encoding="utf-8") as modelfile:
     ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
 NcFirecrown = define_numcosmo_model(ncmodel)
@@ -86,7 +86,11 @@ lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023
 lh.priors_add_gauss_param_name(mset, "NcFirecrown:src0_mult_bias", +0.012, 0.023)
 
 fit = Ncm.Fit.new(
-    Ncm.FitType.NLOPT, "ln-neldermead", lh, mset, Ncm.FitGradType.NUMDIFF_FORWARD
+    Ncm.FitType.NLOPT,
+    "ln-neldermead",
+    lh,
+    mset,
+    Ncm.FitGradType.NUMDIFF_FORWARD,
 )
 
 mset.pretty_log()

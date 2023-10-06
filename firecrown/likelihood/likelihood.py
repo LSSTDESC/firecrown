@@ -10,7 +10,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 """
 
 from __future__ import annotations
-from typing import List, Mapping, Tuple, Union, Optional
+from typing import Mapping, Tuple, Union, Optional
 from abc import abstractmethod
 import warnings
 import importlib
@@ -36,31 +36,14 @@ class Likelihood(Updatable):
     these methods, and provide other abstract methods for their subclasses to implement.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
         """Default initialization for a base Likelihood object."""
-        super().__init__()
+        super().__init__(parameter_prefix=parameter_prefix)
 
-        self.params_names: Optional[List[str]] = None
         self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
         self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
         self.inv_cov: Optional[npt.NDArray[np.double]] = None
         self.statistics: UpdatableCollection = UpdatableCollection()
-
-    def set_params_names(self, params_names: List[str]) -> None:
-        """Set the parameter names for this Likelihood."""
-        self.params_names = params_names
-
-    def get_params_names(self) -> Optional[List[str]]:
-        """Return the parameter names of this Likelihood."""
-
-        # TODO: This test for the presence of the instance variable
-        # params_names seems unnecessary; we set the instance variable
-        # to None in the initializer. Since we would return an empty list
-        # if we did *not* have an instance variable, should we just make
-        # the default value used in the initializer an empty list?
-        if hasattr(self, "params_names"):
-            return self.params_names
-        return []
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc):
@@ -166,10 +149,12 @@ class NamedParameters:
 def load_likelihood(
     filename: str, build_parameters: NamedParameters
 ) -> Tuple[Likelihood, ModelingTools]:
-    """Loads a likelihood script and returns an instance
+    """Loads a likelihood script and returns a tuple of the likelihood and
+    the modeling tools.
 
     :param filename: script filename
-    :param build_parameters: a dictionary containing the factory function parameters
+    :param build_parameters: a NamedParameters object containing the factory
+        function parameters
     """
     _, file_extension = os.path.splitext(filename)
 
@@ -186,14 +171,22 @@ def load_likelihood(
         modname, filename, submodule_search_locations=[script_path]
     )
 
-    if spec is None:
-        raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
+    # Apparently, the spec can be None if the file extension is not .py
+    # However, we already checked for that, so this should never happen.
+    # if spec is None:
+    #    raise ImportError(f"Could not load spec for module '{modname}' at: {filename}")
+    # Instead, we just assert that it is not None.
+    assert spec is not None
     mod = importlib.util.module_from_spec(spec)
     sys.modules[modname] = mod
 
-    if spec.loader is None:
-        raise ImportError(f"Spec for module '{modname}' has no loader.")
-
+    # Apparently, the spec.loader can be None if the file extension is not
+    # recognized. However, we already checked for that, so this should never
+    # happen.
+    # if spec.loader is None:
+    #     raise ImportError(f"Spec for module '{modname}' has no loader.")
+    # Instead, we just assert that it is not None.
+    assert spec.loader is not None
     spec.loader.exec_module(mod)
 
     if not hasattr(mod, "build_likelihood"):
@@ -211,6 +204,7 @@ def load_likelihood(
             category=DeprecationWarning,
         )
         likelihood = mod.likelihood
+        tools = ModelingTools()
     else:
         if not callable(mod.build_likelihood):
             raise TypeError(
@@ -227,6 +221,12 @@ def load_likelihood(
         raise TypeError(
             f"The returned likelihood must be a Firecrown's `Likelihood` type, "
             f"received {type(likelihood)} instead."
+        )
+
+    if not isinstance(tools, ModelingTools):
+        raise TypeError(
+            f"The returned tools must be a Firecrown's `ModelingTools` type, "
+            f"received {type(tools)} instead."
         )
 
     return likelihood, tools

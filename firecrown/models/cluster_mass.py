@@ -8,8 +8,8 @@ from typing import final, List, Tuple, Optional
 from abc import abstractmethod
 
 import numpy as np
+import sacc
 
-from ..sacc_support import sacc
 from ..updatable import Updatable
 from ..parameters import ParamsMap
 
@@ -71,23 +71,11 @@ class ClusterMass(Updatable):
         Subclasses that need to do more than update their contained
         :python:`Updatable` instance variables should implement this method."""
 
-    @abstractmethod
-    def _reset_cluster_mass(self):
-        """Abstract method to reset the ClusterMass."""
-
     @final
     def _update(self, params: ParamsMap):
         """Implementation of Updatable interface method `_update`."""
 
         self._update_cluster_mass(params)
-
-    @final
-    def _reset(self) -> None:
-        """Implementation of the Updatable interface method `_reset`.
-
-        This calls the abstract method `_reset_cluster_mass`, which must be implemented
-        by all subclasses."""
-        self._reset_cluster_mass()
 
     @abstractmethod
     def gen_bins_by_array(self, logM_obs_bins: np.ndarray) -> List[ClusterMassArgument]:
