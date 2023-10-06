@@ -424,6 +424,7 @@ class TwoPoint(Statistic):
             if not (tracer0.has_pt and tracer1.has_pt):
                 # Mixture of PT and non-PT tracers
                 # Create a dummy matter PT tracer for the non-PT part
+                # FIXME: What if we are doing GGL, and need galaxies as tracers?
                 matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
                 if not tracer0.has_pt:
                     tracer0.pt_tracer = matter_pt_tracer
@@ -459,6 +460,7 @@ class TwoPoint(Statistic):
             pk = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
                                           prof=profile0, prof2=profile1,
                                           get_2h=False, a_arr=a_arr)
+            # TODO: Need A_IA here to get the full power spectrum.
         else:
             raise ValueError(f"No power spectrum for {pk_name} can be found.")
         return pk
