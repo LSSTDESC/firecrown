@@ -260,6 +260,13 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         All derived classes must call this method in their own `_read` method
         after they have read their own data and initialized their tracer_args."""
 
+        try:
+            tracer_args = self.tracer_args
+        except AttributeError as exc:
+            raise RuntimeError(
+                "Must initialize tracer_args before calling _read on SourceGalaxy"
+            ) from exc
+
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
         z = getattr(tracer, "z").copy().flatten()
@@ -268,13 +275,8 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         z = z[indices]
         nz = nz[indices]
 
-        if self.tracer_args is None:
-            raise RuntimeError(
-                "Must initialize tracer_args before calling _read on SourceGalaxy"
-            )
-
         self.tracer_args = replace(
-            self.tracer_args,
+            tracer_args,
             z=z,
             dndz=nz,
         )
