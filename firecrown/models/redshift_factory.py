@@ -3,7 +3,10 @@ import numpy as np
 
 from firecrown.parameters import ParamsMap
 from firecrown.models.kernel import Kernel
-from .redshift import *
+from .redshift import (
+    SpectroscopicRedshiftUncertainty,
+    DESY1PhotometricRedshiftUncertainty,
+)
 
 RedshiftType = Enum("RedshiftType", "SPEC DESY1_PHOTO")
 

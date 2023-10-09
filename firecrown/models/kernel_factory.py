@@ -2,7 +2,7 @@ from enum import Enum
 import numpy as np
 from firecrown.parameters import ParamsMap
 from firecrown.updatable import Updatable
-from .kernel import *
+from .kernel import Completeness, Purity, Miscentering
 
 
 KernelType = Enum("KernelType", "COMPLETENESS PURITY MISCENTERING")

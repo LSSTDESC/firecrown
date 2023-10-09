@@ -5,7 +5,7 @@ Define the Cluster Mass Richness proxy module and its arguments.
 
 from ..parameters import ParamsMap
 from enum import Enum
-from .mass_observable import *
+from .mass_observable import TrueMass, MassRichnessMuSigma
 
 MassObservableType = Enum("MassObservableType", "TRUE MU_SIGMA MURATA COSTANZI")
 

@@ -61,7 +61,7 @@ def build_likelihood(build_parameters):
     cluster_abundance = ClusterAbundance(hmf)
     sa = SaccAdapter(sacc_data)
 
-    mass_observable = MassObservableFactory.create(
+    mass_observable_kernel = MassObservableFactory.create(
         MassObservableType.MU_SIGMA,
         ParamsMap(
             {
@@ -72,16 +72,16 @@ def build_likelihood(build_parameters):
             }
         ),
     )
-    cluster_abundance.add_kernel(mass_observable)
+    cluster_abundance.add_kernel(mass_observable_kernel)
 
-    redshift = RedshiftFactory.create(RedshiftType.SPEC)
-    cluster_abundance.add_kernel(redshift)
+    redshift_kernel = RedshiftFactory.create(RedshiftType.SPEC)
+    cluster_abundance.add_kernel(redshift_kernel)
 
-    completeness = KernelFactory.create(KernelType.COMPLETENESS)
-    cluster_abundance.add_kernel(completeness)
+    completeness_kernel = KernelFactory.create(KernelType.COMPLETENESS)
+    cluster_abundance.add_kernel(completeness_kernel)
 
-    purity = KernelFactory.create(KernelType.PURITY)
-    cluster_abundance.add_kernel(purity)
+    purity_kernel = KernelFactory.create(KernelType.PURITY)
+    cluster_abundance.add_kernel(purity_kernel)
 
     modeling = ModelingTools(cluster_abundance=cluster_abundance)
 

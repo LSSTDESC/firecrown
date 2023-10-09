@@ -47,10 +47,10 @@ class ClusterNumberCounts(Statistic):
 
         if self.use_mean_log_mass:
             dtype = sacc_types.cluster_mean_log_mass
-            data, indices = sa.get_data_and_indices(dtype, survey_tracer)
+            data, indices = sa.get_data_and_indices(dtype)
             data_vector_list += data
             sacc_indices_list += indices
-            tracer_bounds += sa.get_tracer_bounds(dtype, survey_tracer)
+            tracer_bounds += sa.get_tracer_bounds(dtype)
 
         self.sky_area = sa.survey_tracer.sky_area
         self.data_vector = DataVector.from_list(data_vector_list)
