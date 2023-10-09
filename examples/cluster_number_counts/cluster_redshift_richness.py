@@ -1,88 +1,103 @@
 """Likelihood factory function for cluster number counts."""
 
 import os
-from typing import Any, Dict
+import numpy as np
 
 import pyccl as ccl
 import sacc
 
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
+    DataVector,
 )
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster_abundance import ClusterAbundance
-from firecrown.models.mass_observable_factory import (
-    MassObservableFactory,
-    MassObservableType,
-)
-from firecrown.models.redshift_factory import RedshiftFactory, RedshiftType
-from firecrown.models.kernel_factory import KernelFactory, KernelType
-from firecrown.parameters import ParamsMap
 from firecrown.models.sacc_adapter import SaccAdapter
+from firecrown.models.mass_observable import MassRichnessMuSigma
+from firecrown.models.redshift import SpectroscopicRedshiftUncertainty
+from firecrown.models.kernel import Completeness, Purity
 
 
 def build_likelihood(build_parameters):
     """
     Here we instantiate the number density (or mass function) object.
     """
-    survey_name = "numcosmo_simulated_redshift_richness"
+
+    # Pull params for the likelihood from build_parameters
     use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
     use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
 
-    stats = ClusterNumberCounts(survey_name, use_cluster_counts, use_mean_log_mass)
-
-    stats_list = [stats]
-
-    # Here we instantiate the actual likelihood. The statistics argument carry
-    # the order of the data/theory vector.
-
-    lk = ConstGaussian(stats_list)
-
-    # We load the correct SACC file.
-    saccfile = os.path.expanduser(
-        os.path.expandvars(
-            "${FIRECROWN_DIR}/examples/cluster_number_counts/"
-            "cluster_redshift_richness_sacc_data.fits"
-        )
+    # Read in sacc data
+    sacc_file_nm = "cluster_redshift_richness_sacc_data.fits"
+    survey_name = "numcosmo_simulated_redshift_richness"
+    sacc_path = os.path.expanduser(
+        os.path.expandvars("${FIRECROWN_DIR}/examples/cluster_number_counts/")
     )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
-    sacc_adapter = SaccAdapter(sacc_data)
+    sacc_file = os.path.join(sacc_path, sacc_file_nm)
 
-    # The read likelihood method is called passing the loaded SACC file, the
-    # cluster number count functions will receive the appropriated sections
-    # of the SACC file.
-    lk.read(sacc_data)
+    sacc_data = sacc.Sacc.load_fits(sacc_file)
+    sacc_adapter = SaccAdapter(
+        sacc_data, survey_name, use_cluster_counts, use_mean_log_mass
+    )
 
-    # This script will be loaded by the appropriated connector. The framework
-    # then looks for the `likelihood` variable to find the instance that will
-    # be used to compute the likelihood.
+    # Build the data vector and indices needed for the likelihood
+    data_vector = []
+    sacc_indices = []
+    sacc_types = sacc.data_types.standard_types
+    if use_cluster_counts:
+        data, indices = sacc_adapter.get_data_and_indices(sacc_types.cluster_counts)
+        data_vector += data
+        sacc_indices += indices
+
+    if use_mean_log_mass:
+        data, indices = sacc_adapter.get_data_and_indices(
+            sacc_types.cluster_mean_log_mass
+        )
+        data_vector += data
+        sacc_indices += indices
+
+    # Finally, build the statistics we want in our likelihood (cluster abundance)
+    counts = ClusterNumberCounts(use_cluster_counts, use_mean_log_mass)
+    counts.data_vector = DataVector.from_list(data_vector)
+    counts.sacc_indices = np.array(sacc_indices)
+    counts.sky_area = sacc_adapter.survey_tracer.sky_area
+
+    mass_limits = []
+    z_limits = []
+    if use_cluster_counts:
+        mass_limits += sacc_adapter.get_mass_tracer_bin_limits(
+            sacc_types.cluster_counts
+        )
+        z_limits += sacc_adapter.get_z_tracer_bin_limits(sacc_types.cluster_counts)
+    if use_mean_log_mass:
+        mass_limits += sacc_adapter.get_mass_tracer_bin_limits(
+            sacc_types.cluster_mean_log_mass
+        )
+        z_limits += sacc_adapter.get_z_tracer_bin_limits(
+            sacc_types.cluster_mean_log_mass
+        )
+
     hmf = ccl.halos.MassFuncTinker08()
     cluster_abundance = ClusterAbundance(hmf)
-    sa = SaccAdapter(sacc_data)
 
-    mass_observable_kernel = MassObservableFactory.create(
-        MassObservableType.MU_SIGMA,
-        ParamsMap(
-            {
-                "pivot_mass": 14.625862906,
-                "pivot_redshift": 0.6,
-                "min_mass": 13.0,
-                "max_mass": 15.0,
-            }
-        ),
+    # Create and add the kernels you want in your cluster abundance
+    mass_observable_kernel = MassRichnessMuSigma(
+        mass_limits, 14.625862906, 0.6, 13.0, 15.0
     )
+    redshift_kernel = SpectroscopicRedshiftUncertainty()
+    completeness_kernel = Completeness()
+    purity_kernel = Purity()
+
     cluster_abundance.add_kernel(mass_observable_kernel)
-
-    redshift_kernel = RedshiftFactory.create(RedshiftType.SPEC)
     cluster_abundance.add_kernel(redshift_kernel)
-
-    completeness_kernel = KernelFactory.create(KernelType.COMPLETENESS)
     cluster_abundance.add_kernel(completeness_kernel)
-
-    purity_kernel = KernelFactory.create(KernelType.PURITY)
     cluster_abundance.add_kernel(purity_kernel)
 
+    # Put it all together
+    stats_list = [counts]
+    lk = ConstGaussian(stats_list)
+    lk.read(sacc_data)
     modeling = ModelingTools(cluster_abundance=cluster_abundance)
 
     return lk, modeling
