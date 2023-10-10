@@ -17,16 +17,25 @@ class ClusterAbundance(object):
     def sky_area(self, sky_area: float) -> None:
         self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
-    def __init__(self, halo_mass_function: pyccl.halos.MassFunc):
+    @property
+    def cosmo(self) -> Cosmology:
+        return self._cosmo
+
+    def __init__(
+        self,
+        halo_mass_function: pyccl.halos.MassFunc,
+        sky_area_rad: float = 4 * np.pi**2,
+    ):
         self.kernels: List[Kernel] = []
-        self.cosmo = None
         self.halo_mass_function = halo_mass_function
+        self.sky_area_rad = sky_area_rad
+        self._cosmo: Cosmology = None
 
     def add_kernel(self, kernel: Kernel):
         self.kernels.append(kernel)
 
     def update_ingredients(self, cosmo: Cosmology):
-        self.cosmo = cosmo
+        self._cosmo = cosmo
 
     def comoving_volume(self, z) -> float:
         """Differential Comoving Volume at z.

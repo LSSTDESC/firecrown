@@ -19,14 +19,17 @@ from firecrown.models.redshift import SpectroscopicRedshift, Redshift
 from firecrown.models.kernel import Completeness, Purity
 
 
-def build_likelihood(build_parameters):
+# def build_likelihood(build_parameters):
+def build_likelihood():
     """
     Here we instantiate the number density (or mass function) object.
     """
 
     # Pull params for the likelihood from build_parameters
-    use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
-    use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
+    # use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
+    # use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
+    use_cluster_counts = True
+    use_mean_log_mass = False
 
     # Read in sacc data
     sacc_file_nm = "cluster_redshift_richness_sacc_data.fits"
@@ -85,7 +88,7 @@ def build_likelihood(build_parameters):
     true_limits = [(0, np.inf)]
     mass_kernel = Mass(true_limits)
     mass_observable_kernel = MassRichnessMuSigma(
-        mass_limits, 14.625862906, 0.6, 13.0, 15.0
+        14.625862906, 0.6, 13.0, 15.0, mass_limits
     )
     redshift_kernel = Redshift(true_limits)
     redshift_proxy_kernel = SpectroscopicRedshift(z_limits)
@@ -106,3 +109,6 @@ def build_likelihood(build_parameters):
     modeling = ModelingTools(cluster_abundance=cluster_abundance)
 
     return lk, modeling
+
+
+build_likelihood()

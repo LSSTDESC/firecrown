@@ -30,7 +30,6 @@ class ClusterNumberCounts(Statistic):
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         tools.cluster_abundance.sky_area = self.sky_area
-        ccl_cosmo = tools.get_ccl_cosmology()
 
         theory_vector_list = []
         cluster_counts_list = []

@@ -6,8 +6,8 @@ from sacc.tracers import SurveyTracer
 class SaccAdapter:
     # Hard coded in SACC, how do we want to handle this?
     _survey_index = 0
-    _mass_index = 1
-    _redshift_index = 2
+    _redshift_index = 1
+    _mass_index = 2
 
     def __init__(
         self, sacc_data: sacc.Sacc, survey_nm: str, cluster_counts, mean_log_mass
@@ -17,6 +17,7 @@ class SaccAdapter:
         self.mean_log_mass = mean_log_mass
         try:
             self.survey_tracer: SurveyTracer = sacc_data.get_tracer(survey_nm)
+            self.survey_nm = survey_nm
         except KeyError as exc:
             raise ValueError(
                 f"The SACC file does not contain the SurveyTracer " f"{survey_nm}."
@@ -25,22 +26,22 @@ class SaccAdapter:
             raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
 
     def filter_tracers(self, data_type):
-        tracers_combinations = np.array(
+        all_tracers = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
-        self.validate_tracers(tracers_combinations, data_type)
-
-        self.z_tracers = np.unique(tracers_combinations[:, self._redshift_index])
-        self.mass_tracers = np.unique(tracers_combinations[:, self._mass_index])
-        self.survey_z_mass_tracers = tracers_combinations[self.survey_tracer]
+        self.validate_tracers(all_tracers, data_type)
+        self.survey_mask = all_tracers[:, self._survey_index] == self.survey_nm
+        my_tracers = all_tracers[self.survey_mask]
+        self.z_tracers = np.unique(my_tracers[:, self._redshift_index])
+        self.mass_tracers = np.unique(my_tracers[:, self._mass_index])
 
     def get_data_and_indices(self, data_type):
         self.filter_tracers(data_type)
         data_vector_list = list(
-            self.sacc_data.get_mean(data_type=data_type)[self.survey_tracer]
+            self.sacc_data.get_mean(data_type=data_type)[self.survey_mask]
         )
         sacc_indices_list = list(
-            self.sacc_data.indices(data_type=data_type)[self.survey_tracer]
+            self.sacc_data.indices(data_type=data_type)[self.survey_mask]
         )
         return data_vector_list, sacc_indices_list
 
@@ -61,19 +62,19 @@ class SaccAdapter:
     def get_mass_tracer_bin_limits(self, data_type):
         self.filter_tracers(data_type)
 
-        z_bounds = [
-            (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
-            for x in self.z_tracers
-        ]
-
-        return z_bounds
-
-    def get_z_tracer_bin_limits(self, data_type):
-        self.filter_tracers(data_type)
-
         mass_bounds = [
             (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
             for x in self.mass_tracers
         ]
 
         return mass_bounds
+
+    def get_z_tracer_bin_limits(self, data_type):
+        self.filter_tracers(data_type)
+
+        z_bounds = [
+            (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
+            for x in self.z_tracers
+        ]
+
+        return z_bounds

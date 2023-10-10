@@ -19,6 +19,7 @@ class MassRichnessMuSigma(Kernel):
         max_mass=16.0,
         integral_bounds: List[Tuple[float, float]] = None,
     ):
+        super().__init__(KernelType.mass_proxy, integral_bounds)
         self.pivot_mass = pivot_mass
         self.pivot_redshift = pivot_redshift
         self.pivot_mass = self.pivot_mass * np.log(10.0)
@@ -35,7 +36,6 @@ class MassRichnessMuSigma(Kernel):
         self.sigma_p2 = parameters.create()
 
         # Verify this gets called last or first
-        super().__init__(KernelType.mass_proxy, integral_bounds)
 
     @staticmethod
     def observed_mass(
