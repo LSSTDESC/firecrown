@@ -58,21 +58,22 @@ class SaccAdapter:
                 "redshift argument and mass argument tracers."
             )
 
-    def get_tracer_bounds(self, data_type):
+    def get_mass_tracer_bin_limits(self, data_type):
         self.filter_tracers(data_type)
 
-        z_bounds = {}
-        for z_tracer_nm in self.z_tracers:
-            tracer_data = self.sacc_data.get_tracer(z_tracer_nm)
-            z_bounds[z_tracer_nm] = (tracer_data.lower, tracer_data.upper)
-
-        mass_bounds = {}
-        for mass_tracer_nm in self.mass_tracers:
-            tracer_data = self.sacc_data.get_tracer(mass_tracer_nm)
-            mass_bounds[mass_tracer_nm] = (tracer_data.lower, tracer_data.upper)
-
-        tracer_bounds = [
-            (z_bounds[z_tracer], mass_bounds[mass_tracer])
-            for _, z_tracer, mass_tracer in self.survey_z_mass_tracers
+        z_bounds = [
+            (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
+            for x in self.z_tracers
         ]
-        return tracer_bounds
+
+        return z_bounds
+
+    def get_z_tracer_bin_limits(self, data_type):
+        self.filter_tracers(data_type)
+
+        mass_bounds = [
+            (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
+            for x in self.mass_tracers
+        ]
+
+        return mass_bounds

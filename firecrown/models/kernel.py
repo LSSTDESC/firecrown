@@ -1,26 +1,43 @@
-from enum import Enum
+from typing import List, Tuple, Dict
 import numpy as np
-from firecrown.parameters import ParamsMap
 from firecrown.updatable import Updatable
+from abc import ABC, abstractmethod
+from enum import Enum
 
 
-class Kernel(Updatable):
-    def __init__(self, bounds=[]):
+class KernelType(Enum):
+    mass = 1
+    z = 2
+    mass_proxy = 3
+    z_proxy = 4
+    completeness = 5
+    purity = 6
+
+
+class Kernel(Updatable, ABC):
+    def __init__(
+        self, kernel_type: KernelType, integral_bounds: List[Tuple[float, float]] = None
+    ):
         super().__init__()
-        # Number of differentials dx, dy, etc in the kernel
-        self.bounds = bounds  # 2x dimension
-        self.dimension = len(bounds)
+        self.integral_bounds = integral_bounds
+        self.is_dirac_delta = integral_bounds is None
+        self.kernel_type = kernel_type
 
-    def probability(self, differentials):
-        return 1.0
+    # TODO change name to something that makes more sense for all proxies
+    # Spread? Distribution?
+    @abstractmethod
+    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+        pass
 
 
 class Completeness(Kernel):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
+        super().__init__(KernelType.completeness, integral_bounds)
 
-    # TODO get better names here
-    def probability(self, mass, z, differentials):
+    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+        mass = args[index_lkp["mass"]]
+        z = args[index_lkp["z"]]
+        # TODO improve parameter names
         a_nc = 1.1321
         b_nc = 0.7751
         a_mc = 13.31
@@ -32,12 +49,14 @@ class Completeness(Kernel):
 
 
 class Purity(Kernel):
-    def __init__(self):
-        super().__init__()
+    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
+        super().__init__(KernelType.purity, integral_bounds)
 
-    # TODO get better names here
-    def probability(self, mass, z):
-        ln_r = np.log(10**mass)
+    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+        mass_proxy = args[index_lkp["mass_proxy"]]
+        z = args[index_lkp["z"]]
+        # TODO improve parameter names
+        ln_r = np.log(10**mass_proxy)
         a_nc = np.log(10) * 0.8612
         b_nc = np.log(10) * 0.3527
         a_rc = 2.2183

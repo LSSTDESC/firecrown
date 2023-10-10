@@ -2,37 +2,28 @@
 
 Define the Cluster Mass Richness proxy module and its arguments.
 """
-from typing import Tuple
+from typing import Tuple, List, Dict
 
 import numpy as np
 from scipy import special
-from ..parameters import ParamsMap
 from .. import parameters
-from .kernel import Kernel
+from .kernel import Kernel, KernelType
 
 
-class MassObservable(Kernel):
-    def __init__(self, params: ParamsMap):
-        """Initialize the ClusterMassRich object."""
-        self.pivot_mass = params["pivot_mass"]
-        self.pivot_redshift = params["pivot_redshift"]
+class MassRichnessMuSigma(Kernel):
+    def __init__(
+        self,
+        pivot_mass,
+        pivot_redshift,
+        min_mass=13.0,
+        max_mass=16.0,
+        integral_bounds: List[Tuple[float, float]] = None,
+    ):
+        self.pivot_mass = pivot_mass
+        self.pivot_redshift = pivot_redshift
         self.pivot_mass = self.pivot_mass * np.log(10.0)
-
-        self.min_mass = params["min_mass"]  # 13
-        self.max_mass = params["max_mass"]  # 16
-
-        super().__init__()
-
-
-class TrueMass(MassObservable):
-    def __init__(self, params: ParamsMap):
-        super().__init__(params)
-
-
-class MassRichnessMuSigma(MassObservable):
-    def __init__(self, params: ParamsMap, bounds):
-        super().__init__(params)
-
+        self.min_mass = min_mass
+        self.max_mass = max_mass
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
@@ -42,6 +33,9 @@ class MassRichnessMuSigma(MassObservable):
         self.sigma_p0 = parameters.create()
         self.sigma_p1 = parameters.create()
         self.sigma_p2 = parameters.create()
+
+        # Verify this gets called last or first
+        super().__init__(KernelType.mass_proxy, integral_bounds)
 
     @staticmethod
     def observed_mass(
@@ -55,7 +49,10 @@ class MassRichnessMuSigma(MassObservable):
 
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
-    def probability(self, mass, z):
+    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+        mass = args[index_lkp["mass"]]
+        z = args[index_lkp["z"]]
+
         observed_mean_mass = MassRichnessMuSigma.observed_mass(
             self.pivot_mass,
             self.log1p_pivot_redshift,
@@ -95,3 +92,11 @@ class MassRichnessMuSigma(MassObservable):
     #     chisq = np.dot(x, x) / (2.0 * sigma**2)
     #     likelihood = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
     #     return likelihood * np.log(10.0)
+
+
+class Mass(Kernel):
+    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
+        super().__init__(KernelType.mass, integral_bounds)
+
+    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+        return 1.0

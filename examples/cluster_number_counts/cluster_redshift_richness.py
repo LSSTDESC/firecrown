@@ -14,8 +14,8 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster_abundance import ClusterAbundance
 from firecrown.models.sacc_adapter import SaccAdapter
-from firecrown.models.mass_observable import MassRichnessMuSigma
-from firecrown.models.redshift import SpectroscopicRedshiftUncertainty
+from firecrown.models.mass_observable import MassRichnessMuSigma, Mass
+from firecrown.models.redshift import SpectroscopicRedshift, Redshift
 from firecrown.models.kernel import Completeness, Purity
 
 
@@ -82,15 +82,20 @@ def build_likelihood(build_parameters):
     cluster_abundance = ClusterAbundance(hmf)
 
     # Create and add the kernels you want in your cluster abundance
+    true_limits = [(0, np.inf)]
+    mass_kernel = Mass(true_limits)
     mass_observable_kernel = MassRichnessMuSigma(
         mass_limits, 14.625862906, 0.6, 13.0, 15.0
     )
-    redshift_kernel = SpectroscopicRedshiftUncertainty()
+    redshift_kernel = Redshift(true_limits)
+    redshift_proxy_kernel = SpectroscopicRedshift(z_limits)
     completeness_kernel = Completeness()
     purity_kernel = Purity()
 
+    cluster_abundance.add_kernel(mass_kernel)
     cluster_abundance.add_kernel(mass_observable_kernel)
     cluster_abundance.add_kernel(redshift_kernel)
+    cluster_abundance.add_kernel(redshift_proxy_kernel)
     cluster_abundance.add_kernel(completeness_kernel)
     cluster_abundance.add_kernel(purity_kernel)
 
