@@ -8,7 +8,6 @@ import numpy as np
 from scipy import special
 from .. import parameters
 from .kernel import Kernel, KernelType
-import pdb
 
 
 class MassRichnessMuSigma(Kernel):
@@ -18,7 +17,7 @@ class MassRichnessMuSigma(Kernel):
         pivot_redshift,
         integral_bounds: List[Tuple[float, float]] = None,
     ):
-        super().__init__(KernelType.mass_proxy, False, integral_bounds, True)
+        super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
         self.pivot_mass = pivot_mass
         self.pivot_redshift = pivot_redshift
         self.pivot_mass = self.pivot_mass * np.log(10.0)  # ln(M)
@@ -31,17 +30,8 @@ class MassRichnessMuSigma(Kernel):
         self.sigma_p0 = parameters.create()
         self.sigma_p1 = parameters.create()
         self.sigma_p2 = parameters.create()
-        self.limits = self.limits_generator()
 
         # Verify this gets called last or first
-
-    def limits_generator(self):
-        i = 0
-        n = len(self.integral_bounds)
-
-        while True:
-            yield self.integral_bounds[i % n]
-            i += 1
 
     def observed_value(self, p: Tuple[float, float, float], mass, z):
         """Return observed quantity corrected by redshift and mass."""
@@ -52,11 +42,11 @@ class MassRichnessMuSigma(Kernel):
 
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
-    def analytic_solution(
-        self, args: List[float], index_lkp: Dict[str, int], args_lkp: Dict[str, int]
-    ):
-        mass = args[index_lkp["mass"]]
-        z = args[index_lkp["z"]]
+    def analytic_solution(self, args: List[float], index_lkp: Dict[str, int]):
+        mass = args[index_lkp[KernelType.mass.name]]
+        z = args[index_lkp[KernelType.z.name]]
+        mass_limits = args[index_lkp[self.kernel_type.name]]
+
         observed_mean_mass = self.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
@@ -67,23 +57,17 @@ class MassRichnessMuSigma(Kernel):
             mass,
             z,
         )
-        min_limit = args[2]
-        max_limit = args[3]
-        x_min = (observed_mean_mass - min_limit * np.log(10.0)) / (
+
+        x_min = (observed_mean_mass - mass_limits[0] * np.log(10.0)) / (
             np.sqrt(2.0) * observed_mass_sigma
         )
-        x_max = (observed_mean_mass - max_limit * np.log(10.0)) / (
+        x_max = (observed_mean_mass - mass_limits[1] * np.log(10.0)) / (
             np.sqrt(2.0) * observed_mass_sigma
         )
 
         if x_max > 3.0 or x_min < -3.0:
-            #  pylint: disable-next=no-member
             return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
-        #  pylint: disable-next=no-member
         return (special.erf(x_min) - special.erf(x_max)) / 2.0
-
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        return 0
 
     # TODO UNDERSTAND THIS
     # def spread_point(self, logM: float, z: float, *_) -> float:
@@ -99,10 +83,8 @@ class MassRichnessMuSigma(Kernel):
 
 
 class TrueMass(Kernel):
-    def __init__(
-        self, is_dirac_delta=False, integral_bounds: List[Tuple[float, float]] = None
-    ):
-        super().__init__(KernelType.mass_proxy, is_dirac_delta, integral_bounds)
+    def __init__(self):
+        super().__init__(KernelType.mass_proxy, True)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         return 1.0

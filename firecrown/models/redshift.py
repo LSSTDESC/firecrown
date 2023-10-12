@@ -4,21 +4,21 @@ from typing import List, Tuple, Dict
 
 
 class SpectroscopicRedshift(Kernel):
-    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.z_proxy, True, integral_bounds)
+    def __init__(self):
+        super().__init__(KernelType.z_proxy, True)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         return 1.0
 
 
 class DESY1PhotometricRedshift(Kernel):
-    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.z_proxy, False)
+    def __init__(self):
+        super().__init__(KernelType.z_proxy)
         self.sigma_0 = 0.05
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        z_proxy = args[index_lkp["z_proxy"]]
-        z = args[index_lkp["z"]]
+        z_proxy = args[index_lkp[KernelType.z_proxy.name]]
+        z = args[index_lkp[KernelType.z.name]]
 
         sigma_z = self.sigma_0 * (1 + z)
         prefactor = 1 / (np.sqrt(2.0 * np.pi) * sigma_z)

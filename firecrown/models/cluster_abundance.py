@@ -33,7 +33,7 @@ class ClusterAbundance(object):
         min_z: float,
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
-        sky_area: float,
+        sky_area: float = 0,
     ):
         self.kernels: List[Kernel] = []
         self.halo_mass_function = halo_mass_function
@@ -79,79 +79,88 @@ class ClusterAbundance(object):
         hmf = self.halo_mass_function(self.cosmo, 10**mass, scale_factor)
         return hmf
 
-    def get_abundance_integrand(self, bounds_map, args_map):
+    def get_abundance_integrand(self, bounds_map):
+        # Use the bounds mapping from the outer scope.
+
         def integrand(*args):
-            z = args[bounds_map["z"]]
-            mass = args[bounds_map["mass"]]
+            z = args[bounds_map[KernelType.z.name]]
+            mass = args[bounds_map[KernelType.mass.name]]
+
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             for kernel in self.kernels:
-                if kernel.has_analytic_sln:
-                    integrand *= kernel.analytic_solution(args, bounds_map, args_map)
-                else:
-                    integrand *= kernel.distribution(args, bounds_map)
+                integrand *= (
+                    kernel.analytic_solution(args, bounds_map)
+                    if kernel.has_analytic_sln
+                    else kernel.distribution(args, bounds_map)
+                )
             return integrand
 
         return integrand
 
-    def get_integration_bounds(self):
-        index_lookup = {"mass": 0, "z": 1}
-        bounds_list = [[(self.min_mass, self.max_mass)], [(self.min_z, self.max_z)]]
-        idx = 2
-        for kernel in self.kernels:
-            if kernel.integral_bounds is None or kernel.has_analytic_sln:
-                continue
+    def get_analytic_kernels(self):
+        return [x for x in self.kernels if x.has_analytic_sln]
 
-            if not kernel.is_dirac_delta:
-                index_lookup[kernel.kernel_type.name] = idx
-                bounds_list.append(kernel.integral_bounds)
-                idx += 1
-                continue
+    def get_dirac_delta_kernels(self):
+        return [x for x in self.kernels if x.is_dirac_delta]
 
-            # If either z or m has a proxy, and its a dirac delta, just replace the
-            # limits
+    def get_integrable_kernels(self):
+        return [
+            x for x in self.kernels if not x.is_dirac_delta and not x.has_analytic_sln
+        ]
+
+    def get_integration_bounds(self, z_proxy_limits, mass_proxy_limits):
+        bounds_map = {KernelType.mass.name: 0, KernelType.z.name: 1}
+        bounds_list = [(self.min_mass, self.max_mass), (self.min_z, self.max_z)]
+        start_idx = len(bounds_map.keys())
+
+        for kernel in self.get_dirac_delta_kernels():
+            # If any kernel is a dirac delta for z or M, just replace the
+            # True limits with the proxy limits
             if kernel.kernel_type == KernelType.z_proxy:
-                bounds_list[index_lookup["z"]] = kernel.integral_bounds
+                bounds_list[bounds_map[KernelType.z.name]] = z_proxy_limits
             elif kernel.kernel_type == KernelType.mass_proxy:
-                bounds_list[index_lookup["mass"]] = kernel.integral_bounds
+                bounds_list[bounds_map[KernelType.mass.name]] = mass_proxy_limits
 
-        bounds_by_bin = list(product(*bounds_list))
+        for kernel in self.get_integrable_kernels():
+            # If any kernel is not a dirac delta, integrate over the relevant limits
+            if kernel.kernel_type == KernelType.z_proxy:
+                bounds_map[kernel.kernel_type.name] = start_idx
+                bounds_list.append(z_proxy_limits)
+            elif kernel.kernel_type == KernelType.mass_proxy:
+                bounds_map[kernel.kernel_type.name] = start_idx
+                bounds_list.append(mass_proxy_limits)
+            else:
+                bounds_map[kernel.kernel_type.name] = start_idx
+                bounds_list.append(kernel.integral_bounds)
+            start_idx += 1
 
-        return bounds_by_bin, index_lookup
+        extra_args = []
+        for kernel in self.get_analytic_kernels():
+            # Lastly, don't integrate any analyticly solved kernels, just solve them.
+            if kernel.kernel_type == KernelType.z_proxy:
+                bounds_map[kernel.kernel_type.name] = start_idx
+                extra_args.append(z_proxy_limits)
+            elif kernel.kernel_type == KernelType.mass_proxy:
+                bounds_map[kernel.kernel_type.name] = start_idx
+                extra_args.append(mass_proxy_limits)
 
-    def get_analytic_args(self):
-        idx = 0
-        index_lookup = {}
-        args = []
-        for kernel in self.kernels:
-            if not kernel.has_analytic_sln:
-                continue
-            index_lookup[kernel.kernel_type.name] = idx
-            args.append(kernel.integral_bounds)
-            idx += 1
+            start_idx += 1
 
-        return args, index_lookup
+        return bounds_list, extra_args, bounds_map
 
-    def compute(self):
-        bounds_by_bin, bounds_map = self.get_integration_bounds()
-        analytic_args, args_map = self.get_analytic_args()
-        integrand = self.get_abundance_integrand(bounds_map, args_map)
-
-        cluster_counts = []
-        print(bounds_by_bin)
-        for bounds in bounds_by_bin:
-            for analytic_sln in analytic_args:
-                for analytic_bounds in analytic_sln:
-                    cc = nquad(
-                        integrand,
-                        ranges=bounds,
-                        args=analytic_bounds,
-                        opts={
-                            "epsabs": self._absolute_tolerance,
-                            "epsrel": self._relative_tolerance,
-                        },
-                    )[0]
-                    print(cc)
-                    cluster_counts.append(cc)
-
-        print(cluster_counts)
-        return cluster_counts
+    def compute(self, z_proxy_limits, mass_proxy_limits):
+        bounds, extra_args, bounds_map = self.get_integration_bounds(
+            z_proxy_limits, mass_proxy_limits
+        )
+        integrand = self.get_abundance_integrand(bounds_map)
+        cc = nquad(
+            integrand,
+            ranges=bounds,
+            args=extra_args,
+            opts={
+                "epsabs": self._absolute_tolerance,
+                "epsrel": self._relative_tolerance,
+            },
+        )[0]
+        print(bounds, cc)
+        return cc

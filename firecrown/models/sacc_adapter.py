@@ -25,23 +25,22 @@ class SaccAdapter:
         if not isinstance(self.survey_tracer, SurveyTracer):
             raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
 
-    def filter_tracers(self, data_type):
+    def get_filtered_tracers(self, data_type):
         all_tracers = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
         self.validate_tracers(all_tracers, data_type)
-        self.survey_mask = all_tracers[:, self._survey_index] == self.survey_nm
-        my_tracers = all_tracers[self.survey_mask]
-        self.z_tracers = np.unique(my_tracers[:, self._redshift_index])
-        self.mass_tracers = np.unique(my_tracers[:, self._mass_index])
+        survey_mask = all_tracers[:, self._survey_index] == self.survey_nm
+        filtered_tracers = all_tracers[survey_mask]
+        return filtered_tracers, survey_mask
 
     def get_data_and_indices(self, data_type):
-        self.filter_tracers(data_type)
+        _, survey_mask = self.get_filtered_tracers(data_type)
         data_vector_list = list(
-            self.sacc_data.get_mean(data_type=data_type)[self.survey_mask]
+            self.sacc_data.get_mean(data_type=data_type)[survey_mask]
         )
         sacc_indices_list = list(
-            self.sacc_data.indices(data_type=data_type)[self.survey_mask]
+            self.sacc_data.indices(data_type=data_type)[survey_mask]
         )
         return data_vector_list, sacc_indices_list
 
@@ -59,22 +58,15 @@ class SaccAdapter:
                 "redshift argument and mass argument tracers."
             )
 
-    def get_mass_tracer_bin_limits(self, data_type):
-        self.filter_tracers(data_type)
+    def get_bin_limits(self, data_type):
+        filtered_tracers, _ = self.get_filtered_tracers(data_type)
 
-        mass_bounds = [
-            (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
-            for x in self.mass_tracers
-        ]
+        tracers = []
+        for _, z_tracer, mass_tracer in filtered_tracers:
+            z_data = self.sacc_data.get_tracer(z_tracer)
+            mass_data = self.sacc_data.get_tracer(mass_tracer)
+            tracers.append(
+                [(z_data.lower, z_data.upper), (mass_data.lower, mass_data.upper)]
+            )
 
-        return mass_bounds
-
-    def get_z_tracer_bin_limits(self, data_type):
-        self.filter_tracers(data_type)
-
-        z_bounds = [
-            (self.sacc_data.get_tracer(x).lower, self.sacc_data.get_tracer(x).upper)
-            for x in self.z_tracers
-        ]
-
-        return z_bounds
+        return tracers

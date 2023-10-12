@@ -1,7 +1,7 @@
 from typing import List, Tuple, Dict
 import numpy as np
 from firecrown.updatable import Updatable
-from abc import ABC, abstractmethod
+from abc import ABC
 from enum import Enum
 
 
@@ -19,8 +19,8 @@ class Kernel(Updatable, ABC):
         self,
         kernel_type: KernelType,
         is_dirac_delta=False,
-        integral_bounds: List[Tuple[float, float]] = None,
         has_analytic_sln=False,
+        integral_bounds: List[Tuple[float, float]] = None,
     ):
         super().__init__()
         self.integral_bounds = integral_bounds
@@ -28,25 +28,20 @@ class Kernel(Updatable, ABC):
         self.kernel_type = kernel_type
         self.has_analytic_sln = has_analytic_sln
 
-    # TODO change name to something that makes more sense for all proxies
-    # Spread? Distribution?
-    @abstractmethod
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        pass
+    def distribution(self, args: List[float], args_map: Dict[str, int]):
+        raise NotImplementedError()
 
-    def analytic_solution(
-        self, args: List[float], index_lkp: Dict[str, int], args_lkp: Dict[str, int]
-    ):
-        return
+    def analytic_solution(self, args: List[float], args_map: Dict[str, int]):
+        raise NotImplementedError()
 
 
 class Completeness(Kernel):
     def __init__(self):
-        super().__init__(KernelType.completeness, False, None)
+        super().__init__(KernelType.completeness)
 
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        mass = args[index_lkp["mass"]]
-        z = args[index_lkp["z"]]
+    def distribution(self, args: List[float], args_map: Dict[str, int]):
+        mass = args[args_map[KernelType.mass.name]]
+        z = args[args_map[KernelType.z.name]]
         # TODO improve parameter names
         a_nc = 1.1321
         b_nc = 0.7751
@@ -60,12 +55,12 @@ class Completeness(Kernel):
 
 class Purity(Kernel):
     def __init__(self):
-        super().__init__(KernelType.purity, False, None)
+        super().__init__(KernelType.purity)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        mass_proxy = args[index_lkp["mass_proxy"]]
-        z = args[index_lkp["z"]]
-        # TODO improve parameter names
+        mass_proxy = args[index_lkp[KernelType.mass_proxy.name]]
+        z = args[index_lkp[KernelType.z.name]]
+
         ln_r = np.log(10**mass_proxy)
         a_nc = np.log(10) * 0.8612
         b_nc = np.log(10) * 0.3527
