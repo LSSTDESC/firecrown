@@ -7,6 +7,8 @@ reusable objects, such as perturbation theory or halo model calculators.
 
 from typing import Dict, Optional, final
 import pyccl.nl_pt
+
+from firecrown.parameters import ParamsMap
 from .models.cluster_abundance import ClusterAbundance
 
 
@@ -55,7 +57,7 @@ class ModelingTools:
             return False
         return True
 
-    def prepare(self, ccl_cosmo: pyccl.Cosmology) -> None:
+    def prepare(self, ccl_cosmo: pyccl.Cosmology, params: ParamsMap) -> None:
         """Prepare the Cosmology for use in likelihoods.
 
         This method will prepare the ModelingTools for use in likelihoods. This
@@ -74,7 +76,7 @@ class ModelingTools:
             self.pt_calculator.update_ingredients(ccl_cosmo)
 
         if self.cluster_abundance is not None:
-            self.cluster_abundance.update_ingredients(ccl_cosmo)
+            self.cluster_abundance.update_ingredients(ccl_cosmo, params)
 
     @final
     def reset(self) -> None:

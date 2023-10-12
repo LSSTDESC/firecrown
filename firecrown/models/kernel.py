@@ -16,12 +16,17 @@ class KernelType(Enum):
 
 class Kernel(Updatable, ABC):
     def __init__(
-        self, kernel_type: KernelType, integral_bounds: List[Tuple[float, float]] = None
+        self,
+        kernel_type: KernelType,
+        is_dirac_delta=False,
+        integral_bounds: List[Tuple[float, float]] = None,
+        has_analytic_sln=False,
     ):
         super().__init__()
         self.integral_bounds = integral_bounds
-        self.is_dirac_delta = integral_bounds is None
+        self.is_dirac_delta = is_dirac_delta
         self.kernel_type = kernel_type
+        self.has_analytic_sln = has_analytic_sln
 
     # TODO change name to something that makes more sense for all proxies
     # Spread? Distribution?
@@ -29,10 +34,15 @@ class Kernel(Updatable, ABC):
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         pass
 
+    def analytic_solution(
+        self, args: List[float], index_lkp: Dict[str, int], args_lkp: Dict[str, int]
+    ):
+        return
+
 
 class Completeness(Kernel):
-    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.completeness, integral_bounds)
+    def __init__(self):
+        super().__init__(KernelType.completeness, False, None)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         mass = args[index_lkp["mass"]]
@@ -49,8 +59,8 @@ class Completeness(Kernel):
 
 
 class Purity(Kernel):
-    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.purity, integral_bounds)
+    def __init__(self):
+        super().__init__(KernelType.purity, False, None)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         mass_proxy = args[index_lkp["mass_proxy"]]

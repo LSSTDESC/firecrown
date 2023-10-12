@@ -14,22 +14,20 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster_abundance import ClusterAbundance
 from firecrown.models.sacc_adapter import SaccAdapter
-from firecrown.models.mass_observable import MassRichnessMuSigma, Mass
-from firecrown.models.redshift import SpectroscopicRedshift, Redshift
+from firecrown.models.mass_observable import MassRichnessMuSigma
+from firecrown.models.redshift import SpectroscopicRedshift
 from firecrown.models.kernel import Completeness, Purity
+from firecrown.parameters import ParamsMap
 
 
-# def build_likelihood(build_parameters):
-def build_likelihood():
+def build_likelihood(build_parameters):
     """
     Here we instantiate the number density (or mass function) object.
     """
 
     # Pull params for the likelihood from build_parameters
-    # use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
-    # use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
-    use_cluster_counts = True
-    use_mean_log_mass = False
+    use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
+    use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
 
     # Read in sacc data
     sacc_file_nm = "cluster_redshift_richness_sacc_data.fits"
@@ -61,46 +59,49 @@ def build_likelihood():
         sacc_indices += indices
 
     # Finally, build the statistics we want in our likelihood (cluster abundance)
+
     counts = ClusterNumberCounts(use_cluster_counts, use_mean_log_mass)
     counts.data_vector = DataVector.from_list(data_vector)
     counts.sacc_indices = np.array(sacc_indices)
-    counts.sky_area = sacc_adapter.survey_tracer.sky_area
 
-    mass_limits = []
-    z_limits = []
+    mass_proxy_limits = []
+    z_proxy_limits = []
     if use_cluster_counts:
-        mass_limits += sacc_adapter.get_mass_tracer_bin_limits(
+        mass_proxy_limits += sacc_adapter.get_mass_tracer_bin_limits(
             sacc_types.cluster_counts
         )
-        z_limits += sacc_adapter.get_z_tracer_bin_limits(sacc_types.cluster_counts)
+        z_proxy_limits += sacc_adapter.get_z_tracer_bin_limits(
+            sacc_types.cluster_counts
+        )
     if use_mean_log_mass:
-        mass_limits += sacc_adapter.get_mass_tracer_bin_limits(
+        mass_proxy_limits += sacc_adapter.get_mass_tracer_bin_limits(
             sacc_types.cluster_mean_log_mass
         )
-        z_limits += sacc_adapter.get_z_tracer_bin_limits(
+        z_proxy_limits += sacc_adapter.get_z_tracer_bin_limits(
             sacc_types.cluster_mean_log_mass
         )
 
     hmf = ccl.halos.MassFuncTinker08()
-    cluster_abundance = ClusterAbundance(hmf)
+    min_mass, max_mass = 13.0, 16.0
+    min_z, max_z = 0.1, 2
+    sky_area = sacc_adapter.survey_tracer.sky_area
+    cluster_abundance = ClusterAbundance(
+        min_mass, max_mass, min_z, max_z, hmf, sky_area
+    )
 
     # Create and add the kernels you want in your cluster abundance
-    true_limits = [(0, np.inf)]
-    mass_kernel = Mass(true_limits)
+    pivot_mass, pivot_redshift = 14.625862906, 0.6
     mass_observable_kernel = MassRichnessMuSigma(
-        14.625862906, 0.6, 13.0, 15.0, mass_limits
+        pivot_mass, pivot_redshift, mass_proxy_limits
     )
-    redshift_kernel = Redshift(true_limits)
-    redshift_proxy_kernel = SpectroscopicRedshift(z_limits)
-    completeness_kernel = Completeness()
-    purity_kernel = Purity()
+    redshift_proxy_kernel = SpectroscopicRedshift(z_proxy_limits)
+    # completeness_kernel = Completeness()
+    # purity_kernel = Purity()
 
-    cluster_abundance.add_kernel(mass_kernel)
     cluster_abundance.add_kernel(mass_observable_kernel)
-    cluster_abundance.add_kernel(redshift_kernel)
     cluster_abundance.add_kernel(redshift_proxy_kernel)
-    cluster_abundance.add_kernel(completeness_kernel)
-    cluster_abundance.add_kernel(purity_kernel)
+    # cluster_abundance.add_kernel(completeness_kernel)
+    # cluster_abundance.add_kernel(purity_kernel)
 
     # Put it all together
     stats_list = [counts]
@@ -109,6 +110,3 @@ def build_likelihood():
     modeling = ModelingTools(cluster_abundance=cluster_abundance)
 
     return lk, modeling
-
-
-build_likelihood()

@@ -3,17 +3,9 @@ from firecrown.models.kernel import Kernel, KernelType
 from typing import List, Tuple, Dict
 
 
-class Redshift(Kernel):
-    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.z, integral_bounds)
-
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        return 1.0
-
-
 class SpectroscopicRedshift(Kernel):
     def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.z_proxy, integral_bounds)
+        super().__init__(KernelType.z_proxy, True, integral_bounds)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         return 1.0
@@ -21,7 +13,7 @@ class SpectroscopicRedshift(Kernel):
 
 class DESY1PhotometricRedshift(Kernel):
     def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.z_proxy, integral_bounds)
+        super().__init__(KernelType.z_proxy, False)
         self.sigma_0 = 0.05
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):

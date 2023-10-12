@@ -8,6 +8,7 @@ import numpy as np
 from scipy import special
 from .. import parameters
 from .kernel import Kernel, KernelType
+import pdb
 
 
 class MassRichnessMuSigma(Kernel):
@@ -15,16 +16,12 @@ class MassRichnessMuSigma(Kernel):
         self,
         pivot_mass,
         pivot_redshift,
-        min_mass=13.0,
-        max_mass=16.0,
         integral_bounds: List[Tuple[float, float]] = None,
     ):
-        super().__init__(KernelType.mass_proxy, integral_bounds)
+        super().__init__(KernelType.mass_proxy, False, integral_bounds, True)
         self.pivot_mass = pivot_mass
         self.pivot_redshift = pivot_redshift
-        self.pivot_mass = self.pivot_mass * np.log(10.0)
-        self.min_mass = min_mass
-        self.max_mass = max_mass
+        self.pivot_mass = self.pivot_mass * np.log(10.0)  # ln(M)
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
@@ -34,44 +31,48 @@ class MassRichnessMuSigma(Kernel):
         self.sigma_p0 = parameters.create()
         self.sigma_p1 = parameters.create()
         self.sigma_p2 = parameters.create()
+        self.limits = self.limits_generator()
 
         # Verify this gets called last or first
 
-    @staticmethod
-    def observed_mass(
-        pivot_mass, log1p_pivot_redshift, p: Tuple[float, float, float], mass, z
-    ):
+    def limits_generator(self):
+        i = 0
+        n = len(self.integral_bounds)
+
+        while True:
+            yield self.integral_bounds[i % n]
+            i += 1
+
+    def observed_value(self, p: Tuple[float, float, float], mass, z):
         """Return observed quantity corrected by redshift and mass."""
 
         ln_mass = mass * np.log(10)
-        delta_ln_mass = ln_mass - pivot_mass
-        delta_z = np.log1p(z) - log1p_pivot_redshift
+        delta_ln_mass = ln_mass - self.pivot_mass
+        delta_z = np.log1p(z) - self.log1p_pivot_redshift
 
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+    def analytic_solution(
+        self, args: List[float], index_lkp: Dict[str, int], args_lkp: Dict[str, int]
+    ):
         mass = args[index_lkp["mass"]]
         z = args[index_lkp["z"]]
-
-        observed_mean_mass = MassRichnessMuSigma.observed_mass(
-            self.pivot_mass,
-            self.log1p_pivot_redshift,
+        observed_mean_mass = self.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
             z,
         )
-        observed_mass_sigma = MassRichnessMuSigma.observed_mass(
-            self.pivot_mass,
-            self.log1p_pivot_redshift,
+        observed_mass_sigma = self.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),
             mass,
             z,
         )
-
-        x_min = (observed_mean_mass - self.min_obs_mass * np.log(10.0)) / (
+        min_limit = args[2]
+        max_limit = args[3]
+        x_min = (observed_mean_mass - min_limit * np.log(10.0)) / (
             np.sqrt(2.0) * observed_mass_sigma
         )
-        x_max = (observed_mean_mass - self.max_obs_mass * np.log(10.0)) / (
+        x_max = (observed_mean_mass - max_limit * np.log(10.0)) / (
             np.sqrt(2.0) * observed_mass_sigma
         )
 
@@ -80,6 +81,9 @@ class MassRichnessMuSigma(Kernel):
             return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
         #  pylint: disable-next=no-member
         return (special.erf(x_min) - special.erf(x_max)) / 2.0
+
+    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+        return 0
 
     # TODO UNDERSTAND THIS
     # def spread_point(self, logM: float, z: float, *_) -> float:
@@ -94,9 +98,11 @@ class MassRichnessMuSigma(Kernel):
     #     return likelihood * np.log(10.0)
 
 
-class Mass(Kernel):
-    def __init__(self, integral_bounds: List[Tuple[float, float]] = None):
-        super().__init__(KernelType.mass, integral_bounds)
+class TrueMass(Kernel):
+    def __init__(
+        self, is_dirac_delta=False, integral_bounds: List[Tuple[float, float]] = None
+    ):
+        super().__init__(KernelType.mass_proxy, is_dirac_delta, integral_bounds)
 
     def distribution(self, args: List[float], index_lkp: Dict[str, int]):
         return 1.0

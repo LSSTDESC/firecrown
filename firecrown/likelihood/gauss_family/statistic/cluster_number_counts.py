@@ -4,6 +4,7 @@ import sacc
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
 from ....modeling_tools import ModelingTools
+import pdb
 
 
 class ClusterNumberCounts(Statistic):
@@ -18,7 +19,6 @@ class ClusterNumberCounts(Statistic):
         self.theory_vector: Optional[TheoryVector] = None
         self.use_cluster_counts = cluster_counts
         self.use_mean_log_mass = mean_log_mass
-        self.sky_area = 0.0
         self.data_vector = DataVector.from_list([])
 
     def read(self, sacc_data: sacc.Sacc):
@@ -29,8 +29,6 @@ class ClusterNumberCounts(Statistic):
         return self.data_vector
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        tools.cluster_abundance.sky_area = self.sky_area
-
         theory_vector_list = []
         cluster_counts_list = []
 
@@ -38,6 +36,7 @@ class ClusterNumberCounts(Statistic):
             cluster_counts_list = tools.cluster_abundance.compute()
             theory_vector_list += cluster_counts_list
 
+        pdb.set_trace()
         # if self.use_mean_log_mass:
         #     mean_log_mass_list = [
         #         self.cluster_abundance.compute_unormalized_mean_logM(

@@ -7,7 +7,7 @@ Note that the class FirecrownLikelihood does *not* inherit from firecrown's
 likelihood abstract base class; it the implementation of a CosmoSIS module,
 not a specific likelihood.
 """
-
+import pdb
 
 import cosmosis.datablock
 from cosmosis.datablock import option_section
@@ -116,7 +116,7 @@ class FirecrownLikelihood:
             msg = self.form_error_message(exc)
             raise RuntimeError(msg) from exc
 
-        self.tools.prepare(ccl_cosmo)
+        self.tools.prepare(ccl_cosmo, firecrown_params)
         loglike = self.likelihood.compute_loglike(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()

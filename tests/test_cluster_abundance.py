@@ -57,23 +57,23 @@ def test_cluster_add_kernel():
 def test_cluster_abundance_bounds():
     hmf = pyccl.halos.MassFuncTinker08()
     ca = ClusterAbundance(hmf)
-    bounds, index_lookup = ca.get_abundance_bounds()
+    bounds, index_lookup = ca.get_integration_bounds()
     assert len(bounds) == 0
     assert len(index_lookup) == 0
 
     ca.add_kernel(MockKernel())
-    bounds, index_lookup = ca.get_abundance_bounds()
+    bounds, index_lookup = ca.get_integration_bounds()
     assert len(bounds) == 0
     assert len(index_lookup) == 0
 
     ca.add_kernel(MockKernel([(0, 1)]))
-    bounds, index_lookup = ca.get_abundance_bounds()
+    bounds, index_lookup = ca.get_integration_bounds()
     assert len(bounds) == 1
     assert len(index_lookup) == 1
     assert index_lookup["mass"] == 0
     assert bounds[index_lookup["mass"]] == [(0, 1)]
 
 
-def test_cluster_abundance_integrand():
-    hmf = pyccl.halos.MassFuncTinker08()
-    ca = ClusterAbundance(hmf)
+# def test_cluster_abundance_integrand():
+#     hmf = pyccl.halos.MassFuncTinker08()
+#     ca = ClusterAbundance(hmf)

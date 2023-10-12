@@ -1,7 +1,6 @@
 from firecrown.models.kernel import Completeness, Purity, KernelType, Kernel
-from firecrown.models.mass_observable import Mass, MassRichnessMuSigma
+from firecrown.models.mass_observable import TrueMass, MassRichnessMuSigma
 from firecrown.models.redshift import (
-    Redshift,
     SpectroscopicRedshift,
     DESY1PhotometricRedshift,
 )
@@ -31,19 +30,6 @@ def test_spectroscopic_redshift_kernel():
     assert srk.is_dirac_delta is False
     assert len(srk.integral_bounds) == 1
     assert srk.integral_bounds[0] == (0, 1)
-
-
-def test_redshift_kernel():
-    rk = Redshift()
-    assert isinstance(rk, Kernel)
-    assert rk.kernel_type == KernelType.z
-    assert rk.is_dirac_delta is True
-    assert rk.integral_bounds is None
-
-    rk = Redshift([(0, 1)])
-    assert rk.is_dirac_delta is False
-    assert len(rk.integral_bounds) == 1
-    assert rk.integral_bounds[0] == (0, 1)
 
 
 def test_musigma_kernel():
