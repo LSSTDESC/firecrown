@@ -18,6 +18,9 @@ class ScipyIntegrator(Integrator):
         self._absolute_tolerance = absolute_tolerance
 
     def integrate(self, integrand, bounds, bounds_map, extra_args):
+        # TODO: Scipy passes the bounds unwrapped, while NumCosmo passes the bounds
+        # Wrapped.  This means we need to adjust the called code to handle this.
+        # This isn't done yet.
         cc = nquad(
             integrand,
             ranges=bounds,

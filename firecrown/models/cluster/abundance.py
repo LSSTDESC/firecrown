@@ -2,7 +2,7 @@ from typing import List
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapper
+from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
 import numpy as np
 from firecrown.parameters import ParamsMap
 from firecrown.integrator import Integrator
@@ -20,6 +20,20 @@ class ClusterAbundance(object):
     @property
     def cosmo(self) -> Cosmology:
         return self._cosmo
+
+    @property
+    def analytic_kernels(self):
+        return [x for x in self.kernels if x.has_analytic_sln]
+
+    @property
+    def dirac_delta_kernels(self):
+        return [x for x in self.kernels if x.is_dirac_delta]
+
+    @property
+    def integrable_kernels(self):
+        return [
+            x for x in self.kernels if not x.is_dirac_delta and not x.has_analytic_sln
+        ]
 
     def __init__(
         self,
@@ -77,10 +91,8 @@ class ClusterAbundance(object):
         return hmf
 
     def get_abundance_integrand(self):
-        # Use the bounds mapping from the outer scope.
-
         def integrand(*int_args):
-            args_map: ArgsMapper = int_args[-1]
+            args_map: ArgsMapping = int_args[-1]
             z = args_map.get_integral_bounds(int_args, KernelType.z)
             mass = args_map.get_integral_bounds(int_args, KernelType.mass)
 
@@ -95,62 +107,50 @@ class ClusterAbundance(object):
 
         return integrand
 
-    @property
-    def analytic_kernels(self):
-        return [x for x in self.kernels if x.has_analytic_sln]
-
-    @property
-    def dirac_delta_kernels(self):
-        return [x for x in self.kernels if x.is_dirac_delta]
-
-    @property
-    def integrable_kernels(self):
-        return [
-            x for x in self.kernels if not x.is_dirac_delta and not x.has_analytic_sln
-        ]
-
     def get_integration_bounds(self, z_proxy_limits, mass_proxy_limits):
-        args_mapping = ArgsMapper()
+        args_mapping = ArgsMapping()
         args_mapping.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
-        bounds_list = [(self.min_mass, self.max_mass), (self.min_z, self.max_z)]
-
-        start_idx = len(args_mapping.integral_bounds.keys())
+        integral_bounds = [(self.min_mass, self.max_mass), (self.min_z, self.max_z)]
+        extra_args = []
 
         for kernel in self.dirac_delta_kernels:
             # If any kernel is a dirac delta for z or M, just replace the
-            # True limits with the proxy limits
+            # true limits with the proxy limits
             if kernel.kernel_type == KernelType.z_proxy:
-                bounds_list[1] = z_proxy_limits
+                integral_bounds[1] = z_proxy_limits
             elif kernel.kernel_type == KernelType.mass_proxy:
-                bounds_list[0] = mass_proxy_limits
+                integral_bounds[0] = mass_proxy_limits
 
+        mapping_idx = len(args_mapping.integral_bounds.keys())
         for kernel in self.integrable_kernels:
             # If any kernel is not a dirac delta, integrate over the relevant limits
-            if kernel.kernel_type == KernelType.z_proxy:
-                args_mapping.integral_bounds[kernel.kernel_type.name] = start_idx
-                bounds_list.append(z_proxy_limits)
-            elif kernel.kernel_type == KernelType.mass_proxy:
-                args_mapping.integral_bounds[kernel.kernel_type.name] = start_idx
-                bounds_list.append(mass_proxy_limits)
-            else:
-                args_mapping.integral_bounds[kernel.kernel_type.name] = start_idx
-                bounds_list.append(kernel.integral_bounds)
-            start_idx += 1
+            args_mapping.integral_bounds[kernel.kernel_type.name] = mapping_idx
+            mapping_idx += 1
 
-        extra_args = []
-        start_idx = 0
+            match kernel.kernel_type:
+                case KernelType.z_proxy:
+                    integral_bounds.append(z_proxy_limits)
+                case KernelType.mass_proxy:
+                    integral_bounds.append(mass_proxy_limits)
+                case _:
+                    integral_bounds.append(kernel.integral_bounds)
+
+        mapping_idx = 0
         for kernel in self.analytic_kernels:
-            # Lastly, don't integrate any analyticly solved kernels, just solve them.
-            if kernel.kernel_type == KernelType.z_proxy:
-                args_mapping.extra_args[kernel.kernel_type.name] = start_idx
-                extra_args.append(z_proxy_limits)
-            elif kernel.kernel_type == KernelType.mass_proxy:
-                args_mapping.extra_args[kernel.kernel_type.name] = start_idx
-                extra_args.append(mass_proxy_limits)
+            # Lastly, don't integrate any kernels with an analytic solution
+            # This means we pass in their limits as extra arguments
+            args_mapping.extra_args[kernel.kernel_type.name] = mapping_idx
+            mapping_idx += 1
 
-            start_idx += 1
+            match kernel.kernel_type:
+                case KernelType.z_proxy:
+                    extra_args.append(z_proxy_limits)
+                case KernelType.mass_proxy:
+                    extra_args.append(mass_proxy_limits)
+                case _:
+                    extra_args.append(kernel.integral_bounds)
 
-        return bounds_list, extra_args, args_mapping
+        return integral_bounds, extra_args, args_mapping
 
     def compute(self, z_proxy_limits, mass_proxy_limits):
         bounds, extra_args, args_mapping = self.get_integration_bounds(

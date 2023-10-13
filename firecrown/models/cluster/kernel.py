@@ -18,7 +18,7 @@ class KernelType(Enum):
     purity = 6
 
 
-class ArgsMapper:
+class ArgsMapping:
     def __init__(self):
         self.integral_bounds = dict()
         self.extra_args = dict()
@@ -49,10 +49,10 @@ class Kernel(Updatable, ABC):
         self.kernel_type = kernel_type
         self.has_analytic_sln = has_analytic_sln
 
-    def distribution(self, args: List[float], args_map: ArgsMapper):
+    def distribution(self, args: List[float], args_map: ArgsMapping):
         raise NotImplementedError()
 
-    def analytic_solution(self, args: List[float], args_map: ArgsMapper):
+    def analytic_solution(self, args: List[float], args_map: ArgsMapping):
         raise NotImplementedError()
 
 
@@ -60,7 +60,7 @@ class Completeness(Kernel):
     def __init__(self):
         super().__init__(KernelType.completeness)
 
-    def distribution(self, args: List[float], args_map: ArgsMapper):
+    def distribution(self, args: List[float], args_map: ArgsMapping):
         mass = args_map.get_integral_bounds(args, KernelType.mass)
         z = args_map.get_integral_bounds(args, KernelType.z)
 
@@ -79,7 +79,7 @@ class Purity(Kernel):
     def __init__(self):
         super().__init__(KernelType.purity)
 
-    def distribution(self, args: List[float], index_lkp: ArgsMapper):
+    def distribution(self, args: List[float], index_lkp: ArgsMapping):
         mass_proxy = args[index_lkp.integral_bounds[KernelType.mass_proxy.name]]
         z = args[index_lkp.integral_bounds[KernelType.z.name]]
 
@@ -126,7 +126,7 @@ class MassRichnessMuSigma(Kernel):
 
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
-    def analytic_solution(self, args: List[float], args_map: ArgsMapper):
+    def analytic_solution(self, args: List[float], args_map: ArgsMapping):
         # pdb.set_trace()
 
         mass = args_map.get_integral_bounds(args, KernelType.mass)
@@ -172,7 +172,7 @@ class TrueMass(Kernel):
     def __init__(self):
         super().__init__(KernelType.mass_proxy, True)
 
-    def distribution(self, args: List[float], args_map: ArgsMapper):
+    def distribution(self, args: List[float], args_map: ArgsMapping):
         return 1.0
 
 
@@ -180,7 +180,7 @@ class SpectroscopicRedshift(Kernel):
     def __init__(self):
         super().__init__(KernelType.z_proxy, True)
 
-    def distribution(self, args: List[float], args_map: ArgsMapper):
+    def distribution(self, args: List[float], args_map: ArgsMapping):
         return 1.0
 
 
@@ -189,7 +189,7 @@ class DESY1PhotometricRedshift(Kernel):
         super().__init__(KernelType.z_proxy)
         self.sigma_0 = 0.05
 
-    def distribution(self, args: List[float], args_map: ArgsMapper):
+    def distribution(self, args: List[float], args_map: ArgsMapping):
         z = args_map.get_integral_bounds(args, KernelType.z)
         z_proxy = args_map.get_integral_bounds(args, KernelType.z_proxy)
 
