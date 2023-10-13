@@ -9,7 +9,7 @@ from typing import Dict, Optional, final
 import pyccl.nl_pt
 
 from firecrown.parameters import ParamsMap
-from .models.cluster_abundance import ClusterAbundance
+from firecrown.models.cluster.abundance import ClusterAbundance
 
 
 class ModelingTools:

@@ -6,10 +6,10 @@ from firecrown.models.sacc_adapter import SaccAdapter
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
 from ....modeling_tools import ModelingTools
-import pdb
 import numpy as np
-import cProfile
-from pstats import SortKey
+
+# import cProfile
+# from pstats import SortKey
 
 
 class ClusterNumberCounts(Statistic):
@@ -20,7 +20,7 @@ class ClusterNumberCounts(Statistic):
         survey_name: str,
         systematics: Optional[List[SourceSystematic]] = None,
     ):
-        self.pr = cProfile.Profile()
+        # self.pr = cProfile.Profile()
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
@@ -66,8 +66,6 @@ class ClusterNumberCounts(Statistic):
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         # self.pr.enable()
-        tools.cluster_abundance.sky_area = self.sky_area
-
         theory_vector_list = []
         cluster_counts_list = []
 
