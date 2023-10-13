@@ -1,12 +1,12 @@
-from typing import List, Dict
+from typing import List, Tuple
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
 from scipy.integrate import nquad
-from itertools import product
-from firecrown.models.kernel import Kernel, KernelType
+from firecrown.models.kernel import Kernel, KernelType, ArgsMapper
 import numpy as np
 import pdb
+from numcosmo_py import Ncm
 from firecrown.parameters import ParamsMap
 
 
@@ -66,9 +66,9 @@ class ClusterAbundance(object):
 
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
         dV = (
-            ((1.0 + z) ** 2)
+            pyccl.physical_constants.CLIGHT_HMPC
+            * ((1.0 + z) ** 2)
             * (angular_diam_dist**2)
-            * pyccl.physical_constants.CLIGHT_HMPC
             / self.cosmo["h"]
             / h_over_h0
         )
@@ -79,19 +79,20 @@ class ClusterAbundance(object):
         hmf = self.halo_mass_function(self.cosmo, 10**mass, scale_factor)
         return hmf
 
-    def get_abundance_integrand(self, bounds_map):
+    def get_abundance_integrand(self):
         # Use the bounds mapping from the outer scope.
 
-        def integrand(*args):
-            z = args[bounds_map[KernelType.z.name]]
-            mass = args[bounds_map[KernelType.mass.name]]
+        def integrand(*int_args):
+            args_map = int_args[-1]
+            z = int_args[0][args_map.integral_bounds[KernelType.z.name]]
+            mass = int_args[0][args_map.integral_bounds[KernelType.mass.name]]
 
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             for kernel in self.kernels:
                 integrand *= (
-                    kernel.analytic_solution(args, bounds_map)
+                    kernel.analytic_solution(int_args, args_map)
                     if kernel.has_analytic_sln
-                    else kernel.distribution(args, bounds_map)
+                    else kernel.distribution(int_args, args_map)
                 )
             return integrand
 
@@ -109,58 +110,118 @@ class ClusterAbundance(object):
         ]
 
     def get_integration_bounds(self, z_proxy_limits, mass_proxy_limits):
-        bounds_map = {KernelType.mass.name: 0, KernelType.z.name: 1}
+        args_mapping = ArgsMapper()
+        args_mapping.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
         bounds_list = [(self.min_mass, self.max_mass), (self.min_z, self.max_z)]
-        start_idx = len(bounds_map.keys())
+
+        start_idx = len(args_mapping.integral_bounds.keys())
 
         for kernel in self.get_dirac_delta_kernels():
             # If any kernel is a dirac delta for z or M, just replace the
             # True limits with the proxy limits
             if kernel.kernel_type == KernelType.z_proxy:
-                bounds_list[bounds_map[KernelType.z.name]] = z_proxy_limits
+                bounds_list[1] = z_proxy_limits
             elif kernel.kernel_type == KernelType.mass_proxy:
-                bounds_list[bounds_map[KernelType.mass.name]] = mass_proxy_limits
+                bounds_list[0] = mass_proxy_limits
 
         for kernel in self.get_integrable_kernels():
             # If any kernel is not a dirac delta, integrate over the relevant limits
             if kernel.kernel_type == KernelType.z_proxy:
-                bounds_map[kernel.kernel_type.name] = start_idx
+                args_mapping.integral_bounds[kernel.kernel_type.name] = start_idx
                 bounds_list.append(z_proxy_limits)
             elif kernel.kernel_type == KernelType.mass_proxy:
-                bounds_map[kernel.kernel_type.name] = start_idx
+                args_mapping.integral_bounds[kernel.kernel_type.name] = start_idx
                 bounds_list.append(mass_proxy_limits)
             else:
-                bounds_map[kernel.kernel_type.name] = start_idx
+                args_mapping.integral_bounds[kernel.kernel_type.name] = start_idx
                 bounds_list.append(kernel.integral_bounds)
             start_idx += 1
 
         extra_args = []
+        start_idx = 0
         for kernel in self.get_analytic_kernels():
             # Lastly, don't integrate any analyticly solved kernels, just solve them.
             if kernel.kernel_type == KernelType.z_proxy:
-                bounds_map[kernel.kernel_type.name] = start_idx
+                args_mapping.extra_args[kernel.kernel_type.name] = start_idx
                 extra_args.append(z_proxy_limits)
             elif kernel.kernel_type == KernelType.mass_proxy:
-                bounds_map[kernel.kernel_type.name] = start_idx
+                args_mapping.extra_args[kernel.kernel_type.name] = start_idx
                 extra_args.append(mass_proxy_limits)
 
             start_idx += 1
 
-        return bounds_list, extra_args, bounds_map
+        return bounds_list, extra_args, args_mapping
+
+    def get_argument_mapper(self):
+        return
 
     def compute(self, z_proxy_limits, mass_proxy_limits):
-        bounds, extra_args, bounds_map = self.get_integration_bounds(
+        bounds, extra_args, args_mapping = self.get_integration_bounds(
             z_proxy_limits, mass_proxy_limits
         )
-        integrand = self.get_abundance_integrand(bounds_map)
+
+        integrand = self.get_abundance_integrand()
+        # cc = self._scipy_nquad_integrate(integrand, bounds, args_mapping, extra_args)
+
+        cc = self._numcosmo_integrate(integrand, bounds, args_mapping, extra_args)
+        return cc
+
+    def _numcosmo_integrate(self, integrand, bounds, bounds_map, extra_args):
+        Ncm.cfg_init()
+        int_nd = CountsIntegralND(
+            len(bounds),
+            integrand,
+            extra_args,
+            bounds_map,
+        )
+        int_nd.set_method(Ncm.IntegralNDMethod.P_V)
+        int_nd.set_reltol(self._relative_tolerance)
+        int_nd.set_abstol(self._absolute_tolerance)
+        res = Ncm.Vector.new(1)
+        err = Ncm.Vector.new(1)
+
+        bl, bu = zip(*bounds)
+        int_nd.eval(Ncm.Vector.new_array(bl), Ncm.Vector.new_array(bu), res, err)
+        return res.get(0)
+
+    def _scipy_nquad_integrate(self, integrand, bounds, bounds_map, extra_args):
         cc = nquad(
             integrand,
             ranges=bounds,
-            args=extra_args,
+            args=(extra_args, bounds_map),
             opts={
                 "epsabs": self._absolute_tolerance,
                 "epsrel": self._relative_tolerance,
             },
         )[0]
-        print(bounds, cc)
+
         return cc
+
+
+class CountsIntegralND(Ncm.IntegralND):
+    """Integral subclass used by the ClusterAbundance
+    to compute the integrals using numcosmo."""
+
+    def __init__(self, dim, fun, *args):
+        super().__init__()
+        self.dim = dim
+        self.fun = fun
+        self.args = args
+
+    # pylint: disable-next=arguments-differ
+    def do_get_dimensions(self) -> Tuple[int, int]:
+        """Get number of dimensions."""
+        return self.dim, 1
+
+    # pylint: disable-next=arguments-differ
+    def do_integrand(
+        self,
+        x_vec: Ncm.Vector,
+        dim: int,
+        npoints: int,
+        _fdim: int,
+        fval_vec: Ncm.Vector,
+    ) -> None:
+        """Integrand function."""
+        x = np.array(x_vec.dup_array()).reshape(npoints, dim)
+        fval_vec.set_array([self.fun(x_i, *self.args) for x_i in x])

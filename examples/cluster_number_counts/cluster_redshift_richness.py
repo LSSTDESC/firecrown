@@ -48,8 +48,8 @@ def build_likelihood(build_parameters):
     # Create and add the kernels you want in your cluster abundance
     pivot_mass, pivot_redshift = 14.625862906, 0.6
     mass_observable_kernel = MassRichnessMuSigma(pivot_mass, pivot_redshift)
-    # redshift_proxy_kernel = SpectroscopicRedshift()
-    redshift_proxy_kernel = DESY1PhotometricRedshift()
+    redshift_proxy_kernel = SpectroscopicRedshift()
+    # redshift_proxy_kernel = DESY1PhotometricRedshift()
     # completeness_kernel = Completeness()
     # purity_kernel = Purity()
 

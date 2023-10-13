@@ -3,6 +3,13 @@ import numpy as np
 from firecrown.updatable import Updatable
 from abc import ABC
 from enum import Enum
+from dataclasses import dataclass, field
+
+
+@dataclass
+class ArgsMapper:
+    integral_bounds: dict = field(default_factory=lambda: {})
+    extra_args: dict = field(default_factory=lambda: {})
 
 
 class KernelType(Enum):
@@ -28,10 +35,10 @@ class Kernel(Updatable, ABC):
         self.kernel_type = kernel_type
         self.has_analytic_sln = has_analytic_sln
 
-    def distribution(self, args: List[float], args_map: Dict[str, int]):
+    def distribution(self, args: List[float], args_map: ArgsMapper):
         raise NotImplementedError()
 
-    def analytic_solution(self, args: List[float], args_map: Dict[str, int]):
+    def analytic_solution(self, args: List[float], args_map: ArgsMapper):
         raise NotImplementedError()
 
 
@@ -39,9 +46,9 @@ class Completeness(Kernel):
     def __init__(self):
         super().__init__(KernelType.completeness)
 
-    def distribution(self, args: List[float], args_map: Dict[str, int]):
-        mass = args[args_map[KernelType.mass.name]]
-        z = args[args_map[KernelType.z.name]]
+    def distribution(self, args: List[float], args_map: ArgsMapper):
+        mass = args[args_map.integral_bounds[KernelType.mass.name]]
+        z = args[args_map.integral_bounds[KernelType.z.name]]
         # TODO improve parameter names
         a_nc = 1.1321
         b_nc = 0.7751
@@ -57,9 +64,9 @@ class Purity(Kernel):
     def __init__(self):
         super().__init__(KernelType.purity)
 
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
-        mass_proxy = args[index_lkp[KernelType.mass_proxy.name]]
-        z = args[index_lkp[KernelType.z.name]]
+    def distribution(self, args: List[float], index_lkp: ArgsMapper):
+        mass_proxy = args[index_lkp.integral_bounds[KernelType.mass_proxy.name]]
+        z = args[index_lkp.integral_bounds[KernelType.z.name]]
 
         ln_r = np.log(10**mass_proxy)
         a_nc = np.log(10) * 0.8612

@@ -1,5 +1,5 @@
 import numpy as np
-from firecrown.models.kernel import Kernel, KernelType
+from firecrown.models.kernel import Kernel, KernelType, ArgsMapper
 from typing import List, Tuple, Dict
 
 
@@ -7,7 +7,7 @@ class SpectroscopicRedshift(Kernel):
     def __init__(self):
         super().__init__(KernelType.z_proxy, True)
 
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+    def distribution(self, args: List[float], index_lkp: ArgsMapper):
         return 1.0
 
 
@@ -16,7 +16,7 @@ class DESY1PhotometricRedshift(Kernel):
         super().__init__(KernelType.z_proxy)
         self.sigma_0 = 0.05
 
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+    def distribution(self, args: List[float], index_lkp: ArgsMapper):
         z_proxy = args[index_lkp[KernelType.z_proxy.name]]
         z = args[index_lkp[KernelType.z.name]]
 

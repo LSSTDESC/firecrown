@@ -8,6 +8,8 @@ from .source.source import SourceSystematic
 from ....modeling_tools import ModelingTools
 import pdb
 import numpy as np
+import cProfile
+from pstats import SortKey
 
 
 class ClusterNumberCounts(Statistic):
@@ -18,6 +20,7 @@ class ClusterNumberCounts(Statistic):
         survey_name: str,
         systematics: Optional[List[SourceSystematic]] = None,
     ):
+        self.pr = cProfile.Profile()
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
@@ -50,6 +53,7 @@ class ClusterNumberCounts(Statistic):
             bin_limits += sacc_adapter.get_bin_limits(sacc_types.cluster_mean_log_mass)
             data_vector += data
             sacc_indices += indices
+
         self.sky_area = sacc_adapter.survey_tracer.sky_area
         self.bin_limits = bin_limits
         self.data_vector = DataVector.from_list(data_vector)
@@ -61,6 +65,7 @@ class ClusterNumberCounts(Statistic):
         return self.data_vector
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        # self.pr.enable()
         tools.cluster_abundance.sky_area = self.sky_area
 
         theory_vector_list = []
@@ -73,7 +78,6 @@ class ClusterNumberCounts(Statistic):
                 )
                 cluster_counts_list.append(cluster_counts)
             theory_vector_list += cluster_counts_list
-            print(theory_vector_list)
 
         # if self.use_mean_log_mass:
         #     mean_log_mass_list = [
@@ -86,4 +90,7 @@ class ClusterNumberCounts(Statistic):
         #         )
         #     ]
         #     theory_vector_list += mean_log_mass_list
+        # self.pr.disable()
+        # self.pr.dump_stats("profile.prof")
+
         return TheoryVector.from_list(theory_vector_list)

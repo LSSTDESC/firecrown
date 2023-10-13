@@ -6,8 +6,10 @@ from typing import Tuple, List, Dict
 
 import numpy as np
 from scipy import special
+
 from .. import parameters
-from .kernel import Kernel, KernelType
+from .kernel import Kernel, KernelType, ArgsMapper
+import pdb
 
 
 class MassRichnessMuSigma(Kernel):
@@ -42,10 +44,13 @@ class MassRichnessMuSigma(Kernel):
 
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
-    def analytic_solution(self, args: List[float], index_lkp: Dict[str, int]):
-        mass = args[index_lkp[KernelType.mass.name]]
-        z = args[index_lkp[KernelType.z.name]]
-        mass_limits = args[index_lkp[self.kernel_type.name]]
+    def analytic_solution(self, args: List[float], index_lkp: ArgsMapper):
+        # pdb.set_trace()
+        bounds = args[0]
+        extra_args = args[1]
+        mass = bounds[index_lkp.integral_bounds[KernelType.mass.name]]
+        z = bounds[index_lkp.integral_bounds[KernelType.z.name]]
+        mass_limits = extra_args[index_lkp.extra_args[self.kernel_type.name]]
 
         observed_mean_mass = self.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
@@ -86,5 +91,5 @@ class TrueMass(Kernel):
     def __init__(self):
         super().__init__(KernelType.mass_proxy, True)
 
-    def distribution(self, args: List[float], index_lkp: Dict[str, int]):
+    def distribution(self, args: List[float], index_lkp: ArgsMapper):
         return 1.0
