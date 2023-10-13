@@ -2,13 +2,14 @@ from __future__ import annotations
 from typing import List, Optional
 import sacc
 
-from firecrown.models.sacc_adapter import SaccAdapter
+from firecrown.models.cluster.abundance_data import AbundanceData
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import SourceSystematic
 from ....modeling_tools import ModelingTools
 import numpy as np
 
-# import cProfile
+import cProfile
+
 # from pstats import SortKey
 
 
@@ -20,7 +21,7 @@ class ClusterNumberCounts(Statistic):
         survey_name: str,
         systematics: Optional[List[SourceSystematic]] = None,
     ):
-        # self.pr = cProfile.Profile()
+        self.pr = cProfile.Profile()
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
@@ -34,15 +35,14 @@ class ClusterNumberCounts(Statistic):
 
         data_vector = []
         sacc_indices = []
-        bin_limits = []
+
         sacc_types = sacc.data_types.standard_types
-        sacc_adapter = SaccAdapter(
+        sacc_adapter = AbundanceData(
             sacc_data, self.survey_name, self.use_cluster_counts, self.use_mean_log_mass
         )
 
         if self.use_cluster_counts:
             data, indices = sacc_adapter.get_data_and_indices(sacc_types.cluster_counts)
-            bin_limits += sacc_adapter.get_bin_limits(sacc_types.cluster_counts)
             data_vector += data
             sacc_indices += indices
 
@@ -50,13 +50,15 @@ class ClusterNumberCounts(Statistic):
             data, indices = sacc_adapter.get_data_and_indices(
                 sacc_types.cluster_mean_log_mass
             )
-            bin_limits += sacc_adapter.get_bin_limits(sacc_types.cluster_mean_log_mass)
             data_vector += data
             sacc_indices += indices
 
         self.sky_area = sacc_adapter.survey_tracer.sky_area
-        self.bin_limits = bin_limits
+        # Note - this is the same for both cl mass and cl counts... Why do we need to
+        # specify a data type?
+        self.bin_limits = sacc_adapter.get_bin_limits(sacc_types.cluster_mean_log_mass)
         self.data_vector = DataVector.from_list(data_vector)
+        print(len(data_vector))
         self.sacc_indices = np.array(sacc_indices)
         super().read(sacc_data)
 
@@ -67,28 +69,31 @@ class ClusterNumberCounts(Statistic):
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         # self.pr.enable()
         theory_vector_list = []
-        cluster_counts_list = []
+        cluster_counts = []
+        cluster_masses = []
 
-        if self.use_cluster_counts:
+        if self.use_cluster_counts or self.use_mean_log_mass:
             for z_proxy_limits, mass_proxy_limits in self.bin_limits:
-                cluster_counts = tools.cluster_abundance.compute(
+                counts = tools.cluster_abundance.compute_counts(
                     z_proxy_limits, mass_proxy_limits
                 )
-                cluster_counts_list.append(cluster_counts)
-            theory_vector_list += cluster_counts_list
+                cluster_counts.append(counts)
+            theory_vector_list += cluster_counts
 
-        # if self.use_mean_log_mass:
-        #     mean_log_mass_list = [
-        #         self.cluster_abundance.compute_unormalized_mean_logM(
-        #             ccl_cosmo, logM_tracer_arg, z_tracer_arg
-        #         )
-        #         / counts
-        #         for (z_tracer_arg, logM_tracer_arg), counts in zip(
-        #             self.tracer_args, cluster_counts_list
-        #         )
-        #     ]
-        #     theory_vector_list += mean_log_mass_list
+        if self.use_mean_log_mass:
+            for (z_proxy_limits, mass_proxy_limits), counts in zip(
+                self.bin_limits, cluster_counts
+            ):
+                cluster_mass = (
+                    tools.cluster_abundance.compute_mass(
+                        z_proxy_limits, mass_proxy_limits
+                    )
+                    / counts
+                )
+                cluster_masses.append(cluster_mass)
+            theory_vector_list += cluster_masses
+
         # self.pr.disable()
         # self.pr.dump_stats("profile.prof")
-
+        print(len(theory_vector_list))
         return TheoryVector.from_list(theory_vector_list)

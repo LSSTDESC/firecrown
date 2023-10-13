@@ -3,7 +3,7 @@ import numpy as np
 from sacc.tracers import SurveyTracer
 
 
-class SaccAdapter:
+class AbundanceData:
     # Hard coded in SACC, how do we want to handle this?
     _survey_index = 0
     _redshift_index = 1

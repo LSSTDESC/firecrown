@@ -10,7 +10,7 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
     ClusterNumberCounts,
 )
-from firecrown.models.sacc_adapter import SaccAdapter
+from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import (
@@ -70,7 +70,7 @@ def build_likelihood(build_parameters):
     sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
-    sacc_adapter = SaccAdapter(
+    sacc_adapter = AbundanceData(
         sacc_data, survey_name, use_cluster_counts, use_mean_log_mass
     )
     cluster_abundance = get_cluster_abundance(sacc_adapter.survey_tracer.sky_area)

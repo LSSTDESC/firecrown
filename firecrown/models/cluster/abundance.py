@@ -6,6 +6,7 @@ from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
 import numpy as np
 from firecrown.parameters import ParamsMap
 from firecrown.integrator import Integrator
+import pdb
 
 
 class ClusterAbundance(object):
@@ -90,13 +91,15 @@ class ClusterAbundance(object):
         hmf = self.halo_mass_function(self.cosmo, 10**mass, scale_factor)
         return hmf
 
-    def get_abundance_integrand(self):
+    def get_integrand(self, include_mass=False):
         def integrand(*int_args):
             args_map: ArgsMapping = int_args[-1]
             z = args_map.get_integral_bounds(int_args, KernelType.z)
             mass = args_map.get_integral_bounds(int_args, KernelType.mass)
 
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
+            if include_mass:
+                integrand *= mass
             for kernel in self.kernels:
                 integrand *= (
                     kernel.analytic_solution(int_args, args_map)
@@ -152,10 +155,18 @@ class ClusterAbundance(object):
 
         return integral_bounds, extra_args, args_mapping
 
-    def compute(self, z_proxy_limits, mass_proxy_limits):
+    def compute_counts(self, z_proxy_limits, mass_proxy_limits):
         bounds, extra_args, args_mapping = self.get_integration_bounds(
             z_proxy_limits, mass_proxy_limits
         )
-        integrand = self.get_abundance_integrand()
+        integrand = self.get_integrand()
+        cc = self.integrator.integrate(integrand, bounds, args_mapping, extra_args)
+        return cc
+
+    def compute_mass(self, z_proxy_limits, mass_proxy_limits):
+        bounds, extra_args, args_mapping = self.get_integration_bounds(
+            z_proxy_limits, mass_proxy_limits
+        )
+        integrand = self.get_integrand(include_mass=True)
         cc = self.integrator.integrate(integrand, bounds, args_mapping, extra_args)
         return cc
