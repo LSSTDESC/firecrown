@@ -6,10 +6,12 @@ be used without an installation of NumCosmo.
 """
 
 from typing import Dict, Union, List, Any, Optional
+import pickle
+import base64
 import numpy as np
 import pyccl as ccl
 
-from numcosmo_py import Nc, Ncm
+from numcosmo_py import Nc, Ncm, GObject
 
 from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.likelihood.likelihood import Likelihood
@@ -20,25 +22,80 @@ from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 
 
-class MappingNumCosmo(Mapping):
+class MappingNumCosmo(GObject.Object):
     """Mapping support for NumCosmo, this is a subclass of Mapping that
     provides a mapping from a NumCosmo Cosmological model to a CCL cosmology.
     It alsos convert NumCosmo models to `ParamsMap`s."""
 
+    __gtype_name__ = "FirecrownMappingNumCosmo"
+
     def __init__(
         self,
-        *,
         require_nonlinear_pk: bool = False,
         p_ml: Optional[Nc.PowspecML] = None,
         p_mnl: Optional[Nc.PowspecMNL] = None,
-        dist: Nc.Distance,
-        model_list: List[str],
+        dist: Optional[Nc.Distance] = None,
     ):
-        super().__init__(require_nonlinear_pk=require_nonlinear_pk)
-        self.p_ml = p_ml
-        self.p_mnl = p_mnl
-        self.dist = dist
-        self.model_list = model_list
+        """Initialize a MappingNumCosmo object."""
+        super().__init__(  # type: ignore
+            require_nonlinear_pk=require_nonlinear_pk, p_ml=p_ml, p_mnl=p_mnl, dist=dist
+        )
+        self.mapping: Mapping
+
+    @GObject.Property(
+        type=str,
+        default="default",
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY,
+    )
+    def mapping_name(self) -> Mapping:
+        """Return the Mapping object."""
+        return self._mapping_name
+
+    @mapping_name.setter  # type: ignore
+    def mapping_name(self, value: str):
+        """Set the Mapping object."""
+        self._mapping_name = value
+        self.mapping = Mapping()
+
+    @GObject.Property(type=bool, default=False, flags=GObject.ParamFlags.READWRITE)
+    def require_nonlinear_pk(self) -> bool:
+        """Return whether nonlinear power spectra are required."""
+        return self.mapping.require_nonlinear_pk
+
+    @require_nonlinear_pk.setter  # type: ignore
+    def require_nonlinear_pk(self, value: bool):
+        """Set whether nonlinear power spectra are required."""
+        self.mapping.require_nonlinear_pk = value
+
+    @GObject.Property(type=Nc.PowspecML, flags=GObject.ParamFlags.READWRITE)
+    def p_ml(self) -> Optional[Nc.PowspecML]:
+        """Return the NumCosmo PowspecML object."""
+        return self._p_ml
+
+    @p_ml.setter  # type: ignore
+    def p_ml(self, value: Optional[Nc.PowspecML]):
+        """Set the NumCosmo PowspecML object."""
+        self._p_ml: Optional[Nc.PowspecML] = value
+
+    @GObject.Property(type=Nc.PowspecMNL, flags=GObject.ParamFlags.READWRITE)
+    def p_mnl(self) -> Optional[Nc.PowspecMNL]:
+        """Return the NumCosmo PowspecMNL object."""
+        return self._p_mnl
+
+    @p_mnl.setter  # type: ignore
+    def p_mnl(self, value: Optional[Nc.PowspecMNL]):
+        """Set the NumCosmo PowspecMNL object."""
+        self._p_mnl: Optional[Nc.PowspecMNL] = value
+
+    @GObject.Property(type=Nc.Distance, flags=GObject.ParamFlags.READWRITE)
+    def dist(self) -> Nc.Distance:
+        """Return the NumCosmo Distance object."""
+        return self._dist
+
+    @dist.setter  # type: ignore
+    def dist(self, value: Nc.Distance):
+        """Set the NumCosmo Distance object."""
+        self._dist: Nc.Distance = value
 
     def set_params_from_numcosmo(
         self, mset: Ncm.MSet
@@ -49,11 +106,11 @@ class MappingNumCosmo(Mapping):
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
-        if self.p_ml is not None:
-            self.p_ml.prepare_if_needed(hi_cosmo)
-        if self.p_mnl is not None:
-            self.p_mnl.prepare_if_needed(hi_cosmo)
-        self.dist.prepare_if_needed(hi_cosmo)
+        if self._p_ml is not None:
+            self._p_ml.prepare_if_needed(hi_cosmo)
+        if self._p_mnl is not None:
+            self._p_mnl.prepare_if_needed(hi_cosmo)
+        self._dist.prepare_if_needed(hi_cosmo)
 
         h = hi_cosmo.h()
         Omega_b = hi_cosmo.Omega_b0()
@@ -94,7 +151,7 @@ class MappingNumCosmo(Mapping):
         n_s = hiprim.props.n_SA
 
         # pylint: disable=duplicate-code
-        self.set_params(
+        self.mapping.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
             h=h,
@@ -116,16 +173,16 @@ class MappingNumCosmo(Mapping):
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
-        if self.p_ml:
-            p_m_spline = self.p_ml.get_spline_2d(hi_cosmo)
+        if self._p_ml:
+            p_m_spline = self._p_ml.get_spline_2d(hi_cosmo)
             z = np.array(p_m_spline.xv.dup_array())
             k = np.array(p_m_spline.yv.dup_array())
 
-            scale = self.redshift_to_scale_factor(z)
+            scale = self.mapping.redshift_to_scale_factor(z)
             p_k = np.transpose(
                 np.array(p_m_spline.zm.dup_array()).reshape(len(k), len(z))
             )
-            p_k = self.redshift_to_scale_factor_p_k(p_k)
+            p_k = self.mapping.redshift_to_scale_factor_p_k(p_k)
 
             ccl_args["pk_linear"] = {
                 "a": scale,
@@ -133,51 +190,59 @@ class MappingNumCosmo(Mapping):
                 "delta_matter:delta_matter": p_k,
             }
 
-        if self.p_mnl:
-            p_mnl_spline = self.p_mnl.get_spline_2d(hi_cosmo)
+        if self._p_mnl:
+            p_mnl_spline = self._p_mnl.get_spline_2d(hi_cosmo)
             z = np.array(p_mnl_spline.xv.dup_array())
             k = np.array(p_mnl_spline.yv.dup_array())
 
-            scale_mpnl = self.redshift_to_scale_factor(z)
+            scale_mpnl = self.mapping.redshift_to_scale_factor(z)
             p_mnl = np.transpose(
                 np.array(p_mnl_spline.zm.dup_array()).reshape(len(k), len(z))
             )
-            p_mnl = self.redshift_to_scale_factor_p_k(p_mnl)
+            p_mnl = self.mapping.redshift_to_scale_factor_p_k(p_mnl)
 
             ccl_args["pk_nonlin"] = {
                 "a": scale_mpnl,
                 "k": k,
                 "delta_matter:delta_matter": p_mnl,
             }
-        elif self.require_nonlinear_pk:
+        elif self.mapping.require_nonlinear_pk:
             ccl_args["nonlinear_model"] = "halofit"
         else:
             ccl_args["nonlinear_model"] = None
 
-        d_spline = self.dist.comoving_distance_spline.peek_spline()
+        d_spline = self._dist.comoving_distance_spline.peek_spline()
         z_dist = np.array(d_spline.get_xv().dup_array())
         c_dist = np.array(d_spline.get_yv().dup_array())
 
         chi = np.flip(c_dist) * hi_cosmo.RH_Mpc()
-        scale_distances = self.redshift_to_scale_factor(z_dist)
+        scale_distances = self.mapping.redshift_to_scale_factor(z_dist)
         h_over_h0 = np.array([hi_cosmo.E(z) for z in reversed(z_dist)])
+
+        # Too many points in the redshift spline can result in scale factors
+        # that are too close together for CCL to handle. This checks for
+        # duplicate scale factors and removes them.
+        a_unique, a_unique_indices = np.unique(scale_distances, return_index=True)
+        scale_distances = a_unique
+        chi = chi[a_unique_indices]
+        h_over_h0 = h_over_h0[a_unique_indices]
 
         ccl_args["background"] = build_ccl_background_dict(
             a=scale_distances, chi=chi, h_over_h0=h_over_h0
         )
+
         ccl_args["background"] = {
             "a": scale_distances,
             "chi": chi,
             "h_over_h0": h_over_h0,
         }
-
         return ccl_args
 
-    def create_params_map(self, mset: Ncm.MSet) -> ParamsMap:
+    def create_params_map(self, model_list: List[str], mset: Ncm.MSet) -> ParamsMap:
         """Create a ParamsMap from a NumCosmo MSet."""
 
         params_map = ParamsMap()
-        for model_ns in self.model_list:
+        for model_ns in model_list:
             mid = mset.get_id_by_ns(model_ns)
             if mid < 0:
                 raise RuntimeError(
@@ -195,7 +260,7 @@ class MappingNumCosmo(Mapping):
                 raise RuntimeError(
                     f"The following keys `{shared_keys}` appear "
                     f"in more than one model used by the "
-                    f"module {self.model_list}."
+                    f"module {model_list}."
                 )
             params_map = ParamsMap({**params_map, **model_dict})
 
@@ -207,18 +272,22 @@ class NumCosmoData(Ncm.Data):
     object virtual methods using the prefix :python:`do_`. This class implement
     a general likelihood."""
 
+    __gtype_name__ = "FirecrownNumCosmoData"
+
     def __init__(
         self,
         likelihood: Likelihood,
+        model_list: List[str],
         tools: ModelingTools,
-        mapping: MappingNumCosmo,
+        nc_mapping: MappingNumCosmo,
     ):
         super().__init__()
         self.likelihood: Likelihood = likelihood
+        self.model_list: List[str] = model_list
         self.tools: ModelingTools = tools
         self.dof: int = 100
         self.len: int = 100
-        self.mapping = mapping
+        self.nc_mapping = nc_mapping
         self.ccl_cosmo: Optional[ccl.Cosmology] = None
         self.set_init(True)
 
@@ -253,10 +322,12 @@ class NumCosmoData(Ncm.Data):
         self.likelihood.reset()
         self.tools.reset()
 
-        self.mapping.set_params_from_numcosmo(mset)
-        ccl_args = self.mapping.calculate_ccl_args(mset)
-        self.ccl_cosmo = ccl.CosmologyCalculator(**self.mapping.asdict(), **ccl_args)
-        params_map = self.mapping.create_params_map(mset)
+        self.nc_mapping.set_params_from_numcosmo(mset)
+        ccl_args = self.nc_mapping.calculate_ccl_args(mset)
+        self.ccl_cosmo = ccl.CosmologyCalculator(
+            **self.nc_mapping.mapping.asdict(), **ccl_args
+        )
+        params_map = self.nc_mapping.create_params_map(self.model_list, mset)
 
         self.likelihood.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
@@ -276,38 +347,134 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     object virtual methods using the prefix :python:`do_`. This class implement
     a Gaussian likelihood."""
 
-    def __init__(
-        self,
-        likelihood: ConstGaussian,
-        tools: ModelingTools,
-        mapping: MappingNumCosmo,
-    ):
-        """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
-        with a constant covariance."""
-        cov = likelihood.get_cov()
+    __gtype_name__ = "FirecrownNumCosmoGaussCov"
+
+    def __init__(self):
+        """Initialize a NumCosmoGaussCov object. This class is a subclass of
+        Ncm.DataGaussCov and implements NumCosmo likelihood object virtual
+        methods using the prefix :python:`do_`. This class implement a Gaussian
+        likelihood.
+
+        Due to the way GObject works, the constructor must have a `**kwargs`
+        argument, and the properties must be set after construction.
+
+        In python one should use the `new_from_likelihood` method to create a
+        NumCosmoGaussCov object from a ConstGaussian object. This constuctor
+        has the correct signature for type checking.
+        """
+        super().__init__()
+        self.likelihood: ConstGaussian
+        self.tools: ModelingTools
+        self.ccl_cosmo: ccl.Cosmology
+        self.dof: int
+        self.len: int
+        self._model_list: List[str]
+        self._nc_mapping: MappingNumCosmo
+        self._likelihood_str: Optional[str] = None
+
+    @GObject.Property(
+        type=GObject.TYPE_STRV,
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+    )
+    def model_list(self) -> List[str]:
+        """Return the list of models."""
+        return self._model_list
+
+    @model_list.setter  # type: ignore
+    def model_list(self, value: List[str]):
+        """Set the list of models."""
+        self._model_list = value
+
+    @GObject.Property(
+        type=MappingNumCosmo,
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+    )
+    def nc_mapping(self) -> MappingNumCosmo:
+        """Return the MappingNumCosmo object."""
+        return self._nc_mapping
+
+    @nc_mapping.setter  # type: ignore
+    def nc_mapping(self, value: MappingNumCosmo):
+        """Set the MappingNumCosmo object."""
+        self._nc_mapping = value
+
+    @GObject.Property(
+        type=str,
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+    )
+    def likelihood_str(self) -> Optional[str]:
+        """Return the likelihood string."""
+        return self._likelihood_str
+
+    def _configure_object(self):
+        """Configure the object."""
+        assert self.likelihood is not None
+
+        cov = self.likelihood.get_cov()
         nrows, ncols = cov.shape
         assert nrows == ncols
 
-        super().__init__(n_points=nrows)
-
-        self.likelihood: ConstGaussian = likelihood
-        self.tools: ModelingTools = tools
-        self.mapping = mapping
-        self.ccl_cosmo: Optional[ccl.Cosmology] = None
-
+        self.set_size(nrows)
+        self.ccl_cosmo = None
         self.dof = nrows
         self.len = nrows
         self.peek_cov().set_from_array(
             cov.flatten().tolist()
         )  # pylint: disable-msg=no-member
 
-        data_vector = likelihood.get_data_vector()
+        data_vector = self.likelihood.get_data_vector()
         assert len(data_vector) == ncols
         self.peek_mean().set_array(
             data_vector.tolist()
         )  # pylint: disable-msg=no-member
 
         self.set_init(True)
+
+    @likelihood_str.setter  # type: ignore
+    def likelihood_str(self, value: Optional[str]):
+        """Set the likelihood string."""
+        self._likelihood_str = value
+        if value is not None:
+            likelihood_source, build_parameters = pickle.loads(
+                base64.b64decode(value.encode("ascii"))
+            )
+            likelihood, tools = load_likelihood(likelihood_source, build_parameters)
+            assert isinstance(likelihood, ConstGaussian)
+            self.likelihood = likelihood
+            self.tools = tools
+            self._configure_object()
+
+    @classmethod
+    def new_from_likelihood(
+        cls,
+        likelihood: ConstGaussian,
+        model_list: List[str],
+        tools: ModelingTools,
+        nc_mapping: MappingNumCosmo,
+        likelihood_str: Optional[str] = None,
+    ):
+        """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
+        with a constant covariance."""
+
+        cov = likelihood.get_cov()
+        nrows, ncols = cov.shape
+        assert nrows == ncols
+
+        nc_gauss_cov: NumCosmoGaussCov = GObject.new(
+            cls,
+            model_list=model_list,
+            nc_mapping=nc_mapping,
+            likelihood_str=None,
+        )
+
+        nc_gauss_cov.likelihood = likelihood
+        nc_gauss_cov.tools = tools
+        # pylint: disable=protected-access
+        nc_gauss_cov._likelihood_str = likelihood_str
+        nc_gauss_cov._configure_object()
+        # pylint: enable=protected-access
+
+        return nc_gauss_cov
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
         """
@@ -340,10 +507,13 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.likelihood.reset()
         self.tools.reset()
 
-        self.mapping.set_params_from_numcosmo(mset)
-        ccl_args = self.mapping.calculate_ccl_args(mset)
-        self.ccl_cosmo = ccl.CosmologyCalculator(**self.mapping.asdict(), **ccl_args)
-        params_map = self.mapping.create_params_map(mset)
+        self._nc_mapping.set_params_from_numcosmo(mset)
+        ccl_args = self._nc_mapping.calculate_ccl_args(mset)
+
+        self.ccl_cosmo = ccl.CosmologyCalculator(
+            **self._nc_mapping.mapping.asdict(), **ccl_args
+        )
+        params_map = self._nc_mapping.create_params_map(self._model_list, mset)
 
         self.likelihood.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
@@ -360,6 +530,15 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         mean_vector.set_array(theory_vector)
 
 
+# These commands creates GObject types for the defined classes, enabling their use
+# within the NumCosmo framework. It is essential to call this module before
+# initializing NumCosmo with the Ncm.init_cfg() function, as failure to do so
+# will cause issues with MPI jobs using these objects.
+GObject.type_register(MappingNumCosmo)
+GObject.type_register(NumCosmoData)
+GObject.type_register(NumCosmoGaussCov)
+
+
 class NumCosmoFactory:
     """NumCosmo likelihood class. This class provide the necessary factory methods
     to create NumCosmo+firecrown likelihoods."""
@@ -369,14 +548,21 @@ class NumCosmoFactory:
         likelihood_source: str,
         build_parameters: NamedParameters,
         mapping: MappingNumCosmo,
+        model_list: List[str],
     ):
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
+        likelihood_str = base64.b64encode(
+            pickle.dumps((likelihood_source, build_parameters))
+        ).decode("ascii")
+
         self.mapping: MappingNumCosmo = mapping
         if isinstance(likelihood, ConstGaussian):
-            self.data: Ncm.Data = NumCosmoGaussCov(likelihood, tools, mapping)
+            self.data: Ncm.Data = NumCosmoGaussCov.new_from_likelihood(
+                likelihood, model_list, tools, mapping, likelihood_str
+            )
         else:
-            self.data = NumCosmoData(likelihood, tools, mapping)
+            self.data = NumCosmoData(likelihood, model_list, tools, mapping)
 
     def get_data(self) -> Ncm.Data:
         """This method return the appropriated Ncm.Data class to be used by NumCosmo."""

@@ -74,10 +74,11 @@ def test_load_likelihood_submodule_returns_wrong_type_tools():
 def test_load_likelihood_submodule_old():
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
-    load_likelihood(
-        os.path.join(dir_path, "lkdir/lkscript_old.py"),
-        NamedParameters(),
-    )
+    with pytest.deprecated_call():
+        load_likelihood(
+            os.path.join(dir_path, "lkdir/lkscript_old.py"),
+            NamedParameters(),
+        )
 
 
 def test_load_likelihood_correct_tools():

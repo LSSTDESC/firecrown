@@ -30,7 +30,6 @@ def test_numcosmo_mapping_create_params_map_non_existing_model():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -40,7 +39,7 @@ def test_numcosmo_mapping_create_params_map_non_existing_model():
         RuntimeError,
         match="Model name non_existing_model was not found in the model set.",
     ):
-        map_cosmo.create_params_map(mset)
+        map_cosmo.create_params_map(["non_existing_model"], mset)
 
 
 def test_numcosmo_mapping_create_params_map_absent_model():
@@ -52,7 +51,6 @@ def test_numcosmo_mapping_create_params_map_absent_model():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["MyModel"],
     )
 
     mset = Ncm.MSet()
@@ -71,7 +69,7 @@ def test_numcosmo_mapping_create_params_map_absent_model():
         RuntimeError,
         match="Model MyModel was not found in the model set.",
     ):
-        map_cosmo.create_params_map(mset)
+        map_cosmo.create_params_map(["MyModel"], mset)
 
 
 def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
@@ -83,7 +81,6 @@ def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["MyModel1", "MyModel2"],
     )
 
     mset = Ncm.MSet()
@@ -120,7 +117,7 @@ def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
         RuntimeError,
         match="The following keys .* appear in more than one model used by the module",
     ):
-        map_cosmo.create_params_map(mset)
+        map_cosmo.create_params_map(["MyModel1", "MyModel2"], mset)
 
 
 def test_numcosmo_mapping_unsupported():
@@ -131,7 +128,6 @@ def test_numcosmo_mapping_unsupported():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -149,7 +145,6 @@ def test_numcosmo_mapping_missing_hiprim():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -171,7 +166,6 @@ def test_numcosmo_mapping_invalid_hiprim():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -194,7 +188,6 @@ def test_numcosmo_mapping_no_p_mnl_require_nonlinear_pk():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -218,7 +211,6 @@ def test_numcosmo_mapping_no_p_mnl():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=False,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -245,7 +237,6 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
         p_ml=numcosmo_cosmo["p_ml"],
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -253,7 +244,7 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
 
     map_cosmo.set_params_from_numcosmo(mset)
     ccl_args = map_cosmo.calculate_ccl_args(mset)
-    ccl_cosmo = ccl.CosmologyCalculator(**map_cosmo.asdict(), **ccl_args)
+    ccl_cosmo = ccl.CosmologyCalculator(**map_cosmo.mapping.asdict(), **ccl_args)
 
     assert ccl_cosmo["H0"] == cosmo.param_get_by_name("H0")
     assert ccl_cosmo["Omega_c"] == cosmo.param_get_by_name("Omegac")
@@ -282,7 +273,6 @@ def test_numcosmo_data(
         p_ml=numcosmo_cosmo["p_ml"],
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
-        model_list=["NcFirecrownTrivial"],
     )
 
     likelihood = ConstGaussian(statistics=trivial_stats)
@@ -291,7 +281,8 @@ def test_numcosmo_data(
     fc_data = NumCosmoData(
         likelihood=likelihood,
         tools=ModelingTools(),
-        mapping=map_cosmo,
+        nc_mapping=map_cosmo,
+        model_list=["NcFirecrownTrivial"],
     )
 
     assert fc_data.get_length() > 0
@@ -334,16 +325,16 @@ def test_numcosmo_gauss_cov(
         p_ml=numcosmo_cosmo["p_ml"],
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
-        model_list=["NcFirecrownTrivial"],
     )
 
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
-    fc_data = NumCosmoGaussCov(
+    fc_data = NumCosmoGaussCov.new_from_likelihood(
         likelihood=likelihood,
         tools=ModelingTools(),
-        mapping=map_cosmo,
+        nc_mapping=map_cosmo,
+        model_list=["NcFirecrownTrivial"],
     )
 
     assert fc_data.get_length() > 0
