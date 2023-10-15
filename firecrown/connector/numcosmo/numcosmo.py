@@ -41,61 +41,88 @@ class MappingNumCosmo(GObject.Object):
             require_nonlinear_pk=require_nonlinear_pk, p_ml=p_ml, p_mnl=p_mnl, dist=dist
         )
         self.mapping: Mapping
+        self._mapping_name: str
+        self._p_ml: Optional[Nc.PowspecML]
+        self._p_mnl: Optional[Nc.PowspecMNL]
+        self._dist: Nc.Distance
 
-    @GObject.Property(
-        type=str,
-        default="default",
-        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY,
-    )
-    def mapping_name(self) -> Mapping:
-        """Return the Mapping object."""
+    def _get_mapping_name(self) -> str:
+        """Return the mapping name."""
         return self._mapping_name
 
-    @mapping_name.setter  # type: ignore
-    def mapping_name(self, value: str):
-        """Set the Mapping object."""
+    def _set_mapping_name(self, value: str):
+        """Set the mapping name."""
         self._mapping_name = value
         self.mapping = Mapping()
 
-    @GObject.Property(type=bool, default=False, flags=GObject.ParamFlags.READWRITE)
-    def require_nonlinear_pk(self) -> bool:
+    mapping_name = GObject.Property(
+        type=str,
+        default="default",
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY,
+        getter=_get_mapping_name,
+        setter=_set_mapping_name,
+    )
+
+    def _get_require_nonlinear_pk(self) -> bool:
         """Return whether nonlinear power spectra are required."""
         return self.mapping.require_nonlinear_pk
 
-    @require_nonlinear_pk.setter  # type: ignore
-    def require_nonlinear_pk(self, value: bool):
+    def _set_require_nonlinear_pk(self, value: bool):
         """Set whether nonlinear power spectra are required."""
         self.mapping.require_nonlinear_pk = value
 
-    @GObject.Property(type=Nc.PowspecML, flags=GObject.ParamFlags.READWRITE)
-    def p_ml(self) -> Optional[Nc.PowspecML]:
+    require_nonlinear_pk = GObject.Property(
+        type=bool,
+        default=False,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_require_nonlinear_pk,
+        setter=_set_require_nonlinear_pk,
+    )
+
+    def _get_p_ml(self) -> Optional[Nc.PowspecML]:
         """Return the NumCosmo PowspecML object."""
         return self._p_ml
 
-    @p_ml.setter  # type: ignore
-    def p_ml(self, value: Optional[Nc.PowspecML]):
+    def _set_p_ml(self, value: Optional[Nc.PowspecML]):
         """Set the NumCosmo PowspecML object."""
-        self._p_ml: Optional[Nc.PowspecML] = value
+        self._p_ml = value
 
-    @GObject.Property(type=Nc.PowspecMNL, flags=GObject.ParamFlags.READWRITE)
-    def p_mnl(self) -> Optional[Nc.PowspecMNL]:
+    p_ml = GObject.Property(
+        type=Nc.PowspecML,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_p_ml,
+        setter=_set_p_ml,
+    )
+
+    def _get_p_mnl(self) -> Optional[Nc.PowspecMNL]:
         """Return the NumCosmo PowspecMNL object."""
         return self._p_mnl
 
-    @p_mnl.setter  # type: ignore
-    def p_mnl(self, value: Optional[Nc.PowspecMNL]):
+    def _set_p_mnl(self, value: Optional[Nc.PowspecMNL]):
         """Set the NumCosmo PowspecMNL object."""
-        self._p_mnl: Optional[Nc.PowspecMNL] = value
+        self._p_mnl = value
 
-    @GObject.Property(type=Nc.Distance, flags=GObject.ParamFlags.READWRITE)
-    def dist(self) -> Nc.Distance:
+    p_mnl = GObject.Property(
+        type=Nc.PowspecMNL,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_p_mnl,
+        setter=_set_p_mnl,
+    )
+
+    def _get_dist(self) -> Optional[Nc.Distance]:
         """Return the NumCosmo Distance object."""
         return self._dist
 
-    @dist.setter  # type: ignore
-    def dist(self, value: Nc.Distance):
+    def _set_dist(self, value: Nc.Distance):
         """Set the NumCosmo Distance object."""
-        self._dist: Nc.Distance = value
+        self._dist = value
+
+    dist = GObject.Property(
+        type=Nc.Distance,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_dist,
+        setter=_set_dist,
+    )
 
     def set_params_from_numcosmo(
         self, mset: Ncm.MSet
@@ -274,22 +301,97 @@ class NumCosmoData(Ncm.Data):
 
     __gtype_name__ = "FirecrownNumCosmoData"
 
-    def __init__(
-        self,
+    def __init__(self):
+        super().__init__()
+        self.likelihood: Likelihood
+        self.tools: ModelingTools
+        self.ccl_cosmo: Optional[ccl.Cosmology] = None
+        self._model_list: List[str]
+        self._nc_mapping: MappingNumCosmo
+        self._likelihood_str: Optional[str] = None
+        self.dof: int = 100
+        self.len: int = 100
+        self.set_init(True)
+
+    def _get_model_list(self) -> List[str]:
+        """Return the list of models."""
+        return self._model_list
+
+    def _set_model_list(self, value: List[str]):
+        """Set the list of models."""
+        self._model_list = value
+
+    model_list = GObject.Property(
+        type=GObject.TYPE_STRV,  # type: ignore
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+        getter=_get_model_list,
+        setter=_set_model_list,
+    )
+
+    def _get_nc_mapping(self) -> MappingNumCosmo:
+        """Return the MappingNumCosmo object."""
+        return self._nc_mapping
+
+    def _set_nc_mapping(self, value: MappingNumCosmo):
+        """Set the MappingNumCosmo object."""
+        self._nc_mapping = value
+
+    nc_mapping = GObject.Property(
+        type=MappingNumCosmo,
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+        getter=_get_nc_mapping,
+        setter=_set_nc_mapping,
+    )
+
+    def _get_likelihood_str(self) -> Optional[str]:
+        """Return the likelihood string."""
+        return self._likelihood_str
+
+    def _set_likelihood_str(self, value: Optional[str]):
+        """Set the likelihood string."""
+        self._likelihood_str = value
+        if value is not None:
+            likelihood_source, build_parameters = pickle.loads(
+                base64.b64decode(value.encode("ascii"))
+            )
+            likelihood, tools = load_likelihood(likelihood_source, build_parameters)
+            assert isinstance(likelihood, ConstGaussian)
+            self.likelihood = likelihood
+            self.tools = tools
+
+    likelihood_str = GObject.Property(
+        type=str,
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+        getter=_get_likelihood_str,
+        setter=_set_likelihood_str,
+    )
+
+    @classmethod
+    def new_from_likelihood(
+        cls,
         likelihood: Likelihood,
         model_list: List[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
+        likelihood_str: Optional[str] = None,
     ):
-        super().__init__()
-        self.likelihood: Likelihood = likelihood
-        self.model_list: List[str] = model_list
-        self.tools: ModelingTools = tools
-        self.dof: int = 100
-        self.len: int = 100
-        self.nc_mapping = nc_mapping
-        self.ccl_cosmo: Optional[ccl.Cosmology] = None
-        self.set_init(True)
+        """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
+        with a constant covariance."""
+
+        nc_data: NumCosmoData = GObject.new(
+            cls,
+            model_list=model_list,
+            nc_mapping=nc_mapping,
+            likelihood_str=None,
+        )
+
+        nc_data.likelihood = likelihood
+        nc_data.tools = tools
+        # pylint: disable=protected-access
+        nc_data._likelihood_str = likelihood_str
+        # pylint: enable=protected-access
+
+        return nc_data
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
         """
@@ -322,12 +424,12 @@ class NumCosmoData(Ncm.Data):
         self.likelihood.reset()
         self.tools.reset()
 
-        self.nc_mapping.set_params_from_numcosmo(mset)
-        ccl_args = self.nc_mapping.calculate_ccl_args(mset)
+        self._nc_mapping.set_params_from_numcosmo(mset)
+        ccl_args = self._nc_mapping.calculate_ccl_args(mset)
         self.ccl_cosmo = ccl.CosmologyCalculator(
-            **self.nc_mapping.mapping.asdict(), **ccl_args
+            **self._nc_mapping.mapping.asdict(), **ccl_args
         )
-        params_map = self.nc_mapping.create_params_map(self.model_list, mset)
+        params_map = self._nc_mapping.create_params_map(self.model_list, mset)
 
         self.likelihood.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
@@ -372,39 +474,35 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self._nc_mapping: MappingNumCosmo
         self._likelihood_str: Optional[str] = None
 
-    @GObject.Property(
-        type=GObject.TYPE_STRV,
-        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
-    )
-    def model_list(self) -> List[str]:
+    def _get_model_list(self) -> List[str]:
         """Return the list of models."""
         return self._model_list
 
-    @model_list.setter  # type: ignore
-    def model_list(self, value: List[str]):
+    def _set_model_list(self, value: List[str]):
         """Set the list of models."""
         self._model_list = value
 
-    @GObject.Property(
-        type=MappingNumCosmo,
+    model_list = GObject.Property(
+        type=GObject.TYPE_STRV,  # type: ignore
         flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+        getter=_get_model_list,
+        setter=_set_model_list,
     )
-    def nc_mapping(self) -> MappingNumCosmo:
+
+    def _get_nc_mapping(self) -> MappingNumCosmo:
         """Return the MappingNumCosmo object."""
         return self._nc_mapping
 
-    @nc_mapping.setter  # type: ignore
-    def nc_mapping(self, value: MappingNumCosmo):
+    def _set_nc_mapping(self, value: MappingNumCosmo):
         """Set the MappingNumCosmo object."""
         self._nc_mapping = value
 
-    @GObject.Property(
-        type=str,
+    nc_mapping = GObject.Property(
+        type=MappingNumCosmo,
         flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+        getter=_get_nc_mapping,
+        setter=_set_nc_mapping,
     )
-    def likelihood_str(self) -> Optional[str]:
-        """Return the likelihood string."""
-        return self._likelihood_str
 
     def _configure_object(self):
         """Configure the object."""
@@ -430,8 +528,11 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         self.set_init(True)
 
-    @likelihood_str.setter  # type: ignore
-    def likelihood_str(self, value: Optional[str]):
+    def _get_likelihood_str(self) -> Optional[str]:
+        """Return the likelihood string."""
+        return self._likelihood_str
+
+    def _set_likelihood_str(self, value: Optional[str]):
         """Set the likelihood string."""
         self._likelihood_str = value
         if value is not None:
@@ -443,6 +544,13 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             self.likelihood = likelihood
             self.tools = tools
             self._configure_object()
+
+    likelihood_str = GObject.Property(
+        type=str,
+        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
+        getter=_get_likelihood_str,
+        setter=_set_likelihood_str,
+    )
 
     @classmethod
     def new_from_likelihood(
@@ -531,7 +639,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
 
 # These commands creates GObject types for the defined classes, enabling their use
-# within the NumCosmo framework. It is essential to call this module before
+# within the NumCosmo framework. It is essential to call these functions before
 # initializing NumCosmo with the Ncm.init_cfg() function, as failure to do so
 # will cause issues with MPI jobs using these objects.
 GObject.type_register(MappingNumCosmo)
@@ -562,7 +670,9 @@ class NumCosmoFactory:
                 likelihood, model_list, tools, mapping, likelihood_str
             )
         else:
-            self.data = NumCosmoData(likelihood, model_list, tools, mapping)
+            self.data = NumCosmoData.new_from_likelihood(
+                likelihood, model_list, tools, mapping
+            )
 
     def get_data(self) -> Ncm.Data:
         """This method return the appropriated Ncm.Data class to be used by NumCosmo."""

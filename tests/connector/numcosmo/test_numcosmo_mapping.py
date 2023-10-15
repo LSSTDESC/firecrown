@@ -256,6 +256,52 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
     "numcosmo_cosmo_fixture",
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
+def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
+    """Test the NumCosmo mapping connector consistence."""
+    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+
+    cosmo = numcosmo_cosmo["cosmo"]
+    map_cosmo = MappingNumCosmo(
+        require_nonlinear_pk=True,
+        p_ml=numcosmo_cosmo["p_ml"],
+        p_mnl=numcosmo_cosmo["p_mnl"],
+        dist=numcosmo_cosmo["dist"],
+    )
+
+    assert map_cosmo.mapping_name == "default"
+
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+
+    map_cosmo_dup = ser.dup_obj(map_cosmo)
+    assert isinstance(map_cosmo_dup, MappingNumCosmo)
+    assert map_cosmo_dup.mapping_name == "default"
+
+    mset = Ncm.MSet()
+    mset.set(cosmo)
+
+    map_cosmo.set_params_from_numcosmo(mset)
+    map_cosmo_dup.set_params_from_numcosmo(mset)
+
+    if map_cosmo_dup.p_ml is None:
+        assert map_cosmo_dup.p_ml is None
+    else:
+        assert map_cosmo_dup.p_ml != map_cosmo.p_ml
+        assert isinstance(map_cosmo_dup.p_ml, Nc.PowspecML)
+
+    if map_cosmo_dup.p_mnl is None:
+        assert map_cosmo_dup.p_mnl is None
+    else:
+        assert map_cosmo_dup.p_mnl != map_cosmo.p_mnl
+        assert isinstance(map_cosmo_dup.p_mnl, Nc.PowspecMNL)
+
+    assert map_cosmo_dup.dist != map_cosmo.dist
+    assert isinstance(map_cosmo_dup.dist, Nc.Distance)
+
+
+@pytest.mark.parametrize(
+    "numcosmo_cosmo_fixture",
+    ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
+)
 def test_numcosmo_data(
     numcosmo_cosmo_fixture,
     trivial_stats,
@@ -278,7 +324,7 @@ def test_numcosmo_data(
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
-    fc_data = NumCosmoData(
+    fc_data = NumCosmoData.new_from_likelihood(
         likelihood=likelihood,
         tools=ModelingTools(),
         nc_mapping=map_cosmo,
