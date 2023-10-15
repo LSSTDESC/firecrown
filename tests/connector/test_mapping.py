@@ -1,6 +1,7 @@
 """
 Unit testing for the mapping module.
 """
+from typing import Any, Dict
 import pytest
 import numpy as np
 from firecrown.connector import mapping
@@ -123,24 +124,33 @@ def test_transform_h_to_h_over_h0():
 def test_sigma8_and_A_s():
     fc_map = Mapping()
 
+    params_dict: Dict[str, Any] = {
+        "Omega_c": 0.26,
+        "Omega_b": 0.04,
+        "h": 0.72,
+        "n_s": 0.96,
+        "Omega_k": 0.0,
+        "Neff": 3.046,
+        "m_nu": 0.0,
+        "m_nu_type": "normal",
+        "w0": -1.0,
+        "wa": 0.0,
+        "T_CMB": 2.7255,
+    }
+
     with pytest.raises(
         ValueError, match="Exactly one of A_s and sigma8 must be supplied"
     ):
         fc_map.set_params(
-            Omega_c=0.26,
-            Omega_b=0.04,
-            h=0.72,
-            A_s=2.1e-9,
+            **params_dict,
             sigma8=0.8,
-            n_s=0.96,
-            Omega_k=0.0,
-            Neff=3.046,
-            m_nu=0.0,
-            m_nu_type="normal",
-            w0=-1.0,
-            wa=0.0,
-            T_CMB=2.7255,
+            A_s=2.1e-9,
         )
+
+    with pytest.raises(
+        ValueError, match="Exactly one of A_s and sigma8 must be supplied"
+    ):
+        fc_map.set_params(**params_dict)
 
 
 def test_mappping_builder():
