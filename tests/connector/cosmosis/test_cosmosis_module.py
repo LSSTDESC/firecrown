@@ -264,7 +264,9 @@ def test_module_exec_working(
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
 
 
-def test_mapping_cosmosis_background():
+@pytest.fixture(name="mapping_cosmosis")
+def fixture_mapping_cosmosis() -> MappingCosmoSIS:
+    """Return a MappingCosmoSIS instance."""
     mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
     assert isinstance(mapping_cosmosis, MappingCosmoSIS)
     mapping_cosmosis.set_params(
@@ -281,7 +283,10 @@ def test_mapping_cosmosis_background():
         wa=0.0,
         T_CMB=2.7255,
     )
+    return mapping_cosmosis
 
+
+def test_mapping_cosmosis_background(mapping_cosmosis):
     block = DataBlock()
 
     background_d_m = np.geomspace(0.1, 10.0, 100)
@@ -309,24 +314,7 @@ def test_mapping_cosmosis_background():
     assert "pk_nonlin" not in ccl_args
 
 
-def test_mapping_cosmosis_pk_linear():
-    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
-    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
-    mapping_cosmosis.set_params(
-        Omega_c=0.26,
-        Omega_b=0.04,
-        h=0.72,
-        A_s=2.1e-9,
-        n_s=0.96,
-        Omega_k=0.0,
-        Neff=3.046,
-        m_nu=0.0,
-        m_nu_type="normal",
-        w0=-1.0,
-        wa=0.0,
-        T_CMB=2.7255,
-    )
-
+def test_mapping_cosmosis_pk_linear(mapping_cosmosis):
     block = DataBlock()
 
     block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
@@ -363,37 +351,20 @@ def test_mapping_cosmosis_pk_linear():
     )
 
 
-def test_mapping_cosmosis_pk_nonlin():
-    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
-    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
-    mapping_cosmosis.set_params(
-        Omega_c=0.26,
-        Omega_b=0.04,
-        h=0.72,
-        A_s=2.1e-9,
-        n_s=0.96,
-        Omega_k=0.0,
-        Neff=3.046,
-        m_nu=0.0,
-        m_nu_type="normal",
-        w0=-1.0,
-        wa=0.0,
-        T_CMB=2.7255,
-    )
-
+def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
     block = DataBlock()
 
     block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
     block.put_double_array_1d("distances", "z", np.linspace(0.0, 2.0, 10))
     block.put_double_array_1d("distances", "h", np.geomspace(0.1, 10.0, 100))
 
-    matter_power_lin_k_h = np.geomspace(0.1, 10.0, 100)
-    matter_power_lin_z = np.linspace(0.0, 2.0, 10)
-    matter_power_lin_p_k = np.geomspace(1.0e-3, 1.0e3, 100)
+    matter_power_nl_k_h = np.geomspace(0.1, 10.0, 100)
+    matter_power_nl_z = np.linspace(0.0, 2.0, 10)
+    matter_power_nl_p_k = np.geomspace(1.0e-3, 1.0e3, 100)
 
-    block.put_double_array_1d("matter_power_nl", "k_h", matter_power_lin_k_h)
-    block.put_double_array_1d("matter_power_nl", "z", matter_power_lin_z)
-    block.put_double_array_1d("matter_power_nl", "p_k", matter_power_lin_p_k)
+    block.put_double_array_1d("matter_power_nl", "k_h", matter_power_nl_k_h)
+    block.put_double_array_1d("matter_power_nl", "z", matter_power_nl_z)
+    block.put_double_array_1d("matter_power_nl", "p_k", matter_power_nl_p_k)
 
     ccl_args = mapping_cosmosis.calculate_ccl_args(block)
 
@@ -404,38 +375,21 @@ def test_mapping_cosmosis_pk_nonlin():
 
     assert np.allclose(
         ccl_args["pk_nonlin"]["a"],
-        mapping_cosmosis.redshift_to_scale_factor(matter_power_lin_z),
+        mapping_cosmosis.redshift_to_scale_factor(matter_power_nl_z),
     )
     assert np.allclose(
         ccl_args["pk_nonlin"]["k"],
-        mapping_cosmosis.transform_k_h_to_k(matter_power_lin_k_h),
+        mapping_cosmosis.transform_k_h_to_k(matter_power_nl_k_h),
     )
     assert np.allclose(
         ccl_args["pk_nonlin"]["delta_matter:delta_matter"],
         mapping_cosmosis.redshift_to_scale_factor_p_k(
-            mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_lin_p_k)
+            mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_nl_p_k)
         ),
     )
 
 
-def test_mapping_cosmosis_pk_nonlin_nonlinear_model():
-    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
-    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
-    mapping_cosmosis.set_params(
-        Omega_c=0.26,
-        Omega_b=0.04,
-        h=0.72,
-        A_s=2.1e-9,
-        n_s=0.96,
-        Omega_k=0.0,
-        Neff=3.046,
-        m_nu=0.0,
-        m_nu_type="normal",
-        w0=-1.0,
-        wa=0.0,
-        T_CMB=2.7255,
-    )
-
+def test_mapping_cosmosis_pk_nonlin_nonlinear_model(mapping_cosmosis):
     block = DataBlock()
 
     block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
