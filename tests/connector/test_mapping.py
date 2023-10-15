@@ -168,46 +168,14 @@ def test_mapping_cosmosis():
     ]
 
 
-def test_mapping_cosmosis_k_h_to_h():
-    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
-    mapping_cosmosis.set_params(
-        Omega_c=0.26,
-        Omega_b=0.04,
-        h=0.72,
-        A_s=2.1e-9,
-        n_s=0.96,
-        Omega_k=0.0,
-        Neff=3.046,
-        m_nu=0.0,
-        m_nu_type="normal",
-        w0=-1.0,
-        wa=0.0,
-        T_CMB=2.7255,
-    )
-
+def test_mapping_cosmosis_k_h_to_h(mapping_cosmosis):
     k_h_array = np.geomspace(0.1, 10.0, 10)
     k_array = mapping_cosmosis.transform_k_h_to_k(k_h_array)
 
     assert np.allclose(k_h_array * mapping_cosmosis.h, k_array)
 
 
-def test_mapping_cosmosis_p_k_h3_to_p_k():
-    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
-    mapping_cosmosis.set_params(
-        Omega_c=0.26,
-        Omega_b=0.04,
-        h=0.72,
-        A_s=2.1e-9,
-        n_s=0.96,
-        Omega_k=0.0,
-        Neff=3.046,
-        m_nu=0.0,
-        m_nu_type="normal",
-        w0=-1.0,
-        wa=0.0,
-        T_CMB=2.7255,
-    )
-
+def test_mapping_cosmosis_p_k_h3_to_p_k(mapping_cosmosis):
     p_k_h3_array = np.geomspace(0.1, 10.0, 10)
     p_k_array = mapping_cosmosis.transform_p_k_h3_to_p_k(p_k_h3_array)
 

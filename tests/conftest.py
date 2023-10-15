@@ -10,6 +10,7 @@ import sacc
 
 from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
+from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 
 
 def pytest_addoption(parser):
@@ -68,3 +69,25 @@ def make_sacc_data():
     result.add_data_point("count", (), -3.0)
     result.add_covariance([4.0, 9.0, 16.0])
     return result
+
+
+@pytest.fixture(name="mapping_cosmosis")
+def fixture_mapping_cosmosis() -> MappingCosmoSIS:
+    """Return a MappingCosmoSIS instance."""
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+    return mapping_cosmosis

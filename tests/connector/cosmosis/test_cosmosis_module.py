@@ -15,7 +15,6 @@ from firecrown.connector.cosmosis.likelihood import (
     extract_section,
     MissingSamplerParameterError,
 )
-from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 
 
 @pytest.fixture(name="minimal_module_config")
@@ -262,28 +261,6 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
 ):
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
-
-
-@pytest.fixture(name="mapping_cosmosis")
-def fixture_mapping_cosmosis() -> MappingCosmoSIS:
-    """Return a MappingCosmoSIS instance."""
-    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
-    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
-    mapping_cosmosis.set_params(
-        Omega_c=0.26,
-        Omega_b=0.04,
-        h=0.72,
-        A_s=2.1e-9,
-        n_s=0.96,
-        Omega_k=0.0,
-        Neff=3.046,
-        m_nu=0.0,
-        m_nu_type="normal",
-        w0=-1.0,
-        wa=0.0,
-        T_CMB=2.7255,
-    )
-    return mapping_cosmosis
 
 
 def test_mapping_cosmosis_background(mapping_cosmosis):
