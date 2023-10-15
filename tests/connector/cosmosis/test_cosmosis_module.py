@@ -15,6 +15,7 @@ from firecrown.connector.cosmosis.likelihood import (
     extract_section,
     MissingSamplerParameterError,
 )
+from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 
 
 @pytest.fixture(name="minimal_module_config")
@@ -261,3 +262,200 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
 ):
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
+
+
+def test_mapping_cosmosis_background():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+
+    block = DataBlock()
+
+    background_d_m = np.geomspace(0.1, 10.0, 100)
+    background_z = np.linspace(0.0, 2.0, 10)
+    background_h = np.geomspace(0.1, 10.0, 100)
+
+    block.put_double_array_1d("distances", "d_m", background_d_m)
+    block.put_double_array_1d("distances", "z", background_z)
+    block.put_double_array_1d("distances", "h", background_h)
+
+    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+
+    assert "background" in ccl_args
+    assert np.allclose(
+        ccl_args["background"]["a"],
+        mapping_cosmosis.redshift_to_scale_factor(background_z),
+    )
+    assert np.allclose(ccl_args["background"]["chi"], np.flip(background_d_m))
+    assert np.allclose(
+        ccl_args["background"]["h_over_h0"],
+        mapping_cosmosis.transform_h_to_h_over_h0(background_h),
+    )
+
+    assert "pk_linear" not in ccl_args
+    assert "pk_nonlin" not in ccl_args
+
+
+def test_mapping_cosmosis_pk_linear():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+
+    block = DataBlock()
+
+    block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
+    block.put_double_array_1d("distances", "z", np.linspace(0.0, 2.0, 10))
+    block.put_double_array_1d("distances", "h", np.geomspace(0.1, 10.0, 100))
+
+    matter_power_lin_k_h = np.geomspace(0.1, 10.0, 100)
+    matter_power_lin_z = np.linspace(0.0, 2.0, 10)
+    matter_power_lin_p_k = np.geomspace(1.0e-3, 1.0e3, 100)
+
+    block.put_double_array_1d("matter_power_lin", "k_h", matter_power_lin_k_h)
+    block.put_double_array_1d("matter_power_lin", "z", matter_power_lin_z)
+    block.put_double_array_1d("matter_power_lin", "p_k", matter_power_lin_p_k)
+
+    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+
+    assert "background" in ccl_args
+    assert "pk_linear" in ccl_args
+    assert "pk_nonlin" not in ccl_args
+
+    assert np.allclose(
+        ccl_args["pk_linear"]["a"],
+        mapping_cosmosis.redshift_to_scale_factor(matter_power_lin_z),
+    )
+    assert np.allclose(
+        ccl_args["pk_linear"]["k"],
+        mapping_cosmosis.transform_k_h_to_k(matter_power_lin_k_h),
+    )
+    assert np.allclose(
+        ccl_args["pk_linear"]["delta_matter:delta_matter"],
+        mapping_cosmosis.redshift_to_scale_factor_p_k(
+            mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_lin_p_k)
+        ),
+    )
+
+
+def test_mapping_cosmosis_pk_nonlin():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+
+    block = DataBlock()
+
+    block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
+    block.put_double_array_1d("distances", "z", np.linspace(0.0, 2.0, 10))
+    block.put_double_array_1d("distances", "h", np.geomspace(0.1, 10.0, 100))
+
+    matter_power_lin_k_h = np.geomspace(0.1, 10.0, 100)
+    matter_power_lin_z = np.linspace(0.0, 2.0, 10)
+    matter_power_lin_p_k = np.geomspace(1.0e-3, 1.0e3, 100)
+
+    block.put_double_array_1d("matter_power_nl", "k_h", matter_power_lin_k_h)
+    block.put_double_array_1d("matter_power_nl", "z", matter_power_lin_z)
+    block.put_double_array_1d("matter_power_nl", "p_k", matter_power_lin_p_k)
+
+    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+
+    assert "background" in ccl_args
+    assert "pk_linear" not in ccl_args
+    assert "pk_nonlin" in ccl_args
+    assert "nonlinear_model" not in ccl_args
+
+    assert np.allclose(
+        ccl_args["pk_nonlin"]["a"],
+        mapping_cosmosis.redshift_to_scale_factor(matter_power_lin_z),
+    )
+    assert np.allclose(
+        ccl_args["pk_nonlin"]["k"],
+        mapping_cosmosis.transform_k_h_to_k(matter_power_lin_k_h),
+    )
+    assert np.allclose(
+        ccl_args["pk_nonlin"]["delta_matter:delta_matter"],
+        mapping_cosmosis.redshift_to_scale_factor_p_k(
+            mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_lin_p_k)
+        ),
+    )
+
+
+def test_mapping_cosmosis_pk_nonlin_nonlinear_model():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+
+    block = DataBlock()
+
+    block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
+    block.put_double_array_1d("distances", "z", np.linspace(0.0, 2.0, 10))
+    block.put_double_array_1d("distances", "h", np.geomspace(0.1, 10.0, 100))
+
+    mapping_cosmosis.require_nonlinear_pk = True
+    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+
+    assert "background" in ccl_args
+    assert "pk_linear" not in ccl_args
+    assert "pk_nonlin" not in ccl_args
+    assert "nonlinear_model" in ccl_args
+    assert ccl_args["nonlinear_model"]
+
+    mapping_cosmosis.require_nonlinear_pk = False
+    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+
+    assert "background" in ccl_args
+    assert "pk_linear" not in ccl_args
+    assert "pk_nonlin" not in ccl_args
+    assert "nonlinear_model" in ccl_args
+    assert not ccl_args["nonlinear_model"]

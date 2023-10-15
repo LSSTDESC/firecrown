@@ -2,6 +2,7 @@
 Unit testing for the mapping module.
 """
 import pytest
+import numpy as np
 from firecrown.connector import mapping
 from firecrown.connector.mapping import Mapping, mapping_builder
 from firecrown.likelihood.likelihood import NamedParameters
@@ -119,8 +120,95 @@ def test_transform_h_to_h_over_h0():
         fc_map.transform_h_to_h_over_h0([])
 
 
+def test_sigma8_and_A_s():
+    fc_map = Mapping()
+
+    with pytest.raises(
+        ValueError, match="Exactly one of A_s and sigma8 must be supplied"
+    ):
+        fc_map.set_params(
+            Omega_c=0.26,
+            Omega_b=0.04,
+            h=0.72,
+            A_s=2.1e-9,
+            sigma8=0.8,
+            n_s=0.96,
+            Omega_k=0.0,
+            Neff=3.046,
+            m_nu=0.0,
+            m_nu_type="normal",
+            w0=-1.0,
+            wa=0.0,
+            T_CMB=2.7255,
+        )
+
+
 def test_mappping_builder():
     with pytest.raises(
         ValueError, match="input_style must be .* not invalid_input_style"
     ):
         mapping_builder(input_style="invalid_input_style")
+
+
+def test_mapping_cosmosis():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, Mapping)
+
+    assert mapping_cosmosis.get_params_names() == [
+        "h0",
+        "omega_b",
+        "omega_c",
+        "sigma_8",
+        "n_s",
+        "omega_k",
+        "delta_neff",
+        "omega_nu",
+        "w",
+        "wa",
+    ]
+
+
+def test_mapping_cosmosis_k_h_to_h():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+
+    k_h_array = np.geomspace(0.1, 10.0, 10)
+    k_array = mapping_cosmosis.transform_k_h_to_k(k_h_array)
+
+    assert np.allclose(k_h_array * mapping_cosmosis.h, k_array)
+
+
+def test_mapping_cosmosis_p_k_h3_to_p_k():
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+
+    p_k_h3_array = np.geomspace(0.1, 10.0, 10)
+    p_k_array = mapping_cosmosis.transform_p_k_h3_to_p_k(p_k_h3_array)
+
+    assert np.allclose(p_k_h3_array / mapping_cosmosis.h**3, p_k_array)
