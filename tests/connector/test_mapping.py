@@ -3,6 +3,7 @@ Unit testing for the mapping module.
 """
 import pytest
 from firecrown.connector import mapping
+from firecrown.connector.mapping import Mapping, mapping_builder
 from firecrown.likelihood.likelihood import NamedParameters
 
 
@@ -87,3 +88,39 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
     p = mapping.mapping_builder(input_style="CosmoSIS")
     p.set_params_from_cosmosis(named_params)
     assert p.Neff == pytest.approx(3.171)
+
+
+def test_get_params_names():
+    fc_map = Mapping()
+
+    with pytest.deprecated_call():
+        params_names = fc_map.get_params_names()
+        assert not params_names
+
+
+def test_transform_k_h_to_k():
+    fc_map = Mapping()
+
+    with pytest.deprecated_call():
+        fc_map.transform_k_h_to_k([])
+
+
+def test_transform_p_k_h3_to_p_k():
+    fc_map = Mapping()
+
+    with pytest.deprecated_call():
+        fc_map.transform_p_k_h3_to_p_k([])
+
+
+def test_transform_h_to_h_over_h0():
+    fc_map = Mapping()
+
+    with pytest.deprecated_call():
+        fc_map.transform_h_to_h_over_h0([])
+
+
+def test_mappping_builder():
+    with pytest.raises(
+        ValueError, match="input_style must be .* not invalid_input_style"
+    ):
+        mapping_builder(input_style="invalid_input_style")

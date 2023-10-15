@@ -210,9 +210,6 @@ class MappingCLASS(Mapping):
     missing classes.
     """
 
-    def get_params_names(self):
-        return []
-
 
 class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
