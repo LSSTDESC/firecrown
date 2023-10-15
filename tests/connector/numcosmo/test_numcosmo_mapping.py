@@ -1,9 +1,13 @@
 """Unit tests for the numcosmo Mapping connector."""
 
+import os
+import base64
+import pickle
 import pytest
 import pyccl as ccl
 from numcosmo_py import Ncm, Nc
 
+from firecrown.likelihood.likelihood import Likelihood, load_likelihood, NamedParameters
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.connector.numcosmo.numcosmo import (
@@ -285,16 +289,16 @@ def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
     if map_cosmo_dup.p_ml is None:
         assert map_cosmo_dup.p_ml is None
     else:
-        assert map_cosmo_dup.p_ml != map_cosmo.p_ml
+        assert id(map_cosmo_dup.p_ml) != id(map_cosmo.p_ml)
         assert isinstance(map_cosmo_dup.p_ml, Nc.PowspecML)
 
     if map_cosmo_dup.p_mnl is None:
         assert map_cosmo_dup.p_mnl is None
     else:
-        assert map_cosmo_dup.p_mnl != map_cosmo.p_mnl
+        assert id(map_cosmo_dup.p_mnl) != id(map_cosmo.p_mnl)
         assert isinstance(map_cosmo_dup.p_mnl, Nc.PowspecMNL)
 
-    assert map_cosmo_dup.dist != map_cosmo.dist
+    assert id(map_cosmo_dup.dist) != id(map_cosmo.dist)
     assert isinstance(map_cosmo_dup.dist, Nc.Distance)
 
 
@@ -400,3 +404,72 @@ def test_numcosmo_gauss_cov(
     nc_likelihood = Ncm.Likelihood(dataset=dset)
 
     assert nc_likelihood.m2lnL_val(mset) == 2.0
+
+
+@pytest.mark.parametrize(
+    "numcosmo_cosmo_fixture",
+    ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
+)
+@pytest.mark.parametrize(
+    "likelihood_relpath",
+    [
+        "../../likelihood/lkdir/lkscript.py",
+        "../../likelihood/gauss_family/lkscript_const_gaussian.py",
+    ],
+)
+def test_numcosmo_serialize_likelihood(
+    numcosmo_cosmo_fixture,
+    likelihood_relpath,
+    request,
+):
+    """Test the NumCosmo data connector for NcmData with serialization."""
+
+    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+
+    map_cosmo = MappingNumCosmo(
+        require_nonlinear_pk=True,
+        p_ml=numcosmo_cosmo["p_ml"],
+        p_mnl=numcosmo_cosmo["p_mnl"],
+        dist=numcosmo_cosmo["dist"],
+    )
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    likelihood_file = os.path.join(dir_path, likelihood_relpath)
+    build_parameters = NamedParameters({})
+    likelihood_str = base64.b64encode(
+        pickle.dumps((likelihood_file, build_parameters))
+    ).decode("ascii")
+
+    likelihood, tools = load_likelihood(likelihood_file, build_parameters)
+
+    fc_data = NumCosmoData.new_from_likelihood(
+        likelihood=likelihood,
+        tools=tools,
+        nc_mapping=map_cosmo,
+        model_list=["NcFirecrownTrivial"],
+        likelihood_str=likelihood_str,
+    )
+
+    assert fc_data.get_length() > 0
+    assert fc_data.get_dof() > 0
+
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+
+    fc_data_dup = ser.dup_obj(fc_data)
+    assert isinstance(fc_data_dup, NumCosmoData)
+
+    if fc_data.nc_mapping is None:
+        assert fc_data_dup.nc_mapping is None
+    else:
+        assert id(fc_data_dup.nc_mapping) != id(fc_data.nc_mapping)
+        assert isinstance(fc_data_dup.nc_mapping, MappingNumCosmo)
+
+    assert id(fc_data_dup.likelihood) != id(fc_data.likelihood)
+    assert isinstance(fc_data_dup.likelihood, Likelihood)
+
+    assert id(fc_data_dup.tools) != id(fc_data.tools)
+    assert isinstance(fc_data_dup.tools, ModelingTools)
+
+    assert id(fc_data_dup.model_list) != id(fc_data.model_list)
+    assert isinstance(fc_data_dup.model_list, list)
+    assert fc_data_dup.model_list == fc_data.model_list

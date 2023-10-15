@@ -355,7 +355,7 @@ class NumCosmoData(Ncm.Data):
                 base64.b64decode(value.encode("ascii"))
             )
             likelihood, tools = load_likelihood(likelihood_source, build_parameters)
-            assert isinstance(likelihood, ConstGaussian)
+            assert isinstance(likelihood, Likelihood)
             self.likelihood = likelihood
             self.tools = tools
 
