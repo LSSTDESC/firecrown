@@ -671,7 +671,7 @@ class NumCosmoFactory:
             )
         else:
             self.data = NumCosmoData.new_from_likelihood(
-                likelihood, model_list, tools, mapping
+                likelihood, model_list, tools, mapping, likelihood_str
             )
 
     def get_data(self) -> Ncm.Data:

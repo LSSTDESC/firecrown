@@ -1,19 +1,17 @@
 """Unit tests for the numcosmo Mapping connector."""
 
-import os
-import base64
-import pickle
 import pytest
 import pyccl as ccl
 from numcosmo_py import Ncm, Nc
 
-from firecrown.likelihood.likelihood import Likelihood, load_likelihood, NamedParameters
+from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoData,
     NumCosmoGaussCov,
     MappingNumCosmo,
+    NumCosmoFactory,
 )
 
 from firecrown.connector.numcosmo.model import (
@@ -411,15 +409,15 @@ def test_numcosmo_gauss_cov(
     ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
 )
 @pytest.mark.parametrize(
-    "likelihood_relpath",
+    "likelihood_file",
     [
-        "../../likelihood/lkdir/lkscript.py",
-        "../../likelihood/gauss_family/lkscript_const_gaussian.py",
+        "tests/likelihood/lkdir/lkscript.py",
+        "tests/likelihood/gauss_family/lkscript_const_gaussian.py",
     ],
 )
 def test_numcosmo_serialize_likelihood(
     numcosmo_cosmo_fixture,
-    likelihood_relpath,
+    likelihood_file,
     request,
 ):
     """Test the NumCosmo data connector for NcmData with serialization."""
@@ -433,30 +431,23 @@ def test_numcosmo_serialize_likelihood(
         dist=numcosmo_cosmo["dist"],
     )
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    likelihood_file = os.path.join(dir_path, likelihood_relpath)
-    build_parameters = NamedParameters({})
-    likelihood_str = base64.b64encode(
-        pickle.dumps((likelihood_file, build_parameters))
-    ).decode("ascii")
-
-    likelihood, tools = load_likelihood(likelihood_file, build_parameters)
-
-    fc_data = NumCosmoData.new_from_likelihood(
-        likelihood=likelihood,
-        tools=tools,
-        nc_mapping=map_cosmo,
+    nc_factory = NumCosmoFactory(
+        likelihood_file,
+        NamedParameters(),
+        map_cosmo,
         model_list=["NcFirecrownTrivial"],
-        likelihood_str=likelihood_str,
     )
 
+    fc_data = nc_factory.get_data()
+
+    assert isinstance(fc_data, (NumCosmoData, NumCosmoGaussCov))
     assert fc_data.get_length() > 0
     assert fc_data.get_dof() > 0
 
     ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
 
     fc_data_dup = ser.dup_obj(fc_data)
-    assert isinstance(fc_data_dup, NumCosmoData)
+    assert isinstance(fc_data_dup, (NumCosmoData, NumCosmoGaussCov))
 
     if fc_data.nc_mapping is None:
         assert fc_data_dup.nc_mapping is None
