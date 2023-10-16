@@ -2,8 +2,11 @@
 """Example of running the DES Y1 3x2pt likelihood using NumCosmo."""
 
 import math
+import os
 from typing import Tuple
 import argparse
+from pathlib import Path
+
 
 import yaml
 
@@ -19,7 +22,11 @@ from firecrown.likelihood.likelihood import NamedParameters
 # in the model set. This is required for the NumCosmo MPI support
 # to work properly.
 
-with open(r"numcosmo_firecrown_model.yml", "r", encoding="utf-8") as modelfile:
+
+module_path = Path(os.path.dirname(__file__))
+with open(
+    module_path / r"numcosmo_firecrown_model.yml", "r", encoding="utf-8"
+) as modelfile:
     ncmodel = yaml.load(modelfile, Loader=yaml.Loader)
 
 NcFirecrown = define_numcosmo_model(ncmodel)
@@ -71,7 +78,10 @@ def setup_firecrown(map_cosmo: MappingNumCosmo) -> Tuple[Ncm.Model, NumCosmoFact
     """Setup Firecrown object."""
 
     nc_factory = NumCosmoFactory(
-        "des_y1_3x2pt.py", NamedParameters(), map_cosmo, [ncmodel.name]
+        str(module_path / "des_y1_3x2pt.py"),
+        NamedParameters(),
+        map_cosmo,
+        [ncmodel.name],
     )
 
     fc = NcFirecrown()
