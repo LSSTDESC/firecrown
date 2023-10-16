@@ -4,12 +4,14 @@ import pytest
 import pyccl as ccl
 from numcosmo_py import Ncm, Nc
 
+from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoData,
     NumCosmoGaussCov,
     MappingNumCosmo,
+    NumCosmoFactory,
 )
 
 from firecrown.connector.numcosmo.model import (
@@ -30,7 +32,6 @@ def test_numcosmo_mapping_create_params_map_non_existing_model():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -40,7 +41,7 @@ def test_numcosmo_mapping_create_params_map_non_existing_model():
         RuntimeError,
         match="Model name non_existing_model was not found in the model set.",
     ):
-        map_cosmo.create_params_map(mset)
+        map_cosmo.create_params_map(["non_existing_model"], mset)
 
 
 def test_numcosmo_mapping_create_params_map_absent_model():
@@ -52,7 +53,6 @@ def test_numcosmo_mapping_create_params_map_absent_model():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["MyModel"],
     )
 
     mset = Ncm.MSet()
@@ -71,7 +71,7 @@ def test_numcosmo_mapping_create_params_map_absent_model():
         RuntimeError,
         match="Model MyModel was not found in the model set.",
     ):
-        map_cosmo.create_params_map(mset)
+        map_cosmo.create_params_map(["MyModel"], mset)
 
 
 def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
@@ -83,7 +83,6 @@ def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["MyModel1", "MyModel2"],
     )
 
     mset = Ncm.MSet()
@@ -120,7 +119,7 @@ def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
         RuntimeError,
         match="The following keys .* appear in more than one model used by the module",
     ):
-        map_cosmo.create_params_map(mset)
+        map_cosmo.create_params_map(["MyModel1", "MyModel2"], mset)
 
 
 def test_numcosmo_mapping_unsupported():
@@ -131,7 +130,6 @@ def test_numcosmo_mapping_unsupported():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -149,7 +147,6 @@ def test_numcosmo_mapping_missing_hiprim():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -171,7 +168,6 @@ def test_numcosmo_mapping_invalid_hiprim():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -194,7 +190,6 @@ def test_numcosmo_mapping_no_p_mnl_require_nonlinear_pk():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -218,7 +213,6 @@ def test_numcosmo_mapping_no_p_mnl():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=False,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -245,7 +239,6 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
         p_ml=numcosmo_cosmo["p_ml"],
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
-        model_list=["non_existing_model"],
     )
 
     mset = Ncm.MSet()
@@ -253,12 +246,58 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
 
     map_cosmo.set_params_from_numcosmo(mset)
     ccl_args = map_cosmo.calculate_ccl_args(mset)
-    ccl_cosmo = ccl.CosmologyCalculator(**map_cosmo.asdict(), **ccl_args)
+    ccl_cosmo = ccl.CosmologyCalculator(**map_cosmo.mapping.asdict(), **ccl_args)
 
     assert ccl_cosmo["H0"] == cosmo.param_get_by_name("H0")
     assert ccl_cosmo["Omega_c"] == cosmo.param_get_by_name("Omegac")
     assert ccl_cosmo["Omega_b"] == cosmo.param_get_by_name("Omegab")
     assert ccl_cosmo["Omega_k"] == cosmo.param_get_by_name("Omegak")
+
+
+@pytest.mark.parametrize(
+    "numcosmo_cosmo_fixture",
+    ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
+)
+def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
+    """Test the NumCosmo mapping connector consistence."""
+    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+
+    cosmo = numcosmo_cosmo["cosmo"]
+    map_cosmo = MappingNumCosmo(
+        require_nonlinear_pk=True,
+        p_ml=numcosmo_cosmo["p_ml"],
+        p_mnl=numcosmo_cosmo["p_mnl"],
+        dist=numcosmo_cosmo["dist"],
+    )
+
+    assert map_cosmo.mapping_name == "default"
+
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+
+    map_cosmo_dup = ser.dup_obj(map_cosmo)
+    assert isinstance(map_cosmo_dup, MappingNumCosmo)
+    assert map_cosmo_dup.mapping_name == "default"
+
+    mset = Ncm.MSet()
+    mset.set(cosmo)
+
+    map_cosmo.set_params_from_numcosmo(mset)
+    map_cosmo_dup.set_params_from_numcosmo(mset)
+
+    if map_cosmo_dup.p_ml is None:
+        assert map_cosmo_dup.p_ml is None
+    else:
+        assert id(map_cosmo_dup.p_ml) != id(map_cosmo.p_ml)
+        assert isinstance(map_cosmo_dup.p_ml, Nc.PowspecML)
+
+    if map_cosmo_dup.p_mnl is None:
+        assert map_cosmo_dup.p_mnl is None
+    else:
+        assert id(map_cosmo_dup.p_mnl) != id(map_cosmo.p_mnl)
+        assert isinstance(map_cosmo_dup.p_mnl, Nc.PowspecMNL)
+
+    assert id(map_cosmo_dup.dist) != id(map_cosmo.dist)
+    assert isinstance(map_cosmo_dup.dist, Nc.Distance)
 
 
 @pytest.mark.parametrize(
@@ -282,16 +321,16 @@ def test_numcosmo_data(
         p_ml=numcosmo_cosmo["p_ml"],
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
-        model_list=["NcFirecrownTrivial"],
     )
 
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
-    fc_data = NumCosmoData(
+    fc_data = NumCosmoData.new_from_likelihood(
         likelihood=likelihood,
         tools=ModelingTools(),
-        mapping=map_cosmo,
+        nc_mapping=map_cosmo,
+        model_list=["NcFirecrownTrivial"],
     )
 
     assert fc_data.get_length() > 0
@@ -334,16 +373,16 @@ def test_numcosmo_gauss_cov(
         p_ml=numcosmo_cosmo["p_ml"],
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
-        model_list=["NcFirecrownTrivial"],
     )
 
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
-    fc_data = NumCosmoGaussCov(
+    fc_data = NumCosmoGaussCov.new_from_likelihood(
         likelihood=likelihood,
         tools=ModelingTools(),
-        mapping=map_cosmo,
+        nc_mapping=map_cosmo,
+        model_list=["NcFirecrownTrivial"],
     )
 
     assert fc_data.get_length() > 0
@@ -363,3 +402,65 @@ def test_numcosmo_gauss_cov(
     nc_likelihood = Ncm.Likelihood(dataset=dset)
 
     assert nc_likelihood.m2lnL_val(mset) == 2.0
+
+
+@pytest.mark.parametrize(
+    "numcosmo_cosmo_fixture",
+    ["numcosmo_cosmo_xcdm", "numcosmo_cosmo_xcdm_no_nu", "numcosmo_cosmo_cpl"],
+)
+@pytest.mark.parametrize(
+    "likelihood_file",
+    [
+        "tests/likelihood/lkdir/lkscript.py",
+        "tests/likelihood/gauss_family/lkscript_const_gaussian.py",
+    ],
+)
+def test_numcosmo_serialize_likelihood(
+    numcosmo_cosmo_fixture,
+    likelihood_file,
+    request,
+):
+    """Test the NumCosmo data connector for NcmData with serialization."""
+
+    numcosmo_cosmo = request.getfixturevalue(numcosmo_cosmo_fixture)
+
+    map_cosmo = MappingNumCosmo(
+        require_nonlinear_pk=True,
+        p_ml=numcosmo_cosmo["p_ml"],
+        p_mnl=numcosmo_cosmo["p_mnl"],
+        dist=numcosmo_cosmo["dist"],
+    )
+
+    nc_factory = NumCosmoFactory(
+        likelihood_file,
+        NamedParameters(),
+        map_cosmo,
+        model_list=["NcFirecrownTrivial"],
+    )
+
+    fc_data = nc_factory.get_data()
+
+    assert isinstance(fc_data, (NumCosmoData, NumCosmoGaussCov))
+    assert fc_data.get_length() > 0
+    assert fc_data.get_dof() > 0
+
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+
+    fc_data_dup = ser.dup_obj(fc_data)
+    assert isinstance(fc_data_dup, (NumCosmoData, NumCosmoGaussCov))
+
+    if fc_data.nc_mapping is None:
+        assert fc_data_dup.nc_mapping is None
+    else:
+        assert id(fc_data_dup.nc_mapping) != id(fc_data.nc_mapping)
+        assert isinstance(fc_data_dup.nc_mapping, MappingNumCosmo)
+
+    assert id(fc_data_dup.likelihood) != id(fc_data.likelihood)
+    assert isinstance(fc_data_dup.likelihood, Likelihood)
+
+    assert id(fc_data_dup.tools) != id(fc_data.tools)
+    assert isinstance(fc_data_dup.tools, ModelingTools)
+
+    assert id(fc_data_dup.model_list) != id(fc_data.model_list)
+    assert isinstance(fc_data_dup.model_list, list)
+    assert fc_data_dup.model_list == fc_data.model_list
