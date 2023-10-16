@@ -143,7 +143,7 @@ class Mapping(ABC):
         self.Omega_b = Omega_b
         self.h = h
 
-        if A_s is not None and sigma8 is not None:
+        if (A_s is not None) == (sigma8 is not None):
             raise ValueError("Exactly one of A_s and sigma8 must be supplied")
         if sigma8 is None:
             self.A_s = A_s
@@ -209,9 +209,6 @@ class MappingCLASS(Mapping):
     This stub is here to satisfy IDEs that complain about using the names of
     missing classes.
     """
-
-    def get_params_names(self):
-        return []
 
 
 class MappingCosmoSIS(Mapping):
