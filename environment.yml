@@ -23,6 +23,7 @@ dependencies:
   - pip:
     - autoclasstoc
     - cobaya
+    - pygobject-stubs
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0

@@ -15,10 +15,12 @@ def test_numcosmo_connector_plain():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
     nc_factory = NumCosmoFactory(
-        "tests/likelihood/lkdir/lkscript.py", NamedParameters(), map_cosmo
+        "tests/likelihood/lkdir/lkscript.py",
+        NamedParameters(),
+        map_cosmo,
+        model_list=["non_existing_model"],
     )
 
     assert nc_factory.get_data() is not None
@@ -31,12 +33,12 @@ def test_numcosmo_connector_const_gauss():
     map_cosmo = MappingNumCosmo(
         require_nonlinear_pk=True,
         dist=Nc.Distance.new(6.0),
-        model_list=["non_existing_model"],
     )
     nc_factory = NumCosmoFactory(
         "tests/likelihood/gauss_family/lkscript_const_gaussian.py",
         NamedParameters(),
         map_cosmo,
+        model_list=["non_existing_model"],
     )
 
     assert nc_factory.get_data() is not None

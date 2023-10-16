@@ -56,14 +56,15 @@ cosmo.add_submodel(reion)
 dist = Nc.Distance.new(6.0)
 dist.comoving_distance_spline.set_reltol(1.0e-5)
 
-map_cosmo = MappingNumCosmo(
-    require_nonlinear_pk=False, dist=dist, model_list=["NcFirecrownSNIa"]
-)
+map_cosmo = MappingNumCosmo(require_nonlinear_pk=False, dist=dist)
 
 sacc_file = os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
 
 nc_factory = NumCosmoFactory(
-    "sn_srd.py", NamedParameters({"sacc_file": sacc_file}), map_cosmo
+    "sn_srd.py",
+    NamedParameters({"sacc_file": sacc_file}),
+    map_cosmo,
+    model_list=["NcFirecrownSNIa"],
 )
 
 fc = NcFirecrownSNIa()
