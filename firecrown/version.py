@@ -9,5 +9,5 @@ See https://semver.org for details.
 
 FIRECROWN_MAJOR = 1
 FIRECROWN_MINOR = 6
-FIRECROWN_PATCH = "alpha"
+FIRECROWN_PATCH = "0a0"
 __version__ = f"{FIRECROWN_MAJOR}.{FIRECROWN_MINOR}.{FIRECROWN_PATCH}"
