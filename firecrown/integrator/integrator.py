@@ -86,4 +86,4 @@ class CountsIntegralND(Ncm.IntegralND):
     ) -> None:
         """Integrand function."""
         x = np.array(x_vec.dup_array()).reshape(npoints, dim)
-        fval_vec.set_array([self.fun(x_i, *self.args) for x_i in x])
+        fval_vec.set_array(self.fun(x, *self.args))

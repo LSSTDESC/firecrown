@@ -67,7 +67,6 @@ class ClusterNumberCounts(Statistic):
         return self.data_vector
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        # self.pr.enable()
         theory_vector_list = []
         cluster_counts = []
         cluster_masses = []
@@ -93,7 +92,5 @@ class ClusterNumberCounts(Statistic):
                 cluster_masses.append(cluster_mass)
             theory_vector_list += cluster_masses
 
-        # self.pr.disable()
-        # self.pr.dump_stats("profile.prof")
         print(len(theory_vector_list))
         return TheoryVector.from_list(theory_vector_list)

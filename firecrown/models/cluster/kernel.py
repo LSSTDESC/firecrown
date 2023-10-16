@@ -7,6 +7,7 @@ from scipy import special
 
 from firecrown import parameters
 from firecrown.updatable import Updatable
+import pdb
 
 
 class KernelType(Enum):
@@ -28,7 +29,7 @@ class ArgsMapping:
 
     def get_integral_bounds(self, int_args, kernel_type: KernelType):
         bounds_values = int_args[self.integral_bounds_idx]
-        return bounds_values[self.integral_bounds[kernel_type.name]]
+        return bounds_values[:, self.integral_bounds[kernel_type.name]]
 
     def get_extra_args(self, int_args, kernel_type: KernelType):
         extra_values = int_args[self.extra_args_idx]
@@ -127,12 +128,9 @@ class MassRichnessMuSigma(Kernel):
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
     def analytic_solution(self, args: List[float], args_map: ArgsMapping):
-        # pdb.set_trace()
-
         mass = args_map.get_integral_bounds(args, KernelType.mass)
         z = args_map.get_integral_bounds(args, KernelType.z)
         mass_limits = args_map.get_extra_args(args, self.kernel_type)
-
         observed_mean_mass = self.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
@@ -151,21 +149,18 @@ class MassRichnessMuSigma(Kernel):
             np.sqrt(2.0) * observed_mass_sigma
         )
 
-        if x_max > 3.0 or x_min < -3.0:
-            return -(special.erfc(x_min) - special.erfc(x_max)) / 2.0
-        return (special.erf(x_min) - special.erf(x_max)) / 2.0
+        return_vals = np.empty_like(x_min)
+        mask1 = (x_max > 3.0) | (x_min < -3.0)
+        mask2 = ~mask1
 
-    # TODO UNDERSTAND THIS
-    # def spread_point(self, logM: float, z: float, *_) -> float:
-    #     """Return the probability of the point argument."""
+        return_vals[mask1] = (
+            -(special.erfc(x_min[mask1]) - special.erfc(x_max[mask1])) / 2.0
+        )
+        return_vals[mask2] = (
+            special.erf(x_min[mask2]) - special.erf(x_max[mask2])
+        ) / 2.0
 
-    #     lnM_obs = self.logM_obs * np.log(10.0)
-
-    #     lnM_mu, sigma = self.richness.cluster_mass_lnM_obs_mu_sigma(logM, z)
-    #     x = lnM_obs - lnM_mu
-    #     chisq = np.dot(x, x) / (2.0 * sigma**2)
-    #     likelihood = np.exp(-chisq) / (np.sqrt(2.0 * np.pi * sigma**2))
-    #     return likelihood * np.log(10.0)
+        return return_vals
 
 
 class TrueMass(Kernel):

@@ -6,7 +6,16 @@ from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
 import numpy as np
 from firecrown.parameters import ParamsMap
 from firecrown.integrator import Integrator
-import pdb
+import numpy.typing as npt
+
+# TODO: 1. CCL recomputing and not caching - mass function
+#       2. Integrator arguments issues
+# * mass_function will ultimately be an NxN grid of values
+#   This is probably being recomputed for every z, m bin
+# * Power spectrum takes the heavy lifting, this will be computed for a
+# single
+#   cosmology.
+# * Compute the grid of values for the mass function, then integrate
 
 
 class ClusterAbundance(object):
@@ -54,6 +63,7 @@ class ClusterAbundance(object):
         self.max_z = max_z
         self.sky_area = sky_area
         self.integrator = integrator
+        self._hmf_cache = {}
         self._cosmo: Cosmology = None
 
     def add_kernel(self, kernel: Kernel):
@@ -61,6 +71,7 @@ class ClusterAbundance(object):
 
     def update_ingredients(self, cosmo: Cosmology, params: ParamsMap):
         self._cosmo = cosmo
+        self._hmf_cache = {}
         for kernel in self.kernels:
             kernel.update(params)
 
@@ -86,21 +97,31 @@ class ClusterAbundance(object):
         )
         return dV * self.sky_area_rad
 
-    def mass_function(self, mass: float, z: float) -> float:
+    def mass_function(
+        self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         scale_factor = 1.0 / (1.0 + z)
-        hmf = self.halo_mass_function(self.cosmo, 10**mass, scale_factor)
-        return hmf
+
+        return_vals = []
+        for m, a in zip(mass, scale_factor):
+            val = self._hmf_cache.get((m, a))
+            if val is None:
+                val = self.halo_mass_function(self.cosmo, 10**m, a)
+                self._hmf_cache[(m, a)] = val
+            return_vals.append(val)
+
+        return return_vals
 
     def get_integrand(self, include_mass=False):
         def integrand(*int_args):
             args_map: ArgsMapping = int_args[-1]
             z = args_map.get_integral_bounds(int_args, KernelType.z)
             mass = args_map.get_integral_bounds(int_args, KernelType.mass)
-
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             if include_mass:
                 integrand *= mass
             for kernel in self.kernels:
+                # Think of overhead here, if its worth it
                 integrand *= (
                     kernel.analytic_solution(int_args, args_map)
                     if kernel.has_analytic_sln
@@ -141,7 +162,7 @@ class ClusterAbundance(object):
         mapping_idx = 0
         for kernel in self.analytic_kernels:
             # Lastly, don't integrate any kernels with an analytic solution
-            # This means we pass in their limits as extra arguments
+            # This means we pass in their limits as extra arguments to the integrator
             args_mapping.extra_args[kernel.kernel_type.name] = mapping_idx
             mapping_idx += 1
 
@@ -163,6 +184,7 @@ class ClusterAbundance(object):
         cc = self.integrator.integrate(integrand, bounds, args_mapping, extra_args)
         return cc
 
+    # compute_average(AverageType.shear, etc)
     def compute_mass(self, z_proxy_limits, mass_proxy_limits):
         bounds, extra_args, args_mapping = self.get_integration_bounds(
             z_proxy_limits, mass_proxy_limits
