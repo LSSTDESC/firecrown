@@ -62,7 +62,6 @@ class Completeness(Kernel):
         mass = args_map.get_integral_bounds(args, KernelType.mass)
         z = args_map.get_integral_bounds(args, KernelType.z)
 
-        # TODO improve parameter names
         a_nc = 1.1321
         b_nc = 0.7751
         a_mc = 13.31
@@ -78,17 +77,21 @@ class Purity(Kernel):
         super().__init__(KernelType.purity)
 
     def distribution(self, args: List[float], args_index_map: ArgsMapping):
-        mass_proxy = args_index_map.get_integral_bounds(KernelType.mass_proxy)
-        z = args_index_map.get_integral_bounds(KernelType.z)
+        mass_proxy = args_index_map.get_integral_bounds(args, KernelType.mass_proxy)
+        z = args_index_map.get_integral_bounds(args, KernelType.z)
 
-        ln_r = np.log(10**mass_proxy)
         a_nc = np.log(10) * 0.8612
         b_nc = np.log(10) * 0.3527
         a_rc = 2.2183
         b_rc = -0.6592
-        nc = a_nc + b_nc * (1.0 + z)
+
+        ln_r = np.log(10**mass_proxy)
         ln_rc = a_rc + b_rc * (1.0 + z)
-        purity = (ln_r / ln_rc) ** nc / ((ln_r / ln_rc) ** nc + 1.0)
+        r_over_rc = ln_r / ln_rc
+
+        nc = a_nc + b_nc * (1.0 + z)
+
+        purity = (r_over_rc) ** nc / (r_over_rc**nc + 1.0)
         return purity
 
 
