@@ -4,12 +4,13 @@ This module contains the ModelingTools class, which is built around the
 :python:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
-
-from typing import Dict, Optional, final
+from __future__ import annotations
+from typing import Dict, Optional, final, Collection
+from .updatable import Updatable, UpdatableCollection
 import pyccl.nl_pt
 
 
-class ModelingTools:
+class ModelingTools(Updatable):
     """A class that bundles together a :python:`pyccl.Cosmology` object and associated
     objects, such as perturbation theory or halo model calculator workspaces."""
 
@@ -17,9 +18,13 @@ class ModelingTools:
         self,
         *,
         pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
+        pk_modifiers: Optional[Collection[PowerspectrumModifier]] = None,
     ):
+        super().__init__()
         self.ccl_cosmo: Optional[pyccl.Cosmology] = None
         self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
+        pk_modifiers = pk_modifiers if pk_modifiers is not None else []
+        self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
@@ -70,11 +75,19 @@ class ModelingTools:
         if self.pt_calculator is not None:
             self.pt_calculator.update_ingredients(ccl_cosmo)
 
+        for pkm in self.pk_modifiers:
+            self.add_pk(
+                name=pkm.name,
+                powerspectrum=pkm.compute_pk(tools=self)
+            )
+
     @final
     def reset(self) -> None:
         """Resets all CCL objects in ModelingTools."""
 
         self.ccl_cosmo = None
+        # Also reset the power spectra
+        self.powerspectra = {}
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
         """Return the CCL cosmology object."""
@@ -89,3 +102,10 @@ class ModelingTools:
         if self.pt_calculator is None:
             raise RuntimeError("A PT calculator has not been set")
         return self.pt_calculator
+
+
+class PowerspectrumModifier(Updatable):
+    name: str = "base:base"
+
+    def compute_pk(self, tools: ModelingTools) -> pyccl.Pk2D:
+        raise NotImplementedError()

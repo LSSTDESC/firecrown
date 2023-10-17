@@ -39,6 +39,8 @@ class WeakLensingArgs(SourceGalaxyArgs):
     has_pt: bool = False
     has_hm: bool = False
 
+    field: str = "delta_matter"
+
     ia_pt_c_1: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_d: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
@@ -202,6 +204,27 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         )
 
 
+class PkSystematic(WeakLensingSystematic):
+    def __init__(self, sacc_tracer: Optional[str] = None, field: str = "delta_matter"):
+        """Create a TattAlignmentSystematic object, using the specified
+        tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
+        self.field = field
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
+
+        return replace(
+            tracer_arg,
+            field=self.field
+        )
+
+
 class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     """Source class for weak lensing."""
 
@@ -268,7 +291,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             dndz=(tracer_args.z, tracer_args.dndz),
             ia_bias=tracer_args.ia_bias,
         )
-        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field="delta_matter")]
+        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field=tracer_args.field)]
 
         if tracer_args.has_pt:
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
