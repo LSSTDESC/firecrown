@@ -4,6 +4,31 @@ from firecrown.models.cluster.abundance_data import AbundanceData
 import sacc
 
 
+@pytest.fixture
+def complicated_sacc_data():
+    cc = sacc.standard_types.cluster_counts
+    mlm = sacc.standard_types.cluster_mean_log_mass
+
+    s = sacc.Sacc()
+    s.add_tracer("survey", "my_survey", 4000)
+    s.add_tracer("survey", "not_my_survey", 4000)
+    s.add_tracer("bin_z", "my_tracer1", 0, 2)
+    s.add_tracer("bin_z", "my_tracer2", 2, 4)
+    s.add_tracer("bin_richness", "my_other_tracer1", 0, 2)
+    s.add_tracer("bin_richness", "my_other_tracer2", 2, 4)
+
+    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
+    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(cc, ("not_my_survey", "my_tracer1", "my_other_tracer2"), 1)
+
+    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer2"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer1"), 1)
+
+    return s
+
+
 def test_create_abundance_data_no_survey():
     with pytest.raises(
         ValueError, match="The SACC file does not contain the SurveyTracer"
@@ -13,7 +38,7 @@ def test_create_abundance_data_no_survey():
 
 def test_create_abundance_data_wrong_tracer():
     s = sacc.Sacc()
-    s.add_tracer("mock", "test", 0.1, 0.2)
+    s.add_tracer("bin_richness", "test", 0.1, 0.2)
     with pytest.raises(ValueError, match="The SACC tracer test is not a SurveyTracer"):
         _ = AbundanceData(s, "test", False, False)
 
@@ -58,32 +83,29 @@ def test_validate_tracers():
         ad.validate_tracers(tracer_combs, sacc.standard_types.cluster_counts)
 
 
-def test_filtered_tracers():
-    s = sacc.Sacc()
-    s.add_tracer("survey", "mock_survey", 4000)
-    s.add_tracer("bin_z", "my_tracer1", 0, 2)
-    s.add_tracer("bin_z", "my_tracer2", 2, 4)
-    s.add_tracer("bin_richness", "my_other_tracer1", 0, 2)
-    s.add_tracer("bin_richness", "my_other_tracer2", 2, 4)
-    s.add_data_point(
-        sacc.standard_types.cluster_counts,
-        ("mock_survey", "my_tracer", "my_other_tracer"),
-        1,
-    )
-    s.add_data_point(
-        sacc.standard_types.cluster_counts,
-        ("mock_survey", "my_tracer", "my_other_tracer"),
-        1,
-    )
-    s.add_data_point(
-        sacc.standard_types.cluster_mean_log_mass,
-        ("mock_survey", "my_tracer", "my_other_other_tracer"),
-        1,
-    )
-    ad = AbundanceData(s, "mock_survey", False, False)
+def test_filtered_tracers(complicated_sacc_data):
+    ad = AbundanceData(complicated_sacc_data, "my_survey", False, False)
+    cc = sacc.standard_types.cluster_counts
+    filtered_tracers, survey_mask = ad.get_filtered_tracers(cc)
+    my_tracers = [
+        ("my_survey", "my_tracer1", "my_other_tracer1"),
+        ("my_survey", "my_tracer1", "my_other_tracer2"),
+    ]
+    assert (filtered_tracers == my_tracers).all()
+    assert (survey_mask == [True, True, False]).all()
 
-    filtered_tracers, survey_mask = ad.get_filtered_tracers(
-        sacc.standard_types.cluster_counts
-    )
-    assert (filtered_tracers == ["mock_survey", "my_tracer", "my_other_tracer"]).all()
-    assert (survey_mask == [True, False]).all()
+
+def test_get_data_and_indices(complicated_sacc_data):
+    ad = AbundanceData(complicated_sacc_data, "my_survey", False, False)
+    cc = sacc.standard_types.cluster_counts
+    data, indices = ad.get_data_and_indices(cc)
+
+    assert data == [1, 1]
+    assert indices == [0, 1]
+
+
+def test_get_bin_limits(complicated_sacc_data):
+    ad = AbundanceData(complicated_sacc_data, "my_survey", False, False)
+    cc = sacc.standard_types.cluster_counts
+    limits = ad.get_bin_limits(cc)
+    assert limits == [[(0, 2), (0, 2)], [(0, 2), (2, 4)]]
