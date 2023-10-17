@@ -11,6 +11,8 @@ from .source.source import SourceSystematic
 from ....modeling_tools import ModelingTools
 import numpy as np
 
+import cProfile
+
 
 class BinnedClusterNumberCounts(Statistic):
     def __init__(
@@ -22,6 +24,7 @@ class BinnedClusterNumberCounts(Statistic):
         systematics: Optional[List[SourceSystematic]] = None,
     ):
         super().__init__()
+        self.pr = cProfile.Profile()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
         self.use_cluster_counts = cluster_counts
@@ -72,6 +75,7 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_masses = []
 
         if self.use_cluster_counts or self.use_mean_log_mass:
+            # self.pr.enable()
             for z_proxy_limits, mass_proxy_limits in self.bin_limits:
                 bounds, extra_args, args_mapping = self.get_integration_bounds(
                     tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
@@ -83,7 +87,8 @@ class BinnedClusterNumberCounts(Statistic):
                 )
 
                 cluster_counts.append(counts)
-
+            # self.pr.disable()
+            # self.pr.dump_stats("profile.prof")
             theory_vector_list += cluster_counts
 
         if self.use_mean_log_mass:

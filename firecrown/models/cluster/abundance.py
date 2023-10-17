@@ -7,15 +7,7 @@ import numpy as np
 from firecrown.parameters import ParamsMap
 import numpy.typing as npt
 
-# TODO: 1. CCL recomputing and not caching - mass function
-#       2. Integrator arguments issues
-# * mass_function will ultimately be an NxN grid of values
-#   This is probably being recomputed for every z, m bin
-# * Power spectrum takes the heavy lifting, this will be computed for a
-# single
-#   cosmology.
-# * Compute the grid of values for the mass function, then integrate
-# Consider emulators for mass function
+# TODO: Consider emulators for mass function
 
 
 class ClusterAbundance(object):

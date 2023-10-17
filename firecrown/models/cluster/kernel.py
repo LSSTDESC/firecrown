@@ -77,9 +77,9 @@ class Purity(Kernel):
     def __init__(self):
         super().__init__(KernelType.purity)
 
-    def distribution(self, args: List[float], index_lkp: ArgsMapping):
-        mass_proxy = args[index_lkp.integral_bounds[KernelType.mass_proxy.name]]
-        z = args[index_lkp.integral_bounds[KernelType.z.name]]
+    def distribution(self, args: List[float], args_index_map: ArgsMapping):
+        mass_proxy = args_index_map.get_integral_bounds(KernelType.mass_proxy)
+        z = args_index_map.get_integral_bounds(KernelType.z)
 
         ln_r = np.log(10**mass_proxy)
         a_nc = np.log(10) * 0.8612
@@ -128,6 +128,7 @@ class MassRichnessMuSigma(Kernel):
         mass = args_map.get_integral_bounds(args, KernelType.mass)
         z = args_map.get_integral_bounds(args, KernelType.z)
         mass_limits = args_map.get_extra_args(args, self.kernel_type)
+
         observed_mean_mass = self.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,

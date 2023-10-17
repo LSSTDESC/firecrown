@@ -23,7 +23,7 @@ from firecrown.models.cluster.kernel import (
 
 
 def get_cluster_abundance(sky_area):
-    hmf = ccl.halos.MassFuncTinker08()
+    hmf = ccl.halos.MassFuncBocquet16()
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
     cluster_abundance = ClusterAbundance(
