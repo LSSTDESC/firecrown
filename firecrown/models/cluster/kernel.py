@@ -53,9 +53,6 @@ class Kernel(Updatable, ABC):
     def distribution(self, args: List[float], args_map: ArgsMapping):
         raise NotImplementedError()
 
-    def analytic_solution(self, args: List[float], args_map: ArgsMapping):
-        raise NotImplementedError()
-
 
 class Completeness(Kernel):
     def __init__(self):
@@ -127,7 +124,7 @@ class MassRichnessMuSigma(Kernel):
 
         return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
-    def analytic_solution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgsMapping):
         mass = args_map.get_integral_bounds(args, KernelType.mass)
         z = args_map.get_integral_bounds(args, KernelType.z)
         mass_limits = args_map.get_extra_args(args, self.kernel_type)

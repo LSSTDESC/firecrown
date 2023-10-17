@@ -1,5 +1,5 @@
-from firecrown.models.cluster_abundance import ClusterAbundance
-from firecrown.models.kernel import Kernel, KernelType
+from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.kernel import Kernel, KernelType
 import pyccl
 import numpy as np
 from typing import List, Tuple, Dict

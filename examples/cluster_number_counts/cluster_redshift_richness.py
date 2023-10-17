@@ -7,8 +7,8 @@ import sacc
 
 from firecrown.integrator.integrator import NumCosmoIntegrator
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
-    ClusterNumberCounts,
+from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
+    BinnedClusterNumberCounts,
 )
 from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.modeling_tools import ModelingTools
@@ -23,12 +23,11 @@ from firecrown.models.cluster.kernel import (
 
 
 def get_cluster_abundance(sky_area):
-    integrator = NumCosmoIntegrator()
     hmf = ccl.halos.MassFuncTinker08()
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
     cluster_abundance = ClusterAbundance(
-        min_mass, max_mass, min_z, max_z, hmf, sky_area, integrator
+        min_mass, max_mass, min_z, max_z, hmf, sky_area
     )
 
     # Create and add the kernels you want in your cluster abundance
@@ -53,13 +52,18 @@ def build_likelihood(build_parameters):
     """
     Here we instantiate the number density (or mass function) object.
     """
+    integrator = NumCosmoIntegrator()
 
     # Pull params for the likelihood from build_parameters
     use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
     use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
     survey_name = "numcosmo_simulated_redshift_richness"
     likelihood = ConstGaussian(
-        [ClusterNumberCounts(use_cluster_counts, use_mean_log_mass, survey_name)]
+        [
+            BinnedClusterNumberCounts(
+                use_cluster_counts, use_mean_log_mass, survey_name, integrator
+            )
+        ]
     )
 
     # Read in sacc data

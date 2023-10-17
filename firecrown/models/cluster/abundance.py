@@ -5,7 +5,6 @@ import pyccl
 from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
 import numpy as np
 from firecrown.parameters import ParamsMap
-from firecrown.integrator import Integrator
 import numpy.typing as npt
 
 # TODO: 1. CCL recomputing and not caching - mass function
@@ -16,6 +15,7 @@ import numpy.typing as npt
 # single
 #   cosmology.
 # * Compute the grid of values for the mass function, then integrate
+# Consider emulators for mass function
 
 
 class ClusterAbundance(object):
@@ -53,7 +53,6 @@ class ClusterAbundance(object):
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
         sky_area: float,
-        integrator: Integrator,
     ):
         self.kernels: List[Kernel] = []
         self.halo_mass_function = halo_mass_function
@@ -62,7 +61,6 @@ class ClusterAbundance(object):
         self.min_z = min_z
         self.max_z = max_z
         self.sky_area = sky_area
-        self.integrator = integrator
         self._hmf_cache = {}
         self._cosmo: Cosmology = None
 
@@ -112,83 +110,23 @@ class ClusterAbundance(object):
 
         return return_vals
 
-    def get_integrand(self, include_mass=False):
+    def get_integrand(self, avg_mass=False, avg_redshift=False):
         def integrand(*int_args):
             args_map: ArgsMapping = int_args[-1]
+
             z = args_map.get_integral_bounds(int_args, KernelType.z)
             mass = args_map.get_integral_bounds(int_args, KernelType.mass)
+
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
-            if include_mass:
+            if avg_mass:
                 integrand *= mass
+            if avg_redshift:
+                integrand *= z
+
             for kernel in self.kernels:
                 # Think of overhead here, if its worth it
-                integrand *= (
-                    kernel.analytic_solution(int_args, args_map)
-                    if kernel.has_analytic_sln
-                    else kernel.distribution(int_args, args_map)
-                )
+                integrand *= kernel.distribution(int_args, args_map)
+
             return integrand
 
         return integrand
-
-    def get_integration_bounds(self, z_proxy_limits, mass_proxy_limits):
-        args_mapping = ArgsMapping()
-        args_mapping.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
-        integral_bounds = [(self.min_mass, self.max_mass), (self.min_z, self.max_z)]
-        extra_args = []
-
-        for kernel in self.dirac_delta_kernels:
-            # If any kernel is a dirac delta for z or M, just replace the
-            # true limits with the proxy limits
-            if kernel.kernel_type == KernelType.z_proxy:
-                integral_bounds[1] = z_proxy_limits
-            elif kernel.kernel_type == KernelType.mass_proxy:
-                integral_bounds[0] = mass_proxy_limits
-
-        mapping_idx = len(args_mapping.integral_bounds.keys())
-        for kernel in self.integrable_kernels:
-            # If any kernel is not a dirac delta, integrate over the relevant limits
-            args_mapping.integral_bounds[kernel.kernel_type.name] = mapping_idx
-            mapping_idx += 1
-
-            match kernel.kernel_type:
-                case KernelType.z_proxy:
-                    integral_bounds.append(z_proxy_limits)
-                case KernelType.mass_proxy:
-                    integral_bounds.append(mass_proxy_limits)
-                case _:
-                    integral_bounds.append(kernel.integral_bounds)
-
-        mapping_idx = 0
-        for kernel in self.analytic_kernels:
-            # Lastly, don't integrate any kernels with an analytic solution
-            # This means we pass in their limits as extra arguments to the integrator
-            args_mapping.extra_args[kernel.kernel_type.name] = mapping_idx
-            mapping_idx += 1
-
-            match kernel.kernel_type:
-                case KernelType.z_proxy:
-                    extra_args.append(z_proxy_limits)
-                case KernelType.mass_proxy:
-                    extra_args.append(mass_proxy_limits)
-                case _:
-                    extra_args.append(kernel.integral_bounds)
-
-        return integral_bounds, extra_args, args_mapping
-
-    def compute_counts(self, z_proxy_limits, mass_proxy_limits):
-        bounds, extra_args, args_mapping = self.get_integration_bounds(
-            z_proxy_limits, mass_proxy_limits
-        )
-        integrand = self.get_integrand()
-        cc = self.integrator.integrate(integrand, bounds, args_mapping, extra_args)
-        return cc
-
-    # compute_average(AverageType.shear, etc)
-    def compute_mass(self, z_proxy_limits, mass_proxy_limits):
-        bounds, extra_args, args_mapping = self.get_integration_bounds(
-            z_proxy_limits, mass_proxy_limits
-        )
-        integrand = self.get_integrand(include_mass=True)
-        cc = self.integrator.integrate(integrand, bounds, args_mapping, extra_args)
-        return cc
