@@ -32,10 +32,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
         self.vD19 = pyccl.baryons.BaryonsvanDaalen19()
         self.f_bar = create()
 
-    # def _update(self, params):
-    #     pass
-
-    def compute_pk(self, tools: ModelingTools) -> pyccl.Pk2D:
+    def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
         self.vD19.update_parameters(fbar=self.f_bar)
         return self.vD19.include_baryonic_effects(
             cosmo=tools.get_ccl_cosmology(),
@@ -197,12 +194,12 @@ def make_plot(ell, cl_dm, cl_baryons, two_point_0):
     plt.xscale("log")
     # plt.yscale("log")
     plt.xlabel(r"$\ell$")
-    plt.ylabel(r"$C_\ell$")
+    plt.ylabel(r"$C_\ell^\mathrm{baryons} / C_\ell^\mathrm{DM-only}$")
     plt.legend()
     # plt.xlim(right=5e3)
     # plt.ylim(bottom=1e-12)
     # plt.title("TATT IA")
-    plt.savefig("vD19_baryons.png", facecolor="white", dpi=300)
+    plt.savefig("plots/vD19_baryons.png", facecolor="white", dpi=300)
     plt.show()
 
 

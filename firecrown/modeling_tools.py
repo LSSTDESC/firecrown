@@ -78,7 +78,7 @@ class ModelingTools(Updatable):
         for pkm in self.pk_modifiers:
             self.add_pk(
                 name=pkm.name,
-                powerspectrum=pkm.compute_pk(tools=self)
+                powerspectrum=pkm.compute_p_of_k_z(tools=self)
             )
 
     @final
@@ -107,5 +107,5 @@ class ModelingTools(Updatable):
 class PowerspectrumModifier(Updatable):
     name: str = "base:base"
 
-    def compute_pk(self, tools: ModelingTools) -> pyccl.Pk2D:
+    def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
         raise NotImplementedError()
