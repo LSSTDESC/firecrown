@@ -5,7 +5,6 @@ from firecrown.models.cluster.kernel import (
     Purity,
     KernelType,
     Kernel,
-    MassRichnessMuSigma,
     DESY1PhotometricRedshift,
     SpectroscopicRedshift,
     TrueMass,
@@ -29,15 +28,6 @@ def test_create_spectroscopic_redshift_kernel():
     assert srk.is_dirac_delta is True
     assert srk.integral_bounds is None
     assert srk.has_analytic_sln is False
-
-
-def test_create_musigma_kernel():
-    msk = MassRichnessMuSigma(1, 1)
-    assert isinstance(msk, Kernel)
-    assert msk.kernel_type == KernelType.mass_proxy
-    assert msk.is_dirac_delta is False
-    assert msk.integral_bounds is None
-    assert msk.has_analytic_sln is True
 
 
 def test_create_mass_kernel():
@@ -167,93 +157,3 @@ def test_des_photoz_kernel_distribution():
     spread = dpk.distribution([bounds], map)
     for ref, true in zip(spread, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
-
-
-# class ArgsMapping:
-#     def __init__(self):
-#         self.integral_bounds = dict()
-#         self.extra_args = dict()
-
-#         self.integral_bounds_idx = 0
-#         self.extra_args_idx = 1
-
-#     def get_integral_bounds(self, int_args, kernel_type: KernelType):
-#         bounds_values = int_args[self.integral_bounds_idx]
-#         return bounds_values[:, self.integral_bounds[kernel_type.name]]
-
-#     def get_extra_args(self, int_args, kernel_type: KernelType):
-#         extra_values = int_args[self.extra_args_idx]
-#         return extra_values[self.extra_args[kernel_type.name]]
-
-
-def test_args_mapper_extra_args():
-    args_map = ArgsMapping()
-
-    mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    args_map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
-
-    extra_args = [(1, 2, 3), ("hello world")]
-    args_map.extra_args = {KernelType.mass_proxy.name: 0, KernelType.z_proxy.name: 1}
-
-    integral_bounds = np.array(list(zip(mass, z)))
-    int_args = [integral_bounds, extra_args]
-
-    assert args_map.get_extra_args(int_args, KernelType.mass_proxy) == (1, 2, 3)
-    assert args_map.get_extra_args(int_args, KernelType.z_proxy) == "hello world"
-
-
-def test_args_mapper_integral_bounds():
-    args_map = ArgsMapping()
-
-    mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    z_proxy = np.array([0.11, 0.21, 0.31, 0.41, 0.51, 0.61, 0.71, 0.81, 0.91, 1.01])
-    mass_proxy = np.array([0.9, 1.9, 2.9, 3.9, 4.9, 5.9, 6.9, 7.9, 8.9, 9.9])
-
-    args_map.integral_bounds = {
-        KernelType.mass.name: 0,
-        KernelType.z.name: 1,
-        KernelType.z_proxy.name: 2,
-        KernelType.mass_proxy.name: 3,
-    }
-
-    integral_bounds = np.array(list(zip(mass, z, z_proxy, mass_proxy)))
-    int_args = [integral_bounds]
-
-    assert (mass == args_map.get_integral_bounds(int_args, KernelType.mass)).all()
-    assert (z == args_map.get_integral_bounds(int_args, KernelType.z)).all()
-    assert (z_proxy == args_map.get_integral_bounds(int_args, KernelType.z_proxy)).all()
-    assert (
-        mass_proxy == args_map.get_integral_bounds(int_args, KernelType.mass_proxy)
-    ).all()
-
-
-def test_create_args_mapping():
-    am = ArgsMapping()
-    assert am.integral_bounds == dict()
-    assert am.extra_args == dict()
-    assert am.integral_bounds_idx == 0
-    assert am.extra_args_idx == 1
-
-
-# int_args = [
-#     (values im integrating over),
-#     (extra arguments for my integrand),
-#     args_mapper = {
-#         integral_bounds = {
-#             mass at index 0
-#             z at index 1
-#             z_proxy at index 2
-#         }
-#         extra_args = {
-#             mass_proxy at index 0
-#         }
-#     }
-# ]
-
-# models/Updatable
-#   firecrown/
-#   cluster_abundance/
-# cluster_abundance/
-#   firecrown/

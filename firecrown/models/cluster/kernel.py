@@ -3,11 +3,9 @@ from enum import Enum
 from typing import List, Tuple
 
 import numpy as np
-from scipy import special
-
-from firecrown import parameters
 from firecrown.updatable import Updatable
 import pdb
+
 
 class KernelType(Enum):
     mass = 1
@@ -92,8 +90,6 @@ class Purity(Kernel):
 
         purity = (r_over_rc) ** nc / (r_over_rc**nc + 1.0)
         return purity
-
-
 
 
 class TrueMass(Kernel):

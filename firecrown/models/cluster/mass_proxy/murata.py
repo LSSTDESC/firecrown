@@ -28,9 +28,8 @@ class MurataCore(MassRichnessGaussian):
     ):
         super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
 
-        self.pivot_mass = pivot_mass
         self.pivot_redshift = pivot_redshift
-        self.pivot_mass = self.pivot_mass * np.log(10.0)  # ln(M)
+        self.pivot_mass = pivot_mass * np.log(10.0)  # ln(M)
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
