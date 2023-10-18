@@ -7,10 +7,6 @@ from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
 
 
 class MassRichnessGaussian(Kernel):
-    def _init_params(self):
-        """Instanciate parameters of mass richenss distribution."""
-        return NotImplementedError
-
     def get_proxy_mean(self, mass, z):
         """Return observed quantity corrected by redshift and mass."""
         return NotImplementedError
