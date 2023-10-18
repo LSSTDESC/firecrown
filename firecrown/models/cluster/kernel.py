@@ -9,7 +9,6 @@ from firecrown import parameters
 from firecrown.updatable import Updatable
 import pdb
 
-
 class KernelType(Enum):
     mass = 1
     z = 2
@@ -95,73 +94,6 @@ class Purity(Kernel):
         return purity
 
 
-class MassRichnessMuSigma(Kernel):
-    def __init__(
-        self,
-        pivot_mass,
-        pivot_redshift,
-        integral_bounds: List[Tuple[float, float]] = None,
-    ):
-        super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
-        self.pivot_mass = pivot_mass
-        self.pivot_redshift = pivot_redshift
-        self.pivot_mass = self.pivot_mass * np.log(10.0)  # ln(M)
-        self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
-
-        # Updatable parameters
-        self.mu_p0 = parameters.create()
-        self.mu_p1 = parameters.create()
-        self.mu_p2 = parameters.create()
-        self.sigma_p0 = parameters.create()
-        self.sigma_p1 = parameters.create()
-        self.sigma_p2 = parameters.create()
-
-        # Verify this gets called last or first
-
-    def observed_value(self, p: Tuple[float, float, float], mass, z):
-        """Return observed quantity corrected by redshift and mass."""
-
-        ln_mass = mass * np.log(10)
-        delta_ln_mass = ln_mass - self.pivot_mass
-        delta_z = np.log1p(z) - self.log1p_pivot_redshift
-
-        return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
-
-    def distribution(self, args: List[float], args_map: ArgsMapping):
-        mass = args_map.get_integral_bounds(args, KernelType.mass)
-        z = args_map.get_integral_bounds(args, KernelType.z)
-        mass_limits = args_map.get_extra_args(args, self.kernel_type)
-
-        observed_mean_mass = self.observed_value(
-            (self.mu_p0, self.mu_p1, self.mu_p2),
-            mass,
-            z,
-        )
-        observed_mass_sigma = self.observed_value(
-            (self.sigma_p0, self.sigma_p1, self.sigma_p2),
-            mass,
-            z,
-        )
-
-        x_min = (observed_mean_mass - mass_limits[0] * np.log(10.0)) / (
-            np.sqrt(2.0) * observed_mass_sigma
-        )
-        x_max = (observed_mean_mass - mass_limits[1] * np.log(10.0)) / (
-            np.sqrt(2.0) * observed_mass_sigma
-        )
-
-        return_vals = np.empty_like(x_min)
-        mask1 = (x_max > 3.0) | (x_min < -3.0)
-        mask2 = ~mask1
-
-        return_vals[mask1] = (
-            -(special.erfc(x_min[mask1]) - special.erfc(x_max[mask1])) / 2.0
-        )
-        return_vals[mask2] = (
-            special.erf(x_min[mask2]) - special.erf(x_max[mask2])
-        ) / 2.0
-
-        return return_vals
 
 
 class TrueMass(Kernel):

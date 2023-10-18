@@ -1,0 +1,75 @@
+from typing import List, Tuple
+
+import numpy as np
+
+from firecrown import parameters
+from firecrown.models.cluster.kernel import KernelType
+from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
+
+
+def _observed_value(
+    p: Tuple[float, float, float], mass, z, pivot_mass, log1p_pivot_redshift
+):
+    """Return observed quantity corrected by redshift and mass."""
+
+    ln_mass = mass * np.log(10)
+    delta_ln_mass = ln_mass - pivot_mass
+    delta_z = np.log1p(z) - log1p_pivot_redshift
+
+    return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
+
+
+class MassRichnessCore(MassRichnessGaussian):
+    def __init__(
+        self,
+        pivot_mass,
+        pivot_redshift,
+        integral_bounds: List[Tuple[float, float]] = None,
+    ):
+        super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
+
+        self.pivot_mass = pivot_mass
+        self.pivot_redshift = pivot_redshift
+        self.pivot_mass = self.pivot_mass * np.log(10.0)  # ln(M)
+        self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
+
+        # Updatable parameters
+        self.mu_p0 = parameters.create()
+        self.mu_p1 = parameters.create()
+        self.mu_p2 = parameters.create()
+        self.sigma_p0 = parameters.create()
+        self.sigma_p1 = parameters.create()
+        self.sigma_p2 = parameters.create()
+
+        # Verify this gets called last or first
+
+    def get_proxy_mean(self, mass, z):
+        """Return observed quantity corrected by redshift and mass."""
+        return _observed_value(
+            (self.mu_p0, self.mu_p1, self.mu_p2),
+            mass,
+            z,
+            self.pivot_mass,
+            self.log1p_pivot_redshift,
+        )
+
+    def get_proxy_sigma(self, mass, z):
+        """Return observed scatter corrected by redshift and mass."""
+        return _observed_value(
+            (self.sigma_p0, self.sigma_p1, self.sigma_p2),
+            mass,
+            z,
+            self.pivot_mass,
+            self.log1p_pivot_redshift,
+        )
+
+
+### used to be MassRichnessMuSigma ###
+class MassRichnessBinned(MassRichnessCore):
+    def distribution(self, args, args_map):
+        return self._distribution_binned(args, args_map)
+
+
+class MassRichnessUnbinned(MassRichnessCore):
+    def distribution(self, args, args_map):
+        return self._distribution_unbinned(args, args_map)
