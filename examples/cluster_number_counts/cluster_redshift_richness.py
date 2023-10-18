@@ -16,10 +16,10 @@ from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import (
     Completeness,
     DESY1PhotometricRedshift,
-    MassRichnessMuSigma,
     Purity,
     SpectroscopicRedshift,
 )
+from firecrown.models.cluster.kernel.mass_proxy.murata import MassRichnessBinned
 
 
 def get_cluster_abundance(sky_area):
@@ -32,7 +32,7 @@ def get_cluster_abundance(sky_area):
 
     # Create and add the kernels you want in your cluster abundance
     pivot_mass, pivot_redshift = 14.625862906, 0.6
-    mass_observable_kernel = MassRichnessMuSigma(pivot_mass, pivot_redshift)
+    mass_observable_kernel = MassRichnessBinned(pivot_mass, pivot_redshift)
     cluster_abundance.add_kernel(mass_observable_kernel)
 
     redshift_proxy_kernel = SpectroscopicRedshift()
