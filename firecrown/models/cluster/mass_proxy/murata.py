@@ -19,7 +19,7 @@ def _observed_value(
     return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
 
 
-class MassRichnessCore(MassRichnessGaussian):
+class MurataCore(MassRichnessGaussian):
     def __init__(
         self,
         pivot_mass,
@@ -65,11 +65,11 @@ class MassRichnessCore(MassRichnessGaussian):
 
 
 ### used to be MassRichnessMuSigma ###
-class MassRichnessBinned(MassRichnessCore):
+class MurataBinned(MurataCore):
     def distribution(self, args, args_map):
         return self._distribution_binned(args, args_map)
 
 
-class MassRichnessUnbinned(MassRichnessCore):
+class MurataUnbinned(MurataCore):
     def distribution(self, args, args_map):
         return self._distribution_unbinned(args, args_map)
