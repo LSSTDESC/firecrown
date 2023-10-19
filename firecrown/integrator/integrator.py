@@ -10,11 +10,11 @@ class Integrator(ABC):
         super().__init__()
 
     @abstractmethod
-    def integrate(
-        self, cl_abundance: ClusterAbundance, z_proxy_limits, mass_proxy_limits
-    ):
-        pass
+    def integrate(self, integrand, bounds, extra_args):
+        """Integrate the integrand over the bounds and include extra_args to integral"""
 
     @abstractmethod
-    def get_integration_bounds(self, integrand, bounds, extra_args):
-        pass
+    def get_integration_bounds(
+        self, cl_abundance: ClusterAbundance, z_proxy_limits, mass_proxy_limits
+    ):
+        """Extract the limits of integration and extra arguments for the integral"""

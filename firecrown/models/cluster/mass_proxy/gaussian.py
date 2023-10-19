@@ -7,11 +7,9 @@ from firecrown.models.cluster.kernel import ArgReader, Kernel, KernelType
 class MassRichnessGaussian(Kernel):
     def get_proxy_mean(self, mass, z):
         """Return observed quantity corrected by redshift and mass."""
-        return NotImplementedError
 
     def get_proxy_sigma(self, mass, z):
         """Return observed scatter corrected by redshift and mass."""
-        return NotImplementedError
 
     def _distribution_binned(self, args: List[float], args_map: ArgReader):
         mass = args_map.get_integral_bounds(args, KernelType.mass)

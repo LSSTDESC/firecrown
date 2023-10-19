@@ -22,11 +22,11 @@ class ArgReader(ABC):
 
     @abstractmethod
     def get_integral_bounds(self, int_args, kernel_type: KernelType):
-        pass
+        """Returns the current differential value for KernelType"""
 
     @abstractmethod
     def get_extra_args(self, int_args, kernel_type: KernelType):
-        pass
+        """Returns the extra arguments passed into the integral for KernelType"""
 
 
 class Kernel(Updatable, ABC):
@@ -44,7 +44,7 @@ class Kernel(Updatable, ABC):
         self.has_analytic_sln = has_analytic_sln
 
     def distribution(self, args: List[float], args_map: ArgReader):
-        raise NotImplementedError()
+        """The functional form of the distribution or spread of this kernel"""
 
 
 class Completeness(Kernel):

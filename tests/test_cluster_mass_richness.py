@@ -1,5 +1,6 @@
 import pytest
 import numpy as np
+from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
 from firecrown.models.cluster.mass_proxy.murata import MurataBinned, _observed_value
 from firecrown.models.cluster.kernel import (
     KernelType,
