@@ -31,9 +31,11 @@ class ArgsMapping:
         extra_values = int_args[self.extra_args_idx]
         return extra_values[self.extra_args[kernel_type.name]]
 
-class Parameters(Enum):
+
+class Parameters:
     def __init__(self):
         pass
+
 
 class Kernel(ABC):
     def __init__(

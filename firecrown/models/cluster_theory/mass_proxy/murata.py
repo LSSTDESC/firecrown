@@ -2,8 +2,8 @@ from typing import List, Tuple
 
 import numpy as np
 
-from firecrown.models.cluster.kernel import KernelType
-from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
+from firecrown.models.cluster_theory.kernel import KernelType
+from firecrown.models.cluster_theory.mass_proxy.gaussian import MassRichnessGaussian
 
 
 def _observed_value(
@@ -40,7 +40,6 @@ class MurataCore(MassRichnessGaussian):
         self.pars.sigma_p1 = 0.0
         self.pars.sigma_p2 = 1.0
 
-
     def get_proxy_mean(self, mass, z):
         """Return observed quantity corrected by redshift and mass."""
         return _observed_value(
@@ -54,7 +53,7 @@ class MurataCore(MassRichnessGaussian):
     def get_proxy_sigma(self, mass, z):
         """Return observed scatter corrected by redshift and mass."""
         return _observed_value(
-            (self.sigma_p0, self.sigma_p1, self.sigma_p2),
+            (self.pars.sigma_p0, self.pars.sigma_p1, self.pars.sigma_p2),
             mass,
             z,
             self.pivot_mass,

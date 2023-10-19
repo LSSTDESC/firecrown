@@ -2,7 +2,7 @@ from typing import List
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
+from firecrown.models.cluster_theory.kernel import Kernel, KernelType, ArgsMapping
 import numpy as np
 from firecrown.parameters import ParamsMap
 import numpy.typing as npt

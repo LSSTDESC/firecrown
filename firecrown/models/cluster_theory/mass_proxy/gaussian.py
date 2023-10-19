@@ -3,7 +3,7 @@ from typing import List
 import numpy as np
 from scipy import special
 
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
+from firecrown.models.cluster_theory.kernel import Kernel, KernelType, ArgsMapping
 
 
 class MassRichnessGaussian(Kernel):
