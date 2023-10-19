@@ -1,7 +1,11 @@
 import pytest
 import numpy as np
 from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
-from firecrown.models.cluster.mass_proxy.murata import MurataBinned, _observed_value
+from firecrown.models.cluster.mass_proxy.murata import (
+    MurataBinned,
+    MurataUnbinned,
+    _observed_value,
+)
 from firecrown.models.cluster.kernel import (
     KernelType,
     Kernel,
@@ -32,6 +36,24 @@ def fixture_cluster_mass_rich() -> MurataBinned:
     """Initialize cluster object."""
 
     mr = MurataBinned(PIVOT_MASS, PIVOT_Z)
+
+    # Set the parameters to the values used in the test
+    # they should be such that the variance is always positive.
+    mr.mu_p0 = 3.00
+    mr.mu_p1 = 0.086
+    mr.mu_p2 = 0.01
+    mr.sigma_p0 = 3.0
+    mr.sigma_p1 = 0.07
+    mr.sigma_p2 = 0.01
+
+    return mr
+
+
+@pytest.fixture(name="murata_unbinned_relation")
+def fixture_cluster_mass_rich() -> MurataUnbinned:
+    """Initialize cluster object."""
+
+    mr = MurataUnbinned(PIVOT_MASS, PIVOT_Z)
 
     # Set the parameters to the values used in the test
     # they should be such that the variance is always positive.
@@ -144,3 +166,37 @@ def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
             )
 
             assert test == pytest.approx(true, rel=1e-7, abs=0.0)
+
+
+def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUnbinned):
+    logM_array = np.linspace(7.0, 26.0, 2000)
+    for z in np.geomspace(1.0e-18, 2.0, 20):
+        flip = False
+        for logM_0, logM_1 in zip(logM_array[:-1], logM_array[1:]):
+            extra_args = [2.5]
+
+            args1 = [np.array([[logM_0, z]]), extra_args]
+            args2 = [np.array([[logM_1, z]]), extra_args]
+
+            args_map = MockArgsReader()
+            args_map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
+            args_map.extra_args = {KernelType.mass_proxy.name: 0}
+
+            probability_0 = murata_unbinned_relation.distribution(args1, args_map)
+            probability_1 = murata_unbinned_relation.distribution(args2, args_map)
+
+            # Probability density should be initially monotonically increasing
+            # and then monotonically decreasing. It should flip only once.
+
+            # Test for the flip
+            if (not flip) and (probability_1 < probability_0):
+                flip = True
+
+            # Test for the second flip
+            if flip and (probability_1 > probability_0):
+                raise ValueError("Probability flipped twice")
+
+            if flip:
+                assert probability_1 <= probability_0
+            else:
+                assert probability_1 >= probability_0
