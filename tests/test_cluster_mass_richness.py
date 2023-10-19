@@ -4,11 +4,26 @@ from firecrown.models.cluster.mass_proxy.murata import MurataBinned, _observed_v
 from firecrown.models.cluster.kernel import (
     KernelType,
     Kernel,
-    ArgsMapping,
+    ArgReader,
 )
 
 PIVOT_Z = 0.6
 PIVOT_MASS = 14.625862906
+
+
+class MockArgsReader(ArgReader):
+    def __init__(self):
+        super().__init__()
+        self.integral_bounds_idx = 0
+        self.extra_args_idx = 1
+
+    def get_integral_bounds(self, int_args, kernel_type: KernelType):
+        bounds_values = int_args[self.integral_bounds_idx]
+        return bounds_values[:, self.integral_bounds[kernel_type.name]]
+
+    def get_extra_args(self, int_args, kernel_type: KernelType):
+        extra_values = int_args[self.extra_args_idx]
+        return extra_values[self.extra_args[kernel_type.name]]
 
 
 @pytest.fixture(name="murata_binned_relation")
@@ -71,7 +86,7 @@ def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned
             args1 = [np.array([[logM_0, z]]), extra_args]
             args2 = [np.array([[logM_1, z]]), extra_args]
 
-            args_map = ArgsMapping()
+            args_map = MockArgsReader()
             args_map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
             args_map.extra_args = {KernelType.mass_proxy.name: 0}
 

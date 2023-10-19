@@ -1,6 +1,6 @@
 import pytest
 from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
+from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
 import pyccl
 import numpy as np
 from typing import List, Tuple
@@ -24,7 +24,7 @@ class MockKernel(Kernel):
     ):
         super().__init__(kernel_type, is_dirac_delta, has_analytic_sln, integral_bounds)
 
-    def distribution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgReader):
         return 1.0
 
 

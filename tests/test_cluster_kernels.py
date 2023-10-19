@@ -8,8 +8,23 @@ from firecrown.models.cluster.kernel import (
     DESY1PhotometricRedshift,
     SpectroscopicRedshift,
     TrueMass,
-    ArgsMapping,
+    ArgReader,
 )
+
+
+class MockArgsReader(ArgReader):
+    def __init__(self):
+        super().__init__()
+        self.integral_bounds_idx = 0
+        self.extra_args_idx = 1
+
+    def get_integral_bounds(self, int_args, kernel_type: KernelType):
+        bounds_values = int_args[self.integral_bounds_idx]
+        return bounds_values[:, self.integral_bounds[kernel_type.name]]
+
+    def get_extra_args(self, int_args, kernel_type: KernelType):
+        extra_values = int_args[self.extra_args_idx]
+        return extra_values[self.extra_args[kernel_type.name]]
 
 
 def test_create_desy1_photometric_redshift_kernel():
@@ -59,12 +74,18 @@ def test_create_purity_kernel():
 
 def test_spec_z_distribution():
     srk = SpectroscopicRedshift()
-    assert srk.distribution([0.5], ArgsMapping()) == 1.0
+    assert srk.distribution([0.5], MockArgsReader()) == 1.0
 
 
 def test_true_mass_distribution():
     tmk = TrueMass()
-    assert tmk.distribution([0.5], ArgsMapping()) == 1.0
+    assert tmk.distribution([0.5], MockArgsReader()) == 1.0
+
+
+def test_create_arg_reader():
+    mr = MockArgsReader()
+    assert mr.integral_bounds == dict()
+    assert mr.extra_args == dict()
 
 
 def test_purity_distribution():
@@ -73,7 +94,7 @@ def test_purity_distribution():
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     arguments = np.array(list(zip(mass_proxy, z)))
-    map = ArgsMapping()
+    map = MockArgsReader()
     map.integral_bounds = {KernelType.mass_proxy.name: 0, KernelType.z.name: 1}
 
     truth = np.array(
@@ -102,7 +123,7 @@ def test_completeness_distribution():
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
     bounds = np.array(list(zip(mass, z)))
-    map = ArgsMapping()
+    map = MockArgsReader()
     map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
 
     truth = np.array(
@@ -134,7 +155,7 @@ def test_des_photoz_kernel_distribution():
 
     bounds = np.array(list(zip(mass, z, z_proxy)))
 
-    map = ArgsMapping()
+    map = MockArgsReader()
     map.integral_bounds = {
         KernelType.mass.name: 0,
         KernelType.z.name: 1,
