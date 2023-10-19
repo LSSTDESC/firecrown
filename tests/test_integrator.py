@@ -631,3 +631,27 @@ def test_scipy_get_integration_bounds_analytic_slns(
             KernelType.mass.name: 0,
             KernelType.z.name: 1,
         }
+
+
+def test_scipy_integrator_integrate():
+    sci = ScipyIntegrator()
+
+    def integrand(*int_args):
+        x = int_args[0]
+        return x
+
+    bounds = [(0, 1)]
+    result = sci.integrate(integrand, bounds, [])
+    assert result == 0.5
+
+
+def test_numcosmo_integrator_integrate():
+    nci = NumCosmoIntegrator()
+
+    def integrand(*int_args):
+        x = int_args[0]
+        return x
+
+    bounds = [(0, 1)]
+    result = nci.integrate(integrand, bounds, [])
+    assert result == 0.5

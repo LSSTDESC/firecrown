@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Union, Callable
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
@@ -63,7 +63,9 @@ class ClusterAbundance(object):
         for kernel in self.kernels:
             kernel.update(params)
 
-    def comoving_volume(self, z) -> float:
+    def comoving_volume(
+        self, z: Union[float, npt.NDArray[np.float64]]
+    ) -> Union[float, npt.NDArray[np.float64]]:
         """Differential Comoving Volume at z.
 
         parameters
@@ -86,10 +88,16 @@ class ClusterAbundance(object):
         return dV * self.sky_area_rad
 
     def mass_function(
-        self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
-    ) -> npt.NDArray[np.float64]:
+        self,
+        mass: Union[float, npt.NDArray[np.float64]],
+        z: Union[float, npt.NDArray[np.float64]],
+    ) -> Union[float, npt.NDArray[np.float64]]:
+        z = np.atleast_1d(z)
+        mass = np.atleast_1d(mass)
+
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
+
         for m, a in zip(mass, scale_factor):
             val = self._hmf_cache.get((m, a))
             if val is None:
@@ -99,17 +107,16 @@ class ClusterAbundance(object):
 
         if len(return_vals) == 1:
             return return_vals[0]
-        return return_vals
+        return np.asarray(return_vals, dtype=np.float64)
 
-    def get_integrand(self, avg_mass=False, avg_redshift=False):
-        def integrand(*int_args):
+    def get_integrand(
+        self, avg_mass: bool = False, avg_redshift: bool = False
+    ) -> Callable[..., Union[float, npt.NDArray[np.float64]]]:
+        def integrand(*int_args) -> Union[float, npt.NDArray[np.float64]]:
             args_map: ArgReader = int_args[-1]
 
             z = args_map.get_integral_bounds(int_args, KernelType.z)
             mass = args_map.get_integral_bounds(int_args, KernelType.mass)
-
-            z = np.atleast_1d(z)
-            mass = np.atleast_1d(mass)
 
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             if avg_mass:

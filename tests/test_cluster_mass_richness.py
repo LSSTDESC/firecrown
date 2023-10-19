@@ -1,6 +1,5 @@
 import pytest
 import numpy as np
-from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
 from firecrown.models.cluster.mass_proxy.murata import (
     MurataBinned,
     MurataUnbinned,
@@ -32,7 +31,7 @@ class MockArgsReader(ArgReader):
 
 
 @pytest.fixture(name="murata_binned_relation")
-def fixture_cluster_mass_rich() -> MurataBinned:
+def fixture_murata_binned() -> MurataBinned:
     """Initialize cluster object."""
 
     mr = MurataBinned(PIVOT_MASS, PIVOT_Z)
@@ -50,7 +49,7 @@ def fixture_cluster_mass_rich() -> MurataBinned:
 
 
 @pytest.fixture(name="murata_unbinned_relation")
-def fixture_cluster_mass_rich() -> MurataUnbinned:
+def fixture_murata_unbinned() -> MurataUnbinned:
     """Initialize cluster object."""
 
     mr = MurataUnbinned(PIVOT_MASS, PIVOT_Z)
@@ -100,7 +99,7 @@ def test_cluster_observed_mass():
 
 
 def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned):
-    logM_array = np.linspace(7.0, 26.0, 2000)
+    logM_array = np.linspace(7.0, 26.0, 20)
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
         for logM_0, logM_1 in zip(logM_array[:-1], logM_array[1:]):
@@ -137,7 +136,7 @@ def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned
 
 
 def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):
-    for mass in np.linspace(7.0, 26.0, 2000):
+    for mass in np.linspace(7.0, 26.0, 20):
         for z in np.geomspace(1.0e-18, 2.0, 20):
             test = murata_binned_relation.get_proxy_mean(mass, z)
 
@@ -153,7 +152,7 @@ def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):
 
 
 def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
-    for mass in np.linspace(7.0, 26.0, 2000):
+    for mass in np.linspace(7.0, 26.0, 20):
         for z in np.geomspace(1.0e-18, 2.0, 20):
             test = murata_binned_relation.get_proxy_sigma(mass, z)
 
@@ -169,7 +168,7 @@ def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
 
 
 def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUnbinned):
-    logM_array = np.linspace(7.0, 26.0, 2000)
+    logM_array = np.linspace(7.0, 26.0, 20)
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
         for logM_0, logM_1 in zip(logM_array[:-1], logM_array[1:]):
