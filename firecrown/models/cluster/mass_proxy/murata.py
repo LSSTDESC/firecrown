@@ -63,7 +63,6 @@ class MurataCore(MassRichnessGaussian):
         )
 
 
-### used to be MassRichnessMuSigma ###
 class MurataBinned(MurataCore):
     def distribution(self, args, args_map):
         return self._distribution_binned(args, args_map)

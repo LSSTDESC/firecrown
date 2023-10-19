@@ -5,7 +5,8 @@ import os
 import pyccl as ccl
 import sacc
 
-from firecrown.integrator.integrator import NumCosmoIntegrator
+from firecrown.integrator.numcosmo_integrator import NumCosmoIntegrator
+from firecrown.integrator.scipy_integrator import ScipyIntegrator
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
@@ -19,7 +20,7 @@ from firecrown.models.cluster.kernel import (
     Purity,
     SpectroscopicRedshift,
 )
-from firecrown.models.cluster.kernel.mass_proxy.murata import MurataBinned
+from firecrown.models.cluster.mass_proxy.murata import MurataBinned
 
 
 def get_cluster_abundance(sky_area):
@@ -35,8 +36,8 @@ def get_cluster_abundance(sky_area):
     mass_observable_kernel = MurataBinned(pivot_mass, pivot_redshift)
     cluster_abundance.add_kernel(mass_observable_kernel)
 
-    redshift_proxy_kernel = SpectroscopicRedshift()
-    # redshift_proxy_kernel = DESY1PhotometricRedshift()
+    # redshift_proxy_kernel = SpectroscopicRedshift()
+    redshift_proxy_kernel = DESY1PhotometricRedshift()
     cluster_abundance.add_kernel(redshift_proxy_kernel)
 
     # completeness_kernel = Completeness()
@@ -53,6 +54,7 @@ def build_likelihood(build_parameters):
     Here we instantiate the number density (or mass function) object.
     """
     integrator = NumCosmoIntegrator()
+    # integrator = ScipyIntegrator()
 
     # Pull params for the likelihood from build_parameters
     use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)

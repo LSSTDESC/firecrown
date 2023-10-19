@@ -3,12 +3,14 @@ from typing import List, Optional
 import sacc
 
 from firecrown.integrator import Integrator
-from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.abundance_data import AbundanceData
-from firecrown.models.cluster.kernel import ArgsMapping, KernelType
-from .statistic import Statistic, DataVector, TheoryVector
-from .source.source import SourceSystematic
-from ....modeling_tools import ModelingTools
+from firecrown.likelihood.gauss_family.statistic.statistic import (
+    Statistic,
+    DataVector,
+    TheoryVector,
+)
+from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
+from firecrown.modeling_tools import ModelingTools
 import numpy as np
 
 import cProfile
@@ -75,87 +77,29 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_masses = []
 
         if self.use_cluster_counts or self.use_mean_log_mass:
-            # self.pr.enable()
             for z_proxy_limits, mass_proxy_limits in self.bin_limits:
-                bounds, extra_args, args_mapping = self.get_integration_bounds(
+                integrand = tools.cluster_abundance.get_integrand()
+                bounds, extra_args = self.integrator.get_integration_bounds(
                     tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
                 )
 
-                integrand = tools.cluster_abundance.get_integrand()
-                counts = self.integrator.integrate(
-                    integrand, bounds, args_mapping, extra_args
-                )
-
+                counts = self.integrator.integrate(integrand, bounds, extra_args)
                 cluster_counts.append(counts)
-            # self.pr.disable()
-            # self.pr.dump_stats("profile.prof")
             theory_vector_list += cluster_counts
 
         if self.use_mean_log_mass:
             for (z_proxy_limits, mass_proxy_limits), counts in zip(
                 self.bin_limits, cluster_counts
             ):
-                bounds, extra_args, args_mapping = self.get_integration_bounds(
-                    z_proxy_limits, mass_proxy_limits
+                integrand = tools.cluster_abundance.get_integrand(avg_mass=True)
+                bounds, extra_args = self.integrator.get_integration_bounds(
+                    tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
                 )
 
-                integrand = tools.cluster_abundance.get_integrand()
-                unnormalized_mass = self.integrator.integrate(
-                    integrand, bounds, args_mapping, extra_args
-                )
-
-                cluster_mass = unnormalized_mass / counts
-                cluster_masses.append(cluster_mass)
+                total_mass = self.integrator.integrate(integrand, bounds, extra_args)
+                mean_mass = total_mass / counts
+                cluster_masses.append(mean_mass)
 
             theory_vector_list += cluster_masses
 
         return TheoryVector.from_list(theory_vector_list)
-
-    def get_integration_bounds(
-        self, cl_abundance: ClusterAbundance, z_proxy_limits, mass_proxy_limits
-    ):
-        args_mapping = ArgsMapping()
-        args_mapping.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
-
-        integral_bounds = [
-            (cl_abundance.min_mass, cl_abundance.max_mass),
-            (cl_abundance.min_z, cl_abundance.max_z),
-        ]
-
-        # If any kernel is a dirac delta for z or M, just replace the
-        # true limits with the proxy limits
-        for kernel in cl_abundance.dirac_delta_kernels:
-            if kernel.kernel_type == KernelType.z_proxy:
-                integral_bounds[1] = z_proxy_limits
-            elif kernel.kernel_type == KernelType.mass_proxy:
-                integral_bounds[0] = mass_proxy_limits
-
-        # If any kernel is not a dirac delta, integrate over the relevant limits
-        mapping_idx = len(args_mapping.integral_bounds.keys())
-        for kernel in cl_abundance.integrable_kernels:
-            args_mapping.integral_bounds[kernel.kernel_type.name] = mapping_idx
-            mapping_idx += 1
-
-            if kernel.kernel_type == KernelType.z_proxy:
-                integral_bounds.append(z_proxy_limits)
-            elif kernel.kernel_type == KernelType.mass_proxy:
-                integral_bounds.append(mass_proxy_limits)
-
-            if kernel.integral_bounds is not None:
-                integral_bounds.append(kernel.integral_bounds)
-
-        # Lastly, don't integrate any kernels with an analytic solution
-        # This means we pass in their limits as extra arguments to the integrator
-        extra_args = []
-        for i, kernel in enumerate(cl_abundance.analytic_kernels):
-            args_mapping.extra_args[kernel.kernel_type.name] = i
-
-            if kernel.kernel_type == KernelType.z_proxy:
-                extra_args.append(z_proxy_limits)
-            elif kernel.kernel_type == KernelType.mass_proxy:
-                extra_args.append(mass_proxy_limits)
-
-            if kernel.integral_bounds is not None:
-                extra_args.append(kernel.integral_bounds)
-
-        return integral_bounds, extra_args, args_mapping

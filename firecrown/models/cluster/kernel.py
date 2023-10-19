@@ -1,10 +1,9 @@
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Tuple
 
 import numpy as np
 from firecrown.updatable import Updatable
-import pdb
 
 
 class KernelType(Enum):
@@ -16,21 +15,18 @@ class KernelType(Enum):
     purity = 6
 
 
-class ArgsMapping:
+class ArgReader(ABC):
     def __init__(self):
         self.integral_bounds = dict()
         self.extra_args = dict()
 
-        self.integral_bounds_idx = 0
-        self.extra_args_idx = 1
-
+    @abstractmethod
     def get_integral_bounds(self, int_args, kernel_type: KernelType):
-        bounds_values = int_args[self.integral_bounds_idx]
-        return bounds_values[:, self.integral_bounds[kernel_type.name]]
+        pass
 
+    @abstractmethod
     def get_extra_args(self, int_args, kernel_type: KernelType):
-        extra_values = int_args[self.extra_args_idx]
-        return extra_values[self.extra_args[kernel_type.name]]
+        pass
 
 
 class Kernel(Updatable, ABC):
@@ -47,7 +43,7 @@ class Kernel(Updatable, ABC):
         self.kernel_type = kernel_type
         self.has_analytic_sln = has_analytic_sln
 
-    def distribution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgReader):
         raise NotImplementedError()
 
 
@@ -55,7 +51,7 @@ class Completeness(Kernel):
     def __init__(self):
         super().__init__(KernelType.completeness)
 
-    def distribution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgReader):
         mass = args_map.get_integral_bounds(args, KernelType.mass)
         z = args_map.get_integral_bounds(args, KernelType.z)
 
@@ -73,7 +69,7 @@ class Purity(Kernel):
     def __init__(self):
         super().__init__(KernelType.purity)
 
-    def distribution(self, args: List[float], args_index_map: ArgsMapping):
+    def distribution(self, args: List[float], args_index_map: ArgReader):
         mass_proxy = args_index_map.get_integral_bounds(args, KernelType.mass_proxy)
         z = args_index_map.get_integral_bounds(args, KernelType.z)
 
@@ -96,7 +92,7 @@ class TrueMass(Kernel):
     def __init__(self):
         super().__init__(KernelType.mass_proxy, True)
 
-    def distribution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgReader):
         return 1.0
 
 
@@ -104,7 +100,7 @@ class SpectroscopicRedshift(Kernel):
     def __init__(self):
         super().__init__(KernelType.z_proxy, True)
 
-    def distribution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgReader):
         return 1.0
 
 
@@ -113,7 +109,7 @@ class DESY1PhotometricRedshift(Kernel):
         super().__init__(KernelType.z_proxy)
         self.sigma_0 = 0.05
 
-    def distribution(self, args: List[float], args_map: ArgsMapping):
+    def distribution(self, args: List[float], args_map: ArgReader):
         z = args_map.get_integral_bounds(args, KernelType.z)
         z_proxy = args_map.get_integral_bounds(args, KernelType.z_proxy)
 

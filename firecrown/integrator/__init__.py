@@ -1,1 +1,1 @@
-from .integrator import NumCosmoIntegrator, ScipyIntegrator, Integrator
+from .integrator import Integrator

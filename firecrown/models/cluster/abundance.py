@@ -2,12 +2,10 @@ from typing import List
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgsMapping
+from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
 import numpy as np
 from firecrown.parameters import ParamsMap
 import numpy.typing as npt
-
-# TODO: Consider emulators for mass function
 
 
 class ClusterAbundance(object):
@@ -91,7 +89,6 @@ class ClusterAbundance(object):
         self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         scale_factor = 1.0 / (1.0 + z)
-
         return_vals = []
         for m, a in zip(mass, scale_factor):
             val = self._hmf_cache.get((m, a))
@@ -100,14 +97,19 @@ class ClusterAbundance(object):
                 self._hmf_cache[(m, a)] = val
             return_vals.append(val)
 
+        if len(return_vals) == 1:
+            return return_vals[0]
         return return_vals
 
     def get_integrand(self, avg_mass=False, avg_redshift=False):
         def integrand(*int_args):
-            args_map: ArgsMapping = int_args[-1]
+            args_map: ArgReader = int_args[-1]
 
             z = args_map.get_integral_bounds(int_args, KernelType.z)
             mass = args_map.get_integral_bounds(int_args, KernelType.mass)
+
+            z = np.atleast_1d(z)
+            mass = np.atleast_1d(mass)
 
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             if avg_mass:
