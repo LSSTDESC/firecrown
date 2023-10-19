@@ -2,7 +2,6 @@ from typing import List, Tuple
 
 import numpy as np
 
-from firecrown import parameters
 from firecrown.models.cluster.kernel import KernelType
 from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
 
@@ -32,20 +31,20 @@ class MurataCore(MassRichnessGaussian):
         self.pivot_mass = pivot_mass * np.log(10.0)  # ln(M)
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
-        # Updatable parameters
-        self.mu_p0 = parameters.create()
-        self.mu_p1 = parameters.create()
-        self.mu_p2 = parameters.create()
-        self.sigma_p0 = parameters.create()
-        self.sigma_p1 = parameters.create()
-        self.sigma_p2 = parameters.create()
+    def set_parameters(self):
+        # Placeholder values
+        self.pars.mu_p0 = 0.0
+        self.pars.mu_p1 = 1.0
+        self.pars.mu_p2 = 0.0
+        self.pars.sigma_p0 = 1.0
+        self.pars.sigma_p1 = 0.0
+        self.pars.sigma_p2 = 1.0
 
-        # Verify this gets called last or first
 
     def get_proxy_mean(self, mass, z):
         """Return observed quantity corrected by redshift and mass."""
         return _observed_value(
-            (self.mu_p0, self.mu_p1, self.mu_p2),
+            (self.pars.mu_p0, self.pars.mu_p1, self.pars.mu_p2),
             mass,
             z,
             self.pivot_mass,

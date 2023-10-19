@@ -3,7 +3,6 @@ from enum import Enum
 from typing import List, Tuple
 
 import numpy as np
-from firecrown.updatable import Updatable
 import pdb
 
 
@@ -32,8 +31,11 @@ class ArgsMapping:
         extra_values = int_args[self.extra_args_idx]
         return extra_values[self.extra_args[kernel_type.name]]
 
+class Parameters(Enum):
+    def __init__(self):
+        pass
 
-class Kernel(Updatable, ABC):
+class Kernel(ABC):
     def __init__(
         self,
         kernel_type: KernelType,
@@ -41,14 +43,18 @@ class Kernel(Updatable, ABC):
         has_analytic_sln=False,
         integral_bounds: List[Tuple[float, float]] = None,
     ):
-        super().__init__()
         self.integral_bounds = integral_bounds
         self.is_dirac_delta = is_dirac_delta
         self.kernel_type = kernel_type
         self.has_analytic_sln = has_analytic_sln
+        self.pars = Parameters()
+        self.set_parameters()
 
     def distribution(self, args: List[float], args_map: ArgsMapping):
         raise NotImplementedError()
+
+    def set_parameters(self):
+        pass
 
 
 class Completeness(Kernel):
