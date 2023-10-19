@@ -4,7 +4,6 @@ import pyccl.background as bkg
 import pyccl
 from firecrown.models.cluster_theory.kernel import Kernel, KernelType, ArgsMapping
 import numpy as np
-from firecrown.parameters import ParamsMap
 import numpy.typing as npt
 
 # TODO: Consider emulators for mass function
@@ -45,6 +44,7 @@ class ClusterAbundance(object):
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
         sky_area: float,
+        cosmo: Cosmology = None,
     ):
         self.kernels: List[Kernel] = []
         self.halo_mass_function = halo_mass_function
@@ -54,16 +54,10 @@ class ClusterAbundance(object):
         self.max_z = max_z
         self.sky_area = sky_area
         self._hmf_cache = {}
-        self._cosmo: Cosmology = None
+        self._cosmo = cosmo
 
     def add_kernel(self, kernel: Kernel):
         self.kernels.append(kernel)
-
-    def update_ingredients(self, cosmo: Cosmology, params: ParamsMap):
-        self._cosmo = cosmo
-        self._hmf_cache = {}
-        for kernel in self.kernels:
-            kernel.update(params)
 
     def comoving_volume(self, z) -> float:
         """Differential Comoving Volume at z.
