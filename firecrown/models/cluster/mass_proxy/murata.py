@@ -7,9 +7,6 @@ from firecrown import parameters
 
 from firecrown.models.cluster_theory.mass_proxy import murata as theo_murata
 
-from firecrown.models.cluster.kernel import KernelType
-from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
-
 
 def _set_parameters(self):
     # Updatable parameters
