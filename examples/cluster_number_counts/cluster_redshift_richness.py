@@ -19,7 +19,7 @@ from firecrown.models.cluster.kernel import (
     Purity,
     SpectroscopicRedshift,
 )
-from firecrown.models.cluster.kernel.mass_proxy.murata import MurataBinned
+from firecrown.models.cluster.mass_proxy.murata import MurataBinned
 
 
 def get_cluster_abundance(sky_area):
