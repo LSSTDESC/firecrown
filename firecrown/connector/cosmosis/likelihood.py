@@ -112,11 +112,11 @@ class FirecrownLikelihood:
         firecrown_params = self.calculate_firecrown_params(sample)
         try:
             self.likelihood.update(firecrown_params)
+            self.tools.update(firecrown_params)
         except MissingSamplerParameterError as exc:
             msg = self.form_error_message(exc)
             raise RuntimeError(msg) from exc
 
-        self.tools.update(firecrown_params)
         self.tools.prepare(ccl_cosmo)
         loglike = self.likelihood.compute_loglike(self.tools)
 

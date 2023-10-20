@@ -432,6 +432,7 @@ class NumCosmoData(Ncm.Data):
         params_map = self._nc_mapping.create_params_map(self.model_list, mset)
 
         self.likelihood.update(params_map)
+        self.tools.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
 
     def do_m2lnL_val(self, _):  # pylint: disable-msg=arguments-differ

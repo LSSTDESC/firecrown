@@ -92,7 +92,7 @@ def define_sources(n_source):
     """Return the sources to be used by the factory function."""
     result = {}
     # Specify that the matter power spectrum with baryons should be used
-    baryon_systematic = wl.PkSystematic(field="delta_matter_baryons")
+    baryon_systematic = wl.SelectField(field="delta_matter_baryons")
     for i in range(n_source):
         # Define the photo-z shift systematic.
         pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")

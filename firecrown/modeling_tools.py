@@ -5,7 +5,8 @@ This module contains the ModelingTools class, which is built around the
 reusable objects, such as perturbation theory or halo model calculators.
 """
 from __future__ import annotations
-from typing import Dict, Optional, final, Collection
+from typing import Dict, Optional, Collection
+from abc import ABC, abstractmethod
 from .updatable import Updatable, UpdatableCollection
 import pyccl.nl_pt
 
@@ -81,12 +82,12 @@ class ModelingTools(Updatable):
                 powerspectrum=pkm.compute_p_of_k_z(tools=self)
             )
 
-    @final
-    def reset(self) -> None:
+    def _reset(self) -> None:
         """Resets all CCL objects in ModelingTools."""
 
         self.ccl_cosmo = None
         # Also reset the power spectra
+        # TODO: is that always needed?
         self.powerspectra = {}
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
@@ -104,8 +105,9 @@ class ModelingTools(Updatable):
         return self.pt_calculator
 
 
-class PowerspectrumModifier(Updatable):
+class PowerspectrumModifier(Updatable, ABC):
     name: str = "base:base"
 
+    @abstractmethod
     def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
-        raise NotImplementedError()
+        """Compute the 3D power spectrum P(k, z)."""
