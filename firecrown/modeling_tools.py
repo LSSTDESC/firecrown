@@ -77,10 +77,7 @@ class ModelingTools(Updatable):
             self.pt_calculator.update_ingredients(ccl_cosmo)
 
         for pkm in self.pk_modifiers:
-            self.add_pk(
-                name=pkm.name,
-                powerspectrum=pkm.compute_p_of_k_z(tools=self)
-            )
+            self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
 
     def _reset(self) -> None:
         """Resets all CCL objects in ModelingTools."""

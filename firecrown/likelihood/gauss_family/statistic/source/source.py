@@ -253,11 +253,7 @@ class SourceGalaxySelectField(
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
     ) -> _SourceGalaxyArgsT:
-
-        return replace(
-            tracer_arg,
-            field=self.field
-        )
+        return replace(tracer_arg, field=self.field)
 
 
 class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):

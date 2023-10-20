@@ -79,7 +79,9 @@ class FirecrownLikelihood:
         # we have a configuration problem, and ParamsMap can never be built
         # correctly.
         if len(self.sampling_sections) == 0:
-            required_parameters = self.likelihood.required_parameters() + self.tools.required_parameters()
+            required_parameters = (
+                self.likelihood.required_parameters() + self.tools.required_parameters()
+            )
             if len(required_parameters) != 0:
                 msg = (
                     f"The configured likelihood has required "
