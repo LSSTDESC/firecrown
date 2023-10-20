@@ -19,6 +19,7 @@ from .source import (
     SourceGalaxyArgs,
     SourceGalaxySystematic,
     SourceGalaxyPhotoZShift,
+    SourceGalaxySelectField,
 )
 from ..... import parameters
 from .....parameters import (
@@ -33,13 +34,10 @@ __all__ = ["WeakLensing"]
 class WeakLensingArgs(SourceGalaxyArgs):
     """Class for weak lensing tracer builder argument."""
 
-    scale: float
-    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
+    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
     has_pt: bool = False
     has_hm: bool = False
-
-    field: str = "delta_matter"
 
     ia_pt_c_1: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_d: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
@@ -58,6 +56,10 @@ class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
 
 class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
     """Photo-z shift systematic."""
+
+
+class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
+    """Systematic to select 3D field"""
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):
@@ -201,27 +203,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             ia_pt_c_1=(z, c_1),
             ia_pt_c_d=(z, c_d),
             ia_pt_c_2=(z, c_2),
-        )
-
-
-class PkSystematic(WeakLensingSystematic):
-    def __init__(self, sacc_tracer: Optional[str] = None, field: str = "delta_matter"):
-        """Create a TattAlignmentSystematic object, using the specified
-        tracer name.
-
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
-        """
-        super().__init__(parameter_prefix=sacc_tracer)
-        self.field = field
-
-    def apply(
-        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
-
-        return replace(
-            tracer_arg,
-            field=self.field
         )
 
 

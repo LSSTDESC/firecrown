@@ -173,8 +173,12 @@ class Tracer:
 class SourceGalaxyArgs:
     """Class for galaxy based sources arguments."""
 
+    scale: float
+
     z: npt.NDArray[np.float64]
     dndz: npt.NDArray[np.float64]
+
+    field: str = "delta_matter"
 
 
 _SourceGalaxyArgsT = TypeVar("_SourceGalaxyArgsT", bound=SourceGalaxyArgs)
@@ -230,6 +234,29 @@ class SourceGalaxyPhotoZShift(
         return replace(
             tracer_arg,
             dndz=dndz,
+        )
+
+
+class SourceGalaxySelectField(
+    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
+):
+    def __init__(self, field: str = "delta_matter"):
+        """Specify which 3D field should be used when computing angular power
+        spectra.
+
+        :param field: the name of the 3D field that is associated to the tracer.
+            Default: :python:`"delta_matter"`
+        """
+        super().__init__()
+        self.field = field
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
+
+        return replace(
+            tracer_arg,
+            field=self.field
         )
 
 
