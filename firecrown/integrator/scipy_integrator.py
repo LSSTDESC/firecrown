@@ -87,7 +87,7 @@ class ScipyArgReader(ArgReader):
         self.extra_args = dict()
         self.integral_bounds_idx = 0
 
-    def get_integral_bounds(self, int_args, kernel_type: KernelType):
+    def get_independent_val(self, int_args, kernel_type: KernelType):
         return np.array(int_args[self.integral_bounds[kernel_type.name]])
 
     def get_extra_args(self, int_args, kernel_type: KernelType):

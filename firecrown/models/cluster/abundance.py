@@ -14,7 +14,7 @@ class ClusterAbundance(object):
         return self.sky_area_rad * (180.0 / np.pi) ** 2
 
     @sky_area.setter
-    def sky_area(self, sky_area: float) -> None:
+    def sky_area(self, sky_area: float):
         self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
     @property
@@ -22,15 +22,15 @@ class ClusterAbundance(object):
         return self._cosmo
 
     @property
-    def analytic_kernels(self):
+    def analytic_kernels(self) -> List[Kernel]:
         return [x for x in self.kernels if x.has_analytic_sln]
 
     @property
-    def dirac_delta_kernels(self):
+    def dirac_delta_kernels(self) -> List[Kernel]:
         return [x for x in self.kernels if x.is_dirac_delta]
 
     @property
-    def integrable_kernels(self):
+    def integrable_kernels(self) -> List[Kernel]:
         return [
             x for x in self.kernels if not x.is_dirac_delta and not x.has_analytic_sln
         ]
@@ -76,14 +76,13 @@ class ClusterAbundance(object):
         """
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
-
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
+
         dV = (
             pyccl.physical_constants.CLIGHT_HMPC
-            * ((1.0 + z) ** 2)
             * (angular_diam_dist**2)
-            / self.cosmo["h"]
-            / h_over_h0
+            * ((1.0 + z) ** 2)
+            / (self.cosmo["h"] * h_over_h0)
         )
         return dV * self.sky_area_rad
 
@@ -115,8 +114,8 @@ class ClusterAbundance(object):
         def integrand(*int_args) -> Union[float, npt.NDArray[np.float64]]:
             args_map: ArgReader = int_args[-1]
 
-            z = args_map.get_integral_bounds(int_args, KernelType.z)
-            mass = args_map.get_integral_bounds(int_args, KernelType.mass)
+            z = args_map.get_independent_val(int_args, KernelType.z)
+            mass = args_map.get_independent_val(int_args, KernelType.mass)
 
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             if avg_mass:

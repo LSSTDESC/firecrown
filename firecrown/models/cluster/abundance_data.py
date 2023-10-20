@@ -1,6 +1,8 @@
 import sacc
 import numpy as np
 from sacc.tracers import SurveyTracer
+from typing import Tuple, List
+import numpy.typing as npt
 
 
 class AbundanceData:
@@ -10,7 +12,11 @@ class AbundanceData:
     _mass_index = 2
 
     def __init__(
-        self, sacc_data: sacc.Sacc, survey_nm: str, cluster_counts, mean_log_mass
+        self,
+        sacc_data: sacc.Sacc,
+        survey_nm: str,
+        cluster_counts: bool,
+        mean_log_mass: bool,
     ):
         self.sacc_data = sacc_data
         self.cluster_counts = cluster_counts
@@ -25,7 +31,7 @@ class AbundanceData:
         if not isinstance(self.survey_tracer, SurveyTracer):
             raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
 
-    def get_filtered_tracers(self, data_type):
+    def get_filtered_tracers(self, data_type: str) -> Tuple[npt.NDArray, npt.NDArray]:
         all_tracers = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
@@ -34,7 +40,7 @@ class AbundanceData:
         filtered_tracers = all_tracers[survey_mask]
         return filtered_tracers, survey_mask
 
-    def get_data_and_indices(self, data_type):
+    def get_data_and_indices(self, data_type: str) -> Tuple[List[float], List[int]]:
         _, survey_mask = self.get_filtered_tracers(data_type)
         data_vector_list = list(
             self.sacc_data.get_mean(data_type=data_type)[survey_mask]
@@ -44,7 +50,7 @@ class AbundanceData:
         )
         return data_vector_list, sacc_indices_list
 
-    def validate_tracers(self, tracers_combinations, data_type):
+    def validate_tracers(self, tracers_combinations, data_type: str):
         if len(tracers_combinations) == 0:
             raise ValueError(
                 f"The SACC file does not contain any tracers for the "
@@ -58,13 +64,13 @@ class AbundanceData:
                 "redshift argument and mass argument tracers."
             )
 
-    def get_bin_limits(self, data_type):
+    def get_bin_limits(self, data_type: str) -> List[Tuple[float, float]]:
         filtered_tracers, _ = self.get_filtered_tracers(data_type)
 
         tracers = []
         for _, z_tracer, mass_tracer in filtered_tracers:
-            z_data = self.sacc_data.get_tracer(z_tracer)
-            mass_data = self.sacc_data.get_tracer(mass_tracer)
+            z_data: sacc.BaseTracer = self.sacc_data.get_tracer(z_tracer)
+            mass_data: sacc.BaseTracer = self.sacc_data.get_tracer(mass_tracer)
             tracers.append(
                 [(z_data.lower, z_data.upper), (mass_data.lower, mass_data.upper)]
             )

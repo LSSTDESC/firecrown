@@ -72,13 +72,13 @@ def test_numcosmo_argreader_integral_bounds():
     integral_bounds = np.array(list(zip(mass, z, z_proxy, mass_proxy)))
     int_args = [integral_bounds]
 
-    assert (mass == arg_reader.get_integral_bounds(int_args, KernelType.mass)).all()
-    assert (z == arg_reader.get_integral_bounds(int_args, KernelType.z)).all()
+    assert (mass == arg_reader.get_independent_val(int_args, KernelType.mass)).all()
+    assert (z == arg_reader.get_independent_val(int_args, KernelType.z)).all()
     assert (
-        z_proxy == arg_reader.get_integral_bounds(int_args, KernelType.z_proxy)
+        z_proxy == arg_reader.get_independent_val(int_args, KernelType.z_proxy)
     ).all()
     assert (
-        mass_proxy == arg_reader.get_integral_bounds(int_args, KernelType.mass_proxy)
+        mass_proxy == arg_reader.get_independent_val(int_args, KernelType.mass_proxy)
     ).all()
 
 
@@ -124,10 +124,10 @@ def test_scipy_argreader_integral_bounds():
 
     for m_i, z_i, zp_i, mp_i in list(zip(mass, z, z_proxy, mass_proxy)):
         int_args = [m_i, z_i, zp_i, mp_i]
-        assert m_i == arg_reader.get_integral_bounds(int_args, KernelType.mass)
-        assert z_i == arg_reader.get_integral_bounds(int_args, KernelType.z)
-        assert zp_i == arg_reader.get_integral_bounds(int_args, KernelType.z_proxy)
-        assert mp_i == arg_reader.get_integral_bounds(int_args, KernelType.mass_proxy)
+        assert m_i == arg_reader.get_independent_val(int_args, KernelType.mass)
+        assert z_i == arg_reader.get_independent_val(int_args, KernelType.z)
+        assert zp_i == arg_reader.get_independent_val(int_args, KernelType.z_proxy)
+        assert mp_i == arg_reader.get_independent_val(int_args, KernelType.mass_proxy)
 
 
 def test_create_scipy_argreader():

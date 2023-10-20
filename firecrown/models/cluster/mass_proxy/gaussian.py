@@ -1,19 +1,28 @@
-from typing import List
+from typing import List, Union
+import numpy.typing as npt
 import numpy as np
 from scipy import special
 from firecrown.models.cluster.kernel import ArgReader, Kernel, KernelType
 
 
 class MassRichnessGaussian(Kernel):
-    def get_proxy_mean(self, mass, z):
+    def get_proxy_mean(
+        self,
+        mass: Union[float, npt.NDArray[np.float64]],
+        z: Union[float, npt.NDArray[np.float64]],
+    ):
         """Return observed quantity corrected by redshift and mass."""
 
-    def get_proxy_sigma(self, mass, z):
+    def get_proxy_sigma(
+        self,
+        mass: Union[float, npt.NDArray[np.float64]],
+        z: Union[float, npt.NDArray[np.float64]],
+    ):
         """Return observed scatter corrected by redshift and mass."""
 
     def _distribution_binned(self, args: List[float], args_map: ArgReader):
-        mass = args_map.get_integral_bounds(args, KernelType.mass)
-        z = args_map.get_integral_bounds(args, KernelType.z)
+        mass = args_map.get_independent_val(args, KernelType.mass)
+        z = args_map.get_independent_val(args, KernelType.z)
         mass_proxy_limits = args_map.get_extra_args(args, self.kernel_type)
 
         proxy_mean = self.get_proxy_mean(mass, z)
@@ -40,8 +49,8 @@ class MassRichnessGaussian(Kernel):
         return return_vals
 
     def _distribution_unbinned(self, args: List[float], args_map: ArgReader):
-        mass = args_map.get_integral_bounds(args, KernelType.mass)
-        z = args_map.get_integral_bounds(args, KernelType.z)
+        mass = args_map.get_independent_val(args, KernelType.mass)
+        z = args_map.get_independent_val(args, KernelType.z)
         mass_proxy = args_map.get_extra_args(args, self.kernel_type)
 
         proxy_mean = self.get_proxy_mean(mass, z)

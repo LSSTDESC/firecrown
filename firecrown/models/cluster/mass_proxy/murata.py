@@ -1,6 +1,7 @@
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 
 from firecrown import parameters
 from firecrown.models.cluster.kernel import KernelType
@@ -8,7 +9,11 @@ from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
 
 
 def _observed_value(
-    p: Tuple[float, float, float], mass, z, pivot_mass, log1p_pivot_redshift
+    p: Tuple[float, float, float],
+    mass: npt.NDArray[np.float64],
+    z: float,
+    pivot_mass: float,
+    log1p_pivot_redshift: float,
 ):
     """Return observed quantity corrected by redshift and mass."""
 
@@ -22,8 +27,8 @@ def _observed_value(
 class MurataCore(MassRichnessGaussian):
     def __init__(
         self,
-        pivot_mass,
-        pivot_redshift,
+        pivot_mass: float,
+        pivot_redshift: float,
         integral_bounds: List[Tuple[float, float]] = None,
     ):
         super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
@@ -42,7 +47,11 @@ class MurataCore(MassRichnessGaussian):
 
         # Verify this gets called last or first
 
-    def get_proxy_mean(self, mass, z):
+    def get_proxy_mean(
+        self,
+        mass: Union[float, npt.NDArray[np.float64]],
+        z: Union[float, npt.NDArray[np.float64]],
+    ):
         """Return observed quantity corrected by redshift and mass."""
         return _observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
@@ -52,7 +61,11 @@ class MurataCore(MassRichnessGaussian):
             self.log1p_pivot_redshift,
         )
 
-    def get_proxy_sigma(self, mass, z):
+    def get_proxy_sigma(
+        self,
+        mass: Union[float, npt.NDArray[np.float64]],
+        z: Union[float, npt.NDArray[np.float64]],
+    ):
         """Return observed scatter corrected by redshift and mass."""
         return _observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),

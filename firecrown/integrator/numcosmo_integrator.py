@@ -15,7 +15,7 @@ class NumCosmoArgReader(ArgReader):
         self.integral_bounds_idx = 0
         self.extra_args_idx = 1
 
-    def get_integral_bounds(self, int_args, kernel_type: KernelType):
+    def get_independent_val(self, int_args, kernel_type: KernelType):
         bounds_values = int_args[self.integral_bounds_idx]
         return bounds_values[:, self.integral_bounds[kernel_type.name]]
 
