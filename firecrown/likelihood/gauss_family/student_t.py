@@ -39,6 +39,5 @@ class StudentT(GaussFamily):
         :param cosmo: Current Cosmology object
         """
 
-        ccl_cosmo = tools.get_ccl_cosmology()
-        chi2 = self.compute_chisq(ccl_cosmo)
+        chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
