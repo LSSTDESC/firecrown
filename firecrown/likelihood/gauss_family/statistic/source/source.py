@@ -240,6 +240,11 @@ class SourceGalaxyPhotoZShift(
 class SourceGalaxySelectField(
     SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
 ):
+    """A systematic that allows specifying the 3D field that will be used
+    to select the 3D power spectrum when computing the angular power
+    spectrum.
+    """
+
     def __init__(self, field: str = "delta_matter"):
         """Specify which 3D field should be used when computing angular power
         spectra.

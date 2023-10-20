@@ -7,8 +7,9 @@ reusable objects, such as perturbation theory or halo model calculators.
 from __future__ import annotations
 from typing import Dict, Optional, Collection
 from abc import ABC, abstractmethod
-from .updatable import Updatable, UpdatableCollection
 import pyccl.nl_pt
+
+from .updatable import Updatable, UpdatableCollection
 
 
 class ModelingTools(Updatable):
@@ -103,6 +104,8 @@ class ModelingTools(Updatable):
 
 
 class PowerspectrumModifier(Updatable, ABC):
+    """Abstract base class for power spectrum modifiers."""
+
     name: str = "base:base"
 
     @abstractmethod
