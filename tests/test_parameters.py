@@ -7,6 +7,7 @@ from firecrown.parameters import RequiredParameters, parameter_get_full_name, Pa
 from firecrown.parameters import (
     DerivedParameterScalar,
     DerivedParameterCollection,
+    register_new_updatable_parameter,
     create,
     InternalParameter,
     SamplerParameter,
@@ -16,23 +17,40 @@ from firecrown.parameters import (
 def test_create_with_no_arg():
     """Calling parameters.create() with no argument should return an
     SamplerParameter"""
-    a_parameter = create()
-    assert isinstance(a_parameter, SamplerParameter)
+    with pytest.deprecated_call():
+        a_parameter = create()
+        assert isinstance(a_parameter, SamplerParameter)
 
 
 def test_create_with_float_arg():
     """Calling parameters.create() with a float argument should return a
     InternalParameter ."""
-    a_parameter = create(1.5)
+    with pytest.deprecated_call():
+        a_parameter = create(1.5)
+        assert isinstance(a_parameter, InternalParameter)
+        assert a_parameter.value == 1.5
+
+
+def test_register_new_updatable_parameter_with_no_arg():
+    """Calling parameters.create() with no argument should return an
+    SamplerParameter"""
+    a_parameter = register_new_updatable_parameter()
+    assert isinstance(a_parameter, SamplerParameter)
+
+
+def test_register_new_updatable_parameter_with_float_arg():
+    """Calling parameters.create() with a float argument should return a
+    InternalParameter ."""
+    a_parameter = register_new_updatable_parameter(1.5)
     assert isinstance(a_parameter, InternalParameter)
     assert a_parameter.value == 1.5
 
 
-def test_create_with_wrong_arg():
+def test_register_new_updatable_parameter_with_wrong_arg():
     """Calling parameters.create() with an org that is neither float nor None should
     raise a TypeError."""
     with pytest.raises(TypeError):
-        _ = create("cow")  # type: ignore
+        _ = register_new_updatable_parameter("cow")  # type: ignore
 
 
 def test_required_parameters_length():

@@ -43,12 +43,12 @@ class ClusterMassRich(ClusterMass):
         self.logMu = logMu
 
         # Updatable parameters
-        self.mu_p0 = parameters.create()
-        self.mu_p1 = parameters.create()
-        self.mu_p2 = parameters.create()
-        self.sigma_p0 = parameters.create()
-        self.sigma_p1 = parameters.create()
-        self.sigma_p2 = parameters.create()
+        self.mu_p0 = parameters.register_new_updatable_parameter()
+        self.mu_p1 = parameters.register_new_updatable_parameter()
+        self.mu_p2 = parameters.register_new_updatable_parameter()
+        self.sigma_p0 = parameters.register_new_updatable_parameter()
+        self.sigma_p1 = parameters.register_new_updatable_parameter()
+        self.sigma_p2 = parameters.register_new_updatable_parameter()
 
         self.logM_obs_min = 0.0
         self.logM_obs_max = np.inf

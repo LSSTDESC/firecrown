@@ -85,9 +85,9 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.alphaz = parameters.create()
-        self.alphag = parameters.create()
-        self.z_piv = parameters.create()
+        self.alphaz = parameters.register_new_updatable_parameter()
+        self.alphag = parameters.register_new_updatable_parameter()
+        self.z_piv = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -143,8 +143,8 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.b_2 = parameters.create()
-        self.b_s = parameters.create()
+        self.b_2 = parameters.register_new_updatable_parameter()
+        self.b_s = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -186,11 +186,11 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.r_lim = parameters.create()
-        self.sig_c = parameters.create()
-        self.eta = parameters.create()
-        self.z_c = parameters.create()
-        self.z_m = parameters.create()
+        self.r_lim = parameters.register_new_updatable_parameter()
+        self.sig_c = parameters.register_new_updatable_parameter()
+        self.eta = parameters.register_new_updatable_parameter()
+        self.z_c = parameters.register_new_updatable_parameter()
+        self.z_m = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -245,7 +245,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mag_bias = parameters.create()
+        self.mag_bias = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -291,7 +291,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.has_rsd = has_rsd
         self.derived_scale = derived_scale
 
-        self.bias = parameters.create()
+        self.bias = parameters.register_new_updatable_parameter()
         self.systematics = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
