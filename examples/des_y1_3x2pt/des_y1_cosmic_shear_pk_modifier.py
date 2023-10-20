@@ -35,8 +35,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
     def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
         self.vD19.update_parameters(fbar=self.f_bar)
         return self.vD19.include_baryonic_effects(
-            cosmo=tools.get_ccl_cosmology(),
-            pk=tools.get_pk(self.pk_to_modify)
+            cosmo=tools.get_ccl_cosmology(), pk=tools.get_pk(self.pk_to_modify)
         )
 
 
@@ -62,7 +61,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     print(
         "Using parameters:",
         list(likelihood.required_parameters().get_params_names()),
-        list(modeling_tools.required_parameters().get_params_names())
+        list(modeling_tools.required_parameters().get_params_names()),
     )
 
     return likelihood, modeling_tools
@@ -125,8 +124,7 @@ def run_likelihood() -> None:
 
     vD19 = pyccl.BaryonsvanDaalen19(fbar=f_bar)
     pk_baryons = vD19.include_baryonic_effects(
-        cosmo=ccl_cosmo,
-        pk=ccl_cosmo.get_nonlin_power()
+        cosmo=ccl_cosmo, pk=ccl_cosmo.get_nonlin_power()
     )
 
     # Set the parameters for our systematics
@@ -164,14 +162,16 @@ def run_likelihood() -> None:
     ell = two_point_0.ells
     cl_dm = ccl.angular_cl(
         cosmo=ccl_cosmo,
-        tracer1=wl_tracer, tracer2=wl_tracer,
+        tracer1=wl_tracer,
+        tracer2=wl_tracer,
         ell=ell,
     )
     cl_baryons = ccl.angular_cl(
         cosmo=ccl_cosmo,
-        tracer1=wl_tracer, tracer2=wl_tracer,
+        tracer1=wl_tracer,
+        tracer2=wl_tracer,
         ell=ell,
-        p_of_k_a=pk_baryons
+        p_of_k_a=pk_baryons,
     )
 
     # pylint: disable=no-member
@@ -186,8 +186,8 @@ def make_plot(ell, cl_dm, cl_baryons, two_point_0):
 
     cl_firecrown = two_point_0.cells[("shear", "shear")]
 
-    plt.plot(ell, cl_firecrown/cl_dm, label="firecrown w/ baryons")
-    plt.plot(ell, cl_baryons/cl_dm, ls="--", label="CCL w/ baryons")
+    plt.plot(ell, cl_firecrown / cl_dm, label="firecrown w/ baryons")
+    plt.plot(ell, cl_baryons / cl_dm, ls="--", label="CCL w/ baryons")
 
     plt.xscale("log")
     # plt.yscale("log")
