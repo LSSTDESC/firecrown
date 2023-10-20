@@ -173,10 +173,10 @@ class Tracer:
 class SourceGalaxyArgs:
     """Class for galaxy based sources arguments."""
 
-    scale: float
-
     z: npt.NDArray[np.float64]
     dndz: npt.NDArray[np.float64]
+
+    scale: float = 1.0
 
     field: str = "delta_matter"
 

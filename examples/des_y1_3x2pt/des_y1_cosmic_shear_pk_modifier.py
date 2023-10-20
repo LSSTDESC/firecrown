@@ -3,7 +3,6 @@
 import os
 from typing import Tuple
 
-import pyccl
 import sacc
 import pyccl as ccl
 import pyccl.nl_pt
