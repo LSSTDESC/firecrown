@@ -217,7 +217,7 @@ class SourceGalaxyPhotoZShift(
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.delta_z = parameters.create()
+        self.delta_z = parameters.register_new_updatable_parameter()
 
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift to the photo-z distribution of a source."""

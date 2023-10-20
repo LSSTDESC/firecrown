@@ -57,7 +57,7 @@ class SamplerParameterLikelihood(Likelihood):
         parameter_prefix value and creates a sampler parameter called "sampler_param0".
         """
         super().__init__(parameter_prefix=params.get_string("parameter_prefix"))
-        self.sampler_param0 = parameters.create()
+        self.sampler_param0 = parameters.register_new_updatable_parameter()
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
