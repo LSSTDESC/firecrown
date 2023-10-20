@@ -86,12 +86,21 @@ class Updatable(ABC):
         """
         if isinstance(value, (Updatable, UpdatableCollection)):
             self._updatables.append(value)
+        if isinstance(value, (InternalParameter, SamplerParameter)):
+            self.set_parameter(key, value)
+        else:
+            super().__setattr__(key, value)
+
+    def set_parameter(
+        self, key: str, value: Union[InternalParameter, SamplerParameter]
+    ) -> None:
+        """Assure this InternalParameter or SamplerParameter has not already
+        been set, and then set it."""
+
         if isinstance(value, SamplerParameter):
             self.set_sampler_parameter(key, value)
         elif isinstance(value, InternalParameter):
             self.set_internal_parameter(key, value)
-        else:
-            super().__setattr__(key, value)
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
         """Assure this InternalParameter has not already been set, and then set it."""
