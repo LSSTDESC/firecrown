@@ -1,7 +1,7 @@
 """Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
 
 import os
-from typing import Optional, Tuple
+from typing import Tuple
 
 import pyccl
 import sacc
@@ -182,23 +182,18 @@ def run_likelihood() -> None:
 
 def make_plot(ell, cl_dm, cl_baryons, two_point_0):
     """Create and show a diagnostic plot."""
-    import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
     cl_firecrown = two_point_0.cells[("shear", "shear")]
 
     plt.plot(ell, cl_firecrown/cl_dm, label="firecrown w/ baryons")
     plt.plot(ell, cl_baryons/cl_dm, ls="--", label="CCL w/ baryons")
-    # plt.plot(ell, cl_dm, label="CCL w/o baryons")
 
     plt.xscale("log")
     # plt.yscale("log")
     plt.xlabel(r"$\ell$")
     plt.ylabel(r"$C_\ell^\mathrm{baryons} / C_\ell^\mathrm{DM-only}$")
     plt.legend()
-    # plt.xlim(right=5e3)
-    # plt.ylim(bottom=1e-12)
-    # plt.title("TATT IA")
     plt.savefig("plots/vD19_baryons.png", facecolor="white", dpi=300)
     plt.show()
 

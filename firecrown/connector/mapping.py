@@ -438,6 +438,6 @@ def mapping_builder(*, input_style: str, **kwargs):
     recognized raise an exception."""
 
     if input_style not in mapping_classes:
-        raise ValueError(f"input_style must be {*mapping_classes,}, not {input_style}")
+        raise ValueError(f"input_style must be {*mapping_classes, }, not {input_style}")
 
     return mapping_classes[input_style](**kwargs)
