@@ -27,7 +27,7 @@ class Supernova(Statistic):
         self.sacc_tracer = sacc_tracer
         self.data_vector: Optional[DataVector] = None
         self.a: Optional[npt.NDArray[np.float64]] = None
-        self.M = parameters.create()
+        self.M = parameters.register_new_updatable_parameter()
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""

@@ -211,7 +211,7 @@ class TrivialStatistic(Statistic):
         # Data and theory will both be of length self.count
         self.count = 3
         self.data_vector: Optional[DataVector] = None
-        self.mean = firecrown.parameters.create()
+        self.mean = firecrown.parameters.register_new_updatable_parameter()
         self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc):

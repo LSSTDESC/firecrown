@@ -78,7 +78,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mult_bias = parameters.create()
+        self.mult_bias = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -124,10 +124,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_bias = parameters.create()
-        self.alphaz = parameters.create()
-        self.alphag = parameters.create(alphag)
-        self.z_piv = parameters.create()
+        self.ia_bias = parameters.register_new_updatable_parameter()
+        self.alphaz = parameters.register_new_updatable_parameter()
+        self.alphag = parameters.register_new_updatable_parameter(alphag)
+        self.z_piv = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -172,9 +172,9 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             as a prefix for its parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.ia_a_1 = parameters.create()
-        self.ia_a_2 = parameters.create()
-        self.ia_a_d = parameters.create()
+        self.ia_a_1 = parameters.register_new_updatable_parameter()
+        self.ia_a_2 = parameters.register_new_updatable_parameter()
+        self.ia_a_d = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
