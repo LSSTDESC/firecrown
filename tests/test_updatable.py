@@ -198,8 +198,12 @@ def test_set_internal_parameter_rejects_duplicates():
 
 def test_set_parameter():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_parameter("the_meaning_of_life", parameters.create(42.0))
-    my_updatable.set_parameter("no_meaning_of_life", parameters.create())
+    my_updatable.set_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+    )
+    my_updatable.set_parameter(
+        "no_meaning_of_life", parameters.register_new_updatable_parameter()
+    )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
     assert my_updatable.the_meaning_of_life == 42.0
