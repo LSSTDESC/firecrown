@@ -202,13 +202,9 @@ flake8 firecrown examples tests
 mypy -p firecrown -p examples -p tests
 
 # We are using pylint to enforce a variety of rules.
-# Not all of the code is "clean" according to pylint; this is a work in progress
+pylint firecrown
 pylint --rcfile pylintrc_for_tests tests
 pylint --rcfile firecrown/models/pylintrc firecrown/models
-pylint firecrown/connector
-pylint firecrown/*.py
-pylint firecrown/likelihood/*.py
-pylint firecrown/likelihood/gauss_family/*.py
 
 # Run the unit test suite. Note that the coverage is incomplete.
 python -m pytest -v tests
