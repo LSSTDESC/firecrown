@@ -291,6 +291,9 @@ class TwoPoint(Statistic):
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
             _ell_or_theta = self.calculate_ell_or_theta()
+            # Normalise the weights to 1:
+            norm = self.theory_window_function.weight.sum(axis=0)
+            self.theory_window_function /= norm
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
