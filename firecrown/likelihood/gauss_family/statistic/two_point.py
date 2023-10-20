@@ -293,7 +293,7 @@ class TwoPoint(Statistic):
             _ell_or_theta = self.calculate_ell_or_theta()
             # Normalise the weights to 1:
             norm = self.theory_window_function.weight.sum(axis=0)
-            self.theory_window_function /= norm
+            self.theory_window_function.weight /= norm
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
