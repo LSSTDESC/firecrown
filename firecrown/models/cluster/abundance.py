@@ -1,4 +1,4 @@
-from typing import List, Union, Callable, Optional
+from typing import List, Union, Callable, Optional, Dict, Tuple
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
@@ -51,7 +51,7 @@ class ClusterAbundance(object):
         self.min_z = min_z
         self.max_z = max_z
         self.sky_area = sky_area
-        self._hmf_cache = {}
+        self._hmf_cache: Dict[Tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
 
     def add_kernel(self, kernel: Kernel):

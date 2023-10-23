@@ -72,6 +72,8 @@ class BinnedClusterNumberCounts(Statistic):
         return self.data_vector
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        assert tools.cluster_abundance is not None
+
         theory_vector_list = []
         cluster_counts = []
         cluster_masses = []

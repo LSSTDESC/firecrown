@@ -64,7 +64,7 @@ class AbundanceData:
                 "redshift argument and mass argument tracers."
             )
 
-    def get_bin_limits(self, data_type: str) -> List[Tuple[float, float]]:
+    def get_bin_limits(self, data_type: str) -> List[List[Tuple[float, float]]]:
         filtered_tracers, _ = self.get_filtered_tracers(data_type)
 
         tracers = []

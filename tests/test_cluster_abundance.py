@@ -3,7 +3,7 @@ from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
 import pyccl
 import numpy as np
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from firecrown.parameters import ParamsMap, create
 
 
@@ -20,7 +20,7 @@ class MockKernel(Kernel):
         kernel_type: KernelType,
         is_dirac_delta: bool = False,
         has_analytic_sln: bool = False,
-        integral_bounds: List[Tuple[float, float]] = None,
+        integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
         super().__init__(kernel_type, is_dirac_delta, has_analytic_sln, integral_bounds)
         self.param = create()

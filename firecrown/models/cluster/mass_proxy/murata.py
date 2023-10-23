@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -10,8 +10,8 @@ from firecrown.models.cluster.mass_proxy.gaussian import MassRichnessGaussian
 
 def _observed_value(
     p: Tuple[float, float, float],
-    mass: npt.NDArray[np.float64],
-    z: float,
+    mass: Union[float, npt.NDArray[np.float64]],
+    z: Union[float, npt.NDArray[np.float64]],
     pivot_mass: float,
     log1p_pivot_redshift: float,
 ):
@@ -29,7 +29,7 @@ class MurataCore(MassRichnessGaussian):
         self,
         pivot_mass: float,
         pivot_redshift: float,
-        integral_bounds: List[Tuple[float, float]] = None,
+        integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
         super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
 

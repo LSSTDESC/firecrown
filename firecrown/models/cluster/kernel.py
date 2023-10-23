@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Tuple, Union
+from typing import List, Tuple, Union, Optional
 import numpy.typing as npt
 import numpy as np
 from firecrown.updatable import Updatable
@@ -39,7 +39,7 @@ class Kernel(Updatable, ABC):
         kernel_type: KernelType,
         is_dirac_delta: bool = False,
         has_analytic_sln: bool = False,
-        integral_bounds: List[Tuple[float, float]] = None,
+        integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
         super().__init__()
         self.integral_bounds = integral_bounds
