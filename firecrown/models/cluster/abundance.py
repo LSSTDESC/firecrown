@@ -1,4 +1,4 @@
-from typing import List, Union, Callable
+from typing import List, Union, Callable, Optional
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
@@ -57,9 +57,12 @@ class ClusterAbundance(object):
     def add_kernel(self, kernel: Kernel):
         self.kernels.append(kernel)
 
-    def update_ingredients(self, cosmo: Cosmology, params: ParamsMap):
+    def update_ingredients(self, cosmo: Cosmology, params: Optional[ParamsMap] = None):
         self._cosmo = cosmo
         self._hmf_cache = {}
+        if params is None:
+            return
+
         for kernel in self.kernels:
             kernel.update(params)
 

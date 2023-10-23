@@ -57,7 +57,9 @@ class ModelingTools:
             return False
         return True
 
-    def prepare(self, ccl_cosmo: pyccl.Cosmology, params: ParamsMap) -> None:
+    def prepare(
+        self, ccl_cosmo: pyccl.Cosmology, params: Optional[ParamsMap] = None
+    ) -> None:
         """Prepare the Cosmology for use in likelihoods.
 
         This method will prepare the ModelingTools for use in likelihoods. This
