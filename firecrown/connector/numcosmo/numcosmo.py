@@ -625,6 +625,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         params_map = self._nc_mapping.create_params_map(self._model_list, mset)
 
         self.likelihood.update(params_map)
+        self.tools.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
 
     # pylint: disable-next=arguments-differ

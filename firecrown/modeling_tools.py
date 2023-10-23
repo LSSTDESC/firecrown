@@ -28,6 +28,7 @@ class ModelingTools(Updatable):
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
+        self._prepared: bool = False
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
@@ -70,6 +71,12 @@ class ModelingTools(Updatable):
 
         """
 
+        if not self.is_updated():
+            raise RuntimeError("ModelingTools has not been prepared")
+
+        if self._prepared:
+            raise RuntimeError("ModelingTools has already been prepared")
+
         if self.ccl_cosmo is not None:
             raise RuntimeError("Cosmology has already been set")
         self.ccl_cosmo = ccl_cosmo
@@ -81,12 +88,17 @@ class ModelingTools(Updatable):
             self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
 
     def _reset(self) -> None:
-        """Resets all CCL objects in ModelingTools."""
+        """Resets all CCL objects in ModelingTools.
+
+        This method is called by the Updatable base class when the object is
+        destroyed. It also resets the power spectra, the cosmology and the
+        _prepared state variable."""
 
         self.ccl_cosmo = None
         # Also reset the power spectra
         # TODO: is that always needed?
         self.powerspectra = {}
+        self._prepared = False
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
         """Return the CCL cosmology object."""
