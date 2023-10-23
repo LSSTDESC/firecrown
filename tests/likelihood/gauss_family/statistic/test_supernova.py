@@ -77,6 +77,7 @@ def test_read_works(minimal_stat: Supernova, good_sacc_data: sacc.Sacc):
     assert data_vector[0] == 16.95
 
     tools = ModelingTools()
+    tools.update(ParamsMap())
     tools.prepare(pyccl.CosmologyVanillaLCDM())
     params = ParamsMap({"sn_fake_sample_M": 1.1})
     minimal_stat.update(params)

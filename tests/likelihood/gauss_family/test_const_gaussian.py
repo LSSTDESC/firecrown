@@ -13,6 +13,7 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
+    ParamsMap,
 )
 
 
@@ -40,6 +41,7 @@ def fixture_tools_with_vanilla_cosmology():
     """Return a ModelingTools object containing the LCDM cosmology from
     pyccl."""
     result = ModelingTools()
+    result.update(ParamsMap())
     result.prepare(pyccl.CosmologyVanillaLCDM())
 
 
