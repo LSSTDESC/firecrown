@@ -11,7 +11,7 @@ You must have the `:bash:firecrown_developer` conda environment activated before
 
 Note that we use the :bash:`--no-deps` flag to prevent the installation from accidentally taking in any new dependencies through  :bash:`pip`.
 If the installation fails because of the lack of a dependency, install that dependency using  :bash:`conda` and not  :bash:`pip`.
-If you find a dpendency on a package not available through :bash:`conda` please file an issue on the issue tracker.
+If you find a dependency on a package not available through :bash:`conda` please file an issue on the issue tracker.
 
 .. code:: bash
     
