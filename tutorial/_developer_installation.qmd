@@ -9,36 +9,50 @@ The developer installation instructions (below) will:
 
 This installation only needs to be done once.
 
-Note that for Apple computers using M1 chips, special instructions are necessary.
-When Conda support for M1 hardware catches up to the support for Intel hardware this should no longer be needed.
-These are available at [https://firecrown.readthedocs.io/en/stable/apple_m1_instructions.html](https://firecrown.readthedocs.io/en/stable/apple_m1_instructions.html).
+## Clone the Firecrown repository
+
+Choose a directory in which to work.
+In this directory, you will be cloning the Firecrown repository and later building some of the non-Firecrown code that is not installable through conda.
+Note that this is *not* the directory in which the conda environment is created, nor is it the directory in which the CosmoSIS Standard Library (CSL) will be built.
 
 ```{.bash}
-cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
 git clone https://github.com/LSSTDESC/firecrown.git
-# conda env update, when run as suggested, is able to create a new environment,
-# as well as updating an existing environment.
+```
+
+## Installation of dependencies
+
+These instructions will create a new conda environment containing all the packages used in development.
+This includes testing and code verification tools used during the development process.
+We use the command `conda` in these instructions, but you may prefer instead to use `mamba`.
+The Mamba version of Conda is typically faster when *solving* environments, which is done both on installation and during updates of the environment.
+
+We recommend that you execute these commands starting in the same directory as you were in when you cloned the Firecrown repository above.
+The `cosmosis-build-standard-library` command below will clone and then build the CosmoSIS Standard Library.
+We recommend doing this in the directory in which the conda environment resides.
+We have found this helps to make sure that only one version of the CSL is associated with any development efforts using the associated installation of CosmoSIS.
+It also makes it easier to keep all of the products in the conda environment consistent when updating is needed.
+Because the CI system is typically using the newest environment available, developers will periodoically need to update their own development environments.
+
+```{.bash}
+# conda env update, when run as suggested, is able to create a new environment, as
+# well as updating an existing environment.
 conda env update -f firecrown/environment.yml
 conda activate firecrown_developer
+# We define two environment variables that will be defined whenever you activate
+# the conda environment.
+conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}/firecrown
+# The command above does not immediately defined the environment variables.
+# They are made available on every fresh activation of the environment.
+# So we have to deactivate and then reactivate...
+conda deactivate
+conda activate firecrown_developer
+# Now we can finish building the CosmoSIS Standard Library.
 source ${CONDA_PREFIX}/bin/cosmosis-configure
-cosmosis-build-standard-library  # this may take a few minutes
-export CSL_DIR=${PWD}/cosmosis-standard-library
-export FIRECROWN_DIR=${PWD}/firecrown
-export PYTHONPATH=${FIRECROWN_DIR}/build/lib
-```
-
-Since conda V4.8 you can use the following command to include these environment variables in your conda environment:
-
-```{.bash}
-conda env config vars set CSL_DIR="${PWD}/cosmosis-standard-library" FIRECROWN_DIR="${PWD}/firecrown" PYTHONPATH="${PWD}/firecrown/build/lib"
-```
-
-Thus, every time you activate the environment, these variables will be set.
-
-If you do not wish to build the CosmoSIS standard library, perhaps because you intend either to not use it or to use only those parts that do not require compilation, you can instead just clone the CSL repository:
-
-```{.bash}
-# Make sure you are doing this in the same directory as you run the rest of the
-# commands above
-git clone https://github.com/joezuntz/cosmosis-standard-library
+# We want to put the CSL into the same directory as conda environment upon which it depends
+cd ${CONDA_PREFIX}
+cosmosis-build-standard-library
+# Now change directory into the firecrown repository
+cd ${FIRECROWN_DIR}
+# And finally make an editable (developer) installation of firecrown into the conda environment
+python -m pip install --no-deps --editable ${PWD}
 ```

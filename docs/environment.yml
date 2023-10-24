@@ -8,6 +8,7 @@ dependencies:
   - cosmosis-build-standard-library
   - flake8
   - mypy
+  - numcosmo>=0.18.2
   - numpy>=1.16
   - plantuml
   - pip
