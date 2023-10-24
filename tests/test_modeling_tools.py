@@ -53,6 +53,15 @@ def test_modeling_tool_prepare_without_update():
         tools.prepare(cosmo)
 
 
+def test_modeling_tool_preparing_twice():
+    tools = ModelingTools()
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    tools.update(ParamsMap())
+    tools.prepare(cosmo)
+    with pytest.raises(RuntimeError, match="ModelingTools has already been prepared"):
+        tools.prepare(cosmo)
+
+
 def test_modeling_tool_wrongly_setting_ccl_cosmo():
     tools = ModelingTools()
     cosmo = pyccl.CosmologyVanillaLCDM()
