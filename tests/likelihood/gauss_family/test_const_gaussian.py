@@ -61,7 +61,7 @@ def test_reset(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
     assert not trivial_stats[0].computed_theory_vector
-    assert likelihood.compute_chisq(ModelingTools()) == 2.0
+    assert likelihood.compute_loglike(ModelingTools()) == -1.0
     assert trivial_stats[0].computed_theory_vector
     likelihood.reset()
     assert not trivial_stats[0].computed_theory_vector
