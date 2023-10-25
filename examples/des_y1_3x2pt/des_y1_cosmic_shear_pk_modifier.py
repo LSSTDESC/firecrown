@@ -1,4 +1,5 @@
-"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
+"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data with a
+modified matter power spectrum"""
 
 import os
 from typing import Tuple
@@ -23,6 +24,9 @@ SACCFILE = os.path.expanduser(
 
 
 class vanDaalen19Baryonfication(PowerspectrumModifier):
+    """A PowerspectrumModifier class that implements the van Daalen et al. 2019
+    baryon model."""
+
     name: str = "delta_matter_baryons:delta_matter_baryons"
 
     def __init__(self, pk_to_modify: str = "delta_matter:delta_matter"):
@@ -46,10 +50,11 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     n_source = 1
     stats = define_stats(n_source)
 
-    # Create the likelihood from the statistics
+    # Define the power spectrum modification and add it to the ModelingTools
     pk_modifier = vanDaalen19Baryonfication(pk_to_modify="delta_matter:delta_matter")
-
     modeling_tools = ModelingTools(pk_modifiers=[pk_modifier])
+
+    # Create the likelihood from the statistics
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
     # Read the two-point data from the sacc file
@@ -121,6 +126,7 @@ def run_likelihood() -> None:
 
     f_bar = 0.5
 
+    # Calculate the barynic effects directly with CCL
     vD19 = pyccl.BaryonsvanDaalen19(fbar=f_bar)
     pk_baryons = vD19.include_baryonic_effects(
         cosmo=ccl_cosmo, pk=ccl_cosmo.get_nonlin_power()
