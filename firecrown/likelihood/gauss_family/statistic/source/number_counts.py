@@ -17,6 +17,7 @@ from .source import (
     SourceGalaxyArgs,
     SourceGalaxySystematic,
     SourceGalaxyPhotoZShift,
+    SourceGalaxySelectField,
 )
 
 from ..... import parameters
@@ -36,7 +37,6 @@ __all__ = ["NumberCounts"]
 class NumberCountsArgs(SourceGalaxyArgs):
     """Class for number counts tracer builder argument."""
 
-    scale: float
     bias: Optional[npt.NDArray[np.float64]] = None
     mag_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     has_pt: bool = False
@@ -59,6 +59,10 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
 
 class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
     """Photo-z shift systematic."""
+
+
+class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
+    """Systematic to select 3D field"""
 
 
 class LinearBiasSystematic(NumberCountsSystematic):
@@ -373,7 +377,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
                 Tracer(
                     ccl_mag_tracer,
                     tracer_name="+".join(tracer_names),
-                    field="delta_matter",
+                    field=tracer_args.field,
                 )
             )
         if tracer_args.has_pt:

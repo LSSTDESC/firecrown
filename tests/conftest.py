@@ -8,9 +8,13 @@ import pytest
 
 import sacc
 
+import numpy as np
+import pyccl
+
 from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
+from firecrown.modeling_tools import ModelingTools
 
 
 def pytest_addoption(parser):
@@ -91,3 +95,36 @@ def fixture_mapping_cosmosis() -> MappingCosmoSIS:
         T_CMB=2.7255,
     )
     return mapping_cosmosis
+
+
+# Distribution tests fixtures
+
+
+@pytest.fixture(name="sacc_with_data_points")
+def fixture_sass_missing_covariance() -> sacc.Sacc:
+    """Return a Sacc object for configuring a GaussFamily likelihood subclass,
+    but which is missing a covariance matrix."""
+    result = sacc.Sacc()
+    result.add_tracer("misc", "sn_fake_sample")
+    for cnt in [7.0, 4.0]:
+        result.add_data_point("misc", ("sn_fake_sample",), cnt)
+    return result
+
+
+@pytest.fixture(name="sacc_with_covariance")
+def fixture_sacc_with_covariance(sacc_with_data_points: sacc.Sacc) -> sacc.Sacc:
+    """Return a Sacc object for configuring a GaussFamily likelihood subclass,
+    with a covariance matrix."""
+    result = sacc_with_data_points
+    cov = np.array([[1.0, -0.5], [-0.5, 1.0]])
+    result.add_covariance(cov)
+    return result
+
+
+@pytest.fixture(name="tools_with_vanilla_cosmology")
+def fixture_tools_with_vanilla_cosmology():
+    """Return a ModelingTools object containing the LCDM cosmology from
+    pyccl."""
+    result = ModelingTools()
+    result.update(ParamsMap())
+    result.prepare(pyccl.CosmologyVanillaLCDM())

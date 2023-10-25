@@ -19,6 +19,7 @@ from .source import (
     SourceGalaxyArgs,
     SourceGalaxySystematic,
     SourceGalaxyPhotoZShift,
+    SourceGalaxySelectField,
 )
 from ..... import parameters
 from .....parameters import (
@@ -33,8 +34,7 @@ __all__ = ["WeakLensing"]
 class WeakLensingArgs(SourceGalaxyArgs):
     """Class for weak lensing tracer builder argument."""
 
-    scale: float
-    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
+    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
     has_pt: bool = False
     has_hm: bool = False
@@ -56,6 +56,10 @@ class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
 
 class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
     """Photo-z shift systematic."""
+
+
+class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
+    """Systematic to select 3D field"""
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):
@@ -268,7 +272,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             dndz=(tracer_args.z, tracer_args.dndz),
             ia_bias=tracer_args.ia_bias,
         )
-        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field="delta_matter")]
+        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field=tracer_args.field)]
 
         if tracer_args.has_pt:
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(
