@@ -1,9 +1,9 @@
 import pytest
 import numpy as np
-from firecrown.models.cluster.mass_proxy.murata import (
+from firecrown.models.cluster.mass_proxy import (
     MurataBinned,
     MurataUnbinned,
-    _observed_value,
+    MassRichnessGaussian,
 )
 from firecrown.models.cluster.kernel import (
     KernelType,
@@ -87,13 +87,13 @@ def test_create_musigma_kernel():
 
 def test_cluster_observed_z():
     for z in np.geomspace(1.0e-18, 2.0, 20):
-        f_z = _observed_value((0.0, 0.0, 1.0), 0.0, z, 0, 0)
+        f_z = MassRichnessGaussian.observed_value((0.0, 0.0, 1.0), 0.0, z, 0, 0)
         assert f_z == pytest.approx(np.log1p(z), 1.0e-7, 0.0)
 
 
 def test_cluster_observed_mass():
     for logM in np.linspace(10.0, 16.0, 20):
-        f_logM = _observed_value((0.0, 1.0, 0.0), logM, 0.0, 0, 0)
+        f_logM = MassRichnessGaussian.observed_value((0.0, 1.0, 0.0), logM, 0.0, 0, 0)
 
         assert f_logM == pytest.approx(logM * np.log(10.0), 1.0e-7, 0.0)
 
@@ -140,7 +140,7 @@ def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):
         for z in np.geomspace(1.0e-18, 2.0, 20):
             test = murata_binned_relation.get_proxy_mean(mass, z)
 
-            true = _observed_value(
+            true = MassRichnessGaussian.observed_value(
                 (3.00, 0.086, 0.01),
                 mass,
                 z,
@@ -156,7 +156,7 @@ def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
         for z in np.geomspace(1.0e-18, 2.0, 20):
             test = murata_binned_relation.get_proxy_sigma(mass, z)
 
-            true = _observed_value(
+            true = MassRichnessGaussian.observed_value(
                 (3.00, 0.07, 0.01),
                 mass,
                 z,

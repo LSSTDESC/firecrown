@@ -2,7 +2,7 @@ from __future__ import annotations
 from typing import List, Optional
 import sacc
 
-from firecrown.integrator import Integrator
+from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.likelihood.gauss_family.statistic.statistic import (
     Statistic,

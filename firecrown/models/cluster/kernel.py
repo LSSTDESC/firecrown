@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from enum import Enum
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Union, Optional, Dict, Any
 import numpy.typing as npt
 import numpy as np
 from firecrown.updatable import Updatable
@@ -16,19 +16,23 @@ class KernelType(Enum):
 
 
 class ArgReader(ABC):
-    def __init__(self):
-        self.integral_bounds = dict()
-        self.extra_args = dict()
+    def __init__(self) -> None:
+        self.integral_bounds: Dict[str, int] = dict()
+        self.extra_args: Dict[str, int] = dict()
 
     @abstractmethod
     def get_independent_val(
-        self, integral_args: List[float], kernel_type: KernelType
+        self,
+        integral_args: Tuple[Any, ...],
+        kernel_type: KernelType,
     ) -> Union[float, npt.NDArray[np.float64]]:
         """Returns the current differential value for KernelType"""
 
     @abstractmethod
     def get_extra_args(
-        self, integral_args: List[float], kernel_type: KernelType
+        self,
+        integral_args: Tuple[Any, ...],
+        kernel_type: KernelType,
     ) -> Union[float, Tuple[float, float]]:
         """Returns the extra arguments passed into the integral for KernelType"""
 
@@ -47,18 +51,23 @@ class Kernel(Updatable, ABC):
         self.kernel_type = kernel_type
         self.has_analytic_sln = has_analytic_sln
 
+    @abstractmethod
     def distribution(
-        self, args: List[float], arg_reader: ArgReader
+        self,
+        args: Tuple[Any, ...],
+        arg_reader: ArgReader,
     ) -> Union[float, npt.NDArray[np.float64]]:
         """The functional form of the distribution or spread of this kernel"""
 
 
 class Completeness(Kernel):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KernelType.completeness)
 
     def distribution(
-        self, args: List[float], arg_reader: ArgReader
+        self,
+        args: Tuple[Any, ...],
+        arg_reader: ArgReader,
     ) -> Union[float, npt.NDArray[np.float64]]:
         mass = arg_reader.get_independent_val(args, KernelType.mass)
         z = arg_reader.get_independent_val(args, KernelType.z)
@@ -74,11 +83,13 @@ class Completeness(Kernel):
 
 
 class Purity(Kernel):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KernelType.purity)
 
     def distribution(
-        self, args: List[float], arg_reader: ArgReader
+        self,
+        args: Tuple[Any, ...],
+        arg_reader: ArgReader,
     ) -> Union[float, npt.NDArray[np.float64]]:
         mass_proxy = arg_reader.get_independent_val(args, KernelType.mass_proxy)
         z = arg_reader.get_independent_val(args, KernelType.z)
@@ -99,32 +110,38 @@ class Purity(Kernel):
 
 
 class TrueMass(Kernel):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KernelType.mass_proxy, True)
 
     def distribution(
-        self, args: List[float], arg_reader: ArgReader
+        self,
+        args: Tuple[Any, ...],
+        arg_reader: ArgReader,
     ) -> Union[float, npt.NDArray[np.float64]]:
         return 1.0
 
 
 class SpectroscopicRedshift(Kernel):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KernelType.z_proxy, True)
 
     def distribution(
-        self, args: List[float], arg_reader: ArgReader
+        self,
+        args: Tuple[Any, ...],
+        arg_reader: ArgReader,
     ) -> Union[float, npt.NDArray[np.float64]]:
         return 1.0
 
 
 class DESY1PhotometricRedshift(Kernel):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__(KernelType.z_proxy)
         self.sigma_0 = 0.05
 
     def distribution(
-        self, args: List[float], arg_reader: ArgReader
+        self,
+        args: Tuple[Any, ...],
+        arg_reader: ArgReader,
     ) -> Union[float, npt.NDArray[np.float64]]:
         z = arg_reader.get_independent_val(args, KernelType.z)
         z_proxy = arg_reader.get_independent_val(args, KernelType.z_proxy)

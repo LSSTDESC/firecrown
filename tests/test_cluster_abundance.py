@@ -3,8 +3,9 @@ from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
 import pyccl
 import numpy as np
-from typing import List, Tuple, Optional
+from typing import List, Tuple, Optional, Any
 from firecrown.parameters import ParamsMap, create
+import math
 
 
 @pytest.fixture()
@@ -25,7 +26,7 @@ class MockKernel(Kernel):
         super().__init__(kernel_type, is_dirac_delta, has_analytic_sln, integral_bounds)
         self.param = create()
 
-    def distribution(self, args: List[float], args_map: ArgReader):
+    def distribution(self, args: Tuple[Any, ...], args_map: ArgReader):
         return 1.0
 
 
@@ -129,7 +130,7 @@ def test_abundance_massfunc_accepts_float(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
 
-    result = cl_abundance.mass_function(13, 0.1)
+    result = cl_abundance.mass_function(13.0, 0.1)
     assert isinstance(result, float)
     assert result > 0
 

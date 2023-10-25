@@ -1,13 +1,14 @@
 from numcosmo_py import Ncm
-from typing import Tuple
+from typing import Tuple, List, Union, Callable, Any
 import numpy as np
-from firecrown.models.cluster.kernel import ArgReader, KernelType
+import numpy.typing as npt
+from firecrown.models.cluster.kernel import KernelType, ArgReader
 from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.integrator import Integrator
+from firecrown.models.cluster.integrator.integrator import Integrator
 
 
 class NumCosmoArgReader(ArgReader):
-    def __init__(self):
+    def __init__(self) -> None:
         super().__init__()
         self.integral_bounds = dict()
         self.extra_args = dict()
@@ -15,7 +16,9 @@ class NumCosmoArgReader(ArgReader):
         self.integral_bounds_idx = 0
         self.extra_args_idx = 1
 
-    def get_independent_val(self, int_args, kernel_type: KernelType):
+    def get_independent_val(
+        self, int_args, kernel_type: KernelType
+    ) -> Union[float, npt.NDArray[np.float64]]:
         bounds_values = int_args[self.integral_bounds_idx]
         return bounds_values[:, self.integral_bounds[kernel_type.name]]
 
@@ -25,15 +28,18 @@ class NumCosmoArgReader(ArgReader):
 
 
 class NumCosmoIntegrator(Integrator):
-    def __init__(self, relative_tolerance=1e-4, absolute_tolerance=1e-12):
+    def __init__(self, relative_tolerance=1e-4, absolute_tolerance=1e-12) -> None:
         super().__init__()
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
         self.arg_reader = NumCosmoArgReader()
 
     def get_integration_bounds(
-        self, cl_abundance: ClusterAbundance, z_proxy_limits, mass_proxy_limits
-    ):
+        self,
+        cl_abundance: ClusterAbundance,
+        z_proxy_limits: Tuple[float, float],
+        mass_proxy_limits: Tuple[float, float],
+    ) -> Tuple[Any, ...]:
         self.arg_reader.integral_bounds = {
             KernelType.mass.name: 0,
             KernelType.z.name: 1,
@@ -64,7 +70,7 @@ class NumCosmoIntegrator(Integrator):
                 integral_bounds.append(mass_proxy_limits)
 
             if kernel.integral_bounds is not None:
-                integral_bounds.append(kernel.integral_bounds)
+                integral_bounds.append(*kernel.integral_bounds)
 
         # Lastly, don't integrate any kernels with an analytic solution
         # This means we pass in their limits as extra arguments to the integrator
@@ -79,11 +85,11 @@ class NumCosmoIntegrator(Integrator):
                 extra_args.append(mass_proxy_limits)
 
             if kernel.integral_bounds is not None:
-                extra_args.append(kernel.integral_bounds)
+                extra_args.append(*kernel.integral_bounds)
 
         return integral_bounds, extra_args
 
-    def integrate(self, integrand, bounds, extra_args):
+    def integrate(self, integrand: Callable, bounds, extra_args):
         Ncm.cfg_init()
         int_nd = CountsIntegralND(
             len(bounds),
@@ -106,13 +112,12 @@ class CountsIntegralND(Ncm.IntegralND):
     """Integral subclass used by the ClusterAbundance
     to compute the integrals using numcosmo."""
 
-    def __init__(self, dim, fun, *args):
+    def __init__(self, dim, fun, *args) -> None:
         super().__init__()
         self.dim = dim
         self.fun = fun
         self.args = args
 
-    # pylint: disable-next=arguments-differ
     def do_get_dimensions(self) -> Tuple[int, int]:
         """Get number of dimensions."""
         return self.dim, 1

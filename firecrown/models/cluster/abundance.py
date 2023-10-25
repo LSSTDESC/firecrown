@@ -1,4 +1,4 @@
-from typing import List, Union, Callable, Optional, Dict, Tuple
+from typing import List, Union, Callable, Optional, Dict, Tuple, Any
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
@@ -6,6 +6,8 @@ from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
 import numpy as np
 from firecrown.parameters import ParamsMap
 import numpy.typing as npt
+from functools import singledispatchmethod
+import pdb
 
 
 class ClusterAbundance(object):
@@ -14,7 +16,7 @@ class ClusterAbundance(object):
         return self.sky_area_rad * (180.0 / np.pi) ** 2
 
     @sky_area.setter
-    def sky_area(self, sky_area: float):
+    def sky_area(self, sky_area: float) -> None:
         self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
     @property
@@ -43,7 +45,7 @@ class ClusterAbundance(object):
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
         sky_area: float,
-    ):
+    ) -> None:
         self.kernels: List[Kernel] = []
         self.halo_mass_function = halo_mass_function
         self.min_mass = min_mass
@@ -54,10 +56,12 @@ class ClusterAbundance(object):
         self._hmf_cache: Dict[Tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
 
-    def add_kernel(self, kernel: Kernel):
+    def add_kernel(self, kernel: Kernel) -> None:
         self.kernels.append(kernel)
 
-    def update_ingredients(self, cosmo: Cosmology, params: Optional[ParamsMap] = None):
+    def update_ingredients(
+        self, cosmo: Cosmology, params: Optional[ParamsMap] = None
+    ) -> None:
         self._cosmo = cosmo
         self._hmf_cache = {}
         if params is None:
@@ -66,6 +70,7 @@ class ClusterAbundance(object):
         for kernel in self.kernels:
             kernel.update(params)
 
+    @singledispatchmethod
     def comoving_volume(
         self, z: Union[float, npt.NDArray[np.float64]]
     ) -> Union[float, npt.NDArray[np.float64]]:
@@ -77,6 +82,10 @@ class ClusterAbundance(object):
 
         :return: Differential Comoving Volume at z in units of Mpc^3 (comoving).
         """
+        raise ValueError("Unsupported type for z:", type(z))
+
+    @comoving_volume.register(np.ndarray)
+    def _(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
@@ -87,16 +96,37 @@ class ClusterAbundance(object):
             * ((1.0 + z) ** 2)
             / (self.cosmo["h"] * h_over_h0)
         )
+        assert isinstance(dV, np.ndarray)
         return dV * self.sky_area_rad
 
+    @comoving_volume.register(float)
+    def _(self, z: float) -> float:
+        z_arr = np.atleast_1d(z)
+        vol = self.comoving_volume(z_arr)
+        assert isinstance(vol, np.ndarray)
+        return vol.item()
+
+    @singledispatchmethod
     def mass_function(
         self,
         mass: Union[float, npt.NDArray[np.float64]],
         z: Union[float, npt.NDArray[np.float64]],
     ) -> Union[float, npt.NDArray[np.float64]]:
-        z = np.atleast_1d(z)
-        mass = np.atleast_1d(mass)
+        """Halo Mass Function at mass and z."""
+        raise ValueError("Unsupported type for either mass or z:", type(mass), type(z))
 
+    @mass_function.register(float)
+    def _(self, mass: float, z: float) -> float:
+        z_arr = np.atleast_1d(z)
+        mass_arr = np.atleast_1d(mass)
+        mf = self.mass_function(mass_arr, z_arr)
+        assert isinstance(mf, np.ndarray)
+        return mf.item()
+
+    @mass_function.register(np.ndarray)
+    def _(
+        self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
 
@@ -107,18 +137,18 @@ class ClusterAbundance(object):
                 self._hmf_cache[(m, a)] = val
             return_vals.append(val)
 
-        if len(return_vals) == 1:
-            return return_vals[0]
         return np.asarray(return_vals, dtype=np.float64)
 
     def get_integrand(
         self, avg_mass: bool = False, avg_redshift: bool = False
-    ) -> Callable[..., Union[float, npt.NDArray[np.float64]]]:
-        def integrand(*int_args) -> Union[float, npt.NDArray[np.float64]]:
-            args_map: ArgReader = int_args[-1]
+    ) -> Callable[..., npt.NDArray[np.float64]]:
+        def integrand(*int_args) -> npt.NDArray[np.float64]:
+            args_map = int_args[-1]
+            assert isinstance(args_map, ArgReader)
+            values_for_integral = int_args[:1]
 
-            z = args_map.get_independent_val(int_args, KernelType.z)
-            mass = args_map.get_independent_val(int_args, KernelType.mass)
+            z = args_map.get_independent_val(values_for_integral, KernelType.z)
+            mass = args_map.get_independent_val(values_for_integral, KernelType.mass)
 
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
             if avg_mass:
@@ -129,7 +159,7 @@ class ClusterAbundance(object):
             for kernel in self.kernels:
                 # Think of overhead here, if its worth it
                 integrand *= kernel.distribution(int_args, args_map)
-
-            return integrand
+            return_val = np.atleast_1d(integrand)
+            return return_val
 
         return integrand

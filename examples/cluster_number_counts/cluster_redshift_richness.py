@@ -5,8 +5,8 @@ import os
 import pyccl as ccl
 import sacc
 
-from firecrown.integrator.numcosmo_integrator import NumCosmoIntegrator
-from firecrown.integrator.scipy_integrator import ScipyIntegrator
+from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
+from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
@@ -43,8 +43,8 @@ def get_cluster_abundance(sky_area):
     # completeness_kernel = Completeness()
     # cluster_abundance.add_kernel(completeness_kernel)
 
-    # # purity_kernel = Purity()
-    # cluster_abundance.add_kernel(purity_kernel)
+    purity_kernel = Purity()
+    cluster_abundance.add_kernel(purity_kernel)
 
     return cluster_abundance
 

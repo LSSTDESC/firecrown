@@ -1,11 +1,14 @@
 import numpy as np
 import pytest
-from typing import List, Tuple
-from firecrown.integrator.numcosmo_integrator import (
+from typing import List, Tuple, Optional, Any
+from firecrown.models.cluster.integrator.numcosmo_integrator import (
     NumCosmoArgReader,
     NumCosmoIntegrator,
 )
-from firecrown.integrator.scipy_integrator import ScipyArgReader, ScipyIntegrator
+from firecrown.models.cluster.integrator.scipy_integrator import (
+    ScipyArgReader,
+    ScipyIntegrator,
+)
 from firecrown.models.cluster.kernel import KernelType, Kernel, ArgReader
 from firecrown.models.cluster.abundance import ClusterAbundance
 
@@ -29,11 +32,11 @@ class MockKernel(Kernel):
         kernel_type: KernelType,
         is_dirac_delta: bool = False,
         has_analytic_sln: bool = False,
-        integral_bounds: List[Tuple[float, float]] = None,
+        integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
         super().__init__(kernel_type, is_dirac_delta, has_analytic_sln, integral_bounds)
 
-    def distribution(self, args: List[float], arg_reader: ArgReader):
+    def distribution(self, args: Tuple[Any, ...], arg_reader: ArgReader):
         return 1.0
 
 
@@ -287,7 +290,7 @@ def test_numcosmo_get_integration_bounds_integrable_kernels(
             KernelType.mass_proxy.name: 3,
         }
 
-    p_kernel = MockKernel(KernelType.purity, integral_bounds=(0, 1))
+    p_kernel = MockKernel(KernelType.purity, integral_bounds=[(0, 1)])
     cl_abundance.add_kernel(p_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -360,7 +363,7 @@ def test_numcosmo_get_integration_bounds_analytic_slns(
         }
 
     a_kernel3 = MockKernel(
-        KernelType.purity, has_analytic_sln=True, integral_bounds=(0, 1)
+        KernelType.purity, has_analytic_sln=True, integral_bounds=[(0, 1)]
     )
     cl_abundance.add_kernel(a_kernel3)
 
@@ -535,7 +538,7 @@ def test_scipy_get_integration_bounds_integrable_kernels(
             KernelType.mass_proxy.name: 3,
         }
 
-    p_kernel = MockKernel(KernelType.purity, integral_bounds=(0, 1))
+    p_kernel = MockKernel(KernelType.purity, integral_bounds=[(0, 1)])
     cl_abundance.add_kernel(p_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -608,7 +611,7 @@ def test_scipy_get_integration_bounds_analytic_slns(
         }
 
     a_kernel3 = MockKernel(
-        KernelType.purity, has_analytic_sln=True, integral_bounds=(0, 1)
+        KernelType.purity, has_analytic_sln=True, integral_bounds=[(0, 1)]
     )
     cl_abundance.add_kernel(a_kernel3)
 

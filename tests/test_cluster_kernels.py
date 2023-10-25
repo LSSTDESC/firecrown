@@ -74,12 +74,12 @@ def test_create_purity_kernel():
 
 def test_spec_z_distribution():
     srk = SpectroscopicRedshift()
-    assert srk.distribution([0.5], MockArgsReader()) == 1.0
+    assert srk.distribution(([0.5], []), MockArgsReader()) == 1.0
 
 
 def test_true_mass_distribution():
     tmk = TrueMass()
-    assert tmk.distribution([0.5], MockArgsReader()) == 1.0
+    assert tmk.distribution(([0.5], []), MockArgsReader()) == 1.0
 
 
 def test_create_arg_reader():
@@ -112,7 +112,8 @@ def test_purity_distribution():
         ]
     )
 
-    purity = pk.distribution([arguments], map)
+    purity = pk.distribution((arguments, []), map)
+    assert isinstance(purity, np.ndarray)
     for ref, true in zip(purity, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
@@ -141,7 +142,8 @@ def test_completeness_distribution():
         ]
     )
 
-    comp = ck.distribution([bounds], map)
+    comp = ck.distribution((bounds, []), map)
+    assert isinstance(comp, np.ndarray)
     for ref, true in zip(comp, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
@@ -175,6 +177,7 @@ def test_des_photoz_kernel_distribution():
         3.969525474770118,
     ]
 
-    spread = dpk.distribution([bounds], map)
+    spread = dpk.distribution((bounds, []), map)
+    assert isinstance(spread, np.ndarray)
     for ref, true in zip(spread, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
