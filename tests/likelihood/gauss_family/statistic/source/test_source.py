@@ -12,6 +12,7 @@ from firecrown.likelihood.gauss_family.statistic.source.source import (
     Tracer,
     SourceGalaxy,
     SourceGalaxyArgs,
+    SourceGalaxySelectField,
 )
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 from firecrown.parameters import ParamsMap
@@ -102,6 +103,19 @@ def test_trivial_source_galaxy_construction():
         match="Must initialize tracer_args before calling _read on SourceGalaxy",
     ):
         trivial.read(sacc.Sacc())
+
+
+def test_trivial_source_select_field():
+    tools = ModelingTools()
+    trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
+    select_field: SourceGalaxySelectField = SourceGalaxySelectField("new_field")
+    trivial.tracer_args = TrivialSourceGalaxyArgs(
+        z=np.array([1.0]), dndz=np.array([1.0]), field="old_field"
+    )
+
+    new_args = select_field.apply(tools, trivial.tracer_args)
+    assert new_args.field == "new_field"
+    assert trivial.tracer_args.field == "old_field"
 
 
 def test_weak_lensing_source():

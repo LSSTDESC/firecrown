@@ -71,10 +71,8 @@ def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
         RuntimeError,
-        match="The ConstGaussian likelihood "
-        "requires a covariance, but the "
-        "SACC data object being read does "
-        "not have one.",
+        match="The ConstGaussian likelihood requires a covariance, but the "
+        "SACC data object being read does not have one.",
     ):
         likelihood.read(sacc_with_data_points)
 
