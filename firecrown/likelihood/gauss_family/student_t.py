@@ -28,7 +28,7 @@ class StudentT(GaussFamily):
     def __init__(
         self,
         statistics: List[Statistic],
-        nu: Optional[float],
+        nu: Optional[float] = None,
     ):
         super().__init__(statistics)
         self.nu = parameters.register_new_updatable_parameter(nu)
