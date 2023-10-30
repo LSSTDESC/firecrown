@@ -12,6 +12,7 @@ likelihood script to create an object of some subclass of :python:`Likelihood`.
 from __future__ import annotations
 from typing import Mapping, Tuple, Union, Optional
 from abc import abstractmethod
+import types
 import warnings
 import importlib
 import importlib.util
@@ -146,7 +147,66 @@ class NamedParameters:
         return set(self.data)
 
 
-def load_likelihood(
+def load_likelihood_from_module_type(
+    module: types.ModuleType, build_parameters: NamedParameters
+) -> Tuple[Likelihood, ModelingTools]:
+    """Loads a likelihood and returns a tuple of the likelihood and
+    the modeling tools.
+
+    This function is used by both :python:`load_likelihood_from_script` and
+    :python:`load_likelihood_from_module`. It is not intended to be called
+    directly.
+
+    :param module: a loaded module
+    :param build_parameters: a NamedParameters object containing the factory
+        function parameters
+    """
+
+    if not hasattr(module, "build_likelihood"):
+        if not hasattr(module, "likelihood"):
+            raise AttributeError(
+                f"Firecrown initialization module {module.__name__} in "
+                f"{module.__file__} does not define "
+                f"a `build_likelihood` factory function."
+            )
+        warnings.simplefilter("always", DeprecationWarning)
+        warnings.warn(
+            "The use of a likelihood variable in Firecrown's initialization "
+            "module is deprecated. Any parameters passed to the likelihood "
+            "will be ignored. The module should define a `build_likelihood` "
+            "factory function.",
+            category=DeprecationWarning,
+        )
+        likelihood = module.likelihood
+        tools = ModelingTools()
+    else:
+        if not callable(module.build_likelihood):
+            raise TypeError(
+                "The factory function `build_likelihood` must be a callable."
+            )
+        build_return = module.build_likelihood(build_parameters)
+        if isinstance(build_return, tuple):
+            likelihood, tools = build_return
+        else:
+            likelihood = build_return
+            tools = ModelingTools()
+
+    if not isinstance(likelihood, Likelihood):
+        raise TypeError(
+            f"The returned likelihood must be a Firecrown's `Likelihood` type, "
+            f"received {type(likelihood)} instead."
+        )
+
+    if not isinstance(tools, ModelingTools):
+        raise TypeError(
+            f"The returned tools must be a Firecrown's `ModelingTools` type, "
+            f"received {type(tools)} instead."
+        )
+
+    return likelihood, tools
+
+
+def load_likelihood_from_script(
     filename: str, build_parameters: NamedParameters
 ) -> Tuple[Likelihood, ModelingTools]:
     """Loads a likelihood script and returns a tuple of the likelihood and
@@ -189,44 +249,48 @@ def load_likelihood(
     assert spec.loader is not None
     spec.loader.exec_module(mod)
 
-    if not hasattr(mod, "build_likelihood"):
-        if not hasattr(mod, "likelihood"):
-            raise AttributeError(
-                f"Firecrown initialization script {filename} does not define "
-                f"a `build_likelihood` factory function."
-            )
-        warnings.simplefilter("always", DeprecationWarning)
-        warnings.warn(
-            "The use of a likelihood variable in Firecrown's initialization "
-            "script is deprecated. Any parameters passed to the likelihood "
-            "will be ignored. The script should define a `build_likelihood` "
-            "factory function.",
-            category=DeprecationWarning,
-        )
-        likelihood = mod.likelihood
-        tools = ModelingTools()
-    else:
-        if not callable(mod.build_likelihood):
-            raise TypeError(
-                "The factory function `build_likelihood` must be a callable."
-            )
-        build_return = mod.build_likelihood(build_parameters)
-        if isinstance(build_return, tuple):
-            likelihood, tools = build_return
-        else:
-            likelihood = build_return
-            tools = ModelingTools()
+    return load_likelihood_from_module_type(mod, build_parameters)
 
-    if not isinstance(likelihood, Likelihood):
-        raise TypeError(
-            f"The returned likelihood must be a Firecrown's `Likelihood` type, "
-            f"received {type(likelihood)} instead."
-        )
 
-    if not isinstance(tools, ModelingTools):
-        raise TypeError(
-            f"The returned tools must be a Firecrown's `ModelingTools` type, "
-            f"received {type(tools)} instead."
-        )
+def load_likelihood_from_module(
+    module: str, build_parameters: NamedParameters
+) -> Tuple[Likelihood, ModelingTools]:
+    """Loads a likelihood and returns a tuple of the likelihood and
+    the modeling tools.
 
-    return likelihood, tools
+    :param module: module name
+    :param build_parameters: a NamedParameters object containing the factory
+        function parameters
+    """
+
+    try:
+        mod = importlib.import_module(module)
+    except ImportError as exc:
+        raise ValueError(
+            f"Unrecognized Firecrown initialization module {module}."
+        ) from exc
+
+    return load_likelihood_from_module_type(mod, build_parameters)
+
+
+def load_likelihood(
+    likelihood_name: str, build_parameters: NamedParameters
+) -> Tuple[Likelihood, ModelingTools]:
+    """Loads a likelihood and returns a tuple of the likelihood and
+    the modeling tools.
+
+    :param likelihood_name: script filename or module name
+    :param build_parameters: a NamedParameters object containing the factory
+        function parameters
+    """
+
+    try:
+        return load_likelihood_from_script(likelihood_name, build_parameters)
+    except ValueError:
+        try:
+            return load_likelihood_from_module(likelihood_name, build_parameters)
+        except ValueError as exc:
+            raise ValueError(
+                f"Unrecognized Firecrown initialization file or module "
+                f"{likelihood_name}."
+            ) from exc
