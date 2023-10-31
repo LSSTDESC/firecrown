@@ -54,9 +54,13 @@ class Kernel(Updatable, ABC):
     @abstractmethod
     def distribution(
         self,
-        args: Tuple[Any, ...],
-        arg_reader: ArgReader,
-    ) -> Union[float, npt.NDArray[np.float64]]:
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         """The functional form of the distribution or spread of this kernel"""
 
 
@@ -66,12 +70,13 @@ class Completeness(Kernel):
 
     def distribution(
         self,
-        args: Tuple[Any, ...],
-        arg_reader: ArgReader,
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        mass = arg_reader.get_independent_val(args, KernelType.mass)
-        z = arg_reader.get_independent_val(args, KernelType.z)
-
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         a_nc = 1.1321
         b_nc = 0.7751
         a_mc = 13.31
@@ -88,12 +93,13 @@ class Purity(Kernel):
 
     def distribution(
         self,
-        args: Tuple[Any, ...],
-        arg_reader: ArgReader,
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        mass_proxy = arg_reader.get_independent_val(args, KernelType.mass_proxy)
-        z = arg_reader.get_independent_val(args, KernelType.z)
-
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         a_nc = np.log(10) * 0.8612
         b_nc = np.log(10) * 0.3527
         a_rc = 2.2183
@@ -115,10 +121,14 @@ class TrueMass(Kernel):
 
     def distribution(
         self,
-        args: Tuple[Any, ...],
-        arg_reader: ArgReader,
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        return 1.0
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
+        return np.atleast_1d(1.0)
 
 
 class SpectroscopicRedshift(Kernel):
@@ -127,10 +137,14 @@ class SpectroscopicRedshift(Kernel):
 
     def distribution(
         self,
-        args: Tuple[Any, ...],
-        arg_reader: ArgReader,
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        return 1.0
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
+        return np.atleast_1d(1.0)
 
 
 class DESY1PhotometricRedshift(Kernel):
@@ -140,12 +154,13 @@ class DESY1PhotometricRedshift(Kernel):
 
     def distribution(
         self,
-        args: Tuple[Any, ...],
-        arg_reader: ArgReader,
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        z = arg_reader.get_independent_val(args, KernelType.z)
-        z_proxy = arg_reader.get_independent_val(args, KernelType.z_proxy)
-
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         sigma_z = self.sigma_0 * (1 + z)
         prefactor = 1 / (np.sqrt(2.0 * np.pi) * sigma_z)
         distribution = np.exp(-(1 / 2) * ((z_proxy - z) / sigma_z) ** 2.0)

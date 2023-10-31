@@ -80,12 +80,12 @@ class BinnedClusterNumberCounts(Statistic):
 
         if self.use_cluster_counts or self.use_mean_log_mass:
             for z_proxy_limits, mass_proxy_limits in self.bin_limits:
-                integrand = tools.cluster_abundance.get_integrand()
-                bounds, extra_args = self.integrator.get_integration_bounds(
+                self.integrator.set_integration_bounds(
                     tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
                 )
 
-                counts = self.integrator.integrate(integrand, bounds, extra_args)
+                integrand = tools.cluster_abundance.get_integrand()
+                counts = self.integrator.integrate(integrand)
                 cluster_counts.append(counts)
             theory_vector_list += cluster_counts
 
@@ -94,11 +94,11 @@ class BinnedClusterNumberCounts(Statistic):
                 self.bin_limits, cluster_counts
             ):
                 integrand = tools.cluster_abundance.get_integrand(avg_mass=True)
-                bounds, extra_args = self.integrator.get_integration_bounds(
+                self.integrator.set_integration_bounds(
                     tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
                 )
 
-                total_mass = self.integrator.integrate(integrand, bounds, extra_args)
+                total_mass = self.integrator.integrate(integrand)
                 mean_mass = total_mass / counts
                 cluster_masses.append(mean_mass)
 

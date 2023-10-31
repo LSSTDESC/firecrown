@@ -20,7 +20,7 @@ from firecrown.models.cluster.kernel import (
     Purity,
     SpectroscopicRedshift,
 )
-from firecrown.models.cluster.mass_proxy.murata import MurataBinned
+from firecrown.models.cluster.mass_proxy import MurataBinned
 
 
 def get_cluster_abundance(sky_area):
@@ -36,15 +36,15 @@ def get_cluster_abundance(sky_area):
     mass_observable_kernel = MurataBinned(pivot_mass, pivot_redshift)
     cluster_abundance.add_kernel(mass_observable_kernel)
 
-    # redshift_proxy_kernel = SpectroscopicRedshift()
-    redshift_proxy_kernel = DESY1PhotometricRedshift()
+    redshift_proxy_kernel = SpectroscopicRedshift()
+    # redshift_proxy_kernel = DESY1PhotometricRedshift()
     cluster_abundance.add_kernel(redshift_proxy_kernel)
 
     # completeness_kernel = Completeness()
     # cluster_abundance.add_kernel(completeness_kernel)
 
-    purity_kernel = Purity()
-    cluster_abundance.add_kernel(purity_kernel)
+    # purity_kernel = Purity()
+    # cluster_abundance.add_kernel(purity_kernel)
 
     return cluster_abundance
 

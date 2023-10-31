@@ -1,11 +1,11 @@
-from typing import List, Tuple, Union, Optional, Any
+from typing import List, Tuple, Union, Optional
 
 import numpy as np
 import numpy.typing as npt
 
 from firecrown import parameters
 from scipy import special
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
+from firecrown.models.cluster.kernel import Kernel, KernelType
 from abc import abstractmethod
 
 
@@ -42,12 +42,15 @@ class MassRichnessGaussian(Kernel):
     ) -> Union[float, npt.NDArray[np.float64]]:
         """Return observed scatter corrected by redshift and mass."""
 
-    def _distribution_binned(self, args: Tuple[Any, ...], args_map: ArgReader):
-        mass = args_map.get_independent_val(args, KernelType.mass)
-        z = args_map.get_independent_val(args, KernelType.z)
-        mass_proxy_limits = args_map.get_extra_args(args, self.kernel_type)
-        assert isinstance(mass_proxy_limits, tuple)
-
+    def _distribution_binned(
+        self,
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
 
@@ -71,12 +74,15 @@ class MassRichnessGaussian(Kernel):
 
         return return_vals
 
-    def _distribution_unbinned(self, args: Tuple[Any, ...], args_map: ArgReader):
-        mass = args_map.get_independent_val(args, KernelType.mass)
-        z = args_map.get_independent_val(args, KernelType.z)
-        mass_proxy = args_map.get_extra_args(args, self.kernel_type)
-        assert isinstance(mass_proxy, float)
-
+    def _distribution_unbinned(
+        self,
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
 
@@ -136,8 +142,18 @@ class MurataBinned(MassRichnessGaussian):
             self.log1p_pivot_redshift,
         )
 
-    def distribution(self, args, args_map):
-        return self._distribution_binned(args, args_map)
+    def distribution(
+        self,
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
+        return self._distribution_binned(
+            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+        )
 
 
 class MurataUnbinned(MassRichnessGaussian):
@@ -191,5 +207,15 @@ class MurataUnbinned(MassRichnessGaussian):
             self.log1p_pivot_redshift,
         )
 
-    def distribution(self, args, args_map):
-        return self._distribution_unbinned(args, args_map)
+    def distribution(
+        self,
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+        mass_proxy: npt.NDArray[np.float64],
+        z_proxy: npt.NDArray[np.float64],
+        mass_proxy_limits: Tuple[float, float],
+        z_proxy_limits: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
+        return self._distribution_unbinned(
+            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+        )

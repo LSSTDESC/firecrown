@@ -1,24 +1,33 @@
 from abc import ABC, abstractmethod
 from firecrown.models.cluster.abundance import ClusterAbundance
-from typing import Tuple, List, Any
-from firecrown.models.cluster.kernel import ArgReader
+from typing import Tuple, Callable
+import numpy.typing as npt
+import numpy as np
 
 
 class Integrator(ABC):
-    arg_reader: ArgReader
-
-    def __init__(self) -> None:
-        super().__init__()
-
     @abstractmethod
-    def integrate(self, integrand, bounds, extra_args):
+    def integrate(
+        self,
+        integrand: Callable[
+            [
+                npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                Tuple[float, float],
+                Tuple[float, float],
+            ],
+            npt.NDArray[np.float64],
+        ],
+    ) -> float:
         """Integrate the integrand over the bounds and include extra_args to integral"""
 
     @abstractmethod
-    def get_integration_bounds(
+    def set_integration_bounds(
         self,
         cl_abundance: ClusterAbundance,
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
-    ) -> Tuple[Any, ...]:
-        """Extract the limits of integration and extra arguments for the integral"""
+    ) -> None:
+        """Set the limits of integration and extra arguments for the integral"""

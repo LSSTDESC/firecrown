@@ -1,13 +1,14 @@
-from typing import List, Union, Callable, Optional, Dict, Tuple, Any
+from typing import List, Callable, Optional, Dict, Tuple
 from pyccl.cosmology import Cosmology
 import pyccl.background as bkg
 import pyccl
-from firecrown.models.cluster.kernel import Kernel, KernelType, ArgReader
+from firecrown.models.cluster.kernel import Kernel
 import numpy as np
 from firecrown.parameters import ParamsMap
 import numpy.typing as npt
-from functools import singledispatchmethod
-import pdb
+
+# from functools import singledispatchmethod
+# import pdb
 
 
 class ClusterAbundance(object):
@@ -70,22 +71,22 @@ class ClusterAbundance(object):
         for kernel in self.kernels:
             kernel.update(params)
 
-    @singledispatchmethod
-    def comoving_volume(
-        self, z: Union[float, npt.NDArray[np.float64]]
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        """Differential Comoving Volume at z.
+    # @singledispatchmethod
+    # def comoving_volume(
+    #     self, z: Union[float, npt.NDArray[np.float64]]
+    # ) -> Union[float, npt.NDArray[np.float64]]:
+    #     """Differential Comoving Volume at z.
 
-        parameters
-        :param ccl_cosmo: pyccl Cosmology
-        :param z: Cluster Redshift.
+    #     parameters
+    #     :param ccl_cosmo: pyccl Cosmology
+    #     :param z: Cluster Redshift.
 
-        :return: Differential Comoving Volume at z in units of Mpc^3 (comoving).
-        """
-        raise ValueError("Unsupported type for z:", type(z))
+    #     :return: Differential Comoving Volume at z in units of Mpc^3 (comoving).
+    #     """
+    #     raise ValueError("Unsupported type for z:", type(z))
 
-    @comoving_volume.register(np.ndarray)
-    def _(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    # @comoving_volume.register(np.ndarray)
+    def comoving_volume(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
@@ -99,32 +100,32 @@ class ClusterAbundance(object):
         assert isinstance(dV, np.ndarray)
         return dV * self.sky_area_rad
 
-    @comoving_volume.register(float)
-    def _(self, z: float) -> float:
-        z_arr = np.atleast_1d(z)
-        vol = self.comoving_volume(z_arr)
-        assert isinstance(vol, np.ndarray)
-        return vol.item()
+    # @comoving_volume.register(float)
+    # def _(self, z: float) -> float:
+    #     z_arr = np.atleast_1d(z)
+    #     vol = self.comoving_volume(z_arr)
+    #     assert isinstance(vol, np.ndarray)
+    #     return vol.item()
 
-    @singledispatchmethod
+    # @singledispatchmethod
+    # def mass_function(
+    #     self,
+    #     mass: Union[float, npt.NDArray[np.float64]],
+    #     z: Union[float, npt.NDArray[np.float64]],
+    # ) -> Union[float, npt.NDArray[np.float64]]:
+    #     """Halo Mass Function at mass and z."""
+    #   raise ValueError("Unsupported type for either mass or z:", type(mass), type(z))
+
+    # @mass_function.register(float)
+    # def _(self, mass: float, z: float) -> float:
+    #     z_arr = np.atleast_1d(z)
+    #     mass_arr = np.atleast_1d(mass)
+    #     mf = self.mass_function(mass_arr, z_arr)
+    #     assert isinstance(mf, np.ndarray)
+    #     return mf.item()
+
+    # @mass_function.register(np.ndarray)
     def mass_function(
-        self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        """Halo Mass Function at mass and z."""
-        raise ValueError("Unsupported type for either mass or z:", type(mass), type(z))
-
-    @mass_function.register(float)
-    def _(self, mass: float, z: float) -> float:
-        z_arr = np.atleast_1d(z)
-        mass_arr = np.atleast_1d(mass)
-        mf = self.mass_function(mass_arr, z_arr)
-        assert isinstance(mf, np.ndarray)
-        return mf.item()
-
-    @mass_function.register(np.ndarray)
-    def _(
         self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         scale_factor = 1.0 / (1.0 + z)
@@ -141,25 +142,36 @@ class ClusterAbundance(object):
 
     def get_integrand(
         self, avg_mass: bool = False, avg_redshift: bool = False
-    ) -> Callable[..., npt.NDArray[np.float64]]:
-        def integrand(*int_args) -> npt.NDArray[np.float64]:
-            args_map = int_args[-1]
-            assert isinstance(args_map, ArgReader)
-            values_for_integral = int_args[:1]
-
-            z = args_map.get_independent_val(values_for_integral, KernelType.z)
-            mass = args_map.get_independent_val(values_for_integral, KernelType.mass)
-
+    ) -> Callable[
+        [
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            Tuple[float, float],
+            Tuple[float, float],
+        ],
+        npt.NDArray[np.float64],
+    ]:
+        def integrand(
+            mass: npt.NDArray[np.float64],
+            z: npt.NDArray[np.float64],
+            mass_proxy: npt.NDArray[np.float64],
+            z_proxy: npt.NDArray[np.float64],
+            mass_proxy_limits: Tuple[float, float],
+            z_proxy_limits: Tuple[float, float],
+        ) -> npt.NDArray[np.float64]:
             integrand = self.comoving_volume(z) * self.mass_function(mass, z)
+
             if avg_mass:
                 integrand *= mass
             if avg_redshift:
                 integrand *= z
 
             for kernel in self.kernels:
-                # Think of overhead here, if its worth it
-                integrand *= kernel.distribution(int_args, args_map)
-            return_val = np.atleast_1d(integrand)
-            return return_val
+                integrand *= kernel.distribution(
+                    mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+                )
+            return integrand
 
         return integrand
