@@ -5,6 +5,9 @@ So Firecrown provides a single framework for writing likelihoods that allows DES
 Moreover, Firecrown is intended to provide a well-defined environment in which all the DESC tools needed for likelihood-dependent analysis tasks are present.
 To accomplish this objective, Firecrown directly uses the DESC Core Cosmology Library [CCL](https://github.com/LSSTDESC/CCL) and the [SACC](https://github.com/LSSTDESC/SACC) data format library.
 
+Note that Firecrown itself does not do sampling, nor does it run the sampling frameworks.
+Instead, whichever sampling framework you are using calls (through the Firecrown connector code) the Firecrown likelihood you configure.
+
 [^firecrown]: A firecrown is a hummingbird native to Chile and Argentina.
 The reasons this software is named Firecrown are now lost to the mists of history.
 ![](green-backed-firecrown.jpg){fig-alt="A green-backed firecrown."}

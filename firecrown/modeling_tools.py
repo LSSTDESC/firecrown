@@ -4,12 +4,15 @@ This module contains the ModelingTools class, which is built around the
 :python:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
-
-from typing import Dict, Optional, final
+from __future__ import annotations
+from typing import Dict, Optional, Collection
+from abc import ABC, abstractmethod
 import pyccl.nl_pt
 
+from .updatable import Updatable, UpdatableCollection
 
-class ModelingTools:
+
+class ModelingTools(Updatable):
     """A class that bundles together a :python:`pyccl.Cosmology` object and associated
     objects, such as perturbation theory or halo model calculator workspaces."""
 
@@ -17,13 +20,17 @@ class ModelingTools:
         self,
         *,
         pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
+        pk_modifiers: Optional[Collection[PowerspectrumModifier]] = None,
         hm_definition: Optional[pyccl.halos.MassDef] = None,
         hm_function: Optional[str] = None,
         bias_function: Optional[str] = None,
         cM_relation: Optional[str] = None,
     ):
+        super().__init__()
         self.ccl_cosmo: Optional[pyccl.Cosmology] = None
         self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
+        pk_modifiers = pk_modifiers if pk_modifiers is not None else []
+        self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         # Developed this way because the halo model calculator requires cosmology as input.
         # This way we are passing the ingredients to create the HM calc.
         # Disadvantage is that other HMC parameters (e.g. mass sampling) are not tweakable.
@@ -32,6 +39,7 @@ class ModelingTools:
         self.bias_function: Optional[str] = bias_function
         self.cM_relation: Optional[str] = cM_relation
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
+        self._prepared: bool = False
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
@@ -74,6 +82,12 @@ class ModelingTools:
 
         """
 
+        if not self.is_updated():
+            raise RuntimeError("ModelingTools has not been prepared")
+
+        if self._prepared:
+            raise RuntimeError("ModelingTools has already been prepared")
+
         if self.ccl_cosmo is not None:
             raise RuntimeError("Cosmology has already been set")
         self.ccl_cosmo = ccl_cosmo
@@ -81,11 +95,23 @@ class ModelingTools:
         if self.pt_calculator is not None:
             self.pt_calculator.update_ingredients(ccl_cosmo)
 
-    @final
-    def reset(self) -> None:
-        """Resets all CCL objects in ModelingTools."""
+        for pkm in self.pk_modifiers:
+            self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
+
+        self._prepared = True
+
+    def _reset(self) -> None:
+        """Resets all CCL objects in ModelingTools.
+
+        This method is called by the Updatable base class when the object is
+        destroyed. It also resets the power spectra, the cosmology and the
+        _prepared state variable."""
 
         self.ccl_cosmo = None
+        # Also reset the power spectra
+        # TODO: is that always needed?
+        self.powerspectra = {}
+        self._prepared = False
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
         """Return the CCL cosmology object."""
@@ -123,3 +149,13 @@ class ModelingTools:
             raise RuntimeError("A halo mass definition has not been set")
 
         return pyccl.halos.concentration_from_name(self.cM_relation)(self.hm_definition)
+
+
+class PowerspectrumModifier(Updatable, ABC):
+    """Abstract base class for power spectrum modifiers."""
+
+    name: str = "base:base"
+
+    @abstractmethod
+    def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
+        """Compute the 3D power spectrum P(k, z)."""

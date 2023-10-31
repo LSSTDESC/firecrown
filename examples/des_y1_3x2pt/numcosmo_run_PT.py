@@ -51,10 +51,14 @@ map_cosmo = MappingNumCosmo(
     p_ml=p_ml,
     p_mnl=p_mnl,
     dist=dist,
-    model_list=["NcFirecrownPT"],
 )
 
-nc_factory = NumCosmoFactory("des_y1_3x2pt_PT.py", NamedParameters(), map_cosmo)
+nc_factory = NumCosmoFactory(
+    "des_y1_3x2pt_PT.py",
+    NamedParameters(),
+    map_cosmo,
+    model_list=["NcFirecrownPT"],
+)
 
 fc = NcFirecrownPT()
 # fc.params_set_default_ftype()

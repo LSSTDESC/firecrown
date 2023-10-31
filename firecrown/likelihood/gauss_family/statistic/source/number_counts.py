@@ -3,16 +3,23 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Union, Tuple, Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
 import numpy as np
 import numpy.typing as npt
 import pyccl
-from scipy.interpolate import Akima1DInterpolator
 
-from .source import Source, Tracer, SourceSystematic
+from .source import (
+    Tracer,
+    SourceGalaxy,
+    SourceGalaxyArgs,
+    SourceGalaxySystematic,
+    SourceGalaxyPhotoZShift,
+    SourceGalaxySelectField,
+)
+
 from ..... import parameters
 
 from .....modeling_tools import ModelingTools
@@ -27,12 +34,9 @@ __all__ = ["NumberCounts"]
 
 
 @dataclass(frozen=True)
-class NumberCountsArgs:
+class NumberCountsArgs(SourceGalaxyArgs):
     """Class for number counts tracer builder argument."""
 
-    scale: float
-    z: npt.NDArray[np.float64]
-    dndz: npt.NDArray[np.float64]
     bias: Optional[npt.NDArray[np.float64]] = None
     mag_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     has_pt: bool = False
@@ -41,7 +45,7 @@ class NumberCountsArgs:
     b_s: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
 
-class NumberCountsSystematic(SourceSystematic):
+class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
     """Abstract base class for systematics for Number Counts sources.
 
     Derived classes must implement :python`apply` with the correct signature."""
@@ -51,6 +55,14 @@ class NumberCountsSystematic(SourceSystematic):
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         """Apply method to include systematics in the tracer_arg."""
+
+
+class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
+    """Photo-z shift systematic."""
+
+
+class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
+    """Systematic to select 3D field"""
 
 
 class LinearBiasSystematic(NumberCountsSystematic):
@@ -77,9 +89,9 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.alphaz = parameters.create()
-        self.alphag = parameters.create()
-        self.z_piv = parameters.create()
+        self.alphaz = parameters.register_new_updatable_parameter()
+        self.alphag = parameters.register_new_updatable_parameter()
+        self.z_piv = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -135,8 +147,8 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.b_2 = parameters.create()
-        self.b_s = parameters.create()
+        self.b_2 = parameters.register_new_updatable_parameter()
+        self.b_s = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -178,11 +190,11 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.r_lim = parameters.create()
-        self.sig_c = parameters.create()
-        self.eta = parameters.create()
-        self.z_c = parameters.create()
-        self.z_m = parameters.create()
+        self.r_lim = parameters.register_new_updatable_parameter()
+        self.sig_c = parameters.register_new_updatable_parameter()
+        self.eta = parameters.register_new_updatable_parameter()
+        self.z_c = parameters.register_new_updatable_parameter()
+        self.z_m = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -237,7 +249,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mag_bias = parameters.create()
+        self.mag_bias = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -248,43 +260,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         )
 
 
-class PhotoZShift(NumberCountsSystematic):
-    """A photo-z shift bias.
-
-    This systematic shifts the photo-z distribution by some ammount `delta_z`.
-
-    The following parameters are special Updatable parameters, which means that
-    they can be updated by the sampler, sacc_tracer is going to be used as a
-    prefix for the parameters:
-
-    :ivar delta_z: the photo-z shift.
-    """
-
-    def __init__(self, sacc_tracer: str):
-        """Create a PhotoZShift object, using the specified tracer name.
-
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
-        """
-        super().__init__(parameter_prefix=sacc_tracer)
-
-        self.delta_z = parameters.create()
-
-    def apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs):
-        """Apply a shift to the photo-z distribution of a source."""
-
-        dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
-
-        dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
-        dndz[np.isnan(dndz)] = 0.0
-
-        return replace(
-            tracer_arg,
-            dndz=dndz,
-        )
-
-
-class NumberCounts(Source):
+class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     """Source class for number counts."""
 
     systematics: UpdatableCollection
@@ -297,7 +273,11 @@ class NumberCounts(Source):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[List[NumberCountsSystematic]] = None,
+        systematics: Optional[
+            List[
+                Union[NumberCountsSystematic, SourceGalaxySystematic[NumberCountsArgs]]
+            ]
+        ] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -309,13 +289,13 @@ class NumberCounts(Source):
         :param scale: the initial scale of the tracer.
         :param systematics: a list of systematics to apply to the tracer.
         """
-        super().__init__(sacc_tracer)
+        super().__init__(sacc_tracer=sacc_tracer, systematics=systematics)
 
         self.sacc_tracer = sacc_tracer
         self.has_rsd = has_rsd
         self.derived_scale = derived_scale
 
-        self.bias = parameters.create()
+        self.bias = parameters.register_new_updatable_parameter()
         self.systematics = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
@@ -350,16 +330,15 @@ class NumberCounts(Source):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        indices = np.argsort(z)
-        z = z[indices]
-        nz = nz[indices]
 
         self.tracer_args = NumberCountsArgs(
-            scale=self.scale, z=z, dndz=nz, bias=None, mag_bias=None
+            scale=self.scale,
+            z=np.array([]),
+            dndz=np.array([]),
+            bias=None,
+            mag_bias=None,
         )
+        super()._read(sacc_data)
 
     def create_tracers(self, tools: ModelingTools):
         tracer_args = self.tracer_args
@@ -398,7 +377,7 @@ class NumberCounts(Source):
                 Tracer(
                     ccl_mag_tracer,
                     tracer_name="+".join(tracer_names),
-                    field="delta_matter",
+                    field=tracer_args.field,
                 )
             )
         if tracer_args.has_pt:

@@ -2,11 +2,12 @@ name: firecrown_developer
 channels:
   - conda-forge
 dependencies:
+  - alabaster
+  - babel
   - black
   - charset-normalizer
   - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
-  - numcosmo >=0.18.2
   - coverage
   - cython < 3.0.0
   - dill
@@ -18,19 +19,22 @@ dependencies:
   - matplotlib-base
   - more-itertools
   - mypy
+  - numcosmo >=0.18.2
   - numpy >= 1.21.0
   - pip
   - pip:
     - autoclasstoc
     - cobaya
+    - pygobject-stubs
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
   - pylint
   - pytest
   - pyyaml
-  - types-pyyaml
   - requests
   - sacc >= 0.11
   - scipy
+  - sphinx
+  - types-pyyaml
   - urllib3

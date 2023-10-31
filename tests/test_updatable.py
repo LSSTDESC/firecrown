@@ -22,7 +22,7 @@ class MinimalUpdatable(Updatable):
         """Initialize object with defaulted value."""
         super().__init__()
 
-        self.a = parameters.create()
+        self.a = parameters.register_new_updatable_parameter()
 
 
 class SimpleUpdatable(Updatable):
@@ -32,8 +32,8 @@ class SimpleUpdatable(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        self.x = parameters.create()
-        self.y = parameters.create()
+        self.x = parameters.register_new_updatable_parameter()
+        self.y = parameters.register_new_updatable_parameter()
 
 
 class UpdatableWithDerived(Updatable):
@@ -43,8 +43,8 @@ class UpdatableWithDerived(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        self.A = parameters.create()
-        self.B = parameters.create()
+        self.A = parameters.register_new_updatable_parameter()
+        self.B = parameters.register_new_updatable_parameter()
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_scale = DerivedParameterScalar("Section", "Name", self.A + self.B)
@@ -132,7 +132,9 @@ def test_updatable_collection_insertion():
 
 def test_set_sampler_parameter():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+    my_updatable.set_sampler_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter()
+    )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
     assert my_updatable.the_meaning_of_life is None
@@ -143,21 +145,27 @@ def test_set_sampler_parameter_rejects_internal_parameter():
 
     with pytest.raises(TypeError):
         my_updatable.set_sampler_parameter(
-            "the_meaning_of_life", parameters.create(42.0)
+            "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
         )
 
 
 def test_set_sampler_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+    my_updatable.set_sampler_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter()
+    )
 
     with pytest.raises(ValueError):
-        my_updatable.set_sampler_parameter("the_meaning_of_life", parameters.create())
+        my_updatable.set_sampler_parameter(
+            "the_meaning_of_life", parameters.register_new_updatable_parameter()
+        )
 
 
 def test_set_internal_parameter():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+    my_updatable.set_internal_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+    )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
     assert my_updatable.the_meaning_of_life == 42.0
@@ -166,27 +174,49 @@ def test_set_internal_parameter():
 def test_set_internal_parameter_rejects_sampler_parameter():
     my_updatable = MinimalUpdatable()
     with pytest.raises(TypeError):
-        my_updatable.set_internal_parameter("sampler_param", parameters.create())
+        my_updatable.set_internal_parameter(
+            "sampler_param", parameters.register_new_updatable_parameter()
+        )
 
 
 def test_set_internal_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+    my_updatable.set_internal_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+    )
 
     with pytest.raises(ValueError):
         my_updatable.set_internal_parameter(
-            "the_meaning_of_life", parameters.create(42.0)
+            "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
         )
 
     with pytest.raises(ValueError):
         my_updatable.set_internal_parameter(
-            "the_meaning_of_life", parameters.create(41.0)
+            "the_meaning_of_life", parameters.register_new_updatable_parameter(41.0)
         )
+
+
+def test_set_parameter():
+    my_updatable = MinimalUpdatable()
+    my_updatable.set_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+    )
+    my_updatable.set_parameter(
+        "no_meaning_of_life", parameters.register_new_updatable_parameter()
+    )
+
+    assert hasattr(my_updatable, "the_meaning_of_life")
+    assert my_updatable.the_meaning_of_life == 42.0
+
+    assert hasattr(my_updatable, "no_meaning_of_life")
+    assert my_updatable.no_meaning_of_life is None
 
 
 def test_update_rejects_internal_parameters():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_internal_parameter("the_meaning_of_life", parameters.create(42.0))
+    my_updatable.set_internal_parameter(
+        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+    )
     assert hasattr(my_updatable, "the_meaning_of_life")
 
     params = ParamsMap({"a": 1.1, "the_meaning_of_life": 34.0})

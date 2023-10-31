@@ -81,6 +81,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         cosmo=ccl_cosmo,
     )
     modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools.update(ParamsMap())
     modeling_tools.prepare(ccl_cosmo)
 
     # Bare CCL setup
@@ -255,6 +256,7 @@ def test_pt_mixed_systematics(sacc_data):
         cosmo=ccl_cosmo,
     )
     modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools.update(ParamsMap())
     modeling_tools.prepare(ccl_cosmo)
 
     # Bare CCL setup
