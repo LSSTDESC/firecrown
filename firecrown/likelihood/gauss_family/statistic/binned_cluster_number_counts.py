@@ -35,7 +35,7 @@ class BinnedClusterNumberCounts(Statistic):
         self.integrator = integrator
         self.data_vector = DataVector.from_list([])
 
-    def read(self, sacc_data: sacc.Sacc):
+    def read(self, sacc_data: sacc.Sacc) -> None:
         # Build the data vector and indices needed for the likelihood
 
         data_vector = []

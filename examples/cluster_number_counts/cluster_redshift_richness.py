@@ -21,9 +21,11 @@ from firecrown.models.cluster.kernel import (
     SpectroscopicRedshift,
 )
 from firecrown.models.cluster.mass_proxy import MurataBinned
+from firecrown.likelihood.likelihood import NamedParameters, Likelihood
+from typing import Tuple
 
 
-def get_cluster_abundance(sky_area):
+def get_cluster_abundance(sky_area: float) -> ClusterAbundance:
     hmf = ccl.halos.MassFuncBocquet16()
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
@@ -49,7 +51,9 @@ def get_cluster_abundance(sky_area):
     return cluster_abundance
 
 
-def build_likelihood(build_parameters):
+def build_likelihood(
+    build_parameters: NamedParameters,
+) -> Tuple[Likelihood, ModelingTools]:
     """
     Here we instantiate the number density (or mass function) object.
     """

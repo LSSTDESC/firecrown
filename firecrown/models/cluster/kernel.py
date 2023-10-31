@@ -4,6 +4,7 @@ from typing import List, Tuple, Union, Optional, Dict, Any
 import numpy.typing as npt
 import numpy as np
 from firecrown.updatable import Updatable
+import pdb
 
 
 class KernelType(Enum):
@@ -84,6 +85,7 @@ class Completeness(Kernel):
         log_mc = a_mc + b_mc * (1.0 + z)
         nc = a_nc + b_nc * (1.0 + z)
         completeness = (mass / log_mc) ** nc / ((mass / log_mc) ** nc + 1.0)
+        assert isinstance(completeness, np.ndarray)
         return completeness
 
 
@@ -104,14 +106,19 @@ class Purity(Kernel):
         b_nc = np.log(10) * 0.3527
         a_rc = 2.2183
         b_rc = -0.6592
-
-        ln_r = np.log(10**mass_proxy)
+        # pdb.set_trace()
+        if all(mass_proxy == -1.0):
+            mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
+            ln_r = np.log(10**mean_mass)
+        else:
+            ln_r = np.log(10**mass_proxy)
         ln_rc = a_rc + b_rc * (1.0 + z)
         r_over_rc = ln_r / ln_rc
 
         nc = a_nc + b_nc * (1.0 + z)
 
         purity = (r_over_rc) ** nc / (r_over_rc**nc + 1.0)
+        assert isinstance(purity, np.ndarray)
         return purity
 
 
@@ -164,4 +171,6 @@ class DESY1PhotometricRedshift(Kernel):
         sigma_z = self.sigma_0 * (1 + z)
         prefactor = 1 / (np.sqrt(2.0 * np.pi) * sigma_z)
         distribution = np.exp(-(1 / 2) * ((z_proxy - z) / sigma_z) ** 2.0)
-        return prefactor * distribution
+        numerator = prefactor * distribution
+        assert isinstance(numerator, np.ndarray)
+        return numerator

@@ -1,15 +1,16 @@
 from numcosmo_py import Ncm
-from typing import Tuple, Callable, Dict
+from typing import Tuple, Callable, Dict, Sequence
 import numpy as np
 import numpy.typing as npt
 from firecrown.models.cluster.kernel import KernelType
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.integrator.integrator import Integrator
-import pdb
 
 
 class NumCosmoIntegrator(Integrator):
-    def __init__(self, relative_tolerance=1e-4, absolute_tolerance=1e-12) -> None:
+    def __init__(
+        self, relative_tolerance: float = 1e-4, absolute_tolerance: float = 1e-12
+    ) -> None:
         super().__init__()
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
@@ -18,8 +19,8 @@ class NumCosmoIntegrator(Integrator):
         self.integral_args_lkp[KernelType.mass] = 0
         self.integral_args_lkp[KernelType.z] = 1
 
-        self.z_proxy_limits = (-1.0, -1.0)
-        self.mass_proxy_limits = (-1.0, -1.0)
+        self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
+        self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
 
     def _integral_wrapper(
         self,
@@ -34,8 +35,9 @@ class NumCosmoIntegrator(Integrator):
             ],
             npt.NDArray[np.float64],
         ],
-    ):
-        def ncm_integrand(int_args):
+    ) -> Callable[[npt.NDArray], Sequence[float]]:
+        # mypy strict issue: npt.NDArray[npt.NDArray[np.float64]] not supported
+        def ncm_integrand(int_args: npt.NDArray) -> Sequence[float]:
             # pdb.set_trace()
             default = np.ones_like(int_args[0]) * -1.0
 
@@ -44,14 +46,16 @@ class NumCosmoIntegrator(Integrator):
             mass_proxy = self._get_or_default(int_args, KernelType.mass_proxy, default)
             z_proxy = self._get_or_default(int_args, KernelType.z_proxy, default)
 
-            return integrand(
+            return_val = integrand(
                 mass,
                 z,
                 mass_proxy,
                 z_proxy,
                 self.mass_proxy_limits,
                 self.z_proxy_limits,
-            )
+            ).tolist()
+            assert isinstance(return_val, list)
+            return return_val
 
         return ncm_integrand
 
@@ -117,7 +121,11 @@ class NumCosmoIntegrator(Integrator):
         return res.get(0)
 
     def _get_or_default(
-        self, int_args, kernel_type, default
+        self,
+        # mypy strict issue: npt.NDArray[npt.NDArray[np.float64]] not supported
+        int_args: npt.NDArray,
+        kernel_type: KernelType,
+        default: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         try:
             return int_args[:, self.integral_args_lkp[kernel_type]]
@@ -129,11 +137,14 @@ class CountsIntegralND(Ncm.IntegralND):
     """Integral subclass used by the ClusterAbundance
     to compute the integrals using numcosmo."""
 
-    def __init__(self, dim, fun, *args) -> None:
+    def __init__(
+        self,
+        dim: int,
+        fun: Callable[[npt.NDArray], Sequence[float]],
+    ) -> None:
         super().__init__()
         self.dim = dim
         self.fun = fun
-        self.args = args
 
     def do_get_dimensions(self) -> Tuple[int, int]:
         """Get number of dimensions."""
@@ -150,4 +161,4 @@ class CountsIntegralND(Ncm.IntegralND):
     ) -> None:
         """Integrand function."""
         x = np.array(x_vec.dup_array()).reshape(npoints, dim)
-        fval_vec.set_array(self.fun(x, *self.args))
+        fval_vec.set_array(self.fun(x))

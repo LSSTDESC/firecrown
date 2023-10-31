@@ -50,7 +50,9 @@ class AbundanceData:
         )
         return data_vector_list, sacc_indices_list
 
-    def validate_tracers(self, tracers_combinations, data_type: str):
+    def validate_tracers(
+        self, tracers_combinations: npt.NDArray, data_type: str
+    ) -> None:
         if len(tracers_combinations) == 0:
             raise ValueError(
                 f"The SACC file does not contain any tracers for the "
