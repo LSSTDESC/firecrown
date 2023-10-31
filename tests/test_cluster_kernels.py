@@ -8,23 +8,7 @@ from firecrown.models.cluster.kernel import (
     DESY1PhotometricRedshift,
     SpectroscopicRedshift,
     TrueMass,
-    ArgReader,
 )
-
-
-class MockArgsReader(ArgReader):
-    def __init__(self):
-        super().__init__()
-        self.integral_bounds_idx = 0
-        self.extra_args_idx = 1
-
-    def get_independent_val(self, int_args, kernel_type: KernelType):
-        bounds_values = int_args[self.integral_bounds_idx]
-        return bounds_values[:, self.integral_bounds[kernel_type.name]]
-
-    def get_extra_args(self, int_args, kernel_type: KernelType):
-        extra_values = int_args[self.extra_args_idx]
-        return extra_values[self.extra_args[kernel_type.name]]
 
 
 def test_create_desy1_photometric_redshift_kernel():
@@ -74,28 +58,50 @@ def test_create_purity_kernel():
 
 def test_spec_z_distribution():
     srk = SpectroscopicRedshift()
-    assert srk.distribution(([0.5], []), MockArgsReader()) == 1.0
+
+    mass = np.linspace(13, 17, 5)
+    z = np.linspace(0, 1, 5)
+    mass_proxy = np.linspace(0, 5, 5)
+    z_proxy = np.linspace(0, 1, 5)
+    mass_proxy_limits = (0, 5)
+    z_proxy_limits = (0, 1)
+
+    assert (
+        srk.distribution(
+            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+        )
+        == 1.0
+    )
 
 
 def test_true_mass_distribution():
     tmk = TrueMass()
-    assert tmk.distribution(([0.5], []), MockArgsReader()) == 1.0
+    mass = np.linspace(13, 17, 5)
+    z = np.linspace(0, 1, 5)
+    mass_proxy = np.linspace(0, 5, 5)
+    z_proxy = np.linspace(0, 1, 5)
+    mass_proxy_limits = (0, 5)
+    z_proxy_limits = (0, 1)
 
-
-def test_create_arg_reader():
-    mr = MockArgsReader()
-    assert mr.integral_bounds == dict()
-    assert mr.extra_args == dict()
+    assert (
+        tmk.distribution(
+            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+        )
+        == 1.0
+    )
 
 
 def test_purity_distribution():
     pk = Purity()
-    mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
 
-    arguments = np.array(list(zip(mass_proxy, z)))
-    map = MockArgsReader()
-    map.integral_bounds = {KernelType.mass_proxy.name: 0, KernelType.z.name: 1}
+    mass = np.linspace(13, 17, 5)
+    mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+
+    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    z_proxy = np.linspace(0, 1, 5)
+
+    mass_proxy_limits = (1.0, 10.0)
+    z_proxy_limits = (0.1, 1.0)
 
     truth = np.array(
         [
@@ -112,7 +118,9 @@ def test_purity_distribution():
         ]
     )
 
-    purity = pk.distribution((arguments, []), map)
+    purity = pk.distribution(
+        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(purity, np.ndarray)
     for ref, true in zip(purity, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
@@ -122,10 +130,11 @@ def test_completeness_distribution():
     ck = Completeness()
     mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    z_proxy = np.linspace(0, 1, 5)
 
-    bounds = np.array(list(zip(mass, z)))
-    map = MockArgsReader()
-    map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
+    mass_proxy_limits = (1.0, 10.0)
+    z_proxy_limits = (0.1, 1.0)
 
     truth = np.array(
         [
@@ -142,7 +151,9 @@ def test_completeness_distribution():
         ]
     )
 
-    comp = ck.distribution((bounds, []), map)
+    comp = ck.distribution(
+        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(comp, np.ndarray)
     for ref, true in zip(comp, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
@@ -152,17 +163,12 @@ def test_des_photoz_kernel_distribution():
     dpk = DESY1PhotometricRedshift()
 
     mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
+    mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     z_proxy = np.array([0.11, 0.21, 0.31, 0.41, 0.51, 0.61, 0.71, 0.81, 0.91, 1.01])
 
-    bounds = np.array(list(zip(mass, z, z_proxy)))
-
-    map = MockArgsReader()
-    map.integral_bounds = {
-        KernelType.mass.name: 0,
-        KernelType.z.name: 1,
-        KernelType.z_proxy.name: 2,
-    }
+    mass_proxy_limits = (1.0, 10.0)
+    z_proxy_limits = (0.11, 1.01)
 
     truth = [
         7.134588921656481,
@@ -177,7 +183,9 @@ def test_des_photoz_kernel_distribution():
         3.969525474770118,
     ]
 
-    spread = dpk.distribution((bounds, []), map)
+    spread = dpk.distribution(
+        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(spread, np.ndarray)
     for ref, true in zip(spread, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)

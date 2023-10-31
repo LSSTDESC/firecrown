@@ -8,26 +8,10 @@ from firecrown.models.cluster.mass_proxy import (
 from firecrown.models.cluster.kernel import (
     KernelType,
     Kernel,
-    ArgReader,
 )
 
 PIVOT_Z = 0.6
 PIVOT_MASS = 14.625862906
-
-
-class MockArgsReader(ArgReader):
-    def __init__(self):
-        super().__init__()
-        self.integral_bounds_idx = 0
-        self.extra_args_idx = 1
-
-    def get_independent_val(self, int_args, kernel_type: KernelType):
-        bounds_values = int_args[self.integral_bounds_idx]
-        return bounds_values[:, self.integral_bounds[kernel_type.name]]
-
-    def get_extra_args(self, int_args, kernel_type: KernelType):
-        extra_values = int_args[self.extra_args_idx]
-        return extra_values[self.extra_args[kernel_type.name]]
 
 
 @pytest.fixture(name="murata_binned_relation")
@@ -99,21 +83,25 @@ def test_cluster_observed_mass():
 
 
 def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned):
-    logM_array = np.linspace(7.0, 26.0, 20)
+    mass_array = np.linspace(7.0, 26.0, 20)
+    mass_proxy_limits = (1.0, 5.0)
+    z_proxy_limits = (0.0, 1.0)
+
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
-        for logM_0, logM_1 in zip(logM_array[:-1], logM_array[1:]):
-            extra_args = [(1.0, 5.0)]
+        for mass1, mass2 in zip(mass_array[:-1], mass_array[1:]):
+            mass1 = np.atleast_1d(mass1)
+            mass2 = np.atleast_1d(mass2)
+            z = np.atleast_1d(z)
+            z_proxy = np.atleast_1d(0)
+            mass_proxy = np.atleast_1d(1)
 
-            args1 = [np.array([[logM_0, z]]), extra_args]
-            args2 = [np.array([[logM_1, z]]), extra_args]
-
-            args_map = MockArgsReader()
-            args_map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
-            args_map.extra_args = {KernelType.mass_proxy.name: 0}
-
-            probability_0 = murata_binned_relation.distribution(args1, args_map)
-            probability_1 = murata_binned_relation.distribution(args2, args_map)
+            probability_0 = murata_binned_relation.distribution(
+                mass1, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+            )
+            probability_1 = murata_binned_relation.distribution(
+                mass2, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+            )
 
             assert probability_0 >= 0
             assert probability_1 >= 0
@@ -168,21 +156,25 @@ def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
 
 
 def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUnbinned):
-    logM_array = np.linspace(7.0, 26.0, 20)
+    mass_array = np.linspace(7.0, 26.0, 20)
+    mass_proxy_limits = (1.0, 5.0)
+    z_proxy_limits = (0.0, 1.0)
+
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
-        for logM_0, logM_1 in zip(logM_array[:-1], logM_array[1:]):
-            extra_args = [2.5]
+        for mass1, mass2 in zip(mass_array[:-1], mass_array[1:]):
+            mass1 = np.atleast_1d(mass1)
+            mass2 = np.atleast_1d(mass2)
+            z = np.atleast_1d(z)
+            z_proxy = np.atleast_1d(0)
+            mass_proxy = np.atleast_1d(1)
 
-            args1 = [np.array([[logM_0, z]]), extra_args]
-            args2 = [np.array([[logM_1, z]]), extra_args]
-
-            args_map = MockArgsReader()
-            args_map.integral_bounds = {KernelType.mass.name: 0, KernelType.z.name: 1}
-            args_map.extra_args = {KernelType.mass_proxy.name: 0}
-
-            probability_0 = murata_unbinned_relation.distribution(args1, args_map)
-            probability_1 = murata_unbinned_relation.distribution(args2, args_map)
+            probability_0 = murata_unbinned_relation.distribution(
+                mass1, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+            )
+            probability_1 = murata_unbinned_relation.distribution(
+                mass2, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+            )
 
             # Probability density should be initially monotonically increasing
             # and then monotonically decreasing. It should flip only once.

@@ -16,28 +16,6 @@ class KernelType(Enum):
     purity = 6
 
 
-class ArgReader(ABC):
-    def __init__(self) -> None:
-        self.integral_bounds: Dict[str, int] = dict()
-        self.extra_args: Dict[str, int] = dict()
-
-    @abstractmethod
-    def get_independent_val(
-        self,
-        integral_args: Tuple[Any, ...],
-        kernel_type: KernelType,
-    ) -> Union[float, npt.NDArray[np.float64]]:
-        """Returns the current differential value for KernelType"""
-
-    @abstractmethod
-    def get_extra_args(
-        self,
-        integral_args: Tuple[Any, ...],
-        kernel_type: KernelType,
-    ) -> Union[float, Tuple[float, float]]:
-        """Returns the extra arguments passed into the integral for KernelType"""
-
-
 class Kernel(Updatable, ABC):
     def __init__(
         self,
