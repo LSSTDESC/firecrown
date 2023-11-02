@@ -42,6 +42,7 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_pt_c_1: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_d: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+
     ia_a_1h: Optional[np.float] = None
 
 
@@ -224,6 +225,8 @@ class HMAlignmentSystematic(WeakLensingSystematic):
 
     def __init__(self, sacc_tracer: Optional[str] = None):
         super().__init__()
+
+        self.ia_bias = parameters.register_new_updatable_parameter()
         self.ia_a_1h = parameters.register_new_updatable_parameter()
 
         self.sacc_tracer = sacc_tracer
@@ -236,11 +239,12 @@ class HMAlignmentSystematic(WeakLensingSystematic):
 
         ccl_cosmo = tools.get_ccl_cosmology() # No purpose now.
         z = tracer_arg.z  # pylint: disable-msg=invalid-name
-        a_1h = np.full(z.shape, self.ia_a_1h)
+        ia_bias_array = np.full(z.shape, self.ia_bias)
 
         return replace(
             tracer_arg,
             has_hm=True,
+            ia_bias=(tracer_arg.z, ia_bias_array),
             ia_a_1h=self.ia_a_1h
         )
 
