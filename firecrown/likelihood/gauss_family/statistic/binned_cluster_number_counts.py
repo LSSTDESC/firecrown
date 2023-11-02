@@ -60,7 +60,7 @@ class BinnedClusterNumberCounts(Statistic):
         # specify a data type?
         self.bin_limits = sacc_adapter.get_bin_limits(sacc_types.cluster_mean_log_mass)
         self.data_vector = DataVector.from_list(data_vector)
-        print(len(data_vector))
+
         self.sacc_indices = np.array(sacc_indices)
         super().read(sacc_data)
 

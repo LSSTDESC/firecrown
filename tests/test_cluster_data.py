@@ -4,8 +4,8 @@ from firecrown.models.cluster.abundance_data import AbundanceData
 import sacc
 
 
-@pytest.fixture
-def complicated_sacc_data():
+@pytest.fixture(name="sacc_data")
+def fixture_complicated_sacc_data():
     cc = sacc.standard_types.cluster_counts
     mlm = sacc.standard_types.cluster_mean_log_mass
 
@@ -83,8 +83,8 @@ def test_validate_tracers():
         ad.validate_tracers(tracer_combs, sacc.standard_types.cluster_counts)
 
 
-def test_filtered_tracers(complicated_sacc_data):
-    ad = AbundanceData(complicated_sacc_data, "my_survey", False, False)
+def test_filtered_tracers(sacc_data):
+    ad = AbundanceData(sacc_data, "my_survey", False, False)
     cc = sacc.standard_types.cluster_counts
     filtered_tracers, survey_mask = ad.get_filtered_tracers(cc)
     my_tracers = [
@@ -95,8 +95,8 @@ def test_filtered_tracers(complicated_sacc_data):
     assert (survey_mask == [True, True, False]).all()
 
 
-def test_get_data_and_indices(complicated_sacc_data):
-    ad = AbundanceData(complicated_sacc_data, "my_survey", False, False)
+def test_get_data_and_indices(sacc_data):
+    ad = AbundanceData(sacc_data, "my_survey", False, False)
     cc = sacc.standard_types.cluster_counts
     data, indices = ad.get_data_and_indices(cc)
 
@@ -104,8 +104,8 @@ def test_get_data_and_indices(complicated_sacc_data):
     assert indices == [0, 1]
 
 
-def test_get_bin_limits(complicated_sacc_data):
-    ad = AbundanceData(complicated_sacc_data, "my_survey", False, False)
+def test_get_bin_limits(sacc_data):
+    ad = AbundanceData(sacc_data, "my_survey", False, False)
     cc = sacc.standard_types.cluster_counts
     limits = ad.get_bin_limits(cc)
     assert limits == [[(0, 2), (0, 2)], [(0, 2), (2, 4)]]

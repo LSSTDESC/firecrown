@@ -1,0 +1,123 @@
+from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
+    BinnedClusterNumberCounts,
+)
+from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
+from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
+from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
+from firecrown.modeling_tools import ModelingTools
+from firecrown.models.cluster.abundance import ClusterAbundance
+import sacc
+import pytest
+import pyccl
+
+
+@pytest.fixture(name="sacc_data")
+def fixture_complicated_sacc_data():
+    cc = sacc.standard_types.cluster_counts
+    mlm = sacc.standard_types.cluster_mean_log_mass
+
+    s = sacc.Sacc()
+    s.add_tracer("survey", "my_survey", 4000)
+    s.add_tracer("survey", "not_my_survey", 5000)
+    s.add_tracer("bin_z", "my_tracer1", 0, 2)
+    s.add_tracer("bin_z", "my_tracer2", 2, 4)
+    s.add_tracer("bin_richness", "my_other_tracer1", 0, 2)
+    s.add_tracer("bin_richness", "my_other_tracer2", 2, 4)
+
+    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
+    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(cc, ("not_my_survey", "my_tracer1", "my_other_tracer2"), 1)
+
+    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer2"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer1"), 1)
+
+    return s
+
+
+def test_create_binned_number_counts():
+    integrator = ScipyIntegrator()
+    bnc = BinnedClusterNumberCounts(False, False, "Test", integrator)
+    assert bnc is not None
+    assert bnc.use_cluster_counts is False
+    assert bnc.use_mean_log_mass is False
+    assert bnc.survey_name == "Test"
+    assert bnc.systematics == []
+    assert bnc.theory_vector is None
+    assert len(bnc.data_vector) == 0
+
+    bnc = BinnedClusterNumberCounts(True, True, "Test", integrator)
+    assert bnc.use_cluster_counts is True
+    assert bnc.use_mean_log_mass is True
+
+    systematics = [SourceSystematic("mock_systematic")]
+    bnc = BinnedClusterNumberCounts(False, False, "Test", integrator, systematics)
+    assert bnc.systematics == systematics
+
+
+def test_get_data_vector():
+    integrator = ScipyIntegrator()
+    bnc = BinnedClusterNumberCounts(False, False, "Test", integrator)
+    dv = bnc.get_data_vector()
+    assert dv is not None
+    assert len(dv) == 0
+
+
+def test_read(sacc_data: sacc.Sacc):
+    integrator = NumCosmoIntegrator()
+    bnc = BinnedClusterNumberCounts(False, False, "my_survey", integrator)
+
+    with pytest.raises(
+        RuntimeError,
+        match="has read a data vector of length 0; the length must be positive",
+    ):
+        bnc.read(sacc_data)
+
+    bnc = BinnedClusterNumberCounts(True, False, "my_survey", integrator)
+    bnc.read(sacc_data)
+    assert bnc.sky_area == 4000
+    assert len(bnc.bin_limits) == 4
+    assert len(bnc.data_vector) == 2
+    assert len(bnc.sacc_indices) == 2
+
+    bnc = BinnedClusterNumberCounts(False, True, "my_survey", integrator)
+    bnc.read(sacc_data)
+    assert bnc.sky_area == 4000
+    assert len(bnc.bin_limits) == 4
+    assert len(bnc.data_vector) == 4
+    assert len(bnc.sacc_indices) == 4
+
+    bnc = BinnedClusterNumberCounts(True, True, "my_survey", integrator)
+    bnc.read(sacc_data)
+    assert bnc.sky_area == 4000
+    assert len(bnc.bin_limits) == 4
+    assert len(bnc.data_vector) == 6
+    assert len(bnc.sacc_indices) == 6
+
+
+def test_compute_theory_vector(sacc_data: sacc.Sacc):
+    integrator = NumCosmoIntegrator()
+    tools = ModelingTools()
+    hmf = pyccl.halos.MassFuncBocquet16()
+    cosmo = pyccl.cosmology.CosmologyVanillaLCDM()
+    tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf, 4000)
+    tools.prepare(cosmo)
+
+    bnc = BinnedClusterNumberCounts(True, False, "my_survey", integrator)
+    bnc.read(sacc_data)
+    tv = bnc.compute_theory_vector(tools)
+    assert tv is not None
+    assert len(tv) == 4
+
+    bnc = BinnedClusterNumberCounts(False, True, "my_survey", integrator)
+    bnc.read(sacc_data)
+    tv = bnc.compute_theory_vector(tools)
+    assert tv is not None
+    assert len(tv) == 8
+
+    bnc = BinnedClusterNumberCounts(True, True, "my_survey", integrator)
+    bnc.read(sacc_data)
+    tv = bnc.compute_theory_vector(tools)
+    assert tv is not None
+    assert len(tv) == 8
