@@ -45,7 +45,7 @@ class MockKernel(Kernel):
         return np.atleast_1d(1.0)
 
 
-def test_numcosmo_get_integration_bounds_no_kernels(cl_abundance: ClusterAbundance):
+def test_numcosmo_set_integration_bounds_no_kernels(cl_abundance: ClusterAbundance):
     nci = NumCosmoIntegrator()
 
     z_array = np.linspace(0, 2, 10)
@@ -66,7 +66,7 @@ def test_numcosmo_get_integration_bounds_no_kernels(cl_abundance: ClusterAbundan
         }
 
 
-def test_numcosmo_get_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance):
+def test_numcosmo_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance):
     nci = NumCosmoIntegrator()
 
     z_array = np.linspace(0, 2, 10)
@@ -120,7 +120,7 @@ def test_numcosmo_get_integration_bounds_dirac_delta(cl_abundance: ClusterAbunda
         }
 
 
-def test_numcosmo_get_integration_bounds_integrable_kernels(
+def test_numcosmo_set_integration_bounds_integrable_kernels(
     cl_abundance: ClusterAbundance,
 ):
     nci = NumCosmoIntegrator()
@@ -181,7 +181,7 @@ def test_numcosmo_get_integration_bounds_integrable_kernels(
         }
 
 
-def test_numcosmo_get_integration_bounds_analytic_slns(
+def test_numcosmo_set_integration_bounds_analytic_slns(
     cl_abundance: ClusterAbundance,
 ):
     nci = NumCosmoIntegrator()
@@ -237,8 +237,9 @@ def test_numcosmo_integrator_integrate(cl_abundance: ClusterAbundance):
         e: Tuple[float, float],
         f: Tuple[float, float],
     ):
-        x = a[0]
-        return x
+        # xy
+        result = a * b
+        return result
 
     nci.set_integration_bounds(
         cl_abundance,
@@ -246,4 +247,5 @@ def test_numcosmo_integrator_integrate(cl_abundance: ClusterAbundance):
         (0, 1),
     )
     result = nci.integrate(integrand)
-    assert result == 0.5
+    # \int_0^1 \int_0^1 xy dx dy = 1/4
+    assert result == 0.25

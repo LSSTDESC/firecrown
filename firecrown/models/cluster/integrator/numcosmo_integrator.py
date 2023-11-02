@@ -32,7 +32,6 @@ class NumCosmoIntegrator(Integrator):
     ) -> Callable[[npt.NDArray], Sequence[float]]:
         # mypy strict issue: npt.NDArray[npt.NDArray[np.float64]] not supported
         def ncm_integrand(int_args: npt.NDArray) -> Sequence[float]:
-            # pdb.set_trace()
             default = np.ones_like(int_args[0]) * -1.0
 
             mass = self._get_or_default(int_args, KernelType.mass, default)

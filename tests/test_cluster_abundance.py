@@ -59,6 +59,7 @@ def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
 
     assert cl_abundance.cosmo is None
     assert mk.param is None
+    assert cl_abundance._hmf_cache == {}
 
     pmap = ParamsMap({"param": 42})
     cosmo = pyccl.CosmologyVanillaLCDM()
@@ -67,6 +68,13 @@ def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
     assert cl_abundance.cosmo is not None
     assert cl_abundance.cosmo == cosmo
     assert mk.param == 42
+    assert cl_abundance._hmf_cache == {}
+
+    cl_abundance.update_ingredients(None)
+    assert cl_abundance.cosmo is None
+    cl_abundance.update_ingredients(cosmo)
+    assert cl_abundance.cosmo is not None
+    assert cl_abundance.cosmo == cosmo
 
 
 def test_cluster_sky_area(cl_abundance: ClusterAbundance):
@@ -101,15 +109,6 @@ def test_cluster_add_kernel(cl_abundance: ClusterAbundance):
     assert len(cl_abundance.integrable_kernels) == 1
 
 
-# def test_abundance_comoving_vol_accepts_float(cl_abundance: ClusterAbundance):
-#     cosmo = pyccl.CosmologyVanillaLCDM()
-#     cl_abundance.update_ingredients(cosmo, ParamsMap())
-
-#     result = cl_abundance.comoving_volume(0.1)
-#     assert isinstance(result, float)
-#     assert result > 0
-
-
 def test_abundance_comoving_vol_accepts_array(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
@@ -119,15 +118,6 @@ def test_abundance_comoving_vol_accepts_array(cl_abundance: ClusterAbundance):
     assert np.issubdtype(result.dtype, np.float64)
     assert len(result) == 10
     assert np.all(result > 0)
-
-
-# def test_abundance_massfunc_accepts_float(cl_abundance: ClusterAbundance):
-#     cosmo = pyccl.CosmologyVanillaLCDM()
-#     cl_abundance.update_ingredients(cosmo, ParamsMap())
-
-#     result = cl_abundance.mass_function(13.0, 0.1)
-#     assert isinstance(result, float)
-#     assert result > 0
 
 
 def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
@@ -159,17 +149,56 @@ def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
 
+
+def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+
+    mass = np.linspace(13, 17, 5)
+    z = np.linspace(0, 1, 5)
+    mass_proxy = np.linspace(0, 5, 5)
+    z_proxy = np.linspace(0, 1, 5)
+    mass_proxy_limits = (0, 5)
+    z_proxy_limits = (0, 1)
+
     integrand = cl_abundance.get_integrand(avg_mass=True)
     assert callable(integrand)
     result = integrand(mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits)
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
 
+
+def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+
+    mass = np.linspace(13, 17, 5)
+    z = np.linspace(0, 1, 5)
+    mass_proxy = np.linspace(0, 5, 5)
+    z_proxy = np.linspace(0, 1, 5)
+    mass_proxy_limits = (0, 5)
+    z_proxy_limits = (0, 1)
+
     integrand = cl_abundance.get_integrand(avg_redshift=True)
     assert callable(integrand)
     result = integrand(mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits)
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
+
+
+def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbundance):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+
+    mass = np.linspace(13, 17, 5)
+    z = np.linspace(0, 1, 5)
+    mass_proxy = np.linspace(0, 5, 5)
+    z_proxy = np.linspace(0, 1, 5)
+    mass_proxy_limits = (0, 5)
+    z_proxy_limits = (0, 1)
 
     integrand = cl_abundance.get_integrand(avg_redshift=True, avg_mass=True)
     assert callable(integrand)

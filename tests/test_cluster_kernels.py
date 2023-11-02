@@ -94,11 +94,11 @@ def test_true_mass_distribution():
 def test_purity_distribution():
     pk = Purity()
 
-    mass = np.linspace(13, 17, 5)
+    mass = np.linspace(13, 17, 10)
     mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    z_proxy = np.linspace(0, 1, 5)
+    z_proxy = np.linspace(0, 1, 10)
 
     mass_proxy_limits = (1.0, 10.0)
     z_proxy_limits = (0.1, 1.0)
@@ -126,12 +126,47 @@ def test_purity_distribution():
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
 
+def test_purity_distribution_uses_mean():
+    pk = Purity()
+
+    mass = np.linspace(13, 17, 10)
+    z_proxy = np.linspace(0, 1, 10)
+
+    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    mass_proxy = np.ones_like(z) * -1.0
+
+    mass_proxy_limits = (1.0, 10.0)
+    z_proxy_limits = (0.1, 1.0)
+
+    truth = np.array(
+        [
+            0.9978693724040568,
+            0.9984319673134954,
+            0.9988620014089232,
+            0.9991864843696077,
+            0.9994279315032029,
+            0.999604893383804,
+            0.9997324678841709,
+            0.9998227843987537,
+            0.9998854531462606,
+            0.9999279749997235,
+        ]
+    )
+
+    purity = pk.distribution(
+        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
+    assert isinstance(purity, np.ndarray)
+    for ref, true in zip(purity, truth):
+        assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
+
+
 def test_completeness_distribution():
     ck = Completeness()
     mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    z_proxy = np.linspace(0, 1, 5)
+    z_proxy = np.linspace(0, 1, 10)
 
     mass_proxy_limits = (1.0, 10.0)
     z_proxy_limits = (0.1, 1.0)
