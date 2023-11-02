@@ -6,7 +6,6 @@ import numpy as np
 from typing import List, Tuple, Optional
 import numpy.typing as npt
 from firecrown.parameters import ParamsMap, create
-import math
 
 
 @pytest.fixture()

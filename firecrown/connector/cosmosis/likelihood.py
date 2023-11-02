@@ -7,8 +7,6 @@ Note that the class FirecrownLikelihood does *not* inherit from firecrown's
 likelihood abstract base class; it the implementation of a CosmoSIS module,
 not a specific likelihood.
 """
-import pdb
-
 import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
