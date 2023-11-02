@@ -10,6 +10,18 @@ import numpy.typing as npt
 # from functools import singledispatchmethod
 # import pdb
 
+AbundanceIntegrand = Callable[
+    [
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        npt.NDArray[np.float64],
+        Tuple[float, float],
+        Tuple[float, float],
+    ],
+    npt.NDArray[np.float64],
+]
+
 
 class ClusterAbundance(object):
     @property
@@ -142,17 +154,7 @@ class ClusterAbundance(object):
 
     def get_integrand(
         self, avg_mass: bool = False, avg_redshift: bool = False
-    ) -> Callable[
-        [
-            npt.NDArray[np.float64],
-            npt.NDArray[np.float64],
-            npt.NDArray[np.float64],
-            npt.NDArray[np.float64],
-            Tuple[float, float],
-            Tuple[float, float],
-        ],
-        npt.NDArray[np.float64],
-    ]:
+    ) -> AbundanceIntegrand:
         def integrand(
             mass: npt.NDArray[np.float64],
             z: npt.NDArray[np.float64],
