@@ -45,9 +45,9 @@ class ScipyIntegrator(Integrator):
                 z_proxy,
                 self.mass_proxy_limits,
                 self.z_proxy_limits,
-            )
-
-            return return_val[0]
+            )[0]
+            assert isinstance(return_val, float)
+            return return_val
 
         return scipy_integrand
 
@@ -99,7 +99,7 @@ class ScipyIntegrator(Integrator):
                 "epsrel": self._relative_tolerance,
             },
         )[0]
-
+        assert isinstance(val, float)
         return val
 
     def _get_or_default(

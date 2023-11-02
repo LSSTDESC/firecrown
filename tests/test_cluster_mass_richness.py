@@ -71,15 +71,19 @@ def test_create_musigma_kernel():
 
 def test_cluster_observed_z():
     for z in np.geomspace(1.0e-18, 2.0, 20):
-        f_z = MassRichnessGaussian.observed_value((0.0, 0.0, 1.0), 0.0, z, 0, 0)
+        z = np.atleast_1d(z)
+        mass = np.atleast_1d(0)
+        f_z = MassRichnessGaussian.observed_value((0.0, 0.0, 1.0), mass, z, 0, 0)
         assert f_z == pytest.approx(np.log1p(z), 1.0e-7, 0.0)
 
 
 def test_cluster_observed_mass():
-    for logM in np.linspace(10.0, 16.0, 20):
-        f_logM = MassRichnessGaussian.observed_value((0.0, 1.0, 0.0), logM, 0.0, 0, 0)
+    for mass in np.linspace(10.0, 16.0, 20):
+        z = np.atleast_1d(0)
+        mass = np.atleast_1d(mass)
+        f_logM = MassRichnessGaussian.observed_value((0.0, 1.0, 0.0), mass, z, 0, 0)
 
-        assert f_logM == pytest.approx(logM * np.log(10.0), 1.0e-7, 0.0)
+        assert f_logM == pytest.approx(mass * np.log(10.0), 1.0e-7, 0.0)
 
 
 def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned):
@@ -126,6 +130,8 @@ def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned
 def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):
     for mass in np.linspace(7.0, 26.0, 20):
         for z in np.geomspace(1.0e-18, 2.0, 20):
+            mass = np.atleast_1d(mass)
+            z = np.atleast_1d(z)
             test = murata_binned_relation.get_proxy_mean(mass, z)
 
             true = MassRichnessGaussian.observed_value(
@@ -142,6 +148,8 @@ def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):
 def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
     for mass in np.linspace(7.0, 26.0, 20):
         for z in np.geomspace(1.0e-18, 2.0, 20):
+            mass = np.atleast_1d(mass)
+            z = np.atleast_1d(z)
             test = murata_binned_relation.get_proxy_sigma(mass, z)
 
             true = MassRichnessGaussian.observed_value(

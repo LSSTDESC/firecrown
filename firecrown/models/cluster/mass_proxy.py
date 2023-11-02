@@ -1,4 +1,4 @@
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -13,33 +13,35 @@ class MassRichnessGaussian(Kernel):
     @staticmethod
     def observed_value(
         p: Tuple[float, float, float],
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
         pivot_mass: float,
         log1p_pivot_redshift: float,
-    ) -> Union[float, npt.NDArray[np.float64]]:
+    ) -> npt.NDArray[np.float64]:
         """Return observed quantity corrected by redshift and mass."""
 
         ln_mass = mass * np.log(10)
         delta_ln_mass = ln_mass - pivot_mass
         delta_z = np.log1p(z) - log1p_pivot_redshift
 
-        return p[0] + p[1] * delta_ln_mass + p[2] * delta_z
+        result = p[0] + p[1] * delta_ln_mass + p[2] * delta_z
+        assert isinstance(result, np.ndarray)
+        return result
 
     @abstractmethod
     def get_proxy_mean(
         self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ) -> Union[float, npt.NDArray[np.float64]]:
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Return observed quantity corrected by redshift and mass."""
 
     @abstractmethod
     def get_proxy_sigma(
         self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ) -> Union[float, npt.NDArray[np.float64]]:
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Return observed scatter corrected by redshift and mass."""
 
     def _distribution_binned(
@@ -71,7 +73,7 @@ class MassRichnessGaussian(Kernel):
         return_vals[mask2] = (
             special.erf(x_min[mask2]) - special.erf(x_max[mask2])
         ) / 2.0
-
+        assert isinstance(return_vals, np.ndarray)
         return return_vals
 
     def _distribution_unbinned(
@@ -86,9 +88,11 @@ class MassRichnessGaussian(Kernel):
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
 
-        return np.exp(-0.5 * (mass_proxy - proxy_mean) ** 2 / proxy_sigma**2) / (
+        result = np.exp(-0.5 * (mass_proxy - proxy_mean) ** 2 / proxy_sigma**2) / (
             2 * np.pi * proxy_sigma
         )
+        assert isinstance(result, np.ndarray)
+        return result
 
 
 class MurataBinned(MassRichnessGaussian):
@@ -116,9 +120,9 @@ class MurataBinned(MassRichnessGaussian):
 
     def get_proxy_mean(
         self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ):
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Return observed quantity corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
@@ -130,9 +134,9 @@ class MurataBinned(MassRichnessGaussian):
 
     def get_proxy_sigma(
         self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ):
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Return observed scatter corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),
@@ -181,9 +185,9 @@ class MurataUnbinned(MassRichnessGaussian):
 
     def get_proxy_mean(
         self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ):
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Return observed quantity corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
@@ -195,9 +199,9 @@ class MurataUnbinned(MassRichnessGaussian):
 
     def get_proxy_sigma(
         self,
-        mass: Union[float, npt.NDArray[np.float64]],
-        z: Union[float, npt.NDArray[np.float64]],
-    ):
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
         """Return observed scatter corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),

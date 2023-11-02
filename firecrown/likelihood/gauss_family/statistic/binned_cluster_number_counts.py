@@ -13,8 +13,6 @@ from firecrown.likelihood.gauss_family.statistic.source.source import SourceSyst
 from firecrown.modeling_tools import ModelingTools
 import numpy as np
 
-import cProfile
-
 
 class BinnedClusterNumberCounts(Statistic):
     def __init__(
@@ -26,7 +24,6 @@ class BinnedClusterNumberCounts(Statistic):
         systematics: Optional[List[SourceSystematic]] = None,
     ):
         super().__init__()
-        self.pr = cProfile.Profile()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
         self.use_cluster_counts = cluster_counts
