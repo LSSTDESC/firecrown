@@ -109,12 +109,12 @@ class MurataBinned(MassRichnessGaussian):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
-        self.mu_p0 = parameters.create()
-        self.mu_p1 = parameters.create()
-        self.mu_p2 = parameters.create()
-        self.sigma_p0 = parameters.create()
-        self.sigma_p1 = parameters.create()
-        self.sigma_p2 = parameters.create()
+        self.mu_p0 = parameters.register_new_updatable_parameter()
+        self.mu_p1 = parameters.register_new_updatable_parameter()
+        self.mu_p2 = parameters.register_new_updatable_parameter()
+        self.sigma_p0 = parameters.register_new_updatable_parameter()
+        self.sigma_p1 = parameters.register_new_updatable_parameter()
+        self.sigma_p2 = parameters.register_new_updatable_parameter()
 
         # Verify this gets called last or first
 
@@ -174,12 +174,12 @@ class MurataUnbinned(MassRichnessGaussian):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
-        self.mu_p0 = parameters.create()
-        self.mu_p1 = parameters.create()
-        self.mu_p2 = parameters.create()
-        self.sigma_p0 = parameters.create()
-        self.sigma_p1 = parameters.create()
-        self.sigma_p2 = parameters.create()
+        self.mu_p0 = parameters.register_new_updatable_parameter()
+        self.mu_p1 = parameters.register_new_updatable_parameter()
+        self.mu_p2 = parameters.register_new_updatable_parameter()
+        self.sigma_p0 = parameters.register_new_updatable_parameter()
+        self.sigma_p1 = parameters.register_new_updatable_parameter()
+        self.sigma_p2 = parameters.register_new_updatable_parameter()
 
         # Verify this gets called last or first
 

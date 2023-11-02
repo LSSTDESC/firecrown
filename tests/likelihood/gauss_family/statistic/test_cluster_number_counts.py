@@ -5,6 +5,7 @@ from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 import sacc
 import pytest
@@ -99,10 +100,14 @@ def test_read(sacc_data: sacc.Sacc):
 def test_compute_theory_vector(sacc_data: sacc.Sacc):
     integrator = NumCosmoIntegrator()
     tools = ModelingTools()
+
     hmf = pyccl.halos.MassFuncBocquet16()
     cosmo = pyccl.cosmology.CosmologyVanillaLCDM()
+    params = ParamsMap()
+
     tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf, 4000)
-    tools.prepare(cosmo)
+    tools.update(params)
+    tools.prepare(cosmo, params)
 
     bnc = BinnedClusterNumberCounts(True, False, "my_survey", integrator)
     bnc.read(sacc_data)

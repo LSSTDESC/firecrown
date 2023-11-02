@@ -91,7 +91,6 @@ class ModelingTools(Updatable):
         if self.pt_calculator is not None:
             self.pt_calculator.update_ingredients(ccl_cosmo)
 
-
         for pkm in self.pk_modifiers:
             self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
 
