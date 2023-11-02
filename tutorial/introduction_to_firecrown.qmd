@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: "Version 1.6.alpha"
+subtitle: "Version 1.6.1a0"
 authors:
   - Marc Paterno
   - Sandro Vitenti
@@ -133,56 +133,64 @@ Firecrown supports a few different installation modes.
 
 
 -   The following commands will:
-    1.  create a *conda* environment
-    2.  clone the Firecrown repository
+    1.  clone the Firecrown repository
+    2.  create a *conda* environment    
     3.  build the CosmoSIS standard library for use with Firecrown
 -   Installation only needs to be done once.
 
-```{{bash}}
-cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
-git clone https://github.com/LSSTDESC/firecrown.git
-# conda env update, when run as suggested, is able to create a new environment,
-# as well as updating an existing environment.
-conda env update -f firecrown/environment.yml
-conda activate firecrown_developer
-source ${CONDA_PREFIX}/bin/cosmosis-configure
-cosmosis-build-standard-library  # this may take a few minutes
-export CSL_DIR=${PWD}/cosmosis-standard-library
-export FIRECROWN_DIR=${PWD}/firecrown
-export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+
+## Clone the Firecrown repository
+
+Choose a directory in which to work.
+In this directory, you will be cloning the Firecrown repository and later building some of the non-Firecrown code that is not installable through conda.
+Note that this is *not* the directory in which the conda environment is created, nor is it the directory in which the CosmoSIS Standard Library (CSL) will be built.
+
+```{.bash}
+git clone https://github.com/LSSTDESC/firecrown.git    
 ```
 
-There are special instructions for [installation on an M1 Mac](https://firecrown.readthedocs.io/en/latest/apple_m1_instructions.html).
+## Installation of dependencies
 
-## Setting up a shell session for development
+These instructions will create a new conda environment containing all the packages used in development.
+(Note you may need to scroll down in the listing of instructions.)
 
--   This assumes that you have already (once, presumably in a previous shell session) done the installation described [on the previous slide](#developer-installation).
-
-``` {{bash}}
-cd THE_DIRECTORY_INTO_WHICH_YOU_DID_INSTALL_THINGS
+```{.bash}
+# conda env update, when run as suggested, is able to create a new environment, as
+# well as updating an existing environment.
+conda env update -f firecrown/environment.yml
 conda activate firecrown_developer
-export CSL_DIR=${PWD}/cosmosis-standard-library
-export FIRECROWN_DIR=${PWD}/firecrown
-export PYTHONPATH=${FIRECROWN_DIR}/build/lib
+# We define two environment variables that will be defined whenever you activate
+# the conda environment.
+conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}/firecrown
+# The command above does not immediately defined the environment variables.
+# They are made available on every fresh activation of the environment.
+# So we have to deactivate and then reactivate...
+conda deactivate
+conda activate firecrown_developer
+# Now we can finish building the CosmoSIS Standard Library.
+source ${CONDA_PREFIX}/bin/cosmosis-configure
+# We want to put the CSL into the same directory as conda environment upon which it depends
+cd ${CONDA_PREFIX}
+cosmosis-build-standard-library
+# Now change directory into the firecrown repository
+cd ${FIRECROWN_DIR}
+# And finally make an editable (developer) installation of firecrown into the conda environment
+python -m pip install --no-deps --editable ${PWD}
+```
+
+## Setting your environment for development
+
+Each time you want to do development in a new shell session you need to activate the conda environment.
+
+When you activate the conda environment, you can use the environment variable you defined when creating the environment to find your Firecrown directory:
+
+```{.bash}
+conda activate firecrown_developer
+cd ${FIRECROWN_DIR}
 ```
 
 -   `CSL_DIR` is used in CosmoSIS *ini* files to allow CosmoSIS to be run from any directory.
 -   `FIRECROWN_DIR` is used in examples.
--   `PYTHONPATH` is used by Python itself to find Firecrown modules.
-
-## Building Firecrown
-
--   We recommend against using a "developer install" using `pip install -e` because:
-    -    That installation does not deal gracefully with the removal of files during development.
-    -    Removing the *build* directory assures that no old artifacts are ever used.
--   We recommend instead building directly using `setup.py`.
-
-``` {{bash}}
-cd ${FIRECROWN_DIR}
-# We clean up any previous build to ensure stale code is never found by python.
-rm -rf build/*
-python setup.py build
-```
 
 ## Code development hygiene
 
@@ -195,24 +203,19 @@ python setup.py build
 -   We are using `flake8` to help verify PEP8 compliance.
 -   We are using type hints and `mypy` to help catch type-related errors.
 -   We are using `pylint` to enforce a variety of rules.
-    -   Not all of the code is "clean" according to pylint; this is a work in progress
 :::
 
 :::{.column width="50%"}
 -   We are using `pytest` to run our unit test suite.
-    -   Note the coverage is incomplete; we are working on this.
-    -   All new code should be accompanied by unit tests.
+
 
 ```{.bash code-copy=true}
 black --check firecrown/ examples/ tests/
 flake8 firecrown examples tests
 mypy -p firecrown -p examples -p tests
-pylint --rcfile pylintrc_for_tests tests
+pylint firecrown
 pylint --rcfile firecrown/models/pylintrc firecrown/models
-pylint firecrown/connector
-pylint firecrown/*.py
-pylint firecrown/likelihood/*.py
-pylint firecrown/likelihood/gauss_family/*.py
+pylint --rcfile pylintrc_for_tests tests
 python -m pytest -v tests
 ```
 :::

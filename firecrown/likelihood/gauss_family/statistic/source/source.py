@@ -1,10 +1,14 @@
-"""Abstract base classes for GaussianFamily statistics.
-
+"""Abstract base classes for TwoPoint Statistics sources.
 """
 
 from __future__ import annotations
-from typing import Optional, Sequence, final
+from typing import Optional, List, Sequence, final, TypeVar, Generic
 from abc import abstractmethod
+from dataclasses import dataclass, replace
+import numpy as np
+import numpy.typing as npt
+from scipy.interpolate import Akima1DInterpolator
+
 import sacc
 
 import pyccl
@@ -12,7 +16,8 @@ import pyccl.nl_pt
 
 from .....modeling_tools import ModelingTools
 from .....parameters import ParamsMap
-from .....updatable import Updatable
+from ..... import parameters
+from .....updatable import Updatable, UpdatableCollection
 
 
 class SourceSystematic(Updatable):
@@ -159,3 +164,147 @@ class Tracer:
     def has_hm(self) -> bool:
         """Return True if we have a halo_profile, and False if not."""
         return self.halo_profile is not None
+
+
+# Sources of galaxy distributions
+
+
+@dataclass(frozen=True)
+class SourceGalaxyArgs:
+    """Class for galaxy based sources arguments."""
+
+    z: npt.NDArray[np.float64]
+    dndz: npt.NDArray[np.float64]
+
+    scale: float = 1.0
+
+    field: str = "delta_matter"
+
+
+_SourceGalaxyArgsT = TypeVar("_SourceGalaxyArgsT", bound=SourceGalaxyArgs)
+
+
+class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
+    """Abstract base class for all galaxy based source systematics."""
+
+    @abstractmethod
+    def apply(
+        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
+        """Apply method to include systematics in the tracer_arg."""
+
+
+_SourceGalaxySystematicT = TypeVar(
+    "_SourceGalaxySystematicT", bound=SourceGalaxySystematic
+)
+
+
+class SourceGalaxyPhotoZShift(
+    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
+):
+    """A photo-z shift bias.
+
+    This systematic shifts the photo-z distribution by some amount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar delta_z: the photo-z shift.
+    """
+
+    def __init__(self, sacc_tracer: str):
+        """Create a PhotoZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
+
+        self.delta_z = parameters.register_new_updatable_parameter()
+
+    def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+        """Apply a shift to the photo-z distribution of a source."""
+
+        dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
+
+        dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
+        dndz[np.isnan(dndz)] = 0.0
+
+        return replace(
+            tracer_arg,
+            dndz=dndz,
+        )
+
+
+class SourceGalaxySelectField(
+    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
+):
+    """A systematic that allows specifying the 3D field that will be used
+    to select the 3D power spectrum when computing the angular power
+    spectrum.
+    """
+
+    def __init__(self, field: str = "delta_matter"):
+        """Specify which 3D field should be used when computing angular power
+        spectra.
+
+        :param field: the name of the 3D field that is associated to the tracer.
+            Default: :python:`"delta_matter"`
+        """
+        super().__init__()
+        self.field = field
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
+        return replace(tracer_arg, field=self.field)
+
+
+class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
+    """Source class for galaxy based sources."""
+
+    def __init__(
+        self,
+        *,
+        sacc_tracer: str,
+        systematics: Optional[List[SourceGalaxySystematic]] = None,
+    ):
+        """Initialize the SourceGalaxy object.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+
+        """
+        super().__init__(sacc_tracer)
+
+        self.sacc_tracer = sacc_tracer
+        self.current_tracer_args: Optional[_SourceGalaxyArgsT] = None
+        self.systematics: UpdatableCollection = UpdatableCollection(systematics)
+        self.tracer_args: _SourceGalaxyArgsT
+
+    def _read(self, sacc_data: sacc.Sacc):
+        """Read the galaxy redshift distribution model from a sacc file.
+        All derived classes must call this method in their own `_read` method
+        after they have read their own data and initialized their tracer_args."""
+
+        try:
+            tracer_args = self.tracer_args
+        except AttributeError as exc:
+            raise RuntimeError(
+                "Must initialize tracer_args before calling _read on SourceGalaxy"
+            ) from exc
+
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+
+        z = getattr(tracer, "z").copy().flatten()
+        nz = getattr(tracer, "nz").copy().flatten()
+        indices = np.argsort(z)
+        z = z[indices]
+        nz = nz[indices]
+
+        self.tracer_args = replace(
+            tracer_args,
+            z=z,
+            dndz=nz,
+        )

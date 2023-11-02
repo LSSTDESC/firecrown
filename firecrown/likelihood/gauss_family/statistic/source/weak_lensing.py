@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import List, Tuple, Optional, Union, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -12,27 +12,29 @@ import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc
-from scipy.interpolate import Akima1DInterpolator
 
-from .source import Source, Tracer, SourceSystematic
+from .source import (
+    SourceGalaxy,
+    Tracer,
+    SourceGalaxyArgs,
+    SourceGalaxySystematic,
+    SourceGalaxyPhotoZShift,
+    SourceGalaxySelectField,
+)
 from ..... import parameters
 from .....parameters import (
     ParamsMap,
 )
 from .....modeling_tools import ModelingTools
-from .....updatable import UpdatableCollection
 
 __all__ = ["WeakLensing"]
 
 
 @dataclass(frozen=True)
-class WeakLensingArgs:
+class WeakLensingArgs(SourceGalaxyArgs):
     """Class for weak lensing tracer builder argument."""
 
-    scale: float
-    z: npt.NDArray[np.float64]
-    dndz: npt.NDArray[np.float64]
-    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]]
+    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
     has_pt: bool = False
     has_hm: bool = False
@@ -42,7 +44,7 @@ class WeakLensingArgs:
     ia_pt_c_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
 
-class WeakLensingSystematic(SourceSystematic):
+class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
     """Abstract base class for all weak lensing systematics."""
 
     @abstractmethod
@@ -50,6 +52,14 @@ class WeakLensingSystematic(SourceSystematic):
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
+
+
+class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
+    """Photo-z shift systematic."""
+
+
+class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
+    """Systematic to select 3D field"""
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):
@@ -72,7 +82,7 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mult_bias = parameters.create()
+        self.mult_bias = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -118,10 +128,10 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_bias = parameters.create()
-        self.alphaz = parameters.create()
-        self.alphag = parameters.create(alphag)
-        self.z_piv = parameters.create()
+        self.ia_bias = parameters.register_new_updatable_parameter()
+        self.alphaz = parameters.register_new_updatable_parameter()
+        self.alphag = parameters.register_new_updatable_parameter(alphag)
+        self.z_piv = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -166,9 +176,9 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             as a prefix for its parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.ia_a_1 = parameters.create()
-        self.ia_a_2 = parameters.create()
-        self.ia_a_d = parameters.create()
+        self.ia_a_1 = parameters.register_new_updatable_parameter()
+        self.ia_a_2 = parameters.register_new_updatable_parameter()
+        self.ia_a_d = parameters.register_new_updatable_parameter()
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -196,54 +206,17 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         )
 
 
-class PhotoZShift(WeakLensingSystematic):
-    """A photo-z shift bias.
-
-    This systematic shifts the photo-z distribution by some amount `delta_z`.
-
-    The following parameters are special Updatable parameters, which means that
-    they can be updated by the sampler, sacc_tracer is going to be used as a
-    prefix for the parameters:
-
-    :ivar delta_z: the photo-z shift.
-    """
-
-    def __init__(self, sacc_tracer: str):
-        """Create a PhotoZShift object, using the specified tracer name.
-
-        :param sacc_tracer: the name of the tracer in the SACC file. This is used
-            as a prefix for its parameters.
-        """
-        super().__init__(parameter_prefix=sacc_tracer)
-
-        self.delta_z = parameters.create()
-
-    def apply(self, tools: ModelingTools, tracer_arg: WeakLensingArgs):
-        """Apply a shift to the photo-z distribution of a source."""
-
-        dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
-
-        dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
-        dndz[np.isnan(dndz)] = 0.0
-
-        return replace(
-            tracer_arg,
-            dndz=dndz,
-        )
-
-
-class WeakLensing(Source):
+class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     """Source class for weak lensing."""
-
-    systematics: UpdatableCollection
-    tracer_args: WeakLensingArgs
 
     def __init__(
         self,
         *,
         sacc_tracer: str,
         scale: float = 1.0,
-        systematics: Optional[List[WeakLensingSystematic]] = None,
+        systematics: Optional[
+            List[Union[WeakLensingSystematic, SourceGalaxySystematic[WeakLensingArgs]]]
+        ] = None,
     ):
         """Initialize the WeakLensing object.
 
@@ -255,12 +228,12 @@ class WeakLensing(Source):
             this source.
 
         """
-        super().__init__(sacc_tracer)
+        super().__init__(sacc_tracer=sacc_tracer, systematics=systematics)
 
         self.sacc_tracer = sacc_tracer
         self.scale = scale
         self.current_tracer_args: Optional[WeakLensingArgs] = None
-        self.systematics = UpdatableCollection(systematics)
+        self.tracer_args: WeakLensingArgs
 
     @final
     def _update_source(self, params: ParamsMap):
@@ -275,15 +248,11 @@ class WeakLensing(Source):
         This sets self.tracer_args, based on the data in `sacc_data` associated with
         this object's `sacc_tracer` name.
         """
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        self.tracer_args = WeakLensingArgs(
+            scale=self.scale, z=np.array([]), dndz=np.array([]), ia_bias=None
+        )
 
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
-        indices = np.argsort(z)
-        z = z[indices]
-        nz = nz[indices]
-
-        self.tracer_args = WeakLensingArgs(scale=self.scale, z=z, dndz=nz, ia_bias=None)
+        super()._read(sacc_data)
 
     def create_tracers(self, tools: ModelingTools):
         """
@@ -303,7 +272,7 @@ class WeakLensing(Source):
             dndz=(tracer_args.z, tracer_args.dndz),
             ia_bias=tracer_args.ia_bias,
         )
-        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field="delta_matter")]
+        tracers = [Tracer(ccl_wl_tracer, tracer_name="shear", field=tracer_args.field)]
 
         if tracer_args.has_pt:
             ia_pt_tracer = pyccl.nl_pt.PTIntrinsicAlignmentTracer(

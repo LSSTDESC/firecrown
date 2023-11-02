@@ -2,8 +2,18 @@
 Tests for the module firecrown.likelihood.gauss_family.statistic.source.source.
 """
 import pytest
+import numpy as np
+
 import pyccl
-from firecrown.likelihood.gauss_family.statistic.source.source import Tracer
+import sacc
+
+from firecrown.modeling_tools import ModelingTools
+from firecrown.likelihood.gauss_family.statistic.source.source import (
+    Tracer,
+    SourceGalaxy,
+    SourceGalaxyArgs,
+    SourceGalaxySelectField,
+)
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 from firecrown.parameters import ParamsMap
 
@@ -15,6 +25,22 @@ class TrivialTracer(Tracer):
 @pytest.fixture(name="empty_pyccl_tracer")
 def fixture_empty_pyccl_tracer():
     return pyccl.Tracer()
+
+
+class TrivialSourceGalaxyArgs(SourceGalaxyArgs):
+    """This is the most trivial possible subclass of SourceGalaxyArgs."""
+
+
+class TrivialSourceGalaxy(SourceGalaxy[TrivialSourceGalaxyArgs]):
+    """This is the most trivial possible subclass of SourceGalaxy."""
+
+    def create_tracers(self, tools: ModelingTools):
+        return TrivialTracer(pyccl.Tracer()), TrivialSourceGalaxyArgs(
+            z=np.array([]), dndz=np.array([])
+        )
+
+    def get_scale(self) -> float:
+        return 1.0
 
 
 def test_trivial_tracer_construction(empty_pyccl_tracer):
@@ -67,6 +93,29 @@ def test_linear_bias_systematic():
     assert a.alphag is None
     assert a.alphaz is None
     assert a.z_piv is None
+
+
+def test_trivial_source_galaxy_construction():
+    trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
+
+    with pytest.raises(
+        RuntimeError,
+        match="Must initialize tracer_args before calling _read on SourceGalaxy",
+    ):
+        trivial.read(sacc.Sacc())
+
+
+def test_trivial_source_select_field():
+    tools = ModelingTools()
+    trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
+    select_field: SourceGalaxySelectField = SourceGalaxySelectField("new_field")
+    trivial.tracer_args = TrivialSourceGalaxyArgs(
+        z=np.array([1.0]), dndz=np.array([1.0]), field="old_field"
+    )
+
+    new_args = select_field.apply(tools, trivial.tracer_args)
+    assert new_args.field == "new_field"
+    assert trivial.tracer_args.field == "old_field"
 
 
 def test_weak_lensing_source():

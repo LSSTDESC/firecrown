@@ -28,10 +28,10 @@ class StudentT(GaussFamily):
     def __init__(
         self,
         statistics: List[Statistic],
-        nu: Optional[float],
+        nu: Optional[float] = None,
     ):
         super().__init__(statistics)
-        self.nu = parameters.create(nu)
+        self.nu = parameters.register_new_updatable_parameter(nu)
 
     def compute_loglike(self, tools: ModelingTools):
         """Compute the log-likelihood.
@@ -39,6 +39,5 @@ class StudentT(GaussFamily):
         :param cosmo: Current Cosmology object
         """
 
-        ccl_cosmo = tools.get_ccl_cosmology()
-        chi2 = self.compute_chisq(ccl_cosmo)
+        chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))

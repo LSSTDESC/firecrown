@@ -4,15 +4,18 @@ This module contains the ModelingTools class, which is built around the
 :python:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
-
-from typing import Dict, Optional, final
+from __future__ import annotations
+from typing import Dict, Optional, Collection
+from abc import ABC, abstractmethod
 import pyccl.nl_pt
 
 from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 
+from .updatable import Updatable, UpdatableCollection
 
-class ModelingTools:
+
+class ModelingTools(Updatable):
     """A class that bundles together a :python:`pyccl.Cosmology` object and associated
     objects, such as perturbation theory or halo model calculator workspaces."""
 
@@ -20,11 +23,16 @@ class ModelingTools:
         self,
         *,
         pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
+        pk_modifiers: Optional[Collection[PowerspectrumModifier]] = None,
         cluster_abundance: Optional[ClusterAbundance] = None,
     ):
+        super().__init__()
         self.ccl_cosmo: Optional[pyccl.Cosmology] = None
         self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
+        pk_modifiers = pk_modifiers if pk_modifiers is not None else []
+        self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
+        self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
@@ -70,6 +78,12 @@ class ModelingTools:
 
         """
 
+        if not self.is_updated():
+            raise RuntimeError("ModelingTools has not been prepared")
+
+        if self._prepared:
+            raise RuntimeError("ModelingTools has already been prepared")
+
         if self.ccl_cosmo is not None:
             raise RuntimeError("Cosmology has already been set")
         self.ccl_cosmo = ccl_cosmo
@@ -77,14 +91,27 @@ class ModelingTools:
         if self.pt_calculator is not None:
             self.pt_calculator.update_ingredients(ccl_cosmo)
 
+
+        for pkm in self.pk_modifiers:
+            self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
+
         if self.cluster_abundance is not None:
             self.cluster_abundance.update_ingredients(ccl_cosmo, params)
 
-    @final
-    def reset(self) -> None:
-        """Resets all CCL objects in ModelingTools."""
+        self._prepared = True
+
+    def _reset(self) -> None:
+        """Resets all CCL objects in ModelingTools.
+
+        This method is called by the Updatable base class when the object is
+        destroyed. It also resets the power spectra, the cosmology and the
+        _prepared state variable."""
 
         self.ccl_cosmo = None
+        # Also reset the power spectra
+        # TODO: is that always needed?
+        self.powerspectra = {}
+        self._prepared = False
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
         """Return the CCL cosmology object."""
@@ -99,3 +126,13 @@ class ModelingTools:
         if self.pt_calculator is None:
             raise RuntimeError("A PT calculator has not been set")
         return self.pt_calculator
+
+
+class PowerspectrumModifier(Updatable, ABC):
+    """Abstract base class for power spectrum modifiers."""
+
+    name: str = "base:base"
+
+    @abstractmethod
+    def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
+        """Compute the 3D power spectrum P(k, z)."""

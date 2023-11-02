@@ -79,7 +79,9 @@ class FirecrownLikelihood:
         # we have a configuration problem, and ParamsMap can never be built
         # correctly.
         if len(self.sampling_sections) == 0:
-            required_parameters = self.likelihood.required_parameters()
+            required_parameters = (
+                self.likelihood.required_parameters() + self.tools.required_parameters()
+            )
             if len(required_parameters) != 0:
                 msg = (
                     f"The configured likelihood has required "
@@ -112,6 +114,7 @@ class FirecrownLikelihood:
         firecrown_params = self.calculate_firecrown_params(sample)
         try:
             self.likelihood.update(firecrown_params)
+            self.tools.update(firecrown_params)
         except MissingSamplerParameterError as exc:
             msg = self.form_error_message(exc)
             raise RuntimeError(msg) from exc

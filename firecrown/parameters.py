@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator, Sequence
+import warnings
 from abc import ABC, abstractmethod
 
 
@@ -302,6 +303,20 @@ class InternalParameter:
 # The function create() is intentionally not type-annotated because its use is subtle.
 # See Updatable.__setatrr__ for details.
 def create(value: Optional[float] = None):
+    """Create a new parameter, either a SamplerParameter or an InternalParameter.
+
+    See register_new_updatable_parameter for details."""
+    warnings.simplefilter("always", DeprecationWarning)
+    warnings.warn(
+        "This function is named `create` and will be removed in a future version "
+        "due to its name being too generic."
+        "Use `register_new_updatable_parameter` instead.",
+        category=DeprecationWarning,
+    )
+    return register_new_updatable_parameter(value)
+
+
+def register_new_updatable_parameter(value: Optional[float] = None):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown

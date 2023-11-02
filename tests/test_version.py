@@ -7,4 +7,4 @@ import firecrown
 
 
 def test_version():
-    assert firecrown.__version__ == "1.6.alpha"
+    assert firecrown.__version__ == "1.6.1a0"

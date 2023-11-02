@@ -81,7 +81,9 @@ class LikelihoodConnector(Likelihood):
         likelihood_requires: Dict[
             str, Union[None, Dict[str, npt.NDArray[np.float64]], Dict[str, object]]
         ] = {"pyccl": None}
-        required_params = self.likelihood.required_parameters()
+        required_params = (
+            self.likelihood.required_parameters() + self.tools.required_parameters()
+        )
 
         for param_name in required_params.get_params_names():
             likelihood_requires[param_name] = None
@@ -102,6 +104,7 @@ class LikelihoodConnector(Likelihood):
         pyccl = self.provider.get_pyccl()
 
         self.likelihood.update(ParamsMap(params_values))
+        self.tools.update(ParamsMap(params_values))
         self.tools.prepare(pyccl)
 
         loglike = self.likelihood.compute_loglike(self.tools)

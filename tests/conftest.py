@@ -8,8 +8,13 @@ import pytest
 
 import sacc
 
+import numpy as np
+import pyccl
+
 from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
+from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
+from firecrown.modeling_tools import ModelingTools
 
 
 def pytest_addoption(parser):
@@ -68,3 +73,58 @@ def make_sacc_data():
     result.add_data_point("count", (), -3.0)
     result.add_covariance([4.0, 9.0, 16.0])
     return result
+
+
+@pytest.fixture(name="mapping_cosmosis")
+def fixture_mapping_cosmosis() -> MappingCosmoSIS:
+    """Return a MappingCosmoSIS instance."""
+    mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
+    assert isinstance(mapping_cosmosis, MappingCosmoSIS)
+    mapping_cosmosis.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=2.1e-9,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=0.0,
+        m_nu_type="normal",
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+    return mapping_cosmosis
+
+
+# Distribution tests fixtures
+
+
+@pytest.fixture(name="sacc_with_data_points")
+def fixture_sass_missing_covariance() -> sacc.Sacc:
+    """Return a Sacc object for configuring a GaussFamily likelihood subclass,
+    but which is missing a covariance matrix."""
+    result = sacc.Sacc()
+    result.add_tracer("misc", "sn_fake_sample")
+    for cnt in [7.0, 4.0]:
+        result.add_data_point("misc", ("sn_fake_sample",), cnt)
+    return result
+
+
+@pytest.fixture(name="sacc_with_covariance")
+def fixture_sacc_with_covariance(sacc_with_data_points: sacc.Sacc) -> sacc.Sacc:
+    """Return a Sacc object for configuring a GaussFamily likelihood subclass,
+    with a covariance matrix."""
+    result = sacc_with_data_points
+    cov = np.array([[1.0, -0.5], [-0.5, 1.0]])
+    result.add_covariance(cov)
+    return result
+
+
+@pytest.fixture(name="tools_with_vanilla_cosmology")
+def fixture_tools_with_vanilla_cosmology():
+    """Return a ModelingTools object containing the LCDM cosmology from
+    pyccl."""
+    result = ModelingTools()
+    result.update(ParamsMap())
+    result.prepare(pyccl.CosmologyVanillaLCDM())
