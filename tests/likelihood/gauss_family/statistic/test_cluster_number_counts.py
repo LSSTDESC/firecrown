@@ -1,15 +1,32 @@
 from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
-from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
-from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
+from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
-from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
+from typing import Tuple
 import sacc
 import pytest
 import pyccl
+
+
+class MockIntegrator(Integrator):
+    def integrate(
+        self,
+        integrand: AbundanceIntegrand,
+    ) -> float:
+        """Integrate the integrand over the bounds and include extra_args to integral"""
+        return 1.0
+
+    def set_integration_bounds(
+        self,
+        cl_abundance: ClusterAbundance,
+        z_proxy_limits: Tuple[float, float],
+        mass_proxy_limits: Tuple[float, float],
+    ) -> None:
+        """Set the limits of integration and extra arguments for the integral"""
 
 
 @pytest.fixture(name="sacc_data")
@@ -38,7 +55,7 @@ def fixture_complicated_sacc_data():
 
 
 def test_create_binned_number_counts():
-    integrator = ScipyIntegrator()
+    integrator = MockIntegrator()
     bnc = BinnedClusterNumberCounts(False, False, "Test", integrator)
     assert bnc is not None
     assert bnc.use_cluster_counts is False
@@ -58,7 +75,7 @@ def test_create_binned_number_counts():
 
 
 def test_get_data_vector():
-    integrator = ScipyIntegrator()
+    integrator = MockIntegrator()
     bnc = BinnedClusterNumberCounts(False, False, "Test", integrator)
     dv = bnc.get_data_vector()
     assert dv is not None
@@ -66,7 +83,7 @@ def test_get_data_vector():
 
 
 def test_read(sacc_data: sacc.Sacc):
-    integrator = NumCosmoIntegrator()
+    integrator = MockIntegrator()
     bnc = BinnedClusterNumberCounts(False, False, "my_survey", integrator)
 
     with pytest.raises(
@@ -98,7 +115,7 @@ def test_read(sacc_data: sacc.Sacc):
 
 
 def test_compute_theory_vector(sacc_data: sacc.Sacc):
-    integrator = NumCosmoIntegrator()
+    integrator = MockIntegrator()
     tools = ModelingTools()
 
     hmf = pyccl.halos.MassFuncBocquet16()
