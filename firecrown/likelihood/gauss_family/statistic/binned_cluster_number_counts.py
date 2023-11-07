@@ -1,7 +1,8 @@
+"""write me"""
 from __future__ import annotations
-from typing import List, Optional
+from typing import List, Optional, Tuple
 import sacc
-
+import numpy as np
 from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.likelihood.gauss_family.statistic.statistic import (
@@ -11,10 +12,11 @@ from firecrown.likelihood.gauss_family.statistic.statistic import (
 )
 from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
-import numpy as np
 
 
 class BinnedClusterNumberCounts(Statistic):
+    """write me"""
+
     def __init__(
         self,
         cluster_counts: bool,
@@ -31,6 +33,8 @@ class BinnedClusterNumberCounts(Statistic):
         self.survey_name = survey_name
         self.integrator = integrator
         self.data_vector = DataVector.from_list([])
+        self.sky_area = 0.0
+        self.bin_limits: List[List[Tuple[float, float]]] = []
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         # Build the data vector and indices needed for the likelihood

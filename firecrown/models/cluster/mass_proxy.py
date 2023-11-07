@@ -102,7 +102,7 @@ class MurataBinned(MassRichnessGaussian):
         pivot_redshift: float,
         integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
-        super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
+        super().__init__(KernelType.MASS_PROXY, False, True, integral_bounds)
 
         self.pivot_redshift = pivot_redshift
         self.pivot_mass = pivot_mass * np.log(10.0)  # ln(M)
@@ -167,7 +167,7 @@ class MurataUnbinned(MassRichnessGaussian):
         pivot_redshift: float,
         integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
-        super().__init__(KernelType.mass_proxy, False, True, integral_bounds)
+        super().__init__(KernelType.MASS_PROXY, False, True, integral_bounds)
 
         self.pivot_redshift = pivot_redshift
         self.pivot_mass = pivot_mass * np.log(10.0)  # ln(M)

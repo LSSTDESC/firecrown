@@ -53,7 +53,7 @@ def fixture_murata_unbinned() -> MurataUnbinned:
 def test_create_musigma_kernel():
     mb = MurataBinned(1, 1)
     assert isinstance(mb, Kernel)
-    assert mb.kernel_type == KernelType.mass_proxy
+    assert mb.kernel_type == KernelType.MASS_PROXY
     assert mb.is_dirac_delta is False
     assert mb.integral_bounds is None
     assert mb.has_analytic_sln is True

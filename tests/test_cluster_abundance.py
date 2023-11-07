@@ -53,7 +53,7 @@ def test_cluster_abundance_init(cl_abundance: ClusterAbundance):
 
 
 def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
-    mk = MockKernel(KernelType.mass_proxy)
+    mk = MockKernel(KernelType.MASS_PROXY)
     cl_abundance.add_kernel(mk)
 
     assert cl_abundance.cosmo is None
@@ -88,21 +88,21 @@ def test_cluster_sky_area(cl_abundance: ClusterAbundance):
 def test_cluster_add_kernel(cl_abundance: ClusterAbundance):
     assert len(cl_abundance.kernels) == 0
 
-    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
     assert len(cl_abundance.kernels) == 1
     assert isinstance(cl_abundance.kernels[0], Kernel)
-    assert cl_abundance.kernels[0].kernel_type == KernelType.mass
+    assert cl_abundance.kernels[0].kernel_type == KernelType.MASS
 
     assert len(cl_abundance.analytic_kernels) == 0
     assert len(cl_abundance.dirac_delta_kernels) == 0
     assert len(cl_abundance.integrable_kernels) == 1
 
-    cl_abundance.add_kernel(MockKernel(KernelType.mass, True))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS, True))
     assert len(cl_abundance.analytic_kernels) == 0
     assert len(cl_abundance.dirac_delta_kernels) == 1
     assert len(cl_abundance.integrable_kernels) == 1
 
-    cl_abundance.add_kernel(MockKernel(KernelType.mass, False, True))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS, False, True))
     assert len(cl_abundance.analytic_kernels) == 1
     assert len(cl_abundance.dirac_delta_kernels) == 1
     assert len(cl_abundance.integrable_kernels) == 1
@@ -133,7 +133,7 @@ def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
@@ -152,7 +152,7 @@ def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
@@ -171,7 +171,7 @@ def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
@@ -190,7 +190,7 @@ def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.mass))
+    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)

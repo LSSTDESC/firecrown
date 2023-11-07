@@ -61,8 +61,8 @@ def test_scipy_set_integration_bounds_no_kernels(cl_abundance: ClusterAbundance)
         assert len(spi.integral_bounds) == 2
         assert spi.integral_bounds == [(13, 17), (0, 2)]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
         }
 
 
@@ -74,7 +74,7 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
 
-    dd_kernel = MockKernel(KernelType.mass_proxy, is_dirac_delta=True)
+    dd_kernel = MockKernel(KernelType.MASS_PROXY, is_dirac_delta=True)
     cl_abundance.add_kernel(dd_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -85,12 +85,12 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
         assert len(spi.integral_bounds) == 2
         assert spi.integral_bounds == [mass_limits, (0, 2)]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
         }
 
     cl_abundance.kernels.clear()
-    dd_kernel = MockKernel(KernelType.z_proxy, is_dirac_delta=True)
+    dd_kernel = MockKernel(KernelType.Z_PROXY, is_dirac_delta=True)
     cl_abundance.add_kernel(dd_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -101,10 +101,10 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
         assert len(spi.integral_bounds) == 2
         assert spi.integral_bounds == [(13, 17), z_limits]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
         }
-    dd_kernel2 = MockKernel(KernelType.mass_proxy, is_dirac_delta=True)
+    dd_kernel2 = MockKernel(KernelType.MASS_PROXY, is_dirac_delta=True)
     cl_abundance.add_kernel(dd_kernel2)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -115,8 +115,8 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
         assert len(spi.integral_bounds) == 2
         assert spi.integral_bounds == [mass_limits, z_limits]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
         }
 
 
@@ -130,7 +130,7 @@ def test_scipy_set_integration_bounds_integrable_kernels(
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
 
-    ig_kernel = MockKernel(KernelType.mass_proxy)
+    ig_kernel = MockKernel(KernelType.MASS_PROXY)
     cl_abundance.add_kernel(ig_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -141,13 +141,13 @@ def test_scipy_set_integration_bounds_integrable_kernels(
         assert len(spi.integral_bounds) == 3
         assert spi.integral_bounds == [(13, 17), (0, 2), mass_limits]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
-            KernelType.mass_proxy: 2,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
+            KernelType.MASS_PROXY: 2,
         }
 
     cl_abundance.kernels.clear()
-    ig_kernel = MockKernel(KernelType.z_proxy)
+    ig_kernel = MockKernel(KernelType.Z_PROXY)
     cl_abundance.add_kernel(ig_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -158,12 +158,12 @@ def test_scipy_set_integration_bounds_integrable_kernels(
         assert len(spi.integral_bounds) == 3
         assert spi.integral_bounds == [(13, 17), (0, 2), z_limits]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
-            KernelType.z_proxy: 2,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
+            KernelType.Z_PROXY: 2,
         }
 
-    ig_kernel2 = MockKernel(KernelType.mass_proxy)
+    ig_kernel2 = MockKernel(KernelType.MASS_PROXY)
     cl_abundance.add_kernel(ig_kernel2)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -174,10 +174,10 @@ def test_scipy_set_integration_bounds_integrable_kernels(
         assert len(spi.integral_bounds) == 4
         assert spi.integral_bounds == [(13, 17), (0, 2), z_limits, mass_limits]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
-            KernelType.z_proxy: 2,
-            KernelType.mass_proxy: 3,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
+            KernelType.Z_PROXY: 2,
+            KernelType.MASS_PROXY: 3,
         }
 
 
@@ -191,7 +191,7 @@ def test_scipy_set_integration_bounds_analytic_slns(
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
 
-    a_kernel = MockKernel(KernelType.mass_proxy, has_analytic_sln=True)
+    a_kernel = MockKernel(KernelType.MASS_PROXY, has_analytic_sln=True)
     cl_abundance.add_kernel(a_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -202,11 +202,11 @@ def test_scipy_set_integration_bounds_analytic_slns(
         assert len(spi.integral_bounds) == 2
         assert spi.integral_bounds == [(13, 17), (0, 2)]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
         }
 
-    a_kernel2 = MockKernel(KernelType.z_proxy, has_analytic_sln=True)
+    a_kernel2 = MockKernel(KernelType.Z_PROXY, has_analytic_sln=True)
     cl_abundance.add_kernel(a_kernel2)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -217,8 +217,8 @@ def test_scipy_set_integration_bounds_analytic_slns(
         assert len(spi.integral_bounds) == 2
         assert spi.integral_bounds == [(13, 17), (0, 2)]
         assert spi.integral_args_lkp == {
-            KernelType.mass: 0,
-            KernelType.z: 1,
+            KernelType.MASS: 0,
+            KernelType.Z: 1,
         }
 
 

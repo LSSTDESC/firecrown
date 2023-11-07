@@ -1,3 +1,4 @@
+"""write me"""
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Tuple, Optional
@@ -7,15 +8,19 @@ from firecrown.updatable import Updatable
 
 
 class KernelType(Enum):
-    mass = 1
-    z = 2
-    mass_proxy = 3
-    z_proxy = 4
-    completeness = 5
-    purity = 6
+    """write me"""
+
+    MASS = 1
+    Z = 2
+    MASS_PROXY = 3
+    Z_PROXY = 4
+    COMPLETENESS = 5
+    PURITY = 6
 
 
 class Kernel(Updatable, ABC):
+    """write me"""
+
     def __init__(
         self,
         kernel_type: KernelType,
@@ -43,8 +48,10 @@ class Kernel(Updatable, ABC):
 
 
 class Completeness(Kernel):
+    """write me"""
+
     def __init__(self) -> None:
-        super().__init__(KernelType.completeness)
+        super().__init__(KernelType.COMPLETENESS)
 
     def distribution(
         self,
@@ -67,8 +74,23 @@ class Completeness(Kernel):
 
 
 class Purity(Kernel):
+    """write me"""
+
     def __init__(self) -> None:
-        super().__init__(KernelType.purity)
+        super().__init__(KernelType.PURITY)
+
+    def _ln_rc(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        a_rc = 2.2183
+        b_rc = -0.6592
+        ln_rc = a_rc + b_rc * (1.0 + z)
+        return ln_rc
+
+    def _nc(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        b_nc = np.log(10) * 0.3527
+        a_nc = np.log(10) * 0.8612
+        nc = a_nc + b_nc * (1.0 + z)
+        assert isinstance(nc, np.ndarray)
+        return nc
 
     def distribution(
         self,
@@ -79,29 +101,24 @@ class Purity(Kernel):
         mass_proxy_limits: Tuple[float, float],
         z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
-        a_nc = np.log(10) * 0.8612
-        b_nc = np.log(10) * 0.3527
-        a_rc = 2.2183
-        b_rc = -0.6592
-        # pdb.set_trace()
         if all(mass_proxy == -1.0):
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
             ln_r = np.log(10**mean_mass)
         else:
             ln_r = np.log(10**mass_proxy)
-        ln_rc = a_rc + b_rc * (1.0 + z)
-        r_over_rc = ln_r / ln_rc
 
-        nc = a_nc + b_nc * (1.0 + z)
+        r_over_rc = ln_r / self._ln_rc(z)
 
-        purity = (r_over_rc) ** nc / (r_over_rc**nc + 1.0)
+        purity = (r_over_rc) ** self._nc(z) / (r_over_rc ** self._nc(z) + 1.0)
         assert isinstance(purity, np.ndarray)
         return purity
 
 
 class TrueMass(Kernel):
+    """write me"""
+
     def __init__(self) -> None:
-        super().__init__(KernelType.mass_proxy, True)
+        super().__init__(KernelType.MASS_PROXY, True)
 
     def distribution(
         self,
@@ -116,8 +133,10 @@ class TrueMass(Kernel):
 
 
 class SpectroscopicRedshift(Kernel):
+    """write me"""
+
     def __init__(self) -> None:
-        super().__init__(KernelType.z_proxy, True)
+        super().__init__(KernelType.Z_PROXY, True)
 
     def distribution(
         self,
@@ -132,8 +151,10 @@ class SpectroscopicRedshift(Kernel):
 
 
 class DESY1PhotometricRedshift(Kernel):
+    """write me"""
+
     def __init__(self) -> None:
-        super().__init__(KernelType.z_proxy)
+        super().__init__(KernelType.Z_PROXY)
         self.sigma_0 = 0.05
 
     def distribution(

@@ -14,7 +14,7 @@ from firecrown.models.cluster.kernel import (
 def test_create_desy1_photometric_redshift_kernel():
     drk = DESY1PhotometricRedshift()
     assert isinstance(drk, Kernel)
-    assert drk.kernel_type == KernelType.z_proxy
+    assert drk.kernel_type == KernelType.Z_PROXY
     assert drk.is_dirac_delta is False
     assert drk.integral_bounds is None
     assert drk.has_analytic_sln is False
@@ -23,7 +23,7 @@ def test_create_desy1_photometric_redshift_kernel():
 def test_create_spectroscopic_redshift_kernel():
     srk = SpectroscopicRedshift()
     assert isinstance(srk, Kernel)
-    assert srk.kernel_type == KernelType.z_proxy
+    assert srk.kernel_type == KernelType.Z_PROXY
     assert srk.is_dirac_delta is True
     assert srk.integral_bounds is None
     assert srk.has_analytic_sln is False
@@ -32,7 +32,7 @@ def test_create_spectroscopic_redshift_kernel():
 def test_create_mass_kernel():
     mk = TrueMass()
     assert isinstance(mk, Kernel)
-    assert mk.kernel_type == KernelType.mass_proxy
+    assert mk.kernel_type == KernelType.MASS_PROXY
     assert mk.is_dirac_delta is True
     assert mk.integral_bounds is None
     assert mk.has_analytic_sln is False
@@ -41,7 +41,7 @@ def test_create_mass_kernel():
 def test_create_completeness_kernel():
     ck = Completeness()
     assert isinstance(ck, Kernel)
-    assert ck.kernel_type == KernelType.completeness
+    assert ck.kernel_type == KernelType.COMPLETENESS
     assert ck.is_dirac_delta is False
     assert ck.integral_bounds is None
     assert ck.has_analytic_sln is False
@@ -50,7 +50,7 @@ def test_create_completeness_kernel():
 def test_create_purity_kernel():
     pk = Purity()
     assert isinstance(pk, Kernel)
-    assert pk.kernel_type == KernelType.purity
+    assert pk.kernel_type == KernelType.PURITY
     assert pk.is_dirac_delta is False
     assert pk.integral_bounds is None
     assert pk.has_analytic_sln is False

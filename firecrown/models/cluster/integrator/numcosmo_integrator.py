@@ -22,8 +22,8 @@ class NumCosmoIntegrator(Integrator):
 
     def _default_integral_args(self) -> Dict[KernelType, int]:
         lkp: Dict[KernelType, int] = dict()
-        lkp[KernelType.mass] = 0
-        lkp[KernelType.z] = 1
+        lkp[KernelType.MASS] = 0
+        lkp[KernelType.Z] = 1
         return lkp
 
     def _integral_wrapper(
@@ -34,10 +34,10 @@ class NumCosmoIntegrator(Integrator):
         def ncm_integrand(int_args: npt.NDArray) -> Sequence[float]:
             default = np.ones_like(int_args[0]) * -1.0
 
-            mass = self._get_or_default(int_args, KernelType.mass, default)
-            z = self._get_or_default(int_args, KernelType.z, default)
-            mass_proxy = self._get_or_default(int_args, KernelType.mass_proxy, default)
-            z_proxy = self._get_or_default(int_args, KernelType.z_proxy, default)
+            mass = self._get_or_default(int_args, KernelType.MASS, default)
+            z = self._get_or_default(int_args, KernelType.Z, default)
+            mass_proxy = self._get_or_default(int_args, KernelType.MASS_PROXY, default)
+            z_proxy = self._get_or_default(int_args, KernelType.Z_PROXY, default)
 
             return_val = integrand(
                 mass,
@@ -69,22 +69,22 @@ class NumCosmoIntegrator(Integrator):
         self.z_proxy_limits = z_proxy_limits
 
         for kernel in cl_abundance.dirac_delta_kernels:
-            if kernel.kernel_type == KernelType.z_proxy:
+            if kernel.kernel_type == KernelType.Z_PROXY:
                 self.integral_bounds[1] = z_proxy_limits
 
-            elif kernel.kernel_type == KernelType.mass_proxy:
+            elif kernel.kernel_type == KernelType.MASS_PROXY:
                 self.integral_bounds[0] = mass_proxy_limits
 
         for kernel in cl_abundance.integrable_kernels:
             idx = len(self.integral_bounds)
 
-            if kernel.kernel_type == KernelType.z_proxy:
+            if kernel.kernel_type == KernelType.Z_PROXY:
                 self.integral_bounds.append(z_proxy_limits)
-                self.integral_args_lkp[KernelType.z_proxy] = idx
+                self.integral_args_lkp[KernelType.Z_PROXY] = idx
 
-            elif kernel.kernel_type == KernelType.mass_proxy:
+            elif kernel.kernel_type == KernelType.MASS_PROXY:
                 self.integral_bounds.append(mass_proxy_limits)
-                self.integral_args_lkp[KernelType.mass_proxy] = idx
+                self.integral_args_lkp[KernelType.MASS_PROXY] = idx
         return
 
     def integrate(
