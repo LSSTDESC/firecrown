@@ -27,19 +27,13 @@ class ScipyIntegrator(Integrator):
         self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
         self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
 
-    def _default_integral_args(self) -> Dict[KernelType, int]:
-        lkp: Dict[KernelType, int] = {}
-        lkp[KernelType.MASS] = 0
-        lkp[KernelType.Z] = 1
-        return lkp
-
     def _integral_wrapper(
         self,
         integrand: AbundanceIntegrand,
     ) -> Callable[..., float]:
         def scipy_integrand(*int_args: float) -> float:
             default = -1.0
-
+            # pylint: disable=R0801
             mass = self._get_or_default(int_args, KernelType.MASS, default)
             z = self._get_or_default(int_args, KernelType.Z, default)
             mass_proxy = self._get_or_default(int_args, KernelType.MASS_PROXY, default)
@@ -64,6 +58,7 @@ class ScipyIntegrator(Integrator):
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
     ) -> None:
+        # pylint: disable=R0801
         self.integral_args_lkp = self._default_integral_args()
         self.integral_bounds = [
             (cl_abundance.min_mass, cl_abundance.max_mass),

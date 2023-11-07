@@ -3,10 +3,10 @@
 This module holds the classes that define the interface required to
 integrate an assembled cluster abundance.
 """
-
 from abc import ABC, abstractmethod
-from typing import Tuple
+from typing import Tuple, Dict
 from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
+from firecrown.models.cluster.kernel import KernelType
 
 
 class Integrator(ABC):
@@ -34,3 +34,9 @@ class Integrator(ABC):
         This method uses the mass and redshift proxy arguments, along with
         the cluster abundance argument to construct the limits of integration
         to be used in evaluating the cluster abundance."""
+
+    def _default_integral_args(self) -> Dict[KernelType, int]:
+        lkp: Dict[KernelType, int] = {}
+        lkp[KernelType.MASS] = 0
+        lkp[KernelType.Z] = 1
+        return lkp
