@@ -1,7 +1,8 @@
+"""write me"""
+from typing import Tuple
 import numpy as np
 import numpy.typing as npt
 import pytest
-from typing import List, Tuple, Optional
 from firecrown.models.cluster.integrator.scipy_integrator import (
     ScipyIntegrator,
 )
@@ -23,23 +24,16 @@ def fixture_cl_abundance():
 
 
 class MockKernel(Kernel):
-    def __init__(
-        self,
-        kernel_type: KernelType,
-        is_dirac_delta: bool = False,
-        has_analytic_sln: bool = False,
-        integral_bounds: Optional[List[Tuple[float, float]]] = None,
-    ):
-        super().__init__(kernel_type, is_dirac_delta, has_analytic_sln, integral_bounds)
+    """write me"""
 
     def distribution(
         self,
-        mass: npt.NDArray[np.float64],
-        z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _mass: npt.NDArray[np.float64],
+        _z: npt.NDArray[np.float64],
+        _mass_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         """The functional form of the distribution or spread of this kernel"""
         return np.atleast_1d(1.0)
@@ -232,10 +226,10 @@ def test_scipy_integrator_integrate(cl_abundance: ClusterAbundance):
     def integrand(
         a: npt.NDArray[np.float64],
         b: npt.NDArray[np.float64],
-        c: npt.NDArray[np.float64],
-        d: npt.NDArray[np.float64],
-        e: Tuple[float, float],
-        f: Tuple[float, float],
+        _c: npt.NDArray[np.float64],
+        _d: npt.NDArray[np.float64],
+        _e: Tuple[float, float],
+        _f: Tuple[float, float],
     ):
         # xy
         result = a * b

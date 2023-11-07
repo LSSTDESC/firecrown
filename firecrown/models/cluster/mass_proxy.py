@@ -1,13 +1,11 @@
 """write me"""
 from typing import List, Tuple, Optional
-
+from abc import abstractmethod
 import numpy as np
 import numpy.typing as npt
-
+from scipy import special
 from firecrown import parameters
-from scipy import special  # pylint: disable=no-member
 from firecrown.models.cluster.kernel import Kernel, KernelType
-from abc import abstractmethod
 
 
 class MassRichnessGaussian(Kernel):
@@ -51,10 +49,10 @@ class MassRichnessGaussian(Kernel):
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
+        _mass_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
         mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
@@ -70,9 +68,11 @@ class MassRichnessGaussian(Kernel):
         mask1 = (x_max > 3.0) | (x_min < -3.0)
         mask2 = ~mask1
 
+        # pylint: disable=no-member
         return_vals[mask1] = (
             -(special.erfc(x_min[mask1]) - special.erfc(x_max[mask1])) / 2.0
         )
+        # pylint: disable=no-member
         return_vals[mask2] = (
             special.erf(x_min[mask2]) - special.erf(x_max[mask2])
         ) / 2.0
@@ -84,9 +84,9 @@ class MassRichnessGaussian(Kernel):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _z_proxy: npt.NDArray[np.float64],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
@@ -99,6 +99,8 @@ class MassRichnessGaussian(Kernel):
 
 
 class MurataBinned(MassRichnessGaussian):
+    """write me"""
+
     def __init__(
         self,
         pivot_mass: float,
@@ -164,6 +166,8 @@ class MurataBinned(MassRichnessGaussian):
 
 
 class MurataUnbinned(MassRichnessGaussian):
+    """write me"""
+
     def __init__(
         self,
         pivot_mass: float,

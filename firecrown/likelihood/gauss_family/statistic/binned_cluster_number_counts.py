@@ -48,11 +48,13 @@ class BinnedClusterNumberCounts(Statistic):
         )
 
         if self.use_cluster_counts:
+            # pylint: disable=no-member
             data, indices = sacc_adapter.get_data_and_indices(sacc_types.cluster_counts)
             data_vector += data
             sacc_indices += indices
 
         if self.use_mean_log_mass:
+            # pylint: disable=no-member
             data, indices = sacc_adapter.get_data_and_indices(
                 sacc_types.cluster_mean_log_mass
             )
@@ -62,6 +64,8 @@ class BinnedClusterNumberCounts(Statistic):
         self.sky_area = sacc_adapter.survey_tracer.sky_area
         # Note - this is the same for both cl mass and cl counts... Why do we need to
         # specify a data type?
+
+        # pylint: disable=no-member
         self.bin_limits = sacc_adapter.get_bin_limits(sacc_types.cluster_mean_log_mass)
         self.data_vector = DataVector.from_list(data_vector)
 

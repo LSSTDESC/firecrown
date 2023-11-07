@@ -1,11 +1,14 @@
-import sacc
-import numpy as np
-from sacc.tracers import SurveyTracer
+"""write me"""
 from typing import Tuple, List
+import numpy as np
 import numpy.typing as npt
+import sacc
+from sacc.tracers import SurveyTracer
 
 
 class AbundanceData:
+    """write me"""
+
     # Hard coded in SACC, how do we want to handle this?
     _survey_index = 0
     _redshift_index = 1
@@ -32,6 +35,7 @@ class AbundanceData:
             raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
 
     def get_filtered_tracers(self, data_type: str) -> Tuple[npt.NDArray, npt.NDArray]:
+        """write me"""
         all_tracers = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
@@ -41,6 +45,7 @@ class AbundanceData:
         return filtered_tracers, survey_mask
 
     def get_data_and_indices(self, data_type: str) -> Tuple[List[float], List[int]]:
+        """write me"""
         _, survey_mask = self.get_filtered_tracers(data_type)
         data_vector_list = list(
             self.sacc_data.get_mean(data_type=data_type)[survey_mask]
@@ -53,6 +58,7 @@ class AbundanceData:
     def validate_tracers(
         self, tracers_combinations: npt.NDArray, data_type: str
     ) -> None:
+        """write me"""
         if len(tracers_combinations) == 0:
             raise ValueError(
                 f"The SACC file does not contain any tracers for the "
@@ -67,6 +73,7 @@ class AbundanceData:
             )
 
     def get_bin_limits(self, data_type: str) -> List[List[Tuple[float, float]]]:
+        """write me"""
         filtered_tracers, _ = self.get_filtered_tracers(data_type)
 
         tracers = []

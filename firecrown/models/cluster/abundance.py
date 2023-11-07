@@ -1,11 +1,12 @@
+"""write me"""
 from typing import List, Callable, Optional, Dict, Tuple
-from pyccl.cosmology import Cosmology
-import pyccl.background as bkg
-import pyccl
-from firecrown.models.cluster.kernel import Kernel
 import numpy as np
-from firecrown.parameters import ParamsMap
 import numpy.typing as npt
+import pyccl
+import pyccl.background as bkg
+from pyccl.cosmology import Cosmology
+from firecrown.models.cluster.kernel import Kernel
+from firecrown.parameters import ParamsMap
 
 
 AbundanceIntegrand = Callable[
@@ -21,9 +22,12 @@ AbundanceIntegrand = Callable[
 ]
 
 
-class ClusterAbundance(object):
+class ClusterAbundance:
+    """write me"""
+
     @property
     def sky_area(self) -> float:
+        """write me"""
         return self.sky_area_rad * (180.0 / np.pi) ** 2
 
     @sky_area.setter
@@ -32,18 +36,22 @@ class ClusterAbundance(object):
 
     @property
     def cosmo(self) -> Cosmology:
+        """write me"""
         return self._cosmo
 
     @property
     def analytic_kernels(self) -> List[Kernel]:
+        """write me"""
         return [x for x in self.kernels if x.has_analytic_sln]
 
     @property
     def dirac_delta_kernels(self) -> List[Kernel]:
+        """write me"""
         return [x for x in self.kernels if x.is_dirac_delta]
 
     @property
     def integrable_kernels(self) -> List[Kernel]:
+        """write me"""
         return [
             x for x in self.kernels if not x.is_dirac_delta and not x.has_analytic_sln
         ]
@@ -68,11 +76,13 @@ class ClusterAbundance(object):
         self._cosmo: Cosmology = None
 
     def add_kernel(self, kernel: Kernel) -> None:
+        """write me"""
         self.kernels.append(kernel)
 
     def update_ingredients(
         self, cosmo: Cosmology, params: Optional[ParamsMap] = None
     ) -> None:
+        """write me"""
         self._cosmo = cosmo
         self._hmf_cache = {}
         if params is None:
@@ -82,6 +92,7 @@ class ClusterAbundance(object):
             kernel.update(params)
 
     def comoving_volume(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """write me"""
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
@@ -98,6 +109,7 @@ class ClusterAbundance(object):
     def mass_function(
         self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
+        """write me"""
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
 
@@ -113,6 +125,8 @@ class ClusterAbundance(object):
     def get_integrand(
         self, avg_mass: bool = False, avg_redshift: bool = False
     ) -> AbundanceIntegrand:
+        """write me"""
+
         def integrand(
             mass: npt.NDArray[np.float64],
             z: npt.NDArray[np.float64],

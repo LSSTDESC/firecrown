@@ -1,21 +1,25 @@
+"""write me"""
+from typing import List, Tuple, Optional
 import pytest
-from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.kernel import Kernel, KernelType
 import pyccl
 import numpy as np
-from typing import List, Tuple, Optional
 import numpy.typing as npt
 from firecrown.parameters import ParamsMap, create
+from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.kernel import Kernel, KernelType
 
 
-@pytest.fixture()
-def cl_abundance():
+@pytest.fixture(name="cl_abundance")
+def fixture_cl_abundance():
+    """write me"""
     hmf = pyccl.halos.MassFuncBocquet16()
     ca = ClusterAbundance(13, 17, 0, 2, hmf, 360.0**2)
     return ca
 
 
 class MockKernel(Kernel):
+    """write me"""
+
     def __init__(
         self,
         kernel_type: KernelType,
@@ -28,12 +32,12 @@ class MockKernel(Kernel):
 
     def distribution(
         self,
-        mass: npt.NDArray[np.float64],
-        z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _mass: npt.NDArray[np.float64],
+        _z: npt.NDArray[np.float64],
+        _mass_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         """The functional form of the distribution or spread of this kernel"""
         return np.atleast_1d(1.0)
@@ -58,6 +62,7 @@ def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
 
     assert cl_abundance.cosmo is None
     assert mk.param is None
+    # pylint: disable=protected-access
     assert cl_abundance._hmf_cache == {}
 
     pmap = ParamsMap({"param": 42})
@@ -67,6 +72,7 @@ def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
     assert cl_abundance.cosmo is not None
     assert cl_abundance.cosmo == cosmo
     assert mk.param == 42
+    # pylint: disable=protected-access
     assert cl_abundance._hmf_cache == {}
 
     cl_abundance.update_ingredients(None)
