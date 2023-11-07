@@ -1,15 +1,18 @@
+"""write me"""
 from typing import List, Tuple, Optional
 
 import numpy as np
 import numpy.typing as npt
 
 from firecrown import parameters
-from scipy import special
+from scipy import special  # pylint: disable=no-member
 from firecrown.models.cluster.kernel import Kernel, KernelType
 from abc import abstractmethod
 
 
 class MassRichnessGaussian(Kernel):
+    """write me"""
+
     @staticmethod
     def observed_value(
         p: Tuple[float, float, float],

@@ -1,13 +1,16 @@
-from numcosmo_py import Ncm
-from typing import Tuple, Callable, Dict, Sequence
+"""write me"""
+from typing import Tuple, Callable, Dict, Sequence, List
 import numpy as np
 import numpy.typing as npt
+from numcosmo_py import Ncm
 from firecrown.models.cluster.kernel import KernelType
 from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
 from firecrown.models.cluster.integrator.integrator import Integrator
 
 
 class NumCosmoIntegrator(Integrator):
+    """write me"""
+
     def __init__(
         self, relative_tolerance: float = 1e-4, absolute_tolerance: float = 1e-12
     ) -> None:
@@ -16,12 +19,13 @@ class NumCosmoIntegrator(Integrator):
         self._absolute_tolerance = absolute_tolerance
 
         self.integral_args_lkp: Dict[KernelType, int] = self._default_integral_args()
+        self.integral_bounds: List[Tuple[float, float]] = []
 
         self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
         self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
 
     def _default_integral_args(self) -> Dict[KernelType, int]:
-        lkp: Dict[KernelType, int] = dict()
+        lkp: Dict[KernelType, int] = {}
         lkp[KernelType.MASS] = 0
         lkp[KernelType.Z] = 1
         return lkp
@@ -85,7 +89,6 @@ class NumCosmoIntegrator(Integrator):
             elif kernel.kernel_type == KernelType.MASS_PROXY:
                 self.integral_bounds.append(mass_proxy_limits)
                 self.integral_args_lkp[KernelType.MASS_PROXY] = idx
-        return
 
     def integrate(
         self,
@@ -130,6 +133,7 @@ class CountsIntegralND(Ncm.IntegralND):
         self.dim = dim
         self.fun = fun
 
+    # pylint: disable-next=arguments-differ
     def do_get_dimensions(self) -> Tuple[int, int]:
         """Get number of dimensions."""
         return self.dim, 1
