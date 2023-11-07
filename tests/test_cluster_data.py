@@ -1,4 +1,4 @@
-"""write me"""
+"""Tests for the cluster abundance data module."""
 import pytest
 import numpy as np
 import sacc

@@ -1,4 +1,4 @@
-"""write me"""
+"""Tests for the binned cluster number counts module."""
 from typing import Tuple
 import sacc
 import pytest
@@ -14,7 +14,7 @@ from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts im
 
 
 class MockIntegrator(Integrator):
-    """write me"""
+    """A mock integrator used by the cluster number counts statistic for testing"""
 
     def integrate(
         self,

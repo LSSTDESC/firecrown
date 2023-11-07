@@ -1,4 +1,4 @@
-"""write me"""
+"""Tests for the numcosmo integrator module."""
 from typing import Tuple
 import numpy as np
 import numpy.typing as npt
@@ -24,7 +24,7 @@ def fixture_cl_abundance():
 
 
 class MockKernel(Kernel):
-    """write me"""
+    """A mock implementation of a Kernel used for unit testing."""
 
     def distribution(
         self,

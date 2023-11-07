@@ -1,4 +1,4 @@
-"""write me"""
+"""Tests for the cluster kernel module."""
 import pytest
 import numpy as np
 from firecrown.models.cluster.kernel import (

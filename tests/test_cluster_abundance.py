@@ -1,4 +1,4 @@
-"""write me"""
+"""Tests for the cluster abundance module."""
 from typing import List, Tuple, Optional
 import pytest
 import pyccl
@@ -11,14 +11,14 @@ from firecrown.models.cluster.kernel import Kernel, KernelType
 
 @pytest.fixture(name="cl_abundance")
 def fixture_cl_abundance():
-    """write me"""
+    """Test fixture that represents an assembled cluster abundance class."""
     hmf = pyccl.halos.MassFuncBocquet16()
     ca = ClusterAbundance(13, 17, 0, 2, hmf, 360.0**2)
     return ca
 
 
 class MockKernel(Kernel):
-    """write me"""
+    """A mock implementation of a Kernel used for unit testing."""
 
     def __init__(
         self,
