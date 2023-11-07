@@ -1,4 +1,8 @@
-"""write me"""
+"""The mass richness kernel module
+
+This module holds the classes that define the mass richness relations
+that can be included in the cluster abundance integrand.  These are
+implementations of Kernels."""
 from typing import List, Tuple, Optional
 from abc import abstractmethod
 import numpy as np
@@ -9,7 +13,7 @@ from firecrown.models.cluster.kernel import Kernel, KernelType
 
 
 class MassRichnessGaussian(Kernel):
-    """write me"""
+    """The representation of mass richness relations that are of a gaussian form."""
 
     @staticmethod
     def observed_value(
@@ -99,7 +103,7 @@ class MassRichnessGaussian(Kernel):
 
 
 class MurataBinned(MassRichnessGaussian):
-    """write me"""
+    """The mass richness relation defined in Murata 19 for a binned data vector."""
 
     def __init__(
         self,
@@ -128,7 +132,6 @@ class MurataBinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        """Return observed quantity corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
@@ -142,7 +145,6 @@ class MurataBinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        """Return observed scatter corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),
             mass,
@@ -166,7 +168,7 @@ class MurataBinned(MassRichnessGaussian):
 
 
 class MurataUnbinned(MassRichnessGaussian):
-    """write me"""
+    """The mass richness relation defined in Murata 19 for a unbinned data vector."""
 
     def __init__(
         self,
@@ -195,7 +197,6 @@ class MurataUnbinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        """Return observed quantity corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
@@ -209,7 +210,6 @@ class MurataUnbinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
-        """Return observed scatter corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),
             mass,

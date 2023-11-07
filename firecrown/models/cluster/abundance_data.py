@@ -1,4 +1,5 @@
-"""write me"""
+"""The module responsible for extracting cluster data from a sacc file.
+"""
 from typing import Tuple, List
 import numpy as np
 import numpy.typing as npt
@@ -7,7 +8,12 @@ from sacc.tracers import SurveyTracer
 
 
 class AbundanceData:
-    """write me"""
+    """The class used to wrap a sacc file and return the cluster abundance data.
+
+    The sacc file is a complicated set of tracers and surveys.  This class
+    manipulates that data and returns only the data relevant for the cluster
+    number count statistic.  The data in this class is specific to a single
+    survey name."""
 
     # Hard coded in SACC, how do we want to handle this?
     _survey_index = 0
@@ -35,7 +41,7 @@ class AbundanceData:
             raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
 
     def get_filtered_tracers(self, data_type: str) -> Tuple[npt.NDArray, npt.NDArray]:
-        """write me"""
+        """Returns only tracers that match the data type requested."""
         all_tracers = np.array(
             self.sacc_data.get_tracer_combinations(data_type=data_type)
         )
@@ -45,7 +51,7 @@ class AbundanceData:
         return filtered_tracers, survey_mask
 
     def get_data_and_indices(self, data_type: str) -> Tuple[List[float], List[int]]:
-        """write me"""
+        """Returns the data vector and indices for the requested data type."""
         _, survey_mask = self.get_filtered_tracers(data_type)
         data_vector_list = list(
             self.sacc_data.get_mean(data_type=data_type)[survey_mask]
@@ -58,7 +64,7 @@ class AbundanceData:
     def validate_tracers(
         self, tracers_combinations: npt.NDArray, data_type: str
     ) -> None:
-        """write me"""
+        """Validates that the tracers requested exist and are valid."""
         if len(tracers_combinations) == 0:
             raise ValueError(
                 f"The SACC file does not contain any tracers for the "
@@ -73,7 +79,7 @@ class AbundanceData:
             )
 
     def get_bin_limits(self, data_type: str) -> List[List[Tuple[float, float]]]:
-        """write me"""
+        """Returns the limits for all z, mass bins for the requested data type."""
         filtered_tracers, _ = self.get_filtered_tracers(data_type)
 
         tracers = []

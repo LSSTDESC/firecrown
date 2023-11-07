@@ -1,4 +1,8 @@
-"""write me"""
+"""This module holds classes needed to predict the binned cluster number counts
+
+The binned cluster number counts statistic predicts the number of galaxy
+clusters within a single redshift and mass bin.
+"""
 from __future__ import annotations
 from typing import List, Optional, Tuple
 import sacc
@@ -15,7 +19,11 @@ from firecrown.modeling_tools import ModelingTools
 
 
 class BinnedClusterNumberCounts(Statistic):
-    """write me"""
+    """The Binned Cluster Number Counts statistic
+
+    This class will make a prediction for the number of clusters in a z, mass bin
+    and compare that prediction to the data provided in the sacc file.
+    """
 
     def __init__(
         self,

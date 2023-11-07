@@ -1,4 +1,7 @@
-"""write me"""
+"""The cluster kernel module
+
+This module holds the classes that define the kernels that can be included
+in the cluster abundance integrand."""
 from abc import ABC, abstractmethod
 from enum import Enum
 from typing import List, Tuple, Optional
@@ -8,7 +11,7 @@ from firecrown.updatable import Updatable
 
 
 class KernelType(Enum):
-    """write me"""
+    """The kernels that can be included in the cluster abundance integrand"""
 
     MASS = 1
     Z = 2
@@ -19,7 +22,10 @@ class KernelType(Enum):
 
 
 class Kernel(Updatable, ABC):
-    """write me"""
+    """The Kernel base class
+
+    This class defines the common interface that any kernel must implement in order
+    to be included in the cluster abundance integrand."""
 
     def __init__(
         self,
@@ -48,7 +54,10 @@ class Kernel(Updatable, ABC):
 
 
 class Completeness(Kernel):
-    """write me"""
+    """The completeness kernel
+
+    This kernel will affect the integrand by accounting for the incompleteness
+    of a cluster selection."""
 
     def __init__(self) -> None:
         super().__init__(KernelType.COMPLETENESS)
@@ -57,10 +66,10 @@ class Completeness(Kernel):
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _mass_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         a_nc = 1.1321
         b_nc = 0.7751
@@ -74,7 +83,10 @@ class Completeness(Kernel):
 
 
 class Purity(Kernel):
-    """write me"""
+    """The purity kernel
+
+    This kernel will affect the integrand by accounting for the purity
+    of a cluster selection."""
 
     def __init__(self) -> None:
         super().__init__(KernelType.PURITY)
@@ -94,12 +106,12 @@ class Purity(Kernel):
 
     def distribution(
         self,
-        mass: npt.NDArray[np.float64],
+        _mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
         mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         if all(mass_proxy == -1.0):
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
@@ -115,43 +127,51 @@ class Purity(Kernel):
 
 
 class TrueMass(Kernel):
-    """write me"""
+    """The true mass kernel.
+
+    Assuming we measure the true mass, this will always be 1."""
 
     def __init__(self) -> None:
         super().__init__(KernelType.MASS_PROXY, True)
 
     def distribution(
         self,
-        mass: npt.NDArray[np.float64],
-        z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _mass: npt.NDArray[np.float64],
+        _z: npt.NDArray[np.float64],
+        _mass_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         return np.atleast_1d(1.0)
 
 
 class SpectroscopicRedshift(Kernel):
-    """write me"""
+    """The spec-z kernel.
+
+    Assuming the spectroscopic redshift has no uncertainties, this is akin to
+    multiplying by 1."""
 
     def __init__(self) -> None:
         super().__init__(KernelType.Z_PROXY, True)
 
     def distribution(
         self,
-        mass: npt.NDArray[np.float64],
-        z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _mass: npt.NDArray[np.float64],
+        _z: npt.NDArray[np.float64],
+        _mass_proxy: npt.NDArray[np.float64],
+        _z_proxy: npt.NDArray[np.float64],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         return np.atleast_1d(1.0)
 
 
 class DESY1PhotometricRedshift(Kernel):
-    """write me"""
+    """The DES Y1 photometric redshift uncertainties kernel.
+
+    This kernel includes a spread in the photo-z estimates following the
+    observed spread in DES Y1."""
 
     def __init__(self) -> None:
         super().__init__(KernelType.Z_PROXY)
@@ -159,12 +179,12 @@ class DESY1PhotometricRedshift(Kernel):
 
     def distribution(
         self,
-        mass: npt.NDArray[np.float64],
+        _mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
+        _mass_proxy: npt.NDArray[np.float64],
         z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
+        _mass_proxy_limits: Tuple[float, float],
+        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         sigma_z = self.sigma_0 * (1 + z)
         prefactor = 1 / (np.sqrt(2.0 * np.pi) * sigma_z)
