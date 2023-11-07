@@ -1,4 +1,7 @@
-"""write me"""
+"""The SciPy integrator module
+
+This module holds the scipy implementation of the integrator classes
+"""
 from typing import Callable, Dict, Tuple, List
 import numpy as np
 import numpy.typing as npt
@@ -9,7 +12,7 @@ from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegr
 
 
 class ScipyIntegrator(Integrator):
-    """write me"""
+    """The scipy implementation of the Integrator base class using nquad."""
 
     def __init__(
         self, relative_tolerance: float = 1e-4, absolute_tolerance: float = 1e-12
@@ -61,7 +64,6 @@ class ScipyIntegrator(Integrator):
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
     ) -> None:
-        # pdb.set_trace()
         self.integral_args_lkp = self._default_integral_args()
         self.integral_bounds = [
             (cl_abundance.min_mass, cl_abundance.max_mass),

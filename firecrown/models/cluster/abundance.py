@@ -1,4 +1,9 @@
-"""write me"""
+"""The module responsible for building the cluster abundance calculation.
+
+The galaxy cluster abundance integral is a combination of both theoretical
+and phenomenological predictions.  This module contains the classes and
+functions that produce those predictions.
+"""
 from typing import List, Callable, Optional, Dict, Tuple
 import numpy as np
 import numpy.typing as npt
@@ -23,11 +28,21 @@ AbundanceIntegrand = Callable[
 
 
 class ClusterAbundance:
-    """write me"""
+    """The class that calculates the predicted number counts of galaxy clusters
+
+    The abundance is a function of a specific cosmology, a mass and redshift range,
+    an area on the sky, a halo mass function, as well as multiple kernels, where
+    each kernel represents a different distribution involved in the final cluster
+    abundance integrand.
+    """
 
     @property
     def sky_area(self) -> float:
-        """write me"""
+        """The sky area in square degrees
+
+        The cluster number count prediction will be different depending on
+        the area of the sky we are considering.  This value controls that.
+        """
         return self.sky_area_rad * (180.0 / np.pi) ** 2
 
     @sky_area.setter
@@ -36,22 +51,22 @@ class ClusterAbundance:
 
     @property
     def cosmo(self) -> Cosmology:
-        """write me"""
+        """The cosmology used to predict the cluster number count."""
         return self._cosmo
 
     @property
     def analytic_kernels(self) -> List[Kernel]:
-        """write me"""
+        """The kernels in in the integrand which have an analytic solution."""
         return [x for x in self.kernels if x.has_analytic_sln]
 
     @property
     def dirac_delta_kernels(self) -> List[Kernel]:
-        """write me"""
+        """The kernels in in the integrand which are dirac delta functions."""
         return [x for x in self.kernels if x.is_dirac_delta]
 
     @property
     def integrable_kernels(self) -> List[Kernel]:
-        """write me"""
+        """The kernels in in the integrand which must be integrated."""
         return [
             x for x in self.kernels if not x.is_dirac_delta and not x.has_analytic_sln
         ]
@@ -76,13 +91,13 @@ class ClusterAbundance:
         self._cosmo: Cosmology = None
 
     def add_kernel(self, kernel: Kernel) -> None:
-        """write me"""
+        """Add a kernel to the cluster abundance integrand"""
         self.kernels.append(kernel)
 
     def update_ingredients(
         self, cosmo: Cosmology, params: Optional[ParamsMap] = None
     ) -> None:
-        """write me"""
+        """Update the cluster abundance calculation with a new cosmology."""
         self._cosmo = cosmo
         self._hmf_cache = {}
         if params is None:
@@ -92,7 +107,7 @@ class ClusterAbundance:
             kernel.update(params)
 
     def comoving_volume(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """write me"""
+        """The differential comoving volume at redshift z."""
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
@@ -109,7 +124,7 @@ class ClusterAbundance:
     def mass_function(
         self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
-        """write me"""
+        """The mass function at z and mass."""
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
 
@@ -125,7 +140,7 @@ class ClusterAbundance:
     def get_integrand(
         self, avg_mass: bool = False, avg_redshift: bool = False
     ) -> AbundanceIntegrand:
-        """write me"""
+        """Returns a callable that evaluates the complete integrand."""
 
         def integrand(
             mass: npt.NDArray[np.float64],

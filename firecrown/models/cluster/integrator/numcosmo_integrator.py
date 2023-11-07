@@ -1,4 +1,7 @@
-"""write me"""
+"""The NumCosmo integrator module
+
+This module holds the NumCosmo implementation of the integrator classes
+"""
 from typing import Tuple, Callable, Dict, Sequence, List
 import numpy as np
 import numpy.typing as npt
@@ -9,7 +12,7 @@ from firecrown.models.cluster.integrator.integrator import Integrator
 
 
 class NumCosmoIntegrator(Integrator):
-    """write me"""
+    """The NumCosmo implementation of the Integrator base class."""
 
     def __init__(
         self, relative_tolerance: float = 1e-4, absolute_tolerance: float = 1e-12
@@ -62,7 +65,6 @@ class NumCosmoIntegrator(Integrator):
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
     ) -> None:
-        # pdb.set_trace()
         self.integral_args_lkp = self._default_integral_args()
         self.integral_bounds = [
             (cl_abundance.min_mass, cl_abundance.max_mass),
@@ -121,8 +123,7 @@ class NumCosmoIntegrator(Integrator):
 
 
 class CountsIntegralND(Ncm.IntegralND):
-    """Integral subclass used by the ClusterAbundance
-    to compute the integrals using numcosmo."""
+    """Integral subclass used to compute the integrals using NumCosmo."""
 
     def __init__(
         self,
@@ -135,7 +136,7 @@ class CountsIntegralND(Ncm.IntegralND):
 
     # pylint: disable-next=arguments-differ
     def do_get_dimensions(self) -> Tuple[int, int]:
-        """Get number of dimensions."""
+        """Returns the dimensionality of the integral."""
         return self.dim, 1
 
     # pylint: disable-next=arguments-differ
@@ -147,6 +148,6 @@ class CountsIntegralND(Ncm.IntegralND):
         _fdim: int,
         fval_vec: Ncm.Vector,
     ) -> None:
-        """Integrand function."""
+        """Called by NumCosmo to evaluate the integrand."""
         x = np.array(x_vec.dup_array()).reshape(npoints, dim)
         fval_vec.set_array(self.fun(x))
