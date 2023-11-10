@@ -62,12 +62,12 @@ def test_spec_z_distribution():
 
     assert (
         srk.distribution(
-            mass=np.linspace(13, 17, 5),
-            z=np.linspace(0, 1, 5),
-            mass_proxy=np.linspace(0, 5, 5),
-            z_proxy=np.linspace(0, 1, 5),
-            mass_proxy_limits=(0, 5),
-            z_proxy_limits=(0, 1),
+            _mass=np.linspace(13, 17, 5),
+            _z=np.linspace(0, 1, 5),
+            _mass_proxy=np.linspace(0, 5, 5),
+            _z_proxy=np.linspace(0, 1, 5),
+            _mass_proxy_limits=(0, 5),
+            _z_proxy_limits=(0, 1),
         )
         == 1.0
     )
@@ -78,12 +78,12 @@ def test_true_mass_distribution():
 
     assert (
         tmk.distribution(
-            mass=np.linspace(13, 17, 5),
-            z=np.linspace(0, 1, 5),
-            mass_proxy=np.linspace(0, 5, 5),
-            z_proxy=np.linspace(0, 1, 5),
-            mass_proxy_limits=(0, 5),
-            z_proxy_limits=(0, 1),
+            _mass=np.linspace(13, 17, 5),
+            _z=np.linspace(0, 1, 5),
+            _mass_proxy=np.linspace(0, 5, 5),
+            _z_proxy=np.linspace(0, 1, 5),
+            _mass_proxy_limits=(0, 5),
+            _z_proxy_limits=(0, 1),
         )
         == 1.0
     )
