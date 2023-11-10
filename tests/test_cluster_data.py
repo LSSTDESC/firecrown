@@ -5,33 +5,6 @@ import sacc
 from firecrown.models.cluster.abundance_data import AbundanceData
 
 
-@pytest.fixture(name="sacc_data")
-def fixture_complicated_sacc_data():
-    # pylint: disable=no-member
-    cc = sacc.standard_types.cluster_counts
-    # pylint: disable=no-member
-    mlm = sacc.standard_types.cluster_mean_log_mass
-
-    s = sacc.Sacc()
-    s.add_tracer("survey", "my_survey", 4000)
-    s.add_tracer("survey", "not_my_survey", 4000)
-    s.add_tracer("bin_z", "my_tracer1", 0, 2)
-    s.add_tracer("bin_z", "my_tracer2", 2, 4)
-    s.add_tracer("bin_richness", "my_other_tracer1", 0, 2)
-    s.add_tracer("bin_richness", "my_other_tracer2", 2, 4)
-
-    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
-    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
-    s.add_data_point(cc, ("not_my_survey", "my_tracer1", "my_other_tracer2"), 1)
-
-    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
-    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
-    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer2"), 1)
-    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer1"), 1)
-
-    return s
-
-
 def test_create_abundance_data_no_survey():
     with pytest.raises(
         ValueError, match="The SACC file does not contain the SurveyTracer"
@@ -94,8 +67,8 @@ def test_validate_tracers():
         ad.validate_tracers(tracer_combs, sacc.standard_types.cluster_counts)
 
 
-def test_filtered_tracers(sacc_data):
-    ad = AbundanceData(sacc_data, "my_survey", False, False)
+def test_filtered_tracers(cluster_sacc_data):
+    ad = AbundanceData(cluster_sacc_data, "my_survey", False, False)
     # pylint: disable=no-member
     cc = sacc.standard_types.cluster_counts
     filtered_tracers, survey_mask = ad.get_filtered_tracers(cc)
@@ -107,8 +80,8 @@ def test_filtered_tracers(sacc_data):
     assert (survey_mask == [True, True, False]).all()
 
 
-def test_get_data_and_indices(sacc_data):
-    ad = AbundanceData(sacc_data, "my_survey", False, False)
+def test_get_data_and_indices(cluster_sacc_data):
+    ad = AbundanceData(cluster_sacc_data, "my_survey", False, False)
     # pylint: disable=no-member
     cc = sacc.standard_types.cluster_counts
     data, indices = ad.get_data_and_indices(cc)
@@ -117,8 +90,8 @@ def test_get_data_and_indices(sacc_data):
     assert indices == [0, 1]
 
 
-def test_get_bin_limits(sacc_data):
-    ad = AbundanceData(sacc_data, "my_survey", False, False)
+def test_get_bin_limits(cluster_sacc_data):
+    ad = AbundanceData(cluster_sacc_data, "my_survey", False, False)
     # pylint: disable=no-member
     cc = sacc.standard_types.cluster_counts
     limits = ad.get_bin_limits(cc)

@@ -128,3 +128,30 @@ def fixture_tools_with_vanilla_cosmology():
     result = ModelingTools()
     result.update(ParamsMap())
     result.prepare(pyccl.CosmologyVanillaLCDM())
+
+
+@pytest.fixture(name="cluster_sacc_data")
+def fixture_cluster_sacc_data():
+    # pylint: disable=no-member
+    cc = sacc.standard_types.cluster_counts
+    # pylint: disable=no-member
+    mlm = sacc.standard_types.cluster_mean_log_mass
+
+    s = sacc.Sacc()
+    s.add_tracer("survey", "my_survey", 4000)
+    s.add_tracer("survey", "not_my_survey", 4000)
+    s.add_tracer("bin_z", "my_tracer1", 0, 2)
+    s.add_tracer("bin_z", "my_tracer2", 2, 4)
+    s.add_tracer("bin_richness", "my_other_tracer1", 0, 2)
+    s.add_tracer("bin_richness", "my_other_tracer2", 2, 4)
+
+    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
+    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(cc, ("not_my_survey", "my_tracer1", "my_other_tracer2"), 1)
+
+    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer2"), 1)
+    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer1"), 1)
+
+    return s
