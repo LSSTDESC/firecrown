@@ -60,16 +60,14 @@ def test_create_purity_kernel():
 def test_spec_z_distribution():
     srk = SpectroscopicRedshift()
 
-    mass = np.linspace(13, 17, 5)
-    z = np.linspace(0, 1, 5)
-    mass_proxy = np.linspace(0, 5, 5)
-    z_proxy = np.linspace(0, 1, 5)
-    mass_proxy_limits = (0, 5)
-    z_proxy_limits = (0, 1)
-
     assert (
         srk.distribution(
-            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+            mass=np.linspace(13, 17, 5),
+            z=np.linspace(0, 1, 5),
+            mass_proxy=np.linspace(0, 5, 5),
+            z_proxy=np.linspace(0, 1, 5),
+            mass_proxy_limits=(0, 5),
+            z_proxy_limits=(0, 1),
         )
         == 1.0
     )
@@ -77,16 +75,15 @@ def test_spec_z_distribution():
 
 def test_true_mass_distribution():
     tmk = TrueMass()
-    mass = np.linspace(13, 17, 5)
-    z = np.linspace(0, 1, 5)
-    mass_proxy = np.linspace(0, 5, 5)
-    z_proxy = np.linspace(0, 1, 5)
-    mass_proxy_limits = (0, 5)
-    z_proxy_limits = (0, 1)
 
     assert (
         tmk.distribution(
-            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+            mass=np.linspace(13, 17, 5),
+            z=np.linspace(0, 1, 5),
+            mass_proxy=np.linspace(0, 5, 5),
+            z_proxy=np.linspace(0, 1, 5),
+            mass_proxy_limits=(0, 5),
+            z_proxy_limits=(0, 1),
         )
         == 1.0
     )
