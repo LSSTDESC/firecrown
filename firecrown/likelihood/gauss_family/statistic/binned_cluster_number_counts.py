@@ -87,34 +87,53 @@ class BinnedClusterNumberCounts(Statistic):
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         assert tools.cluster_abundance is not None
 
-        theory_vector_list = []
+        theory_vector_list: List[float] = []
         cluster_counts = []
-        cluster_masses = []
 
-        if self.use_cluster_counts or self.use_mean_log_mass:
-            for z_proxy_limits, mass_proxy_limits in self.bin_limits:
-                self.integrator.set_integration_bounds(
-                    tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
-                )
+        if not self.use_cluster_counts and not self.use_mean_log_mass:
+            return TheoryVector.from_list(theory_vector_list)
 
-                integrand = tools.cluster_abundance.get_integrand()
-                counts = self.integrator.integrate(integrand)
-                cluster_counts.append(counts)
+        cluster_counts = self.get_binned_cluster_counts(tools)
+
+        if self.use_cluster_counts:
             theory_vector_list += cluster_counts
 
         if self.use_mean_log_mass:
-            for (z_proxy_limits, mass_proxy_limits), counts in zip(
-                self.bin_limits, cluster_counts
-            ):
-                integrand = tools.cluster_abundance.get_integrand(avg_mass=True)
-                self.integrator.set_integration_bounds(
-                    tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
-                )
-
-                total_mass = self.integrator.integrate(integrand)
-                mean_mass = total_mass / counts
-                cluster_masses.append(mean_mass)
-
-            theory_vector_list += cluster_masses
+            theory_vector_list += self.get_binned_cluster_masses(tools, cluster_counts)
 
         return TheoryVector.from_list(theory_vector_list)
+
+    def get_binned_cluster_masses(
+        self, tools: ModelingTools, cluster_counts: List[float]
+    ) -> List[float]:
+        assert tools.cluster_abundance is not None
+
+        cluster_masses = []
+        for (z_proxy_limits, mass_proxy_limits), counts in zip(
+            self.bin_limits, cluster_counts
+        ):
+            integrand = tools.cluster_abundance.get_integrand(avg_mass=True)
+            self.integrator.set_integration_bounds(
+                tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
+            )
+
+            total_mass = self.integrator.integrate(integrand)
+            mean_mass = total_mass / counts
+            cluster_masses.append(mean_mass)
+
+        return cluster_masses
+
+    def get_binned_cluster_counts(self, tools: ModelingTools) -> List[float]:
+        assert tools.cluster_abundance is not None
+
+        cluster_counts = []
+        for z_proxy_limits, mass_proxy_limits in self.bin_limits:
+            self.integrator.set_integration_bounds(
+                tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
+            )
+
+            integrand = tools.cluster_abundance.get_integrand()
+            counts = self.integrator.integrate(integrand)
+            cluster_counts.append(counts)
+
+        return cluster_counts
