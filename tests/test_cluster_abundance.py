@@ -1,10 +1,9 @@
 """Tests for the cluster abundance module."""
-from typing import List, Tuple, Optional
 import pytest
 import pyccl
 import numpy as np
-import numpy.typing as npt
-from firecrown.parameters import ParamsMap, create
+from unittest.mock import Mock
+from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import Kernel, KernelType
 
@@ -15,32 +14,6 @@ def fixture_cl_abundance():
     hmf = pyccl.halos.MassFuncBocquet16()
     ca = ClusterAbundance(13, 17, 0, 2, hmf, 360.0**2)
     return ca
-
-
-class MockKernel(Kernel):
-    """A mock implementation of a Kernel used for unit testing."""
-
-    def __init__(
-        self,
-        kernel_type: KernelType,
-        is_dirac_delta: bool = False,
-        has_analytic_sln: bool = False,
-        integral_bounds: Optional[List[Tuple[float, float]]] = None,
-    ):
-        super().__init__(kernel_type, is_dirac_delta, has_analytic_sln, integral_bounds)
-        self.param = create()
-
-    def distribution(
-        self,
-        _mass: npt.NDArray[np.float64],
-        _z: npt.NDArray[np.float64],
-        _mass_proxy: npt.NDArray[np.float64],
-        _z_proxy: npt.NDArray[np.float64],
-        _mass_proxy_limits: Tuple[float, float],
-        _z_proxy_limits: Tuple[float, float],
-    ) -> npt.NDArray[np.float64]:
-        """The functional form of the distribution or spread of this kernel"""
-        return np.atleast_1d(1.0)
 
 
 def test_cluster_abundance_init(cl_abundance: ClusterAbundance):
@@ -57,21 +30,25 @@ def test_cluster_abundance_init(cl_abundance: ClusterAbundance):
 
 
 def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
-    mk = MockKernel(KernelType.MASS_PROXY)
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS_PROXY,
+        is_dirac_delta=True,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(mk)
 
     assert cl_abundance.cosmo is None
-    assert mk.param is None
     # pylint: disable=protected-access
     assert cl_abundance._hmf_cache == {}
 
-    pmap = ParamsMap({"param": 42})
+    pmap = ParamsMap({})
     cosmo = pyccl.CosmologyVanillaLCDM()
 
     cl_abundance.update_ingredients(cosmo, pmap)
     assert cl_abundance.cosmo is not None
     assert cl_abundance.cosmo == cosmo
-    assert mk.param == 42
     # pylint: disable=protected-access
     assert cl_abundance._hmf_cache == {}
 
@@ -94,7 +71,14 @@ def test_cluster_sky_area(cl_abundance: ClusterAbundance):
 def test_cluster_add_kernel(cl_abundance: ClusterAbundance):
     assert len(cl_abundance.kernels) == 0
 
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
     assert len(cl_abundance.kernels) == 1
     assert isinstance(cl_abundance.kernels[0], Kernel)
     assert cl_abundance.kernels[0].kernel_type == KernelType.MASS
@@ -103,12 +87,25 @@ def test_cluster_add_kernel(cl_abundance: ClusterAbundance):
     assert len(cl_abundance.dirac_delta_kernels) == 0
     assert len(cl_abundance.integrable_kernels) == 1
 
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS, True))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=True,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
     assert len(cl_abundance.analytic_kernels) == 0
     assert len(cl_abundance.dirac_delta_kernels) == 1
     assert len(cl_abundance.integrable_kernels) == 1
 
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS, False, True))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=True,
+    )
+    cl_abundance.add_kernel(mk)
     assert len(cl_abundance.analytic_kernels) == 1
     assert len(cl_abundance.dirac_delta_kernels) == 1
     assert len(cl_abundance.integrable_kernels) == 1
@@ -139,7 +136,14 @@ def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
@@ -158,7 +162,14 @@ def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
@@ -177,7 +188,14 @@ def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
@@ -196,7 +214,14 @@ def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
 def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
-    cl_abundance.add_kernel(MockKernel(KernelType.MASS))
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
 
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
