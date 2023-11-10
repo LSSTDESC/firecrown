@@ -1,5 +1,6 @@
 """Tests for the scipy integrator module."""
 from typing import Tuple
+from unittest.mock import Mock
 import numpy as np
 import numpy.typing as npt
 import pytest
@@ -21,22 +22,6 @@ def fixture_cl_abundance():
         halo_mass_function=None,
     )
     return cl_abundance
-
-
-class MockKernel(Kernel):
-    """A mock implementation of a Kernel used for unit testing."""
-
-    def distribution(
-        self,
-        _mass: npt.NDArray[np.float64],
-        _z: npt.NDArray[np.float64],
-        _mass_proxy: npt.NDArray[np.float64],
-        _z_proxy: npt.NDArray[np.float64],
-        _mass_proxy_limits: Tuple[float, float],
-        _z_proxy_limits: Tuple[float, float],
-    ) -> npt.NDArray[np.float64]:
-        """The functional form of the distribution or spread of this kernel"""
-        return np.atleast_1d(1.0)
 
 
 def test_scipy_set_integration_bounds_no_kernels(cl_abundance: ClusterAbundance):
@@ -68,7 +53,13 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
 
-    dd_kernel = MockKernel(KernelType.MASS_PROXY, is_dirac_delta=True)
+    dd_kernel = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS_PROXY,
+        is_dirac_delta=True,
+        has_analytic_sln=False,
+    )
+    dd_kernel.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(dd_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -84,7 +75,13 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
         }
 
     cl_abundance.kernels.clear()
-    dd_kernel = MockKernel(KernelType.Z_PROXY, is_dirac_delta=True)
+    dd_kernel = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.Z_PROXY,
+        is_dirac_delta=True,
+        has_analytic_sln=False,
+    )
+    dd_kernel.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(dd_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -98,7 +95,14 @@ def test_scipy_set_integration_bounds_dirac_delta(cl_abundance: ClusterAbundance
             KernelType.MASS: 0,
             KernelType.Z: 1,
         }
-    dd_kernel2 = MockKernel(KernelType.MASS_PROXY, is_dirac_delta=True)
+
+    dd_kernel2 = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS_PROXY,
+        is_dirac_delta=True,
+        has_analytic_sln=False,
+    )
+    dd_kernel2.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(dd_kernel2)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -124,7 +128,13 @@ def test_scipy_set_integration_bounds_integrable_kernels(
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
 
-    ig_kernel = MockKernel(KernelType.MASS_PROXY)
+    ig_kernel = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS_PROXY,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    ig_kernel.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(ig_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -141,7 +151,13 @@ def test_scipy_set_integration_bounds_integrable_kernels(
         }
 
     cl_abundance.kernels.clear()
-    ig_kernel = MockKernel(KernelType.Z_PROXY)
+    ig_kernel = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.Z_PROXY,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    ig_kernel.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(ig_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -157,7 +173,13 @@ def test_scipy_set_integration_bounds_integrable_kernels(
             KernelType.Z_PROXY: 2,
         }
 
-    ig_kernel2 = MockKernel(KernelType.MASS_PROXY)
+    ig_kernel2 = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS_PROXY,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    ig_kernel2.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(ig_kernel2)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -185,7 +207,13 @@ def test_scipy_set_integration_bounds_analytic_slns(
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
 
-    a_kernel = MockKernel(KernelType.MASS_PROXY, has_analytic_sln=True)
+    a_kernel = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS_PROXY,
+        is_dirac_delta=False,
+        has_analytic_sln=True,
+    )
+    a_kernel.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(a_kernel)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
@@ -200,7 +228,13 @@ def test_scipy_set_integration_bounds_analytic_slns(
             KernelType.Z: 1,
         }
 
-    a_kernel2 = MockKernel(KernelType.Z_PROXY, has_analytic_sln=True)
+    a_kernel2 = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.Z_PROXY,
+        is_dirac_delta=False,
+        has_analytic_sln=True,
+    )
+    a_kernel2.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(a_kernel2)
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
