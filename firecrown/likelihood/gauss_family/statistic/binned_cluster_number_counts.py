@@ -106,6 +106,11 @@ class BinnedClusterNumberCounts(Statistic):
     def get_binned_cluster_masses(
         self, tools: ModelingTools, cluster_counts: List[float]
     ) -> List[float]:
+        """Computes the mean mass of clusters in each bin
+
+        Using the data from the sacc file, this function evaluates the likelihood for
+        a single point of the parameter space, and returns the predicted mean mass of
+        the clusters in each bin."""
         assert tools.cluster_abundance is not None
 
         cluster_masses = []
@@ -124,6 +129,11 @@ class BinnedClusterNumberCounts(Statistic):
         return cluster_masses
 
     def get_binned_cluster_counts(self, tools: ModelingTools) -> List[float]:
+        """Computes the number of clusters in each bin
+
+        Using the data from the sacc file, this function evaluates the likelihood for
+        a single point of the parameter space, and returns the predicted number of
+        clusters in each bin."""
         assert tools.cluster_abundance is not None
 
         cluster_counts = []
