@@ -1,8 +1,8 @@
 """Tests for the cluster abundance module."""
+from unittest.mock import Mock
 import pytest
 import pyccl
 import numpy as np
-from unittest.mock import Mock
 from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import Kernel, KernelType
