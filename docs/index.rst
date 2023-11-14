@@ -15,15 +15,20 @@ Currently, it supports Cobaya,  CosmoSIS, and NumCosmo, providing the necessary 
 
 It can also be used as a library in other contexts, and so the installation of Firecrown does not *require* the installation of a sampler.
 
+
+.. note::
+   Before installing Firecrown, we recommend reading the `introductory article <_static/intro_article.html>`_.
+   This article explains the general concepts behind Firecrown, how to install it, and how to use it.  
+
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Getting Started
    :name: getstart
 
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
 
-- `Tutorial Article <_static/intro_article.html>`_
+
 
 .. toctree::
    :maxdepth: 1
