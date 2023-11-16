@@ -15,7 +15,7 @@ from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
 
 @pytest.fixture(name="minimal_stat")
 def fixture_minimal_stat() -> ClusterNumberCounts:
-    """Return a correctly initialized :python:`ClusterNumberCounts` object."""
+    """Return a correctly initialized :class:`ClusterNumberCounts` object."""
     stat = ClusterNumberCounts(
         survey_tracer="SDSS",
         cluster_abundance=ClusterAbundance(
@@ -38,7 +38,7 @@ def fixture_missing_survey_tracer() -> sacc.Sacc:
 @pytest.fixture(name="good_sacc_data")
 def fixture_sacc_data():
     """Return a sacc.Sacc object sufficient to correctly set a
-    :python:`ClusterNumberCounts` object.
+    :class:`ClusterNumberCounts` object.
     """
     data = sacc.Sacc()
     return data
@@ -56,6 +56,6 @@ def test_missing_survey_tracer(
 def test_read_works():
     """After read() is called, we should be able to get the statistic's
 
-    :python:`DataVector` and also should be able to call
-    :python:`compute_theory_vector`.
+    :class:`DataVector` and also should be able to call
+    :meth:`compute_theory_vector`.
     """

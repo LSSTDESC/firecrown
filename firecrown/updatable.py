@@ -2,13 +2,13 @@
 
 Abstract class :class:`Updatable` is the base class from which any class in Firecrown
 that supports updating from a :class:`ParamsMap` should inherit. Such classes are
-expected to change state only in through their implementation of :python:`_update`
-(including any other private methods used to implement :python:`_update`). Other
+expected to change state only in through their implementation of :meth:`_update`
+(including any other private methods used to implement :meth:`_update`). Other
 functions should not change the data of :class:`Updatable` objects.
 
 :class:`UpdatableCollection` is a subclass of the built-in list. It implements the
-:class:`Updatable` interface by calling :python:`update()` on each element it contains.
-The :python:`append()` member is overridden to make sure that only objects which are of
+:class:`Updatable` interface by calling :meth:`update()` on each element it contains.
+The :meth:`append()` method is overridden to make sure that only objects which are of
 a type that implements :class:`Updatable` can be appended to the list.
 
 """
@@ -50,11 +50,10 @@ class Updatable(ABC):
     """Abstract class Updatable is the base class for Updatable objects in Firecrown.
 
     Any class in Firecrown that supports updating from a ParamsMap should
-    inherit. Such classes are expected to change state only in through their
-    implementation of _update (including any other private methods used to
-    implement _update). Other functions should not change the data of Updatable
-    objects.
-
+    inherit from :class:`Updatable`. Such classes are expected to change state
+    only in through their implementation of _update (including any other private
+    methods used to implement _update). Other functions should not change the
+    data of Updatable objects.
     """
 
     def __init__(self, parameter_prefix: Optional[str] = None) -> None:
@@ -75,13 +74,13 @@ class Updatable(ABC):
         self.parameter_prefix: Optional[str] = parameter_prefix
 
     def __setattr__(self, key: str, value: Any) -> None:
-        """Set the attribute named :python:`key` to the supplied :python:`value`.
+        """Set the attribute named :attr:`key` to the supplied `value`.
 
-        There is special handling for two types: :python:`SamplerParameter`
-        and :python:`InternalParameter`.
+        There is special handling for two types: :class:`SamplerParameter`
+        and :class:`InternalParameter`.
 
-        We also keep track of all :python:`Updatable` instance variables added,
-        appending a reference to each to :python:`self._updatables` as well as
+        We also keep track of all :class:`Updatable` instance variables added,
+        appending a reference to each to :attr:`self._updatables` as well as
         storing the attribute directly.
         """
         if isinstance(value, (Updatable, UpdatableCollection)):
@@ -139,12 +138,12 @@ class Updatable(ABC):
         """Update self by calling to prepare for the next MCMC sample.
 
         We first update the values of sampler parameters from the values in
-        :python:`params`. An error will be raised if any of self's sampler
-        parameters can not be found in :python:`params` or if any internal
-        parameters are provided in :python:`params`.
+        `params`. An error will be raised if any of self's sampler
+        parameters can not be found in `params` or if any internal
+        parameters are provided in `params`.
 
-        We then use the :python:`params` to update each contained Updatable or
-        UpdatableCollection object. The method _update is called to give
+        We then use the `params` to update each contained :class:`Updatable` or
+        :class:`UpdatableCollection` object. The method :meth:`_update` is called to give
         subclasses an opportunity to do any other preparation for the next
         MCMC sample.
 
@@ -211,12 +210,12 @@ class Updatable(ABC):
         self._reset()
 
     def _update(self, params: ParamsMap) -> None:
-        """Do any updating other than calling :python:`update` on contained
-        :python:`Updatable` objects.
+        """Do any updating other than calling :meth:`update` on contained
+        :class:`Updatable` objects.
 
         Implement this method in a subclass only when it has something to do.
-        If the supplied ParamsMap is lacking a required parameter,
-        an implementation should raise a TypeError.
+        If the supplied :class:`ParamsMap` is lacking a required parameter,
+        an implementation should raise a `TypeError`.
 
         This default implementation does nothing.
 
@@ -303,12 +302,11 @@ class Updatable(ABC):
 class UpdatableCollection(UserList):
 
     """UpdatableCollection is a list of Updatable objects and is itself
-    supports :python:`update` and :python:`reset` (although it does not inherit
-    from
-    :python:`Updatable`).
+    supports :meth:`update` and :meth:`reset` (although it does not inherit
+    from :class:`Updatable`).
 
-    Every item in an UpdatableCollection must itself be Updatable. Calling
-    update on the collection results in every item in the collection being
+    Every item in an UpdatableCollection must itself be :class:`Updatable`). Calling
+    :meth:`update` on the collection results in every item in the collection being
     updated.
     """
 

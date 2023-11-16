@@ -1,7 +1,8 @@
 """Cluster Redshift Module
-abstract class to compute cluster redshift functions.
-========================================
-The implemented functions use PyCCL library as backend.
+Abstract class to compute cluster redshift functions.
+
+
+The implemented functions use the :mod:`pyccl` library.
 """
 
 from typing import final, List, Tuple, Optional
@@ -70,7 +71,7 @@ class ClusterRedshift(Updatable):
     def _update_cluster_redshift(self, params: ParamsMap):
         """Method to update the ClusterRedshift from the given ParamsMap.
         Subclasses that need to do more than update their contained
-        :python:`Updatable` instance variables should implement this method."""
+        :class:`Updatable` instance variables should implement this method."""
 
     @final
     def _update(self, params: ParamsMap):

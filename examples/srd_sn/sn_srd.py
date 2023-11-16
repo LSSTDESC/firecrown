@@ -1,4 +1,4 @@
-"""Demonstration of the use of the :python:`Supernova` statistics object.
+"""Demonstration of the use of the :class:`Supernova` statistics object.
 """
 import sacc
 import firecrown.likelihood.gauss_family.statistic.supernova as sn

@@ -4,9 +4,6 @@ Using Firecrown
 .. role:: python(code)
    :language: python
 
-
-
-
 The easiest way to get started using Firecrown is to look at the examples.
 These are found in the `examples folder <https://github.com/LSSTDESC/firecrown/tree/master/examples>`_.
 There are examples that show use of each of the supported samplers.

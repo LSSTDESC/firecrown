@@ -1,8 +1,10 @@
 """Cluster Mass Module
-abstract class to compute cluster mass function.
-========================================
-The implemented functions use PyCCL library as backend.
+Abstract class to compute cluster mass function.
+
+
+The implemented functions use the :mod:`pyccl` library.
 """
+
 from __future__ import annotations
 from typing import final, List, Tuple, Optional
 from abc import abstractmethod
@@ -69,7 +71,7 @@ class ClusterMass(Updatable):
     def _update_cluster_mass(self, params: ParamsMap):
         """Method to update the ClusterMass from the given ParamsMap.
         Subclasses that need to do more than update their contained
-        :python:`Updatable` instance variables should implement this method."""
+        :class:`Updatable` instance variables should implement this method."""
 
     @final
     def _update(self, params: ParamsMap):
