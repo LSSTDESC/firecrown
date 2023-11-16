@@ -1,7 +1,7 @@
 """Basic likelihood infrastructure
 
 
-This module provides the base class :python:`Likelihood`, which is the class
+This module provides the base class :class:`Likelihood`, which is the class
 from which all concrete firecrown likelihoods must descend.
 
 It also provides the function :python:`load_likelihood` which reads a
@@ -153,8 +153,8 @@ def load_likelihood_from_module_type(
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 
-    This function is used by both :python:`load_likelihood_from_script` and
-    :python:`load_likelihood_from_module`. It is not intended to be called
+    This function is used by both :meth:`load_likelihood_from_script` and
+    :meth:`load_likelihood_from_module`. It is not intended to be called
     directly.
 
     :param module: a loaded module
