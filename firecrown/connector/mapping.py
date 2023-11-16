@@ -1,7 +1,7 @@
 """Facilities for mapping cosmological parameters between frameworks.
 
 The module :mod:`mapping` provides facilities for mapping the cosmological
-constants and functions used by one body of code to another. 
+constants and functions used by one body of code to another.
 
 Each supported body of code has its own dedicated class.
 """

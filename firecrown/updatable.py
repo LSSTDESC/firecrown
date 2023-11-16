@@ -143,9 +143,9 @@ class Updatable(ABC):
         parameters are provided in `params`.
 
         We then use the `params` to update each contained :class:`Updatable` or
-        :class:`UpdatableCollection` object. The method :meth:`_update` is called to give
-        subclasses an opportunity to do any other preparation for the next
-        MCMC sample.
+        :class:`UpdatableCollection` object. The method :meth:`_update` is
+        called to give subclasses an opportunity to do any other preparation
+        for the next MCMC sample.
 
         :param params: new parameter values
         """
