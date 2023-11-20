@@ -63,6 +63,7 @@ In Firecrown, this means writing a new *likelihood factory function* -- the func
 -   Structuring your factory function well helps make it easier for you, and others, to understand what you have written.
 
 ```{python}
+#| eval: false
 import os.path 
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
