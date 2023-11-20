@@ -8,6 +8,7 @@ dependencies:
   - cosmosis-build-standard-library
   - cython < 3.0.0
   - flake8
+  - jupyter
   - mypy
   - numcosmo>=0.18.2
   - numpy>=1.21.0
