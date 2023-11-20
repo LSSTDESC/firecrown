@@ -1,5 +1,0 @@
-abstract class Updatable {
-  + {final} update(params: ParamsDict)
-  - {abstract} _update(params: ParamsDict)
-  + {abstract} required_parameters() : RequiredParameters
-}

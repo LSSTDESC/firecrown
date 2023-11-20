@@ -38,7 +38,6 @@ It can also be used as a library in other contexts, and so the installation of F
    Release and dependency policy<release-dependency-policy.rst>
    Developer Notes<dev-notes.rst>
    Contributing<contrib.rst>
-   Class Diagrams<diagrams.rst>
 
 .. toctree::
    :maxdepth: 1
