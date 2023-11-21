@@ -305,7 +305,7 @@ class UpdatableCollection(UserList):
     supports :meth:`update` and :meth:`reset` (although it does not inherit
     from :class:`Updatable`).
 
-    Every item in an UpdatableCollection must itself be :class:`Updatable`). Calling
+    Every item in an UpdatableCollection must itself be :class:`Updatable`. Calling
     :meth:`update` on the collection results in every item in the collection being
     updated.
     """
