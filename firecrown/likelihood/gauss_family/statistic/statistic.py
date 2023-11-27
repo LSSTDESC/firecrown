@@ -110,8 +110,8 @@ class Statistic(Updatable):
     """The abstract base class for all physics-related statistics.
 
     Statistics read data from a SACC object as part of a multi-phase
-    initialization. The manage a :python:`DataVector` and, given a
-    :python:`ModelingTools` object, can compute a :python:`TheoryVector`.
+    initialization. They manage a :class:`DataVector` and, given a
+    :class:`ModelingTools` object, can compute a :class:`TheoryVector`.
 
     Statistics represent things like two-point functions and mass functions.
     """
@@ -148,23 +148,23 @@ class Statistic(Updatable):
 
 
 class GuardedStatistic(Updatable):
-    """:python:`GuardedStatistic` is used by the framework to maintain and
+    """:class:`GuardedStatistic` is used by the framework to maintain and
     validate the state of instances of classes derived from
-    :python:`Statistic`."""
+    :class:`Statistic`."""
 
     def __init__(self, stat: Statistic):
         """Initialize the GuardedStatistic to contain the given
-        :python:`Statistic`."""
+        :class:`Statistic`."""
         super().__init__()
         self.statistic = stat
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read whatever data is needed from the given :python:`sacc.Sacc
+        """Read whatever data is needed from the given :class:`sacc.Sacc
         object.
 
         After this function is called, the object should be prepared for the
-        calling of the methods :python:`get_data_vector` and
-        :python:`compute_theory_vector`.
+        calling of the methods :meth:`get_data_vector` and
+        :meth:`compute_theory_vector`.
         """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
@@ -179,18 +179,18 @@ class GuardedStatistic(Updatable):
             raise RuntimeError(msg) from exc
 
     def get_data_vector(self) -> DataVector:
-        """Return the contained :python:`Statistic`'s data vector.
+        """Return the contained :class:`Statistic`'s data vector.
 
-        :python:`GuardedStatistic` ensures that :python:`read` has been called.
+        :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.get_data_vector()
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Return the contained :python:`Statistic`'s computed theory vector.
+        """Return the contained :class:`Statistic`'s computed theory vector.
 
-        :python:`GuardedStatistic` ensures that :python:`read` has been called.
+        :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -200,8 +200,8 @@ class GuardedStatistic(Updatable):
 class TrivialStatistic(Statistic):
     """A minimal statistic only to be used for testing Gaussian likelihoods.
 
-    It returns a :python:`DataVector` and :python:`TheoryVector` that is three
-    elements long. The SACC data provided to :python:`TrivialStatistic.read`
+    It returns a :class:`DataVector` and :class:`TheoryVector` each of which is
+    three elements long. The SACC data provided to :meth:`TrivialStatistic.read`
     must supply the necessary values.
     """
 

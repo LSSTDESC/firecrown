@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Numcosmo example using the :python:`sn_srd` likelihood.
+Numcosmo example using the `sn_srd` likelihood.
 """
 
 import math

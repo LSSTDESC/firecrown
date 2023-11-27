@@ -30,7 +30,7 @@ saccfile = os.path.expanduser(
 @dataclass
 class CclSetup:
     """A package of related CCL parameters, to reduce the number of variables
-    used in the :python:`run_likelihood` method."""
+    used in the :meth:`run_likelihood` method."""
 
     a_1: float = 1.0
     a_2: float = 0.5
@@ -156,7 +156,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 # We can also run the likelihood directly
 def run_likelihood() -> None:
     """Produce some plots using the likelihood function built by
-    :python:`build_likelihood`.
+    :meth:`build_likelihood`.
     """
 
     # pylint: enable=import-outside-toplevel

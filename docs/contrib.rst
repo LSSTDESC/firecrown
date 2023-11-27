@@ -41,6 +41,11 @@ Testing
     As the coverage improves, we will provide instructions for writing tests for new code.
 
 We are using :bash:`pytest` to run tests on Firecrown.
+To run the same set of tests that will be run by the CI system, use:
+
+.. code:: bash
+
+    python -m pytest
 
 Use of :bash:`pylint`
 ---------------------

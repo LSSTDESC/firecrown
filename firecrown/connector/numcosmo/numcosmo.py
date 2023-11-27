@@ -23,9 +23,9 @@ from firecrown.modeling_tools import ModelingTools
 
 
 class MappingNumCosmo(GObject.Object):
-    """Mapping support for NumCosmo, this is a subclass of Mapping that
+    """Mapping support for NumCosmo, this is a subclass of :class:`Mapping` that
     provides a mapping from a NumCosmo Cosmological model to a CCL cosmology.
-    It alsos convert NumCosmo models to `ParamsMap`s."""
+    It also converts NumCosmo models to :class:`ParamsMap` objects."""
 
     __gtype_name__ = "FirecrownMappingNumCosmo"
 
@@ -296,7 +296,7 @@ class MappingNumCosmo(GObject.Object):
 
 class NumCosmoData(Ncm.Data):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix :python:`do_`. This class implement
+    object virtual methods using the prefix `do_`. This class implements
     a general likelihood."""
 
     __gtype_name__ = "FirecrownNumCosmoData"
@@ -447,7 +447,7 @@ class NumCosmoData(Ncm.Data):
 
 class NumCosmoGaussCov(Ncm.DataGaussCov):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix :python:`do_`. This class implement
+    object virtual methods using the prefix `do_`. This class implements
     a Gaussian likelihood."""
 
     __gtype_name__ = "FirecrownNumCosmoGaussCov"
@@ -455,7 +455,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def __init__(self):
         """Initialize a NumCosmoGaussCov object. This class is a subclass of
         Ncm.DataGaussCov and implements NumCosmo likelihood object virtual
-        methods using the prefix :python:`do_`. This class implement a Gaussian
+        methods using the prefix `do_`. This class implements a Gaussian
         likelihood.
 
         Due to the way GObject works, the constructor must have a `**kwargs`
@@ -491,7 +491,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     )
 
     def _get_nc_mapping(self) -> MappingNumCosmo:
-        """Return the MappingNumCosmo object."""
+        """Return the :class:`MappingNumCosmo` object."""
         return self._nc_mapping
 
     def _set_nc_mapping(self, value: MappingNumCosmo):

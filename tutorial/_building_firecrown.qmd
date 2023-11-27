@@ -1,15 +1,12 @@
 There are two options for working on the Firecrown code.
-One is to do an *editable installation* using `pip install -e`; the other is to directly use the `setup.py` script.
-We caution against using the editable installation because it does not deal gracefully with the removal of files during development.
-We recommend instead building by directly using the `setup.py` script.
-We also recommend removing any previous build before making a new build; this assures that no old artifacts are ever used.
-The steps below thus guarantee a clean build:
+One is to do an *editable installation* using `python -m pip install --no-deps -e`; the other is to directly use the `setup.py` script.
+We recommend use of the `python -m pip install --no-deps -e .`; direct use of the `setup.py` file is deprecated with recent versions of `setuputils`.
 
 ```{.bash}
 cd ${FIRECROWN_DIR}
-# We clean up any previous build to ensure stale code is never found
-# by python.
-rm -rf build/*
-python setup.py build
+python -m pip install --no-deps -e .
 ```
-Remember to do these steps after each set of modifications to the code.
+
+We recommend `python -m pip ...` rather than direct use of `pip ...` to help ensure that the `pip` that is found is the one consistent with the `python` used by the environment.
+Note the inclusion of the `--no-deps` option; this helps make sure that no *other* packages are accidentally installed.
+If running this command fails because of a missing dependency, you should install the required produce using `conda` rather than `pip`.

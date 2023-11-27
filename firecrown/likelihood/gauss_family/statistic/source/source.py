@@ -68,7 +68,7 @@ class Source(Updatable):
 
     def _update_source(self, params: ParamsMap):
         """Method to update the source from the given ParamsMap. Any subclass
-        that needs to do more than update its contained :python:`Updatable`
+        that needs to do more than update its contained :class:`Updatable`
         objects should implement this method."""
 
     @final
@@ -115,7 +115,7 @@ class Tracer:
     @staticmethod
     def determine_field_name(field: Optional[str], tracer: Optional[str]) -> str:
         """This function encapsulates the policy for determining the value to be
-        assigned to the :python:`field` member variable of a :python:`Tracer`.
+        assigned to the :attr:`field` attribute of a :class:`Tracer`.
 
         It is a static method only to keep it grouped with the class for which it is
         defining the initialization policy.
@@ -138,14 +138,14 @@ class Tracer:
         """Initialize a new Tracer based on the given pyccl.Tracer which must not be
         None.
 
-        Note that the :python:`pyccl.Tracer` is not copied; we store a reference to the
-        original tracer. Be careful not to accidentally share :python:`pyccl.Tracer`s.
+        Note that the :class:`pyccl.Tracer` is not copied; we store a reference to the
+        original tracer. Be careful not to accidentally share :class:`pyccl.Tracer`s.
 
         If no tracer_name is supplied, then the tracer_name is set to the name of the
-        :python:`pyccl.Tracer` class that was used.
+        :class:`pyccl.Tracer` class that was used.
 
-        If no field is given, then field is set to either (1) the tracer_name, if one
-        was given,, or (2) 'delta_matter'.
+        If no `field` is given, then the attribute :attr:`field` is set to either
+        (1) the tracer_name, if one was given, or (2) 'delta_matter'.
         """
         assert tracer is not None
         self.ccl_tracer = tracer
@@ -250,7 +250,7 @@ class SourceGalaxySelectField(
         spectra.
 
         :param field: the name of the 3D field that is associated to the tracer.
-            Default: :python:`"delta_matter"`
+            Default: `"delta_matter"`
         """
         super().__init__()
         self.field = field
