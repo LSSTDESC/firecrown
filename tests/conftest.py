@@ -165,7 +165,6 @@ def fixture_empty_cluster_abundance() -> ClusterAbundance:
         max_z=2,
         min_mass=13,
         max_mass=17,
-        sky_area=100,
         halo_mass_function=None,
     )
     return cl_abundance

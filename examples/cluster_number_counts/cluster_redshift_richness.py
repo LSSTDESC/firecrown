@@ -21,13 +21,11 @@ from firecrown.likelihood.likelihood import NamedParameters, Likelihood
 from typing import Tuple
 
 
-def get_cluster_abundance(sky_area: float) -> ClusterAbundance:
+def get_cluster_abundance() -> ClusterAbundance:
     hmf = ccl.halos.MassFuncBocquet16()
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
-    cluster_abundance = ClusterAbundance(
-        min_mass, max_mass, min_z, max_z, hmf, sky_area
-    )
+    cluster_abundance = ClusterAbundance(min_mass, max_mass, min_z, max_z, hmf)
 
     # Create and add the kernels you want in your cluster abundance
     pivot_mass, pivot_redshift = 14.625862906, 0.6
@@ -69,10 +67,7 @@ def build_likelihood(
     sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
-    sacc_adapter = AbundanceData(
-        sacc_data, survey_name, use_cluster_counts, use_mean_log_mass
-    )
-    cluster_abundance = get_cluster_abundance(sacc_adapter.survey_tracer.sky_area)
+    cluster_abundance = get_cluster_abundance()
     modeling_tools = ModelingTools(cluster_abundance=cluster_abundance)
 
     return likelihood, modeling_tools

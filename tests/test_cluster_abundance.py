@@ -12,7 +12,7 @@ from firecrown.models.cluster.kernel import Kernel, KernelType
 def fixture_cl_abundance():
     """Test fixture that represents an assembled cluster abundance class."""
     hmf = pyccl.halos.MassFuncBocquet16()
-    ca = ClusterAbundance(13, 17, 0, 2, hmf, 360.0**2)
+    ca = ClusterAbundance(13, 17, 0, 2, hmf)
     return ca
 
 
@@ -24,8 +24,6 @@ def test_cluster_abundance_init(cl_abundance: ClusterAbundance):
     assert cl_abundance.max_mass == 17.0
     assert cl_abundance.min_z == 0.0
     assert cl_abundance.max_z == 2.0
-    assert cl_abundance.sky_area == 360.0**2
-    assert cl_abundance.sky_area_rad == 4 * np.pi**2
     assert len(cl_abundance.kernels) == 0
 
 
@@ -57,15 +55,6 @@ def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
     cl_abundance.update_ingredients(cosmo)
     assert cl_abundance.cosmo is not None
     assert cl_abundance.cosmo == cosmo
-
-
-def test_cluster_sky_area(cl_abundance: ClusterAbundance):
-    assert cl_abundance.sky_area == 360.0**2
-    assert cl_abundance.sky_area_rad == 4 * np.pi**2
-
-    cl_abundance.sky_area = 180.0**2
-    assert cl_abundance.sky_area == 180.0**2
-    assert cl_abundance.sky_area_rad == np.pi**2
 
 
 def test_cluster_add_kernel(cl_abundance: ClusterAbundance):
@@ -115,13 +104,14 @@ def test_abundance_comoving_vol_accepts_array(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
 
-    result = cl_abundance.comoving_volume(np.linspace(0.1, 1, 10))
+    result = cl_abundance.comoving_volume(np.linspace(0.1, 1, 10), 360**2)
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
     assert len(result) == 10
     assert np.all(result > 0)
 
 
+@pytest.mark.regression
 def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
@@ -133,6 +123,7 @@ def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
     assert np.all(result > 0)
 
 
+@pytest.mark.regression
 def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
@@ -145,6 +136,7 @@ def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
     mk.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(mk)
 
+    sky_area = 439.78986
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
     mass_proxy = np.linspace(0, 5, 5)
@@ -154,11 +146,14 @@ def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
 
     integrand = cl_abundance.get_integrand()
     assert callable(integrand)
-    result = integrand(mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits)
+    result = integrand(
+        mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
 
 
+@pytest.mark.regression
 def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
@@ -171,6 +166,7 @@ def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
     mk.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(mk)
 
+    sky_area = 439.78986
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
     mass_proxy = np.linspace(0, 5, 5)
@@ -180,11 +176,14 @@ def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
 
     integrand = cl_abundance.get_integrand(avg_mass=True)
     assert callable(integrand)
-    result = integrand(mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits)
+    result = integrand(
+        mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
 
 
+@pytest.mark.regression
 def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
@@ -197,6 +196,7 @@ def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
     mk.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(mk)
 
+    sky_area = 439.78986
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
     mass_proxy = np.linspace(0, 5, 5)
@@ -206,11 +206,14 @@ def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
 
     integrand = cl_abundance.get_integrand(avg_redshift=True)
     assert callable(integrand)
-    result = integrand(mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits)
+    result = integrand(
+        mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
 
 
+@pytest.mark.regression
 def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cl_abundance.update_ingredients(cosmo, ParamsMap())
@@ -223,6 +226,7 @@ def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbun
     mk.distribution.return_value = np.atleast_1d(1.0)
     cl_abundance.add_kernel(mk)
 
+    sky_area = 439.78986
     mass = np.linspace(13, 17, 5)
     z = np.linspace(0, 1, 5)
     mass_proxy = np.linspace(0, 5, 5)
@@ -232,6 +236,8 @@ def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbun
 
     integrand = cl_abundance.get_integrand(avg_redshift=True, avg_mass=True)
     assert callable(integrand)
-    result = integrand(mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits)
+    result = integrand(
+        mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+    )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)

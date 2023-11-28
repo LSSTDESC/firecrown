@@ -26,11 +26,14 @@ class ScipyIntegrator(Integrator):
 
         self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
         self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
+        self.sky_area: float = 360**2
 
-    def _integral_wrapper(
+    def integral_wrapper(
         self,
         integrand: AbundanceIntegrand,
     ) -> Callable[..., float]:
+        self._validate_integrand(integrand)
+
         def scipy_integrand(*int_args: float) -> float:
             default = -1.0
             # pylint: disable=R0801
@@ -42,6 +45,7 @@ class ScipyIntegrator(Integrator):
             return_val = integrand(
                 mass,
                 z,
+                self.sky_area,
                 mass_proxy,
                 z_proxy,
                 self.mass_proxy_limits,
@@ -55,6 +59,7 @@ class ScipyIntegrator(Integrator):
     def set_integration_bounds(
         self,
         cl_abundance: ClusterAbundance,
+        sky_area: float,
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
     ) -> None:
@@ -67,6 +72,7 @@ class ScipyIntegrator(Integrator):
 
         self.mass_proxy_limits = mass_proxy_limits
         self.z_proxy_limits = z_proxy_limits
+        self.sky_area = sky_area
 
         for kernel in cl_abundance.dirac_delta_kernels:
             if kernel.kernel_type == KernelType.Z_PROXY:
@@ -90,7 +96,7 @@ class ScipyIntegrator(Integrator):
         self,
         integrand: AbundanceIntegrand,
     ) -> float:
-        scipy_integrand = self._integral_wrapper(integrand)
+        scipy_integrand = self.integral_wrapper(integrand)
         val = nquad(
             scipy_integrand,
             ranges=self.integral_bounds,

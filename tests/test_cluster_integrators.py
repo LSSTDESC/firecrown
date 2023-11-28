@@ -8,7 +8,7 @@ from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 from firecrown.models.cluster.kernel import KernelType, Kernel
-from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
 
 
 @pytest.fixture(name="integrator", params=[ScipyIntegrator, NumCosmoIntegrator])
@@ -23,10 +23,11 @@ def test_numcosmo_set_integration_bounds_no_kernels(
     m_array = np.linspace(13, 17, 10)
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
+    sky_area = 100**2
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -46,6 +47,7 @@ def test_numcosmo_set_integration_bounds_dirac_delta(
     m_array = np.linspace(13, 17, 10)
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
+    sky_area = 100**2
 
     dd_kernel = Mock(
         spec=Kernel,
@@ -58,7 +60,7 @@ def test_numcosmo_set_integration_bounds_dirac_delta(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -82,7 +84,7 @@ def test_numcosmo_set_integration_bounds_dirac_delta(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -104,7 +106,7 @@ def test_numcosmo_set_integration_bounds_dirac_delta(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -124,6 +126,7 @@ def test_numcosmo_set_integration_bounds_integrable_kernels(
     m_array = np.linspace(13, 17, 10)
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
+    sky_area = 100**2
 
     ig_kernel = Mock(
         spec=Kernel,
@@ -136,7 +139,7 @@ def test_numcosmo_set_integration_bounds_integrable_kernels(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -161,7 +164,7 @@ def test_numcosmo_set_integration_bounds_integrable_kernels(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -185,7 +188,7 @@ def test_numcosmo_set_integration_bounds_integrable_kernels(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -207,6 +210,7 @@ def test_numcosmo_set_integration_bounds_analytic_slns(
     m_array = np.linspace(13, 17, 10)
     z_bins = list(zip(z_array[:-1], z_array[1:]))
     m_bins = list(zip(m_array[:-1], m_array[1:]))
+    sky_area = 100**2
 
     a_kernel = Mock(
         spec=Kernel,
@@ -219,7 +223,7 @@ def test_numcosmo_set_integration_bounds_analytic_slns(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -241,7 +245,7 @@ def test_numcosmo_set_integration_bounds_analytic_slns(
 
     for z_limits, mass_limits in zip(z_bins, m_bins):
         integrator.set_integration_bounds(
-            empty_cluster_abundance, z_limits, mass_limits
+            empty_cluster_abundance, sky_area, z_limits, mass_limits
         )
 
         assert integrator.mass_proxy_limits == mass_limits
@@ -261,21 +265,24 @@ def test_numcosmo_integrator_integrate(
     empty_cluster_abundance.max_mass = 1
     empty_cluster_abundance.min_z = 0
     empty_cluster_abundance.max_z = 1
+    sky_area = 100**2
 
     def integrand(
         a: npt.NDArray[np.float64],
         b: npt.NDArray[np.float64],
-        _c: npt.NDArray[np.float64],
+        _c: float,
         _d: npt.NDArray[np.float64],
-        _e: Tuple[float, float],
+        _e: npt.NDArray[np.float64],
         _f: Tuple[float, float],
-    ):
+        _g: Tuple[float, float],
+    ) -> npt.NDArray[np.float64]:
         # xy
         result = a * b
         return result
 
     integrator.set_integration_bounds(
         empty_cluster_abundance,
+        sky_area,
         (0, 1),
         (0, 1),
     )

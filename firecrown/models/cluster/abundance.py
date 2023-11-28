@@ -18,6 +18,7 @@ AbundanceIntegrand = Callable[
     [
         npt.NDArray[np.float64],
         npt.NDArray[np.float64],
+        float,
         npt.NDArray[np.float64],
         npt.NDArray[np.float64],
         Tuple[float, float],
@@ -35,19 +36,6 @@ class ClusterAbundance:
     each kernel represents a different distribution involved in the final cluster
     abundance integrand.
     """
-
-    @property
-    def sky_area(self) -> float:
-        """The sky area in square degrees
-
-        The cluster number count prediction will be different depending on
-        the area of the sky we are considering.  This value controls that.
-        """
-        return self.sky_area_rad * (180.0 / np.pi) ** 2
-
-    @sky_area.setter
-    def sky_area(self, sky_area: float) -> None:
-        self.sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
     @property
     def cosmo(self) -> Cosmology:
@@ -78,7 +66,6 @@ class ClusterAbundance:
         min_z: float,
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
-        sky_area: float,
     ) -> None:
         self.kernels: List[Kernel] = []
         self.halo_mass_function = halo_mass_function
@@ -86,7 +73,6 @@ class ClusterAbundance:
         self.max_mass = max_mass
         self.min_z = min_z
         self.max_z = max_z
-        self.sky_area = sky_area
         self._hmf_cache: Dict[Tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
 
@@ -106,8 +92,12 @@ class ClusterAbundance:
         for kernel in self.kernels:
             kernel.update(params)
 
-    def comoving_volume(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
-        """The differential comoving volume at redshift z."""
+    def comoving_volume(
+        self, z: npt.NDArray[np.float64], sky_area: float = 0
+    ) -> npt.NDArray[np.float64]:
+        """The differential comoving volume given area sky_area at redshift z.
+
+        :param sky_area: The area of the survey on the sky in square degrees."""
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
@@ -119,10 +109,15 @@ class ClusterAbundance:
             / (self.cosmo["h"] * h_over_h0)
         )
         assert isinstance(dV, np.ndarray)
-        return dV * self.sky_area_rad
+
+        sky_area_rad = sky_area * (np.pi / 180.0) ** 2
+
+        return dV * sky_area_rad
 
     def mass_function(
-        self, mass: npt.NDArray[np.float64], z: npt.NDArray[np.float64]
+        self,
+        mass: npt.NDArray[np.float64],
+        z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
         """The mass function at z and mass."""
         scale_factor = 1.0 / (1.0 + z)
@@ -145,12 +140,13 @@ class ClusterAbundance:
         def integrand(
             mass: npt.NDArray[np.float64],
             z: npt.NDArray[np.float64],
+            sky_area: float,
             mass_proxy: npt.NDArray[np.float64],
             z_proxy: npt.NDArray[np.float64],
             mass_proxy_limits: Tuple[float, float],
             z_proxy_limits: Tuple[float, float],
         ) -> npt.NDArray[np.float64]:
-            integrand = self.comoving_volume(z) * self.mass_function(mass, z)
+            integrand = self.comoving_volume(z, sky_area) * self.mass_function(mass, z)
 
             if avg_mass:
                 integrand *= mass

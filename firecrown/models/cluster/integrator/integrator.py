@@ -3,8 +3,9 @@
 This module holds the classes that define the interface required to
 integrate an assembled cluster abundance.
 """
+import inspect
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict
+from typing import Tuple, Dict, Callable, get_args
 from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
 from firecrown.models.cluster.kernel import KernelType
 
@@ -26,6 +27,7 @@ class Integrator(ABC):
     def set_integration_bounds(
         self,
         cl_abundance: ClusterAbundance,
+        sky_area: float,
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
     ) -> None:
@@ -40,3 +42,16 @@ class Integrator(ABC):
         lkp[KernelType.MASS] = 0
         lkp[KernelType.Z] = 1
         return lkp
+
+    def _validate_integrand(self, integrand: AbundanceIntegrand) -> None:
+        expected_args, expected_return = get_args(AbundanceIntegrand)
+
+        signature = inspect.signature(integrand)
+        params = signature.parameters.values()
+        param_types = [param.annotation for param in params]
+
+        assert len(params) == len(expected_args)
+
+        assert param_types == list(expected_args)
+
+        assert signature.return_annotation == expected_return

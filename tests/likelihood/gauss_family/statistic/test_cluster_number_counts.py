@@ -85,7 +85,7 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
     cosmo = pyccl.cosmology.CosmologyVanillaLCDM()
     params = ParamsMap()
 
-    tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf, 4000)
+    tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf)
     tools.update(params)
     tools.prepare(cosmo, params)
 

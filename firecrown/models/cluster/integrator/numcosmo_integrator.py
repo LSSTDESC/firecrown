@@ -26,11 +26,14 @@ class NumCosmoIntegrator(Integrator):
 
         self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
         self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
+        self.sky_area: float = 360**2
 
     def _integral_wrapper(
         self,
         integrand: AbundanceIntegrand,
     ) -> Callable[[npt.NDArray], Sequence[float]]:
+        self._validate_integrand(integrand)
+
         # mypy strict issue: npt.NDArray[npt.NDArray[np.float64]] not supported
         def ncm_integrand(int_args: npt.NDArray) -> Sequence[float]:
             default = np.ones_like(int_args[0]) * -1.0
@@ -43,6 +46,7 @@ class NumCosmoIntegrator(Integrator):
             return_val = integrand(
                 mass,
                 z,
+                self.sky_area,
                 mass_proxy,
                 z_proxy,
                 self.mass_proxy_limits,
@@ -56,6 +60,7 @@ class NumCosmoIntegrator(Integrator):
     def set_integration_bounds(
         self,
         cl_abundance: ClusterAbundance,
+        sky_area: float,
         z_proxy_limits: Tuple[float, float],
         mass_proxy_limits: Tuple[float, float],
     ) -> None:
@@ -68,6 +73,7 @@ class NumCosmoIntegrator(Integrator):
 
         self.mass_proxy_limits = mass_proxy_limits
         self.z_proxy_limits = z_proxy_limits
+        self.sky_area = sky_area
 
         for kernel in cl_abundance.dirac_delta_kernels:
             if kernel.kernel_type == KernelType.Z_PROXY:
