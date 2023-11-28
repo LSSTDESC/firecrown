@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Dict, Optional, Any, List, Union
+from typing import final, Dict, Optional, Any, List, Union, Iterable
 from abc import ABC
 from collections import UserList
 from .parameters import (
@@ -300,7 +300,7 @@ class Updatable(ABC):
         return DerivedParameterCollection([])
 
 
-class UpdatableCollection(UserList):
+class UpdatableCollection(UserList[Any]):
 
     """UpdatableCollection is a list of Updatable objects and is itself
     supports :python:`update` and :python:`reset` (although it does not inherit
@@ -312,7 +312,7 @@ class UpdatableCollection(UserList):
     updated.
     """
 
-    def __init__(self, iterable=None):
+    def __init__(self, iterable: Optional[Iterable[Any]] = None) -> None:
         """Initialize the UpdatableCollection from the supplied iterable.
 
         If the iterable contains any object that is not Updatable, a TypeError
@@ -329,7 +329,7 @@ class UpdatableCollection(UserList):
                 )
 
     @final
-    def update(self, params: ParamsMap):
+    def update(self, params: ParamsMap) -> None:
         """Update self by calling update() on each contained item.
 
         :param params: new parameter values
@@ -350,7 +350,7 @@ class UpdatableCollection(UserList):
         return self._updated
 
     @final
-    def reset(self):
+    def reset(self) -> None:
         """Resets self by calling reset() on each contained item."""
         self._updated = False
         for updatable in self:
@@ -394,7 +394,7 @@ class UpdatableCollection(UserList):
             )
         super().append(item)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key, value) -> None:
         """Set self[key] to value; raise TypeError if Value is not Updatable."""
         if not isinstance(value, Updatable):
             raise TypeError(

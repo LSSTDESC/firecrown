@@ -87,7 +87,7 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
 
     tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf)
     tools.update(params)
-    tools.prepare(cosmo, params)
+    tools.prepare(cosmo)
 
     bnc = BinnedClusterNumberCounts(True, False, "my_survey", integrator)
     bnc.read(cluster_sacc_data)

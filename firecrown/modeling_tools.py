@@ -9,7 +9,6 @@ from typing import Dict, Optional, Collection
 from abc import ABC, abstractmethod
 import pyccl.nl_pt
 
-from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 
 from .updatable import Updatable, UpdatableCollection
@@ -35,7 +34,7 @@ class ModelingTools(Updatable):
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
 
-    def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
+    def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
 
         if name in self.powerspectra:
@@ -65,9 +64,7 @@ class ModelingTools(Updatable):
             return False
         return True
 
-    def prepare(
-        self, ccl_cosmo: pyccl.Cosmology, params: Optional[ParamsMap] = None
-    ) -> None:
+    def prepare(self, ccl_cosmo: pyccl.Cosmology) -> None:
         """Prepare the Cosmology for use in likelihoods.
 
         This method will prepare the ModelingTools for use in likelihoods. This
@@ -95,7 +92,7 @@ class ModelingTools(Updatable):
             self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
 
         if self.cluster_abundance is not None:
-            self.cluster_abundance.update_ingredients(ccl_cosmo, params)
+            self.cluster_abundance.update_ingredients(ccl_cosmo)
 
         self._prepared = True
 

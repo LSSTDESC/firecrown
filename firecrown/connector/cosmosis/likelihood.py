@@ -117,7 +117,7 @@ class FirecrownLikelihood:
             msg = self.form_error_message(exc)
             raise RuntimeError(msg) from exc
 
-        self.tools.prepare(ccl_cosmo, firecrown_params)
+        self.tools.prepare(ccl_cosmo)
         loglike = self.likelihood.compute_loglike(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()
@@ -173,7 +173,7 @@ class FirecrownLikelihood:
 
         return 0
 
-    def form_error_message(self, exc):
+    def form_error_message(self, exc: MissingSamplerParameterError) -> str:
         """Form the error message that will be used to report a missing
         parameter, when that parameter should have been supplied by the
         sampler."""
@@ -226,6 +226,6 @@ def execute(sample: cosmosis.datablock, instance: FirecrownLikelihood) -> int:
     return instance.execute(sample)
 
 
-def cleanup(_):
+def cleanup(_) -> int:
     """Cleanup hook for a CosmoSIS module. This one has nothing to do."""
     return 0

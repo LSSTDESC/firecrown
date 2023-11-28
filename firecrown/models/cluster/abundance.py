@@ -10,6 +10,7 @@ import numpy.typing as npt
 import pyccl
 import pyccl.background as bkg
 from pyccl.cosmology import Cosmology
+from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown.models.cluster.kernel import Kernel
 from firecrown.parameters import ParamsMap
 
@@ -28,7 +29,7 @@ AbundanceIntegrand = Callable[
 ]
 
 
-class ClusterAbundance:
+class ClusterAbundance(Updatable):
     """The class that calculates the predicted number counts of galaxy clusters
 
     The abundance is a function of a specific cosmology, a mass and redshift range,
@@ -67,7 +68,8 @@ class ClusterAbundance:
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
     ) -> None:
-        self.kernels: List[Kernel] = []
+        super().__init__()
+        self.kernels: UpdatableCollection = UpdatableCollection()
         self.halo_mass_function = halo_mass_function
         self.min_mass = min_mass
         self.max_mass = max_mass
@@ -86,11 +88,6 @@ class ClusterAbundance:
         """Update the cluster abundance calculation with a new cosmology."""
         self._cosmo = cosmo
         self._hmf_cache = {}
-        if params is None:
-            return
-
-        for kernel in self.kernels:
-            kernel.update(params)
 
     def comoving_volume(
         self, z: npt.NDArray[np.float64], sky_area: float = 0
