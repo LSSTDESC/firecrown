@@ -5,6 +5,7 @@ import numpy as np
 import numpy.typing as npt
 import sacc
 from sacc.tracers import SurveyTracer
+from firecrown.models.cluster.properties import ClusterProperty
 
 
 class AbundanceData:
@@ -24,12 +25,10 @@ class AbundanceData:
         self,
         sacc_data: sacc.Sacc,
         survey_nm: str,
-        cluster_counts: bool,
-        mean_log_mass: bool,
+        properties: ClusterProperty,
     ):
         self.sacc_data = sacc_data
-        self.cluster_counts = cluster_counts
-        self.mean_log_mass = mean_log_mass
+        self.properties = properties
         try:
             self.survey_tracer: SurveyTracer = sacc_data.get_tracer(survey_nm)
             self.survey_nm = survey_nm

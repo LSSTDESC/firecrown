@@ -9,6 +9,7 @@ import sacc
 import numpy as np
 from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.abundance_data import AbundanceData
+from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.likelihood.gauss_family.statistic.statistic import (
     Statistic,
     DataVector,
@@ -27,8 +28,7 @@ class BinnedClusterNumberCounts(Statistic):
 
     def __init__(
         self,
-        cluster_counts: bool,
-        mean_log_mass: bool,
+        properties: ClusterProperty,
         survey_name: str,
         integrator: Integrator,
         systematics: Optional[List[SourceSystematic]] = None,
@@ -36,8 +36,7 @@ class BinnedClusterNumberCounts(Statistic):
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
-        self.use_cluster_counts = cluster_counts
-        self.use_mean_log_mass = mean_log_mass
+        self.properties = properties
         self.survey_name = survey_name
         self.integrator = integrator
         self.data_vector = DataVector.from_list([])
@@ -51,17 +50,18 @@ class BinnedClusterNumberCounts(Statistic):
         sacc_indices = []
 
         sacc_types = sacc.data_types.standard_types
-        sacc_adapter = AbundanceData(
-            sacc_data, self.survey_name, self.use_cluster_counts, self.use_mean_log_mass
-        )
+        sacc_adapter = AbundanceData(sacc_data, self.survey_name, self.properties)
 
-        if self.use_cluster_counts:
+        if self.properties == ClusterProperty.NONE:
+            raise ValueError("You must specify at least one cluster property.")
+
+        if ClusterProperty.COUNTS in self.properties:
             # pylint: disable=no-member
             data, indices = sacc_adapter.get_data_and_indices(sacc_types.cluster_counts)
             data_vector += data
             sacc_indices += indices
 
-        if self.use_mean_log_mass:
+        if ClusterProperty.MASS in self.properties:
             # pylint: disable=no-member
             data, indices = sacc_adapter.get_data_and_indices(
                 sacc_types.cluster_mean_log_mass
@@ -90,21 +90,27 @@ class BinnedClusterNumberCounts(Statistic):
         theory_vector_list: List[float] = []
         cluster_counts = []
 
-        if not self.use_cluster_counts and not self.use_mean_log_mass:
-            return TheoryVector.from_list(theory_vector_list)
-
         cluster_counts = self.get_binned_cluster_counts(tools)
 
-        if self.use_cluster_counts:
-            theory_vector_list += cluster_counts
+        for property in ClusterProperty:
+            if not property & self.properties:
+                continue
 
-        if self.use_mean_log_mass:
-            theory_vector_list += self.get_binned_cluster_masses(tools, cluster_counts)
+            if property == ClusterProperty.COUNTS:
+                theory_vector_list += cluster_counts
+                continue
+
+            theory_vector_list += self.get_binned_cluster_property(
+                tools, cluster_counts, property
+            )
 
         return TheoryVector.from_list(theory_vector_list)
 
-    def get_binned_cluster_masses(
-        self, tools: ModelingTools, cluster_counts: List[float]
+    def get_binned_cluster_property(
+        self,
+        tools: ModelingTools,
+        cluster_counts: List[float],
+        property: ClusterProperty,
     ) -> List[float]:
         """Computes the mean mass of clusters in each bin
 
@@ -117,7 +123,7 @@ class BinnedClusterNumberCounts(Statistic):
         for (z_proxy_limits, mass_proxy_limits), counts in zip(
             self.bin_limits, cluster_counts
         ):
-            integrand = tools.cluster_abundance.get_integrand(avg_mass=True)
+            integrand = tools.cluster_abundance.get_integrand(average=property)
             self.integrator.set_integration_bounds(
                 tools.cluster_abundance,
                 self.sky_area,

@@ -6,6 +6,7 @@ import numpy as np
 from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import Kernel, KernelType
+from firecrown.models.cluster.properties import ClusterProperty
 
 
 @pytest.fixture(name="cl_abundance")
@@ -174,7 +175,7 @@ def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
     mass_proxy_limits = (0, 5)
     z_proxy_limits = (0, 1)
 
-    integrand = cl_abundance.get_integrand(avg_mass=True)
+    integrand = cl_abundance.get_integrand(average=ClusterProperty.MASS)
     assert callable(integrand)
     result = integrand(
         mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
@@ -204,7 +205,7 @@ def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
     mass_proxy_limits = (0, 5)
     z_proxy_limits = (0, 1)
 
-    integrand = cl_abundance.get_integrand(avg_redshift=True)
+    integrand = cl_abundance.get_integrand(average=ClusterProperty.REDSHIFT)
     assert callable(integrand)
     result = integrand(
         mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
@@ -234,10 +235,43 @@ def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbun
     mass_proxy_limits = (0, 5)
     z_proxy_limits = (0, 1)
 
-    integrand = cl_abundance.get_integrand(avg_redshift=True, avg_mass=True)
+    average_properties = ClusterProperty.MASS | ClusterProperty.REDSHIFT
+    integrand = cl_abundance.get_integrand(average=average_properties)
     assert callable(integrand)
     result = integrand(
         mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
     )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
+
+
+@pytest.mark.regression
+def test_abundance_get_integrand_avg_not_implemented_throws(
+    cl_abundance: ClusterAbundance,
+):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    mk = Mock(
+        spec=Kernel,
+        kernel_type=KernelType.MASS,
+        is_dirac_delta=False,
+        has_analytic_sln=False,
+    )
+    mk.distribution.return_value = np.atleast_1d(1.0)
+    cl_abundance.add_kernel(mk)
+
+    sky_area = 439.78986
+    mass = np.linspace(13, 17, 5)
+    z = np.linspace(0, 1, 5)
+    mass_proxy = np.linspace(0, 5, 5)
+    z_proxy = np.linspace(0, 1, 5)
+    mass_proxy_limits = (0, 5)
+    z_proxy_limits = (0, 1)
+
+    average_properties = ClusterProperty.SHEAR
+    integrand = cl_abundance.get_integrand(average=average_properties)
+    assert callable(integrand)
+    with pytest.raises(NotImplementedError):
+        _ = integrand(
+            mass, z, sky_area, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+        )

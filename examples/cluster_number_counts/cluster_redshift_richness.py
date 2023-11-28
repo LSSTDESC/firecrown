@@ -10,7 +10,7 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
-from firecrown.models.cluster.abundance_data import AbundanceData
+from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import (
@@ -48,15 +48,15 @@ def build_likelihood(
     # integrator = ScipyIntegrator()
 
     # Pull params for the likelihood from build_parameters
-    use_cluster_counts = build_parameters.get_bool("use_cluster_counts", True)
-    use_mean_log_mass = build_parameters.get_bool("use_mean_log_mass", False)
+    average_properties = ClusterProperty.NONE
+    if build_parameters.get_bool("use_cluster_counts", True):
+        average_properties |= ClusterProperty.COUNTS
+    if build_parameters.get_bool("use_mean_log_mass", False):
+        average_properties |= ClusterProperty.MASS
+
     survey_name = "numcosmo_simulated_redshift_richness"
     likelihood = ConstGaussian(
-        [
-            BinnedClusterNumberCounts(
-                use_cluster_counts, use_mean_log_mass, survey_name, integrator
-            )
-        ]
+        [BinnedClusterNumberCounts(average_properties, survey_name, integrator)]
     )
 
     # Read in sacc data

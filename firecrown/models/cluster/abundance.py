@@ -13,6 +13,7 @@ from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown.models.cluster.kernel import Kernel
 from firecrown.parameters import ParamsMap
+from firecrown.models.cluster.properties import ClusterProperty
 
 
 AbundanceIntegrand = Callable[
@@ -130,7 +131,7 @@ class ClusterAbundance(Updatable):
         return np.asarray(return_vals, dtype=np.float64)
 
     def get_integrand(
-        self, avg_mass: bool = False, avg_redshift: bool = False
+        self, *, average: Optional[ClusterProperty] = None
     ) -> AbundanceIntegrand:
         """Returns a callable that evaluates the complete integrand."""
 
@@ -145,15 +146,25 @@ class ClusterAbundance(Updatable):
         ) -> npt.NDArray[np.float64]:
             integrand = self.comoving_volume(z, sky_area) * self.mass_function(mass, z)
 
-            if avg_mass:
-                integrand *= mass
-            if avg_redshift:
-                integrand *= z
-
             for kernel in self.kernels:
+                assert isinstance(kernel, Kernel)
                 integrand *= kernel.distribution(
                     mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
                 )
+
+            if average is None:
+                return integrand
+
+            for prop in ClusterProperty:
+                if not prop & average:
+                    continue
+                if prop == ClusterProperty.MASS:
+                    integrand *= mass
+                elif prop == ClusterProperty.REDSHIFT:
+                    integrand *= z
+                else:
+                    raise NotImplementedError(f"Average for {prop}.")
+
             return integrand
 
         return integrand
