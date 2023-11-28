@@ -119,7 +119,10 @@ class BinnedClusterNumberCounts(Statistic):
         ):
             integrand = tools.cluster_abundance.get_integrand(avg_mass=True)
             self.integrator.set_integration_bounds(
-                tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
+                tools.cluster_abundance,
+                self.sky_area,
+                z_proxy_limits,
+                mass_proxy_limits,
             )
 
             total_mass = self.integrator.integrate(integrand)
@@ -139,7 +142,10 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_counts = []
         for z_proxy_limits, mass_proxy_limits in self.bin_limits:
             self.integrator.set_integration_bounds(
-                tools.cluster_abundance, z_proxy_limits, mass_proxy_limits
+                tools.cluster_abundance,
+                self.sky_area,
+                z_proxy_limits,
+                mass_proxy_limits,
             )
 
             integrand = tools.cluster_abundance.get_integrand()
