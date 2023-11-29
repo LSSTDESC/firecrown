@@ -2,7 +2,8 @@
 
 This module holds the NumCosmo implementation of the integrator classes
 """
-from typing import Tuple, Callable, Dict, Sequence, List
+from typing import Tuple, Callable, Dict, Sequence, List, Optional
+from enum import Enum
 import numpy as np
 import numpy.typing as npt
 from numcosmo_py import Ncm
@@ -11,15 +12,26 @@ from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegr
 from firecrown.models.cluster.integrator.integrator import Integrator
 
 
+class NumCosmoIntegralMethod(Enum):
+    P = Ncm.IntegralNDMethod.P
+    P_V = Ncm.IntegralNDMethod.P_V
+    H = Ncm.IntegralNDMethod.H
+    H_V = Ncm.IntegralNDMethod.H_V
+
+
 class NumCosmoIntegrator(Integrator):
     """The NumCosmo implementation of the Integrator base class."""
 
     def __init__(
-        self, relative_tolerance: float = 1e-4, absolute_tolerance: float = 1e-12
+        self,
+        method: Optional[NumCosmoIntegralMethod] = None,
+        relative_tolerance: float = 1e-4,
+        absolute_tolerance: float = 1e-12,
     ) -> None:
         super().__init__()
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
+        self._method = method or NumCosmoIntegralMethod.P_V
 
         self.integral_args_lkp: Dict[KernelType, int] = self._default_integral_args()
         self.integral_bounds: List[Tuple[float, float]] = []
@@ -100,7 +112,7 @@ class NumCosmoIntegrator(Integrator):
         Ncm.cfg_init()
         ncm_integrand = self._integral_wrapper(integrand)
         int_nd = CountsIntegralND(len(self.integral_bounds), ncm_integrand)
-        int_nd.set_method(Ncm.IntegralNDMethod.P_V)
+        int_nd.set_method(self._method.value)
         int_nd.set_reltol(self._relative_tolerance)
         int_nd.set_abstol(self._absolute_tolerance)
         res = Ncm.Vector.new(1)
