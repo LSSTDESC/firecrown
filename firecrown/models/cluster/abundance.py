@@ -128,7 +128,7 @@ class ClusterAbundance(Updatable):
         return np.asarray(return_vals, dtype=np.float64)
 
     def get_integrand(
-        self, *, average: Optional[ClusterProperty] = None
+        self, *, average_properties: Optional[ClusterProperty] = None
     ) -> AbundanceIntegrand:
         """Returns a callable that evaluates the complete integrand."""
 
@@ -149,18 +149,18 @@ class ClusterAbundance(Updatable):
                     mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
                 )
 
-            if average is None:
+            if average_properties is None:
                 return integrand
 
-            for prop in ClusterProperty:
-                if not prop & average:
+            for cluster_prop in ClusterProperty:
+                if not cluster_prop & average_properties:
                     continue
-                if prop == ClusterProperty.MASS:
+                if cluster_prop == ClusterProperty.MASS:
                     integrand *= mass
-                elif prop == ClusterProperty.REDSHIFT:
+                elif cluster_prop == ClusterProperty.REDSHIFT:
                     integrand *= z
                 else:
-                    raise NotImplementedError(f"Average for {prop}.")
+                    raise NotImplementedError(f"Average for {cluster_prop}.")
 
             return integrand
 

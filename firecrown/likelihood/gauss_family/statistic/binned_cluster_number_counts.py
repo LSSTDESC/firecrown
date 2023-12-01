@@ -8,7 +8,8 @@ from typing import List, Optional
 import sacc
 import numpy as np
 from firecrown.models.cluster.integrator.integrator import Integrator
-from firecrown.models.cluster.abundance_data import AbundanceData, SaccBin
+from firecrown.models.cluster.abundance_data import AbundanceData
+from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.likelihood.gauss_family.statistic.statistic import (
     Statistic,
@@ -106,7 +107,7 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_masses = []
         for bin_edge, counts in zip(self.bin_edges, cluster_counts):
             integrand = tools.cluster_abundance.get_integrand(
-                average=cluster_properties
+                average_properties=cluster_properties
             )
             self.integrator.set_integration_bounds(
                 tools.cluster_abundance,
