@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import pytest
 import pyccl
 import numpy as np
-from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.kernel import Kernel, KernelType
 from firecrown.models.cluster.properties import ClusterProperty
@@ -42,10 +41,9 @@ def test_cluster_update_ingredients(cl_abundance: ClusterAbundance):
     # pylint: disable=protected-access
     assert cl_abundance._hmf_cache == {}
 
-    pmap = ParamsMap({})
     cosmo = pyccl.CosmologyVanillaLCDM()
 
-    cl_abundance.update_ingredients(cosmo, pmap)
+    cl_abundance.update_ingredients(cosmo)
     assert cl_abundance.cosmo is not None
     assert cl_abundance.cosmo == cosmo
     # pylint: disable=protected-access
@@ -103,7 +101,7 @@ def test_cluster_add_kernel(cl_abundance: ClusterAbundance):
 
 def test_abundance_comoving_vol_accepts_array(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
 
     result = cl_abundance.comoving_volume(np.linspace(0.1, 1, 10), 360**2)
     assert isinstance(result, np.ndarray)
@@ -115,7 +113,7 @@ def test_abundance_comoving_vol_accepts_array(cl_abundance: ClusterAbundance):
 @pytest.mark.regression
 def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
 
     result = cl_abundance.mass_function(np.linspace(13, 17, 5), np.linspace(0.1, 1, 5))
     assert isinstance(result, np.ndarray)
@@ -127,7 +125,7 @@ def test_abundance_massfunc_accepts_array(cl_abundance: ClusterAbundance):
 @pytest.mark.regression
 def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
     mk = Mock(
         spec=Kernel,
         kernel_type=KernelType.MASS,
@@ -157,7 +155,7 @@ def test_abundance_get_integrand(cl_abundance: ClusterAbundance):
 @pytest.mark.regression
 def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
     mk = Mock(
         spec=Kernel,
         kernel_type=KernelType.MASS,
@@ -187,7 +185,7 @@ def test_abundance_get_integrand_avg_mass(cl_abundance: ClusterAbundance):
 @pytest.mark.regression
 def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
     mk = Mock(
         spec=Kernel,
         kernel_type=KernelType.MASS,
@@ -217,7 +215,7 @@ def test_abundance_get_integrand_avg_redshift(cl_abundance: ClusterAbundance):
 @pytest.mark.regression
 def test_abundance_get_integrand_avg_mass_and_redshift(cl_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
     mk = Mock(
         spec=Kernel,
         kernel_type=KernelType.MASS,
@@ -250,7 +248,7 @@ def test_abundance_get_integrand_avg_not_implemented_throws(
     cl_abundance: ClusterAbundance,
 ):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cl_abundance.update_ingredients(cosmo, ParamsMap())
+    cl_abundance.update_ingredients(cosmo)
     mk = Mock(
         spec=Kernel,
         kernel_type=KernelType.MASS,
