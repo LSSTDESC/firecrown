@@ -28,7 +28,7 @@ class ScipyIntegrator(Integrator):
         self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
         self.sky_area: float = 360**2
 
-    def integral_wrapper(
+    def _integral_wrapper(
         self,
         integrand: AbundanceIntegrand,
     ) -> Callable[..., float]:
@@ -96,7 +96,7 @@ class ScipyIntegrator(Integrator):
         self,
         integrand: AbundanceIntegrand,
     ) -> float:
-        scipy_integrand = self.integral_wrapper(integrand)
+        scipy_integrand = self._integral_wrapper(integrand)
         val = nquad(
             scipy_integrand,
             ranges=self.integral_bounds,

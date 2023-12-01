@@ -8,7 +8,7 @@ from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 from firecrown.models.cluster.kernel import KernelType, Kernel
-from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
+from firecrown.models.cluster.abundance import ClusterAbundance
 
 
 @pytest.fixture(name="integrator", params=[ScipyIntegrator, NumCosmoIntegrator])

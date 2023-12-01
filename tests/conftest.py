@@ -141,19 +141,20 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     s = sacc.Sacc()
     s.add_tracer("survey", "my_survey", 4000)
     s.add_tracer("survey", "not_my_survey", 4000)
-    s.add_tracer("bin_z", "my_tracer1", 0, 2)
-    s.add_tracer("bin_z", "my_tracer2", 2, 4)
-    s.add_tracer("bin_richness", "my_other_tracer1", 0, 2)
-    s.add_tracer("bin_richness", "my_other_tracer2", 2, 4)
+    s.add_tracer("bin_z", "z_bin_tracer_1", 0, 2)
+    s.add_tracer("bin_z", "z_bin_tracer_2", 2, 4)
+    s.add_tracer("bin_richness", "mass_bin_tracer_1", 0, 2)
+    s.add_tracer("bin_richness", "mass_bin_tracer_2", 2, 4)
 
-    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
-    s.add_data_point(cc, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
-    s.add_data_point(cc, ("not_my_survey", "my_tracer1", "my_other_tracer2"), 1)
+    s.add_data_point(cc, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1"), 1)
+    s.add_data_point(cc, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"), 1)
+    s.add_data_point(cc, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1"), 1)
+    s.add_data_point(cc, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_2"), 1)
 
-    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer1"), 1)
-    s.add_data_point(mlm, ("my_survey", "my_tracer1", "my_other_tracer2"), 1)
-    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer2"), 1)
-    s.add_data_point(mlm, ("my_survey", "my_tracer2", "my_other_tracer1"), 1)
+    s.add_data_point(mlm, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1"), 1)
+    s.add_data_point(mlm, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"), 1)
+    s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1"), 1)
+    s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_2"), 1)
 
     return s
 

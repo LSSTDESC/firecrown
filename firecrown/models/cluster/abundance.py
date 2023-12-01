@@ -12,7 +12,6 @@ import pyccl.background as bkg
 from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown.models.cluster.kernel import Kernel
-from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.properties import ClusterProperty
 
 
@@ -83,9 +82,7 @@ class ClusterAbundance(Updatable):
         """Add a kernel to the cluster abundance integrand"""
         self.kernels.append(kernel)
 
-    def update_ingredients(
-        self, cosmo: Cosmology, params: Optional[ParamsMap] = None
-    ) -> None:
+    def update_ingredients(self, cosmo: Cosmology) -> None:
         """Update the cluster abundance calculation with a new cosmology."""
         self._cosmo = cosmo
         self._hmf_cache = {}

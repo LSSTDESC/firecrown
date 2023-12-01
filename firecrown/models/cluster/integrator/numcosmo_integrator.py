@@ -13,6 +13,8 @@ from firecrown.models.cluster.integrator.integrator import Integrator
 
 
 class NumCosmoIntegralMethod(Enum):
+    """The available NumCosmo integration methods."""
+
     P = Ncm.IntegralNDMethod.P
     P_V = Ncm.IntegralNDMethod.P_V
     H = Ncm.IntegralNDMethod.H

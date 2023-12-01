@@ -5,7 +5,7 @@ integrate an assembled cluster abundance.
 """
 import inspect
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, Callable, get_args
+from typing import Tuple, Dict, get_args
 from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
 from firecrown.models.cluster.kernel import KernelType
 

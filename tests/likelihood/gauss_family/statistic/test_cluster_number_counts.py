@@ -19,7 +19,7 @@ def test_create_binned_number_counts():
     integrator.integrate.return_value = 1.0
     bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", integrator)
     assert bnc is not None
-    assert bnc.properties == ClusterProperty.NONE
+    assert bnc.cluster_properties == ClusterProperty.NONE
     assert bnc.survey_name == "Test"
     assert bnc.systematics == []
     assert bnc.theory_vector is None
@@ -28,8 +28,8 @@ def test_create_binned_number_counts():
     bnc = BinnedClusterNumberCounts(
         (ClusterProperty.COUNTS | ClusterProperty.MASS), "Test", integrator
     )
-    assert ClusterProperty.COUNTS in bnc.properties
-    assert ClusterProperty.MASS in bnc.properties
+    assert ClusterProperty.COUNTS in bnc.cluster_properties
+    assert ClusterProperty.MASS in bnc.cluster_properties
 
     systematics = [SourceSystematic("mock_systematic")]
     bnc = BinnedClusterNumberCounts(
@@ -61,25 +61,25 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", integrator)
     bnc.read(cluster_sacc_data)
     assert bnc.sky_area == 4000
-    assert len(bnc.bin_limits) == 4
+    assert len(bnc.bin_edges) == 2
     assert len(bnc.data_vector) == 2
     assert len(bnc.sacc_indices) == 2
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", integrator)
     bnc.read(cluster_sacc_data)
     assert bnc.sky_area == 4000
-    assert len(bnc.bin_limits) == 4
-    assert len(bnc.data_vector) == 4
-    assert len(bnc.sacc_indices) == 4
+    assert len(bnc.bin_edges) == 2
+    assert len(bnc.data_vector) == 2
+    assert len(bnc.sacc_indices) == 2
 
     bnc = BinnedClusterNumberCounts(
         (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", integrator
     )
     bnc.read(cluster_sacc_data)
     assert bnc.sky_area == 4000
-    assert len(bnc.bin_limits) == 4
-    assert len(bnc.data_vector) == 6
-    assert len(bnc.sacc_indices) == 6
+    assert len(bnc.bin_edges) == 2
+    assert len(bnc.data_vector) == 4
+    assert len(bnc.sacc_indices) == 4
 
 
 def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
@@ -99,13 +99,13 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
     bnc.read(cluster_sacc_data)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
-    assert len(tv) == 4
+    assert len(tv) == 2
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", integrator)
     bnc.read(cluster_sacc_data)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
-    assert len(tv) == 4
+    assert len(tv) == 2
 
     bnc = BinnedClusterNumberCounts(
         (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", integrator
@@ -113,4 +113,4 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
     bnc.read(cluster_sacc_data)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
-    assert len(tv) == 8
+    assert len(tv) == 4

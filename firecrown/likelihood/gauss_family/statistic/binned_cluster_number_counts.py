@@ -4,11 +4,11 @@ The binned cluster number counts statistic predicts the number of galaxy
 clusters within a single redshift and mass bin.
 """
 from __future__ import annotations
-from typing import List, Optional, Tuple
+from typing import List, Optional
 import sacc
 import numpy as np
 from firecrown.models.cluster.integrator.integrator import Integrator
-from firecrown.models.cluster.abundance_data import AbundanceData
+from firecrown.models.cluster.abundance_data import AbundanceData, SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.likelihood.gauss_family.statistic.statistic import (
     Statistic,
@@ -28,7 +28,7 @@ class BinnedClusterNumberCounts(Statistic):
 
     def __init__(
         self,
-        properties: ClusterProperty,
+        cluster_properties: ClusterProperty,
         survey_name: str,
         integrator: Integrator,
         systematics: Optional[List[SourceSystematic]] = None,
@@ -36,48 +36,32 @@ class BinnedClusterNumberCounts(Statistic):
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: Optional[TheoryVector] = None
-        self.properties = properties
+        self.cluster_properties = cluster_properties
         self.survey_name = survey_name
         self.integrator = integrator
         self.data_vector = DataVector.from_list([])
         self.sky_area = 0.0
-        self.bin_limits: List[List[Tuple[float, float]]] = []
+        self.bin_edges: List[SaccBin] = []
+        self.bin_dimensions = 2
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         # Build the data vector and indices needed for the likelihood
-
-        data_vector = []
-        sacc_indices = []
-
-        sacc_types = sacc.data_types.standard_types
-        sacc_adapter = AbundanceData(sacc_data, self.survey_name, self.properties)
-
-        if self.properties == ClusterProperty.NONE:
+        if self.cluster_properties == ClusterProperty.NONE:
             raise ValueError("You must specify at least one cluster property.")
 
-        if ClusterProperty.COUNTS in self.properties:
-            # pylint: disable=no-member
-            data, indices = sacc_adapter.get_data_and_indices(sacc_types.cluster_counts)
-            data_vector += data
-            sacc_indices += indices
+        sacc_adapter = AbundanceData(sacc_data, self.bin_dimensions)
+        self.sky_area = sacc_adapter.get_survey_tracer(self.survey_name).sky_area
 
-        if ClusterProperty.MASS in self.properties:
-            # pylint: disable=no-member
-            data, indices = sacc_adapter.get_data_and_indices(
-                sacc_types.cluster_mean_log_mass
-            )
-            data_vector += data
-            sacc_indices += indices
+        data, indices = sacc_adapter.get_observed_data_and_indices_by_survey(
+            self.survey_name, self.cluster_properties
+        )
+        self.data_vector = DataVector.from_list(data)
+        self.sacc_indices = np.array(indices)
 
-        self.sky_area = sacc_adapter.survey_tracer.sky_area
-        # Note - this is the same for both cl mass and cl counts... Why do we need to
-        # specify a data type?
+        self.bin_edges = sacc_adapter.get_bin_edges(
+            self.survey_name, self.cluster_properties
+        )
 
-        # pylint: disable=no-member
-        self.bin_limits = sacc_adapter.get_bin_limits(sacc_types.cluster_mean_log_mass)
-        self.data_vector = DataVector.from_list(data_vector)
-
-        self.sacc_indices = np.array(sacc_indices)
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
@@ -92,16 +76,16 @@ class BinnedClusterNumberCounts(Statistic):
 
         cluster_counts = self.get_binned_cluster_counts(tools)
 
-        for property in ClusterProperty:
-            if not property & self.properties:
+        for cl_property in ClusterProperty:
+            if not cl_property & self.cluster_properties:
                 continue
 
-            if property == ClusterProperty.COUNTS:
+            if cl_property == ClusterProperty.COUNTS:
                 theory_vector_list += cluster_counts
                 continue
 
             theory_vector_list += self.get_binned_cluster_property(
-                tools, cluster_counts, property
+                tools, cluster_counts, cl_property
             )
 
         return TheoryVector.from_list(theory_vector_list)
@@ -110,7 +94,7 @@ class BinnedClusterNumberCounts(Statistic):
         self,
         tools: ModelingTools,
         cluster_counts: List[float],
-        property: ClusterProperty,
+        cluster_properties: ClusterProperty,
     ) -> List[float]:
         """Computes the mean mass of clusters in each bin
 
@@ -120,15 +104,15 @@ class BinnedClusterNumberCounts(Statistic):
         assert tools.cluster_abundance is not None
 
         cluster_masses = []
-        for (z_proxy_limits, mass_proxy_limits), counts in zip(
-            self.bin_limits, cluster_counts
-        ):
-            integrand = tools.cluster_abundance.get_integrand(average=property)
+        for bin_edge, counts in zip(self.bin_edges, cluster_counts):
+            integrand = tools.cluster_abundance.get_integrand(
+                average=cluster_properties
+            )
             self.integrator.set_integration_bounds(
                 tools.cluster_abundance,
                 self.sky_area,
-                z_proxy_limits,
-                mass_proxy_limits,
+                bin_edge.z_edges,
+                bin_edge.mass_proxy_edges,
             )
 
             total_mass = self.integrator.integrate(integrand)
@@ -146,12 +130,12 @@ class BinnedClusterNumberCounts(Statistic):
         assert tools.cluster_abundance is not None
 
         cluster_counts = []
-        for z_proxy_limits, mass_proxy_limits in self.bin_limits:
+        for bin_edge in self.bin_edges:
             self.integrator.set_integration_bounds(
                 tools.cluster_abundance,
                 self.sky_area,
-                z_proxy_limits,
-                mass_proxy_limits,
+                bin_edge.z_edges,
+                bin_edge.mass_proxy_edges,
             )
 
             integrand = tools.cluster_abundance.get_integrand()
