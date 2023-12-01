@@ -1,214 +1,34 @@
 ---
-title: An Introduction to Firecrown
+title: "Developing a New Likelihood"
 subtitle: "Version 1.6.1a0"
 authors:
   - Marc Paterno
   - Sandro Vitenti
+execute:
+  EFL: false
 format:
-  revealjs:
-    footer: "An Introduction to Firecrown | Paterno and Vitenti"
-    highlight-style: arrow
-    include-after-body: clean_title_slide.html
-    height: 1080
-    width: 1920
-    margin: 0.05
-    max-scale: 4.0
-    min-scale: 0.05
-    navigation-mode: linear
-    slide-number: true
+  html:
+    toc: true
     theme: [serif, custom.scss]
-    title-slide-attributes:
-      data-background-color: black
-      data-background-image: logo-dark-mode.png
-      data-background-size: 40%
-      data-background-position: right bottom
+    code-overflow: wrap
+reference-location: margin
+citation-location: margin
 ---
 
-# What is Firecrown?
+## Prologue
 
-## Introducing Firecrown
-
--   Firecrown is the DESC *framework* for implementing likelihoods.
-    - Provides connections with DESC tools (e.g. [CCL](https://github.com/LSSTDESC/CCL), [SACC](https://github.com/LSSTDESC/SACC)).
-    - It is used by other DESC tools (e.g. [Augur](https://github.com/LSSTDESC/Augur)).
--   It can be used as a *standalone library* to calculate a likelihood.
--   It can be used with any of the supported *MCMC sampling frameworks* for inference. Currently supported sampling frameworks are:
-    -   [Cobaya](https://github.com/CobayaSampler/cobaya)
-    -   [CosmoSIS](https://github.com/joezuntz/cosmosis)
-    -   [NumCosmo](https://github.com/NumCosmo/NumCosmo)
-
-## Basic Firecrown concepts
-
--   Cosmology
--   Modeling tools
--   Likelihoods
-    - Currently released likelihoods are all Gaussian-family
--   Statistics (for Gaussian-family likelihoods; calculate predicted means and store observations)
--   Sources (provide calculations of distributions of observable quantities related to mass distributions in the universe; for two-point statistics)
--   Systematics (alter calculations of predicted means)
-
-## High-level Firecrown concepts
-
--   Cosmology (`pyccl.Cosmology`): represents a parameterized model.
--   Modeling tools (`firecrown.modeling_tools.ModelingTools`): associates a set of theoretical models for physical effects with a cosmology.
-    -   Specific physical effects will get added as they are invented.
-    -   Each is usable by different parts of the same likelihood; the cosmology is the most obvious example.
--   Likelihoods: calculates the probability of observing some given (presumably DESC) *data*, based on a certain set of parameters used in predictions of that data.
-    -   `calculate_loglike(tools: ModelingTools) -> float`
-    -   Reads data from a SACC object: `read(sacc: sacc.Sacc) -> None`
-    -   Currently, only `GaussFamily` is implemented.
-
-## Building blocks for `GaussFamily` likelihoods
-
--   Statistics: provide access to observations (a *data vector*) and calculate predictions (a *theory vector*) based on a set of parameters (a *cosmology*).
-    -   `get_data_vector() -> DataVector`
-    -   `compute_theory_vector(tools: ModelingTools) -> TheoryVector`
-    -   May contain *systematics*.
--   Two point statistics: represented by class `TwoPoint`
-    -   Contains two `Source`s and calculates the correlation between them.
-    -   Use the same `Source` twice for auto-correlation.
-
-## Building blocks for `TwoPoint` statistics
-
--   Sources: associated with one or more `Tracer`s
-    -   `Tracer`: encapulates a `pyccl.Tracer` with optional metainformation of how to calculate it.
-        [Caution]{.alert}: this code currently contains some features that are nowhere used.
-	We are working on simplification of this code.
-    -   Defines a `dataclass` that is used by the source to create the `pyccl.Tracer` object.
--   Systematics are associated with a type of source:
-    -    `apply(self, tools: ModelingTools, tracer_args: T) -> T`
-    -    The type `T` is a the `dataclass` mentioned above.
--   [Caution]{.alert}: These abstractions are currently under review.
+For the purposes of this example, by *developing a new likelihood* we mean writing the code that uses existing software element in the Firecrown package to define a likelihood for some specific data, taking into account the set of physical effects of interest for the analysis that will use this likelihood.
+In Firecrown, this means writing a new *likelihood factory function* -- the function that actually creates a Python object representing a likelihood.
 
 ## Development workflow
-
-::: columns
-::: {.column width="50%"}
-In a factory function:
-
--   Define source systematics
--   Create `Source` objects
--   Create `Statistics` objects
--   Create the `Likelihood` and `ModelingTools` objects
--   Load SACC data into the `Likelihood` object
--   Return the `Likelihood` and `ModelingTools`
-:::
-
-::: {.column width="50%"}
-Optionally, add a demo program:
-
--   Use your factory function to create a likelihood and toolset
--   Create a `pyccl.Cosmology`
--   Update the likelihood and toolset using the cosmology
--   Evaluate your likelihood using the toolset
-:::
-:::
-
-## Examples in the repository
-
--   Simplified DES Y1 cosmic shear
-    -   Only for CosmoSIS
--   DES Y1 3x2pt
-    -   For Cobaya, CosmoSIS and NumCosmo
-    -   basic version
-    -   enhanced version with perturbation theory systematics
--   SRD Supernova
-    -   For CosmoSIS and NumCosmo
-    -   NumCosmo version also demonstrates the calculation of the Fisher matrix
-
-# Installation and setup
-
-## Installation modes
-
-Firecrown supports a few different installation modes.
-
--   *Developer use*: If you want to modify existing Firecrown code, or if you may produce new code and may produce a pull request to submit your code to Firecrown, use the developer installation.
-
--   *Non-developer use*: If you want to write your own likelihood class or create subclasses of classes already in Firecrown, but do not intend to submit code back to Firecrown, you can use the non-development installation.
-    If you choose this installation and decide later that you do want to submit your code back to Firecrown you will need to copy the new code files you write into a developer-usage environment at a later date.
-
-[Firecrown is under rapid development: most users are developers.]{.alert}
-
-## Developer installation {#developer-installation}
-
-::: aside
-There are special instructions for [installation on an M1 Mac](https://firecrown.readthedocs.io/en/latest/apple_m1_instructions.html).
-:::
-
--   The following commands will:
-    1.  create a *conda* environment
-    2.  clone the Firecrown repository
-    3.  build the CosmoSIS standard library for use with Firecrown
--   Installation only needs to be done once.
-
-``` {{bash}}
-cd THE_DIRECTORY_INTO_WHICH_YOU_WANT_TO_INSTALL_THINGS
-git clone https://github.com/LSSTDESC/firecrown.git
-# conda env update, when run as suggested, is able to create a new environment, as
-# well as updating an existing environment.
-conda env update -f firecrown/environment.yml
-conda activate firecrown_developer
-source ${CONDA_PREFIX}/bin/cosmosis-configure
-cosmosis-build-standard-library  # this may take a few minutes
-export CSL_DIR=${PWD}/cosmosis-standard-library
-export FIRECROWN_DIR=${PWD}/firecrown
-export PYTHONPATH=${FIRECROWN_DIR}/build/lib
-```
-
-## Setting up a shell session for development
-
--   This assumes that you have already (once, presumably in a previous shell session) done the installation described [on the previous slide](#developer-installation).
-
-``` {{bash}}
-cd THE_DIRECTORY_INTO_WHICH_YOU_DID_INSTALL_THINGS
-conda activate firecrown_developer
-export CSL_DIR=${PWD}/cosmosis-standard-library
-export FIRECROWN_DIR=${PWD}/firecrown
-export PYTHONPATH=${FIRECROWN_DIR}/build/lib
-```
-
--   `CSL_DIR` is used in CosmoSIS *ini* files to allow CosmoSIS to be run from any directory.
--   `FIRECROWN_DIR` is used in examples.
--   `PYTHONPATH` is used by Python itself to find Firecrown modules.
+{{< include _development_workflow.qmd >}}
 
 ## Building Firecrown
-
--   We recommend against using a "developer install" using `pip install -e` because:
-    -    That installation does not deal gracefully with the removal of files during development.
-    -    Removing the *build* directory assures that no old artifacts are ever used.
--   We recommend instead building directly using `setup.py`.
-
-``` {{bash}}
-cd ${FIRECROWN_DIR}
-# We clean up any previous build to ensure stale code is never found by python.
-rm -rf build/*
-python setup.py build
-```
+{{< include _building_firecrown.qmd >}}
 
 ## Code development hygiene
 
--   The Continuous Integration (CI) system will enforce these.
-
-``` {{bash}}
-# We are using black to keep consistent formatting across all python source files.
-# Note that this use of 'black --check' does not actually change any file. If files other
-# than those you edited are complained about by black, please file an issue.
-black --check firecrown/ examples/ tests/
-
-# We are using flake8 to help verify PEP8 compliance.
-flake8 firecrown examples tests
-
-# We are using type hints and mypy to help catch type-related errors.
-mypy -p firecrown -p examples -p tests
-
-# We are using pylint to enforce a variety of rules.
-pylint firecrown
-pylint --rcfile pylintrc_for_tests tests
-pylint --rcfile firecrown/models/pylintrc firecrown/models
-
-# Run the unit test suite. Note that the coverage is incomplete.
-python -m pytest -v tests
-```
+{{< include _code_development_hygiene.qmd >}}
 
 # Implementing a new [`ConstGaussian`]{.fragment} likelihood
 
@@ -242,14 +62,16 @@ python -m pytest -v tests
 
 -   Structuring your factory function well helps make it easier for you, and others, to understand what you have written.
 
-```{{python}}
-from os.path 
+```{python}
+#| eval: false
+import os.path 
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 import sacc
 
-SACC_FILENAME =
-    os.path.expandvars("${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc")
+SACC_FILENAME = os.path.expandvars( \
+    "${FIRECROWN_DIR}/examples/srd_sn/srd-y1-converted.sacc" \
+    )
 
 def build_likelihood(_):
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")

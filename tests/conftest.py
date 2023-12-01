@@ -67,7 +67,7 @@ def make_trivial_params() -> ParamsMap:
 @pytest.fixture(name="sacc_data_for_trivial_stat")
 def make_sacc_data():
     """Create a sacc.Sacc object suitable for configuring a
-    :python:`TrivialStatistic`."""
+    :class:`TrivialStatistic`."""
     result = sacc.Sacc()
     result.add_data_point("count", (), 1.0)
     result.add_data_point("count", (), 4.0)

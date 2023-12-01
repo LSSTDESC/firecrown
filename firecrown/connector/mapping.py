@@ -1,13 +1,9 @@
 """Facilities for mapping cosmological parameters between frameworks.
 
 The module :mod:`mapping` provides facilities for mapping the cosmological
-constants and functions used by one body of code to another. This is done by
-defining one of the codes (:mod:`pyccl`) as being the 'standard', and for all
-other supported code, providing functions :python:`from_ccl` and
-:python:`to_ccl`.
+constants and functions used by one body of code to another.
 
 Each supported body of code has its own dedicated class.
-
 """
 
 from abc import ABC
@@ -39,10 +35,10 @@ class Mapping(ABC):
     concrete Boltzmann calculator to the form those constants take in CCL. Each
     supported Boltzmann calculator must have its own concrete subclass.
 
-    The class variables are all :mod:`firecrown.connector.descriptors`. This is
-    to control the allowed types for the instance variables. A descriptor of
-    name 'x' will provide an apparent instance variable of name :python:`x` in
-    each class, as well as an entry :python:`_x` in the object's __dict__.
+    The class attributes are all :mod:`firecrown.connector.descriptors`. This is
+    to control the allowed types for the instance attributes. A descriptor of
+    name 'x' will provide an apparent attribue with name `x` in
+    each object, as well as an entry `_x` in the object's `__dict__`.
 
     """
 

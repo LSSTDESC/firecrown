@@ -1,7 +1,7 @@
 """Basic module for Cosmology and cosmological tools definitions.
 
 This module contains the ModelingTools class, which is built around the
-:python:`pyccl.Cosmology` class. This is used by likelihoods that need to access
+:class:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
 from __future__ import annotations
@@ -15,7 +15,7 @@ from .updatable import Updatable, UpdatableCollection
 
 
 class ModelingTools(Updatable):
-    """A class that bundles together a :python:`pyccl.Cosmology` object and associated
+    """A class that bundles together a :class:`pyccl.Cosmology` object and associated
     objects, such as perturbation theory or halo model calculator workspaces."""
 
     def __init__(
@@ -55,7 +55,7 @@ class ModelingTools(Updatable):
         return self.ccl_cosmo.get_nonlin_power(name)
 
     def has_pk(self, name: str) -> bool:
-        """Check if a power spectrum with name :python:`name` is available."""
+        """Check if a power spectrum with name `name` is available."""
         # There should probably a pyccl.Cosmology method to check if a specific
         # power spectrum exists
         try:
