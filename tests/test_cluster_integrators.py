@@ -1,4 +1,4 @@
-"""Tests for the numcosmo integrator module."""
+"""Tests for the integrator module."""
 from typing import Tuple
 from unittest.mock import Mock
 import numpy as np
@@ -16,7 +16,7 @@ def fixture_integrator(request) -> Integrator:
     return request.param()
 
 
-def test_numcosmo_set_integration_bounds_no_kernels(
+def test_set_integration_bounds_no_kernels(
     empty_cluster_abundance: ClusterAbundance, integrator: Integrator
 ):
     z_array = np.linspace(0, 2, 10)
@@ -40,7 +40,7 @@ def test_numcosmo_set_integration_bounds_no_kernels(
         }
 
 
-def test_numcosmo_set_integration_bounds_dirac_delta(
+def test_set_integration_bounds_dirac_delta(
     empty_cluster_abundance: ClusterAbundance, integrator: Integrator
 ):
     z_array = np.linspace(0, 2, 10)
@@ -119,7 +119,7 @@ def test_numcosmo_set_integration_bounds_dirac_delta(
         }
 
 
-def test_numcosmo_set_integration_bounds_integrable_kernels(
+def test_set_integration_bounds_integrable_kernels(
     empty_cluster_abundance: ClusterAbundance, integrator: Integrator
 ):
     z_array = np.linspace(0, 2, 10)
@@ -203,7 +203,7 @@ def test_numcosmo_set_integration_bounds_integrable_kernels(
         }
 
 
-def test_numcosmo_set_integration_bounds_analytic_slns(
+def test_set_integration_bounds_analytic_slns(
     empty_cluster_abundance: ClusterAbundance, integrator: Integrator
 ):
     z_array = np.linspace(0, 2, 10)
@@ -258,7 +258,7 @@ def test_numcosmo_set_integration_bounds_analytic_slns(
         }
 
 
-def test_numcosmo_integrator_integrate(
+def test_integrator_integrate(
     empty_cluster_abundance: ClusterAbundance, integrator: Integrator
 ):
     empty_cluster_abundance.min_mass = 0
