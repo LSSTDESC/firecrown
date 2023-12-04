@@ -153,7 +153,7 @@ class ClusterAbundance(Updatable):
                 return integrand
 
             for cluster_prop in ClusterProperty:
-                if not cluster_prop & average_properties:
+                if not (cluster_prop & average_properties):
                     continue
                 if cluster_prop == ClusterProperty.MASS:
                     integrand *= mass

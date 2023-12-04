@@ -59,7 +59,7 @@ class AbundanceData:
         sacc_indices = []
 
         for cluster_property in ClusterProperty:
-            if not cluster_property & properties:
+            if not (cluster_property & properties):
                 continue
 
             if cluster_property == ClusterProperty.COUNTS:
@@ -130,9 +130,11 @@ class AbundanceData:
             bin_combinations_for_survey = bin_combinations[my_survey_mask]
 
             for _, z_tracer, mass_tracer in bin_combinations_for_survey:
-                z_data: sacc.BaseTracer = self.sacc_data.get_tracer(z_tracer)
-                mass_data: sacc.BaseTracer = self.sacc_data.get_tracer(mass_tracer)
-                sacc_bin = SaccBin([z_data, mass_data], self.bin_dimensions)
+                z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
+                mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(
+                    mass_tracer
+                )
+                sacc_bin = SaccBin([z_data, mass_data])
                 bins.append(sacc_bin)
 
         # Remove duplicates while preserving order (i.e. dont use set())

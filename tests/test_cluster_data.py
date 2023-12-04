@@ -110,3 +110,40 @@ def test_observed_data_and_indices_by_survey_not_implemented_throws(
     ad = AbundanceData(cluster_sacc_data, 2)
     with pytest.raises(NotImplementedError):
         ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.SHEAR)
+
+
+def test_observed_data_and_indices_no_data_throws():
+    # pylint: disable=no-member
+    cc = sacc.standard_types.cluster_counts
+
+    s = sacc.Sacc()
+    s.add_tracer("survey", "my_survey", 4000)
+    s.add_tracer("bin_z", "z_bin_tracer_1", 0, 2)
+    s.add_tracer("bin_z", "z_bin_tracer_2", 2, 4)
+    s.add_tracer("bin_richness", "mass_bin_tracer_1", 0, 2)
+    s.add_tracer("bin_richness", "mass_bin_tracer_2", 2, 4)
+
+    s.add_data_point(
+        cc,
+        ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1"),
+        1,
+    )
+    s.add_data_point(
+        cc,
+        ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"),
+        1,
+    )
+
+    ad = AbundanceData(s, 2)
+
+    with pytest.raises(
+        ValueError, match="The SACC file does not contain any tracers for the"
+    ):
+        ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)
+
+
+def test_observed_data_and_indices_wrong_dimension_throws(cluster_sacc_data: sacc.Sacc):
+    ad = AbundanceData(cluster_sacc_data, 1)
+
+    with pytest.raises(ValueError, match="The SACC file must contain"):
+        ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)

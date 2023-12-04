@@ -78,7 +78,7 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_counts = self.get_binned_cluster_counts(tools)
 
         for cl_property in ClusterProperty:
-            if not cl_property & self.cluster_properties:
+            if not (cl_property & self.cluster_properties):
                 continue
 
             if cl_property == ClusterProperty.COUNTS:
