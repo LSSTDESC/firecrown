@@ -165,30 +165,3 @@ class SpectroscopicRedshift(Kernel):
         _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         return np.atleast_1d(1.0)
-
-
-class DESY1PhotometricRedshift(Kernel):
-    """The DES Y1 photometric redshift uncertainties kernel.
-
-    This kernel includes a spread in the photo-z estimates following the
-    observed spread in DES Y1."""
-
-    def __init__(self) -> None:
-        super().__init__(KernelType.Z_PROXY)
-        self.sigma_0 = 0.05
-
-    def distribution(
-        self,
-        _mass: npt.NDArray[np.float64],
-        z: npt.NDArray[np.float64],
-        _mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        _mass_proxy_limits: Tuple[float, float],
-        _z_proxy_limits: Tuple[float, float],
-    ) -> npt.NDArray[np.float64]:
-        sigma_z = self.sigma_0 * (1 + z)
-        prefactor = 1 / (np.sqrt(2.0 * np.pi) * sigma_z)
-        distribution = np.exp(-(1 / 2) * ((z_proxy - z) / sigma_z) ** 2.0)
-        numerator = prefactor * distribution
-        assert isinstance(numerator, np.ndarray)
-        return numerator

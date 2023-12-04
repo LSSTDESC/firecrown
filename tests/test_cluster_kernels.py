@@ -6,19 +6,9 @@ from firecrown.models.cluster.kernel import (
     Purity,
     KernelType,
     Kernel,
-    DESY1PhotometricRedshift,
     SpectroscopicRedshift,
     TrueMass,
 )
-
-
-def test_create_desy1_photometric_redshift_kernel():
-    drk = DESY1PhotometricRedshift()
-    assert isinstance(drk, Kernel)
-    assert drk.kernel_type == KernelType.Z_PROXY
-    assert drk.is_dirac_delta is False
-    assert drk.integral_bounds is None
-    assert drk.has_analytic_sln is False
 
 
 def test_create_spectroscopic_redshift_kernel():
@@ -89,6 +79,7 @@ def test_true_mass_distribution():
     )
 
 
+@pytest.mark.regression
 def test_purity_distribution():
     pk = Purity()
 
@@ -124,6 +115,7 @@ def test_purity_distribution():
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
 
+@pytest.mark.regression
 def test_purity_distribution_uses_mean():
     pk = Purity()
 
@@ -159,6 +151,7 @@ def test_purity_distribution_uses_mean():
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
 
+@pytest.mark.regression
 def test_completeness_distribution():
     ck = Completeness()
     mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
@@ -189,36 +182,4 @@ def test_completeness_distribution():
     )
     assert isinstance(comp, np.ndarray)
     for ref, true in zip(comp, truth):
-        assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
-
-
-def test_des_photoz_kernel_distribution():
-    dpk = DESY1PhotometricRedshift()
-
-    mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    z_proxy = np.array([0.11, 0.21, 0.31, 0.41, 0.51, 0.61, 0.71, 0.81, 0.91, 1.01])
-
-    mass_proxy_limits = (1.0, 10.0)
-    z_proxy_limits = (0.11, 1.01)
-
-    truth = [
-        7.134588921656481,
-        6.557328601698999,
-        6.065367634804254,
-        5.641316284718016,
-        5.272157878477569,
-        4.9479710868093685,
-        4.661070179674804,
-        4.405413986167644,
-        4.176191421334415,
-        3.969525474770118,
-    ]
-
-    spread = dpk.distribution(
-        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-    )
-    assert isinstance(spread, np.ndarray)
-    for ref, true in zip(spread, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)

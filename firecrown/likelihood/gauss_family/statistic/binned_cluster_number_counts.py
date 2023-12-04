@@ -62,6 +62,12 @@ class BinnedClusterNumberCounts(Statistic):
         self.bin_edges = sacc_adapter.get_bin_edges(
             self.survey_name, self.cluster_properties
         )
+        for bin_edge in self.bin_edges:
+            if bin_edge.dimension != self.bin_edges[0].dimension:
+                raise ValueError(
+                    "The cluster number counts statistic requires all bins to be the "
+                    "same dimension."
+                )
 
         super().read(sacc_data)
 

@@ -135,7 +135,7 @@ def test_abundance_comoving_returns_value(cluster_abundance: ClusterAbundance):
     assert np.all(result > 0)
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 def test_abundance_massfunc_returns_value(cluster_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cluster_abundance.update_ingredients(cosmo)
@@ -149,7 +149,7 @@ def test_abundance_massfunc_returns_value(cluster_abundance: ClusterAbundance):
     assert np.all(result > 0)
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 def test_abundance_get_integrand(
     cluster_abundance: ClusterAbundance, integrable_kernel: Kernel, integrand_args
 ):
@@ -164,7 +164,7 @@ def test_abundance_get_integrand(
     assert np.issubdtype(result.dtype, np.float64)
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 def test_abundance_get_integrand_avg_mass(
     cluster_abundance: ClusterAbundance, integrable_kernel: Kernel, integrand_args
 ):
@@ -179,7 +179,7 @@ def test_abundance_get_integrand_avg_mass(
     assert np.issubdtype(result.dtype, np.float64)
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 def test_abundance_get_integrand_avg_redshift(
     cluster_abundance: ClusterAbundance, integrable_kernel: Kernel, integrand_args
 ):
@@ -196,7 +196,7 @@ def test_abundance_get_integrand_avg_redshift(
     assert np.issubdtype(result.dtype, np.float64)
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 def test_abundance_get_integrand_avg_mass_and_redshift(
     cluster_abundance: ClusterAbundance, integrable_kernel: Kernel, integrand_args
 ):
@@ -212,7 +212,7 @@ def test_abundance_get_integrand_avg_mass_and_redshift(
     assert np.issubdtype(result.dtype, np.float64)
 
 
-@pytest.mark.regression
+@pytest.mark.slow
 def test_abundance_get_integrand_avg_not_implemented_throws(
     cluster_abundance: ClusterAbundance, integrable_kernel: Kernel, integrand_args
 ):
