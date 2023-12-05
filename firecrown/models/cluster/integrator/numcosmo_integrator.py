@@ -35,13 +35,6 @@ class NumCosmoIntegrator(Integrator):
         self._absolute_tolerance = absolute_tolerance
         self._method = method or NumCosmoIntegralMethod.P_V
 
-        self.integral_args_lkp: Dict[KernelType, int] = self._default_integral_args()
-        self.integral_bounds: List[Tuple[float, float]] = []
-
-        self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
-        self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
-        self.sky_area: float = 360**2
-
     def _integral_wrapper(
         self,
         integrand: AbundanceIntegrand,

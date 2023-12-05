@@ -96,7 +96,7 @@ class MassRichnessGaussian(Kernel):
         proxy_sigma = self.get_proxy_sigma(mass, z)
 
         result = np.exp(-0.5 * (mass_proxy - proxy_mean) ** 2 / proxy_sigma**2) / (
-            2 * np.pi * proxy_sigma
+            np.sqrt(2 * np.pi) * proxy_sigma
         )
         assert isinstance(result, np.ndarray)
         return result

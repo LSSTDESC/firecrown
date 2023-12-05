@@ -63,6 +63,7 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     assert bnc.sky_area == 4000
     assert len(bnc.bin_edges) == 2
     assert len(bnc.data_vector) == 2
+    assert bnc.sacc_indices is not None
     assert len(bnc.sacc_indices) == 2
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", integrator)
@@ -70,6 +71,7 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     assert bnc.sky_area == 4000
     assert len(bnc.bin_edges) == 2
     assert len(bnc.data_vector) == 2
+    assert bnc.sacc_indices is not None
     assert len(bnc.sacc_indices) == 2
 
     bnc = BinnedClusterNumberCounts(
@@ -79,6 +81,7 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     assert bnc.sky_area == 4000
     assert len(bnc.bin_edges) == 2
     assert len(bnc.data_vector) == 4
+    assert bnc.sacc_indices is not None
     assert len(bnc.sacc_indices) == 4
 
 

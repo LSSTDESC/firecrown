@@ -21,12 +21,7 @@ class ScipyIntegrator(Integrator):
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
 
-        self.integral_bounds: List[Tuple[float, float]] = []
         self.integral_args_lkp: Dict[KernelType, int] = self._default_integral_args()
-
-        self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
-        self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
-        self.sky_area: float = 360**2
 
     def _integral_wrapper(
         self,

@@ -5,7 +5,7 @@ integrate an assembled cluster abundance.
 """
 import inspect
 from abc import ABC, abstractmethod
-from typing import Tuple, Dict, get_args
+from typing import Tuple, Dict, get_args, List
 from firecrown.models.cluster.abundance import ClusterAbundance, AbundanceIntegrand
 from firecrown.models.cluster.kernel import KernelType
 
@@ -15,6 +15,13 @@ class Integrator(ABC):
 
     This class acts as an adapter around an integration library, and must provides
     a specific set of methods to be used to integrate a cluster abundance integral."""
+
+    def __init__(self) -> None:
+        self.z_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
+        self.mass_proxy_limits: Tuple[float, float] = (-1.0, -1.0)
+        self.sky_area: float = 360**2
+        self.integral_bounds: List[Tuple[float, float]] = []
+        self.integral_args_lkp: Dict[KernelType, int] = self._default_integral_args()
 
     @abstractmethod
     def integrate(

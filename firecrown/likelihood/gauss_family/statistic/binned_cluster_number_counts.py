@@ -43,14 +43,13 @@ class BinnedClusterNumberCounts(Statistic):
         self.data_vector = DataVector.from_list([])
         self.sky_area = 0.0
         self.bin_edges: List[SaccBin] = []
-        self.bin_dimensions = 2
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         # Build the data vector and indices needed for the likelihood
         if self.cluster_properties == ClusterProperty.NONE:
             raise ValueError("You must specify at least one cluster property.")
 
-        sacc_adapter = AbundanceData(sacc_data, self.bin_dimensions)
+        sacc_adapter = AbundanceData(sacc_data)
         self.sky_area = sacc_adapter.get_survey_tracer(self.survey_name).sky_area
 
         data, indices = sacc_adapter.get_observed_data_and_indices_by_survey(

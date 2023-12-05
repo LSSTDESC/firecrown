@@ -17,18 +17,12 @@ class AbundanceData:
     number count statistic.  The data in this class is specific to a single
     survey name."""
 
-    # Hard coded in SACC, how do we want to handle this?
     _survey_index = 0
     _redshift_index = 1
     _mass_index = 2
 
-    def __init__(
-        self,
-        sacc_data: sacc.Sacc,
-        bin_dimensions: int,
-    ):
+    def __init__(self, sacc_data: sacc.Sacc):
         self.sacc_data = sacc_data
-        self.bin_dimensions = bin_dimensions
 
     def get_survey_tracer(self, survey_nm: str) -> SurveyTracer:
         """Returns the SurveyTracer for the specified survey name."""
@@ -96,8 +90,7 @@ class AbundanceData:
                 f"{data_type} data type."
             )
 
-        # Add one because we don't include survey in the bin dimensions (for now)
-        if bins_combos_for_type.shape[1] != self.bin_dimensions + 1:
+        if bins_combos_for_type.shape[1] != 3:
             raise ValueError(
                 "The SACC file must contain 3 tracers for the "
                 "cluster_counts data type: cluster_survey, "
