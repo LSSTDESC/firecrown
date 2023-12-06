@@ -67,14 +67,49 @@ class GaussFamily(Likelihood):
             for new_j, old_j in enumerate(indices):
                 cov[new_i, new_j] = covariance[old_i, old_j]
 
+        self.cov_index_map = {old_i: new_i for new_i, old_i in enumerate(indices)}
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
         self.inv_cov = np.linalg.inv(cov)
 
+    def write(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
+        new_sacc = sacc_data.copy()
+
+        sacc_indicies = []
+        predictions = []
+        for stat in self.statistics:
+            sacc_indicies.append(stat.statistic.sacc_indices.copy())
+            predictions.append(stat.statistic.get_theory_vector())
+
+        sacc_indicies = np.concatenate(sacc_indicies)
+        predictions = np.concatenate(predictions)
+        assert len(sacc_indicies) == len(predictions)
+
+        if strict:
+            if set(sacc_indicies.tolist()) != set(sacc_data.indices()):
+                raise RuntimeError(
+                    "The predicted data does not cover all the data in the "
+                    "sacc object. To write only the calculated predictions, "
+                    "set strict=False."
+                )
+
+        for prediction_idx, sacc_idx in enumerate(sacc_indicies):
+            new_sacc.data[sacc_idx].value = predictions[prediction_idx]
+
+        return new_sacc
+
     @final
-    def get_cov(self) -> npt.NDArray[np.float64]:
-        """Gets the current covariance matrix."""
+    def get_cov(self, statistic: Optional[Statistic] = None) -> npt.NDArray[np.float64]:
+        """Gets the current covariance matrix.
+
+        :param statistic: The statistic for which the sub-covariance matrix
+        should be return. If not specified, return the covariance of all
+        statistics.
+        """
         assert self.cov is not None
+        if statistic is not None:
+            idx = [self.cov_index_map[idx] for idx in statistic.sacc_indices]
+            return self.cov[np.ix_(idx, idx)]
         return self.cov
 
     @final

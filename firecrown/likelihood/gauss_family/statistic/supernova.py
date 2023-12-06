@@ -67,4 +67,6 @@ class Supernova(Statistic):
 
         ccl_cosmo = tools.get_ccl_cosmology()
         prediction = self.M + pyccl.distance_modulus(ccl_cosmo, self.a)
-        return TheoryVector.create(prediction)
+        self.computed = True
+        self.predicted_statistic_ = TheoryVector.create(prediction)
+        return self.predicted_statistic_

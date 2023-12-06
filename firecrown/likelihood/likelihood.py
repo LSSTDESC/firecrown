@@ -93,6 +93,10 @@ class Likelihood(Updatable):
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     @abstractmethod
+    def write(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+        """Write the model predictions to a SACC file"""
+
+    @abstractmethod
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood of generic CCL data."""
 

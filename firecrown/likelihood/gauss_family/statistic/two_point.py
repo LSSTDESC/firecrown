@@ -207,7 +207,6 @@ class TwoPoint(Statistic):
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
         self._ell_or_theta: Optional[npt.NDArray[np.float64]] = None
-        self.predicted_statistic_: Optional[TheoryVector] = None
         self.measured_statistic_: Optional[DataVector] = None
         self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
 
@@ -413,8 +412,8 @@ class TwoPoint(Statistic):
         self.predicted_statistic_ = TheoryVector.create(theory_vector)
 
         assert self.data_vector is not None
-
-        return TheoryVector.create(theory_vector)
+        self.computed = True
+        return self.predicted_statistic_
 
     def calculate_pk(
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
