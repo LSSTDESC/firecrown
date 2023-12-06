@@ -2,7 +2,7 @@
 
 This module holds the NumCosmo implementation of the integrator classes
 """
-from typing import Tuple, Callable, Dict, Sequence, List, Optional
+from typing import Tuple, Callable, Sequence, Optional
 from enum import Enum
 import numpy as np
 import numpy.typing as npt
