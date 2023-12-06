@@ -213,6 +213,6 @@ class ClusterNumberCounts(Statistic):
                 )
             ]
             theory_vector_list += mean_log_mass_list
-        self.computed = True
+        self.computed_theory_vector = True
         self.predicted_statistic_ = TheoryVector.from_list(theory_vector_list)
         return self.predicted_statistic_

@@ -412,7 +412,7 @@ class TwoPoint(Statistic):
         self.predicted_statistic_ = TheoryVector.create(theory_vector)
 
         assert self.data_vector is not None
-        self.computed = True
+        self.computed_theory_vector = True
         return self.predicted_statistic_
 
     def calculate_pk(

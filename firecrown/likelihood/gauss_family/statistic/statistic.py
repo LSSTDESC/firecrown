@@ -120,7 +120,7 @@ class Statistic(Updatable):
         super().__init__(parameter_prefix=parameter_prefix)
         self.sacc_indices: Optional[npt.NDArray[np.int64]]
         self.ready = False
-        self.computed = False
+        self.computed_theory_vector = False
         # TODO: how to we call this?
         self.predicted_statistic_: Optional[TheoryVector] = None
 
@@ -150,7 +150,7 @@ class Statistic(Updatable):
         """Compute a statistic from sources, applying any systematics."""
 
     def get_theory_vector(self) -> TheoryVector:
-        if not self.computed:
+        if not self.computed_theory_vector:
             raise RuntimeError(
                 f"The theory for statistic {self} has not been computed yet."
             )
@@ -258,4 +258,5 @@ class TrivialStatistic(Statistic):
     def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
         """Return a fixed theory vector."""
         self.computed_theory_vector = True
-        return TheoryVector.from_list([self.mean] * self.count)
+        self.predicted_statistic_ = TheoryVector.from_list([self.mean] * self.count)
+        return self.predicted_statistic_

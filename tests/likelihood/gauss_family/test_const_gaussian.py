@@ -9,6 +9,7 @@ import sacc
 import firecrown.parameters
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.gauss_family.gauss_family import Statistic
+from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
@@ -99,3 +100,25 @@ def test_after_read_all_statistics_are_ready(
     for gs in likelihood.statistics:
         stat: Statistic = gs.statistic
         assert stat.ready
+
+
+def test_write_to_sacc(
+    trivial_stats,
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    params = firecrown.parameters.ParamsMap(mean=10.5)
+    likelihood.update(params)
+    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+
+    new_sacc = likelihood.write(sacc_data_for_trivial_stat)
+
+    new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
+    new_likelihood.read(new_sacc)
+    params = firecrown.parameters.ParamsMap(mean=10.5)
+    new_likelihood.update(params)
+    chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
+
+    assert np.isclose(chisq, 0.0)
