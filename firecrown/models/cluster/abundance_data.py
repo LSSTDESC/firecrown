@@ -53,7 +53,8 @@ class AbundanceData:
         sacc_indices = []
 
         for cluster_property in ClusterProperty:
-            if not (cluster_property & properties):
+            include_prop = cluster_property & properties
+            if not include_prop:
                 continue
 
             if cluster_property == ClusterProperty.COUNTS:

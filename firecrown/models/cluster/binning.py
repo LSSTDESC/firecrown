@@ -61,7 +61,7 @@ class SaccBin(NDimensionalBin[sacc.BaseTracer]):
         if self.dimension != other.dimension:
             return False
 
-        for i, my_bin in enumerate(self.coordinate_bins):
+        for my_bin in self.coordinate_bins:
             other_bin = [
                 x for x in other.coordinate_bins if x.tracer_type == my_bin.tracer_type
             ]
