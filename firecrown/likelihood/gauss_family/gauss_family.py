@@ -75,25 +75,25 @@ class GaussFamily(Likelihood):
     def write(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
         new_sacc = sacc_data.copy()
 
-        sacc_indicies = []
+        sacc_indices = []
         predictions = []
         for stat in self.statistics:
-            sacc_indicies.append(stat.statistic.sacc_indices.copy())
+            sacc_indices.append(stat.statistic.sacc_indices.copy())
             predictions.append(stat.statistic.get_theory_vector())
 
-        sacc_indicies = np.concatenate(sacc_indicies)
+        sacc_indices = np.concatenate(sacc_indices)
         predictions = np.concatenate(predictions)
-        assert len(sacc_indicies) == len(predictions)
+        assert len(sacc_indices) == len(predictions)
 
         if strict:
-            if set(sacc_indicies.tolist()) != set(sacc_data.indices()):
+            if set(sacc_indices.tolist()) != set(sacc_data.indices()):
                 raise RuntimeError(
                     "The predicted data does not cover all the data in the "
                     "sacc object. To write only the calculated predictions, "
                     "set strict=False."
                 )
 
-        for prediction_idx, sacc_idx in enumerate(sacc_indicies):
+        for prediction_idx, sacc_idx in enumerate(sacc_indices):
             new_sacc.data[sacc_idx].value = predictions[prediction_idx]
 
         return new_sacc
@@ -108,6 +108,7 @@ class GaussFamily(Likelihood):
         """
         assert self.cov is not None
         if statistic is not None:
+            assert statistic.sacc_indices is not None
             idx = [self.cov_index_map[idx] for idx in statistic.sacc_indices]
             return self.cov[np.ix_(idx, idx)]
         return self.cov
