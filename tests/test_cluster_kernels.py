@@ -79,7 +79,7 @@ def test_true_mass_distribution():
     )
 
 
-@pytest.mark.regression
+@pytest.mark.precision_sensitive
 def test_purity_distribution():
     pk = Purity()
 
@@ -115,7 +115,7 @@ def test_purity_distribution():
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
 
-@pytest.mark.regression
+@pytest.mark.precision_sensitive
 def test_purity_distribution_uses_mean():
     pk = Purity()
 
@@ -151,7 +151,7 @@ def test_purity_distribution_uses_mean():
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
 
 
-@pytest.mark.regression
+@pytest.mark.precision_sensitive
 def test_completeness_distribution():
     ck = Completeness()
     mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])

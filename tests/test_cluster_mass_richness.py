@@ -1,6 +1,7 @@
 """Tests for the cluster mass richness module."""
 import pytest
 import numpy as np
+from scipy.integrate import quad
 from firecrown.models.cluster.mass_proxy import (
     MurataBinned,
     MurataUnbinned,
@@ -200,3 +201,33 @@ def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUn
                 assert probability_1 <= probability_0
             else:
                 assert probability_1 >= probability_0
+
+
+@pytest.mark.precision_sensitive
+def test_cluster_murata_unbinned_distribution_is_normalized(
+    murata_unbinned_relation: MurataUnbinned,
+):
+    for mass_i, z_i in zip(np.linspace(7.0, 26.0, 20), np.geomspace(1.0e-18, 2.0, 20)):
+        mass = np.atleast_1d(mass_i)
+        z = np.atleast_1d(z_i)
+
+        mean = murata_unbinned_relation.get_proxy_mean(mass, z)[0]
+        sigma = murata_unbinned_relation.get_proxy_sigma(mass, z)[0]
+        mass_proxy_limits = (mean - 5 * sigma, mean + 5 * sigma)
+
+        def integrand(mass_proxy):
+            """Evaluate the unbinned distribution at fixed mass and redshift."""
+            # pylint: disable=cell-var-from-loop
+            return murata_unbinned_relation.distribution(
+                mass, z, mass_proxy, z, mass_proxy_limits, (0.0, 1.0)
+            )
+
+        result, _ = quad(
+            integrand,
+            mass_proxy_limits[0],
+            mass_proxy_limits[1],
+            epsabs=1e-12,
+            epsrel=1e-12,
+        )
+
+        assert result == pytest.approx(1.0, rel=1.0e-6, abs=0.0)

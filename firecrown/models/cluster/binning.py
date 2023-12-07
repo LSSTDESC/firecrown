@@ -47,11 +47,17 @@ class SaccBin(NDimensionalBin[sacc.BaseTracer]):
 
     @property
     def z_edges(self) -> Tuple[float, float]:
-        return self.coordinate_bins[0].lower, self.coordinate_bins[0].upper
+        z_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_z"]
+        if len(z_bin) != 1:
+            raise ValueError("SaccBin must have exactly one z bin")
+        return z_bin[0].lower, z_bin[0].upper
 
     @property
     def mass_proxy_edges(self) -> Tuple[float, float]:
-        return self.coordinate_bins[1].lower, self.coordinate_bins[1].upper
+        mass_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_richness"]
+        if len(mass_bin) != 1:
+            raise ValueError("SaccBin must have exactly one richness bin")
+        return mass_bin[0].lower, mass_bin[0].upper
 
     def __eq__(self, other: object) -> bool:
         """Two bins are equal if they have the same lower/upper bound."""

@@ -42,7 +42,7 @@ class BinnedClusterNumberCounts(Statistic):
         self.integrator = integrator
         self.data_vector = DataVector.from_list([])
         self.sky_area = 0.0
-        self.bin_edges: List[SaccBin] = []
+        self.bins: List[SaccBin] = []
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         # Build the data vector and indices needed for the likelihood
@@ -58,11 +58,11 @@ class BinnedClusterNumberCounts(Statistic):
         self.data_vector = DataVector.from_list(data)
         self.sacc_indices = np.array(indices)
 
-        self.bin_edges = sacc_adapter.get_bin_edges(
+        self.bins = sacc_adapter.get_bin_edges(
             self.survey_name, self.cluster_properties
         )
-        for bin_edge in self.bin_edges:
-            if bin_edge.dimension != self.bin_edges[0].dimension:
+        for bin_edge in self.bins:
+            if bin_edge.dimension != self.bins[0].dimension:
                 raise ValueError(
                     "The cluster number counts statistic requires all bins to be the "
                     "same dimension."
@@ -111,7 +111,7 @@ class BinnedClusterNumberCounts(Statistic):
         assert tools.cluster_abundance is not None
 
         cluster_masses = []
-        for bin_edge, counts in zip(self.bin_edges, cluster_counts):
+        for bin_edge, counts in zip(self.bins, cluster_counts):
             integrand = tools.cluster_abundance.get_integrand(
                 average_properties=cluster_properties
             )
@@ -137,7 +137,7 @@ class BinnedClusterNumberCounts(Statistic):
         assert tools.cluster_abundance is not None
 
         cluster_counts = []
-        for bin_edge in self.bin_edges:
+        for bin_edge in self.bins:
             self.integrator.set_integration_bounds(
                 tools.cluster_abundance,
                 self.sky_area,
