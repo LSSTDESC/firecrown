@@ -129,7 +129,7 @@ def setup_likelihood(
 def setup_fit(likelihood: Ncm.Likelihood, mset: Ncm.MSet) -> Ncm.Fit:
     """Setup the fit object."""
 
-    fit = Ncm.Fit.new(
+    fit = Ncm.Fit.factory(
         Ncm.FitType.NLOPT,
         "ln-neldermead",
         likelihood,
@@ -151,7 +151,7 @@ def setup_fit_all() -> Ncm.Fit:
     return fit
 
 
-def run_test():
+def run_test() -> None:
     """Run the fit."""
 
     fit = setup_fit_all()
@@ -162,7 +162,7 @@ def run_test():
     fit.run_restart(Ncm.FitRunMsgs.FULL, 1.0e-3, 0.0, None, None)
 
 
-def run_compute_best_fit():
+def run_compute_best_fit() -> None:
     """Run the fit."""
 
     fit = setup_fit_all()
@@ -178,7 +178,7 @@ def run_compute_best_fit():
     fit.run_restart(Ncm.FitRunMsgs.FULL, 1.0e-3, 0.0, None, None)
 
 
-def run_apes_sampler(ssize: int):
+def run_apes_sampler(ssize: int) -> None:
     """Run the fit."""
 
     fit = setup_fit_all()
@@ -192,7 +192,7 @@ def run_apes_sampler(ssize: int):
 
     nwalkers = mset.fparam_len * 100
     esmcmc = create_esmcmc(
-        fit.lh, mset, "des_y1_3x2pt_apes", nwalkers=nwalkers, nthreads=1
+        fit.props.likelihood, mset, "des_y1_3x2pt_apes", nwalkers=nwalkers, nthreads=1
     )
 
     esmcmc.start_run()

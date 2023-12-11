@@ -77,7 +77,7 @@ lh = Ncm.Likelihood(dataset=dset)
 lh.priors_add_gauss_param_name(mset, "NcFirecrownPT:src0_delta_z", -0.001, 0.016)
 lh.priors_add_gauss_param_name(mset, "NcFirecrownPT:lens0_delta_z", +0.001, 0.008)
 
-fit = Ncm.Fit.new(
+fit = Ncm.Fit.factory(
     Ncm.FitType.NLOPT,
     "ln-neldermead",
     lh,
