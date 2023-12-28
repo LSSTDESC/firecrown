@@ -190,7 +190,7 @@ def run_apes_sampler(ssize: int) -> None:
         model.params_set_default_ftype()
     mset.prepare_fparam_map()
 
-    nwalkers = mset.fparam_len * 100
+    nwalkers = mset.fparam_len() * 100
     esmcmc = create_esmcmc(
         fit.props.likelihood, mset, "des_y1_3x2pt_apes", nwalkers=nwalkers, nthreads=1
     )
