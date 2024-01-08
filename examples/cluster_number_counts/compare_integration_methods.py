@@ -4,14 +4,14 @@ import itertools
 
 import pyccl
 import numpy as np
-from firecrown.models.cluster.mass_proxy import MurataBinned
-from firecrown.models.cluster.kernel import Kernel
 from firecrown.models.cluster.integrator.numcosmo_integrator import (
-    NumCosmoIntegrator,
     NumCosmoIntegralMethod,
 )
 from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.kernel import SpectroscopicRedshift
+from firecrown.models.cluster.recipes.murata_binned_spec_z import (
+    MurataBinnedSpecZRecipe,
+)
+from firecrown.models.cluster.binning import TupleBin
 
 
 def get_cosmology() -> pyccl.Cosmology:
@@ -44,64 +44,45 @@ def get_cosmology() -> pyccl.Cosmology:
     return cosmo_ccl
 
 
-def get_mass_richness() -> Kernel:
-    pivot_mass = 14.625862906
-    pivot_redshift = 0.6
-
-    mass_richness = MurataBinned(pivot_mass, pivot_redshift)
-
-    mass_richness.mu_p0 = 3.0
-    mass_richness.mu_p1 = 0.86
-    mass_richness.mu_p2 = 0.0
-    mass_richness.sigma_p0 = 3.0
-    mass_richness.sigma_p1 = 0.7
-    mass_richness.sigma_p2 = 0.0
-
-    return mass_richness
-
-
 def compare_integration() -> None:
     """Compare integration methods."""
     hmf = pyccl.halos.MassFuncTinker08()
     abundance = ClusterAbundance(13, 15, 0, 4, hmf)
+    cluster_recipe = MurataBinnedSpecZRecipe()
 
-    mass_richness = get_mass_richness()
-    abundance.add_kernel(mass_richness)
-
-    redshift_proxy_kernel = SpectroscopicRedshift()
-    abundance.add_kernel(redshift_proxy_kernel)
+    cluster_recipe.mass_distribution.mu_p0 = 3.0
+    cluster_recipe.mass_distribution.mu_p1 = 0.86
+    cluster_recipe.mass_distribution.mu_p2 = 0.0
+    cluster_recipe.mass_distribution.sigma_p0 = 3.0
+    cluster_recipe.mass_distribution.sigma_p1 = 0.7
+    cluster_recipe.mass_distribution.sigma_p2 = 0.0
 
     cosmo = get_cosmology()
     abundance.update_ingredients(cosmo)
 
     sky_area = 360**2
-    integrand = abundance.get_integrand()
 
     for method in NumCosmoIntegralMethod:
         counts_list = []
         t_start = time.time()
 
-        nc_integrator = NumCosmoIntegrator(method=method)
-        nc_integrator.set_integration_bounds(abundance, 496, (0, 4), (13, 15))
+        cluster_recipe.integrator.method = method
+
+        # nc_integrator.set_integration_bounds(abundance, 496, (0, 4), (13, 15))
 
         z_bins = np.linspace(0.0, 1.0, 4)
         mass_proxy_bins = np.linspace(1.0, 2.5, 5)
 
         for z_idx, mass_proxy_idx in itertools.product(range(3), range(4)):
-            z_proxy_limits = (z_bins[z_idx], z_bins[z_idx + 1])
-            mass_proxy_limits = (
+            mass_limits = (
                 mass_proxy_bins[mass_proxy_idx],
                 mass_proxy_bins[mass_proxy_idx + 1],
             )
+            z_limits = (z_bins[z_idx], z_bins[z_idx + 1])
 
-            nc_integrator.set_integration_bounds(
-                abundance,
-                sky_area,
-                z_proxy_limits,
-                mass_proxy_limits,
-            )
+            bin = TupleBin([mass_limits, z_limits])
 
-            counts = nc_integrator.integrate(integrand)
+            counts = cluster_recipe.evaluate_theory_prediction(abundance, bin, sky_area)
             counts_list.append(counts)
 
         t_stop = time.time()

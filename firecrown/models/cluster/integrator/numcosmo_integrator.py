@@ -28,11 +28,11 @@ class NumCosmoIntegrator:
         absolute_tolerance: float = 1e-12,
     ) -> None:
         super().__init__()
+        self.method = method or NumCosmoIntegralMethod.P_V
         self.integral_bounds: List[Tuple[float, float]] = []
         self.extra_args: List[float] = []
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
-        self._method = method or NumCosmoIntegralMethod.P_V
 
     def integrate(self, func_to_integrate: Callable) -> float:
         Ncm.cfg_init()
@@ -40,7 +40,7 @@ class NumCosmoIntegrator:
         int_nd = CountsIntegralND(
             len(self.integral_bounds), func_to_integrate, self.extra_args
         )
-        int_nd.set_method(self._method.value)
+        int_nd.set_method(self.method.value)
         int_nd.set_reltol(self._relative_tolerance)
         int_nd.set_abstol(self._absolute_tolerance)
         res = Ncm.Vector.new(1)
