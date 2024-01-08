@@ -9,11 +9,14 @@ import numpy as np
 import numpy.typing as npt
 from scipy import special
 from firecrown import parameters
-from firecrown.models.cluster.kernel import Kernel, KernelType
+from firecrown.updatable import Updatable
 
 
-class MassRichnessGaussian(Kernel):
+class MassRichnessGaussian(Updatable):
     """The representation of mass richness relations that are of a gaussian form."""
+
+    def __init__(self, parameter_prefix: str | None = None) -> None:
+        super().__init__(parameter_prefix)
 
     @staticmethod
     def observed_value(
@@ -53,10 +56,7 @@ class MassRichnessGaussian(Kernel):
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        _mass_proxy: npt.NDArray[np.float64],
-        _z_proxy: npt.NDArray[np.float64],
         mass_proxy_limits: Tuple[float, float],
-        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
@@ -88,9 +88,6 @@ class MassRichnessGaussian(Kernel):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        _z_proxy: npt.NDArray[np.float64],
-        _mass_proxy_limits: Tuple[float, float],
-        _z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
@@ -111,10 +108,8 @@ class MurataBinned(MassRichnessGaussian):
         self,
         pivot_mass: float,
         pivot_redshift: float,
-        integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
-        super().__init__(KernelType.MASS_PROXY, False, True, integral_bounds)
-
+        super().__init__()
         self.pivot_redshift = pivot_redshift
         self.pivot_mass = pivot_mass * np.log(10.0)  # ln(M)
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
@@ -159,14 +154,9 @@ class MurataBinned(MassRichnessGaussian):
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
         mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
-        return self._distribution_binned(
-            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-        )
+        return self._distribution_binned(mass, z, mass_proxy_limits)
 
 
 class MurataUnbinned(MassRichnessGaussian):
@@ -178,8 +168,7 @@ class MurataUnbinned(MassRichnessGaussian):
         pivot_redshift: float,
         integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
-        super().__init__(KernelType.MASS_PROXY, False, True, integral_bounds)
-
+        super().__init__()
         self.pivot_redshift = pivot_redshift
         self.pivot_mass = pivot_mass * np.log(10.0)  # ln(M)
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
@@ -225,10 +214,5 @@ class MurataUnbinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        z_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
-        z_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
-        return self._distribution_unbinned(
-            mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-        )
+        return self._distribution_unbinned(mass, z, mass_proxy)
