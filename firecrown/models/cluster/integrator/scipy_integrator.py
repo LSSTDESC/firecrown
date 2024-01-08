@@ -7,6 +7,7 @@ from scipy.integrate import nquad
 from firecrown.models.cluster.integrator.integrator import Integrator
 
 
+# pylint: disable=too-few-public-methods
 class ScipyIntegrator(Integrator):
     """The scipy implementation of the Integrator base class using nquad."""
 

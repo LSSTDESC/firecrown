@@ -2,13 +2,17 @@
 
 This module holds the NumCosmo implementation of the integrator classes
 """
-from typing import Tuple, Callable, Sequence, Optional, List
 from enum import Enum
+from typing import Callable, List, Optional, Sequence, Tuple
+
 import numpy as np
 import numpy.typing as npt
 from numcosmo_py import Ncm
 
+from firecrown.models.cluster.integrator.integrator import Integrator
 
+
+# pylint: disable=too-few-public-methods
 class NumCosmoIntegralMethod(Enum):
     """The available NumCosmo integration methods."""
 
@@ -18,7 +22,7 @@ class NumCosmoIntegralMethod(Enum):
     H_V = Ncm.IntegralNDMethod.H_V
 
 
-class NumCosmoIntegrator:
+class NumCosmoIntegrator(Integrator):
     """The NumCosmo implementation of the Integrator base class."""
 
     def __init__(

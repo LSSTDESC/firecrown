@@ -3,20 +3,19 @@
 This module holds the classes that define the mass richness relations
 that can be included in the cluster abundance integrand.  These are
 implementations of Kernels."""
-from typing import List, Tuple, Optional
 from abc import abstractmethod
+from typing import Tuple
+
 import numpy as np
 import numpy.typing as npt
 from scipy import special
+
 from firecrown import parameters
 from firecrown.updatable import Updatable
 
 
 class MassRichnessGaussian(Updatable):
     """The representation of mass richness relations that are of a gaussian form."""
-
-    def __init__(self, parameter_prefix: str | None = None) -> None:
-        super().__init__(parameter_prefix)
 
     @staticmethod
     def observed_value(
@@ -156,6 +155,7 @@ class MurataBinned(MassRichnessGaussian):
         z: npt.NDArray[np.float64],
         mass_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
+        """Evaluates and returns the mass-richness contribution to the integrand."""
         return self._distribution_binned(mass, z, mass_proxy_limits)
 
 
@@ -166,7 +166,6 @@ class MurataUnbinned(MassRichnessGaussian):
         self,
         pivot_mass: float,
         pivot_redshift: float,
-        integral_bounds: Optional[List[Tuple[float, float]]] = None,
     ):
         super().__init__()
         self.pivot_redshift = pivot_redshift
@@ -215,4 +214,5 @@ class MurataUnbinned(MassRichnessGaussian):
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Evaluates and returns the mass-richness contribution to the integrand."""
         return self._distribution_unbinned(mass, z, mass_proxy)

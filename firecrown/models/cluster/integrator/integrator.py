@@ -1,17 +1,17 @@
 """The integrator module
 
 This module holds the classes that define the interface required to
-integrate an assembled cluster abundance.
+integrate a function.
 """
 from abc import ABC, abstractmethod
 from typing import Tuple, List, Callable
 
 
+# pylint: disable=too-few-public-methods
 class Integrator(ABC):
     """The integrator base class
 
-    This class acts as an adapter around an integration library, and must provides
-    a specific set of methods to be used to integrate a cluster abundance integral."""
+    This class acts as an adapter around an integration library."""
 
     def __init__(self) -> None:
         self.integral_bounds: List[Tuple[float, float]] = []

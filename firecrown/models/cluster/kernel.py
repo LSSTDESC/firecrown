@@ -19,8 +19,9 @@ class KernelType(Enum):
     PURITY = 6
 
 
+# pylint: disable=too-few-public-methods
 class Completeness:
-    """The completeness kernel
+    """The completeness kernel for the numcosmo simulated survey
 
     This kernel will affect the integrand by accounting for the incompleteness
     of a cluster selection."""
@@ -30,6 +31,7 @@ class Completeness:
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Evaluates and returns the completeness contribution to the integrand."""
         a_nc = 1.1321
         b_nc = 0.7751
         a_mc = 13.31
@@ -41,8 +43,9 @@ class Completeness:
         return completeness
 
 
+# pylint: disable=too-few-public-methods
 class Purity:
-    """The purity kernel
+    """The purity kernel for the numcosmo simulated survey
 
     This kernel will affect the integrand by accounting for the purity
     of a cluster selection."""
@@ -66,6 +69,7 @@ class Purity:
         mass_proxy: npt.NDArray[np.float64],
         mass_proxy_limits: Tuple[float, float],
     ) -> npt.NDArray[np.float64]:
+        """Evaluates and returns the purity contribution to the integrand."""
         if all(mass_proxy == -1.0):
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
             ln_r = np.log(10**mean_mass)
@@ -79,15 +83,19 @@ class Purity:
         return purity
 
 
+# pylint: disable=too-few-public-methods
 class TrueMass:
     """The true mass kernel.
 
     Assuming we measure the true mass, this will always be 1."""
 
     def distribution(self) -> npt.NDArray[np.float64]:
+        """Evaluates and returns the mass distribution contribution to the integrand.
+        We have set this to 1.0 (i.e. it does not affect the mass distribution)"""
         return np.atleast_1d(1.0)
 
 
+# pylint: disable=too-few-public-methods
 class SpectroscopicRedshift:
     """The spec-z kernel.
 
@@ -95,4 +103,6 @@ class SpectroscopicRedshift:
     multiplying by 1."""
 
     def distribution(self) -> npt.NDArray[np.float64]:
+        """Evaluates and returns the z distribution contribution to the integrand.
+        We have set this to 1.0 (i.e. it does not affect the redshift distribution)"""
         return np.atleast_1d(1.0)

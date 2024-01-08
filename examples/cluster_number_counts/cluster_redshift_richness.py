@@ -17,7 +17,8 @@ from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.recipes.murata_binned_spec_z import (
     MurataBinnedSpecZRecipe,
 )
-from firecrown.models.cluster.recipes.true_mass_spec_z import TrueMassSpecZRecipe
+
+# from firecrown.models.cluster.recipes.true_mass_spec_z import TrueMassSpecZRecipe
 
 
 def get_cluster_abundance() -> ClusterAbundance:
