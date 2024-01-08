@@ -3,7 +3,6 @@
 import numpy as np
 import numpy.typing as npt
 import pytest
-from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 

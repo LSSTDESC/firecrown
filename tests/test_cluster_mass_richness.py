@@ -197,10 +197,10 @@ def test_cluster_murata_unbinned_distribution_is_normalized(
         sigma = murata_unbinned_relation.get_proxy_sigma(mass, z)[0]
         mass_proxy_limits = (mean - 5 * sigma, mean + 5 * sigma)
 
-        def integrand(mass_proxy):
+        def integrand(mass_proxy) -> float:
             """Evaluate the unbinned distribution at fixed mass and redshift."""
             # pylint: disable=cell-var-from-loop
-            return murata_unbinned_relation.distribution(mass, z, mass_proxy)
+            return murata_unbinned_relation.distribution(mass, z, mass_proxy)[0]
 
         result, _ = quad(
             integrand,
