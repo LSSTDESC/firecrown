@@ -7,10 +7,7 @@ from firecrown.models.cluster.mass_proxy import (
     MurataUnbinned,
     MassRichnessGaussian,
 )
-from firecrown.models.cluster.kernel import (
-    KernelType,
-    Kernel,
-)
+
 
 PIVOT_Z = 0.6
 PIVOT_MASS = 14.625862906
@@ -54,11 +51,6 @@ def fixture_murata_unbinned() -> MurataUnbinned:
 
 def test_create_musigma_kernel():
     mb = MurataBinned(1, 1)
-    assert isinstance(mb, Kernel)
-    assert mb.kernel_type == KernelType.MASS_PROXY
-    assert mb.is_dirac_delta is False
-    assert mb.integral_bounds is None
-    assert mb.has_analytic_sln is True
     assert mb.pivot_mass == 1 * np.log(10)
     assert mb.pivot_redshift == 1
     assert mb.log1p_pivot_redshift == np.log1p(1)
@@ -91,7 +83,6 @@ def test_cluster_observed_mass():
 def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned):
     mass_array = np.linspace(7.0, 26.0, 20)
     mass_proxy_limits = (1.0, 5.0)
-    z_proxy_limits = (0.0, 1.0)
 
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
@@ -99,14 +90,12 @@ def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned
             mass1 = np.atleast_1d(mass1)
             mass2 = np.atleast_1d(mass2)
             z = np.atleast_1d(z)
-            z_proxy = np.atleast_1d(0)
-            mass_proxy = np.atleast_1d(1)
 
             probability_0 = murata_binned_relation.distribution(
-                mass1, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+                mass1, z, mass_proxy_limits
             )
             probability_1 = murata_binned_relation.distribution(
-                mass2, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
+                mass2, z, mass_proxy_limits
             )
 
             assert probability_0 >= 0
@@ -167,8 +156,6 @@ def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
 
 def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUnbinned):
     mass_array = np.linspace(7.0, 26.0, 20)
-    mass_proxy_limits = (1.0, 5.0)
-    z_proxy_limits = (0.0, 1.0)
 
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
@@ -176,15 +163,10 @@ def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUn
             mass1 = np.atleast_1d(mass1)
             mass2 = np.atleast_1d(mass2)
             z = np.atleast_1d(z)
-            z_proxy = np.atleast_1d(0)
             mass_proxy = np.atleast_1d(1)
 
-            probability_0 = murata_unbinned_relation.distribution(
-                mass1, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-            )
-            probability_1 = murata_unbinned_relation.distribution(
-                mass2, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-            )
+            probability_0 = murata_unbinned_relation.distribution(mass1, z, mass_proxy)
+            probability_1 = murata_unbinned_relation.distribution(mass2, z, mass_proxy)
 
             # Probability density should be initially monotonically increasing
             # and then monotonically decreasing. It should flip only once.
@@ -218,9 +200,7 @@ def test_cluster_murata_unbinned_distribution_is_normalized(
         def integrand(mass_proxy):
             """Evaluate the unbinned distribution at fixed mass and redshift."""
             # pylint: disable=cell-var-from-loop
-            return murata_unbinned_relation.distribution(
-                mass, z, mass_proxy, z, mass_proxy_limits, (0.0, 1.0)
-            )
+            return murata_unbinned_relation.distribution(mass, z, mass_proxy)
 
         result, _ = quad(
             integrand,
