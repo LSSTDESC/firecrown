@@ -1,7 +1,7 @@
 from typing import Callable, Optional
 
 from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.binning import SaccBin
+from firecrown.models.cluster.binning import NDimensionalBin
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 from firecrown.models.cluster.kernel import SpectroscopicRedshift
 from firecrown.models.cluster.mass_proxy import MurataBinned
@@ -65,7 +65,7 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
     def evaluate_theory_prediction(
         self,
         cluster_theory: ClusterAbundance,
-        bin: SaccBin,
+        bin: NDimensionalBin,
         sky_area: float,
         average_on: Optional[ClusterProperty] = None,
     ) -> float:
