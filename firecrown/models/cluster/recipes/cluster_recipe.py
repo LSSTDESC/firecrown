@@ -20,4 +20,4 @@ class ClusterRecipe(Updatable, ABC):
         sky_area: float,
         average_on: Optional[ClusterProperty] = None,
     ) -> float:
-        pass
+        """Evaluate the theory prediction for this cluster recipe"""

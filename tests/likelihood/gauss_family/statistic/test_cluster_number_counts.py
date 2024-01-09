@@ -43,7 +43,7 @@ def test_get_data_vector():
     assert len(dv) == 0
 
 
-def test_read(cluster_sacc_data: sacc.Sacc):
+def test_read_throws_if_no_property(cluster_sacc_data: sacc.Sacc):
     recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "my_survey", recipe)
 
@@ -52,6 +52,10 @@ def test_read(cluster_sacc_data: sacc.Sacc):
         match="You must specify at least one cluster property",
     ):
         bnc.read(cluster_sacc_data)
+
+
+def test_read_single_property(cluster_sacc_data: sacc.Sacc):
+    recipe = Mock(spec=ClusterRecipe)
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", recipe)
     bnc.read(cluster_sacc_data)
@@ -69,6 +73,9 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     assert bnc.sacc_indices is not None
     assert len(bnc.sacc_indices) == 2
 
+
+def test_read_multiple_properties(cluster_sacc_data: sacc.Sacc):
+    recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(
         (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", recipe
     )

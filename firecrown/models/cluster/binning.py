@@ -71,8 +71,7 @@ class SaccBin(NDimensionalBin[sacc.BaseTracer]):
             other_bin = [
                 x for x in other.coordinate_bins if x.tracer_type == my_bin.tracer_type
             ]
-            if len(other_bin) != 1:
-                return False
+
             if my_bin.lower != other_bin[0].lower:
                 return False
             if my_bin.upper != other_bin[0].upper:
