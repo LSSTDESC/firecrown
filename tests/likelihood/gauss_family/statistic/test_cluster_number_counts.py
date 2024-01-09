@@ -3,7 +3,6 @@ from unittest.mock import Mock
 import sacc
 import pytest
 import pyccl
-from firecrown.models.cluster.integrator.integrator import Integrator
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
