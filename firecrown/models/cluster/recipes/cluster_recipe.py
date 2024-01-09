@@ -8,7 +8,7 @@ from firecrown.updatable import Updatable, UpdatableCollection
 
 
 class ClusterRecipe(Updatable, ABC):
-    def __init__(self, parameter_prefix: str | None = None) -> None:
+    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
         super().__init__(parameter_prefix)
         self.my_updatables: UpdatableCollection = UpdatableCollection()
 
