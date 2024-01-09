@@ -180,8 +180,6 @@ class MurataUnbinned(MassRichnessGaussian):
         self.sigma_p1 = parameters.register_new_updatable_parameter()
         self.sigma_p2 = parameters.register_new_updatable_parameter()
 
-        # Verify this gets called last or first
-
     def get_proxy_mean(
         self,
         mass: npt.NDArray[np.float64],

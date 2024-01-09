@@ -4,27 +4,13 @@ The galaxy cluster abundance integral is a combination of both theoretical
 and phenomenological predictions.  This module contains the classes and
 functions that produce those predictions.
 """
-from typing import Callable, Dict, Tuple
+from typing import Dict, Tuple
 import numpy as np
 import numpy.typing as npt
 import pyccl
 import pyccl.background as bkg
 from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
-
-
-AbundanceIntegrand = Callable[
-    [
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        float,
-        npt.NDArray[np.float64],
-        npt.NDArray[np.float64],
-        Tuple[float, float],
-        Tuple[float, float],
-    ],
-    npt.NDArray[np.float64],
-]
 
 
 class ClusterAbundance(Updatable):

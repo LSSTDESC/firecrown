@@ -1,3 +1,4 @@
+"""Module for defining the classes used in the MurataBinnedSpecZ cluster recipe."""
 from typing import Callable, Optional, Tuple
 
 import numpy as np
@@ -12,7 +13,11 @@ from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
+# pylint: disable=R0801
 class MurataBinnedSpecZRecipe(ClusterRecipe):
+    """Cluster recipe using the Murata 2019 binned mass-richness relation and assuming
+    perfectly measured spec-zs."""
+
     def __init__(self) -> None:
         super().__init__()
 
@@ -30,8 +35,6 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         [npt.NDArray[np.float64], npt.NDArray[np.float64], Tuple[float, float], float],
         npt.NDArray[np.float64],
     ]:
-        """_summary_"""
-
         def theory_prediction(
             mass: npt.NDArray[np.float64],
             z: npt.NDArray[np.float64],
@@ -92,15 +95,18 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
     def evaluate_theory_prediction(
         self,
         cluster_theory: ClusterAbundance,
-        bin: NDimensionalBin,
+        this_bin: NDimensionalBin,
         sky_area: float,
         average_on: Optional[ClusterProperty] = None,
     ) -> float:
+        """Evaluate the theoretical prediction for the observable in the provided bin
+        using the Murata 2019 binned mass-richness relation and assuming perfectly
+        measured redshifts."""
         self.integrator.integral_bounds = [
             (cluster_theory.min_mass, cluster_theory.max_mass),
-            bin.z_edges,
+            this_bin.z_edges,
         ]
-        self.integrator.extra_args = np.array([*bin.mass_proxy_edges, sky_area])
+        self.integrator.extra_args = np.array([*this_bin.mass_proxy_edges, sky_area])
 
         theory_prediction = self.get_theory_prediction(cluster_theory, average_on)
         prediction_wrapper = self.get_function_to_integrate(theory_prediction)

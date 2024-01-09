@@ -3,7 +3,7 @@
 This module holds the NumCosmo implementation of the integrator classes
 """
 from enum import Enum
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -32,8 +32,6 @@ class NumCosmoIntegrator(Integrator):
     ) -> None:
         super().__init__()
         self.method = method or NumCosmoIntegralMethod.P_V
-        self.integral_bounds: List[Tuple[float, float]] = []
-        self.extra_args: npt.NDArray[np.float64] = np.array([], dtype=np.float64)
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
 

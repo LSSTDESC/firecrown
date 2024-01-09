@@ -18,8 +18,6 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z import (
     MurataBinnedSpecZRecipe,
 )
 
-# from firecrown.models.cluster.recipes.true_mass_spec_z import TrueMassSpecZRecipe
-
 
 def get_cluster_abundance() -> ClusterAbundance:
     hmf = ccl.halos.MassFuncBocquet16()
@@ -47,7 +45,6 @@ def build_likelihood(
     survey_name = "numcosmo_simulated_redshift_richness"
     likelihood = ConstGaussian(
         [BinnedClusterNumberCounts(average_on, survey_name, MurataBinnedSpecZRecipe())]
-        # [BinnedClusterNumberCounts(average_on, survey_name, TrueMassSpecZRecipe())]
     )
 
     # Read in sacc data
