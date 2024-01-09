@@ -15,7 +15,9 @@ from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoInte
 def test_numcosmo_integrator_integrate():
     integrator = NumCosmoIntegrator()
 
-    def integrand(int_args: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+    def integrand(
+        int_args: npt.NDArray[np.float64], _extra_args: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         # xy
         a = int_args[:, 0]
         b = int_args[:, 1]
@@ -23,7 +25,7 @@ def test_numcosmo_integrator_integrate():
         return result
 
     integrator.integral_bounds = [(0, 1), (0, 1)]
-    integrator.extra_args = []
+    integrator.extra_args = np.array([], dtype=np.float64)
     result = integrator.integrate(integrand)
     # \int_0^1 \int_0^1 xy dx dy = 1/4
     assert result == pytest.approx(0.25, rel=1e-15, abs=0)
@@ -32,13 +34,16 @@ def test_numcosmo_integrator_integrate():
 def test_scipy_integrator_integrate():
     integrator = ScipyIntegrator()
 
-    def integrand(a: np.float64, b: np.float64) -> np.float64:
+    # TODO: should we just remove this?
+    def integrand(
+        a: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
         # xy
         result = a * b
         return result
 
     integrator.integral_bounds = [(0, 1), (0, 1)]
-    integrator.extra_args = []
+    integrator.extra_args = np.array([], dtype=np.float64)
     result = integrator.integrate(integrand)
     # \int_0^1 \int_0^1 xy dx dy = 1/4
     assert result == pytest.approx(0.25, rel=1e-15, abs=0)

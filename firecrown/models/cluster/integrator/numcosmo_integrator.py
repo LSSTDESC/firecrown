@@ -3,7 +3,7 @@
 This module holds the NumCosmo implementation of the integrator classes
 """
 from enum import Enum
-from typing import Callable, List, Optional, Sequence, Tuple
+from typing import Callable, List, Optional, Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -12,7 +12,6 @@ from numcosmo_py import Ncm
 from firecrown.models.cluster.integrator.integrator import Integrator
 
 
-# pylint: disable=too-few-public-methods
 class NumCosmoIntegralMethod(Enum):
     """The available NumCosmo integration methods."""
 
@@ -34,11 +33,16 @@ class NumCosmoIntegrator(Integrator):
         super().__init__()
         self.method = method or NumCosmoIntegralMethod.P_V
         self.integral_bounds: List[Tuple[float, float]] = []
-        self.extra_args: List[float] = []
+        self.extra_args: npt.NDArray[np.float64] = np.array([], dtype=np.float64)
         self._relative_tolerance = relative_tolerance
         self._absolute_tolerance = absolute_tolerance
 
-    def integrate(self, func_to_integrate: Callable) -> float:
+    def integrate(
+        self,
+        func_to_integrate: Callable[
+            [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
+        ],
+    ) -> float:
         Ncm.cfg_init()
 
         int_nd = CountsIntegralND(
@@ -61,8 +65,10 @@ class CountsIntegralND(Ncm.IntegralND):
     def __init__(
         self,
         dim: int,
-        fun: Callable[[npt.NDArray], Sequence[float]],
-        args: List[float],
+        fun: Callable[
+            [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
+        ],
+        args: npt.NDArray[np.float64],
     ) -> None:
         super().__init__()
         self.dim = dim
@@ -85,4 +91,4 @@ class CountsIntegralND(Ncm.IntegralND):
     ) -> None:
         """Called by NumCosmo to evaluate the integrand."""
         x = np.array(x_vec.dup_array()).reshape(npoints, dim)
-        fval_vec.set_array(self.fun(x, *self.extra_args))
+        fval_vec.set_array(list(self.fun(x, self.extra_args)))

@@ -3,11 +3,14 @@
 This module holds the scipy implementation of the integrator classes
 """
 from typing import Callable
+
+import numpy as np
+import numpy.typing as npt
 from scipy.integrate import nquad
+
 from firecrown.models.cluster.integrator.integrator import Integrator
 
 
-# pylint: disable=too-few-public-methods
 class ScipyIntegrator(Integrator):
     """The scipy implementation of the Integrator base class using nquad."""
 
@@ -20,7 +23,9 @@ class ScipyIntegrator(Integrator):
 
     def integrate(
         self,
-        func_to_integrate: Callable,
+        func_to_integrate: Callable[
+            [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
+        ],
     ) -> float:
         val = nquad(
             func_to_integrate,

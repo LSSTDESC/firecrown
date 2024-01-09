@@ -1,4 +1,7 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
+
+import numpy as np
+import numpy.typing as npt
 
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.binning import NDimensionalBin
@@ -23,10 +26,18 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         self,
         cluster_theory: ClusterAbundance,
         average_on: Optional[ClusterProperty] = None,
-    ) -> Callable:
+    ) -> Callable[
+        [npt.NDArray[np.float64], npt.NDArray[np.float64], Tuple[float, float], float],
+        npt.NDArray[np.float64],
+    ]:
         """_summary_"""
 
-        def theory_prediction(mass, z, mass_proxy_limits, sky_area):
+        def theory_prediction(
+            mass: npt.NDArray[np.float64],
+            z: npt.NDArray[np.float64],
+            mass_proxy_limits: Tuple[float, float],
+            sky_area: float,
+        ):
             prediction = (
                 cluster_theory.comoving_volume(z, sky_area)
                 * cluster_theory.mass_function(mass, z)
@@ -52,15 +63,31 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
 
         return theory_prediction
 
-    def get_function_to_integrate(self, prediction: Callable) -> Callable:
-        def numcosmo_wrapper(
-            int_args, mass_proxy_low, mass_proxy_high, sky_area
-        ) -> float:
+    def get_function_to_integrate(
+        self,
+        prediction: Callable[
+            [
+                npt.NDArray[np.float64],
+                npt.NDArray[np.float64],
+                Tuple[float, float],
+                float,
+            ],
+            npt.NDArray[np.float64],
+        ],
+    ) -> Callable[[npt.NDArray, npt.NDArray], npt.NDArray]:
+        def function_mapper(
+            int_args: npt.NDArray, extra_args: npt.NDArray
+        ) -> npt.NDArray[np.float64]:
             mass = int_args[:, 0]
             z = int_args[:, 1]
+
+            mass_proxy_low = extra_args[0]
+            mass_proxy_high = extra_args[1]
+            sky_area = extra_args[2]
+
             return prediction(mass, z, (mass_proxy_low, mass_proxy_high), sky_area)
 
-        return numcosmo_wrapper
+        return function_mapper
 
     def evaluate_theory_prediction(
         self,
@@ -73,7 +100,7 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
             (cluster_theory.min_mass, cluster_theory.max_mass),
             bin.z_edges,
         ]
-        self.integrator.extra_args = [*bin.mass_proxy_edges, sky_area]
+        self.integrator.extra_args = np.array([*bin.mass_proxy_edges, sky_area])
 
         theory_prediction = self.get_theory_prediction(cluster_theory, average_on)
         prediction_wrapper = self.get_function_to_integrate(theory_prediction)

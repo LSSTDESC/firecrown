@@ -4,10 +4,12 @@ This module holds the classes that define the interface required to
 integrate a function.
 """
 from abc import ABC, abstractmethod
-from typing import Tuple, List, Callable
+from typing import Callable, List, Tuple
+
+import numpy as np
+import numpy.typing as npt
 
 
-# pylint: disable=too-few-public-methods
 class Integrator(ABC):
     """The integrator base class
 
@@ -15,8 +17,13 @@ class Integrator(ABC):
 
     def __init__(self) -> None:
         self.integral_bounds: List[Tuple[float, float]] = []
-        self.extra_args: List[float] = []
+        self.extra_args: npt.NDArray[np.float64] = np.array([], dtype=np.float64)
 
     @abstractmethod
-    def integrate(self, func_to_integrate: Callable) -> float:
+    def integrate(
+        self,
+        func_to_integrate: Callable[
+            [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
+        ],
+    ) -> float:
         """Call this method to integrate the provided integrand argument."""
