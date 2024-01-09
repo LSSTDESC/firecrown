@@ -40,7 +40,9 @@ class MurataUnbinnedSpecZ(ClusterRecipe):
         ],
         npt.NDArray[np.float64],
     ]:
-        import pdb
+        """Returns a callable function that accepts mass, redshift, mass proxy,
+        and the sky area of your survey and returns the theoretical prediction for the
+        expected number of clusters."""
 
         def theory_prediction(
             mass: npt.NDArray[np.float64],
@@ -48,7 +50,6 @@ class MurataUnbinnedSpecZ(ClusterRecipe):
             mass_proxy: npt.NDArray[np.float64],
             sky_area: float,
         ):
-            pdb.set_trace()
             prediction = (
                 cluster_theory.comoving_volume(z, sky_area)
                 * cluster_theory.mass_function(mass, z)
@@ -88,7 +89,12 @@ class MurataUnbinnedSpecZ(ClusterRecipe):
     ) -> Callable[
         [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
     ]:
-        def numcosmo_wrapper(
+        """Returns a callable function that can be evaluated by an integrator.
+
+        This function is responsible for mapping arguments from the numerical integrator
+        to the arguments of the theoretical prediction function."""
+
+        def function_mapper(
             int_args: npt.NDArray[np.float64], extra_args: npt.NDArray[np.float64]
         ) -> npt.NDArray[np.float64]:
             mass = int_args[:, 0]
@@ -97,7 +103,7 @@ class MurataUnbinnedSpecZ(ClusterRecipe):
             sky_area = extra_args[0]
             return prediction(mass, z, mass_proxy, sky_area)
 
-        return numcosmo_wrapper
+        return function_mapper
 
     def evaluate_theory_prediction(
         self,

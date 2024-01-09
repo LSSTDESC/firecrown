@@ -35,6 +35,10 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         [npt.NDArray[np.float64], npt.NDArray[np.float64], Tuple[float, float], float],
         npt.NDArray[np.float64],
     ]:
+        """Returns a callable function that accepts mass, redshift, mass proxy limits,
+        and the sky area of your survey and returns the theoretical prediction for the
+        expected number of clusters."""
+
         def theory_prediction(
             mass: npt.NDArray[np.float64],
             z: npt.NDArray[np.float64],
@@ -78,6 +82,11 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
             npt.NDArray[np.float64],
         ],
     ) -> Callable[[npt.NDArray, npt.NDArray], npt.NDArray]:
+        """Returns a callable function that can be evaluated by an integrator.
+
+        This function is responsible for mapping arguments from the numerical integrator
+        to the arguments of the theoretical prediction function."""
+
         def function_mapper(
             int_args: npt.NDArray, extra_args: npt.NDArray
         ) -> npt.NDArray[np.float64]:
