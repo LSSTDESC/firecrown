@@ -15,7 +15,6 @@ from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatist
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster.abundance import ClusterAbundance
 
 
 def pytest_addoption(parser):
@@ -157,15 +156,3 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_2"), 1)
 
     return s
-
-
-@pytest.fixture(name="empty_cluster_abundance")
-def fixture_empty_cluster_abundance() -> ClusterAbundance:
-    cl_abundance = ClusterAbundance(
-        min_z=0,
-        max_z=2,
-        min_mass=13,
-        max_mass=17,
-        halo_mass_function=None,
-    )
-    return cl_abundance
