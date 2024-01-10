@@ -20,7 +20,7 @@ class Supernova(Statistic):
     """A statistic that applies an additive shift M to a supernova's distance
     modulus."""
 
-    def __init__(self, sacc_tracer) -> None:
+    def __init__(self, sacc_tracer: str) -> None:
         """Initialize this statistic."""
         super().__init__(parameter_prefix=sacc_tracer)
 
@@ -29,7 +29,7 @@ class Supernova(Statistic):
         self.a: Optional[npt.NDArray[np.float64]] = None
         self.M = parameters.register_new_updatable_parameter()
 
-    def read(self, sacc_data: sacc.Sacc):
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
 
         # We do not actually need the tracer, but we want to make sure the SACC

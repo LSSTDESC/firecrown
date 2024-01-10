@@ -7,8 +7,6 @@ Note that the class FirecrownLikelihood does *not* inherit from firecrown's
 likelihood abstract base class; it the implementation of a CosmoSIS module,
 not a specific likelihood.
 """
-
-
 import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
@@ -175,7 +173,7 @@ class FirecrownLikelihood:
 
         return 0
 
-    def form_error_message(self, exc):
+    def form_error_message(self, exc: MissingSamplerParameterError) -> str:
         """Form the error message that will be used to report a missing
         parameter, when that parameter should have been supplied by the
         sampler."""
@@ -228,6 +226,6 @@ def execute(sample: cosmosis.datablock, instance: FirecrownLikelihood) -> int:
     return instance.execute(sample)
 
 
-def cleanup(_):
+def cleanup(_) -> int:
     """Cleanup hook for a CosmoSIS module. This one has nothing to do."""
     return 0

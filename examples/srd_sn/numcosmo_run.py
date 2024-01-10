@@ -81,7 +81,7 @@ dset.append_data(fc_data)
 
 lh = Ncm.Likelihood(dataset=dset)
 
-fit = Ncm.Fit.new(
+fit = Ncm.Fit.factory(
     Ncm.FitType.NLOPT,
     "ln-neldermead",
     lh,

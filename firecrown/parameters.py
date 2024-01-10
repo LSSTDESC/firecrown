@@ -91,7 +91,7 @@ class RequiredParameters:
         """Return the number of parameters contained."""
         return len(self.params_names)
 
-    def __add__(self, other: RequiredParameters):
+    def __add__(self, other: RequiredParameters) -> RequiredParameters:
         """Return a new RequiredParameters with the concatenated names.
 
         Note that this function returns a new object that does not share state

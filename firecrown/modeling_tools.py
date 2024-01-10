@@ -9,6 +9,8 @@ from typing import Dict, Optional, Collection
 from abc import ABC, abstractmethod
 import pyccl.nl_pt
 
+from firecrown.models.cluster.abundance import ClusterAbundance
+
 from .updatable import Updatable, UpdatableCollection
 
 
@@ -21,6 +23,7 @@ class ModelingTools(Updatable):
         *,
         pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
         pk_modifiers: Optional[Collection[PowerspectrumModifier]] = None,
+        cluster_abundance: Optional[ClusterAbundance] = None,
     ):
         super().__init__()
         self.ccl_cosmo: Optional[pyccl.Cosmology] = None
@@ -29,9 +32,10 @@ class ModelingTools(Updatable):
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: Dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
+        self.cluster_abundance = cluster_abundance
 
-    def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
-        """Add a :class:`pyccl.Pk2D` to the table of power spectra."""
+    def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
+        """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
 
         if name in self.powerspectra:
             raise KeyError(f"Power spectrum {name} already exists")
@@ -86,6 +90,9 @@ class ModelingTools(Updatable):
 
         for pkm in self.pk_modifiers:
             self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
+
+        if self.cluster_abundance is not None:
+            self.cluster_abundance.update_ingredients(ccl_cosmo)
 
         self._prepared = True
 

@@ -19,11 +19,11 @@ from astropy.table import Table
 
 from astropy.io import fits
 from scipy import stats
-
+from typing import Any
 import sacc
 
 
-def generate_sacc_file():
+def generate_sacc_file() -> Any:
     """Generate a SACC file for cluster number counts."""
 
     H0 = 71.0
@@ -40,8 +40,7 @@ def generate_sacc_file():
     cosmo.add_submodel(prim)
 
     dist = Nc.Distance.new(2.0)
-
-    tf = Nc.TransferFunc.new_from_name("NcTransferFuncEH")
+    tf = Nc.TransferFuncEH.new()
 
     psml = Nc.PowspecMLTransfer.new(tf)
 
@@ -74,13 +73,9 @@ def generate_sacc_file():
     zu = 0.65
 
     # NumCosmo proxy model based on arxiv 1904.07524v2
-    cluster_z = Nc.ClusterRedshift.new_from_name(
-        f"NcClusterRedshiftNodist{{'z-min': <{zl:22.15e}>, 'z-max':<{zu:22.15e}>}}"
-    )
-
-    cluster_m = Nc.ClusterMass.new_from_name(
-        f"NcClusterMassAscaso{{'M0':<{3.0e14 / 0.71:22.15e}>,'z0':<0.6>, "
-        f"'lnRichness-min':<{lnRl:22.15e}>, 'lnRichness-max':<{lnRu:22.15e}>}}"
+    cluster_z = Nc.ClusterRedshiftNodist(z_max=zu, z_min=zl)
+    cluster_m = Nc.ClusterMassAscaso(
+        M0=3.0e14 / 0.71, z0=0.6, lnRichness_min=lnRl, lnRichness_max=lnRu
     )
     cluster_m.param_set_by_name("mup0", 3.19)
     cluster_m.param_set_by_name("mup1", 2 / np.log(10))

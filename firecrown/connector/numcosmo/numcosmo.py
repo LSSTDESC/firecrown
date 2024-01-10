@@ -202,12 +202,12 @@ class MappingNumCosmo(GObject.Object):
 
         if self._p_ml:
             p_m_spline = self._p_ml.get_spline_2d(hi_cosmo)
-            z = np.array(p_m_spline.xv.dup_array())
-            k = np.array(p_m_spline.yv.dup_array())
+            z = np.array(p_m_spline.peek_xv().dup_array())
+            k = np.array(p_m_spline.peek_yv().dup_array())
 
             scale = self.mapping.redshift_to_scale_factor(z)
             p_k = np.transpose(
-                np.array(p_m_spline.zm.dup_array()).reshape(len(k), len(z))
+                np.array(p_m_spline.peek_zm().dup_array()).reshape(len(k), len(z))
             )
             p_k = self.mapping.redshift_to_scale_factor_p_k(p_k)
 
@@ -219,12 +219,12 @@ class MappingNumCosmo(GObject.Object):
 
         if self._p_mnl:
             p_mnl_spline = self._p_mnl.get_spline_2d(hi_cosmo)
-            z = np.array(p_mnl_spline.xv.dup_array())
-            k = np.array(p_mnl_spline.yv.dup_array())
+            z = np.array(p_mnl_spline.peek_xv().dup_array())
+            k = np.array(p_mnl_spline.peek_yv().dup_array())
 
             scale_mpnl = self.mapping.redshift_to_scale_factor(z)
             p_mnl = np.transpose(
-                np.array(p_mnl_spline.zm.dup_array()).reshape(len(k), len(z))
+                np.array(p_mnl_spline.peek_zm().dup_array()).reshape(len(k), len(z))
             )
             p_mnl = self.mapping.redshift_to_scale_factor_p_k(p_mnl)
 

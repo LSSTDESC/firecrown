@@ -52,7 +52,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Tuple, Union, Optional
+from typing import Mapping, Tuple, Union, Optional, Set
 from abc import abstractmethod
 import types
 import warnings
@@ -89,7 +89,7 @@ class Likelihood(Updatable):
         self.statistics: UpdatableCollection = UpdatableCollection()
 
     @abstractmethod
-    def read(self, sacc_data: sacc.Sacc):
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     @abstractmethod
@@ -188,7 +188,18 @@ class NamedParameters:
         assert val.dtype == np.float64
         return val
 
-    def to_set(self):
+    def to_set(
+        self,
+    ) -> Set[
+        Union[
+            str,
+            int,
+            bool,
+            float,
+            npt.NDArray[np.int64],
+            npt.NDArray[np.float64],
+        ]
+    ]:
         """Return the contained data as a set."""
         return set(self.data)
 

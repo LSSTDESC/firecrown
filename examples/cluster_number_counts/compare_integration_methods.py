@@ -1,26 +1,20 @@
 """Test integral methods for cluster abundance."""
-
-from typing import Any, Dict
 import time
 import itertools
 
-import pyccl as ccl
+import pyccl
 import numpy as np
-from numcosmo_py import Ncm
-
-from firecrown.models.cluster_abundance import ClusterAbundance
-from firecrown.models.cluster_mass_rich_proxy import (
-    ClusterMassRich,
-    ClusterMassRichBinArgument,
+from firecrown.models.cluster.mass_proxy import MurataBinned
+from firecrown.models.cluster.kernel import Kernel
+from firecrown.models.cluster.integrator.numcosmo_integrator import (
+    NumCosmoIntegrator,
+    NumCosmoIntegralMethod,
 )
-from firecrown.models.cluster_redshift_spec import (
-    ClusterRedshiftSpecArgument,
-)
+from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.kernel import SpectroscopicRedshift
 
 
-def compare_integration():
-    """Compare integration methods."""
-
+def get_cosmology() -> pyccl.Cosmology:
     Omega_c = 0.262
     Omega_b = 0.049
     Omega_k = 0.0
@@ -32,7 +26,8 @@ def compare_integration():
     Neff = 3.046
     w0 = -1.0
     wa = 0.0
-    cosmo_ccl = ccl.Cosmology(
+
+    cosmo_ccl = pyccl.Cosmology(
         Omega_c=Omega_c,
         Omega_b=Omega_b,
         Neff=Neff,
@@ -45,56 +40,75 @@ def compare_integration():
         T_CMB=Tcmb0,
         m_nu=[0.00, 0.0, 0.0],
     )
+
+    return cosmo_ccl
+
+
+def get_mass_richness() -> Kernel:
     pivot_mass = 14.625862906
     pivot_redshift = 0.6
 
-    cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
+    mass_richness = MurataBinned(pivot_mass, pivot_redshift)
 
-    cluster_mass_r.mu_p0 = 3.0
-    cluster_mass_r.mu_p1 = 0.86
-    cluster_mass_r.mu_p2 = 0.0
-    cluster_mass_r.sigma_p0 = 3.0
-    cluster_mass_r.sigma_p1 = 0.7
-    cluster_mass_r.sigma_p2 = 0.0
+    mass_richness.mu_p0 = 3.0
+    mass_richness.mu_p1 = 0.86
+    mass_richness.mu_p2 = 0.0
+    mass_richness.sigma_p0 = 3.0
+    mass_richness.sigma_p1 = 0.7
+    mass_richness.sigma_p2 = 0.0
 
-    # TODO: remove try/except when pyccl 3.0 is released
-    try:
-        hmd_200 = ccl.halos.MassDef200m()
-    except TypeError:
-        hmd_200 = ccl.halos.MassDef200m
+    return mass_richness
 
-    hmf_args: Dict[str, Any] = {}
-    hmf_name = "Tinker08"
-    z_bins = np.linspace(0.0, 1.0, 4)
-    r_bins = np.linspace(1.0, 2.5, 5)
 
-    integ_options = [
-        Ncm.IntegralNDMethod.P,
-        Ncm.IntegralNDMethod.P_V,
-        Ncm.IntegralNDMethod.H,
-        Ncm.IntegralNDMethod.H_V,
-    ]
-    for integ_method in integ_options:
-        abundance_test = ClusterAbundance(
-            hmd_200, hmf_name, hmf_args, integ_method=integ_method
-        )
-        test_m_list = []
-        t1 = time.time()
+def compare_integration() -> None:
+    """Compare integration methods."""
+    hmf = pyccl.halos.MassFuncTinker08()
+    abundance = ClusterAbundance(13, 15, 0, 4, hmf)
 
-        for i, j in itertools.product(range(3), range(4)):
-            cluster_mass_bin = ClusterMassRichBinArgument(
-                cluster_mass_r, 13, 15, r_bins[j], r_bins[j + 1]
+    mass_richness = get_mass_richness()
+    abundance.add_kernel(mass_richness)
+
+    redshift_proxy_kernel = SpectroscopicRedshift()
+    abundance.add_kernel(redshift_proxy_kernel)
+
+    cosmo = get_cosmology()
+    abundance.update_ingredients(cosmo)
+
+    sky_area = 360**2
+    integrand = abundance.get_integrand()
+
+    for method in NumCosmoIntegralMethod:
+        counts_list = []
+        t_start = time.time()
+
+        nc_integrator = NumCosmoIntegrator(method=method)
+        nc_integrator.set_integration_bounds(abundance, 496, (0, 4), (13, 15))
+
+        z_bins = np.linspace(0.0, 1.0, 4)
+        mass_proxy_bins = np.linspace(1.0, 2.5, 5)
+
+        for z_idx, mass_proxy_idx in itertools.product(range(3), range(4)):
+            z_proxy_limits = (z_bins[z_idx], z_bins[z_idx + 1])
+            mass_proxy_limits = (
+                mass_proxy_bins[mass_proxy_idx],
+                mass_proxy_bins[mass_proxy_idx + 1],
             )
-            cluster_z_bin = ClusterRedshiftSpecArgument(z_bins[i], z_bins[i + 1])
-            cluster_counts = abundance_test.compute(
-                cosmo_ccl, cluster_mass_bin, cluster_z_bin
+
+            nc_integrator.set_integration_bounds(
+                abundance,
+                sky_area,
+                z_proxy_limits,
+                mass_proxy_limits,
             )
-            test_m_list.append(cluster_counts)
-        t2 = time.time()
+
+            counts = nc_integrator.integrate(integrand)
+            counts_list.append(counts)
+
+        t_stop = time.time()
 
         print(
-            f"The time for {integ_method} is {t2-t1}\n\n"
-            f"The counts value is {test_m_list}\n\n"
+            f"The time for NumCosmo integration method {method} is {t_stop-t_start}\n\n"
+            f"The counts value is {counts_list}\n\n"
         )
 
 
