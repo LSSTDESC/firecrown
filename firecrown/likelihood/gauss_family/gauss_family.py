@@ -8,7 +8,7 @@ Some notes.
 """
 
 from __future__ import annotations
-from typing import List, Optional, Tuple, Sequence
+from typing import List, Optional, Tuple, Sequence, Dict
 from typing import final
 import warnings
 
@@ -44,6 +44,7 @@ class GaussFamily(Likelihood):
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
+        self.cov_index_map: Optional[Dict[int, int]] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
@@ -75,13 +76,13 @@ class GaussFamily(Likelihood):
     def write(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
         new_sacc = sacc_data.copy()
 
-        sacc_indices = []
+        sacc_indices_list = []
         predictions = []
         for stat in self.statistics:
-            sacc_indices.append(stat.statistic.sacc_indices.copy())
+            sacc_indices_list.append(stat.statistic.sacc_indices.copy())
             predictions.append(stat.statistic.get_theory_vector())
 
-        sacc_indices = np.concatenate(sacc_indices)
+        sacc_indices = np.concatenate(sacc_indices_list)
         predictions = np.concatenate(predictions)
         assert len(sacc_indices) == len(predictions)
 
@@ -109,6 +110,7 @@ class GaussFamily(Likelihood):
         assert self.cov is not None
         if statistic is not None:
             assert statistic.sacc_indices is not None
+            assert self.cov_index_map is not None
             idx = [self.cov_index_map[idx] for idx in statistic.sacc_indices]
             return self.cov[np.ix_(idx, idx)]
         return self.cov

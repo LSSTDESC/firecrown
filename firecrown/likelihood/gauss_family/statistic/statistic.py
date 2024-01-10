@@ -150,6 +150,9 @@ class Statistic(Updatable):
         """Compute a statistic from sources, applying any systematics."""
 
     def get_theory_vector(self) -> TheoryVector:
+        """Returns the last computed theory vector. Raises a RuntimeError if the vector
+        has not been computed."""
+
         if not self.computed_theory_vector:
             raise RuntimeError(
                 f"The theory for statistic {self} has not been computed yet."
