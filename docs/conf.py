@@ -19,11 +19,11 @@ sys.path.insert(0, os.path.abspath(".."))
 # -- Project information -----------------------------------------------------
 
 project = "firecrown"
-copyright = "2022, LSST DESC Firecrown Contributors"
+copyright = "2022--2024, LSST DESC Firecrown Contributors"
 author = "LSST DESC Firecrown Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = "1.1"
+release = "1.6.1a0"
 
 
 # -- General configuration ---------------------------------------------------
