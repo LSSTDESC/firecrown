@@ -14,7 +14,7 @@ from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
 # pylint: disable=R0801
-class MurataUnbinnedSpecZ(ClusterRecipe):
+class MurataUnbinnedSpecZRecipe(ClusterRecipe):
     """Cluster recipe using the Murata 2019 unbinned mass-richness relation and assuming
     perfectly measured spec-zs."""
 
@@ -101,6 +101,7 @@ class MurataUnbinnedSpecZ(ClusterRecipe):
             z = int_args[:, 1]
             mass_proxy = int_args[:, 2]
             sky_area = extra_args[0]
+
             return prediction(mass, z, mass_proxy, sky_area)
 
         return function_mapper
@@ -120,7 +121,7 @@ class MurataUnbinnedSpecZ(ClusterRecipe):
             this_bin.z_edges,
             this_bin.mass_proxy_edges,
         ]
-        self.integrator.extra_args = np.array([*this_bin.mass_proxy_edges, sky_area])
+        self.integrator.extra_args = np.array([sky_area])
 
         theory_prediction = self.get_theory_prediction(cluster_theory, average_on)
         prediction_wrapper = self.get_function_to_integrate(theory_prediction)
