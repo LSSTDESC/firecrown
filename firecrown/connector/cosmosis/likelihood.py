@@ -150,26 +150,27 @@ class FirecrownLikelihood:
         # some method in the Statistic base class should be called here. For
         # statistics other than TwoPoint, the base class implementation should
         # do nothing.
-        for stat in self.likelihood.statistics:
-            if isinstance(stat, TwoPoint):
-                assert stat.sacc_tracers is not None
-                tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
+        if isinstance(self.likelihood, GaussFamily):
+            for stat in self.likelihood.statistics:
+                if isinstance(stat, TwoPoint):
+                    assert stat.sacc_tracers is not None
+                    tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
 
-                sample.put(
-                    "data_vector",
-                    f"ell_or_theta_{stat.sacc_data_type}_{tracer}",
-                    stat.ell_or_theta_,
-                )
-                sample.put(
-                    "data_vector",
-                    f"theory_{stat.sacc_data_type}_{tracer}",
-                    stat.predicted_statistic_,
-                )
-                sample.put(
-                    "data_vector",
-                    f"data_{stat.sacc_data_type}_{tracer}",
-                    stat.measured_statistic_,
-                )
+                    sample.put(
+                        "data_vector",
+                        f"ell_or_theta_{stat.sacc_data_type}_{tracer}",
+                        stat.ell_or_theta_,
+                    )
+                    sample.put(
+                        "data_vector",
+                        f"theory_{stat.sacc_data_type}_{tracer}",
+                        stat.predicted_statistic_,
+                    )
+                    sample.put(
+                        "data_vector",
+                        f"data_{stat.sacc_data_type}_{tracer}",
+                        stat.measured_statistic_,
+                    )
 
         return 0
 

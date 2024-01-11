@@ -65,7 +65,7 @@ import numpy.typing as npt
 
 import sacc
 
-from ..updatable import Updatable, UpdatableCollection
+from ..updatable import Updatable
 from ..modeling_tools import ModelingTools
 
 
@@ -82,11 +82,6 @@ class Likelihood(Updatable):
     def __init__(self, parameter_prefix: Optional[str] = None) -> None:
         """Default initialization for a base Likelihood object."""
         super().__init__(parameter_prefix=parameter_prefix)
-
-        self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.inv_cov: Optional[npt.NDArray[np.double]] = None
-        self.statistics: UpdatableCollection = UpdatableCollection()
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc) -> None:

@@ -38,13 +38,15 @@ class GaussFamily(Likelihood):
         super().__init__()
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
-        self.statistics: UpdatableCollection = UpdatableCollection(
+        self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
             GuardedStatistic(s) for s in statistics
         )
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
         self.cov_index_map: Optional[Dict[int, int]] = None
+        self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
+        self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
@@ -60,7 +62,11 @@ class GaussFamily(Likelihood):
         for stat in self.statistics:
             stat.read(sacc_data)
 
-        indices_list = [s.statistic.sacc_indices.copy() for s in self.statistics]
+        indices_list = [
+            s.statistic.sacc_indices.copy()
+            for s in self.statistics
+            if s.statistic.sacc_indices is not None
+        ]
         indices = np.concatenate(indices_list)
         cov = np.zeros((len(indices), len(indices)))
 
@@ -77,13 +83,14 @@ class GaussFamily(Likelihood):
         new_sacc = sacc_data.copy()
 
         sacc_indices_list = []
-        predictions = []
+        predictions_list = []
         for stat in self.statistics:
+            assert stat.statistic.sacc_indices is not None
             sacc_indices_list.append(stat.statistic.sacc_indices.copy())
-            predictions.append(stat.statistic.get_theory_vector())
+            predictions_list.append(stat.statistic.get_theory_vector())
 
         sacc_indices = np.concatenate(sacc_indices_list)
-        predictions = np.concatenate(predictions)
+        predictions = np.concatenate(predictions_list)
         assert len(sacc_indices) == len(predictions)
 
         if strict:
@@ -168,8 +175,8 @@ class GaussFamily(Likelihood):
         assert len(data_vector) == len(theory_vector)
         residuals = data_vector - theory_vector
 
-        self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
-        self.measured_data_vector: npt.NDArray[np.float64] = data_vector
+        self.predicted_data_vector = theory_vector
+        self.measured_data_vector = data_vector
 
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)

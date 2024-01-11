@@ -263,9 +263,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
 class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     """Source class for number counts."""
 
-    systematics: UpdatableCollection
-    tracer_args: NumberCountsArgs
-
     def __init__(
         self,
         *,
@@ -296,9 +293,12 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.derived_scale = derived_scale
 
         self.bias = parameters.register_new_updatable_parameter()
-        self.systematics = UpdatableCollection(systematics)
+        self.systematics: UpdatableCollection[
+            Union[NumberCountsSystematic, SourceGalaxySystematic[NumberCountsArgs]]
+        ] = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
+        self.tracer_args: NumberCountsArgs
 
     @final
     def _update_source(self, params: ParamsMap):

@@ -67,7 +67,7 @@ def test_simple_updatable():
 
 #  pylint: disable-msg=E1101
 def test_updatable_collection_appends():
-    coll = UpdatableCollection()
+    coll: UpdatableCollection = UpdatableCollection()
     assert len(coll) == 0
 
     coll.append(SimpleUpdatable())
@@ -83,7 +83,7 @@ def test_updatable_collection_appends():
 
 
 def test_updatable_collection_updates():
-    coll = UpdatableCollection()
+    coll: UpdatableCollection = UpdatableCollection()
     assert len(coll) == 0
 
     coll.append(SimpleUpdatable())
@@ -99,11 +99,11 @@ def test_updatable_collection_updates():
 
 
 def test_updatable_collection_rejects_nonupdatables():
-    coll = UpdatableCollection()
+    coll: UpdatableCollection = UpdatableCollection()
     assert len(coll) == 0
 
     with pytest.raises(TypeError):
-        coll.append(3)  # type: ignore
+        coll.append(3)
     assert len(coll) == 0
 
 
