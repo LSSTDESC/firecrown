@@ -29,6 +29,12 @@ def test_require_nonempty_statistics():
         _ = StudentT(statistics=[])
 
 
+def test_update_fails_before_read(trivial_stats, trivial_params_student_t):
+    likelihood = StudentT(statistics=trivial_stats)
+    with pytest.raises(AssertionError):
+        likelihood.update(trivial_params_student_t)
+
+
 def test_get_cov_fails_before_read(trivial_stats):
     likelihood = StudentT(statistics=trivial_stats)
     with pytest.raises(AssertionError):
