@@ -40,9 +40,6 @@ class FirecrownLikelihood:
     :param config: current CosmoSIS datablock
     """
 
-    likelihood: Likelihood
-    map: MappingCosmoSIS
-
     def __init__(self, config: cosmosis.datablock):
         """Create the FirecrownLikelihood object from the given configuration."""
         likelihood_source = config.get_string(option_section, "likelihood_source", "")
@@ -60,6 +57,7 @@ class FirecrownLikelihood:
 
         self.firecrown_module_name = option_section
         self.sampling_sections = sections
+        self.likelihood: Likelihood
         try:
             self.likelihood, self.tools = load_likelihood(
                 likelihood_source, build_parameters
@@ -69,7 +67,7 @@ class FirecrownLikelihood:
             print(f"The Firecrown likelihood needs a required parameter: {err}")
             print("*" * 30)
             raise
-        self.map = mapping_builder(
+        self.map: MappingCosmoSIS = mapping_builder(
             input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
         )
 
