@@ -20,7 +20,7 @@ class ConstGaussian(GaussFamily):
     def make_realization_vector(self) -> np.ndarray:
         assert (
             self.state == State.UPDATED
-        ), "update() must be called before make_realization()"
+        ), "update() must be called before make_realization_vector()"
 
         if not self.computed_theory_vector:
             raise RuntimeError(
