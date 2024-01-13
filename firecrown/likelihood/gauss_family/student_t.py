@@ -6,7 +6,6 @@ from __future__ import annotations
 from typing import List, Optional
 
 import numpy as np
-import sacc
 
 from .gauss_family import GaussFamily
 from ...modeling_tools import ModelingTools
@@ -42,8 +41,3 @@ class StudentT(GaussFamily):
 
         chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
-
-    def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
-    ) -> sacc.Sacc:
-        raise NotImplementedError("make_realization not implemented for StudentT")

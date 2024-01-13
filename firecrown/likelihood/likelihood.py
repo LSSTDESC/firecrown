@@ -87,7 +87,14 @@ class Likelihood(Updatable):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
-    @abstractmethod
+    def make_realization_vector(self) -> npt.NDArray[np.float64]:
+        """Create a new realization of the model using the previously computed
+        theory vector and covariance matrix.
+        """
+        raise NotImplementedError(
+            "This class does not implement make_realization_vector."
+        )
+
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:

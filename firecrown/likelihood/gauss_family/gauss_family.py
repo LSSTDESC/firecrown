@@ -253,3 +253,45 @@ class GaussFamily(Likelihood):
     def _is_ready(self) -> bool:
         """Return True if the state is either READY or UPDATED."""
         return self.state in (State.READY, State.UPDATED)
+
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
+    ) -> sacc.Sacc:
+        assert (
+            self.state == State.UPDATED
+        ), "update() must be called before make_realization()"
+
+        if not self.computed_theory_vector:
+            raise RuntimeError(
+                "The theory vector has not been computed yet. "
+                "Call compute_theory_vector first."
+            )
+
+        new_sacc = sacc_data.copy()
+
+        sacc_indices_list = []
+        for stat in self.statistics:
+            assert stat.statistic.sacc_indices is not None
+            sacc_indices_list.append(stat.statistic.sacc_indices.copy())
+
+        sacc_indices = np.concatenate(sacc_indices_list)
+
+        if add_noise:
+            new_data_vector = self.make_realization_vector()
+        else:
+            new_data_vector = self.get_theory_vector()
+
+        assert len(sacc_indices) == len(new_data_vector)
+
+        if strict:
+            if set(sacc_indices.tolist()) != set(sacc_data.indices()):
+                raise RuntimeError(
+                    "The predicted data does not cover all the data in the "
+                    "sacc object. To write only the calculated predictions, "
+                    "set strict=False."
+                )
+
+        for prediction_idx, sacc_idx in enumerate(sacc_indices):
+            new_sacc.data[sacc_idx].value = new_data_vector[prediction_idx]
+
+        return new_sacc

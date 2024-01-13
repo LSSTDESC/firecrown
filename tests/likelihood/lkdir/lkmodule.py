@@ -24,12 +24,6 @@ class EmptyLikelihood(Likelihood):
         of self.placeholder."""
         return -3.0 * self.placeholder
 
-    def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
-    ) -> sacc.Sacc:
-        """This class does not implement make_realization."""
-        raise NotImplementedError("This class does not implement make_realization.")
-
 
 def empty_likelihood() -> EmptyLikelihood:
     """Return an EmptyLikelihood object."""
@@ -49,12 +43,6 @@ class ParamaterizedLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
-    ) -> sacc.Sacc:
-        """This class does not implement make_realization."""
-        raise NotImplementedError("This class does not implement make_realization.")
-
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""
         return -1.5
@@ -73,12 +61,6 @@ class SamplerParameterLikelihood(Likelihood):
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
-
-    def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
-    ) -> sacc.Sacc:
-        """This class does not implement make_realization."""
-        raise NotImplementedError("This class does not implement make_realization.")
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""
@@ -103,12 +85,6 @@ class DerivedParameterLikelihood(Likelihood):
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
-
-    def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
-    ) -> sacc.Sacc:
-        """This class does not implement make_realization."""
-        raise NotImplementedError("This class does not implement make_realization.")
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""
