@@ -89,7 +89,7 @@ class Likelihood(Updatable):
 
     @abstractmethod
     def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
         """Create a new realization of the model using the previously computed
         theory vector and covariance matrix.
@@ -97,6 +97,8 @@ class Likelihood(Updatable):
         :param sacc_data: The SACC data object containing the covariance matrix
         :param add_noise: If True, add noise to the realization. If False, return
             only the theory vector.
+        :param strict: If True, check that the indices of the realization cover
+            all the indices of the SACC data object.
         """
 
     @abstractmethod

@@ -19,7 +19,7 @@ class ConstGaussian(GaussFamily):
         return -0.5 * self.compute_chisq(tools)
 
     def make_realization(
-        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict=True
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
         assert (
             self.state == State.UPDATED

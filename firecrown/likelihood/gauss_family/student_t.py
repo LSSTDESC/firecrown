@@ -43,5 +43,7 @@ class StudentT(GaussFamily):
         chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
 
-    def make_realization(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
+    ) -> sacc.Sacc:
         raise NotImplementedError("make_realization not implemented for StudentT")
