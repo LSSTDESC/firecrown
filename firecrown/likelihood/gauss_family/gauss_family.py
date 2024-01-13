@@ -209,6 +209,10 @@ class GaussFamily(Likelihood):
         """Get the theory vector from all statistics and concatenate in the right
         order."""
 
+        assert (
+            self.state == State.UPDATED
+        ), "update() must be called before get_theory_vector()"
+
         if not self.computed_theory_vector:
             raise RuntimeError(
                 "The theory vector has not been computed yet. "
