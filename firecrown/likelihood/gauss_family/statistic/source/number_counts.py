@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Union, Tuple, Optional, final
+from typing import List, Tuple, Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -270,11 +270,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[
-            List[
-                Union[NumberCountsSystematic, SourceGalaxySystematic[NumberCountsArgs]]
-            ]
-        ] = None,
+        systematics: Optional[List[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -294,7 +290,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
 
         self.bias = parameters.register_new_updatable_parameter()
         self.systematics: UpdatableCollection[
-            Union[NumberCountsSystematic, SourceGalaxySystematic[NumberCountsArgs]]
+            SourceGalaxySystematic[NumberCountsArgs]
         ] = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None

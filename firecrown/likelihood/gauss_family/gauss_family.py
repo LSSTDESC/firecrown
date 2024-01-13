@@ -45,8 +45,9 @@ class GaussFamily(Likelihood):
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
         self.cov_index_map: Optional[Dict[int, int]] = None
-        self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
+        self.computed_theory_vector = False
+        self.theory_vector: Optional[npt.NDArray[np.double]] = None
+        self.data_vector: Optional[npt.NDArray[np.double]] = None
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
@@ -59,21 +60,27 @@ class GaussFamily(Likelihood):
             raise RuntimeError(msg)
 
         covariance = sacc_data.covariance.dense
+
+        indices_list = []
+        data_vector_list = []
         for stat in self.statistics:
             stat.read(sacc_data)
+            if stat.statistic.sacc_indices is None:
+                raise RuntimeError(
+                    f"The statistic {stat.statistic} has no sacc_indices."
+                )
+            indices_list.append(stat.statistic.sacc_indices.copy())
+            data_vector_list.append(stat.statistic.get_data_vector())
 
-        indices_list = [
-            s.statistic.sacc_indices.copy()
-            for s in self.statistics
-            if s.statistic.sacc_indices is not None
-        ]
         indices = np.concatenate(indices_list)
+        data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
 
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):
                 cov[new_i, new_j] = covariance[old_i, old_j]
 
+        self.data_vector = data_vector
         self.cov_index_map = {old_i: new_i for new_i, old_i in enumerate(indices)}
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
@@ -127,10 +134,8 @@ class GaussFamily(Likelihood):
         """Get the data vector from all statistics and concatenate in the right
         order."""
 
-        data_vector_list: List[npt.NDArray[np.float64]] = [
-            stat.get_data_vector() for stat in self.statistics
-        ]
-        return np.concatenate(data_vector_list)
+        assert self.data_vector is not None
+        return self.data_vector
 
     @final
     def compute_theory_vector(self, tools: ModelingTools) -> npt.NDArray[np.float64]:
@@ -142,7 +147,26 @@ class GaussFamily(Likelihood):
         theory_vector_list: List[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
         ]
-        return np.concatenate(theory_vector_list)
+        self.computed_theory_vector = True
+        self.theory_vector = np.concatenate(theory_vector_list)
+
+        return self.theory_vector
+
+    @final
+    def get_theory_vector(self) -> npt.NDArray[np.float64]:
+        """Get the theory vector from all statistics and concatenate in the right
+        order."""
+
+        if not self.computed_theory_vector:
+            raise RuntimeError(
+                "The theory vector has not been computed yet. "
+                "Call compute_theory_vector first."
+            )
+        assert self.theory_vector is not None, (
+            "Implementation error, "
+            "computed_theory_vector is True but theory_vector is None"
+        )
+        return self.theory_vector
 
     @final
     def compute(
@@ -174,9 +198,6 @@ class GaussFamily(Likelihood):
 
         assert len(data_vector) == len(theory_vector)
         residuals = data_vector - theory_vector
-
-        self.predicted_data_vector = theory_vector
-        self.measured_data_vector = data_vector
 
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)

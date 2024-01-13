@@ -121,8 +121,7 @@ class Statistic(Updatable):
         self.sacc_indices: Optional[npt.NDArray[np.int64]]
         self.ready = False
         self.computed_theory_vector = False
-        # TODO: how to we call this?
-        self.predicted_statistic_: Optional[TheoryVector] = None
+        self.theory_vector: Optional[TheoryVector] = None
 
     def read(self, _: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC data, and mark it
@@ -145,9 +144,17 @@ class Statistic(Updatable):
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector."""
 
-    @abstractmethod
+    @final
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
+        self.theory_vector = self._compute_theory_vector(tools)
+        self.computed_theory_vector = True
+
+        return self.theory_vector
+
+    @abstractmethod
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a statistic from sources, concrete implementation."""
 
     def get_theory_vector(self) -> TheoryVector:
         """Returns the last computed theory vector. Raises a RuntimeError if the vector
@@ -157,9 +164,11 @@ class Statistic(Updatable):
             raise RuntimeError(
                 f"The theory for statistic {self} has not been computed yet."
             )
-        # TODO: give proper error message
-        assert self.predicted_statistic_ is not None
-        return self.predicted_statistic_
+        assert self.theory_vector is not None, (
+            "implementation error, "
+            "computed_theory_vector is True but theory_vector is None"
+        )
+        return self.theory_vector
 
 
 class GuardedStatistic(Updatable):
@@ -258,8 +267,6 @@ class TrivialStatistic(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
         """Return a fixed theory vector."""
-        self.computed_theory_vector = True
-        self.predicted_statistic_ = TheoryVector.from_list([self.mean] * self.count)
-        return self.predicted_statistic_
+        return TheoryVector.from_list([self.mean] * self.count)

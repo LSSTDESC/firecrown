@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, Union, final
+from typing import List, Tuple, Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -214,9 +214,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         *,
         sacc_tracer: str,
         scale: float = 1.0,
-        systematics: Optional[
-            List[Union[WeakLensingSystematic, SourceGalaxySystematic[WeakLensingArgs]]]
-        ] = None,
+        systematics: Optional[List[SourceGalaxySystematic[WeakLensingArgs]]] = None,
     ):
         """Initialize the WeakLensing object.
 

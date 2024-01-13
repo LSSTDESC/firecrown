@@ -127,20 +127,29 @@ class FirecrownLikelihood:
         self.likelihood.reset()
         self.tools.reset()
 
-        # Save concatenated data vector and inverse covariance to enable support
+        if not isinstance(self.likelihood, GaussFamily):
+            return 0
+
+        # If we get here, we have a GaussFamily likelihood, and we need to
+        # save concatenated data vector and inverse covariance to enable support
         # for the CosmoSIS Fisher sampler. This can only work for likelihoods
         # that have these quantities. Currently, this is only GaussFamily.
 
-        if isinstance(self.likelihood, GaussFamily):
-            sample.put(
-                "data_vector", "firecrown_theory", self.likelihood.predicted_data_vector
-            )
-            sample.put(
-                "data_vector", "firecrown_data", self.likelihood.measured_data_vector
-            )
-            sample.put(
-                "data_vector", "firecrown_inverse_covariance", self.likelihood.inv_cov
-            )
+        sample.put(
+            "data_vector",
+            "firecrown_theory",
+            self.likelihood.get_theory_vector(),
+        )
+        sample.put(
+            "data_vector",
+            "firecrown_data",
+            self.likelihood.get_data_vector(),
+        )
+        sample.put(
+            "data_vector",
+            "firecrown_inverse_covariance",
+            self.likelihood.inv_cov,
+        )
 
         # Write out theory and data vectors to the data block the ease
         # debugging.
@@ -148,27 +157,26 @@ class FirecrownLikelihood:
         # some method in the Statistic base class should be called here. For
         # statistics other than TwoPoint, the base class implementation should
         # do nothing.
-        if isinstance(self.likelihood, GaussFamily):
-            for stat in self.likelihood.statistics:
-                if isinstance(stat, TwoPoint):
-                    assert stat.sacc_tracers is not None
-                    tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
+        for stat in self.likelihood.statistics:
+            if isinstance(stat, TwoPoint):
+                assert stat.sacc_tracers is not None
+                tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
 
-                    sample.put(
-                        "data_vector",
-                        f"ell_or_theta_{stat.sacc_data_type}_{tracer}",
-                        stat.ell_or_theta_,
-                    )
-                    sample.put(
-                        "data_vector",
-                        f"theory_{stat.sacc_data_type}_{tracer}",
-                        stat.predicted_statistic_,
-                    )
-                    sample.put(
-                        "data_vector",
-                        f"data_{stat.sacc_data_type}_{tracer}",
-                        stat.measured_statistic_,
-                    )
+                sample.put(
+                    "data_vector",
+                    f"ell_or_theta_{stat.sacc_data_type}_{tracer}",
+                    stat.ell_or_theta_,
+                )
+                sample.put(
+                    "data_vector",
+                    f"theory_{stat.sacc_data_type}_{tracer}",
+                    stat.get_theory_vector(),
+                )
+                sample.put(
+                    "data_vector",
+                    f"data_{stat.sacc_data_type}_{tracer}",
+                    stat.get_data_vector(),
+                )
 
         return 0
 
