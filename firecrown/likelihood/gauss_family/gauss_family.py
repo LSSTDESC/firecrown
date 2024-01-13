@@ -257,16 +257,6 @@ class GaussFamily(Likelihood):
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
-        assert (
-            self.state == State.UPDATED
-        ), "update() must be called before make_realization()"
-
-        if not self.computed_theory_vector:
-            raise RuntimeError(
-                "The theory vector has not been computed yet. "
-                "Call compute_theory_vector first."
-            )
-
         new_sacc = sacc_data.copy()
 
         sacc_indices_list = []
