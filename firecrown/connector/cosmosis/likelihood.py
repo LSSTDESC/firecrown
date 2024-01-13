@@ -124,10 +124,9 @@ class FirecrownLikelihood:
         for section, name, val in derived_params_collection:
             sample.put(section, name, val)
 
-        self.likelihood.reset()
-        self.tools.reset()
-
         if not isinstance(self.likelihood, GaussFamily):
+            self.likelihood.reset()
+            self.tools.reset()
             return 0
 
         # If we get here, we have a GaussFamily likelihood, and we need to
@@ -178,6 +177,8 @@ class FirecrownLikelihood:
                     stat.get_data_vector(),
                 )
 
+        self.likelihood.reset()
+        self.tools.reset()
         return 0
 
     def form_error_message(self, exc: MissingSamplerParameterError) -> str:
