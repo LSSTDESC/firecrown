@@ -100,12 +100,14 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", integrator)
     bnc.read(cluster_sacc_data)
+    bnc.update(params)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
     assert len(tv) == 2
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", integrator)
     bnc.read(cluster_sacc_data)
+    bnc.update(params)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
     assert len(tv) == 2
@@ -114,6 +116,7 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
         (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", integrator
     )
     bnc.read(cluster_sacc_data)
+    bnc.update(params)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
     assert len(tv) == 4

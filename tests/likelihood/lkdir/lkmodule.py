@@ -25,8 +25,8 @@ class EmptyLikelihood(Likelihood):
         return -3.0 * self.placeholder
 
     def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
-        """This class has nothing to write."""
-        return sacc_data
+        """This class does not implement make_realization."""
+        raise NotImplementedError("This class does not implement make_realization.")
 
 
 def empty_likelihood() -> EmptyLikelihood:
@@ -48,8 +48,8 @@ class ParamaterizedLikelihood(Likelihood):
         """This class has nothing to read."""
 
     def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
-        """This class has nothing to write."""
-        return sacc_data
+        """This class does not implement make_realization."""
+        raise NotImplementedError("This class does not implement make_realization.")
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""
@@ -71,8 +71,8 @@ class SamplerParameterLikelihood(Likelihood):
         """This class has nothing to read."""
 
     def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
-        """This class has nothing to write."""
-        return sacc_data
+        """This class does not implement make_realization."""
+        raise NotImplementedError("This class does not implement make_realization.")
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""
@@ -99,8 +99,8 @@ class DerivedParameterLikelihood(Likelihood):
         """This class has nothing to read."""
 
     def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
-        """This class has nothing to write."""
-        return sacc_data
+        """This class does not implement make_realization."""
+        raise NotImplementedError("This class does not implement make_realization.")
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Return a constant value of the likelihood."""

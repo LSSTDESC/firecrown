@@ -153,6 +153,10 @@ class Statistic(Updatable):
     @final
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
+        if not self.is_updated():
+            raise RuntimeError(
+                f"The statistic {self} has not been updated with parameters."
+            )
         self.theory_vector = self._compute_theory_vector(tools)
         self.computed_theory_vector = True
 

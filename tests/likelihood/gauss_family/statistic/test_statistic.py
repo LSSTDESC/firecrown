@@ -3,10 +3,13 @@ Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
 """
 from typing import List
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 import sacc
 
 import firecrown.likelihood.gauss_family.statistic.statistic as stat
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
 
 
 VECTOR_CLASSES = (stat.TheoryVector, stat.DataVector)
@@ -104,3 +107,70 @@ def test_guarded_statistic_get_data_before_read(trivial_stats):
     ):
         g = stat.GuardedStatistic(s)
         _ = g.get_data_vector()
+
+
+def test_statistic_get_data_vector_before_read():
+    s = stat.TrivialStatistic()
+    with pytest.raises(AssertionError):
+        _ = s.get_data_vector()
+
+
+def test_statistic_get_data_vector_after_read(sacc_data_for_trivial_stat):
+    s = stat.TrivialStatistic()
+    s.read(sacc_data_for_trivial_stat)
+    assert_allclose(s.get_data_vector(), [1.0, 4.0, -3.0])
+
+
+def test_statistic_get_theory_vector_before_compute():
+    s = stat.TrivialStatistic()
+    with pytest.raises(
+        RuntimeError, match="The theory for statistic .* has not been computed yet\\."
+    ):
+        _ = s.get_theory_vector()
+
+
+def test_statistic_get_theory_vector_after_compute(sacc_data_for_trivial_stat):
+    s = stat.TrivialStatistic()
+    s.read(sacc_data_for_trivial_stat)
+    s.update(ParamsMap(mean=10.5))
+    s.compute_theory_vector(ModelingTools())
+    assert_allclose(s.get_theory_vector(), [10.5, 10.5, 10.5])
+
+
+def test_statistic_get_theory_vector_after_reset(sacc_data_for_trivial_stat):
+    s = stat.TrivialStatistic()
+    s.read(sacc_data_for_trivial_stat)
+    s.update(ParamsMap(mean=10.5))
+    s.compute_theory_vector(ModelingTools())
+    s.reset()
+    with pytest.raises(
+        RuntimeError, match="The theory for statistic .* has not been computed yet\\."
+    ):
+        _ = s.get_theory_vector()
+
+
+def test_statistic_compute_theory_vector_before_read():
+    s = stat.TrivialStatistic()
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* has not been updated with parameters\\.",
+    ):
+        s.compute_theory_vector(ModelingTools())
+
+
+def test_statistic_compute_theory_vector_before_update(sacc_data_for_trivial_stat):
+    s = stat.TrivialStatistic()
+    s.read(sacc_data_for_trivial_stat)
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* has not been updated with parameters\\.",
+    ):
+        s.compute_theory_vector(ModelingTools())
+
+
+def test_statistic_compute_theory_vector_after_update(sacc_data_for_trivial_stat):
+    s = stat.TrivialStatistic()
+    s.read(sacc_data_for_trivial_stat)
+    s.update(ParamsMap(mean=10.5))
+
+    assert_allclose(s.compute_theory_vector(ModelingTools()), [10.5, 10.5, 10.5])

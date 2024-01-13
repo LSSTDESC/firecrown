@@ -143,47 +143,6 @@ class GaussFamily(Likelihood):
 
         self.state = State.READY
 
-    def make_realization(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
-        assert (
-            self.state == State.UPDATED
-        ), "update() must be called before get_theory_vector()"
-
-        if not self.computed_theory_vector:
-            raise RuntimeError(
-                "The theory vector has not been computed yet. "
-                "Call compute_theory_vector first."
-            )
-
-        new_sacc = sacc_data.copy()
-
-        sacc_indices_list = []
-        predictions_list = []
-        for stat in self.statistics:
-            assert stat.statistic.sacc_indices is not None
-            sacc_indices_list.append(stat.statistic.sacc_indices.copy())
-            predictions_list.append(stat.statistic.get_theory_vector())
-
-        sacc_indices = np.concatenate(sacc_indices_list)
-        predictions = np.concatenate(predictions_list)
-        assert len(sacc_indices) == len(predictions)
-
-        if strict:
-            if set(sacc_indices.tolist()) != set(sacc_data.indices()):
-                raise RuntimeError(
-                    "The predicted data does not cover all the data in the "
-                    "sacc object. To write only the calculated predictions, "
-                    "set strict=False."
-                )
-
-        # Adding Gaussian noise defined by the covariance matrix.
-        assert self.cholesky is not None
-        predictions += np.dot(self.cholesky, np.random.randn(len(predictions)))
-
-        for prediction_idx, sacc_idx in enumerate(sacc_indices):
-            new_sacc.data[sacc_idx].value = predictions[prediction_idx]
-
-        return new_sacc
-
     @final
     def get_cov(self, statistic: Optional[Statistic] = None) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix.
