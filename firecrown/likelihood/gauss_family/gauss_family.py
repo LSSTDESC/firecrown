@@ -8,6 +8,8 @@ Some notes.
 """
 
 from __future__ import annotations
+
+from enum import Enum
 from typing import List, Optional, Tuple, Sequence, Dict
 from typing import final
 import warnings
@@ -18,10 +20,19 @@ import scipy.linalg
 
 import sacc
 
+from ...parameters import ParamsMap
 from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic, GuardedStatistic
+
+
+class State(Enum):
+    """The states used in GaussFamily."""
+
+    INITIALIZED = 1
+    READY = 2
+    UPDATED = 3
 
 
 class GaussFamily(Likelihood):
@@ -29,6 +40,18 @@ class GaussFamily(Likelihood):
     based on a chi-squared calculation. It provides an implementation of
     Likelihood.compute_chisq. Derived classes must implement the abstract method
     compute_loglike, which is inherited from Likelihood.
+
+    GaussFamily (and all classes that inherit from it) must abide by the the
+    following rules regarding the order of calling of methods.
+
+      1. after a new object is created, :meth:`read` must be called before any
+         other method in the interfaqce.
+      2. after :meth:`read` has been called it is legal to call
+         :meth:`get_data_vector`, or to call :meth:`update`.
+      3. after :meth:`update` is called it is then legal to call
+         :meth:`calculate_loglike` or :meth:`get_data_vector`, or to reset
+         the object (returning to the pre-update state) by calling
+         :meth:`reset`.
     """
 
     def __init__(
@@ -36,6 +59,7 @@ class GaussFamily(Likelihood):
         statistics: Sequence[Statistic],
     ):
         super().__init__()
+        self.state: State = State.INITIALIZED
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
         self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
@@ -49,9 +73,28 @@ class GaussFamily(Likelihood):
         self.theory_vector: Optional[npt.NDArray[np.double]] = None
         self.data_vector: Optional[npt.NDArray[np.double]] = None
 
+    def _update(self, _: ParamsMap) -> None:
+        """Handle the state resetting required by :class:`GaussFamily`
+        likelihoods. Any derived class that needs to implement :meth:`_update`
+        for its own reasons must be sure to do what this does: check the state
+        at the start of the method, and change the state at the end of the
+        method."""
+        assert self.state == State.READY, "read() must be called before update()"
+        self.state = State.UPDATED
+
+    def _reset(self) -> None:
+        """Handle the state resetting required by :class:`GaussFamily`
+        likelihoods. Any derived class that needs to implement :meth:`reset`
+        for its own reasons must be sure to do what this does: check the state
+        at the start of the method, and change the state at the end of the
+        method."""
+        assert self.state == State.UPDATED, "update() must be called before reset()"
+        self.state = State.READY
+
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
 
+        assert self.state == State.INITIALIZED, "read() must only be called once"
         if sacc_data.covariance is None:
             msg = (
                 f"The {type(self).__name__} likelihood requires a covariance, "
@@ -85,6 +128,8 @@ class GaussFamily(Likelihood):
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
         self.inv_cov = np.linalg.inv(cov)
+
+        self.state = State.READY
 
     def write(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
         new_sacc = sacc_data.copy()
@@ -121,18 +166,22 @@ class GaussFamily(Likelihood):
         should be return. If not specified, return the covariance of all
         statistics.
         """
+        assert self._is_ready(), "read() must be called before get_cov()"
         assert self.cov is not None
         if statistic is not None:
             assert statistic.sacc_indices is not None
             assert self.cov_index_map is not None
             idx = [self.cov_index_map[idx] for idx in statistic.sacc_indices]
+            # We do not change the state.
             return self.cov[np.ix_(idx, idx)]
+        # We do not change the state.
         return self.cov
 
     @final
     def get_data_vector(self) -> npt.NDArray[np.float64]:
         """Get the data vector from all statistics and concatenate in the right
         order."""
+        assert self._is_ready(), "read() must be called before get_data_vector()"
 
         assert self.data_vector is not None
         return self.data_vector
@@ -143,6 +192,9 @@ class GaussFamily(Likelihood):
 
         :param tools: Current ModelingTools object
         """
+        assert (
+            self.state == State.UPDATED
+        ), "update() must be called before compute_theory_vector()"
 
         theory_vector_list: List[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
@@ -173,7 +225,7 @@ class GaussFamily(Likelihood):
         self, tools: ModelingTools
     ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Calculate and return both the data and theory vectors."""
-
+        assert self.state == State.UPDATED, "update() must be called before compute()"
         warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "The use of the `compute` method on Statistic is deprecated."
@@ -182,11 +234,15 @@ class GaussFamily(Likelihood):
             category=DeprecationWarning,
         )
 
+        # We do not change the state.
         return self.get_data_vector(), self.compute_theory_vector(tools)
 
     @final
     def compute_chisq(self, tools: ModelingTools) -> float:
         """Calculate and return the chi-squared for the given cosmology."""
+        assert (
+            self.state == State.UPDATED
+        ), "update() must be called before compute_chisq()"
         theory_vector: npt.NDArray[np.float64]
         data_vector: npt.NDArray[np.float64]
         residuals: npt.NDArray[np.float64]
@@ -202,4 +258,9 @@ class GaussFamily(Likelihood):
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
 
+        # We do not change the state.
         return chisq
+
+    def _is_ready(self) -> bool:
+        """Return True if the state is either READY or UPDATED."""
+        return self.state in (State.READY, State.UPDATED)

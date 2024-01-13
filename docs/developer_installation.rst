@@ -150,7 +150,7 @@ Please also file an issue in the GitHub issue tracker describing the failure.
     # Update the pip-installed products.
     # The --no-deps flag is critical to avoid accidentally installing new packages
     # with pip (rather than with conda).
-    python -m pip install --upgrade --no-deps autoclasstoc cobaya
+    python -m pip install --upgrade --no-deps autoclasstoc cobaya pygobject-stubs
     # Rebuild the CSL
     cd ${CSL_DIR}
     # Optionally, you may want to update to the newest version of the CSL
