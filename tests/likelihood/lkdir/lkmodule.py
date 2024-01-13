@@ -24,7 +24,9 @@ class EmptyLikelihood(Likelihood):
         of self.placeholder."""
         return -3.0 * self.placeholder
 
-    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True
+    ) -> sacc.Sacc:
         """This class does not implement make_realization."""
         raise NotImplementedError("This class does not implement make_realization.")
 
@@ -47,7 +49,9 @@ class ParamaterizedLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True
+    ) -> sacc.Sacc:
         """This class does not implement make_realization."""
         raise NotImplementedError("This class does not implement make_realization.")
 
@@ -70,7 +74,9 @@ class SamplerParameterLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True
+    ) -> sacc.Sacc:
         """This class does not implement make_realization."""
         raise NotImplementedError("This class does not implement make_realization.")
 
@@ -98,7 +104,9 @@ class DerivedParameterLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True
+    ) -> sacc.Sacc:
         """This class does not implement make_realization."""
         raise NotImplementedError("This class does not implement make_realization.")
 

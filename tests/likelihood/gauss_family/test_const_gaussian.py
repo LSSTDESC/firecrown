@@ -353,3 +353,24 @@ def test_make_realization_data_vector(
         1.0,
         atol=5,
     )
+
+
+def test_make_realization_no_noise(
+    trivial_stats,
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    params = firecrown.parameters.ParamsMap(mean=10.5)
+    likelihood.update(params)
+    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+
+    new_sacc = likelihood.make_realization(sacc_data_for_trivial_stat, add_noise=False)
+
+    new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
+    new_likelihood.read(new_sacc)
+    params = firecrown.parameters.ParamsMap(mean=10.5)
+    new_likelihood.update(params)
+
+    assert_allclose(new_likelihood.get_data_vector(), likelihood.get_theory_vector())

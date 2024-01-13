@@ -88,8 +88,16 @@ class Likelihood(Updatable):
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     @abstractmethod
-    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
-        """Write the model predictions to a SACC file"""
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True
+    ) -> sacc.Sacc:
+        """Create a new realization of the model using the previously computed
+        theory vector and covariance matrix.
+
+        :param sacc_data: The SACC data object containing the covariance matrix
+        :param add_noise: If True, add noise to the realization. If False, return
+            only the theory vector.
+        """
 
     @abstractmethod
     def compute_loglike(self, tools: ModelingTools) -> float:

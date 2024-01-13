@@ -18,7 +18,9 @@ class ConstGaussian(GaussFamily):
 
         return -0.5 * self.compute_chisq(tools)
 
-    def make_realization(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict=True
+    ) -> sacc.Sacc:
         assert (
             self.state == State.UPDATED
         ), "update() must be called before get_theory_vector()"
@@ -49,10 +51,13 @@ class ConstGaussian(GaussFamily):
                 )
 
         # Adding Gaussian noise defined by the covariance matrix.
-        assert self.cholesky is not None
-        new_data_vector = theory_vector + np.dot(
-            self.cholesky, np.random.randn(len(theory_vector))
-        )
+        if add_noise:
+            assert self.cholesky is not None
+            new_data_vector = theory_vector + np.dot(
+                self.cholesky, np.random.randn(len(theory_vector))
+            )
+        else:
+            new_data_vector = theory_vector
 
         for prediction_idx, sacc_idx in enumerate(sacc_indices):
             new_sacc.data[sacc_idx].value = new_data_vector[prediction_idx]
