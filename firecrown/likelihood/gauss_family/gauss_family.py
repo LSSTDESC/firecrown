@@ -62,6 +62,14 @@ class GaussFamily(Likelihood):
         self.state: State = State.INITIALIZED
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
+
+        for i, s in enumerate(statistics):
+            if not isinstance(s, Statistic):
+                raise ValueError(
+                    f"statistics[{i}] is not an instance of Statistic: {s}"
+                    f"it is a {type(s)} instead."
+                )
+
         self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
             GuardedStatistic(s) for s in statistics
         )

@@ -186,6 +186,7 @@ class GuardedStatistic(Updatable):
         """Initialize the GuardedStatistic to contain the given
         :class:`Statistic`."""
         super().__init__()
+        assert isinstance(stat, Statistic)
         self.statistic = stat
 
     def read(self, sacc_data: sacc.Sacc) -> None:

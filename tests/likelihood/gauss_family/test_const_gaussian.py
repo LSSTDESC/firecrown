@@ -1,8 +1,12 @@
 """Unit testsing for ConstGaussian
 """
 
+import re
+from typing import Tuple
+
 import pytest
 import numpy as np
+import numpy.typing as npt
 
 import sacc
 
@@ -34,10 +38,158 @@ def test_get_cov_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
     assert np.all(likelihood.get_cov() == np.diag([4.0, 9.0, 16.0]))
 
 
+def test_get_cov_with_statistics(trivial_stats, sacc_data_for_trivial_stat):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+
+    assert np.all(likelihood.get_cov(trivial_stats[0]) == np.diag([4.0, 9.0, 16.0]))
+
+
+def test_get_data_vector_fails_before_read(trivial_stats):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("read() must be called before get_data_vector()"),
+    ):
+        _ = likelihood.get_data_vector()
+
+
+def test_get_data_vector_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    assert np.all(likelihood.get_data_vector() == np.array([1.0, 4.0, -3.0]))
+
+
+def test_compute_theory_vector_fails_before_read(trivial_stats):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("update() must be called before compute_theory_vector()"),
+    ):
+        _ = likelihood.compute_theory_vector(ModelingTools())
+
+
+def test_compute_theory_vector_fails_before_update(
+    trivial_stats, sacc_data_for_trivial_stat
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("update() must be called before compute_theory_vector()"),
+    ):
+        _ = likelihood.compute_theory_vector(ModelingTools())
+
+
+def test_compute_theory_vector_works_after_read_and_update(
+    trivial_stats, sacc_data_for_trivial_stat
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    assert np.all(
+        likelihood.compute_theory_vector(ModelingTools())
+        == np.array([10.5, 10.5, 10.5])
+    )
+
+
+def test_get_theory_vector_fails_before_read(trivial_stats):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("update() must be called before get_theory_vector()"),
+    ):
+        _ = likelihood.get_theory_vector()
+
+
+def test_get_theory_vector_fails_before_update(
+    trivial_stats, sacc_data_for_trivial_stat
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("update() must be called before get_theory_vector()"),
+    ):
+        _ = likelihood.get_theory_vector()
+
+
+def test_get_theory_vector_fails_before_compute_theory_vector(
+    trivial_stats, sacc_data_for_trivial_stat
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "The theory vector has not been computed yet. "
+            "Call compute_theory_vector first."
+        ),
+    ):
+        _ = likelihood.get_theory_vector()
+
+
+def test_get_theory_vector_works_after_read_update_and_compute_theory_vector(
+    trivial_stats, sacc_data_for_trivial_stat
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.compute_theory_vector(ModelingTools())
+    assert np.all(likelihood.get_theory_vector() == np.array([10.5, 10.5, 10.5]))
+
+
+def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_reset(
+    trivial_stats, sacc_data_for_trivial_stat
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    likelihood.compute_theory_vector(ModelingTools())
+    likelihood.reset()
+    with pytest.raises(
+        AssertionError,
+        match=re.escape("update() must be called before get_theory_vector()"),
+    ):
+        _ = likelihood.get_theory_vector()
+
+
 def test_chisquared(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
+    assert likelihood.compute_chisq(ModelingTools()) == 2.0
+
+
+def test_deprecated_compute(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(trivial_params)
+    with pytest.warns(DeprecationWarning):
+        data_vector, theory_vector = likelihood.compute(ModelingTools())
+    assert np.all(data_vector == np.array([1.0, 4.0, -3.0]))
+    assert np.all(theory_vector == np.array([1.0, 1.0, 1.0]))
+
+
+def test_chisquared_compute_vector_not_implemented(
+    trivial_stats, sacc_data_for_trivial_stat, trivial_params
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(trivial_params)
+
+    def compute_theory_vector(_tools: ModelingTools) -> npt.NDArray[np.float64]:
+        raise NotImplementedError()
+
+    def compute(
+        _tools: ModelingTools,
+    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        return np.array([1.0, 4.0, -3.0]), np.array([1.0, 1.0, 1.0])
+
+    likelihood.compute_theory_vector = compute_theory_vector  # type: ignore
+    likelihood.compute = compute  # type: ignore
+
     assert likelihood.compute_chisq(ModelingTools()) == 2.0
 
 
