@@ -23,7 +23,7 @@ class ConstGaussian(GaussFamily):
     ) -> sacc.Sacc:
         assert (
             self.state == State.UPDATED
-        ), "update() must be called before get_theory_vector()"
+        ), "update() must be called before make_realization()"
 
         if not self.computed_theory_vector:
             raise RuntimeError(
