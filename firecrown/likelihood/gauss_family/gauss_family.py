@@ -89,6 +89,10 @@ class GaussFamily(Likelihood):
         at the start of the method, and change the state at the end of the
         method."""
         assert self.state == State.UPDATED, "update() must be called before reset()"
+
+        self.computed_theory_vector = False
+        self.theory_vector = None
+
         self.state = State.READY
 
     def read(self, sacc_data: sacc.Sacc) -> None:

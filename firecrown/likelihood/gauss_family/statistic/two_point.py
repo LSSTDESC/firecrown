@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Tuple, Optional, final, Union
+from typing import Dict, Tuple, Optional, Union
 import copy
 import functools
 import warnings
@@ -219,13 +219,6 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
-
-    @final
-    def _reset(self) -> None:
-        """Prepared to be called again for a new cosmology."""
-        # TODO: Why is self.predicted_statistic_ not re-set to None here?
-        # If we do that, then the CosmoSIS module fails -- because this data
-        # is accessed from that code.
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.

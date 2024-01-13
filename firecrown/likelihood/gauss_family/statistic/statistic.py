@@ -140,6 +140,12 @@ class Statistic(Updatable):
                 f"of length 0; the length must be positive"
             )
 
+    def _reset(self):
+        """Reset this statistic, subclasses implementations must call
+        super()._reset()"""
+        self.computed_theory_vector = False
+        self.theory_vector = None
+
     @abstractmethod
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector."""
@@ -246,11 +252,6 @@ class TrivialStatistic(Statistic):
         self.data_vector = DataVector.from_list(our_data)
         self.sacc_indices = np.arange(len(self.data_vector))
         super().read(sacc_data)
-
-    @final
-    def _reset(self):
-        """Reset this statistic."""
-        self.computed_theory_vector = False
 
     @final
     def _required_parameters(self) -> RequiredParameters:
