@@ -143,7 +143,17 @@ class GaussFamily(Likelihood):
 
         self.state = State.READY
 
-    def write(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
+    def make_realization(self, sacc_data: sacc.Sacc, strict=True) -> sacc.Sacc:
+        assert (
+            self.state == State.UPDATED
+        ), "update() must be called before get_theory_vector()"
+
+        if not self.computed_theory_vector:
+            raise RuntimeError(
+                "The theory vector has not been computed yet. "
+                "Call compute_theory_vector first."
+            )
+
         new_sacc = sacc_data.copy()
 
         sacc_indices_list = []
@@ -164,6 +174,10 @@ class GaussFamily(Likelihood):
                     "sacc object. To write only the calculated predictions, "
                     "set strict=False."
                 )
+
+        # Adding Gaussian noise defined by the covariance matrix.
+        assert self.cholesky is not None
+        predictions += np.dot(self.cholesky, np.random.randn(len(predictions)))
 
         for prediction_idx, sacc_idx in enumerate(sacc_indices):
             new_sacc.data[sacc_idx].value = predictions[prediction_idx]

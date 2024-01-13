@@ -24,7 +24,7 @@ class EmptyLikelihood(Likelihood):
         of self.placeholder."""
         return -3.0 * self.placeholder
 
-    def write(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
         """This class has nothing to write."""
         return sacc_data
 
@@ -47,7 +47,7 @@ class ParamaterizedLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def write(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
         """This class has nothing to write."""
         return sacc_data
 
@@ -70,7 +70,7 @@ class SamplerParameterLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def write(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
         """This class has nothing to write."""
         return sacc_data
 
@@ -98,7 +98,7 @@ class DerivedParameterLikelihood(Likelihood):
     def read(self, sacc_data: sacc.Sacc) -> None:
         """This class has nothing to read."""
 
-    def write(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
         """This class has nothing to write."""
         return sacc_data
 

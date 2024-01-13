@@ -7,6 +7,8 @@ from typing import Tuple
 import pytest
 import numpy as np
 import numpy.typing as npt
+from numpy.testing import assert_allclose
+from scipy.stats import chi2
 
 import sacc
 
@@ -254,7 +256,7 @@ def test_after_read_all_statistics_are_ready(
         assert stat.ready
 
 
-def test_write_to_sacc(
+def test_make_realization_chisq(
     trivial_stats,
     sacc_data_for_trivial_stat: sacc.Sacc,
     tools_with_vanilla_cosmology: ModelingTools,
@@ -265,7 +267,7 @@ def test_write_to_sacc(
     likelihood.update(params)
     likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
-    new_sacc = likelihood.write(sacc_data_for_trivial_stat)
+    new_sacc = likelihood.make_realization(sacc_data_for_trivial_stat)
 
     new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
     new_likelihood.read(new_sacc)
@@ -273,4 +275,81 @@ def test_write_to_sacc(
     new_likelihood.update(params)
     chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
 
-    assert np.isclose(chisq, 0.0)
+    # The new likelihood chisq is distributed as a chi-squared with 3 degrees of
+    # freedom. We want to check that the new chisq is within the 1-10^-6 quantile
+    # of the chi-squared distribution. This is equivalent to checking that the
+    # new chisq is less than the 1-10^-6 quantile. This is expected to fail
+    # 1 in 10^6 times.
+    assert chisq < chi2.ppf(1.0 - 1.0e-6, df=3)
+
+
+def test_make_realization_chisq_mean(
+    trivial_stats,
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    params = firecrown.parameters.ParamsMap(mean=10.5)
+    likelihood.update(params)
+    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+
+    chisq_list = []
+    for _ in range(1000):
+        new_sacc = likelihood.make_realization(sacc_data_for_trivial_stat)
+
+        new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
+        new_likelihood.read(new_sacc)
+        params = firecrown.parameters.ParamsMap(mean=10.5)
+        new_likelihood.update(params)
+        chisq = new_likelihood.compute_chisq(tools_with_vanilla_cosmology)
+        chisq_list.append(chisq)
+
+    # The new likelihood chisq is distributed as a chi-squared with 3 degrees of
+    # freedom, so the mean is 3.0 and the variance is 6.0. Since we are computing
+    # the mean of 1000 realizations, the variance of the mean is 6.0 / 1000.0.
+    # We want to check that the new chisq is within 5 sigma of the mean.
+    assert_allclose(np.mean(chisq_list), 3.0, atol=5.0 * np.sqrt(6.0 / 1000.0))
+
+
+def test_make_realization_data_vector(
+    trivial_stats,
+    sacc_data_for_trivial_stat: sacc.Sacc,
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    params = firecrown.parameters.ParamsMap(mean=10.5)
+    likelihood.update(params)
+    likelihood.compute_chisq(tools_with_vanilla_cosmology)
+
+    data_vector_list = []
+    for _ in range(1000):
+        new_sacc = likelihood.make_realization(sacc_data_for_trivial_stat)
+
+        new_likelihood = ConstGaussian(statistics=[TrivialStatistic()])
+        new_likelihood.read(new_sacc)
+        params = firecrown.parameters.ParamsMap(mean=10.5)
+        new_likelihood.update(params)
+        data_vector = new_likelihood.get_data_vector()
+        data_vector_list.append(data_vector)
+
+    # The new likelihood data vector is distributed as a Gaussian with mean
+    # equal to the theory vector and covariance equal to the covariance matrix.
+    # We want to check that the new data vector is within 5 sigma of the mean.
+    var_exact = np.array([4.0, 9.0, 16.0])
+    assert_allclose(
+        (np.mean(data_vector_list, axis=0) - np.array([10.5, 10.5, 10.5]))
+        / np.sqrt(var_exact),
+        0.0,
+        atol=5.0 / np.sqrt(1000.0),
+    )
+
+    # The covariance can be computed as the covariance of the data vectors
+    # minus the covariance of the theory vectors.
+    covariance = np.cov(np.array(data_vector_list).T)
+    assert_allclose(
+        (covariance.diagonal() - var_exact) / np.sqrt(2.0 * var_exact**2 / 999.0),
+        1.0,
+        atol=5,
+    )

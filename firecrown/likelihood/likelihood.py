@@ -88,7 +88,7 @@ class Likelihood(Updatable):
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     @abstractmethod
-    def write(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
+    def make_realization(self, sacc_data: sacc.Sacc) -> sacc.Sacc:
         """Write the model predictions to a SACC file"""
 
     @abstractmethod
