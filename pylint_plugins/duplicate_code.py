@@ -10,7 +10,7 @@ def register(linter: PyLinter):
 def transform(mod):
     if "firecrown.models.cluster.recipes." not in mod.name:
         return
-    print(mod.name)
+
     c = mod.stream().read()
     c = b"# pylint: disable=duplicate-code\n" + c
 
