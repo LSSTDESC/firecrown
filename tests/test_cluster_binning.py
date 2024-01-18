@@ -7,14 +7,6 @@ import sacc
 from firecrown.models.cluster.binning import NDimensionalBin, SaccBin, TupleBin
 
 
-def test_bin_repr():
-    tracer_z = sacc.tracers.BinZTracer("", 0, 1)
-    tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
-
-    sb = SaccBin([tracer_z, tracer_lambda])
-    assert repr(sb) == "[(0, 1), (4, 5)]\n"
-
-
 def test_bin_str():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)

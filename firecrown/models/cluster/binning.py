@@ -35,9 +35,6 @@ class NDimensionalBin(Generic[T], ABC):
     def __str__(self) -> str:
         return f"[{self.z_edges}, {self.mass_proxy_edges}]\n"
 
-    def __repr__(self) -> str:
-        return f"[{self.z_edges}, {self.mass_proxy_edges}]\n"
-
 
 class SaccBin(NDimensionalBin[sacc.BaseTracer]):
     """An implementation of the N dimensional bin using sacc tracers."""
