@@ -13,7 +13,6 @@ from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
-# pylint: disable=R0801
 class MurataUnbinnedSpecZRecipe(ClusterRecipe):
     """Cluster recipe using the Murata 2019 unbinned mass-richness relation and assuming
     perfectly measured spec-zs."""
