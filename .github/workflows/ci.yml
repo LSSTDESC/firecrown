@@ -5,6 +5,7 @@ on:
   push:
     branches:
       - 'master'
+      - 'codecov-mvp'
 
   pull_request:
     branches:
