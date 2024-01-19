@@ -98,7 +98,7 @@ jobs:
           pylint --rcfile firecrown/models/pylintrc firecrown/models
       - name: Running pytest
         shell: bash -l {0}
-        run: python -m pytest -vv --runslow
+        run: python -m pytest -vv --runslow --cov firecrown
       - name: Running example - cosmosis - cosmic-shear
         shell: bash -l {0}
         run: |
@@ -153,6 +153,12 @@ jobs:
           cosmosis cluster_counts_redshift_richness.ini
           cosmosis cluster_mean_mass_redshift_richness.ini
           cosmosis cluster_counts_mean_mass_redshift_richness.ini
+      
+      - name: Upload coverage reports to Codecov
+        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Upload coverage reports to coveralls (legacy)
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
@@ -164,8 +170,4 @@ jobs:
           coverage run --source=firecrown -m pytest tests/
           coveralls --service=github
 
-      - name: Upload coverage reports to Codecov
-        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
-        uses: codecov/codecov-action@v3
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
