@@ -152,7 +152,8 @@ jobs:
           cosmosis cluster_counts_redshift_richness.ini
           cosmosis cluster_mean_mass_redshift_richness.ini
           cosmosis cluster_counts_mean_mass_redshift_richness.ini
-      - name: Code coverage
+
+      - name: Upload coverage reports to coveralls (legacy)
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
         shell: bash -l {0}
         env:
@@ -162,3 +163,8 @@ jobs:
           coverage run --source=firecrown -m pytest tests/
           coveralls --service=github
 
+      - name: Upload coverage reports to Codecov
+        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
+        uses: codecov/codecov-action@v3
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
