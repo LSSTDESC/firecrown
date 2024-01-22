@@ -33,6 +33,7 @@ class NDimensionalBin(Generic[T], ABC):
         """Mass proxy bin edges"""
 
     def do_thing_tested(self):
+        """summary"""
         return 1.0
 
     def do_thing(self):
