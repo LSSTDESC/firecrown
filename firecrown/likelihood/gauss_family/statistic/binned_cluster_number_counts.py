@@ -63,7 +63,7 @@ class BinnedClusterNumberCounts(Statistic):
         )
         for bin_edge in self.bins:
             if bin_edge.dimension != self.bins[0].dimension:
-                raise NameError(
+                raise ValueError(
                     "The cluster number counts statistic requires all bins to be the "
                     "same dimension."
                 )
