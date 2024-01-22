@@ -1,7 +1,6 @@
 """Tests for the cluster binning module"""
-from unittest.mock import Mock
 import sacc
-from firecrown.models.cluster.binning import SaccBin, NDimensionalBin
+from firecrown.models.cluster.binning import SaccBin
 
 
 def test_create_sacc_bin_with_correct_dimension():
