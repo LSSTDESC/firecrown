@@ -14,6 +14,14 @@ from firecrown.parameters import (
 )
 
 
+def test_create_with_no_arg():
+    """Calling parameters.create() with no argument should return an
+    SamplerParameter"""
+    with pytest.deprecated_call():
+        a_parameter = create()
+        assert isinstance(a_parameter, SamplerParameter)
+
+
 def test_create_with_float_arg():
     """Calling parameters.create() with a float argument should return a
     InternalParameter ."""
