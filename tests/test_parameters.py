@@ -14,7 +14,6 @@ from firecrown.parameters import (
 )
 
 
-
 def test_create_with_float_arg():
     """Calling parameters.create() with a float argument should return a
     InternalParameter ."""
