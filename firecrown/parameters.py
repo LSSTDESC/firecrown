@@ -108,7 +108,7 @@ class RequiredParameters:
         are equal (including appearing in the same order).
         """
         if not isinstance(other, RequiredParameters):
-            return NotImplemented
+            raise NotImplementedError()
         return self.params_names == other.params_names
 
     def get_params_names(self) -> Iterator[str]:

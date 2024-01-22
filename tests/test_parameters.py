@@ -229,3 +229,9 @@ def test_derived_parameters_collection_eq_invalid():
         "implemented for DerivedParameterCollection objects",
     ):
         _ = dpc1 == 1.0
+
+
+def test_required_params_eq_not_impl_for_different_types():
+    """Test that the == operator is not implemented for different types."""
+    with pytest.raises(NotImplementedError):
+        _ = RequiredParameters(["test"]) == 1.0
