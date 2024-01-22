@@ -32,6 +32,9 @@ class NDimensionalBin(Generic[T], ABC):
     def mass_proxy_edges(self) -> Tuple[float, float]:
         """Mass proxy bin edges"""
 
+    def do_thing_tested(self):
+        return 1.0
+
     def do_thing(self):
         """_summary_"""
         print("null")

@@ -12,6 +12,13 @@ def test_create_sacc_bin_with_correct_dimension():
         assert sb.dimension == i
 
 
+def test_do_thing_tested():
+    tracer_z = sacc.tracers.BinZTracer("", 0, 1)
+    tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
+    sb = SaccBin([tracer_z, tracer_lambda])
+    assert sb.do_thing_tested() == 1.0
+
+
 def test_sacc_bin_z_edges():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
