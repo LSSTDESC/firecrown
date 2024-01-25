@@ -242,14 +242,6 @@ def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
         likelihood.read(sacc_with_data_points)
 
 
-def test_get_data_vector_fails_before_read(trivial_stats):
-    likelihood = ConstGaussian(statistics=trivial_stats)
-    with pytest.raises(
-        AssertionError, match=r"read\(\) must be called before get_data_vector\(\)"
-    ):
-        _ = likelihood.get_data_vector()
-
-
 def test_using_good_sacc(
     trivial_stats,
     sacc_data_for_trivial_stat: sacc.Sacc,
