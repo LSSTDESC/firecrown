@@ -162,7 +162,8 @@ def test_compute_chisq_fails_before_read(trivial_stats):
     that update() must be called; this can only be called after read()."""
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
-        AssertionError, match=r"update\(\) must be called before compute_chisq\(\)"
+        AssertionError,
+        match=re.escape("update() must be called before compute_chisq()"),
     ):
         _ = likelihood.compute_chisq(ModelingTools())
 
