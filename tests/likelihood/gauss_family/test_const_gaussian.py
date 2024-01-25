@@ -156,8 +156,17 @@ def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_res
     ):
         _ = likelihood.get_theory_vector()
 
+def test_compute_chisq_fails_before_read(trivial_stats):
+    """Note that the error message from the direct call to compute_chisq notes
+    that update() must be called; this can only be called after read()."""
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    with pytest.raises(
+        AssertionError, match=r"update\(\) must be called before compute_chisq\(\)"
+    ):
+        _ = likelihood.compute_chisq(ModelingTools())
 
-def test_chisquared(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
+
+def test_compute_chisq(trivial_stats, sacc_data_for_trivial_stat, trivial_params):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
@@ -230,6 +239,14 @@ def test_missing_covariance(trivial_stats, sacc_with_data_points: sacc.Sacc):
         "SACC data object being read does not have one.",
     ):
         likelihood.read(sacc_with_data_points)
+
+
+def test_get_data_vector_fails_before_read(trivial_stats):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    with pytest.raises(
+        AssertionError, match=r"read\(\) must be called before get_data_vector\(\)"
+    ):
+        _ = likelihood.get_data_vector()
 
 
 def test_using_good_sacc(

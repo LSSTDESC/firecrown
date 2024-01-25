@@ -3,7 +3,7 @@ from unittest.mock import Mock
 import sacc
 import pytest
 import pyccl
-from firecrown.models.cluster.integrator.integrator import Integrator
+from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.properties import ClusterProperty
@@ -15,9 +15,8 @@ from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts im
 
 
 def test_create_binned_number_counts():
-    integrator = Mock(spec=Integrator)
-    integrator.integrate.return_value = 1.0
-    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", integrator)
+    recipe = Mock(spec=ClusterRecipe)
+    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", recipe)
     assert bnc is not None
     assert bnc.cluster_properties == ClusterProperty.NONE
     assert bnc.survey_name == "Test"
@@ -26,31 +25,27 @@ def test_create_binned_number_counts():
     assert len(bnc.data_vector) == 0
 
     bnc = BinnedClusterNumberCounts(
-        (ClusterProperty.COUNTS | ClusterProperty.MASS), "Test", integrator
+        (ClusterProperty.COUNTS | ClusterProperty.MASS), "Test", recipe
     )
     assert ClusterProperty.COUNTS in bnc.cluster_properties
     assert ClusterProperty.MASS in bnc.cluster_properties
 
     systematics = [SourceSystematic("mock_systematic")]
-    bnc = BinnedClusterNumberCounts(
-        ClusterProperty.NONE, "Test", integrator, systematics
-    )
+    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", recipe, systematics)
     assert bnc.systematics == systematics
 
 
 def test_get_data_vector():
-    integrator = Mock(spec=Integrator)
-    integrator.integrate.return_value = 1.0
-    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", integrator)
+    recipe = Mock(spec=ClusterRecipe)
+    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", recipe)
     dv = bnc.get_data_vector()
     assert dv is not None
     assert len(dv) == 0
 
 
-def test_read(cluster_sacc_data: sacc.Sacc):
-    integrator = Mock(spec=Integrator)
-    integrator.integrate.return_value = 1.0
-    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "my_survey", integrator)
+def test_read_throws_if_no_property(cluster_sacc_data: sacc.Sacc):
+    recipe = Mock(spec=ClusterRecipe)
+    bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "my_survey", recipe)
 
     with pytest.raises(
         ValueError,
@@ -58,7 +53,11 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     ):
         bnc.read(cluster_sacc_data)
 
-    bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", integrator)
+
+def test_read_single_property(cluster_sacc_data: sacc.Sacc):
+    recipe = Mock(spec=ClusterRecipe)
+
+    bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", recipe)
     bnc.read(cluster_sacc_data)
     assert bnc.sky_area == 4000
     assert len(bnc.bins) == 2
@@ -66,7 +65,7 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     assert bnc.sacc_indices is not None
     assert len(bnc.sacc_indices) == 2
 
-    bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", integrator)
+    bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", recipe)
     bnc.read(cluster_sacc_data)
     assert bnc.sky_area == 4000
     assert len(bnc.bins) == 2
@@ -74,8 +73,11 @@ def test_read(cluster_sacc_data: sacc.Sacc):
     assert bnc.sacc_indices is not None
     assert len(bnc.sacc_indices) == 2
 
+
+def test_read_multiple_properties(cluster_sacc_data: sacc.Sacc):
+    recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(
-        (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", integrator
+        (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", recipe
     )
     bnc.read(cluster_sacc_data)
     assert bnc.sky_area == 4000
@@ -86,8 +88,8 @@ def test_read(cluster_sacc_data: sacc.Sacc):
 
 
 def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
-    integrator = Mock(spec=Integrator)
-    integrator.integrate.return_value = 1.0
+    recipe = Mock(spec=ClusterRecipe)
+    recipe.evaluate_theory_prediction.return_value = 1.0
     tools = ModelingTools()
 
     hmf = pyccl.halos.MassFuncBocquet16()
@@ -98,14 +100,14 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
     tools.update(params)
     tools.prepare(cosmo)
 
-    bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", integrator)
+    bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", recipe)
     bnc.read(cluster_sacc_data)
     bnc.update(params)
     tv = bnc.compute_theory_vector(tools)
     assert tv is not None
     assert len(tv) == 2
 
-    bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", integrator)
+    bnc = BinnedClusterNumberCounts(ClusterProperty.MASS, "my_survey", recipe)
     bnc.read(cluster_sacc_data)
     bnc.update(params)
     tv = bnc.compute_theory_vector(tools)
@@ -113,7 +115,7 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
     assert len(tv) == 2
 
     bnc = BinnedClusterNumberCounts(
-        (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", integrator
+        (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", recipe
     )
     bnc.read(cluster_sacc_data)
     bnc.update(params)
