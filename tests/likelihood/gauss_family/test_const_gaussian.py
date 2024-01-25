@@ -156,6 +156,7 @@ def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_res
     ):
         _ = likelihood.get_theory_vector()
 
+
 def test_compute_chisq_fails_before_read(trivial_stats):
     """Note that the error message from the direct call to compute_chisq notes
     that update() must be called; this can only be called after read()."""

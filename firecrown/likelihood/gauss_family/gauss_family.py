@@ -269,7 +269,7 @@ class GaussFamily(Likelihood):
     @final
     @enforce_states(
         initial=State.UPDATED,
-        failure_message="update() must be called before get_theory_vector()"
+        failure_message="update() must be called before get_theory_vector()",
     )
     def get_theory_vector(self) -> npt.NDArray[np.float64]:
         """Get the theory vector from all statistics and concatenate in the right
@@ -328,7 +328,7 @@ class GaussFamily(Likelihood):
 
     @enforce_states(
         initial=State.UPDATED,
-        failure_message="update() must be called before make_realization()"
+        failure_message="update() must be called before make_realization()",
     )
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
