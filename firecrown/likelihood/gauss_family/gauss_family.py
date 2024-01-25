@@ -35,6 +35,7 @@ class State(Enum):
     INITIALIZED = 1
     READY = 2
     UPDATED = 3
+    COMPUTED = 4
 
 
 T = TypeVar("T")
@@ -115,7 +116,10 @@ class GaussFamily(Likelihood):
       3. after :meth:`update` is called it is then legal to call
          :meth:`calculate_loglike` or :meth:`get_data_vector`, or to reset
          the object (returning to the pre-update state) by calling
-         :meth:`reset`.
+         :meth:`reset`. It is also legal to call :meth:`compute_theory_vector`.
+      4. after :meth:`compute_theory_vector` is called it is legal to call
+         :meth:`get_theory_vector` to retrieve the already-calculated theory
+         vector.
 
     This state machine behavior is enforced through the use of the decorator
     :meth:`enforce_states`, above.
@@ -145,7 +149,6 @@ class GaussFamily(Likelihood):
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
         self.cov_index_map: Optional[Dict[int, int]] = None
-        self.computed_theory_vector = False
         self.theory_vector: Optional[npt.NDArray[np.double]] = None
         self.data_vector: Optional[npt.NDArray[np.double]] = None
 
@@ -162,7 +165,7 @@ class GaussFamily(Likelihood):
         method."""
 
     @enforce_states(
-        initial=State.UPDATED,
+        initial=[State.UPDATED, State.COMPUTED],
         terminal=State.READY,
         failure_message="update() must be called before reset()",
     )
@@ -172,7 +175,6 @@ class GaussFamily(Likelihood):
         for its own reasons must be sure to do what this does: check the state
         at the start of the method, and change the state at the end of the
         method."""
-        self.computed_theory_vector = False
         self.theory_vector = None
 
     @enforce_states(
@@ -240,7 +242,7 @@ class GaussFamily(Likelihood):
 
     @final
     @enforce_states(
-        initial=[State.READY, State.UPDATED],
+        initial=[State.READY, State.UPDATED, State.COMPUTED],
         failure_message="read() must be called before get_data_vector()",
     )
     def get_data_vector(self) -> npt.NDArray[np.float64]:
@@ -252,6 +254,7 @@ class GaussFamily(Likelihood):
     @final
     @enforce_states(
         initial=State.UPDATED,
+        terminal=State.COMPUTED,
         failure_message="update() must be called before compute_theory_vector()",
     )
     def compute_theory_vector(self, tools: ModelingTools) -> npt.NDArray[np.float64]:
@@ -262,27 +265,21 @@ class GaussFamily(Likelihood):
         theory_vector_list: List[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
         ]
-        self.computed_theory_vector = True
         self.theory_vector = np.concatenate(theory_vector_list)
         return self.theory_vector
 
     @final
     @enforce_states(
-        initial=State.UPDATED,
-        failure_message="update() must be called before get_theory_vector()",
+        initial=State.COMPUTED,
+        failure_message="compute_theory_vector() must be called before "
+        "get_theory_vector()",
     )
     def get_theory_vector(self) -> npt.NDArray[np.float64]:
         """Get the theory vector from all statistics and concatenate in the right
         order."""
-        if not self.computed_theory_vector:
-            raise RuntimeError(
-                "The theory vector has not been computed yet. "
-                "Call compute_theory_vector first."
-            )
-        assert self.theory_vector is not None, (
-            "Implementation error, "
-            "computed_theory_vector is True but theory_vector is None"
-        )
+        assert (
+            self.theory_vector is not None
+        ), "theory_vector is None after compute_theory_vector() has been called"
         return self.theory_vector
 
     @final
@@ -305,7 +302,8 @@ class GaussFamily(Likelihood):
 
     @final
     @enforce_states(
-        initial=State.UPDATED,
+        initial=[State.UPDATED, State.COMPUTED],
+        terminal=State.COMPUTED,
         failure_message="update() must be called before compute_chisq()",
     )
     def compute_chisq(self, tools: ModelingTools) -> float:
@@ -327,8 +325,9 @@ class GaussFamily(Likelihood):
         return chisq
 
     @enforce_states(
-        initial=State.UPDATED,
-        failure_message="update() must be called before make_realization()",
+        initial=State.COMPUTED,
+        failure_message="compute_theory_vector() must be called before "
+        "make_realization()",
     )
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True

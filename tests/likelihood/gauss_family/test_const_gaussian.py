@@ -99,7 +99,9 @@ def test_get_theory_vector_fails_before_read(trivial_stats):
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(
         AssertionError,
-        match=re.escape("update() must be called before get_theory_vector()"),
+        match=re.escape(
+            "compute_theory_vector() must be called before get_theory_vector()"
+        ),
     ):
         _ = likelihood.get_theory_vector()
 
@@ -111,7 +113,9 @@ def test_get_theory_vector_fails_before_update(
     likelihood.read(sacc_data_for_trivial_stat)
     with pytest.raises(
         AssertionError,
-        match=re.escape("update() must be called before get_theory_vector()"),
+        match=re.escape(
+            "compute_theory_vector() must be called before get_theory_vector()"
+        ),
     ):
         _ = likelihood.get_theory_vector()
 
@@ -123,10 +127,9 @@ def test_get_theory_vector_fails_before_compute_theory_vector(
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
     with pytest.raises(
-        RuntimeError,
-        match=(
-            "The theory vector has not been computed yet. "
-            "Call compute_theory_vector first."
+        AssertionError,
+        match=re.escape(
+            "compute_theory_vector() must be called before get_theory_vector()",
         ),
     ):
         _ = likelihood.get_theory_vector()
@@ -152,7 +155,9 @@ def test_get_theory_vector_fails_after_read_update_compute_theory_vector_and_res
     likelihood.reset()
     with pytest.raises(
         AssertionError,
-        match=re.escape("update() must be called before get_theory_vector()"),
+        match=re.escape(
+            "compute_theory_vector() must be called before get_theory_vector()"
+        ),
     ):
         _ = likelihood.get_theory_vector()
 
