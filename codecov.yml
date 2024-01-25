@@ -17,11 +17,11 @@ comment:
 coverage:
 
   # What precision do you want the coverage value to be
-  precision: 2
+  precision: 1
   # Which direction to you want to round the coverage value
   round: down
   # The value range where you want the value to be green
-  range: 70..100
+  range: 95..100
 
   status:
     # The codecov/patch status only measures lines adjusted 
@@ -33,7 +33,7 @@ coverage:
         # basic
         target: auto
         threshold: 0%
-        base: auto 
+
         # advanced
         branches: 
           - master
@@ -50,7 +50,7 @@ coverage:
         # compare against.
         target: auto
         # Allow the coverage to drop by X%, and posting a success status
-        threshold: 5%
+        threshold: 0%
 
         # advanced settings
         branches: 
