@@ -28,10 +28,6 @@ class StatisticWithoutIndices(TrivialStatistic):
     testing.
     """
 
-    def __init__(self):
-        """Initialize the statistic, with sacc_indices set to None."""
-        super().__init__()
-
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the TrivialStatistic data, then nullify the sacc_indices."""
         super().read(sacc_data)
