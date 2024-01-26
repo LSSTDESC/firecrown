@@ -23,6 +23,21 @@ from firecrown.parameters import (
 )
 
 
+class StatisticWithoutIndices(TrivialStatistic):
+    """This is a statistic that has no indices when read. It is only for
+    testing.
+    """
+
+    def __init__(self):
+        """Initialize the statistic, with sacc_indices set to None."""
+        super().__init__()
+
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the TrivialStatistic data, then nullify the sacc_indices."""
+        super().read(sacc_data)
+        self.sacc_indices = None
+
+
 def test_require_nonempty_statistics():
     with pytest.raises(ValueError):
         _ = ConstGaussian(statistics=[])
@@ -32,6 +47,17 @@ def test_get_cov_fails_before_read(trivial_stats):
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(AssertionError):
         _ = likelihood.get_cov()
+
+
+def test_read_with_wrong_statistic_fails(sacc_data_for_trivial_stat):
+    # Make the first statistic defective.
+    defective_stat = StatisticWithoutIndices()
+    likelihood = ConstGaussian(statistics=[defective_stat])
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* has no sacc_indices",
+    ):
+        likelihood.read(sacc_data_for_trivial_stat)
 
 
 def test_get_cov_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
