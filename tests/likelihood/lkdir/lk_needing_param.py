@@ -2,6 +2,7 @@
 Provides a trivial likelihood factory function for testing purposes.
 The likelihood created requires a string parameter named "sacc_file".
 """
+
 from firecrown.likelihood.likelihood import NamedParameters
 from . import lkmodule
 

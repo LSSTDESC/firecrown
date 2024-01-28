@@ -3,6 +3,7 @@
 As a unit test, what this can test is very limited.
 This test do not invoke the `cosmosis` executable.
 """
+
 from os.path import expandvars
 import yaml
 import pytest

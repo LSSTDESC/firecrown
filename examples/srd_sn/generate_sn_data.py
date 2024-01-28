@@ -1,5 +1,6 @@
 """Generate SACC data into file srd-y1-converted.sacc.
 """
+
 import os
 import tarfile
 import urllib.request

@@ -1,4 +1,5 @@
 """Module for defining the ClusterRecipe class"""
+
 from abc import ABC, abstractmethod
 from typing import Optional
 

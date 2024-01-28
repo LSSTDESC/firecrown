@@ -1,6 +1,7 @@
 """
 Tests for the TwoPoint module.
 """
+
 import numpy as np
 import pytest
 

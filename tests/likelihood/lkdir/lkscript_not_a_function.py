@@ -5,5 +5,4 @@ It should raise an exception because the factory function does not define
 a build_likelihood as a Callable.
 """
 
-
 build_likelihood = "I am not a function"

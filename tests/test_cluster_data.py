@@ -1,4 +1,5 @@
 """Tests for the cluster abundance data module."""
+
 import pytest
 import sacc
 from firecrown.models.cluster.abundance_data import AbundanceData

@@ -5,5 +5,4 @@ be used without an installation of CosmoSIS.
 
 """
 
-
 # flake8: noqa

@@ -2,6 +2,7 @@
 
 This module holds the scipy implementation of the integrator classes
 """
+
 from typing import Callable
 
 import numpy as np

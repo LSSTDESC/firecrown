@@ -300,7 +300,6 @@ class Updatable(ABC):
 
 
 class UpdatableCollection(UserList[Any]):
-
     """UpdatableCollection is a list of Updatable objects and is itself
     supports :meth:`update` and :meth:`reset` (although it does not inherit
     from :class:`Updatable`).
