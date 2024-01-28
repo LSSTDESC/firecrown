@@ -62,11 +62,20 @@ def test_get_cov_works_after_read(trivial_stats, sacc_data_for_trivial_stat):
     assert np.all(likelihood.get_cov() == np.diag([4.0, 9.0, 16.0]))
 
 
-def test_get_cov_with_statistics(trivial_stats, sacc_data_for_trivial_stat):
+def test_get_cov_with_one_statistic(trivial_stats, sacc_data_for_trivial_stat):
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
 
     assert np.all(likelihood.get_cov(trivial_stats[0]) == np.diag([4.0, 9.0, 16.0]))
+
+
+def test_get_cov_with_list_of_statistics(trivial_stats, sacc_data_for_trivial_stat):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+
+    assert isinstance(trivial_stats, list)
+    cov = likelihood.get_cov(trivial_stats)
+    assert np.all(cov == np.diag([4.0, 9.0, 16.0]))
 
 
 def test_get_data_vector_fails_before_read(trivial_stats):

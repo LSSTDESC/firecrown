@@ -224,7 +224,9 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before get_cov()",
     )
     @final
-    def get_cov(self, statistic: Optional[Statistic] = None) -> npt.NDArray[np.float64]:
+    def get_cov(
+        self, statistic: Union[Statistic, List[Statistic], None] = None
+    ) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix.
 
         :param statistic: The statistic for which the sub-covariance matrix
@@ -235,10 +237,19 @@ class GaussFamily(Likelihood):
         if statistic is None:
             return self.cov
 
-        assert statistic.sacc_indices is not None
         assert self.cov_index_map is not None
-        idx = [self.cov_index_map[idx] for idx in statistic.sacc_indices]
-        return self.cov[np.ix_(idx, idx)]
+        if isinstance(statistic, Statistic):
+            statistic_list = [statistic]
+        else:
+            statistic_list = statistic
+        indices: List[int] = []
+        for stat in statistic_list:
+            assert stat.sacc_indices is not None
+            temp = [self.cov_index_map[idx] for idx in stat.sacc_indices]
+            indices += temp
+        ixgrid = np.ix_(indices, indices)
+
+        return self.cov[ixgrid]
 
     @final
     @enforce_states(
