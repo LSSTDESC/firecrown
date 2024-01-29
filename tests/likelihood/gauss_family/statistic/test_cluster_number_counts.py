@@ -1,4 +1,5 @@
 """Tests for the binned cluster number counts module."""
+
 from unittest.mock import Mock
 import sacc
 import pytest

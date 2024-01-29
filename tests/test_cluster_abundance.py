@@ -1,4 +1,5 @@
 """Tests for the cluster abundance module."""
+
 import numpy as np
 import pyccl
 import pytest

@@ -2,6 +2,7 @@
 
 This module holds the classes that define the kernels that can be included
 in the cluster abundance integrand."""
+
 from enum import Enum
 from typing import Tuple
 import numpy.typing as npt

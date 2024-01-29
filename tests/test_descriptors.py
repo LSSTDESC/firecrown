@@ -1,6 +1,7 @@
 """
 Tests for the module firecrown.descriptors.
 """
+
 import math
 import pytest
 from firecrown.descriptors import TypeFloat, TypeString

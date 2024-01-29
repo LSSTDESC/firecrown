@@ -1,4 +1,5 @@
 """Module for defining the classes used in the MurataBinnedSpecZ cluster recipe."""
+
 from typing import Callable, Optional, Tuple
 
 import numpy as np

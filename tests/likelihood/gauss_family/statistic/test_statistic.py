@@ -1,6 +1,7 @@
 """
 Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
 """
+
 from typing import List
 import numpy as np
 from numpy.testing import assert_allclose

@@ -3,6 +3,7 @@
 The binned cluster number counts statistic predicts the number of galaxy
 clusters within a single redshift and mass bin.
 """
+
 from __future__ import annotations
 
 from typing import List, Optional

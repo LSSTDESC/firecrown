@@ -4,6 +4,7 @@ This module contains the ModelingTools class, which is built around the
 :class:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
+
 from __future__ import annotations
 from typing import Dict, Optional, Collection
 from abc import ABC, abstractmethod

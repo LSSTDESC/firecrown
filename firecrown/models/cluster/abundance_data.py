@@ -1,5 +1,6 @@
 """The module responsible for extracting cluster data from a sacc file.
 """
+
 from typing import Tuple, List
 import numpy as np
 import numpy.typing as npt

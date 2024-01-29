@@ -1,4 +1,5 @@
 """Tests for the cluster abundance module."""
+
 from unittest.mock import Mock
 
 import numpy as np

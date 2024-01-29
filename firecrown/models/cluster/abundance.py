@@ -4,6 +4,7 @@ The galaxy cluster abundance integral is a combination of both theoretical
 and phenomenological predictions.  This module contains the classes and
 functions that produce those predictions.
 """
+
 from typing import Dict, Tuple
 import numpy as np
 import numpy.typing as npt

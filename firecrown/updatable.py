@@ -314,7 +314,6 @@ T = TypeVar("T", bound=Updatable)
 
 
 class UpdatableCollection(UserList[T], Generic[T]):
-
     """UpdatableCollection is a list of Updatable objects and is itself
     supports :meth:`update` and :meth:`reset` (although it does not inherit
     from :class:`Updatable`).
