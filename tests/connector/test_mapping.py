@@ -1,6 +1,7 @@
 """
 Unit testing for the mapping module.
 """
+
 from typing import Any, Dict
 import pytest
 import numpy as np

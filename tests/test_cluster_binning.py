@@ -1,4 +1,5 @@
 """Tests for the cluster binning module"""
+
 from unittest.mock import Mock
 
 import pytest

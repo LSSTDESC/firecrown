@@ -1,4 +1,5 @@
 """Module containing classes relevant to defining cluster properties."""
+
 from enum import Flag, auto
 
 

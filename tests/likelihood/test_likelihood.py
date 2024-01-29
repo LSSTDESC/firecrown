@@ -1,6 +1,7 @@
 """
 Tests for the module firecrown.likelihood.likelihood.
 """
+
 import os
 import sys
 import pytest

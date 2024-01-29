@@ -1,4 +1,5 @@
 """Tests for the cluster kernel module."""
+
 import numpy as np
 import pytest
 

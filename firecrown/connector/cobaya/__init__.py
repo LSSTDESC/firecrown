@@ -5,5 +5,4 @@ be used without an installation of Cobaya.
 
 """
 
-
 # flake8: noqa

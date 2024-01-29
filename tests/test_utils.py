@@ -1,6 +1,7 @@
 """
 Tests for the firecrown.utils modle.
 """
+
 from firecrown.utils import upper_triangle_indices
 
 

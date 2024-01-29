@@ -2,6 +2,7 @@
 
 This module holds the NumCosmo implementation of the integrator classes
 """
+
 from enum import Enum
 from typing import Callable, Optional, Tuple
 

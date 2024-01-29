@@ -1,4 +1,5 @@
 """Tests for the cluster mass richness module."""
+
 import pytest
 import numpy as np
 from scipy.integrate import quad

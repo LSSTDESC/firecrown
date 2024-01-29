@@ -3,6 +3,7 @@
 This module holds the classes that define the interface required to
 integrate a function.
 """
+
 from abc import ABC, abstractmethod
 from typing import Callable, List, Tuple
 
