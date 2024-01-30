@@ -41,9 +41,6 @@ class FirecrownLikelihood:
     :param config: current CosmoSIS datablock
     """
 
-    likelihood: Likelihood
-    map: MappingCosmoSIS
-
     def __init__(self, config: cosmosis.datablock):
         """Create the FirecrownLikelihood object from the given configuration."""
         likelihood_source = config.get_string(option_section, "likelihood_source", "")
@@ -61,6 +58,7 @@ class FirecrownLikelihood:
 
         self.firecrown_module_name = option_section
         self.sampling_sections = sections
+        self.likelihood: Likelihood
         try:
             self.likelihood, self.tools = load_likelihood(
                 likelihood_source, build_parameters
@@ -70,7 +68,7 @@ class FirecrownLikelihood:
             print(f"The Firecrown likelihood needs a required parameter: {err}")
             print("*" * 30)
             raise
-        self.map = mapping_builder(
+        self.map: MappingCosmoSIS = mapping_builder(
             input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
         )
 
@@ -127,23 +125,31 @@ class FirecrownLikelihood:
         for section, name, val in derived_params_collection:
             sample.put(section, name, val)
 
-        self.likelihood.reset()
-        self.tools.reset()
+        if not isinstance(self.likelihood, GaussFamily):
+            self.likelihood.reset()
+            self.tools.reset()
+            return 0
 
-        # Save concatenated data vector and inverse covariance to enable support
+        # If we get here, we have a GaussFamily likelihood, and we need to
+        # save concatenated data vector and inverse covariance to enable support
         # for the CosmoSIS Fisher sampler. This can only work for likelihoods
         # that have these quantities. Currently, this is only GaussFamily.
 
-        if isinstance(self.likelihood, GaussFamily):
-            sample.put(
-                "data_vector", "firecrown_theory", self.likelihood.predicted_data_vector
-            )
-            sample.put(
-                "data_vector", "firecrown_data", self.likelihood.measured_data_vector
-            )
-            sample.put(
-                "data_vector", "firecrown_inverse_covariance", self.likelihood.inv_cov
-            )
+        sample.put(
+            "data_vector",
+            "firecrown_theory",
+            self.likelihood.get_theory_vector(),
+        )
+        sample.put(
+            "data_vector",
+            "firecrown_data",
+            self.likelihood.get_data_vector(),
+        )
+        sample.put(
+            "data_vector",
+            "firecrown_inverse_covariance",
+            self.likelihood.inv_cov,
+        )
 
         # Write out theory and data vectors to the data block the ease
         # debugging.
@@ -164,14 +170,16 @@ class FirecrownLikelihood:
                 sample.put(
                     "data_vector",
                     f"theory_{stat.sacc_data_type}_{tracer}",
-                    stat.predicted_statistic_,
+                    stat.get_theory_vector(),
                 )
                 sample.put(
                     "data_vector",
                     f"data_{stat.sacc_data_type}_{tracer}",
-                    stat.measured_statistic_,
+                    stat.get_data_vector(),
                 )
 
+        self.likelihood.reset()
+        self.tools.reset()
         return 0
 
     def form_error_message(self, exc: MissingSamplerParameterError) -> str:

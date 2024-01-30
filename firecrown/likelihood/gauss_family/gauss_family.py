@@ -8,9 +8,10 @@ Some notes.
 """
 
 from __future__ import annotations
+
 from enum import Enum
 from functools import wraps
-from typing import List, Optional, Tuple, Sequence, Callable, Union, TypeVar
+from typing import List, Optional, Tuple, Sequence, Callable, Union, TypeVar, Dict
 from typing import final
 import warnings
 
@@ -34,6 +35,7 @@ class State(Enum):
     INITIALIZED = 1
     READY = 2
     UPDATED = 3
+    COMPUTED = 4
 
 
 T = TypeVar("T")
@@ -114,7 +116,10 @@ class GaussFamily(Likelihood):
       3. after :meth:`update` is called it is then legal to call
          :meth:`calculate_loglike` or :meth:`get_data_vector`, or to reset
          the object (returning to the pre-update state) by calling
-         :meth:`reset`.
+         :meth:`reset`. It is also legal to call :meth:`compute_theory_vector`.
+      4. after :meth:`compute_theory_vector` is called it is legal to call
+         :meth:`get_theory_vector` to retrieve the already-calculated theory
+         vector.
 
     This state machine behavior is enforced through the use of the decorator
     :meth:`enforce_states`, above.
@@ -129,12 +134,23 @@ class GaussFamily(Likelihood):
         self.state: State = State.INITIALIZED
         if len(statistics) == 0:
             raise ValueError("GaussFamily requires at least one statistic")
-        self.statistics: UpdatableCollection = UpdatableCollection(
+
+        for i, s in enumerate(statistics):
+            if not isinstance(s, Statistic):
+                raise ValueError(
+                    f"statistics[{i}] is not an instance of Statistic: {s}"
+                    f"it is a {type(s)} instead."
+                )
+
+        self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
             GuardedStatistic(s) for s in statistics
         )
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
+        self.cov_index_map: Optional[Dict[int, int]] = None
+        self.theory_vector: Optional[npt.NDArray[np.double]] = None
+        self.data_vector: Optional[npt.NDArray[np.double]] = None
 
     @enforce_states(
         initial=State.READY,
@@ -149,7 +165,7 @@ class GaussFamily(Likelihood):
         method."""
 
     @enforce_states(
-        initial=State.UPDATED,
+        initial=[State.UPDATED, State.COMPUTED],
         terminal=State.READY,
         failure_message="update() must be called before reset()",
     )
@@ -159,6 +175,7 @@ class GaussFamily(Likelihood):
         for its own reasons must be sure to do what this does: check the state
         at the start of the method, and change the state at the end of the
         method."""
+        self.theory_vector = None
 
     @enforce_states(
         initial=State.INITIALIZED,
@@ -176,17 +193,28 @@ class GaussFamily(Likelihood):
             raise RuntimeError(msg)
 
         covariance = sacc_data.covariance.dense
+
+        indices_list = []
+        data_vector_list = []
         for stat in self.statistics:
             stat.read(sacc_data)
+            if stat.statistic.sacc_indices is None:
+                raise RuntimeError(
+                    f"The statistic {stat.statistic} has no sacc_indices."
+                )
+            indices_list.append(stat.statistic.sacc_indices.copy())
+            data_vector_list.append(stat.statistic.get_data_vector())
 
-        indices_list = [s.statistic.sacc_indices.copy() for s in self.statistics]
         indices = np.concatenate(indices_list)
+        data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
 
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):
                 cov[new_i, new_j] = covariance[old_i, old_j]
 
+        self.data_vector = data_vector
+        self.cov_index_map = {old_i: new_i for new_i, old_i in enumerate(indices)}
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
         self.inv_cov = np.linalg.inv(cov)
@@ -196,27 +224,48 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before get_cov()",
     )
     @final
-    def get_cov(self) -> npt.NDArray[np.float64]:
-        """Gets the current covariance matrix."""
+    def get_cov(
+        self, statistic: Union[Statistic, List[Statistic], None] = None
+    ) -> npt.NDArray[np.float64]:
+        """Gets the current covariance matrix.
+
+        :param statistic: The statistic for which the sub-covariance matrix
+        should be return. If not specified, return the covariance of all
+        statistics.
+        """
         assert self.cov is not None
-        return self.cov
+        if statistic is None:
+            return self.cov
+
+        assert self.cov_index_map is not None
+        if isinstance(statistic, Statistic):
+            statistic_list = [statistic]
+        else:
+            statistic_list = statistic
+        indices: List[int] = []
+        for stat in statistic_list:
+            assert stat.sacc_indices is not None
+            temp = [self.cov_index_map[idx] for idx in stat.sacc_indices]
+            indices += temp
+        ixgrid = np.ix_(indices, indices)
+
+        return self.cov[ixgrid]
 
     @final
     @enforce_states(
-        initial=[State.READY, State.UPDATED],
+        initial=[State.READY, State.UPDATED, State.COMPUTED],
         failure_message="read() must be called before get_data_vector()",
     )
     def get_data_vector(self) -> npt.NDArray[np.float64]:
         """Get the data vector from all statistics and concatenate in the right
         order."""
-        data_vector_list: List[npt.NDArray[np.float64]] = [
-            stat.get_data_vector() for stat in self.statistics
-        ]
-        return np.concatenate(data_vector_list)
+        assert self.data_vector is not None
+        return self.data_vector
 
     @final
     @enforce_states(
         initial=State.UPDATED,
+        terminal=State.COMPUTED,
         failure_message="update() must be called before compute_theory_vector()",
     )
     def compute_theory_vector(self, tools: ModelingTools) -> npt.NDArray[np.float64]:
@@ -227,7 +276,22 @@ class GaussFamily(Likelihood):
         theory_vector_list: List[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
         ]
-        return np.concatenate(theory_vector_list)
+        self.theory_vector = np.concatenate(theory_vector_list)
+        return self.theory_vector
+
+    @final
+    @enforce_states(
+        initial=State.COMPUTED,
+        failure_message="compute_theory_vector() must be called before "
+        "get_theory_vector()",
+    )
+    def get_theory_vector(self) -> npt.NDArray[np.float64]:
+        """Get the theory vector from all statistics and concatenate in the right
+        order."""
+        assert (
+            self.theory_vector is not None
+        ), "theory_vector is None after compute_theory_vector() has been called"
+        return self.theory_vector
 
     @final
     @enforce_states(
@@ -249,7 +313,8 @@ class GaussFamily(Likelihood):
 
     @final
     @enforce_states(
-        initial=State.UPDATED,
+        initial=[State.UPDATED, State.COMPUTED],
+        terminal=State.COMPUTED,
         failure_message="update() must be called before compute_chisq()",
     )
     def compute_chisq(self, tools: ModelingTools) -> float:
@@ -266,9 +331,43 @@ class GaussFamily(Likelihood):
         assert len(data_vector) == len(theory_vector)
         residuals = data_vector - theory_vector
 
-        self.predicted_data_vector: npt.NDArray[np.float64] = theory_vector
-        self.measured_data_vector: npt.NDArray[np.float64] = data_vector
-
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
         return chisq
+
+    @enforce_states(
+        initial=State.COMPUTED,
+        failure_message="compute_theory_vector() must be called before "
+        "make_realization()",
+    )
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
+    ) -> sacc.Sacc:
+        new_sacc = sacc_data.copy()
+
+        sacc_indices_list = []
+        for stat in self.statistics:
+            assert stat.statistic.sacc_indices is not None
+            sacc_indices_list.append(stat.statistic.sacc_indices.copy())
+
+        sacc_indices = np.concatenate(sacc_indices_list)
+
+        if add_noise:
+            new_data_vector = self.make_realization_vector()
+        else:
+            new_data_vector = self.get_theory_vector()
+
+        assert len(sacc_indices) == len(new_data_vector)
+
+        if strict:
+            if set(sacc_indices.tolist()) != set(sacc_data.indices()):
+                raise RuntimeError(
+                    "The predicted data does not cover all the data in the "
+                    "sacc object. To write only the calculated predictions, "
+                    "set strict=False."
+                )
+
+        for prediction_idx, sacc_idx in enumerate(sacc_indices):
+            new_sacc.data[sacc_idx].value = new_data_vector[prediction_idx]
+
+        return new_sacc

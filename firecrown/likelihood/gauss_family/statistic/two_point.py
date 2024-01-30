@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import Dict, Tuple, Optional, final, Union
+from typing import Dict, Tuple, Optional, Union
 import copy
 import functools
 import warnings
@@ -207,8 +207,6 @@ class TwoPoint(Statistic):
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
         self._ell_or_theta: Optional[npt.NDArray[np.float64]] = None
-        self.predicted_statistic_: Optional[TheoryVector] = None
-        self.measured_statistic_: Optional[DataVector] = None
         self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
 
         self.sacc_tracers: Tuple[str, str]
@@ -221,13 +219,6 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
-
-    @final
-    def _reset(self) -> None:
-        """Prepared to be called again for a new cosmology."""
-        # TODO: Why is self.predicted_statistic_ not re-set to None here?
-        # If we do that, then the CosmoSIS module fails -- because this data
-        # is accessed from that code.
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
@@ -298,7 +289,7 @@ class TwoPoint(Statistic):
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
         self.data_vector = DataVector.create(_stat)
-        self.measured_statistic_ = self.data_vector
+        self.data_vector = self.data_vector
         self.sacc_tracers = tracers
 
         super().read(sacc_data)
@@ -331,7 +322,7 @@ class TwoPoint(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic from sources."""
 
         assert self._ell_or_theta is not None
@@ -410,10 +401,7 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory_window_function.weight, ell
             )
 
-        self.predicted_statistic_ = TheoryVector.create(theory_vector)
-
         assert self.data_vector is not None
-
         return TheoryVector.create(theory_vector)
 
     def calculate_pk(

@@ -65,7 +65,7 @@ import numpy.typing as npt
 
 import sacc
 
-from ..updatable import Updatable, UpdatableCollection
+from ..updatable import Updatable
 from ..modeling_tools import ModelingTools
 
 
@@ -83,14 +83,30 @@ class Likelihood(Updatable):
         """Default initialization for a base Likelihood object."""
         super().__init__(parameter_prefix=parameter_prefix)
 
-        self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.inv_cov: Optional[npt.NDArray[np.double]] = None
-        self.statistics: UpdatableCollection = UpdatableCollection()
-
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
+
+    def make_realization_vector(self) -> npt.NDArray[np.float64]:
+        """Create a new realization of the model using the previously computed
+        theory vector and covariance matrix.
+        """
+        raise NotImplementedError(
+            "This class does not implement make_realization_vector."
+        )
+
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
+    ) -> sacc.Sacc:
+        """Create a new realization of the model using the previously computed
+        theory vector and covariance matrix.
+
+        :param sacc_data: The SACC data object containing the covariance matrix
+        :param add_noise: If True, add noise to the realization. If False, return
+            only the theory vector.
+        :param strict: If True, check that the indices of the realization cover
+            all the indices of the SACC data object.
+        """
 
     @abstractmethod
     def compute_loglike(self, tools: ModelingTools) -> float:

@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Union, Tuple, Optional, final
+from typing import List, Tuple, Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -263,9 +263,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
 class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     """Source class for number counts."""
 
-    systematics: UpdatableCollection
-    tracer_args: NumberCountsArgs
-
     def __init__(
         self,
         *,
@@ -273,11 +270,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[
-            List[
-                Union[NumberCountsSystematic, SourceGalaxySystematic[NumberCountsArgs]]
-            ]
-        ] = None,
+        systematics: Optional[List[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -296,9 +289,12 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.derived_scale = derived_scale
 
         self.bias = parameters.register_new_updatable_parameter()
-        self.systematics = UpdatableCollection(systematics)
+        self.systematics: UpdatableCollection[
+            SourceGalaxySystematic[NumberCountsArgs]
+        ] = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
+        self.tracer_args: NumberCountsArgs
 
     @final
     def _update_source(self, params: ParamsMap):

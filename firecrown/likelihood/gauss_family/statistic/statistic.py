@@ -120,6 +120,8 @@ class Statistic(Updatable):
         super().__init__(parameter_prefix=parameter_prefix)
         self.sacc_indices: Optional[npt.NDArray[np.int64]]
         self.ready = False
+        self.computed_theory_vector = False
+        self.theory_vector: Optional[TheoryVector] = None
 
     def read(self, _: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC data, and mark it
@@ -138,13 +140,45 @@ class Statistic(Updatable):
                 f"of length 0; the length must be positive"
             )
 
+    def _reset(self):
+        """Reset this statistic, subclasses implementations must call
+        super()._reset()"""
+        self.computed_theory_vector = False
+        self.theory_vector = None
+
     @abstractmethod
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector."""
 
-    @abstractmethod
+    @final
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
+        if not self.is_updated():
+            raise RuntimeError(
+                f"The statistic {self} has not been updated with parameters."
+            )
+        self.theory_vector = self._compute_theory_vector(tools)
+        self.computed_theory_vector = True
+
+        return self.theory_vector
+
+    @abstractmethod
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a statistic from sources, concrete implementation."""
+
+    def get_theory_vector(self) -> TheoryVector:
+        """Returns the last computed theory vector. Raises a RuntimeError if the vector
+        has not been computed."""
+
+        if not self.computed_theory_vector:
+            raise RuntimeError(
+                f"The theory for statistic {self} has not been computed yet."
+            )
+        assert self.theory_vector is not None, (
+            "implementation error, "
+            "computed_theory_vector is True but theory_vector is None"
+        )
+        return self.theory_vector
 
 
 class GuardedStatistic(Updatable):
@@ -156,6 +190,7 @@ class GuardedStatistic(Updatable):
         """Initialize the GuardedStatistic to contain the given
         :class:`Statistic`."""
         super().__init__()
+        assert isinstance(stat, Statistic)
         self.statistic = stat
 
     def read(self, sacc_data: sacc.Sacc) -> None:
@@ -224,11 +259,6 @@ class TrivialStatistic(Statistic):
         super().read(sacc_data)
 
     @final
-    def _reset(self):
-        """Reset this statistic."""
-        self.computed_theory_vector = False
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         """Return an empty RequiredParameters."""
         return RequiredParameters([])
@@ -243,7 +273,6 @@ class TrivialStatistic(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
         """Return a fixed theory vector."""
-        self.computed_theory_vector = True
         return TheoryVector.from_list([self.mean] * self.count)

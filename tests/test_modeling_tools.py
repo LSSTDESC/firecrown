@@ -51,7 +51,7 @@ def test_no_adding_pk_twice(dummy_powerspectrum: pyccl.Pk2D):
 def test_modeling_tool_prepare_without_update():
     tools = ModelingTools()
     cosmo = pyccl.CosmologyVanillaLCDM()
-    with pytest.raises(RuntimeError, match="ModelingTools has not been prepared"):
+    with pytest.raises(RuntimeError, match="ModelingTools has not been updated."):
         tools.prepare(cosmo)
 
 

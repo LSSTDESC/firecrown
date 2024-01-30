@@ -143,6 +143,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     # TODO:  We need to have a way to test systematics without requiring
     #  digging  into the innards of a likelihood object.
     s0 = likelihood.statistics[0].statistic
+    assert isinstance(s0, TwoPoint)
     ells = s0.ells
     cells_GG = s0.cells[("shear", "shear")]
     cells_GI = s0.cells[("shear", "intrinsic_pt")]
@@ -151,12 +152,14 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
 
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
+    assert isinstance(s2, TwoPoint)
     cells_gG = s2.cells[("galaxies", "shear")]
     cells_gI = s2.cells[("galaxies", "intrinsic_pt")]
     cells_mI = s2.cells[("magnification+rsd", "intrinsic_pt")]
 
     # print(list(likelihood.statistics[3].cells.keys()))
     s3 = likelihood.statistics[3].statistic
+    assert isinstance(s3, TwoPoint)
     cells_gg = s3.cells[("galaxies", "galaxies")]
     cells_gm = s3.cells[("galaxies", "magnification+rsd")]
     cells_mm = s3.cells[("magnification+rsd", "magnification+rsd")]
@@ -303,6 +306,7 @@ def test_pt_mixed_systematics(sacc_data):
     # pylint: disable=no-member
 
     s0 = likelihood.statistics[0].statistic
+    assert isinstance(s0, TwoPoint)
     ells = s0.ells
 
     # print(list(likelihood.statistics[2].cells.keys()))

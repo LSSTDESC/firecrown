@@ -213,7 +213,7 @@ class SourceGalaxyPhotoZShift(
     :ivar delta_z: the photo-z shift.
     """
 
-    def __init__(self, sacc_tracer: str):
+    def __init__(self, sacc_tracer: str) -> None:
         """Create a PhotoZShift object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -280,7 +280,9 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
         self.sacc_tracer = sacc_tracer
         self.current_tracer_args: Optional[_SourceGalaxyArgsT] = None
-        self.systematics: UpdatableCollection = UpdatableCollection(systematics)
+        self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
+            UpdatableCollection(systematics)
+        )
         self.tracer_args: _SourceGalaxyArgsT
 
     def _read(self, sacc_data: sacc.Sacc):
