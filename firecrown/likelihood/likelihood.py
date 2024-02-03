@@ -232,11 +232,11 @@ class NamedParameters:
             elif isinstance(value, Sequence):
                 if all(isinstance(v, float) for v in value):
                     self.data = dict(self.data, **{key: np.array(value)})
-                elif all(isinstance(v, int) for v in value):
+                elif all(isinstance(v, bool) for v in value):
                     self.data = dict(
                         self.data, **{key: np.array(value, dtype=np.int64)}
                     )
-                elif all(isinstance(v, bool) for v in value):
+                elif all(isinstance(v, int) for v in value):
                     self.data = dict(
                         self.data, **{key: np.array(value, dtype=np.int64)}
                     )
