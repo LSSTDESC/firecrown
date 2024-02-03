@@ -1,6 +1,7 @@
 """
 Tests for the module firecrown.likelihood.gauss_family.statistic.source.source.
 """
+
 import pytest
 import numpy as np
 

@@ -1,11 +1,11 @@
 """Tests for the cluster kernel module."""
-import pytest
+
 import numpy as np
+import pytest
+
 from firecrown.models.cluster.kernel import (
     Completeness,
     Purity,
-    KernelType,
-    Kernel,
     SpectroscopicRedshift,
     TrueMass,
 )
@@ -13,84 +13,41 @@ from firecrown.models.cluster.kernel import (
 
 def test_create_spectroscopic_redshift_kernel():
     srk = SpectroscopicRedshift()
-    assert isinstance(srk, Kernel)
-    assert srk.kernel_type == KernelType.Z_PROXY
-    assert srk.is_dirac_delta is True
-    assert srk.integral_bounds is None
-    assert srk.has_analytic_sln is False
+    assert srk is not None
 
 
 def test_create_mass_kernel():
     mk = TrueMass()
-    assert isinstance(mk, Kernel)
-    assert mk.kernel_type == KernelType.MASS_PROXY
-    assert mk.is_dirac_delta is True
-    assert mk.integral_bounds is None
-    assert mk.has_analytic_sln is False
+    assert mk is not None
 
 
 def test_create_completeness_kernel():
     ck = Completeness()
-    assert isinstance(ck, Kernel)
-    assert ck.kernel_type == KernelType.COMPLETENESS
-    assert ck.is_dirac_delta is False
-    assert ck.integral_bounds is None
-    assert ck.has_analytic_sln is False
+    assert ck is not None
 
 
 def test_create_purity_kernel():
     pk = Purity()
-    assert isinstance(pk, Kernel)
-    assert pk.kernel_type == KernelType.PURITY
-    assert pk.is_dirac_delta is False
-    assert pk.integral_bounds is None
-    assert pk.has_analytic_sln is False
+    assert pk is not None
 
 
 def test_spec_z_distribution():
     srk = SpectroscopicRedshift()
-
-    assert (
-        srk.distribution(
-            _mass=np.linspace(13, 17, 5),
-            _z=np.linspace(0, 1, 5),
-            _mass_proxy=np.linspace(0, 5, 5),
-            _z_proxy=np.linspace(0, 1, 5),
-            _mass_proxy_limits=(0, 5),
-            _z_proxy_limits=(0, 1),
-        )
-        == 1.0
-    )
+    assert srk.distribution() == 1.0
 
 
 def test_true_mass_distribution():
     tmk = TrueMass()
-
-    assert (
-        tmk.distribution(
-            _mass=np.linspace(13, 17, 5),
-            _z=np.linspace(0, 1, 5),
-            _mass_proxy=np.linspace(0, 5, 5),
-            _z_proxy=np.linspace(0, 1, 5),
-            _mass_proxy_limits=(0, 5),
-            _z_proxy_limits=(0, 1),
-        )
-        == 1.0
-    )
+    assert tmk.distribution() == 1.0
 
 
 @pytest.mark.precision_sensitive
 def test_purity_distribution():
     pk = Purity()
-
-    mass = np.linspace(13, 17, 10)
     mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    z_proxy = np.linspace(0, 1, 10)
-
     mass_proxy_limits = (1.0, 10.0)
-    z_proxy_limits = (0.1, 1.0)
 
     truth = np.array(
         [
@@ -107,9 +64,7 @@ def test_purity_distribution():
         ]
     )
 
-    purity = pk.distribution(
-        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-    )
+    purity = pk.distribution(z, mass_proxy, mass_proxy_limits)
     assert isinstance(purity, np.ndarray)
     for ref, true in zip(purity, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
@@ -118,15 +73,9 @@ def test_purity_distribution():
 @pytest.mark.precision_sensitive
 def test_purity_distribution_uses_mean():
     pk = Purity()
-
-    mass = np.linspace(13, 17, 10)
-    z_proxy = np.linspace(0, 1, 10)
-
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     mass_proxy = np.ones_like(z) * -1.0
-
     mass_proxy_limits = (1.0, 10.0)
-    z_proxy_limits = (0.1, 1.0)
 
     truth = np.array(
         [
@@ -143,9 +92,7 @@ def test_purity_distribution_uses_mean():
         ]
     )
 
-    purity = pk.distribution(
-        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-    )
+    purity = pk.distribution(z, mass_proxy, mass_proxy_limits)
     assert isinstance(purity, np.ndarray)
     for ref, true in zip(purity, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
@@ -156,11 +103,6 @@ def test_completeness_distribution():
     ck = Completeness()
     mass = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    mass_proxy = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
-    z_proxy = np.linspace(0, 1, 10)
-
-    mass_proxy_limits = (1.0, 10.0)
-    z_proxy_limits = (0.1, 1.0)
 
     truth = np.array(
         [
@@ -177,9 +119,7 @@ def test_completeness_distribution():
         ]
     )
 
-    comp = ck.distribution(
-        mass, z, mass_proxy, z_proxy, mass_proxy_limits, z_proxy_limits
-    )
+    comp = ck.distribution(mass, z)
     assert isinstance(comp, np.ndarray)
     for ref, true in zip(comp, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)

@@ -1,6 +1,5 @@
 """Tests for the class firecrown.likelihood.NamedParameters."""
 
-
 import pytest
 import numpy as np
 

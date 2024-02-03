@@ -4,6 +4,7 @@ This module contains the ModelingTools class, which is built around the
 :class:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
+
 from __future__ import annotations
 from typing import Dict, Optional, Collection
 from abc import ABC, abstractmethod
@@ -76,7 +77,7 @@ class ModelingTools(Updatable):
         """
 
         if not self.is_updated():
-            raise RuntimeError("ModelingTools has not been prepared")
+            raise RuntimeError("ModelingTools has not been updated.")
 
         if self._prepared:
             raise RuntimeError("ModelingTools has already been prepared")

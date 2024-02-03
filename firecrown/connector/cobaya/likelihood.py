@@ -5,6 +5,7 @@ Module for providing a likelihood for use in Cobaya.
 This module provides the class :class:`LikelihoodConnector`, which is an implementation
 of a Cobaya likelihood.
 """
+
 from typing import List, Dict, Union
 
 import numpy as np

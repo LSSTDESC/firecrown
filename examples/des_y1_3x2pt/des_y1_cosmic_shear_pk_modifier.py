@@ -156,10 +156,9 @@ def run_likelihood() -> None:
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
+    assert isinstance(likelihood, ConstGaussian)
     two_point_0 = likelihood.statistics[0].statistic
     assert isinstance(two_point_0, TwoPoint)
-
-    assert isinstance(likelihood, ConstGaussian)
     assert likelihood.cov is not None
 
     # Predict CCL Cl

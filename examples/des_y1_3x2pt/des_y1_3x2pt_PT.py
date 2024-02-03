@@ -43,6 +43,9 @@ class CclSetup:
 
 @dataclass
 class CElls:
+    """A package of related C_ell values, to reduce the number of variables
+    used in the :meth:`run_likelihood` method."""
+
     GG: np.ndarray
     GI: np.ndarray
     II: np.ndarray
@@ -234,6 +237,7 @@ def run_likelihood() -> None:
     assert likelihood.cov is not None
 
     stat0 = likelihood.statistics[0].statistic
+    assert isinstance(stat0, TwoPoint)
 
     # x = likelihood.statistics[0].ell_or_theta_
     # y_data = likelihood.statistics[0].measured_statistic_
@@ -243,11 +247,12 @@ def run_likelihood() -> None:
 
     print(list(stat0.cells.keys()))
 
-    stat2 = likelihood.statistics[2].statistic
+    stat2 = likelihood.statistics[2].statistic  # pylint: disable=no-member
     assert isinstance(stat2, TwoPoint)
     print(list(stat2.cells.keys()))
 
-    stat3 = likelihood.statistics[3].statistic
+    stat3 = likelihood.statistics[3].statistic  # pylint: disable=no-member
+    assert isinstance(stat3, TwoPoint)
     print(list(stat3.cells.keys()))
 
     plot_predicted_and_measured_statistics(

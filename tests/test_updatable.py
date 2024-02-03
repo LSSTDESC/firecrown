@@ -1,6 +1,7 @@
 """
 Tests for the Updatable class.
 """
+
 from itertools import permutations
 import pytest
 import numpy as np
@@ -59,15 +60,17 @@ def test_simple_updatable():
     assert obj.required_parameters() == expected_params
     assert obj.x is None
     assert obj.y is None
+    assert not obj.is_updated()
     new_params = ParamsMap({"x": -1.0, "y": 5.5})
     obj.update(new_params)
     assert obj.x == -1.0
     assert obj.y == 5.5
+    assert obj.is_updated()
 
 
 #  pylint: disable-msg=E1101
 def test_updatable_collection_appends():
-    coll = UpdatableCollection()
+    coll: UpdatableCollection = UpdatableCollection()
     assert len(coll) == 0
 
     coll.append(SimpleUpdatable())
@@ -83,7 +86,7 @@ def test_updatable_collection_appends():
 
 
 def test_updatable_collection_updates():
-    coll = UpdatableCollection()
+    coll: UpdatableCollection = UpdatableCollection()
     assert len(coll) == 0
 
     coll.append(SimpleUpdatable())
@@ -99,11 +102,11 @@ def test_updatable_collection_updates():
 
 
 def test_updatable_collection_rejects_nonupdatables():
-    coll = UpdatableCollection()
+    coll: UpdatableCollection = UpdatableCollection()
     assert len(coll) == 0
 
     with pytest.raises(TypeError):
-        coll.append(3)  # type: ignore
+        coll.append(3)
     assert len(coll) == 0
 
 
@@ -228,6 +231,21 @@ def test_update_rejects_internal_parameters():
 
     assert my_updatable.a is None
     assert my_updatable.the_meaning_of_life == 42.0
+
+
+def test_updatable_collection_is_updated():
+    obj: UpdatableCollection = UpdatableCollection([SimpleUpdatable()])
+    new_params = {"x": -1.0, "y": 5.5}
+
+    assert not obj.is_updated()
+    obj.update(ParamsMap(new_params))
+    assert obj.is_updated()
+
+
+def test_updatablecollection_without_derived_parameters():
+    obj: UpdatableCollection = UpdatableCollection()
+
+    assert obj.get_derived_parameters() is None
 
 
 @pytest.fixture(name="nested_updatables", params=permutations(range(3)))

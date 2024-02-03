@@ -3,21 +3,25 @@
 The binned cluster number counts statistic predicts the number of galaxy
 clusters within a single redshift and mass bin.
 """
+
 from __future__ import annotations
+
 from typing import List, Optional
-import sacc
+
 import numpy as np
-from firecrown.models.cluster.integrator.integrator import Integrator
+import sacc
+
+from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
+from firecrown.likelihood.gauss_family.statistic.statistic import (
+    DataVector,
+    Statistic,
+    TheoryVector,
+)
+from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.likelihood.gauss_family.statistic.statistic import (
-    Statistic,
-    DataVector,
-    TheoryVector,
-)
-from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
-from firecrown.modeling_tools import ModelingTools
+from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
 class BinnedClusterNumberCounts(Statistic):
@@ -31,7 +35,7 @@ class BinnedClusterNumberCounts(Statistic):
         self,
         cluster_properties: ClusterProperty,
         survey_name: str,
-        integrator: Integrator,
+        cluster_recipe: ClusterRecipe,
         systematics: Optional[List[SourceSystematic]] = None,
     ):
         super().__init__()
@@ -39,7 +43,7 @@ class BinnedClusterNumberCounts(Statistic):
         self.theory_vector: Optional[TheoryVector] = None
         self.cluster_properties = cluster_properties
         self.survey_name = survey_name
-        self.integrator = integrator
+        self.cluster_recipe = cluster_recipe
         self.data_vector = DataVector.from_list([])
         self.sky_area = 0.0
         self.bins: List[SaccBin] = []
@@ -74,7 +78,7 @@ class BinnedClusterNumberCounts(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         assert tools.cluster_abundance is not None
 
         theory_vector_list: List[float] = []
@@ -110,23 +114,17 @@ class BinnedClusterNumberCounts(Statistic):
         the clusters in each bin."""
         assert tools.cluster_abundance is not None
 
-        cluster_masses = []
-        for bin_edge, counts in zip(self.bins, cluster_counts):
-            integrand = tools.cluster_abundance.get_integrand(
-                average_properties=cluster_properties
+        mean_values = []
+        for this_bin, counts in zip(self.bins, cluster_counts):
+            total_observable = self.cluster_recipe.evaluate_theory_prediction(
+                tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
             )
-            self.integrator.set_integration_bounds(
-                tools.cluster_abundance,
-                self.sky_area,
-                bin_edge.z_edges,
-                bin_edge.mass_proxy_edges,
-            )
+            cluster_counts.append(counts)
 
-            total_mass = self.integrator.integrate(integrand)
-            mean_mass = total_mass / counts
-            cluster_masses.append(mean_mass)
+            mean_observable = total_observable / counts
+            mean_values.append(mean_observable)
 
-        return cluster_masses
+        return mean_values
 
     def get_binned_cluster_counts(self, tools: ModelingTools) -> List[float]:
         """Computes the number of clusters in each bin
@@ -137,16 +135,10 @@ class BinnedClusterNumberCounts(Statistic):
         assert tools.cluster_abundance is not None
 
         cluster_counts = []
-        for bin_edge in self.bins:
-            self.integrator.set_integration_bounds(
-                tools.cluster_abundance,
-                self.sky_area,
-                bin_edge.z_edges,
-                bin_edge.mass_proxy_edges,
+        for this_bin in self.bins:
+            counts = self.cluster_recipe.evaluate_theory_prediction(
+                tools.cluster_abundance, this_bin, self.sky_area
             )
-
-            integrand = tools.cluster_abundance.get_integrand()
-            counts = self.integrator.integrate(integrand)
             cluster_counts.append(counts)
 
         return cluster_counts

@@ -14,7 +14,18 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import final, Dict, Optional, Any, List, Union, Iterable
+from typing import (
+    Any,
+    cast,
+    Dict,
+    final,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+)
 from abc import ABC
 from collections import UserList
 from .parameters import (
@@ -299,8 +310,10 @@ class Updatable(ABC):
         return DerivedParameterCollection([])
 
 
-class UpdatableCollection(UserList[Any]):
+T = TypeVar("T", bound=Updatable)
 
+
+class UpdatableCollection(UserList[T], Generic[T]):
     """UpdatableCollection is a list of Updatable objects and is itself
     supports :meth:`update` and :meth:`reset` (although it does not inherit
     from :class:`Updatable`).
@@ -310,7 +323,7 @@ class UpdatableCollection(UserList[Any]):
     updated.
     """
 
-    def __init__(self, iterable: Optional[Iterable[Any]] = None) -> None:
+    def __init__(self, iterable: Optional[Iterable[T]] = None) -> None:
         """Initialize the UpdatableCollection from the supplied iterable.
 
         If the iterable contains any object that is not Updatable, a TypeError
@@ -379,7 +392,7 @@ class UpdatableCollection(UserList[Any]):
             return derived_parameters
         return None
 
-    def append(self, item: Updatable) -> None:
+    def append(self, item: T) -> None:
         """Append the given item to self.
 
         If the item is not Updatable a TypeError is raised.
@@ -392,10 +405,11 @@ class UpdatableCollection(UserList[Any]):
             )
         super().append(item)
 
-    def __setitem__(self, key, value) -> None:
+    def __setitem__(self, key, value):
         """Set self[key] to value; raise TypeError if Value is not Updatable."""
         if not isinstance(value, Updatable):
             raise TypeError(
-                "Values inserted into an UpdatableCollection must be Updatable"
+                "Only updatable items can be appended to an UpdatableCollection"
             )
-        super().__setitem__(key, value)
+
+        super().__setitem__(key, cast(T, value))

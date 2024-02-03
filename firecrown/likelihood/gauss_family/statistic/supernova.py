@@ -62,7 +62,7 @@ class Supernova(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute SNIa distance statistic using CCL."""
 
         ccl_cosmo = tools.get_ccl_cosmology()
