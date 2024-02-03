@@ -74,7 +74,7 @@ def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
     mset = Ncm.MSet()
     mset.set(cosmo)
 
-    my_model1_dc_yaml = """
+    my_model1_dc_yaml = r"""
 NcmModelBuilder:
     parent-type-string: 'NcmModel'
     name: 'MyModel1'
@@ -100,7 +100,7 @@ NcmModelBuilder:
         fit-type: 0
 """
 
-    my_model2_dc_yaml = """
+    my_model2_dc_yaml = r"""
 NcmModelBuilder:
     parent-type-string: 'NcmModel'
     name: 'MyModel2'

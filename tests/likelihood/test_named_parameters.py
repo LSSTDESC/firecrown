@@ -216,6 +216,16 @@ def test_named_parameters_set_from_basic_dict_float_array():
     assert params.get_float_array("b").tolist() == [4.0, 5.0, 6.0]
 
 
+def test_named_parameters_set_from_basic_dict_bool_array():
+    params = NamedParameters()
+    params.set_from_basic_dict({"a": [True, False, True]})
+    assert params.get_int_array("a").tolist() == [True, False, True]
+
+    params.set_from_basic_dict({"b": [False, True, False]})
+    assert params.get_int_array("a").tolist() == [True, False, True]
+    assert params.get_int_array("b").tolist() == [False, True, False]
+
+
 def test_named_parameters_set_from_basic_dict_mixed():
     params = NamedParameters()
     params.set_from_basic_dict(
@@ -346,6 +356,6 @@ def test_invalid_convert_to_basic_dict():
 
 
 def test_invalid_convert_to_basic_dict_sequence():
-    params = NamedParameters({"a": ["a", "b", "c"]})  # type: ignore
+    params = NamedParameters({"a": np.array(["a", "b", "c"])})  # type: ignore
     with pytest.raises(ValueError):
         params.convert_to_basic_dict()
