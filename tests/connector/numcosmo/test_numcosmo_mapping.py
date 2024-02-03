@@ -1,8 +1,9 @@
 """Unit tests for the numcosmo Mapping connector."""
 
+from typing import cast
 import pytest
 import pyccl as ccl
-from numcosmo_py import Ncm, Nc
+from numcosmo_py import Ncm, Nc, GObject
 
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
@@ -12,12 +13,6 @@ from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoGaussCov,
     MappingNumCosmo,
     NumCosmoFactory,
-)
-
-from firecrown.connector.numcosmo.model import (
-    NumCosmoModel,
-    ScalarParameter,
-    define_numcosmo_model,
 )
 
 Ncm.cfg_init()
@@ -58,18 +53,9 @@ def test_numcosmo_mapping_create_params_map_absent_model():
     mset = Ncm.MSet()
     mset.set(cosmo)
 
-    my_model_dc = NumCosmoModel(
-        name="MyModel", description="MyModel desc", scalar_params=[], vector_params=[]
-    )
-
-    MyModel = define_numcosmo_model(my_model_dc)
-
-    my_model = MyModel()
-    del my_model
-
     with pytest.raises(
         RuntimeError,
-        match="Model MyModel was not found in the model set.",
+        match="Model name MyModel was not found in the model set.",
     ):
         map_cosmo.create_params_map(["MyModel"], mset)
 
@@ -88,26 +74,66 @@ def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
     mset = Ncm.MSet()
     mset.set(cosmo)
 
-    my_model1_dc = NumCosmoModel(
-        name="MyModel1",
-        description="MyModel1 desc",
-        scalar_params=[
-            ScalarParameter(symbol="symbol1", name="param1", default_value=1.0),
-            ScalarParameter(symbol="symbol2", name="param2", default_value=1.0),
-        ],
-        vector_params=[],
-    )
-    my_model2_dc = NumCosmoModel(
-        name="MyModel2",
-        description="MyModel2 desc",
-        scalar_params=[
-            ScalarParameter(symbol="symbol2", name="param2", default_value=1.0),
-        ],
-        vector_params=[],
-    )
+    my_model1_dc_yaml = """
+NcmModelBuilder:
+    parent-type-string: 'NcmModel'
+    name: 'MyModel1'
+    description: 'My Test Model 1'
+    sparams:
+    - NcmSParam:
+        name: 'param1'
+        symbol: 'symbol1'
+        lower-bound: -5.0
+        upper-bound: 5.0
+        scale: 1.0
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+    - NcmSParam:
+        name: 'param2'
+        symbol: 'symbol2'
+        lower-bound: -5.0
+        upper-bound: 5.0
+        scale: 1.0
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+"""
 
-    MyModel1 = define_numcosmo_model(my_model1_dc)
-    MyModel2 = define_numcosmo_model(my_model2_dc)
+    my_model2_dc_yaml = """
+NcmModelBuilder:
+    parent-type-string: 'NcmModel'
+    name: 'MyModel2'
+    description: 'My Test Model 2'
+    sparams:
+    - NcmSParam:
+        name: 'param2'
+        symbol: 'symbol2'
+        lower-bound: -5.0
+        upper-bound: 5.0
+        scale: 1.0
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+"""
+
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+    mb_model1: Ncm.ModelBuilder = cast(
+        Ncm.ModelBuilder, ser.from_yaml(my_model1_dc_yaml)
+    )
+    assert isinstance(mb_model1, Ncm.ModelBuilder)
+    model1_type = mb_model1.create()
+    GObject.new(model1_type)
+
+    mb_model2: Ncm.ModelBuilder = cast(
+        Ncm.ModelBuilder, ser.from_yaml(my_model2_dc_yaml)
+    )
+    assert isinstance(mb_model2, Ncm.ModelBuilder)
+    model2_type = mb_model2.create()
+    GObject.new(model2_type)
+
+    MyModel1 = model1_type.pytype
+    MyModel2 = model2_type.pytype
 
     my_model1 = MyModel1()
     my_model2 = MyModel2()
