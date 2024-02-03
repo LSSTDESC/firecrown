@@ -280,9 +280,9 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
         self.sacc_tracer = sacc_tracer
         self.current_tracer_args: Optional[_SourceGalaxyArgsT] = None
-        self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
-            UpdatableCollection(systematics)
-        )
+        self.systematics: UpdatableCollection[
+            SourceGalaxySystematic
+        ] = UpdatableCollection(systematics)
         self.tracer_args: _SourceGalaxyArgsT
 
     def _read(self, sacc_data: sacc.Sacc):
