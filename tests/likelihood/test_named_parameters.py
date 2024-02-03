@@ -356,6 +356,6 @@ def test_invalid_convert_to_basic_dict():
 
 
 def test_invalid_convert_to_basic_dict_sequence():
-    params = NamedParameters({"a": np.array(["a", "b", "c"])})  # type: ignore
+    params = NamedParameters({"a": np.array(["a", "b", "c"])})
     with pytest.raises(ValueError):
         params.convert_to_basic_dict()
