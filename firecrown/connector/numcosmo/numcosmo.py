@@ -393,19 +393,17 @@ class NumCosmoData(Ncm.Data):
 
     def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
         """Set the likelihood build parameters."""
-        if value is None:
-            self._likelihood_build_parameters = None
-        else:
-            self._likelihood_build_parameters = NamedParameters()
+        self._likelihood_build_parameters = NamedParameters()
+        if value is not None:
             self._likelihood_build_parameters.set_from_basic_dict(
                 var_dict_to_dict(value)
             )
 
-            if self._starting_deserialization:
-                self._set_likelihood_from_factory()
-                self._starting_deserialization = False
-            else:
-                self._starting_deserialization = True
+        if self._starting_deserialization:
+            self._set_likelihood_from_factory()
+            self._starting_deserialization = False
+        else:
+            self._starting_deserialization = True
 
     likelihood_build_parameters = GObject.Property(
         type=Ncm.VarDict,
@@ -625,18 +623,16 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
     def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
         """Set the likelihood build parameters."""
-        if value is None:
-            self._likelihood_build_parameters = None
-        else:
-            self._likelihood_build_parameters = NamedParameters()
+        self._likelihood_build_parameters = NamedParameters()
+        if value is not None:
             self._likelihood_build_parameters.set_from_basic_dict(
                 var_dict_to_dict(value)
             )
-            if self._starting_deserialization:
-                self._set_likelihood_from_factory()
-                self._starting_deserialization = False
-            else:
-                self._starting_deserialization = True
+        if self._starting_deserialization:
+            self._set_likelihood_from_factory()
+            self._starting_deserialization = False
+        else:
+            self._starting_deserialization = True
 
     likelihood_build_parameters = GObject.Property(
         type=Ncm.VarDict,

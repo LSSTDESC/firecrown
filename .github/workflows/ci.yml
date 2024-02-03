@@ -86,9 +86,9 @@ jobs:
       - name: Running mypy
         shell: bash -l {0}
         run: |
-          mypy -p firecrown -vv
-          mypy -p examples -vv
-          mypy -p tests -vv
+          mypy -p firecrown
+          mypy -p examples
+          mypy -p tests
       - name: Running pylint
         shell: bash -l {0}
         run: |
