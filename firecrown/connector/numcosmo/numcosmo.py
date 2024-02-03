@@ -5,13 +5,11 @@ be used without an installation of NumCosmo.
 
 """
 
-from typing import Dict, Union, List, Any, Optional
-import pickle
-import base64
+from typing import Dict, Union, List, Any, Optional, Sequence
 import numpy as np
 import pyccl as ccl
 
-from numcosmo_py import Nc, Ncm, GObject
+from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
 
 from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.likelihood.likelihood import Likelihood
@@ -45,6 +43,12 @@ class MappingNumCosmo(GObject.Object):
         self._p_ml: Optional[Nc.PowspecML]
         self._p_mnl: Optional[Nc.PowspecMNL]
         self._dist: Nc.Distance
+
+        if not hasattr(self, "_p_ml"):
+            self._p_ml = None
+
+        if not hasattr(self, "_p_mnl"):
+            self._p_mnl = None
 
     def _get_mapping_name(self) -> str:
         """Return the mapping name."""
@@ -294,6 +298,61 @@ class MappingNumCosmo(GObject.Object):
         return params_map
 
 
+def _convert_basic_dict_to_named_parameters(
+    basic_dict: Dict[
+        str,
+        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
+    ],
+) -> NamedParameters:
+    """Convert a basic dictionary to a NamedParameters object."""
+    named_parameters = NamedParameters()
+
+    for key, value in basic_dict.items():
+        if isinstance(value, (bool, str, float)):
+            named_parameters.data = dict(named_parameters.data, **{key: value})
+        elif isinstance(value, Sequence):
+            if all(isinstance(v, float) for v in value):
+                named_parameters.data = dict(
+                    named_parameters.data, **{key: np.array(value)}
+                )
+            elif all(isinstance(v, int) for v in value):
+                named_parameters.data = dict(
+                    named_parameters.data, **{key: np.array(value, dtype=np.int64)}
+                )
+            else:
+                raise TypeError(f"Invalid type for sequence value: {value}")
+        else:
+            raise TypeError(f"Invalid type for value: {value}")
+    return named_parameters
+
+
+def _convert_named_parameters_to_basic_dict(
+    named_parameters: NamedParameters,
+) -> Dict[
+    str,
+    Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
+]:
+    """Convert a NamedParameters object to a basic dictionary."""
+    basic_dict: Dict[
+        str,
+        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
+    ] = {}
+
+    for key, value in named_parameters.data.items():
+        if isinstance(value, (bool, str, float, int)):
+            basic_dict[key] = value
+        elif isinstance(value, np.ndarray):
+            if value.dtype == np.int64:
+                basic_dict[key] = value.tolist()
+            elif value.dtype == np.float64:
+                basic_dict[key] = value.tolist()
+            else:
+                raise TypeError(f"Invalid type for sequence value: {value}")
+        else:
+            raise TypeError(f"Invalid type for value: {value}")
+    return basic_dict
+
+
 class NumCosmoData(Ncm.Data):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
     object virtual methods using the prefix `do_`. This class implements
@@ -308,7 +367,9 @@ class NumCosmoData(Ncm.Data):
         self.ccl_cosmo: Optional[ccl.Cosmology] = None
         self._model_list: List[str]
         self._nc_mapping: MappingNumCosmo
-        self._likelihood_str: Optional[str] = None
+        self._likelihood_source: Optional[str] = None
+        self._likelihood_build_parameters: Optional[NamedParameters] = None
+        self._starting_deserialization: bool = False
         self.dof: int = 100
         self.len: int = 100
         self.set_init(True)
@@ -343,27 +404,67 @@ class NumCosmoData(Ncm.Data):
         setter=_set_nc_mapping,
     )
 
-    def _get_likelihood_str(self) -> Optional[str]:
-        """Return the likelihood string."""
-        return self._likelihood_str
+    def _set_likelihood_from_factory(self):
+        """Deserialize the likelihood."""
+        assert self._likelihood_source is not None
+        assert self._likelihood_build_parameters is not None
+        likelihood, tools = load_likelihood(
+            self._likelihood_source, self._likelihood_build_parameters
+        )
+        assert isinstance(likelihood, Likelihood)
+        assert isinstance(tools, ModelingTools)
+        self.likelihood = likelihood
+        self.tools = tools
 
-    def _set_likelihood_str(self, value: Optional[str]):
-        """Set the likelihood string."""
-        self._likelihood_str = value
+    def _get_likelihood_source(self) -> Optional[str]:
+        """Return the likelihood string defining the factory function."""
+        return self._likelihood_source
+
+    def _set_likelihood_source(self, value: Optional[str]):
+        """Set the likelihood string defining the factory function."""
+
         if value is not None:
-            likelihood_source, build_parameters = pickle.loads(
-                base64.b64decode(value.encode("ascii"))
-            )
-            likelihood, tools = load_likelihood(likelihood_source, build_parameters)
-            assert isinstance(likelihood, Likelihood)
-            self.likelihood = likelihood
-            self.tools = tools
+            self._likelihood_source = value
+            if self._starting_deserialization:
+                self._set_likelihood_from_factory()
+                self._starting_deserialization = False
+            else:
+                self._starting_deserialization = True
 
-    likelihood_str = GObject.Property(
+    likelihood_source = GObject.Property(
         type=str,
-        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
-        getter=_get_likelihood_str,
-        setter=_set_likelihood_str,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_likelihood_source,
+        setter=_set_likelihood_source,
+    )
+
+    def _get_likelihood_build_parameters(self) -> Optional[Ncm.VarDict]:
+        """Return the likelihood build parameters."""
+        if self._likelihood_build_parameters is None:
+            return None
+        return dict_to_var_dict(
+            _convert_named_parameters_to_basic_dict(self._likelihood_build_parameters)
+        )
+
+    def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
+        """Set the likelihood build parameters."""
+        if value is None:
+            self._likelihood_build_parameters = None
+        else:
+            self._likelihood_build_parameters = _convert_basic_dict_to_named_parameters(
+                var_dict_to_dict(value)
+            )
+            if self._starting_deserialization:
+                self._set_likelihood_from_factory()
+                self._starting_deserialization = False
+            else:
+                self._starting_deserialization = True
+
+    likelihood_build_parameters = GObject.Property(
+        type=Ncm.VarDict,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_likelihood_build_parameters,
+        setter=_set_likelihood_build_parameters,
     )
 
     @classmethod
@@ -373,7 +474,8 @@ class NumCosmoData(Ncm.Data):
         model_list: List[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
-        likelihood_str: Optional[str] = None,
+        likelihood_source: Optional[str] = None,
+        likelihood_build_parameters: Optional[NamedParameters] = None,
     ):
         """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
         with a constant covariance."""
@@ -382,13 +484,13 @@ class NumCosmoData(Ncm.Data):
             cls,
             model_list=model_list,
             nc_mapping=nc_mapping,
-            likelihood_str=None,
         )
 
         nc_data.likelihood = likelihood
         nc_data.tools = tools
         # pylint: disable=protected-access
-        nc_data._likelihood_str = likelihood_str
+        nc_data._likelihood_source = likelihood_source
+        nc_data._likelihood_build_parameters = likelihood_build_parameters
         # pylint: enable=protected-access
 
         return nc_data
@@ -473,7 +575,9 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.len: int
         self._model_list: List[str]
         self._nc_mapping: MappingNumCosmo
-        self._likelihood_str: Optional[str] = None
+        self._likelihood_source: Optional[str] = None
+        self._likelihood_build_parameters: Optional[NamedParameters] = None
+        self._starting_deserialization: bool = False
 
     def _get_model_list(self) -> List[str]:
         """Return the list of models."""
@@ -529,28 +633,68 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         self.set_init(True)
 
-    def _get_likelihood_str(self) -> Optional[str]:
-        """Return the likelihood string."""
-        return self._likelihood_str
+    def _set_likelihood_from_factory(self):
+        """Deserialize the likelihood."""
+        assert self._likelihood_source is not None
+        assert self._likelihood_build_parameters is not None
+        likelihood, tools = load_likelihood(
+            self._likelihood_source, self._likelihood_build_parameters
+        )
+        assert isinstance(likelihood, ConstGaussian)
+        assert isinstance(tools, ModelingTools)
+        self.likelihood = likelihood
+        self.tools = tools
+        self._configure_object()
 
-    def _set_likelihood_str(self, value: Optional[str]):
-        """Set the likelihood string."""
-        self._likelihood_str = value
+    def _get_likelihood_source(self) -> Optional[str]:
+        """Return the likelihood string defining the factory function."""
+        return self._likelihood_source
+
+    def _set_likelihood_source(self, value: Optional[str]):
+        """Set the likelihood string defining the factory function."""
+
         if value is not None:
-            likelihood_source, build_parameters = pickle.loads(
-                base64.b64decode(value.encode("ascii"))
-            )
-            likelihood, tools = load_likelihood(likelihood_source, build_parameters)
-            assert isinstance(likelihood, ConstGaussian)
-            self.likelihood = likelihood
-            self.tools = tools
-            self._configure_object()
+            self._likelihood_source = value
+            if self._starting_deserialization:
+                self._set_likelihood_from_factory()
+                self._starting_deserialization = False
+            else:
+                self._starting_deserialization = True
 
-    likelihood_str = GObject.Property(
+    likelihood_source = GObject.Property(
         type=str,
-        flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT,
-        getter=_get_likelihood_str,
-        setter=_set_likelihood_str,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_likelihood_source,
+        setter=_set_likelihood_source,
+    )
+
+    def _get_likelihood_build_parameters(self) -> Optional[Ncm.VarDict]:
+        """Return the likelihood build parameters."""
+        if self._likelihood_build_parameters is None:
+            return None
+        return dict_to_var_dict(
+            _convert_named_parameters_to_basic_dict(self._likelihood_build_parameters)
+        )
+
+    def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
+        """Set the likelihood build parameters."""
+        if value is None:
+            self._likelihood_build_parameters = None
+        else:
+            self._likelihood_build_parameters = _convert_basic_dict_to_named_parameters(
+                var_dict_to_dict(value)
+            )
+            if self._starting_deserialization:
+                self._set_likelihood_from_factory()
+                self._starting_deserialization = False
+            else:
+                self._starting_deserialization = True
+
+    likelihood_build_parameters = GObject.Property(
+        type=Ncm.VarDict,
+        flags=GObject.ParamFlags.READWRITE,
+        getter=_get_likelihood_build_parameters,
+        setter=_set_likelihood_build_parameters,
     )
 
     @classmethod
@@ -560,7 +704,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         model_list: List[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
-        likelihood_str: Optional[str] = None,
+        likelihood_source: Optional[str] = None,
+        likelihood_build_parameters: Optional[NamedParameters] = None,
     ):
         """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
         with a constant covariance."""
@@ -573,13 +718,17 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             cls,
             model_list=model_list,
             nc_mapping=nc_mapping,
-            likelihood_str=None,
+            likelihood_source=None,
+            likelihood_build_parameters=None,
         )
+
+        assert isinstance(nc_gauss_cov, NumCosmoGaussCov)
 
         nc_gauss_cov.likelihood = likelihood
         nc_gauss_cov.tools = tools
         # pylint: disable=protected-access
-        nc_gauss_cov._likelihood_str = likelihood_str
+        nc_gauss_cov._likelihood_source = likelihood_source
+        nc_gauss_cov._likelihood_build_parameters = likelihood_build_parameters
         nc_gauss_cov._configure_object()
         # pylint: enable=protected-access
 
@@ -635,7 +784,6 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         This method should compute the theoretical mean for the gaussian
         distribution.
         """
-
         theory_vector = self.likelihood.compute_theory_vector(self.tools)
         mean_vector.set_array(theory_vector)
 
@@ -662,18 +810,25 @@ class NumCosmoFactory:
     ):
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
-        likelihood_str = base64.b64encode(
-            pickle.dumps((likelihood_source, build_parameters))
-        ).decode("ascii")
-
+        self.data: Union[NumCosmoGaussCov, NumCosmoData]
         self.mapping: MappingNumCosmo = mapping
         if isinstance(likelihood, ConstGaussian):
-            self.data: Ncm.Data = NumCosmoGaussCov.new_from_likelihood(
-                likelihood, model_list, tools, mapping, likelihood_str
+            self.data = NumCosmoGaussCov.new_from_likelihood(
+                likelihood,
+                model_list,
+                tools,
+                mapping,
+                likelihood_source,
+                build_parameters,
             )
         else:
             self.data = NumCosmoData.new_from_likelihood(
-                likelihood, model_list, tools, mapping, likelihood_str
+                likelihood,
+                model_list,
+                tools,
+                mapping,
+                likelihood_source,
+                build_parameters,
             )
 
     def get_data(self) -> Ncm.Data:
@@ -683,3 +838,7 @@ class NumCosmoFactory:
     def get_mapping(self) -> MappingNumCosmo:
         """This method return the current MappingNumCosmo."""
         return self.mapping
+
+    def get_firecrown_likelihood(self) -> Likelihood:
+        """This method returns the firecrown Likelihood."""
+        return self.data.likelihood
