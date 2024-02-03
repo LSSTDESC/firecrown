@@ -5,7 +5,7 @@ be used without an installation of NumCosmo.
 
 """
 
-from typing import Dict, Union, List, Any, Optional, Sequence
+from typing import Dict, Union, List, Any, Optional
 import numpy as np
 import pyccl as ccl
 
@@ -298,61 +298,6 @@ class MappingNumCosmo(GObject.Object):
         return params_map
 
 
-def _convert_basic_dict_to_named_parameters(
-    basic_dict: Dict[
-        str,
-        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
-    ],
-) -> NamedParameters:
-    """Convert a basic dictionary to a NamedParameters object."""
-    named_parameters = NamedParameters()
-
-    for key, value in basic_dict.items():
-        if isinstance(value, (bool, str, float)):
-            named_parameters.data = dict(named_parameters.data, **{key: value})
-        elif isinstance(value, Sequence):
-            if all(isinstance(v, float) for v in value):
-                named_parameters.data = dict(
-                    named_parameters.data, **{key: np.array(value)}
-                )
-            elif all(isinstance(v, int) for v in value):
-                named_parameters.data = dict(
-                    named_parameters.data, **{key: np.array(value, dtype=np.int64)}
-                )
-            else:
-                raise TypeError(f"Invalid type for sequence value: {value}")
-        else:
-            raise TypeError(f"Invalid type for value: {value}")
-    return named_parameters
-
-
-def _convert_named_parameters_to_basic_dict(
-    named_parameters: NamedParameters,
-) -> Dict[
-    str,
-    Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
-]:
-    """Convert a NamedParameters object to a basic dictionary."""
-    basic_dict: Dict[
-        str,
-        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
-    ] = {}
-
-    for key, value in named_parameters.data.items():
-        if isinstance(value, (bool, str, float, int)):
-            basic_dict[key] = value
-        elif isinstance(value, np.ndarray):
-            if value.dtype == np.int64:
-                basic_dict[key] = value.tolist()
-            elif value.dtype == np.float64:
-                basic_dict[key] = value.tolist()
-            else:
-                raise TypeError(f"Invalid type for sequence value: {value}")
-        else:
-            raise TypeError(f"Invalid type for value: {value}")
-    return basic_dict
-
-
 class NumCosmoData(Ncm.Data):
     """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
     object virtual methods using the prefix `do_`. This class implements
@@ -443,7 +388,7 @@ class NumCosmoData(Ncm.Data):
         if self._likelihood_build_parameters is None:
             return None
         return dict_to_var_dict(
-            _convert_named_parameters_to_basic_dict(self._likelihood_build_parameters)
+            self._likelihood_build_parameters.convert_to_basic_dict()
         )
 
     def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
@@ -451,9 +396,11 @@ class NumCosmoData(Ncm.Data):
         if value is None:
             self._likelihood_build_parameters = None
         else:
-            self._likelihood_build_parameters = _convert_basic_dict_to_named_parameters(
+            self._likelihood_build_parameters = NamedParameters()
+            self._likelihood_build_parameters.set_from_basic_dict(
                 var_dict_to_dict(value)
             )
+
             if self._starting_deserialization:
                 self._set_likelihood_from_factory()
                 self._starting_deserialization = False
@@ -673,7 +620,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         if self._likelihood_build_parameters is None:
             return None
         return dict_to_var_dict(
-            _convert_named_parameters_to_basic_dict(self._likelihood_build_parameters)
+            self._likelihood_build_parameters.convert_to_basic_dict()
         )
 
     def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
@@ -681,7 +628,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         if value is None:
             self._likelihood_build_parameters = None
         else:
-            self._likelihood_build_parameters = _convert_basic_dict_to_named_parameters(
+            self._likelihood_build_parameters = NamedParameters()
+            self._likelihood_build_parameters.set_from_basic_dict(
                 var_dict_to_dict(value)
             )
             if self._starting_deserialization:

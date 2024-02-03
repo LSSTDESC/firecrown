@@ -52,7 +52,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Tuple, Union, Optional, Set
+from typing import Mapping, Tuple, Union, Optional, Set, Dict, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -214,6 +214,64 @@ class NamedParameters:
     ]:
         """Return the contained data as a set."""
         return set(self.data)
+
+    def set_from_basic_dict(
+        self,
+        basic_dict: Dict[
+            str,
+            Union[
+                str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
+            ],
+        ],
+    ) -> None:
+        """Set the contained data from a dictionary of basic types."""
+
+        for key, value in basic_dict.items():
+            if isinstance(value, (str, float, int, bool)):
+                self.data = dict(self.data, **{key: value})
+            elif isinstance(value, Sequence):
+                if all(isinstance(v, float) for v in value):
+                    self.data = dict(self.data, **{key: np.array(value)})
+                elif all(isinstance(v, int) for v in value):
+                    self.data = dict(
+                        self.data, **{key: np.array(value, dtype=np.int64)}
+                    )
+                elif all(isinstance(v, bool) for v in value):
+                    self.data = dict(
+                        self.data, **{key: np.array(value, dtype=np.int64)}
+                    )
+                else:
+                    raise ValueError(f"Invalid type for sequence value: {value}")
+            else:
+                raise ValueError(f"Invalid type for value: {value}")
+
+    def convert_to_basic_dict(
+        self,
+    ) -> Dict[
+        str,
+        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
+    ]:
+        """Convert a NamedParameters object to a dictionary of basic types."""
+        basic_dict: Dict[
+            str,
+            Union[
+                str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
+            ],
+        ] = {}
+
+        for key, value in self.data.items():
+            if isinstance(value, (str, float, int, bool)):
+                basic_dict[key] = value
+            elif isinstance(value, np.ndarray):
+                if value.dtype == np.int64:
+                    basic_dict[key] = value.tolist()
+                elif value.dtype == np.float64:
+                    basic_dict[key] = value.tolist()
+                else:
+                    raise ValueError(f"Invalid type for sequence value: {value}")
+            else:
+                raise ValueError(f"Invalid type for value: {value}")
+        return basic_dict
 
 
 def load_likelihood_from_module_type(
