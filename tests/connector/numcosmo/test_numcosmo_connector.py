@@ -250,3 +250,19 @@ def test_numcosmo_factory_const_gauss_set_properties_empty_build_parameters(
     assert fc_likelihood is not None
     assert isinstance(fc_likelihood, Likelihood)
     assert fc_likelihood != old_fc_likelihood
+
+
+def test_empty_plain_data():
+    """Test the NumCosmo connector."""
+
+    nc_data = NumCosmoData()
+    assert nc_data.likelihood_source is None
+    assert nc_data.likelihood_build_parameters is None
+
+
+def test_empty_gauss_cov_data():
+    """Test the NumCosmo connector."""
+
+    nc_data = NumCosmoGaussCov()
+    assert nc_data.likelihood_source is None
+    assert nc_data.likelihood_build_parameters is None
