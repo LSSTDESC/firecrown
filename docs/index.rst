@@ -28,8 +28,6 @@ It can also be used as a library in other contexts, and so the installation of F
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
 
-
-
 .. toctree::
    :maxdepth: 1
    :caption: Developing with Firecrown
@@ -39,6 +37,13 @@ It can also be used as a library in other contexts, and so the installation of F
    Developer Notes<dev-notes.rst>
    Contributing<contrib.rst>
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Cookbook
+   :name: cookbook
+
+   NumCosmo <numcosmo_cookbook.rst>
+ 
 .. toctree::
    :maxdepth: 1
    :caption: Reference
