@@ -162,9 +162,12 @@ jobs:
           numcosmo run test cluster_mean_mass_redshift_richness.yaml
           numcosmo from-cosmosis cluster_counts_mean_mass_redshift_richness.ini --matter-ps eisenstein_hu
           numcosmo run test cluster_counts_mean_mass_redshift_richness.yaml
+      
       - name: Upload coverage reports to Codecov
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
