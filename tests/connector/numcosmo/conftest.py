@@ -1,38 +1,10 @@
 """Collection of fixtures for the numcosmo connector tests."""
 
+from typing import cast
 import math
 import pytest
 
-from numcosmo_py import Nc
-
-from firecrown.connector.numcosmo.model import (
-    NumCosmoModel,
-    ScalarParameter,
-    VectorParameter,
-    define_numcosmo_model,
-)
-
-
-@pytest.fixture(name="sparams")
-def fixture_scalar_parameters():
-    """Create a list of scalar parameters."""
-    sp1 = ScalarParameter("s_1", "sp1", 0.0, 1.0, 0.1)
-    sp2 = ScalarParameter("s_2", "sp2", -1.0, 2.0, 0.1)
-    return [sp1, sp2]
-
-
-@pytest.fixture(name="vparams")
-def fixture_vector_parameters():
-    """Create a list of vector parameters."""
-    vp1 = VectorParameter(3, "v_1", "vp1", 0.0, 1.0, 0.1)
-    vp2 = VectorParameter(4, "v_2", "vp2", 0.0, 1.0, 0.1)
-    return [vp1, vp2]
-
-
-@pytest.fixture(name="nc_model")
-def fixture_nc_model(sparams, vparams):
-    """Create a NumCosmoModel instance."""
-    return NumCosmoModel("model1", "model1 description", sparams, vparams)
+from numcosmo_py import Nc, Ncm, GObject
 
 
 @pytest.fixture(name="numcosmo_cosmo_xcdm")
@@ -135,11 +107,28 @@ def fixture_numcosmo_cosmo_cpl():
 @pytest.fixture(name="nc_model_trivial", scope="session")
 def fixture_nc_model_trivial():
     """Create a NumCosmoModel instance."""
-    return define_numcosmo_model(
-        NumCosmoModel(
-            "NcFirecrownTrivial",
-            "Trivial model description",
-            [ScalarParameter(r"\mu", "mean", -5.0, 5.0, 0.1)],
-            [],
-        )
+    my_model_trivial_yaml = r"""
+NcmModelBuilder:
+    parent-type-string: 'NcmModel'
+    name: 'NcFirecrownTrivial'
+    description: 'Trivial model description'
+    sparams:
+    - NcmSParam:
+        name: 'mean'
+        symbol: '\mu'
+        lower-bound: -5.0
+        upper-bound: 5.0
+        scale: 1.0
+        absolute-tolerance: 0.0
+        default-value: 0.1
+        fit-type: 0
+"""
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
+    mb_model: Ncm.ModelBuilder = cast(
+        Ncm.ModelBuilder, ser.from_yaml(my_model_trivial_yaml)
     )
+    assert isinstance(mb_model, Ncm.ModelBuilder)
+    model_type = mb_model.create()
+    GObject.new(model_type)
+
+    return model_type.pytype

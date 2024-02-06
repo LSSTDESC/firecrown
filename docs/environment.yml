@@ -10,7 +10,7 @@ dependencies:
   - flake8
   - jupyter
   - mypy
-  - numcosmo>=0.18.2
+  - numcosmo>=0.21.1
   - numpy>=1.21.0
   - plantuml
   - pip>=20.1  # pip is needed as dependency

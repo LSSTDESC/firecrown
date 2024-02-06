@@ -1,67 +1,38 @@
-# comment: false
+# See https://docs.codecov.com/docs/codecovyml-reference for config reference
+# To validate: `curl -X POST --data-binary @codecov.yml https://codecov.io/validate`
+
 comment:
   layout: "diff, flags, files"
   behavior: default
-  # if true: only post the comment if coverage changes
   require_changes: false  
-
-  # [true :: must have a base report to post]
   require_base: false        
-
-  # [true :: must have a head report to post]
   require_head: true       
-
-  # [true :: only show coverage on the git diff]
   hide_project_coverage: false 
 
 coverage:
-
-  # What precision do you want the coverage value to be
   precision: 1
-  # Which direction to you want to round the coverage value
   round: down
-  # The value range where you want the value to be green
-  range: 95..100
+  # red below 70, yellow between 70 and 95, green above 95.
+  range: 70..95 
 
   status:
-    # The codecov/patch status only measures lines adjusted 
-    # in the pull request or single commit, if the commit is 
-    # not in a pull request. This status provides an indication 
-    # on how well the pull request is tested.
     patch:
       default:
-        # basic
         target: 100%
         threshold: 0%
-
-        # advanced
-        branches: 
-          - master
-        if_ci_failed: error #success, failure, error, ignore
+        branches: [master]
+        if_ci_failed: error
         only_pulls: false
 
-    # The codecov/project status measures overall project 
-    # coverage and compares it against the base of the pull 
-    # request or parent commit.
     project:
       default: 
-        # auto will use the coverage from the base commit 
-        # (pull request base or parent commit) coverage to 
-        # compare against.
         target: auto
-        # Allow the coverage to drop by X%, and posting a success status
         threshold: 0%
-
-        # advanced settings
-        branches: 
-          - master
-        if_ci_failed: error #success, failure, error, ignore
+        branches: [master]
+        if_ci_failed: error
         only_pulls: false
-        # These behaviors allows users to specify what should happen 
-        # to the project status in case changes causes overall coverage 
-        # to drop, but are part of good development practices.
-        removed_code_behavior: fully_covered_patch #off, removals_only, adjust_base",
+        removed_code_behavior: fully_covered_patch
       
 github_checks:
-	annotations: true #,false
+  annotations: true
 
