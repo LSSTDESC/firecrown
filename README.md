@@ -2,7 +2,7 @@
 Firecrown
 =========
 
-[![firecrown-ci](https://github.com/LSSTDESC/firecrown/actions/workflows/ci.yml/badge.svg)](https://github.com/LSSTDESC/firecrown/actions/workflows/ci.yml) [![Documentation !Status](https://readthedocs.org/projects/ccl/badge/?version=latest)](https://firecrown.readthedocs.io/en/latest/?badge=latest) [![Coverage Status](https://coveralls.io/repos/github/LSSTDESC/firecrown/badge.svg?branch=master)](https://coveralls.io/github/LSSTDESC/firecrown?branch=master)
+[![firecrown-ci](https://github.com/LSSTDESC/firecrown/actions/workflows/ci.yml/badge.svg)](https://github.com/LSSTDESC/firecrown/actions/workflows/ci.yml) [![Documentation !Status](https://readthedocs.org/projects/ccl/badge/?version=latest)](https://firecrown.readthedocs.io/en/latest/?badge=latest) [![codecov](https://codecov.io/gh/LSSTDESC/firecrown/graph/badge.svg?token=LevlRR3wJj)](https://codecov.io/gh/LSSTDESC/firecrown)
 
 Firecrown is a Python package that provides the DESC *framework* to implement likelihoods,
 as well as specific likelihood implementations. Firecrown is intended to be usable *from*
