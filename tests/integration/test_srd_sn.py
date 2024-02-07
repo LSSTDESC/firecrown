@@ -1,3 +1,5 @@
+"""Integration tests for SRD SN"""
+
 import subprocess
 import pytest
 

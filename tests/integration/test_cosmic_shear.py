@@ -1,3 +1,5 @@
+"""Integration tests for cosmic shear"""
+
 import subprocess
 import pytest
 

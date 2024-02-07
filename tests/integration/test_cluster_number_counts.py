@@ -1,3 +1,5 @@
+"""Integration tests for cluster number counts"""
+
 import subprocess
 import pytest
 

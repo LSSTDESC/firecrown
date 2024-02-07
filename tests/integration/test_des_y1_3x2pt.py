@@ -1,3 +1,5 @@
+"""Integration tests for the DES Y1 3x2pt analysis"""
+
 import subprocess
 import pytest
 

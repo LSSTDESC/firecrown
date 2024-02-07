@@ -55,6 +55,8 @@ def pytest_collection_modifyitems(config, items):
 
 
 def _skip_tests(items, keyword, reason):
+    """Helper method to skip tests based on a marker name."""
+
     tests_to_skip = pytest.mark.skip(reason=reason)
     for item in items:
         if keyword in item.keywords:
