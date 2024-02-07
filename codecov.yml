@@ -20,13 +20,19 @@ coverage:
       default:
         target: 100%
         threshold: 0%
+        branches: [master]
+        if_ci_failed: error
+        only_pulls: false
 
     project:
       default: 
         target: auto
         threshold: 0%
+        branches: [master]
+        if_ci_failed: error
+        only_pulls: false
         removed_code_behavior: fully_covered_patch
       
 github_checks:
-	annotations: true
+  annotations: true
 
