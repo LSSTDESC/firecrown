@@ -21,9 +21,16 @@ def pytest_addoption(parser):
     """Add handling of firecrown-specific options for the pytest test runner.
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
+    --integration: used to run only integration tests, which are otherwise not run.
     """
     parser.addoption(
         "--runslow", action="store_true", default=False, help="run slow tests"
+    )
+    parser.addoption(
+        "--integration",
+        action="store_true",
+        default=False,
+        help="run integration tests",
     )
 
 
@@ -39,13 +46,19 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(config, items):
     """Apply our special markers and option handling for pytest."""
-    if config.getoption("--runslow"):
-        # --runslow given in cli: do not skip slow tests
-        return
-    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+
+    if not config.getoption("--integration"):
+        _skip_tests(items, "integration", "need --integration option to run")
+
+    if not config.getoption("--runslow"):
+        _skip_tests(items, "slow", "need --runslow option to run")
+
+
+def _skip_tests(items, keyword, reason):
+    tests_to_skip = pytest.mark.skip(reason=reason)
     for item in items:
-        if "slow" in item.keywords:
-            item.add_marker(skip_slow)
+        if keyword in item.keywords:
+            item.add_marker(tests_to_skip)
 
 
 # Fixtures
