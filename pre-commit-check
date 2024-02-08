@@ -1,0 +1,16 @@
+#!/usr/bin/env bash -x
+
+black firecrown/ examples/ tests/
+
+flake8 firecrown/ examples/ tests/
+
+pylint firecrown
+
+pylint --rcfile firecrown/models/pylintrc firecrown/models
+
+pylint --rcfile tests/pylintrc tests
+
+PERL5LIB= parallel ::: "mypy -p firecrown" "mypy -p tests" "mypy -p examples"
+
+python -m pytest --runslow -vv --integration tests
+
