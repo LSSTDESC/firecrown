@@ -95,74 +95,12 @@ jobs:
           pylint firecrown
           pylint --rcfile tests/pylintrc  tests
           pylint --rcfile firecrown/models/pylintrc firecrown/models
-      - name: Running pytest
+      - name: Running unit tests
         shell: bash -l {0}
         run: python -m pytest -vv --runslow --cov firecrown --cov-report xml
-      - name: Running example - cosmic-shear - cosmosis
+      - name: Running integration tests
         shell: bash -l {0}
-        run: |
-          cd examples/cosmicshear
-          python generate_cosmicshear_data.py
-          cosmosis cosmicshear.ini
-      - name: Running example - cosmic-shear - NumCosmo
-        shell: bash -l {0}
-        run: |
-          cd examples/cosmicshear
-          numcosmo from-cosmosis cosmicshear.ini --matter-ps eisenstein_hu --nonlin-matter-ps halofit 
-          numcosmo run test cosmicshear.yaml
-      - name: Running example - des-y1-3x2pt - cosmosis
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          cosmosis des_y1_3x2pt.ini
-          cosmosis des_y1_3x2pt_PT.ini
-      - name: Running example - des-y1-3x2pt - cobaya
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          cobaya-run cobaya_evaluate.yaml
-          cobaya-run cobaya_evaluate_PT.yaml
-      - name: Running example - des-y1-3x2pt - NumCosmo
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          numcosmo from-cosmosis des_y1_3x2pt.ini --matter-ps eisenstein_hu --nonlin-matter-ps halofit 
-          numcosmo run test des_y1_3x2pt.yaml
-          numcosmo from-cosmosis des_y1_3x2pt_PT.ini --matter-ps eisenstein_hu --nonlin-matter-ps halofit 
-          numcosmo run test des_y1_3x2pt_PT.yaml
-      - name: Running example - srd_sn - cosmosis
-        shell: bash -l {0}
-        run: |
-          cd examples/srd_sn
-          cosmosis sn_srd.ini
-          cosmosis sn_only.ini
-      - name: Running example - srd_sn - NumCosmo
-        shell: bash -l {0}
-        run: |
-          cd examples/srd_sn
-          numcosmo from-cosmosis sn_srd.ini
-          numcosmo run test sn_srd.yaml
-          numcosmo from-cosmosis sn_only.ini
-          numcosmo run test sn_only.yaml
-      - name: Running example - cluster_number_counts - cosmosis
-        shell: bash -l {0}
-        run: |  
-          cd examples/cluster_number_counts
-          python generate_rich_mean_mass_sacc_data.py
-          cosmosis cluster_counts_redshift_richness.ini
-          cosmosis cluster_mean_mass_redshift_richness.ini
-          cosmosis cluster_counts_mean_mass_redshift_richness.ini
-      - name: Running example - cluster_number_counts - NumCosmo
-        shell: bash -l {0}
-        run: |
-          cd examples/cluster_number_counts
-          numcosmo from-cosmosis cluster_counts_redshift_richness.ini --matter-ps eisenstein_hu
-          numcosmo run test cluster_counts_redshift_richness.yaml
-          numcosmo from-cosmosis cluster_mean_mass_redshift_richness.ini --matter-ps eisenstein_hu
-          numcosmo run test cluster_mean_mass_redshift_richness.yaml
-          numcosmo from-cosmosis cluster_counts_mean_mass_redshift_richness.ini --matter-ps eisenstein_hu
-          numcosmo run test cluster_counts_mean_mass_redshift_richness.yaml
-      
+        run: python -m pytest -vv -s --integration tests/integration --cov firecrown --cov-report xml --cov-append
       - name: Upload coverage reports to Codecov
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
         uses: codecov/codecov-action@v4
