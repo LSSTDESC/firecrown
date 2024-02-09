@@ -25,7 +25,7 @@ from ..... import parameters
 from .....modeling_tools import ModelingTools
 from .....parameters import (
     ParamsMap,
-    DerivedParameterScalar,
+    DerivedParameter,
     DerivedParameterCollection,
 )
 from .....updatable import UpdatableCollection
@@ -307,7 +307,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         if self.derived_scale:
             assert self.current_tracer_args is not None
-            derived_scale = DerivedParameterScalar(
+            derived_scale = DerivedParameter(
                 "TwoPoint",
                 f"NumberCountsScale_{self.sacc_tracer}",
                 self.current_tracer_args.scale,

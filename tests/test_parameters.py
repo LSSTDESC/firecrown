@@ -6,7 +6,7 @@ import pytest
 import numpy as np
 from firecrown.parameters import RequiredParameters, parameter_get_full_name, ParamsMap
 from firecrown.parameters import (
-    DerivedParameterScalar,
+    DerivedParameter,
     DerivedParameterCollection,
     register_new_updatable_parameter,
     create,
@@ -104,7 +104,7 @@ def test_parameter_get_full_name_without_prefix():
 
 
 def test_derived_parameter_scalar():
-    derived_param = DerivedParameterScalar("sec1", "name1", 3.14)
+    derived_param = DerivedParameter("sec1", "name1", 3.14)
 
     assert isinstance(derived_param.get_val(), float)
     assert derived_param.get_val() == 3.14
@@ -115,35 +115,35 @@ def test_derived_parameter_wrong_type():
     """Try instantiating DerivedParameter objects with wrong types."""
 
     with pytest.raises(TypeError):
-        _ = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
+        _ = DerivedParameter(  # pylint: disable-msg=E0110,W0612
             "sec1", "name1", "not a float"  # type: ignore
         )
     with pytest.raises(TypeError):
-        _ = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
+        _ = DerivedParameter(  # pylint: disable-msg=E0110,W0612
             "sec1", "name1", [3.14]  # type: ignore
         )
     with pytest.raises(TypeError):
-        _ = DerivedParameterScalar(  # pylint: disable-msg=E0110,W0612
+        _ = DerivedParameter(  # pylint: disable-msg=E0110,W0612
             "sec1", "name1", np.array([3.14])  # type: ignore
         )
 
 
 def test_derived_parameters_collection():
     olist = [
-        DerivedParameterScalar("sec1", "name1", 3.14),
-        DerivedParameterScalar("sec2", "name2", 2.72),
+        DerivedParameter("sec1", "name1", 3.14),
+        DerivedParameter("sec2", "name2", 2.72),
     ]
     orig = DerivedParameterCollection(olist)
     clist = orig.get_derived_list()
-    clist.append(DerivedParameterScalar("sec3", "name3", 0.58))
+    clist.append(DerivedParameter("sec3", "name3", 0.58))
     assert orig.get_derived_list() == olist
 
 
 def test_derived_parameters_collection_add():
     olist = [
-        DerivedParameterScalar("sec1", "name1", 3.14),
-        DerivedParameterScalar("sec2", "name2", 2.72),
-        DerivedParameterScalar("sec2", "name3", 0.58),
+        DerivedParameter("sec1", "name1", 3.14),
+        DerivedParameter("sec2", "name2", 2.72),
+        DerivedParameter("sec2", "name3", 0.58),
     ]
     dpc1 = DerivedParameterCollection(olist)
     dpc2 = None
@@ -158,16 +158,16 @@ def test_derived_parameters_collection_add():
 
 def test_derived_parameters_collection_add_iter():
     olist1 = [
-        DerivedParameterScalar("sec1", "name1", 3.14),
-        DerivedParameterScalar("sec2", "name2", 2.72),
-        DerivedParameterScalar("sec2", "name3", 0.58),
+        DerivedParameter("sec1", "name1", 3.14),
+        DerivedParameter("sec2", "name2", 2.72),
+        DerivedParameter("sec2", "name3", 0.58),
     ]
     dpc1 = DerivedParameterCollection(olist1)
 
     olist2 = [
-        DerivedParameterScalar("sec3", "name1", 3.14e1),
-        DerivedParameterScalar("sec3", "name2", 2.72e1),
-        DerivedParameterScalar("sec3", "name3", 0.58e1),
+        DerivedParameter("sec3", "name1", 3.14e1),
+        DerivedParameter("sec3", "name2", 2.72e1),
+        DerivedParameter("sec3", "name3", 0.58e1),
     ]
     dpc2 = DerivedParameterCollection(olist2)
 
@@ -181,35 +181,35 @@ def test_derived_parameters_collection_add_iter():
 
 
 def test_derived_parameter_eq():
-    dv1 = DerivedParameterScalar("sec1", "name1", 3.14)
-    dv2 = DerivedParameterScalar("sec1", "name1", 3.14)
+    dv1 = DerivedParameter("sec1", "name1", 3.14)
+    dv2 = DerivedParameter("sec1", "name1", 3.14)
 
     assert dv1 == dv2
 
 
 def test_derived_parameter_eq_invalid():
-    dv1 = DerivedParameterScalar("sec1", "name1", 3.14)
+    dv1 = DerivedParameter("sec1", "name1", 3.14)
 
     with pytest.raises(
         NotImplementedError,
-        match="DerivedParameterScalar comparison is only "
-        "implemented for DerivedParameterScalar objects",
+        match="DerivedParameter comparison is only "
+        "implemented for DerivedParameter objects",
     ):
         _ = dv1 == 1.0
 
 
 def test_derived_parameters_collection_eq():
     olist1 = [
-        DerivedParameterScalar("sec1", "name1", 3.14),
-        DerivedParameterScalar("sec2", "name2", 2.72),
-        DerivedParameterScalar("sec2", "name3", 0.58),
+        DerivedParameter("sec1", "name1", 3.14),
+        DerivedParameter("sec2", "name2", 2.72),
+        DerivedParameter("sec2", "name3", 0.58),
     ]
     dpc1 = DerivedParameterCollection(olist1)
 
     olist2 = [
-        DerivedParameterScalar("sec1", "name1", 3.14),
-        DerivedParameterScalar("sec2", "name2", 2.72),
-        DerivedParameterScalar("sec2", "name3", 0.58),
+        DerivedParameter("sec1", "name1", 3.14),
+        DerivedParameter("sec2", "name2", 2.72),
+        DerivedParameter("sec2", "name3", 0.58),
     ]
     dpc2 = DerivedParameterCollection(olist2)
 
@@ -218,9 +218,9 @@ def test_derived_parameters_collection_eq():
 
 def test_derived_parameters_collection_eq_invalid():
     olist1 = [
-        DerivedParameterScalar("sec1", "name1", 3.14),
-        DerivedParameterScalar("sec2", "name2", 2.72),
-        DerivedParameterScalar("sec2", "name3", 0.58),
+        DerivedParameter("sec1", "name1", 3.14),
+        DerivedParameter("sec2", "name2", 2.72),
+        DerivedParameter("sec2", "name3", 0.58),
     ]
     dpc1 = DerivedParameterCollection(olist1)
 
