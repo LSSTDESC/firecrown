@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import Tuple, Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -270,7 +270,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[List[SourceGalaxySystematic[NumberCountsArgs]]] = None,
+        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ):
         """Initialize the NumberCounts object.
 

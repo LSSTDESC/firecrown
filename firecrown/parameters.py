@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator, Sequence
+from typing import Iterable, Dict, Set, Tuple, Optional, Iterator, Sequence
 import warnings
 from abc import ABC, abstractmethod
 
@@ -253,7 +253,7 @@ class DerivedParameterCollection:
             )
         self.derived_parameters[required_parameter_full_name] = derived_parameter
 
-    def get_derived_list(self) -> List[DerivedParameter]:
+    def get_derived_list(self) -> list[DerivedParameter]:
         """Implement lazy iteration through the contained parameter names."""
 
         return list(self.derived_parameters.values())

@@ -21,7 +21,6 @@ from typing import (
     final,
     Generic,
     Iterable,
-    List,
     Optional,
     TypeVar,
     Union,
@@ -81,7 +80,7 @@ class Updatable(ABC):
         self._returned_derived: bool = False
         self._sampler_parameters: Dict[str, SamplerParameter] = {}
         self._internal_parameters: Dict[str, InternalParameter] = {}
-        self._updatables: List[GeneralUpdatable] = []
+        self._updatables: list[GeneralUpdatable] = []
         self.parameter_prefix: Optional[str] = parameter_prefix
 
     def __setattr__(self, key: str, value: Any) -> None:

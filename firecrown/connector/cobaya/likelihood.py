@@ -6,7 +6,7 @@ This module provides the class :class:`LikelihoodConnector`, which is an impleme
 of a Cobaya likelihood.
 """
 
-from typing import List, Dict, Union
+from typing import Dict, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -21,7 +21,7 @@ class LikelihoodConnector(Likelihood):
 
     likelihood: Likelihood
     firecrownIni: str
-    derived_parameters: List[str] = []
+    derived_parameters: list[str] = []
     build_parameters: NamedParameters
 
     def initialize(self):
@@ -57,7 +57,7 @@ class LikelihoodConnector(Likelihood):
 
         self.provider = provider
 
-    def get_can_provide_params(self) -> List[str]:
+    def get_can_provide_params(self) -> list[str]:
         """Required by Cobaya.
 
         Returns an empty list.

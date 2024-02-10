@@ -2,7 +2,6 @@
 Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
 """
 
-from typing import List
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
@@ -87,7 +86,7 @@ def test_vector_residuals():
 
 
 def test_guarded_statistic_read_only_once(
-    sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: List[stat.TrivialStatistic]
+    sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: list[stat.TrivialStatistic]
 ):
     gs = stat.GuardedStatistic(trivial_stats.pop())
     assert not gs.statistic.ready

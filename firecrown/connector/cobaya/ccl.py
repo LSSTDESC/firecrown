@@ -6,7 +6,7 @@ Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
 """
 
 from __future__ import annotations
-from typing import Optional, Dict, List, Union
+from typing import Optional, Dict, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -61,7 +61,7 @@ class CCLConnector(Theory):
         """
         return []
 
-    def get_can_support_params(self) -> List[str]:
+    def get_can_support_params(self) -> list[str]:
         """Required by Cobaya.
 
         Return a list containing the names of the mapping's parameter names.

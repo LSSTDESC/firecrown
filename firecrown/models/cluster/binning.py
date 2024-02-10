@@ -1,7 +1,7 @@
 """This module contains the classes that define the bins and binning
 used for cluster theoretical predictions within Firecrown."""
 
-from typing import Tuple, List, TypeVar, Generic
+from typing import Tuple, TypeVar, Generic
 from abc import ABC, abstractmethod
 import sacc
 
@@ -12,11 +12,11 @@ class NDimensionalBin(Generic[T], ABC):
     """Class which defines the interface for an N dimensional bin used in
     the cluster likelihood."""
 
-    def __init__(self, coordinate_bins: List[T]):
+    def __init__(self, coordinate_bins: list[T]):
         """_summary_
 
         Args:
-            coordinate_bins (List[T]): _description_
+            coordinate_bins (list[T]): _description_
             dimension (int): _description_
         """
         self.coordinate_bins = coordinate_bins
@@ -39,7 +39,7 @@ class NDimensionalBin(Generic[T], ABC):
 class SaccBin(NDimensionalBin[sacc.BaseTracer]):
     """An implementation of the N dimensional bin using sacc tracers."""
 
-    def __init__(self, bins: List[sacc.BaseTracer]):
+    def __init__(self, bins: list[sacc.BaseTracer]):
         super().__init__(bins)
 
     @property
@@ -85,7 +85,7 @@ class SaccBin(NDimensionalBin[sacc.BaseTracer]):
 class TupleBin(NDimensionalBin[Tuple]):
     """An implementation of the N dimensional bin using sacc tracers."""
 
-    def __init__(self, bins: List[Tuple]):
+    def __init__(self, bins: list[Tuple]):
         super().__init__(bins)
 
     @property

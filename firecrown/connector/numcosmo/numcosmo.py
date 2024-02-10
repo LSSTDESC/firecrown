@@ -5,7 +5,7 @@ be used without an installation of NumCosmo.
 
 """
 
-from typing import Dict, Union, List, Any, Optional
+from typing import Dict, Union, Any, Optional
 import numpy as np
 import pyccl as ccl
 
@@ -150,7 +150,7 @@ class MappingNumCosmo(GObject.Object):
         Neff = hi_cosmo.Neff()
         T_gamma0 = hi_cosmo.T_gamma0()
 
-        m_nu: Union[float, List[float]] = 0.0
+        m_nu: Union[float, list[float]] = 0.0
         if hi_cosmo.NMassNu() == 0:
             m_nu_type = "normal"
         else:
@@ -269,7 +269,7 @@ class MappingNumCosmo(GObject.Object):
         }
         return ccl_args
 
-    def create_params_map(self, model_list: List[str], mset: Ncm.MSet) -> ParamsMap:
+    def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
         """Create a ParamsMap from a NumCosmo MSet."""
 
         params_map = ParamsMap()
@@ -310,7 +310,7 @@ class NumCosmoData(Ncm.Data):
         self.likelihood: Likelihood
         self.tools: ModelingTools
         self.ccl_cosmo: Optional[ccl.Cosmology] = None
-        self._model_list: List[str]
+        self._model_list: list[str]
         self._nc_mapping: MappingNumCosmo
         self._likelihood_source: Optional[str] = None
         self._likelihood_build_parameters: Optional[NamedParameters] = None
@@ -319,11 +319,11 @@ class NumCosmoData(Ncm.Data):
         self.len: int = 100
         self.set_init(True)
 
-    def _get_model_list(self) -> List[str]:
+    def _get_model_list(self) -> list[str]:
         """Return the list of models."""
         return self._model_list
 
-    def _set_model_list(self, value: List[str]):
+    def _set_model_list(self, value: list[str]):
         """Set the list of models."""
         self._model_list = value
 
@@ -416,7 +416,7 @@ class NumCosmoData(Ncm.Data):
     def new_from_likelihood(
         cls,
         likelihood: Likelihood,
-        model_list: List[str],
+        model_list: list[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
         likelihood_source: Optional[str] = None,
@@ -518,17 +518,17 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.ccl_cosmo: ccl.Cosmology
         self.dof: int
         self.len: int
-        self._model_list: List[str]
+        self._model_list: list[str]
         self._nc_mapping: MappingNumCosmo
         self._likelihood_source: Optional[str] = None
         self._likelihood_build_parameters: Optional[NamedParameters] = None
         self._starting_deserialization: bool = False
 
-    def _get_model_list(self) -> List[str]:
+    def _get_model_list(self) -> list[str]:
         """Return the list of models."""
         return self._model_list
 
-    def _set_model_list(self, value: List[str]):
+    def _set_model_list(self, value: list[str]):
         """Set the list of models."""
         self._model_list = value
 
@@ -645,7 +645,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def new_from_likelihood(
         cls,
         likelihood: ConstGaussian,
-        model_list: List[str],
+        model_list: list[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
         likelihood_source: Optional[str] = None,
@@ -750,7 +750,7 @@ class NumCosmoFactory:
         likelihood_source: str,
         build_parameters: NamedParameters,
         mapping: MappingNumCosmo,
-        model_list: List[str],
+        model_list: list[str],
     ):
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 

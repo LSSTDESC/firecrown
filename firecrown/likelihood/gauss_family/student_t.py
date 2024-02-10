@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 
@@ -21,13 +21,13 @@ class StudentT(GaussFamily):
     (2016; arXiv:1511.05969). As the number of simulations increases, the
     T-distribution approaches a Gaussian.
 
-    :param statistics: List of statistics to build the theory and data vectors
+    :param statistics: list of statistics to build the theory and data vectors
     :param nu: The Student-t $\\nu$ parameter
     """
 
     def __init__(
         self,
-        statistics: List[Statistic],
+        statistics: list[Statistic],
         nu: Optional[float] = None,
     ):
         super().__init__(statistics)

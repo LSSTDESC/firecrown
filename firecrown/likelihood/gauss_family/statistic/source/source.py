@@ -2,7 +2,7 @@
 """
 
 from __future__ import annotations
-from typing import Optional, List, Sequence, final, TypeVar, Generic
+from typing import Optional, Sequence, final, TypeVar, Generic
 from abc import abstractmethod
 from dataclasses import dataclass, replace
 import numpy as np
@@ -268,7 +268,7 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         self,
         *,
         sacc_tracer: str,
-        systematics: Optional[List[SourceGalaxySystematic]] = None,
+        systematics: Optional[list[SourceGalaxySystematic]] = None,
     ):
         """Initialize the SourceGalaxy object.
 
