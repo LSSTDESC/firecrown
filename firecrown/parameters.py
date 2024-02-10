@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, Dict, Set, Tuple, Optional, Iterator, Sequence
+from typing import Iterable, Dict, Tuple, Optional, Iterator, Sequence
 import warnings
 from abc import ABC, abstractmethod
 
@@ -85,7 +85,7 @@ class RequiredParameters:
 
     def __init__(self, params_names: Iterable[str]):
         """Construct an instance from an Iterable yielding strings."""
-        self.params_names: Set[str] = set(params_names)
+        self.params_names: set[str] = set(params_names)
 
     def __len__(self):
         """Return the number of parameters contained."""

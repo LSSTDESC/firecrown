@@ -52,7 +52,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Tuple, Union, Optional, Set, Dict, Sequence
+from typing import Mapping, Tuple, Union, Optional, Dict, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -202,7 +202,7 @@ class NamedParameters:
 
     def to_set(
         self,
-    ) -> Set[
+    ) -> set[
         Union[
             str,
             int,
