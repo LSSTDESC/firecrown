@@ -44,7 +44,14 @@ def test_register_new_updatable_parameter_with_float_arg():
     InternalParameter ."""
     a_parameter = register_new_updatable_parameter(1.5)
     assert isinstance(a_parameter, InternalParameter)
-    assert a_parameter.value == 1.5
+    assert a_parameter.get_value() == 1.5
+
+
+def test_setting_internal_parameter():
+    a_parameter = register_new_updatable_parameter(1.0)
+    assert a_parameter.value == 1.0
+    a_parameter.set_value(2.0)
+    assert a_parameter.value == 2.0
 
 
 def test_register_new_updatable_parameter_with_wrong_arg():
@@ -150,6 +157,15 @@ def test_derived_parameters_collection():
     clist = orig.get_derived_list()
     clist.append(DerivedParameter("sec3", "name3", 0.58))
     assert orig.get_derived_list() == olist
+
+
+def test_derived_parameters_collection_rejects_bad_list():
+    badlist = [1, 3, 5]
+    with pytest.raises(TypeError):
+        # We have to tell mypy to ignore the type error on the
+        # next line, because it is the very type error we are
+        # testing.
+        _ = DerivedParameterCollection(badlist)  # type: ignore
 
 
 def test_derived_parameters_collection_add():
