@@ -2,7 +2,6 @@
 """
 
 import re
-from typing import Tuple
 
 import pytest
 import numpy as np
@@ -233,7 +232,7 @@ def test_chisquared_compute_vector_not_implemented(
 
     def compute(
         _tools: ModelingTools,
-    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         return np.array([1.0, 4.0, -3.0]), np.array([1.0, 1.0, 1.0])
 
     likelihood.compute_theory_vector = compute_theory_vector  # type: ignore

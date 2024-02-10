@@ -1,7 +1,7 @@
 """This module contains the classes that define the bins and binning
 used for cluster theoretical predictions within Firecrown."""
 
-from typing import Tuple, TypeVar, Generic
+from typing import TypeVar, Generic
 from abc import ABC, abstractmethod
 import sacc
 
@@ -24,12 +24,12 @@ class NDimensionalBin(Generic[T], ABC):
 
     @property
     @abstractmethod
-    def z_edges(self) -> Tuple[float, float]:
+    def z_edges(self) -> tuple[float, float]:
         """Redshift bin edges"""
 
     @property
     @abstractmethod
-    def mass_proxy_edges(self) -> Tuple[float, float]:
+    def mass_proxy_edges(self) -> tuple[float, float]:
         """Mass proxy bin edges"""
 
     def __str__(self) -> str:
@@ -43,14 +43,14 @@ class SaccBin(NDimensionalBin[sacc.BaseTracer]):
         super().__init__(bins)
 
     @property
-    def z_edges(self) -> Tuple[float, float]:
+    def z_edges(self) -> tuple[float, float]:
         z_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_z"]
         if len(z_bin) != 1:
             raise ValueError("SaccBin must have exactly one z bin")
         return z_bin[0].lower, z_bin[0].upper
 
     @property
-    def mass_proxy_edges(self) -> Tuple[float, float]:
+    def mass_proxy_edges(self) -> tuple[float, float]:
         mass_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_richness"]
         if len(mass_bin) != 1:
             raise ValueError("SaccBin must have exactly one richness bin")
@@ -82,19 +82,19 @@ class SaccBin(NDimensionalBin[sacc.BaseTracer]):
         return hash((self.dimension, tuple(bin_bounds)))
 
 
-class TupleBin(NDimensionalBin[Tuple]):
+class TupleBin(NDimensionalBin[tuple]):
     """An implementation of the N dimensional bin using sacc tracers."""
 
-    def __init__(self, bins: list[Tuple]):
+    def __init__(self, bins: list[tuple]):
         super().__init__(bins)
 
     @property
-    def mass_proxy_edges(self) -> Tuple[float, float]:
+    def mass_proxy_edges(self) -> tuple[float, float]:
         mass_bin = self.coordinate_bins[0]
         return mass_bin[0], mass_bin[1]
 
     @property
-    def z_edges(self) -> Tuple[float, float]:
+    def z_edges(self) -> tuple[float, float]:
         z_bin = self.coordinate_bins[1]
         return z_bin[0], z_bin[1]
 

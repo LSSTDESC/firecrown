@@ -6,7 +6,6 @@ products from:
 
 """
 
-from typing import Tuple
 import fitsio
 import numpy as np
 import sacc
@@ -91,8 +90,8 @@ angles = """\
 #   ...
 
 # Type specifications for the bin information.
-Bin = Tuple[float, float]
-BinIndex = Tuple[int, int]
+Bin = tuple[float, float]
+BinIndex = tuple[int, int]
 
 bin_limits: dict[str, dict[BinIndex, Bin]] = {}
 for line in angles.split("\n"):

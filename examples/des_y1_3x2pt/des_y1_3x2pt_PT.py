@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 import os
 
-from typing import Union, Tuple
+from typing import Union
 
 import numpy as np
 import sacc
@@ -72,7 +72,7 @@ class CElls:
         self.gg_total = stat3.cells["total"]
 
 
-def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
 
     # Load sacc file

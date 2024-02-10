@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Tuple, Optional, final
+from typing import Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -34,14 +34,14 @@ __all__ = ["WeakLensing"]
 class WeakLensingArgs(SourceGalaxyArgs):
     """Class for weak lensing tracer builder argument."""
 
-    ia_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_bias: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
     has_pt: bool = False
     has_hm: bool = False
 
-    ia_pt_c_1: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    ia_pt_c_d: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    ia_pt_c_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_pt_c_1: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_pt_c_d: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_pt_c_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):

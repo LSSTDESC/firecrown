@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, Tuple, Optional, Iterator, Sequence
+from typing import Iterable, Optional, Iterator, Sequence
 import warnings
 from abc import ABC, abstractmethod
 
@@ -232,7 +232,7 @@ class DerivedParameterCollection:
             )
         return self.derived_parameters == other.derived_parameters
 
-    def __iter__(self) -> Iterator[Tuple[str, str, float]]:
+    def __iter__(self) -> Iterator[tuple[str, str, float]]:
         for derived_parameter in self.derived_parameters.values():
             yield (
                 derived_parameter.section,

@@ -5,7 +5,6 @@ and phenomenological predictions.  This module contains the classes and
 functions that produce those predictions.
 """
 
-from typing import Tuple
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -43,7 +42,7 @@ class ClusterAbundance(Updatable):
         self.max_mass = max_mass
         self.min_z = min_z
         self.max_z = max_z
-        self._hmf_cache: dict[Tuple[float, float], float] = {}
+        self._hmf_cache: dict[tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
 
     def update_ingredients(self, cosmo: Cosmology) -> None:

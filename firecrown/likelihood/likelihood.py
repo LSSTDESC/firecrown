@@ -52,7 +52,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Tuple, Union, Optional, Sequence
+from typing import Mapping, Union, Optional, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -276,7 +276,7 @@ class NamedParameters:
 
 def load_likelihood_from_module_type(
     module: types.ModuleType, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 
@@ -335,7 +335,7 @@ def load_likelihood_from_module_type(
 
 def load_likelihood_from_script(
     filename: str, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood script and returns a tuple of the likelihood and
     the modeling tools.
 
@@ -381,7 +381,7 @@ def load_likelihood_from_script(
 
 def load_likelihood_from_module(
     module: str, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 
@@ -402,7 +402,7 @@ def load_likelihood_from_module(
 
 def load_likelihood(
     likelihood_name: str, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 

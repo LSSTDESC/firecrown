@@ -2,7 +2,6 @@
 modified matter power spectrum"""
 
 import os
-from typing import Tuple
 
 import sacc
 import pyccl as ccl
@@ -42,7 +41,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
         )
 
 
-def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Build the likelihood for the DES Y1 cosmic shear data TATT."""
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(SACCFILE)

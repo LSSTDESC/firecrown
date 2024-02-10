@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import wraps
-from typing import Optional, Tuple, Sequence, Callable, Union, TypeVar
+from typing import Optional, Sequence, Callable, Union, TypeVar
 from typing import final
 import warnings
 
@@ -300,7 +300,7 @@ class GaussFamily(Likelihood):
     )
     def compute(
         self, tools: ModelingTools
-    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Calculate and return both the data and theory vectors."""
         warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(

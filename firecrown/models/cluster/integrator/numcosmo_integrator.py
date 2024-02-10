@@ -4,7 +4,7 @@ This module holds the NumCosmo implementation of the integrator classes
 """
 
 from enum import Enum
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -75,7 +75,7 @@ class CountsIntegralND(Ncm.IntegralND):
         self.extra_args = args
 
     # pylint: disable-next=arguments-differ
-    def do_get_dimensions(self) -> Tuple[int, int]:
+    def do_get_dimensions(self) -> tuple[int, int]:
         """Returns the dimensionality of the integral."""
         return self.dim, 1
 
