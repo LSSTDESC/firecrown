@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 import os
 
-from typing import Dict, Union, Tuple
+from typing import Union, Tuple
 
 import numpy as np
 import sacc
@@ -79,7 +79,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # Define sources
-    sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
+    sources: dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later

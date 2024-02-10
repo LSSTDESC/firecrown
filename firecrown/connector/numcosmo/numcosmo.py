@@ -5,7 +5,7 @@ be used without an installation of NumCosmo.
 
 """
 
-from typing import Dict, Union, Any, Optional
+from typing import Union, Any, Optional
 import numpy as np
 import pyccl as ccl
 
@@ -200,7 +200,7 @@ class MappingNumCosmo(GObject.Object):
 
     def calculate_ccl_args(self, mset: Ncm.MSet):  # pylint: disable-msg=too-many-locals
         """Calculate the arguments necessary for CCL for this sample."""
-        ccl_args: Dict[str, Any] = {}
+        ccl_args: dict[str, Any] = {}
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
 

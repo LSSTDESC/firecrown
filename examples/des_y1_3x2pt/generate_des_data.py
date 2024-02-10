@@ -6,7 +6,7 @@ products from:
 
 """
 
-from typing import Dict, Tuple
+from typing import Tuple
 import fitsio
 import numpy as np
 import sacc
@@ -94,7 +94,7 @@ angles = """\
 Bin = Tuple[float, float]
 BinIndex = Tuple[int, int]
 
-bin_limits: Dict[str, Dict[BinIndex, Bin]] = {}
+bin_limits: dict[str, dict[BinIndex, Bin]] = {}
 for line in angles.split("\n"):
     items = line.split()
     keys = items[1].replace("angle_range_", "").split("_")

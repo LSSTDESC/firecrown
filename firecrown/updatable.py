@@ -17,7 +17,6 @@ from __future__ import annotations
 from typing import (
     Any,
     cast,
-    Dict,
     final,
     Generic,
     Iterable,
@@ -78,8 +77,8 @@ class Updatable(ABC):
         """
         self._updated: bool = False
         self._returned_derived: bool = False
-        self._sampler_parameters: Dict[str, SamplerParameter] = {}
-        self._internal_parameters: Dict[str, InternalParameter] = {}
+        self._sampler_parameters: dict[str, SamplerParameter] = {}
+        self._internal_parameters: dict[str, InternalParameter] = {}
         self._updatables: list[GeneralUpdatable] = []
         self.parameter_prefix: Optional[str] = parameter_prefix
 

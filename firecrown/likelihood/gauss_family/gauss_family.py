@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import wraps
-from typing import Optional, Tuple, Sequence, Callable, Union, TypeVar, Dict
+from typing import Optional, Tuple, Sequence, Callable, Union, TypeVar
 from typing import final
 import warnings
 
@@ -148,7 +148,7 @@ class GaussFamily(Likelihood):
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
-        self.cov_index_map: Optional[Dict[int, int]] = None
+        self.cov_index_map: Optional[dict[int, int]] = None
         self.theory_vector: Optional[npt.NDArray[np.double]] = None
         self.data_vector: Optional[npt.NDArray[np.double]] = None
 

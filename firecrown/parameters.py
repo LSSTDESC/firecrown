@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, Dict, Tuple, Optional, Iterator, Sequence
+from typing import Iterable, Tuple, Optional, Iterator, Sequence
 import warnings
 from abc import ABC, abstractmethod
 
@@ -31,8 +31,8 @@ def parameter_get_full_name(prefix: Optional[str], param: str) -> str:
     return param
 
 
-class ParamsMap(Dict[str, float]):
-    """A specialized Dict in which all keys are strings and values are floats.
+class ParamsMap(dict[str, float]):
+    """A specialized dict in which all keys are strings and values are floats.
 
     The recommended access method is get_from_prefix_param, rather than indexing
     with square brackets like x[].
@@ -193,7 +193,7 @@ class DerivedParameterCollection:
                 "received a " + str([str(type(x)) for x in derived_parameters])
             )
 
-        self.derived_parameters: Dict[str, DerivedParameter] = {}
+        self.derived_parameters: dict[str, DerivedParameter] = {}
 
         for derived_parameter in derived_parameters:
             self.add_required_parameter(derived_parameter)

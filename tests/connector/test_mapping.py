@@ -2,7 +2,7 @@
 Unit testing for the mapping module.
 """
 
-from typing import Any, Dict
+from typing import Any
 import pytest
 import numpy as np
 from firecrown.connector import mapping
@@ -125,7 +125,7 @@ def test_transform_h_to_h_over_h0():
 def test_sigma8_and_A_s():
     fc_map = Mapping()
 
-    params_dict: Dict[str, Any] = {
+    params_dict: dict[str, Any] = {
         "Omega_c": 0.26,
         "Omega_b": 0.04,
         "h": 0.72,

@@ -52,7 +52,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Tuple, Union, Optional, Dict, Sequence
+from typing import Mapping, Tuple, Union, Optional, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -217,7 +217,7 @@ class NamedParameters:
 
     def set_from_basic_dict(
         self,
-        basic_dict: Dict[
+        basic_dict: dict[
             str,
             Union[
                 str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
@@ -247,12 +247,12 @@ class NamedParameters:
 
     def convert_to_basic_dict(
         self,
-    ) -> Dict[
+    ) -> dict[
         str,
         Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
     ]:
         """Convert a NamedParameters object to a dictionary of basic types."""
-        basic_dict: Dict[
+        basic_dict: dict[
             str,
             Union[
                 str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]

@@ -7,7 +7,7 @@ Each supported body of code has its own dedicated class.
 """
 
 from abc import ABC
-from typing import Type, Dict, Optional, final, Any, Union
+from typing import Type, Optional, final, Any, Union
 import typing
 import warnings
 import numpy as np
@@ -175,7 +175,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> Dict[str, Union[Optional[float], list[float]]]:
+    def asdict(self) -> dict[str, Union[Optional[float], list[float]]]:
         """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,
@@ -276,7 +276,7 @@ class MappingCosmoSIS(Mapping):
 
     def calculate_ccl_args(self, sample: cosmosis.datablock):
         """Calculate the arguments necessary for CCL for this sample."""
-        ccl_args: Dict[str, Any] = {}
+        ccl_args: dict[str, Any] = {}
         if sample.has_section("matter_power_lin"):
             k = self.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
             z_mpl = sample["matter_power_lin", "z"]
