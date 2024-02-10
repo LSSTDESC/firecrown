@@ -63,6 +63,19 @@ def test_required_parameters_length():
     assert len(b) == 2
 
 
+def test_required_parameters_equality_testing():
+    a1 = RequiredParameters(["a"])
+    a2 = RequiredParameters(["a"])
+    assert a1 == a2
+    assert a1 is not a2
+    b = RequiredParameters(["b"])
+    assert a1 != b
+    with pytest.raises(
+        TypeError, match="Cannot compare a RequiredParameter to an object of type int"
+    ):
+        _ = a1 == 10
+
+
 def test_get_params_names_does_not_allow_mutation():
     """The caller of RequiredParameters.get_params_names should not be able to modify
     the state of the object on which the call was made."""
