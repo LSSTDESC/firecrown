@@ -45,6 +45,11 @@ class ClusterAbundance(Updatable):
         self.max_z = max_z
         self._hmf_cache: Dict[Tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
+        self.test_method()
+
+    def test_method(self):
+        """Some fake docstring."""
+        print("I exist only for testing codecov.")
 
     def update_ingredients(self, cosmo: Cosmology) -> None:
         """Update the cluster abundance calculation with a new cosmology."""
