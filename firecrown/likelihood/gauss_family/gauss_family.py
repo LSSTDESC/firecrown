@@ -220,7 +220,7 @@ class GaussFamily(Likelihood):
         self.inv_cov = np.linalg.inv(cov)
 
     @enforce_states(
-        initial=[State.READY, State.UPDATED],
+        initial=[State.READY, State.UPDATED, State.COMPUTED],
         failure_message="read() must be called before get_cov()",
     )
     @final
