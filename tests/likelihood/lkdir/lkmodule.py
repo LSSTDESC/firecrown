@@ -3,7 +3,7 @@ Provides a trivial likelihood class and factory function for testing purposes.
 """
 
 import sacc
-from firecrown.parameters import DerivedParameterCollection, DerivedParameterScalar
+from firecrown.parameters import DerivedParameterCollection, DerivedParameter
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown import parameters
@@ -81,7 +81,7 @@ class DerivedParameterLikelihood(Likelihood):
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         return DerivedParameterCollection(
-            [DerivedParameterScalar("derived_section", "derived_param0", 1.0)]
+            [DerivedParameter("derived_section", "derived_param0", 1.0)]
         )
 
     def read(self, sacc_data: sacc.Sacc) -> None:
