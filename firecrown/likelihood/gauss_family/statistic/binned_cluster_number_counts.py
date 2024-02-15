@@ -6,7 +6,7 @@ clusters within a single redshift and mass bin.
 
 from __future__ import annotations
 
-from typing import List, Optional
+from typing import Optional
 
 import numpy as np
 import sacc
@@ -36,7 +36,7 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_properties: ClusterProperty,
         survey_name: str,
         cluster_recipe: ClusterRecipe,
-        systematics: Optional[List[SourceSystematic]] = None,
+        systematics: Optional[list[SourceSystematic]] = None,
     ):
         super().__init__()
         self.systematics = systematics or []
@@ -46,7 +46,7 @@ class BinnedClusterNumberCounts(Statistic):
         self.cluster_recipe = cluster_recipe
         self.data_vector = DataVector.from_list([])
         self.sky_area = 0.0
-        self.bins: List[SaccBin] = []
+        self.bins: list[SaccBin] = []
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         # Build the data vector and indices needed for the likelihood
@@ -81,7 +81,7 @@ class BinnedClusterNumberCounts(Statistic):
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         assert tools.cluster_abundance is not None
 
-        theory_vector_list: List[float] = []
+        theory_vector_list: list[float] = []
         cluster_counts = []
 
         cluster_counts = self.get_binned_cluster_counts(tools)
@@ -104,9 +104,9 @@ class BinnedClusterNumberCounts(Statistic):
     def get_binned_cluster_property(
         self,
         tools: ModelingTools,
-        cluster_counts: List[float],
+        cluster_counts: list[float],
         cluster_properties: ClusterProperty,
-    ) -> List[float]:
+    ) -> list[float]:
         """Computes the mean mass of clusters in each bin
 
         Using the data from the sacc file, this function evaluates the likelihood for
@@ -126,7 +126,7 @@ class BinnedClusterNumberCounts(Statistic):
 
         return mean_values
 
-    def get_binned_cluster_counts(self, tools: ModelingTools) -> List[float]:
+    def get_binned_cluster_counts(self, tools: ModelingTools) -> list[float]:
         """Computes the number of clusters in each bin
 
         Using the data from the sacc file, this function evaluates the likelihood for

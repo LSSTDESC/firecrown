@@ -1,7 +1,6 @@
 """Likelihood factory function for cluster number counts."""
 
 import os
-from typing import Tuple
 
 import pyccl as ccl
 import sacc
@@ -30,7 +29,7 @@ def get_cluster_abundance() -> ClusterAbundance:
 
 def build_likelihood(
     build_parameters: NamedParameters,
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """
     Here we instantiate the number density (or mass function) object.
     """

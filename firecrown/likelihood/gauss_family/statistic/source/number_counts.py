@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Tuple, Optional, final
+from typing import Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -38,11 +38,11 @@ class NumberCountsArgs(SourceGalaxyArgs):
     """Class for number counts tracer builder argument."""
 
     bias: Optional[npt.NDArray[np.float64]] = None
-    mag_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    mag_bias: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     has_pt: bool = False
     has_hm: bool = False
-    b_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    b_s: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    b_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    b_s: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
 
 class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
@@ -270,7 +270,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[List[SourceGalaxySystematic[NumberCountsArgs]]] = None,
+        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ):
         """Initialize the NumberCounts object.
 

@@ -9,7 +9,7 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import Optional, final
 from dataclasses import dataclass
 from abc import abstractmethod
 import warnings
@@ -32,7 +32,7 @@ class DataVector(npt.NDArray[np.float64]):
         return vals.view(cls)
 
     @classmethod
-    def from_list(cls, vals: List[float]) -> DataVector:
+    def from_list(cls, vals: list[float]) -> DataVector:
         """Create a DataVector from the given list of floats."""
         array = np.array(vals)
         return cls.create(array)
@@ -48,7 +48,7 @@ class TheoryVector(npt.NDArray[np.float64]):
         return vals.view(cls)
 
     @classmethod
-    def from_list(cls, vals: List[float]) -> TheoryVector:
+    def from_list(cls, vals: list[float]) -> TheoryVector:
         """Create a TheoryVector from the given list of floats."""
         array = np.array(vals)
         return cls.create(array)

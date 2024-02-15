@@ -1,7 +1,6 @@
 """The module responsible for extracting cluster data from a sacc file.
 """
 
-from typing import Tuple, List
 import numpy as np
 import numpy.typing as npt
 import sacc
@@ -43,7 +42,7 @@ class AbundanceData:
         self,
         survey_nm: str,
         properties: ClusterProperty,
-    ) -> Tuple[List[float], List[int]]:
+    ) -> tuple[list[float], list[int]]:
         """Will return observed data (and sacc indices) for a specified survey based on
         the properties requested by the caller.
 
@@ -103,7 +102,7 @@ class AbundanceData:
 
     def get_bin_edges(
         self, survey_nm: str, properties: ClusterProperty
-    ) -> List[SaccBin]:
+    ) -> list[SaccBin]:
         """Returns the limits for all z, mass bins for the requested data type."""
         bins = []
 

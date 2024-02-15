@@ -4,7 +4,6 @@ This module holds the classes that define the kernels that can be included
 in the cluster abundance integrand."""
 
 from enum import Enum
-from typing import Tuple
 import numpy.typing as npt
 import numpy as np
 
@@ -68,7 +67,7 @@ class Purity:
         self,
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
+        mass_proxy_limits: tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         """Evaluates and returns the purity contribution to the integrand."""
         if all(mass_proxy == -1.0):

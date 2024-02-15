@@ -5,7 +5,6 @@ that can be included in the cluster abundance integrand.  These are
 implementations of Kernels."""
 
 from abc import abstractmethod
-from typing import Tuple
 
 import numpy as np
 import numpy.typing as npt
@@ -20,7 +19,7 @@ class MassRichnessGaussian(Updatable):
 
     @staticmethod
     def observed_value(
-        p: Tuple[float, float, float],
+        p: tuple[float, float, float],
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         pivot_mass: float,
@@ -56,7 +55,7 @@ class MassRichnessGaussian(Updatable):
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
+        mass_proxy_limits: tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         proxy_mean = self.get_proxy_mean(mass, z)
         proxy_sigma = self.get_proxy_sigma(mass, z)
@@ -154,7 +153,7 @@ class MurataBinned(MassRichnessGaussian):
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
-        mass_proxy_limits: Tuple[float, float],
+        mass_proxy_limits: tuple[float, float],
     ) -> npt.NDArray[np.float64]:
         """Evaluates and returns the mass-richness contribution to the integrand."""
         return self._distribution_binned(mass, z, mass_proxy_limits)

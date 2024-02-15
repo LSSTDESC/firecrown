@@ -6,7 +6,7 @@ Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
 """
 
 from __future__ import annotations
-from typing import Optional, Dict, List, Union
+from typing import Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -61,7 +61,7 @@ class CCLConnector(Theory):
         """
         return []
 
-    def get_can_support_params(self) -> List[str]:
+    def get_can_support_params(self) -> list[str]:
         """Required by Cobaya.
 
         Return a list containing the names of the mapping's parameter names.
@@ -77,7 +77,7 @@ class CCLConnector(Theory):
 
     def get_requirements(
         self,
-    ) -> Dict[str, Union[None, Dict[str, npt.NDArray[np.float64]], Dict[str, object]]]:
+    ) -> dict[str, Union[None, dict[str, npt.NDArray[np.float64]], dict[str, object]]]:
         """Required by Cobaya.
 
         Returns a dictionary with keys:
@@ -102,7 +102,7 @@ class CCLConnector(Theory):
         """
 
     def calculate(
-        self, state: Dict[str, float], want_derived=True, **params_values
+        self, state: dict[str, float], want_derived=True, **params_values
     ) -> None:
         """Calculate the current cosmology, and set state["pyccl"] to the result."""
 

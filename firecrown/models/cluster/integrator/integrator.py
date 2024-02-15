@@ -5,7 +5,7 @@ integrate a function.
 """
 
 from abc import ABC, abstractmethod
-from typing import Callable, List, Tuple
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -17,7 +17,7 @@ class Integrator(ABC):
     This class acts as an adapter around an integration library."""
 
     def __init__(self) -> None:
-        self.integral_bounds: List[Tuple[float, float]] = []
+        self.integral_bounds: list[tuple[float, float]] = []
         self.extra_args: npt.NDArray[np.float64] = np.array([], dtype=np.float64)
 
     @abstractmethod

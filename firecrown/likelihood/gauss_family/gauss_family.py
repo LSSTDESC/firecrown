@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import wraps
-from typing import List, Optional, Tuple, Sequence, Callable, Union, TypeVar, Dict
+from typing import Optional, Sequence, Callable, Union, TypeVar
 from typing import final
 import warnings
 
@@ -51,7 +51,7 @@ P = ParamSpec("P")
 # Beware
 def enforce_states(
     *,
-    initial: Union[State, List[State]],
+    initial: Union[State, list[State]],
     terminal: Optional[State] = None,
     failure_message: str,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
@@ -62,7 +62,7 @@ def enforce_states(
     If terminal is not None and the call to the wrapped method returns
     normally the state of the object is set to terminal.
     """
-    initials: List[State]
+    initials: list[State]
     if isinstance(initial, list):
         initials = initial
     else:
@@ -148,7 +148,7 @@ class GaussFamily(Likelihood):
         self.cov: Optional[npt.NDArray[np.float64]] = None
         self.cholesky: Optional[npt.NDArray[np.float64]] = None
         self.inv_cov: Optional[npt.NDArray[np.float64]] = None
-        self.cov_index_map: Optional[Dict[int, int]] = None
+        self.cov_index_map: Optional[dict[int, int]] = None
         self.theory_vector: Optional[npt.NDArray[np.double]] = None
         self.data_vector: Optional[npt.NDArray[np.double]] = None
 
@@ -225,7 +225,7 @@ class GaussFamily(Likelihood):
     )
     @final
     def get_cov(
-        self, statistic: Union[Statistic, List[Statistic], None] = None
+        self, statistic: Union[Statistic, list[Statistic], None] = None
     ) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix.
 
@@ -242,7 +242,7 @@ class GaussFamily(Likelihood):
             statistic_list = [statistic]
         else:
             statistic_list = statistic
-        indices: List[int] = []
+        indices: list[int] = []
         for stat in statistic_list:
             assert stat.sacc_indices is not None
             temp = [self.cov_index_map[idx] for idx in stat.sacc_indices]
@@ -273,7 +273,7 @@ class GaussFamily(Likelihood):
 
         :param tools: Current ModelingTools object
         """
-        theory_vector_list: List[npt.NDArray[np.float64]] = [
+        theory_vector_list: list[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
         ]
         self.theory_vector = np.concatenate(theory_vector_list)
@@ -300,7 +300,7 @@ class GaussFamily(Likelihood):
     )
     def compute(
         self, tools: ModelingTools
-    ) -> Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Calculate and return both the data and theory vectors."""
         warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(

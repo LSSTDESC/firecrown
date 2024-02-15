@@ -6,7 +6,7 @@ This module provides the class :class:`LikelihoodConnector`, which is an impleme
 of a Cobaya likelihood.
 """
 
-from typing import List, Dict, Union
+from typing import Union
 
 import numpy as np
 import numpy.typing as npt
@@ -21,7 +21,7 @@ class LikelihoodConnector(Likelihood):
 
     likelihood: Likelihood
     firecrownIni: str
-    derived_parameters: List[str] = []
+    derived_parameters: list[str] = []
     build_parameters: NamedParameters
 
     def initialize(self):
@@ -57,7 +57,7 @@ class LikelihoodConnector(Likelihood):
 
         self.provider = provider
 
-    def get_can_provide_params(self) -> List[str]:
+    def get_can_provide_params(self) -> list[str]:
         """Required by Cobaya.
 
         Returns an empty list.
@@ -73,14 +73,14 @@ class LikelihoodConnector(Likelihood):
 
     def get_requirements(
         self,
-    ) -> Dict[str, Union[None, Dict[str, npt.NDArray[np.float64]], Dict[str, object]]]:
+    ) -> dict[str, Union[None, dict[str, npt.NDArray[np.float64]], dict[str, object]]]:
         """Required by Cobaya.
 
         Returns a dictionary with keys corresponding the contained likelihood's
         required parameter, plus "pyccl". All values are None.
         """
-        likelihood_requires: Dict[
-            str, Union[None, Dict[str, npt.NDArray[np.float64]], Dict[str, object]]
+        likelihood_requires: dict[
+            str, Union[None, dict[str, npt.NDArray[np.float64]], dict[str, object]]
         ] = {"pyccl": None}
         required_params = (
             self.likelihood.required_parameters() + self.tools.required_parameters()

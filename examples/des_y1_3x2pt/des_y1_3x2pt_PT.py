@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 import os
 
-from typing import Dict, Union, Tuple
+from typing import Union
 
 import numpy as np
 import sacc
@@ -72,14 +72,14 @@ class CElls:
         self.gg_total = stat3.cells["total"]
 
 
-def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
 
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # Define sources
-    sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
+    sources: dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later

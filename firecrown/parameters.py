@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import Iterable, List, Dict, Set, Tuple, Optional, Iterator, Sequence
+from typing import Iterable, Optional, Iterator, Sequence
 import warnings
 
 
@@ -30,8 +30,8 @@ def parameter_get_full_name(prefix: Optional[str], param: str) -> str:
     return param
 
 
-class ParamsMap(Dict[str, float]):
-    """A specialized Dict in which all keys are strings and values are floats.
+class ParamsMap(dict[str, float]):
+    """A specialized dict in which all keys are strings and values are floats.
 
     The recommended access method is get_from_prefix_param, rather than indexing
     with square brackets like x[].
@@ -84,7 +84,7 @@ class RequiredParameters:
 
     def __init__(self, params_names: Iterable[str]):
         """Construct an instance from an Iterable yielding strings."""
-        self.params_names: Set[str] = set(params_names)
+        self.params_names: set[str] = set(params_names)
 
     def __len__(self):
         """Return the number of parameters contained."""
@@ -179,7 +179,7 @@ class DerivedParameterCollection:
                 "but received a " + str([str(type(x)) for x in derived_parameters])
             )
 
-        self.derived_parameters: Dict[str, DerivedParameter] = {}
+        self.derived_parameters: dict[str, DerivedParameter] = {}
 
         for derived_parameter in derived_parameters:
             self.add_required_parameter(derived_parameter)
@@ -218,7 +218,7 @@ class DerivedParameterCollection:
             )
         return self.derived_parameters == other.derived_parameters
 
-    def __iter__(self) -> Iterator[Tuple[str, str, float]]:
+    def __iter__(self) -> Iterator[tuple[str, str, float]]:
         for derived_parameter in self.derived_parameters.values():
             yield (
                 derived_parameter.section,
@@ -239,7 +239,7 @@ class DerivedParameterCollection:
             )
         self.derived_parameters[required_parameter_full_name] = derived_parameter
 
-    def get_derived_list(self) -> List[DerivedParameter]:
+    def get_derived_list(self) -> list[DerivedParameter]:
         """Implement lazy iteration through the contained parameter names."""
 
         return list(self.derived_parameters.values())
