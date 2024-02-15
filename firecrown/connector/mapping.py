@@ -175,7 +175,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> dict[str, Union[Optional[float], list[float]]]:
+    def asdict(self) -> Dict[str, Union[Optional[float], List[float], str]]:
         """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,
