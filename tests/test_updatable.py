@@ -11,7 +11,7 @@ from firecrown import parameters
 from firecrown.parameters import (
     RequiredParameters,
     ParamsMap,
-    DerivedParameterScalar,
+    DerivedParameter,
     DerivedParameterCollection,
 )
 
@@ -48,7 +48,7 @@ class UpdatableWithDerived(Updatable):
         self.B = parameters.register_new_updatable_parameter()
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        derived_scale = DerivedParameterScalar("Section", "Name", self.A + self.B)
+        derived_scale = DerivedParameter("Section", "Name", self.A + self.B)
         derived_parameters = DerivedParameterCollection([derived_scale])
 
         return derived_parameters
@@ -316,7 +316,7 @@ def test_nesting_updatables_derived_parameters(nested_updatables):
 
     base.update(params)
 
-    derived_scale = DerivedParameterScalar("Section", "Name", 9.0)
+    derived_scale = DerivedParameter("Section", "Name", 9.0)
     derived_parameters = DerivedParameterCollection([derived_scale])
 
     assert base.get_derived_parameters() == derived_parameters
