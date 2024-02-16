@@ -48,12 +48,15 @@ def _ell_for_xi(
     logarithmically spaced values. All values are rounded to the nearest
     integer.
     """
+    assert minimum >= 0
+    assert minimum < midpoint
+    assert midpoint < maximum
     lower_range = np.linspace(minimum, midpoint - 1, midpoint - minimum)
     upper_range = np.logspace(np.log10(midpoint), np.log10(maximum), n_log)
     concatenated = np.concatenate((lower_range, upper_range))
     # Round the results to the nearest integer values.
     # N.B. the dtype of the result is np.dtype[float64]
-    return np.around(concatenated)
+    return np.unique(np.around(concatenated))
 
 
 def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
