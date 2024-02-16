@@ -34,10 +34,12 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
 
-ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 6e4, "n_log": 200}
+ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 60_000, "n_log": 200}
 
 
-def _ell_for_xi(*, minimum, midpoint, maximum, n_log) -> npt.NDArray[np.float64]:
+def _ell_for_xi(
+    *, minimum: int, midpoint: int, maximum: int, n_log: int
+) -> npt.NDArray[np.float64]:
     """Build an array of ells to sample the power spectrum for real-space
     predictions.
 
@@ -145,14 +147,16 @@ class TwoPoint(Statistic):
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
 
-         - min : int, optional - The minimum angular wavenumber to use for
+         - minimum : int, optional - The minimum angular wavenumber to use for
            real-space integrations. Default is 2.
-         - mid : int, optional - The midpoint angular wavenumber to use for
-           real-space integrations. The angular wavenumber samples are linearly
-           spaced at integers between `min` and `mid`. Default is 50.
-         - max : float, optional - The maximum angular wavenumber to use for
+         - midpoint : int, optional - The midpoint angular wavenumber to use
+           for real-space integrations. The angular wavenumber samples are
+           linearly spaced at integers between `minimum` and `midpoint`. Default
+           is 50.
+         - maximum : int, optional - The maximum angular wavenumber to use for
            real-space integrations. The angular wavenumber samples are
-           logarithmically spaced between `mid` and `max`. Default is 6e4.
+           logarithmically spaced between `midpoint` and `maximum`. Default is
+           60,000.
          - n_log : int, optional - The number of logarithmically spaced angular
            wavenumber samples between `mid` and `max`. Default is 200.
 
@@ -336,7 +340,12 @@ class TwoPoint(Statistic):
         if self.ccl_kind == "cl":
             self.ells = self.ell_or_theta_
         else:
-            self.ells = _ell_for_xi(**self.ell_for_xi)
+            self.ells = _ell_for_xi(
+                minimum=int(self.ell_for_xi["minimum"]),
+                midpoint=int(self.ell_for_xi["midpoint"]),
+                maximum=int(self.ell_for_xi["maximum"]),
+                n_log=int(self.ell_for_xi["n_log"]),
+            )
 
         # TODO: we should not be adding a new instance variable outside of
         # __init__. Why is `self.cells` an instance variable rather than a
