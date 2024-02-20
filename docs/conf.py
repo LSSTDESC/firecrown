@@ -55,15 +55,18 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # -- Options for HTML output -------------------------------------------------
 
-# Attempt to generate a sidebar
-html_sidebars = {"**": ["localtoc.html", "sourcelink.html", "searchbox.html"]}
-
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
-html_theme = "sphinx_rtd_theme"
+# To see how to further customize the theme, see:
+# https://sphinx-book-theme.readthedocs.io/en/stable/index.html
 
-html_theme_options = {"collapse_navigation": False}
+html_theme = "sphinx_book_theme"
+html_theme_options = {
+    "collapse_navigation": False,
+    "repository_url": "https://github.com/LSSTDESC/firecrown",
+    "use_repository_button": True,
+}
+html_title = "firecrown"
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

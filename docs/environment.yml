@@ -27,4 +27,4 @@ dependencies:
   - sphinx-autoapi
   - sphinx-autodoc-typehints
   - sphinxcontrib-apidoc
-  - sphinx_rtd_theme
+  - sphinx-book-theme
