@@ -132,7 +132,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
-        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
+        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 60_000, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     _ = likelihood.compute_loglike(modeling_tools)
@@ -297,7 +297,7 @@ def test_pt_mixed_systematics(sacc_data):
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
-        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
+        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 60_000, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     _ = likelihood.compute_loglike(modeling_tools)
