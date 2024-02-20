@@ -17,13 +17,13 @@ This is the procedure we use for create a new release of Firecrown.
     pytest -v tests/test_version.py
 
 11. Update the tutorial files with the new release number.
-   1. development_example.qmd
-   2. intro_article.qmd
-   3. introduction_to_firecrown.qmd
-   4. `docs/conf.py`
-   5. You can find all the files to change with: `rg -g '!*.ipynb' -g '!*.ini' -g '!*.yaml' -g '!*.yml' -l -F x.y` where "x.y" should be replaced with the old release number.
+    1. development_example.qmd
+    1. intro_article.qmd
+    2. introduction_to_firecrown.qmd
+    3. `docs/conf.py`
+    4. You can find all the files to change with: `rg -g '!*.ipynb' -g '!*.ini' -g '!*.yaml' -g '!*.yml' -l -F x.y` where "x.y" should be replaced with the old release number.
 12. Commit and push all the changes to the new branch for the PR.
-   1. can be done either through the web interface, or through the `gh` command line utility.
+    1. can be done either through the web interface, or through the `gh` command line utility.
 13. Create a PR for the generation of the new release.
    The CI system will automatically run on the PR.
 14. If the CI system complains, fix things and iterate as needed.
@@ -33,14 +33,14 @@ This is the procedure we use for create a new release of Firecrown.
 17. Create the new `conda` release.
    You do this in your local clone of the feedstock repository.
 
-   1. `git pull` to make sure you have the latest version of everything.
-   2. Edit `recipe/meta.yaml` to update the version, and to reset the build number to 0.
+    1. `git pull` to make sure you have the latest version of everything.
+    2. Edit `recipe/meta.yaml` to update the version, and to reset the build number to 0.
       Make sure any version pinning in `meta.yml` (which will be used by the conda solver)  is consistent with Firecrown's `environment.yml`.
       Add any new dependencies, if appropriate.
       Download the new `.tar.gz` file from the Firecrown repo, find the `sha256sum` of the file.
       Update that in the `meta.yml` file.
-   3. Commit and push changes.
-   4. If you make an error, make sure you update the build number.
+    3. Commit and push changes.
+    4. If you make an error, make sure you update the build number.
 
 18. Immediately change the version (in all the places listed above) the next number. If the release just made is x.y.z, the new one should be x.y.(z+1)a0
 
