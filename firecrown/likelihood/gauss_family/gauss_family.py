@@ -337,7 +337,7 @@ class GaussFamily(Likelihood):
         return chisq
 
     @enforce_states(
-        initial=State.READY,
+        initial=[State.READY, State.UPDATED, State.COMPUTED],
         failure_message="read() must be called before get_sacc_indices()",
     )
     def get_sacc_indices(
