@@ -342,7 +342,7 @@ class GaussFamily(Likelihood):
     )
     def get_sacc_indices(
         self, statistic: Union[Statistic, list[Statistic], None] = None
-    ) -> npt.NDArray[np.int]:
+    ) -> npt.NDArray[np.int64]:
         """Get the SACC indices of the statistic or list of statistics. If no
         statistic is given, get the indices of all statistics of the likelihood."""
         if statistic is None:

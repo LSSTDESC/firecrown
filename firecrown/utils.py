@@ -25,7 +25,7 @@ def upper_triangle_indices(n: int):
 def save_to_sacc(
     sacc_data: sacc.Sacc,
     data_vector: npt.NDArray[np.float64],
-    indices: npt.NDArray[np.int],
+    indices: npt.NDArray[np.int64],
     strict: bool = True,
 ) -> sacc.Sacc:
     """Save a data vector into a SACC object.
