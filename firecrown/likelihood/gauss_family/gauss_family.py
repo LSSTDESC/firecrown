@@ -27,7 +27,7 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic, GuardedStatistic
-from ....utils import save_to_sacc
+from ...utils import save_to_sacc
 
 
 class State(Enum):
