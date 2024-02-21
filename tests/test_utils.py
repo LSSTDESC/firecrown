@@ -29,7 +29,7 @@ def test_save_to_sacc(trivial_stats, sacc_data_for_trivial_stat):
         indices=idx,
         strict=True,
     )
-    assert all([new_sacc.data[i].value == d for i, d in zip(idx, new_data_vector)])
+    assert all(new_sacc.data[i].value == d for i, d in zip(idx, new_data_vector))
 
 
 def test_save_to_sacc_strict_fail(trivial_stats, sacc_data_for_trivial_stat):
