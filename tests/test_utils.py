@@ -1,6 +1,7 @@
 """
 Tests for the firecrown.utils modle.
 """
+
 import pytest
 import numpy as np
 
