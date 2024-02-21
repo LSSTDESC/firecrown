@@ -27,6 +27,7 @@ from ..likelihood import Likelihood
 from ...modeling_tools import ModelingTools
 from ...updatable import UpdatableCollection
 from .statistic.statistic import Statistic, GuardedStatistic
+from ....utils import save_to_sacc
 
 
 class State(Enum):
@@ -336,6 +337,29 @@ class GaussFamily(Likelihood):
         return chisq
 
     @enforce_states(
+        initial=State.READY,
+        failure_message="read() must be called before get_sacc_indices()",
+    )
+    def get_sacc_indices(
+        self, statistic: Union[Statistic, list[Statistic], None] = None
+    ) -> npt.NDArray[np.int]:
+        """Get the SACC indices of the statistic or list of statistics. If no
+        statistic is given, get the indices of all statistics of the likelihood."""
+        if statistic is None:
+            statistic = [stat.statistic for stat in self.statistics]
+        if isinstance(statistic, Statistic):
+            statistic = [statistic]
+
+        sacc_indices_list = []
+        for stat in statistic:
+            assert stat.sacc_indices is not None
+            sacc_indices_list.append(stat.sacc_indices.copy())
+
+        sacc_indices = np.concatenate(sacc_indices_list)
+
+        return sacc_indices
+
+    @enforce_states(
         initial=State.COMPUTED,
         failure_message="compute_theory_vector() must be called before "
         "make_realization()",
@@ -343,31 +367,18 @@ class GaussFamily(Likelihood):
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
-        new_sacc = sacc_data.copy()
-
-        sacc_indices_list = []
-        for stat in self.statistics:
-            assert stat.statistic.sacc_indices is not None
-            sacc_indices_list.append(stat.statistic.sacc_indices.copy())
-
-        sacc_indices = np.concatenate(sacc_indices_list)
+        sacc_indices = self.get_sacc_indices()
 
         if add_noise:
             new_data_vector = self.make_realization_vector()
         else:
             new_data_vector = self.get_theory_vector()
 
-        assert len(sacc_indices) == len(new_data_vector)
-
-        if strict:
-            if set(sacc_indices.tolist()) != set(sacc_data.indices()):
-                raise RuntimeError(
-                    "The predicted data does not cover all the data in the "
-                    "sacc object. To write only the calculated predictions, "
-                    "set strict=False."
-                )
-
-        for prediction_idx, sacc_idx in enumerate(sacc_indices):
-            new_sacc.data[sacc_idx].value = new_data_vector[prediction_idx]
+        new_sacc = save_to_sacc(
+            sacc_data=sacc_data,
+            data_vector=new_data_vector,
+            indices=sacc_indices,
+            strict=strict,
+        )
 
         return new_sacc
