@@ -100,7 +100,7 @@ jobs:
         run: python -m pytest -vv --runslow --cov firecrown --cov-report xml
       - name: Running integration tests
         shell: bash -l {0}
-        run: python -m pytest -vv -s --integration tests/integration --cov firecrown --cov-report xml --cov-append
+        run: python -m pytest -vv -s --integration tests/integration 
       - name: Upload coverage reports to Codecov
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
         uses: codecov/codecov-action@v4
