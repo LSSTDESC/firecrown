@@ -420,3 +420,32 @@ def test_make_realization_no_noise(
     new_likelihood.update(params)
 
     assert_allclose(new_likelihood.get_data_vector(), likelihood.get_theory_vector())
+
+
+def test_get_sacc_indices(
+    trivial_stats,
+    sacc_data_for_trivial_stat: sacc.Sacc,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+
+    idx = likelihood.get_sacc_indices()
+
+    assert all(
+        idx
+        == np.concatenate(
+            [stat.statistic.sacc_indices for stat in likelihood.statistics]
+        )
+    )
+
+
+def test_get_sacc_indices_single_stat(
+    trivial_stats,
+    sacc_data_for_trivial_stat: sacc.Sacc,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+
+    idx = likelihood.get_sacc_indices(statistic=likelihood.statistics[0].statistic)
+
+    assert all(idx == likelihood.statistics[0].statistic.sacc_indices)
