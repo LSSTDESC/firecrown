@@ -233,13 +233,7 @@ class TwoPoint(Statistic):
         :param sacc_data: The data in the sacc format.
         """
 
-        self.source0.read(sacc_data)
-        if self.source0 is not self.source1:
-            self.source1.read(sacc_data)
-
-        assert self.source0.sacc_tracer is not None
-        assert self.source1.sacc_tracer is not None
-        tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
+        tracers = self.initialize_sources(sacc_data)
 
         if self.ccl_kind == "cl":
             _ell_or_theta, _stat = sacc_data.get_ell_cl(
@@ -301,6 +295,15 @@ class TwoPoint(Statistic):
 
         super().read(sacc_data)
 
+    def initialize_sources(self, sacc_data: sacc.Sacc) -> tuple[str, str]:
+        """Initialize this TwoPoint's sources, and return the tracer names."""
+        self.source0.read(sacc_data)
+        if self.source0 is not self.source1:
+            self.source1.read(sacc_data)
+        assert self.source0.sacc_tracer is not None
+        assert self.source1.sacc_tracer is not None
+        tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
+        return tracers
     def calculate_ell_or_theta(self):
         """See _ell_for_xi.
 
