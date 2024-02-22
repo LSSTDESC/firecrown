@@ -28,14 +28,18 @@ def save_to_sacc(
     indices: npt.NDArray[np.int64],
     strict: bool = True,
 ) -> sacc.Sacc:
-    """Save a data vector into a SACC object.
+    """Save a data vector into a (new) SACC object, copied from `sacc_data`.
+
+    Note that the original object `sacc_data` is not modified. Its contents are
+    copied into a new object, and the new information is put into that copy,
+    which is returned by this method.
 
     Arguments
     ---------
     sacc_data: sacc.Sacc
-        SACC object to save the data vector into.
+        SACC object to be copied. It is not modified.
     data_vector: np.ndarray[float]
-        Data vector to be saved.
+        Data vector to be saved to the new copy of `sacc_data`.
     indices: np.ndarray[int]
         SACC indices where the data vector should be written.
     strict: bool
