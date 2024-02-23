@@ -314,7 +314,8 @@ class TwoPoint(Statistic):
         assert self.source1.sacc_tracer is not None
         tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
         return tracers
-    def calculate_ell_or_theta(self):
+
+    def calculate_ell_or_theta(self) -> npt.NDArray[np.float64]:
         """See _ell_for_xi.
 
         This method mixes together:
