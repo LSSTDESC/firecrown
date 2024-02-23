@@ -235,14 +235,7 @@ class TwoPoint(Statistic):
 
         tracers = self.initialize_sources(sacc_data)
 
-        if self.ccl_kind == "cl":
-            _ell_or_theta, _stat = sacc_data.get_ell_cl(
-                self.sacc_data_type, *tracers, return_cov=False
-            )
-        else:
-            _ell_or_theta, _stat = sacc_data.get_theta_xi(
-                self.sacc_data_type, *tracers, return_cov=False
-            )
+        _ell_or_theta, _stat = self.handle_ccl_kind(sacc_data, tracers)
 
         if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
             raise RuntimeError(
@@ -294,6 +287,23 @@ class TwoPoint(Statistic):
         self.sacc_tracers = tracers
 
         super().read(sacc_data)
+
+    def handle_ccl_kind(
+        self, sacc_data: sacc.Sacc, tracers: tuple[str, str]
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        """Read either ell_cl or theta_xi data from sacc_data, and
+        return that and associated stat data.
+        """
+
+        if self.ccl_kind == "cl":
+            _ell_or_theta, _stat = sacc_data.get_ell_cl(
+                self.sacc_data_type, *tracers, return_cov=False
+            )
+        else:
+            _ell_or_theta, _stat = sacc_data.get_theta_xi(
+                self.sacc_data_type, *tracers, return_cov=False
+            )
+        return _ell_or_theta, _stat
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> tuple[str, str]:
         """Initialize this TwoPoint's sources, and return the tracer names."""
