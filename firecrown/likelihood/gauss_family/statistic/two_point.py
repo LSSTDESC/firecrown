@@ -243,6 +243,9 @@ class TwoPoint(Statistic):
                 f"have no 2pt data in the SACC file and no input ell or "
                 f"theta values were given!"
             )
+        # TODO: should this next condition be:
+        # if self.ell_or_theta is not None and (len(_ell_or_theta)>0 or len(_stat)>0):
+        # similar to what is tested in the clause above?
         if self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0:
             warnings.warn(
                 f"Tracers '{tracers}' have 2pt data and you have specified "
@@ -251,34 +254,9 @@ class TwoPoint(Statistic):
             )
 
         # at this point we default to the values in the sacc file
-        if len(_ell_or_theta) == 0 or len(_stat) == 0:
-            _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
-            _stat = np.zeros_like(_ell_or_theta)
-        else:
-            self.sacc_indices = np.atleast_1d(
-                sacc_data.indices(self.sacc_data_type, tracers)
-            )
-
-        if self.ell_or_theta_min is not None:
-            locations = np.where(_ell_or_theta >= self.ell_or_theta_min)
-            _ell_or_theta = _ell_or_theta[locations]
-            _stat = _stat[locations]
-            if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[locations]
-
-        if self.ell_or_theta_max is not None:
-            locations = np.where(_ell_or_theta <= self.ell_or_theta_max)
-            _ell_or_theta = _ell_or_theta[locations]
-            _stat = _stat[locations]
-            if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[locations]
-
-        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
-        if self.theory_window_function is not None:
-            _ell_or_theta = self.calculate_ell_or_theta()
-            # Normalise the weights to 1:
-            norm = self.theory_window_function.weight.sum(axis=0)
-            self.theory_window_function.weight /= norm
+        _ell_or_theta, _stat = self._calculate_stat_stuff(
+            _ell_or_theta, _stat, sacc_data, tracers
+        )
 
         # I don't think we need these copies, but being safe here.
         self._ell_or_theta = _ell_or_theta.copy()
@@ -287,6 +265,43 @@ class TwoPoint(Statistic):
         self.sacc_tracers = tracers
 
         super().read(sacc_data)
+
+    # TODO: Rename and document this method.
+    def _calculate_stat_stuff(
+        self,
+        _ell_or_theta: npt.NDArray[np.float64],
+        _stat: npt.NDArray[np.float64],
+        sacc_data: sacc.Sacc,
+        tracers: tuple[str, str],
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        """What should we call this method? What do _ell_or_theta and _stat have
+        in common that one body of code is used to calculate them both?"""
+        if len(_ell_or_theta) == 0 or len(_stat) == 0:
+            _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
+            _stat = np.zeros_like(_ell_or_theta)
+        else:
+            self.sacc_indices = np.atleast_1d(
+                sacc_data.indices(self.sacc_data_type, tracers)
+            )
+        if self.ell_or_theta_min is not None:
+            locations = np.where(_ell_or_theta >= self.ell_or_theta_min)
+            _ell_or_theta = _ell_or_theta[locations]
+            _stat = _stat[locations]
+            if self.sacc_indices is not None:
+                self.sacc_indices = self.sacc_indices[locations]
+        if self.ell_or_theta_max is not None:
+            locations = np.where(_ell_or_theta <= self.ell_or_theta_max)
+            _ell_or_theta = _ell_or_theta[locations]
+            _stat = _stat[locations]
+            if self.sacc_indices is not None:
+                self.sacc_indices = self.sacc_indices[locations]
+        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
+        if self.theory_window_function is not None:
+            _ell_or_theta = self.calculate_ell_or_theta()
+            # Normalise the weights to 1:
+            norm = self.theory_window_function.weight.sum(axis=0)
+            self.theory_window_function.weight /= norm
+        return _ell_or_theta, _stat
 
     def handle_ccl_kind(
         self, sacc_data: sacc.Sacc, tracers: tuple[str, str]
