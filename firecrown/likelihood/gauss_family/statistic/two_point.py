@@ -217,7 +217,7 @@ class TwoPoint(Statistic):
         self.sacc_data_type = sacc_data_type
         self.source0 = source0
         self.source1 = source1
-        self.ell_for_xi = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        self.ell_for_xi: dict[str, int] = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
             self.ell_for_xi.update(ell_for_xi)
         # What is the difference between the following 3 instance variables?
