@@ -102,14 +102,8 @@ def read_ell_or_theta_and_stat(
     """Read either ell_cl or theta_xi data from sacc_data, and
     return that and associated stat data.
     """
-    if ccl_kind == "cl":
-        ell_or_theta, stat = sacc_data.get_ell_cl(
-            sacc_data_type, *tracers, return_cov=False
-        )
-    else:
-        ell_or_theta, stat = sacc_data.get_theta_xi(
-            sacc_data_type, *tracers, return_cov=False
-        )
+    method = sacc_data.get_ell_cl if ccl_kind == "cl" else sacc_data.get_theta_xi
+    ell_or_theta, stat = method(sacc_data_type, *tracers, return_cov=False)
     assert len(ell_or_theta) == len(stat)
     return ell_or_theta, stat
 
