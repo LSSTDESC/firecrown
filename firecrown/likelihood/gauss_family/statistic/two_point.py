@@ -315,13 +315,20 @@ class TwoPoint(Statistic):
             stat = stat[locations]
             if self.sacc_indices is not None:
                 self.sacc_indices = self.sacc_indices[locations]
+        ell_or_theta = self.set_window_function(ell_or_theta, sacc_data)
+        return ell_or_theta, stat
+
+    def set_window_function(
+        self, ell_or_theta: npt.NDArray[np.float64], sacc_data: sacc.Sacc
+    ) -> npt.NDArray[np.float64]:
+        """Set the window function for this statistic."""
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
             ell_or_theta = self.calculate_ell_or_theta()
             # Normalise the weights to 1:
             norm = self.theory_window_function.weight.sum(axis=0)
             self.theory_window_function.weight /= norm
-        return ell_or_theta, stat
+        return ell_or_theta
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> tuple[str, str]:
         """Initialize this TwoPoint's sources, and return the tracer names."""
