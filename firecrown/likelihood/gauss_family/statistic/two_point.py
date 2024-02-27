@@ -295,8 +295,8 @@ class TwoPoint(Statistic):
         sacc_data: sacc.Sacc,
         tracers: tuple[str, str],
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        #
-        if len(ell_or_theta) == 0 or len(stat) == 0:
+        assert len(ell_or_theta) == len(stat)
+        if len(ell_or_theta) == 0:
             ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
             stat = np.zeros_like(ell_or_theta)
         else:
