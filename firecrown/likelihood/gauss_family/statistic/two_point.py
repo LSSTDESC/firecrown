@@ -96,6 +96,24 @@ def make_log_interpolator(x, y):
     return lambda x_, intp=intp: intp(np.log(x_))
 
 
+def read_ell_or_theta_and_stat(
+    ccl_kind: str, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: tuple[str, str]
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Read either ell_cl or theta_xi data from sacc_data, and
+    return that and associated stat data.
+    """
+    if ccl_kind == "cl":
+        ell_or_theta, stat = sacc_data.get_ell_cl(
+            sacc_data_type, *tracers, return_cov=False
+        )
+    else:
+        ell_or_theta, stat = sacc_data.get_theta_xi(
+            sacc_data_type, *tracers, return_cov=False
+        )
+    assert len(ell_or_theta) == len(stat)
+    return ell_or_theta, stat
+
+
 class TwoPoint(Statistic):
     """A two-point statistic (e.g., shear correlation function, galaxy-shear
     correlation function, etc.).
@@ -235,17 +253,20 @@ class TwoPoint(Statistic):
 
         tracers = self.initialize_sources(sacc_data)
 
-        _ell_or_theta, _stat = self.handle_ccl_kind(sacc_data, tracers)
+        _ell_or_theta, _stat = read_ell_or_theta_and_stat(
+            self.ccl_kind, self.sacc_data_type, sacc_data, tracers
+        )
 
+        # If we have no data from our construction, and the SACC object also contains
+        # no data, we have a failure...
         if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
             raise RuntimeError(
                 f"Tracers '{tracers}' for data type '{self.sacc_data_type}' "
                 f"have no 2pt data in the SACC file and no input ell or "
                 f"theta values were given!"
             )
-        # TODO: should this next condition be:
-        # if self.ell_or_theta is not None and (len(_ell_or_theta)>0 or len(_stat)>0):
-        # similar to what is tested in the clause above?
+        # If we have data from our construction, and also have data in the SACC object,
+        # emit a warning and use the information read from the SACC object.
         if self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0:
             warnings.warn(
                 f"Tracers '{tracers}' have 2pt data and you have specified "
@@ -266,59 +287,41 @@ class TwoPoint(Statistic):
 
         super().read(sacc_data)
 
-    # TODO: Rename and document this method.
+    # TODO: Inline this function after it has been refactored.
     def _calculate_stat_stuff(
         self,
-        _ell_or_theta: npt.NDArray[np.float64],
-        _stat: npt.NDArray[np.float64],
+        ell_or_theta: npt.NDArray[np.float64],
+        stat: npt.NDArray[np.float64],
         sacc_data: sacc.Sacc,
         tracers: tuple[str, str],
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        """What should we call this method? What do _ell_or_theta and _stat have
-        in common that one body of code is used to calculate them both?"""
-        if len(_ell_or_theta) == 0 or len(_stat) == 0:
-            _ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
-            _stat = np.zeros_like(_ell_or_theta)
+        #
+        if len(ell_or_theta) == 0 or len(stat) == 0:
+            ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
+            stat = np.zeros_like(ell_or_theta)
         else:
             self.sacc_indices = np.atleast_1d(
                 sacc_data.indices(self.sacc_data_type, tracers)
             )
         if self.ell_or_theta_min is not None:
-            locations = np.where(_ell_or_theta >= self.ell_or_theta_min)
-            _ell_or_theta = _ell_or_theta[locations]
-            _stat = _stat[locations]
+            locations = np.where(ell_or_theta >= self.ell_or_theta_min)
+            ell_or_theta = ell_or_theta[locations]
+            stat = stat[locations]
             if self.sacc_indices is not None:
                 self.sacc_indices = self.sacc_indices[locations]
         if self.ell_or_theta_max is not None:
-            locations = np.where(_ell_or_theta <= self.ell_or_theta_max)
-            _ell_or_theta = _ell_or_theta[locations]
-            _stat = _stat[locations]
+            locations = np.where(ell_or_theta <= self.ell_or_theta_max)
+            ell_or_theta = ell_or_theta[locations]
+            stat = stat[locations]
             if self.sacc_indices is not None:
                 self.sacc_indices = self.sacc_indices[locations]
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
-            _ell_or_theta = self.calculate_ell_or_theta()
+            ell_or_theta = self.calculate_ell_or_theta()
             # Normalise the weights to 1:
             norm = self.theory_window_function.weight.sum(axis=0)
             self.theory_window_function.weight /= norm
-        return _ell_or_theta, _stat
-
-    def handle_ccl_kind(
-        self, sacc_data: sacc.Sacc, tracers: tuple[str, str]
-    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        """Read either ell_cl or theta_xi data from sacc_data, and
-        return that and associated stat data.
-        """
-
-        if self.ccl_kind == "cl":
-            _ell_or_theta, _stat = sacc_data.get_ell_cl(
-                self.sacc_data_type, *tracers, return_cov=False
-            )
-        else:
-            _ell_or_theta, _stat = sacc_data.get_theta_xi(
-                self.sacc_data_type, *tracers, return_cov=False
-            )
-        return _ell_or_theta, _stat
+        return ell_or_theta, stat
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> tuple[str, str]:
         """Initialize this TwoPoint's sources, and return the tracer names."""
