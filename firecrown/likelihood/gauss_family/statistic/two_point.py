@@ -204,6 +204,7 @@ class TwoPoint(Statistic):
         sacc_data_type,
         source0: Source,
         source1: Source,
+        *,
         ell_for_xi=None,
         ell_or_theta=None,
         ell_or_theta_min=None,
