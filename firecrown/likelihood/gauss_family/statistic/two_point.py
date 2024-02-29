@@ -291,32 +291,49 @@ class TwoPoint(Statistic):
         tracers: tuple[str, str],
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         assert len(ell_or_theta) == len(stat)
-        if len(ell_or_theta) == 0:
+        common_length = len(ell_or_theta)
+        ell_or_theta, stat = self.phase_1(sacc_data, tracers, common_length)
+        ell_or_theta = self.set_window_function(ell_or_theta, sacc_data)
+        assert len(ell_or_theta) == len(stat)
+        return ell_or_theta, stat
+
+    def phase_1(self, sacc_data, tracers, common_length):
+        # Depending on the value of common_length, calculate either:
+        #    1) ell_or_theta and stat, or
+        #    2) self.sacc_indices
+        if common_length == 0:
             ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
             stat = np.zeros_like(ell_or_theta)
         else:
             self.sacc_indices = np.atleast_1d(
                 sacc_data.indices(self.sacc_data_type, tracers)
             )
+            assert len(self.sacc_indices) == common_length
+        
+        # If we have set self.ell_or_theta_min, filter ell_or_theta, stat, and
+        # possibly self.sacc_indices
         if self.ell_or_theta_min is not None:
             locations = np.where(ell_or_theta >= self.ell_or_theta_min)
             ell_or_theta = ell_or_theta[locations]
             stat = stat[locations]
             if self.sacc_indices is not None:
                 self.sacc_indices = self.sacc_indices[locations]
+
+        # If we have set self.ell_or_theta_max, filter ell_or_theta, stat, and
+        # possibly self.sacc_indices
         if self.ell_or_theta_max is not None:
             locations = np.where(ell_or_theta <= self.ell_or_theta_max)
             ell_or_theta = ell_or_theta[locations]
             stat = stat[locations]
             if self.sacc_indices is not None:
                 self.sacc_indices = self.sacc_indices[locations]
-        ell_or_theta = self.set_window_function(ell_or_theta, sacc_data)
-        return ell_or_theta, stat
+        return ell_or_theta,stat
 
     def set_window_function(
         self, ell_or_theta: npt.NDArray[np.float64], sacc_data: sacc.Sacc
     ) -> npt.NDArray[np.float64]:
         """Set the window function for this statistic."""
+        assert self.sacc_indices is not None
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
         if self.theory_window_function is not None:
             ell_or_theta = self.calculate_ell_or_theta()
