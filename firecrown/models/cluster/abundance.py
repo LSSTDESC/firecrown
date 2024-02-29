@@ -14,7 +14,7 @@ from firecrown.updatable import Updatable, UpdatableCollection
 
 
 class ClusterAbundance(Updatable):
-    """The class that calculates the predicted number counts of galaxy clusters
+    """The class that calculates the predicted number counts of galaxy clusters.
 
     The abundance is a function of a specific cosmology, a mass and redshift range,
     an area on the sky, a halo mass function, as well as multiple kernels, where
@@ -55,7 +55,8 @@ class ClusterAbundance(Updatable):
     ) -> npt.NDArray[np.float64]:
         """The differential comoving volume given area sky_area at redshift z.
 
-        :param sky_area: The area of the survey on the sky in square degrees."""
+        :param sky_area: The area of the survey on the sky in square degrees.
+        """
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)

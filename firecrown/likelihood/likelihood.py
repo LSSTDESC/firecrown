@@ -1,5 +1,4 @@
-"""Basic likelihood infrastructure
-
+"""Basic likelihood infrastructure.
 
 This module provides the base class :class:`Likelihood`, which is the class
 from which all concrete firecrown likelihoods must descend.

@@ -39,9 +39,11 @@ GeneralUpdatable = Union["Updatable", "UpdatableCollection"]
 
 
 class MissingSamplerParameterError(RuntimeError):
-    """Error class raised when an Updatable failes to be updated because the
-    ParamsMap supplied for the update is missing a parameter that should have
-    been provided by the sampler."""
+    """Error for when a required parameter is missing.
+
+    Raised when an Updatable fails to be updated because the ParamsMap supplied for the
+    update is missing a parameter that should have been provided by the sampler.
+    """
 
     def __init__(self, parameter: str):
         """Create the error, with a meaning error message."""
@@ -102,9 +104,11 @@ class Updatable(ABC):
     def set_parameter(
         self, key: str, value: Union[InternalParameter, SamplerParameter]
     ) -> None:
-        """Assure this InternalParameter or SamplerParameter has not already
-        been set, and then set it."""
+        """Sets the parameter to the given value.
 
+        Assure this InternalParameter or SamplerParameter has not already
+        been set, and then set it.
+        """
         if isinstance(value, SamplerParameter):
             self.set_sampler_parameter(key, value)
         elif isinstance(value, InternalParameter):
@@ -112,7 +116,6 @@ class Updatable(ABC):
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
         """Assure this InternalParameter has not already been set, and then set it."""
-
         if not isinstance(value, InternalParameter):
             raise TypeError(
                 "Can only add InternalParameter objects to internal_parameters"
@@ -128,7 +131,6 @@ class Updatable(ABC):
 
     def set_sampler_parameter(self, key: str, value: SamplerParameter) -> None:
         """Assure this SamplerParameter has not already been set, and then set it."""
-
         if not isinstance(value, SamplerParameter):
             raise TypeError(
                 "Can only add SamplerParameter objects to sampler_parameters"
@@ -186,21 +188,26 @@ class Updatable(ABC):
         self._updated = True
 
     def is_updated(self) -> bool:
-        """Return True if the object is currently updated, and False if not.
+        """Determine if the object has been updated.
+
+        Return True if the object is currently updated, and False if not.
         A default-constructed Updatable has not been updated. After `update`,
         but before `reset`, has been called the object is updated. After
-        `reset` has been called, the object is not currently updated."""
+        `reset` has been called, the object is not currently updated.
+        """
         return self._updated
 
     @final
     def reset(self) -> None:
-        """Clean up self by clearing the _updated status and reseting all
+        """Reset the updatable.
+
+        Clean up self by clearing the _updated status and reseting all
         internals. We call the abstract method _reset to allow derived classes
         to clean up any additional internals.
 
         Each MCMC framework connector should call this after handling an MCMC
-        sample."""
-
+        sample.
+        """
         # If we have not been updated, there is nothing to do.
         if not self._updated:
             return
@@ -219,7 +226,9 @@ class Updatable(ABC):
         self._reset()
 
     def _update(self, params: ParamsMap) -> None:
-        """Do any updating other than calling :meth:`update` on contained
+        """Update other 
+        
+        Do any updating other than calling :meth:`update` on contained
         :class:`Updatable` objects.
 
         Implement this method in a subclass only when it has something to do.

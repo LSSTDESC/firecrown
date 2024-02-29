@@ -1,6 +1,5 @@
 """Provides type validation as used in connectors.
 
-
 Validators are created using the constructor for each class.
 Access to the data done through the object name, not through any named function.
 Setting the data is validated with the class's `validate` function; the user does
@@ -43,7 +42,9 @@ class TypeFloat:
         self.allow_none = allow_none
 
     def validate(self, value: Optional[float]) -> None:
-        """Raise an exception if the provided `value` does not meet all of the
+        """Run all validators on this value.
+
+        Raise an exception if the provided `value` does not meet all of the
         required conditions enforced by this validator.
         """
         if self.allow_none and value is None:
@@ -58,8 +59,7 @@ class TypeFloat:
             raise ValueError("NaN is disallowed in a constrained float")
 
     def _is_constrained(self) -> bool:
-        """Return true if this validation enforces any constraint, and false
-        if it does not."""
+        """Return if this validation enforces any constraint."""
         return not ((self.minvalue is None) and (self.maxvalue is None))
 
     def __set_name__(self, _, name: str) -> None:
@@ -69,13 +69,15 @@ class TypeFloat:
     def __get__(self, obj, objtype=None) -> float:
         """Accessor method, which reads controlled value.
 
-        This is invoked whenever the validated variable is read."""
+        This is invoked whenever the validated variable is read.
+        """
         return getattr(obj, self.private_name)
 
     def __set__(self, obj, value: Optional[float]) -> None:
         """Setter for the validated variable.
 
-        This function invokes the `validate` method of the derived class."""
+        This function invokes the `validate` method of the derived class.
+        """
         self.validate(value)
         setattr(obj, self.private_name, value)
 
@@ -97,13 +99,15 @@ class TypeString:
         maxsize: Optional[int] = None,
         predicate: Optional[Callable[[str], bool]] = None,
     ) -> None:
-        """Initialize the TypeString object'"""
+        """Initialize the TypeString object."""
         self.minsize = minsize
         self.maxsize = maxsize
         self.predicate = predicate
 
     def validate(self, value: Optional[str]) -> None:
-        """Raise an exception if the provided `value` does not meet all of the
+        """Run all validators on this value.
+
+        Raise an exception if the provided `value` does not meet all of the
         required conditions enforced by this validator.
         """
         if not isinstance(value, str):
@@ -126,12 +130,14 @@ class TypeString:
     def __get__(self, obj, objtype=None) -> str:
         """Accessor method, which reads controlled value.
 
-        This is invoked whenever the validated variable is read."""
+        This is invoked whenever the validated variable is read.
+        """
         return getattr(obj, self.private_name)
 
     def __set__(self, obj, value: Optional[str]) -> None:
         """Setter for the validated variable.
 
-        This function invokes the `validate` method of the derived class."""
+        This function invokes the `validate` method of the derived class.
+        """
         self.validate(value)
         setattr(obj, self.private_name, value)
