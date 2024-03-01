@@ -2,7 +2,9 @@
 """
 
 from __future__ import annotations
-from typing import Optional, Union
+
+import dataclasses
+from typing import Optional
 import copy
 import functools
 import warnings
@@ -96,8 +98,33 @@ def make_log_interpolator(x, y):
     return lambda x_, intp=intp: intp(np.log(x_))
 
 
+@dataclasses.dataclass(frozen=True)
+class TracerNames:
+    """The names of the two tracers in the sacc file."""
+
+    name1: str
+    name2: str
+
+    def __getitem__(self, item):
+        """Get the name of the tracer at the given index."""
+        if item == 0:
+            return self.name1
+        if item == 1:
+            return self.name2
+        raise IndexError
+
+    def __iter__(self):
+        """Iterate through the data members. This is to allow automatic
+        unpacking."""
+        yield self.name1
+        yield self.name2
+
+
+TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
+
+
 def read_ell_or_theta_and_stat(
-    ccl_kind: str, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: tuple[str, str]
+    ccl_kind: str, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """Read either ell_cl or theta_xi data from sacc_data, and
     return that and associated stat data.
@@ -229,10 +256,9 @@ class TwoPoint(Statistic):
         self._ell_or_theta: Optional[npt.NDArray[np.float64]] = None
         self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
 
-        self.sacc_tracers: tuple[str, str]
+        self.sacc_tracers: TracerNames
         self.ells: Optional[npt.NDArray[np.float64]] = None
-        self.cells: dict[Union[tuple[str, str], str], npt.NDArray[np.float64]] = {}
-
+        self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
@@ -288,7 +314,7 @@ class TwoPoint(Statistic):
         ell_or_theta: npt.NDArray[np.float64],
         stat: npt.NDArray[np.float64],
         sacc_data: sacc.Sacc,
-        tracers: tuple[str, str],
+        tracers: TracerNames,
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         assert len(ell_or_theta) == len(stat)
         common_length = len(ell_or_theta)
@@ -299,7 +325,10 @@ class TwoPoint(Statistic):
         assert len(ell_or_theta) == len(stat)
         return ell_or_theta, stat
 
-    def phase_1(self, sacc_data, tracers, common_length, ell_or_theta, stat):
+    def phase_1(
+        self, sacc_data, tracers: TracerNames, common_length, ell_or_theta, stat
+    ):
+        """Temporary method to support refactoring of TwoPoint.read."""
         # Depending on the value of common_length, calculate either:
         #    1) ell_or_theta and stat, or
         #    2) self.sacc_indices
@@ -310,6 +339,7 @@ class TwoPoint(Statistic):
             self.sacc_indices = np.atleast_1d(
                 sacc_data.indices(self.sacc_data_type, tracers)
             )
+            assert self.sacc_indices is not None  # Needed for mypy
             assert len(self.sacc_indices) == common_length
 
         # If we have set self.ell_or_theta_min, filter ell_or_theta, stat, and
@@ -344,7 +374,7 @@ class TwoPoint(Statistic):
             self.theory_window_function.weight /= norm
         return ell_or_theta
 
-    def initialize_sources(self, sacc_data: sacc.Sacc) -> tuple[str, str]:
+    def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
         self.source0.read(sacc_data)
         if self.source0 is not self.source1:
@@ -352,7 +382,7 @@ class TwoPoint(Statistic):
         assert self.source0.sacc_tracer is not None
         assert self.source1.sacc_tracer is not None
         tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
-        return tracers
+        return TracerNames(*tracers)
 
     def calculate_ell_or_theta(self) -> npt.NDArray[np.float64]:
         """See _ell_for_xi.
@@ -413,16 +443,17 @@ class TwoPoint(Statistic):
         self.cells = {}
 
         # Loop over the tracers and compute all possible combinations
-        # of them
+        # of them.
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
-                if (tracer0.tracer_name, tracer1.tracer_name) in self.cells:
+                tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
+                if tn in self.cells:
                     # Already computed this combination, skipping
                     continue
                 pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
 
-                self.cells[(tracer0.tracer_name, tracer1.tracer_name)] = (
+                self.cells[tn] = (
                     _cached_angular_cl(
                         tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
@@ -434,8 +465,8 @@ class TwoPoint(Statistic):
                 )
 
         # Add up all the contributions to the cells
-        self.cells["total"] = np.array(sum(self.cells.values()))
-        theory_vector = self.cells["total"]
+        self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
+        theory_vector = self.cells[TRACER_NAMES_TOTAL]
 
         if not self.ccl_kind == "cl":
             theory_vector = pyccl.correlation(

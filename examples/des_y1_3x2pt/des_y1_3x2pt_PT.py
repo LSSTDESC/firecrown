@@ -13,7 +13,11 @@ import pyccl.nl_pt
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.statistic.two_point import (
+    TwoPoint,
+    TracerNames,
+    TRACER_NAMES_TOTAL,
+)
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
@@ -58,18 +62,18 @@ class CElls:
     gg_total: np.ndarray
 
     def __init__(self, stat0: TwoPoint, stat2: TwoPoint, stat3: TwoPoint):
-        self.GG = stat0.cells[("shear", "shear")]
-        self.GI = stat0.cells[("shear", "intrinsic_pt")]
-        self.II = stat0.cells[("intrinsic_pt", "intrinsic_pt")]
-        self.cs_total = stat0.cells["total"]
+        self.GG = stat0.cells[TracerNames("shear", "shear")]
+        self.GI = stat0.cells[TracerNames("shear", "intrinsic_pt")]
+        self.II = stat0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
+        self.cs_total = stat0.cells[TRACER_NAMES_TOTAL]
 
-        self.gG = stat2.cells[("galaxies", "shear")]
-        self.gI = stat2.cells[("galaxies", "intrinsic_pt")]
-        self.mI = stat2.cells[("magnification+rsd", "intrinsic_pt")]
+        self.gG = stat2.cells[TracerNames("galaxies", "shear")]
+        self.gI = stat2.cells[TracerNames("galaxies", "intrinsic_pt")]
+        self.mI = stat2.cells[TracerNames("magnification+rsd", "intrinsic_pt")]
 
-        self.gg = stat3.cells[("galaxies", "galaxies")]
-        self.gm = stat3.cells[("galaxies", "magnification+rsd")]
-        self.gg_total = stat3.cells["total"]
+        self.gg = stat3.cells[TracerNames("galaxies", "galaxies")]
+        self.gm = stat3.cells[TracerNames("galaxies", "magnification+rsd")]
+        self.gg_total = stat3.cells[TRACER_NAMES_TOTAL]
 
 
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
