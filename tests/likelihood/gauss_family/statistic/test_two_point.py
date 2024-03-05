@@ -63,3 +63,6 @@ def test_tracer_names():
     tn2 = TracerNames("cat", "dog")
     assert tn1 != tn2
     assert hash(tn1) != hash(tn2)
+
+    with pytest.raises(IndexError):
+        _ = tn1[2]
