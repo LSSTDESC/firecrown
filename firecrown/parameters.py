@@ -116,9 +116,7 @@ class RequiredParameters:
     def get_params_names(self) -> Iterator[str]:
         """Implement lazy iteration through the contained parameter names."""
         params_names_set = set(self.params_names)
-
-        for name in params_names_set:
-            yield name
+        yield from params_names_set
 
 
 class DerivedParameter:
