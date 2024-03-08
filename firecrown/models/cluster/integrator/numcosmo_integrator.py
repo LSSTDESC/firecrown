@@ -1,4 +1,4 @@
-"""The NumCosmo integrator module
+"""The NumCosmo integrator module.
 
 This module holds the NumCosmo implementation of the integrator classes
 """
@@ -42,6 +42,7 @@ class NumCosmoIntegrator(Integrator):
             [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
         ],
     ) -> float:
+        """Integrate the provided integrand argument with NumCosmo."""
         Ncm.cfg_init()
 
         int_nd = CountsIntegralND(

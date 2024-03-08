@@ -15,8 +15,11 @@ from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
 class MurataBinnedSpecZRecipe(ClusterRecipe):
-    """Cluster recipe using the Murata 2019 binned mass-richness relation and assuming
-    perfectly measured spec-zs."""
+    """Cluster recipe with Murata19 mass-richness and spec-zs.
+
+    This recipe uses the Murata 2019 binned mass-richness relation and assumes
+    perfectly measured spec-zs.
+    """
 
     def __init__(self) -> None:
         super().__init__()
@@ -35,9 +38,12 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         [npt.NDArray[np.float64], npt.NDArray[np.float64], tuple[float, float], float],
         npt.NDArray[np.float64],
     ]:
-        """Returns a callable function that accepts mass, redshift, mass proxy limits,
+        """Get a callable that evaluates a cluster theory prediction.
+
+        Returns a callable function that accepts mass, redshift, mass proxy limits,
         and the sky area of your survey and returns the theoretical prediction for the
-        expected number of clusters."""
+        expected number of clusters.
+        """
 
         def theory_prediction(
             mass: npt.NDArray[np.float64],
@@ -85,7 +91,8 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         """Returns a callable function that can be evaluated by an integrator.
 
         This function is responsible for mapping arguments from the numerical integrator
-        to the arguments of the theoretical prediction function."""
+        to the arguments of the theoretical prediction function.
+        """
 
         def function_mapper(
             int_args: npt.NDArray, extra_args: npt.NDArray
@@ -108,9 +115,12 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         sky_area: float,
         average_on: Optional[ClusterProperty] = None,
     ) -> float:
-        """Evaluate the theoretical prediction for the observable in the provided bin
+        """Evaluate the theory prediction for this cluster recipe.
+
+        Evaluate the theoretical prediction for the observable in the provided bin
         using the Murata 2019 binned mass-richness relation and assuming perfectly
-        measured redshifts."""
+        measured redshifts.
+        """
         self.integrator.integral_bounds = [
             (cluster_theory.min_mass, cluster_theory.max_mass),
             this_bin.z_edges,
