@@ -460,10 +460,19 @@ class TwoPoint(Statistic):
                     tracer1.halo_profile = other_profile
             profile0 = tracer0.halo_profile
             profile1 = tracer1.halo_profile
+            pk_1h = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
+                                             prof=profile0, prof2=profile1,
+                                             a_arr=a_arr)
+            # FIXME: I need to access 2-halo A_IA to build pk_2h here.
+            # But I also need to know what I am computing. GI and II are different.
+            # Solution to make centrals have their own profile problematic because the
+            # HM in CCL computes terms that shouldn't be there.
+            # Compute here the 2-halo amplitude:
+            #pk_2h =
+            # pk_total = pk_1h + pk_2h
             pk = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
                                           prof=profile0, prof2=profile1,
                                           get_2h=False, a_arr=a_arr)
-            # TODO: Need A_IA here to get the full power spectrum.
         else:
             raise ValueError(f"No power spectrum for {pk_name} can be found.")
         return pk

@@ -31,9 +31,6 @@ class ModelingTools(Updatable):
         self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
-        # Developed this way because the halo model calculator requires cosmology as input.
-        # This way we are passing the ingredients to create the HM calc.
-        # Disadvantage is that other HMC parameters (e.g. mass sampling) are not tweakable.
         self.hm_definition: Optional[pyccl.halos.MassDef] = hm_definition
         self.hm_function: Optional[str] = hm_function
         self.bias_function: Optional[str] = bias_function
@@ -136,9 +133,9 @@ class ModelingTools(Updatable):
             raise RuntimeError("A halo mass function has not been set")
         if self.bias_function is None:
             raise RuntimeError("A halo bias function has not been set")
-        nM = pyccl.halos.mass_function_from_name(self.hm_function)(mass_def=self.hm_definition)
-        bM = pyccl.halos.halo_bias_from_name(self.bias_function)(mass_def=self.hm_definition)
-        return pyccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=self.hm_definition, nlog10M=64)
+        nM = pyccl.halos.MassFunc.from_name(self.hm_function)(mass_def=self.hm_definition)
+        bM = pyccl.halos.HaloBias.from_name(self.bias_function)(mass_def=self.hm_definition)
+        return pyccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=self.hm_definition)
 
     def get_cM_relation(self) -> pyccl.halos.Concentration:
         """Return the concentration-mass relation."""
@@ -148,7 +145,7 @@ class ModelingTools(Updatable):
         if self.hm_definition is None:
             raise RuntimeError("A halo mass definition has not been set")
 
-        return pyccl.halos.concentration_from_name(self.cM_relation)(self.hm_definition)
+        return pyccl.halos.Concentration.from_name(self.cM_relation)(mass_def=self.hm_definition)
 
 
 class PowerspectrumModifier(Updatable, ABC):

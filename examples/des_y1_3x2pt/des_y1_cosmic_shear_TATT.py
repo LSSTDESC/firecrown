@@ -146,7 +146,8 @@ def run_likelihood() -> None:
         }
     )
 
-    # Apply the systematics parameters
+    # Apply the systematics parameter
+    tools.update(systematics_params)
     likelihood.update(systematics_params)
 
     # Prepare the cosmology object

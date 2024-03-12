@@ -44,6 +44,7 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_pt_c_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
     ia_a_1h: Optional[np.float] = None
+    ia_a_2h: Optional[np.float] = None
 
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
@@ -209,43 +210,38 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
 
 class HMAlignmentSystematic(WeakLensingSystematic):
-    """Halo model alignment systematic.
+    """Halo model intrinsic alignment systematic.
 
-    This systematic tries to add a halo model-based
-     (nonlinear) intrinsic alignment systematic.
+    This systematic adds a halo model based intrinsic alignment systematic
+    which, at the moment, is fixed within the redshift bin.
 
-    Parameters
-    ----------
-    ia_a_1h: float
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
 
-    Methods
-    -------
-    apply : apply the systematic to a source
+    :ivar ia_a_1h: the 1-halo intrinsic alignment bias parameter (satellite galaxies).
+    :ivar ia_a_2h: the 2-halo intrinsic alignment bias parameter (central galaxies).
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None):
         super().__init__()
 
-        self.ia_bias = parameters.register_new_updatable_parameter()
         self.ia_a_1h = parameters.register_new_updatable_parameter()
+        self.ia_a_2h = parameters.register_new_updatable_parameter()
 
         self.sacc_tracer = sacc_tracer
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Return a new linear alignment systematic, based on the given
+        """Return a new halo-model alignment systematic, based on the given
         tracer_arg, in the context of the given cosmology."""
-
-        ccl_cosmo = tools.get_ccl_cosmology() # No purpose now.
-        z = tracer_arg.z  # pylint: disable-msg=invalid-name
-        ia_bias_array = np.full(z.shape, self.ia_bias)
 
         return replace(
             tracer_arg,
             has_hm=True,
-            ia_bias=(tracer_arg.z, ia_bias_array),
-            ia_a_1h=self.ia_a_1h
+            ia_a_1h=self.ia_a_1h,
+            ia_a_2h=self.ia_a_2h
         )
 
 
@@ -341,6 +337,10 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             halo_profile = pyccl.halos.SatelliteShearHOD(mass_def=tools.hm_definition,
                 concentration=cM,
                 a1h=tracer_args.ia_a_1h)
+            # FIXME: This is a quick fix but doesn't generalize well.
+            # To do this properly, I would need to incorporate the profile of centrals
+            # within the halo model.
+            halo_profile.ia_a_2h = tracer_args.ia_a_2h
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 ccl_cosmo,
                 has_shear=False,

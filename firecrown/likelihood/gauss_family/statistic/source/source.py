@@ -133,6 +133,9 @@ class Tracer:
         field: Optional[str] = None,
         pt_tracer: Optional[pyccl.nl_pt.PTTracer] = None,
         halo_profile: Optional[pyccl.halos.HaloProfile] = None,
+        # FIXME: Here should be the information for 2-halo A_IA.
+        # Maybe I need to make some kind of new tracer?
+        # Or find a way to get 2-halo with a new halo profile for centrals.
         halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
         """Initialize a new Tracer based on the given pyccl.Tracer which must not be

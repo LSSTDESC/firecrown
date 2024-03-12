@@ -1,6 +1,5 @@
 """Example of a Firecrown likelihood using the DES Y1 cosmic shear data and
 the halo model for intrinsic alignments."""
-
 import os
 from typing import Tuple
 import sacc
@@ -61,7 +60,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 
     # Create the likelihood from the statistics
     # Define the halo model components. This is one solution but maybe not the best!
-    hmd_200m = ccl.halos.MassDef200m()
+    hmd_200m = ccl.halos.MassDef200m
     cM = 'Duffy08'
     nM = 'Tinker10'
     bM = 'Tinker10'
@@ -87,15 +86,9 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 # We can also run the likelihood directly
 def run_likelihood() -> None:
     """Run the likelihood."""
-
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
-    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-topleve
 
-    # Run the likelihood.
-
-    like_and_tools = build_likelihood(None)
-    likelihood: Likelihood = like_and_tools[0]
-    tools: ModelingTools = like_and_tools[1]
+    likelihood, tools = build_likelihood(None)
 
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
@@ -109,6 +102,8 @@ def run_likelihood() -> None:
 
     # Bare CCL setup
     a_1h = 1e-3 # 1-halo alignment amplitude.
+    # TODO: The 2-halo amplitude doesn't work currently.
+    a_2h = 1. # 2-halo alignment amplitude.
 
     # Code that creates a Pk2D object:
     k_arr = np.geomspace(1E-3, 1e3, 128)  # For evaluating
@@ -116,7 +111,7 @@ def run_likelihood() -> None:
     cM = ccl.halos.ConcentrationDuffy08(mass_def="200m")
     nM = ccl.halos.MassFuncTinker10(mass_def="200m")
     bM = ccl.halos.HaloBiasTinker10(mass_def="200m")
-    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def="200m", nM=64)
+    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def="200m")
     sat_gamma_HOD = ccl.halos.SatelliteShearHOD(mass_def="200m", concentration=cM, a1h=a_1h, b=-2)
     # NFW profile for matter (G)
     NFW = ccl.halos.HaloProfileNFW(mass_def="200m", concentration=cM, truncated=True, fourier_analytic=True)
@@ -127,10 +122,8 @@ def run_likelihood() -> None:
     systematics_params = ParamsMap(
         {
             "ia_a_1h": a_1h,
+            "ia_a_2h": a_2h,
             "src0_delta_z": 0.000,
-            "src1_delta_z": 0.003,
-            "src2_delta_z": -0.001,
-            "src3_delta_z": 0.002,
         }
     )
 
@@ -138,6 +131,7 @@ def run_likelihood() -> None:
     likelihood.update(systematics_params)
 
     # Prepare the cosmology object
+    tools.update(systematics_params)
     tools.prepare(ccl_cosmo)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
@@ -146,8 +140,7 @@ def run_likelihood() -> None:
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
-
-    two_point_0 = likelihood.statistics[0]
+    two_point_0 = likelihood.statistics[0].statistic
     assert isinstance(two_point_0, TwoPoint)
 
     # x = two_point_0.ell_or_theta_
@@ -162,16 +155,23 @@ def run_likelihood() -> None:
     # pylint: disable=no-member
     print(list(two_point_0.cells.keys()))
 
+    make_plot(ccl_cosmo, nz, pk_GI_1h, pk_II_1h, two_point_0, z)
+
+
+def make_plot(ccl_cosmo, nz, pk_GI_1h, pk_II_1h, two_point_0, z):
+    """Create and show a diagnostic plot."""
+    import numpy as np  # pylint: disable-msg=import-outside-toplevel
+    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-topleve
+
     ells = two_point_0.ells
     cells_gg = two_point_0.cells[("shear", "shear")]
     cells_gi = two_point_0.cells[("shear", "intrinsic_hm")]
-    cells_ig = two_point_0.cells[("intrinsic_hm", "shear")]
     cells_ii = two_point_0.cells[("intrinsic_hm", "intrinsic_hm")]
     cells_total = two_point_0.cells["total"]
     # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object
-    t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
+    t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz), use_A_ia=False)
     t_ia = ccl.WeakLensingTracer(
         ccl_cosmo,
         has_shear=False,
@@ -187,7 +187,7 @@ def run_likelihood() -> None:
     # The observed angular power spectrum is the sum of the two.
     cl_theory = (
         cl_GG + 2 * cl_GI + cl_II
-    )  # normally we would also have a third term, +cl_II).
+    )
     # pylint: enable=invalid-name
 
     # plt.plot(x, y_theory, label="Total")
@@ -210,7 +210,6 @@ def run_likelihood() -> None:
     # plt.ylim(bottom=1e-12)
     plt.title("Halo model IA")
     plt.savefig("halo_model.png", facecolor="white", dpi=300)
-
     plt.show()
 
 
