@@ -530,10 +530,12 @@ class TwoPoint(Statistic):
             )
         elif tracer0.has_hm or tracer1.has_hm:
             # Compute halo model power spectrum
-            a_arr = np.linspace(0.1, 1, 16) # Fix a_arr because normalization is zero for a<~0.07
+            a_arr = np.linspace(0.1, 1, 16)  # Fix a_arr because normalization is zero for a<~0.07
             ccl_cosmo = tools.get_ccl_cosmology()
             hmc = tools.get_hm_calculator()
+            IA_bias_exponent = 2  # Square IA bias if both tracers are HM (doing II correlation).
             if not (tracer0.has_hm and tracer1.has_hm):
+                IA_bias_exponent = 1  # IA bias if not both tracers are HM (doing GI correlation).
                 if 'galaxies' in [tracer0.field, tracer1.field]:
                     other_profile = pyccl.halos.HaloProfileHOD(mass_def=tools.hm_definition,
                                                                concentration=tools.get_cM_relation(),
@@ -542,25 +544,26 @@ class TwoPoint(Statistic):
                     other_profile = pyccl.halos.HaloProfileNFW(mass_def=tools.hm_definition,
                                                                concentration=tools.get_cM_relation(),
                                                                truncated=True, fourier_analytic=True)
+                other_profile.ia_a_2h = -1.  # used in GI contribution, which is negative.
                 if not tracer0.has_hm:
                     tracer0.halo_profile = other_profile
                 else:
                     tracer1.halo_profile = other_profile
             profile0 = tracer0.halo_profile
             profile1 = tracer1.halo_profile
+            # Compute here the 1-halo power spectrum
             pk_1h = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
                                              prof=profile0, prof2=profile1,
-                                             a_arr=a_arr)
-            # FIXME: I need to access 2-halo A_IA to build pk_2h here.
-            # But I also need to know what I am computing. GI and II are different.
-            # Solution to make centrals have their own profile problematic because the
-            # HM in CCL computes terms that shouldn't be there.
-            # Compute here the 2-halo amplitude:
-            #pk_2h =
-            # pk_total = pk_1h + pk_2h
-            pk = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
-                                          prof=profile0, prof2=profile1,
-                                          get_2h=False, a_arr=a_arr)
+                                             a_arr=a_arr, get_2h=False)
+            # Compute here the 2-halo power spectrum
+            C1rhocrit = 5e-14 * pyccl.physical_constants.RHO_CRITICAL # standard IA normalisation
+            pk_2h = pyccl.Pk2D.from_function(
+                pkfunc=lambda k, a: profile0.ia_a_2h*profile1.ia_a_2h*
+                                    (C1rhocrit*ccl_cosmo['Omega_m']/ccl_cosmo.growth_factor(a))
+                                    **IA_bias_exponent*
+                                    ccl_cosmo.nonlin_matter_power(k, a),
+                is_logp=False)
+            pk = pk_1h + pk_2h
         else:
             raise ValueError(f"No power spectrum for {pk_name} can be found.")
         return pk

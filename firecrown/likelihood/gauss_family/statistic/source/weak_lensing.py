@@ -335,10 +335,6 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             halo_profile = pyccl.halos.SatelliteShearHOD(mass_def=tools.hm_definition,
                 concentration=cM,
                 a1h=tracer_args.ia_a_1h)
-            # FIXME: This is a quick fix but doesn't generalize well.
-            # To do this properly, I would need to incorporate the profile of centrals
-            # within the halo model.
-            halo_profile.ia_a_2h = tracer_args.ia_a_2h
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 ccl_cosmo,
                 has_shear=False,
@@ -349,6 +345,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             ia_tracer = Tracer(
                 ccl_wl_dummy_tracer, tracer_name="intrinsic_hm", halo_profile=halo_profile
             )
+            halo_profile.ia_a_2h = tracer_args.ia_a_2h # Attach the 2-halo amplitude here.
             tracers.append(ia_tracer)
 
         self.current_tracer_args = tracer_args

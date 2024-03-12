@@ -6,7 +6,7 @@ import sacc
 import pyccl as ccl
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint, TracerNames
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
@@ -102,7 +102,6 @@ def run_likelihood() -> None:
 
     # Bare CCL setup
     a_1h = 1e-3 # 1-halo alignment amplitude.
-    # TODO: The 2-halo amplitude doesn't work currently.
     a_2h = 1. # 2-halo alignment amplitude.
 
     # Code that creates a Pk2D object:
@@ -117,6 +116,12 @@ def run_likelihood() -> None:
     NFW = ccl.halos.HaloProfileNFW(mass_def="200m", concentration=cM, truncated=True, fourier_analytic=True)
     pk_GI_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, NFW, prof2=sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
     pk_II_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
+    # NLA
+    C1rhocrit = 5e-14 * ccl.physical_constants.RHO_CRITICAL  # standard IA normalisation
+    pk_GI_NLA = ccl.Pk2D.from_function(pkfunc=lambda k, a: -a_2h * C1rhocrit * ccl_cosmo['Omega_m'] / ccl_cosmo.growth_factor(a) * ccl_cosmo.nonlin_matter_power(k, a), is_logp=False)
+    pk_II_NLA = ccl.Pk2D.from_function(pkfunc=lambda k, a: (a_2h * C1rhocrit * ccl_cosmo['Omega_m'] / ccl_cosmo.growth_factor(a)) ** 2 * ccl_cosmo.nonlin_matter_power(k, a), is_logp=False)
+    pk_GI = pk_GI_1h+pk_GI_NLA
+    pk_II = pk_II_1h + pk_II_NLA
 
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
@@ -155,19 +160,20 @@ def run_likelihood() -> None:
     # pylint: disable=no-member
     print(list(two_point_0.cells.keys()))
 
-    make_plot(ccl_cosmo, nz, pk_GI_1h, pk_II_1h, two_point_0, z)
+    make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z)
 
 
-def make_plot(ccl_cosmo, nz, pk_GI_1h, pk_II_1h, two_point_0, z):
+def make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z):
     """Create and show a diagnostic plot."""
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-topleve
 
     ells = two_point_0.ells
-    cells_gg = two_point_0.cells[("shear", "shear")]
-    cells_gi = two_point_0.cells[("shear", "intrinsic_hm")]
-    cells_ii = two_point_0.cells[("intrinsic_hm", "intrinsic_hm")]
-    cells_total = two_point_0.cells["total"]
+    cells_gg = two_point_0.cells[TracerNames("shear", "shear")]
+    cells_gi = two_point_0.cells[TracerNames("shear", "intrinsic_hm")]
+    cells_ig = two_point_0.cells[TracerNames("intrinsic_hm", "shear")]
+    cells_ii = two_point_0.cells[TracerNames("intrinsic_hm", "intrinsic_hm")]
+    cells_total = two_point_0.cells[TracerNames("", "")]
     # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object
@@ -180,13 +186,14 @@ def make_plot(ccl_cosmo, nz, pk_GI_1h, pk_II_1h, two_point_0, z):
         ia_bias=(z, np.ones_like(z)),
     )
     # pylint: disable=invalid-name
-    cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_GI_1h)
-    cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_II_1h)
+    cl_GI = ccl.angular_cl(ccl_cosmo, t_lens, t_ia, ells, p_of_k_a=pk_GI)
+    cl_IG = ccl.angular_cl(ccl_cosmo, t_ia, t_lens, ells, p_of_k_a=pk_GI)
+    cl_II = ccl.angular_cl(ccl_cosmo, t_ia, t_ia, ells, p_of_k_a=pk_II)
     # The weak gravitational lensing power spectrum
     cl_GG = ccl.angular_cl(ccl_cosmo, t_lens, t_lens, ells)
     # The observed angular power spectrum is the sum of the two.
     cl_theory = (
-        cl_GG + 2 * cl_GI + cl_II
+        cl_GG + cl_GI + cl_IG + cl_II
     )
     # pylint: enable=invalid-name
 
