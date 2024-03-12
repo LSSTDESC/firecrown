@@ -4,12 +4,12 @@ Gaussian Family Statistic Module
 ================================
 
 The Statistic class describing objects that implement methods to compute the
-data and theory vectors for a GaussianFamily subclass.
+data and theory vectors for a :class:`GaussFamily` subclass.
 
 """
 
 from __future__ import annotations
-from typing import List, Optional, final
+from typing import Optional, final
 from dataclasses import dataclass
 from abc import abstractmethod
 import warnings
@@ -32,7 +32,7 @@ class DataVector(npt.NDArray[np.float64]):
         return vals.view(cls)
 
     @classmethod
-    def from_list(cls, vals: List[float]) -> DataVector:
+    def from_list(cls, vals: list[float]) -> DataVector:
         """Create a DataVector from the given list of floats."""
         array = np.array(vals)
         return cls.create(array)
@@ -48,7 +48,7 @@ class TheoryVector(npt.NDArray[np.float64]):
         return vals.view(cls)
 
     @classmethod
-    def from_list(cls, vals: List[float]) -> TheoryVector:
+    def from_list(cls, vals: list[float]) -> TheoryVector:
         """Create a TheoryVector from the given list of floats."""
         array = np.array(vals)
         return cls.create(array)
@@ -110,8 +110,8 @@ class Statistic(Updatable):
     """The abstract base class for all physics-related statistics.
 
     Statistics read data from a SACC object as part of a multi-phase
-    initialization. The manage a :python:`DataVector` and, given a
-    :python:`ModelingTools` object, can compute a :python:`TheoryVector`.
+    initialization. They manage a :class:`DataVector` and, given a
+    :class:`ModelingTools` object, can compute a :class:`TheoryVector`.
 
     Statistics represent things like two-point functions and mass functions.
     """
@@ -120,6 +120,8 @@ class Statistic(Updatable):
         super().__init__(parameter_prefix=parameter_prefix)
         self.sacc_indices: Optional[npt.NDArray[np.int64]]
         self.ready = False
+        self.computed_theory_vector = False
+        self.theory_vector: Optional[TheoryVector] = None
 
     def read(self, _: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC data, and mark it
@@ -138,33 +140,66 @@ class Statistic(Updatable):
                 f"of length 0; the length must be positive"
             )
 
+    def _reset(self):
+        """Reset this statistic, subclasses implementations must call
+        super()._reset()"""
+        self.computed_theory_vector = False
+        self.theory_vector = None
+
     @abstractmethod
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector."""
 
-    @abstractmethod
+    @final
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, applying any systematics."""
+        if not self.is_updated():
+            raise RuntimeError(
+                f"The statistic {self} has not been updated with parameters."
+            )
+        self.theory_vector = self._compute_theory_vector(tools)
+        self.computed_theory_vector = True
+
+        return self.theory_vector
+
+    @abstractmethod
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a statistic from sources, concrete implementation."""
+
+    def get_theory_vector(self) -> TheoryVector:
+        """Returns the last computed theory vector. Raises a RuntimeError if the vector
+        has not been computed."""
+
+        if not self.computed_theory_vector:
+            raise RuntimeError(
+                f"The theory for statistic {self} has not been computed yet."
+            )
+        assert self.theory_vector is not None, (
+            "implementation error, "
+            "computed_theory_vector is True but theory_vector is None"
+        )
+        return self.theory_vector
 
 
 class GuardedStatistic(Updatable):
-    """:python:`GuardedStatistic` is used by the framework to maintain and
+    """:class:`GuardedStatistic` is used by the framework to maintain and
     validate the state of instances of classes derived from
-    :python:`Statistic`."""
+    :class:`Statistic`."""
 
     def __init__(self, stat: Statistic):
         """Initialize the GuardedStatistic to contain the given
-        :python:`Statistic`."""
+        :class:`Statistic`."""
         super().__init__()
+        assert isinstance(stat, Statistic)
         self.statistic = stat
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read whatever data is needed from the given :python:`sacc.Sacc
+        """Read whatever data is needed from the given :class:`sacc.Sacc
         object.
 
         After this function is called, the object should be prepared for the
-        calling of the methods :python:`get_data_vector` and
-        :python:`compute_theory_vector`.
+        calling of the methods :meth:`get_data_vector` and
+        :meth:`compute_theory_vector`.
         """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
@@ -179,18 +214,18 @@ class GuardedStatistic(Updatable):
             raise RuntimeError(msg) from exc
 
     def get_data_vector(self) -> DataVector:
-        """Return the contained :python:`Statistic`'s data vector.
+        """Return the contained :class:`Statistic`'s data vector.
 
-        :python:`GuardedStatistic` ensures that :python:`read` has been called.
+        :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.get_data_vector()
 
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Return the contained :python:`Statistic`'s computed theory vector.
+        """Return the contained :class:`Statistic`'s computed theory vector.
 
-        :python:`GuardedStatistic` ensures that :python:`read` has been called.
+        :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first."""
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -200,8 +235,8 @@ class GuardedStatistic(Updatable):
 class TrivialStatistic(Statistic):
     """A minimal statistic only to be used for testing Gaussian likelihoods.
 
-    It returns a :python:`DataVector` and :python:`TheoryVector` that is three
-    elements long. The SACC data provided to :python:`TrivialStatistic.read`
+    It returns a :class:`DataVector` and :class:`TheoryVector` each of which is
+    three elements long. The SACC data provided to :meth:`TrivialStatistic.read`
     must supply the necessary values.
     """
 
@@ -224,11 +259,6 @@ class TrivialStatistic(Statistic):
         super().read(sacc_data)
 
     @final
-    def _reset(self):
-        """Reset this statistic."""
-        self.computed_theory_vector = False
-
-    @final
     def _required_parameters(self) -> RequiredParameters:
         """Return an empty RequiredParameters."""
         return RequiredParameters([])
@@ -243,7 +273,6 @@ class TrivialStatistic(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
+    def _compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
         """Return a fixed theory vector."""
-        self.computed_theory_vector = True
         return TheoryVector.from_list([self.mean] * self.count)

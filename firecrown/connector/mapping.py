@@ -1,17 +1,13 @@
 """Facilities for mapping cosmological parameters between frameworks.
 
 The module :mod:`mapping` provides facilities for mapping the cosmological
-constants and functions used by one body of code to another. This is done by
-defining one of the codes (:mod:`pyccl`) as being the 'standard', and for all
-other supported code, providing functions :python:`from_ccl` and
-:python:`to_ccl`.
+constants and functions used by one body of code to another.
 
 Each supported body of code has its own dedicated class.
-
 """
 
 from abc import ABC
-from typing import Type, List, Dict, Optional, final, Any, Union
+from typing import Type, Optional, final, Any, Union
 import typing
 import warnings
 import numpy as np
@@ -39,10 +35,10 @@ class Mapping(ABC):
     concrete Boltzmann calculator to the form those constants take in CCL. Each
     supported Boltzmann calculator must have its own concrete subclass.
 
-    The class variables are all :mod:`firecrown.connector.descriptors`. This is
-    to control the allowed types for the instance variables. A descriptor of
-    name 'x' will provide an apparent instance variable of name :python:`x` in
-    each class, as well as an entry :python:`_x` in the object's __dict__.
+    The class attributes are all :mod:`firecrown.connector.descriptors`. This is
+    to control the allowed types for the instance attributes. A descriptor of
+    name 'x' will provide an apparent attribue with name `x` in
+    each object, as well as an entry `_x` in the object's `__dict__`.
 
     """
 
@@ -64,9 +60,9 @@ class Mapping(ABC):
 
     def __init__(self, *, require_nonlinear_pk: bool = False):
         self.require_nonlinear_pk = require_nonlinear_pk
-        self.m_nu: Optional[Union[float, List[float]]] = None
+        self.m_nu: Optional[Union[float, list[float]]] = None
 
-    def get_params_names(self) -> List[str]:
+    def get_params_names(self) -> list[str]:
         """Return the names of the cosmological parameters that this
         mapping is expected to deliver.
         """
@@ -124,7 +120,7 @@ class Mapping(ABC):
         n_s: float,
         Omega_k: float,
         Neff: float,
-        m_nu: Union[float, List[float]],
+        m_nu: Union[float, list[float]],
         m_nu_type: str,
         w0: float,
         wa: float,
@@ -179,7 +175,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> Dict[str, Union[Optional[float], List[float]]]:
+    def asdict(self) -> dict[str, Union[Optional[float], list[float], str]]:
         """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,
@@ -280,7 +276,7 @@ class MappingCosmoSIS(Mapping):
 
     def calculate_ccl_args(self, sample: cosmosis.datablock):
         """Calculate the arguments necessary for CCL for this sample."""
-        ccl_args: Dict[str, Any] = {}
+        ccl_args: dict[str, Any] = {}
         if sample.has_section("matter_power_lin"):
             k = self.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
             z_mpl = sample["matter_power_lin", "z"]
@@ -357,7 +353,7 @@ class MappingCAMB(Mapping):
     the Fortran version of CAMB. The two are not interchangeable.
     """
 
-    def get_params_names(self) -> List[str]:
+    def get_params_names(self) -> list[str]:
         """
         Return the list of parameters handled by this mapping.
         """

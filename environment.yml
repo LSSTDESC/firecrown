@@ -6,7 +6,7 @@ dependencies:
   - babel
   - black
   - charset-normalizer
-  - cosmosis >= 2.2.0
+  - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
   - cython < 3.0.0
@@ -19,8 +19,8 @@ dependencies:
   - matplotlib-base
   - more-itertools
   - mypy
-  - numcosmo >=0.18.2
-  - numpy >= 1.21.0
+  - numcosmo >=0.21.1
+  - numpy >= 1.23.0
   - pip
   - pip:
     - autoclasstoc
@@ -31,10 +31,11 @@ dependencies:
   - pyccl >= 2.8.0
   - pylint
   - pytest
+  - pytest-cov
   - pyyaml
   - requests
   - sacc >= 0.11
   - scipy
-  - sphinx
+  - sphinx=7.1.2
   - types-pyyaml
   - urllib3

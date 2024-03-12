@@ -18,13 +18,7 @@ help:
 
 TOPTARGETS := all html clean
 
-SUBDIRS = diagrams
-
-$(TOPTARGETS): $(SUBDIRS)
-$(SUBDIRS):
-	$(MAKE) -C $@ $(MAKECMDGOALS)
-
-.PHONY: $(TOPTARGETS) $(SUBDIRS)
+.PHONY: $(TOPTARGETS)
 
 .PHONY: html
 html:
@@ -36,8 +30,3 @@ clean:
 	$(RM) _build/
 	$(RM) _autosummary/
 
-
-# Catch-all target: route all unknown targets to Sphinx using the new
-# "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
-%: Makefile $(SUBDIRS)
-	@$(SPHINXBUILD) -M $@ "$(SOURCEDIR)" "$(BUILDDIR)" $(SPHINXOPTS) $(O)

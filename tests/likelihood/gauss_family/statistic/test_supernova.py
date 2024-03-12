@@ -1,5 +1,6 @@
 """Tests for the Supernova statistic.
 """
+
 import pytest
 
 import sacc
@@ -12,7 +13,7 @@ from firecrown.parameters import ParamsMap
 
 @pytest.fixture(name="minimal_stat")
 def fixture_minimal_stat() -> Supernova:
-    """Return a correctly initialized :python:`Supernova` object."""
+    """Return a correctly initialized :class:`Supernova` object."""
     stat = Supernova(sacc_tracer="sn_fake_sample")
     return stat
 
@@ -33,7 +34,7 @@ def fixture_wrong_tracer_type() -> sacc.Sacc:
 @pytest.fixture(name="good_sacc_data")
 def fixture_sacc_data() -> sacc.Sacc:
     """Return a sacc.Sacc object sufficient to correctly read a
-    :python:`Supernova` object.
+    :class:`Supernova` object.
     """
     data = sacc.Sacc()
     data.add_tracer("Misc", "sn_fake_sample")
@@ -68,8 +69,8 @@ def test_wrong_tracer_type_fails_read(
 def test_read_works(minimal_stat: Supernova, good_sacc_data: sacc.Sacc):
     """After read() is called, we should be able to get the statistic's
 
-    :python:`DataVector` and also should be able to call
-    :python:`compute_theory_vector`.
+    :class:`DataVector` and also should be able to call
+    :meth:`compute_theory_vector`.
     """
     minimal_stat.read(good_sacc_data)
     data_vector = minimal_stat.get_data_vector()

@@ -6,5 +6,4 @@ likelihoods and likelihood loading utilities.
 
 """
 
-
 # flake8: noqa

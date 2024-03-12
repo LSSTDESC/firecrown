@@ -95,64 +95,21 @@ jobs:
           pylint firecrown
           pylint --rcfile tests/pylintrc  tests
           pylint --rcfile firecrown/models/pylintrc firecrown/models
-      - name: Running pytest
+      - name: Running unit tests
         shell: bash -l {0}
-        run: python -m pytest -vv
-      - name: Running example - cosmosis - cosmic-shear
+        run: python -m pytest -vv --runslow --cov firecrown --cov-report xml
+      - name: Running integration tests
         shell: bash -l {0}
-        run: |
-          cd examples/cosmicshear
-          python generate_cosmicshear_data.py
-          cosmosis cosmicshear.ini
-      - name: Running example - cosmosis - des-y1-3x2pt
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          cosmosis des_y1_3x2pt.ini
-      - name: Running example - cosmosis - des-y1-3x2pt-PT
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          cosmosis des_y1_3x2pt_PT.ini
-      - name: Running example - cobaya - des-y1-3x2pt
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          cobaya-run cobaya_evaluate.yaml
-      - name: Running example - cobaya - des-y1-3x2pt-PT
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          cobaya-run cobaya_evaluate_PT.yaml
-      - name: Running example - NumCosmo - des-y1-3x2pt
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          python numcosmo_run.py
-      - name: Running example - NumCosmo - des-y1-3x2pt-PT
-        shell: bash -l {0}
-        run: |
-          cd examples/des_y1_3x2pt
-          python numcosmo_run_PT.py
-      - name: Running example - cosmosis - srd_sn
-        shell: bash -l {0}
-        run: |
-          cd examples/srd_sn
-          cosmosis sn_srd.ini
-      - name: Running example - NumCosmo - srd_sn
-        shell: bash -l {0}
-        run: |
-          cd examples/srd_sn
-          python numcosmo_run.py
-      - name: Running example - cosmosis - cluster_number_counts
-        shell: bash -l {0}
-        run: |
-          cd examples/cluster_number_counts
-          python generate_rich_mean_mass_sacc_data.py
-          cosmosis cluster_counts_redshift_richness.ini
-          cosmosis cluster_mean_mass_redshift_richness.ini
-          cosmosis cluster_counts_mean_mass_redshift_richness.ini
-      - name: Code coverage
+        run: python -m pytest -vv -s --integration tests/integration 
+      - name: Upload coverage reports to Codecov
+        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
+        uses: codecov/codecov-action@v4
+        with:
+          fail_ci_if_error: true
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Upload coverage reports to coveralls (legacy)
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
         shell: bash -l {0}
         env:
@@ -161,4 +118,5 @@ jobs:
           python -m pip install --no-input coveralls
           coverage run --source=firecrown -m pytest tests/
           coveralls --service=github
+
 

@@ -1,0 +1,47 @@
+#!/usr/bin/env bash -x
+
+if black firecrown/ examples/ tests/; then
+  echo "black ok"
+else
+  echo "black failed"
+  exit 1
+fi
+
+
+if flake8 firecrown/ examples/ tests/; then
+  echo "flake8 ok"
+else
+  echo "flake8 failed"
+  exit 1
+fi
+  
+if pylint firecrown; then
+  echo "pylint ok for firecrown"
+else
+  echo "pylint failed for firecrown"
+  exit 1
+fi
+
+if pylint --rcfile firecrown/models/pylintrc firecrown/models; then
+  echo "pylint ok for firecrown.models"
+else
+  echo "pylint failed for firecrown.models"
+  exit 1
+fi
+
+if pylint --rcfile tests/pylintrc tests; then
+  echo "pylint ok for tests"
+else
+  echo "pylint failed for tests"
+  exit 1
+fi
+
+if mypy -p firecrown -p examples -p tests; then
+  echo "mypy ok"
+else
+  echo "mypy failed"
+  exit 1
+fi
+
+python -m pytest --runslow -vv --integration tests
+

@@ -2,6 +2,7 @@
 Tests for the perturbation theory systematics for both
 Weak Lensing and Number Counts.
 """
+
 import os
 
 import pytest
@@ -13,7 +14,11 @@ import sacc
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.statistic.two_point import (
+    TwoPoint,
+    TracerNames,
+    TRACER_NAMES_TOTAL,
+)
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
@@ -131,7 +136,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
-        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
+        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 60_000, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     _ = likelihood.compute_loglike(modeling_tools)
@@ -142,24 +147,27 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     # TODO:  We need to have a way to test systematics without requiring
     #  digging  into the innards of a likelihood object.
     s0 = likelihood.statistics[0].statistic
+    assert isinstance(s0, TwoPoint)
     ells = s0.ells
-    cells_GG = s0.cells[("shear", "shear")]
-    cells_GI = s0.cells[("shear", "intrinsic_pt")]
-    cells_II = s0.cells[("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total = s0.cells["total"]
+    cells_GG = s0.cells[TracerNames("shear", "shear")]
+    cells_GI = s0.cells[TracerNames("shear", "intrinsic_pt")]
+    cells_II = s0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
+    cells_cs_total = s0.cells[TRACER_NAMES_TOTAL]
 
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
-    cells_gG = s2.cells[("galaxies", "shear")]
-    cells_gI = s2.cells[("galaxies", "intrinsic_pt")]
-    cells_mI = s2.cells[("magnification+rsd", "intrinsic_pt")]
+    assert isinstance(s2, TwoPoint)
+    cells_gG = s2.cells[TracerNames("galaxies", "shear")]
+    cells_gI = s2.cells[TracerNames("galaxies", "intrinsic_pt")]
+    cells_mI = s2.cells[TracerNames("magnification+rsd", "intrinsic_pt")]
 
     # print(list(likelihood.statistics[3].cells.keys()))
     s3 = likelihood.statistics[3].statistic
-    cells_gg = s3.cells[("galaxies", "galaxies")]
-    cells_gm = s3.cells[("galaxies", "magnification+rsd")]
-    cells_mm = s3.cells[("magnification+rsd", "magnification+rsd")]
-    cells_gg_total = s3.cells["total"]
+    assert isinstance(s3, TwoPoint)
+    cells_gg = s3.cells[TracerNames("galaxies", "galaxies")]
+    cells_gm = s3.cells[TracerNames("galaxies", "magnification+rsd")]
+    cells_mm = s3.cells[TracerNames("magnification+rsd", "magnification+rsd")]
+    cells_gg_total = s3.cells[TRACER_NAMES_TOTAL]
     # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
@@ -293,7 +301,7 @@ def test_pt_mixed_systematics(sacc_data):
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
-        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 6e4, "n_log": 10}
+        s.ell_for_xi = {"minimum": 2, "midpoint": 5, "maximum": 60_000, "n_log": 10}
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     _ = likelihood.compute_loglike(modeling_tools)
@@ -302,11 +310,12 @@ def test_pt_mixed_systematics(sacc_data):
     # pylint: disable=no-member
 
     s0 = likelihood.statistics[0].statistic
+    assert isinstance(s0, TwoPoint)
     ells = s0.ells
 
     # print(list(likelihood.statistics[2].cells.keys()))
-    cells_gG = s0.cells[("galaxies+magnification+rsd", "shear")]
-    cells_gI = s0.cells[("galaxies+magnification+rsd", "intrinsic_pt")]
+    cells_gG = s0.cells[TracerNames("galaxies+magnification+rsd", "shear")]
+    cells_gI = s0.cells[TracerNames("galaxies+magnification+rsd", "intrinsic_pt")]
     # pylint: enable=no-member
 
     # Code that computes effect from IA using that Pk2D object

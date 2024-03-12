@@ -12,6 +12,9 @@ py-version=3.9
 # Discover python modules and packages in the file system subtree.
 recursive=yes
 
+# Add custom pylint plugins
+load-plugins=pylint_plugins.duplicate_code
+
 [MESSAGES CONTROL]
 
 # Enable the message, report, category or checker with the given id(s). You can
@@ -19,6 +22,7 @@ recursive=yes
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once). See also the "--disable" option for examples.
 enable=c-extension-no-member
+disable=too-few-public-methods
 
 [MISCELLANEOUS]
 

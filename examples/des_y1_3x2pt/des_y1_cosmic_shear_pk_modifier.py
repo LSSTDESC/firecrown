@@ -2,7 +2,6 @@
 modified matter power spectrum"""
 
 import os
-from typing import Tuple
 
 import sacc
 import pyccl as ccl
@@ -42,7 +41,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
         )
 
 
-def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Build the likelihood for the DES Y1 cosmic shear data TATT."""
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(SACCFILE)
@@ -156,10 +155,9 @@ def run_likelihood() -> None:
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
+    assert isinstance(likelihood, ConstGaussian)
     two_point_0 = likelihood.statistics[0].statistic
     assert isinstance(two_point_0, TwoPoint)
-
-    assert isinstance(likelihood, ConstGaussian)
     assert likelihood.cov is not None
 
     # Predict CCL Cl

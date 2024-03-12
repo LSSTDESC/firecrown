@@ -1,6 +1,7 @@
 """
 Tests for the TwoPoint module.
 """
+
 import numpy as np
 import pytest
 
@@ -8,7 +9,12 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
     NumberCounts,
 )
-from firecrown.likelihood.gauss_family.statistic.two_point import _ell_for_xi, TwoPoint
+from firecrown.likelihood.gauss_family.statistic.two_point import (
+    _ell_for_xi,
+    TwoPoint,
+    TracerNames,
+    TRACER_NAMES_TOTAL,
+)
 
 
 @pytest.fixture(name="source_0")
@@ -45,3 +51,18 @@ def test_compute_theory_vector(source_0: NumberCounts):
     # into the correct state.
     # prediction = statistic.compute_theory_vector(tools)
     # assert isinstance(prediction, TheoryVector)
+
+
+def test_tracer_names():
+    assert TracerNames("", "") == TRACER_NAMES_TOTAL
+
+    tn1 = TracerNames("cow", "pig")
+    assert tn1[0] == "cow"
+    assert tn1[1] == "pig"
+
+    tn2 = TracerNames("cat", "dog")
+    assert tn1 != tn2
+    assert hash(tn1) != hash(tn2)
+
+    with pytest.raises(IndexError):
+        _ = tn1[2]

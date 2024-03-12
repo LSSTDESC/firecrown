@@ -3,7 +3,7 @@
 """
 
 from __future__ import annotations
-from typing import List, Union, Tuple, Optional, final
+from typing import Optional, final
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -25,7 +25,7 @@ from ..... import parameters
 from .....modeling_tools import ModelingTools
 from .....parameters import (
     ParamsMap,
-    DerivedParameterScalar,
+    DerivedParameter,
     DerivedParameterCollection,
 )
 from .....updatable import UpdatableCollection
@@ -38,11 +38,11 @@ class NumberCountsArgs(SourceGalaxyArgs):
     """Class for number counts tracer builder argument."""
 
     bias: Optional[npt.NDArray[np.float64]] = None
-    mag_bias: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    mag_bias: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     has_pt: bool = False
     has_hm: bool = False
-    b_2: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    b_s: Optional[Tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    b_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    b_s: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
 
 class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
@@ -263,9 +263,6 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
 class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     """Source class for number counts."""
 
-    systematics: UpdatableCollection
-    tracer_args: NumberCountsArgs
-
     def __init__(
         self,
         *,
@@ -273,11 +270,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[
-            List[
-                Union[NumberCountsSystematic, SourceGalaxySystematic[NumberCountsArgs]]
-            ]
-        ] = None,
+        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -296,9 +289,12 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.derived_scale = derived_scale
 
         self.bias = parameters.register_new_updatable_parameter()
-        self.systematics = UpdatableCollection(systematics)
+        self.systematics: UpdatableCollection[
+            SourceGalaxySystematic[NumberCountsArgs]
+        ] = UpdatableCollection(systematics)
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
+        self.tracer_args: NumberCountsArgs
 
     @final
     def _update_source(self, params: ParamsMap):
@@ -311,7 +307,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         if self.derived_scale:
             assert self.current_tracer_args is not None
-            derived_scale = DerivedParameterScalar(
+            derived_scale = DerivedParameter(
                 "TwoPoint",
                 f"NumberCountsScale_{self.sacc_tracer}",
                 self.current_tracer_args.scale,

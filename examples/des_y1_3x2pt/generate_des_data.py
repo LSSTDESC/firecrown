@@ -5,7 +5,7 @@ products from:
    http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits
 
 """
-from typing import Dict, Tuple
+
 import fitsio
 import numpy as np
 import sacc
@@ -90,10 +90,10 @@ angles = """\
 #   ...
 
 # Type specifications for the bin information.
-Bin = Tuple[float, float]
-BinIndex = Tuple[int, int]
+Bin = tuple[float, float]
+BinIndex = tuple[int, int]
 
-bin_limits: Dict[str, Dict[BinIndex, Bin]] = {}
+bin_limits: dict[str, dict[BinIndex, Bin]] = {}
 for line in angles.split("\n"):
     items = line.split()
     keys = items[1].replace("angle_range_", "").split("_")

@@ -21,9 +21,16 @@ def pytest_addoption(parser):
     """Add handling of firecrown-specific options for the pytest test runner.
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
+    --integration: used to run only integration tests, which are otherwise not run.
     """
     parser.addoption(
         "--runslow", action="store_true", default=False, help="run slow tests"
+    )
+    parser.addoption(
+        "--integration",
+        action="store_true",
+        default=False,
+        help="run integration tests",
     )
 
 
@@ -39,13 +46,21 @@ def pytest_configure(config):
 
 def pytest_collection_modifyitems(config, items):
     """Apply our special markers and option handling for pytest."""
-    if config.getoption("--runslow"):
-        # --runslow given in cli: do not skip slow tests
-        return
-    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
+
+    if not config.getoption("--integration"):
+        _skip_tests(items, "integration", "need --integration option to run")
+
+    if not config.getoption("--runslow"):
+        _skip_tests(items, "slow", "need --runslow option to run")
+
+
+def _skip_tests(items, keyword, reason):
+    """Helper method to skip tests based on a marker name."""
+
+    tests_to_skip = pytest.mark.skip(reason=reason)
     for item in items:
-        if "slow" in item.keywords:
-            item.add_marker(skip_slow)
+        if keyword in item.keywords:
+            item.add_marker(tests_to_skip)
 
 
 # Fixtures
@@ -66,7 +81,7 @@ def make_trivial_params() -> ParamsMap:
 @pytest.fixture(name="sacc_data_for_trivial_stat")
 def make_sacc_data():
     """Create a sacc.Sacc object suitable for configuring a
-    :python:`TrivialStatistic`."""
+    :class:`TrivialStatistic`."""
     result = sacc.Sacc()
     result.add_data_point("count", (), 1.0)
     result.add_data_point("count", (), 4.0)
@@ -128,3 +143,31 @@ def fixture_tools_with_vanilla_cosmology():
     result = ModelingTools()
     result.update(ParamsMap())
     result.prepare(pyccl.CosmologyVanillaLCDM())
+
+
+@pytest.fixture(name="cluster_sacc_data")
+def fixture_cluster_sacc_data() -> sacc.Sacc:
+    # pylint: disable=no-member
+    cc = sacc.standard_types.cluster_counts
+    # pylint: disable=no-member
+    mlm = sacc.standard_types.cluster_mean_log_mass
+
+    s = sacc.Sacc()
+    s.add_tracer("survey", "my_survey", 4000)
+    s.add_tracer("survey", "not_my_survey", 4000)
+    s.add_tracer("bin_z", "z_bin_tracer_1", 0, 2)
+    s.add_tracer("bin_z", "z_bin_tracer_2", 2, 4)
+    s.add_tracer("bin_richness", "mass_bin_tracer_1", 0, 2)
+    s.add_tracer("bin_richness", "mass_bin_tracer_2", 2, 4)
+
+    s.add_data_point(cc, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1"), 1)
+    s.add_data_point(cc, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"), 1)
+    s.add_data_point(cc, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1"), 1)
+    s.add_data_point(cc, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_2"), 1)
+
+    s.add_data_point(mlm, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1"), 1)
+    s.add_data_point(mlm, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"), 1)
+    s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1"), 1)
+    s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_2"), 1)
+
+    return s

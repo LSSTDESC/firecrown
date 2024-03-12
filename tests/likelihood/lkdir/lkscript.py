@@ -1,6 +1,7 @@
 """
 Provides a trivial likelihood factory function for testing purposes.
 """
+
 from firecrown.modeling_tools import ModelingTools
 from . import lkmodule
 

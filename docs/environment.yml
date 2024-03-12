@@ -4,24 +4,27 @@ channels:
   - nodefaults
 dependencies:
   - python>=3.8
-  - cosmosis
+  - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
+  - cython < 3.0.0
   - flake8
+  - jupyter
   - mypy
-  - numcosmo>=0.18.2
-  - numpy>=1.16
+  - numcosmo>=0.21.1
+  - numpy>=1.21.0
   - plantuml
-  - pip
-  - pyccl>=2.0
-  - pytest
-  - sacc>=0.3
-  - scipy
-  - sphinx
-  - sphinx-autoapi
-  - sphinx-autodoc-typehints
-  - sphinxcontrib-apidoc
-  - sphinx_rtd_theme
   - pip>=20.1  # pip is needed as dependency
   - pip:
     - autoclasstoc
     - cobaya
+    - pygobject-stubs
+  - pyccl>=2.8.0
+  - pytest
+  - quarto
+  - sacc>=0.11
+  - scipy
+  - sphinx=7.1.2
+  - sphinx-autoapi
+  - sphinx-autodoc-typehints
+  - sphinxcontrib-apidoc
+  - sphinx-book-theme

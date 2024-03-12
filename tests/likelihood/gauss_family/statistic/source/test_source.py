@@ -1,6 +1,7 @@
 """
 Tests for the module firecrown.likelihood.gauss_family.statistic.source.source.
 """
+
 import pytest
 import numpy as np
 
@@ -47,7 +48,7 @@ def test_trivial_tracer_construction(empty_pyccl_tracer):
     trivial = TrivialTracer(empty_pyccl_tracer)
     assert trivial.ccl_tracer is empty_pyccl_tracer
     # If we have not assigned a name through the initializer, the name of the resulting
-    # Tracer object is the class name of the :python:`pyccl.Tracer` that was used to
+    # Tracer object is the class name of the :class:`pyccl.Tracer` that was used to
     # create it.
     assert trivial.tracer_name == "Tracer"
     # If we have not supplied a field, and have not supplied a tracer_name, then the

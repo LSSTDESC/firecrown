@@ -1,6 +1,7 @@
 """
 Tests for the module firecrown.descriptors.
 """
+
 import math
 import pytest
 from firecrown.descriptors import TypeFloat, TypeString
@@ -218,7 +219,9 @@ def test_upper_bound_float():
 def test_string_conversion_failure():
     d = HasString()
     with pytest.raises(TypeError):
-        d.x = NotStringy()
+        # We ignore type checking on this line because we are testing the error
+        # handling for the very type error that mypy would detect.
+        d.x = NotStringy()  # type: ignore
 
 
 def test_string_too_short():

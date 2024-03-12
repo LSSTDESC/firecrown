@@ -4,7 +4,7 @@
 from dataclasses import dataclass
 import os
 
-from typing import Dict, Union, Tuple
+from typing import Union
 
 import numpy as np
 import sacc
@@ -13,7 +13,11 @@ import pyccl.nl_pt
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.statistic.two_point import (
+    TwoPoint,
+    TracerNames,
+    TRACER_NAMES_TOTAL,
+)
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
@@ -30,7 +34,7 @@ saccfile = os.path.expanduser(
 @dataclass
 class CclSetup:
     """A package of related CCL parameters, to reduce the number of variables
-    used in the :python:`run_likelihood` method."""
+    used in the :meth:`run_likelihood` method."""
 
     a_1: float = 1.0
     a_2: float = 0.5
@@ -43,6 +47,9 @@ class CclSetup:
 
 @dataclass
 class CElls:
+    """A package of related C_ell values, to reduce the number of variables
+    used in the :meth:`run_likelihood` method."""
+
     GG: np.ndarray
     GI: np.ndarray
     II: np.ndarray
@@ -55,28 +62,28 @@ class CElls:
     gg_total: np.ndarray
 
     def __init__(self, stat0: TwoPoint, stat2: TwoPoint, stat3: TwoPoint):
-        self.GG = stat0.cells[("shear", "shear")]
-        self.GI = stat0.cells[("shear", "intrinsic_pt")]
-        self.II = stat0.cells[("intrinsic_pt", "intrinsic_pt")]
-        self.cs_total = stat0.cells["total"]
+        self.GG = stat0.cells[TracerNames("shear", "shear")]
+        self.GI = stat0.cells[TracerNames("shear", "intrinsic_pt")]
+        self.II = stat0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
+        self.cs_total = stat0.cells[TRACER_NAMES_TOTAL]
 
-        self.gG = stat2.cells[("galaxies", "shear")]
-        self.gI = stat2.cells[("galaxies", "intrinsic_pt")]
-        self.mI = stat2.cells[("magnification+rsd", "intrinsic_pt")]
+        self.gG = stat2.cells[TracerNames("galaxies", "shear")]
+        self.gI = stat2.cells[TracerNames("galaxies", "intrinsic_pt")]
+        self.mI = stat2.cells[TracerNames("magnification+rsd", "intrinsic_pt")]
 
-        self.gg = stat3.cells[("galaxies", "galaxies")]
-        self.gm = stat3.cells[("galaxies", "magnification+rsd")]
-        self.gg_total = stat3.cells["total"]
+        self.gg = stat3.cells[TracerNames("galaxies", "galaxies")]
+        self.gm = stat3.cells[TracerNames("galaxies", "magnification+rsd")]
+        self.gg_total = stat3.cells[TRACER_NAMES_TOTAL]
 
 
-def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
 
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
     # Define sources
-    sources: Dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
+    sources: dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later
@@ -156,7 +163,7 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
 # We can also run the likelihood directly
 def run_likelihood() -> None:
     """Produce some plots using the likelihood function built by
-    :python:`build_likelihood`.
+    :meth:`build_likelihood`.
     """
 
     # pylint: enable=import-outside-toplevel
@@ -234,6 +241,7 @@ def run_likelihood() -> None:
     assert likelihood.cov is not None
 
     stat0 = likelihood.statistics[0].statistic
+    assert isinstance(stat0, TwoPoint)
 
     # x = likelihood.statistics[0].ell_or_theta_
     # y_data = likelihood.statistics[0].measured_statistic_
@@ -243,11 +251,12 @@ def run_likelihood() -> None:
 
     print(list(stat0.cells.keys()))
 
-    stat2 = likelihood.statistics[2].statistic
+    stat2 = likelihood.statistics[2].statistic  # pylint: disable=no-member
     assert isinstance(stat2, TwoPoint)
     print(list(stat2.cells.keys()))
 
-    stat3 = likelihood.statistics[3].statistic
+    stat3 = likelihood.statistics[3].statistic  # pylint: disable=no-member
+    assert isinstance(stat3, TwoPoint)
     print(list(stat3.cells.keys()))
 
     plot_predicted_and_measured_statistics(

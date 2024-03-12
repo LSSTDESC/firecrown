@@ -1,75 +1,60 @@
 """Likelihood factory function for cluster number counts."""
 
 import os
-from typing import Any, Dict
 
 import pyccl as ccl
 import sacc
 
-from firecrown.likelihood.gauss_family.statistic.cluster_number_counts import (
-    ClusterNumberCounts,
-)
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
+    BinnedClusterNumberCounts,
+)
+from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster_abundance import ClusterAbundance
-from firecrown.models.cluster_mass_rich_proxy import ClusterMassRich
-from firecrown.models.cluster_redshift_spec import ClusterRedshiftSpec
+from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.properties import ClusterProperty
+from firecrown.models.cluster.recipes.murata_binned_spec_z import (
+    MurataBinnedSpecZRecipe,
+)
 
 
-def build_likelihood(build_parameters):
+def get_cluster_abundance() -> ClusterAbundance:
+    hmf = ccl.halos.MassFuncBocquet16()
+    min_mass, max_mass = 13.0, 16.0
+    min_z, max_z = 0.2, 0.8
+    cluster_abundance = ClusterAbundance(min_mass, max_mass, min_z, max_z, hmf)
+
+    return cluster_abundance
+
+
+def build_likelihood(
+    build_parameters: NamedParameters,
+) -> tuple[Likelihood, ModelingTools]:
     """
     Here we instantiate the number density (or mass function) object.
     """
 
-    pivot_mass = 14.625862906
-    pivot_redshift = 0.6
+    # Pull params for the likelihood from build_parameters
+    average_on = ClusterProperty.NONE
+    if build_parameters.get_bool("use_cluster_counts", True):
+        average_on |= ClusterProperty.COUNTS
+    if build_parameters.get_bool("use_mean_log_mass", False):
+        average_on |= ClusterProperty.MASS
 
-    cluster_mass_r = ClusterMassRich(pivot_mass, pivot_redshift)
-    cluster_z = ClusterRedshiftSpec()
-
-    # TODO: remove try/except when pyccl 3.0 is released
-    try:
-        hmd_200 = ccl.halos.MassDef200m()
-    except TypeError:
-        hmd_200 = ccl.halos.MassDef200m
-
-    hmf_args: Dict[str, Any] = {}
-    hmf_name = "Tinker08"
-
-    cluster_abundance = ClusterAbundance(hmd_200, hmf_name, hmf_args)
-
-    stats = ClusterNumberCounts(
-        "numcosmo_simulated_redshift_richness",
-        cluster_abundance,
-        cluster_mass_r,
-        cluster_z,
-        use_cluster_counts=build_parameters.get_bool("use_cluster_counts", True),
-        use_mean_log_mass=build_parameters.get_bool("use_mean_log_mass", False),
+    survey_name = "numcosmo_simulated_redshift_richness"
+    likelihood = ConstGaussian(
+        [BinnedClusterNumberCounts(average_on, survey_name, MurataBinnedSpecZRecipe())]
     )
-    stats_list = [stats]
 
-    # Here we instantiate the actual likelihood. The statistics argument carry
-    # the order of the data/theory vector.
-
-    lk = ConstGaussian(stats_list)
-
-    # We load the correct SACC file.
-    saccfile = os.path.expanduser(
-        os.path.expandvars(
-            "${FIRECROWN_DIR}/examples/cluster_number_counts/"
-            "cluster_redshift_richness_sacc_data.fits"
-        )
+    # Read in sacc data
+    sacc_file_nm = "cluster_redshift_richness_sacc_data.fits"
+    sacc_path = os.path.expanduser(
+        os.path.expandvars("${FIRECROWN_DIR}/examples/cluster_number_counts/")
     )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
+    likelihood.read(sacc_data)
 
-    # The read likelihood method is called passing the loaded SACC file, the
-    # cluster number count functions will receive the appropriated sections
-    # of the SACC file.
-    lk.read(sacc_data)
+    cluster_abundance = get_cluster_abundance()
+    modeling_tools = ModelingTools(cluster_abundance=cluster_abundance)
 
-    # This script will be loaded by the appropriated connector. The framework
-    # then looks for the `likelihood` variable to find the instance that will
-    # be used to compute the likelihood.
-    modeling = ModelingTools()
-
-    return lk, modeling
+    return likelihood, modeling_tools

@@ -1,16 +1,58 @@
 """Basic likelihood infrastructure
 
 
-This module provides the base class :python:`Likelihood`, which is the class
+This module provides the base class :class:`Likelihood`, which is the class
 from which all concrete firecrown likelihoods must descend.
 
-It also provides the function :python:`load_likelihood` which reads a
-likelihood script to create an object of some subclass of :python:`Likelihood`.
+It also provides the function :meth:`load_likelihood` which reads a
+likelihood script to create an object of some subclass of :class:`Likelihood`.
 
+How to use a :class:`Likelihood` object
+.......................................
+
+The class :class:`Likelihood` is designed to support repeated calculations
+of the likelihood of the observation of some specific data, given a specified
+theory.
+
+The data for which the likelihood is being calculated is set when the
+:meth:`read` method of the likelihood is called. It is expected that this
+will be done only once in the lifetime of any likelihood object. In the
+specific case of a :class:`GaussFamily` likelihood, these data include both
+a *data vector* and a *covariance matrix*, which must be present in the
+:class:`Sacc` object given to the :meth:`read` method.
+
+The theory predictions that are used in the calcluation of a likelihood are
+expected to change for different calls to the :meth:`compute_loglike` method.
+In order to prepare a :class:`Likelihood` object for each call to
+:meth:`compute_loglike`, the following sequence of calls must be made (note
+that this is done by the Firecrown infrastructure when you are using Firecrown
+with any of the supported sampling frameworks):
+
+#. create the `Likelihood` object `like` using the concrete class name as a
+   factory function
+#. call :meth:`read` passing in the :class:`sacc.Sacc` object containing all
+   the necessary data
+#. for each call to :meth:`calculate_loglike`, prepare `like` for the new
+   calculation:
+
+    #. call :meth:`update` on the :class:`ParamsMap` object you are using the
+       this likelihood.
+    #. call :meth:`prepare` on the :class:`ModelingTools` object you are using.
+    #. call :meth:`update` on `like`, passing in the :class:`ParamsMap` you
+       just updated.
+#. call :meth:`calculate_loglike` passing the current :class:`ModelingTools`
+   object.
+#. call :meth:`reset` to free any held resources and to prepare `like` for the
+   next cycle.
+
+Note that repeated calls to :meth:`update` on a :class:`Likelihood` object, if
+there is no intervening call of :meth:`reset`, have no effect. This is necessary
+cause the same object many be used in several places in any given :class:`Likelihood`,
+but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Tuple, Union, Optional
+from typing import Mapping, Union, Optional, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -23,7 +65,7 @@ import numpy.typing as npt
 
 import sacc
 
-from ..updatable import Updatable, UpdatableCollection
+from ..updatable import Updatable
 from ..modeling_tools import ModelingTools
 
 
@@ -41,14 +83,30 @@ class Likelihood(Updatable):
         """Default initialization for a base Likelihood object."""
         super().__init__(parameter_prefix=parameter_prefix)
 
-        self.predicted_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.measured_data_vector: Optional[npt.NDArray[np.double]] = None
-        self.inv_cov: Optional[npt.NDArray[np.double]] = None
-        self.statistics: UpdatableCollection = UpdatableCollection()
-
     @abstractmethod
-    def read(self, sacc_data: sacc.Sacc):
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
+
+    def make_realization_vector(self) -> npt.NDArray[np.float64]:
+        """Create a new realization of the model using the previously computed
+        theory vector and covariance matrix.
+        """
+        raise NotImplementedError(
+            "This class does not implement make_realization_vector."
+        )
+
+    def make_realization(
+        self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
+    ) -> sacc.Sacc:
+        """Create a new realization of the model using the previously computed
+        theory vector and covariance matrix.
+
+        :param sacc_data: The SACC data object containing the covariance matrix
+        :param add_noise: If True, add noise to the realization. If False, return
+            only the theory vector.
+        :param strict: If True, check that the indices of the realization cover
+            all the indices of the SACC data object.
+        """
 
     @abstractmethod
     def compute_loglike(self, tools: ModelingTools) -> float:
@@ -142,19 +200,88 @@ class NamedParameters:
         assert val.dtype == np.float64
         return val
 
-    def to_set(self):
+    def to_set(
+        self,
+    ) -> set[
+        Union[
+            str,
+            int,
+            bool,
+            float,
+            npt.NDArray[np.int64],
+            npt.NDArray[np.float64],
+        ]
+    ]:
         """Return the contained data as a set."""
         return set(self.data)
+
+    def set_from_basic_dict(
+        self,
+        basic_dict: dict[
+            str,
+            Union[
+                str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
+            ],
+        ],
+    ) -> None:
+        """Set the contained data from a dictionary of basic types."""
+
+        for key, value in basic_dict.items():
+            if isinstance(value, (str, float, int, bool)):
+                self.data = dict(self.data, **{key: value})
+            elif isinstance(value, Sequence):
+                if all(isinstance(v, float) for v in value):
+                    self.data = dict(self.data, **{key: np.array(value)})
+                elif all(isinstance(v, bool) for v in value):
+                    self.data = dict(
+                        self.data, **{key: np.array(value, dtype=np.int64)}
+                    )
+                elif all(isinstance(v, int) for v in value):
+                    self.data = dict(
+                        self.data, **{key: np.array(value, dtype=np.int64)}
+                    )
+                else:
+                    raise ValueError(f"Invalid type for sequence value: {value}")
+            else:
+                raise ValueError(f"Invalid type for value: {value}")
+
+    def convert_to_basic_dict(
+        self,
+    ) -> dict[
+        str,
+        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
+    ]:
+        """Convert a NamedParameters object to a dictionary of basic types."""
+        basic_dict: dict[
+            str,
+            Union[
+                str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
+            ],
+        ] = {}
+
+        for key, value in self.data.items():
+            if isinstance(value, (str, float, int, bool)):
+                basic_dict[key] = value
+            elif isinstance(value, np.ndarray):
+                if value.dtype == np.int64:
+                    basic_dict[key] = value.tolist()
+                elif value.dtype == np.float64:
+                    basic_dict[key] = value.tolist()
+                else:
+                    raise ValueError(f"Invalid type for sequence value: {value}")
+            else:
+                raise ValueError(f"Invalid type for value: {value}")
+        return basic_dict
 
 
 def load_likelihood_from_module_type(
     module: types.ModuleType, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 
-    This function is used by both :python:`load_likelihood_from_script` and
-    :python:`load_likelihood_from_module`. It is not intended to be called
+    This function is used by both :meth:`load_likelihood_from_script` and
+    :meth:`load_likelihood_from_module`. It is not intended to be called
     directly.
 
     :param module: a loaded module
@@ -208,7 +335,7 @@ def load_likelihood_from_module_type(
 
 def load_likelihood_from_script(
     filename: str, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood script and returns a tuple of the likelihood and
     the modeling tools.
 
@@ -254,7 +381,7 @@ def load_likelihood_from_script(
 
 def load_likelihood_from_module(
     module: str, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 
@@ -275,7 +402,7 @@ def load_likelihood_from_module(
 
 def load_likelihood(
     likelihood_name: str, build_parameters: NamedParameters
-) -> Tuple[Likelihood, ModelingTools]:
+) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood and returns a tuple of the likelihood and
     the modeling tools.
 

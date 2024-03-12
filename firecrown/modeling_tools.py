@@ -1,19 +1,22 @@
 """Basic module for Cosmology and cosmological tools definitions.
 
 This module contains the ModelingTools class, which is built around the
-:python:`pyccl.Cosmology` class. This is used by likelihoods that need to access
+:class:`pyccl.Cosmology` class. This is used by likelihoods that need to access
 reusable objects, such as perturbation theory or halo model calculators.
 """
+
 from __future__ import annotations
-from typing import Dict, Optional, Collection
+from typing import Optional, Collection
 from abc import ABC, abstractmethod
 import pyccl.nl_pt
+
+from firecrown.models.cluster.abundance import ClusterAbundance
 
 from .updatable import Updatable, UpdatableCollection
 
 
 class ModelingTools(Updatable):
-    """A class that bundles together a :python:`pyccl.Cosmology` object and associated
+    """A class that bundles together a :class:`pyccl.Cosmology` object and associated
     objects, such as perturbation theory or halo model calculator workspaces."""
 
     def __init__(
@@ -21,6 +24,7 @@ class ModelingTools(Updatable):
         *,
         pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
         pk_modifiers: Optional[Collection[PowerspectrumModifier]] = None,
+        cluster_abundance: Optional[ClusterAbundance] = None,
         hm_definition: Optional[pyccl.halos.MassDef] = None,
         hm_function: Optional[str] = None,
         bias_function: Optional[str] = None,
@@ -31,14 +35,16 @@ class ModelingTools(Updatable):
         self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
+        self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self.hm_definition: Optional[pyccl.halos.MassDef] = hm_definition
         self.hm_function: Optional[str] = hm_function
         self.bias_function: Optional[str] = bias_function
         self.cM_relation: Optional[str] = cM_relation
-        self.powerspectra: Dict[str, pyccl.Pk2D] = {}
+        self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
+        self.cluster_abundance = cluster_abundance
 
-    def add_pk(self, name: str, powerspectrum: pyccl.Pk2D):
+    def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
 
         if name in self.powerspectra:
@@ -59,7 +65,7 @@ class ModelingTools(Updatable):
         return self.ccl_cosmo.get_nonlin_power(name)
 
     def has_pk(self, name: str) -> bool:
-        """Check if a power spectrum with name :python:`name` is available."""
+        """Check if a power spectrum with name `name` is available."""
         # There should probably a pyccl.Cosmology method to check if a specific
         # power spectrum exists
         try:
@@ -80,7 +86,7 @@ class ModelingTools(Updatable):
         """
 
         if not self.is_updated():
-            raise RuntimeError("ModelingTools has not been prepared")
+            raise RuntimeError("ModelingTools has not been updated.")
 
         if self._prepared:
             raise RuntimeError("ModelingTools has already been prepared")
@@ -94,6 +100,9 @@ class ModelingTools(Updatable):
 
         for pkm in self.pk_modifiers:
             self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
+
+        if self.cluster_abundance is not None:
+            self.cluster_abundance.update_ingredients(ccl_cosmo)
 
         self._prepared = True
 
