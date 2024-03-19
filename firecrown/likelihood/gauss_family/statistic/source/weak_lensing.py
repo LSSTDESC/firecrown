@@ -241,7 +241,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         systematics: Optional[list[SourceGalaxySystematic[WeakLensingArgs]]] = None,
     ) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        obj = cls(sacc_tracer=inferred_zdist.name, systematics=systematics)
+        obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)
         obj.tracer_args = WeakLensingArgs(
             scale=obj.scale, z=inferred_zdist.z, dndz=inferred_zdist.dndz, ia_bias=None
         )

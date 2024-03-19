@@ -304,7 +304,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
-        obj = cls(sacc_tracer=inferred_zdist.name, systematics=systematics)
+        obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)
         obj.tracer_args = NumberCountsArgs(
             scale=obj.scale,
             z=inferred_zdist.z,

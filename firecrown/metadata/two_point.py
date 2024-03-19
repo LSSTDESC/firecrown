@@ -44,7 +44,7 @@ class InferredGalaxyZDist:
     is used to store the redshift resolution data for a single photometric bin.
     """
 
-    name: str
+    bin_name: str
     z: np.ndarray
     dndz: np.ndarray
     measured_type: MeasuredType
@@ -230,7 +230,7 @@ def make_galaxy_zdists_dataclasses(
 
     inferrerd_galaxy_zdists = [
         InferredGalaxyZDist(
-            name=tracer.name,
+            bin_name=tracer.name,
             z=tracer.z,
             dndz=tracer.nz,
             measured_type=measured_type_from_name(tracer.name),
@@ -316,10 +316,10 @@ def get_combination(bin_combinations: list[TwoPointXY], bin_combo: TracerNames):
     """Get the combination of two-point function data for a sacc file."""
 
     for combination in bin_combinations:
-        if combination.x.name == bin_combo[0] and combination.y.name == bin_combo[1]:
+        if combination.x.bin_name == bin_combo[0] and combination.y.bin_name == bin_combo[1]:
             return combination
 
-        if combination.x.name == bin_combo[1] and combination.y.name == bin_combo[0]:
+        if combination.x.bin_name == bin_combo[1] and combination.y.bin_name == bin_combo[0]:
             return combination
 
     raise ValueError(f"Combination {bin_combo} not found in bin_combinations.")
