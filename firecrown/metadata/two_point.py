@@ -1,7 +1,7 @@
 """This module contains all data classes and functions for store and extract two-point
 functions meta-data from a sacc file."""
 
-from typing import TypedDict, Optional, Union, Any
+from typing import TypedDict, Optional, Union
 from dataclasses import dataclass
 from enum import StrEnum, auto
 import re
@@ -317,7 +317,6 @@ def make_xi_thetas(
 
 
 def make_cells(
-    data_type: str,
     tracer_names: TracerNames,
     ells: np.ndarray,
     bin_combinations: list[TwoPointXY],
@@ -327,7 +326,6 @@ def make_cells(
     bin_combo = get_combination(bin_combinations, tracer_names)
 
     return TwoPointCells(
-        data_type=data_type,
         XY=bin_combo,
         ells=ells,
     )
