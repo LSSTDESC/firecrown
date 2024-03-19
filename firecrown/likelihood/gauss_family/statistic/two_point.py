@@ -321,7 +321,8 @@ class TwoPoint(Statistic):
         ell_or_theta, stat = self.phase_1(
             sacc_data, tracers, common_length, ell_or_theta, stat
         )
-        ell_or_theta = self.set_window_function(ell_or_theta, sacc_data)
+        if not self.ignore_window_function:
+            ell_or_theta = self.set_window_function(ell_or_theta, sacc_data)
         assert len(ell_or_theta) == len(stat)
         return ell_or_theta, stat
 

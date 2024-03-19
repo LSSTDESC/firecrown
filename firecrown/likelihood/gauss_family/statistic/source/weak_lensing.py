@@ -26,6 +26,7 @@ from .....parameters import (
     ParamsMap,
 )
 from .....modeling_tools import ModelingTools
+from .....metadata.two_point import InferredGalaxyZDist
 
 __all__ = ["WeakLensing"]
 
@@ -233,6 +234,20 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         self.current_tracer_args: Optional[WeakLensingArgs] = None
         self.tracer_args: WeakLensingArgs
 
+    @classmethod
+    def create_ready(
+        cls,
+        inferred_zdist: InferredGalaxyZDist,
+        systematics: Optional[list[SourceGalaxySystematic[WeakLensingArgs]]] = None,
+    ) -> WeakLensing:
+        """Create a WeakLensing object with the given tracer name and scale."""
+        obj = cls(sacc_tracer=inferred_zdist.name, systematics=systematics)
+        obj.tracer_args = WeakLensingArgs(
+            scale=obj.scale, z=inferred_zdist.z, dndz=inferred_zdist.dndz, ia_bias=None
+        )
+
+        return obj
+
     @final
     def _update_source(self, params: ParamsMap):
         """Implementation of Source interface `_update_source`.
@@ -298,3 +313,43 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     def get_scale(self):
         assert self.current_tracer_args
         return self.current_tracer_args.scale
+
+
+class WeakLensingSystematicFactory:
+    """Factory class for WeakLensingSystematic objects."""
+
+    @abstractmethod
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensingSystematic:
+        """Create a WeakLensingSystematic object with the given tracer name."""
+
+
+class WeakLensingFactory:
+    """Factory class for WeakLensing objects."""
+
+    def __init__(
+        self,
+        per_bin_systematics: list[WeakLensingSystematicFactory],
+        global_systematics: list[WeakLensingSystematic],
+    ) -> None:
+        self.per_bin_systematics: list[WeakLensingSystematicFactory] = (
+            per_bin_systematics
+        )
+        self.global_systematics: list[WeakLensingSystematic] = global_systematics
+        self.cache: dict[InferredGalaxyZDist, WeakLensing] = {}
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
+        """Create a WeakLensing object with the given tracer name and scale."""
+
+        if inferred_zdist in self.cache:
+            return self.cache[inferred_zdist]
+
+        systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
+            systematic_factory.create(inferred_zdist)
+            for systematic_factory in self.per_bin_systematics
+        ]
+        systematics.extend(self.global_systematics)
+
+        wl = WeakLensing.create_ready(inferred_zdist, systematics)
+        self.cache[inferred_zdist] = wl
+
+        return wl
