@@ -89,7 +89,6 @@ class TwoPointXiTheta:
 TwoPointXiThetaIndex = TypedDict(
     "TwoPointXiThetaIndex",
     {
-        "data_type": str,
         "tracer_names": TracerNames,
         "theta": npt.NDArray[np.float64],
     },
@@ -99,7 +98,6 @@ TwoPointXiThetaIndex = TypedDict(
 TwoPointCellsIndex = TypedDict(
     "TwoPointCellsIndex",
     {
-        "data_type": str,
         "tracer_names": TracerNames,
         "ells": npt.NDArray[np.int64],
     },
@@ -147,7 +145,6 @@ def extract_all_data_types_xi_thetas(
 
             all_xi_thetas.append(
                 {
-                    "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
                     "theta": sacc_data.get_tag(
                         tag_name, data_type=data_type, tracers=combo
@@ -188,7 +185,6 @@ def extract_all_data_types_cells(
 
             all_cell.append(
                 {
-                    "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
                     "ells": sacc_data.get_tag(
                         tag_name, data_type=data_type, tracers=combo
@@ -276,21 +272,6 @@ DATATYPE_DICT = {
         "xi",
     ): "galaxy_shear_xi_plus",
 }
-
-
-# (tracer_name_1, tracer_name_2), data_type, data, tags...
-# ("src0", "src0"), "galaxy_density_cl", C_0, 0
-# ("src0", "src0"), "galaxy_density_cl", C_1, 1
-# ("src0", "src0"), "galaxy_density_cl", C_2, 2
-# ...
-# ("lens0", "src0"), "galaxy_shearDensity_cl_e", C_0, 0
-# ("lens0", "src0"), "galaxy_shearDensity_cl_e", C_1, 1
-# ("lens0", "src0"), "galaxy_shearDensity_cl_e", C_2, 2
-# ...
-# ("lens1", "src0"), "galaxy_shearDensity_cl_e", C_0, 0
-# ("lens1", "src0"), "galaxy_shearDensity_cl_e", C_1, 1
-# ("lens1", "src0"), "galaxy_shearDensity_cl_e", C_2, 2
-# ...
 
 
 def make_xi_thetas(
