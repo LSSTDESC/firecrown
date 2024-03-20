@@ -43,8 +43,8 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_pt_c_d: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
-    ia_a_1h: Optional[np.float] = None
-    ia_a_2h: Optional[np.float] = None
+    ia_a_1h: Optional[np.float64] = None
+    ia_a_2h: Optional[np.float64] = None
 
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
@@ -238,10 +238,7 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         tracer_arg, in the context of the given cosmology."""
 
         return replace(
-            tracer_arg,
-            has_hm=True,
-            ia_a_1h=self.ia_a_1h,
-            ia_a_2h=self.ia_a_2h
+            tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
         )
 
 
@@ -332,9 +329,9 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
 
         if tracer_args.has_hm:
             cM = tools.get_cM_relation()
-            halo_profile = pyccl.halos.SatelliteShearHOD(mass_def=tools.hm_definition,
-                concentration=cM,
-                a1h=tracer_args.ia_a_1h)
+            halo_profile = pyccl.halos.SatelliteShearHOD(
+                mass_def=tools.hm_definition, concentration=cM, a1h=tracer_args.ia_a_1h
+            )
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 ccl_cosmo,
                 has_shear=False,
@@ -343,9 +340,13 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
                 ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
             )
             ia_tracer = Tracer(
-                ccl_wl_dummy_tracer, tracer_name="intrinsic_hm", halo_profile=halo_profile
+                ccl_wl_dummy_tracer,
+                tracer_name="intrinsic_hm",
+                halo_profile=halo_profile,
             )
-            halo_profile.ia_a_2h = tracer_args.ia_a_2h # Attach the 2-halo amplitude here.
+            halo_profile.ia_a_2h = (
+                tracer_args.ia_a_2h
+            )  # Attach the 2-halo amplitude here.
             tracers.append(ia_tracer)
 
         self.current_tracer_args = tracer_args

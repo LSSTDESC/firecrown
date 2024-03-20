@@ -61,14 +61,13 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     # Create the likelihood from the statistics
     # Define the halo model components. This is one solution but maybe not the best!
     hmd_200m = ccl.halos.MassDef200m
-    cM = 'Duffy08'
-    nM = 'Tinker10'
-    bM = 'Tinker10'
+    cM = "Duffy08"
+    nM = "Tinker10"
+    bM = "Tinker10"
 
-    modeling_tools = ModelingTools(hm_definition=hmd_200m,
-                                   hm_function=nM,
-                                   bias_function=bM,
-                                   cM_relation=cM)
+    modeling_tools = ModelingTools(
+        hm_definition=hmd_200m, hm_function=nM, bias_function=bM, cM_relation=cM
+    )
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
     # Read the two-point data from the sacc file
@@ -101,26 +100,54 @@ def run_likelihood() -> None:
     ccl_cosmo.compute_nonlin_power()
 
     # Bare CCL setup
-    a_1h = 1e-3 # 1-halo alignment amplitude.
-    a_2h = 1. # 2-halo alignment amplitude.
+    a_1h = 1e-3  # 1-halo alignment amplitude.
+    a_2h = 1.0  # 2-halo alignment amplitude.
 
     # Code that creates a Pk2D object:
-    k_arr = np.geomspace(1E-3, 1e3, 128)  # For evaluating
+    k_arr = np.geomspace(1e-3, 1e3, 128)  # For evaluating
     a_arr = np.linspace(0.1, 1, 16)
     cM = ccl.halos.ConcentrationDuffy08(mass_def="200m")
     nM = ccl.halos.MassFuncTinker10(mass_def="200m")
     bM = ccl.halos.HaloBiasTinker10(mass_def="200m")
     hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def="200m")
-    sat_gamma_HOD = ccl.halos.SatelliteShearHOD(mass_def="200m", concentration=cM, a1h=a_1h, b=-2)
+    sat_gamma_HOD = ccl.halos.SatelliteShearHOD(
+        mass_def="200m", concentration=cM, a1h=a_1h, b=-2
+    )
     # NFW profile for matter (G)
-    NFW = ccl.halos.HaloProfileNFW(mass_def="200m", concentration=cM, truncated=True, fourier_analytic=True)
-    pk_GI_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, NFW, prof2=sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
-    pk_II_1h = ccl.halos.halomod_Pk2D(ccl_cosmo, hmc, sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr)
+    NFW = ccl.halos.HaloProfileNFW(
+        mass_def="200m", concentration=cM, truncated=True, fourier_analytic=True
+    )
+    pk_GI_1h = ccl.halos.halomod_Pk2D(
+        ccl_cosmo,
+        hmc,
+        NFW,
+        prof2=sat_gamma_HOD,
+        get_2h=False,
+        lk_arr=np.log(k_arr),
+        a_arr=a_arr,
+    )
+    pk_II_1h = ccl.halos.halomod_Pk2D(
+        ccl_cosmo, hmc, sat_gamma_HOD, get_2h=False, lk_arr=np.log(k_arr), a_arr=a_arr
+    )
     # NLA
     C1rhocrit = 5e-14 * ccl.physical_constants.RHO_CRITICAL  # standard IA normalisation
-    pk_GI_NLA = ccl.Pk2D.from_function(pkfunc=lambda k, a: -a_2h * C1rhocrit * ccl_cosmo['Omega_m'] / ccl_cosmo.growth_factor(a) * ccl_cosmo.nonlin_matter_power(k, a), is_logp=False)
-    pk_II_NLA = ccl.Pk2D.from_function(pkfunc=lambda k, a: (a_2h * C1rhocrit * ccl_cosmo['Omega_m'] / ccl_cosmo.growth_factor(a)) ** 2 * ccl_cosmo.nonlin_matter_power(k, a), is_logp=False)
-    pk_GI = pk_GI_1h+pk_GI_NLA
+    pk_GI_NLA = ccl.Pk2D.from_function(
+        pkfunc=lambda k, a: -a_2h
+        * C1rhocrit
+        * ccl_cosmo["Omega_m"]
+        / ccl_cosmo.growth_factor(a)
+        * ccl_cosmo.nonlin_matter_power(k, a),
+        is_logp=False,
+    )
+    pk_II_NLA = ccl.Pk2D.from_function(
+        pkfunc=lambda k, a: (
+            a_2h * C1rhocrit * ccl_cosmo["Omega_m"] / ccl_cosmo.growth_factor(a)
+        )
+        ** 2
+        * ccl_cosmo.nonlin_matter_power(k, a),
+        is_logp=False,
+    )
+    pk_GI = pk_GI_1h + pk_GI_NLA
     pk_II = pk_II_1h + pk_II_NLA
 
     # Set the parameters for our systematics
@@ -145,6 +172,7 @@ def run_likelihood() -> None:
     print(f"Log-like = {log_like:.1f}")
 
     # Plot the predicted and measured statistic
+    assert isinstance(likelihood, ConstGaussian)
     two_point_0 = likelihood.statistics[0].statistic
     assert isinstance(two_point_0, TwoPoint)
 
@@ -192,9 +220,7 @@ def make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z):
     # The weak gravitational lensing power spectrum
     cl_GG = ccl.angular_cl(ccl_cosmo, t_lens, t_lens, ells)
     # The observed angular power spectrum is the sum of the two.
-    cl_theory = (
-        cl_GG + cl_GI + cl_IG + cl_II
-    )
+    cl_theory = cl_GG + cl_GI + cl_IG + cl_II
     # pylint: enable=invalid-name
 
     # plt.plot(x, y_theory, label="Total")

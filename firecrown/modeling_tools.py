@@ -40,7 +40,6 @@ class ModelingTools(Updatable):
         self.hm_function: Optional[str] = hm_function
         self.bias_function: Optional[str] = bias_function
         self.cM_relation: Optional[str] = cM_relation
-        self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
 
@@ -142,9 +141,15 @@ class ModelingTools(Updatable):
             raise RuntimeError("A halo mass function has not been set")
         if self.bias_function is None:
             raise RuntimeError("A halo bias function has not been set")
-        nM = pyccl.halos.MassFunc.from_name(self.hm_function)(mass_def=self.hm_definition)
-        bM = pyccl.halos.HaloBias.from_name(self.bias_function)(mass_def=self.hm_definition)
-        return pyccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=self.hm_definition)
+        nM = pyccl.halos.MassFunc.from_name(self.hm_function)(
+            mass_def=self.hm_definition
+        )
+        bM = pyccl.halos.HaloBias.from_name(self.bias_function)(
+            mass_def=self.hm_definition
+        )
+        return pyccl.halos.HMCalculator(
+            mass_function=nM, halo_bias=bM, mass_def=self.hm_definition
+        )
 
     def get_cM_relation(self) -> pyccl.halos.Concentration:
         """Return the concentration-mass relation."""
@@ -154,7 +159,9 @@ class ModelingTools(Updatable):
         if self.hm_definition is None:
             raise RuntimeError("A halo mass definition has not been set")
 
-        return pyccl.halos.Concentration.from_name(self.cM_relation)(mass_def=self.hm_definition)
+        return pyccl.halos.Concentration.from_name(self.cM_relation)(
+            mass_def=self.hm_definition
+        )
 
 
 class PowerspectrumModifier(Updatable, ABC):
