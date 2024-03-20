@@ -1,10 +1,11 @@
 """This module contains all data classes and functions for store and extract two-point
 functions metadata from a sacc file."""
 
-from typing import TypedDict, Optional, Union
+from typing import TypedDict, Optional, Union, Tuple
 from dataclasses import dataclass
 from enum import StrEnum, auto
 import re
+from itertools import chain
 
 import numpy as np
 import numpy.typing as npt
@@ -25,9 +26,34 @@ class GalaxyMeasuredType(StrEnum):
     enumeration needs to be updated.
     """
 
-    CONVERGENCE = auto()
     COUNTS = auto()
     SHEAR_E = auto()
+
+    def sacc_type_name(self) -> str:
+        """Return the lower-case form of the name SACC uses for this type of
+        measurement.
+        """
+        return "galaxy"
+
+    def sacc_measurement_name(self) -> str:
+        """Return the lower-case form of the name SACC uses for this specific
+        enumeration value.
+        """
+        if self == GalaxyMeasuredType.COUNTS:
+            return "counts"
+        if self == GalaxyMeasuredType.SHEAR_E:
+            return "shear"
+        raise ValueError("Untranslated GalaxyMeasuredType encountered")
+    
+    def polarization(self) -> str:
+        """Return the SACC polarization code for this specific enumeration
+        value.
+        """
+        if self == GalaxyMeasuredType.COUNTS:
+            return ""
+        if self == GalaxyMeasuredType.SHEAR_E:
+            return "e"
+
 
 
 class CMBMeasuredType(StrEnum):
@@ -40,12 +66,61 @@ class CMBMeasuredType(StrEnum):
     """
 
     CONVERGENCE = auto()
-    TEMPERATURE = auto()
-    POLARIATION_E = auto()
-    POLARIATION_B = auto()
+
+    def sacc_type_name(self) -> str:
+        """Return the lower-case form of the name SACC uses for this type of
+        measurement.
+        """
+        return "cmb"
+
+    def sacc_measurement_name(self) -> str:
+        """Return the lower-case form of the name SACC uses for this specific
+        enumeration value.
+        """
+        if self == CMBMeasuredType.CONVERGENCE:
+            return "convergence"
+        raise ValueError("Untranslated CMBMeasuredType encountered")
 
 
-MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType]
+class ClusterMeasuredType(StrEnum):
+    """This enumeration type provides identifiers for the different types of
+    cluster-related types of measurement.
+
+    SACC has some notion of supporting other types, but incomplete
+    implementation. When support for more types is added to SACC this
+    enumeration needs to be updated.
+    """
+
+    DENSITY = auto()
+
+    def sacc_type_name(self) -> str:
+        """Return the lower-case form of the name SACC uses for this type of
+        measurement.
+        """
+        return "cluster"
+
+    def sacc_measurement_name(self) -> str:
+        """Return the lower-case form of the name SACC uses for this specific
+        enumeration value.
+        """
+        if self == ClusterMeasuredType.DENSITY:
+            return "density"
+        raise ValueError("Untranslated ClusterMeasuredType encountered")
+
+
+MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
+
+
+def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
+    """Return -1 if a comes before b, 0 if they are the same, and +1 if b comes
+    before a."""
+    order = (ClusterMeasuredType, CMBMeasuredType, GalaxyMeasuredType)
+    return order.index(type(a)) - order.index(type(b))
+
+
+ALL_MEASURED_TYPES = list(
+    chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
+)
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -120,6 +195,8 @@ class TwoPointXiTheta:
     theta: npt.NDArray[np.float64]
 
 
+# TwoPointXiThetaIndex is a type used to create intermediate objects when
+# reading SACC objects. They should not be seen directly by users of Firecrown.
 TwoPointXiThetaIndex = TypedDict(
     "TwoPointXiThetaIndex",
     {
@@ -129,6 +206,8 @@ TwoPointXiThetaIndex = TypedDict(
 )
 
 
+# TwoPointCellsIndex is a type used to create intermediate objects when reading
+# SACC objects. They should not be seen directly by users of Firecrown.
 TwoPointCellsIndex = TypedDict(
     "TwoPointCellsIndex",
     {
@@ -153,7 +232,7 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[sacc.tracers.BaseTracer]:
 
 def extract_all_data_types_xi_thetas(
     sacc_data: sacc.Sacc,
-    allowed_data_type: Optional[list[str]] = None,
+    allowed_data_type: Optional[list[Tuple[MeasuredType, MeasuredType]]] = None,
 ) -> list[TwoPointXiThetaIndex]:
     """Extracts the two-point function measurement metadata for all measurements
     made in real space  from a Sacc object."""
@@ -353,10 +432,44 @@ def get_combination(bin_combinations: list[TwoPointXY], bin_combo: TracerNames):
     """Get the combination of two-point function data for a sacc file."""
 
     for combination in bin_combinations:
-        if combination.x.bin_name == bin_combo[0] and combination.y.bin_name == bin_combo[1]:
+        if (
+            combination.x.bin_name == bin_combo[0]
+            and combination.y.bin_name == bin_combo[1]
+        ):
             return combination
 
-        if combination.x.bin_name == bin_combo[1] and combination.y.bin_name == bin_combo[0]:
+        if (
+            combination.x.bin_name == bin_combo[1]
+            and combination.y.bin_name == bin_combo[0]
+        ):
             return combination
 
     raise ValueError(f"Combination {bin_combo} not found in bin_combinations.")
+
+
+def _type_to_sacc_string_common(x: MeasuredType, y: MeasuredType) -> str:
+    """Return the first two parts of the SACC string used to denote a
+    correlation between measurements of x and y."""
+    a, b = sorted([x, y])
+    part_1 = f"{a.sacc_type_name()}{b.sacc_type_name().capitalize()}_"
+    part_2 = f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
+    return part_1 + part_2
+
+
+def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
+    """Return the SACC string used to denote the real-space correlation type
+    between measurements of x and y.
+    """
+    suffix = f"xi_{x.polarization()_{y.polarization()}}"
+    if suffix.beginswith("_"):
+        suffix = suffix[1:]
+    if suffix.endswith("_"):
+        suffix = suffix[:-1]
+    return _type_to_sacc_string_common(x, y) + suffix 
+
+
+def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
+    """Return the SACC string used to denote the harmonic-space correlation type
+    between measurements of x and y.
+    """
+    return _type_to_sacc_string_common(x, y) + "bar"
