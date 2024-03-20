@@ -1,5 +1,5 @@
 """This module contains all data classes and functions for store and extract two-point
-functions meta-data from a sacc file."""
+functions metadata from a sacc file."""
 
 from typing import TypedDict, Optional, Union
 from dataclasses import dataclass
@@ -17,7 +17,13 @@ from firecrown.likelihood.gauss_family.statistic.two_point import TracerNames
 
 
 class GalaxyMeasuredType(StrEnum):
-    """The class used to store the two-point function data for a sacc file."""
+    """This enumeration type provides identifiers for the different types of
+    galaxy-related types of measurement.
+
+    SACC has some notion of supporting other types, but incomplete
+    implementation. When support for more types is added to SACC this
+    enumeration needs to be updated.
+    """
 
     CONVERGENCE = auto()
     COUNTS = auto()
@@ -25,7 +31,13 @@ class GalaxyMeasuredType(StrEnum):
 
 
 class CMBMeasuredType(StrEnum):
-    """The class used to store the two-point function data for a sacc file."""
+    """This enumeration type provides identifiers for the different types of
+    CMB-related types of measurement.
+
+    SACC has some notion of supporting other types, but incomplete
+    implementation. When support for more types is added to SACC this
+    enumeration needs to be updated.
+    """
 
     CONVERGENCE = auto()
     TEMPERATURE = auto()
@@ -52,7 +64,8 @@ class InferredGalaxyZDist:
 
 @dataclass(frozen=True, kw_only=True)
 class TwoPointXY:
-    """The class used to store the two-point function data for a sacc file."""
+    """The class used to store the two redshift resolutions for the two bins
+    being correlated."""
 
     x: InferredGalaxyZDist
     y: InferredGalaxyZDist
@@ -60,15 +73,30 @@ class TwoPointXY:
 
 @dataclass(frozen=True, kw_only=True)
 class TwoPointCells:
-    """The class used to store the two-point function data for a sacc file."""
+    """The class used to store the metadata for a (spherical) harmonic-space
+    two-point function measured on a sphere.
+
+    This includes the two redshift resolutions (one for each binned quantity)
+    and the array of (integer) l's at which the two-point function which has
+    this metadata were calculated.
+    """
 
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
 
 
 @dataclass(frozen=True, kw_only=True)
-class TwoPointCWindown:
-    """The class used to store the two-point function data for a sacc file."""
+class TwoPointCWindow:
+    """The class used to store the metadata for a (spherical) harmonic-space
+    two-point function measured on a sphere, with an associated window
+    function.
+
+    This includes the two redshift resolutions (one for each binned quantity)
+    and the matrix (window function) that relates the measured Cl's with the
+    predicted Cl's.
+
+    Note that the matrix `window` always has l=0 and l=1 suppressed.
+    """
 
     XY: TwoPointXY
     window: npt.NDArray[np.int64]
@@ -80,7 +108,13 @@ class TwoPointCWindown:
 
 @dataclass(frozen=True, kw_only=True)
 class TwoPointXiTheta:
-    """The class used to store the two-point function data for a sacc file."""
+    """The class used to store the metadata for a real-space two-point
+    function measured on a sphere.
+
+    This includes the two redshift resolutions (one for each binned quantity)
+    and the a array of (floating point) theta (angle) values at which the
+    two-point function which has  this metadata were calculated.
+    """
 
     XY: TwoPointXY
     theta: npt.NDArray[np.float64]
@@ -105,11 +139,13 @@ TwoPointCellsIndex = TypedDict(
 
 
 def extract_all_tracers(sacc_data: sacc.Sacc) -> list[sacc.tracers.BaseTracer]:
-    """Extracts the two-point function meta-data from a sacc file.
+    """Extracts the two-point function metadata from a Sacc object.
 
-    The sacc file is a complicated set of tracers (bins) and surveys. This function
-    extracts the two-point function meta-data from the sacc file and returns it in a
-    dictionary.
+    The Sacc object contains a set of tracers (one-dimensional bins) and data
+    points (measurements of the correlation between two tracers).
+
+    This function extracts the two-point function metadata from the Sacc object
+    and returns it in a list.
     """
 
     return sacc_data.tracers.values()
@@ -119,7 +155,8 @@ def extract_all_data_types_xi_thetas(
     sacc_data: sacc.Sacc,
     allowed_data_type: Optional[list[str]] = None,
 ) -> list[TwoPointXiThetaIndex]:
-    """Extracts the two-point function meta-data from a sacc file."""
+    """Extracts the two-point function measurement metadata for all measurements
+    made in real space  from a Sacc object."""
 
     tag_name = "theta"
 
@@ -158,7 +195,7 @@ def extract_all_data_types_xi_thetas(
 def extract_all_data_types_cells(
     sacc_data: sacc.Sacc, allowed_data_type: Optional[list[str]] = None
 ) -> list[TwoPointCellsIndex]:
-    """Extracts the two-point function meta-data from a sacc file."""
+    """Extracts the two-point function metadata from a sacc file."""
 
     tag_name = "ell"
 
@@ -198,7 +235,7 @@ def extract_all_data_types_cells(
 def extract_all_photoz_bin_combinations(
     sacc_data: sacc.Sacc,
 ) -> list[TwoPointXY]:
-    """Extracts the two-point function meta-data from a sacc file."""
+    """Extracts the two-point function metadata from a sacc file."""
 
     tracers = extract_all_tracers(sacc_data)
     inferred_galaxy_zdists = make_galaxy_zdists_dataclasses(tracers)
@@ -245,7 +282,7 @@ def make_galaxy_zdists_dataclasses(
 def make_all_photoz_bin_combinations(
     inferred_galaxy_zdists: list[InferredGalaxyZDist],
 ) -> list[TwoPointXY]:
-    """Extracts the two-point function meta-data from a sacc file."""
+    """Extracts the two-point function metadata from a sacc file."""
 
     inferred_galaxy_zdists_len = len(inferred_galaxy_zdists)
 
@@ -280,7 +317,7 @@ def make_xi_thetas(
     theta: np.ndarray,
     bin_combinations: list[TwoPointXY],
 ) -> TwoPointXiTheta:
-    """Make a TwoPointXiTheta dataclass from the two-point function meta-data."""
+    """Make a TwoPointXiTheta dataclass from the two-point function metadata."""
 
     bin_combo = get_combination(bin_combinations, tracer_names)
 
@@ -302,7 +339,7 @@ def make_cells(
     ells: np.ndarray,
     bin_combinations: list[TwoPointXY],
 ) -> TwoPointCells:
-    """Make a TwoPointCells dataclass from the two-point function meta-data."""
+    """Make a TwoPointCells dataclass from the two-point function metadata."""
 
     bin_combo = get_combination(bin_combinations, tracer_names)
 
