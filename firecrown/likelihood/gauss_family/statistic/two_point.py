@@ -546,11 +546,14 @@ class TwoPoint(Statistic):
                                                                truncated=True, fourier_analytic=True)
                 other_profile.ia_a_2h = -1.  # used in GI contribution, which is negative.
                 if not tracer0.has_hm:
-                    tracer0.halo_profile = other_profile
+                    profile0 = other_profile
+                    profile1 = tracer1.halo_profile
                 else:
-                    tracer1.halo_profile = other_profile
-            profile0 = tracer0.halo_profile
-            profile1 = tracer1.halo_profile
+                    profile0 = tracer0.halo_profile
+                    profile1 = other_profile
+            else:
+                profile0 = tracer0.halo_profile
+                profile1 = tracer1.halo_profile
             # Compute here the 1-halo power spectrum
             pk_1h = pyccl.halos.halomod_Pk2D(cosmo=ccl_cosmo, hmc=hmc,
                                              prof=profile0, prof2=profile1,
