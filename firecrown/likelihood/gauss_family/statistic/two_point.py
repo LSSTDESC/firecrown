@@ -467,6 +467,9 @@ class TwoPoint(Statistic):
         self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
         theory_vector = self.cells[TRACER_NAMES_TOTAL]
 
+        # If self.ccl_kind is not "cl", then we have a measurement in real
+        # space. We call CCL to translate the previously computed Cl's to real
+        # space, as xi(theta).
         if not self.ccl_kind == "cl":
             theory_vector = pyccl.correlation(
                 tools.get_ccl_cosmology(),
