@@ -44,7 +44,7 @@ class GalaxyMeasuredType(StrEnum):
         if self == GalaxyMeasuredType.SHEAR_E:
             return "shear"
         raise ValueError("Untranslated GalaxyMeasuredType encountered")
-    
+
     def polarization(self) -> str:
         """Return the SACC polarization code for this specific enumeration
         value.
@@ -53,7 +53,6 @@ class GalaxyMeasuredType(StrEnum):
             return ""
         if self == GalaxyMeasuredType.SHEAR_E:
             return "e"
-
 
 
 class CMBMeasuredType(StrEnum):
@@ -158,6 +157,25 @@ class TwoPointCells:
 
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
+
+
+@dataclass(frozen=True, kw_only=True)
+class Window:
+    """The class used to represent a window function."""
+
+    ells: npt.NDArray[np.int64]
+    weights: npt.NDArray[np.float64]
+
+    def __post_init__(self) -> None:
+        """Make sure the weights have the right shape."""
+        if len(self.weights.shape) != 2:
+            raise ValueError("Weights should be a 2D array.")
+        if self.weights.shape[0] != len(self.ells):
+            raise ValueError("Weights should have the same number of rows as ells.")
+
+    def n_observations(self) -> int:
+        """Return the number of observations supported by the window function."""
+        return self.weights.shape[1]
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -323,6 +341,19 @@ def extract_all_photoz_bin_combinations(
     return bin_combinations
 
 
+def extract_window_function(
+    sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
+) -> Optional[Window]:
+    """Extract a window function from a sacc file that matches the given indices.
+
+    If there is no appropriate window function, return None."""
+    bandpower_window = sacc_data.get_bandpower_windows(indices)
+    return Window(
+        ells=bandpower_window.values,
+        weights=bandpower_window.weight / bandpower_window.weight.sum(axis=0),
+    )
+
+
 LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 
@@ -460,12 +491,12 @@ def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
     """Return the SACC string used to denote the real-space correlation type
     between measurements of x and y.
     """
-    suffix = f"xi_{x.polarization()_{y.polarization()}}"
+    suffix = f"xi_{x.polarization()}_{y.polarization()}"
     if suffix.beginswith("_"):
         suffix = suffix[1:]
     if suffix.endswith("_"):
         suffix = suffix[:-1]
-    return _type_to_sacc_string_common(x, y) + suffix 
+    return _type_to_sacc_string_common(x, y) + suffix
 
 
 def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:

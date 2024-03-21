@@ -21,6 +21,7 @@ from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Tracer
+from firecrown.metadata.two_point import extract_window_function, Window
 
 # only supported types are here, anything else will throw
 # a value error
@@ -133,6 +134,24 @@ def read_ell_or_theta_and_stat(
     ell_or_theta, stat = method(sacc_data_type, *tracers, return_cov=False)
     assert len(ell_or_theta) == len(stat)
     return ell_or_theta, stat
+
+
+def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.float64]:
+    """See _ell_for_xi.
+
+    This method mixes together:
+        1. the default parameters in ELL_FOR_XI_DEFAULTS
+        2. the first and last values in w.
+
+    and then calls _ell_for_xi with those arguments, returning whatever it
+    returns.
+    """
+    ell_config = {
+        **ELL_FOR_XI_DEFAULTS,
+        "maximum": w.ells[-1],
+    }
+    ell_config["minimum"] = max(ell_config["minimum"], w.ells[0])
+    return _ell_for_xi(**ell_config)
 
 
 class TwoPoint(Statistic):
@@ -249,14 +268,14 @@ class TwoPoint(Statistic):
         self.ell_or_theta = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
         self.ells_for_interpolation: Optional[npt.NDArray[np.int64]] = None
-        self.ells_for_window: Optional[npt.NDArray[np.int64]] = None
+        self.window: Optional[Window] = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
         self._ell_or_theta: Optional[npt.NDArray[np.float64]] = None
         self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
+        self.mean_ells: Optional[npt.NDArray[np.float64]] = None
 
         self.sacc_tracers: TracerNames
         self.ells: Optional[npt.NDArray[np.float64]] = None
@@ -323,7 +342,15 @@ class TwoPoint(Statistic):
         ell_or_theta, stat = self.phase_1(
             sacc_data, tracers, common_length, ell_or_theta, stat
         )
-        self.set_window_function(sacc_data)
+        if self.sacc_indices is not None:
+            self.window = extract_window_function(sacc_data, self.sacc_indices)
+        if self.window is not None:
+            # When using a window function, we do not calculate all Cl's.
+            # For this reason we have a default set of ells that we use
+            # to compute Cl's, and we have a set of ells used for
+            # interpolation.
+            self.ells_for_interpolation = calculate_ells_for_interpolation(self.window)
+
         return ell_or_theta, stat
 
     def phase_1(
@@ -362,21 +389,6 @@ class TwoPoint(Statistic):
                 self.sacc_indices = self.sacc_indices[locations]
         return ell_or_theta, stat
 
-    def set_window_function(self, sacc_data: sacc.Sacc) -> None:
-        """Set the window function for this statistic."""
-        assert self.sacc_indices is not None
-        assert self.theory_window_function is None
-        # If the SACC data does not contain a window function, get_bandpower_windows
-        # will return None.
-        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
-        if self.theory_window_function is None:
-            return
-        self.ells_for_interpolation = self.calculate_ell_or_theta()
-        self.ells_for_window = self.theory_window_function.values
-        # Normalise the weights to 1:
-        norm = self.theory_window_function.weight.sum(axis=0)
-        self.theory_window_function.weight /= norm
-
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
         self.source0.read(sacc_data)
@@ -386,29 +398,6 @@ class TwoPoint(Statistic):
         assert self.source1.sacc_tracer is not None
         tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
         return TracerNames(*tracers)
-
-    def calculate_ell_or_theta(self) -> npt.NDArray[np.float64]:
-        """See _ell_for_xi.
-
-        This method mixes together:
-           1. the default parameters in ELL_FOR_XI_DEFAULTS
-           2. the first and last values in self.theory_window_function.values
-        and then calls _ell_for_xi with those arguments, returning whatever it
-        returns.
-
-        It is an error to call this function if self.theory_window_function has
-        not been set. That is done in `read`, but might result in the value
-        being re-set to None.:w
-        """
-        assert self.theory_window_function is not None
-        ell_config = {
-            **ELL_FOR_XI_DEFAULTS,
-            "maximum": self.theory_window_function.values[-1],
-        }
-        ell_config["minimum"] = max(
-            ell_config["minimum"], self.theory_window_function.values[0]
-        )
-        return _ell_for_xi(**ell_config)
 
     def get_data_vector(self) -> DataVector:
         """Return this statistic's data vector."""
@@ -426,16 +415,6 @@ class TwoPoint(Statistic):
         scale0 = self.source0.get_scale()
         scale1 = self.source1.get_scale()
 
-        if self.ccl_kind == "cl":
-            self.ells = self.ell_or_theta_
-        else:
-            self.ells = _ell_for_xi(
-                minimum=int(self.ell_for_xi["minimum"]),
-                midpoint=int(self.ell_for_xi["midpoint"]),
-                maximum=int(self.ell_for_xi["maximum"]),
-                n_log=int(self.ell_for_xi["n_log"]),
-            )
-
         # TODO: we should not be adding a new instance variable outside of
         # __init__. Why is `self.cells` an instance variable rather than a
         # local variable? It is used in at least two of the example codes:
@@ -445,8 +424,67 @@ class TwoPoint(Statistic):
 
         self.cells = {}
 
-        # Loop over the tracers and compute all possible combinations
-        # of them.
+        # If self.ccl_kind is not "cl", then we have a measurement in real
+        # space. We call CCL to translate the previously computed Cl's to real
+        # space, as xi(theta).
+        if not self.ccl_kind == "cl":
+            ells_for_xi = _ell_for_xi(
+                minimum=int(self.ell_for_xi["minimum"]),
+                midpoint=int(self.ell_for_xi["midpoint"]),
+                maximum=int(self.ell_for_xi["maximum"]),
+                n_log=int(self.ell_for_xi["n_log"]),
+            )
+            cells_for_xi = self.compute_cells(
+                ells_for_xi, scale0, scale1, tools, tracers0, tracers1
+            )
+
+            theory_vector = pyccl.correlation(
+                tools.get_ccl_cosmology(),
+                ell=ells_for_xi,
+                C_ell=cells_for_xi,
+                theta=self.ell_or_theta_ / 60,
+                type=self.ccl_kind,
+            )
+            assert self.data_vector is not None
+            return TheoryVector.create(theory_vector)
+
+        # If we get here, we are working in harmonic space.
+
+        if self.window is not None:
+            cells_for_interpolation = self.compute_cells(
+                self.ells_for_interpolation, scale0, scale1, tools, tracers0, tracers1
+            )
+
+            # TODO: There is no code in Firecrown, neither test nor example,
+            # that exercises a theory window function in any way.
+            cell_interpolator = make_log_interpolator(
+                self.ells_for_interpolation, cells_for_interpolation
+            )
+            # Deal with ell=0 and ell=1
+            cells_interpolated = np.zeros(self.window.ells.size)
+            cells_interpolated[2:] = cell_interpolator(self.window.ells[2:])
+
+            theory_vector = np.einsum(
+                "lb, l -> b",
+                self.window.weights,
+                cells_interpolated,
+            )
+            self.mean_ells = np.einsum(
+                "lb, l -> b", self.window.weights, self.window.ells
+            )
+
+        assert self.data_vector is not None
+        return TheoryVector.create(theory_vector)
+
+    def compute_cells(
+        self,
+        ells: npt.NDArray[np.int64],
+        scale0: float,
+        scale1: float,
+        tools: ModelingTools,
+        tracers0: Tracer,
+        tracers1: Tracer,
+    ) -> npt.NDArray[np.float64]:
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
@@ -460,55 +498,16 @@ class TwoPoint(Statistic):
                     _cached_angular_cl(
                         tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
-                        tuple(self.ells.tolist()),
+                        tuple(ells.tolist()),
                         p_of_k_a=pk,
                     )
                     * scale0
                     * scale1
                 )
-
         # Add up all the contributions to the cells
         self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
         theory_vector = self.cells[TRACER_NAMES_TOTAL]
-
-        # If self.ccl_kind is not "cl", then we have a measurement in real
-        # space. We call CCL to translate the previously computed Cl's to real
-        # space, as xi(theta).
-        if not self.ccl_kind == "cl":
-            theory_vector = pyccl.correlation(
-                tools.get_ccl_cosmology(),
-                ell=self.ells,
-                C_ell=theory_vector,
-                theta=self.ell_or_theta_ / 60,
-                type=self.ccl_kind,
-            )
-
-        if self.theory_window_function is not None:
-
-            if not self.ccl_kind == "cl":
-                raise ValueError("You cannot mix theory window function with xi.")
-
-            # TODO: There is no code in Firecrown, neither test nor example,
-            # that exercises a theory window function in any way.
-            theory_interpolator = make_log_interpolator(
-                self.ell_or_theta_, theory_vector
-            )
-            ell = self.theory_window_function.values
-            # Deal with ell=0 and ell=1
-            theory_vector_interpolated = np.zeros(ell.size)
-            theory_vector_interpolated[2:] = theory_interpolator(ell[2:])
-
-            theory_vector = np.einsum(
-                "lb, l -> b",
-                self.theory_window_function.weight,
-                theory_vector_interpolated,
-            )
-            self.ell_or_theta_ = np.einsum(
-                "lb, l -> b", self.theory_window_function.weight, ell
-            )
-
-        assert self.data_vector is not None
-        return TheoryVector.create(theory_vector)
+        return theory_vector
 
     def calculate_pk(
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
