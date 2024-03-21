@@ -250,6 +250,8 @@ class TwoPoint(Statistic):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
         self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
+        self.ells_for_interpolation: Optional[npt.NDArray[np.int64]] = None
+        self.ells_for_window: Optional[npt.NDArray[np.int64]] = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
@@ -321,7 +323,7 @@ class TwoPoint(Statistic):
         ell_or_theta, stat = self.phase_1(
             sacc_data, tracers, common_length, ell_or_theta, stat
         )
-        assert len(ell_or_theta) == len(stat)
+        self.set_window_function(sacc_data)
         return ell_or_theta, stat
 
     def phase_1(
@@ -360,18 +362,20 @@ class TwoPoint(Statistic):
                 self.sacc_indices = self.sacc_indices[locations]
         return ell_or_theta, stat
 
-    def set_window_function(
-        self, ell_or_theta: npt.NDArray[np.float64], sacc_data: sacc.Sacc
-    ) -> npt.NDArray[np.float64]:
+    def set_window_function(self, sacc_data: sacc.Sacc) -> None:
         """Set the window function for this statistic."""
         assert self.sacc_indices is not None
+        assert self.theory_window_function is None
+        # If the SACC data does not contain a window function, get_bandpower_windows
+        # will return None.
         self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
-        if self.theory_window_function is not None:
-            ell_or_theta = self.calculate_ell_or_theta()
-            # Normalise the weights to 1:
-            norm = self.theory_window_function.weight.sum(axis=0)
-            self.theory_window_function.weight /= norm
-        return ell_or_theta
+        if self.theory_window_function is None:
+            return
+        self.ells_for_interpolation = self.calculate_ell_or_theta()
+        self.ells_for_window = self.theory_window_function.values
+        # Normalise the weights to 1:
+        norm = self.theory_window_function.weight.sum(axis=0)
+        self.theory_window_function.weight /= norm
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
