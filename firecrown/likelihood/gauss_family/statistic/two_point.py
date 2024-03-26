@@ -113,8 +113,10 @@ class TracerNames:
         raise IndexError
 
     def __iter__(self):
-        """Iterate through the data members. This is to allow automatic
-        unpacking."""
+        """Iterate through the data members.
+
+        This is to allow automatic unpacking.
+        """
         yield self.name1
         yield self.name2
 
@@ -125,8 +127,9 @@ TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 def read_ell_or_theta_and_stat(
     ccl_kind: str, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Read either ell_cl or theta_xi data from sacc_data, and
-    return that and associated stat data.
+    """Read and return either ell_cl or theta_xi data and stat.
+
+    These are read from the supplied sacc_data.
     """
     method = sacc_data.get_ell_cl if ccl_kind == "cl" else sacc_data.get_theta_xi
     ell_or_theta, stat = method(sacc_data_type, *tracers, return_cov=False)
