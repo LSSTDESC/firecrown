@@ -1,4 +1,4 @@
-"""CosmoSIS Likelihood Connector
+"""CosmoSIS Likelihood Connector.
 
 This module provides the class FirecrownLikelihood, and the hook functions
 for this module to be a CosmoSIS likelihood module.
@@ -22,8 +22,7 @@ from firecrown.updatable import MissingSamplerParameterError
 
 
 def extract_section(sample: cosmosis.datablock, section: str) -> NamedParameters:
-    """Extract the all the parameters from the name datablock section into a
-    dictionary."""
+    """Extract all the parameters from the name datablock section into a dictionary."""
     if not sample.has_section(section):
         raise RuntimeError(f"Datablock section `{section}' does not exist.")
     sec_dict = {name: sample[section, name] for _, name in sample.keys(section=section)}
@@ -183,9 +182,11 @@ class FirecrownLikelihood:
         return 0
 
     def form_error_message(self, exc: MissingSamplerParameterError) -> str:
-        """Form the error message that will be used to report a missing
-        parameter, when that parameter should have been supplied by the
-        sampler."""
+        """Form the error message that will be used to report a missing parameter.
+
+        This error message will also include when that parameter should have been
+        supplied by the sampler.
+        """
         msg = (
             "A required parameter was not found in any of the "
             "sections searched on DataBlock.\n"
@@ -203,7 +204,6 @@ class FirecrownLikelihood:
 
     def calculate_firecrown_params(self, sample: cosmosis.datablock) -> ParamsMap:
         """Calculate the ParamsMap for this sample."""
-
         firecrown_params = ParamsMap()
         for section in self.sampling_sections:
             section_params = extract_section(sample, section)
@@ -222,16 +222,21 @@ class FirecrownLikelihood:
 
 
 def setup(config: cosmosis.datablock) -> FirecrownLikelihood:
-    """Setup hook for a CosmoSIS module. Returns an instance of
+    """Setup hook for a CosmoSIS module.
+
+    Returns an instance of
     class FirecrownLikelihood. The same object will be passed to the CosmoSIS
-    execute hook."""
+    execute hook.
+    """
     return FirecrownLikelihood(config)
 
 
 def execute(sample: cosmosis.datablock, instance: FirecrownLikelihood) -> int:
-    """Execute hook for a CosmoSIS module. Return 0 on success. The parameter
-    `sample` represents the current MCMC sample; `instance` is the
-    FirecrownLikelihood object created by `setup`."""
+    """Execute hook for a CosmoSIS module.
+
+    Return 0 on success. The parameter `sample` represents the current MCMC sample;
+    `instance` is the FirecrownLikelihood object created by `setup`.
+    """
     return instance.execute(sample)
 
 

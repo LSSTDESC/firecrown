@@ -63,9 +63,7 @@ class Mapping(ABC):
         self.m_nu: Optional[Union[float, list[float]]] = None
 
     def get_params_names(self) -> list[str]:
-        """Return the names of the cosmological parameters that this
-        mapping is expected to deliver.
-        """
+        """Return the names of the expected cosmological parameters for this mapping."""
         warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
@@ -87,7 +85,7 @@ class Mapping(ABC):
         )
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given :math:`p_k h^3 \\to p_k`."""
+        r"""Transform the given :math:`p_k h^3 \to p_k`."""
         assert p_k_h3 is not None  # use assertion to silence pylint warning
         warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
@@ -126,12 +124,11 @@ class Mapping(ABC):
         wa: float,
         T_CMB: float,
     ):
-        """Sets the cosmological constants suitable for use in constructing a
-        pyccl.core.CosmologyCalculator. See the documentation of that class
-        for an explanation of the choices and meanings of default values
-        of None.
-        """
+        """Sets the cosmological constants suitable a pyccl.core.CosmologyCalculator.
 
+        See the documentation of that class for an explanation of the choices and
+        meanings of default values of None.
+        """
         # Typecheck is done automatically using the descriptors and is done to
         # avoid void very confusing error messages at a later time in case of
         # error.
@@ -160,18 +157,22 @@ class Mapping(ABC):
 
     @staticmethod
     def redshift_to_scale_factor(z):
-        """Given arrays of redshift returns an array of scale factor with the
-        inverse order."""
+        """Converts redshift to scale factor.
 
+        Given arrays of redshift returns an array of scale factor with the
+        inverse order.
+        """
         scale = np.flip(1.0 / (1.0 + z))
         return scale
 
     @staticmethod
     def redshift_to_scale_factor_p_k(p_k):
-        """Given an 2d arrays power spectrum ordered by (redshift, mode)
-        return a 2d array with the rows flipped to match the reorderning
-        from redshift to scale factor."""
+        """Converts power spectrum from redshift to scale factor.
 
+        Given an 2d arrays power spectrum ordered by (redshift, mode)
+        return a 2d array with the rows flipped to match the reorderning
+        from redshift to scale factor.
+        """
         p_k_out = np.flipud(p_k)
         return p_k_out
 
@@ -211,6 +212,7 @@ class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
 
     def get_params_names(self):
+        """Return the names of the expected cosmological parameters for this mapping."""
         return [
             "h0",
             "omega_b",
@@ -225,18 +227,24 @@ class MappingCosmoSIS(Mapping):
         ]
 
     def transform_k_h_to_k(self, k_h):
+        """Transform the given k_h (k over h) to k."""
         return k_h * self.h
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
+        r"""Transform the given :math:`p_k h^3 \to p_k`."""
         return p_k_h3 / (self.h**3)
 
     def transform_h_to_h_over_h0(self, h):
+        """Transform distances h to :math:`h/h_0`."""
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
         return np.flip(h) * hubble_radius_today
 
     def set_params_from_cosmosis(self, cosmosis_params: NamedParameters):
-        """Return a PyCCLCosmologyConstants object with parameters equivalent to
-        those read from CosmoSIS when using CAMB."""
+        """Return a PyCCLCosmologyConstants object.
+
+        This object has parameters equivalent to those read from CosmoSIS when using
+        CAMB.
+        """
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
 
@@ -354,9 +362,7 @@ class MappingCAMB(Mapping):
     """
 
     def get_params_names(self) -> list[str]:
-        """
-        Return the list of parameters handled by this mapping.
-        """
+        """Return the list of parameters handled by this mapping."""
         return [
             "H0",
             "ombh2",
@@ -372,8 +378,10 @@ class MappingCAMB(Mapping):
         ]
 
     def set_params_from_camb(self, **params_values):
-        """Read the CAMB-style parameters from params_values, translate them to
-        our conventions, and store them."""
+        """Read the CAMB-style parameters from params_values.
+
+        Then, translate them to our conventions, and store them.
+        """
         # pylint: disable-msg=R0914
 
         # CAMB can use different parameters in place of H0, we must deal with this
@@ -430,9 +438,10 @@ mapping_classes: typing.Mapping[str, Type[Mapping]] = {
 
 
 def mapping_builder(*, input_style: str, **kwargs):
-    """Return the Mapping class for the given input_style. If input_style is not
-    recognized raise an exception."""
+    """Return the Mapping class for the given input_style.
 
+    If input_style is not recognized raise an exception.
+    """
     if input_style not in mapping_classes:
         raise ValueError(f"input_style must be {*mapping_classes, }, not {input_style}")
 

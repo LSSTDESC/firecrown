@@ -69,9 +69,10 @@ from ..modeling_tools import ModelingTools
 
 
 class Likelihood(Updatable):
-    """Likelihood is an abstract class. Concrete subclasses represent specific
-    likelihood forms (e.g. gaussian with constant covariance matrix, or Student's t,
-    etc.).
+    """Likelihood is an abstract class.
+
+    Concrete subclasses represent specific likelihood forms (e.g. gaussian with
+    constant covariance matrix, or Student's t, etc.).
 
     Concrete subclasses must have an implementation of both *read* and
     *compute_loglike*. Note that abstract subclasses of Likelihood might implement
@@ -87,8 +88,10 @@ class Likelihood(Updatable):
         """Read the covariance matrix for this likelihood from the SACC file."""
 
     def make_realization_vector(self) -> npt.NDArray[np.float64]:
-        """Create a new realization of the model using the previously computed
-        theory vector and covariance matrix.
+        """Create a new realization of the model.
+
+        This new realization uses the previously computed theory vector and covariance
+        matrix.
         """
         raise NotImplementedError(
             "This class does not implement make_realization_vector."
@@ -97,8 +100,10 @@ class Likelihood(Updatable):
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
-        """Create a new realization of the model using the previously computed
-        theory vector and covariance matrix.
+        """Create a new realization of the model.
+
+        This realization uses the previously computed theory vector and covariance
+        matrix.
 
         :param sacc_data: The SACC data object containing the covariance matrix
         :param add_noise: If True, add noise to the realization. If False, return
@@ -224,7 +229,6 @@ class NamedParameters:
         ],
     ) -> None:
         """Set the contained data from a dictionary of basic types."""
-
         for key, value in basic_dict.items():
             if isinstance(value, (str, float, int, bool)):
                 self.data = dict(self.data, **{key: value})
@@ -276,7 +280,9 @@ class NamedParameters:
 def load_likelihood_from_module_type(
     module: types.ModuleType, build_parameters: NamedParameters
 ) -> tuple[Likelihood, ModelingTools]:
-    """Loads a likelihood and returns a tuple of the likelihood and
+    """Loads a likelihood from a module type.
+
+    After loading, this method returns a tuple of the likelihood and
     the modeling tools.
 
     This function is used by both :meth:`load_likelihood_from_script` and
@@ -287,7 +293,6 @@ def load_likelihood_from_module_type(
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
     """
-
     if not hasattr(module, "build_likelihood"):
         if not hasattr(module, "likelihood"):
             raise AttributeError(
@@ -335,7 +340,9 @@ def load_likelihood_from_module_type(
 def load_likelihood_from_script(
     filename: str, build_parameters: NamedParameters
 ) -> tuple[Likelihood, ModelingTools]:
-    """Loads a likelihood script and returns a tuple of the likelihood and
+    """Loads a likelihood script.
+
+    After loading, this method returns a tuple of the likelihood and
     the modeling tools.
 
     :param filename: script filename
@@ -381,14 +388,15 @@ def load_likelihood_from_script(
 def load_likelihood_from_module(
     module: str, build_parameters: NamedParameters
 ) -> tuple[Likelihood, ModelingTools]:
-    """Loads a likelihood and returns a tuple of the likelihood and
+    """Loads a likelihood from a module.
+
+    After loading, this method returns a tuple of the likelihood and
     the modeling tools.
 
     :param module: module name
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
     """
-
     try:
         mod = importlib.import_module(module)
     except ImportError as exc:
@@ -402,14 +410,15 @@ def load_likelihood_from_module(
 def load_likelihood(
     likelihood_name: str, build_parameters: NamedParameters
 ) -> tuple[Likelihood, ModelingTools]:
-    """Loads a likelihood and returns a tuple of the likelihood and
+    """Loads a likelihood from the provided likelihood_name.
+
+    After loading, this method returns a tuple of the likelihood and
     the modeling tools.
 
     :param likelihood_name: script filename or module name
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
     """
-
     try:
         return load_likelihood_from_script(likelihood_name, build_parameters)
     except ValueError:

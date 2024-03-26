@@ -1,5 +1,4 @@
-"""Two point statistic support.
-"""
+"""Two point statistic support."""
 
 from __future__ import annotations
 from typing import Optional, Union
@@ -40,13 +39,13 @@ ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 60_000, "n_log":
 def _ell_for_xi(
     *, minimum: int, midpoint: int, maximum: int, n_log: int
 ) -> npt.NDArray[np.float64]:
-    """Build an array of ells to sample the power spectrum for real-space
-    predictions.
+    """Create an array of ells to sample the power spectrum.
 
-    The result will contain each integral value from min to mid.
-    Starting from mid, and going up to max, there will be n_log
-    logarithmically spaced values. All values are rounded to the nearest
-    integer.
+    This is used for for real-space predictions. The result will contain
+    each integral value from min to mid. Starting from mid, and going up
+    to max, there will be n_log logarithmically spaced values.
+
+    All values are rounded to the nearest integer.
     """
     assert minimum >= 0
     assert minimum < midpoint
@@ -97,8 +96,9 @@ def make_log_interpolator(x, y):
 
 
 class TwoPoint(Statistic):
-    """A two-point statistic (e.g., shear correlation function, galaxy-shear
-    correlation function, etc.).
+    """A two-point statistic.
+
+    For example, shear correlation function, galaxy-shear correlation function, etc.
 
     Parameters
     ----------
@@ -232,7 +232,6 @@ class TwoPoint(Statistic):
 
         :param sacc_data: The data in the sacc format.
         """
-
         self.source0.read(sacc_data)
         if self.source0 is not self.source1:
             self.source1.read(sacc_data)
@@ -331,7 +330,6 @@ class TwoPoint(Statistic):
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic from sources."""
-
         assert self._ell_or_theta is not None
         self.ell_or_theta_ = self._ell_or_theta.copy()
 

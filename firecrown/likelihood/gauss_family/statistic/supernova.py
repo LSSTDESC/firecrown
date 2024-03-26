@@ -1,5 +1,4 @@
-"""Supernova statistic support
-"""
+"""Supernova statistic support."""
 
 from __future__ import annotations
 from typing import Optional
@@ -17,8 +16,11 @@ from .... import parameters
 
 
 class Supernova(Statistic):
-    """A statistic that applies an additive shift M to a supernova's distance
-    modulus."""
+    """A supernova statistic.
+
+    This statistic that applies an additive shift M to a supernova's distance
+    modulus.
+    """
 
     def __init__(self, sacc_tracer: str) -> None:
         """Initialize this statistic."""
@@ -31,7 +33,6 @@ class Supernova(Statistic):
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
-
         # We do not actually need the tracer, but we want to make sure the SACC
         # data contains this tracer.
         # TODO: remove the work-around when the new version of SACC supporting
@@ -64,7 +65,6 @@ class Supernova(Statistic):
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute SNIa distance statistic using CCL."""
-
         ccl_cosmo = tools.get_ccl_cosmology()
         prediction = self.M + pyccl.distance_modulus(ccl_cosmo, self.a)
         return TheoryVector.create(prediction)

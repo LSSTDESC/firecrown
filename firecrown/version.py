@@ -1,5 +1,5 @@
-"""Version data for Firecrown.
-
+"""
+Version data for Firecrown.
 
 The versioning of Firecrown is intended to follow *Semantic Versioning*,
 version 2.
