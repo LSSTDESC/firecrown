@@ -1,5 +1,4 @@
-"""Define the likelihood factory function for the cosmic shear example.
-"""
+"""Define the likelihood factory function for the cosmic shear example."""
 
 import os
 

@@ -117,7 +117,7 @@ def test_sacc_bin_different_dimensions_not_equal():
 
 def test_sacc_bin_must_be_equal_type():
     other_bin = Mock(spec=NDimensionalBin)
-    
+
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     sb = SaccBin([tracer_z, tracer_lambda])

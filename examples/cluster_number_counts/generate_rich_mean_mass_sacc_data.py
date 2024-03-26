@@ -25,7 +25,6 @@ import sacc
 
 def generate_sacc_file() -> Any:
     """Generate a SACC file for cluster number counts."""
-
     H0 = 71.0
     Ob0 = 0.0448
     Odm0 = 0.22

@@ -1,4 +1,4 @@
-""" Generate the firecrown input from the DES Y1 3x2pt data products.
+"""Generate the firecrown input from the DES Y1 3x2pt data products.
 
 Before running this script, you must first download the DES Y1 3x2pt data
 products from:

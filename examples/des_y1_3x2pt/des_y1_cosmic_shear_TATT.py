@@ -94,7 +94,6 @@ def define_sources(n_source):
 # We can also run the likelihood directly
 def run_likelihood() -> None:
     """Run the likelihood."""
-
     likelihood, tools = build_likelihood(None)
 
     # Load sacc file

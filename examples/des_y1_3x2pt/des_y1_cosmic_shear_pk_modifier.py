@@ -1,5 +1,7 @@
-"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data with a
-modified matter power spectrum"""
+"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data.
+
+This example also includes a modified matter power spectrum.
+"""
 
 import os
 
@@ -23,8 +25,10 @@ SACCFILE = os.path.expanduser(
 
 
 class vanDaalen19Baryonfication(PowerspectrumModifier):
-    """A PowerspectrumModifier class that implements the van Daalen et al. 2019
-    baryon model."""
+    """A PowerspectrumModifier class.
+
+    This clas implements the van Daalen et al. 2019 baryon model.
+    """
 
     name: str = "delta_matter_baryons:delta_matter_baryons"
 
@@ -35,6 +39,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
         self.f_bar = create()
 
     def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
+        """Compute the 3D power spectrum P(k, z)."""
         self.vD19.update_parameters(fbar=self.f_bar)
         return self.vD19.include_baryonic_effects(
             cosmo=tools.get_ccl_cosmology(), pk=tools.get_pk(self.pk_to_modify)
@@ -110,7 +115,6 @@ def define_sources(n_source):
 # We can also run the likelihood directly
 def run_likelihood() -> None:
     """Run the likelihood."""
-
     likelihood, tools = build_likelihood(None)
 
     # Load sacc file
