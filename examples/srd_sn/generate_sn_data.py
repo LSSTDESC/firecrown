@@ -1,5 +1,4 @@
-"""Generate SACC data into file srd-y1-converted.sacc.
-"""
+"""Generate SACC data into file srd-y1-converted.sacc."""
 
 import os
 import tarfile
@@ -14,10 +13,9 @@ import sacc
 
 
 def conversion(hdg):
-    """
-    CODE TO CONVERT THE NEW DESC HUBBLE DIAGRAM FILE STRUCTURE
-    SIMILAR TO COSMOMC STYLED INPUT HUBBLE DIAGRAM
-    FILE STRUCTURE
+    """Code to convert the new DESC Hubble diagram file structure.
+
+    This is similar to cosmomc styled input hubble diagram file structure.
     """
     col = [
         "#name",
@@ -61,8 +59,9 @@ def conversion(hdg):
 
 
 def read_hubble_data(args):
-    """Read the Hubble and covariance data, either from specified files or
-    from the default files.
+    """Read the Hubble and covariance data.
+
+    This is read either from specified files or from the default files.
     """
     if len(args) == 4:
         path = args[1]
@@ -115,8 +114,7 @@ def read_hubble_data(args):
 
 
 def ensure_local_data_files(dirname_year10, url):
-    """Ensure we have the required local data files, downloading them if
-    needed."""
+    """Ensure we have the required local data files, downloading them if needed."""
     if os.path.exists(dirname_year10):
         print("Y10 directory already downloaded")
     else:

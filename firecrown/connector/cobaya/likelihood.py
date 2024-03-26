@@ -1,4 +1,4 @@
-"""Cobaya Likelihood Connector
+"""Cobaya Likelihood Connector.
 
 Module for providing a likelihood for use in Cobaya.
 
@@ -25,8 +25,7 @@ class LikelihoodConnector(Likelihood):
     build_parameters: NamedParameters
 
     def initialize(self):
-        """Initialize the likelihood object by loading its Firecrown
-        configuration."""
+        """Initialize the likelihood object by loading its Firecrown configuration."""
         if not hasattr(self, "build_parameters"):
             build_parameters = NamedParameters()
         else:
@@ -54,7 +53,6 @@ class LikelihoodConnector(Likelihood):
 
         Sets instance's provided to the given provider.
         """
-
         self.provider = provider
 
     def get_can_provide_params(self) -> list[str]:

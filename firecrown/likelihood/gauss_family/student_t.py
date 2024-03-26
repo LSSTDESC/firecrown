@@ -1,6 +1,4 @@
-"""The Student-t likelihood.
-
-"""
+"""The Student-t likelihood."""
 
 from __future__ import annotations
 from typing import Optional
@@ -14,7 +12,7 @@ from ... import parameters
 
 
 class StudentT(GaussFamily):
-    """A T-distribution for the log-likelihood.
+    r"""A T-distribution for the log-likelihood.
 
     This distribution is appropriate when the covariance has been obtained
     from a finite number of simulations. See Sellentin & Heavens
@@ -22,7 +20,7 @@ class StudentT(GaussFamily):
     T-distribution approaches a Gaussian.
 
     :param statistics: list of statistics to build the theory and data vectors
-    :param nu: The Student-t $\\nu$ parameter
+    :param nu: The Student-t $\nu$ parameter
     """
 
     def __init__(
@@ -38,6 +36,5 @@ class StudentT(GaussFamily):
 
         :param cosmo: Current Cosmology object
         """
-
         chi2 = self.compute_chisq(tools)
         return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))

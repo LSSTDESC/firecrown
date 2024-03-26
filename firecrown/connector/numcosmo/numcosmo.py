@@ -2,7 +2,6 @@
 
 The subpackages and modules in this package depend upon NumCosmo, and can not
 be used without an installation of NumCosmo.
-
 """
 
 from typing import Union, Any, Optional
@@ -21,9 +20,12 @@ from firecrown.modeling_tools import ModelingTools
 
 
 class MappingNumCosmo(GObject.Object):
-    """Mapping support for NumCosmo, this is a subclass of :class:`Mapping` that
-    provides a mapping from a NumCosmo Cosmological model to a CCL cosmology.
-    It also converts NumCosmo models to :class:`ParamsMap` objects."""
+    """Mapping support for NumCosmo.
+
+    This is a subclass of :class:`Mapping` that provides a mapping from a NumCosmo
+    Cosmological model to a CCL cosmology. It also converts NumCosmo models to
+    :class:`ParamsMap` objects.
+    """
 
     __gtype_name__ = "FirecrownMappingNumCosmo"
 
@@ -131,9 +133,10 @@ class MappingNumCosmo(GObject.Object):
     def set_params_from_numcosmo(
         self, mset: Ncm.MSet
     ):  # pylint: disable-msg=too-many-locals
-        """Return a PyCCLCosmologyConstants object with parameters equivalent to
-        those read from NumCosmo."""
+        """Return a PyCCLCosmologyConstants object.
 
+        This object will have parameters equivalent to those read from NumCosmo.
+        """
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
@@ -271,7 +274,6 @@ class MappingNumCosmo(GObject.Object):
 
     def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
         """Create a ParamsMap from a NumCosmo MSet."""
-
         params_map = ParamsMap()
         for model_ns in model_list:
             mid = mset.get_id_by_ns(model_ns)
@@ -299,9 +301,11 @@ class MappingNumCosmo(GObject.Object):
 
 
 class NumCosmoData(Ncm.Data):
-    """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix `do_`. This class implements
-    a general likelihood."""
+    """NumCosmoData is a subclass of Ncm.Data.
+
+    This subclass also implements NumCosmo likelihood object virtual methods using
+    the prefix `do_`. This class implements a general likelihood.
+    """
 
     __gtype_name__ = "FirecrownNumCosmoData"
 
@@ -367,7 +371,6 @@ class NumCosmoData(Ncm.Data):
 
     def _set_likelihood_source(self, value: Optional[str]):
         """Set the likelihood string defining the factory function."""
-
         if value is not None:
             self._likelihood_source = value
             if self._starting_deserialization:
@@ -422,9 +425,10 @@ class NumCosmoData(Ncm.Data):
         likelihood_source: Optional[str] = None,
         likelihood_build_parameters: Optional[NamedParameters] = None,
     ):
-        """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
-        with a constant covariance."""
+        """Initialize a NumCosmoGaussCov object.
 
+        This object represents a Gaussian likelihood with a constant covariance.
+        """
         nc_data: NumCosmoData = GObject.new(
             cls,
             model_list=model_list,
@@ -441,20 +445,16 @@ class NumCosmoData(Ncm.Data):
         return nc_data
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual Ncm.Data method get_length.
-        """
+        """Implements the virtual Ncm.Data method get_length."""
         return self.len
 
     def do_get_dof(self):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual Ncm.Data method get_dof.
-        """
+        """Implements the virtual Ncm.Data method get_dof."""
         return self.dof
 
     def do_begin(self):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual Ncm.Data method `begin`.
+        """Implements the virtual Ncm.Data method `begin`.
+
         This method usually do some groundwork in the data
         before the actual calculations. For example, if the likelihood
         involves the decomposition of a constant matrix, it can be done
@@ -462,8 +462,8 @@ class NumCosmoData(Ncm.Data):
         """
 
     def do_prepare(self, mset: Ncm.MSet):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual method Ncm.Data `prepare`.
+        """Implements the virtual method Ncm.Data `prepare`.
+
         This method should do all the necessary calculations using mset
         to be able to calculate the likelihood afterwards.
         """
@@ -483,8 +483,8 @@ class NumCosmoData(Ncm.Data):
         self.tools.prepare(self.ccl_cosmo)
 
     def do_m2lnL_val(self, _):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual method `m2lnL`.
+        """Implements the virtual method `m2lnL`.
+
         This method should calculate the value of the likelihood for
         the model set `mset`.
         """
@@ -493,17 +493,20 @@ class NumCosmoData(Ncm.Data):
 
 
 class NumCosmoGaussCov(Ncm.DataGaussCov):
-    """NumCosmoData is a subclass of Ncm.Data and implements NumCosmo likelihood
-    object virtual methods using the prefix `do_`. This class implements
-    a Gaussian likelihood."""
+    """NumCosmoGaussCov is a subclass of Ncm.DataGaussCov.
+
+    This subclass implements NumCosmo likelihood object virtual methods using the
+    prefix `do_`. This class implements a Gaussian likelihood.
+    """
 
     __gtype_name__ = "FirecrownNumCosmoGaussCov"
 
     def __init__(self):
-        """Initialize a NumCosmoGaussCov object. This class is a subclass of
-        Ncm.DataGaussCov and implements NumCosmo likelihood object virtual
-        methods using the prefix `do_`. This class implements a Gaussian
-        likelihood.
+        """Initialize a NumCosmoGaussCov object.
+
+        This class is a subclass of Ncm.DataGaussCov and implements NumCosmo
+        likelihood object virtual methods using the prefix `do_`. This class
+        implements a Gaussian likelihood.
 
         Due to the way GObject works, the constructor must have a `**kwargs`
         argument, and the properties must be set after construction.
@@ -597,7 +600,6 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
     def _set_likelihood_source(self, value: Optional[str]):
         """Set the likelihood string defining the factory function."""
-
         if value is not None:
             self._likelihood_source = value
             if self._starting_deserialization:
@@ -651,9 +653,10 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         likelihood_source: Optional[str] = None,
         likelihood_build_parameters: Optional[NamedParameters] = None,
     ):
-        """Initialize a NumCosmoGaussCov object representing a Gaussian likelihood
-        with a constant covariance."""
+        """Initialize a NumCosmoGaussCov object.
 
+        This object represents a Gaussian likelihood with a constant covariance.
+        """
         cov = likelihood.get_cov()
         nrows, ncols = cov.shape
         assert nrows == ncols
@@ -679,29 +682,25 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         return nc_gauss_cov
 
     def do_get_length(self):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual `Ncm.Data` method `get_length`.
-        """
+        """Implements the virtual `Ncm.Data` method `get_length`."""
         return self.len
 
     def do_get_dof(self):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual `Ncm.Data` method `get_dof`.
-        """
+        """Implements the virtual `Ncm.Data` method `get_dof`."""
         return self.dof
 
     def do_begin(self):  # pylint: disable-msg=arguments-differ
-        """
-        # Implements the virtual `Ncm.Data` method `begin`.
-        # This method usually do some groundwork in the data
-        # before the actual calculations. For example, if the likelihood
-        # involves the decomposition of a constant matrix, it can be done
-        # during `begin` once and then used afterwards.
+        """Implements the virtual `Ncm.Data` method `begin`.
+
+        This method usually do some groundwork in the data
+        before the actual calculations. For example, if the likelihood
+        involves the decomposition of a constant matrix, it can be done
+        during `begin` once and then used afterwards.
         """
 
     def do_prepare(self, mset: Ncm.MSet):  # pylint: disable-msg=arguments-differ
-        """
-        Implements the virtual method Ncm.Data `prepare`.
+        """Implements the virtual method Ncm.Data `prepare`.
+
         This method should do all the necessary calculations using mset
         to be able to calculate the likelihood afterwards.
         """
@@ -723,8 +722,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
     # pylint: disable-next=arguments-differ
     def do_mean_func(self, _, mean_vector):
-        """
-        Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
+        """Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
+
         This method should compute the theoretical mean for the gaussian
         distribution.
         """
@@ -742,8 +741,11 @@ GObject.type_register(NumCosmoGaussCov)
 
 
 class NumCosmoFactory:
-    """NumCosmo likelihood class. This class provide the necessary factory methods
-    to create NumCosmo+firecrown likelihoods."""
+    """NumCosmo likelihood class.
+
+    This class provide the necessary factory methods
+    to create NumCosmo+firecrown likelihoods.
+    """
 
     def __init__(
         self,

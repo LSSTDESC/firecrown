@@ -1,4 +1,4 @@
-"""Module for defining the ClusterRecipe class"""
+"""Module for defining the ClusterRecipe class."""
 
 from abc import ABC, abstractmethod
 from typing import Optional
@@ -13,7 +13,8 @@ class ClusterRecipe(Updatable, ABC):
     """Abstract class defining a cluster recipe.
 
     A cluster recipe is a combination of different cluster theoretrical predictions
-    and models that produces a single prediction for an observable."""
+    and models that produces a single prediction for an observable.
+    """
 
     def __init__(self, parameter_prefix: Optional[str] = None) -> None:
         super().__init__(parameter_prefix)
@@ -27,4 +28,4 @@ class ClusterRecipe(Updatable, ABC):
         sky_area: float,
         average_on: Optional[ClusterProperty] = None,
     ) -> float:
-        """Evaluate the theory prediction for this cluster recipe"""
+        """Evaluate the theory prediction for this cluster recipe."""

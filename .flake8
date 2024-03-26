@@ -1,8 +1,0 @@
-[flake8]
-max-line-length = 88
-per-file-ignores =
-    examples/srd_sn/generate_sn_data.py:E501
-...
-select = C,E,F,W,B,B950
-extend-ignore = E203, E501
-

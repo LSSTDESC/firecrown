@@ -1,5 +1,4 @@
-"""Some utility functions for patterns common in Firecrown.
-"""
+"""Some utility functions for patterns common in Firecrown."""
 
 from __future__ import annotations
 
@@ -10,7 +9,9 @@ import sacc
 
 
 def upper_triangle_indices(n: int):
-    """generator that yields a sequence of tuples that carry the indices for an
+    """Returns the upper triangular indices for an (n x n) matrix.
+
+    generator that yields a sequence of tuples that carry the indices for an
     (n x n) upper-triangular matrix. This is a replacement for the nested loops:
 
     for i in range(n):
@@ -51,7 +52,6 @@ def save_to_sacc(
     new_sacc: sacc.Sacc
         A copy of `sacc_data`, with data at `indices` replaced with `data_vector`.
     """
-
     assert len(indices) == len(data_vector)
 
     new_sacc = sacc_data.copy()

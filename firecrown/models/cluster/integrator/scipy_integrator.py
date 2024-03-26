@@ -1,4 +1,4 @@
-"""The SciPy integrator module
+"""The SciPy integrator module.
 
 This module holds the scipy implementation of the integrator classes
 """
@@ -28,6 +28,7 @@ class ScipyIntegrator(Integrator):
             [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
         ],
     ) -> float:
+        """Integrate the provided integrand argument with SciPy."""
         val = nquad(
             func_to_integrate,
             ranges=self.integral_bounds,

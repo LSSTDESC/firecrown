@@ -1,11 +1,7 @@
-"""
-
-Gaussian Family Statistic Module
-================================
+"""Gaussian Family Statistic Module.
 
 The Statistic class describing objects that implement methods to compute the
 data and theory vectors for a :class:`GaussFamily` subclass.
-
 """
 
 from __future__ import annotations
@@ -39,8 +35,7 @@ class DataVector(npt.NDArray[np.float64]):
 
 
 class TheoryVector(npt.NDArray[np.float64]):
-    """This class wraps a np.ndarray that represents an observation predicted by
-    some theory."""
+    """This class represents an observation predicted by some theory."""
 
     @classmethod
     def create(cls, vals: npt.NDArray[np.float64]) -> TheoryVector:
@@ -56,7 +51,9 @@ class TheoryVector(npt.NDArray[np.float64]):
 
 def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]:
     """Return a bare np.ndarray with the difference between `data` and `theory`.
-    This is to be preferred to using arithmetic on the vectors directly."""
+
+    This is to be preferred to using arithmetic on the vectors directly.
+    """
     assert isinstance(data, DataVector)
     assert isinstance(theory, TheoryVector)
     return (data - theory).view(np.ndarray)
@@ -78,11 +75,14 @@ class StatisticsResult:
         return self.data - self.theory
 
     def __iter__(self):
-        """Iterate through the data members. This is to allow automatic unpacking, as
-        if the StatisticsResult were a tuple of (data, theory).
+        """Iterate through the data members.
+
+        This is to allow automatic unpacking, as if the StatisticsResult were a tuple
+        of (data, theory).
 
         This method is a temporary measure to help code migrate to the newer,
-        safer interface for Statistic.compute()."""
+        safer interface for Statistic.compute().
+        """
         warnings.warn(
             "Iteration and tuple unpacking for StatisticsResult is "
             "deprecated.\nPlease use the StatisticsResult class accessors"
@@ -93,8 +93,11 @@ class StatisticsResult:
 
 
 class StatisticUnreadError(RuntimeError):
-    """Run-time error indicating an attempt has been made to use a statistic
-    that has not had `read` called in it."""
+    """Error raised when accessing an un-read statistic.
+
+    Run-time error indicating an attempt has been made to use a statistic
+    that has not had `read` called in it.
+    """
 
     def __init__(self, stat: Statistic):
         msg = (
@@ -124,9 +127,10 @@ class Statistic(Updatable):
         self.theory_vector: Optional[TheoryVector] = None
 
     def read(self, _: sacc.Sacc) -> None:
-        """Read the data for this statistic from the SACC data, and mark it
-        as ready for use. Derived classes that override this function
-        should make sure to call the base class method using:
+        """Read the data for this statistic and mark it as ready for use.
+
+        Derived classes that override this function should make sure to call the base
+        class method using:
             super().read(sacc_data)
         as the last thing they do in `__init__`.
 
@@ -141,8 +145,10 @@ class Statistic(Updatable):
             )
 
     def _reset(self):
-        """Reset this statistic, subclasses implementations must call
-        super()._reset()"""
+        """Reset this statistic.
+
+        All subclasses implementations must call super()._reset()
+        """
         self.computed_theory_vector = False
         self.theory_vector = None
 
@@ -167,9 +173,10 @@ class Statistic(Updatable):
         """Compute a statistic from sources, concrete implementation."""
 
     def get_theory_vector(self) -> TheoryVector:
-        """Returns the last computed theory vector. Raises a RuntimeError if the vector
-        has not been computed."""
+        """Returns the last computed theory vector.
 
+        Raises a RuntimeError if the vector has not been computed.
+        """
         if not self.computed_theory_vector:
             raise RuntimeError(
                 f"The theory for statistic {self} has not been computed yet."
@@ -182,20 +189,20 @@ class Statistic(Updatable):
 
 
 class GuardedStatistic(Updatable):
-    """:class:`GuardedStatistic` is used by the framework to maintain and
-    validate the state of instances of classes derived from
-    :class:`Statistic`."""
+    """An internal class used to maintain state on statistics.
+
+    :class:`GuardedStatistic` is used by the framework to maintain and
+    validate the state of instances of classes derived from :class:`Statistic`.
+    """
 
     def __init__(self, stat: Statistic):
-        """Initialize the GuardedStatistic to contain the given
-        :class:`Statistic`."""
+        """Initialize the GuardedStatistic to contain the given :class:`Statistic`."""
         super().__init__()
         assert isinstance(stat, Statistic)
         self.statistic = stat
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read whatever data is needed from the given :class:`sacc.Sacc
-        object.
+        """Read whatever data is needed from the given :class:`sacc.Sacc` object.
 
         After this function is called, the object should be prepared for the
         calling of the methods :meth:`get_data_vector` and
@@ -217,7 +224,8 @@ class GuardedStatistic(Updatable):
         """Return the contained :class:`Statistic`'s data vector.
 
         :class:`GuardedStatistic` ensures that :meth:`read` has been called.
-        first."""
+        first.
+        """
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.get_data_vector()
@@ -226,7 +234,8 @@ class GuardedStatistic(Updatable):
         """Return the contained :class:`Statistic`'s computed theory vector.
 
         :class:`GuardedStatistic` ensures that :meth:`read` has been called.
-        first."""
+        first.
+        """
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
         return self.statistic.compute_theory_vector(tools)
@@ -251,7 +260,6 @@ class TrivialStatistic(Statistic):
 
     def read(self, sacc_data: sacc.Sacc):
         """Read the necessary items from the sacc data."""
-
         our_data = sacc_data.get_mean(data_type="count")
         assert len(our_data) == self.count
         self.data_vector = DataVector.from_list(our_data)

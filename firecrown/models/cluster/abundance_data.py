@@ -1,5 +1,4 @@
-"""The module responsible for extracting cluster data from a sacc file.
-"""
+"""The module responsible for extracting cluster data from a sacc file."""
 
 import numpy as np
 import numpy.typing as npt
@@ -15,7 +14,8 @@ class AbundanceData:
     The sacc file is a complicated set of tracers (bins) and surveys.  This class
     manipulates that data and returns only the data relevant for the cluster
     number count statistic.  The data in this class is specific to a single
-    survey name."""
+    survey name.
+    """
 
     _survey_index = 0
     _redshift_index = 1
@@ -43,12 +43,11 @@ class AbundanceData:
         survey_nm: str,
         properties: ClusterProperty,
     ) -> tuple[list[float], list[int]]:
-        """Will return observed data (and sacc indices) for a specified survey based on
-        the properties requested by the caller.
+        """Returns the observed data for the specified survey and properties.
 
         For example if the caller has enabled COUNTS then the observed cluster counts
-        within each N dimensional bin will be returned."""
-
+        within each N dimensional bin will be returned.
+        """
         data_vectors = []
         sacc_indices = []
 

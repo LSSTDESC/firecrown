@@ -1,7 +1,8 @@
-"""The cluster kernel module
+"""The cluster kernel module.
 
 This module holds the classes that define the kernels that can be included
-in the cluster abundance integrand."""
+in the cluster abundance integrand.
+"""
 
 from enum import Enum
 import numpy.typing as npt
@@ -9,7 +10,7 @@ import numpy as np
 
 
 class KernelType(Enum):
-    """The kernels that can be included in the cluster abundance integrand"""
+    """The kernels that can be included in the cluster abundance integrand."""
 
     MASS = 1
     Z = 2
@@ -19,12 +20,12 @@ class KernelType(Enum):
     PURITY = 6
 
 
-# pylint: disable=too-few-public-methods
 class Completeness:
-    """The completeness kernel for the numcosmo simulated survey
+    """The completeness kernel for the numcosmo simulated survey.
 
     This kernel will affect the integrand by accounting for the incompleteness
-    of a cluster selection."""
+    of a cluster selection.
+    """
 
     def distribution(
         self,
@@ -43,12 +44,12 @@ class Completeness:
         return completeness
 
 
-# pylint: disable=too-few-public-methods
 class Purity:
-    """The purity kernel for the numcosmo simulated survey
+    """The purity kernel for the numcosmo simulated survey.
 
     This kernel will affect the integrand by accounting for the purity
-    of a cluster selection."""
+    of a cluster selection.
+    """
 
     def _ln_rc(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         a_rc = 2.2183
@@ -83,26 +84,30 @@ class Purity:
         return purity
 
 
-# pylint: disable=too-few-public-methods
 class TrueMass:
     """The true mass kernel.
 
-    Assuming we measure the true mass, this will always be 1."""
+    Assuming we measure the true mass, this will always be 1.
+    """
 
     def distribution(self) -> npt.NDArray[np.float64]:
         """Evaluates and returns the mass distribution contribution to the integrand.
-        We have set this to 1.0 (i.e. it does not affect the mass distribution)"""
+
+        We have set this to 1.0 (i.e. it does not affect the mass distribution)
+        """
         return np.atleast_1d(1.0)
 
 
-# pylint: disable=too-few-public-methods
 class SpectroscopicRedshift:
     """The spec-z kernel.
 
     Assuming the spectroscopic redshift has no uncertainties, this is akin to
-    multiplying by 1."""
+    multiplying by 1.
+    """
 
     def distribution(self) -> npt.NDArray[np.float64]:
         """Evaluates and returns the z distribution contribution to the integrand.
-        We have set this to 1.0 (i.e. it does not affect the redshift distribution)"""
+
+        We have set this to 1.0 (i.e. it does not affect the redshift distribution)
+        """
         return np.atleast_1d(1.0)

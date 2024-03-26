@@ -1,4 +1,4 @@
-"""This module holds classes needed to predict the binned cluster number counts
+"""This module holds classes needed to predict the binned cluster number counts.
 
 The binned cluster number counts statistic predicts the number of galaxy
 clusters within a single redshift and mass bin.
@@ -25,7 +25,7 @@ from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
 class BinnedClusterNumberCounts(Statistic):
-    """The Binned Cluster Number Counts statistic
+    """The Binned Cluster Number Counts statistic.
 
     This class will make a prediction for the number of clusters in a z, mass bin
     and compare that prediction to the data provided in the sacc file.
@@ -49,6 +49,7 @@ class BinnedClusterNumberCounts(Statistic):
         self.bins: list[SaccBin] = []
 
     def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the data for this statistic and mark it as ready for use."""
         # Build the data vector and indices needed for the likelihood
         if self.cluster_properties == ClusterProperty.NONE:
             raise ValueError("You must specify at least one cluster property.")
@@ -75,10 +76,12 @@ class BinnedClusterNumberCounts(Statistic):
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
+        """Gets the statistic data vector."""
         assert self.data_vector is not None
         return self.data_vector
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a statistic from sources, concrete implementation."""
         assert tools.cluster_abundance is not None
 
         theory_vector_list: list[float] = []
@@ -107,11 +110,12 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_counts: list[float],
         cluster_properties: ClusterProperty,
     ) -> list[float]:
-        """Computes the mean mass of clusters in each bin
+        """Computes the mean mass of clusters in each bin.
 
         Using the data from the sacc file, this function evaluates the likelihood for
         a single point of the parameter space, and returns the predicted mean mass of
-        the clusters in each bin."""
+        the clusters in each bin.
+        """
         assert tools.cluster_abundance is not None
 
         mean_values = []
@@ -127,11 +131,12 @@ class BinnedClusterNumberCounts(Statistic):
         return mean_values
 
     def get_binned_cluster_counts(self, tools: ModelingTools) -> list[float]:
-        """Computes the number of clusters in each bin
+        """Computes the number of clusters in each bin.
 
         Using the data from the sacc file, this function evaluates the likelihood for
         a single point of the parameter space, and returns the predicted number of
-        clusters in each bin."""
+        clusters in each bin.
+        """
         assert tools.cluster_abundance is not None
 
         cluster_counts = []
