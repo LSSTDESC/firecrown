@@ -26,6 +26,7 @@ dependencies:
     - autoclasstoc
     - cobaya
     - pygobject-stubs
+    - flake8-docstrings
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
