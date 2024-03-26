@@ -1,5 +1,4 @@
-"""Abstract base classes for TwoPoint Statistics sources.
-"""
+"""Abstract base classes for TwoPoint Statistics sources."""
 
 from __future__ import annotations
 from typing import Optional, Sequence, final, TypeVar, Generic
@@ -24,11 +23,11 @@ class SourceSystematic(Updatable):
     """An abstract systematic class (e.g., shear biases, photo-z shifts, etc.).
 
     This class currently has no methods at all, because the argument types for
-    the `apply` method of different subclasses are different."""
+    the `apply` method of different subclasses are different.
+    """
 
     def read(self, sacc_data: sacc.Sacc):
-        """This method is called to allow the systematic object to read from the
-        appropriated sacc data."""
+        """Call to allow this object to read from the appropriate sacc data."""
 
 
 class Source(Updatable):
@@ -67,16 +66,19 @@ class Source(Updatable):
         """Abstract method to read the data for this source from the SACC file."""
 
     def _update_source(self, params: ParamsMap):
-        """Method to update the source from the given ParamsMap. Any subclass
-        that needs to do more than update its contained :class:`Updatable`
-        objects should implement this method."""
+        """Method to update the source from the given ParamsMap.
+
+        Any subclass that needs to do more than update its contained :class:`Updatable`
+        objects should implement this method.
+        """
 
     @final
     def _update(self, params: ParamsMap):
         """Implementation of Updatable interface method `_update`.
 
         This clears the current hash and tracer, and calls the abstract method
-        `_update_source`, which must be implemented in all subclasses."""
+        `_update_source`, which must be implemented in all subclasses.
+        """
         self.cosmo_hash = None
         self.tracers = []
         self._update_source(params)
@@ -87,16 +89,15 @@ class Source(Updatable):
 
     @abstractmethod
     def create_tracers(self, tools: ModelingTools):
-        """Abstract method to create tracers for this `Source`, for the given
-        cosmology."""
+        """Create tracers for this `Source`, for the given cosmology."""
 
     @final
     def get_tracers(self, tools: ModelingTools) -> Sequence[Tracer]:
         """Return the tracer for the given cosmology.
 
         This method caches its result, so if called a second time with the same
-        cosmology, no calculation needs to be done."""
-
+        cosmology, no calculation needs to be done.
+        """
         ccl_cosmo = tools.get_ccl_cosmology()
 
         cur_hash = hash(ccl_cosmo)
@@ -109,12 +110,17 @@ class Source(Updatable):
 
 
 class Tracer:
-    """Bundles together a pyccl.Tracer object with optional information about the
-    underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles."""
+    """Extending the pyccl.Tracer object with additional information.
+
+    Bundles together a pyccl.Tracer object with optional information about the
+    underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles.
+    """
 
     @staticmethod
     def determine_field_name(field: Optional[str], tracer: Optional[str]) -> str:
-        """This function encapsulates the policy for determining the value to be
+        """Gets a field name for a tracer.
+
+        This function encapsulates the policy for determining the value to be
         assigned to the :attr:`field` attribute of a :class:`Tracer`.
 
         It is a static method only to keep it grouped with the class for which it is
@@ -135,8 +141,7 @@ class Tracer:
         halo_profile: Optional[pyccl.halos.HaloProfile] = None,
         halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
     ):
-        """Initialize a new Tracer based on the given pyccl.Tracer which must not be
-        None.
+        """Initialize a new Tracer based on the pyccl.Tracer which must not be None.
 
         Note that the :class:`pyccl.Tracer` is not copied; we store a reference to the
         original tracer. Be careful not to accidentally share :class:`pyccl.Tracer`s.
@@ -225,7 +230,6 @@ class SourceGalaxyPhotoZShift(
 
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift to the photo-z distribution of a source."""
-
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
 
         dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
@@ -240,14 +244,15 @@ class SourceGalaxyPhotoZShift(
 class SourceGalaxySelectField(
     SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
 ):
-    """A systematic that allows specifying the 3D field that will be used
+    """The source galaxy select field systematic.
+
+    A systematic that allows specifying the 3D field that will be used
     to select the 3D power spectrum when computing the angular power
     spectrum.
     """
 
     def __init__(self, field: str = "delta_matter"):
-        """Specify which 3D field should be used when computing angular power
-        spectra.
+        """Specify which 3D field should be used when computing angular power spectra.
 
         :param field: the name of the 3D field that is associated to the tracer.
             Default: `"delta_matter"`
@@ -258,6 +263,7 @@ class SourceGalaxySelectField(
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
     ) -> _SourceGalaxyArgsT:
+        """Apply method to include systematics in the tracer_arg."""
         return replace(tracer_arg, field=self.field)
 
 
@@ -287,9 +293,10 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
     def _read(self, sacc_data: sacc.Sacc):
         """Read the galaxy redshift distribution model from a sacc file.
-        All derived classes must call this method in their own `_read` method
-        after they have read their own data and initialized their tracer_args."""
 
+        All derived classes must call this method in their own `_read` method
+        after they have read their own data and initialized their tracer_args.
+        """
         try:
             tracer_args = self.tracer_args
         except AttributeError as exc:
