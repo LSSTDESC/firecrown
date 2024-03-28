@@ -437,15 +437,14 @@ class NumberCountsFactory:
         per_bin_systematics: list[NumberCountsSystematicFactory],
         global_systematics: list[NumberCountsSystematic],
     ) -> None:
-        self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
-            per_bin_systematics
-        )
+        self.per_bin_systematics: list[
+            NumberCountsSystematicFactory
+        ] = per_bin_systematics
         self.global_systematics: list[NumberCountsSystematic] = global_systematics
         self.cache: dict[InferredGalaxyZDist, NumberCounts] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
-
         if inferred_zdist in self.cache:
             return self.cache[inferred_zdist]
 
