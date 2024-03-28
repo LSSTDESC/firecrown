@@ -19,7 +19,6 @@ from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 # theoretical prediction and are also constructed in the build_likelihood function.
 def build_likelihood(_):
     """Build the DES Y1 3x2pt likelihood."""
-
     # Creates a LAI systematic. This is a systematic that is applied to
     # all weak-lensing probes. The `sacc_tracer` argument is used to identify the
     # section of the SACC file that this systematic will be applied to. In this

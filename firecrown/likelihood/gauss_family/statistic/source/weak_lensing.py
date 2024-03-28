@@ -1,6 +1,4 @@
-"""Weak lensing source and systematics
-
-"""
+"""Weak lensing source and systematics."""
 
 from __future__ import annotations
 from typing import Optional, final
@@ -60,7 +58,7 @@ class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
 
 
 class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
-    """Systematic to select 3D field"""
+    """Systematic to select 3D field."""
 
 
 class MultiplicativeShearBias(WeakLensingSystematic):
@@ -88,15 +86,15 @@ class MultiplicativeShearBias(WeakLensingSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Apply multiplicative shear bias to a source. The `scale_` of the
-        source is multiplied by `(1 + m)`.
+        """Apply multiplicative shear bias to a source.
+
+        The `scale_` of the source is multiplied by `(1 + m)`.
 
         :param tools: A ModelingTools object.
         :param tracer_arg: The WeakLensingArgs to which apply the shear bias.
 
         :returns: A new WeakLensingArgs object with the shear bias applied.
         """
-
         return replace(
             tracer_arg,
             scale=tracer_arg.scale * (1.0 + self.mult_bias),
@@ -120,8 +118,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None, alphag=1.0):
-        """Create a LinearAlignmentSystematic object, using the specified
-        tracer name.
+        """Create a LinearAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
@@ -137,9 +134,11 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Return a new linear alignment systematic, based on the given
-        tracer_arg, in the context of the given cosmology."""
+        """Return a new linear alignment systematic.
 
+        This choice is based on the given tracer_arg, in the context of the given
+        cosmology.
+        """
         ccl_cosmo = tools.get_ccl_cosmology()
 
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
@@ -170,8 +169,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     """
 
     def __init__(self, sacc_tracer: Optional[str] = None):
-        """Create a TattAlignmentSystematic object, using the specified
-        tracer name.
+        """Create a TattAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
@@ -184,9 +182,11 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Return a new linear alignment systematic, based on the given
-        tracer_arg, in the context of the given cosmology."""
+        """Return a new linear alignment systematic.
 
+        This choice is based on the given tracer_arg, in the context of the given
+        cosmology.
+        """
         ccl_cosmo = tools.get_ccl_cosmology()
         z = tracer_arg.z
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
@@ -252,7 +252,8 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     def _update_source(self, params: ParamsMap):
         """Implementation of Source interface `_update_source`.
 
-        This updates all the contained systematics."""
+        This updates all the contained systematics.
+        """
         self.systematics.update(params)
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
@@ -268,11 +269,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         super()._read(sacc_data)
 
     def create_tracers(self, tools: ModelingTools):
-        """
-        Render a source by applying systematics.
-
-        """
-
+        """Render a source by applying systematics."""
         ccl_cosmo = tools.get_ccl_cosmology()
         tracer_args = self.tracer_args
 
@@ -311,6 +308,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         return tracers, tracer_args
 
     def get_scale(self):
+        """Returns the scales for this Source."""
         assert self.current_tracer_args
         return self.current_tracer_args.scale
 

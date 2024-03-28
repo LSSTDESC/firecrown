@@ -16,8 +16,11 @@ from .updatable import Updatable, UpdatableCollection
 
 
 class ModelingTools(Updatable):
-    """A class that bundles together a :class:`pyccl.Cosmology` object and associated
-    objects, such as perturbation theory or halo model calculator workspaces."""
+    """Modeling tools for likelihoods.
+
+    A class that bundles together a :class:`pyccl.Cosmology` object and associated
+    objects, such as perturbation theory or halo model calculator workspaces.
+    """
 
     def __init__(
         self,
@@ -37,16 +40,17 @@ class ModelingTools(Updatable):
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
-
         if name in self.powerspectra:
             raise KeyError(f"Power spectrum {name} already exists")
 
         self.powerspectra[name] = powerspectrum
 
     def get_pk(self, name: str) -> pyccl.Pk2D:
-        """Retrive a pyccl.Pk2D from the table of power spectra, or fall back
-        to what the pyccl.Cosmology object can provide."""
+        """Access a power spectrum from the table of power spectra.
 
+        Either retrive a pyccl.Pk2D from the table of power spectra, or fall back
+        to what the pyccl.Cosmology object can provide.
+        """
         if self.ccl_cosmo is None:
             raise RuntimeError("Cosmology has not been set")
 
@@ -73,9 +77,7 @@ class ModelingTools(Updatable):
         if they are needed.
 
         :param ccl_cosmo: the current CCL cosmology object
-
         """
-
         if not self.is_updated():
             raise RuntimeError("ModelingTools has not been updated.")
 
@@ -102,8 +104,8 @@ class ModelingTools(Updatable):
 
         This method is called by the Updatable base class when the object is
         destroyed. It also resets the power spectra, the cosmology and the
-        _prepared state variable."""
-
+        _prepared state variable.
+        """
         self.ccl_cosmo = None
         # Also reset the power spectra
         # TODO: is that always needed?
@@ -112,14 +114,12 @@ class ModelingTools(Updatable):
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
         """Return the CCL cosmology object."""
-
         if self.ccl_cosmo is None:
             raise RuntimeError("Cosmology has not been set")
         return self.ccl_cosmo
 
     def get_pt_calculator(self) -> pyccl.nl_pt.EulerianPTCalculator:
         """Return the perturbation theory calculator object."""
-
         if self.pt_calculator is None:
             raise RuntimeError("A PT calculator has not been set")
         return self.pt_calculator

@@ -16,6 +16,7 @@ from firecrown.models.cluster.binning import TupleBin
 
 
 def get_cosmology() -> pyccl.Cosmology:
+    """Creates and returns a CCL cosmology object."""
     Omega_c = 0.262
     Omega_b = 0.049
     Omega_k = 0.0

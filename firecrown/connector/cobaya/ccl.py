@@ -1,8 +1,6 @@
-"""Cobaya CCL Connector
-
+"""Cobaya CCL Connector.
 
 Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
-
 """
 
 from __future__ import annotations
@@ -18,9 +16,7 @@ from firecrown.connector.mapping import mapping_builder
 
 
 class CCLConnector(Theory):
-    """
-    A class implementing cobaya.theory.Theory.
-    """
+    """A class implementing cobaya.theory.Theory."""
 
     input_style: Optional[str] = None
 
@@ -30,7 +26,6 @@ class CCLConnector(Theory):
         This is used instead of __init__, to provide default initialization.
         Cobaya does not allow us to override __init__.
         """
-
         assert self.input_style
         self.map = mapping_builder(input_style=self.input_style)
 
@@ -51,7 +46,6 @@ class CCLConnector(Theory):
 
         Sets instance's provided to the given provider.
         """
-
         self.provider = provider
 
     def get_can_provide_params(self):
@@ -83,9 +77,7 @@ class CCLConnector(Theory):
         Returns a dictionary with keys:
              omk, Pk_grid, comoving_radial_distance, Hubble,
              and with values reflecting the current status of the object.
-
         """
-
         pyccl_calculator_requires = {
             "omk": None,
             "Pk_grid": {"k_max": self.Pk_kmax, "z": self.z_Pk},
@@ -105,7 +97,6 @@ class CCLConnector(Theory):
         self, state: dict[str, float], want_derived=True, **params_values
     ) -> None:
         """Calculate the current cosmology, and set state["pyccl"] to the result."""
-
         self.map.set_params_from_camb(**params_values)
 
         pyccl_params_values = self.map.asdict()

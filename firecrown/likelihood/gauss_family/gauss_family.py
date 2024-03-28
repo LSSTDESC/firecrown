@@ -1,10 +1,6 @@
-"""
-
-Gaussian Family Module
-======================
+"""Gaussian Family Module.
 
 Some notes.
-
 """
 
 from __future__ import annotations
@@ -56,8 +52,9 @@ def enforce_states(
     terminal: Optional[State] = None,
     failure_message: str,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
-    """This decorator wraps a method, and enforces state machine behavior. If
-    the object is not in one of the states in initial, an
+    """This decorator wraps a method, and enforces state machine behavior.
+
+    If the object is not in one of the states in initial, an
     AssertionError is raised with the given failure_message.
     If terminal is None the state of the object is not modified.
     If terminal is not None and the call to the wrapped method returns
@@ -70,14 +67,17 @@ def enforce_states(
         initials = [initial]
 
     def decorator_enforce_states(func: Callable[P, T]) -> Callable[P, T]:
-        """This part of the decorator is the closure that actually contains the
-        values of initials, terminal, and failure_message.
+        """Part of the decorator which is the closure.
+
+        This closure is what actually contains the values of initials, terminal, and
+        failure_message.
         """
 
         @wraps(func)
         def wrapper_repeat(*args: P.args, **kwargs: P.kwargs) -> T:
-            """This part of the decorator is the actual wrapped method. It is
-            responsible for confirming a correct initial state, and
+            """Part of the decorator which is the actual wrapped method.
+
+            It is responsible for confirming a correct initial state, and
             establishing the correct final state if the wrapped method
             succeeds.
             """
@@ -102,10 +102,10 @@ def enforce_states(
 
 
 class GaussFamily(Likelihood):
-    """GaussFamily is an abstract class. It is the base class for all likelihoods
-    based on a chi-squared calculation. It provides an implementation of
-    Likelihood.compute_chisq. Derived classes must implement the abstract method
-    compute_loglike, which is inherited from Likelihood.
+    """GaussFamily is the base class for likelihoods based on a chi-squared calculation.
+
+    It provides an implementation of Likelihood.compute_chisq. Derived classes must
+    implement the abstract method compute_loglike, which is inherited from Likelihood.
 
     GaussFamily (and all classes that inherit from it) must abide by the the
     following rules regarding the order of calling of methods.
@@ -159,11 +159,13 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before update()",
     )
     def _update(self, _: ParamsMap) -> None:
-        """Handle the state resetting required by :class:`GaussFamily`
-        likelihoods. Any derived class that needs to implement :meth:`_update`
+        """Handle the state resetting required by :class:`GaussFamily` likelihoods.
+
+        Any derived class that needs to implement :meth:`_update`
         for its own reasons must be sure to do what this does: check the state
         at the start of the method, and change the state at the end of the
-        method."""
+        method.
+        """
 
     @enforce_states(
         initial=[State.UPDATED, State.COMPUTED],
@@ -171,11 +173,13 @@ class GaussFamily(Likelihood):
         failure_message="update() must be called before reset()",
     )
     def _reset(self) -> None:
-        """Handle the state resetting required by :class:`GaussFamily`
-        likelihoods. Any derived class that needs to implement :meth:`reset`
+        """Handle the state resetting required by :class:`GaussFamily` likelihoods.
+
+        Any derived class that needs to implement :meth:`reset`
         for its own reasons must be sure to do what this does: check the state
         at the start of the method, and change the state at the end of the
-        method."""
+        method.
+        """
         self.theory_vector = None
 
     @enforce_states(
@@ -185,7 +189,6 @@ class GaussFamily(Likelihood):
     )
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the covariance matrix for this likelihood from the SACC file."""
-
         if sacc_data.covariance is None:
             msg = (
                 f"The {type(self).__name__} likelihood requires a covariance, "
@@ -258,8 +261,7 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before get_data_vector()",
     )
     def get_data_vector(self) -> npt.NDArray[np.float64]:
-        """Get the data vector from all statistics and concatenate in the right
-        order."""
+        """Get the data vector from all statistics in the right order."""
         assert self.data_vector is not None
         return self.data_vector
 
@@ -287,8 +289,7 @@ class GaussFamily(Likelihood):
         "get_theory_vector()",
     )
     def get_theory_vector(self) -> npt.NDArray[np.float64]:
-        """Get the theory vector from all statistics and concatenate in the right
-        order."""
+        """Get the theory vector from all statistics in the right order."""
         assert (
             self.theory_vector is not None
         ), "theory_vector is None after compute_theory_vector() has been called"
@@ -343,8 +344,10 @@ class GaussFamily(Likelihood):
     def get_sacc_indices(
         self, statistic: Union[Statistic, list[Statistic], None] = None
     ) -> npt.NDArray[np.int64]:
-        """Get the SACC indices of the statistic or list of statistics. If no
-        statistic is given, get the indices of all statistics of the likelihood."""
+        """Get the SACC indices of the statistic or list of statistics.
+
+        If no statistic is given, get the indices of all statistics of the likelihood.
+        """
         if statistic is None:
             statistic = [stat.statistic for stat in self.statistics]
         if isinstance(statistic, Statistic):
@@ -367,6 +370,7 @@ class GaussFamily(Likelihood):
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
+        """Create a new realization of the model."""
         sacc_indices = self.get_sacc_indices()
 
         if add_noise:

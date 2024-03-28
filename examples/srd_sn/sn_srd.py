@@ -1,5 +1,4 @@
-"""Demonstration of the use of the :class:`Supernova` statistics object.
-"""
+"""Demonstration of the use of the :class:`Supernova` statistics object."""
 
 import sacc
 import firecrown.likelihood.gauss_family.statistic.supernova as sn
@@ -8,8 +7,10 @@ from firecrown.likelihood.likelihood import NamedParameters
 
 
 def build_likelihood(params: NamedParameters):
-    """Build the Firecrown likelihood object. We have no extra tools for this
-    example."""
+    """Build the Firecrown likelihood object.
+
+    We have no extra tools for this example.
+    """
     # Here we instantiate the necessary statistic object to deal with SNIa data.
     snia_stats = sn.Supernova(sacc_tracer="sn_ddf_sample")
 

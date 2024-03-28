@@ -4,8 +4,11 @@ from enum import Flag, auto
 
 
 class ClusterProperty(Flag):
-    """Flag containing the possible cluster properties we can make a theoretical
-    prediction for."""
+    """Flag representing cluster observables.
+
+    This flag containing the possible cluster properties we can make a theoretical
+    prediction for.
+    """
 
     NONE = 0
     COUNTS = auto()

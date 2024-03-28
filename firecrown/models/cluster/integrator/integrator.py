@@ -1,4 +1,4 @@
-"""The integrator module
+"""The cluster integrator module.
 
 This module holds the classes that define the interface required to
 integrate a function.
@@ -12,9 +12,10 @@ import numpy.typing as npt
 
 
 class Integrator(ABC):
-    """The integrator base class
+    """The integrator base class.
 
-    This class acts as an adapter around an integration library."""
+    This class acts as an adapter around an integration library.
+    """
 
     def __init__(self) -> None:
         self.integral_bounds: list[tuple[float, float]] = []

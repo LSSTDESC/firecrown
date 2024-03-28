@@ -1,6 +1,4 @@
-"""Provides GaussFamily concrete types.
-
-"""
+"""Provides GaussFamily concrete types."""
 
 from __future__ import annotations
 import numpy as np
@@ -14,10 +12,10 @@ class ConstGaussian(GaussFamily):
 
     def compute_loglike(self, tools: ModelingTools):
         """Compute the log-likelihood."""
-
         return -0.5 * self.compute_chisq(tools)
 
     def make_realization_vector(self) -> np.ndarray:
+        """Create a new realization of the model."""
         theory_vector = self.get_theory_vector()
         assert self.cholesky is not None
         new_data_vector = theory_vector + np.dot(

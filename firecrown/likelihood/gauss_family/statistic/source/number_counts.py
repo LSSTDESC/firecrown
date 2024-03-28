@@ -1,6 +1,4 @@
-"""Number counts source and systematics
-
-"""
+"""Number counts source and systematics."""
 
 from __future__ import annotations
 from typing import Optional, final
@@ -49,7 +47,8 @@ class NumberCountsArgs(SourceGalaxyArgs):
 class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
     """Abstract base class for systematics for Number Counts sources.
 
-    Derived classes must implement :python`apply` with the correct signature."""
+    Derived classes must implement :python`apply` with the correct signature.
+    """
 
     @abstractmethod
     def apply(
@@ -63,7 +62,7 @@ class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
 
 
 class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
-    """Systematic to select 3D field"""
+    """Systematic to select 3D field."""
 
 
 class LinearBiasSystematic(NumberCountsSystematic):
@@ -106,7 +105,6 @@ class LinearBiasSystematic(NumberCountsSystematic):
         tracer_arg : NumberCountsArgs
             The source to which apply the shear bias.
         """
-
         ccl_cosmo = tools.get_ccl_cosmology()
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
         pref *= (
@@ -207,7 +205,6 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
 
         :return: a NumberCountsArgs object
         """
-
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
         # where n_tot(z,r_lim) is the luminosity function after using fit (C.1)
@@ -319,7 +316,8 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def _update_source(self, params: ParamsMap):
         """Perform any updates necessary after the parameters have being updated.
 
-        This implementation must update all contained Updatable instances."""
+        This implementation must update all contained Updatable instances.
+        """
         self.systematics.update(params)
 
     @final
@@ -345,7 +343,6 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
-
         self.tracer_args = NumberCountsArgs(
             scale=self.scale,
             z=np.array([]),
@@ -356,6 +353,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         super()._read(sacc_data)
 
     def create_tracers(self, tools: ModelingTools):
+        """Create the tracers for this source."""
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
 
@@ -418,6 +416,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         return tracers, tracer_args
 
     def get_scale(self):
+        """Return the scale for this source."""
         assert self.current_tracer_args
         return self.current_tracer_args.scale
 

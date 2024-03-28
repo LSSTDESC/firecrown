@@ -1,5 +1,4 @@
-"""Two point statistic support.
-"""
+"""Two point statistic support."""
 
 from __future__ import annotations
 
@@ -43,13 +42,13 @@ ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 60_000, "n_log":
 def _ell_for_xi(
     *, minimum: int, midpoint: int, maximum: int, n_log: int
 ) -> npt.NDArray[np.float64]:
-    """Build an array of ells to sample the power spectrum for real-space
-    predictions.
+    """Create an array of ells to sample the power spectrum.
 
-    The result will contain each integral value from min to mid.
-    Starting from mid, and going up to max, there will be n_log
-    logarithmically spaced values. All values are rounded to the nearest
-    integer.
+    This is used for for real-space predictions. The result will contain
+    each integral value from min to mid. Starting from mid, and going up
+    to max, there will be n_log logarithmically spaced values.
+
+    All values are rounded to the nearest integer.
     """
     assert minimum >= 0
     assert minimum < midpoint
@@ -115,8 +114,10 @@ class TracerNames:
         raise IndexError
 
     def __iter__(self):
-        """Iterate through the data members. This is to allow automatic
-        unpacking."""
+        """Iterate through the data members.
+
+        This is to allow automatic unpacking.
+        """
         yield self.name1
         yield self.name2
 
@@ -127,8 +128,9 @@ TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 def read_ell_or_theta_and_stat(
     ccl_kind: str, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
 ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Read either ell_cl or theta_xi data from sacc_data, and
-    return that and associated stat data.
+    """Read and return either ell_cl or theta_xi data and stat.
+
+    These are read from the supplied sacc_data.
     """
     method = sacc_data.get_ell_cl if ccl_kind == "cl" else sacc_data.get_theta_xi
     ell_or_theta, stat = method(sacc_data_type, *tracers, return_cov=False)
@@ -155,8 +157,9 @@ def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.float64]:
 
 
 class TwoPoint(Statistic):
-    """A two-point statistic (e.g., shear correlation function, galaxy-shear
-    correlation function, etc.).
+    """A two-point statistic.
+
+    For example, shear correlation function, galaxy-shear correlation function, etc.
 
     Parameters
     ----------
@@ -292,7 +295,6 @@ class TwoPoint(Statistic):
 
         :param sacc_data: The data in the sacc format.
         """
-
         tracers = self.initialize_sources(sacc_data)
 
         _ell_or_theta, _stat = read_ell_or_theta_and_stat(
@@ -406,7 +408,6 @@ class TwoPoint(Statistic):
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic from sources."""
-
         assert self._ell_or_theta is not None
         self.ell_or_theta_ = self._ell_or_theta.copy()
 

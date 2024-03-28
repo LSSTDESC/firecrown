@@ -19,6 +19,7 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z import (
 
 
 def get_cluster_abundance() -> ClusterAbundance:
+    """Creates and returns a ClusterAbundance object."""
     hmf = ccl.halos.MassFuncBocquet16()
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
@@ -30,10 +31,7 @@ def get_cluster_abundance() -> ClusterAbundance:
 def build_likelihood(
     build_parameters: NamedParameters,
 ) -> tuple[Likelihood, ModelingTools]:
-    """
-    Here we instantiate the number density (or mass function) object.
-    """
-
+    """Builds the likelihood for Firecrown."""
     # Pull params for the likelihood from build_parameters
     average_on = ClusterProperty.NONE
     if build_parameters.get_bool("use_cluster_counts", True):

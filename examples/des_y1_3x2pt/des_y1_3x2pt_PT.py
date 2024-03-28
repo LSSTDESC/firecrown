@@ -33,8 +33,11 @@ saccfile = os.path.expanduser(
 
 @dataclass
 class CclSetup:
-    """A package of related CCL parameters, to reduce the number of variables
-    used in the :meth:`run_likelihood` method."""
+    """A package of related CCL parameters.
+
+    We use this to reduce the number of variables used in the :meth:`run_likelihood`
+    method.
+    """
 
     a_1: float = 1.0
     a_2: float = 0.5
@@ -47,8 +50,11 @@ class CclSetup:
 
 @dataclass
 class CElls:
-    """A package of related C_ell values, to reduce the number of variables
-    used in the :meth:`run_likelihood` method."""
+    """A package of related C_ell values.
+
+    This is used to reduce the number of variables used in the
+    :meth:`run_likelihood` method.
+    """
 
     GG: np.ndarray
     GI: np.ndarray
@@ -78,7 +84,6 @@ class CElls:
 
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
-
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
@@ -162,10 +167,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
 # We can also run the likelihood directly
 def run_likelihood() -> None:
-    """Produce some plots using the likelihood function built by
-    :meth:`build_likelihood`.
-    """
-
+    """Produce plots using the likelihood function built by :meth:`build_likelihood`."""
     # pylint: enable=import-outside-toplevel
 
     likelihood, tools = build_likelihood(None)
