@@ -2,7 +2,11 @@
 Tests for the module firecrown.metadata.two_point
 """
 
-from firecrown.metadata.two_point import GalaxyMeasuredType, CMBMeasuredType
+from firecrown.metadata.two_point import (
+    GalaxyMeasuredType,
+    CMBMeasuredType,
+    ClusterMeasuredType,
+)
 from firecrown.metadata.two_point import (
     ALL_MEASURED_TYPES,
     type_to_sacc_string_harmonic as harmonic,
@@ -24,6 +28,12 @@ def test_exact_matches():
 def test_translation_invariants():
     for a in ALL_MEASURED_TYPES:
         for b in ALL_MEASURED_TYPES:
+            assert isinstance(
+                a, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
+            )
+            assert isinstance(
+                b, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
+            )
             assert harmonic(a, b) == harmonic(b, a)
             assert real(a, b) == real(b, a)
             assert harmonic(a, b) != real(a, b)
