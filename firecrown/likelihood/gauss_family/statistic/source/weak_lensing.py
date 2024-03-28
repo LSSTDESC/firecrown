@@ -329,9 +329,9 @@ class WeakLensingFactory:
         per_bin_systematics: list[WeakLensingSystematicFactory],
         global_systematics: list[WeakLensingSystematic],
     ) -> None:
-        self.per_bin_systematics: list[
-            WeakLensingSystematicFactory
-        ] = per_bin_systematics
+        self.per_bin_systematics: list[WeakLensingSystematicFactory] = (
+            per_bin_systematics
+        )
         self.global_systematics: list[WeakLensingSystematic] = global_systematics
         self.cache: dict[InferredGalaxyZDist, WeakLensing] = {}
 

@@ -437,9 +437,9 @@ class NumberCountsFactory:
         per_bin_systematics: list[NumberCountsSystematicFactory],
         global_systematics: list[NumberCountsSystematic],
     ) -> None:
-        self.per_bin_systematics: list[
-            NumberCountsSystematicFactory
-        ] = per_bin_systematics
+        self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
+            per_bin_systematics
+        )
         self.global_systematics: list[NumberCountsSystematic] = global_systematics
         self.cache: dict[InferredGalaxyZDist, NumberCounts] = {}
 
