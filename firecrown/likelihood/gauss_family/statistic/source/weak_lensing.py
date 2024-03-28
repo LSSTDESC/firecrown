@@ -329,15 +329,14 @@ class WeakLensingFactory:
         per_bin_systematics: list[WeakLensingSystematicFactory],
         global_systematics: list[WeakLensingSystematic],
     ) -> None:
-        self.per_bin_systematics: list[WeakLensingSystematicFactory] = (
-            per_bin_systematics
-        )
+        self.per_bin_systematics: list[
+            WeakLensingSystematicFactory
+        ] = per_bin_systematics
         self.global_systematics: list[WeakLensingSystematic] = global_systematics
         self.cache: dict[InferredGalaxyZDist, WeakLensing] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-
         if inferred_zdist in self.cache:
             return self.cache[inferred_zdist]
 
