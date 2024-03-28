@@ -148,7 +148,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     #  digging  into the innards of a likelihood object.
     s0 = likelihood.statistics[0].statistic
     assert isinstance(s0, TwoPoint)
-    ells = s0.ells
+    ells = s0.ells_for_xi
     cells_GG = s0.cells[TracerNames("shear", "shear")]
     cells_GI = s0.cells[TracerNames("shear", "intrinsic_pt")]
     cells_II = s0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
@@ -311,7 +311,7 @@ def test_pt_mixed_systematics(sacc_data):
 
     s0 = likelihood.statistics[0].statistic
     assert isinstance(s0, TwoPoint)
-    ells = s0.ells
+    ells = s0.ells_for_xi
 
     # print(list(likelihood.statistics[2].cells.keys()))
     cells_gG = s0.cells[TracerNames("galaxies+magnification+rsd", "shear")]
