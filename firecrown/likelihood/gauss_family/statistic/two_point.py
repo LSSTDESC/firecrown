@@ -393,108 +393,106 @@ class TwoPoint(Statistic):
 
         :param sacc_data: The data in the sacc format.
         """
-        tracers = self.initialize_sources(sacc_data)
-        self.sacc_tracers = tracers
+        self.sacc_tracers = self.initialize_sources(sacc_data)
 
         if self.ccl_kind == "cl":
-            # Reading harmonic space data, it may be empty
-
-            ells_cells_indices = self.read_ell_cells(
-                self.sacc_data_type, sacc_data, tracers
-            )
-            if ells_cells_indices is not None:
-                ells, Cells, sacc_indices = ells_cells_indices
-                if self.ell_or_theta_config is not None:
-                    # If we have data from our construction, and also have data in the
-                    # SACC object, emit a warning and use the information read from the
-                    # SACC object.
-                    warnings.warn(
-                        f"Tracers '{tracers}' have 2pt data and you have specified "
-                        "`ell` in the configuration. `ell` is being ignored!",
-                        stacklevel=2,
-                    )
-                window = extract_window_function(sacc_data, sacc_indices)
-                if window is not None:
-                    # When using a window function, we do not calculate all Cl's.
-                    # For this reason we have a default set of ells that we use
-                    # to compute Cl's, and we have a set of ells used for
-                    # interpolation.
-                    window.ells_for_interpolation = calculate_ells_for_interpolation(
-                        window
-                    )
-
-            else:
-                if self.ell_or_theta_config is None:
-                    # The SACC file has no data points, just a tracer, in this case we
-                    # are building the statistic from scratch. In this case the user
-                    # must have set the dictionary ell_or_theta, containing the
-                    # minimum, maximum and number of bins to generate the ell values.
-                    raise RuntimeError(
-                        f"Tracers '{tracers}' for data type '{self.sacc_data_type}' "
-                        "have no 2pt data in the SACC file and no input ell values "
-                        "were given!"
-                    )
-                ells, Cells = generate_ells_cells(self.ell_or_theta_config)
-                sacc_indices = None
-
-                # When generating the ells and Cells we do not have a window function
-                window = None
-
-            assert isinstance(self.ell_or_theta_min, (int, type(None)))
-            assert isinstance(self.ell_or_theta_max, (int, type(None)))
-            ells, Cells, sacc_indices = apply_ells_min_max(
-                ells, Cells, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
-            )
-
-            self.ells = ells
-            self.sacc_indices = sacc_indices
-            self.data_vector = DataVector.create(Cells)
-
+            self.read_harmonic_space(sacc_data)
         else:
-            # Reading real space data, it may be empty
-            thetas_xis_indices = self.read_theta_xis(
-                self.sacc_data_type, sacc_data, tracers
-            )
-            # We do not support window functions for real space statistics
-            window = None
-
-            if thetas_xis_indices is not None:
-                thetas, xis, sacc_indices = thetas_xis_indices
-                if self.ell_or_theta_config is not None:
-                    # If we have data from our construction, and also have data in the
-                    # SACC object, emit a warning and use the information read from the
-                    # SACC object.
-                    warnings.warn(
-                        f"Tracers '{tracers}' have 2pt data and you have specified "
-                        "`theta` in the configuration. `theta` is being ignored!",
-                        stacklevel=2,
-                    )
-            else:
-                if self.ell_or_theta_config is None:
-                    # The SACC file has no data points, just a tracer, in this case we
-                    # are building the statistic from scratch. In this case the user
-                    # must have set the dictionary ell_or_theta, containing the
-                    # minimum, maximum and number of bins to generate the ell values.
-                    raise RuntimeError(
-                        f"Tracers '{tracers}' for data type '{self.sacc_data_type}' "
-                        "have no 2pt data in the SACC file and no input theta values "
-                        "were given!"
-                    )
-                thetas, xis = generate_theta_xis(self.ell_or_theta_config)
-                sacc_indices = None
-
-            assert isinstance(self.ell_or_theta_min, (float, type(None)))
-            assert isinstance(self.ell_or_theta_max, (float, type(None)))
-            thetas, xis, sacc_indices = apply_theta_min_max(
-                thetas, xis, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
-            )
-
-            self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
-            self.thetas = thetas
-            self.sacc_indices = sacc_indices
-            self.data_vector = DataVector.create(xis)
+            self.read_real_space(sacc_data)
 
         super().read(sacc_data)
+
+    def read_real_space(self, sacc_data: sacc.Sacc):
+        """Read the data for this statistic from the SACC file."""
+        thetas_xis_indices = self.read_theta_xis(
+            self.sacc_data_type, sacc_data, self.sacc_tracers
+        )
+        # We do not support window functions for real space statistics
+        if thetas_xis_indices is not None:
+            thetas, xis, sacc_indices = thetas_xis_indices
+            if self.ell_or_theta_config is not None:
+                # If we have data from our construction, and also have data in the
+                # SACC object, emit a warning and use the information read from the
+                # SACC object.
+                warnings.warn(
+                    f"Tracers '{self.sacc_tracers}' have 2pt data and you have "
+                    f"specified `theta` in the configuration. `theta` is being "
+                    f"ignored!",
+                    stacklevel=2,
+                )
+        else:
+            if self.ell_or_theta_config is None:
+                # The SACC file has no data points, just a tracer, in this case we
+                # are building the statistic from scratch. In this case the user
+                # must have set the dictionary ell_or_theta, containing the
+                # minimum, maximum and number of bins to generate the ell values.
+                raise RuntimeError(
+                    f"Tracers '{self.sacc_tracers}' for data type "
+                    f"'{self.sacc_data_type}' "
+                    "have no 2pt data in the SACC file and no input theta values "
+                    "were given!"
+                )
+            thetas, xis = generate_theta_xis(self.ell_or_theta_config)
+            sacc_indices = None
+        assert isinstance(self.ell_or_theta_min, (float, type(None)))
+        assert isinstance(self.ell_or_theta_max, (float, type(None)))
+        thetas, xis, sacc_indices = apply_theta_min_max(
+            thetas, xis, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
+        )
+        self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
+        self.thetas = thetas
+        self.sacc_indices = sacc_indices
+        self.data_vector = DataVector.create(xis)
+
+    def read_harmonic_space(self, sacc_data: sacc.Sacc):
+        """Read the data for this statistic from the SACC file."""
+        ells_cells_indices = self.read_ell_cells(
+            self.sacc_data_type, sacc_data, self.sacc_tracers
+        )
+        if ells_cells_indices is not None:
+            ells, Cells, sacc_indices = ells_cells_indices
+            if self.ell_or_theta_config is not None:
+                # If we have data from our construction, and also have data in the
+                # SACC object, emit a warning and use the information read from the
+                # SACC object.
+                warnings.warn(
+                    f"Tracers '{self.sacc_tracers}' have 2pt data and you have "
+                    f"specified `ell` in the configuration. `ell` is being ignored!",
+                    stacklevel=2,
+                )
+            window = extract_window_function(sacc_data, sacc_indices)
+            if window is not None:
+                # When using a window function, we do not calculate all Cl's.
+                # For this reason we have a default set of ells that we use
+                # to compute Cl's, and we have a set of ells used for
+                # interpolation.
+                window.ells_for_interpolation = calculate_ells_for_interpolation(window)
+
+        else:
+            if self.ell_or_theta_config is None:
+                # The SACC file has no data points, just a tracer, in this case we
+                # are building the statistic from scratch. In this case the user
+                # must have set the dictionary ell_or_theta, containing the
+                # minimum, maximum and number of bins to generate the ell values.
+                raise RuntimeError(
+                    f"Tracers '{self.sacc_tracers}' for data type "
+                    f"'{self.sacc_data_type}' "
+                    "have no 2pt data in the SACC file and no input ell values "
+                    "were given!"
+                )
+            ells, Cells = generate_ells_cells(self.ell_or_theta_config)
+            sacc_indices = None
+
+            # When generating the ells and Cells we do not have a window function
+            window = None
+        assert isinstance(self.ell_or_theta_min, (int, type(None)))
+        assert isinstance(self.ell_or_theta_max, (int, type(None)))
+        ells, Cells, sacc_indices = apply_ells_min_max(
+            ells, Cells, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
+        )
+        self.ells = ells
+        self.sacc_indices = sacc_indices
+        self.data_vector = DataVector.create(Cells)
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
