@@ -20,7 +20,7 @@ def test_exact_matches():
         == "cmbGalaxy_convergenceShear_cl_e"
     )
     assert (
-        real(GalaxyMeasuredType.SHEAR_E, CMBMeasuredType.CONVERGENCE)
+        real(GalaxyMeasuredType.SHEAR_T, CMBMeasuredType.CONVERGENCE)
         == "cmbGalaxy_convergenceShear_xi_t"
     )
 
@@ -34,6 +34,7 @@ def test_translation_invariants():
             assert isinstance(
                 b, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
             )
+
             assert harmonic(a, b) == harmonic(b, a)
             assert real(a, b) == real(b, a)
             assert harmonic(a, b) != real(a, b)

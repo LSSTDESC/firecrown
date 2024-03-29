@@ -6,7 +6,7 @@ metadata from a sacc file.
 
 from typing import TypedDict, Optional, Union, Tuple
 from dataclasses import dataclass
-from enum import StrEnum, auto
+from enum import Enum, auto
 import re
 from itertools import chain
 
@@ -46,7 +46,7 @@ class TracerNames:
 TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 
 
-class GalaxyMeasuredType(StrEnum):
+class GalaxyMeasuredType(str, Enum):
     """This enumeration type for galaxy measurements.
 
     It provides identifiers for the different types of galaxy-related types of
@@ -56,8 +56,9 @@ class GalaxyMeasuredType(StrEnum):
     support for more types is added to SACC this enumeration needs to be updated.
     """
 
-    COUNTS = auto()
     SHEAR_E = auto()
+    SHEAR_T = auto()
+    COUNTS = auto()
 
     def sacc_type_name(self) -> str:
         """Return the lower-case form of the main measurement type.
@@ -73,10 +74,12 @@ class GalaxyMeasuredType(StrEnum):
         This is the second part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == GalaxyMeasuredType.COUNTS:
-            return "counts"
         if self == GalaxyMeasuredType.SHEAR_E:
             return "shear"
+        if self == GalaxyMeasuredType.SHEAR_T:
+            return "shear"
+        if self == GalaxyMeasuredType.COUNTS:
+            return "density"
         raise ValueError("Untranslated GalaxyMeasuredType encountered")
 
     def polarization(self) -> str:
@@ -85,14 +88,20 @@ class GalaxyMeasuredType(StrEnum):
         This is the third part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == GalaxyMeasuredType.COUNTS:
-            return ""
         if self == GalaxyMeasuredType.SHEAR_E:
             return "e"
+        if self == GalaxyMeasuredType.SHEAR_T:
+            return "t"
+        if self == GalaxyMeasuredType.COUNTS:
+            return ""
         raise ValueError("Untranslated GalaxyMeasuredType encountered")
 
+    def __lt__(self, other):
+        """Define a comparison function for the GalaxyMeasuredType enumeration."""
+        return compare_enums(self, other) < 0
 
-class CMBMeasuredType(StrEnum):
+
+class CMBMeasuredType(str, Enum):
     """This enumeration type for CMB measurements.
 
     It provides identifiers for the different types of CMB-related types of
@@ -132,8 +141,12 @@ class CMBMeasuredType(StrEnum):
             return ""
         raise ValueError("Untranslated CMBMeasuredType encountered")
 
+    def __lt__(self, other):
+        """Define a comparison function for the CMBMeasuredType enumeration."""
+        return compare_enums(self, other) < 0
 
-class ClusterMeasuredType(StrEnum):
+
+class ClusterMeasuredType(str, Enum):
     """This enumeration type for cluster measurements.
 
     It provides identifiers for the different types of cluster-related types of
@@ -173,6 +186,10 @@ class ClusterMeasuredType(StrEnum):
             return ""
         raise ValueError("Untranslated ClusterMeasuredType encountered")
 
+    def __lt__(self, other):
+        """Define a comparison function for the ClusterMeasuredType enumeration."""
+        return compare_enums(self, other) < 0
+
 
 MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
 
@@ -182,8 +199,12 @@ def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
 
     Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
     """
-    order = (ClusterMeasuredType, CMBMeasuredType, GalaxyMeasuredType)
-    return order.index(type(a)) - order.index(type(b))
+    order = (CMBMeasuredType, ClusterMeasuredType, GalaxyMeasuredType)
+    main_type_index_a = order.index(type(a))
+    main_type_index_b = order.index(type(b))
+    if main_type_index_a == main_type_index_b:
+        return int(a) - int(b)
+    return main_type_index_a - main_type_index_b
 
 
 ALL_MEASURED_TYPES = list(
@@ -581,8 +602,18 @@ def _type_to_sacc_string_common(x: MeasuredType, y: MeasuredType) -> str:
     measurements of x and y.
     """
     a, b = sorted([x, y])
-    part_1 = f"{a.sacc_type_name()}{b.sacc_type_name().capitalize()}_"
-    part_2 = f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
+    if isinstance(a, type(b)):
+        part_1 = f"{a.sacc_type_name()}_"
+        if a == b:
+            part_2 = f"{a.sacc_measurement_name()}_"
+        else:
+            part_2 = (
+                f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
+            )
+    else:
+        part_1 = f"{a.sacc_type_name()}{b.sacc_type_name().capitalize()}_"
+        part_2 = f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
+
     return part_1 + part_2
 
 
@@ -592,13 +623,14 @@ def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
     The SACC string used to denote the real-space correlation type
     between measurements of x and y.
     """
-    suffix = f"{x.polarization()}_{y.polarization()}"
+    a, b = sorted([x, y])
+    suffix = f"{a.polarization()}_{b.polarization()}"
 
     if suffix.startswith("_"):
         suffix = suffix[1:]
     if suffix.endswith("_"):
         suffix = suffix[:-1]
-    return _type_to_sacc_string_common(x, y) + f"xi_{suffix}"
+    return _type_to_sacc_string_common(x, y) + (f"xi_{suffix}" if suffix else "xi")
 
 
 def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
@@ -607,11 +639,12 @@ def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
     the SACC string used to denote the harmonic-space correlation type
     between measurements of x and y.
     """
-    suffix = f"{x.polarization()}_{y.polarization()}"
+    a, b = sorted([x, y])
+    suffix = f"{a.polarization()}_{b.polarization()}"
 
     if suffix.startswith("_"):
         suffix = suffix[1:]
     if suffix.endswith("_"):
         suffix = suffix[:-1]
 
-    return _type_to_sacc_string_common(x, y) + f"cl_{suffix}"
+    return _type_to_sacc_string_common(x, y) + (f"cl_{suffix}" if suffix else "cl")
