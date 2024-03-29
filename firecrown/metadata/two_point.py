@@ -212,7 +212,9 @@ ALL_MEASURED_TYPES = list(
 )
 
 
-@dataclass(frozen=True, kw_only=True)
+# kw_only=True only available in Python >= 3.10:
+# TODO update when we drop Python 3.9
+@dataclass(frozen=True)
 class InferredGalaxyZDist:
     """The class used to store the redshift resolution data for a sacc file.
 
@@ -226,7 +228,9 @@ class InferredGalaxyZDist:
     measured_type: MeasuredType
 
 
-@dataclass(frozen=True, kw_only=True)
+# kw_only=True only available in Python >= 3.10:
+# TODO update when we drop Python 3.9
+@dataclass(frozen=True)
 class TwoPointXY:
     """Class defining a two-point correlation pair of redshift resolutions.
 
@@ -238,7 +242,9 @@ class TwoPointXY:
     y: InferredGalaxyZDist
 
 
-@dataclass(frozen=True, kw_only=True)
+# kw_only=True only available in Python >= 3.10:
+# TODO update when we drop Python 3.9
+@dataclass(frozen=True)
 class TwoPointCells:
     """Class defining the metadata for an harmonic-space two-point measurement.
 
@@ -254,7 +260,9 @@ class TwoPointCells:
     ells: npt.NDArray[np.int64]
 
 
-@dataclass(kw_only=True)
+# kw_only=True only available in Python >= 3.10:
+# TODO update when we drop Python 3.9
+@dataclass()
 class Window:
     """The class used to represent a window function.
 
@@ -282,7 +290,9 @@ class Window:
         return self.weights.shape[1]
 
 
-@dataclass(frozen=True, kw_only=True)
+# kw_only=True only available in Python >= 3.10:
+# TODO update when we drop Python 3.9
+@dataclass(frozen=True)
 class TwoPointCWindow:
     """Two-point function with a window function.
 
@@ -304,7 +314,9 @@ class TwoPointCWindow:
             raise ValueError("Window should be a 2D array.")
 
 
-@dataclass(frozen=True, kw_only=True)
+# kw_only=True only available in Python >= 3.10:
+# TODO update when we drop Python 3.9
+@dataclass(frozen=True)
 class TwoPointXiTheta:
     """Class defining the metadata for a real-space two-point measurement.
 
