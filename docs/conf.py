@@ -23,7 +23,7 @@ copyright = "2022--2024, LSST DESC Firecrown Contributors"
 author = "LSST DESC Firecrown Contributors"
 
 # The full version, including alpha/beta/rc tags
-release = "1.8.0a0"
+release = "1.7.2"
 
 
 # -- General configuration ---------------------------------------------------

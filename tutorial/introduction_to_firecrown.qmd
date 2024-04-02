@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: "Version 1.8.0a0"
+subtitle: "Version 1.7.2"
 authors:
   - Marc Paterno
   - Sandro Vitenti
