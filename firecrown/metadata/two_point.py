@@ -192,6 +192,20 @@ class ClusterMeasuredType(str, Enum):
 
 
 MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
+HARMONIC_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_E,)
+REAL_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_T,)
+
+
+def measured_type_is_compatible(a: MeasuredType, b: MeasuredType) -> bool:
+    """Check if two MeasuredType are compatible.
+
+    Two MeasuredType are compatible if they can be correlated in a two-point function.
+    """
+    if a in HARMONIC_ONLY_MEASURED_TYPES and b in REAL_ONLY_MEASURED_TYPES:
+        return False
+    if a in REAL_ONLY_MEASURED_TYPES and b in HARMONIC_ONLY_MEASURED_TYPES:
+        return False
+    return True
 
 
 def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
@@ -240,6 +254,15 @@ class TwoPointXY:
 
     x: InferredGalaxyZDist
     y: InferredGalaxyZDist
+
+    def __post_init__(self) -> None:
+        """Make sure the two redshift resolutions are compatible."""
+
+        if not measured_type_is_compatible(self.x.measured_type, self.y.measured_type):
+            raise ValueError(
+                f"Measured types {self.x.measured_type} and {self.y.measured_type} "
+                f"are not compatible."
+            )
 
 
 # kw_only=True only available in Python >= 3.10:
@@ -638,6 +661,9 @@ def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
     a, b = sorted([x, y])
     suffix = f"{a.polarization()}_{b.polarization()}"
 
+    if a in (GalaxyMeasuredType.SHEAR_E) or b in (GalaxyMeasuredType.SHEAR_E):
+        raise ValueError("Real-space correlation not supported for shear E.")
+
     if suffix.startswith("_"):
         suffix = suffix[1:]
     if suffix.endswith("_"):
@@ -653,6 +679,9 @@ def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
     """
     a, b = sorted([x, y])
     suffix = f"{a.polarization()}_{b.polarization()}"
+
+    if a in (GalaxyMeasuredType.SHEAR_T) or b in (GalaxyMeasuredType.SHEAR_T):
+        raise ValueError("Harmonic-space correlation not supported for shear T.")
 
     if suffix.startswith("_"):
         suffix = suffix[1:]
