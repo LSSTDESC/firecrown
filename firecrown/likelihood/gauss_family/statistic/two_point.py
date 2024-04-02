@@ -2,8 +2,7 @@
 
 from __future__ import annotations
 
-import dataclasses
-from typing import Optional
+from typing import Optional, Sequence, TypedDict, Union
 import copy
 import functools
 import warnings
@@ -16,6 +15,12 @@ import scipy.interpolate
 import pyccl
 import pyccl.nl_pt
 
+from firecrown.metadata.two_point import (
+    extract_window_function,
+    Window,
+    TracerNames,
+    TRACER_NAMES_TOTAL,
+)
 from ....modeling_tools import ModelingTools
 
 from .statistic import Statistic, DataVector, TheoryVector
@@ -40,7 +45,7 @@ ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 60_000, "n_log":
 
 def _ell_for_xi(
     *, minimum: int, midpoint: int, maximum: int, n_log: int
-) -> npt.NDArray[np.float64]:
+) -> npt.NDArray[np.int64]:
     """Create an array of ells to sample the power spectrum.
 
     This is used for for real-space predictions. The result will contain
@@ -57,7 +62,7 @@ def _ell_for_xi(
     concatenated = np.concatenate((lower_range, upper_range))
     # Round the results to the nearest integer values.
     # N.B. the dtype of the result is np.dtype[float64]
-    return np.unique(np.around(concatenated))
+    return np.unique(np.around(concatenated)).astype(np.int64)
 
 
 def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
@@ -97,44 +102,112 @@ def make_log_interpolator(x, y):
     return lambda x_, intp=intp: intp(np.log(x_))
 
 
-@dataclasses.dataclass(frozen=True)
-class TracerNames:
-    """The names of the two tracers in the sacc file."""
+def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.int64]:
+    """See _ell_for_xi.
 
-    name1: str
-    name2: str
+    This method mixes together:
+        1. the default parameters in ELL_FOR_XI_DEFAULTS
+        2. the first and last values in w.
 
-    def __getitem__(self, item):
-        """Get the name of the tracer at the given index."""
-        if item == 0:
-            return self.name1
-        if item == 1:
-            return self.name2
-        raise IndexError
-
-    def __iter__(self):
-        """Iterate through the data members.
-
-        This is to allow automatic unpacking.
-        """
-        yield self.name1
-        yield self.name2
-
-
-TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
-
-
-def read_ell_or_theta_and_stat(
-    ccl_kind: str, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """Read and return either ell_cl or theta_xi data and stat.
-
-    These are read from the supplied sacc_data.
+    and then calls _ell_for_xi with those arguments, returning whatever it
+    returns.
     """
-    method = sacc_data.get_ell_cl if ccl_kind == "cl" else sacc_data.get_theta_xi
-    ell_or_theta, stat = method(sacc_data_type, *tracers, return_cov=False)
-    assert len(ell_or_theta) == len(stat)
-    return ell_or_theta, stat
+    ell_config = {
+        **ELL_FOR_XI_DEFAULTS,
+        "maximum": w.ells[-1],
+    }
+    ell_config["minimum"] = max(ell_config["minimum"], w.ells[0])
+    return _ell_for_xi(**ell_config)
+
+
+class EllOrThetaConfig(TypedDict):
+    """A dictionary of options for generating the ell or theta.
+
+    This dictionary contains the minimum, maximum and number of
+    bins to generate the ell or theta values at which to compute the statistics.
+
+    :param minimum: The start of the binning.
+    :param maximum: The end of the binning.
+    :param n: The number of bins.
+    :param binning: Pass 'log' to get logarithmic spaced bins and 'lin' to get linearly
+        spaced bins. Default is 'log'.
+
+    """
+
+    minimum: float
+    maximum: float
+    n: int
+    binning: str
+
+
+def generate_ells_cells(ell_config: EllOrThetaConfig):
+    """Generate ells or theta values from the configuration dictionary."""
+    ells = _generate_ell_or_theta(**ell_config)
+    Cells = np.zeros_like(ells)
+
+    return ells, Cells
+
+
+def generate_theta_xis(theta_config: EllOrThetaConfig):
+    """Generate theta and xi values from the configuration dictionary."""
+    thetas = _generate_ell_or_theta(**theta_config)
+    xis = np.zeros_like(thetas)
+
+    return thetas, xis
+
+
+def apply_ells_min_max(
+    ells: npt.NDArray[np.int64],
+    Cells: npt.NDArray[np.float64],
+    indices: Optional[npt.NDArray[np.int64]],
+    ell_min: Optional[int],
+    ell_max: Optional[int],
+) -> tuple[
+    npt.NDArray[np.int64], npt.NDArray[np.float64], Optional[npt.NDArray[np.int64]]
+]:
+    """Apply the minimum and maximum ell values to the ells and Cells."""
+    if ell_min is not None:
+        locations = np.where(ells >= ell_min)
+        ells = ells[locations]
+        Cells = Cells[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    if ell_max is not None:
+        locations = np.where(ells <= ell_max)
+        ells = ells[locations]
+        Cells = Cells[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    return ells, Cells, indices
+
+
+def apply_theta_min_max(
+    thetas: npt.NDArray[np.float64],
+    xis: npt.NDArray[np.float64],
+    indices: Optional[npt.NDArray[np.int64]],
+    theta_min: Optional[float],
+    theta_max: Optional[float],
+) -> tuple[
+    npt.NDArray[np.float64], npt.NDArray[np.float64], Optional[npt.NDArray[np.int64]]
+]:
+    """Apply the minimum and maximum theta values to the thetas and xis."""
+    if theta_min is not None:
+        locations = np.where(thetas >= theta_min)
+        thetas = thetas[locations]
+        xis = xis[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    if theta_max is not None:
+        locations = np.where(thetas <= theta_max)
+        thetas = thetas[locations]
+        xis = xis[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    return thetas, xis, indices
 
 
 class TwoPoint(Statistic):
@@ -174,8 +247,8 @@ class TwoPoint(Statistic):
         generate data without the corresponding 2pt data in the input SACC file.
         The options are:
 
-         - min : float - The start of the binning.
-         - max : float - The end of the binning.
+         - minimun : float - The start of the binning.
+         - maximun : float - The end of the binning.
          - n : int - The number of bins. Note that the edges of the bins start
            at `min` and end at `max`. The actual bin locations will be at the
            (possibly geometric) midpoint of the bin.
@@ -225,42 +298,44 @@ class TwoPoint(Statistic):
 
     def __init__(
         self,
-        sacc_data_type,
+        sacc_data_type: str,
         source0: Source,
         source1: Source,
         *,
-        ell_for_xi=None,
-        ell_or_theta=None,
-        ell_or_theta_min=None,
-        ell_or_theta_max=None,
-    ):
+        ell_for_xi: Optional[dict[str, int]] = None,
+        ell_or_theta: Optional[EllOrThetaConfig] = None,
+        ell_or_theta_min: Optional[Union[float, int]] = None,
+        ell_or_theta_max: Optional[Union[float, int]] = None,
+    ) -> None:
         super().__init__()
 
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.sacc_data_type = sacc_data_type
-        self.source0 = source0
+        self.sacc_data_type: str = sacc_data_type
+        self.source0: Source = source0
         self.source1 = source1
-        self.ell_for_xi: dict[str, int] = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        self.ell_for_xi_config: dict[str, int] = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
-            self.ell_for_xi.update(ell_for_xi)
+            self.ell_for_xi_config.update(ell_for_xi)
         # What is the difference between the following 3 instance variables?
         #        ell_or_theta
         #        _ell_or_theta
         #        ell_or_theta_
-        self.ell_or_theta = ell_or_theta
+        self.ell_or_theta_config = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        self.theory_window_function: Optional[sacc.windows.BandpowerWindow] = None
+        self.window: Optional[Window] = None
 
         self.data_vector: Optional[DataVector] = None
         self.theory_vector: Optional[TheoryVector] = None
-        self._ell_or_theta: Optional[npt.NDArray[np.float64]] = None
-        self.ell_or_theta_: Optional[npt.NDArray[np.float64]] = None
 
         self.sacc_tracers: TracerNames
-        self.ells: Optional[npt.NDArray[np.float64]] = None
+        self.ells: Optional[npt.NDArray[np.int64]] = None
+        self.thetas: Optional[npt.NDArray[np.float64]] = None
+        self.mean_ells: Optional[npt.NDArray[np.float64]] = None
+        self.ells_for_xi: Optional[npt.NDArray[np.int64]] = None
+
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
@@ -269,112 +344,155 @@ class TwoPoint(Statistic):
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
 
+    def read_ell_cells(
+        self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
+    ) -> Optional[
+        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
+    ]:
+        """Read and return ell and Cell."""
+        ells, Cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
+        # As version 0.13 of sacc, the method get_ell_cl returns the
+        # ell values and the Cl values in arrays of the same length.
+        assert len(ells) == len(Cells)
+        common_length = len(ells)
+        sacc_indices = None
+
+        if common_length == 0:
+            return None
+        sacc_indices = np.atleast_1d(sacc_data.indices(self.sacc_data_type, tracers))
+        assert sacc_indices is not None  # Needed for mypy
+        assert len(sacc_indices) == common_length
+
+        return ells, Cells, sacc_indices
+
+    def read_theta_xis(
+        self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
+    ) -> Optional[
+        tuple[
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            npt.NDArray[np.int64],
+        ]
+    ]:
+        """Read and return theta and xi."""
+        thetas, xis = sacc_data.get_theta_xi(sacc_data_type, *tracers, return_cov=False)
+        # As version 0.13 of sacc, the method get_theta_xi returns the
+        # theta values and the xi values in arrays of the same length.
+        assert len(thetas) == len(xis)
+
+        common_length = len(thetas)
+        if common_length == 0:
+            return None
+        sacc_indices = np.atleast_1d(sacc_data.indices(self.sacc_data_type, tracers))
+        assert sacc_indices is not None  # Needed for mypy
+        assert len(sacc_indices) == common_length
+        return thetas, xis, sacc_indices
+
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
 
         :param sacc_data: The data in the sacc format.
         """
-        tracers = self.initialize_sources(sacc_data)
+        self.sacc_tracers = self.initialize_sources(sacc_data)
 
-        _ell_or_theta, _stat = read_ell_or_theta_and_stat(
-            self.ccl_kind, self.sacc_data_type, sacc_data, tracers
-        )
-
-        # If we have no data from our construction, and the SACC object also contains
-        # no data, we have a failure...
-        if self.ell_or_theta is None and (len(_ell_or_theta) == 0 or len(_stat) == 0):
-            raise RuntimeError(
-                f"Tracers '{tracers}' for data type '{self.sacc_data_type}' "
-                f"have no 2pt data in the SACC file and no input ell or "
-                f"theta values were given!"
-            )
-        # If we have data from our construction, and also have data in the SACC object,
-        # emit a warning and use the information read from the SACC object.
-        if self.ell_or_theta is not None and len(_ell_or_theta) > 0 and len(_stat) > 0:
-            warnings.warn(
-                f"Tracers '{tracers}' have 2pt data and you have specified "
-                "`ell_or_theta` in the configuration. `ell_or_theta` is being ignored!",
-                stacklevel=2,
-            )
-
-        # at this point we default to the values in the sacc file
-        _ell_or_theta, _stat = self._calculate_stat_stuff(
-            _ell_or_theta, _stat, sacc_data, tracers
-        )
-
-        # I don't think we need these copies, but being safe here.
-        self._ell_or_theta = _ell_or_theta.copy()
-        self.data_vector = DataVector.create(_stat)
-        self.data_vector = self.data_vector
-        self.sacc_tracers = tracers
+        if self.ccl_kind == "cl":
+            self.read_harmonic_space(sacc_data)
+        else:
+            self.read_real_space(sacc_data)
 
         super().read(sacc_data)
 
-    # TODO: Inline this function after it has been refactored.
-    def _calculate_stat_stuff(
-        self,
-        ell_or_theta: npt.NDArray[np.float64],
-        stat: npt.NDArray[np.float64],
-        sacc_data: sacc.Sacc,
-        tracers: TracerNames,
-    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        assert len(ell_or_theta) == len(stat)
-        common_length = len(ell_or_theta)
-        ell_or_theta, stat = self.phase_1(
-            sacc_data, tracers, common_length, ell_or_theta, stat
+    def read_real_space(self, sacc_data: sacc.Sacc):
+        """Read the data for this statistic from the SACC file."""
+        thetas_xis_indices = self.read_theta_xis(
+            self.sacc_data_type, sacc_data, self.sacc_tracers
         )
-        ell_or_theta = self.set_window_function(ell_or_theta, sacc_data)
-        assert len(ell_or_theta) == len(stat)
-        return ell_or_theta, stat
-
-    def phase_1(
-        self, sacc_data, tracers: TracerNames, common_length, ell_or_theta, stat
-    ):
-        """Temporary method to support refactoring of TwoPoint.read."""
-        # Depending on the value of common_length, calculate either:
-        #    1) ell_or_theta and stat, or
-        #    2) self.sacc_indices
-        if common_length == 0:
-            ell_or_theta = _generate_ell_or_theta(**self.ell_or_theta)
-            stat = np.zeros_like(ell_or_theta)
+        # We do not support window functions for real space statistics
+        if thetas_xis_indices is not None:
+            thetas, xis, sacc_indices = thetas_xis_indices
+            if self.ell_or_theta_config is not None:
+                # If we have data from our construction, and also have data in the
+                # SACC object, emit a warning and use the information read from the
+                # SACC object.
+                warnings.warn(
+                    f"Tracers '{self.sacc_tracers}' have 2pt data and you have "
+                    f"specified `theta` in the configuration. `theta` is being "
+                    f"ignored!",
+                    stacklevel=2,
+                )
         else:
-            self.sacc_indices = np.atleast_1d(
-                sacc_data.indices(self.sacc_data_type, tracers)
-            )
-            assert self.sacc_indices is not None  # Needed for mypy
-            assert len(self.sacc_indices) == common_length
+            if self.ell_or_theta_config is None:
+                # The SACC file has no data points, just a tracer, in this case we
+                # are building the statistic from scratch. In this case the user
+                # must have set the dictionary ell_or_theta, containing the
+                # minimum, maximum and number of bins to generate the ell values.
+                raise RuntimeError(
+                    f"Tracers '{self.sacc_tracers}' for data type "
+                    f"'{self.sacc_data_type}' "
+                    "have no 2pt data in the SACC file and no input theta values "
+                    "were given!"
+                )
+            thetas, xis = generate_theta_xis(self.ell_or_theta_config)
+            sacc_indices = None
+        assert isinstance(self.ell_or_theta_min, (float, type(None)))
+        assert isinstance(self.ell_or_theta_max, (float, type(None)))
+        thetas, xis, sacc_indices = apply_theta_min_max(
+            thetas, xis, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
+        )
+        self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
+        self.thetas = thetas
+        self.sacc_indices = sacc_indices
+        self.data_vector = DataVector.create(xis)
 
-        # If we have set self.ell_or_theta_min, filter ell_or_theta, stat, and
-        # possibly self.sacc_indices
-        if self.ell_or_theta_min is not None:
-            locations = np.where(ell_or_theta >= self.ell_or_theta_min)
-            ell_or_theta = ell_or_theta[locations]
-            stat = stat[locations]
-            if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[locations]
+    def read_harmonic_space(self, sacc_data: sacc.Sacc):
+        """Read the data for this statistic from the SACC file."""
+        ells_cells_indices = self.read_ell_cells(
+            self.sacc_data_type, sacc_data, self.sacc_tracers
+        )
+        if ells_cells_indices is not None:
+            ells, Cells, sacc_indices = ells_cells_indices
+            if self.ell_or_theta_config is not None:
+                # If we have data from our construction, and also have data in the
+                # SACC object, emit a warning and use the information read from the
+                # SACC object.
+                warnings.warn(
+                    f"Tracers '{self.sacc_tracers}' have 2pt data and you have "
+                    f"specified `ell` in the configuration. `ell` is being ignored!",
+                    stacklevel=2,
+                )
+            window = extract_window_function(sacc_data, sacc_indices)
+            if window is not None:
+                # When using a window function, we do not calculate all Cl's.
+                # For this reason we have a default set of ells that we use
+                # to compute Cl's, and we have a set of ells used for
+                # interpolation.
+                window.ells_for_interpolation = calculate_ells_for_interpolation(window)
 
-        # If we have set self.ell_or_theta_max, filter ell_or_theta, stat, and
-        # possibly self.sacc_indices
-        if self.ell_or_theta_max is not None:
-            locations = np.where(ell_or_theta <= self.ell_or_theta_max)
-            ell_or_theta = ell_or_theta[locations]
-            stat = stat[locations]
-            if self.sacc_indices is not None:
-                self.sacc_indices = self.sacc_indices[locations]
-        return ell_or_theta, stat
+        else:
+            if self.ell_or_theta_config is None:
+                # The SACC file has no data points, just a tracer, in this case we
+                # are building the statistic from scratch. In this case the user
+                # must have set the dictionary ell_or_theta, containing the
+                # minimum, maximum and number of bins to generate the ell values.
+                raise RuntimeError(
+                    f"Tracers '{self.sacc_tracers}' for data type "
+                    f"'{self.sacc_data_type}' "
+                    "have no 2pt data in the SACC file and no input ell values "
+                    "were given!"
+                )
+            ells, Cells = generate_ells_cells(self.ell_or_theta_config)
+            sacc_indices = None
 
-    def set_window_function(
-        self, ell_or_theta: npt.NDArray[np.float64], sacc_data: sacc.Sacc
-    ) -> npt.NDArray[np.float64]:
-        """Set the window function for this statistic."""
-        assert self.sacc_indices is not None
-        self.theory_window_function = sacc_data.get_bandpower_windows(self.sacc_indices)
-        if self.theory_window_function is not None:
-            ell_or_theta = self.calculate_ell_or_theta()
-            # Normalise the weights to 1:
-            norm = self.theory_window_function.weight.sum(axis=0)
-            self.theory_window_function.weight /= norm
-        return ell_or_theta
+            # When generating the ells and Cells we do not have a window function
+            window = None
+        assert isinstance(self.ell_or_theta_min, (int, type(None)))
+        assert isinstance(self.ell_or_theta_max, (int, type(None)))
+        ells, Cells, sacc_indices = apply_ells_min_max(
+            ells, Cells, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
+        )
+        self.ells = ells
+        self.sacc_indices = sacc_indices
+        self.data_vector = DataVector.create(Cells)
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
@@ -386,65 +504,129 @@ class TwoPoint(Statistic):
         tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
         return TracerNames(*tracers)
 
-    def calculate_ell_or_theta(self) -> npt.NDArray[np.float64]:
-        """See _ell_for_xi.
-
-        This method mixes together:
-           1. the default parameters in ELL_FOR_XI_DEFAULTS
-           2. the first and last values in self.theory_window_function.values
-        and then calls _ell_for_xi with those arguments, returning whatever it
-        returns.
-
-        It is an error to call this function if self.theory_window_function has
-        not been set. That is done in `read`, but might result in the value
-        being re-set to None.:w
-        """
-        assert self.theory_window_function is not None
-        ell_config = {
-            **ELL_FOR_XI_DEFAULTS,
-            "maximum": self.theory_window_function.values[-1],
-        }
-        ell_config["minimum"] = max(
-            ell_config["minimum"], self.theory_window_function.values[0]
-        )
-        return _ell_for_xi(**ell_config)
-
     def get_data_vector(self) -> DataVector:
         """Return this statistic's data vector."""
         assert self.data_vector is not None
         return self.data_vector
 
-    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a two-point statistic from sources."""
-        assert self._ell_or_theta is not None
-        self.ell_or_theta_ = self._ell_or_theta.copy()
+    def compute_theory_vector_real_space(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a two-point statistic in real space.
 
+        This method computes the two-point statistic in real space. It first computes
+        the Cl's in harmonic space and then translates them to real space using CCL.
+        """
         tracers0 = self.source0.get_tracers(tools)
         tracers1 = self.source1.get_tracers(tools)
         scale0 = self.source0.get_scale()
         scale1 = self.source1.get_scale()
 
-        if self.ccl_kind == "cl":
-            self.ells = self.ell_or_theta_
-        else:
-            self.ells = _ell_for_xi(
-                minimum=int(self.ell_for_xi["minimum"]),
-                midpoint=int(self.ell_for_xi["midpoint"]),
-                maximum=int(self.ell_for_xi["maximum"]),
-                n_log=int(self.ell_for_xi["n_log"]),
-            )
-
-        # TODO: we should not be adding a new instance variable outside of
-        # __init__. Why is `self.cells` an instance variable rather than a
-        # local variable? It is used in at least two of the example codes:
-        # both the PT and the TATT examples in des_y1_3x2pt access this data
-        # member to print out results when the likelihood is "run directly"
-        # by calling `run_likelihood`.
+        assert self.ccl_kind != "cl"
+        assert self.thetas is not None
+        assert self.ells_for_xi is not None
 
         self.cells = {}
+        cells_for_xi = self.compute_cells(
+            self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
+        )
 
-        # Loop over the tracers and compute all possible combinations
-        # of them.
+        theory_vector = pyccl.correlation(
+            tools.get_ccl_cosmology(),
+            ell=self.ells_for_xi,
+            C_ell=cells_for_xi,
+            theta=self.thetas / 60,
+            type=self.ccl_kind,
+        )
+        assert self.data_vector is not None
+        return TheoryVector.create(theory_vector)
+
+    def compute_theory_vector_harmonic_space(
+        self, tools: ModelingTools
+    ) -> TheoryVector:
+        """Compute a two-point statistic in harmonic space.
+
+        This method computes the two-point statistic in harmonic space. It computes
+        either the Cl's at the ells provided by the SACC file or the ells required
+        for the window function.
+        """
+        tracers0 = self.source0.get_tracers(tools)
+        tracers1 = self.source1.get_tracers(tools)
+        scale0 = self.source0.get_scale()
+        scale1 = self.source1.get_scale()
+
+        assert self.ccl_kind == "cl"
+        assert self.ells is not None
+
+        if self.window is not None:
+            # If a window function is provided, we need to compute the Cl's
+            # for the ells used in the window function. To do this, we will
+            # first compute the Cl's for the ells used in the interpolation
+            # and then interpolate the results to the ells used in the window
+            # function.
+            assert self.window.ells_for_interpolation is not None
+            cells_for_interpolation = self.compute_cells(
+                self.window.ells_for_interpolation,
+                scale0,
+                scale1,
+                tools,
+                tracers0,
+                tracers1,
+            )
+
+            # TODO: There is no code in Firecrown, neither test nor example,
+            # that exercises a theory window function in any way.
+            cell_interpolator = make_log_interpolator(
+                self.window.ells_for_interpolation, cells_for_interpolation
+            )
+            # Deal with ell=0 and ell=1
+            cells_interpolated = np.zeros(self.window.ells.size)
+            cells_interpolated[2:] = cell_interpolator(self.window.ells[2:])
+
+            # Here we left multiply the computed Cl's by the window function
+            # to get the final Cl's.
+            theory_vector = np.einsum(
+                "lb, l -> b",
+                self.window.weights,
+                cells_interpolated,
+            )
+            # We also compute the mean ell value associated with each bin.
+            self.mean_ells = np.einsum(
+                "lb, l -> b", self.window.weights, self.window.ells
+            )
+
+            assert self.data_vector is not None
+            return TheoryVector.create(theory_vector)
+
+        # If we get here, we are working in harmonic space without a window function.
+        assert self.ells is not None
+        theory_vector = self.compute_cells(
+            self.ells,
+            scale0,
+            scale1,
+            tools,
+            tracers0,
+            tracers1,
+        )
+
+        assert self.data_vector is not None
+        return TheoryVector.create(theory_vector)
+
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a two-point statistic from sources."""
+        if self.ccl_kind == "cl":
+            return self.compute_theory_vector_harmonic_space(tools)
+
+        return self.compute_theory_vector_real_space(tools)
+
+    def compute_cells(
+        self,
+        ells: npt.NDArray[np.int64],
+        scale0: float,
+        scale1: float,
+        tools: ModelingTools,
+        tracers0: Sequence[Tracer],
+        tracers1: Sequence[Tracer],
+    ) -> npt.NDArray[np.float64]:
+        """Compute the power spectrum for the given ells and tracers."""
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
@@ -458,52 +640,16 @@ class TwoPoint(Statistic):
                     _cached_angular_cl(
                         tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
-                        tuple(self.ells.tolist()),
+                        tuple(ells.tolist()),
                         p_of_k_a=pk,
                     )
                     * scale0
                     * scale1
                 )
-
         # Add up all the contributions to the cells
         self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
         theory_vector = self.cells[TRACER_NAMES_TOTAL]
-
-        if not self.ccl_kind == "cl":
-            theory_vector = pyccl.correlation(
-                tools.get_ccl_cosmology(),
-                ell=self.ells,
-                C_ell=theory_vector,
-                theta=self.ell_or_theta_ / 60,
-                type=self.ccl_kind,
-            )
-
-        if self.theory_window_function is not None:
-
-            if not self.ccl_kind == "cl":
-                raise ValueError("You cannot mix theory window function with xi.")
-
-            # TODO: There is no code in Firecrown, neither test nor example,
-            # that exercises a theory window function in any way.
-            theory_interpolator = make_log_interpolator(
-                self.ell_or_theta_, theory_vector
-            )
-            ell = self.theory_window_function.values
-            # Deal with ell=0 and ell=1
-            theory_vector_interpolated = np.zeros(ell.size)
-            theory_vector_interpolated[2:] = theory_interpolator(ell[2:])
-
-            theory_vector = np.einsum(
-                "lb, l -> b",
-                self.theory_window_function.weight,
-                theory_vector_interpolated,
-            )
-            self.ell_or_theta_ = np.einsum(
-                "lb, l -> b", self.theory_window_function.weight, ell
-            )
-
-        assert self.data_vector is not None
-        return TheoryVector.create(theory_vector)
+        return theory_vector
 
     def calculate_pk(
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
