@@ -257,7 +257,6 @@ class TwoPointXY:
 
     def __post_init__(self) -> None:
         """Make sure the two redshift resolutions are compatible."""
-
         if not measured_type_is_compatible(self.x.measured_type, self.y.measured_type):
             raise ValueError(
                 f"Measured types {self.x.measured_type} and {self.y.measured_type} "
