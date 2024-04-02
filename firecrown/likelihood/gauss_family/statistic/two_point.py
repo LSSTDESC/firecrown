@@ -509,45 +509,52 @@ class TwoPoint(Statistic):
         assert self.data_vector is not None
         return self.data_vector
 
-    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a two-point statistic from sources."""
+    def compute_theory_vector_real_space(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a two-point statistic in real space.
+
+        This method computes the two-point statistic in real space. It first computes
+        the Cl's in harmonic space and then translates them to real space using CCL.
+        """
         tracers0 = self.source0.get_tracers(tools)
         tracers1 = self.source1.get_tracers(tools)
         scale0 = self.source0.get_scale()
         scale1 = self.source1.get_scale()
 
-        # TODO: we should not be adding a new instance variable outside of __init__.
-        # Why is `self.cells` an instance variable rather than a local variable? It is
-        # used in at least two of the example codes: both the PT and the TATT examples
-        # in des_y1_3x2pt access this data member to print out results when the
-        # likelihood is "run directly" by calling `run_likelihood`.
+        assert self.ccl_kind != "cl"
+        assert self.thetas is not None
+        assert self.ells_for_xi is not None
 
         self.cells = {}
+        cells_for_xi = self.compute_cells(
+            self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
+        )
 
-        if not self.ccl_kind == "cl":
-            # If self.ccl_kind is not "cl", then we have a measurement in real space.
-            # Thus, we need first to compute the Cl's in harmonic space. Then, we will
-            # call CCL to translate the previously computed Cl's to real space, as
-            # xi(theta).
+        theory_vector = pyccl.correlation(
+            tools.get_ccl_cosmology(),
+            ell=self.ells_for_xi,
+            C_ell=cells_for_xi,
+            theta=self.thetas / 60,
+            type=self.ccl_kind,
+        )
+        assert self.data_vector is not None
+        return TheoryVector.create(theory_vector)
 
-            assert self.thetas is not None
-            assert self.ells_for_xi is not None
+    def compute_theory_vector_harmonic_space(
+        self, tools: ModelingTools
+    ) -> TheoryVector:
+        """Compute a two-point statistic in harmonic space.
 
-            cells_for_xi = self.compute_cells(
-                self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
-            )
+        This method computes the two-point statistic in harmonic space. It computes
+        either the Cl's at the ells provided by the SACC file or the ells required
+        for the window function.
+        """
+        tracers0 = self.source0.get_tracers(tools)
+        tracers1 = self.source1.get_tracers(tools)
+        scale0 = self.source0.get_scale()
+        scale1 = self.source1.get_scale()
 
-            theory_vector = pyccl.correlation(
-                tools.get_ccl_cosmology(),
-                ell=self.ells_for_xi,
-                C_ell=cells_for_xi,
-                theta=self.thetas / 60,
-                type=self.ccl_kind,
-            )
-            assert self.data_vector is not None
-            return TheoryVector.create(theory_vector)
-
-        # If we get here, we are working in harmonic space.
+        assert self.ccl_kind == "cl"
+        assert self.ells is not None
 
         if self.window is not None:
             # If a window function is provided, we need to compute the Cl's
@@ -602,6 +609,13 @@ class TwoPoint(Statistic):
 
         assert self.data_vector is not None
         return TheoryVector.create(theory_vector)
+
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a two-point statistic from sources."""
+        if self.ccl_kind == "cl":
+            return self.compute_theory_vector_harmonic_space(tools)
+
+        return self.compute_theory_vector_real_space(tools)
 
     def compute_cells(
         self,
