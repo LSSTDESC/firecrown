@@ -344,6 +344,27 @@ class TwoPointCells:
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
 
+    def __post_init__(self) -> None:
+        """Validate the TwoPointCells data.
+
+        Make sure the ells are a 1D array and X and Y are compatible
+        with harmonic-space calculations.
+        """
+        if len(self.ells.shape) != 1:
+            raise ValueError("Ells should be a 1D array.")
+
+        if not measured_type_supports_harmonic(self.XY.x.measured_type):
+            raise ValueError(
+                f"Measured type {self.XY.x.measured_type} does not "
+                f"support harmonic-space calculations."
+            )
+
+    def get_sacc_name(self) -> str:
+        """Return the SACC name for the two-point function."""
+        return type_to_sacc_string_harmonic(
+            self.XY.x.measured_type, self.XY.y.measured_type
+        )
+
 
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9

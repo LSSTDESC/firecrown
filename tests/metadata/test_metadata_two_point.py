@@ -91,7 +91,7 @@ def test_translation_invariants():
 
 def test_unsupported_type_galaxy():
     unknown_type = MagicMock(spec=GalaxyMeasuredType)
-    unknown_type.__eq__ = MagicMock(return_value=False)  # type: ignore
+    unknown_type.__eq__.return_value = False  # type: ignore
 
     with pytest.raises(ValueError, match="Untranslated GalaxyMeasuredType encountered"):
         GalaxyMeasuredType.sacc_measurement_name(unknown_type)
@@ -102,7 +102,7 @@ def test_unsupported_type_galaxy():
 
 def test_unsupported_type_cmb():
     unknown_type = MagicMock(spec=CMBMeasuredType)
-    unknown_type.__eq__ = MagicMock(return_value=False)  # type: ignore
+    unknown_type.__eq__.return_value = False  # type: ignore
 
     with pytest.raises(ValueError, match="Untranslated CMBMeasuredType encountered"):
         CMBMeasuredType.sacc_measurement_name(unknown_type)
@@ -113,7 +113,7 @@ def test_unsupported_type_cmb():
 
 def test_unsupported_type_cluster():
     unknown_type = MagicMock(spec=ClusterMeasuredType)
-    unknown_type.__eq__ = MagicMock(return_value=False)  # type: ignore
+    unknown_type.__eq__.return_value = False  # type: ignore
 
     with pytest.raises(
         ValueError, match="Untranslated ClusterMeasuredType encountered"
