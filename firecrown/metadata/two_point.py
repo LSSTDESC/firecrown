@@ -228,6 +228,7 @@ class ClusterMeasuredType(str, Enum):
 
 
 MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
+ALL_MEASURED_TYPES_TYPES = (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
 HARMONIC_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_E,)
 REAL_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_T,)
 
@@ -286,6 +287,22 @@ class InferredGalaxyZDist:
     z: np.ndarray
     dndz: np.ndarray
     measured_type: MeasuredType
+
+    def __post_init__(self) -> None:
+        """Validate the redshift resolution data.
+
+        - Make sure the z and dndz arrays have the same shape;
+        - The measured type must be a MeasuredType.
+        - The bin_name should not be empty.
+        """
+        if self.z.shape != self.dndz.shape:
+            raise ValueError("The z and dndz arrays should have the same shape.")
+
+        if not isinstance(self.measured_type, ALL_MEASURED_TYPES_TYPES):
+            raise ValueError("The measured_type should be a MeasuredType.")
+
+        if self.bin_name == "":
+            raise ValueError("The bin_name should not be empty.")
 
 
 # kw_only=True only available in Python >= 3.10:
