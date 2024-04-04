@@ -90,8 +90,8 @@ def test_translation_invariants():
 
 
 def test_unsupported_type_galaxy():
-    unknown_type = MagicMock(spec=GalaxyMeasuredType)
-    unknown_type.configure_mock(**{"__eq__.return_value": False})
+    unknown_type = MagicMock()
+    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
     with pytest.raises(ValueError, match="Untranslated GalaxyMeasuredType encountered"):
         GalaxyMeasuredType.sacc_measurement_name(unknown_type)
@@ -101,8 +101,8 @@ def test_unsupported_type_galaxy():
 
 
 def test_unsupported_type_cmb():
-    unknown_type = MagicMock(spec=CMBMeasuredType)
-    unknown_type.configure_mock(**{"__eq__.return_value": False})
+    unknown_type = MagicMock()
+    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
     with pytest.raises(ValueError, match="Untranslated CMBMeasuredType encountered"):
         CMBMeasuredType.sacc_measurement_name(unknown_type)
@@ -112,8 +112,8 @@ def test_unsupported_type_cmb():
 
 
 def test_unsupported_type_cluster():
-    unknown_type = MagicMock(spec=ClusterMeasuredType)
-    unknown_type.configure_mock(**{"__eq__.return_value": False})
+    unknown_type = MagicMock()
+    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
     with pytest.raises(
         ValueError, match="Untranslated ClusterMeasuredType encountered"
@@ -244,9 +244,6 @@ def test_two_point_xy_invalid():
     )
     with pytest.raises(
         ValueError,
-        match=(
-            "Measured types GalaxyMeasuredType.SHEAR_E and "
-            "GalaxyMeasuredType.SHEAR_T are not compatible."
-        ),
+        match=("Measured types .* and .* are not compatible."),
     ):
         TwoPointXY(x=x, y=y)

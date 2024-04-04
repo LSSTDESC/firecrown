@@ -415,9 +415,19 @@ class TwoPointCWindow:
     window: npt.NDArray[np.int64]
 
     def __post_init__(self):
-        """Make sure the window has the right shape."""
+        """Validate the TwoPointCWindow data.
+
+        Make sure the window has the right shape. Check if the type of XY is compatible
+        with harmonic-space calculations.
+        """
         if len(self.window.shape) != 2:
             raise ValueError("Window should be a 2D array.")
+
+        if not measured_type_supports_harmonic(self.XY.x.measured_type):
+            raise ValueError(
+                f"Measured type {self.XY.x.measured_type} does not "
+                f"support harmonic-space calculations."
+            )
 
 
 # kw_only=True only available in Python >= 3.10:
