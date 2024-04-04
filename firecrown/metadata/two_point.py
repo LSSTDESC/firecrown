@@ -100,6 +100,18 @@ class GalaxyMeasuredType(str, Enum):
         """Define a comparison function for the GalaxyMeasuredType enumeration."""
         return compare_enums(self, other) < 0
 
+    def __eq__(self, other):
+        """Define an equality test for GalaxyMeasuredType enumeration."""
+        return compare_enums(self, other) == 0
+
+    def __ne__(self, other):
+        """Negation of __eq__."""
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        """Define a hash function that uses both type and value information."""
+        return hash((GalaxyMeasuredType, self.value))
+
 
 class CMBMeasuredType(str, Enum):
     """This enumeration type for CMB measurements.
@@ -144,6 +156,18 @@ class CMBMeasuredType(str, Enum):
     def __lt__(self, other):
         """Define a comparison function for the CMBMeasuredType enumeration."""
         return compare_enums(self, other) < 0
+
+    def __eq__(self, other):
+        """Define an equality test for CMBMeasuredType enumeration."""
+        return compare_enums(self, other) == 0
+
+    def __ne__(self, other):
+        """Negation of __eq__."""
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        """Define a hash function that uses both type and value information."""
+        return hash((CMBMeasuredType, self.value))
 
 
 class ClusterMeasuredType(str, Enum):
@@ -190,6 +214,18 @@ class ClusterMeasuredType(str, Enum):
         """Define a comparison function for the ClusterMeasuredType enumeration."""
         return compare_enums(self, other) < 0
 
+    def __eq__(self, other):
+        """Define an equality test for ClusterMeasuredType enumeration."""
+        return compare_enums(self, other) == 0
+
+    def __ne__(self, other):
+        """Negation of __eq__."""
+        return not self.__eq__(other)
+
+    def __hash__(self) -> int:
+        """Define a hash function that uses both type and value information."""
+        return hash((ClusterMeasuredType, self.value))
+
 
 MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
 HARMONIC_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_E,)
@@ -208,6 +244,16 @@ def measured_type_is_compatible(a: MeasuredType, b: MeasuredType) -> bool:
     return True
 
 
+def measured_type_supports_real(x: MeasuredType) -> bool:
+    """Return True if x supports real-space calculations."""
+    return x not in HARMONIC_ONLY_MEASURED_TYPES
+
+
+def measured_type_supports_harmonic(x: MeasuredType) -> bool:
+    """Return True if x supports harmonic-space calculations."""
+    return x not in REAL_ONLY_MEASURED_TYPES
+
+
 def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
     """Define a comparison function for the MeasuredType enumeration.
 
@@ -221,7 +267,7 @@ def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
     return main_type_index_a - main_type_index_b
 
 
-ALL_MEASURED_TYPES = list(
+ALL_MEASURED_TYPES: list[MeasuredType] = list(
     chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
 )
 
@@ -646,7 +692,12 @@ def _type_to_sacc_string_common(x: MeasuredType, y: MeasuredType) -> str:
             )
     else:
         part_1 = f"{a.sacc_type_name()}{b.sacc_type_name().capitalize()}_"
-        part_2 = f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
+        if a.sacc_measurement_name() == b.sacc_measurement_name():
+            part_2 = f"{a.sacc_measurement_name()}_"
+        else:
+            part_2 = (
+                f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
+            )
 
     return part_1 + part_2
 
@@ -658,15 +709,11 @@ def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
     between measurements of x and y.
     """
     a, b = sorted([x, y])
-    suffix = f"{a.polarization()}_{b.polarization()}"
+    suffix = f"{a.polarization()}{b.polarization()}"
 
-    if a in (GalaxyMeasuredType.SHEAR_E) or b in (GalaxyMeasuredType.SHEAR_E):
+    if a in HARMONIC_ONLY_MEASURED_TYPES or b in HARMONIC_ONLY_MEASURED_TYPES:
         raise ValueError("Real-space correlation not supported for shear E.")
 
-    if suffix.startswith("_"):
-        suffix = suffix[1:]
-    if suffix.endswith("_"):
-        suffix = suffix[:-1]
     return _type_to_sacc_string_common(x, y) + (f"xi_{suffix}" if suffix else "xi")
 
 
@@ -677,14 +724,9 @@ def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
     between measurements of x and y.
     """
     a, b = sorted([x, y])
-    suffix = f"{a.polarization()}_{b.polarization()}"
+    suffix = f"{a.polarization()}{b.polarization()}"
 
-    if a in (GalaxyMeasuredType.SHEAR_T) or b in (GalaxyMeasuredType.SHEAR_T):
+    if a in REAL_ONLY_MEASURED_TYPES or b in REAL_ONLY_MEASURED_TYPES:
         raise ValueError("Harmonic-space correlation not supported for shear T.")
-
-    if suffix.startswith("_"):
-        suffix = suffix[1:]
-    if suffix.endswith("_"):
-        suffix = suffix[:-1]
 
     return _type_to_sacc_string_common(x, y) + (f"cl_{suffix}" if suffix else "cl")
