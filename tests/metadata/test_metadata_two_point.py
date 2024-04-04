@@ -3,6 +3,9 @@ Tests for the module firecrown.metadata.two_point
 """
 
 from itertools import product, chain
+from unittest.mock import Mock
+import pytest
+
 import sacc_name_mapping as snm
 from firecrown.metadata.two_point import (
     GalaxyMeasuredType,
@@ -14,6 +17,7 @@ from firecrown.metadata.two_point import (
     type_to_sacc_string_real as real,
     measured_type_supports_harmonic as supports_harmonic,
     measured_type_supports_real as supports_real,
+    measured_type_is_compatible as is_compatible,
 )
 
 
@@ -80,3 +84,60 @@ def test_translation_invariants():
             and supports_real(b)
         ):
             assert harmonic(a, b) != real(a, b)
+
+
+def test_unsupported_type_galaxy():
+    unknown_type = Mock(spec=GalaxyMeasuredType)
+    unknown_type.__eq__ = Mock(return_value=False)  # type: ignore
+
+    with pytest.raises(ValueError, match="Untranslated GalaxyMeasuredType encountered"):
+        GalaxyMeasuredType.sacc_measurement_name(unknown_type)
+
+    with pytest.raises(ValueError, match="Untranslated GalaxyMeasuredType encountered"):
+        GalaxyMeasuredType.polarization(unknown_type)
+
+
+def test_unsupported_type_cmb():
+    unknown_type = Mock(spec=CMBMeasuredType)
+    unknown_type.__eq__ = Mock(return_value=False)  # type: ignore
+
+    with pytest.raises(ValueError, match="Untranslated CMBMeasuredType encountered"):
+        CMBMeasuredType.sacc_measurement_name(unknown_type)
+
+    with pytest.raises(ValueError, match="Untranslated CMBMeasuredType encountered"):
+        CMBMeasuredType.polarization(unknown_type)
+
+
+def test_unsupported_type_cluster():
+    unknown_type = Mock(spec=ClusterMeasuredType)
+    unknown_type.__eq__ = Mock(return_value=False)  # type: ignore
+
+    with pytest.raises(
+        ValueError, match="Untranslated ClusterMeasuredType encountered"
+    ):
+        ClusterMeasuredType.sacc_measurement_name(unknown_type)
+
+    with pytest.raises(
+        ValueError, match="Untranslated ClusterMeasuredType encountered"
+    ):
+        ClusterMeasuredType.polarization(unknown_type)
+
+
+def test_type_hashs():
+    for e1, e2 in product(ALL_MEASURED_TYPES, ALL_MEASURED_TYPES):
+        if e1 == e2:
+            assert hash(e1) == hash(e2)
+        else:
+            assert hash(e1) != hash(e2)
+
+
+def test_measured_type_is_compatible():
+    for a, b in product(ALL_MEASURED_TYPES, ALL_MEASURED_TYPES):
+        assert isinstance(a, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType))
+        assert isinstance(b, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType))
+        if (supports_real(a) and supports_real(b)) or (
+            supports_harmonic(a) and supports_harmonic(b)
+        ):
+            assert is_compatible(a, b)
+        else:
+            assert not is_compatible(a, b)
