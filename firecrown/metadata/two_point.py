@@ -156,7 +156,7 @@ class ClusterMeasuredType(str, Enum):
     support for more types is added to SACC this enumeration needs to be updated.
     """
 
-    DENSITY = auto()
+    COUNTS = auto()
 
     def sacc_type_name(self) -> str:
         """Return the lower-case form of the main measurement type.
@@ -172,7 +172,7 @@ class ClusterMeasuredType(str, Enum):
         This is the second part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == ClusterMeasuredType.DENSITY:
+        if self == ClusterMeasuredType.COUNTS:
             return "density"
         raise ValueError("Untranslated ClusterMeasuredType encountered")
 
@@ -182,7 +182,7 @@ class ClusterMeasuredType(str, Enum):
         This is the third part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == ClusterMeasuredType.DENSITY:
+        if self == ClusterMeasuredType.COUNTS:
             return ""
         raise ValueError("Untranslated ClusterMeasuredType encountered")
 
