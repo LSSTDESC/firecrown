@@ -353,10 +353,12 @@ class TwoPointCells:
         if len(self.ells.shape) != 1:
             raise ValueError("Ells should be a 1D array.")
 
-        if not measured_type_supports_harmonic(self.XY.x.measured_type):
+        if not measured_type_supports_harmonic(
+            self.XY.x.measured_type
+        ) or not measured_type_supports_harmonic(self.XY.y.measured_type):
             raise ValueError(
-                f"Measured type {self.XY.x.measured_type} does not "
-                f"support harmonic-space calculations."
+                f"Measured types {self.XY.x.measured_type} and "
+                f"{self.XY.y.measured_type} must support harmonic-space calculations."
             )
 
     def get_sacc_name(self) -> str:
@@ -386,10 +388,17 @@ class Window:
 
     def __post_init__(self) -> None:
         """Make sure the weights have the right shape."""
+        if len(self.ells.shape) != 1:
+            raise ValueError("Ells should be a 1D array.")
         if len(self.weights.shape) != 2:
             raise ValueError("Weights should be a 2D array.")
         if self.weights.shape[0] != len(self.ells):
             raise ValueError("Weights should have the same number of rows as ells.")
+        if (
+            self.ells_for_interpolation is not None
+            and len(self.ells_for_interpolation.shape) != 1
+        ):
+            raise ValueError("Ells for interpolation should be a 1D array.")
 
     def n_observations(self) -> int:
         """Return the number of observations supported by the window function."""
@@ -412,22 +421,29 @@ class TwoPointCWindow:
     """
 
     XY: TwoPointXY
-    window: npt.NDArray[np.int64]
+    window: Window
 
     def __post_init__(self):
         """Validate the TwoPointCWindow data.
 
-        Make sure the window has the right shape. Check if the type of XY is compatible
-        with harmonic-space calculations.
+        Make sure the window is
         """
-        if len(self.window.shape) != 2:
-            raise ValueError("Window should be a 2D array.")
+        if not isinstance(self.window, Window):
+            raise ValueError("Window should be a Window object.")
 
-        if not measured_type_supports_harmonic(self.XY.x.measured_type):
+        if not measured_type_supports_harmonic(
+            self.XY.x.measured_type
+        ) or not measured_type_supports_harmonic(self.XY.y.measured_type):
             raise ValueError(
-                f"Measured type {self.XY.x.measured_type} does not "
-                f"support harmonic-space calculations."
+                f"Measured types {self.XY.x.measured_type} and "
+                f"{self.XY.y.measured_type} must support harmonic-space calculations."
             )
+
+    def get_sacc_name(self) -> str:
+        """Return the SACC name for the two-point function."""
+        return type_to_sacc_string_harmonic(
+            self.XY.x.measured_type, self.XY.y.measured_type
+        )
 
 
 # kw_only=True only available in Python >= 3.10:
@@ -446,6 +462,25 @@ class TwoPointXiTheta:
 
     XY: TwoPointXY
     theta: npt.NDArray[np.float64]
+
+    def __post_init__(self):
+        """Validate the TwoPointCWindow data.
+
+        Make sure the window is
+        """
+        if not measured_type_supports_real(
+            self.XY.x.measured_type
+        ) or not measured_type_supports_real(self.XY.y.measured_type):
+            raise ValueError(
+                f"Measured types {self.XY.x.measured_type} and "
+                f"{self.XY.y.measured_type} must support real-space calculations."
+            )
+
+    def get_sacc_name(self) -> str:
+        """Return the SACC name for the two-point function."""
+        return type_to_sacc_string_real(
+            self.XY.x.measured_type, self.XY.y.measured_type
+        )
 
 
 # TwoPointXiThetaIndex is a type used to create intermediate objects when

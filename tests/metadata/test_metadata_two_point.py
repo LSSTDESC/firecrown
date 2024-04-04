@@ -6,6 +6,7 @@ from itertools import product, chain
 from unittest.mock import MagicMock
 import pytest
 import numpy as np
+from numpy.testing import assert_array_equal
 
 import sacc_name_mapping as snm
 from firecrown.metadata.two_point import (
@@ -18,9 +19,13 @@ from firecrown.metadata.two_point import (
     measured_type_is_compatible as is_compatible,
     measured_type_supports_harmonic as supports_harmonic,
     measured_type_supports_real as supports_real,
+    TwoPointCells,
+    TwoPointCWindow,
     TwoPointXY,
+    TwoPointXiTheta,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
+    Window,
 )
 
 
@@ -247,3 +252,246 @@ def test_two_point_xy_invalid():
         match=("Measured types .* and .* are not compatible."),
     ):
         TwoPointXY(x=x, y=y)
+
+
+def test_two_point_cells():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    cells = TwoPointCells(ells=ells, XY=xy)
+
+    assert_array_equal(cells.ells, ells)
+    assert cells.XY == xy
+    assert cells.get_sacc_name() == harmonic(x.measured_type, y.measured_type)
+
+
+def test_two_point_cells_invalid_ells():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Ells should be a 1D array.",
+    ):
+        TwoPointCells(ells=ells, XY=xy)
+
+
+def test_two_point_cells_invalid_type():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.SHEAR_T,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    with pytest.raises(
+        ValueError,
+        match="Measured types .* and .* must support harmonic-space calculations.",
+    ):
+        TwoPointCells(ells=ells, XY=xy)
+
+
+def test_two_point_window():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    assert_array_equal(window.ells, ells)
+    assert_array_equal(window.weights, weights)
+    assert window.ells_for_interpolation is not None
+    assert_array_equal(window.ells_for_interpolation, ells_for_interpolation)
+    assert window.n_observations() == 4
+
+
+def test_two_point_window_invalid_ells():
+    ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
+    weights = np.ones(400).reshape(-1, 4)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+
+    with pytest.raises(
+        ValueError,
+        match="Ells should be a 1D array.",
+    ):
+        Window(
+            ells=ells,
+            weights=weights,
+            ells_for_interpolation=ells_for_interpolation,
+        )
+
+
+def test_two_point_window_invalid_weights():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 5)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+
+    with pytest.raises(
+        ValueError,
+        match="Weights should have the same number of rows as ells.",
+    ):
+        Window(
+            ells=ells,
+            weights=weights,
+            ells_for_interpolation=ells_for_interpolation,
+        )
+
+
+def test_two_point_window_invalid_ells_for_interpolation():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+    ells_for_interpolation = np.array(np.linspace(0, 100), dtype=np.int64).reshape(
+        -1, 10
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="Ells for interpolation should be a 1D array.",
+    ):
+        Window(
+            ells=ells,
+            weights=weights,
+            ells_for_interpolation=ells_for_interpolation,
+        )
+
+
+def test_two_point_two_point_cwindow():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    two_point = TwoPointCWindow(XY=xy, window=window)
+
+    assert two_point.window == window
+    assert two_point.XY == xy
+    assert two_point.get_sacc_name() == harmonic(x.measured_type, y.measured_type)
+
+
+def test_two_point_two_point_cwindow_invalid():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.SHEAR_T,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    with pytest.raises(
+        ValueError,
+        match="Measured types .* and .* must support harmonic-space calculations.",
+    ):
+        TwoPointCWindow(XY=xy, window=window)
+
+
+def test_two_point_xi_theta():
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    theta = np.array(np.linspace(0, 100, 100))
+    two_point = TwoPointXiTheta(XY=xy, theta=theta)
+
+    assert_array_equal(two_point.theta, theta)
+    assert two_point.XY == xy
+    assert two_point.get_sacc_name() == real(x.measured_type, y.measured_type)
+
+
+def test_two_point_xi_theta_invalid():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.SHEAR_E,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    theta = np.array(np.linspace(0, 100, 100))
+    with pytest.raises(
+        ValueError,
+        match="Measured types .* and .* must support real-space calculations.",
+    ):
+        TwoPointXiTheta(XY=xy, theta=theta)
