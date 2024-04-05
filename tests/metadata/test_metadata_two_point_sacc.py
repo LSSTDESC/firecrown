@@ -1,7 +1,6 @@
 """Tests for the module firecrown.metadata.two_point.
 
-In this module, we test the functions and classes involved SACC 
-extraction tools.
+In this module, we test the functions and classes involved SACC extraction tools.
 """
 
 from itertools import product
