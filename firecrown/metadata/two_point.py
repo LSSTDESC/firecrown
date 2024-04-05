@@ -490,7 +490,7 @@ TwoPointXiThetaIndex = TypedDict(
     {
         "data_type": str,
         "tracer_names": TracerNames,
-        "theta": npt.NDArray[np.float64],
+        "thetas": npt.NDArray[np.float64],
     },
 )
 
@@ -554,8 +554,8 @@ def extract_all_data_types_xi_thetas(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
-                    "theta": sacc_data.get_tag(
-                        tag_name, data_type=data_type, tracers=combo
+                    "thetas": np.array(
+                        sacc_data.get_tag(tag_name, data_type=data_type, tracers=combo)
                     ),
                 }
             )
@@ -594,9 +594,9 @@ def extract_all_data_types_cells(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
-                    "ells": sacc_data.get_tag(
-                        tag_name, data_type=data_type, tracers=combo
-                    ),
+                    "ells": np.array(
+                        sacc_data.get_tag(tag_name, data_type=data_type, tracers=combo)
+                    ).astype(np.int64),
                 }
             )
 

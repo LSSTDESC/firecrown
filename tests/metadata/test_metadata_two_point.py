@@ -452,6 +452,27 @@ def test_two_point_two_point_cwindow_invalid():
         TwoPointCWindow(XY=xy, window=window)
 
 
+def test_two_point_two_point_cwindow_invalid_window():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.SHEAR_T,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    with pytest.raises(
+        ValueError,
+        match="Window should be a Window object.",
+    ):
+        TwoPointCWindow(XY=xy, window="Im not a window")  # type: ignore
+
+
 def test_two_point_xi_theta():
 
     x = InferredGalaxyZDist(
