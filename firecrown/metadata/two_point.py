@@ -5,7 +5,7 @@ metadata from a sacc file.
 """
 
 from itertools import combinations_with_replacement, chain
-from typing import TypedDict, Optional, Union
+from typing import TypedDict, Optional, Union, TypeVar, Type
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
@@ -14,13 +14,37 @@ import numpy as np
 import numpy.typing as npt
 
 import sacc
+
+import yaml
+
+try:
+    from yaml import CLoader as Loader
+    from yaml import CDumper as Dumper
+except ImportError:
+    from yaml import Loader, Dumper  # type: ignore
+
 from sacc.data_types import required_tags
 
-from firecrown.utils import upper_triangle_indices
+from firecrown.utils import upper_triangle_indices, compare_optional_arrays
+
+ST = TypeVar("ST")  # This will be used in YAMLSerializable
+
+
+class YAMLSerializable:
+    """Protocol for classes that can be serialized to and from YAML."""
+
+    def to_yaml(self: ST) -> str:
+        """Return the YAML representation of the object."""
+        return yaml.dump(self, Dumper=Dumper)
+
+    @classmethod
+    def from_yaml(cls: Type[ST], yaml_str: str) -> ST:
+        """Load the object from YAML."""
+        return yaml.load(yaml_str, Loader=Loader)
 
 
 @dataclass(frozen=True)
-class TracerNames:
+class TracerNames(YAMLSerializable):
     """The names of the two tracers in the sacc file."""
 
     name1: str
@@ -46,7 +70,7 @@ class TracerNames:
 TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 
 
-class GalaxyMeasuredType(str, Enum):
+class GalaxyMeasuredType(YAMLSerializable, str, Enum):
     """This enumeration type for galaxy measurements.
 
     It provides identifiers for the different types of galaxy-related types of
@@ -113,7 +137,7 @@ class GalaxyMeasuredType(str, Enum):
         return hash((GalaxyMeasuredType, self.value))
 
 
-class CMBMeasuredType(str, Enum):
+class CMBMeasuredType(YAMLSerializable, str, Enum):
     """This enumeration type for CMB measurements.
 
     It provides identifiers for the different types of CMB-related types of
@@ -170,7 +194,7 @@ class CMBMeasuredType(str, Enum):
         return hash((CMBMeasuredType, self.value))
 
 
-class ClusterMeasuredType(str, Enum):
+class ClusterMeasuredType(YAMLSerializable, str, Enum):
     """This enumeration type for cluster measurements.
 
     It provides identifiers for the different types of cluster-related types of
@@ -274,7 +298,7 @@ def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9
 @dataclass(frozen=True)
-class InferredGalaxyZDist:
+class InferredGalaxyZDist(YAMLSerializable):
     """The class used to store the redshift resolution data for a sacc file.
 
     The sacc file is a complicated set of tracers (bins) and surveys. This class is
@@ -302,11 +326,24 @@ class InferredGalaxyZDist:
         if self.bin_name == "":
             raise ValueError("The bin_name should not be empty.")
 
+    def __eq__(self, other):
+        """Equality test for InferredGalaxyZDist.
+
+        Two InferredGalaxyZDist are equal if they have equal bin_name, z, dndz, and
+        measured_type.
+        """
+        return (
+            self.bin_name == other.bin_name
+            and np.array_equal(self.z, other.z)
+            and np.array_equal(self.dndz, other.dndz)
+            and self.measured_type == other.measured_type
+        )
+
 
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9
 @dataclass(frozen=True)
-class TwoPointXY:
+class TwoPointXY(YAMLSerializable):
     """Class defining a two-point correlation pair of redshift resolutions.
 
     It is used to store the two redshift resolutions for the two bins being
@@ -324,11 +361,15 @@ class TwoPointXY:
                 f"are not compatible."
             )
 
+    def __eq__(self, other) -> bool:
+        """Equality test for TwoPointXY objects."""
+        return self.x == other.x and self.y == other.y
+
 
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9
 @dataclass(frozen=True)
-class TwoPointCells:
+class TwoPointCells(YAMLSerializable):
     """Class defining the metadata for an harmonic-space two-point measurement.
 
     The class used to store the metadata for a (spherical) harmonic-space two-point
@@ -359,6 +400,10 @@ class TwoPointCells:
                 f"{self.XY.y.measured_type} must support harmonic-space calculations."
             )
 
+    def __eq__(self, other) -> bool:
+        """Equality test for TwoPointCells objects."""
+        return self.XY == other.XY and np.array_equal(self.ells, other.ells)
+
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
         return type_to_sacc_string_harmonic(
@@ -369,7 +414,7 @@ class TwoPointCells:
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9
 @dataclass()
-class Window:
+class Window(YAMLSerializable):
     """The class used to represent a window function.
 
     It contains the ells at which the window function is defined, the weights
@@ -402,11 +447,25 @@ class Window:
         """Return the number of observations supported by the window function."""
         return self.weights.shape[1]
 
+    def __eq__(self, other) -> bool:
+        """Equality test for Window objects."""
+        assert isinstance(other, Window)
+        # We will need special handling for the optional ells_for_interpolation.
+        # First handle the non-optinal parts.
+        partial_result = np.array_equal(self.ells, other.ells) and np.array_equal(
+            self.weights, other.weights
+        )
+        if not partial_result:
+            return False
+        return compare_optional_arrays(
+            self.ells_for_interpolation, other.ells_for_interpolation
+        )
+
 
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9
 @dataclass(frozen=True)
-class TwoPointCWindow:
+class TwoPointCWindow(YAMLSerializable):
     """Two-point function with a window function.
 
     The class used to store the metadata for a (spherical) harmonic-space two-point
@@ -447,7 +506,7 @@ class TwoPointCWindow:
 # kw_only=True only available in Python >= 3.10:
 # TODO update when we drop Python 3.9
 @dataclass(frozen=True)
-class TwoPointXiTheta:
+class TwoPointXiTheta(YAMLSerializable):
     """Class defining the metadata for a real-space two-point measurement.
 
     The class used to store the metadata for a real-space two-point function measured
@@ -479,6 +538,10 @@ class TwoPointXiTheta:
         return type_to_sacc_string_real(
             self.XY.x.measured_type, self.XY.y.measured_type
         )
+
+    def __eq__(self, other) -> bool:
+        """Equality test for TwoPointXiTheta objects."""
+        return self.XY == other.XY and np.array_equal(self.thetas, other.thetas)
 
 
 # TwoPointXiThetaIndex is a type used to create intermediate objects when

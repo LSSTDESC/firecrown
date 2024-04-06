@@ -19,6 +19,7 @@ from firecrown.metadata.two_point import (
     measured_type_is_compatible as is_compatible,
     measured_type_supports_harmonic as supports_harmonic,
     measured_type_supports_real as supports_real,
+    TracerNames,
     TwoPointCells,
     TwoPointCWindow,
     TwoPointXY,
@@ -27,6 +28,55 @@ from firecrown.metadata.two_point import (
     type_to_sacc_string_real as real,
     Window,
 )
+
+
+@pytest.fixture(name="bin_1")
+def make_bin_1() -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 5 bins."""
+    x = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.linspace(0, 1, 5),
+        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    return x
+
+
+@pytest.fixture(name="bin_2")
+def make_bin_2() -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 3 bins."""
+    x = InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.linspace(0, 1, 3),
+        dndz=np.array([0.1, 0.5, 0.4]),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    return x
+
+
+@pytest.fixture(name="window_1")
+def make_window_1() -> Window:
+    """Generate a Window object with 100 ells."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+    return window
+
+
+@pytest.fixture(name="two_point_cwindow_1")
+def make_two_point_cwindow_1(
+    window_1: Window, bin_1: InferredGalaxyZDist, bin_2: InferredGalaxyZDist
+) -> TwoPointCWindow:
+    """Generate a TwoPointCWindow object with 100 ells."""
+    xy = TwoPointXY(x=bin_1, y=bin_2)
+    two_point = TwoPointCWindow(XY=xy, window=window_1)
+    return two_point
 
 
 def test_order_enums():
@@ -546,3 +596,70 @@ def test_real_type_string_invalid():
         ValueError, match="Real-space correlation not supported for shear E."
     ):
         real(GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_E)
+
+
+def test_tracer_names_serialization():
+    tn = TracerNames("x", "y")
+    s = tn.to_yaml()
+    recovered = TracerNames.from_yaml(s)
+    assert tn == recovered
+
+
+def test_measured_type_serialization():
+    for t in ALL_MEASURED_TYPES:
+        s = t.to_yaml()
+        recovered = type(t).from_yaml(s)
+        assert t == recovered
+
+
+def test_inferred_galaxy_zdist_serialization(bin_1: InferredGalaxyZDist):
+    s = bin_1.to_yaml()
+    # Take a look at how hideous the generated string
+    # is.
+    recovered = InferredGalaxyZDist.from_yaml(s)
+    assert bin_1 == recovered
+
+
+def test_two_point_xy_serialization(
+    bin_1: InferredGalaxyZDist, bin_2: InferredGalaxyZDist
+):
+    xy = TwoPointXY(x=bin_1, y=bin_2)
+    s = xy.to_yaml()
+    # Take a look at how hideous the generated string
+    # is.
+    recovered = TwoPointXY.from_yaml(s)
+    assert xy == recovered
+
+
+def test_two_point_cells_serialization(
+    bin_1: InferredGalaxyZDist, bin_2: InferredGalaxyZDist
+):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    xy = TwoPointXY(x=bin_1, y=bin_2)
+    cells = TwoPointCells(ells=ells, XY=xy)
+    s = cells.to_yaml()
+    recovered = TwoPointCells.from_yaml(s)
+    assert cells == recovered
+
+
+def test_window_serialization(window_1: Window):
+    s = window_1.to_yaml()
+    recovered = Window.from_yaml(s)
+    assert window_1 == recovered
+
+
+def test_two_point_cwindow_serialization(two_point_cwindow_1: TwoPointCWindow):
+    s = two_point_cwindow_1.to_yaml()
+    recovered = TwoPointCWindow.from_yaml(s)
+    assert two_point_cwindow_1 == recovered
+
+
+def test_two_point_xi_theta_serialization(
+    bin_1: InferredGalaxyZDist, bin_2: InferredGalaxyZDist
+):
+    xy = TwoPointXY(x=bin_1, y=bin_2)
+    theta = np.array(np.linspace(0, 10, 10))
+    xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
+    s = xi_theta.to_yaml()
+    recovered = TwoPointXiTheta.from_yaml(s)
+    assert xi_theta == recovered
