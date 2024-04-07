@@ -489,9 +489,9 @@ def test_two_point_xi_theta():
     )
     xy = TwoPointXY(x=x, y=y)
     theta = np.array(np.linspace(0, 100, 100))
-    two_point = TwoPointXiTheta(XY=xy, theta=theta)
+    two_point = TwoPointXiTheta(XY=xy, thetas=theta)
 
-    assert_array_equal(two_point.theta, theta)
+    assert_array_equal(two_point.thetas, theta)
     assert two_point.XY == xy
     assert two_point.get_sacc_name() == real(x.measured_type, y.measured_type)
 
@@ -515,4 +515,4 @@ def test_two_point_xi_theta_invalid():
         ValueError,
         match="Measured types .* and .* must support real-space calculations.",
     ):
-        TwoPointXiTheta(XY=xy, theta=theta)
+        TwoPointXiTheta(XY=xy, thetas=theta)

@@ -13,10 +13,13 @@ import sacc
 
 from firecrown.utils import upper_triangle_indices
 from firecrown.metadata.two_point import (
-    extract_all_tracers,
     extract_all_data_types_cells,
     extract_all_data_types_xi_thetas,
+    extract_all_photoz_bin_combinations,
+    extract_all_tracers,
     TracerNames,
+    TwoPointCells,
+    TwoPointXiTheta,
 )
 
 
@@ -149,31 +152,28 @@ def fixture_sacc_galaxy_xis():
 
 
 def test_extract_all_tracers_cells(sacc_galaxy_cells):
-
     sacc_data, tracers, _ = sacc_galaxy_cells
     assert sacc_data is not None
     all_tracers = extract_all_tracers(sacc_data)
 
     for tracer in all_tracers:
-        orig_tracer = tracers[tracer.name]
+        orig_tracer = tracers[tracer.bin_name]
         assert_array_equal(tracer.z, orig_tracer[0])
-        assert_array_equal(tracer.nz, orig_tracer[1])
+        assert_array_equal(tracer.dndz, orig_tracer[1])
 
 
 def test_extract_all_tracers_xis(sacc_galaxy_xis):
-
     sacc_data, tracers, _ = sacc_galaxy_xis
     assert sacc_data is not None
     all_tracers = extract_all_tracers(sacc_data)
 
     for tracer in all_tracers:
-        orig_tracer = tracers[tracer.name]
+        orig_tracer = tracers[tracer.bin_name]
         assert_array_equal(tracer.z, orig_tracer[0])
-        assert_array_equal(tracer.nz, orig_tracer[1])
+        assert_array_equal(tracer.dndz, orig_tracer[1])
 
 
 def test_extract_all_data_cells(sacc_galaxy_cells):
-
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     all_data = extract_all_data_types_cells(sacc_data)
@@ -188,8 +188,27 @@ def test_extract_all_data_cells(sacc_galaxy_cells):
         assert two_point["data_type"] == tracer_pair[0]
 
 
-def test_extract_all_data_xis(sacc_galaxy_xis):
+def test_extract_all_data_cells_by_type(sacc_galaxy_cells):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
+    tracer_pairs = {
+        k: v for k, v in tracer_pairs.items() if v[0] == "galaxy_shear_cl_ee"
+    }
+    all_data = extract_all_data_types_cells(
+        sacc_data, allowed_data_type=["galaxy_shear_cl_ee"]
+    )
+    assert len(all_data) == len(tracer_pairs)
+
+    for two_point in all_data:
+        tracer_names = two_point["tracer_names"]
+        assert tracer_names in tracer_pairs
+
+        tracer_pair = tracer_pairs[tracer_names]
+        assert_array_equal(two_point["ells"], tracer_pair[1])
+        assert two_point["data_type"] == tracer_pair[0]
+
+
+def test_extract_all_data_xis(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     all_data = extract_all_data_types_xi_thetas(sacc_data)
@@ -202,3 +221,98 @@ def test_extract_all_data_xis(sacc_galaxy_xis):
         tracer_pair = tracer_pairs[tracer_names]
         assert_array_equal(two_point["thetas"], tracer_pair[1])
         assert two_point["data_type"] == tracer_pair[0]
+
+
+def test_extract_all_data_xis_by_type(sacc_galaxy_xis):
+    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+
+    tracer_pairs = {
+        k: v for k, v in tracer_pairs.items() if v[0] == "galaxy_density_xi"
+    }
+
+    all_data = extract_all_data_types_xi_thetas(
+        sacc_data, allowed_data_type=["galaxy_density_xi"]
+    )
+    assert len(all_data) == len(tracer_pairs)
+
+    for two_point in all_data:
+        tracer_names = two_point["tracer_names"]
+        assert tracer_names in tracer_pairs
+
+        tracer_pair = tracer_pairs[tracer_names]
+        assert_array_equal(two_point["thetas"], tracer_pair[1])
+        assert two_point["data_type"] == tracer_pair[0]
+
+
+def test_extract_all_photoz_bin_combinations_xis(sacc_galaxy_xis):
+    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+    # We build all possible combinations of tracers
+    all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
+
+    # We get all combinations already present in the data
+    tracer_names_list = [
+        TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name)
+        for bin_comb in all_bin_combs
+    ]
+
+    # We check if the particular are present in the list
+    for tracer_names in tracer_pairs:
+        assert tracer_names in tracer_names_list
+
+        bin_comb = all_bin_combs[tracer_names_list.index(tracer_names)]
+        two_point_xis = TwoPointXiTheta(
+            XY=bin_comb, thetas=np.linspace(0.0, 2.0 * np.pi, 20)
+        )
+        assert two_point_xis.get_sacc_name() == tracer_pairs[tracer_names][0]
+
+
+def test_extract_all_photoz_bin_combinations_cells(sacc_galaxy_cells):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+    # We build all possible combinations of tracers
+    all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
+
+    # We get all combinations already present in the data
+    tracer_names_list = [
+        TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name)
+        for bin_comb in all_bin_combs
+    ]
+
+    # We check if the particular are present in the list
+    for tracer_names in tracer_pairs:
+        assert tracer_names in tracer_names_list
+
+        bin_comb = all_bin_combs[tracer_names_list.index(tracer_names)]
+        two_point_cells = TwoPointCells(
+            XY=bin_comb, ells=np.unique(np.logspace(1, 3, 10))
+        )
+        assert two_point_cells.get_sacc_name() == tracer_pairs[tracer_names][0]
+
+
+def test_make_cells(sacc_galaxy_cells):
+    sacc_data, _, _ = sacc_galaxy_cells
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
+
+    for bin_comb in all_bin_combs:
+        two_point_cells = TwoPointCells(XY=bin_comb, ells=ells)
+
+        assert two_point_cells.ells is not None
+        assert_array_equal(two_point_cells.ells, ells)
+        assert two_point_cells.XY is not None
+        assert two_point_cells.XY == bin_comb
+
+
+def test_make_xis(sacc_galaxy_xis):
+    sacc_data, _, _ = sacc_galaxy_xis
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
+
+    for bin_comb in all_bin_combs:
+        two_point_xis = TwoPointXiTheta(XY=bin_comb, thetas=thetas)
+
+        assert two_point_xis.thetas is not None
+        assert_array_equal(two_point_xis.thetas, thetas)
+        assert two_point_xis.XY is not None
+        assert two_point_xis.XY == bin_comb

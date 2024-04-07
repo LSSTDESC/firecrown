@@ -4,7 +4,8 @@ It contains all data classes and functions for store and extract two-point funct
 metadata from a sacc file.
 """
 
-from typing import TypedDict, Optional, Union, Tuple
+from itertools import product, combinations_with_replacement
+from typing import TypedDict, Optional, Union
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
@@ -228,6 +229,9 @@ class ClusterMeasuredType(str, Enum):
 
 
 MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
+ALL_MEASURED_TYPES: list[MeasuredType] = list(
+    chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
+)
 ALL_MEASURED_TYPES_TYPES = (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
 HARMONIC_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_E,)
 REAL_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_T,)
@@ -266,11 +270,6 @@ def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
     if main_type_index_a == main_type_index_b:
         return int(a) - int(b)
     return main_type_index_a - main_type_index_b
-
-
-ALL_MEASURED_TYPES: list[MeasuredType] = list(
-    chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
-)
 
 
 # kw_only=True only available in Python >= 3.10:
@@ -461,7 +460,7 @@ class TwoPointXiTheta:
     """
 
     XY: TwoPointXY
-    theta: npt.NDArray[np.float64]
+    thetas: npt.NDArray[np.float64]
 
     def __post_init__(self):
         """Validate the TwoPointCWindow data.
@@ -507,7 +506,7 @@ TwoPointCellsIndex = TypedDict(
 )
 
 
-def extract_all_tracers(sacc_data: sacc.Sacc) -> list[sacc.tracers.BaseTracer]:
+def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -516,12 +515,101 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[sacc.tracers.BaseTracer]:
     This function extracts the two-point function metadata from the Sacc object
     and returns it in a list.
     """
-    return sacc_data.tracers.values()
+
+    tracers = sacc_data.tracers.values()
+
+    data_points = sacc_data.get_data_points()
+
+    inferred_galaxy_zdists = []
+
+    for tracer in tracers:
+        name = tracer.name
+        tracer_associated_types = {
+            d.data_type for d in data_points if name in d.tracers
+        }
+        tracer_associated_types_len = len(tracer_associated_types)
+
+        type_count: dict[MeasuredType, int] = {
+            measured_type: 0 for measured_type in ALL_MEASURED_TYPES
+        }
+        for data_type in tracer_associated_types:
+            a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+            type_count[a] += 1
+            type_count[b] += 1
+
+        candidate_measured_types = [
+            measured_type
+            for measured_type, count in type_count.items()
+            if count >= tracer_associated_types_len
+        ]
+
+        if len(candidate_measured_types) == 0:
+            raise ValueError(
+                f"Tracer {name} does not have a compatible measured type. Inconsistent SACC object."
+            )
+
+        if len(candidate_measured_types) == 1:
+            inferred_galaxy_zdists.append(
+                InferredGalaxyZDist(
+                    bin_name=name,
+                    z=tracer.z,
+                    dndz=tracer.nz,
+                    measured_type=candidate_measured_types[0],
+                )
+            )
+        else:
+            # We cannot infer the measured type from the associated data points.
+            # We need to check the tracer name.
+            if (
+                LENS_REGEX.match(name)
+                and GalaxyMeasuredType.COUNTS in candidate_measured_types
+            ):
+                inferred_galaxy_zdists.append(
+                    InferredGalaxyZDist(
+                        bin_name=name,
+                        z=tracer.z,
+                        dndz=tracer.nz,
+                        measured_type=GalaxyMeasuredType.COUNTS,
+                    )
+                )
+            elif SOURCE_REGEX.match(name):
+                # The source tracers can be either shear E or shear T.
+                if GalaxyMeasuredType.SHEAR_E in candidate_measured_types:
+                    inferred_galaxy_zdists.append(
+                        InferredGalaxyZDist(
+                            bin_name=name,
+                            z=tracer.z,
+                            dndz=tracer.nz,
+                            measured_type=GalaxyMeasuredType.SHEAR_E,
+                        )
+                    )
+                elif GalaxyMeasuredType.SHEAR_T in candidate_measured_types:
+                    inferred_galaxy_zdists.append(
+                        InferredGalaxyZDist(
+                            bin_name=name,
+                            z=tracer.z,
+                            dndz=tracer.nz,
+                            measured_type=GalaxyMeasuredType.SHEAR_T,
+                        )
+                    )
+                else:
+                    raise ValueError(
+                        f"Tracer {name} does not have a compatible measured type. "
+                        f"Inconsistent SACC object."
+                    )
+            else:
+                raise ValueError(
+                    f"Tracer {name} does not have a compatible measured type. "
+                    f"Inconsistent SACC object."
+                )
+
+    return inferred_galaxy_zdists
 
 
 def extract_all_data_types_xi_thetas(
     sacc_data: sacc.Sacc,
-    allowed_data_type: Optional[list[Tuple[MeasuredType, MeasuredType]]] = None,
+    allowed_data_type: Optional[list[str]] = None,
 ) -> list[TwoPointXiThetaIndex]:
     """Extract all two-point function metadata from a sacc file.
 
@@ -607,8 +695,7 @@ def extract_all_photoz_bin_combinations(
     sacc_data: sacc.Sacc,
 ) -> list[TwoPointXY]:
     """Extracts the two-point function metadata from a sacc file."""
-    tracers = extract_all_tracers(sacc_data)
-    inferred_galaxy_zdists = make_galaxy_zdists_dataclasses(tracers)
+    inferred_galaxy_zdists = extract_all_tracers(sacc_data)
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
     return bin_combinations
@@ -634,35 +721,6 @@ LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 
 
-def measured_type_from_name(name: str) -> MeasuredType:
-    """Extracts the measured type from the tracer name."""
-    if LENS_REGEX.match(name):
-        return GalaxyMeasuredType.COUNTS
-
-    if SOURCE_REGEX.match(name):
-        return GalaxyMeasuredType.SHEAR_E
-
-    raise ValueError(f"Measured type not found for tracer name {name}.")
-
-
-def make_galaxy_zdists_dataclasses(
-    tracers: list[sacc.tracers.BaseTracer],
-) -> list[InferredGalaxyZDist]:
-    """Make a list of InferredGalaxyZDist dataclasses from a list of sacc tracers."""
-    inferrerd_galaxy_zdists = [
-        InferredGalaxyZDist(
-            bin_name=tracer.name,
-            z=tracer.z,
-            dndz=tracer.nz,
-            measured_type=measured_type_from_name(tracer.name),
-        )
-        for tracer in tracers
-        if isinstance(tracer, sacc.tracers.NZTracer)
-    ]
-
-    return inferrerd_galaxy_zdists
-
-
 def make_all_photoz_bin_combinations(
     inferred_galaxy_zdists: list[InferredGalaxyZDist],
 ) -> list[TwoPointXY]:
@@ -675,87 +733,13 @@ def make_all_photoz_bin_combinations(
             y=inferred_galaxy_zdists[j],
         )
         for i, j in upper_triangle_indices(inferred_galaxy_zdists_len)
+        if measured_type_is_compatible(
+            inferred_galaxy_zdists[i].measured_type,
+            inferred_galaxy_zdists[j].measured_type,
+        )
     ]
 
     return bin_combinations
-
-
-DATATYPE_DICT = {
-    (
-        GalaxyMeasuredType.COUNTS,
-        GalaxyMeasuredType.COUNTS,
-        "xi_theta",
-    ): "galaxy_density_xi",
-    (
-        GalaxyMeasuredType.SHEAR_E,
-        GalaxyMeasuredType.SHEAR_E,
-        "xi",
-    ): "galaxy_shear_xi_plus",
-}
-
-
-def make_xi_thetas(
-    *,
-    data_type: str,
-    tracer_names: TracerNames,
-    theta: np.ndarray,
-    bin_combinations: list[TwoPointXY],
-) -> TwoPointXiTheta:
-    """Make a TwoPointXiTheta dataclass from the two-point function metadata."""
-    bin_combo = get_combination(bin_combinations, tracer_names)
-
-    assert (
-        DATATYPE_DICT[
-            (bin_combo.x.measured_type, bin_combo.y.measured_type, "xi_theta")
-        ]
-        == data_type
-    )
-
-    return TwoPointXiTheta(
-        XY=bin_combo,
-        theta=theta,
-    )
-
-
-def make_cells(
-    *,
-    data_type: str,
-    tracer_names: TracerNames,
-    ells: np.ndarray,
-    bin_combinations: list[TwoPointXY],
-) -> TwoPointCells:
-    """Make a TwoPointCells dataclass from the two-point function metadata."""
-    bin_combo = get_combination(bin_combinations, tracer_names)
-
-    assert (
-        DATATYPE_DICT[
-            (bin_combo.x.measured_type, bin_combo.y.measured_type, "xi_theta")
-        ]
-        == data_type
-    )
-
-    return TwoPointCells(
-        XY=bin_combo,
-        ells=ells,
-    )
-
-
-def get_combination(bin_combinations: list[TwoPointXY], bin_combo: TracerNames):
-    """Get the combination of two-point function data for a sacc file."""
-    for combination in bin_combinations:
-        if (
-            combination.x.bin_name == bin_combo[0]
-            and combination.y.bin_name == bin_combo[1]
-        ):
-            return combination
-
-        if (
-            combination.x.bin_name == bin_combo[1]
-            and combination.y.bin_name == bin_combo[0]
-        ):
-            return combination
-
-    raise ValueError(f"Combination {bin_combo} not found in bin_combinations.")
 
 
 def _type_to_sacc_string_common(x: MeasuredType, y: MeasuredType) -> str:
@@ -813,3 +797,14 @@ def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
         raise ValueError("Harmonic-space correlation not supported for shear T.")
 
     return _type_to_sacc_string_common(x, y) + (f"cl_{suffix}" if suffix else "cl")
+
+
+MEASURED_TYPE_STRING_MAP: dict[str, tuple[MeasuredType, MeasuredType]] = {
+    type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
+    for a, b in combinations_with_replacement(ALL_MEASURED_TYPES, 2)
+    if measured_type_supports_real(a) and measured_type_supports_real(b)
+} | {
+    type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
+    for a, b in combinations_with_replacement(ALL_MEASURED_TYPES, 2)
+    if measured_type_supports_harmonic(a) and measured_type_supports_harmonic(b)
+}
