@@ -4,12 +4,11 @@ It contains all data classes and functions for store and extract two-point funct
 metadata from a sacc file.
 """
 
-from itertools import product, combinations_with_replacement
+from itertools import combinations_with_replacement, chain
 from typing import TypedDict, Optional, Union
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
-from itertools import chain
 
 import numpy as np
 import numpy.typing as npt
@@ -515,7 +514,6 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     This function extracts the two-point function metadata from the Sacc object
     and returns it in a list.
     """
-
     tracers = sacc_data.tracers.values()
 
     data_points = sacc_data.get_data_points()
@@ -546,7 +544,8 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
 
         if len(candidate_measured_types) == 0:
             raise ValueError(
-                f"Tracer {name} does not have a compatible measured type. Inconsistent SACC object."
+                f"Tracer {name} does not have a compatible measured type. "
+                f"Inconsistent SACC object."
             )
 
         if len(candidate_measured_types) == 1:
