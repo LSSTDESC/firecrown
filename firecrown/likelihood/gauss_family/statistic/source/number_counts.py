@@ -1,7 +1,7 @@
 """Number counts source and systematics."""
 
 from __future__ import annotations
-from typing import Optional, final
+from typing import Optional, final, Sequence
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -268,7 +268,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
+        systematics: Optional[
+            Sequence[SourceGalaxySystematic[NumberCountsArgs]]
+        ] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -298,10 +300,19 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def create_ready(
         cls,
         inferred_zdist: InferredGalaxyZDist,
+        has_rsd: bool = False,
+        derived_scale: bool = False,
+        scale: float = 1.0,
         systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
     ) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
-        obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)
+        obj = cls(
+            sacc_tracer=inferred_zdist.bin_name,
+            systematics=systematics,
+            has_rsd=has_rsd,
+            derived_scale=derived_scale,
+            scale=scale,
+        )
         obj.tracer_args = NumberCountsArgs(
             scale=obj.scale,
             z=inferred_zdist.z,
@@ -435,18 +446,18 @@ class NumberCountsFactory:
     def __init__(
         self,
         per_bin_systematics: list[NumberCountsSystematicFactory],
-        global_systematics: list[NumberCountsSystematic],
+        global_systematics: Sequence[NumberCountsSystematic],
     ) -> None:
         self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
             per_bin_systematics
         )
-        self.global_systematics: list[NumberCountsSystematic] = global_systematics
-        self.cache: dict[InferredGalaxyZDist, NumberCounts] = {}
+        self.global_systematics: Sequence[NumberCountsSystematic] = global_systematics
+        self.cache: dict[str, NumberCounts] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
-        if inferred_zdist in self.cache:
-            return self.cache[inferred_zdist]
+        if inferred_zdist.bin_name in self.cache:
+            return self.cache[inferred_zdist.bin_name]
 
         systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
             systematic_factory.create(inferred_zdist)
@@ -454,7 +465,7 @@ class NumberCountsFactory:
         ]
         systematics.extend(self.global_systematics)
 
-        wl = NumberCounts.create_ready(inferred_zdist, systematics)
-        self.cache[inferred_zdist] = wl
+        nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
+        self.cache[inferred_zdist.bin_name] = nc
 
-        return wl
+        return nc

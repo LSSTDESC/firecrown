@@ -1,7 +1,7 @@
 """Weak lensing source and systematics."""
 
 from __future__ import annotations
-from typing import Optional, final
+from typing import Optional, final, Sequence
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -215,7 +215,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         *,
         sacc_tracer: str,
         scale: float = 1.0,
-        systematics: Optional[list[SourceGalaxySystematic[WeakLensingArgs]]] = None,
+        systematics: Optional[Sequence[SourceGalaxySystematic[WeakLensingArgs]]] = None,
     ):
         """Initialize the WeakLensing object.
 
@@ -327,18 +327,18 @@ class WeakLensingFactory:
     def __init__(
         self,
         per_bin_systematics: list[WeakLensingSystematicFactory],
-        global_systematics: list[WeakLensingSystematic],
+        global_systematics: Sequence[WeakLensingSystematic],
     ) -> None:
         self.per_bin_systematics: list[WeakLensingSystematicFactory] = (
             per_bin_systematics
         )
-        self.global_systematics: list[WeakLensingSystematic] = global_systematics
-        self.cache: dict[InferredGalaxyZDist, WeakLensing] = {}
+        self.global_systematics: Sequence[WeakLensingSystematic] = global_systematics
+        self.cache: dict[str, WeakLensing] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        if inferred_zdist in self.cache:
-            return self.cache[inferred_zdist]
+        if inferred_zdist.bin_name in self.cache:
+            return self.cache[inferred_zdist.bin_name]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
             systematic_factory.create(inferred_zdist)
@@ -347,6 +347,6 @@ class WeakLensingFactory:
         systematics.extend(self.global_systematics)
 
         wl = WeakLensing.create_ready(inferred_zdist, systematics)
-        self.cache[inferred_zdist] = wl
+        self.cache[inferred_zdist.bin_name] = wl
 
         return wl

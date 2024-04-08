@@ -4,6 +4,7 @@ Tests for the module firecrown.likelihood.gauss_family.statistic.source.source.
 
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose
 
 import pyccl
 import sacc
@@ -16,6 +17,8 @@ from firecrown.likelihood.gauss_family.statistic.source.source import (
     SourceGalaxySelectField,
 )
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
+import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
+from firecrown.metadata.two_point import extract_all_tracers
 from firecrown.parameters import ParamsMap
 
 
@@ -119,9 +122,145 @@ def test_trivial_source_select_field():
     assert trivial.tracer_args.field == "old_field"
 
 
-def test_weak_lensing_source():
-    pass
+def test_weak_lensing_source_init(sacc_galaxy_cells_src0_src0):
+    sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
+
+    source = wl.WeakLensing(sacc_tracer="src0")
+    source.read(sacc_data)
+
+    assert_allclose(source.tracer_args.z, z)
+    assert_allclose(source.tracer_args.dndz, dndz)
 
 
-def test_number_counts_source():
-    pass
+def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
+    assert src0 is not None
+
+    source_ready = wl.WeakLensing.create_ready(inferred_zdist=src0)
+
+    source_read = wl.WeakLensing(sacc_tracer="src0")
+    source_read.read(sacc_data)
+
+    assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
+    assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+
+
+def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
+    assert src0 is not None
+
+    wl_factory = wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    source_ready = wl_factory.create(inferred_zdist=src0)
+
+    source_read = wl.WeakLensing(sacc_tracer="src0")
+    source_read.read(sacc_data)
+
+    assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
+    assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+
+
+def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_src0):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
+    assert src0 is not None
+
+    global_systematics = [wl.LinearAlignmentSystematic(sacc_tracer="")]
+    wl_factory = wl.WeakLensingFactory(
+        per_bin_systematics=[], global_systematics=global_systematics
+    )
+    source_ready = wl_factory.create(inferred_zdist=src0)
+
+    source_read = wl.WeakLensing(sacc_tracer="src0", systematics=global_systematics)
+    source_read.read(sacc_data)
+
+    assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
+    assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+    assert source_ready.systematics == source_read.systematics
+
+
+def test_weak_lensing_source_init_wrong_name(sacc_galaxy_cells_src0_src0):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+
+    source = wl.WeakLensing(sacc_tracer="src10")
+    with pytest.raises(KeyError, match="src10"):
+        source.read(sacc_data)
+
+
+def test_number_counts_source_init(sacc_galaxy_cells_lens0_lens0):
+    sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
+
+    source = nc.NumberCounts(sacc_tracer="lens0")
+    source.read(sacc_data)
+
+    assert_allclose(source.tracer_args.z, z)
+    assert_allclose(source.tracer_args.dndz, dndz)
+
+
+def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
+    assert lens0 is not None
+
+    source_ready = nc.NumberCounts.create_ready(inferred_zdist=lens0)
+
+    source_read = nc.NumberCounts(sacc_tracer="lens0")
+    source_read.read(sacc_data)
+
+    assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
+    assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+
+
+def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
+    assert lens0 is not None
+
+    nc_factory = nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    source_ready = nc_factory.create(inferred_zdist=lens0)
+
+    source_read = nc.NumberCounts(sacc_tracer="lens0")
+    source_read.read(sacc_data)
+
+    assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
+    assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+
+
+def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
+    assert lens0 is not None
+
+    global_systematics = [nc.PTNonLinearBiasSystematic(sacc_tracer="")]
+    nc_factory = nc.NumberCountsFactory(
+        per_bin_systematics=[], global_systematics=global_systematics
+    )
+    source_ready = nc_factory.create(inferred_zdist=lens0)
+
+    source_read = nc.NumberCounts(sacc_tracer="lens0", systematics=global_systematics)
+    source_read.read(sacc_data)
+
+    assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
+    assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+    assert source_ready.systematics == source_read.systematics
+
+
+def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+
+    source = nc.NumberCounts(sacc_tracer="lens10")
+    with pytest.raises(KeyError, match="lens10"):
+        source.read(sacc_data)
