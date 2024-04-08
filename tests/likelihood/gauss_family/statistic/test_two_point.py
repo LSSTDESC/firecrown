@@ -2,6 +2,7 @@
 Tests for the TwoPoint module.
 """
 
+import re
 import numpy as np
 import pytest
 
@@ -96,7 +97,7 @@ def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window):
     statistic.compute_theory_vector(tools)
 
 
-def test_two_point_src0_src0_no_data(sacc_galaxy_cells_src0_src0_no_data):
+def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -106,6 +107,35 @@ def test_two_point_src0_src0_no_data(sacc_galaxy_cells_src0_src0_no_data):
         "maximum": 100,
         "n": 5,
         "binning": "lin",
+    }
+
+    statistic = TwoPoint(
+        "galaxy_shear_cl_ee",
+        src0,
+        src0,
+        ell_or_theta=ell_config,
+    )
+    with pytest.warns(UserWarning, match="Empty index selected"):
+        statistic.read(sacc_data)
+
+    assert statistic.window is None
+    assert statistic.ells is not None
+    assert statistic.thetas is None
+    assert all(np.isfinite(statistic.ells))
+    assert all(statistic.ells >= 1)
+    assert all(statistic.ells <= 100)
+
+
+def test_two_point_src0_src0_no_data_log(sacc_galaxy_cells_src0_src0_no_data):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
+
+    src0 = WeakLensing(sacc_tracer="src0")
+
+    ell_config: EllOrThetaConfig = {
+        "minimum": 1,
+        "maximum": 100,
+        "n": 5,
+        "binning": "log",
     }
 
     statistic = TwoPoint(
@@ -204,3 +234,66 @@ def test_two_point_lens0_lens0_cuts(sacc_galaxy_xis_lens0_lens0):
 
     statistic.update(param_map)
     statistic.compute_theory_vector(tools)
+
+
+def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
+
+    src0 = NumberCounts(sacc_tracer="lens0")
+
+    statistic = TwoPoint(
+        "galaxy_density_xi",
+        src0,
+        src0,
+        ell_for_xi={"minimum": 2, "midpoint": 6, "n_log": 180},
+    )
+    statistic.read(sacc_data)
+
+    param_map = ParamsMap({"lens0_bias": 1.0})
+    tools = ModelingTools()
+    tools.update(param_map)
+    tools.prepare(pyccl.CosmologyVanillaLCDM())
+
+    assert statistic.window is None
+    assert statistic.thetas is not None
+    assert all(np.isfinite(statistic.thetas))
+    assert statistic.ells_for_xi is not None
+    assert all(np.isfinite(statistic.ells_for_xi))
+    # The size depends on the configuration but also
+    # on how many unique ells we get from the log-binning.
+    assert len(statistic.ells_for_xi) == 175
+
+    statistic.update(param_map)
+    statistic.compute_theory_vector(tools)
+
+
+def test_two_point_src0_src0_no_data_error(sacc_galaxy_cells_src0_src0_no_data):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
+
+    src0 = WeakLensing(sacc_tracer="src0")
+
+    statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0)
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "for data type 'galaxy_shear_cl_ee' have no 2pt data in the SACC file "
+            "and no input ell values were given"
+        ),
+    ):
+        statistic.read(sacc_data)
+
+
+def test_two_point_lens0_lens0_no_data_error(sacc_galaxy_xis_lens0_lens0_no_data):
+    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_no_data
+
+    src0 = NumberCounts(sacc_tracer="lens0")
+
+    statistic = TwoPoint("galaxy_density_xi", src0, src0)
+    with pytest.raises(
+        RuntimeError,
+        match=re.escape(
+            "for data type 'galaxy_density_xi' have no 2pt data in the SACC file "
+            "and no input theta values were given"
+        ),
+    ):
+        statistic.read(sacc_data)
