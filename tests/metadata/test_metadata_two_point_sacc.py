@@ -4,6 +4,7 @@ In this module, we test the functions and classes involved SACC extraction tools
 """
 
 from itertools import product
+import re
 import pytest
 import numpy as np
 import numpy.typing as npt
@@ -17,10 +18,11 @@ from firecrown.metadata.two_point import (
     extract_all_data_types_xi_thetas,
     extract_all_photoz_bin_combinations,
     extract_all_tracers,
+    extract_window_function,
+    GalaxyMeasuredType,
     TracerNames,
     TwoPointCells,
     TwoPointXiTheta,
-    GalaxyMeasuredType,
 )
 
 
@@ -267,6 +269,112 @@ def fixture_sacc_galaxy_xis_src0_lens0_bad_source_label():
     sacc_data.add_covariance(cov)
 
     return sacc_data, z, dndz0, dndz1
+
+
+@pytest.fixture(name="sacc_galaxy_xis_inconsistent_lens_label")
+def fixture_sacc_galaxy_xis_inconsistent_lens_label():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
+
+    xis = np.random.normal(size=thetas.shape[0])
+    sacc_data.add_theta_xi(
+        "cmbGalaxy_convergenceShear_xi_t", "src0", "lens0", thetas, xis
+    )
+
+    cov = np.diag(np.ones_like(xis) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, dndz0, dndz1
+
+
+@pytest.fixture(name="sacc_galaxy_xis_inconsistent_source_label")
+def fixture_sacc_galaxy_xis_inconsistent_source_label():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
+
+    xis = np.random.normal(size=thetas.shape[0])
+    sacc_data.add_theta_xi("clusterGalaxy_density_xi", "src0", "lens0", thetas, xis)
+
+    cov = np.diag(np.ones_like(xis) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, dndz0, dndz1
+
+
+@pytest.fixture(name="sacc_galaxy_xis_three_tracers")
+def fixture_sacc_galaxy_xis_three_tracers():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
+
+    dndz2 = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens1", z, dndz2)
+
+    xis = np.random.normal(size=thetas.shape[0])
+    for theta, xi in zip(thetas, xis):
+        sacc_data.add_data_point(
+            "galaxy_density_xi", ("src0", "lens0", "lens1"), xi, theta=theta
+        )
+
+    cov = np.diag(np.ones_like(xis) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, dndz0, dndz1, dndz2
+
+
+@pytest.fixture(name="sacc_galaxy_cells_three_tracers")
+def fixture_sacc_galaxy_cells_three_tracers():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
+
+    dndz2 = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens1", z, dndz2)
+
+    Cells = np.random.normal(size=ells.shape[0])
+    for ell, cell in zip(ells, Cells):
+        sacc_data.add_data_point(
+            "galaxy_shear_cl_ee", ("src0", "lens0", "lens1"), cell, ell=ell
+        )
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, dndz0, dndz1, dndz2
 
 
 @pytest.fixture(name="sacc_galaxy_cells")
@@ -574,7 +682,39 @@ def test_extract_all_tracers_bad_source_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match="Tracer non_informative_label does not have a compatible measured type.",
+        match=(
+            "Tracer non_informative_label does not have a compatible measured type."
+        ),
+    ):
+        _ = extract_all_tracers(sacc_data)
+
+
+def test_extract_all_tracers_inconsistent_lens_label(
+    sacc_galaxy_xis_inconsistent_lens_label,
+):
+    sacc_data, _, _, _ = sacc_galaxy_xis_inconsistent_lens_label
+    assert sacc_data is not None
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Tracer lens0 matches the lens regex but does "
+            "not have a compatible measured type."
+        ),
+    ):
+        _ = extract_all_tracers(sacc_data)
+
+
+def test_extract_all_tracers_inconsistent_source_label(
+    sacc_galaxy_xis_inconsistent_source_label,
+):
+    sacc_data, _, _, _ = sacc_galaxy_xis_inconsistent_source_label
+    assert sacc_data is not None
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Tracer src0 matches the source regex but does "
+            "not have a compatible measured type."
+        ),
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -648,6 +788,40 @@ def test_extract_all_data_xis_by_type(sacc_galaxy_xis):
         tracer_pair = tracer_pairs[tracer_names]
         assert_array_equal(two_point["thetas"], tracer_pair[1])
         assert two_point["data_type"] == tracer_pair[0]
+
+
+def test_extract_no_window(sacc_galaxy_cells_src0_src0):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+    indices = np.array([0, 1, 2], dtype=np.int64)
+
+    with pytest.warns(UserWarning):
+        assert extract_window_function(sacc_data, indices=indices) is None
+
+
+def test_extract_all_data_types_three_tracers_xis(sacc_galaxy_xis_three_tracers):
+    sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Tracer combination ('src0', 'lens0', 'lens1') "
+            "does not have exactly two tracers."
+        ),
+    ):
+        _ = extract_all_data_types_xi_thetas(sacc_data)
+
+
+def test_extract_all_data_types_three_tracers_cells(sacc_galaxy_cells_three_tracers):
+    sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Tracer combination ('src0', 'lens0', 'lens1') "
+            "does not have exactly two tracers."
+        ),
+    ):
+        _ = extract_all_data_types_cells(sacc_data)
 
 
 def test_extract_all_photoz_bin_combinations_xis(sacc_galaxy_xis):

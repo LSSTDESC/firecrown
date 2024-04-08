@@ -388,6 +388,22 @@ def test_two_point_window_invalid_ells_for_interpolation():
         )
 
 
+def test_two_point_window_invalid_weights_shape():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400)
+    ells_for_interpolation = np.array(np.linspace(0, 100), dtype=np.int64)
+
+    with pytest.raises(
+        ValueError,
+        match="Weights should be a 2D array.",
+    ):
+        Window(
+            ells=ells,
+            weights=weights,
+            ells_for_interpolation=ells_for_interpolation,
+        )
+
+
 def test_two_point_two_point_cwindow():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
@@ -516,3 +532,17 @@ def test_two_point_xi_theta_invalid():
         match="Measured types .* and .* must support real-space calculations.",
     ):
         TwoPointXiTheta(XY=xy, thetas=theta)
+
+
+def test_harmonic_type_string_invalid():
+    with pytest.raises(
+        ValueError, match="Harmonic-space correlation not supported for shear T."
+    ):
+        harmonic(GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_T)
+
+
+def test_real_type_string_invalid():
+    with pytest.raises(
+        ValueError, match="Real-space correlation not supported for shear E."
+    ):
+        real(GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_E)
