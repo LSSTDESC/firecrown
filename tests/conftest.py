@@ -185,7 +185,7 @@ def fixture_sacc_galaxy_cells_src0_src0():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
@@ -204,7 +204,7 @@ def fixture_sacc_galaxy_cells_src0_src0():
 def fixture_sacc_galaxy_cells_src0_src1():
     """Fixture for a SACC data without window functions."""
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     sacc_data = sacc.Sacc()
@@ -229,7 +229,7 @@ def fixture_sacc_galaxy_cells_lens0_lens0():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
@@ -249,7 +249,7 @@ def fixture_sacc_galaxy_cells_lens0_lens1():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     dndz0 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
@@ -271,7 +271,7 @@ def fixture_sacc_galaxy_xis_lens0_lens0():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
@@ -291,7 +291,7 @@ def fixture_sacc_galaxy_xis_lens0_lens1():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
     dndz0 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
@@ -313,7 +313,7 @@ def fixture_sacc_galaxy_cells_src0_lens0():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
@@ -336,7 +336,7 @@ def fixture_sacc_galaxy_xis_src0_lens0():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
     dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
@@ -359,7 +359,7 @@ def fixture_sacc_galaxy_cells():
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     src_bins_centers = np.linspace(0.25, 0.75, 5)
@@ -426,7 +426,7 @@ def fixture_sacc_galaxy_cells():
 def fixture_sacc_galaxy_xis():
     """Fixture for a SACC data without window functions."""
 
-    z = np.linspace(0, 1.0, 50) + 0.05
+    z = np.linspace(0, 1.0, 256) + 0.05
     thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
     sacc_data = sacc.Sacc()
@@ -479,3 +479,58 @@ def fixture_sacc_galaxy_xis():
     sacc_data.add_covariance(cov)
 
     return sacc_data, tracers, tracer_pairs
+
+
+@pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
+def fixture_sacc_galaxy_cells_src0_src0_no_data():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    return sacc_data, z, dndz
+
+
+@pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_no_data")
+def fixture_sacc_galaxy_xis_lens0_lens0_no_data():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz)
+
+    return sacc_data, z, thetas
+
+
+# Two-point related SACC data fixtures with window functions
+
+
+@pytest.fixture(name="sacc_galaxy_cells_src0_src0_window")
+def fixture_sacc_galaxy_cells_src0_src0_window():
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Making a diagonal window function
+    window = sacc.BandpowerWindow(ells, np.diag(np.ones_like(ells)))
+
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl(
+        "galaxy_shear_cl_ee", "src0", "src0", ells, Cells, window=window
+    )
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, dndz
