@@ -82,8 +82,8 @@ def fixture_config_with_const_gaussian_missing_sampling_parameters_sections() ->
     return result
 
 
-@pytest.fixture(name="config_with_two_point")
-def fixture_config_with_two_point() -> DataBlock:
+@pytest.fixture(name="config_with_two_point_real")
+def fixture_config_with_two_point_real() -> DataBlock:
     result = DataBlock()
     result.put_string(
         option_section,
@@ -96,6 +96,34 @@ def fixture_config_with_two_point() -> DataBlock:
         option_section,
         "sampling_parameters_sections",
         "firecrown_two_point_parameters",
+    )
+    result.put_string(
+        option_section,
+        "projection",
+        "real",
+    )
+    return result
+
+
+@pytest.fixture(name="config_with_two_point_harmonic")
+def fixture_config_with_two_point_harmonic() -> DataBlock:
+    result = DataBlock()
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
+        ),
+    )
+    result.put_string(
+        option_section,
+        "sampling_parameters_sections",
+        "firecrown_two_point_parameters",
+    )
+    result.put_string(
+        option_section,
+        "projection",
+        "harmonic",
     )
     return result
 
@@ -120,11 +148,19 @@ def fixture_firecrown_mod_with_const_gaussian(
     return result
 
 
-@pytest.fixture(name="firecrown_mod_with_two_point")
-def fixture_firecrown_mod_with_two_point(
-    config_with_two_point: DataBlock,
+@pytest.fixture(name="firecrown_mod_with_two_point_real")
+def fixture_firecrown_mod_with_two_point_real(
+    config_with_two_point_real: DataBlock,
 ) -> FirecrownLikelihood:
-    result = FirecrownLikelihood(config_with_two_point)
+    result = FirecrownLikelihood(config_with_two_point_real)
+    return result
+
+
+@pytest.fixture(name="firecrown_mod_with_two_point_harmonic")
+def fixture_firecrown_mod_with_two_point_harmonic(
+    config_with_two_point_harmonic: DataBlock,
+) -> FirecrownLikelihood:
+    result = FirecrownLikelihood(config_with_two_point_harmonic)
     return result
 
 
@@ -308,10 +344,66 @@ def test_module_exec_working(
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
 
 
-def test_module_exec_with_two_point(
-    firecrown_mod_with_two_point: FirecrownLikelihood, sample_with_lens0_bias: DataBlock
+def test_module_exec_with_two_point_real(
+    firecrown_mod_with_two_point_real: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
 ):
-    assert firecrown_mod_with_two_point.execute(sample_with_lens0_bias) == 0
+    assert firecrown_mod_with_two_point_real.execute(sample_with_lens0_bias) == 0
+
+    # CosmoSIS always writes the output to the same section, so we can
+    # check if the connector is writing the expected values.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "firecrown_theory"
+            )
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d("data_vector", "firecrown_data")
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_nd(
+                "data_vector", "firecrown_inverse_covariance"
+            )
+        )
+    )
+
+    # When dealing with a two-point statistic, the connector should write
+    # the related quantities to the datablock.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theta_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theory_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "data_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+
+def test_module_exec_with_two_point_harmonic(
+    firecrown_mod_with_two_point_harmonic: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+):
+    assert firecrown_mod_with_two_point_harmonic.execute(sample_with_lens0_bias) == 0
 
     # CosmoSIS always writes the output to the same section, so we can
     # check if the connector is writing the expected values.
