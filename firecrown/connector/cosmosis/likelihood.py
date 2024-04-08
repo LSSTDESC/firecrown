@@ -98,9 +98,9 @@ class FirecrownLikelihood:
         )
         self.map.set_params_from_cosmosis(cosmological_params)
 
-        ccl_args = self.map.calculate_ccl_args(sample)
-
-        ccl_cosmo = ccl.CosmologyCalculator(**self.map.asdict(), **ccl_args)
+        ccl_cosmo = ccl.CosmologyCalculator(
+            **self.map.asdict(), **self.map.calculate_ccl_args(sample)
+        )
 
         # TODO: Future development will need to capture elements that get put into the
         # datablock. This probably will be in a different "physics module" and not in
