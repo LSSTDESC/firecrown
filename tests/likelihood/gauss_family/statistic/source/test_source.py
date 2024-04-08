@@ -165,6 +165,19 @@ def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
     assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
 
 
+def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
+    assert src0 is not None
+
+    wl_factory = wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    source_ready = wl_factory.create(inferred_zdist=src0)
+
+    assert source_ready is wl_factory.create(inferred_zdist=src0)
+
+
 def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
@@ -235,6 +248,19 @@ def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
 
     assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
     assert_allclose(source_ready.tracer_args.dndz, source_read.tracer_args.dndz)
+
+
+def test_number_counts_source_factory_cache(sacc_galaxy_cells_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+
+    all_tracers = extract_all_tracers(sacc_data)
+    lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
+    assert lens0 is not None
+
+    nc_factory = nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    source_ready = nc_factory.create(inferred_zdist=lens0)
+
+    assert source_ready is nc_factory.create(inferred_zdist=lens0)
 
 
 def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0_lens0):
