@@ -505,6 +505,36 @@ TwoPointCellsIndex = TypedDict(
 )
 
 
+def _extract_candidate_data_types(
+    tracer_name: str, data_points: list[sacc.DataPoint]
+) -> list[MeasuredType]:
+    """Extract the candidate measured types for a tracer."""
+    tracer_associated_types = {
+        d.data_type for d in data_points if tracer_name in d.tracers
+    }
+    tracer_associated_types_len = len(tracer_associated_types)
+
+    type_count: dict[MeasuredType, int] = {
+        measured_type: 0 for measured_type in ALL_MEASURED_TYPES
+    }
+    for data_type in tracer_associated_types:
+        if data_type not in MEASURED_TYPE_STRING_MAP:
+            continue
+        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+        if a != b:
+            type_count[a] += 1
+            type_count[b] += 1
+        else:
+            type_count[a] += 1
+
+    return [
+        measured_type
+        for measured_type, count in type_count.items()
+        if count == tracer_associated_types_len
+    ]
+
+
 def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
@@ -521,87 +551,57 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     inferred_galaxy_zdists = []
 
     for tracer in tracers:
-        name = tracer.name
-        tracer_associated_types = {
-            d.data_type for d in data_points if name in d.tracers
-        }
-        tracer_associated_types_len = len(tracer_associated_types)
-
-        type_count: dict[MeasuredType, int] = {
-            measured_type: 0 for measured_type in ALL_MEASURED_TYPES
-        }
-        for data_type in tracer_associated_types:
-            a, b = MEASURED_TYPE_STRING_MAP[data_type]
-
-            type_count[a] += 1
-            type_count[b] += 1
-
-        candidate_measured_types = [
-            measured_type
-            for measured_type, count in type_count.items()
-            if count >= tracer_associated_types_len
-        ]
+        candidate_measured_types = _extract_candidate_data_types(
+            tracer.name, data_points
+        )
 
         if len(candidate_measured_types) == 0:
             raise ValueError(
-                f"Tracer {name} does not have a compatible measured type. "
+                f"Tracer {tracer.name} does not have data points associated with it. "
                 f"Inconsistent SACC object."
             )
 
         if len(candidate_measured_types) == 1:
-            inferred_galaxy_zdists.append(
-                InferredGalaxyZDist(
-                    bin_name=name,
-                    z=tracer.z,
-                    dndz=tracer.nz,
-                    measured_type=candidate_measured_types[0],
-                )
-            )
+            # Only one measured type appears in all associated data points.
+            # We can infer the measured type from the data points.
+            measured_type = candidate_measured_types[0]
         else:
             # We cannot infer the measured type from the associated data points.
             # We need to check the tracer name.
-            if (
-                LENS_REGEX.match(name)
-                and GalaxyMeasuredType.COUNTS in candidate_measured_types
-            ):
-                inferred_galaxy_zdists.append(
-                    InferredGalaxyZDist(
-                        bin_name=name,
-                        z=tracer.z,
-                        dndz=tracer.nz,
-                        measured_type=GalaxyMeasuredType.COUNTS,
+            if LENS_REGEX.match(tracer.name):
+                if GalaxyMeasuredType.COUNTS not in candidate_measured_types:
+                    raise ValueError(
+                        f"Tracer {tracer.name} matches the lens regex but does "
+                        f"not have a compatible measured type. Inconsistent SACC "
+                        f"object."
                     )
-                )
-            elif SOURCE_REGEX.match(name):
+                measured_type = GalaxyMeasuredType.COUNTS
+            elif SOURCE_REGEX.match(tracer.name):
                 # The source tracers can be either shear E or shear T.
                 if GalaxyMeasuredType.SHEAR_E in candidate_measured_types:
-                    inferred_galaxy_zdists.append(
-                        InferredGalaxyZDist(
-                            bin_name=name,
-                            z=tracer.z,
-                            dndz=tracer.nz,
-                            measured_type=GalaxyMeasuredType.SHEAR_E,
-                        )
-                    )
+                    measured_type = GalaxyMeasuredType.SHEAR_E
                 elif GalaxyMeasuredType.SHEAR_T in candidate_measured_types:
-                    inferred_galaxy_zdists.append(
-                        InferredGalaxyZDist(
-                            bin_name=name,
-                            z=tracer.z,
-                            dndz=tracer.nz,
-                            measured_type=GalaxyMeasuredType.SHEAR_T,
-                        )
-                    )
+                    measured_type = GalaxyMeasuredType.SHEAR_T
                 else:
                     raise ValueError(
-                        f"Tracer {name} does not have a compatible measured type. "
-                        f"Inconsistent SACC object."
+                        f"Tracer {tracer.name} matches the source regex but does "
+                        f"not have a compatible measured type. Inconsistent SACC "
+                        f"object."
                     )
             else:
                 raise ValueError(
-                    f"Tracer {name} does not have a compatible measured type. "
+                    f"Tracer {tracer.name} does not have a compatible measured type. "
                     f"Inconsistent SACC object."
                 )
+
+        inferred_galaxy_zdists.append(
+            InferredGalaxyZDist(
+                bin_name=tracer.name,
+                z=tracer.z,
+                dndz=tracer.nz,
+                measured_type=measured_type,
+            )
+        )
 
     return inferred_galaxy_zdists
 
