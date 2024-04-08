@@ -273,14 +273,15 @@ def test_two_point_src0_src0_no_data_error(sacc_galaxy_cells_src0_src0_no_data):
     src0 = WeakLensing(sacc_tracer="src0")
 
     statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0)
-    with pytest.raises(
-        RuntimeError,
-        match=re.escape(
-            "for data type 'galaxy_shear_cl_ee' have no 2pt data in the SACC file "
-            "and no input ell values were given"
-        ),
-    ):
-        statistic.read(sacc_data)
+    with pytest.warns(UserWarning, match="Empty index selected"):
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "for data type 'galaxy_shear_cl_ee' have no 2pt data in the SACC file "
+                "and no input ell values were given"
+            ),
+        ):
+            statistic.read(sacc_data)
 
 
 def test_two_point_lens0_lens0_no_data_error(sacc_galaxy_xis_lens0_lens0_no_data):
@@ -289,11 +290,58 @@ def test_two_point_lens0_lens0_no_data_error(sacc_galaxy_xis_lens0_lens0_no_data
     src0 = NumberCounts(sacc_tracer="lens0")
 
     statistic = TwoPoint("galaxy_density_xi", src0, src0)
-    with pytest.raises(
-        RuntimeError,
+    with pytest.warns(UserWarning, match="Empty index selected"):
+        with pytest.raises(
+            RuntimeError,
+            match=re.escape(
+                "for data type 'galaxy_density_xi' have no 2pt data in the SACC file "
+                "and no input theta values were given"
+            ),
+        ):
+            statistic.read(sacc_data)
+
+
+def test_two_point_src0_src0_data_and_conf_warn(sacc_galaxy_cells_src0_src0_window):
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+
+    src0 = WeakLensing(sacc_tracer="src0")
+
+    ell_config: EllOrThetaConfig = {
+        "minimum": 1,
+        "maximum": 100,
+        "n": 5,
+        "binning": "lin",
+    }
+
+    statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0, ell_or_theta=ell_config)
+    with pytest.warns(
+        UserWarning,
         match=re.escape(
-            "for data type 'galaxy_density_xi' have no 2pt data in the SACC file "
-            "and no input theta values were given"
+            "have 2pt data and you have specified `ell` in the configuration. "
+            "`ell` is being ignored!"
+        ),
+    ):
+        statistic.read(sacc_data)
+
+
+def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0):
+    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
+
+    src0 = NumberCounts(sacc_tracer="lens0")
+
+    theta_config: EllOrThetaConfig = {
+        "minimum": 0.0,
+        "maximum": 1.0,
+        "n": 5,
+        "binning": "lin",
+    }
+
+    statistic = TwoPoint("galaxy_density_xi", src0, src0, ell_or_theta=theta_config)
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "have 2pt data and you have specified `theta` in the configuration. "
+            "`theta` is being ignored!"
         ),
     ):
         statistic.read(sacc_data)
