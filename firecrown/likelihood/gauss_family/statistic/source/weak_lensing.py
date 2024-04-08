@@ -41,6 +41,9 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_pt_c_d: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
     ia_pt_c_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
 
+    ia_a_1h: Optional[np.float64] = None
+    ia_a_2h: Optional[np.float64] = None
+
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
     """Abstract base class for all weak lensing systematics."""
@@ -206,6 +209,39 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         )
 
 
+class HMAlignmentSystematic(WeakLensingSystematic):
+    """Halo model intrinsic alignment systematic.
+
+    This systematic adds a halo model based intrinsic alignment systematic
+    which, at the moment, is fixed within the redshift bin.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar ia_a_1h: the 1-halo intrinsic alignment bias parameter (satellite galaxies).
+    :ivar ia_a_2h: the 2-halo intrinsic alignment bias parameter (central galaxies).
+    """
+
+    def __init__(self, sacc_tracer: Optional[str] = None):
+        super().__init__()
+
+        self.ia_a_1h = parameters.register_new_updatable_parameter()
+        self.ia_a_2h = parameters.register_new_updatable_parameter()
+
+        self.sacc_tracer = sacc_tracer
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
+        """Return a new halo-model alignment systematic, based on the given
+        tracer_arg, in the context of the given cosmology."""
+
+        return replace(
+            tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
+        )
+
+
 class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     """Source class for weak lensing."""
 
@@ -286,6 +322,28 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             ia_tracer = Tracer(
                 ccl_wl_dummy_tracer, tracer_name="intrinsic_pt", pt_tracer=ia_pt_tracer
             )
+            tracers.append(ia_tracer)
+
+        if tracer_args.has_hm:
+            cM = tools.get_cM_relation()
+            halo_profile = pyccl.halos.SatelliteShearHOD(
+                mass_def=tools.hm_definition, concentration=cM, a1h=tracer_args.ia_a_1h
+            )
+            ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
+                ccl_cosmo,
+                has_shear=False,
+                use_A_ia=False,
+                dndz=(tracer_args.z, tracer_args.dndz),
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
+            )
+            ia_tracer = Tracer(
+                ccl_wl_dummy_tracer,
+                tracer_name="intrinsic_hm",
+                halo_profile=halo_profile,
+            )
+            halo_profile.ia_a_2h = (
+                tracer_args.ia_a_2h
+            )  # Attach the 2-halo amplitude here.
             tracers.append(ia_tracer)
 
         self.current_tracer_args = tracer_args
