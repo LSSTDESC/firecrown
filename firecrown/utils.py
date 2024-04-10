@@ -1,6 +1,7 @@
 """Some utility functions for patterns common in Firecrown."""
 
 from __future__ import annotations
+from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -68,3 +69,13 @@ def save_to_sacc(
         new_sacc.data[sacc_idx].value = data_vector[data_idx]
 
     return new_sacc
+
+
+def compare_optional_arrays(x: Optional[npt.NDArray], y: Optional[npt.NDArray]) -> bool:
+    """Compare two arrays, allowing for either or both to be None."""
+    if x is None and y is None:
+        return True
+    if x is not None and y is not None:
+        return np.array_equal(x, y)
+    # One is None and the other is not.
+    return False

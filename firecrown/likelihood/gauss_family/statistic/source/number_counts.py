@@ -1,7 +1,7 @@
 """Number counts source and systematics."""
 
 from __future__ import annotations
-from typing import Optional, final
+from typing import Optional, final, Sequence
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -27,6 +27,7 @@ from .....parameters import (
     DerivedParameterCollection,
 )
 from .....updatable import UpdatableCollection
+from .....metadata.two_point import InferredGalaxyZDist
 
 __all__ = ["NumberCounts"]
 
@@ -267,7 +268,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
+        systematics: Optional[
+            Sequence[SourceGalaxySystematic[NumberCountsArgs]]
+        ] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -292,6 +295,33 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.scale = scale
         self.current_tracer_args: Optional[NumberCountsArgs] = None
         self.tracer_args: NumberCountsArgs
+
+    @classmethod
+    def create_ready(
+        cls,
+        inferred_zdist: InferredGalaxyZDist,
+        has_rsd: bool = False,
+        derived_scale: bool = False,
+        scale: float = 1.0,
+        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
+    ) -> NumberCounts:
+        """Create a NumberCounts object with the given tracer name and scale."""
+        obj = cls(
+            sacc_tracer=inferred_zdist.bin_name,
+            systematics=systematics,
+            has_rsd=has_rsd,
+            derived_scale=derived_scale,
+            scale=scale,
+        )
+        obj.tracer_args = NumberCountsArgs(
+            scale=obj.scale,
+            z=inferred_zdist.z,
+            dndz=inferred_zdist.dndz,
+            bias=None,
+            mag_bias=None,
+        )
+
+        return obj
 
     @final
     def _update_source(self, params: ParamsMap):
@@ -400,3 +430,42 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         """Return the scale for this source."""
         assert self.current_tracer_args
         return self.current_tracer_args.scale
+
+
+class NumberCountsSystematicFactory:
+    """Factory class for NumberCountsSystematic objects."""
+
+    @abstractmethod
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCountsSystematic:
+        """Create a NumberCountsSystematic object with the given tracer name."""
+
+
+class NumberCountsFactory:
+    """Factory class for NumberCounts objects."""
+
+    def __init__(
+        self,
+        per_bin_systematics: list[NumberCountsSystematicFactory],
+        global_systematics: Sequence[NumberCountsSystematic],
+    ) -> None:
+        self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
+            per_bin_systematics
+        )
+        self.global_systematics: Sequence[NumberCountsSystematic] = global_systematics
+        self.cache: dict[str, NumberCounts] = {}
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
+        """Create a NumberCounts object with the given tracer name and scale."""
+        if inferred_zdist.bin_name in self.cache:
+            return self.cache[inferred_zdist.bin_name]
+
+        systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
+            systematic_factory.create(inferred_zdist)
+            for systematic_factory in self.per_bin_systematics
+        ]
+        systematics.extend(self.global_systematics)
+
+        nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
+        self.cache[inferred_zdist.bin_name] = nc
+
+        return nc

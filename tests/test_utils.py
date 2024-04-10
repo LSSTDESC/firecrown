@@ -5,7 +5,11 @@ Tests for the firecrown.utils modle.
 import pytest
 import numpy as np
 
-from firecrown.utils import upper_triangle_indices, save_to_sacc
+from firecrown.utils import (
+    upper_triangle_indices,
+    save_to_sacc,
+    compare_optional_arrays,
+)
 
 
 def test_upper_triangle_indices_nonzero():
@@ -46,3 +50,21 @@ def test_save_to_sacc_strict_fail(trivial_stats, sacc_data_for_trivial_stat):
             indices=idx,
             strict=True,
         )
+
+
+def test_compare_optional_arrays_():
+    x = np.array([1, 2, 3])
+    y = np.array([1, 2, 3])
+    assert compare_optional_arrays(x, y)
+
+    z = np.array([1, 2, 4])
+    assert not compare_optional_arrays(x, z)
+
+    a = None
+    b = None
+    assert compare_optional_arrays(a, b)
+
+    q = np.array([1, 2, 3])
+    assert not compare_optional_arrays(q, a)
+
+    assert not compare_optional_arrays(a, q)

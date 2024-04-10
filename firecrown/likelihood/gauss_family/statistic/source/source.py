@@ -274,7 +274,7 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         self,
         *,
         sacc_tracer: str,
-        systematics: Optional[list[SourceGalaxySystematic]] = None,
+        systematics: Optional[Sequence[SourceGalaxySystematic]] = None,
     ):
         """Initialize the SourceGalaxy object.
 

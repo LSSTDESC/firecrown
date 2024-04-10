@@ -8,6 +8,7 @@ from os.path import expandvars
 import yaml
 import pytest
 import numpy as np
+
 from cosmosis.datablock import DataBlock, option_section, names as section_names
 
 from firecrown.likelihood.likelihood import NamedParameters
@@ -81,6 +82,52 @@ def fixture_config_with_const_gaussian_missing_sampling_parameters_sections() ->
     return result
 
 
+@pytest.fixture(name="config_with_two_point_real")
+def fixture_config_with_two_point_real() -> DataBlock:
+    result = DataBlock()
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
+        ),
+    )
+    result.put_string(
+        option_section,
+        "sampling_parameters_sections",
+        "firecrown_two_point_parameters",
+    )
+    result.put_string(
+        option_section,
+        "projection",
+        "real",
+    )
+    return result
+
+
+@pytest.fixture(name="config_with_two_point_harmonic")
+def fixture_config_with_two_point_harmonic() -> DataBlock:
+    result = DataBlock()
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
+        ),
+    )
+    result.put_string(
+        option_section,
+        "sampling_parameters_sections",
+        "firecrown_two_point_parameters",
+    )
+    result.put_string(
+        option_section,
+        "projection",
+        "harmonic",
+    )
+    return result
+
+
 @pytest.fixture(name="minimal_firecrown_mod")
 def fixture_minimal_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
     return FirecrownLikelihood(minimal_config)
@@ -98,6 +145,22 @@ def fixture_firecrown_mod_with_const_gaussian(
     working_config_for_const_gaussian: DataBlock,
 ) -> FirecrownLikelihood:
     result = FirecrownLikelihood(working_config_for_const_gaussian)
+    return result
+
+
+@pytest.fixture(name="firecrown_mod_with_two_point_real")
+def fixture_firecrown_mod_with_two_point_real(
+    config_with_two_point_real: DataBlock,
+) -> FirecrownLikelihood:
+    result = FirecrownLikelihood(config_with_two_point_real)
+    return result
+
+
+@pytest.fixture(name="firecrown_mod_with_two_point_harmonic")
+def fixture_firecrown_mod_with_two_point_harmonic(
+    config_with_two_point_harmonic: DataBlock,
+) -> FirecrownLikelihood:
+    result = FirecrownLikelihood(config_with_two_point_harmonic)
     return result
 
 
@@ -130,10 +193,27 @@ def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
     return sample
 
 
+@pytest.fixture(name="minimal_sample_with_pk")
+def fixture_minimal_sample_with_pk(sample_with_cosmo: DataBlock) -> DataBlock:
+    with open("tests/distances_and_pk.yml", encoding="utf-8") as stream:
+        rawdata = yaml.load(stream, yaml.CLoader)
+    sample = sample_with_cosmo
+    for section_name, section_data in rawdata.items():
+        for parameter_name, value in section_data.items():
+            sample.put(section_name, parameter_name, np.array(value))
+    return sample
+
+
 @pytest.fixture(name="sample_with_M")
 def fixture_sample_with_M(minimal_sample: DataBlock) -> DataBlock:
     minimal_sample.put("supernova_parameters", "pantheon_M", 4.5)
     return minimal_sample
+
+
+@pytest.fixture(name="sample_with_lens0_bias")
+def fixture_sample_with_lens0_bias(minimal_sample_with_pk: DataBlock) -> DataBlock:
+    minimal_sample_with_pk.put("firecrown_two_point_parameters", "lens0_bias", 1.0)
+    return minimal_sample_with_pk
 
 
 @pytest.fixture(name="sample_without_M")
@@ -262,6 +342,116 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
 ):
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
+
+
+def test_module_exec_with_two_point_real(
+    firecrown_mod_with_two_point_real: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+):
+    assert firecrown_mod_with_two_point_real.execute(sample_with_lens0_bias) == 0
+
+    # CosmoSIS always writes the output to the same section, so we can
+    # check if the connector is writing the expected values.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "firecrown_theory"
+            )
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d("data_vector", "firecrown_data")
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_nd(
+                "data_vector", "firecrown_inverse_covariance"
+            )
+        )
+    )
+
+    # When dealing with a two-point statistic, the connector should write
+    # the related quantities to the datablock.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theta_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theory_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "data_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+
+def test_module_exec_with_two_point_harmonic(
+    firecrown_mod_with_two_point_harmonic: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+):
+    assert firecrown_mod_with_two_point_harmonic.execute(sample_with_lens0_bias) == 0
+
+    # CosmoSIS always writes the output to the same section, so we can
+    # check if the connector is writing the expected values.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "firecrown_theory"
+            )
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d("data_vector", "firecrown_data")
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_nd(
+                "data_vector", "firecrown_inverse_covariance"
+            )
+        )
+    )
+
+    # When dealing with a two-point statistic, the connector should write
+    # the related quantities to the datablock.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_int_array_1d(
+                "data_vector", "ell_galaxy_density_cl_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theory_galaxy_density_cl_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "data_galaxy_density_cl_lens0_lens0"
+            )
+        )
+    )
 
 
 def test_mapping_cosmosis_background(mapping_cosmosis):
