@@ -13,16 +13,11 @@ import re
 import numpy as np
 import numpy.typing as npt
 
-import sacc
-
 import yaml
+from yaml import CLoader as Loader
+from yaml import CDumper as Dumper
 
-try:
-    from yaml import CLoader as Loader
-    from yaml import CDumper as Dumper
-except ImportError:
-    from yaml import Loader, Dumper  # type: ignore
-
+import sacc
 from sacc.data_types import required_tags
 
 from firecrown.utils import upper_triangle_indices, compare_optional_arrays
