@@ -370,6 +370,37 @@ def test_two_point_cells_invalid_type():
         TwoPointCells(ells=ells, XY=xy)
 
 
+def test_window_equality():
+    # Construct two windows with the same parameters, but different objects.
+    window_1 = Window(
+        ells=np.array(np.linspace(0, 100, 100), dtype=np.int64),
+        weights=np.ones(400).reshape(-1, 4),
+        ells_for_interpolation=np.array(np.linspace(0, 100, 100), dtype=np.int64),
+    )
+    window_2 = Window(
+        ells=np.array(np.linspace(0, 100, 100), dtype=np.int64),
+        weights=np.ones(400).reshape(-1, 4),
+        ells_for_interpolation=np.array(np.linspace(0, 100, 100), dtype=np.int64),
+    )
+    # Two windows constructed from the same parameters should be equal.
+    assert window_1 == window_2
+
+    # If we get rid of the ells_for_interpolation from one, they should no
+    # longer be equal.
+    window_2.ells_for_interpolation = None
+    assert window_1 != window_2
+    assert window_2 != window_1
+
+    # If we have nulled out both ells_for_interpolation, they should be equal
+    # again.
+    window_1.ells_for_interpolation = None
+    assert window_1 == window_2
+
+    # And if we change the ells, they should no longer be equal.
+    window_2.ells[0] = window_2.ells[0] + 1
+    assert window_1 != window_2
+
+
 def test_two_point_window():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
