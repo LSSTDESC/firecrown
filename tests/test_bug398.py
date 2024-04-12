@@ -200,8 +200,35 @@ def test_eval_cl_window_lens0_lens0():
     assert_allclose(theory_vector, LENS0_LENS0_CL_VANILLA_LCDM, rtol=1e-8)
 
 
+def test_compute_likelihood_src0_src0():
+    tools = ModelingTools()
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    params = ParamsMap()
+
+    tools.update(params)
+    tools.prepare(cosmo)
+
+    sacc_data = sacc.Sacc.load_fits(SACC_FILE)
+    src0 = wl.WeakLensing(sacc_tracer="src0")
+
+    src0_src0 = TwoPoint(
+        source0=src0,
+        source1=src0,
+        sacc_data_type="galaxy_shear_cl_ee",
+    )
+
+    likelihood = ConstGaussian(statistics=[src0_src0])
+    likelihood.read(sacc_data)
+    likelihood.update(params)
+
+    log_like = likelihood.compute_loglike(tools)
+    # Compare to 73af686f050ea60d349a0e6792a4832f2e7f554e
+    assert_allclose(log_like, -15.014821, rtol=1e-7)
+
+
 if __name__ == "__main__":
     test_broken_window_function()
     test_eval_cl_window_src2_src2()
     test_eval_cl_window_lens0_src2()
     test_eval_cl_window_lens0_lens0()
+    test_compute_likelihood_src0_src0()
