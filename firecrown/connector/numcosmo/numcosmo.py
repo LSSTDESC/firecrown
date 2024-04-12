@@ -4,7 +4,7 @@ The subpackages and modules in this package depend upon NumCosmo, and can not
 be used without an installation of NumCosmo.
 """
 
-from typing import Union, Any, Optional
+from typing import Any, Optional
 import numpy as np
 import pyccl as ccl
 
@@ -153,7 +153,7 @@ class MappingNumCosmo(GObject.Object):
         Neff = hi_cosmo.Neff()
         T_gamma0 = hi_cosmo.T_gamma0()
 
-        m_nu: Union[float, list[float]] = 0.0
+        m_nu: float | list[float] = 0.0
         if hi_cosmo.NMassNu() == 0:
             m_nu_type = "normal"
         else:
@@ -756,7 +756,7 @@ class NumCosmoFactory:
     ):
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
-        self.data: Union[NumCosmoGaussCov, NumCosmoData]
+        self.data: NumCosmoGaussCov | NumCosmoData
         self.mapping: MappingNumCosmo = mapping
         if isinstance(likelihood, ConstGaussian):
             self.data = NumCosmoGaussCov.new_from_likelihood(

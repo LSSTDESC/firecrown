@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, TypedDict, Union
+from typing import Optional, Sequence, TypedDict
 import copy
 import functools
 import warnings
@@ -304,8 +304,8 @@ class TwoPoint(Statistic):
         *,
         ell_for_xi: Optional[dict[str, int]] = None,
         ell_or_theta: Optional[EllOrThetaConfig] = None,
-        ell_or_theta_min: Optional[Union[float, int]] = None,
-        ell_or_theta_max: Optional[Union[float, int]] = None,
+        ell_or_theta_min: None | float | int = None,
+        ell_or_theta_max: None | float | int = None,
     ) -> None:
         super().__init__()
 

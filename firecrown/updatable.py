@@ -21,6 +21,7 @@ from typing import (
     Generic,
     Iterable,
     Optional,
+    TypeAlias,
     TypeVar,
     Union,
 )
@@ -35,7 +36,7 @@ from .parameters import (
 )
 from .parameters import DerivedParameterCollection
 
-GeneralUpdatable = Union["Updatable", "UpdatableCollection"]
+GeneralUpdatable: TypeAlias = Union["Updatable", "UpdatableCollection"]
 
 
 class MissingSamplerParameterError(RuntimeError):
@@ -102,7 +103,7 @@ class Updatable(ABC):
             super().__setattr__(key, value)
 
     def set_parameter(
-        self, key: str, value: Union[InternalParameter, SamplerParameter]
+        self, key: str, value: InternalParameter | SamplerParameter
     ) -> None:
         """Sets the parameter to the given value.
 

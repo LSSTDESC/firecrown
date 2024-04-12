@@ -51,7 +51,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Union, Optional, Sequence
+from typing import Mapping, Optional, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -131,14 +131,12 @@ class NamedParameters:
         mapping: Optional[
             Mapping[
                 str,
-                Union[
-                    str,
-                    int,
-                    bool,
-                    float,
-                    npt.NDArray[np.int64],
-                    npt.NDArray[np.float64],
-                ],
+                str
+                | int
+                | bool
+                | float
+                | npt.NDArray[np.int64]
+                | npt.NDArray[np.float64],
             ]
         ] = None,
     ):
@@ -207,14 +205,7 @@ class NamedParameters:
     def to_set(
         self,
     ) -> set[
-        Union[
-            str,
-            int,
-            bool,
-            float,
-            npt.NDArray[np.int64],
-            npt.NDArray[np.float64],
-        ]
+        str | int | bool | float | npt.NDArray[np.int64] | npt.NDArray[np.float64]
     ]:
         """Return the contained data as a set."""
         return set(self.data)
@@ -223,9 +214,7 @@ class NamedParameters:
         self,
         basic_dict: dict[
             str,
-            Union[
-                str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
-            ],
+            str | float | int | bool | Sequence[float] | Sequence[int] | Sequence[bool],
         ],
     ) -> None:
         """Set the contained data from a dictionary of basic types."""
@@ -252,14 +241,12 @@ class NamedParameters:
         self,
     ) -> dict[
         str,
-        Union[str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]],
+        str | float | int | bool | Sequence[float] | Sequence[int] | Sequence[bool],
     ]:
         """Convert a NamedParameters object to a dictionary of basic types."""
         basic_dict: dict[
             str,
-            Union[
-                str, float, int, bool, Sequence[float], Sequence[int], Sequence[bool]
-            ],
+            str | float | int | bool | Sequence[float] | Sequence[int] | Sequence[bool],
         ] = {}
 
         for key, value in self.data.items():

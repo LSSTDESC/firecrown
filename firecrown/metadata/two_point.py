@@ -5,7 +5,7 @@ metadata from a sacc file.
 """
 
 from itertools import combinations_with_replacement, chain
-from typing import TypedDict, Optional, Union, TypeVar, Type
+from typing import TypedDict, Optional, TypeVar, Type
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
@@ -246,7 +246,7 @@ class ClusterMeasuredType(YAMLSerializable, str, Enum):
         return hash((ClusterMeasuredType, self.value))
 
 
-MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
+MeasuredType = GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType
 ALL_MEASURED_TYPES: list[MeasuredType] = list(
     chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
 )

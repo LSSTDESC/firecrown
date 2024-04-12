@@ -4,7 +4,6 @@ Provide the class CCLConnector, which is an implementation of a Cobaya Theory.
 """
 
 from __future__ import annotations
-from typing import Optional, Union
 
 import numpy as np
 import numpy.typing as npt
@@ -18,7 +17,7 @@ from firecrown.connector.mapping import mapping_builder
 class CCLConnector(Theory):
     """A class implementing cobaya.theory.Theory."""
 
-    input_style: Optional[str] = None
+    input_style: str | None = None
 
     def initialize(self):
         """Required by Cobaya.
@@ -71,7 +70,7 @@ class CCLConnector(Theory):
 
     def get_requirements(
         self,
-    ) -> dict[str, Union[None, dict[str, npt.NDArray[np.float64]], dict[str, object]]]:
+    ) -> dict[str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]]:
         """Required by Cobaya.
 
         Returns a dictionary with keys:

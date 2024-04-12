@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import wraps
-from typing import Optional, Sequence, Callable, Union, TypeVar
+from typing import Optional, Sequence, Callable, TypeVar
 from typing import final
 import warnings
 
@@ -48,7 +48,7 @@ P = ParamSpec("P")
 # Beware
 def enforce_states(
     *,
-    initial: Union[State, list[State]],
+    initial: State | list[State],
     terminal: Optional[State] = None,
     failure_message: str,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
@@ -229,7 +229,7 @@ class GaussFamily(Likelihood):
     )
     @final
     def get_cov(
-        self, statistic: Union[Statistic, list[Statistic], None] = None
+        self, statistic: Statistic | list[Statistic] | None = None
     ) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix.
 
@@ -342,7 +342,7 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before get_sacc_indices()",
     )
     def get_sacc_indices(
-        self, statistic: Union[Statistic, list[Statistic], None] = None
+        self, statistic: Statistic | list[Statistic] | None = None
     ) -> npt.NDArray[np.int64]:
         """Get the SACC indices of the statistic or list of statistics.
 
