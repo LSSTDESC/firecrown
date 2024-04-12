@@ -491,6 +491,7 @@ class TwoPoint(Statistic):
             ells, Cells, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
         )
         self.ells = ells
+        self.window = window
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(Cells)
 
