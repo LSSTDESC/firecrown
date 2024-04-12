@@ -6,7 +6,7 @@ reusable objects, such as perturbation theory or halo model calculators.
 """
 
 from __future__ import annotations
-from typing import Optional, Collection
+from typing import Collection
 from abc import ABC, abstractmethod
 import pyccl.nl_pt
 
@@ -25,13 +25,13 @@ class ModelingTools(Updatable):
     def __init__(
         self,
         *,
-        pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = None,
-        pk_modifiers: Optional[Collection[PowerspectrumModifier]] = None,
-        cluster_abundance: Optional[ClusterAbundance] = None,
+        pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = None,
+        pk_modifiers: None | Collection[PowerspectrumModifier] = None,
+        cluster_abundance: None | ClusterAbundance = None,
     ):
         super().__init__()
-        self.ccl_cosmo: Optional[pyccl.Cosmology] = None
-        self.pt_calculator: Optional[pyccl.nl_pt.EulerianPTCalculator] = pt_calculator
+        self.ccl_cosmo: None | pyccl.Cosmology = None
+        self.pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = pt_calculator
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: dict[str, pyccl.Pk2D] = {}

@@ -51,7 +51,7 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Sequence
 from abc import abstractmethod
 import types
 import warnings
@@ -79,7 +79,7 @@ class Likelihood(Updatable):
     these methods, and provide other abstract methods for their subclasses to implement.
     """
 
-    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
+    def __init__(self, parameter_prefix: None | str = None) -> None:
         """Default initialization for a base Likelihood object."""
         super().__init__(parameter_prefix=parameter_prefix)
 
@@ -128,8 +128,9 @@ class NamedParameters:
 
     def __init__(
         self,
-        mapping: Optional[
-            Mapping[
+        mapping: (
+            None
+            | Mapping[
                 str,
                 str
                 | int
@@ -138,7 +139,7 @@ class NamedParameters:
                 | npt.NDArray[np.int64]
                 | npt.NDArray[np.float64],
             ]
-        ] = None,
+        ) = None,
     ):
         """Initialize the object from the supplied mapping of values."""
         if mapping is None:
@@ -146,7 +147,7 @@ class NamedParameters:
         else:
             self.data = dict(mapping)
 
-    def get_bool(self, name: str, default_value: Optional[bool] = None) -> bool:
+    def get_bool(self, name: str, default_value: None | bool = None) -> bool:
         """Return the named parameter as a bool."""
         if default_value is None:
             val = self.data[name]
@@ -156,7 +157,7 @@ class NamedParameters:
         assert isinstance(val, bool)
         return val
 
-    def get_string(self, name: str, default_value: Optional[str] = None) -> str:
+    def get_string(self, name: str, default_value: None | str = None) -> str:
         """Return the named parameter as a string."""
         if default_value is None:
             val = self.data[name]
@@ -166,7 +167,7 @@ class NamedParameters:
         assert isinstance(val, str)
         return val
 
-    def get_int(self, name: str, default_value: Optional[int] = None) -> int:
+    def get_int(self, name: str, default_value: None | int = None) -> int:
         """Return the named parameter as an int."""
         if default_value is None:
             val = self.data[name]
@@ -176,7 +177,7 @@ class NamedParameters:
         assert isinstance(val, int)
         return val
 
-    def get_float(self, name: str, default_value: Optional[float] = None) -> float:
+    def get_float(self, name: str, default_value: None | float = None) -> float:
         """Return the named parameter as a float."""
         if default_value is None:
             val = self.data[name]

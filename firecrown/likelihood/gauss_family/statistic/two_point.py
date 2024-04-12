@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Optional, Sequence, TypedDict
+from typing import Sequence, TypedDict
 import copy
 import functools
 import warnings
@@ -159,11 +159,11 @@ def generate_theta_xis(theta_config: EllOrThetaConfig):
 def apply_ells_min_max(
     ells: npt.NDArray[np.int64],
     Cells: npt.NDArray[np.float64],
-    indices: Optional[npt.NDArray[np.int64]],
-    ell_min: Optional[int],
-    ell_max: Optional[int],
+    indices: None | npt.NDArray[np.int64],
+    ell_min: None | int,
+    ell_max: None | int,
 ) -> tuple[
-    npt.NDArray[np.int64], npt.NDArray[np.float64], Optional[npt.NDArray[np.int64]]
+    npt.NDArray[np.int64], npt.NDArray[np.float64], None | npt.NDArray[np.int64]
 ]:
     """Apply the minimum and maximum ell values to the ells and Cells."""
     if ell_min is not None:
@@ -186,11 +186,11 @@ def apply_ells_min_max(
 def apply_theta_min_max(
     thetas: npt.NDArray[np.float64],
     xis: npt.NDArray[np.float64],
-    indices: Optional[npt.NDArray[np.int64]],
-    theta_min: Optional[float],
-    theta_max: Optional[float],
+    indices: None | npt.NDArray[np.int64],
+    theta_min: None | float,
+    theta_max: None | float,
 ) -> tuple[
-    npt.NDArray[np.float64], npt.NDArray[np.float64], Optional[npt.NDArray[np.int64]]
+    npt.NDArray[np.float64], npt.NDArray[np.float64], None | npt.NDArray[np.int64]
 ]:
     """Apply the minimum and maximum theta values to the thetas and xis."""
     if theta_min is not None:
@@ -302,8 +302,8 @@ class TwoPoint(Statistic):
         source0: Source,
         source1: Source,
         *,
-        ell_for_xi: Optional[dict[str, int]] = None,
-        ell_or_theta: Optional[EllOrThetaConfig] = None,
+        ell_for_xi: None | dict[str, int] = None,
+        ell_or_theta: None | EllOrThetaConfig = None,
         ell_or_theta_min: None | float | int = None,
         ell_or_theta_max: None | float | int = None,
     ) -> None:
@@ -325,16 +325,16 @@ class TwoPoint(Statistic):
         self.ell_or_theta_config = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        self.window: Optional[Window] = None
+        self.window: None | Window = None
 
-        self.data_vector: Optional[DataVector] = None
-        self.theory_vector: Optional[TheoryVector] = None
+        self.data_vector: None | DataVector = None
+        self.theory_vector: None | TheoryVector = None
 
         self.sacc_tracers: TracerNames
-        self.ells: Optional[npt.NDArray[np.int64]] = None
-        self.thetas: Optional[npt.NDArray[np.float64]] = None
-        self.mean_ells: Optional[npt.NDArray[np.float64]] = None
-        self.ells_for_xi: Optional[npt.NDArray[np.int64]] = None
+        self.ells: None | npt.NDArray[np.int64] = None
+        self.thetas: None | npt.NDArray[np.float64] = None
+        self.mean_ells: None | npt.NDArray[np.float64] = None
+        self.ells_for_xi: None | npt.NDArray[np.int64] = None
 
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
@@ -346,9 +346,10 @@ class TwoPoint(Statistic):
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
-    ) -> Optional[
-        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
-    ]:
+    ) -> (
+        None
+        | tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
+    ):
         """Read and return ell and Cell."""
         ells, Cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
         # As version 0.13 of sacc, the method get_ell_cl returns the
@@ -367,13 +368,10 @@ class TwoPoint(Statistic):
 
     def read_theta_xis(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
-    ) -> Optional[
-        tuple[
-            npt.NDArray[np.float64],
-            npt.NDArray[np.float64],
-            npt.NDArray[np.int64],
-        ]
-    ]:
+    ) -> (
+        None
+        | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
+    ):
         """Read and return theta and xi."""
         thetas, xis = sacc_data.get_theta_xi(sacc_data_type, *tracers, return_cov=False)
         # As version 0.13 of sacc, the method get_theta_xi returns the

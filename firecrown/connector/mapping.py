@@ -7,7 +7,7 @@ Each supported body of code has its own dedicated class.
 """
 
 from abc import ABC
-from typing import Type, Optional, final, Any
+from typing import Type, final, Any
 import typing
 import warnings
 import numpy as np
@@ -113,8 +113,8 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: Optional[float] = None,
-        sigma8: Optional[float] = None,
+        A_s: None | float = None,
+        sigma8: None | float = None,
         n_s: float,
         Omega_k: float,
         Neff: float,

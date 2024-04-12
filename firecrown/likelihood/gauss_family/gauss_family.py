@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import wraps
-from typing import Optional, Sequence, Callable, TypeVar
+from typing import Sequence, Callable, TypeVar
 from typing import final
 import warnings
 
@@ -49,7 +49,7 @@ P = ParamSpec("P")
 def enforce_states(
     *,
     initial: State | list[State],
-    terminal: Optional[State] = None,
+    terminal: None | State = None,
     failure_message: str,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """This decorator wraps a method, and enforces state machine behavior.
@@ -146,12 +146,12 @@ class GaussFamily(Likelihood):
         self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
             GuardedStatistic(s) for s in statistics
         )
-        self.cov: Optional[npt.NDArray[np.float64]] = None
-        self.cholesky: Optional[npt.NDArray[np.float64]] = None
-        self.inv_cov: Optional[npt.NDArray[np.float64]] = None
-        self.cov_index_map: Optional[dict[int, int]] = None
-        self.theory_vector: Optional[npt.NDArray[np.double]] = None
-        self.data_vector: Optional[npt.NDArray[np.double]] = None
+        self.cov: None | npt.NDArray[np.float64] = None
+        self.cholesky: None | npt.NDArray[np.float64] = None
+        self.inv_cov: None | npt.NDArray[np.float64] = None
+        self.cov_index_map: None | dict[int, int] = None
+        self.theory_vector: None | npt.NDArray[np.double] = None
+        self.data_vector: None | npt.NDArray[np.double] = None
 
     @enforce_states(
         initial=State.READY,

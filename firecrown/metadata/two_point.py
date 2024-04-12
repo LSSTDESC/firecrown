@@ -5,7 +5,7 @@ metadata from a sacc file.
 """
 
 from itertools import combinations_with_replacement, chain
-from typing import TypedDict, Optional, TypeVar, Type
+from typing import TypedDict, TypeVar, Type
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
@@ -422,7 +422,7 @@ class Window(YAMLSerializable):
 
     ells: npt.NDArray[np.int64]
     weights: npt.NDArray[np.float64]
-    ells_for_interpolation: Optional[npt.NDArray[np.int64]] = None
+    ells_for_interpolation: None | npt.NDArray[np.int64] = None
 
     def __post_init__(self) -> None:
         """Make sure the weights have the right shape."""
@@ -666,7 +666,7 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
 
 def extract_all_data_types_xi_thetas(
     sacc_data: sacc.Sacc,
-    allowed_data_type: Optional[list[str]] = None,
+    allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointXiThetaIndex]:
     """Extract all two-point function metadata from a sacc file.
 
@@ -709,7 +709,7 @@ def extract_all_data_types_xi_thetas(
 
 
 def extract_all_data_types_cells(
-    sacc_data: sacc.Sacc, allowed_data_type: Optional[list[str]] = None
+    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
 ) -> list[TwoPointCellsIndex]:
     """Extracts the two-point function metadata from a sacc file."""
     tag_name = "ell"
@@ -760,7 +760,7 @@ def extract_all_photoz_bin_combinations(
 
 def extract_window_function(
     sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
-) -> Optional[Window]:
+) -> None | Window:
     """Extract a window function from a sacc file that matches the given indices.
 
     If there is no appropriate window function, return None.

@@ -6,8 +6,6 @@ clusters within a single redshift and mass bin.
 
 from __future__ import annotations
 
-from typing import Optional
-
 import numpy as np
 import sacc
 
@@ -36,11 +34,11 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_properties: ClusterProperty,
         survey_name: str,
         cluster_recipe: ClusterRecipe,
-        systematics: Optional[list[SourceSystematic]] = None,
+        systematics: None | list[SourceSystematic] = None,
     ):
         super().__init__()
         self.systematics = systematics or []
-        self.theory_vector: Optional[TheoryVector] = None
+        self.theory_vector: None | TheoryVector = None
         self.cluster_properties = cluster_properties
         self.survey_name = survey_name
         self.cluster_recipe = cluster_recipe

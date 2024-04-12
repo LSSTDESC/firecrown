@@ -20,7 +20,6 @@ from typing import (
     final,
     Generic,
     Iterable,
-    Optional,
     TypeAlias,
     TypeVar,
     Union,
@@ -68,7 +67,7 @@ class Updatable(ABC):
     data of Updatable objects.
     """
 
-    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
+    def __init__(self, parameter_prefix: None | str = None) -> None:
         """Updatable initialization.
 
         :param prefix: prefix for all parameters in this Updatable
@@ -83,7 +82,7 @@ class Updatable(ABC):
         self._sampler_parameters: dict[str, SamplerParameter] = {}
         self._internal_parameters: dict[str, InternalParameter] = {}
         self._updatables: list[GeneralUpdatable] = []
-        self.parameter_prefix: Optional[str] = parameter_prefix
+        self.parameter_prefix: None | str = parameter_prefix
 
     def __setattr__(self, key: str, value: Any) -> None:
         """Set the attribute named :attr:`key` to the supplied `value`.
@@ -282,7 +281,7 @@ class Updatable(ABC):
     @final
     def get_derived_parameters(
         self,
-    ) -> Optional[DerivedParameterCollection]:
+    ) -> None | DerivedParameterCollection:
         """Returns a collection of derived parameters.
 
         This occurs once per iteration of the statistical analysis. First call returns
@@ -329,7 +328,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
     updated.
     """
 
-    def __init__(self, iterable: Optional[Iterable[T]] = None) -> None:
+    def __init__(self, iterable: None | Iterable[T] = None) -> None:
         """Initialize the UpdatableCollection from the supplied iterable.
 
         If the iterable contains any object that is not Updatable, a TypeError
@@ -390,7 +389,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
         return result
 
     @final
-    def get_derived_parameters(self) -> Optional[DerivedParameterCollection]:
+    def get_derived_parameters(self) -> None | DerivedParameterCollection:
         """Get all derived parameters if any."""
         has_any_derived = False
         derived_parameters = DerivedParameterCollection([])

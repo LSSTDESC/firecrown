@@ -1,11 +1,11 @@
 """Classes and functions to support groups of named parameters."""
 
 from __future__ import annotations
-from typing import Iterable, Optional, Iterator, Sequence
+from typing import Iterable, Iterator, Sequence
 import warnings
 
 
-def parameter_get_full_name(prefix: Optional[str], param: str) -> str:
+def parameter_get_full_name(prefix: None | str, param: str) -> str:
     """Form a full parameter name from the given (optional) prefix and name.
 
     Parameter names, as stored in SACC, for example, contain an optional
@@ -50,7 +50,7 @@ class ParamsMap(dict[str, float]):
         """
         self.lower_case = enable
 
-    def get_from_prefix_param(self, prefix: Optional[str], param: str) -> float:
+    def get_from_prefix_param(self, prefix: None | str, param: str) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
         See parameter_get_full_name for rules on the forming of prefix and name.
@@ -180,7 +180,7 @@ class DerivedParameterCollection:
         for derived_parameter in derived_parameters:
             self.add_required_parameter(derived_parameter)
 
-    def __add__(self, other: Optional[DerivedParameterCollection]):
+    def __add__(self, other: None | DerivedParameterCollection):
         """Add two DerivedParameterCollection objects.
 
         Return a new DerivedParameterCollection with the lists of DerivedParameter
@@ -252,7 +252,7 @@ class SamplerParameter:
 
         This represents a parameter having its value defined by the sampler.
         """
-        self.value: Optional[float] = None
+        self.value: None | float = None
 
     def set_value(self, value: float):
         """Set the value of this parameter.
@@ -291,7 +291,7 @@ class InternalParameter:
 
 # The function create() is intentionally not type-annotated because its use is subtle.
 # See Updatable.__setatrr__ for details.
-def create(value: Optional[float] = None):
+def create(value: None | float = None):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     See register_new_updatable_parameter for details.
@@ -306,7 +306,7 @@ def create(value: Optional[float] = None):
     return register_new_updatable_parameter(value)
 
 
-def register_new_updatable_parameter(value: Optional[float] = None):
+def register_new_updatable_parameter(value: None | float = None):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown

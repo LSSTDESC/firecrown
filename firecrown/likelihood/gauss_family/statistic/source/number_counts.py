@@ -1,7 +1,7 @@
 """Number counts source and systematics."""
 
 from __future__ import annotations
-from typing import Optional, final, Sequence
+from typing import final, Sequence
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -36,12 +36,12 @@ __all__ = ["NumberCounts"]
 class NumberCountsArgs(SourceGalaxyArgs):
     """Class for number counts tracer builder argument."""
 
-    bias: Optional[npt.NDArray[np.float64]] = None
-    mag_bias: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    bias: None | npt.NDArray[np.float64] = None
+    mag_bias: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
     has_pt: bool = False
     has_hm: bool = False
-    b_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    b_s: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    b_2: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
+    b_s: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
 
 class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
@@ -268,9 +268,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[
-            Sequence[SourceGalaxySystematic[NumberCountsArgs]]
-        ] = None,
+        systematics: None | Sequence[SourceGalaxySystematic[NumberCountsArgs]] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -293,7 +291,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
             SourceGalaxySystematic[NumberCountsArgs]
         ] = UpdatableCollection(systematics)
         self.scale = scale
-        self.current_tracer_args: Optional[NumberCountsArgs] = None
+        self.current_tracer_args: None | NumberCountsArgs = None
         self.tracer_args: NumberCountsArgs
 
     @classmethod
@@ -303,7 +301,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: Optional[list[SourceGalaxySystematic[NumberCountsArgs]]] = None,
+        systematics: None | list[SourceGalaxySystematic[NumberCountsArgs]] = None,
     ) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
         obj = cls(

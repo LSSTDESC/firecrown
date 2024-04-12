@@ -5,7 +5,7 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 """
 
 from __future__ import annotations
-from typing import Optional, final
+from typing import final
 from dataclasses import dataclass
 from abc import abstractmethod
 import warnings
@@ -119,12 +119,12 @@ class Statistic(Updatable):
     Statistics represent things like two-point functions and mass functions.
     """
 
-    def __init__(self, parameter_prefix: Optional[str] = None):
+    def __init__(self, parameter_prefix: None | str = None):
         super().__init__(parameter_prefix=parameter_prefix)
-        self.sacc_indices: Optional[npt.NDArray[np.int64]]
+        self.sacc_indices: None | npt.NDArray[np.int64]
         self.ready = False
         self.computed_theory_vector = False
-        self.theory_vector: Optional[TheoryVector] = None
+        self.theory_vector: None | TheoryVector = None
 
     def read(self, _: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.
@@ -254,7 +254,7 @@ class TrivialStatistic(Statistic):
         super().__init__()
         # Data and theory will both be of length self.count
         self.count = 3
-        self.data_vector: Optional[DataVector] = None
+        self.data_vector: None | DataVector = None
         self.mean = firecrown.parameters.register_new_updatable_parameter()
         self.computed_theory_vector = False
 

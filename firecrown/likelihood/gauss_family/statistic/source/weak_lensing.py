@@ -1,7 +1,7 @@
 """Weak lensing source and systematics."""
 
 from __future__ import annotations
-from typing import Optional, final, Sequence
+from typing import final, Sequence
 from dataclasses import dataclass, replace
 from abc import abstractmethod
 
@@ -33,14 +33,14 @@ __all__ = ["WeakLensing"]
 class WeakLensingArgs(SourceGalaxyArgs):
     """Class for weak lensing tracer builder argument."""
 
-    ia_bias: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_bias: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
     has_pt: bool = False
     has_hm: bool = False
 
-    ia_pt_c_1: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    ia_pt_c_d: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
-    ia_pt_c_2: Optional[tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = None
+    ia_pt_c_1: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
+    ia_pt_c_d: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
+    ia_pt_c_2: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
@@ -117,7 +117,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     :ivar z_piv: the pivot redshift for the intrinsic alignment bias.
     """
 
-    def __init__(self, sacc_tracer: Optional[str] = None, alphag=1.0):
+    def __init__(self, sacc_tracer: None | str = None, alphag=1.0):
         """Create a LinearAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -168,7 +168,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_a_d: the amplitude of the density-dependent alignment model.
     """
 
-    def __init__(self, sacc_tracer: Optional[str] = None):
+    def __init__(self, sacc_tracer: None | str = None):
         """Create a TattAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -215,7 +215,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         *,
         sacc_tracer: str,
         scale: float = 1.0,
-        systematics: Optional[Sequence[SourceGalaxySystematic[WeakLensingArgs]]] = None,
+        systematics: None | Sequence[SourceGalaxySystematic[WeakLensingArgs]] = None,
     ):
         """Initialize the WeakLensing object.
 
@@ -231,14 +231,14 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
 
         self.sacc_tracer = sacc_tracer
         self.scale = scale
-        self.current_tracer_args: Optional[WeakLensingArgs] = None
+        self.current_tracer_args: None | WeakLensingArgs = None
         self.tracer_args: WeakLensingArgs
 
     @classmethod
     def create_ready(
         cls,
         inferred_zdist: InferredGalaxyZDist,
-        systematics: Optional[list[SourceGalaxySystematic[WeakLensingArgs]]] = None,
+        systematics: None | list[SourceGalaxySystematic[WeakLensingArgs]] = None,
     ) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
         obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)

@@ -4,7 +4,7 @@ The subpackages and modules in this package depend upon NumCosmo, and can not
 be used without an installation of NumCosmo.
 """
 
-from typing import Any, Optional
+from typing import Any
 import numpy as np
 import pyccl as ccl
 
@@ -32,9 +32,9 @@ class MappingNumCosmo(GObject.Object):
     def __init__(
         self,
         require_nonlinear_pk: bool = False,
-        p_ml: Optional[Nc.PowspecML] = None,
-        p_mnl: Optional[Nc.PowspecMNL] = None,
-        dist: Optional[Nc.Distance] = None,
+        p_ml: None | Nc.PowspecML = None,
+        p_mnl: None | Nc.PowspecMNL = None,
+        dist: None | Nc.Distance = None,
     ):
         """Initialize a MappingNumCosmo object."""
         super().__init__(  # type: ignore
@@ -42,8 +42,8 @@ class MappingNumCosmo(GObject.Object):
         )
         self.mapping: Mapping
         self._mapping_name: str
-        self._p_ml: Optional[Nc.PowspecML]
-        self._p_mnl: Optional[Nc.PowspecMNL]
+        self._p_ml: None | Nc.PowspecML
+        self._p_mnl: None | Nc.PowspecMNL
         self._dist: Nc.Distance
 
         if not hasattr(self, "_p_ml"):
@@ -85,11 +85,11 @@ class MappingNumCosmo(GObject.Object):
         setter=_set_require_nonlinear_pk,
     )
 
-    def _get_p_ml(self) -> Optional[Nc.PowspecML]:
+    def _get_p_ml(self) -> None | Nc.PowspecML:
         """Return the NumCosmo PowspecML object."""
         return self._p_ml
 
-    def _set_p_ml(self, value: Optional[Nc.PowspecML]):
+    def _set_p_ml(self, value: None | Nc.PowspecML):
         """Set the NumCosmo PowspecML object."""
         self._p_ml = value
 
@@ -100,11 +100,11 @@ class MappingNumCosmo(GObject.Object):
         setter=_set_p_ml,
     )
 
-    def _get_p_mnl(self) -> Optional[Nc.PowspecMNL]:
+    def _get_p_mnl(self) -> None | Nc.PowspecMNL:
         """Return the NumCosmo PowspecMNL object."""
         return self._p_mnl
 
-    def _set_p_mnl(self, value: Optional[Nc.PowspecMNL]):
+    def _set_p_mnl(self, value: None | Nc.PowspecMNL):
         """Set the NumCosmo PowspecMNL object."""
         self._p_mnl = value
 
@@ -115,7 +115,7 @@ class MappingNumCosmo(GObject.Object):
         setter=_set_p_mnl,
     )
 
-    def _get_dist(self) -> Optional[Nc.Distance]:
+    def _get_dist(self) -> None | Nc.Distance:
         """Return the NumCosmo Distance object."""
         return self._dist
 
@@ -313,11 +313,11 @@ class NumCosmoData(Ncm.Data):
         super().__init__()
         self.likelihood: Likelihood
         self.tools: ModelingTools
-        self.ccl_cosmo: Optional[ccl.Cosmology] = None
+        self.ccl_cosmo: None | ccl.Cosmology = None
         self._model_list: list[str]
         self._nc_mapping: MappingNumCosmo
-        self._likelihood_source: Optional[str] = None
-        self._likelihood_build_parameters: Optional[NamedParameters] = None
+        self._likelihood_source: None | str = None
+        self._likelihood_build_parameters: None | NamedParameters = None
         self._starting_deserialization: bool = False
         self.dof: int = 100
         self.len: int = 100
@@ -365,11 +365,11 @@ class NumCosmoData(Ncm.Data):
         self.likelihood = likelihood
         self.tools = tools
 
-    def _get_likelihood_source(self) -> Optional[str]:
+    def _get_likelihood_source(self) -> None | str:
         """Return the likelihood string defining the factory function."""
         return self._likelihood_source
 
-    def _set_likelihood_source(self, value: Optional[str]):
+    def _set_likelihood_source(self, value: None | str):
         """Set the likelihood string defining the factory function."""
         if value is not None:
             self._likelihood_source = value
@@ -386,7 +386,7 @@ class NumCosmoData(Ncm.Data):
         setter=_set_likelihood_source,
     )
 
-    def _get_likelihood_build_parameters(self) -> Optional[Ncm.VarDict]:
+    def _get_likelihood_build_parameters(self) -> None | Ncm.VarDict:
         """Return the likelihood build parameters."""
         if self._likelihood_build_parameters is None:
             return None
@@ -394,7 +394,7 @@ class NumCosmoData(Ncm.Data):
             self._likelihood_build_parameters.convert_to_basic_dict()
         )
 
-    def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
+    def _set_likelihood_build_parameters(self, value: None | Ncm.VarDict):
         """Set the likelihood build parameters."""
         self._likelihood_build_parameters = NamedParameters()
         if value is not None:
@@ -422,8 +422,8 @@ class NumCosmoData(Ncm.Data):
         model_list: list[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
-        likelihood_source: Optional[str] = None,
-        likelihood_build_parameters: Optional[NamedParameters] = None,
+        likelihood_source: None | str = None,
+        likelihood_build_parameters: None | NamedParameters = None,
     ):
         """Initialize a NumCosmoGaussCov object.
 
@@ -523,8 +523,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.len: int
         self._model_list: list[str]
         self._nc_mapping: MappingNumCosmo
-        self._likelihood_source: Optional[str] = None
-        self._likelihood_build_parameters: Optional[NamedParameters] = None
+        self._likelihood_source: None | str = None
+        self._likelihood_build_parameters: None | NamedParameters = None
         self._starting_deserialization: bool = False
 
     def _get_model_list(self) -> list[str]:
@@ -594,11 +594,11 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.tools = tools
         self._configure_object()
 
-    def _get_likelihood_source(self) -> Optional[str]:
+    def _get_likelihood_source(self) -> None | str:
         """Return the likelihood string defining the factory function."""
         return self._likelihood_source
 
-    def _set_likelihood_source(self, value: Optional[str]):
+    def _set_likelihood_source(self, value: None | str):
         """Set the likelihood string defining the factory function."""
         if value is not None:
             self._likelihood_source = value
@@ -615,7 +615,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         setter=_set_likelihood_source,
     )
 
-    def _get_likelihood_build_parameters(self) -> Optional[Ncm.VarDict]:
+    def _get_likelihood_build_parameters(self) -> None | Ncm.VarDict:
         """Return the likelihood build parameters."""
         if self._likelihood_build_parameters is None:
             return None
@@ -623,7 +623,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
             self._likelihood_build_parameters.convert_to_basic_dict()
         )
 
-    def _set_likelihood_build_parameters(self, value: Optional[Ncm.VarDict]):
+    def _set_likelihood_build_parameters(self, value: None | Ncm.VarDict):
         """Set the likelihood build parameters."""
         self._likelihood_build_parameters = NamedParameters()
         if value is not None:
@@ -650,8 +650,8 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         model_list: list[str],
         tools: ModelingTools,
         nc_mapping: MappingNumCosmo,
-        likelihood_source: Optional[str] = None,
-        likelihood_build_parameters: Optional[NamedParameters] = None,
+        likelihood_source: None | str = None,
+        likelihood_build_parameters: None | NamedParameters = None,
     ):
         """Initialize a NumCosmoGaussCov object.
 

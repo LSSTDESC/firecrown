@@ -1,7 +1,6 @@
 """Module for defining the ClusterRecipe class."""
 
 from abc import ABC, abstractmethod
-from typing import Optional
 
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.binning import SaccBin
@@ -16,7 +15,7 @@ class ClusterRecipe(Updatable, ABC):
     and models that produces a single prediction for an observable.
     """
 
-    def __init__(self, parameter_prefix: Optional[str] = None) -> None:
+    def __init__(self, parameter_prefix: None | str = None) -> None:
         super().__init__(parameter_prefix)
         self.my_updatables: UpdatableCollection = UpdatableCollection()
 
@@ -26,6 +25,6 @@ class ClusterRecipe(Updatable, ABC):
         cluster_theory: ClusterAbundance,
         this_bin: SaccBin,
         sky_area: float,
-        average_on: Optional[ClusterProperty] = None,
+        average_on: None | ClusterProperty = None,
     ) -> float:
         """Evaluate the theory prediction for this cluster recipe."""
