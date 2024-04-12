@@ -290,9 +290,7 @@ def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
     return main_type_index_a - main_type_index_b
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class InferredGalaxyZDist(YAMLSerializable):
     """The class used to store the redshift resolution data for a sacc file.
 
@@ -335,9 +333,7 @@ class InferredGalaxyZDist(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointXY(YAMLSerializable):
     """Class defining a two-point correlation pair of redshift resolutions.
 
@@ -361,9 +357,7 @@ class TwoPointXY(YAMLSerializable):
         return self.x == other.x and self.y == other.y
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointCells(YAMLSerializable):
     """Class defining the metadata for an harmonic-space two-point measurement.
 
@@ -406,9 +400,7 @@ class TwoPointCells(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass()
+@dataclass(kw_only=True)
 class Window(YAMLSerializable):
     """The class used to represent a window function.
 
@@ -457,9 +449,7 @@ class Window(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointCWindow(YAMLSerializable):
     """Two-point function with a window function.
 
@@ -498,9 +488,7 @@ class TwoPointCWindow(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointXiTheta(YAMLSerializable):
     """Class defining the metadata for a real-space two-point measurement.
 
