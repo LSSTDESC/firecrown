@@ -109,14 +109,3 @@ jobs:
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-      - name: Upload coverage reports to coveralls (legacy)
-        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
-        shell: bash -l {0}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          python -m pip install --no-input coveralls
-          coverage run --source=firecrown -m pytest tests/
-          coveralls --service=github
-
-
