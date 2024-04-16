@@ -1,7 +1,6 @@
 """The DES Y1 3x2pt likelihood factory module."""
 
 import os
-from typing import Union
 import sacc
 
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
@@ -30,7 +29,7 @@ def build_likelihood(_):
     # this case src0, src1, src2 and src3 describe weak-lensing probes. The
     # sources are saved in a dictionary since they will be used by one or more
     # two-point function.
-    sources: dict[str, Union[wl.WeakLensing, nc.NumberCounts]] = {}
+    sources: dict[str, wl.WeakLensing | nc.NumberCounts] = {}
 
     for i in range(4):
         # Each weak-lensing section has its own multiplicative bias. Parameters

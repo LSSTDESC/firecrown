@@ -1,7 +1,7 @@
 """Abstract base classes for TwoPoint Statistics sources."""
 
 from __future__ import annotations
-from typing import Optional, Sequence, final, TypeVar, Generic
+from typing import Sequence, final, TypeVar, Generic
 from abc import abstractmethod
 from dataclasses import dataclass, replace
 import numpy as np
@@ -41,7 +41,7 @@ class Source(Updatable):
     """
 
     systematics: Sequence[SourceSystematic]
-    cosmo_hash: Optional[int]
+    cosmo_hash: None | int
     tracers: Sequence[Tracer]
 
     def __init__(self, sacc_tracer: str) -> None:
@@ -117,7 +117,7 @@ class Tracer:
     """
 
     @staticmethod
-    def determine_field_name(field: Optional[str], tracer: Optional[str]) -> str:
+    def determine_field_name(field: None | str, tracer: None | str) -> str:
         """Gets a field name for a tracer.
 
         This function encapsulates the policy for determining the value to be
@@ -135,11 +135,11 @@ class Tracer:
     def __init__(
         self,
         tracer: pyccl.Tracer,
-        tracer_name: Optional[str] = None,
-        field: Optional[str] = None,
-        pt_tracer: Optional[pyccl.nl_pt.PTTracer] = None,
-        halo_profile: Optional[pyccl.halos.HaloProfile] = None,
-        halo_2pt: Optional[pyccl.halos.Profile2pt] = None,
+        tracer_name: None | str = None,
+        field: None | str = None,
+        pt_tracer: None | pyccl.nl_pt.PTTracer = None,
+        halo_profile: None | pyccl.halos.HaloProfile = None,
+        halo_2pt: None | pyccl.halos.Profile2pt = None,
     ):
         """Initialize a new Tracer based on the pyccl.Tracer which must not be None.
 
@@ -274,7 +274,7 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         self,
         *,
         sacc_tracer: str,
-        systematics: Optional[Sequence[SourceGalaxySystematic]] = None,
+        systematics: None | Sequence[SourceGalaxySystematic] = None,
     ):
         """Initialize the SourceGalaxy object.
 
@@ -285,7 +285,7 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         super().__init__(sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
-        self.current_tracer_args: Optional[_SourceGalaxyArgsT] = None
+        self.current_tracer_args: None | _SourceGalaxyArgsT = None
         self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
             UpdatableCollection(systematics)
         )

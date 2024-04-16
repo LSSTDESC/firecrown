@@ -1,7 +1,6 @@
 """Supernova statistic support."""
 
 from __future__ import annotations
-from typing import Optional
 
 import numpy as np
 import numpy.typing as npt
@@ -27,8 +26,8 @@ class Supernova(Statistic):
         super().__init__(parameter_prefix=sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
-        self.data_vector: Optional[DataVector] = None
-        self.a: Optional[npt.NDArray[np.float64]] = None
+        self.data_vector: None | DataVector = None
+        self.a: None | npt.NDArray[np.float64] = None
         self.M = parameters.register_new_updatable_parameter()
 
     def read(self, sacc_data: sacc.Sacc) -> None:

@@ -7,7 +7,7 @@ from __future__ import annotations
 
 from enum import Enum
 from functools import wraps
-from typing import Optional, Sequence, Callable, Union, TypeVar
+from typing import Sequence, Callable, TypeVar
 from typing import final
 import warnings
 
@@ -48,8 +48,8 @@ P = ParamSpec("P")
 # Beware
 def enforce_states(
     *,
-    initial: Union[State, list[State]],
-    terminal: Optional[State] = None,
+    initial: State | list[State],
+    terminal: None | State = None,
     failure_message: str,
 ) -> Callable[[Callable[P, T]], Callable[P, T]]:
     """This decorator wraps a method, and enforces state machine behavior.
@@ -146,12 +146,12 @@ class GaussFamily(Likelihood):
         self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
             GuardedStatistic(s) for s in statistics
         )
-        self.cov: Optional[npt.NDArray[np.float64]] = None
-        self.cholesky: Optional[npt.NDArray[np.float64]] = None
-        self.inv_cov: Optional[npt.NDArray[np.float64]] = None
-        self.cov_index_map: Optional[dict[int, int]] = None
-        self.theory_vector: Optional[npt.NDArray[np.double]] = None
-        self.data_vector: Optional[npt.NDArray[np.double]] = None
+        self.cov: None | npt.NDArray[np.float64] = None
+        self.cholesky: None | npt.NDArray[np.float64] = None
+        self.inv_cov: None | npt.NDArray[np.float64] = None
+        self.cov_index_map: None | dict[int, int] = None
+        self.theory_vector: None | npt.NDArray[np.double] = None
+        self.data_vector: None | npt.NDArray[np.double] = None
 
     @enforce_states(
         initial=State.READY,
@@ -229,7 +229,7 @@ class GaussFamily(Likelihood):
     )
     @final
     def get_cov(
-        self, statistic: Union[Statistic, list[Statistic], None] = None
+        self, statistic: Statistic | list[Statistic] | None = None
     ) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix.
 
@@ -342,7 +342,7 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before get_sacc_indices()",
     )
     def get_sacc_indices(
-        self, statistic: Union[Statistic, list[Statistic], None] = None
+        self, statistic: Statistic | list[Statistic] | None = None
     ) -> npt.NDArray[np.int64]:
         """Get the SACC indices of the statistic or list of statistics.
 

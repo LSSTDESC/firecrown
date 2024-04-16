@@ -1,6 +1,6 @@
 """Module for defining the classes used in the MurataBinnedSpecZ cluster recipe."""
 
-from typing import Callable, Optional
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -33,7 +33,7 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
     def get_theory_prediction(
         self,
         cluster_theory: ClusterAbundance,
-        average_on: Optional[ClusterProperty] = None,
+        average_on: None | ClusterProperty = None,
     ) -> Callable[
         [npt.NDArray[np.float64], npt.NDArray[np.float64], tuple[float, float], float],
         npt.NDArray[np.float64],
@@ -113,7 +113,7 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         cluster_theory: ClusterAbundance,
         this_bin: NDimensionalBin,
         sky_area: float,
-        average_on: Optional[ClusterProperty] = None,
+        average_on: None | ClusterProperty = None,
     ) -> float:
         """Evaluate the theory prediction for this cluster recipe.
 

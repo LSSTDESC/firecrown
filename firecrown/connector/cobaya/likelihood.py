@@ -6,8 +6,6 @@ This module provides the class :class:`LikelihoodConnector`, which is an impleme
 of a Cobaya likelihood.
 """
 
-from typing import Union
-
 import numpy as np
 import numpy.typing as npt
 from cobaya.likelihood import Likelihood
@@ -71,14 +69,14 @@ class LikelihoodConnector(Likelihood):
 
     def get_requirements(
         self,
-    ) -> dict[str, Union[None, dict[str, npt.NDArray[np.float64]], dict[str, object]]]:
+    ) -> dict[str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]]:
         """Required by Cobaya.
 
         Returns a dictionary with keys corresponding the contained likelihood's
         required parameter, plus "pyccl". All values are None.
         """
         likelihood_requires: dict[
-            str, Union[None, dict[str, npt.NDArray[np.float64]], dict[str, object]]
+            str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]
         ] = {"pyccl": None}
         required_params = (
             self.likelihood.required_parameters() + self.tools.required_parameters()

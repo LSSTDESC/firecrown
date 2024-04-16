@@ -1,7 +1,6 @@
 """The Student-t likelihood."""
 
 from __future__ import annotations
-from typing import Optional
 
 import numpy as np
 
@@ -26,7 +25,7 @@ class StudentT(GaussFamily):
     def __init__(
         self,
         statistics: list[Statistic],
-        nu: Optional[float] = None,
+        nu: None | float = None,
     ):
         super().__init__(statistics)
         self.nu = parameters.register_new_updatable_parameter(nu)

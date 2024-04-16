@@ -5,7 +5,7 @@ metadata from a sacc file.
 """
 
 from itertools import combinations_with_replacement, chain
-from typing import TypedDict, Optional, Union, TypeVar, Type
+from typing import TypedDict, TypeVar, Type
 from dataclasses import dataclass
 from enum import Enum, auto
 import re
@@ -246,7 +246,7 @@ class ClusterMeasuredType(YAMLSerializable, str, Enum):
         return hash((ClusterMeasuredType, self.value))
 
 
-MeasuredType = Union[GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType]
+MeasuredType = GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType
 ALL_MEASURED_TYPES: list[MeasuredType] = list(
     chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
 )
@@ -290,9 +290,7 @@ def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
     return main_type_index_a - main_type_index_b
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class InferredGalaxyZDist(YAMLSerializable):
     """The class used to store the redshift resolution data for a sacc file.
 
@@ -335,9 +333,7 @@ class InferredGalaxyZDist(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointXY(YAMLSerializable):
     """Class defining a two-point correlation pair of redshift resolutions.
 
@@ -361,9 +357,7 @@ class TwoPointXY(YAMLSerializable):
         return self.x == other.x and self.y == other.y
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointCells(YAMLSerializable):
     """Class defining the metadata for an harmonic-space two-point measurement.
 
@@ -406,9 +400,7 @@ class TwoPointCells(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass()
+@dataclass(kw_only=True)
 class Window(YAMLSerializable):
     """The class used to represent a window function.
 
@@ -422,7 +414,7 @@ class Window(YAMLSerializable):
 
     ells: npt.NDArray[np.int64]
     weights: npt.NDArray[np.float64]
-    ells_for_interpolation: Optional[npt.NDArray[np.int64]] = None
+    ells_for_interpolation: None | npt.NDArray[np.int64] = None
 
     def __post_init__(self) -> None:
         """Make sure the weights have the right shape."""
@@ -457,9 +449,7 @@ class Window(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointCWindow(YAMLSerializable):
     """Two-point function with a window function.
 
@@ -498,9 +488,7 @@ class TwoPointCWindow(YAMLSerializable):
         )
 
 
-# kw_only=True only available in Python >= 3.10:
-# TODO update when we drop Python 3.9
-@dataclass(frozen=True)
+@dataclass(frozen=True, kw_only=True)
 class TwoPointXiTheta(YAMLSerializable):
     """Class defining the metadata for a real-space two-point measurement.
 
@@ -666,7 +654,7 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
 
 def extract_all_data_types_xi_thetas(
     sacc_data: sacc.Sacc,
-    allowed_data_type: Optional[list[str]] = None,
+    allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointXiThetaIndex]:
     """Extract all two-point function metadata from a sacc file.
 
@@ -709,7 +697,7 @@ def extract_all_data_types_xi_thetas(
 
 
 def extract_all_data_types_cells(
-    sacc_data: sacc.Sacc, allowed_data_type: Optional[list[str]] = None
+    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
 ) -> list[TwoPointCellsIndex]:
     """Extracts the two-point function metadata from a sacc file."""
     tag_name = "ell"
@@ -760,7 +748,7 @@ def extract_all_photoz_bin_combinations(
 
 def extract_window_function(
     sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
-) -> Optional[Window]:
+) -> None | Window:
     """Extract a window function from a sacc file that matches the given indices.
 
     If there is no appropriate window function, return None.

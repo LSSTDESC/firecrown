@@ -7,7 +7,7 @@ Each supported body of code has its own dedicated class.
 """
 
 from abc import ABC
-from typing import Type, Optional, final, Any, Union
+from typing import Type, final, Any
 import typing
 import warnings
 import numpy as np
@@ -60,7 +60,7 @@ class Mapping(ABC):
 
     def __init__(self, *, require_nonlinear_pk: bool = False):
         self.require_nonlinear_pk = require_nonlinear_pk
-        self.m_nu: Optional[Union[float, list[float]]] = None
+        self.m_nu: float | list[float] | None = None
 
     def get_params_names(self) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping."""
@@ -113,12 +113,12 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: Optional[float] = None,
-        sigma8: Optional[float] = None,
+        A_s: None | float = None,
+        sigma8: None | float = None,
         n_s: float,
         Omega_k: float,
         Neff: float,
-        m_nu: Union[float, list[float]],
+        m_nu: float | list[float],
         m_nu_type: str,
         w0: float,
         wa: float,
@@ -176,7 +176,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> dict[str, Union[Optional[float], list[float], str]]:
+    def asdict(self) -> dict[str, None | float | list[float] | str]:
         """Return a dictionary containing the cosmological constants."""
         return {
             "Omega_c": self.Omega_c,

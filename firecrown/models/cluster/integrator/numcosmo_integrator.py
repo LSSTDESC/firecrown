@@ -4,7 +4,7 @@ This module holds the NumCosmo implementation of the integrator classes
 """
 
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -27,7 +27,7 @@ class NumCosmoIntegrator(Integrator):
 
     def __init__(
         self,
-        method: Optional[NumCosmoIntegralMethod] = None,
+        method: None | NumCosmoIntegralMethod = None,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-12,
     ) -> None:

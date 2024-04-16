@@ -25,7 +25,7 @@ has an attribute `x` that is required to be a float in the range
 # pylint: disable=R0903
 
 import math
-from typing import Callable, Optional
+from typing import Callable
 
 
 class TypeFloat:
@@ -33,15 +33,15 @@ class TypeFloat:
 
     def __init__(
         self,
-        minvalue: Optional[float] = None,
-        maxvalue: Optional[float] = None,
+        minvalue: None | float = None,
+        maxvalue: None | float = None,
         allow_none: bool = False,
     ) -> None:
         self.minvalue = minvalue
         self.maxvalue = maxvalue
         self.allow_none = allow_none
 
-    def validate(self, value: Optional[float]) -> None:
+    def validate(self, value: None | float) -> None:
         """Run all validators on this value.
 
         Raise an exception if the provided `value` does not meet all of the
@@ -73,7 +73,7 @@ class TypeFloat:
         """
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: Optional[float]) -> None:
+    def __set__(self, obj, value: None | float) -> None:
         """Setter for the validated variable.
 
         This function invokes the `validate` method of the derived class.
@@ -95,16 +95,16 @@ class TypeString:
 
     def __init__(
         self,
-        minsize: Optional[int] = None,
-        maxsize: Optional[int] = None,
-        predicate: Optional[Callable[[str], bool]] = None,
+        minsize: None | int = None,
+        maxsize: None | int = None,
+        predicate: None | Callable[[str], bool] = None,
     ) -> None:
         """Initialize the TypeString object."""
         self.minsize = minsize
         self.maxsize = maxsize
         self.predicate = predicate
 
-    def validate(self, value: Optional[str]) -> None:
+    def validate(self, value: None | str) -> None:
         """Run all validators on this value.
 
         Raise an exception if the provided `value` does not meet all of the
@@ -134,7 +134,7 @@ class TypeString:
         """
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: Optional[str]) -> None:
+    def __set__(self, obj, value: None | str) -> None:
         """Setter for the validated variable.
 
         This function invokes the `validate` method of the derived class.
