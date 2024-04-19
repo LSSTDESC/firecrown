@@ -1,7 +1,10 @@
 version: 2
 
 sphinx:
+  python: mambaforge-latest
   configuration: docs/conf.py
+  install:
+    - editable .
 
 # Build all formats
 
@@ -13,9 +16,11 @@ conda:
 build:
   os: ubuntu-22.04
   tools:
+    # Because we are using python: mambaforge-latest, we will be using mamba
+    # instead of conda.
     python: mambaforge-latest
   jobs:
     pre_build:
-      - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=$PWD make
+      - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=.${PWD}/.. make
       - mkdir -p docs/_static
       - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
