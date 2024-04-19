@@ -26,6 +26,6 @@ build:
       # - mamba activate firecrown-docs && printenv
 
     pre_build:
-      - conda activate firecrown-docs && cd tutorial && make
+      - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=$PWD make
       - mkdir -p docs/_static
       - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
