@@ -19,7 +19,7 @@ build:
       # Each element of the array is a 'step'.
       # Each step is executed in its own shell, so modifications to the shell
       # environment are not visible in other steps.
-      - mamba init bash
+      - mamba init --system
       - mamba activate firecrown-docs && mamba env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}
       # some day we may need to build the CSL, but not today...
       # Let's make sure we can see the necessary environment variables.
