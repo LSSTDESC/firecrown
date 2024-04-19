@@ -15,16 +15,6 @@ build:
   tools:
     python: mambaforge-latest
   jobs:
-    post_create_environment:
-      # Each element of the array is a 'step'.
-      # Each step is executed in its own shell, so modifications to the shell
-      # environment are not visible in other steps.
-      # - mamba init
-      - conda activate firecrown-docs && conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}
-      # some day we may need to build the CSL, but not today...
-      # Let's make sure we can see the necessary environment variables.
-      # - mamba activate firecrown-docs && printenv
-
     pre_build:
       - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=$PWD make
       - mkdir -p docs/_static
