@@ -15,9 +15,16 @@ build:
   tools:
     python: mambaforge-4.10
   jobs:
+    post_create_environment:
+      mamba activate firecrown-docs
+      mamba env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}
+      echo CONDA_PREIX: ${CONDA_PREFIX}
+      echo CLS_DIR: ${CSL_DIR}
+      echo FIRECROWN_DIR: ${FIRECROWN_DIR}
+      mamba activate firecrown-docs  # some day we may need to build the CSL, but not today...
+
     pre_build:
       - echo $PATH
-      - wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz && mkdir ~/opt && tar -C ~/opt -xvzf quarto-1.3.450-linux-amd64.tar.gz
-      - cd tutorial && PATH="$HOME/opt/quarto-1.3.450/bin:$PATH" make
+      - cd tutorial && make
       - mkdir -p docs/_static
-      - cp -rf tutorial/intro_article.html tutorial/intro_article_files tutorial/introduction_to_firecrown.html tutorial/introduction_to_firecrown_files tutorial/*.png tutorial/*.jpg docs/_static
+      - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
