@@ -20,12 +20,12 @@ build:
       # Each step is executed in its own shell, so modifications to the shell
       # environment are not visible in other steps.
       # - mamba init
-      # - mamba activate firecrown-docs && mamba env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}
+      - conda activate firecrown-docs && conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=${PWD}
       # some day we may need to build the CSL, but not today...
       # Let's make sure we can see the necessary environment variables.
-      - mamba activate firecrown-docs && printenv
+      # - mamba activate firecrown-docs && printenv
 
     pre_build:
-      - mamba activate firecrown-docs && cd tutorial && make
+      - conda activate firecrown-docs && cd tutorial && make
       - mkdir -p docs/_static
       - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
