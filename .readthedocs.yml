@@ -1,10 +1,7 @@
 version: 2
 
 sphinx:
-  python: mambaforge-latest
   configuration: docs/conf.py
-  install:
-    - editable .
 
 # Build all formats
 
