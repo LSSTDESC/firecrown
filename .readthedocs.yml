@@ -19,8 +19,8 @@ build:
   jobs:
     pre_build:
       - printenv
-      - ls -l $QUARTO_DENO
-      - file $QUARTO_DENO
+      - mamba info
+      - mamba list
       - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=.${PWD}/.. make
       - mkdir -p docs/_static
       - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
