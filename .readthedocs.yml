@@ -27,7 +27,7 @@ build:
       # /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
       # so we have to put it there.
       - mkdir -p /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64
-      - ln -s $(which quarto) /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
+      - ln -s $(which deno) /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
       # CONDA_PREFIX is not defined.
       - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=.${PWD}/.. make
       - mkdir -p docs/_static
