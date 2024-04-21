@@ -21,6 +21,8 @@ build:
       - printenv
       - mamba info
       - mamba list
+      - which quarto
+      - which deno
       - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=.${PWD}/.. make
       - mkdir -p docs/_static
       - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
