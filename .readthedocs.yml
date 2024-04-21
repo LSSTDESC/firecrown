@@ -23,6 +23,11 @@ build:
       - mamba list
       - which quarto
       - which deno
+      # The build on readthedocs is looking for deno at:
+      # /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
+      # so we have to put it there.
+      - ln -s $(which quarto) /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
+      # CONDA_PREFIX is not defined.
       - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=.${PWD}/.. make
       - mkdir -p docs/_static
       - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
