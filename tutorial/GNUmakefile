@@ -2,7 +2,7 @@
 .PHONY: clean
 
 .qmd.html:
-	quarto render $<
+	quarto render $< --debug --log-level info
 
 all: introduction_to_firecrown.html intro_article.html development_example.html theoretical_predictions_tutorial.html
 introduction_to_firecrown.html: custom.scss clean_title_slide.html.frag introduction_to_firecrown.qmd \
