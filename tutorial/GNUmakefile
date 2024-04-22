@@ -5,7 +5,7 @@
 	quarto render $< --debug --log-level info
 
 all: introduction_to_firecrown.html intro_article.html development_example.html theoretical_predictions_tutorial.html
-introduction_to_firecrown.html: custom.scss clean_title_slide.html.frag introduction_to_firecrown.qmd \
+introduction_to_firecrown.html: custom.scss clean_title_slide.html introduction_to_firecrown.qmd \
 	_what_is_firecrown.qmd \
 	_basic_firecrown_concepts.qmd \
 	_high_level_firecrown_classes.qmd \

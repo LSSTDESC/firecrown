@@ -18,17 +18,8 @@ build:
     python: mambaforge-latest
   jobs:
     pre_build:
-      - printenv
-      - mamba info
-      - mamba list
-      - which quarto
-      - which deno
-      # The build on readthedocs is looking for deno at:
-      # /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
-      # so we have to put it there.
-      - mkdir -p /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64
-      - ln -s $(which deno) /home/docs/checkouts/readthedocs.org/user_builds/firecrown/conda/412/bin/tools/x86_64/deno
-      # CONDA_PREFIX is not defined.
-      - cd tutorial && CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library FIRECROWN_DIR=.${PWD}/.. make
+      - echo $PATH
+      - wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.3.450/quarto-1.3.450-linux-amd64.tar.gz && mkdir ~/opt && tar -C ~/opt -xvzf quarto-1.3.450-linux-amd64.tar.gz
+      - cd tutorial && PATH="$HOME/opt/quarto-1.3.450/bin:$PATH" make
       - mkdir -p docs/_static
-      - cp -rf tutorial/*.html tutorial/*.png tutorial/*.jpg docs/_static
+      - cp -rf tutorial/intro_article.html tutorial/intro_article_files tutorial/introduction_to_firecrown.html tutorial/introduction_to_firecrown_files tutorial/*.png tutorial/*.jpg docs/_static

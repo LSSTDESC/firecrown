@@ -3,49 +3,28 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - alabaster
-  - babel
-  - black
-  - charset-normalizer
-  - cosmosis >= 3.0
+  - python>=3.8
+  - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
-  - coverage
   - cython < 3.0.0
-  - dill
-  - fitsio
   - flake8
-  - flake8-docstrings
-  - fuzzywuzzy
-  - getdist
-  - glib <= 2.78.4
-  - idna
   - jupyter
-  - matplotlib-base
-  - more-itertools
   - mypy
-  - numcosmo >=0.21.1
-  - numpy >= 1.23.0
-  - pip
-  - portalocker
-  - pybobyqa
-  - pyccl >= 2.8.0
-  - pylint
-  - pytest
-  - pytest-cov
-  - python>=3.10
-  - pyyaml
-  - quarto
-  - requests
-  - sacc >= 0.11
-  - scipy
-  - sphinx-autoapi
-  - sphinx-autodoc-typehints
-  - sphinx-book-theme
-  - sphinx=7.1.2
-  - sphinxcontrib-apidoc
-  - types-pyyaml
-  - urllib3
+  - numcosmo>=0.21.1
+  - numpy>=1.21.0
+  - plantuml
+  - pip>=20.1  # pip is needed as dependency
   - pip:
     - autoclasstoc
     - cobaya
     - pygobject-stubs
+  - pyccl>=2.8.0
+  - pytest
+  - quarto
+  - sacc>=0.11
+  - scipy
+  - sphinx=7.1.2
+  - sphinx-autoapi
+  - sphinx-autodoc-typehints
+  - sphinxcontrib-apidoc
+  - sphinx-book-theme
