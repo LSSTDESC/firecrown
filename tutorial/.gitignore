@@ -9,4 +9,5 @@ intro_article_files/
 development_example.html
 development_example_files
 intro_article.html
-intro_article_files
+*.html.md
+*.revealjs.md
