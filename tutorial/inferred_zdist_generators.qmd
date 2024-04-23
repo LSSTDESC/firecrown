@@ -1,0 +1,85 @@
+---
+title: "Using Firecrown to Calculate Theoretical Predictions"
+subtitle: "Version 1.8.0a0"
+author:
+  - Marc Paterno
+  - Sandro Vitenti
+format:
+  html:
+    toc: true
+    theme: [serif, custom.scss]
+    code-overflow: wrap
+    code-fold: false
+reference-location: margin
+citation-location: margin
+jupyter: python3
+---
+
+## Purpose of this document
+
+Firecrown provides facilities for creating distributions for galaxies
+$$
+P(z|B_i, \theta) \equiv \frac{\mathrm{d}n}{\mathrm{d}z}(z;B_i, \theta),
+$${#eq-Pi}
+where $B_i$ is the $i$-th bin of the photometric redshifts, and $\theta$ is a set of parameters that describe the model. 
+
+In Firecrown, this distribution is stored as a `InferredGalaxyZDist` dataclass in `firecrown.metadata`, which contains the redshifts, the corresponding probabilities and the data-type of the measurements. Firecrown also provides objects that generate this distributions given a chosen model. In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which generates the redshift distribution according to the LSST Science Requirements Document (SRD). 
+
+## LSST SRD Distribution
+
+In the LSST SRD, the redshift distribution is described by a set of parameters $\theta = (\alpha,\,\beta,\,z_0)$, where the redshift distribution is given by
+$$
+P(z|\theta) = f(z;\alpha,\,\beta,\,z_0) = \frac{\alpha}{z_0\Gamma[(1+\beta)/\alpha]}\left(\frac{z}{z_0}\right)^\beta\exp\left[\left(\frac{z}{z_0}\right)^\alpha\right],
+$${#eq-fz}
+To obtain the distribution in each photometric redshift bin, we need to convolve this with a model for the photometric redshift errors, namely
+$$
+P(z_\mathrm{p}|z,\sigma_z) = \frac{1}{N(z)\sqrt{2\pi}\sigma_z(1+z)}\exp\left[-\frac{1}{2}\frac{(z-z_p)^2}{\sigma_z^2(1+z)^2}\right],
+$${#eq-Pzp}
+where 
+$$
+N(z) = \frac{1}{2}\mathrm{erfc}\left[-\frac{z}{\sqrt{2}\sigma_z(1+z)}\right].
+$$
+The redshift distribution (@eq-Pi) is then given by
+$$
+\begin{align}
+P(z|B_i, \theta) &= \int_{z_{p,i}^\mathrm{low}}^{z_{p,i}^\mathrm{up}} \!\!\!\mathrm{d}z_p\,P(z_p|z,\sigma_z)P(z|\theta), \\
+&= \int_{z_{p,i}^\mathrm{low}}^{z_{p,i}^\mathrm{up}} \!\!\!\mathrm{d}z_p\,\frac{1}{\sqrt{2\pi}\sigma_z(1+z)}\exp\left[-\frac{1}{2}\frac{(z-z_p)^2}{\sigma_z^2(1+z)^2}\right]f(z;\alpha,\,\beta,\,z_0).
+\end{align}
+$${#eq-lsst-srd}
+where $B_i = \left(z_{p,i}^\mathrm{low}, z_{p,i}^\mathrm{up}, \sigma_z\right)$ provides the photometric redshift bin limits and the photometric redshift error in the form $\sigma_z(1+z)$.
+
+The object `ZDistLSSTSRD` in Firecrown generates the redshift distribution according to the LSST SRD. The following code block demonstrates how to use this object to generate the redshift distribution for a given set of parameters $\theta$.
+
+Below we plot @eq-fz for year 1 and year 10 parameters from LSST SRD:
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+import firecrown
+from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
+
+zdist_y1 = ZDistLSSTSRD.year_1()
+zdist_y10 = ZDistLSSTSRD.year_10()
+z = np.linspace(0, 3.0, 100)
+Pz_y1 = zdist_y1.distribution(z)
+Pz_y10 = zdist_y10.distribution(z)
+
+plt.scatter(z, Pz_y1, label="Year 1")
+plt.scatter(z, Pz_y10, label="Year 10")
+```
+
+
+```{python}
+import numpy as np
+import matplotlib.pyplot as plt
+import firecrown
+from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
+
+zdist_y1 = ZDistLSSTSRD.year_1()
+zdist_y10 = ZDistLSSTSRD.year_10()
+z = np.linspace(0, 0.5, 1000)
+Pz_y1 = zdist_y1.binned_distribution(0.2, 0.3, 0.01, z)
+Pz_y10 = zdist_y10.binned_distribution(0.2, 0.3, 0.01, z)
+
+plt.plot(z, Pz_y1, label="Year 1")
+plt.plot(z, Pz_y10, label="Year 10")
+```
