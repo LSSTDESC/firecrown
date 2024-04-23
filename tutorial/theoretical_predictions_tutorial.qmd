@@ -1,0 +1,35 @@
+---
+title: "Using Firecrown to Calculate Theoretical Predictions"
+subtitle: "Version 1.8.0a0"
+author:
+  - Marc Paterno
+  - Sandro Vitenti
+format:
+  html:
+    toc: true
+    theme: [serif, custom.scss]
+    code-overflow: wrap
+    code-fold: true
+reference-location: margin
+citation-location: margin
+jupyter: python3
+---
+
+## Prologue
+
+This document demonstrates how to use Quarto to generate a demo of Firecrown.
+
+## Running some code
+
+Here is a python code block.
+It starts out with the code hidden, because we have used `code-fold: true` in the YAML header.
+Cllck on the triangle next to the word `code` in the code block to reveal it.
+Below the code block is the output of the code.
+
+```{python}
+# This demonstrates loading firecrown and running some code.
+from datetime import datetime
+import firecrown
+print(f"This demo was run on {datetime.now()}")
+print(f"You are running Firecrown version {firecrown.__version__}")
+```

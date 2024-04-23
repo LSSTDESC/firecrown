@@ -2,10 +2,10 @@
 .PHONY: clean
 
 .qmd.html:
-	quarto render $<
+	quarto render $< --debug --log-level info
 
-all: introduction_to_firecrown.html intro_article.html development_example.html
-introduction_to_firecrown.html: custom.scss clean_title_slide.html introduction_to_firecrown.qmd \
+all: introduction_to_firecrown.html intro_article.html development_example.html theoretical_predictions_tutorial.html
+introduction_to_firecrown.html: custom.scss clean_title_slide.html.frag introduction_to_firecrown.qmd \
 	_what_is_firecrown.qmd \
 	_basic_firecrown_concepts.qmd \
 	_high_level_firecrown_classes.qmd \
@@ -25,9 +25,12 @@ development_example.html: custom.scss development_example.qmd \
 	_building_firecrown.qmd \
 	_code_development_hygiene.qmd
 
+theoretical_predictions_tutorial.html: custom.scss theoretical_predictions_tutorial.qmd
+
 clean:
 	rm -f *.qmd.bak
 	rm -rf introduction_to_firecrown.html introduction_to_firecrown_files/
 	rm -rf intro_article.{html,pdf,epub} intro_article_files/
 	rm -rf development_example.html development_example_files/
+	rm -rf theoretical_predictions_tutorial.html theoretical_predictions_tutorial_files/
 
