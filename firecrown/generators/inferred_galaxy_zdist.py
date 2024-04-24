@@ -1,11 +1,6 @@
-"""This module deals with the generation of inferred galaxy redshift distributions.
-"""
+"""Generation of inferred galaxy redshift distributions."""
 
-from itertools import combinations_with_replacement, chain
-from typing import TypedDict, TypeVar, Type, Self
-from dataclasses import dataclass
-from enum import Enum, auto
-import re
+from typing import Self
 
 import numpy as np
 import numpy.typing as npt
@@ -13,10 +8,6 @@ from scipy.special import gamma, erf, erfc
 
 import yaml
 from yaml import CLoader as Loader
-from yaml import CDumper as Dumper
-
-import sacc
-from sacc.data_types import required_tags
 
 from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
 
@@ -31,7 +22,6 @@ Y10_Z0 = 0.28
 
 class ZDistLSSTSRD:
     """LSST Inferred galaxy redshift distributions.
-
 
     Inferred galaxy redshift distribution based on the LSST Science Requirements
     Document (SRD).
