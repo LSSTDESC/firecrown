@@ -18,7 +18,7 @@ from yaml import CDumper as Dumper
 import sacc
 from sacc.data_types import required_tags
 
-from firecrown.metadata.two_point import InferredGalaxyZDist
+from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
 
 Y1_ALPHA = 0.94
 Y1_BETA = 2.0
@@ -107,8 +107,18 @@ class ZDistLSSTSRD:
         return (erf((z - zpl) / denom) - erf((z - zpu) / denom)) / erfc(-z / denom)
 
     def binned_distribution(
-        self, zpl: float, zpu: float, sigma_z: float, z: npt.NDArray
-    ) -> npt.NDArray:
+        self,
+        *,
+        zpl: float,
+        zpu: float,
+        sigma_z: float,
+        z: npt.NDArray,
+        name: str,
+        measured_type: MeasuredType,
+    ) -> InferredGalaxyZDist:
         """Generate the inferred galaxy redshift distribution in bins."""
         true_dist = self.distribution(z)
-        return self._integrated_gaussian(zpl, zpu, sigma_z, z) * true_dist
+        dndz = self._integrated_gaussian(zpl, zpu, sigma_z, z) * true_dist
+        return InferredGalaxyZDist(
+            bin_name=name, z=z, dndz=dndz, measured_type=measured_type
+        )

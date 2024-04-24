@@ -15,6 +15,15 @@ citation-location: margin
 jupyter: python3
 ---
 
+::: {.hidden}
+```{python}
+def doc_theme():
+    return theme_minimal() + theme(
+        panel_grid_minor=element_line(color="gray", linetype="--")
+    )
+```
+:::
+
 ## Purpose of this document
 
 Firecrown provides facilities for creating distributions for galaxies
@@ -50,36 +59,102 @@ where $B_i = \left(z_{p,i}^\mathrm{low}, z_{p,i}^\mathrm{up}, \sigma_z\right)$ p
 
 The object `ZDistLSSTSRD` in Firecrown generates the redshift distribution according to the LSST SRD. The following code block demonstrates how to use this object to generate the redshift distribution for a given set of parameters $\theta$.
 
-Below we plot @eq-fz for year 1 and year 10 parameters from LSST SRD:
+Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD:
 ```{python}
 import numpy as np
-import matplotlib.pyplot as plt
 import firecrown
 from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
 
+# These are the values of z at which we will evalute f(z)
+z = np.linspace(0, 3.0, 100)
+
+# We want to evaluate f(z) for both Y1 and Y10.
 zdist_y1 = ZDistLSSTSRD.year_1()
 zdist_y10 = ZDistLSSTSRD.year_10()
-z = np.linspace(0, 3.0, 100)
+
+# Now we can generate the values we want to plot.
+# Note that Pz_y1 and Pz_y10 are both numpy arrays:
 Pz_y1 = zdist_y1.distribution(z)
 Pz_y10 = zdist_y10.distribution(z)
-
-plt.scatter(z, Pz_y1, label="Year 1")
-plt.scatter(z, Pz_y10, label="Year 10")
 ```
 
+The generated data are plotted in @fig-fz
+
+```{python}
+# | label: fig-fz
+# | fig-cap: $\textrm{d}N/\textrm{d}z$ for both Year 1 and Year 10, using the formulation from the SRD.
+# | fig-cap-location: margin
+# | code-fold: true
+from plotnine import *  # bad form in programs, but seems OK for plotnine
+import pandas as pd
+
+# The data were not originally generated in a dataframe convenient for
+# plotting, so our first task it to put them into such a form.
+# First we create a dataframe with the raw data.
+data = pd.DataFrame({"z": z, "Y1": Pz_y1, "Y2": Pz_y10})
+# Then we 'melt' the data into a longer form, which is more conveient for
+# making multiple plots on the same axes, or for making panel (faceted) plots.
+long = pd.melt(data, id_vars=["z"], var_name="year", value_name="fz")
+
+# Now we can generate the plot.
+(
+    ggplot(long, aes("z", "fz", color="year"))
+    + geom_point()
+    + labs(y="dN/dz")
+    + doc_theme()
+)
+```
+
+Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
 
 ```{python}
 import numpy as np
-import matplotlib.pyplot as plt
 import firecrown
-from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
+from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD, InferredGalaxyZDist
+from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
 
-zdist_y1 = ZDistLSSTSRD.year_1()
-zdist_y10 = ZDistLSSTSRD.year_10()
+# These are the values at which we will evaluate the distribution.
 z = np.linspace(0, 0.5, 1000)
-Pz_y1 = zdist_y1.binned_distribution(0.2, 0.3, 0.01, z)
-Pz_y10 = zdist_y10.binned_distribution(0.2, 0.3, 0.01, z)
 
-plt.plot(z, Pz_y1, label="Year 1")
-plt.plot(z, Pz_y10, label="Year 10")
+# We use the same zdist_y1 and zdist_y10 that were created above.
+# We create two GalaxyInferredZDist objects, one for Y1 and one for Y10.
+Pz_y1 = zdist_y1.binned_distribution(
+    zpl=0.2,
+    zpu=0.3,
+    sigma_z=0.01,
+    z=z,
+    name="bin1_y1",
+    measured_type=GalaxyMeasuredType.COUNTS,
+)
+Pz_y10 = zdist_y10.binned_distribution(
+    zpl=0.2,
+    zpu=0.3,
+    sigma_z=0.01,
+    z=z,
+    name="bin1_y10",
+    measured_type=GalaxyMeasuredType.COUNTS,
+)
+assert isinstance(Pz_y1, InferredGalaxyZDist)
 ```
+
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `GalaxyInferredZDist` objects is shown in @fig-inferred-dist.
+
+```{python}
+# | label: fig-inferred-dist
+# | fig-cap: $\textrm{d}N/\textrm{d}z$ for both Year 1 and Year 10, using the formulation from the SRD, with the binning and resolution specified above.
+# | fig-cap-location: margin
+# | code-fold: true
+# We have already imported plotnine, so we don't need to do that again.
+# This time we generate the dataframe using a different technique.
+d_y1 = pd.DataFrame({"z": Pz_y1.z, "dndz": Pz_y1.dndz, "year": "Y1"})
+d_y10 = pd.DataFrame({"z": Pz_y10.z, "dndz": Pz_y10.dndz, "year": "Y10"})
+data = pd.concat([d_y1, d_y10])
+
+(
+    ggplot(data, aes("z", "dndz", color="year"))
+    + geom_point()
+    + labs(y="dN/dz")
+    + doc_theme()
+)
+```
+
