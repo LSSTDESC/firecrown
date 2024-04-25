@@ -1,7 +1,5 @@
 """Generation of inferred galaxy redshift distributions."""
 
-from typing import Self
-
 import numpy as np
 import numpy.typing as npt
 from scipy.special import gamma, erf, erfc
@@ -39,7 +37,7 @@ class ZDistLSSTSRD:
         self.z0 = z0
 
     @classmethod
-    def from_yaml(cls, filename: str) -> Self:
+    def from_yaml(cls, filename: str) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object from a YAML file.
 
         :param filename: The path to the YAML file.
@@ -52,7 +50,7 @@ class ZDistLSSTSRD:
     @classmethod
     def year_1(
         cls, alpha: float = Y1_ALPHA, beta: float = Y1_BETA, z0: float = Y1_Z0
-    ) -> Self:
+    ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the first year of LSST.
 
         It uses the default values of the alpha, beta and z0 parameters from
@@ -68,7 +66,7 @@ class ZDistLSSTSRD:
     @classmethod
     def year_10(
         cls, alpha: float = Y10_ALPHA, beta: float = Y10_BETA, z0: float = Y10_Z0
-    ) -> Self:
+    ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the tenth year of LSST.
 
         It uses the default values of the alpha, beta and z0 parameters from
