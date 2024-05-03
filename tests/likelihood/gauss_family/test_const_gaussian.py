@@ -125,6 +125,15 @@ def test_compute_theory_vector_works_after_read_and_update(
     )
 
 
+def test_compute_theory_vector_called_twice(trivial_stats, sacc_data_for_trivial_stat):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    res_1 = likelihood.compute_theory_vector(ModelingTools())
+    res_2 = likelihood.compute_theory_vector(ModelingTools())
+    assert np.all(res_1 == res_2)
+
+
 def test_get_theory_vector_fails_before_read(trivial_stats):
     likelihood = ConstGaussian(statistics=trivial_stats)
     with pytest.raises(

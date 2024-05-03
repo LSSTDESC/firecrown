@@ -267,7 +267,7 @@ class GaussFamily(Likelihood):
 
     @final
     @enforce_states(
-        initial=State.UPDATED,
+        initial=[State.UPDATED, State.COMPUTED],
         terminal=State.COMPUTED,
         failure_message="update() must be called before compute_theory_vector()",
     )
