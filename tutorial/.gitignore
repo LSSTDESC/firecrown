@@ -11,3 +11,5 @@ development_example_files
 intro_article.html
 *.html.md
 *.revealjs.md
+
+/.quarto/
