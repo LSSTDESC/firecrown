@@ -33,6 +33,8 @@ website:
               href: https://github.com/LSSTDESC/firecrown
             - text: "Issues"
               href: https://github.com/LSSTDESC/firecrown/issues
+            - text: "Discussions"
+              href: https://github.com/LSSTDESC/firecrown/discussions
 
 format:
   html:
