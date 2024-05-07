@@ -1,5 +1,9 @@
+<<<<<<< HEAD
 """This module deals with the generation of inferred galaxy redshift distributions.
 """
+=======
+"""Generation of inferred galaxy redshift distributions."""
+>>>>>>> ac47ae0584a25f579723a62d619e6cf186fa929e
 
 import numpy as np
 import numpy.typing as npt
@@ -8,8 +12,11 @@ from scipy.integrate import quad
 
 import yaml
 from yaml import CLoader as Loader
+<<<<<<< HEAD
 
 from numcosmo_py import Ncm
+=======
+>>>>>>> ac47ae0584a25f579723a62d619e6cf186fa929e
 
 from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
 
@@ -28,7 +35,6 @@ Y10_SOURCE_BINS = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.05}
 
 class ZDistLSSTSRD:
     """LSST Inferred galaxy redshift distributions.
-
 
     Inferred galaxy redshift distribution based on the LSST Science Requirements
     Document (SRD).
