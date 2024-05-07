@@ -108,12 +108,7 @@ class FirecrownLikelihood:
         # calculations. e.g., data_vector/firecrown_theory  data_vector/firecrown_data
 
         firecrown_params = self.calculate_firecrown_params(sample)
-        try:
-            self.likelihood.update(firecrown_params)
-            self.tools.update(firecrown_params)
-        except MissingSamplerParameterError as exc:
-            msg = self.form_error_message(exc)
-            raise RuntimeError(msg) from exc
+        self.update_likelihood_and_tools(firecrown_params)
 
         self.tools.prepare(ccl_cosmo)
         loglike = self.likelihood.compute_loglike(self.tools)
@@ -129,11 +124,21 @@ class FirecrownLikelihood:
             self.tools.reset()
             return 0
 
-        # If we get here, we have a GaussFamily likelihood, and we need to
-        # save concatenated data vector and inverse covariance to enable support
-        # for the CosmoSIS Fisher sampler. This can only work for likelihoods
-        # that have these quantities. Currently, this is only GaussFamily.
+        self.special_gauss_family_handling(sample)
 
+        self.likelihood.reset()
+        self.tools.reset()
+        return 0
+
+    def special_gauss_family_handling(self, sample):
+        """Special handling for the GaussFamily likelihood.
+
+        We need to save concatenated data vector and inverse covariance to
+        enable support for the CosmoSIS Fisher sampler. This can only work
+        for likelihoods that have these quantities. Currently, this is only
+        GaussFamily.
+        """
+        assert isinstance(self.likelihood, GaussFamily)
         sample.put(
             "data_vector",
             "firecrown_theory",
@@ -149,7 +154,6 @@ class FirecrownLikelihood:
             "firecrown_inverse_covariance",
             self.likelihood.inv_cov,
         )
-
         # Write out theory and data vectors to the data block the ease
         # debugging.
         # TODO: This logic should be moved into the TwoPoint statistic, and
@@ -186,9 +190,14 @@ class FirecrownLikelihood:
                     stat.get_data_vector(),
                 )
 
-        self.likelihood.reset()
-        self.tools.reset()
-        return 0
+    def update_likelihood_and_tools(self, firecrown_params: ParamsMap) -> None:
+        """Update the likelihood and tools with the new parameters."""
+        try:
+            self.likelihood.update(firecrown_params)
+            self.tools.update(firecrown_params)
+        except MissingSamplerParameterError as exc:
+            msg = self.form_error_message(exc)
+            raise RuntimeError(msg) from exc
 
     def form_error_message(self, exc: MissingSamplerParameterError) -> str:
         """Form the error message that will be used to report a missing parameter.
