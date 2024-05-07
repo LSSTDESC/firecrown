@@ -361,7 +361,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         )
         super()._read(sacc_data)
 
-    def create_tracers(self, tools: ModelingTools):
+    def create_tracers(
+        self, tools: ModelingTools
+    ) -> tuple[list[Tracer], NumberCountsArgs]:
         """Create the tracers for this source."""
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
@@ -450,12 +452,13 @@ class NumberCountsFactory:
             per_bin_systematics
         )
         self.global_systematics: Sequence[NumberCountsSystematic] = global_systematics
-        self.cache: dict[str, NumberCounts] = {}
+        self.cache: dict[int, NumberCounts] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
-        if inferred_zdist.bin_name in self.cache:
-            return self.cache[inferred_zdist.bin_name]
+        inferred_zdist_id = id(inferred_zdist)
+        if inferred_zdist_id in self.cache:
+            return self.cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
             systematic_factory.create(inferred_zdist)
@@ -464,6 +467,6 @@ class NumberCountsFactory:
         systematics.extend(self.global_systematics)
 
         nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
-        self.cache[inferred_zdist.bin_name] = nc
+        self.cache[inferred_zdist_id] = nc
 
         return nc

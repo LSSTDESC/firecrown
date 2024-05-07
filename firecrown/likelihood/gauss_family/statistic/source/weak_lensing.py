@@ -333,12 +333,13 @@ class WeakLensingFactory:
             per_bin_systematics
         )
         self.global_systematics: Sequence[WeakLensingSystematic] = global_systematics
-        self.cache: dict[str, WeakLensing] = {}
+        self.cache: dict[int, WeakLensing] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        if inferred_zdist.bin_name in self.cache:
-            return self.cache[inferred_zdist.bin_name]
+        inferred_zdist_id = id(inferred_zdist)
+        if inferred_zdist_id in self.cache:
+            return self.cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
             systematic_factory.create(inferred_zdist)
@@ -347,6 +348,6 @@ class WeakLensingFactory:
         systematics.extend(self.global_systematics)
 
         wl = WeakLensing.create_ready(inferred_zdist, systematics)
-        self.cache[inferred_zdist.bin_name] = wl
+        self.cache[inferred_zdist_id] = wl
 
         return wl

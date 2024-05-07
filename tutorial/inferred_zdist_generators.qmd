@@ -1,5 +1,5 @@
 ---
-title: "Using Firecrown to Calculate Theoretical Predictions"
+title: "Using Firecrown to Generate Redshift Distributions"
 subtitle: "Version 1.8.0a0"
 author:
   - Marc Paterno
@@ -59,7 +59,8 @@ where $B_i = \left(z_{p,i}^\mathrm{low}, z_{p,i}^\mathrm{up}, \sigma_z\right)$ p
 
 The object `ZDistLSSTSRD` in Firecrown generates the redshift distribution according to the LSST SRD. The following code block demonstrates how to use this object to generate the redshift distribution for a given set of parameters $\theta$.
 
-Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD:
+Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD.
+Here we are choosing $100$ points between $0$ and $3$ to evaluate the function $f(z)$.
 ```{python}
 import numpy as np
 import firecrown
@@ -91,7 +92,7 @@ import pandas as pd
 # The data were not originally generated in a dataframe convenient for
 # plotting, so our first task it to put them into such a form.
 # First we create a dataframe with the raw data.
-data = pd.DataFrame({"z": z, "Y1": Pz_y1, "Y2": Pz_y10})
+data = pd.DataFrame({"z": z, "Y1": Pz_y1, "Y10": Pz_y10})
 # Then we 'melt' the data into a longer form, which is more conveient for
 # making multiple plots on the same axes, or for making panel (faceted) plots.
 long = pd.melt(data, id_vars=["z"], var_name="year", value_name="fz")
@@ -105,36 +106,63 @@ long = pd.melt(data, id_vars=["z"], var_name="year", value_name="fz")
 )
 ```
 
-Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
+Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$. Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points between $0$ and $0.6$.
 
 ```{python}
 import numpy as np
 import firecrown
-from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD, InferredGalaxyZDist
+from firecrown.generators.inferred_galaxy_zdist import (
+    ZDistLSSTSRD,
+    InferredGalaxyZDist,
+    Y1_LENS_BINS,
+    Y10_LENS_BINS,
+    Y1_SOURCE_BINS,
+    Y10_SOURCE_BINS,
+)
 from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
 
 # These are the values at which we will evaluate the distribution.
-z = np.linspace(0, 0.5, 1000)
+z = np.linspace(0.0, 0.6, 100)
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
 # We create two GalaxyInferredZDist objects, one for Y1 and one for Y10.
-Pz_y1 = zdist_y1.binned_distribution(
-    zpl=0.2,
-    zpu=0.3,
-    sigma_z=0.01,
+Pz_lens0_y1 = zdist_y1.binned_distribution(
+    zpl=Y1_LENS_BINS["edges"][0],
+    zpu=Y1_LENS_BINS["edges"][1],
+    sigma_z=Y1_LENS_BINS["sigma_z"],
     z=z,
-    name="bin1_y1",
+    name="lens0_y1",
     measured_type=GalaxyMeasuredType.COUNTS,
 )
-Pz_y10 = zdist_y10.binned_distribution(
-    zpl=0.2,
-    zpu=0.3,
-    sigma_z=0.01,
+Pz_source0_y1 = zdist_y1.binned_distribution(
+    zpl=Y1_SOURCE_BINS["edges"][0],
+    zpu=Y1_SOURCE_BINS["edges"][1],
+    sigma_z=Y1_SOURCE_BINS["sigma_z"],
     z=z,
-    name="bin1_y10",
+    name="source0_y1",
+    measured_type=GalaxyMeasuredType.SHEAR_E,
+)
+Pz_lens0_y10 = zdist_y10.binned_distribution(
+    zpl=Y10_LENS_BINS["edges"][0],
+    zpu=Y10_LENS_BINS["edges"][1],
+    sigma_z=Y10_LENS_BINS["sigma_z"],
+    z=z,
+    name="lens0_y10",
     measured_type=GalaxyMeasuredType.COUNTS,
 )
-assert isinstance(Pz_y1, InferredGalaxyZDist)
+Pz_source0_y10 = zdist_y10.binned_distribution(
+    zpl=Y10_SOURCE_BINS["edges"][0],
+    zpu=Y10_SOURCE_BINS["edges"][1],
+    sigma_z=Y10_SOURCE_BINS["sigma_z"],
+    z=z,
+    name="source0_y10",
+    measured_type=GalaxyMeasuredType.SHEAR_E,
+)
+
+assert isinstance(Pz_lens0_y1, InferredGalaxyZDist)
+assert isinstance(Pz_lens0_y10, InferredGalaxyZDist)
+assert isinstance(Pz_source0_y1, InferredGalaxyZDist)
+assert isinstance(Pz_source0_y10, InferredGalaxyZDist)
 ```
 
 The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `GalaxyInferredZDist` objects is shown in @fig-inferred-dist.
@@ -146,15 +174,116 @@ The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `GalaxyInferred
 # | code-fold: true
 # We have already imported plotnine, so we don't need to do that again.
 # This time we generate the dataframe using a different technique.
-d_y1 = pd.DataFrame({"z": Pz_y1.z, "dndz": Pz_y1.dndz, "year": "Y1"})
-d_y10 = pd.DataFrame({"z": Pz_y10.z, "dndz": Pz_y10.dndz, "year": "Y10"})
-data = pd.concat([d_y1, d_y10])
+d_lens0_y1 = pd.DataFrame(
+    {
+        "z": Pz_lens0_y1.z,
+        "dndz": Pz_lens0_y1.dndz,
+        "year": "Y1",
+        "bin_name": Pz_lens0_y1.bin_name,
+    }
+)
+d_source0_y1 = pd.DataFrame(
+    {
+        "z": Pz_source0_y1.z,
+        "dndz": Pz_source0_y1.dndz,
+        "year": "Y1",
+        "bin_name": Pz_source0_y1.bin_name,
+    }
+)
+d_lens0_y10 = pd.DataFrame(
+    {
+        "z": Pz_lens0_y10.z,
+        "dndz": Pz_lens0_y10.dndz,
+        "year": "Y10",
+        "bin_name": Pz_lens0_y10.bin_name,
+    }
+)
+d_source0_y10 = pd.DataFrame(
+    {
+        "z": Pz_source0_y10.z,
+        "dndz": Pz_source0_y10.dndz,
+        "year": "Y10",
+        "bin_name": Pz_source0_y10.bin_name,
+    }
+)
+data = pd.concat([d_lens0_y1, d_source0_y1, d_lens0_y10, d_source0_y10])
 
 (
-    ggplot(data, aes("z", "dndz", color="year"))
+    ggplot(data, aes("z", "dndz", color="bin_name"))
     + geom_point()
-    + labs(y="dN/dz")
+    + labs(y="$\mathrm{d}N/\mathrm{d}z$")
     + doc_theme()
+    + facet_wrap("~ year", nrow=2)
 )
 ```
 
+## Generating the redshift distribution for all bins at once
+
+The `ZDistLSSTSRD` object can also be used to generate the redshift distribution for all bins at once. The following code block demonstrates how to generate the redshift distribution for all bins at once. Moreover, we also use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation, the knots are assigned such that the interpolation error is less than $10^{-5}$.
+
+```{python}
+
+from itertools import pairwise
+
+# We use the same zdist_y1 and zdist_y10 that were created above.
+# We create two GalaxyInferredZDist objects, one for Y1 and one for Y10.
+z = np.linspace(0.0, 1.6, 1000)
+all_y1_bins = [
+    zdist_y1.binned_distribution(
+        zpl=zpl,
+        zpu=zpu,
+        sigma_z=Y1_LENS_BINS["sigma_z"],
+        z=z,
+        name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
+        measured_type=GalaxyMeasuredType.COUNTS,
+        use_autoknot=True,
+        autoknots_reltol=1.0e-5,
+    )
+    for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
+] + [
+    zdist_y1.binned_distribution(
+        zpl=zpl,
+        zpu=zpu,
+        sigma_z=Y1_SOURCE_BINS["sigma_z"],
+        z=z,
+        name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
+        measured_type=GalaxyMeasuredType.SHEAR_E,
+        use_autoknot=True,
+        autoknots_reltol=1.0e-5,
+    )
+    for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
+]
+```
+
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `GalaxyInferredZDist` objects is shown in @fig-inferred-dist-all.
+
+```{python}
+# | label: fig-inferred-dist-all
+# | fig-cap: $\textrm{d}N/\textrm{d}z$ for all bins for LSST Year 1 using the formulation from the SRD.
+# | fig-cap-location: margin
+# | code-fold: true
+# We have already imported plotnine, so we don't need to do that again.
+# This time we generate the dataframe using a different technique.
+d_y1 = pd.concat(
+    [
+        pd.DataFrame(
+            {
+                "z": Pz.z,
+                "dndz": Pz.dndz,
+                "bin": Pz.bin_name,
+                "measured_type": Pz.measured_type,
+                "legend": f"{Pz.bin_name}, {len(Pz.z)}",
+            }
+        )
+        for Pz in all_y1_bins
+    ]
+)
+
+(
+    ggplot(d_y1, aes("z", "dndz", color="legend"))
+    + geom_point()
+    + labs(y="dN/dz")
+    + facet_wrap("~ measured_type", nrow=2)
+    + doc_theme()
+)
+```

@@ -1,32 +1,29 @@
 """This module deals with the generation of inferred galaxy redshift distributions.
 """
 
-from itertools import combinations_with_replacement, chain
-from typing import TypedDict, TypeVar, Type, Self
-from dataclasses import dataclass
-from enum import Enum, auto
-import re
-
 import numpy as np
 import numpy.typing as npt
 from scipy.special import gamma, erf, erfc
+from scipy.integrate import quad
 
 import yaml
 from yaml import CLoader as Loader
-from yaml import CDumper as Dumper
 
-import sacc
-from sacc.data_types import required_tags
+from numcosmo_py import Ncm
 
 from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
 
 Y1_ALPHA = 0.94
 Y1_BETA = 2.0
 Y1_Z0 = 0.26
+Y1_LENS_BINS = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}
+Y1_SOURCE_BINS = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.05}
 
 Y10_ALPHA = 0.90
 Y10_BETA = 2.0
 Y10_Z0 = 0.28
+Y10_LENS_BINS = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.03}
+Y10_SOURCE_BINS = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.05}
 
 
 class ZDistLSSTSRD:
@@ -49,7 +46,7 @@ class ZDistLSSTSRD:
         self.z0 = z0
 
     @classmethod
-    def from_yaml(cls, filename: str) -> Self:
+    def from_yaml(cls, filename: str) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object from a YAML file.
 
         :param filename: The path to the YAML file.
@@ -62,7 +59,7 @@ class ZDistLSSTSRD:
     @classmethod
     def year_1(
         cls, alpha: float = Y1_ALPHA, beta: float = Y1_BETA, z0: float = Y1_Z0
-    ) -> Self:
+    ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the first year of LSST.
 
         It uses the default values of the alpha, beta and z0 parameters from
@@ -78,7 +75,7 @@ class ZDistLSSTSRD:
     @classmethod
     def year_10(
         cls, alpha: float = Y10_ALPHA, beta: float = Y10_BETA, z0: float = Y10_Z0
-    ) -> Self:
+    ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the tenth year of LSST.
 
         It uses the default values of the alpha, beta and z0 parameters from
@@ -99,12 +96,45 @@ class ZDistLSSTSRD:
             norma * (z / self.z0) ** self.beta * np.exp(-((z / self.z0) ** self.alpha))
         )
 
+    def _integrated_gaussian_scalar(
+        self, zpl: float, zpu: float, sigma_z: float, z: float
+    ) -> float:
+        """Generate the integrated Gaussian distribution."""
+        denom = np.sqrt(2.0) * sigma_z * (1.0 + z)
+        if (z - zpu) > 0.0:
+            return -(erfc((z - zpl) / denom) - erfc((z - zpu) / denom)) / erfc(
+                -z / denom
+            )
+        if (z - zpl) < 0.0:
+            return (erfc((zpl - z) / denom) - erfc((zpu - z) / denom)) / erfc(
+                -z / denom
+            )
+
+        return (erf((z - zpl) / denom) - erf((z - zpu) / denom)) / erfc(-z / denom)
+
     def _integrated_gaussian(
         self, zpl: float, zpu: float, sigma_z: float, z: npt.NDArray
     ) -> npt.NDArray:
         """Generate the integrated Gaussian distribution."""
         denom = np.sqrt(2.0) * sigma_z * (1.0 + z)
-        return (erf((z - zpl) / denom) - erf((z - zpu) / denom)) / erfc(-z / denom)
+        result = np.zeros_like(denom)
+        erfc_up = (z - zpu) > 0.0
+        erfc_low = (z - zpl) < 0.0
+        rest = ~(erfc_up | erfc_low)
+
+        result[erfc_up] = -(
+            erfc((z[erfc_up] - zpl) / denom[erfc_up])
+            - erfc((z[erfc_up] - zpu) / denom[erfc_up])
+        ) / erfc(-z[erfc_up] / denom[erfc_up])
+        result[erfc_low] = (
+            erfc((zpl - z[erfc_low]) / denom[erfc_low])
+            - erfc((zpu - z[erfc_low]) / denom[erfc_low])
+        ) / erfc(-z[erfc_low] / denom[erfc_low])
+        result[rest] = (
+            erf((z[rest] - zpl) / denom[rest]) - erf((z[rest] - zpu) / denom[rest])
+        ) / erfc(-z[rest] / denom[rest])
+
+        return result
 
     def binned_distribution(
         self,
@@ -115,10 +145,42 @@ class ZDistLSSTSRD:
         z: npt.NDArray,
         name: str,
         measured_type: MeasuredType,
+        use_autoknot: bool = False,
+        autoknots_reltol: float = 1.0e-4,
+        autoknots_abstol: float = 1.0e-15,
     ) -> InferredGalaxyZDist:
         """Generate the inferred galaxy redshift distribution in bins."""
-        true_dist = self.distribution(z)
-        dndz = self._integrated_gaussian(zpl, zpu, sigma_z, z) * true_dist
+
+        def _P(z, _):
+            return (
+                self.distribution(z)
+                * self._integrated_gaussian_scalar(zpl, zpu, sigma_z, z)
+                + autoknots_abstol
+            )
+
+        norma = quad(_P, z[0], z[-1], args=None)[0]
+
+        if not use_autoknot:
+            z_knots = z
+            dndz = (
+                self._integrated_gaussian(zpl, zpu, sigma_z, z)
+                * self.distribution(z)
+                / norma
+            )
+        else:
+            s = Ncm.SplineCubicNotaknot.new()
+            s.set_func1(
+                Ncm.SplineFuncType.FUNCTION_SPLINE,
+                _P,
+                None,
+                z[0],
+                z[-1],
+                0,
+                autoknots_reltol,
+            )
+            z_knots = np.array(s.peek_xv().dup_array())
+            dndz = np.array(s.peek_yv().dup_array()) / norma
+
         return InferredGalaxyZDist(
-            bin_name=name, z=z, dndz=dndz, measured_type=measured_type
+            bin_name=name, z=z_knots, dndz=dndz, measured_type=measured_type
         )

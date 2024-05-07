@@ -73,7 +73,7 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
     return (edges[1:] + edges[:-1]) / 2.0
 
 
-@functools.lru_cache(maxsize=128)
+# @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
     return pyccl.angular_cl(
         cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
@@ -524,6 +524,7 @@ class TwoPoint(Statistic):
         assert self.ells_for_xi is not None
 
         self.cells = {}
+        print(self.source0.parameter_prefix, self.source1.parameter_prefix)
         cells_for_xi = self.compute_cells(
             self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
         )
@@ -630,10 +631,12 @@ class TwoPoint(Statistic):
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
                 tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
+                print(f"my tn is {tn}, {tn in self.cells}")
                 if tn in self.cells:
                     # Already computed this combination, skipping
                     continue
                 pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
+                print(id(pk))
 
                 self.cells[tn] = (
                     _cached_angular_cl(
@@ -654,6 +657,14 @@ class TwoPoint(Statistic):
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
     ):
         """Return the power spectrum named by pk_name."""
+
+        print(
+            (id(tracer0), id(tracer1)),
+            (tracer0.tracer_name, tracer1.tracer_name),
+            (tracer0.has_pt, tracer1.has_pt),
+            pk_name,
+            tools.has_pk(pk_name),
+        )
         if tools.has_pk(pk_name):
             # Use existing power spectrum
             pk = tools.get_pk(pk_name)
