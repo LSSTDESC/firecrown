@@ -658,7 +658,7 @@ class TwoPoint(Statistic):
             # Use existing power spectrum
             pk = tools.get_pk(pk_name)
         elif tracer0.has_pt or tracer1.has_pt:
-            if not tracer0.has_pt and tracer1.has_pt:
+            if not (tracer0.has_pt and tracer1.has_pt):
                 # Mixture of PT and non-PT tracers
                 # Create a dummy matter PT tracer for the non-PT part
                 matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
