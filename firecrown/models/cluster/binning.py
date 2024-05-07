@@ -80,7 +80,11 @@ class TupleBin(NDimensionalBin):
 
     def __init__(self, coordinate_bins: list[tuple]):
         self.coordinate_bins = coordinate_bins
-        self.dimension = len(coordinate_bins)
+
+    @property
+    def dimension(self) -> int:
+        """Number of dimensions for this bin."""
+        return len(self.coordinate_bins)
 
     @property
     def mass_proxy_edges(self) -> tuple[float, float]:
@@ -98,20 +102,7 @@ class TupleBin(NDimensionalBin):
         """Two bins are equal if they have the same lower/upper bound."""
         if not isinstance(other, TupleBin):
             return False
-
-        if self.dimension != other.dimension:
-            return False
-
-        for i, my_bin in enumerate(self.coordinate_bins):
-            other_bin = other.coordinate_bins[i]
-            if len(my_bin) != len(other_bin):
-                return False
-            if my_bin[0] != other_bin[0]:
-                return False
-            if my_bin[1] != other_bin[1]:
-                return False
-
-        return True
+        return self.coordinate_bins == other.coordinate_bins
 
     def __hash__(self) -> int:
         """One bin's hash is determined by the dimension and lower/upper bound."""
