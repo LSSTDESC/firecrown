@@ -448,6 +448,7 @@ class NumberCountsFactory:
         per_bin_systematics: list[NumberCountsSystematicFactory],
         global_systematics: Sequence[NumberCountsSystematic],
     ) -> None:
+        """Initialize the NumberCountsFactory."""
         self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
             per_bin_systematics
         )
