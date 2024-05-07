@@ -88,9 +88,10 @@ def compare_integration() -> None:
             counts_list.append(counts)
 
         t_stop = time.time()
+        delta_t = t_stop - t_start
 
         print(
-            f"The time for NumCosmo integration method {method} is {t_stop-t_start}\n\n"
+            f"The time for NumCosmo integration method {method} is {delta_t}\n\n"
             f"The counts value is {counts_list}\n\n"
         )
 
