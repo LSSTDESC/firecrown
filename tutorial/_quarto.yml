@@ -1,0 +1,42 @@
+project:
+  type: website
+  render:
+    - index.qmd
+    - about.qmd
+    - intro_article.qmd
+    - development_example.qmd
+    - theoretical_predictions_tutorial.qmd
+
+website:
+  title: "Firecrown Tutorial Documents"
+  favicon: green-backed-firecrown.jpg
+  navbar:
+    search: true
+    left:
+      - about.qmd
+  sidebar:
+      style: "docked"
+      contents:
+        - section: "Basics"
+          contents:
+            - href: intro_article.qmd
+              text: "Introduction"
+            - href: development_example.qmd
+              text: "Development Example"
+        - section: "Tutorials"
+          contents:
+            - href: theoretical_predictions_tutorial.qmd
+              text: "Theoretical Predictions Tutorial"
+        - section: "Firecrown on GitHub"
+          contents:
+            - text: "Source Code"
+              href: https://github.com/LSSTDESC/firecrown
+            - text: "Issues"
+              href: https://github.com/LSSTDESC/firecrown/issues
+            - text: "Discussions"
+              href: https://github.com/LSSTDESC/firecrown/discussions
+
+format:
+  html:
+    theme: [serif, custom.scss]
+    toc: true

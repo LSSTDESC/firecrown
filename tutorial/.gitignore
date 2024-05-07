@@ -13,3 +13,5 @@ inferred_zdist_generators.html
 inferred_zdist_generators_files/
 *.html.md
 *.revealjs.md
+
+/.quarto/

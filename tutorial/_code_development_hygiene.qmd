@@ -4,7 +4,7 @@ The continuous integration (CI) system used for Firecrown applies all of these t
 
 Some of the tools we use help to keep the Firecrown code in conformance with the PEP 8[^pep8] style guidelines.
 
-[^pep8]: Python Enhance Proposal (PEP) 8 is the official (from the Python development team) style guide for Python code.
+[^pep8]: Python Enhancement Proposal (PEP) 8 is the official (from the Python development team) style guide for Python code.
   This style guide is used for code in the Python distribution itself.
   It can be read at [https://peps.python.org/pep-0008/](https://peps.python.org/pep-0008/).
 
