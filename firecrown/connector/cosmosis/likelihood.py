@@ -164,31 +164,34 @@ class FirecrownLikelihood:
             stat = gstat.statistic
 
             if isinstance(stat, TwoPoint):
-                assert stat.sacc_tracers is not None
-                tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
+                self.handle_twopoint_statistic(sample, stat)
 
-                if stat.ells is not None:
-                    sample.put_int_array_1d(
-                        "data_vector",
-                        f"ell_{stat.sacc_data_type}_{tracer}",
-                        stat.ells,
-                    )
-                elif stat.thetas is not None:
-                    sample.put_double_array_1d(
-                        "data_vector",
-                        f"theta_{stat.sacc_data_type}_{tracer}",
-                        stat.thetas,
-                    )
-                sample.put_double_array_1d(
-                    "data_vector",
-                    f"theory_{stat.sacc_data_type}_{tracer}",
-                    stat.get_theory_vector(),
-                )
-                sample.put_double_array_1d(
-                    "data_vector",
-                    f"data_{stat.sacc_data_type}_{tracer}",
-                    stat.get_data_vector(),
-                )
+    def handle_twopoint_statistic(self, sample, stat):
+        """Handle the TwoPoint statistic for the GaussFamily likelihood."""
+        assert stat.sacc_tracers is not None
+        tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
+        if stat.ells is not None:
+            sample.put_int_array_1d(
+                "data_vector",
+                f"ell_{stat.sacc_data_type}_{tracer}",
+                stat.ells,
+            )
+        elif stat.thetas is not None:
+            sample.put_double_array_1d(
+                "data_vector",
+                f"theta_{stat.sacc_data_type}_{tracer}",
+                stat.thetas,
+            )
+        sample.put_double_array_1d(
+            "data_vector",
+            f"theory_{stat.sacc_data_type}_{tracer}",
+            stat.get_theory_vector(),
+        )
+        sample.put_double_array_1d(
+            "data_vector",
+            f"data_{stat.sacc_data_type}_{tracer}",
+            stat.get_data_vector(),
+        )
 
     def update_likelihood_and_tools(self, firecrown_params: ParamsMap) -> None:
         """Update the likelihood and tools with the new parameters."""
