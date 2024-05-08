@@ -590,7 +590,7 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     This function extracts the two-point function metadata from the Sacc object
     and returns it in a list.
     """
-    tracers = sacc_data.tracers.values()
+    tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
 
     data_points = sacc_data.get_data_points()
 
@@ -607,38 +607,7 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
                 f"Inconsistent SACC object."
             )
 
-        if len(candidate_measured_types) == 1:
-            # Only one measured type appears in all associated data points.
-            # We can infer the measured type from the data points.
-            measured_type = candidate_measured_types[0]
-        else:
-            # We cannot infer the measured type from the associated data points.
-            # We need to check the tracer name.
-            if LENS_REGEX.match(tracer.name):
-                if GalaxyMeasuredType.COUNTS not in candidate_measured_types:
-                    raise ValueError(
-                        f"Tracer {tracer.name} matches the lens regex but does "
-                        f"not have a compatible measured type. Inconsistent SACC "
-                        f"object."
-                    )
-                measured_type = GalaxyMeasuredType.COUNTS
-            elif SOURCE_REGEX.match(tracer.name):
-                # The source tracers can be either shear E or shear T.
-                if GalaxyMeasuredType.SHEAR_E in candidate_measured_types:
-                    measured_type = GalaxyMeasuredType.SHEAR_E
-                elif GalaxyMeasuredType.SHEAR_T in candidate_measured_types:
-                    measured_type = GalaxyMeasuredType.SHEAR_T
-                else:
-                    raise ValueError(
-                        f"Tracer {tracer.name} matches the source regex but does "
-                        f"not have a compatible measured type. Inconsistent SACC "
-                        f"object."
-                    )
-            else:
-                raise ValueError(
-                    f"Tracer {tracer.name} does not have a compatible measured type. "
-                    f"Inconsistent SACC object."
-                )
+        measured_type = extract_measured_type(candidate_measured_types, tracer)
 
         inferred_galaxy_zdists.append(
             InferredGalaxyZDist(
@@ -650,6 +619,51 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
         )
 
     return inferred_galaxy_zdists
+
+
+def extract_measured_type(
+    candidate_measured_types: list[
+        GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType
+    ],
+    tracer: sacc.tracers.BaseTracer,
+) -> GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType:
+    """Extract from tracer a single type of measurement.
+
+    Only types in candidate_measured_types will be considered.
+    """
+    if len(candidate_measured_types) == 1:
+        # Only one measured type appears in all associated data points.
+        # We can infer the measured type from the data points.
+        measured_type = candidate_measured_types[0]
+    else:
+        # We cannot infer the measured type from the associated data points.
+        # We need to check the tracer name.
+        if LENS_REGEX.match(tracer.name):
+            if GalaxyMeasuredType.COUNTS not in candidate_measured_types:
+                raise ValueError(
+                    f"Tracer {tracer.name} matches the lens regex but does "
+                    f"not have a compatible measured type. Inconsistent SACC "
+                    f"object."
+                )
+            measured_type = GalaxyMeasuredType.COUNTS
+        elif SOURCE_REGEX.match(tracer.name):
+            # The source tracers can be either shear E or shear T.
+            if GalaxyMeasuredType.SHEAR_E in candidate_measured_types:
+                measured_type = GalaxyMeasuredType.SHEAR_E
+            elif GalaxyMeasuredType.SHEAR_T in candidate_measured_types:
+                measured_type = GalaxyMeasuredType.SHEAR_T
+            else:
+                raise ValueError(
+                    f"Tracer {tracer.name} matches the source regex but does "
+                    f"not have a compatible measured type. Inconsistent SACC "
+                    f"object."
+                )
+        else:
+            raise ValueError(
+                f"Tracer {tracer.name} does not have a compatible measured type. "
+                f"Inconsistent SACC object."
+            )
+    return measured_type
 
 
 def extract_all_data_types_xi_thetas(
