@@ -554,7 +554,10 @@ TwoPointCellsIndex = TypedDict(
 def _extract_candidate_data_types(
     tracer_name: str, data_points: list[sacc.DataPoint]
 ) -> list[MeasuredType]:
-    """Extract the candidate measured types for a tracer."""
+    """Extract the candidate measured types for a tracer.
+
+    An exception is raise if the tracer does not have any associated data points.
+    """
     tracer_associated_types = {
         d.data_type for d in data_points if tracer_name in d.tracers
     }
@@ -574,11 +577,17 @@ def _extract_candidate_data_types(
         else:
             type_count[a] += 1
 
-    return [
+    result = [
         measured_type
         for measured_type, count in type_count.items()
         if count == tracer_associated_types_len
     ]
+    if len(result) == 0:
+        raise ValueError(
+            f"Tracer {tracer_name} does not have data points associated with it. "
+            f"Inconsistent SACC object."
+        )
+    return result
 
 
 def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
@@ -600,12 +609,6 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
         candidate_measured_types = _extract_candidate_data_types(
             tracer.name, data_points
         )
-
-        if len(candidate_measured_types) == 0:
-            raise ValueError(
-                f"Tracer {tracer.name} does not have data points associated with it. "
-                f"Inconsistent SACC object."
-            )
 
         measured_type = extract_measured_type(candidate_measured_types, tracer)
 
