@@ -2,29 +2,31 @@
 
 from __future__ import annotations
 
-from typing import Sequence, TypedDict
 import copy
 import functools
 import warnings
+from typing import Sequence, TypedDict
 
 import numpy as np
 import numpy.typing as npt
+import pyccl
+import pyccl.nl_pt
 import sacc.windows
 import scipy.interpolate
 
-import pyccl
-import pyccl.nl_pt
-
-from firecrown.metadata.two_point import (
-    extract_window_function,
-    Window,
-    TracerNames,
-    TRACER_NAMES_TOTAL,
+from firecrown.likelihood.gauss_family.statistic.source.source import Source, Tracer
+from firecrown.likelihood.gauss_family.statistic.statistic import (
+    DataVector,
+    Statistic,
+    TheoryVector,
 )
-from ....modeling_tools import ModelingTools
-
-from .statistic import Statistic, DataVector, TheoryVector
-from .source.source import Source, Tracer
+from firecrown.metadata.two_point import (
+    TRACER_NAMES_TOTAL,
+    TracerNames,
+    Window,
+    extract_window_function,
+)
+from firecrown.modeling_tools import ModelingTools
 
 # only supported types are here, anything else will throw
 # a value error

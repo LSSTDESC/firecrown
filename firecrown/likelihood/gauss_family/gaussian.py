@@ -3,8 +3,8 @@
 from __future__ import annotations
 import numpy as np
 
-from .gauss_family import GaussFamily
-from ...modeling_tools import ModelingTools
+from firecrown.likelihood.gauss_family.gauss_family import GaussFamily
+from firecrown.modeling_tools import ModelingTools
 
 
 class ConstGaussian(GaussFamily):
