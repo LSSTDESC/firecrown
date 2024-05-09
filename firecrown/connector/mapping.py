@@ -6,16 +6,18 @@ constants and functions used by one body of code to another.
 Each supported body of code has its own dedicated class.
 """
 
-from abc import ABC
-from typing import Type, final, Any
 import typing
 import warnings
+from abc import ABC
+from typing import Any, Type, final
+
+import cosmosis.datablock
 import numpy as np
 import numpy.typing as npt
 from pyccl import physical_constants as physics
-import cosmosis.datablock
+
+from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
-from ..descriptors import TypeFloat, TypeString
 
 
 def build_ccl_background_dict(

@@ -1,22 +1,22 @@
 """Abstract base classes for TwoPoint Statistics sources."""
 
 from __future__ import annotations
-from typing import Sequence, final, TypeVar, Generic
+
 from abc import abstractmethod
 from dataclasses import dataclass, replace
+from typing import Generic, Sequence, TypeVar, final
+
 import numpy as np
 import numpy.typing as npt
-from scipy.interpolate import Akima1DInterpolator
-
-import sacc
-
 import pyccl
 import pyccl.nl_pt
+import sacc
+from scipy.interpolate import Akima1DInterpolator
 
-from .....modeling_tools import ModelingTools
-from .....parameters import ParamsMap
-from ..... import parameters
-from .....updatable import Updatable, UpdatableCollection
+from firecrown import parameters
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
+from firecrown.updatable import Updatable, UpdatableCollection
 
 
 class SourceSystematic(Updatable):

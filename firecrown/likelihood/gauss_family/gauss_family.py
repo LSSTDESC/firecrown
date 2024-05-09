@@ -18,12 +18,15 @@ import scipy.linalg
 
 import sacc
 
-from ...parameters import ParamsMap
-from ..likelihood import Likelihood
-from ...modeling_tools import ModelingTools
-from ...updatable import UpdatableCollection
-from .statistic.statistic import Statistic, GuardedStatistic
-from ...utils import save_to_sacc
+from firecrown.parameters import ParamsMap
+from firecrown.likelihood.likelihood import Likelihood
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import UpdatableCollection
+from firecrown.likelihood.gauss_family.statistic.statistic import (
+    Statistic,
+    GuardedStatistic,
+)
+from firecrown.utils import save_to_sacc
 
 
 class State(Enum):

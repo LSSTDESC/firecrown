@@ -19,6 +19,20 @@ from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 
 
+def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
+    """Return the HIPrim object from a NumCosmo HICosmo object.
+
+    If hi_cosmo does not have a HIPrim object, a ValueError is raised.
+    If the HIPrim object is not of type HIPrimPowerLaw, a ValueError is raised.
+    """
+    hiprim = hi_cosmo.peek_submodel_by_mid(Nc.HIPrim.id())
+    if not hiprim:
+        raise ValueError("NumCosmo object must include a HIPrim object.")
+    if not isinstance(hiprim, Nc.HIPrimPowerLaw):
+        raise ValueError(f"NumCosmo HIPrim object type {type(hiprim)} not supported.")
+    return hiprim
+
+
 class MappingNumCosmo(GObject.Object):
     """Mapping support for NumCosmo.
 
@@ -158,39 +172,28 @@ class MappingNumCosmo(GObject.Object):
             m_nu_type = "normal"
         else:
             m_nu_type = "list"
-            m_nu = [0.0, 0.0, 0.0]
             assert hi_cosmo.NMassNu() <= 3
-            for i in range(hi_cosmo.NMassNu()):
-                nu_info = hi_cosmo.MassNuInfo(i)
-                m_nu[i] = nu_info[0]
+            m_nu = [hi_cosmo.MassNuInfo(i)[0] for i in range(hi_cosmo.NMassNu())]
 
-        if isinstance(hi_cosmo, Nc.HICosmoDEXcdm):
-            w0 = hi_cosmo.props.w
-            wa = 0.0
-        elif isinstance(hi_cosmo, Nc.HICosmoDECpl):
-            w0 = hi_cosmo.props.w0
-            wa = hi_cosmo.props.w1
-        else:
-            raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
+        match hi_cosmo:
+            case Nc.HICosmoDEXcdm():
+                w0 = hi_cosmo.props.w
+                wa = 0.0
+            case Nc.HICosmoDECpl():
+                w0 = hi_cosmo.props.w0
+                wa = hi_cosmo.props.w1
+            case _:
+                raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        hiprim = hi_cosmo.peek_submodel_by_mid(Nc.HIPrim.id())
-        if not hiprim:
-            raise ValueError("NumCosmo object must include a HIPrim object.")
-        if not isinstance(hiprim, Nc.HIPrimPowerLaw):
-            raise ValueError(
-                f"NumCosmo HIPrim object type {type(hiprim)} not supported."
-            )
-
-        A_s = hiprim.SA_Ampl()
-        n_s = hiprim.props.n_SA
+        hiprim = get_hiprim(hi_cosmo)
 
         # pylint: disable=duplicate-code
         self.mapping.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
             h=h,
-            A_s=A_s,
-            n_s=n_s,
+            A_s=hiprim.SA_Ampl(),
+            n_s=hiprim.props.n_SA,
             Omega_k=Omega_k,
             Neff=Neff,
             m_nu=m_nu,

@@ -6,13 +6,14 @@ reusable objects, such as perturbation theory or halo model calculators.
 """
 
 from __future__ import annotations
-from typing import Collection
+
 from abc import ABC, abstractmethod
+from typing import Collection
+
 import pyccl.nl_pt
 
 from firecrown.models.cluster.abundance import ClusterAbundance
-
-from .updatable import Updatable, UpdatableCollection
+from firecrown.updatable import Updatable, UpdatableCollection
 
 
 class ModelingTools(Updatable):
