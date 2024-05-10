@@ -61,6 +61,9 @@ class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
     """Systematic to select 3D field."""
 
 
+MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS = 1.0
+
+
 class MultiplicativeShearBias(WeakLensingSystematic):
     """Multiplicative shear bias systematic.
 
@@ -81,7 +84,9 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mult_bias = parameters.register_new_updatable_parameter()
+        self.mult_bias = parameters.register_new_updatable_parameter(
+            default_value=MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -99,6 +104,12 @@ class MultiplicativeShearBias(WeakLensingSystematic):
             tracer_arg,
             scale=tracer_arg.scale * (1.0 + self.mult_bias),
         )
+
+
+LINEAR_ALIGNMENT_DEFAULT_IA_BIAS = 0.5
+LINEAR_ALIGNMENT_DEFAULT_ALPHAZ = 0.0
+LINEAR_ALIGNMENT_DEFAULT_ALPHAG = 1.0
+LINEAR_ALIGNMENT_DEFAULT_Z_PIV = 0.5
 
 
 class LinearAlignmentSystematic(WeakLensingSystematic):
@@ -126,10 +137,18 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_bias = parameters.register_new_updatable_parameter()
-        self.alphaz = parameters.register_new_updatable_parameter()
-        self.alphag = parameters.register_new_updatable_parameter(alphag)
-        self.z_piv = parameters.register_new_updatable_parameter()
+        self.ia_bias = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS
+        )
+        self.alphaz = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ
+        )
+        self.alphag = parameters.register_new_updatable_parameter(
+            alphag, default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
+        )
+        self.z_piv = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -154,6 +173,11 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         )
 
 
+TATT_ALIGNMENT_DEFAULT_IA_A_1 = 1.0
+TATT_ALIGNMENT_DEFAULT_IA_A_2 = 0.5
+TATT_ALIGNMENT_DEFAULT_IA_A_D = 0.5
+
+
 class TattAlignmentSystematic(WeakLensingSystematic):
     """TATT alignment systematic.
 
@@ -175,9 +199,15 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             as a prefix for its parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.ia_a_1 = parameters.register_new_updatable_parameter()
-        self.ia_a_2 = parameters.register_new_updatable_parameter()
-        self.ia_a_d = parameters.register_new_updatable_parameter()
+        self.ia_a_1 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
+        )
+        self.ia_a_2 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
+        )
+        self.ia_a_d = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs

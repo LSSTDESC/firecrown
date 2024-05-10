@@ -254,7 +254,7 @@ def test_required_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
-    expected_params = RequiredParameters(params_names=["mean"])
+    expected_params = RequiredParameters(params=["mean"])
     assert likelihood.required_parameters() == expected_params
 
 

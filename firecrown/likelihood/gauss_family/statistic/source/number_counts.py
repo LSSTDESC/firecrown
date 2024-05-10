@@ -65,6 +65,11 @@ class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
     """Systematic to select 3D field."""
 
 
+LINEAR_BIAS_DEFAULT_ALPHAZ = 0.0
+LINEAR_BIAS_DEFAULT_ALPHAG = 1.0
+LINEAR_BIAS_DEFAULT_Z_PIV = 0.5
+
+
 class LinearBiasSystematic(NumberCountsSystematic):
     """Linear bias systematic.
 
@@ -89,9 +94,15 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.alphaz = parameters.register_new_updatable_parameter()
-        self.alphag = parameters.register_new_updatable_parameter()
-        self.z_piv = parameters.register_new_updatable_parameter()
+        self.alphaz = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_BIAS_DEFAULT_ALPHAZ
+        )
+        self.alphag = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_BIAS_DEFAULT_ALPHAG
+        )
+        self.z_piv = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_BIAS_DEFAULT_Z_PIV
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -123,6 +134,10 @@ class LinearBiasSystematic(NumberCountsSystematic):
         )
 
 
+PT_NON_LINEAR_BIAS_DEFAULT_B_2 = 1.0
+PT_NON_LINEAR_BIAS_DEFAULT_B_S = 1.0
+
+
 class PTNonLinearBiasSystematic(NumberCountsSystematic):
     """Non-linear bias systematic.
 
@@ -146,8 +161,12 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.b_2 = parameters.register_new_updatable_parameter()
-        self.b_s = parameters.register_new_updatable_parameter()
+        self.b_2 = parameters.register_new_updatable_parameter(
+            default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
+        )
+        self.b_s = parameters.register_new_updatable_parameter(
+            default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_S
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -226,6 +245,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         )
 
 
+CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS = 1.0
+
+
 class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     """Simple constant magnification bias systematic.
 
@@ -247,7 +269,9 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mag_bias = parameters.register_new_updatable_parameter()
+        self.mag_bias = parameters.register_new_updatable_parameter(
+            default_value=CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -256,6 +280,9 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
             tracer_arg,
             mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z) * self.mag_bias),
         )
+
+
+NUMBER_COUNTS_DEFAULT_BIAS = 1.5
 
 
 class NumberCounts(SourceGalaxy[NumberCountsArgs]):
@@ -286,7 +313,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.has_rsd = has_rsd
         self.derived_scale = derived_scale
 
-        self.bias = parameters.register_new_updatable_parameter()
+        self.bias = parameters.register_new_updatable_parameter(
+            default_value=NUMBER_COUNTS_DEFAULT_BIAS
+        )
         self.systematics: UpdatableCollection[
             SourceGalaxySystematic[NumberCountsArgs]
         ] = UpdatableCollection(systematics)

@@ -63,7 +63,7 @@ def test_required_parameters(
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
-    expected_params = RequiredParameters(params_names=["mean", "nu"])
+    expected_params = RequiredParameters(params=["mean", "nu"])
     assert likelihood.required_parameters() == expected_params
 
 

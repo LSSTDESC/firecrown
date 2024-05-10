@@ -31,7 +31,6 @@ from .parameters import (
     RequiredParameters,
     SamplerParameter,
     InternalParameter,
-    parameter_get_full_name,
 )
 from .parameters import DerivedParameterCollection
 
@@ -79,7 +78,7 @@ class Updatable(ABC):
         """
         self._updated: bool = False
         self._returned_derived: bool = False
-        self._sampler_parameters: dict[str, SamplerParameter] = {}
+        self._sampler_parameters: list[SamplerParameter] = []
         self._internal_parameters: dict[str, InternalParameter] = {}
         self._updatables: list[GeneralUpdatable] = []
         self.parameter_prefix: None | str = parameter_prefix
@@ -110,7 +109,8 @@ class Updatable(ABC):
         been set, and then set it.
         """
         if isinstance(value, SamplerParameter):
-            self.set_sampler_parameter(key, value)
+            value.set_fullname(self.parameter_prefix, key)
+            self.set_sampler_parameter(value)
         elif isinstance(value, InternalParameter):
             self.set_internal_parameter(key, value)
 
@@ -129,20 +129,20 @@ class Updatable(ABC):
         self._internal_parameters[key] = value
         super().__setattr__(key, value.get_value())
 
-    def set_sampler_parameter(self, key: str, value: SamplerParameter) -> None:
+    def set_sampler_parameter(self, value: SamplerParameter) -> None:
         """Assure this SamplerParameter has not already been set, and then set it."""
         if not isinstance(value, SamplerParameter):
             raise TypeError(
                 "Can only add SamplerParameter objects to sampler_parameters"
             )
 
-        if key in self._sampler_parameters or hasattr(self, key):
+        if value in self._sampler_parameters or hasattr(self, value.name):
             raise ValueError(
-                f"attribute {key} already set in {self} "
+                f"attribute {value.name} already set in {self} "
                 f"from a parameter read from the sampler"
             )
-        self._sampler_parameters[key] = value
-        super().__setattr__(key, None)
+        self._sampler_parameters.append(value)
+        super().__setattr__(value.name, None)
 
     @final
     def update(self, params: ParamsMap) -> None:
@@ -172,12 +172,10 @@ class Updatable(ABC):
 
         for parameter in self._sampler_parameters:
             try:
-                value = params.get_from_prefix_param(self.parameter_prefix, parameter)
+                value = params.get_from_full_name(parameter.fullname)
             except KeyError as exc:
-                raise MissingSamplerParameterError(
-                    parameter_get_full_name(self.parameter_prefix, parameter)
-                ) from exc
-            setattr(self, parameter, value)
+                raise MissingSamplerParameterError(parameter.fullname) from exc
+            setattr(self, parameter.name, value)
 
         for item in self._updatables:
             item.update(params)
@@ -219,7 +217,7 @@ class Updatable(ABC):
 
         # Reset the sampler parameters to None.
         for parameter in self._sampler_parameters:
-            setattr(self, parameter, None)
+            setattr(self, parameter.name, None)
 
         self._updated = False
         self._returned_derived = False
@@ -253,12 +251,7 @@ class Updatable(ABC):
         This object contains the information for all parameters defined in the
         implementing class, any additional parameter.
         """
-        sampler_parameters = RequiredParameters(
-            [
-                parameter_get_full_name(self.parameter_prefix, parameter)
-                for parameter in self._sampler_parameters
-            ]
-        )
+        sampler_parameters = RequiredParameters(self._sampler_parameters)
         additional_parameters = self._required_parameters()
 
         for item in self._updatables:
