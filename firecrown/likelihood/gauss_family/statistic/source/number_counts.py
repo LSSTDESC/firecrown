@@ -465,8 +465,54 @@ class NumberCountsSystematicFactory:
     """Factory class for NumberCountsSystematic objects."""
 
     @abstractmethod
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCountsSystematic:
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> SourceGalaxySystematic[NumberCountsArgs]:
         """Create a NumberCountsSystematic object with the given tracer name."""
+
+
+class PhotoZShiftFactory(NumberCountsSystematicFactory):
+    """Factory class for PhotoZShift objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        return PhotoZShift(inferred_zdist.bin_name)
+
+
+class LinearBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for LinearBiasSystematic objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> LinearBiasSystematic:
+        """Create a LinearBiasSystematic object with the given tracer name."""
+        return LinearBiasSystematic(inferred_zdist.bin_name)
+
+
+class PTNonLinearBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for PTNonLinearBiasSystematic objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> PTNonLinearBiasSystematic:
+        """Create a PTNonLinearBiasSystematic object with the given tracer name."""
+        return PTNonLinearBiasSystematic(inferred_zdist.bin_name)
+
+
+class MagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for MagnificationBiasSystematic objects."""
+
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> MagnificationBiasSystematic:
+        """Create a MagnificationBiasSystematic object with the given tracer name."""
+        return MagnificationBiasSystematic(inferred_zdist.bin_name)
+
+
+class ConstantMagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for ConstantMagnificationBiasSystematic objects."""
+
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> ConstantMagnificationBiasSystematic:
+        """Create a ConstantMagnificationBiasSystematic object with the given tracer name."""
+        return ConstantMagnificationBiasSystematic(inferred_zdist.bin_name)
 
 
 class NumberCountsFactory:

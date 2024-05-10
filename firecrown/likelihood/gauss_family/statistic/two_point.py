@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Sequence, TypedDict
 import copy
-import functools
 import warnings
 
 import numpy as np
@@ -20,11 +19,17 @@ from firecrown.metadata.two_point import (
     Window,
     TracerNames,
     TRACER_NAMES_TOTAL,
+    TwoPointCells,
+    InferredGalaxyZDist,
+    GalaxyMeasuredType,
 )
 from ....modeling_tools import ModelingTools
+from ....updatable import UpdatableCollection
 
 from .statistic import Statistic, DataVector, TheoryVector
 from .source.source import Source, Tracer
+from .source.weak_lensing import WeakLensingFactory, WeakLensing
+from .source.number_counts import NumberCountsFactory, NumberCounts
 
 # only supported types are here, anything else will throw
 # a value error
@@ -210,6 +215,58 @@ def apply_theta_min_max(
     return thetas, xis, indices
 
 
+def use_source_factory(
+    inferred_galaxy_zdist: InferredGalaxyZDist,
+    wl_factory: WeakLensingFactory | None = None,
+    nc_factory: NumberCountsFactory | None = None,
+) -> WeakLensing | NumberCounts:
+    """Apply the factory to the inferred galaxy redshift distribution."""
+
+    source: WeakLensing | NumberCounts
+    match inferred_galaxy_zdist.measured_type:
+        case GalaxyMeasuredType.COUNTS:
+            assert nc_factory is not None
+            source = nc_factory.create(inferred_galaxy_zdist)
+        case GalaxyMeasuredType.SHEAR_E | GalaxyMeasuredType.SHEAR_T:
+            assert wl_factory is not None
+            source = wl_factory.create(inferred_galaxy_zdist)
+        case _:
+            raise ValueError(
+                f"Measured type {inferred_galaxy_zdist.measured_type} not supported!"
+            )
+    return source
+
+
+def create_sacc(metadata: list[TwoPointCells]):
+    """Fill the SACC file with the inferred galaxy redshift distributions."""
+    sacc_data = sacc.Sacc()
+
+    dv = []
+    for cell in metadata:
+        for inferred_galaxy_zdist in (cell.XY.x, cell.XY.y):
+            if inferred_galaxy_zdist.bin_name not in sacc_data.tracers:
+                sacc_data.add_tracer(
+                    "NZ",
+                    inferred_galaxy_zdist.bin_name,
+                    inferred_galaxy_zdist.z,
+                    inferred_galaxy_zdist.dndz,
+                )
+        cells = np.ones_like(cell.ells)
+        sacc_data.add_ell_cl(
+            cell.get_sacc_name(),
+            cell.XY.x.bin_name,
+            cell.XY.y.bin_name,
+            ell=cell.ells,
+            x=cells,
+        )
+        dv.append(cells)
+
+    delta_v = np.concatenate(dv, axis=0)
+    sacc_data.add_covariance(np.diag(np.ones_like(delta_v)))
+
+    return sacc_data
+
+
 class TwoPoint(Statistic):
     """A two-point statistic.
 
@@ -343,6 +400,36 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
+
+    @classmethod
+    def from_metadata_cells(
+        cls,
+        metadata: list[TwoPointCells],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create a TwoPoint statistic from a TwoPointCells metadata object."""
+
+        sacc_data = create_sacc(metadata)
+
+        two_point_list = [
+            cls(
+                cell.get_sacc_name(),
+                use_source_factory(
+                    cell.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+                ),
+                use_source_factory(
+                    cell.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+                ),
+            )
+            for cell in metadata
+        ]
+
+        for two_point in two_point_list:
+            with warnings.catch_warnings(action="ignore"):
+                two_point.read(sacc_data)
+
+        return UpdatableCollection(two_point_list)
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
@@ -631,12 +718,10 @@ class TwoPoint(Statistic):
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
                 tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
-                print(f"my tn is {tn}, {tn in self.cells}")
                 if tn in self.cells:
                     # Already computed this combination, skipping
                     continue
                 pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
-                print(id(pk))
 
                 self.cells[tn] = (
                     _cached_angular_cl(
@@ -657,14 +742,6 @@ class TwoPoint(Statistic):
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
     ):
         """Return the power spectrum named by pk_name."""
-
-        print(
-            (id(tracer0), id(tracer1)),
-            (tracer0.tracer_name, tracer1.tracer_name),
-            (tracer0.has_pt, tracer1.has_pt),
-            pk_name,
-            tools.has_pk(pk_name),
-        )
         if tools.has_pk(pk_name):
             # Use existing power spectrum
             pk = tools.get_pk(pk_name)
@@ -690,3 +767,33 @@ class TwoPoint(Statistic):
         else:
             raise ValueError(f"No power spectrum for {pk_name} can be found.")
         return pk
+
+
+class SourceFactory:
+    """A factory for creating sources."""
+
+    def __init__(
+        self,
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+    ) -> None:
+        """Initialize the SourceFactory."""
+
+        self.wl_factory = wl_factory
+        self.nc_factory = nc_factory
+
+    def create(self, inferred_galaxy_zdist: InferredGalaxyZDist) -> Source:
+
+        match inferred_galaxy_zdist.measured_type:
+
+            case GalaxyMeasuredType.COUNTS:
+                assert self.nc_factory is not None
+                return self.nc_factory.create(inferred_galaxy_zdist)
+
+            case GalaxyMeasuredType.SHEAR_E | GalaxyMeasuredType.SHEAR_T:
+                assert self.wl_factory is not None
+                return self.wl_factory.create(inferred_galaxy_zdist)
+            case _:
+                raise ValueError(
+                    f"Measured type {inferred_galaxy_zdist.measured_type} not supported!"
+                )

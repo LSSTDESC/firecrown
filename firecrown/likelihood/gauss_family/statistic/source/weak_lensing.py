@@ -347,8 +347,31 @@ class WeakLensingSystematicFactory:
     """Factory class for WeakLensingSystematic objects."""
 
     @abstractmethod
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensingSystematic:
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> SourceGalaxySystematic[WeakLensingArgs]:
         """Create a WeakLensingSystematic object with the given tracer name."""
+
+
+class MultiplicativeShearBiasFactory(WeakLensingSystematicFactory):
+    """Factory class for MultiplicativeShearBias objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> MultiplicativeShearBias:
+        return MultiplicativeShearBias(inferred_zdist.bin_name)
+
+
+class TattAlignmentSystematicFactory(WeakLensingSystematicFactory):
+    """Factory class for TattAlignmentSystematic objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> TattAlignmentSystematic:
+        return TattAlignmentSystematic(inferred_zdist.bin_name)
+
+
+class PhotoZShiftFactory(WeakLensingSystematicFactory):
+    """Factory class for PhotoZShift objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+        return PhotoZShift(inferred_zdist.bin_name)
 
 
 class WeakLensingFactory:
