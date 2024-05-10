@@ -65,7 +65,10 @@ def test_required_parameters(
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
     expected_params = RequiredParameters(
-        params=[SamplerParameter(name="mean"), SamplerParameter(name="nu")]
+        params=[
+            SamplerParameter(name="mean", default_value=0.0),
+            SamplerParameter(name="nu"),
+        ]
     )
     assert likelihood.required_parameters() == expected_params
 
