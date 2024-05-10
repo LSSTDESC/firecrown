@@ -432,7 +432,8 @@ class TwoPoint(Statistic):
         ]
 
         for two_point in two_point_list:
-            with warnings.catch_warnings(action="ignore"):
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
                 two_point.read(sacc_data)
 
         return UpdatableCollection(two_point_list)

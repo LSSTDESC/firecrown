@@ -6,6 +6,8 @@ project:
     - intro_article.qmd
     - development_example.qmd
     - theoretical_predictions_tutorial.qmd
+    - inferred_zdist_generators.qmd
+    - two_point_generators.qmd
 
 website:
   title: "Firecrown Tutorial Documents"
@@ -27,6 +29,10 @@ website:
           contents:
             - href: theoretical_predictions_tutorial.qmd
               text: "Theoretical Predictions Tutorial"
+            - href: inferred_zdist_generators.qmd
+              text: "Redshift Distribution Generators"
+            - href: two_point_generators.qmd
+              text: "Two-Point Function Generators"
         - section: "Firecrown on GitHub"
           contents:
             - text: "Source Code"
