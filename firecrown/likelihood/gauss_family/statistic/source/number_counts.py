@@ -506,7 +506,10 @@ class ConstantMagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
     def create(
         self, inferred_zdist: InferredGalaxyZDist
     ) -> ConstantMagnificationBiasSystematic:
-        """Create a ConstantMagnificationBiasSystematic object with the given tracer name."""
+        """Create a ConstantMagnificationBiasSystematic object.
+
+        Use the inferred_zdist to create the systematic.
+        """
         return ConstantMagnificationBiasSystematic(inferred_zdist.bin_name)
 
 

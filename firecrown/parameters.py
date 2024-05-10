@@ -266,14 +266,20 @@ class DerivedParameterCollection:
 class SamplerParameter:
     """Class to represent a sampler defined parameter."""
 
-    def __init__(self, *, default_value: None | float = None):
+    def __init__(
+        self,
+        *,
+        default_value: None | float = None,
+        name: None | str = None,
+        prefix: None | str = None,
+    ):
         """Creates a new SamplerParameter instance.
 
         This represents a parameter having its value defined by the sampler.
         """
         self.value: None | float = None
-        self._prefix: None | str = None
-        self._name: None | str = None
+        self._prefix: None | str = prefix
+        self._name: None | str = name
         if default_value is not None:
             self.default_value: None | float = default_value
         else:
@@ -327,7 +333,23 @@ class SamplerParameter:
         return parameter_get_full_name(self.prefix, self.name)
 
     def __hash__(self) -> int:
+        """Return the hash of the full name of this parameter."""
         return hash(self.fullname)
+
+    def __eq__(self, other: object) -> bool:
+        """Return whether this parameter is equal to another.
+
+        Two SamplerParameter objects are equal if they have the same full name.
+        """
+        if not isinstance(other, SamplerParameter):
+            return False
+        return (
+            self.fullname == other.fullname
+            and self.default_value == other.default_value
+            and self.value == other.value
+            and self._prefix == other._prefix
+            and self._name == other._name
+        )
 
 
 class InternalParameter:

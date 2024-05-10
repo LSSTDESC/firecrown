@@ -229,7 +229,6 @@ def use_source_factory(
     nc_factory: NumberCountsFactory | None = None,
 ) -> WeakLensing | NumberCounts:
     """Apply the factory to the inferred galaxy redshift distribution."""
-
     source: WeakLensing | NumberCounts
     match inferred_galaxy_zdist.measured_type:
         case GalaxyMeasuredType.COUNTS:
@@ -417,7 +416,6 @@ class TwoPoint(Statistic):
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create a TwoPoint statistic from a TwoPointCells metadata object."""
-
         sacc_data = create_sacc(metadata)
 
         two_point_list = [
@@ -786,12 +784,11 @@ class SourceFactory:
         nc_factory: NumberCountsFactory | None = None,
     ) -> None:
         """Initialize the SourceFactory."""
-
         self.wl_factory = wl_factory
         self.nc_factory = nc_factory
 
     def create(self, inferred_galaxy_zdist: InferredGalaxyZDist) -> Source:
-
+        """Create a source from the inferred galaxy redshift distribution."""
         match inferred_galaxy_zdist.measured_type:
 
             case GalaxyMeasuredType.COUNTS:
@@ -803,5 +800,6 @@ class SourceFactory:
                 return self.wl_factory.create(inferred_galaxy_zdist)
             case _:
                 raise ValueError(
-                    f"Measured type {inferred_galaxy_zdist.measured_type} not supported!"
+                    f"Measured type {inferred_galaxy_zdist.measured_type} "
+                    f"not supported!"
                 )

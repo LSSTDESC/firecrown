@@ -64,18 +64,18 @@ def test_register_new_updatable_parameter_with_wrong_arg():
 def test_required_parameters_length():
     empty = RequiredParameters([])
     assert len(empty) == 0
-    a = RequiredParameters(["a"])
+    a = RequiredParameters([SamplerParameter(name="a")])
     assert len(a) == 1
-    b = RequiredParameters(["a", "b"])
+    b = RequiredParameters([SamplerParameter(name="a"), SamplerParameter(name="b")])
     assert len(b) == 2
 
 
 def test_required_parameters_equality_testing():
-    a1 = RequiredParameters(["a"])
-    a2 = RequiredParameters(["a"])
+    a1 = RequiredParameters([SamplerParameter(name="a")])
+    a2 = RequiredParameters([SamplerParameter(name="a")])
     assert a1 == a2
     assert a1 is not a2
-    b = RequiredParameters(["b"])
+    b = RequiredParameters([SamplerParameter(name="b")])
     assert a1 != b
     with pytest.raises(
         TypeError, match="Cannot compare a RequiredParameter to an object of type int"
@@ -86,7 +86,7 @@ def test_required_parameters_equality_testing():
 def test_get_params_names_does_not_allow_mutation():
     """The caller of RequiredParameters.get_params_names should not be able to modify
     the state of the object on which the call was made."""
-    orig = RequiredParameters(["a", "b"])
+    orig = RequiredParameters([SamplerParameter(name="a"), SamplerParameter(name="b")])
     names = set(orig.get_params_names())
     assert names == {"a", "b"}
     assert names == {"b", "a"}

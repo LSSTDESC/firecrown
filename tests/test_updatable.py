@@ -13,6 +13,7 @@ from firecrown.parameters import (
     ParamsMap,
     DerivedParameter,
     DerivedParameterCollection,
+    SamplerParameter,
 )
 
 
@@ -56,7 +57,9 @@ class UpdatableWithDerived(Updatable):
 
 def test_simple_updatable():
     obj = SimpleUpdatable()
-    expected_params = RequiredParameters(["x", "y"])
+    expected_params = RequiredParameters(
+        [SamplerParameter(name="x"), SamplerParameter(name="y")]
+    )
     assert obj.required_parameters() == expected_params
     assert obj.x is None
     assert obj.y is None
@@ -77,12 +80,20 @@ def test_updatable_collection_appends():
     assert len(coll) == 1
     assert coll[0].x is None
     assert coll[0].y is None
-    assert coll.required_parameters() == RequiredParameters(["x", "y"])
+    assert coll.required_parameters() == RequiredParameters(
+        [SamplerParameter(name="x"), SamplerParameter(name="y")]
+    )
 
     coll.append(MinimalUpdatable())
     assert len(coll) == 2
     assert coll[1].a is None
-    assert coll.required_parameters() == RequiredParameters(["x", "y", "a"])
+    assert coll.required_parameters() == RequiredParameters(
+        [
+            SamplerParameter(name="x"),
+            SamplerParameter(name="y"),
+            SamplerParameter(name="a"),
+        ]
+    )
 
 
 def test_updatable_collection_updates():
@@ -135,9 +146,9 @@ def test_updatable_collection_insertion():
 
 def test_set_sampler_parameter():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_sampler_parameter(
-        "the_meaning_of_life", parameters.register_new_updatable_parameter()
-    )
+    my_param = parameters.register_new_updatable_parameter()
+    my_param.set_fullname(prefix=None, name="the_meaning_of_life")
+    my_updatable.set_sampler_parameter(my_param)
 
     assert hasattr(my_updatable, "the_meaning_of_life")
     assert my_updatable.the_meaning_of_life is None
@@ -145,23 +156,23 @@ def test_set_sampler_parameter():
 
 def test_set_sampler_parameter_rejects_internal_parameter():
     my_updatable = MinimalUpdatable()
+    my_param = parameters.register_new_updatable_parameter(42.0)
 
     with pytest.raises(TypeError):
-        my_updatable.set_sampler_parameter(
-            "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
-        )
+        my_updatable.set_sampler_parameter(my_param)
 
 
 def test_set_sampler_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
-    my_updatable.set_sampler_parameter(
-        "the_meaning_of_life", parameters.register_new_updatable_parameter()
-    )
+    my_param = parameters.register_new_updatable_parameter()
+    my_param.set_fullname(prefix=None, name="the_meaning_of_life")
+    my_param_same = parameters.register_new_updatable_parameter()
+    my_param_same.set_fullname(prefix=None, name="the_meaning_of_life")
+
+    my_updatable.set_sampler_parameter(my_param)
 
     with pytest.raises(ValueError):
-        my_updatable.set_sampler_parameter(
-            "the_meaning_of_life", parameters.register_new_updatable_parameter()
-        )
+        my_updatable.set_sampler_parameter(my_param_same)
 
 
 def test_set_internal_parameter():
@@ -299,7 +310,15 @@ def test_nesting_updatables_required_parameters(nested_updatables):
     base = nested_updatables[0]
     assert isinstance(base, Updatable)
 
-    assert base.required_parameters() == RequiredParameters(["a", "x", "y", "A", "B"])
+    assert base.required_parameters() == RequiredParameters(
+        [
+            SamplerParameter(name="a"),
+            SamplerParameter(name="x"),
+            SamplerParameter(name="y"),
+            SamplerParameter(name="A"),
+            SamplerParameter(name="B"),
+        ]
+    )
 
 
 def test_nesting_updatables_derived_parameters(nested_updatables):

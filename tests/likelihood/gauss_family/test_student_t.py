@@ -14,6 +14,7 @@ from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
     ParamsMap,
+    SamplerParameter,
 )
 
 
@@ -63,7 +64,9 @@ def test_required_parameters(
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
-    expected_params = RequiredParameters(params=["mean", "nu"])
+    expected_params = RequiredParameters(
+        params=[SamplerParameter(name="mean"), SamplerParameter(name="nu")]
+    )
     assert likelihood.required_parameters() == expected_params
 
 
