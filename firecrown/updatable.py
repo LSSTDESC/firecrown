@@ -14,24 +14,18 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-from typing import (
-    Any,
-    cast,
-    final,
-    Generic,
-    Iterable,
-    TypeAlias,
-    TypeVar,
-    Union,
-)
+
 from abc import ABC
 from collections import UserList
-from .parameters import (
+from typing import Any, Generic, Iterable, TypeAlias, TypeVar, Union, cast, final
+
+from firecrown.parameters import (
+    InternalParameter,
     ParamsMap,
     RequiredParameters,
     SamplerParameter,
-    InternalParameter,
 )
+
 from .parameters import DerivedParameterCollection
 
 GeneralUpdatable: TypeAlias = Union["Updatable", "UpdatableCollection"]

@@ -1,33 +1,28 @@
 """Number counts source and systematics."""
 
 from __future__ import annotations
-from typing import final, Sequence
-from dataclasses import dataclass, replace
+
 from abc import abstractmethod
+from dataclasses import dataclass, replace
+from typing import Sequence, final
 
 import numpy as np
 import numpy.typing as npt
 import pyccl
 
-from .source import (
-    Tracer,
+from firecrown import parameters
+from firecrown.likelihood.gauss_family.statistic.source.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
-    SourceGalaxySystematic,
     SourceGalaxyPhotoZShift,
     SourceGalaxySelectField,
+    SourceGalaxySystematic,
+    Tracer,
 )
-
-from ..... import parameters
-
-from .....modeling_tools import ModelingTools
-from .....parameters import (
-    ParamsMap,
-    DerivedParameter,
-    DerivedParameterCollection,
-)
-from .....updatable import UpdatableCollection
-from .....metadata.two_point import InferredGalaxyZDist
+from firecrown.metadata.two_point import InferredGalaxyZDist
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import DerivedParameter, DerivedParameterCollection, ParamsMap
+from firecrown.updatable import UpdatableCollection
 
 __all__ = ["NumberCounts"]
 

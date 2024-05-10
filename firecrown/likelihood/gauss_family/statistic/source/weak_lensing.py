@@ -1,9 +1,10 @@
 """Weak lensing source and systematics."""
 
 from __future__ import annotations
-from typing import final, Sequence
-from dataclasses import dataclass, replace
+
 from abc import abstractmethod
+from dataclasses import dataclass, replace
+from typing import Sequence, final
 
 import numpy as np
 import numpy.typing as npt
@@ -11,20 +12,18 @@ import pyccl
 import pyccl.nl_pt
 import sacc
 
-from .source import (
+from firecrown import parameters
+from firecrown.likelihood.gauss_family.statistic.source.source import (
     SourceGalaxy,
-    Tracer,
     SourceGalaxyArgs,
-    SourceGalaxySystematic,
     SourceGalaxyPhotoZShift,
     SourceGalaxySelectField,
+    SourceGalaxySystematic,
+    Tracer,
 )
-from ..... import parameters
-from .....parameters import (
-    ParamsMap,
-)
-from .....modeling_tools import ModelingTools
-from .....metadata.two_point import InferredGalaxyZDist
+from firecrown.metadata.two_point import InferredGalaxyZDist
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
 
 __all__ = ["WeakLensing"]
 

@@ -4,14 +4,17 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
-
 import pyccl
 import sacc
 from sacc.tracers import MiscTracer
 
-from ....modeling_tools import ModelingTools
-from .statistic import Statistic, DataVector, TheoryVector
-from .... import parameters
+from firecrown import parameters
+from firecrown.likelihood.gauss_family.statistic.statistic import (
+    DataVector,
+    Statistic,
+    TheoryVector,
+)
+from firecrown.modeling_tools import ModelingTools
 
 SNIA_DEFAULT_M = -19.2
 

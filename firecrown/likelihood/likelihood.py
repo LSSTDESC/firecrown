@@ -51,21 +51,22 @@ but object should only be updated once.
 """
 
 from __future__ import annotations
-from typing import Mapping, Sequence
-from abc import abstractmethod
-import types
-import warnings
+
 import importlib
 import importlib.util
 import os
 import sys
+import types
+import warnings
+from abc import abstractmethod
+from typing import Mapping, Sequence
+
 import numpy as np
 import numpy.typing as npt
-
 import sacc
 
-from ..updatable import Updatable
-from ..modeling_tools import ModelingTools
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import Updatable
 
 
 class Likelihood(Updatable):

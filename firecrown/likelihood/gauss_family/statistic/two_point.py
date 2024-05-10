@@ -2,34 +2,42 @@
 
 from __future__ import annotations
 
-from typing import Sequence, TypedDict
 import copy
 import warnings
+from typing import Sequence, TypedDict
 
 import numpy as np
 import numpy.typing as npt
+import pyccl
+import pyccl.nl_pt
 import sacc.windows
 import scipy.interpolate
 
-import pyccl
-import pyccl.nl_pt
-
-from firecrown.metadata.two_point import (
-    extract_window_function,
-    Window,
-    TracerNames,
-    TRACER_NAMES_TOTAL,
-    TwoPointCells,
-    InferredGalaxyZDist,
-    GalaxyMeasuredType,
+from firecrown.likelihood.gauss_family.statistic.source.source import Source, Tracer
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import (
+    WeakLensingFactory,
+    WeakLensing,
 )
-from ....modeling_tools import ModelingTools
-from ....updatable import UpdatableCollection
-
-from .statistic import Statistic, DataVector, TheoryVector
-from .source.source import Source, Tracer
-from .source.weak_lensing import WeakLensingFactory, WeakLensing
-from .source.number_counts import NumberCountsFactory, NumberCounts
+from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+    NumberCountsFactory,
+    NumberCounts,
+)
+from firecrown.likelihood.gauss_family.statistic.statistic import (
+    DataVector,
+    Statistic,
+    TheoryVector,
+)
+from firecrown.metadata.two_point import (
+    GalaxyMeasuredType,
+    InferredGalaxyZDist,
+    TRACER_NAMES_TOTAL,
+    TracerNames,
+    TwoPointCells,
+    Window,
+    extract_window_function,
+)
+from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import UpdatableCollection
 
 # only supported types are here, anything else will throw
 # a value error
