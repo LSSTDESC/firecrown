@@ -1,0 +1,245 @@
+---
+title: "Using Firecrown to Generate Two-Point Statistics for LSST"
+subtitle: "Version 1.8.0a0"
+author:
+  - Marc Paterno
+  - Sandro Vitenti
+format:
+  html:
+    toc: true
+    theme: [serif, custom.scss]
+    code-overflow: wrap
+    code-fold: false
+reference-location: margin
+citation-location: margin
+jupyter: python3
+---
+
+::: {.hidden}
+```{python}
+def doc_theme():
+    return theme_minimal() + theme()
+```
+:::
+
+## Purpose of this document
+
+In the tutorial found in the [Redshift Distributions tutorial](inferred_zdist_generators.html), we demonstrate how to use Firecrown to generate the redshift distribution for a given set of parameters. In this document, we demonstrate how to use the `InferredGalaxyZDist` object to generate the two-point statistics for the Large Synoptic Survey Telescope (LSST) using the redshift distribution from the LSST Science Requirements Document (SRD).
+
+First we will generate all bins for the LSST year 1 redshift distribution:
+
+```{python}
+
+from itertools import pairwise
+import numpy as np
+import firecrown
+from firecrown.generators.inferred_galaxy_zdist import (
+    ZDistLSSTSRD,
+    InferredGalaxyZDist,
+    Y1_LENS_BINS,
+    Y1_SOURCE_BINS,
+)
+from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
+
+zdist_y1 = ZDistLSSTSRD.year_1()
+
+z = np.linspace(0.0, 1.5, 1000)
+all_y1_bins = [
+    zdist_y1.binned_distribution(
+        zpl=zpl,
+        zpu=zpu,
+        sigma_z=Y1_LENS_BINS["sigma_z"],
+        z=z,
+        name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
+        measured_type=GalaxyMeasuredType.COUNTS,
+        use_autoknot=True,
+        autoknots_reltol=1.0e-5,
+    )
+    for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
+] + [
+    zdist_y1.binned_distribution(
+        zpl=zpl,
+        zpu=zpu,
+        sigma_z=Y1_SOURCE_BINS["sigma_z"],
+        z=z,
+        name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
+        measured_type=GalaxyMeasuredType.SHEAR_E,
+        use_autoknot=True,
+        autoknots_reltol=1.0e-5,
+    )
+    for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
+]
+```
+
+In `firecrown.metadata` we have functions that compute all possible two-point statistics for a given set of bins. For example, below we compute all possible two-point statistics for the LSST year 1 redshift distribution:
+
+```{python}
+
+from firecrown.metadata.two_point import make_all_photoz_bin_combinations, TwoPointCells
+
+all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
+ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
+all_two_point_cells = [TwoPointCells(XY=xy, ells=ells) for xy in all_two_point_xy]
+
+```
+
+The code above generates the following table of two-point statistics:
+```{python}
+# | code-fold: true
+import pandas as pd
+from IPython.display import Markdown
+
+two_point_names = [
+    (Cells.XY.x.bin_name, Cells.XY.y.bin_name, Cells.get_sacc_name())
+    for Cells in all_two_point_cells
+]
+df = pd.DataFrame(two_point_names, columns=["bin-x", "bin-y", "SACC data-type"])
+Markdown(df.to_markdown())
+```
+
+In order to generate the two-point statistics, we need to define the factories for the weak lensing and number counts systematics. The code below defines the factories for the weak lensing and number counts systematics:
+
+```{python}
+
+import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
+import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
+import firecrown.likelihood.gauss_family.statistic.two_point as tp
+import warnings
+
+# WeakLensing systematics -- global
+ia_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
+# WeakLensing systematics -- per-bin
+wl_photoz = wl.PhotoZShiftFactory()
+wl_mult_bias = wl.MultiplicativeShearBiasFactory()
+
+# NumberCounts systematics -- global
+# As for Firecrown 1.8.0a0, we do not have any global systematics for number counts
+# NumberCounts systematics -- per-bin
+nc_photoz = nc.PhotoZShiftFactory()
+
+wlf = wl.WeakLensingFactory(
+    per_bin_systematics=[wl_mult_bias, wl_photoz],
+    global_systematics=[ia_systematic],
+)
+ncf = nc.NumberCountsFactory(
+    per_bin_systematics=[nc_photoz],
+    global_systematics=[],
+)
+```
+
+Now that we have defined the factories for the weak lensing and number counts systematics, we can generate the two-point statistics for the LSST year 1 redshift distribution:
+
+```{python}
+all_two_point_functions = tp.TwoPoint.from_metadata_cells(
+    metadata=all_two_point_cells,
+    wl_factory=wlf,
+    nc_factory=ncf,
+)
+```
+
+Setting up the two-point statistics requires a cosmology and a set of parameters. The parameters necessary in our analysis depend on the two-point statistics and the systematics we are considering. In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the default values:
+
+```{python}
+from firecrown.parameters import ParamsMap
+
+req_params = all_two_point_functions.required_parameters()
+default_values = req_params.get_default_values()
+params = ParamsMap(default_values)
+
+```
+
+Before we can generate the two-point statistics, we need to set the parameters to the default values. The default values are:
+
+```{python}
+# | code-fold: true
+import yaml
+
+default_values_yaml = yaml.dump(default_values, default_flow_style=False)
+
+Markdown(f"```yaml\n{default_values_yaml}\n```")
+```
+
+
+Finally, we need to set up the cosmology and prepare the two-point statistics for the analysis:
+
+```{python}
+import pyccl
+
+from firecrown.modeling_tools import ModelingTools
+
+ccl_cosmo = pyccl.CosmologyVanillaLCDM()
+ccl_cosmo.compute_nonlin_power()
+
+tools = ModelingTools()
+tools.update(params)
+tools.prepare(ccl_cosmo)
+all_two_point_functions.update(params)
+
+```
+
+Now that we have set up the cosmology and prepared the two-point statistics, we can generate the two-point statistics for the LSST year 1 redshift distribution. Starting with the first two-point statistic:
+
+```{python}
+
+two_point0 = all_two_point_functions[0]
+tv0 = two_point0.compute_theory_vector(tools)
+
+```
+
+Below we plot the first pair of bins for the LSST year 1 redshift distribution:
+```{python}
+# | label: fig-fz
+# | fig-cap: First pair of bins for the LSST year 1 redshift distribution
+# | fig-cap-location: margin
+# | code-fold: true
+from plotnine import *  # bad form in programs, but seems OK for plotnine
+import pandas as pd
+
+# The data were not originally generated in a dataframe convenient for
+# plotting, so our first task it to put them into such a form.
+# First we create a dataframe with the raw data.
+data = pd.DataFrame({"ell": two_point0.ells, "Cell": tv0})
+
+# Now we can generate the plot.
+(
+    ggplot(data, aes("ell", "Cell"))
+    + geom_line()
+    + labs(x=r"$\ell$", y=r"$C_\ell$")
+    + scale_x_log10()
+    + scale_y_log10()
+    + doc_theme()
+)
+
+```
+
+The plot above shows the first pair of bins for the LSST year 1 redshift distribution. We can generate the two-point statistics for the remaining pairs of bins in the LSST year 1 redshift distribution:
+
+```{python}
+# | code-fold: true
+
+two_point_pd_list = []
+for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
+    two_point_pd_list.append(
+        pd.DataFrame(
+            {
+                "ell": two_point.ells,
+                "Cell": two_point.compute_theory_vector(tools),
+                "bin-x": meta.XY.x.bin_name,
+                "bin-y": meta.XY.y.bin_name,
+                "measured_type": meta.get_sacc_name(),
+            }
+        )
+    )
+
+data = pd.concat(two_point_pd_list)
+
+(
+    ggplot(data, aes("ell", "Cell", color="bin-x", linetype="bin-y"))
+    + geom_point()
+    + labs(x=r"$\ell$", y=r"$C_\ell$")
+    + scale_x_log10()
+    + scale_y_log10()
+    + facet_wrap("measured_type")
+    + doc_theme()
+)
+```
