@@ -24,9 +24,12 @@ def doc_theme():
 
 ## Purpose of this document
 
-In the tutorial found in the [Redshift Distributions tutorial](inferred_zdist_generators.html), we demonstrate how to use Firecrown to generate the redshift distribution for a given set of parameters. In this document, we demonstrate how to use the `InferredGalaxyZDist` object to generate the two-point statistics for the Large Synoptic Survey Telescope (LSST) using the redshift distribution from the LSST Science Requirements Document (SRD).
+In the tutorial available at [Redshift Distributions tutorial](inferred_zdist_generators.html), we illustrate the process of utilizing Firecrown to create the redshift distribution based on specified parameters. 
+This document specifically outlines the utilization of the `InferredGalaxyZDist` object to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
 
-First we will generate all bins for the LSST year 1 redshift distribution:
+## Generating the LSST year 1 redshift distribution bins
+
+Our initial step involves generating all bins necessary for the LSST year 1 redshift distribution.
 
 ```{python}
 
@@ -71,7 +74,10 @@ all_y1_bins = [
 ]
 ```
 
-In `firecrown.metadata` we have functions that compute all possible two-point statistics for a given set of bins. For example, below we compute all possible two-point statistics for the LSST year 1 redshift distribution:
+## Generating the two-point metadata
+
+Within `firecrown.metadata`, a suite of functions is available to calculate all possible two-point statistic metadata corresponding to a designated set of bins.
+For instance, demonstrated below is the computation of all feasible metadata tailored to the LSST year 1 redshift distribution:
 
 ```{python}
 
@@ -83,7 +89,7 @@ all_two_point_cells = [TwoPointCells(XY=xy, ells=ells) for xy in all_two_point_x
 
 ```
 
-The code above generates the following table of two-point statistics:
+The code above generates the following table of two-point statistic metadata:
 ```{python}
 # | code-fold: true
 import pandas as pd
@@ -97,7 +103,11 @@ df = pd.DataFrame(two_point_names, columns=["bin-x", "bin-y", "SACC data-type"])
 Markdown(df.to_markdown())
 ```
 
-In order to generate the two-point statistics, we need to define the factories for the weak lensing and number counts systematics. The code below defines the factories for the weak lensing and number counts systematics:
+## Defining two-point statistics factories
+
+In order to generate the two-point statistics, we need to define the factories for the weak lensing and number counts systematics. 
+These factories are responsible for generating the systematics that will be applied to the two-point statistics.
+The code below defines the factories for the weak lensing and number counts systematics:
 
 ```{python}
 
@@ -127,6 +137,8 @@ ncf = nc.NumberCountsFactory(
 )
 ```
 
+## Generating the two-point statistics
+
 Now that we have defined the factories for the weak lensing and number counts systematics, we can generate the two-point statistics for the LSST year 1 redshift distribution:
 
 ```{python}
@@ -137,7 +149,11 @@ all_two_point_functions = tp.TwoPoint.from_metadata_cells(
 )
 ```
 
-Setting up the two-point statistics requires a cosmology and a set of parameters. The parameters necessary in our analysis depend on the two-point statistics and the systematics we are considering. In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the default values:
+## Setting up the two-point statistics
+
+Setting up the two-point statistics requires a cosmology and a set of parameters. 
+The parameters necessary in our analysis depend on the two-point statistic measured types and the systematics we are considering. 
+In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the parameters' default values:
 
 ```{python}
 from firecrown.parameters import ParamsMap
@@ -158,7 +174,6 @@ default_values_yaml = yaml.dump(default_values, default_flow_style=False)
 
 Markdown(f"```yaml\n{default_values_yaml}\n```")
 ```
-
 
 Finally, we need to set up the cosmology and prepare the two-point statistics for the analysis:
 
