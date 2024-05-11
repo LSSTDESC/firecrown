@@ -22,12 +22,12 @@ def doc_theme():
 ```
 :::
 
-## Purpose of this document
+## Purpose of this Document
 
 In the tutorial available at [Redshift Distributions tutorial](inferred_zdist_generators.html), we illustrate the process of utilizing Firecrown to create the redshift distribution based on specified parameters. 
 This document specifically outlines the utilization of the `InferredGalaxyZDist` object to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
 
-## Generating the LSST year 1 redshift distribution bins
+## Generating the LSST Year 1 Redshift Distribution Bins
 
 Our initial step involves generating all bins necessary for the LSST year 1 redshift distribution.
 
@@ -74,7 +74,7 @@ all_y1_bins = [
 ]
 ```
 
-## Generating the two-point metadata
+## Generating the Two-Point Metadata
 
 Within `firecrown.metadata`, a suite of functions is available to calculate all possible two-point statistic metadata corresponding to a designated set of bins.
 For instance, demonstrated below is the computation of all feasible metadata tailored to the LSST year 1 redshift distribution:
@@ -103,7 +103,7 @@ df = pd.DataFrame(two_point_names, columns=["bin-x", "bin-y", "SACC data-type"])
 Markdown(df.to_markdown())
 ```
 
-## Defining two-point statistics factories
+## Defining Two-Point Statistics Factories
 
 In order to generate the two-point statistics, we need to define the factories for the weak lensing and number counts systematics. 
 These factories are responsible for generating the systematics that will be applied to the two-point statistics.
@@ -137,9 +137,11 @@ ncf = nc.NumberCountsFactory(
 )
 ```
 
-## Generating the two-point statistics
+## Generating the Two-Point Statistics
 
-Now that we have defined the factories for the weak lensing and number counts systematics, we can generate the two-point statistics for the LSST year 1 redshift distribution:
+To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics. 
+These factories are responsible for producing the necessary systematics applied to the two-point statistics. 
+Below is the code defining the factories for weak lensing and number counts systematics:
 
 ```{python}
 all_two_point_functions = tp.TwoPoint.from_metadata_cells(
@@ -149,7 +151,7 @@ all_two_point_functions = tp.TwoPoint.from_metadata_cells(
 )
 ```
 
-## Setting up the two-point statistics
+## Setting Up the Two-Point Statistics
 
 Setting up the two-point statistics requires a cosmology and a set of parameters. 
 The parameters necessary in our analysis depend on the two-point statistic measured types and the systematics we are considering. 
@@ -164,7 +166,8 @@ params = ParamsMap(default_values)
 
 ```
 
-Before we can generate the two-point statistics, we need to set the parameters to the default values. The default values are:
+Before generating the two-point statistics, it's necessary to set the parameters to their default values. 
+These default values are:
 
 ```{python}
 # | code-fold: true
@@ -175,7 +178,7 @@ default_values_yaml = yaml.dump(default_values, default_flow_style=False)
 Markdown(f"```yaml\n{default_values_yaml}\n```")
 ```
 
-Finally, we need to set up the cosmology and prepare the two-point statistics for the analysis:
+Lastly, we must configure the cosmology and prepare the two-point statistics for analysis:
 
 ```{python}
 import pyccl
@@ -192,16 +195,22 @@ all_two_point_functions.update(params)
 
 ```
 
-Now that we have set up the cosmology and prepared the two-point statistics, we can generate the two-point statistics for the LSST year 1 redshift distribution. Starting with the first two-point statistic:
+# Computing the Two-Point Statistics
+
+With the cosmology configured and the two-point statistics prepared, we can now proceed to compute the two-point statistics. 
+Let's begin by computing the first two-point statistic as an example:
+
 
 ```{python}
 
 two_point0 = all_two_point_functions[0]
+meta0 = all_two_point_cells[0]
 tv0 = two_point0.compute_theory_vector(tools)
 
 ```
 
-Below we plot the first pair of bins for the LSST year 1 redshift distribution:
+Here, we plot the first two-point statistic representing the first pair of bins:
+
 ```{python}
 # | label: fig-fz
 # | fig-cap: First pair of bins for the LSST year 1 redshift distribution
@@ -213,7 +222,15 @@ import pandas as pd
 # The data were not originally generated in a dataframe convenient for
 # plotting, so our first task it to put them into such a form.
 # First we create a dataframe with the raw data.
-data = pd.DataFrame({"ell": two_point0.ells, "Cell": tv0})
+data = pd.DataFrame(
+    {
+        "ell": two_point0.ells,
+        "Cell": tv0,
+        "bin-x": meta0.XY.x.bin_name,
+        "bin-y": meta0.XY.y.bin_name,
+        "measured_type": meta0.get_sacc_name(),
+    }
+)
 
 # Now we can generate the plot.
 (
@@ -227,7 +244,8 @@ data = pd.DataFrame({"ell": two_point0.ells, "Cell": tv0})
 
 ```
 
-The plot above shows the first pair of bins for the LSST year 1 redshift distribution. We can generate the two-point statistics for the remaining pairs of bins in the LSST year 1 redshift distribution:
+The plot above illustrates the first pair of bins. 
+To complete the analysis, we can generate the two-point statistics for all bin pairs.
 
 ```{python}
 # | code-fold: true
@@ -238,7 +256,7 @@ for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
         pd.DataFrame(
             {
                 "ell": two_point.ells,
-                "Cell": two_point.compute_theory_vector(tools),
+                "Cell": np.abs(two_point.compute_theory_vector(tools)),
                 "bin-x": meta.XY.x.bin_name,
                 "bin-y": meta.XY.y.bin_name,
                 "measured_type": meta.get_sacc_name(),
@@ -249,7 +267,7 @@ for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
 data = pd.concat(two_point_pd_list)
 
 (
-    ggplot(data, aes("ell", "Cell", color="bin-x", linetype="bin-y"))
+    ggplot(data, aes("ell", "Cell", color="bin-x", shape="bin-y"))
     + geom_point()
     + labs(x=r"$\ell$", y=r"$C_\ell$")
     + scale_x_log10()
