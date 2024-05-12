@@ -309,3 +309,74 @@ def test_sampler_parameter_eq():
     sp2 = SamplerParameter(name="name1", default_value=3.14)
 
     assert sp1 == sp2
+
+
+def test_sampler_parameter_eq_invalid():
+    sp1 = SamplerParameter(name="name1", default_value=3.14)
+    with pytest.raises(
+        NotImplementedError,
+        match=(
+            "SamplerParameter comparison is only implemented for "
+            "SamplerParameter objects"
+        ),
+    ):
+        _ = sp1 == 1.0
+
+
+def test_sampler_parameter_ne():
+    sp1 = SamplerParameter(name="name1", default_value=3.14)
+    sp2 = SamplerParameter(name="name2", default_value=3.14)
+
+    assert sp1 != sp2
+
+
+def test_sampler_parameter_default_value():
+    sp = SamplerParameter(name="name1", default_value=3.14)
+    assert sp.get_default_value() == 3.14
+
+
+def test_sampler_parameter_default_value_no_default():
+    sp = SamplerParameter(name="name1")
+    assert sp.get_default_value() is None
+
+
+def test_required_parameters_get_names():
+    rp = RequiredParameters(
+        [SamplerParameter(name="name1"), SamplerParameter(name="name2")]
+    )
+    assert set(rp.get_params_names()) == {"name1", "name2"}
+
+
+def test_required_parameters_get_default_values():
+    rp = RequiredParameters(
+        [
+            SamplerParameter(name="name1", default_value=3.14),
+            SamplerParameter(name="name2", default_value=2.72),
+            SamplerParameter(name="name3", default_value=2.3),
+        ]
+    )
+    assert rp.get_default_values() == {"name1": 3.14, "name2": 2.72, "name3": 2.3}
+
+
+def test_required_parameters_get_default_values_no_default():
+    rp = RequiredParameters(
+        [
+            SamplerParameter(name="name1"),
+            SamplerParameter(name="name2", default_value=2.72),
+            SamplerParameter(name="name3", default_value=2.3),
+        ]
+    )
+    with pytest.raises(ValueError, match="Parameter name1 has no default value"):
+        _ = rp.get_default_values()
+
+
+def test_required_parameters_get_default_values_no_default3():
+    rp = RequiredParameters(
+        [
+            SamplerParameter(name="name1", default_value=3.14),
+            SamplerParameter(name="name2", default_value=2.72),
+            SamplerParameter(name="name3"),
+        ]
+    )
+    with pytest.raises(ValueError, match="Parameter name3 has no default value"):
+        _ = rp.get_default_values()

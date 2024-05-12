@@ -129,9 +129,7 @@ class RequiredParameters:
         for parameter in self.params_set:
             default_value = parameter.get_default_value()
             if default_value is None:
-                raise ValueError(
-                    f"Parameter {parameter.fullname} has a None default value"
-                )
+                raise ValueError(f"Parameter {parameter.fullname} has no default value")
             default_values[parameter.fullname] = default_value
 
         return default_values
@@ -342,7 +340,10 @@ class SamplerParameter:
         Two SamplerParameter objects are equal if they have the same full name.
         """
         if not isinstance(other, SamplerParameter):
-            return NotImplemented
+            raise NotImplementedError(
+                f"SamplerParameter comparison is only implemented for "
+                f"SamplerParameter objects, received {type(other)}"
+            )
         return (
             self.fullname == other.fullname
             and self.default_value == other.default_value
