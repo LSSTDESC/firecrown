@@ -17,7 +17,7 @@ It can also be used as a library in other contexts, and so the installation of F
 
 
 .. note::
-   Before installing Firecrown, we recommend visiting the `tutorial site <_static/index.html>`.
+   Before installing Firecrown, we recommend visiting the `tutorial site <_static/index.html>`_.
    This site serves as a comprehensive resource for Firecrown, offering both pre-installation information and post-installation guidance. 
    It covers essential topics such as the general concepts behind Firecrown, installation instructions, and usage guidelines.
 
