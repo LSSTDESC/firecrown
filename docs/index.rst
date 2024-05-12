@@ -17,8 +17,9 @@ It can also be used as a library in other contexts, and so the installation of F
 
 
 .. note::
-   Before installing Firecrown, we recommend reading the `introductory article <_static/intro_article.html>`_.
-   This article explains the general concepts behind Firecrown, how to install it, and how to use it.  
+   Before installing Firecrown, we recommend visiting the `tutorial site <_static/index.html>`.
+   This site serves as a comprehensive resource for Firecrown, offering both pre-installation information and post-installation guidance. 
+   It covers essential topics such as the general concepts behind Firecrown, installation instructions, and usage guidelines.
 
 .. toctree::
    :maxdepth: 1
