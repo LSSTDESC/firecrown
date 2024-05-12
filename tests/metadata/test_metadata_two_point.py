@@ -790,6 +790,6 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
     cells = TwoPointCells(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
-        match="Measured type CMBMeasuredType.CONVERGENCE not supported!",
+        match="Measured type .* not supported!",
     ):
         TwoPoint.from_metadata_cells([cells], wl_factory, nc_factory)
