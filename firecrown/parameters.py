@@ -342,7 +342,7 @@ class SamplerParameter:
         Two SamplerParameter objects are equal if they have the same full name.
         """
         if not isinstance(other, SamplerParameter):
-            return False
+            return NotImplemented
         return (
             self.fullname == other.fullname
             and self.default_value == other.default_value

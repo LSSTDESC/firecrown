@@ -259,3 +259,53 @@ def test_derived_parameters_collection_eq_invalid():
         "implemented for DerivedParameterCollection objects",
     ):
         _ = dpc1 == 1.0
+
+
+def test_sampler_parameter_no_prefix():
+    sp = SamplerParameter(name="name1")
+    assert sp.name == "name1"
+    assert sp.fullname == "name1"
+
+
+def test_sampler_parameter_with_prefix():
+    sp = SamplerParameter(name="name1", prefix="prefix1")
+    assert sp.name == "name1"
+    assert sp.fullname == "prefix1_name1"
+
+
+def test_sampler_parameter_no_value():
+    sp = SamplerParameter(name="name1")
+    with pytest.raises(AssertionError):
+        _ = sp.get_value()
+
+
+def test_sampler_parameter_with_value():
+    sp = SamplerParameter(name="name1")
+    sp.set_value(3.14)
+    assert sp.get_value() == 3.14
+
+
+def test_sampler_parameter_with_value_and_prefix():
+    sp = SamplerParameter(name="name1", prefix="prefix1")
+    sp.set_value(3.14)
+    assert sp.get_value() == 3.14
+
+
+def test_sampler_parameter_with_value_and_prefix_and_fullname():
+    sp = SamplerParameter(name="name1", prefix="prefix1")
+    sp.set_value(3.14)
+    assert sp.get_value() == 3.14
+    assert sp.fullname == "prefix1_name1"
+
+
+def test_sample_parameter_hash():
+    sp1 = SamplerParameter(name="name1")
+    sp2 = SamplerParameter(name="name1")
+    assert hash(sp1) == hash(sp2)
+
+
+def test_sampler_parameter_eq():
+    sp1 = SamplerParameter(name="name1", default_value=3.14)
+    sp2 = SamplerParameter(name="name1", default_value=3.14)
+
+    assert sp1 == sp2
