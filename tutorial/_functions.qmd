@@ -1,0 +1,10 @@
+::: {.hidden}
+```{python}
+def doc_theme():
+    return theme_minimal() + theme(
+        panel_grid_minor=element_line(color="gray", linetype="--"),
+        panel_border=element_rect(color="black", fill=None, size=1)
+    )
+```
+:::
+

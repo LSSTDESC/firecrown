@@ -27,8 +27,6 @@ website:
               text: "Development Example"
         - section: "Tutorials"
           contents:
-            - href: theoretical_predictions_tutorial.qmd
-              text: "Theoretical Predictions Tutorial"
             - href: inferred_zdist_generators.qmd
               text: "Redshift Distribution Generators"
             - href: two_point_generators.qmd
@@ -46,3 +44,12 @@ format:
   html:
     theme: [serif, custom.scss]
     toc: true
+    code-overflow: wrap
+
+reference-location: margin
+citation-location: margin
+subtitle: "version 1.8.0.a0"
+authors:
+  - Marc Paterno
+  - Sandro Vitenti
+jupyter: python3

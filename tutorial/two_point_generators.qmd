@@ -1,26 +1,9 @@
 ---
 title: "Using Firecrown to Generate Two-Point Statistics for LSST"
-subtitle: "Version 1.8.0a0"
-author:
-  - Marc Paterno
-  - Sandro Vitenti
-format:
-  html:
-    toc: true
-    theme: [serif, custom.scss]
-    code-overflow: wrap
-    code-fold: false
-reference-location: margin
-citation-location: margin
-jupyter: python3
+format: html
 ---
 
-::: {.hidden}
-```{python}
-def doc_theme():
-    return theme_minimal() + theme()
-```
-:::
+{{< include _functions.qmd >}}
 
 ## Purpose of this Document
 
