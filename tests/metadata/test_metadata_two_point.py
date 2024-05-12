@@ -123,11 +123,13 @@ def make_two_point_cwindow_1(
 
 @pytest.fixture(name="wl_factory")
 def make_wl_factory():
+    """Generate a WeakLensingFactory object."""
     return wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
 
 
 @pytest.fixture(name="nc_factory")
 def make_nc_factory():
+    """Generate a NumberCountsFactory object."""
     return nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
 
 
