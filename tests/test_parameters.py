@@ -340,6 +340,12 @@ def test_sampler_parameter_default_value_no_default():
     assert sp.get_default_value() is None
 
 
+def test_sampler_parameter_default_value_no_name():
+    sp = SamplerParameter()
+    with pytest.raises(ValueError, match="Parameter name is not set"):
+        _ = sp.name
+
+
 def test_required_parameters_get_names():
     rp = RequiredParameters(
         [SamplerParameter(name="name1"), SamplerParameter(name="name2")]

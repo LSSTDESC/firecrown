@@ -770,3 +770,26 @@ def test_two_point_from_metadata_cells(
 
     assert_array_equal(two_point.source0.tracer_args.dndz, harmonic_bin_1.dndz)
     assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_bin_2.dndz)
+
+
+def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=CMBMeasuredType.CONVERGENCE,
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    xy = TwoPointXY(x=x, y=y)
+    cells = TwoPointCells(ells=ells, XY=xy)
+    with pytest.raises(
+        ValueError,
+        match="Measured type CMBMeasuredType.CONVERGENCE not supported!",
+    ):
+        TwoPoint.from_metadata_cells([cells], wl_factory, nc_factory)

@@ -5,8 +5,6 @@ import numpy.typing as npt
 from scipy.special import gamma, erf, erfc
 from scipy.integrate import quad
 
-import yaml
-from yaml import CLoader as Loader
 from numcosmo_py import Ncm
 
 from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
@@ -41,17 +39,6 @@ class ZDistLSSTSRD:
         self.alpha = alpha
         self.beta = beta
         self.z0 = z0
-
-    @classmethod
-    def from_yaml(cls, filename: str) -> "ZDistLSSTSRD":
-        """Create a ZDistLSSTSRD object from a YAML file.
-
-        :param filename: The path to the YAML file.
-        :return: A ZDistLSSTSRD object.
-        """
-        with open(filename, "r", encoding="utf8") as f:
-            data = yaml.load(f, Loader=Loader)
-            return cls(**data)
 
     @classmethod
     def year_1(
