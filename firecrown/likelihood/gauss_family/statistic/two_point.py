@@ -774,33 +774,3 @@ class TwoPoint(Statistic):
         else:
             raise ValueError(f"No power spectrum for {pk_name} can be found.")
         return pk
-
-
-class SourceFactory:
-    """A factory for creating sources."""
-
-    def __init__(
-        self,
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
-    ) -> None:
-        """Initialize the SourceFactory."""
-        self.wl_factory = wl_factory
-        self.nc_factory = nc_factory
-
-    def create(self, inferred_galaxy_zdist: InferredGalaxyZDist) -> Source:
-        """Create a source from the inferred galaxy redshift distribution."""
-        match inferred_galaxy_zdist.measured_type:
-
-            case GalaxyMeasuredType.COUNTS:
-                assert self.nc_factory is not None
-                return self.nc_factory.create(inferred_galaxy_zdist)
-
-            case GalaxyMeasuredType.SHEAR_E | GalaxyMeasuredType.SHEAR_T:
-                assert self.wl_factory is not None
-                return self.wl_factory.create(inferred_galaxy_zdist)
-            case _:
-                raise ValueError(
-                    f"Measured type {inferred_galaxy_zdist.measured_type} "
-                    f"not supported!"
-                )
