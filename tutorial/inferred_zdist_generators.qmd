@@ -11,13 +11,18 @@ Firecrown provides facilities for creating distributions for galaxies
 $$
 P(z|B_i, \theta) \equiv \frac{\mathrm{d}n}{\mathrm{d}z}(z;B_i, \theta),
 $${#eq-Pi}
-where $B_i$ is the $i$-th bin of the photometric redshifts, and $\theta$ is a set of parameters that describe the model. 
+where $B_i$ is the $i$-th bin of the photometric redshifts, and $\theta$ is a set of parameters that describe the model.
 
-In Firecrown, this distribution is stored as a `InferredGalaxyZDist` dataclass in `firecrown.metadata`, which contains the redshifts, the corresponding probabilities and the data-type of the measurements. Firecrown also provides objects that generate this distributions given a chosen model. In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which generates the redshift distribution according to the LSST Science Requirements Document (SRD). 
+In Firecrown this distribution is represented as an object of type `InferredGalaxyZDist`[^1].
+An object of this type contains the redshifts, the corresponding probabilities, and the data-type of the measurements.
+Firecrown also provides facilities to generate these distributions, given a chosen model.
+In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which can be used to generate redshift distributions according to the LSST Science Requirements Document (SRD).
+
+[^1]: The metadata classes described in this tutorial, unless otherwise noted, are defined in the package `firecrown.metadata`.
 
 ## LSST SRD Distribution
 
-In the LSST SRD, the redshift distribution is described by a set of parameters $\theta = (\alpha,\,\beta,\,z_0)$, where the redshift distribution is given by
+In the LSST SRD, a redshift distribution is described by a set of parameters $\theta = (\alpha,\,\beta,\,z_0)$, where the redshift distribution is given by
 $$
 P(z|\theta) = f(z;\alpha,\,\beta,\,z_0) = \frac{\alpha}{z_0\Gamma[(1+\beta)/\alpha]}\left(\frac{z}{z_0}\right)^\beta\exp\left[\left(\frac{z}{z_0}\right)^\alpha\right],
 $${#eq-fz}
@@ -38,10 +43,15 @@ P(z|B_i, \theta) &= \int_{z_{p,i}^\mathrm{low}}^{z_{p,i}^\mathrm{up}} \!\!\!\mat
 $${#eq-lsst-srd}
 where $B_i = \left(z_{p,i}^\mathrm{low}, z_{p,i}^\mathrm{up}, \sigma_z\right)$ provides the photometric redshift bin limits and the photometric redshift error in the form $\sigma_z(1+z)$.
 
-The object `ZDistLSSTSRD` in Firecrown generates the redshift distribution according to the LSST SRD. The following code block demonstrates how to use this object to generate the redshift distribution for a given set of parameters $\theta$.
+Objects of type `ZDistLSSTSRD` can be used to generate redshift distributions according to the LSST SRD.
+The following code block demonstrates how to use them to generate the redshift distributions for a given set of parameters $\theta$.[^2]
+
+[^2]: Note that the SRD fixes $\beta = 1$.
+The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
+`ZDistLLSTSRD` provides these values as defaults and allows for greater flexibility when desired.
 
 Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD.
-Here we are choosing $100$ points between $0$ and $3$ to evaluate the function $f(z)$.
+Here we are choosing $100$ equally-spaced points in the range $0 < z < 3$ at which to evaluate the function $f(z)$.
 ```{python}
 import numpy as np
 import firecrown
@@ -50,7 +60,7 @@ from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
 # These are the values of z at which we will evalute f(z)
 z = np.linspace(0, 3.0, 100)
 
-# We want to evaluate f(z) for both Y1 and Y10.
+# We want to evaluate f(z) for both Y1 and Y10, using the SRD prescriptions.
 zdist_y1 = ZDistLSSTSRD.year_1()
 zdist_y10 = ZDistLSSTSRD.year_10()
 
@@ -87,7 +97,10 @@ long = pd.melt(data, id_vars=["z"], var_name="year", value_name="fz")
 )
 ```
 
-Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$. Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points between $0$ and $0.6$.
+Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
+Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $0.6$.[^3]
+
+[^3]: Note that we are making use of several module-level constants in the `firecrown.generators.inferred_galaxy_zdist` module, namely `Y1_LENS_BINS`, `Y10_LENS_BINS`, `Y1_SOURCE_BINS`, and `Y10_SOURCE_BINS`, which are dictionaries that contain the bin edges and the resolution parameter $\sigma_z$ for the bins.
 
 ```{python}
 import numpy as np
@@ -140,6 +153,7 @@ Pz_source0_y10 = zdist_y10.binned_distribution(
     measured_type=GalaxyMeasuredType.SHEAR_E,
 )
 
+# Next we check that the objects we created are of the expected type.
 assert isinstance(Pz_lens0_y1, InferredGalaxyZDist)
 assert isinstance(Pz_lens0_y10, InferredGalaxyZDist)
 assert isinstance(Pz_source0_y1, InferredGalaxyZDist)
@@ -200,10 +214,15 @@ data = pd.concat([d_lens0_y1, d_source0_y1, d_lens0_y10, d_source0_y10])
 
 ## Generating the redshift distribution for all bins at once
 
-The `ZDistLSSTSRD` object can also be used to generate the redshift distribution for all bins at once. The following code block demonstrates how to generate the redshift distribution for all bins at once. Moreover, we also use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation, the knots are assigned such that the interpolation error is less than $10^{-5}$.
+The `ZDistLSSTSRD` object can also be used to generate the redshift distribution for all bins at once.
+The following code block demonstrates how to do this.
+Moreover, we also use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation.
+This allows us to create the knots such that the interpolation error is less than $10^{-5}$.[^4]
+
+[^4]: The `autoknots` method is a part of the NumCosmo package, which is a dependency of Firecrown.
+See [the NumCosmo documentation](https://numcosmo.github.io/manual/NcmSplineCubicNotaknot.html) for more information.
 
 ```{python}
-
 from itertools import pairwise
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
@@ -268,3 +287,9 @@ d_y1 = pd.concat(
     + doc_theme()
 )
 ```
+
+## End note
+
+Note that these facilities for creating redshift distributions are not limitations on the use of the distributions.
+Any facility that can create the $z$ and $\textrm{d}N/\textrm{d}z$  arrays can be used to create an `InferredGalaxyZDist` object.
+Code that uses the `InferrredGalaxyZDist` objects does not depend on how they were created.

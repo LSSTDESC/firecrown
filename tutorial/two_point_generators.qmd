@@ -7,30 +7,37 @@ format: html
 
 ## Purpose of this Document
 
-In the tutorial available at [Redshift Distributions tutorial](inferred_zdist_generators.html), we illustrate the process of utilizing Firecrown to create the redshift distribution based on specified parameters. 
-This document specifically outlines the utilization of the `InferredGalaxyZDist` object to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
+In the tutorial [redshift distributions](inferred_zdist_generators.html) we illustrate the process of using Firecrown to create redshift distributions based on specified parameters describing the distributions.
+This document outlines how to use `InferredGalaxyZDist` objects to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
+
+## Two-point statistics
+
+Two-point statistics are widely used in cosmological analyses.
+They provide a statistical summary of the distribution, in either real of harmonic space, of galaxies and the matter density field, or of other observables.
+In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.gauss_family.statistic.two_point`.
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
-Our initial step involves generating all bins necessary for the LSST year 1 redshift distribution.
+Our initial step involves generating all photometric redshift bins necessary for the LSST year 1 redshift distribution.
 
 ```{python}
-
 from itertools import pairwise
-import numpy as np
+
 import firecrown
+import numpy as np
 from firecrown.generators.inferred_galaxy_zdist import (
-    ZDistLSSTSRD,
-    InferredGalaxyZDist,
     Y1_LENS_BINS,
     Y1_SOURCE_BINS,
+    InferredGalaxyZDist,
+    ZDistLSSTSRD,
 )
-from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
+from firecrown.metadata.two_point import GalaxyMeasuredType, MeasuredType
 
 zdist_y1 = ZDistLSSTSRD.year_1()
 
 z = np.linspace(0.0, 1.5, 1000)
-all_y1_bins = [
+
+count_bins = [
     zdist_y1.binned_distribution(
         zpl=zpl,
         zpu=zpu,
@@ -42,7 +49,9 @@ all_y1_bins = [
         autoknots_reltol=1.0e-5,
     )
     for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
-] + [
+]
+
+shear_bins = [
     zdist_y1.binned_distribution(
         zpl=zpl,
         zpu=zpu,
@@ -55,6 +64,7 @@ all_y1_bins = [
     )
     for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
 ]
+all_y1_bins = count_bins + shear_bins
 ```
 
 ## Generating the Two-Point Metadata
@@ -88,7 +98,15 @@ Markdown(df.to_markdown())
 
 ## Defining Two-Point Statistics Factories
 
-In order to generate the two-point statistics, we need to define the factories for the weak lensing and number counts systematics. 
+In Firecrown, "systematics" are classes that are used to represent modifications to physical models which incorporate corrections for various modeling imperfections.
+Some examples are the intrinsic alignment (IA) of galaxies, the multiplicative bias of weak lensing, and photo-z shifts.
+These are represented by the classes `LinearAlignmentSystematic`,  `MultiplicativeShearBias`, and `PhotoZShift`, respectively[^1].
+Firecrown contains several factories for generating the objects that represent these systematics.
+The purpose of the factories is to ensure that each of the systematics created by a given factory are consistent.
+
+[^1]: The classes `LinearAlignmentSystematic`, `MultiplicativeShearBias`, and `PhotoZShift` are all found in the module `firecrown.likelihood.gauss_family.statistic.source.weak_lensing`.
+
+In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics. 
 These factories are responsible for generating the systematics that will be applied to the two-point statistics.
 The code below defines the factories for the weak lensing and number counts systematics:
 
