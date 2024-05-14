@@ -131,7 +131,11 @@ class Statistic(Updatable):
 
         Derived classes that override this function should make sure to call the base
         class method using:
+
+        .. code-block:: python
+
             super().read(sacc_data)
+
         as the last thing they do in `__init__`.
 
         Note that currently the argument is not used; it is present so that this
@@ -255,7 +259,9 @@ class TrivialStatistic(Statistic):
         # Data and theory will both be of length self.count
         self.count = 3
         self.data_vector: None | DataVector = None
-        self.mean = firecrown.parameters.register_new_updatable_parameter()
+        self.mean = firecrown.parameters.register_new_updatable_parameter(
+            default_value=0.0
+        )
         self.computed_theory_vector = False
 
     def read(self, sacc_data: sacc.Sacc):

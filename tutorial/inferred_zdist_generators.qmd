@@ -1,0 +1,295 @@
+---
+title: "Using Firecrown to Generate Redshift Distributions"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this document
+
+Firecrown provides facilities for creating distributions for galaxies
+$$
+P(z|B_i, \theta) \equiv \frac{\mathrm{d}n}{\mathrm{d}z}(z;B_i, \theta),
+$${#eq-Pi}
+where $B_i$ is the $i$-th bin of the photometric redshifts, and $\theta$ is a set of parameters that describe the model.
+
+In Firecrown this distribution is represented as an object of type `InferredGalaxyZDist`[^1].
+An object of this type contains the redshifts, the corresponding probabilities, and the data-type of the measurements.
+Firecrown also provides facilities to generate these distributions, given a chosen model.
+In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which can be used to generate redshift distributions according to the LSST Science Requirements Document (SRD).
+
+[^1]: The metadata classes described in this tutorial, unless otherwise noted, are defined in the package `firecrown.metadata`.
+
+## LSST SRD Distribution
+
+In the LSST SRD, a redshift distribution is described by a set of parameters $\theta = (\alpha,\,\beta,\,z_0)$, where the redshift distribution is given by
+$$
+P(z|\theta) = f(z;\alpha,\,\beta,\,z_0) = \frac{\alpha}{z_0\Gamma[(1+\beta)/\alpha]}\left(\frac{z}{z_0}\right)^\beta\exp\left[\left(\frac{z}{z_0}\right)^\alpha\right],
+$${#eq-fz}
+To obtain the distribution in each photometric redshift bin, we need to convolve this with a model for the photometric redshift errors, namely
+$$
+P(z_\mathrm{p}|z,\sigma_z) = \frac{1}{N(z)\sqrt{2\pi}\sigma_z(1+z)}\exp\left[-\frac{1}{2}\frac{(z-z_p)^2}{\sigma_z^2(1+z)^2}\right],
+$${#eq-Pzp}
+where 
+$$
+N(z) = \frac{1}{2}\mathrm{erfc}\left[-\frac{z}{\sqrt{2}\sigma_z(1+z)}\right].
+$$
+The redshift distribution (@eq-Pi) is then given by
+$$
+\begin{align}
+P(z|B_i, \theta) &= \int_{z_{p,i}^\mathrm{low}}^{z_{p,i}^\mathrm{up}} \!\!\!\mathrm{d}z_p\,P(z_p|z,\sigma_z)P(z|\theta), \\
+&= \int_{z_{p,i}^\mathrm{low}}^{z_{p,i}^\mathrm{up}} \!\!\!\mathrm{d}z_p\,\frac{1}{\sqrt{2\pi}\sigma_z(1+z)}\exp\left[-\frac{1}{2}\frac{(z-z_p)^2}{\sigma_z^2(1+z)^2}\right]f(z;\alpha,\,\beta,\,z_0).
+\end{align}
+$${#eq-lsst-srd}
+where $B_i = \left(z_{p,i}^\mathrm{low}, z_{p,i}^\mathrm{up}, \sigma_z\right)$ provides the photometric redshift bin limits and the photometric redshift error in the form $\sigma_z(1+z)$.
+
+Objects of type `ZDistLSSTSRD` can be used to generate redshift distributions according to the LSST SRD.
+The following code block demonstrates how to use them to generate the redshift distributions for a given set of parameters $\theta$.[^2]
+
+[^2]: Note that the SRD fixes $\beta = 2$.
+The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
+`ZDistLLSTSRD` provides these values as defaults and allows for greater flexibility when desired.
+
+Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD.
+Here we are choosing $100$ equally-spaced points in the range $0 < z < 3$ at which to evaluate the function $f(z)$.
+```{python}
+import numpy as np
+import firecrown
+from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
+
+# These are the values of z at which we will evalute f(z)
+z = np.linspace(0, 3.0, 100)
+
+# We want to evaluate f(z) for both Y1 and Y10, using the SRD prescriptions.
+zdist_y1 = ZDistLSSTSRD.year_1()
+zdist_y10 = ZDistLSSTSRD.year_10()
+
+# Now we can generate the values we want to plot.
+# Note that Pz_y1 and Pz_y10 are both numpy arrays:
+Pz_y1 = zdist_y1.distribution(z)
+Pz_y10 = zdist_y10.distribution(z)
+```
+
+The generated data are plotted in @fig-fz
+
+```{python}
+# | label: fig-fz
+# | fig-cap: $\textrm{d}N/\textrm{d}z$ for both Year 1 and Year 10, using the formulation from the SRD.
+# | fig-cap-location: margin
+# | code-fold: true
+from plotnine import *  # bad form in programs, but seems OK for plotnine
+import pandas as pd
+
+# The data were not originally generated in a dataframe convenient for
+# plotting, so our first task it to put them into such a form.
+# First we create a dataframe with the raw data.
+data = pd.DataFrame({"z": z, "Y1": Pz_y1, "Y10": Pz_y10})
+# Then we 'melt' the data into a longer form, which is more conveient for
+# making multiple plots on the same axes, or for making panel (faceted) plots.
+long = pd.melt(data, id_vars=["z"], var_name="year", value_name="fz")
+
+# Now we can generate the plot.
+(
+    ggplot(long, aes("z", "fz", color="year"))
+    + geom_point()
+    + labs(y="dN/dz")
+    + doc_theme()
+)
+```
+
+Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
+Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $0.6$.[^3]
+
+[^3]: Note that we are making use of several module-level constants in the `firecrown.generators.inferred_galaxy_zdist` module, namely `Y1_LENS_BINS`, `Y10_LENS_BINS`, `Y1_SOURCE_BINS`, and `Y10_SOURCE_BINS`, which are dictionaries that contain the bin edges and the resolution parameter $\sigma_z$ for the bins.
+
+```{python}
+import numpy as np
+import firecrown
+from firecrown.generators.inferred_galaxy_zdist import (
+    ZDistLSSTSRD,
+    InferredGalaxyZDist,
+    Y1_LENS_BINS,
+    Y10_LENS_BINS,
+    Y1_SOURCE_BINS,
+    Y10_SOURCE_BINS,
+)
+from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
+
+# These are the values at which we will evaluate the distribution.
+z = np.linspace(0.0, 0.6, 100)
+
+# We use the same zdist_y1 and zdist_y10 that were created above.
+# We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
+Pz_lens0_y1 = zdist_y1.binned_distribution(
+    zpl=Y1_LENS_BINS["edges"][0],
+    zpu=Y1_LENS_BINS["edges"][1],
+    sigma_z=Y1_LENS_BINS["sigma_z"],
+    z=z,
+    name="lens0_y1",
+    measured_type=GalaxyMeasuredType.COUNTS,
+)
+Pz_source0_y1 = zdist_y1.binned_distribution(
+    zpl=Y1_SOURCE_BINS["edges"][0],
+    zpu=Y1_SOURCE_BINS["edges"][1],
+    sigma_z=Y1_SOURCE_BINS["sigma_z"],
+    z=z,
+    name="source0_y1",
+    measured_type=GalaxyMeasuredType.SHEAR_E,
+)
+Pz_lens0_y10 = zdist_y10.binned_distribution(
+    zpl=Y10_LENS_BINS["edges"][0],
+    zpu=Y10_LENS_BINS["edges"][1],
+    sigma_z=Y10_LENS_BINS["sigma_z"],
+    z=z,
+    name="lens0_y10",
+    measured_type=GalaxyMeasuredType.COUNTS,
+)
+Pz_source0_y10 = zdist_y10.binned_distribution(
+    zpl=Y10_SOURCE_BINS["edges"][0],
+    zpu=Y10_SOURCE_BINS["edges"][1],
+    sigma_z=Y10_SOURCE_BINS["sigma_z"],
+    z=z,
+    name="source0_y10",
+    measured_type=GalaxyMeasuredType.SHEAR_E,
+)
+
+# Next we check that the objects we created are of the expected type.
+assert isinstance(Pz_lens0_y1, InferredGalaxyZDist)
+assert isinstance(Pz_lens0_y10, InferredGalaxyZDist)
+assert isinstance(Pz_source0_y1, InferredGalaxyZDist)
+assert isinstance(Pz_source0_y10, InferredGalaxyZDist)
+```
+
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxyZDist` objects is shown in @fig-inferred-dist.
+
+```{python}
+# | label: fig-inferred-dist
+# | fig-cap: $\textrm{d}N/\textrm{d}z$ for both Year 1 and Year 10, using the formulation from the SRD, with the binning and resolution specified above.
+# | fig-cap-location: margin
+# | code-fold: true
+# We have already imported plotnine, so we don't need to do that again.
+# This time we generate the dataframe using a different technique.
+d_lens0_y1 = pd.DataFrame(
+    {
+        "z": Pz_lens0_y1.z,
+        "dndz": Pz_lens0_y1.dndz,
+        "year": "Y1",
+        "bin_name": Pz_lens0_y1.bin_name,
+    }
+)
+d_source0_y1 = pd.DataFrame(
+    {
+        "z": Pz_source0_y1.z,
+        "dndz": Pz_source0_y1.dndz,
+        "year": "Y1",
+        "bin_name": Pz_source0_y1.bin_name,
+    }
+)
+d_lens0_y10 = pd.DataFrame(
+    {
+        "z": Pz_lens0_y10.z,
+        "dndz": Pz_lens0_y10.dndz,
+        "year": "Y10",
+        "bin_name": Pz_lens0_y10.bin_name,
+    }
+)
+d_source0_y10 = pd.DataFrame(
+    {
+        "z": Pz_source0_y10.z,
+        "dndz": Pz_source0_y10.dndz,
+        "year": "Y10",
+        "bin_name": Pz_source0_y10.bin_name,
+    }
+)
+data = pd.concat([d_lens0_y1, d_source0_y1, d_lens0_y10, d_source0_y10])
+
+(
+    ggplot(data, aes("z", "dndz", color="bin_name"))
+    + geom_point()
+    + labs(y=r"$\mathrm{d}N/\mathrm{d}z$")
+    + doc_theme()
+    + facet_wrap("~ year", nrow=2)
+)
+```
+
+## Generating the redshift distribution for all bins at once
+
+The `ZDistLSSTSRD` object can also be used to generate the redshift distribution for all bins at once.
+The following code block demonstrates how to do this.
+Moreover, we also use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation.
+This allows us to create the knots such that the interpolation error is less than $10^{-5}$.[^4]
+
+[^4]: The `autoknots` method is a part of the NumCosmo package, which is a dependency of Firecrown.
+See [the NumCosmo documentation](https://numcosmo.github.io/manual/NcmSplineCubicNotaknot.html) for more information.
+
+```{python}
+from itertools import pairwise
+
+# We use the same zdist_y1 and zdist_y10 that were created above.
+# We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
+z = np.linspace(0.0, 1.6, 1000)
+all_y1_bins = [
+    zdist_y1.binned_distribution(
+        zpl=zpl,
+        zpu=zpu,
+        sigma_z=Y1_LENS_BINS["sigma_z"],
+        z=z,
+        name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
+        measured_type=GalaxyMeasuredType.COUNTS,
+        use_autoknot=True,
+        autoknots_reltol=1.0e-5,
+    )
+    for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
+] + [
+    zdist_y1.binned_distribution(
+        zpl=zpl,
+        zpu=zpu,
+        sigma_z=Y1_SOURCE_BINS["sigma_z"],
+        z=z,
+        name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
+        measured_type=GalaxyMeasuredType.SHEAR_E,
+        use_autoknot=True,
+        autoknots_reltol=1.0e-5,
+    )
+    for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
+]
+```
+
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxyZDist` objects is shown in @fig-inferred-dist-all.
+
+```{python}
+# | label: fig-inferred-dist-all
+# | fig-cap: $\textrm{d}N/\textrm{d}z$ for all bins for LSST Year 1 using the formulation from the SRD.
+# | fig-cap-location: margin
+# | code-fold: true
+# We have already imported plotnine, so we don't need to do that again.
+# This time we generate the dataframe using a different technique.
+d_y1 = pd.concat(
+    [
+        pd.DataFrame(
+            {
+                "z": Pz.z,
+                "dndz": Pz.dndz,
+                "bin": Pz.bin_name,
+                "measured_type": Pz.measured_type,
+                "legend": f"{Pz.bin_name}, {len(Pz.z)}",
+            }
+        )
+        for Pz in all_y1_bins
+    ]
+)
+
+(
+    ggplot(d_y1, aes("z", "dndz", color="legend"))
+    + geom_point()
+    + labs(y="dN/dz")
+    + facet_wrap("~ measured_type", nrow=2)
+    + doc_theme()
+)
+```
+
+## End note
+
+Note that these facilities for creating redshift distributions are not limitations on the use of the distributions.
+Any facility that can create the $z$ and $\textrm{d}N/\textrm{d}z$  arrays can be used to create an `InferredGalaxyZDist` object.
+Code that uses the `InferrredGalaxyZDist` objects does not depend on how they were created.

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import copy
-import functools
 import warnings
 from typing import Sequence, TypedDict
 
@@ -15,18 +14,30 @@ import sacc.windows
 import scipy.interpolate
 
 from firecrown.likelihood.gauss_family.statistic.source.source import Source, Tracer
+from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import (
+    WeakLensingFactory,
+    WeakLensing,
+)
+from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+    NumberCountsFactory,
+    NumberCounts,
+)
 from firecrown.likelihood.gauss_family.statistic.statistic import (
     DataVector,
     Statistic,
     TheoryVector,
 )
 from firecrown.metadata.two_point import (
+    GalaxyMeasuredType,
+    InferredGalaxyZDist,
     TRACER_NAMES_TOTAL,
     TracerNames,
+    TwoPointCells,
     Window,
     extract_window_function,
 )
 from firecrown.modeling_tools import ModelingTools
+from firecrown.updatable import UpdatableCollection
 
 # only supported types are here, anything else will throw
 # a value error
@@ -75,7 +86,7 @@ def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
     return (edges[1:] + edges[:-1]) / 2.0
 
 
-@functools.lru_cache(maxsize=128)
+# @functools.lru_cache(maxsize=128)
 def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
     return pyccl.angular_cl(
         cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
@@ -212,6 +223,57 @@ def apply_theta_min_max(
     return thetas, xis, indices
 
 
+def use_source_factory(
+    inferred_galaxy_zdist: InferredGalaxyZDist,
+    wl_factory: WeakLensingFactory | None = None,
+    nc_factory: NumberCountsFactory | None = None,
+) -> WeakLensing | NumberCounts:
+    """Apply the factory to the inferred galaxy redshift distribution."""
+    source: WeakLensing | NumberCounts
+    match inferred_galaxy_zdist.measured_type:
+        case GalaxyMeasuredType.COUNTS:
+            assert nc_factory is not None
+            source = nc_factory.create(inferred_galaxy_zdist)
+        case GalaxyMeasuredType.SHEAR_E | GalaxyMeasuredType.SHEAR_T:
+            assert wl_factory is not None
+            source = wl_factory.create(inferred_galaxy_zdist)
+        case _:
+            raise ValueError(
+                f"Measured type {inferred_galaxy_zdist.measured_type} not supported!"
+            )
+    return source
+
+
+def create_sacc(metadata: list[TwoPointCells]):
+    """Fill the SACC file with the inferred galaxy redshift distributions."""
+    sacc_data = sacc.Sacc()
+
+    dv = []
+    for cell in metadata:
+        for inferred_galaxy_zdist in (cell.XY.x, cell.XY.y):
+            if inferred_galaxy_zdist.bin_name not in sacc_data.tracers:
+                sacc_data.add_tracer(
+                    "NZ",
+                    inferred_galaxy_zdist.bin_name,
+                    inferred_galaxy_zdist.z,
+                    inferred_galaxy_zdist.dndz,
+                )
+        cells = np.ones_like(cell.ells)
+        sacc_data.add_ell_cl(
+            cell.get_sacc_name(),
+            cell.XY.x.bin_name,
+            cell.XY.y.bin_name,
+            ell=cell.ells,
+            x=cells,
+        )
+        dv.append(cells)
+
+    delta_v = np.concatenate(dv, axis=0)
+    sacc_data.add_covariance(np.diag(np.ones_like(delta_v)))
+
+    return sacc_data
+
+
 class TwoPoint(Statistic):
     """A two-point statistic.
 
@@ -345,6 +407,36 @@ class TwoPoint(Statistic):
             raise ValueError(
                 f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
             )
+
+    @classmethod
+    def from_metadata_cells(
+        cls,
+        metadata: list[TwoPointCells],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create a TwoPoint statistic from a TwoPointCells metadata object."""
+        sacc_data = create_sacc(metadata)
+
+        two_point_list = [
+            cls(
+                cell.get_sacc_name(),
+                use_source_factory(
+                    cell.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+                ),
+                use_source_factory(
+                    cell.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+                ),
+            )
+            for cell in metadata
+        ]
+
+        for two_point in two_point_list:
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                two_point.read(sacc_data)
+
+        return UpdatableCollection(two_point_list)
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
@@ -526,6 +618,7 @@ class TwoPoint(Statistic):
         assert self.ells_for_xi is not None
 
         self.cells = {}
+        print(self.source0.parameter_prefix, self.source1.parameter_prefix)
         cells_for_xi = self.compute_cells(
             self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
         )

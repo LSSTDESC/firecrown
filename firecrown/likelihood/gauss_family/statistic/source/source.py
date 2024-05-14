@@ -204,6 +204,9 @@ _SourceGalaxySystematicT = TypeVar(
 )
 
 
+SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
+
+
 class SourceGalaxyPhotoZShift(
     SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
 ):
@@ -226,7 +229,9 @@ class SourceGalaxyPhotoZShift(
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.delta_z = parameters.register_new_updatable_parameter()
+        self.delta_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+        )
 
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift to the photo-z distribution of a source."""

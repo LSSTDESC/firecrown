@@ -16,6 +16,8 @@ from firecrown.likelihood.gauss_family.statistic.statistic import (
 )
 from firecrown.modeling_tools import ModelingTools
 
+SNIA_DEFAULT_M = -19.2
+
 
 class Supernova(Statistic):
     """A supernova statistic.
@@ -31,7 +33,9 @@ class Supernova(Statistic):
         self.sacc_tracer = sacc_tracer
         self.data_vector: None | DataVector = None
         self.a: None | npt.NDArray[np.float64] = None
-        self.M = parameters.register_new_updatable_parameter()
+        self.M = parameters.register_new_updatable_parameter(
+            default_value=SNIA_DEFAULT_M
+        )
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""

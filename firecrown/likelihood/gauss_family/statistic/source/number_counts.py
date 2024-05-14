@@ -60,6 +60,11 @@ class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
     """Systematic to select 3D field."""
 
 
+LINEAR_BIAS_DEFAULT_ALPHAZ = 0.0
+LINEAR_BIAS_DEFAULT_ALPHAG = 1.0
+LINEAR_BIAS_DEFAULT_Z_PIV = 0.5
+
+
 class LinearBiasSystematic(NumberCountsSystematic):
     """Linear bias systematic.
 
@@ -84,9 +89,15 @@ class LinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.alphaz = parameters.register_new_updatable_parameter()
-        self.alphag = parameters.register_new_updatable_parameter()
-        self.z_piv = parameters.register_new_updatable_parameter()
+        self.alphaz = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_BIAS_DEFAULT_ALPHAZ
+        )
+        self.alphag = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_BIAS_DEFAULT_ALPHAG
+        )
+        self.z_piv = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_BIAS_DEFAULT_Z_PIV
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -118,6 +129,10 @@ class LinearBiasSystematic(NumberCountsSystematic):
         )
 
 
+PT_NON_LINEAR_BIAS_DEFAULT_B_2 = 1.0
+PT_NON_LINEAR_BIAS_DEFAULT_B_S = 1.0
+
+
 class PTNonLinearBiasSystematic(NumberCountsSystematic):
     """Non-linear bias systematic.
 
@@ -141,8 +156,12 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.b_2 = parameters.register_new_updatable_parameter()
-        self.b_s = parameters.register_new_updatable_parameter()
+        self.b_2 = parameters.register_new_updatable_parameter(
+            default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
+        )
+        self.b_s = parameters.register_new_updatable_parameter(
+            default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_S
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -221,6 +240,9 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         )
 
 
+CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS = 1.0
+
+
 class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     """Simple constant magnification bias systematic.
 
@@ -242,7 +264,9 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mag_bias = parameters.register_new_updatable_parameter()
+        self.mag_bias = parameters.register_new_updatable_parameter(
+            default_value=CONSTANT_MAGNIFICATION_BIAS_DEFAULT_MAG_BIAS
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -251,6 +275,9 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
             tracer_arg,
             mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z) * self.mag_bias),
         )
+
+
+NUMBER_COUNTS_DEFAULT_BIAS = 1.5
 
 
 class NumberCounts(SourceGalaxy[NumberCountsArgs]):
@@ -281,7 +308,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         self.has_rsd = has_rsd
         self.derived_scale = derived_scale
 
-        self.bias = parameters.register_new_updatable_parameter()
+        self.bias = parameters.register_new_updatable_parameter(
+            default_value=NUMBER_COUNTS_DEFAULT_BIAS
+        )
         self.systematics: UpdatableCollection[
             SourceGalaxySystematic[NumberCountsArgs]
         ] = UpdatableCollection(systematics)
@@ -356,7 +385,9 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         )
         super()._read(sacc_data)
 
-    def create_tracers(self, tools: ModelingTools):
+    def create_tracers(
+        self, tools: ModelingTools
+    ) -> tuple[list[Tracer], NumberCountsArgs]:
         """Create the tracers for this source."""
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
@@ -429,8 +460,57 @@ class NumberCountsSystematicFactory:
     """Factory class for NumberCountsSystematic objects."""
 
     @abstractmethod
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCountsSystematic:
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> SourceGalaxySystematic[NumberCountsArgs]:
         """Create a NumberCountsSystematic object with the given tracer name."""
+
+
+class PhotoZShiftFactory(NumberCountsSystematicFactory):
+    """Factory class for PhotoZShift objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        return PhotoZShift(inferred_zdist.bin_name)
+
+
+class LinearBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for LinearBiasSystematic objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> LinearBiasSystematic:
+        """Create a LinearBiasSystematic object with the given tracer name."""
+        return LinearBiasSystematic(inferred_zdist.bin_name)
+
+
+class PTNonLinearBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for PTNonLinearBiasSystematic objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> PTNonLinearBiasSystematic:
+        """Create a PTNonLinearBiasSystematic object with the given tracer name."""
+        return PTNonLinearBiasSystematic(inferred_zdist.bin_name)
+
+
+class MagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for MagnificationBiasSystematic objects."""
+
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> MagnificationBiasSystematic:
+        """Create a MagnificationBiasSystematic object with the given tracer name."""
+        return MagnificationBiasSystematic(inferred_zdist.bin_name)
+
+
+class ConstantMagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
+    """Factory class for ConstantMagnificationBiasSystematic objects."""
+
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> ConstantMagnificationBiasSystematic:
+        """Create a ConstantMagnificationBiasSystematic object.
+
+        Use the inferred_zdist to create the systematic.
+        """
+        return ConstantMagnificationBiasSystematic(inferred_zdist.bin_name)
 
 
 class NumberCountsFactory:
@@ -441,16 +521,18 @@ class NumberCountsFactory:
         per_bin_systematics: list[NumberCountsSystematicFactory],
         global_systematics: Sequence[NumberCountsSystematic],
     ) -> None:
+        """Initialize the NumberCountsFactory."""
         self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
             per_bin_systematics
         )
         self.global_systematics: Sequence[NumberCountsSystematic] = global_systematics
-        self.cache: dict[str, NumberCounts] = {}
+        self.cache: dict[int, NumberCounts] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
-        if inferred_zdist.bin_name in self.cache:
-            return self.cache[inferred_zdist.bin_name]
+        inferred_zdist_id = id(inferred_zdist)
+        if inferred_zdist_id in self.cache:
+            return self.cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
             systematic_factory.create(inferred_zdist)
@@ -459,6 +541,6 @@ class NumberCountsFactory:
         systematics.extend(self.global_systematics)
 
         nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
-        self.cache[inferred_zdist.bin_name] = nc
+        self.cache[inferred_zdist_id] = nc
 
         return nc

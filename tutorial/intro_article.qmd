@@ -1,18 +1,8 @@
 ---
 title: "An Introduction to Firecrown"
-subtitle: "Version 1.8.0a0"
-author:
-  - Marc Paterno
-  - Sandro Vitenti
 execute:
   eval: false
-format:
-  html:
-    toc: true
-    theme: [serif, custom.scss]
-    code-overflow: wrap
-reference-location: margin
-citation-location: margin
+format: html
 ---
 
 ## Prologue

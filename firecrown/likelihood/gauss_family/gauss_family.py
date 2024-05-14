@@ -226,19 +226,19 @@ class GaussFamily(Likelihood):
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
         self.inv_cov = np.linalg.inv(cov)
 
+    @final
     @enforce_states(
         initial=[State.READY, State.UPDATED, State.COMPUTED],
         failure_message="read() must be called before get_cov()",
     )
-    @final
     def get_cov(
         self, statistic: Statistic | list[Statistic] | None = None
     ) -> npt.NDArray[np.float64]:
         """Gets the current covariance matrix.
 
         :param statistic: The statistic for which the sub-covariance matrix
-        should be return. If not specified, return the covariance of all
-        statistics.
+            should be returned. If not specified, return the covariance of all
+            statistics.
         """
         assert self.cov is not None
         if statistic is None:

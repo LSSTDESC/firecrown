@@ -20,7 +20,7 @@ from yaml import CDumper as Dumper
 import sacc
 from sacc.data_types import required_tags
 
-from firecrown.utils import upper_triangle_indices, compare_optional_arrays
+from firecrown.utils import compare_optional_arrays
 
 ST = TypeVar("ST")  # This will be used in YAMLSerializable
 
@@ -786,19 +786,11 @@ SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 def make_all_photoz_bin_combinations(
     inferred_galaxy_zdists: list[InferredGalaxyZDist],
 ) -> list[TwoPointXY]:
-    """Extracts the two-point function metadata from a sacc file."""
-    inferred_galaxy_zdists_len = len(inferred_galaxy_zdists)
-
+    """Extract the two-point function metadata from a sacc file."""
     bin_combinations = [
-        TwoPointXY(
-            x=inferred_galaxy_zdists[i],
-            y=inferred_galaxy_zdists[j],
-        )
-        for i, j in upper_triangle_indices(inferred_galaxy_zdists_len)
-        if measured_type_is_compatible(
-            inferred_galaxy_zdists[i].measured_type,
-            inferred_galaxy_zdists[j].measured_type,
-        )
+        TwoPointXY(x=igz1, y=igz2)
+        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
+        if measured_type_is_compatible(igz1.measured_type, igz2.measured_type)
     ]
 
     return bin_combinations

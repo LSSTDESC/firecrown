@@ -87,10 +87,14 @@ class TypeString:
 
     TypeString provides several different means of validation of the controlled
     string attribute, all of which are optional.
-        `minsize` provides a required minimum length for the string
-        `maxsize` provides a required maximum length for the string
-        `predicate` allows specification of a function that must return true
-            when a string is provided to allow use of that string.
+
+    `minsize` provides a required minimum length for the string.
+
+
+    `maxsize` provides a required maximum length for the string
+
+    `predicate` allows specification of a function that must return true
+    when a string is provided to allow use of that string.
     """
 
     def __init__(

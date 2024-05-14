@@ -60,6 +60,9 @@ class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
     """Systematic to select 3D field."""
 
 
+MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS = 1.0
+
+
 class MultiplicativeShearBias(WeakLensingSystematic):
     """Multiplicative shear bias systematic.
 
@@ -80,7 +83,9 @@ class MultiplicativeShearBias(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.mult_bias = parameters.register_new_updatable_parameter()
+        self.mult_bias = parameters.register_new_updatable_parameter(
+            default_value=MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -98,6 +103,12 @@ class MultiplicativeShearBias(WeakLensingSystematic):
             tracer_arg,
             scale=tracer_arg.scale * (1.0 + self.mult_bias),
         )
+
+
+LINEAR_ALIGNMENT_DEFAULT_IA_BIAS = 0.5
+LINEAR_ALIGNMENT_DEFAULT_ALPHAZ = 0.0
+LINEAR_ALIGNMENT_DEFAULT_ALPHAG = 1.0
+LINEAR_ALIGNMENT_DEFAULT_Z_PIV = 0.5
 
 
 class LinearAlignmentSystematic(WeakLensingSystematic):
@@ -125,10 +136,18 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.ia_bias = parameters.register_new_updatable_parameter()
-        self.alphaz = parameters.register_new_updatable_parameter()
-        self.alphag = parameters.register_new_updatable_parameter(alphag)
-        self.z_piv = parameters.register_new_updatable_parameter()
+        self.ia_bias = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_IA_BIAS
+        )
+        self.alphaz = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAZ
+        )
+        self.alphag = parameters.register_new_updatable_parameter(
+            alphag, default_value=LINEAR_ALIGNMENT_DEFAULT_ALPHAG
+        )
+        self.z_piv = parameters.register_new_updatable_parameter(
+            default_value=LINEAR_ALIGNMENT_DEFAULT_Z_PIV
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -153,6 +172,11 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         )
 
 
+TATT_ALIGNMENT_DEFAULT_IA_A_1 = 1.0
+TATT_ALIGNMENT_DEFAULT_IA_A_2 = 0.5
+TATT_ALIGNMENT_DEFAULT_IA_A_D = 0.5
+
+
 class TattAlignmentSystematic(WeakLensingSystematic):
     """TATT alignment systematic.
 
@@ -174,9 +198,15 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             as a prefix for its parameters.
         """
         super().__init__(parameter_prefix=sacc_tracer)
-        self.ia_a_1 = parameters.register_new_updatable_parameter()
-        self.ia_a_2 = parameters.register_new_updatable_parameter()
-        self.ia_a_d = parameters.register_new_updatable_parameter()
+        self.ia_a_1 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
+        )
+        self.ia_a_2 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
+        )
+        self.ia_a_d = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
+        )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -316,8 +346,31 @@ class WeakLensingSystematicFactory:
     """Factory class for WeakLensingSystematic objects."""
 
     @abstractmethod
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensingSystematic:
+    def create(
+        self, inferred_zdist: InferredGalaxyZDist
+    ) -> SourceGalaxySystematic[WeakLensingArgs]:
         """Create a WeakLensingSystematic object with the given tracer name."""
+
+
+class MultiplicativeShearBiasFactory(WeakLensingSystematicFactory):
+    """Factory class for MultiplicativeShearBias objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> MultiplicativeShearBias:
+        return MultiplicativeShearBias(inferred_zdist.bin_name)
+
+
+class TattAlignmentSystematicFactory(WeakLensingSystematicFactory):
+    """Factory class for TattAlignmentSystematic objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> TattAlignmentSystematic:
+        return TattAlignmentSystematic(inferred_zdist.bin_name)
+
+
+class PhotoZShiftFactory(WeakLensingSystematicFactory):
+    """Factory class for PhotoZShift objects."""
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+        return PhotoZShift(inferred_zdist.bin_name)
 
 
 class WeakLensingFactory:
@@ -332,12 +385,13 @@ class WeakLensingFactory:
             per_bin_systematics
         )
         self.global_systematics: Sequence[WeakLensingSystematic] = global_systematics
-        self.cache: dict[str, WeakLensing] = {}
+        self.cache: dict[int, WeakLensing] = {}
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
-        if inferred_zdist.bin_name in self.cache:
-            return self.cache[inferred_zdist.bin_name]
+        inferred_zdist_id = id(inferred_zdist)
+        if inferred_zdist_id in self.cache:
+            return self.cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
             systematic_factory.create(inferred_zdist)
@@ -346,6 +400,6 @@ class WeakLensingFactory:
         systematics.extend(self.global_systematics)
 
         wl = WeakLensing.create_ready(inferred_zdist, systematics)
-        self.cache[inferred_zdist.bin_name] = wl
+        self.cache[inferred_zdist_id] = wl
 
         return wl

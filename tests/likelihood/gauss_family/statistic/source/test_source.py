@@ -18,7 +18,11 @@ from firecrown.likelihood.gauss_family.statistic.source.source import (
 )
 import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
 import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-from firecrown.metadata.two_point import extract_all_tracers
+from firecrown.metadata.two_point import (
+    extract_all_tracers,
+    InferredGalaxyZDist,
+    GalaxyMeasuredType,
+)
 from firecrown.parameters import ParamsMap
 
 
@@ -29,6 +33,46 @@ class TrivialTracer(Tracer):
 @pytest.fixture(name="empty_pyccl_tracer")
 def fixture_empty_pyccl_tracer():
     return pyccl.Tracer()
+
+
+@pytest.fixture(
+    name="nc_sys_factory",
+    params=[
+        nc.PhotoZShiftFactory(),
+        nc.LinearBiasSystematicFactory(),
+        nc.PTNonLinearBiasSystematicFactory(),
+        nc.MagnificationBiasSystematicFactory(),
+        nc.ConstantMagnificationBiasSystematicFactory(),
+    ],
+    ids=[
+        "PhotoZShiftFactory",
+        "LinearBiasSystematicFactory",
+        "PTNonLinearBiasSystematicFactory",
+        "MagnificationBiasSystematicFactory",
+        "ConstantMagnificationBiasSystematicFactory",
+    ],
+)
+def fixture_nc_sys_factory(request):
+    """Fixture for the NumberCountsSystematicFactory class."""
+    return request.param
+
+
+@pytest.fixture(
+    name="wl_sys_factory",
+    params=[
+        wl.MultiplicativeShearBiasFactory(),
+        wl.TattAlignmentSystematicFactory(),
+        wl.PhotoZShiftFactory(),
+    ],
+    ids=[
+        "MultiplicativeShearBiasFactory",
+        "TattAlignmentSystematicFactory",
+        "PhotoZShiftFactory",
+    ],
+)
+def fixture_wl_sys_factory(request):
+    """Fixture for the WeakLensingSystematicFactory class."""
+    return request.param
 
 
 class TrivialSourceGalaxyArgs(SourceGalaxyArgs):
@@ -290,3 +334,25 @@ def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
     source = nc.NumberCounts(sacc_tracer="lens10")
     with pytest.raises(KeyError, match="lens10"):
         source.read(sacc_data)
+
+
+def test_number_counts_systematic_factory(nc_sys_factory):
+    bin_1 = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([1.0]),
+        dndz=np.array([1.0]),
+        measured_type=GalaxyMeasuredType.COUNTS,
+    )
+    sys_pz_shift = nc_sys_factory.create(bin_1)
+    assert sys_pz_shift.parameter_prefix == "bin_1"
+
+
+def test_weak_lensing_systematic_factory(wl_sys_factory):
+    bin_1 = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([1.0]),
+        dndz=np.array([1.0]),
+        measured_type=GalaxyMeasuredType.SHEAR_E,
+    )
+    sys_pz_shift = wl_sys_factory.create(bin_1)
+    assert sys_pz_shift.parameter_prefix == "bin_1"

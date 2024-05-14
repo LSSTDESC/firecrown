@@ -150,9 +150,20 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     assert isinstance(s0, TwoPoint)
     ells = s0.ells_for_xi
     cells_GG = s0.cells[TracerNames("shear", "shear")]
-    cells_GI = s0.cells[TracerNames("shear", "intrinsic_pt")]
+    cells_GI = s0.cells[TracerNames("intrinsic_pt", "shear")]
     cells_II = s0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
     cells_cs_total = s0.cells[TRACER_NAMES_TOTAL]
+
+    s1 = likelihood.statistics[1].statistic
+    # del weak_lensing_source.cosmo_hash
+    s1.cells = {}
+    s1.compute_theory_vector(modeling_tools)
+    assert isinstance(s1, TwoPoint)
+    ells = s1.ells_for_xi
+    cells_GG_m = s1.cells[TracerNames("shear", "shear")]
+    cells_GI_m = s1.cells[TracerNames("shear", "intrinsic_pt")]
+    cells_II_m = s1.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
+    cells_cs_total_m = s1.cells[TRACER_NAMES_TOTAL]
 
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
@@ -208,9 +219,16 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cl_cs_theory = cl_GG + 2 * cl_GI + cl_II
     cl_gg_theory = cl_gg + 2 * cl_gm + cl_mm
 
+    print("IDS: ", id(s0), id(s1))
+
+    assert np.allclose(cells_GG, cells_GG_m, atol=0, rtol=1e-127)
+
     assert np.allclose(cl_GG, cells_GG, atol=0, rtol=1e-7)
+    assert np.allclose(cl_GG, cells_GG_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_GI, cells_GI, atol=0, rtol=1e-7)
+    assert np.allclose(cl_GI, cells_GI_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_II, cells_II, atol=0, rtol=1e-7)
+    assert np.allclose(cl_II, cells_II_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
     assert np.allclose(cl_gg, cells_gg, atol=0, rtol=1e-7)
@@ -218,6 +236,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     assert np.allclose(cl_gm, cells_gm, atol=0, rtol=1e-7)
     assert np.allclose(cl_mm, cells_mm, atol=0, rtol=1e-7)
     assert np.allclose(cl_cs_theory, cells_cs_total, atol=0, rtol=1e-7)
+    assert np.allclose(cl_cs_theory, cells_cs_total_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_gg_theory, cells_gg_total, atol=0, rtol=1e-7)
 
 

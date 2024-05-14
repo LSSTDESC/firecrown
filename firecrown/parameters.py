@@ -50,6 +50,18 @@ class ParamsMap(dict[str, float]):
         """
         self.lower_case = enable
 
+    def get_from_full_name(self, full_name: str) -> float:
+        """Return the parameter identified by the full name.
+
+        Raises a KeyError if the parameter is not found.
+        """
+        if self.lower_case:
+            full_name = full_name.lower()
+
+        if full_name in self.keys():
+            return self[full_name]
+        raise KeyError(f"Key {full_name} not found.")
+
     def get_from_prefix_param(self, prefix: None | str, param: str) -> float:
         """Return the parameter identified by the optional prefix and parameter name.
 
@@ -57,14 +69,8 @@ class ParamsMap(dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         fullname = parameter_get_full_name(prefix, param)
-        if self.lower_case:
-            fullname = fullname.lower()
 
-        if fullname in self.keys():
-            return self[fullname]
-        raise KeyError(
-            f"Prefix `{prefix}`, param `{param}', key `{fullname}' not found."
-        )
+        return self.get_from_full_name(fullname)
 
 
 class RequiredParameters:
@@ -80,13 +86,13 @@ class RequiredParameters:
     which implements lazy evaluation.
     """
 
-    def __init__(self, params_names: Iterable[str]):
+    def __init__(self, params: Iterable[SamplerParameter]):
         """Construct an instance from an Iterable yielding strings."""
-        self.params_names: set[str] = set(params_names)
+        self.params_set: set[SamplerParameter] = set(params)
 
     def __len__(self):
         """Return the number of parameters contained."""
-        return len(self.params_names)
+        return len(self.params_set)
 
     def __add__(self, other: RequiredParameters) -> RequiredParameters:
         """Return a new RequiredParameters with the concatenated names.
@@ -94,7 +100,7 @@ class RequiredParameters:
         Note that this function returns a new object that does not share state
         with either argument to the addition operator.
         """
-        return RequiredParameters(self.params_names | other.params_names)
+        return RequiredParameters(self.params_set | other.params_set)
 
     def __eq__(self, other: object):
         """Compare two RequiredParameters objects for equality.
@@ -110,12 +116,23 @@ class RequiredParameters:
             raise TypeError(
                 f"Cannot compare a RequiredParameter to an object of type {n}"
             )
-        return self.params_names == other.params_names
+        return self.params_set == other.params_set
 
     def get_params_names(self) -> Iterator[str]:
         """Implement lazy iteration through the contained parameter names."""
-        params_names_set = set(self.params_names)
+        params_names_set = set(parameter.fullname for parameter in self.params_set)
         yield from params_names_set
+
+    def get_default_values(self) -> dict[str, float]:
+        """Return a dictionary with the default values of the parameters."""
+        default_values = {}
+        for parameter in self.params_set:
+            default_value = parameter.get_default_value()
+            if default_value is None:
+                raise ValueError(f"Parameter {parameter.fullname} has no default value")
+            default_values[parameter.fullname] = default_value
+
+        return default_values
 
 
 class DerivedParameter:
@@ -247,12 +264,30 @@ class DerivedParameterCollection:
 class SamplerParameter:
     """Class to represent a sampler defined parameter."""
 
-    def __init__(self):
+    def __init__(
+        self,
+        *,
+        default_value: None | float = None,
+        name: None | str = None,
+        prefix: None | str = None,
+    ):
         """Creates a new SamplerParameter instance.
 
         This represents a parameter having its value defined by the sampler.
         """
         self.value: None | float = None
+        self._prefix: None | str = prefix
+        self._name: None | str = name
+        if default_value is not None:
+            self.default_value: None | float = default_value
+        else:
+            warnings.simplefilter("always", DeprecationWarning)
+            warnings.warn(
+                "The default_value argument as optional argument is deprecated. "
+                "All parameters should be created with a default value.",
+                category=DeprecationWarning,
+            )
+            self.default_value = None
 
     def set_value(self, value: float):
         """Set the value of this parameter.
@@ -265,6 +300,57 @@ class SamplerParameter:
         """Get the current value of this parameter."""
         assert self.value is not None
         return self.value
+
+    def get_default_value(self) -> None | float:
+        """Get the default value of this parameter."""
+        return self.default_value
+
+    def set_fullname(self, prefix: str | None, name: str):
+        """Set the prefix of this parameter.
+
+        :param prefix: new prefix
+        """
+        self._prefix = prefix
+        self._name = name
+
+    @property
+    def prefix(self) -> str | None:
+        """Get the prefix of this parameter."""
+        return self._prefix
+
+    @property
+    def name(self) -> str:
+        """Get the name of this parameter."""
+        if self._name is None:
+            raise ValueError("Parameter name is not set")
+        return self._name
+
+    @property
+    def fullname(self) -> str:
+        """Get the full name of this parameter."""
+        return parameter_get_full_name(self.prefix, self.name)
+
+    def __hash__(self) -> int:
+        """Return the hash of the full name of this parameter."""
+        return hash(self.fullname)
+
+    def __eq__(self, other: object) -> bool:
+        """Return whether this parameter is equal to another.
+
+        Two SamplerParameter objects are equal if they have the same full name.
+        """
+        if not isinstance(other, SamplerParameter):
+            raise NotImplementedError(
+                f"SamplerParameter comparison is only implemented for "
+                f"SamplerParameter objects, received {type(other)}"
+            )
+        return (
+            self.fullname == other.fullname
+            and self.default_value == other.default_value
+            and self.value == other.value
+            and self._prefix == other._prefix
+            and self._name == other._name
+        )
 
 
 class InternalParameter:
@@ -306,7 +392,9 @@ def create(value: None | float = None):
     return register_new_updatable_parameter(value)
 
 
-def register_new_updatable_parameter(value: None | float = None):
+def register_new_updatable_parameter(
+    value: None | float = None, *, default_value: None | float = None
+):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
@@ -318,7 +406,7 @@ def register_new_updatable_parameter(value: None | float = None):
     Only `None` or a `float` value is allowed.
     """
     if value is None:
-        return SamplerParameter()
+        return SamplerParameter(default_value=default_value)
     if not isinstance(value, float):
         raise TypeError(
             f"parameter.create() requires a float parameter or none, "

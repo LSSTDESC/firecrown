@@ -19,6 +19,7 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
+    SamplerParameter,
 )
 
 
@@ -254,7 +255,9 @@ def test_required_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
-    expected_params = RequiredParameters(params_names=["mean"])
+    expected_params = RequiredParameters(
+        params=[SamplerParameter(name="mean", default_value=0.0)]
+    )
     assert likelihood.required_parameters() == expected_params
 
 

@@ -3,12 +3,14 @@ introduction_to_firecrown_files/
 intro_article.pdf
 intro_article.html
 intro_article.epub
+intro_article.html
 intro_article_files/
 .Rproj.user
 .Rhistory
 development_example.html
 development_example_files
-intro_article.html
+inferred_zdist_generators.html
+inferred_zdist_generators_files/
 *.html.md
 *.revealjs.md
 
