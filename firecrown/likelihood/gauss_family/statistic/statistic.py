@@ -131,7 +131,11 @@ class Statistic(Updatable):
 
         Derived classes that override this function should make sure to call the base
         class method using:
+
+        .. code-block:: python
+
             super().read(sacc_data)
+
         as the last thing they do in `__init__`.
 
         Note that currently the argument is not used; it is present so that this

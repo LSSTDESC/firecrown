@@ -237,8 +237,8 @@ class GaussFamily(Likelihood):
         """Gets the current covariance matrix.
 
         :param statistic: The statistic for which the sub-covariance matrix
-        should be returned. If not specified, return the covariance of all
-        statistics.
+            should be returned. If not specified, return the covariance of all
+            statistics.
         """
         assert self.cov is not None
         if statistic is None:
