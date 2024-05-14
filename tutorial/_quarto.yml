@@ -45,6 +45,8 @@ format:
     theme: [serif, custom.scss]
     toc: true
     code-overflow: wrap
+    grid:
+      body-width: 1200px
 
 reference-location: margin
 citation-location: margin

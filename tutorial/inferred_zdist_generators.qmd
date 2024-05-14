@@ -46,7 +46,7 @@ where $B_i = \left(z_{p,i}^\mathrm{low}, z_{p,i}^\mathrm{up}, \sigma_z\right)$ p
 Objects of type `ZDistLSSTSRD` can be used to generate redshift distributions according to the LSST SRD.
 The following code block demonstrates how to use them to generate the redshift distributions for a given set of parameters $\theta$.[^2]
 
-[^2]: Note that the SRD fixes $\beta = 1$.
+[^2]: Note that the SRD fixes $\beta = 2$.
 The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
 `ZDistLLSTSRD` provides these values as defaults and allows for greater flexibility when desired.
 
@@ -119,7 +119,7 @@ from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
 z = np.linspace(0.0, 0.6, 100)
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
-# We create two GalaxyInferredZDist objects, one for Y1 and one for Y10.
+# We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
 Pz_lens0_y1 = zdist_y1.binned_distribution(
     zpl=Y1_LENS_BINS["edges"][0],
     zpu=Y1_LENS_BINS["edges"][1],
@@ -160,7 +160,7 @@ assert isinstance(Pz_source0_y1, InferredGalaxyZDist)
 assert isinstance(Pz_source0_y10, InferredGalaxyZDist)
 ```
 
-The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `GalaxyInferredZDist` objects is shown in @fig-inferred-dist.
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxyZDist` objects is shown in @fig-inferred-dist.
 
 ```{python}
 # | label: fig-inferred-dist
@@ -206,7 +206,7 @@ data = pd.concat([d_lens0_y1, d_source0_y1, d_lens0_y10, d_source0_y10])
 (
     ggplot(data, aes("z", "dndz", color="bin_name"))
     + geom_point()
-    + labs(y="$\mathrm{d}N/\mathrm{d}z$")
+    + labs(y=r"$\mathrm{d}N/\mathrm{d}z$")
     + doc_theme()
     + facet_wrap("~ year", nrow=2)
 )
@@ -226,7 +226,7 @@ See [the NumCosmo documentation](https://numcosmo.github.io/manual/NcmSplineCubi
 from itertools import pairwise
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
-# We create two GalaxyInferredZDist objects, one for Y1 and one for Y10.
+# We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
 z = np.linspace(0.0, 1.6, 1000)
 all_y1_bins = [
     zdist_y1.binned_distribution(
@@ -255,7 +255,7 @@ all_y1_bins = [
 ]
 ```
 
-The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `GalaxyInferredZDist` objects is shown in @fig-inferred-dist-all.
+The plot of the $\textrm{d}N/\textrm{d}z$ distributions in these `InferredGalaxyZDist` objects is shown in @fig-inferred-dist-all.
 
 ```{python}
 # | label: fig-inferred-dist-all
