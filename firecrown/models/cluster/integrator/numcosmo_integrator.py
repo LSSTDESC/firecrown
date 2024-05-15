@@ -56,7 +56,7 @@ class NumCosmoIntegrator(Integrator):
 
         bl, bu = zip(*self.integral_bounds)
         int_nd.eval(Ncm.Vector.new_array(bl), Ncm.Vector.new_array(bu), res, err)
-        return res.get(0)
+        return res.get(0)  # pylint: disable-msg=no-member
 
 
 class CountsIntegralND(Ncm.IntegralND):
@@ -83,12 +83,12 @@ class CountsIntegralND(Ncm.IntegralND):
     # pylint: disable-next=arguments-differ
     def do_integrand(
         self,
-        x_vec: Ncm.Vector,
+        x: Ncm.Vector,
         dim: int,
         npoints: int,
         _fdim: int,
-        fval_vec: Ncm.Vector,
+        fval: Ncm.Vector,
     ) -> None:
         """Called by NumCosmo to evaluate the integrand."""
-        x = np.array(x_vec.dup_array()).reshape(npoints, dim)
-        fval_vec.set_array(list(self.fun(x, self.extra_args)))
+        x_array = np.array(x.dup_array()).reshape(npoints, dim)
+        fval.set_array(list(self.fun(x_array, self.extra_args)))
