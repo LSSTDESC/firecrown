@@ -152,7 +152,7 @@ class ZDistLSSTSRD:
                 / norma
             )
         else:
-            s = Ncm.SplineCubicNotaknot.new()
+            s = Ncm.SplineCubicNotaknot()
             s.set_func1(
                 Ncm.SplineFuncType.FUNCTION_SPLINE,
                 _P,
@@ -162,8 +162,11 @@ class ZDistLSSTSRD:
                 0,
                 autoknots_reltol,
             )
-            z_knots = np.array(s.peek_xv().dup_array())
-            dndz = np.array(s.peek_yv().dup_array()) / norma
+            z_knots = np.array(s.peek_xv().dup_array())  # pylint: disable-msg=no-member
+            dndz = (
+                np.array(s.peek_yv().dup_array())  # pylint: disable-msg=no-member
+                / norma
+            )
 
         return InferredGalaxyZDist(
             bin_name=name, z=z_knots, dndz=dndz, measured_type=measured_type

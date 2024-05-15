@@ -572,15 +572,15 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.ccl_cosmo = None
         self.dof = nrows
         self.len = nrows
-        self.peek_cov().set_from_array(
+        self.peek_cov().set_from_array(  # pylint: disable-msg=no-member
             cov.flatten().tolist()
-        )  # pylint: disable-msg=no-member
+        )
 
         data_vector = self.likelihood.get_data_vector()
         assert len(data_vector) == ncols
-        self.peek_mean().set_array(
+        self.peek_mean().set_array(  # pylint: disable-msg=no-member
             data_vector.tolist()
-        )  # pylint: disable-msg=no-member
+        )
 
         self.set_init(True)
 
@@ -724,14 +724,14 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.tools.prepare(self.ccl_cosmo)
 
     # pylint: disable-next=arguments-differ
-    def do_mean_func(self, _, mean_vector):
+    def do_mean_func(self, _, vp):
         """Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
 
         This method should compute the theoretical mean for the gaussian
         distribution.
         """
         theory_vector = self.likelihood.compute_theory_vector(self.tools)
-        mean_vector.set_array(theory_vector)
+        vp.set_array(theory_vector)
 
 
 # These commands creates GObject types for the defined classes, enabling their use
