@@ -119,14 +119,14 @@ NcmModelBuilder:
 
     ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
     mb_model1: Ncm.ModelBuilder = cast(
-        Ncm.ModelBuilder, ser.from_yaml(my_model1_dc_yaml)
+        Ncm.ModelBuilder, ser.from_yaml(my_model1_dc_yaml)  # pylint: disable=no-member
     )
     assert isinstance(mb_model1, Ncm.ModelBuilder)
     model1_type = mb_model1.create()
     GObject.new(model1_type)
 
     mb_model2: Ncm.ModelBuilder = cast(
-        Ncm.ModelBuilder, ser.from_yaml(my_model2_dc_yaml)
+        Ncm.ModelBuilder, ser.from_yaml(my_model2_dc_yaml)  # pylint: disable=no-member
     )
     assert isinstance(mb_model2, Ncm.ModelBuilder)
     model2_type = mb_model2.create()
@@ -300,7 +300,7 @@ def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
 
     ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
 
-    map_cosmo_dup = ser.dup_obj(map_cosmo)
+    map_cosmo_dup = ser.dup_obj(map_cosmo)  # pylint: disable=no-member
     assert isinstance(map_cosmo_dup, MappingNumCosmo)
     assert map_cosmo_dup.mapping_name == "default"
 
@@ -472,7 +472,7 @@ def test_numcosmo_serialize_likelihood(
 
     ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
 
-    fc_data_dup = ser.dup_obj(fc_data)
+    fc_data_dup = ser.dup_obj(fc_data)  # pylint: disable=no-member
     assert isinstance(fc_data_dup, (NumCosmoData, NumCosmoGaussCov))
 
     if fc_data.nc_mapping is None:
