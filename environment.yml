@@ -9,14 +9,14 @@ dependencies:
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
-  - cython < 3.0.0
+  - cython
   - dill
   - fitsio
   - flake8
   - flake8-docstrings
   - fuzzywuzzy
   - getdist
-  - glib <= 2.78.4
+  - glib
   - idna
   - matplotlib-base
   - more-itertools
