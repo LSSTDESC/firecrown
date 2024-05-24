@@ -335,6 +335,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
             derived_scale=derived_scale,
             scale=scale,
         )
+        # pylint: disable=unexpected-keyword-arg
         obj.tracer_args = NumberCountsArgs(
             scale=obj.scale,
             z=inferred_zdist.z,
@@ -342,6 +343,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
             bias=None,
             mag_bias=None,
         )
+        # pylint: enable=unexpected-keyword-arg
 
         return obj
 
@@ -376,6 +378,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         sacc_data : sacc.Sacc
             The data in the sacc format.
         """
+        # pylint: disable=unexpected-keyword-arg
         self.tracer_args = NumberCountsArgs(
             scale=self.scale,
             z=np.array([]),
@@ -383,6 +386,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
             bias=None,
             mag_bias=None,
         )
+        # pylint: enable=unexpected-keyword-arg
         super()._read(sacc_data)
 
     def create_tracers(

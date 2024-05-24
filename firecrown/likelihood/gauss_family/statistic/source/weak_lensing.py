@@ -271,9 +271,11 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     ) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
         obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)
+        # pylint: disable=unexpected-keyword-arg
         obj.tracer_args = WeakLensingArgs(
             scale=obj.scale, z=inferred_zdist.z, dndz=inferred_zdist.dndz, ia_bias=None
         )
+        # pylint: enable=unexpected-keyword-arg
 
         return obj
 
@@ -291,9 +293,11 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         This sets self.tracer_args, based on the data in `sacc_data` associated with
         this object's `sacc_tracer` name.
         """
+        # pylint: disable=unexpected-keyword-arg
         self.tracer_args = WeakLensingArgs(
             scale=self.scale, z=np.array([]), dndz=np.array([]), ia_bias=None
         )
+        # pylint: enable=unexpected-keyword-arg
 
         super()._read(sacc_data)
 
