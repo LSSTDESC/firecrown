@@ -9,7 +9,7 @@ from __future__ import annotations
 import numpy as np
 import sacc
 
-from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
+from firecrown.likelihood.gauss_family.statistic.source import SourceSystematic
 from firecrown.likelihood.gauss_family.statistic.statistic import (
     DataVector,
     Statistic,

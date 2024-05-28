@@ -9,8 +9,8 @@ import sacc
 import pyccl as ccl
 import pyccl.nl_pt
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
+import firecrown.likelihood.gauss_family.statistic.weak_lensing as wl
+import firecrown.likelihood.gauss_family.statistic.number_counts as nc
 from firecrown.likelihood.gauss_family.statistic.two_point import (
     TwoPoint,
     TracerNames,

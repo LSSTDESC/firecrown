@@ -4,7 +4,7 @@ from typing import Tuple
 import pyccl
 import sacc
 
-from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+from firecrown.likelihood.gauss_family.statistic.number_counts import (
     NumberCounts,
     PTNonLinearBiasSystematic,
 )

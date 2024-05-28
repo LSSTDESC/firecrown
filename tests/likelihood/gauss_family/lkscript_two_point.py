@@ -9,7 +9,7 @@ import sacc
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
-from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+from firecrown.likelihood.gauss_family.statistic.number_counts import (
     NumberCounts,
 )
 

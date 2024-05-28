@@ -5,7 +5,7 @@ import sacc
 import pytest
 import pyccl
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
-from firecrown.likelihood.gauss_family.statistic.source.source import SourceSystematic
+from firecrown.likelihood.gauss_family.statistic.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.parameters import ParamsMap

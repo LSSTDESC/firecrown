@@ -13,12 +13,12 @@ import pyccl.nl_pt
 import sacc.windows
 import scipy.interpolate
 
-from firecrown.likelihood.gauss_family.statistic.source.source import Source, Tracer
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import (
+from firecrown.likelihood.gauss_family.statistic.source import Source, Tracer
+from firecrown.likelihood.gauss_family.statistic.weak_lensing import (
     WeakLensingFactory,
     WeakLensing,
 )
-from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+from firecrown.likelihood.gauss_family.statistic.number_counts import (
     NumberCountsFactory,
     NumberCounts,
 )
