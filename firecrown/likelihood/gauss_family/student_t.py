@@ -6,7 +6,7 @@ import numpy as np
 
 from firecrown.likelihood.gauss_family.gauss_family import GaussFamily
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.gauss_family.statistic.statistic import Statistic
+from firecrown.likelihood.gauss_family.statistic import Statistic
 from firecrown import parameters
 
 

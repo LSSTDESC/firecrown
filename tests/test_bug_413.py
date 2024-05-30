@@ -4,11 +4,11 @@ from typing import Tuple
 import pyccl
 import sacc
 
-from firecrown.likelihood.gauss_family.statistic.number_counts import (
+from firecrown.likelihood.gauss_family.number_counts import (
     NumberCounts,
     PTNonLinearBiasSystematic,
 )
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.two_point import TwoPoint
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 

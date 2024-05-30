@@ -15,7 +15,7 @@ import pyccl as ccl
 
 from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.gauss_family.gauss_family import GaussFamily
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.two_point import TwoPoint
 from firecrown.likelihood.likelihood import load_likelihood, Likelihood, NamedParameters
 from firecrown.parameters import ParamsMap
 from firecrown.updatable import MissingSamplerParameterError

@@ -13,7 +13,7 @@ import pyccl.nl_pt
 import sacc
 
 from firecrown import parameters
-from firecrown.likelihood.gauss_family.statistic.source import (
+from firecrown.likelihood.gauss_family.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,

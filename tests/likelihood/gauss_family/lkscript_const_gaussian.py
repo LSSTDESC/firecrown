@@ -6,7 +6,7 @@ for testing purposes.
 import sacc
 
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family.statistic.supernova import Supernova
+from firecrown.likelihood.gauss_family.supernova import Supernova
 
 
 def build_likelihood(_):

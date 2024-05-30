@@ -2,10 +2,10 @@
 
 import os
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
+import firecrown.likelihood.gauss_family.source.weak_lensing as wl
+import firecrown.likelihood.gauss_family.source.number_counts as nc
 
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.gauss_family.two_point import TwoPoint
 
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 

@@ -5,12 +5,12 @@ import sacc
 import pytest
 import pyccl
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
-from firecrown.likelihood.gauss_family.statistic.source import SourceSystematic
+from firecrown.likelihood.gauss_family.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
+from firecrown.likelihood.gauss_family.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
 

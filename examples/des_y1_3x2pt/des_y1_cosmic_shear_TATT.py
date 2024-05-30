@@ -5,8 +5,8 @@ import sacc
 import pyccl as ccl
 import pyccl.nl_pt
 
-import firecrown.likelihood.gauss_family.statistic.weak_lensing as wl
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+import firecrown.likelihood.gauss_family.weak_lensing as wl
+from firecrown.likelihood.gauss_family.two_point import TwoPoint
 from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools

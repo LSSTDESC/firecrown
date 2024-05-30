@@ -6,7 +6,7 @@ import pytest
 import sacc
 import pyccl
 
-from firecrown.likelihood.gauss_family.statistic.supernova import Supernova
+from firecrown.likelihood.gauss_family.supernova import Supernova
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
