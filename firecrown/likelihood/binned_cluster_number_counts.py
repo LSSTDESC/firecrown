@@ -9,8 +9,8 @@ from __future__ import annotations
 import numpy as np
 import sacc
 
-from firecrown.likelihood.gauss_family.source import SourceSystematic
-from firecrown.likelihood.gauss_family.statistic import (
+from firecrown.likelihood.source import SourceSystematic
+from firecrown.likelihood.statistic import (
     DataVector,
     Statistic,
     TheoryVector,

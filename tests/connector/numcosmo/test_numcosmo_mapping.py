@@ -6,7 +6,7 @@ import pyccl as ccl
 from numcosmo_py import Ncm, Nc, GObject
 
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoData,

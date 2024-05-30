@@ -9,7 +9,7 @@ import sacc
 from sacc.tracers import MiscTracer
 
 from firecrown import parameters
-from firecrown.likelihood.gauss_family.statistic import (
+from firecrown.likelihood.statistic import (
     DataVector,
     Statistic,
     TheoryVector,

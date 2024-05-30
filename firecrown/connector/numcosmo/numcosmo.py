@@ -13,7 +13,7 @@ from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
 from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools

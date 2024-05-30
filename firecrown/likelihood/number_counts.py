@@ -11,7 +11,7 @@ import numpy.typing as npt
 import pyccl
 
 from firecrown import parameters
-from firecrown.likelihood.gauss_family.source import (
+from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,

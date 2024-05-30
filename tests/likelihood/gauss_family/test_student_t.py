@@ -7,8 +7,8 @@ import numpy as np
 import sacc
 
 import firecrown.parameters
-from firecrown.likelihood.gauss_family.student_t import StudentT
-from firecrown.likelihood.gauss_family.gauss_family import Statistic
+from firecrown.likelihood.student_t import StudentT
+from firecrown.likelihood.gauss_family import Statistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,

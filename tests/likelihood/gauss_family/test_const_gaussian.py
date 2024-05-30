@@ -12,9 +12,9 @@ from scipy.stats import chi2
 import sacc
 
 import firecrown.parameters
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family.gauss_family import Statistic
-from firecrown.likelihood.gauss_family.statistic import TrivialStatistic
+from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood.gauss_family import Statistic
+from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,

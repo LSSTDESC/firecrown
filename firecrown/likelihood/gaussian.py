@@ -3,7 +3,7 @@
 from __future__ import annotations
 import numpy as np
 
-from firecrown.likelihood.gauss_family.gauss_family import GaussFamily
+from firecrown.likelihood.gauss_family import GaussFamily
 from firecrown.modeling_tools import ModelingTools
 
 

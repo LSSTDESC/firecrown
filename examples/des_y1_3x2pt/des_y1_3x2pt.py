@@ -3,10 +3,10 @@
 import os
 import sacc
 
-import firecrown.likelihood.gauss_family.weak_lensing as wl
-import firecrown.likelihood.gauss_family.number_counts as nc
-from firecrown.likelihood.gauss_family.two_point import TwoPoint
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.gaussian import ConstGaussian
 
 
 # The likelihood used for DES Y1 3x2pt analysis is a Gaussian likelihood, which

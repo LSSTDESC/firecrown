@@ -1,5 +1,5 @@
 """
-Tests for the module firecrown.likelihood.gauss_family.statistic.source.
+Tests for the module firecrown.likelihood.statistic.source.
 """
 
 import pytest
@@ -10,14 +10,14 @@ import pyccl
 import sacc
 
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.gauss_family.source import (
+from firecrown.likelihood.source import (
     Tracer,
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySelectField,
 )
-import firecrown.likelihood.gauss_family.number_counts as nc
-import firecrown.likelihood.gauss_family.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata.two_point import (
     extract_all_tracers,
     InferredGalaxyZDist,
