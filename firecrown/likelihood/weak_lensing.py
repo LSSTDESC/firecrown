@@ -25,8 +25,6 @@ from firecrown.metadata.two_point import InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
-__all__ = ["WeakLensing"]
-
 
 @dataclass(frozen=True)
 class WeakLensingArgs(SourceGalaxyArgs):
