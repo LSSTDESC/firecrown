@@ -10,6 +10,9 @@ import numpy as np
 import numpy.typing as npt
 import pyccl
 
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
@@ -23,8 +26,6 @@ from firecrown.metadata.two_point import InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import DerivedParameter, DerivedParameterCollection, ParamsMap
 from firecrown.updatable import UpdatableCollection
-
-__all__ = ["NumberCounts"]
 
 
 @dataclass(frozen=True)
@@ -166,6 +167,13 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
+        """Apply a non-linear bias systematic.
+
+        :param tools: currently unused, but required by interface
+        :param tracer_arg: a NumberCountsArgs object with values to be updated
+
+        :return: the updated NumberCountsArgs object
+        """
         z = tracer_arg.z
         b_2_z = self.b_2 * np.ones_like(z)
         b_s_z = self.b_s * np.ones_like(z)
@@ -271,6 +279,13 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
+        """Apply a constant magnification bias systematic.
+
+        :param tools: currently unused, but required by interface
+        :param tracer_arg: a NumberCountsArgs object with values to be updated
+
+        :return: the updated NumberCountsArgs object
+        """
         return replace(
             tracer_arg,
             mag_bias=(tracer_arg.z, np.ones_like(tracer_arg.z) * self.mag_bias),

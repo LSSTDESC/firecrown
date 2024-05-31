@@ -12,6 +12,9 @@ import pyccl
 import pyccl.nl_pt
 import sacc
 
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
@@ -358,6 +361,12 @@ class MultiplicativeShearBiasFactory(WeakLensingSystematicFactory):
     """Factory class for MultiplicativeShearBias objects."""
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> MultiplicativeShearBias:
+        """Create a MultiplicativeShearBias object.
+
+        :param inferred_zdist: The inferred galaxy redshift distribution for
+            the created MultiplicativeShearBias object.
+        :return: The created MultiplicativeShearBias object.
+        """
         return MultiplicativeShearBias(inferred_zdist.bin_name)
 
 
@@ -365,6 +374,12 @@ class TattAlignmentSystematicFactory(WeakLensingSystematicFactory):
     """Factory class for TattAlignmentSystematic objects."""
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> TattAlignmentSystematic:
+        """Create a TattAlignmentSystematic object.
+
+        :param inferred_zdist: The inferred galaxy redshift distribution for
+            the created TattAlignmentSystematic object.
+        :return: The created TattAlignmentSystematic object.
+        """
         return TattAlignmentSystematic(inferred_zdist.bin_name)
 
 
@@ -372,6 +387,12 @@ class PhotoZShiftFactory(WeakLensingSystematicFactory):
     """Factory class for PhotoZShift objects."""
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+        """Create a PhotoZShift object.
+
+        :param inferred_zdist: The inferred galaxy redshift distribution for
+            the created PhotoZShift object.
+        :return: The created PhotoZShift object.
+        """
         return PhotoZShift(inferred_zdist.bin_name)
 
 

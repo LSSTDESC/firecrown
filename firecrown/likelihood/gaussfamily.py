@@ -1,7 +1,4 @@
-"""Gaussian Family Module.
-
-Some notes.
-"""
+"""Support for the family of Gaussian likelihood."""
 
 from __future__ import annotations
 
@@ -18,6 +15,9 @@ import scipy.linalg
 
 import sacc
 
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.parameters import ParamsMap
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.modeling_tools import ModelingTools

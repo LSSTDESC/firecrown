@@ -8,7 +8,7 @@ import sacc
 
 import firecrown.parameters
 from firecrown.likelihood.student_t import StudentT
-from firecrown.likelihood.gauss_family import Statistic
+from firecrown.likelihood.gaussfamily import Statistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,

@@ -8,6 +8,9 @@ import pyccl
 import sacc
 from sacc.tracers import MiscTracer
 
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown import parameters
 from firecrown.likelihood.statistic import (
     DataVector,

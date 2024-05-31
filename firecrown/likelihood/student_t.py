@@ -4,7 +4,10 @@ from __future__ import annotations
 
 import numpy as np
 
-from firecrown.likelihood.gauss_family import GaussFamily
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
+from firecrown.likelihood.gaussfamily import GaussFamily
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.statistic import Statistic
 from firecrown import parameters

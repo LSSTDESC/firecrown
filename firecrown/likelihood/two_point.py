@@ -13,6 +13,9 @@ import pyccl.nl_pt
 import sacc.windows
 import scipy.interpolate
 
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
     WeakLensingFactory,

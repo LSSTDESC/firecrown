@@ -13,7 +13,7 @@ import sacc
 
 import firecrown.parameters
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family import Statistic
+from firecrown.likelihood.gaussfamily import Statistic
 from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
