@@ -14,7 +14,7 @@ This document outlines how to use `InferredGalaxyZDist` objects to derive the tw
 
 Two-point statistics are widely used in cosmological analyses.
 They provide a statistical summary of the distribution, in either real of harmonic space, of galaxies and the matter density field, or of other observables.
-In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.gauss_family.statistic.two_point`.
+In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.two_point`.
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
@@ -104,7 +104,7 @@ These are represented by the classes `LinearAlignmentSystematic`,  `Multiplicati
 Firecrown contains several factories for generating the objects that represent these systematics.
 The purpose of the factories is to ensure that each of the systematics created by a given factory are consistent.
 
-[^1]: The classes `LinearAlignmentSystematic`, `MultiplicativeShearBias`, and `PhotoZShift` are all found in the module `firecrown.likelihood.gauss_family.statistic.source.weak_lensing`.
+[^1]: The classes `LinearAlignmentSystematic`, `MultiplicativeShearBias`, and `PhotoZShift` are all found in the module `firecrown.likelihood.weak_lensing`.
 
 In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics. 
 These factories are responsible for generating the systematics that will be applied to the two-point statistics.
@@ -112,9 +112,9 @@ The code below defines the factories for the weak lensing and number counts syst
 
 ```{python}
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-import firecrown.likelihood.gauss_family.statistic.two_point as tp
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.two_point as tp
 import warnings
 
 # WeakLensing systematics -- global

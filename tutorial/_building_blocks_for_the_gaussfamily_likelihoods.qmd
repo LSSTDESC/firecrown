@@ -14,7 +14,7 @@ A given `SACC` object may contain information from observations in many bins, bu
 All `GaussFamily` likelihoods have an implementation of the `read` method that reads data covariance information from the provided `sacc.SACC` object.
 These likelihoods use the indices from all of its (possibly many) `Statistic`s to build the covariance matrix for the likelihood.
 
-The class `firecrown.likelihood.gauss_family.two_point.TwoPoint` is a statistic that represents a two-point function.
+The class `firecrown.likelihood.two_point.TwoPoint` is a statistic that represents a two-point function.
 A `TwoPoint` object has two `Source`s, each of which is associated with one or more tracer names.
 To calculate an autocorrelation, use the same `Source` twice.
 Each `Source`  will produce one or more [`pyccl.Tracer`s](https://ccl.readthedocs.io/en/latest/api/pyccl.tracers.html#pyccl.tracers.Tracer).[^tracer]
