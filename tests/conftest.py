@@ -14,7 +14,7 @@ import numpy.typing as npt
 import pyccl
 
 from firecrown.utils import upper_triangle_indices
-from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatistic
+from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools

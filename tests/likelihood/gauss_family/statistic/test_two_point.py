@@ -11,13 +11,13 @@ import pyccl
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
-from firecrown.likelihood.gauss_family.statistic.source.number_counts import (
+from firecrown.likelihood.number_counts import (
     NumberCounts,
 )
-from firecrown.likelihood.gauss_family.statistic.source.weak_lensing import (
+from firecrown.likelihood.weak_lensing import (
     WeakLensing,
 )
-from firecrown.likelihood.gauss_family.statistic.two_point import (
+from firecrown.likelihood.two_point import (
     _ell_for_xi,
     TwoPoint,
     TracerNames,

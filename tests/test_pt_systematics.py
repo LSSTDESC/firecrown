@@ -12,14 +12,14 @@ import pyccl as ccl
 import pyccl.nl_pt as pt
 import sacc
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import (
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
     TRACER_NAMES_TOTAL,
 )
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 

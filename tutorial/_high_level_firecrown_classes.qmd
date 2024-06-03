@@ -10,8 +10,8 @@ A `ModelingTools` object associates a cosmology with a set of objects representi
 Each of these may be used more than once in the evaluation of the likelihood.
 This is why they are gathered together in one location: to help assure that different parts of a likelihood calculation that require the same theoretical calculation get the identical theoretical calculation for a given cosmology.
 
-Moreover, we define for `ModelingTools` an abstract class [^abstract-class] for each additional tool that can be used in the likelihood calculation. 
-Thus, the same tool can have different implementations, and the user can choose which one to use. 
+Moreover, we define for `ModelingTools` an abstract class [^abstract-class] for each additional tool that can be used in the likelihood calculation.
+Thus, the same tool can have different implementations, and the user can choose which one to use.
 This is intended to partially address the issue of systematic effects, as we can have different implementations of the same tool, each one representing a different systematic effect.
 For example, we can have different implementations of the halo model, each one including a different effects.
 This is in contrast to the current implementation, where we would have a single halo model that needs to have its results modified by `Systematic` objects.
@@ -31,7 +31,6 @@ calculate_loglike(tools: ModelingTools) -> float
 The method `read` reads the necessary data (data vectors and covariances) from the provided `sacc.SACC` object.
 This specifies the data for which we are calculating the likelihood.
 The method `calculate_loglike` return the (natural) logarithm of the likelihood for the data given the cosmology and models in `tools`.
-Gaussian-related likelihoods are subclasses of `firecrown.likelihood.gauss_family.GaussFamily`.
+Gaussian-related likelihoods are subclasses of `firecrown.likelihood.gaussfamily.GaussFamily`.
 Currently-implemented subclasses include `ConstGaussian` and `StudentT`.
 `ConstGaussian` assumes a Gaussian distribution in which the covariance of the data is constant.
-

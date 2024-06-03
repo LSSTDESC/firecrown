@@ -1,25 +1,20 @@
-"""Provides GaussFamily concrete types."""
+"""Deprecated module with classes related to the Gaussian likelihood."""
 
-from __future__ import annotations
-import numpy as np
+# flake8: noqa
 
-from firecrown.likelihood.gauss_family.gauss_family import GaussFamily
-from firecrown.modeling_tools import ModelingTools
+import warnings
 
+import firecrown.likelihood.gaussian
 
-class ConstGaussian(GaussFamily):
-    """A Gaussian log-likelihood with a constant covariance matrix."""
+# pylint: disable=unused-import,unused-wildcard-import,wildcard-import
+from firecrown.likelihood.gaussian import *
 
-    def compute_loglike(self, tools: ModelingTools):
-        """Compute the log-likelihood."""
-        return -0.5 * self.compute_chisq(tools)
+# pylint: enable=unused-import,unused-wildcard-import,wildcard-import
 
-    def make_realization_vector(self) -> np.ndarray:
-        """Create a new realization of the model."""
-        theory_vector = self.get_theory_vector()
-        assert self.cholesky is not None
-        new_data_vector = theory_vector + np.dot(
-            self.cholesky, np.random.randn(len(theory_vector))
-        )
+assert not hasattr(firecrown.likelihood.gaussian, "__all__")
 
-        return new_data_vector
+warnings.warn(
+    "This module is deprecated. Use firecrown.likelihood.gaussian instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)

@@ -1,5 +1,5 @@
 """
-Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
+Tests for the module firecrown.likelihood.statistic.
 """
 
 import numpy as np
@@ -7,7 +7,7 @@ from numpy.testing import assert_allclose
 import pytest
 import sacc
 
-import firecrown.likelihood.gauss_family.statistic.statistic as stat
+import firecrown.likelihood.statistic as stat
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 

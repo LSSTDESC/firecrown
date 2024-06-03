@@ -4,9 +4,9 @@ import os
 
 import sacc
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+import firecrown.likelihood.weak_lensing as wl
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.gaussian import ConstGaussian
 
 
 def build_likelihood(_):

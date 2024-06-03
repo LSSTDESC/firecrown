@@ -5,8 +5,8 @@ import os
 import pyccl as ccl
 import sacc
 
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts import (
+from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters

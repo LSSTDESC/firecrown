@@ -28,10 +28,10 @@ from firecrown.metadata.two_point import (
     type_to_sacc_string_real as real,
     Window,
 )
-from firecrown.likelihood.gauss_family.statistic.source.source import SourceGalaxy
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
+from firecrown.likelihood.source import SourceGalaxy
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+from firecrown.likelihood.two_point import TwoPoint
 
 
 @pytest.fixture(
