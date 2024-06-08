@@ -1,8 +1,9 @@
-"""Basic module for Cosmology and cosmological tools definitions.
+"""Basic Cosmology and cosmological tools definitions.
 
-This module contains the ModelingTools class, which is built around the
-:class:`pyccl.Cosmology` class. This is used by likelihoods that need to access
-reusable objects, such as perturbation theory or halo model calculators.
+:mod:`modeling_tools` contains the :class:`ModelingTools` class, which is
+built around the :class:`pyccl.Cosmology` class. This is used by likelihoods
+that need to access reusable objects, such as perturbation theory or halo model
+calculators.
 """
 
 from __future__ import annotations

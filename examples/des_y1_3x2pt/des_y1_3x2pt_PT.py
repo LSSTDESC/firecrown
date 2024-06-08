@@ -94,9 +94,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     # Create the weak lensing source, specifying the name of the tracer in the
     # sacc file and a list of systematics
-    src0 = wl.WeakLensing(
-        sacc_tracer="src0", systematics=[src_pzshift, ia_systematic]
-    )
+    src0 = wl.WeakLensing(sacc_tracer="src0", systematics=[src_pzshift, ia_systematic])
 
     lens_pzshift = nc.PhotoZShift(sacc_tracer="lens0")
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
@@ -111,10 +109,12 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     # The only place the dict 'stats' gets used, other than setting values in
     # it, is to call 'values' on it. Thus we don't need a dict, we need a list
     # of the values. The keys assigned to the dict are never used.
-    xip_src0_src0 = TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus")
-    xim_src0_src0 = TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_minus")
-
-
+    xip_src0_src0 = TwoPoint(
+        source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus"
+    )
+    xim_src0_src0 = TwoPoint(
+        source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_minus"
+    )
 
     gammat_lens0_src0 = TwoPoint(
         source0=lens0,
@@ -141,10 +141,9 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     # Note that the ordering of the statistics is relevant, because the data
     # vector, theory vector, and covariance matrix will be organized to
     # follow the order used here.
-    likelihood = ConstGaussian(statistics=[xip_src0_src0,
-                                           xim_src0_src0,
-                                           gammat_lens0_src0,
-                                           wtheta_lens0_lens0])
+    likelihood = ConstGaussian(
+        statistics=[xip_src0_src0, xim_src0_src0, gammat_lens0_src0, wtheta_lens0_lens0]
+    )
 
     # Read the two-point data from the sacc file
     likelihood.read(sacc_data)
