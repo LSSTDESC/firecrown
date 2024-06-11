@@ -85,9 +85,6 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
-    # Define sources
-    sources: dict[str, wl.WeakLensing | nc.NumberCounts] = {}
-
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later
     ia_systematic = wl.TattAlignmentSystematic()
@@ -97,14 +94,12 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     # Create the weak lensing source, specifying the name of the tracer in the
     # sacc file and a list of systematics
-    sources["src0"] = wl.WeakLensing(
-        sacc_tracer="src0", systematics=[src_pzshift, ia_systematic]
-    )
+    src0 = wl.WeakLensing(sacc_tracer="src0", systematics=[src_pzshift, ia_systematic])
 
     lens_pzshift = nc.PhotoZShift(sacc_tracer="lens0")
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
     nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
-    sources["lens0"] = nc.NumberCounts(
+    lens0 = nc.NumberCounts(
         sacc_tracer="lens0",
         has_rsd=True,
         systematics=[lens_pzshift, magnification, nl_bias],
@@ -114,27 +109,22 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     # The only place the dict 'stats' gets used, other than setting values in
     # it, is to call 'values' on it. Thus we don't need a dict, we need a list
     # of the values. The keys assigned to the dict are never used.
-    stats = {}
-    for stat, sacc_stat in [
-        ("xip", "galaxy_shear_xi_plus"),
-        ("xim", "galaxy_shear_xi_minus"),
-    ]:
-        # Define two-point statistics, given two sources (from above) and
-        # the type of statistic.
-        stats[f"{stat}_src0_src0"] = TwoPoint(
-            source0=sources["src0"],
-            source1=sources["src0"],
-            sacc_data_type=sacc_stat,
-        )
-    stats["gammat_lens0_src0"] = TwoPoint(
-        source0=sources["lens0"],
-        source1=sources["src0"],
+    xip_src0_src0 = TwoPoint(
+        source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus"
+    )
+    xim_src0_src0 = TwoPoint(
+        source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_minus"
+    )
+
+    gammat_lens0_src0 = TwoPoint(
+        source0=lens0,
+        source1=src0,
         sacc_data_type="galaxy_shearDensity_xi_t",
     )
 
-    stats["wtheta_lens0_lens0"] = TwoPoint(
-        source0=sources["lens0"],
-        source1=sources["lens0"],
+    wtheta_lens0_lens0 = TwoPoint(
+        source0=lens0,
+        source1=lens0,
         sacc_data_type="galaxy_density_xi",
     )
 
@@ -148,7 +138,12 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     )
 
     modeling_tools = ModelingTools(pt_calculator=pt_calculator)
-    likelihood = ConstGaussian(statistics=list(stats.values()))
+    # Note that the ordering of the statistics is relevant, because the data
+    # vector, theory vector, and covariance matrix will be organized to
+    # follow the order used here.
+    likelihood = ConstGaussian(
+        statistics=[xip_src0_src0, xim_src0_src0, gammat_lens0_src0, wtheta_lens0_lens0]
+    )
 
     # Read the two-point data from the sacc file
     likelihood.read(sacc_data)

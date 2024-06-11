@@ -461,3 +461,11 @@ def test_get_sacc_indices_single_stat(
     idx = likelihood.get_sacc_indices(statistic=likelihood.statistics[0].statistic)
 
     assert all(idx == likelihood.statistics[0].statistic.sacc_indices)
+
+
+def test_access_required_parameters(
+    trivial_stats,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    params = likelihood.required_parameters().get_default_values()
+    assert params == {"mean": 0.0}

@@ -15,3 +15,4 @@ inferred_zdist_generators_files/
 *.revealjs.md
 
 /.quarto/
+_site
