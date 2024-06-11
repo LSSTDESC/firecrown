@@ -60,7 +60,7 @@ class LikelihoodConnector(Likelihood):
         """
         return self.derived_parameters
 
-    def get_allow_agnostic(self):
+    def get_allow_agnostic(self) -> bool:
         """Required by Cobaya.
 
         Return False.
@@ -87,7 +87,7 @@ class LikelihoodConnector(Likelihood):
 
         return likelihood_requires
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements) -> None:
         """Required by Cobaya.
 
         This version does nothing.
