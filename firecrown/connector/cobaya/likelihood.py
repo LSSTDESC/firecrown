@@ -41,27 +41,35 @@ class LikelihoodConnector(Likelihood):
         )
 
     def initialize_with_params(self) -> None:
-        """Required by Cobaya.
+        """Complete the initialization of a LikelihoodConnector object.
+
+        Required by Cobaya.
 
         This version has nothing to do.
         """
 
     def initialize_with_provider(self, provider) -> None:
-        """Required by Cobaya.
+        """Set the obejct's provider.
 
-        Sets instance's provided to the given provider.
+        Required by Cobaya.
+
+        :param provider: A Cobaya provider.
         """
         self.provider = provider
 
     def get_can_provide_params(self) -> list[str]:
-        """Required by Cobaya.
+        """Return the list of params provided.
+
+        Required by Cobaya.
 
         Returns an empty list.
         """
         return self.derived_parameters
 
     def get_allow_agnostic(self) -> bool:
-        """Required by Cobaya.
+        """Is it allowed to pass all unassigned input parameters to this component.
+
+        Required by Cobaya.
 
         Return False.
         """
@@ -70,10 +78,13 @@ class LikelihoodConnector(Likelihood):
     def get_requirements(
         self,
     ) -> dict[str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]]:
-        """Required by Cobaya.
+        """Returns a dictionary.
 
         Returns a dictionary with keys corresponding the contained likelihood's
         required parameter, plus "pyccl". All values are None.
+
+        Required by Cobaya.
+        :return: a dictionary
         """
         likelihood_requires: dict[
             str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]
@@ -94,9 +105,10 @@ class LikelihoodConnector(Likelihood):
         """
 
     def logp(self, **params_values) -> float:
-        """Required by Cobaya.
+        """Return the log of the calculated likelihood.
 
-        Return the (log) calculated likelihood.
+        Required by Cobaya.
+        :params values: The values of the parameters to use.
         """
         pyccl = self.provider.get_pyccl()
 
