@@ -1,4 +1,8 @@
-"""Classes and functions to support groups of named parameters."""
+"""Classes and functions to support groups of named parameters.
+
+These are used in Firecrown in preference to the Python dictionary in order to
+provide better type safety.
+"""
 
 from __future__ import annotations
 from typing import Iterable, Iterator, Sequence
@@ -18,7 +22,10 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     The parameter name can not be empty, even if accompanied by a prefix;
     this is enforced in the code.
 
-    Ill-formed parameter names result in raising a ValueError.
+    :param prefix: optional prefix
+    :param param: name
+    :return: full name
+    :raises ValueError: if the parameter name is empty
     """
     if len(param) == 0:
         raise ValueError("param must not be an empty string")

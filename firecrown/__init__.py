@@ -1,8 +1,4 @@
-"""
-
-A package for creation of DESC likelihoods.
-
-
+"""A package for the creation of DESC likelihoods.
 """
 
 from firecrown.version import __version__

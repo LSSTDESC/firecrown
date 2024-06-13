@@ -20,7 +20,9 @@ class CCLConnector(Theory):
     input_style: str | None = None
 
     def initialize(self):
-        """Required by Cobaya.
+        """Initialize a CCLConnector object.
+
+        Required by Cobaya.
 
         This is used instead of __init__, to provide default initialization.
         Cobaya does not allow us to override __init__.
@@ -34,48 +36,60 @@ class CCLConnector(Theory):
         self.Pk_kmax = 1.0
 
     def initialize_with_params(self):
-        """Required by Cobaya.
+        """Complete the initialization of a CCLConnector object.
+
+        Required by Cobaya.
 
         Cobaya calls this after initialize(), so that work can be done after
         that point. This version has nothing to do.
         """
 
     def initialize_with_provider(self, provider):
-        """Required by Cobaya.
+        """Set the object's provider.
 
-        Sets instance's provided to the given provider.
+        Required by Cobaya.
+
+        :param provider: A Cobaya provider.
         """
         self.provider = provider
 
     def get_can_provide_params(self):
-        """Required by Cobaya.
+        """Return the list of params provided.
+
+        Required by Cobaya.
 
         Returns an empty list.
         """
         return []
 
     def get_can_support_params(self) -> list[str]:
-        """Required by Cobaya.
+        """Return a list containing the names of the mapping's parameter names.
 
-        Return a list containing the names of the mapping's parameter names.
+        Required by Cobaya.
+        :return: The list of parameter names.
         """
         return self.map.get_params_names()
 
     def get_allow_agnostic(self):
-        """Required by Cobaya.
+        """Is it allowed to pass all unassigned input parameters to this component.
 
-        Return False.
+        Required by Cobaya.
+
+        This implementation always returns False.
+        :return: False
         """
         return False
 
     def get_requirements(
         self,
     ) -> dict[str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]]:
-        """Required by Cobaya.
+        """Returns a dictionary.
 
-        Returns a dictionary with keys:
+        The dictionary contains the following keys:
              omk, Pk_grid, comoving_radial_distance, Hubble,
              and with values reflecting the current status of the object.
+        Required by Cobaya.
+        :return: a dictionary
         """
         pyccl_calculator_requires = {
             "omk": None,
@@ -95,7 +109,12 @@ class CCLConnector(Theory):
     def calculate(
         self, state: dict[str, float], want_derived=True, **params_values
     ) -> None:
-        """Calculate the current cosmology, and set state["pyccl"] to the result."""
+        """Calculate the current cosmology, and set state["pyccl"] to the result.
+
+        :param state: The state dictionary to update.
+        :param want_derived: Whether to calculate derived parameters or not.
+        :param params_values: The values of the parameters to use.
+        """
         self.map.set_params_from_camb(**params_values)
 
         pyccl_params_values = self.map.asdict()
@@ -125,5 +144,8 @@ class CCLConnector(Theory):
         state["pyccl"] = cosmo
 
     def get_pyccl(self) -> pyccl.Cosmology:
-        """Return the current cosmology."""
+        """Return the current cosmology.
+
+        :return: The current cosmology
+        """
         return self.current_state["pyccl"]
