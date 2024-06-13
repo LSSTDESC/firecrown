@@ -211,11 +211,11 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.r_lim = parameters.register_new_updatable_parameter()
-        self.sig_c = parameters.register_new_updatable_parameter()
-        self.eta = parameters.register_new_updatable_parameter()
-        self.z_c = parameters.register_new_updatable_parameter()
-        self.z_m = parameters.register_new_updatable_parameter()
+        self.r_lim = parameters.register_new_updatable_parameter(default_value=24.0)
+        self.sig_c = parameters.register_new_updatable_parameter(default_value=9.83)
+        self.eta = parameters.register_new_updatable_parameter(default_value=19.0)
+        self.z_c = parameters.register_new_updatable_parameter(default_value=0.39)
+        self.z_m = parameters.register_new_updatable_parameter(default_value=0.055)
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs

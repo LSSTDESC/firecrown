@@ -67,7 +67,7 @@ def test_required_parameters(
     expected_params = RequiredParameters(
         params=[
             SamplerParameter(name="mean", default_value=0.0),
-            SamplerParameter(name="nu"),
+            SamplerParameter(name="nu", default_value=3.0),
         ]
     )
     assert likelihood.required_parameters() == expected_params
