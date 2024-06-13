@@ -4,8 +4,32 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
+from pydantic import BaseModel
 
 import sacc
+
+import yaml
+
+
+def base_model_from_yaml(cls: type, yaml_str: str):
+    """Create a base model from a yaml string."""
+    if not issubclass(cls, BaseModel):
+        raise ValueError("cls must be a subclass of pydantic.BaseModel")
+
+    try:
+        return cls.model_validate(
+            yaml.safe_load(yaml_str),
+            strict=True,
+        )
+    except Exception as e:
+        raise ValueError(
+            f"Error creating {cls.__name__} from yaml. Parsing error message:\n{e}"
+        ) from e
+
+
+def base_model_to_yaml(model: BaseModel):
+    """Convert a base model to a yaml string."""
+    return yaml.dump(model.model_dump(), default_flow_style=False)
 
 
 def upper_triangle_indices(n: int):
