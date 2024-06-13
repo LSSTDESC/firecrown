@@ -65,7 +65,7 @@ class TracerNames(YAMLSerializable):
 TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 
 
-class GalaxyMeasuredType(YAMLSerializable, str, Enum):
+class Galaxies(YAMLSerializable, str, Enum):
     """This enumeration type for galaxy measurements.
 
     It provides identifiers for the different types of galaxy-related types of
@@ -93,13 +93,13 @@ class GalaxyMeasuredType(YAMLSerializable, str, Enum):
         This is the second part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == GalaxyMeasuredType.SHEAR_E:
+        if self == Galaxies.SHEAR_E:
             return "shear"
-        if self == GalaxyMeasuredType.SHEAR_T:
+        if self == Galaxies.SHEAR_T:
             return "shear"
-        if self == GalaxyMeasuredType.COUNTS:
+        if self == Galaxies.COUNTS:
             return "density"
-        raise ValueError("Untranslated GalaxyMeasuredType encountered")
+        raise ValueError("Untranslated Galaxy Measurement encountered")
 
     def polarization(self) -> str:
         """Return the SACC polarization code.
@@ -107,20 +107,20 @@ class GalaxyMeasuredType(YAMLSerializable, str, Enum):
         This is the third part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == GalaxyMeasuredType.SHEAR_E:
+        if self == Galaxies.SHEAR_E:
             return "e"
-        if self == GalaxyMeasuredType.SHEAR_T:
+        if self == Galaxies.SHEAR_T:
             return "t"
-        if self == GalaxyMeasuredType.COUNTS:
+        if self == Galaxies.COUNTS:
             return ""
-        raise ValueError("Untranslated GalaxyMeasuredType encountered")
+        raise ValueError("Untranslated Galaxy Measurement encountered")
 
     def __lt__(self, other):
-        """Define a comparison function for the GalaxyMeasuredType enumeration."""
+        """Define a comparison function for the Galaxy Measurement enumeration."""
         return compare_enums(self, other) < 0
 
     def __eq__(self, other):
-        """Define an equality test for GalaxyMeasuredType enumeration."""
+        """Define an equality test for Galaxy Measurement enumeration."""
         return compare_enums(self, other) == 0
 
     def __ne__(self, other):
@@ -129,10 +129,10 @@ class GalaxyMeasuredType(YAMLSerializable, str, Enum):
 
     def __hash__(self) -> int:
         """Define a hash function that uses both type and value information."""
-        return hash((GalaxyMeasuredType, self.value))
+        return hash((Galaxies, self.value))
 
 
-class CMBMeasuredType(YAMLSerializable, str, Enum):
+class CMB(YAMLSerializable, str, Enum):
     """This enumeration type for CMB measurements.
 
     It provides identifiers for the different types of CMB-related types of
@@ -158,9 +158,9 @@ class CMBMeasuredType(YAMLSerializable, str, Enum):
         This is the second part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == CMBMeasuredType.CONVERGENCE:
+        if self == CMB.CONVERGENCE:
             return "convergence"
-        raise ValueError("Untranslated CMBMeasuredType encountered")
+        raise ValueError("Untranslated CMBMeasurement encountered")
 
     def polarization(self) -> str:
         """Return the SACC polarization code.
@@ -168,16 +168,16 @@ class CMBMeasuredType(YAMLSerializable, str, Enum):
         This is the third part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == CMBMeasuredType.CONVERGENCE:
+        if self == CMB.CONVERGENCE:
             return ""
-        raise ValueError("Untranslated CMBMeasuredType encountered")
+        raise ValueError("Untranslated CMBMeasurement encountered")
 
     def __lt__(self, other):
-        """Define a comparison function for the CMBMeasuredType enumeration."""
+        """Define a comparison function for the CMBMeasurement enumeration."""
         return compare_enums(self, other) < 0
 
     def __eq__(self, other):
-        """Define an equality test for CMBMeasuredType enumeration."""
+        """Define an equality test for CMBMeasurement enumeration."""
         return compare_enums(self, other) == 0
 
     def __ne__(self, other):
@@ -186,10 +186,10 @@ class CMBMeasuredType(YAMLSerializable, str, Enum):
 
     def __hash__(self) -> int:
         """Define a hash function that uses both type and value information."""
-        return hash((CMBMeasuredType, self.value))
+        return hash((CMB, self.value))
 
 
-class ClusterMeasuredType(YAMLSerializable, str, Enum):
+class Clusters(YAMLSerializable, str, Enum):
     """This enumeration type for cluster measurements.
 
     It provides identifiers for the different types of cluster-related types of
@@ -215,9 +215,9 @@ class ClusterMeasuredType(YAMLSerializable, str, Enum):
         This is the second part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == ClusterMeasuredType.COUNTS:
+        if self == Clusters.COUNTS:
             return "density"
-        raise ValueError("Untranslated ClusterMeasuredType encountered")
+        raise ValueError("Untranslated ClusterMeasurement encountered")
 
     def polarization(self) -> str:
         """Return the SACC polarization code.
@@ -225,16 +225,16 @@ class ClusterMeasuredType(YAMLSerializable, str, Enum):
         This is the third part of the SACC string used to denote the specific
         measurement type.
         """
-        if self == ClusterMeasuredType.COUNTS:
+        if self == Clusters.COUNTS:
             return ""
-        raise ValueError("Untranslated ClusterMeasuredType encountered")
+        raise ValueError("Untranslated ClusterMeasurement encountered")
 
     def __lt__(self, other):
-        """Define a comparison function for the ClusterMeasuredType enumeration."""
+        """Define a comparison function for the ClusterMeasurement enumeration."""
         return compare_enums(self, other) < 0
 
     def __eq__(self, other):
-        """Define an equality test for ClusterMeasuredType enumeration."""
+        """Define an equality test for ClusterMeasurement enumeration."""
         return compare_enums(self, other) == 0
 
     def __ne__(self, other):
@@ -243,46 +243,44 @@ class ClusterMeasuredType(YAMLSerializable, str, Enum):
 
     def __hash__(self) -> int:
         """Define a hash function that uses both type and value information."""
-        return hash((ClusterMeasuredType, self.value))
+        return hash((Clusters, self.value))
 
 
-MeasuredType = GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType
-ALL_MEASURED_TYPES: list[MeasuredType] = list(
-    chain(GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
-)
-ALL_MEASURED_TYPES_TYPES = (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType)
-HARMONIC_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_E,)
-REAL_ONLY_MEASURED_TYPES = (GalaxyMeasuredType.SHEAR_T,)
+Measurement = Galaxies | CMB | Clusters
+ALL_MEASUREMENTS: list[Measurement] = list(chain(Galaxies, CMB, Clusters))
+ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
+HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
+REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T,)
 
 
-def measured_type_is_compatible(a: MeasuredType, b: MeasuredType) -> bool:
-    """Check if two MeasuredType are compatible.
+def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
+    """Check if two Measurement are compatible.
 
-    Two MeasuredType are compatible if they can be correlated in a two-point function.
+    Two Measurement are compatible if they can be correlated in a two-point function.
     """
-    if a in HARMONIC_ONLY_MEASURED_TYPES and b in REAL_ONLY_MEASURED_TYPES:
+    if a in HARMONIC_ONLY_MEASUREMENTS and b in REAL_ONLY_MEASUREMENTS:
         return False
-    if a in REAL_ONLY_MEASURED_TYPES and b in HARMONIC_ONLY_MEASURED_TYPES:
+    if a in REAL_ONLY_MEASUREMENTS and b in HARMONIC_ONLY_MEASUREMENTS:
         return False
     return True
 
 
-def measured_type_supports_real(x: MeasuredType) -> bool:
+def measurement_supports_real(x: Measurement) -> bool:
     """Return True if x supports real-space calculations."""
-    return x not in HARMONIC_ONLY_MEASURED_TYPES
+    return x not in HARMONIC_ONLY_MEASUREMENTS
 
 
-def measured_type_supports_harmonic(x: MeasuredType) -> bool:
+def measurement_supports_harmonic(x: Measurement) -> bool:
     """Return True if x supports harmonic-space calculations."""
-    return x not in REAL_ONLY_MEASURED_TYPES
+    return x not in REAL_ONLY_MEASUREMENTS
 
 
-def compare_enums(a: MeasuredType, b: MeasuredType) -> int:
-    """Define a comparison function for the MeasuredType enumeration.
+def compare_enums(a: Measurement, b: Measurement) -> int:
+    """Define a comparison function for the Measurement enumeration.
 
     Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
     """
-    order = (CMBMeasuredType, ClusterMeasuredType, GalaxyMeasuredType)
+    order = (CMB, Clusters, Galaxies)
     main_type_index_a = order.index(type(a))
     main_type_index_b = order.index(type(b))
     if main_type_index_a == main_type_index_b:
@@ -301,20 +299,20 @@ class InferredGalaxyZDist(YAMLSerializable):
     bin_name: str
     z: np.ndarray
     dndz: np.ndarray
-    measured_type: MeasuredType
+    measurement: Measurement
 
     def __post_init__(self) -> None:
         """Validate the redshift resolution data.
 
         - Make sure the z and dndz arrays have the same shape;
-        - The measured type must be a MeasuredType.
+        - The measurement must be of type Measurement.
         - The bin_name should not be empty.
         """
         if self.z.shape != self.dndz.shape:
             raise ValueError("The z and dndz arrays should have the same shape.")
 
-        if not isinstance(self.measured_type, ALL_MEASURED_TYPES_TYPES):
-            raise ValueError("The measured_type should be a MeasuredType.")
+        if not isinstance(self.measurement, ALL_MEASUREMENT_TYPES):
+            raise ValueError("The measurement should be a Measurement.")
 
         if self.bin_name == "":
             raise ValueError("The bin_name should not be empty.")
@@ -323,13 +321,13 @@ class InferredGalaxyZDist(YAMLSerializable):
         """Equality test for InferredGalaxyZDist.
 
         Two InferredGalaxyZDist are equal if they have equal bin_name, z, dndz, and
-        measured_type.
+        measurement.
         """
         return (
             self.bin_name == other.bin_name
             and np.array_equal(self.z, other.z)
             and np.array_equal(self.dndz, other.dndz)
-            and self.measured_type == other.measured_type
+            and self.measurement == other.measurement
         )
 
 
@@ -346,9 +344,9 @@ class TwoPointXY(YAMLSerializable):
 
     def __post_init__(self) -> None:
         """Make sure the two redshift resolutions are compatible."""
-        if not measured_type_is_compatible(self.x.measured_type, self.y.measured_type):
+        if not measurement_is_compatible(self.x.measurement, self.y.measurement):
             raise ValueError(
-                f"Measured types {self.x.measured_type} and {self.y.measured_type} "
+                f"Measurements {self.x.measurement} and {self.y.measurement} "
                 f"are not compatible."
             )
 
@@ -381,12 +379,12 @@ class TwoPointCells(YAMLSerializable):
         if len(self.ells.shape) != 1:
             raise ValueError("Ells should be a 1D array.")
 
-        if not measured_type_supports_harmonic(
-            self.XY.x.measured_type
-        ) or not measured_type_supports_harmonic(self.XY.y.measured_type):
+        if not measurement_supports_harmonic(
+            self.XY.x.measurement
+        ) or not measurement_supports_harmonic(self.XY.y.measurement):
             raise ValueError(
-                f"Measured types {self.XY.x.measured_type} and "
-                f"{self.XY.y.measured_type} must support harmonic-space calculations."
+                f"Measurements {self.XY.x.measurement} and "
+                f"{self.XY.y.measurement} must support harmonic-space calculations."
             )
 
     def __eq__(self, other) -> bool:
@@ -396,7 +394,7 @@ class TwoPointCells(YAMLSerializable):
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
         return type_to_sacc_string_harmonic(
-            self.XY.x.measured_type, self.XY.y.measured_type
+            self.XY.x.measurement, self.XY.y.measurement
         )
 
 
@@ -473,18 +471,18 @@ class TwoPointCWindow(YAMLSerializable):
         if not isinstance(self.window, Window):
             raise ValueError("Window should be a Window object.")
 
-        if not measured_type_supports_harmonic(
-            self.XY.x.measured_type
-        ) or not measured_type_supports_harmonic(self.XY.y.measured_type):
+        if not measurement_supports_harmonic(
+            self.XY.x.measurement
+        ) or not measurement_supports_harmonic(self.XY.y.measurement):
             raise ValueError(
-                f"Measured types {self.XY.x.measured_type} and "
-                f"{self.XY.y.measured_type} must support harmonic-space calculations."
+                f"Measurements {self.XY.x.measurement} and "
+                f"{self.XY.y.measurement} must support harmonic-space calculations."
             )
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
         return type_to_sacc_string_harmonic(
-            self.XY.x.measured_type, self.XY.y.measured_type
+            self.XY.x.measurement, self.XY.y.measurement
         )
 
 
@@ -508,19 +506,17 @@ class TwoPointXiTheta(YAMLSerializable):
 
         Make sure the window is
         """
-        if not measured_type_supports_real(
-            self.XY.x.measured_type
-        ) or not measured_type_supports_real(self.XY.y.measured_type):
+        if not measurement_supports_real(
+            self.XY.x.measurement
+        ) or not measurement_supports_real(self.XY.y.measurement):
             raise ValueError(
-                f"Measured types {self.XY.x.measured_type} and "
-                f"{self.XY.y.measured_type} must support real-space calculations."
+                f"Measurements {self.XY.x.measurement} and "
+                f"{self.XY.y.measurement} must support real-space calculations."
             )
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_real(
-            self.XY.x.measured_type, self.XY.y.measured_type
-        )
+        return type_to_sacc_string_real(self.XY.x.measurement, self.XY.y.measurement)
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointXiTheta objects."""
@@ -553,8 +549,8 @@ TwoPointCellsIndex = TypedDict(
 
 def _extract_candidate_data_types(
     tracer_name: str, data_points: list[sacc.DataPoint]
-) -> list[MeasuredType]:
-    """Extract the candidate measured types for a tracer.
+) -> list[Measurement]:
+    """Extract the candidate Measurement for a tracer.
 
     An exception is raise if the tracer does not have any associated data points.
     """
@@ -563,8 +559,8 @@ def _extract_candidate_data_types(
     }
     tracer_associated_types_len = len(tracer_associated_types)
 
-    type_count: dict[MeasuredType, int] = {
-        measured_type: 0 for measured_type in ALL_MEASURED_TYPES
+    type_count: dict[Measurement, int] = {
+        measurement: 0 for measurement in ALL_MEASUREMENTS
     }
     for data_type in tracer_associated_types:
         if data_type not in MEASURED_TYPE_STRING_MAP:
@@ -578,8 +574,8 @@ def _extract_candidate_data_types(
             type_count[a] += 1
 
     result = [
-        measured_type
-        for measured_type, count in type_count.items()
+        measurement
+        for measurement, count in type_count.items()
         if count == tracer_associated_types_len
     ]
     if len(result) == 0:
@@ -606,67 +602,63 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     inferred_galaxy_zdists = []
 
     for tracer in tracers:
-        candidate_measured_types = _extract_candidate_data_types(
-            tracer.name, data_points
-        )
+        candidate_measurements = _extract_candidate_data_types(tracer.name, data_points)
 
-        measured_type = extract_measured_type(candidate_measured_types, tracer)
+        measurement = extract_measurement(candidate_measurements, tracer)
 
         inferred_galaxy_zdists.append(
             InferredGalaxyZDist(
                 bin_name=tracer.name,
                 z=tracer.z,
                 dndz=tracer.nz,
-                measured_type=measured_type,
+                measurement=measurement,
             )
         )
 
     return inferred_galaxy_zdists
 
 
-def extract_measured_type(
-    candidate_measured_types: list[
-        GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType
-    ],
+def extract_measurement(
+    candidate_measurements: list[Galaxies | CMB | Clusters],
     tracer: sacc.tracers.BaseTracer,
-) -> GalaxyMeasuredType | CMBMeasuredType | ClusterMeasuredType:
+) -> Galaxies | CMB | Clusters:
     """Extract from tracer a single type of measurement.
 
-    Only types in candidate_measured_types will be considered.
+    Only types in candidate_measurements will be considered.
     """
-    if len(candidate_measured_types) == 1:
-        # Only one measured type appears in all associated data points.
-        # We can infer the measured type from the data points.
-        measured_type = candidate_measured_types[0]
+    if len(candidate_measurements) == 1:
+        # Only one Measurement appears in all associated data points.
+        # We can infer the Measurement from the data points.
+        measurement = candidate_measurements[0]
     else:
-        # We cannot infer the measured type from the associated data points.
+        # We cannot infer the Measurement from the associated data points.
         # We need to check the tracer name.
         if LENS_REGEX.match(tracer.name):
-            if GalaxyMeasuredType.COUNTS not in candidate_measured_types:
+            if Galaxies.COUNTS not in candidate_measurements:
                 raise ValueError(
                     f"Tracer {tracer.name} matches the lens regex but does "
-                    f"not have a compatible measured type. Inconsistent SACC "
+                    f"not have a compatible Measurement. Inconsistent SACC "
                     f"object."
                 )
-            measured_type = GalaxyMeasuredType.COUNTS
+            measurement = Galaxies.COUNTS
         elif SOURCE_REGEX.match(tracer.name):
             # The source tracers can be either shear E or shear T.
-            if GalaxyMeasuredType.SHEAR_E in candidate_measured_types:
-                measured_type = GalaxyMeasuredType.SHEAR_E
-            elif GalaxyMeasuredType.SHEAR_T in candidate_measured_types:
-                measured_type = GalaxyMeasuredType.SHEAR_T
+            if Galaxies.SHEAR_E in candidate_measurements:
+                measurement = Galaxies.SHEAR_E
+            elif Galaxies.SHEAR_T in candidate_measurements:
+                measurement = Galaxies.SHEAR_T
             else:
                 raise ValueError(
                     f"Tracer {tracer.name} matches the source regex but does "
-                    f"not have a compatible measured type. Inconsistent SACC "
+                    f"not have a compatible Measurement. Inconsistent SACC "
                     f"object."
                 )
         else:
             raise ValueError(
-                f"Tracer {tracer.name} does not have a compatible measured type. "
+                f"Tracer {tracer.name} does not have a compatible Measurement. "
                 f"Inconsistent SACC object."
             )
-    return measured_type
+    return measurement
 
 
 def extract_all_data_types_xi_thetas(
@@ -790,13 +782,13 @@ def make_all_photoz_bin_combinations(
     bin_combinations = [
         TwoPointXY(x=igz1, y=igz2)
         for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
-        if measured_type_is_compatible(igz1.measured_type, igz2.measured_type)
+        if measurement_is_compatible(igz1.measurement, igz2.measurement)
     ]
 
     return bin_combinations
 
 
-def _type_to_sacc_string_common(x: MeasuredType, y: MeasuredType) -> str:
+def _type_to_sacc_string_common(x: Measurement, y: Measurement) -> str:
     """Return the first two parts of the SACC string.
 
     The first two parts of the SACC string is used to denote a correlation between
@@ -823,7 +815,7 @@ def _type_to_sacc_string_common(x: MeasuredType, y: MeasuredType) -> str:
     return part_1 + part_2
 
 
-def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
+def type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
     """Return the final SACC string used to denote the real-space correlation.
 
     The SACC string used to denote the real-space correlation type
@@ -832,13 +824,13 @@ def type_to_sacc_string_real(x: MeasuredType, y: MeasuredType) -> str:
     a, b = sorted([x, y])
     suffix = f"{a.polarization()}{b.polarization()}"
 
-    if a in HARMONIC_ONLY_MEASURED_TYPES or b in HARMONIC_ONLY_MEASURED_TYPES:
+    if a in HARMONIC_ONLY_MEASUREMENTS or b in HARMONIC_ONLY_MEASUREMENTS:
         raise ValueError("Real-space correlation not supported for shear E.")
 
     return _type_to_sacc_string_common(x, y) + (f"xi_{suffix}" if suffix else "xi")
 
 
-def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
+def type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
     """Return the final SACC string used to denote the harmonic-space correlation.
 
     the SACC string used to denote the harmonic-space correlation type
@@ -847,18 +839,18 @@ def type_to_sacc_string_harmonic(x: MeasuredType, y: MeasuredType) -> str:
     a, b = sorted([x, y])
     suffix = f"{a.polarization()}{b.polarization()}"
 
-    if a in REAL_ONLY_MEASURED_TYPES or b in REAL_ONLY_MEASURED_TYPES:
+    if a in REAL_ONLY_MEASUREMENTS or b in REAL_ONLY_MEASUREMENTS:
         raise ValueError("Harmonic-space correlation not supported for shear T.")
 
     return _type_to_sacc_string_common(x, y) + (f"cl_{suffix}" if suffix else "cl")
 
 
-MEASURED_TYPE_STRING_MAP: dict[str, tuple[MeasuredType, MeasuredType]] = {
+MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
     type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
-    for a, b in combinations_with_replacement(ALL_MEASURED_TYPES, 2)
-    if measured_type_supports_real(a) and measured_type_supports_real(b)
+    for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
+    if measurement_supports_real(a) and measurement_supports_real(b)
 } | {
     type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
-    for a, b in combinations_with_replacement(ALL_MEASURED_TYPES, 2)
-    if measured_type_supports_harmonic(a) and measured_type_supports_harmonic(b)
+    for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
+    if measurement_supports_harmonic(a) and measurement_supports_harmonic(b)
 }

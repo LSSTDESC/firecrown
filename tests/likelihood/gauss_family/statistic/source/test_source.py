@@ -21,7 +21,7 @@ import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata.two_point import (
     extract_all_tracers,
     InferredGalaxyZDist,
-    GalaxyMeasuredType,
+    Galaxies,
 )
 from firecrown.parameters import ParamsMap
 
@@ -52,7 +52,7 @@ def fixture_empty_pyccl_tracer():
         "ConstantMagnificationBiasSystematicFactory",
     ],
 )
-def fixture_nc_sys_factory(request):
+def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
     """Fixture for the NumberCountsSystematicFactory class."""
     return request.param
 
@@ -341,7 +341,7 @@ def test_number_counts_systematic_factory(nc_sys_factory):
         bin_name="bin_1",
         z=np.array([1.0]),
         dndz=np.array([1.0]),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     sys_pz_shift = nc_sys_factory.create(bin_1)
     assert sys_pz_shift.parameter_prefix == "bin_1"
@@ -352,7 +352,7 @@ def test_weak_lensing_systematic_factory(wl_sys_factory):
         bin_name="bin_1",
         z=np.array([1.0]),
         dndz=np.array([1.0]),
-        measured_type=GalaxyMeasuredType.SHEAR_E,
+        measurement=Galaxies.SHEAR_E,
     )
     sys_pz_shift = wl_sys_factory.create(bin_1)
     assert sys_pz_shift.parameter_prefix == "bin_1"

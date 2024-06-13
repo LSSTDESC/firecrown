@@ -16,7 +16,7 @@ from firecrown.metadata.two_point import (
     extract_all_photoz_bin_combinations,
     extract_all_tracers,
     extract_window_function,
-    GalaxyMeasuredType,
+    Galaxies,
     TracerNames,
     TwoPointCells,
     TwoPointXiTheta,
@@ -233,7 +233,7 @@ def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
         assert_array_equal(tracer.z, z)
         assert_array_equal(tracer.dndz, dndz)
         assert tracer.bin_name == "src0"
-        assert tracer.measured_type == GalaxyMeasuredType.SHEAR_E
+        assert tracer.measurement == Galaxies.SHEAR_E
 
 
 def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
@@ -245,7 +245,7 @@ def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
 
     for tracer in all_tracers:
         assert_array_equal(tracer.z, z)
-        assert tracer.measured_type == GalaxyMeasuredType.SHEAR_E
+        assert tracer.measurement == Galaxies.SHEAR_E
         if tracer.bin_name == "src0":
             assert_array_equal(tracer.dndz, dndz0)
         elif tracer.bin_name == "src1":
@@ -263,7 +263,7 @@ def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
         assert_array_equal(tracer.z, z)
         assert_array_equal(tracer.dndz, dndz)
         assert tracer.bin_name == "lens0"
-        assert tracer.measured_type == GalaxyMeasuredType.COUNTS
+        assert tracer.measurement == Galaxies.COUNTS
 
 
 def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
@@ -275,7 +275,7 @@ def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
 
     for tracer in all_tracers:
         assert_array_equal(tracer.z, z)
-        assert tracer.measured_type == GalaxyMeasuredType.COUNTS
+        assert tracer.measurement == Galaxies.COUNTS
         if tracer.bin_name == "lens0":
             assert_array_equal(tracer.dndz, dndz0)
         elif tracer.bin_name == "lens1":
@@ -293,7 +293,7 @@ def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
         assert_array_equal(tracer.z, z)
         assert_array_equal(tracer.dndz, dndz)
         assert tracer.bin_name == "lens0"
-        assert tracer.measured_type == GalaxyMeasuredType.COUNTS
+        assert tracer.measurement == Galaxies.COUNTS
 
 
 def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
@@ -305,7 +305,7 @@ def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
 
     for tracer in all_tracers:
         assert_array_equal(tracer.z, z)
-        assert tracer.measured_type == GalaxyMeasuredType.COUNTS
+        assert tracer.measurement == Galaxies.COUNTS
         if tracer.bin_name == "lens0":
             assert_array_equal(tracer.dndz, dndz0)
         elif tracer.bin_name == "lens1":
@@ -323,11 +323,11 @@ def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
         if tracer.bin_name == "src0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz0)
-            assert tracer.measured_type == GalaxyMeasuredType.SHEAR_E
+            assert tracer.measurement == Galaxies.SHEAR_E
         elif tracer.bin_name == "lens0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz1)
-            assert tracer.measured_type == GalaxyMeasuredType.COUNTS
+            assert tracer.measurement == Galaxies.COUNTS
 
 
 def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
@@ -341,11 +341,11 @@ def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
         if tracer.bin_name == "src0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz0)
-            assert tracer.measured_type == GalaxyMeasuredType.SHEAR_T
+            assert tracer.measurement == Galaxies.SHEAR_T
         elif tracer.bin_name == "lens0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz1)
-            assert tracer.measured_type == GalaxyMeasuredType.COUNTS
+            assert tracer.measurement == Galaxies.COUNTS
 
 
 def test_extract_all_tracers_invalid_data_type(
@@ -366,7 +366,7 @@ def test_extract_all_tracers_bad_lens_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match="Tracer non_informative_label does not have a compatible measured type.",
+        match="Tracer non_informative_label does not have a compatible Measurement.",
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -378,9 +378,7 @@ def test_extract_all_tracers_bad_source_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=(
-            "Tracer non_informative_label does not have a compatible measured type."
-        ),
+        match=("Tracer non_informative_label does not have a compatible Measurement."),
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -394,7 +392,7 @@ def test_extract_all_tracers_inconsistent_lens_label(
         ValueError,
         match=(
             "Tracer lens0 matches the lens regex but does "
-            "not have a compatible measured type."
+            "not have a compatible Measurement."
         ),
     ):
         _ = extract_all_tracers(sacc_data)
@@ -409,7 +407,7 @@ def test_extract_all_tracers_inconsistent_source_label(
         ValueError,
         match=(
             "Tracer src0 matches the source regex but does "
-            "not have a compatible measured type."
+            "not have a compatible Measurement."
         ),
     ):
         _ = extract_all_tracers(sacc_data)

@@ -7,7 +7,15 @@ from scipy.integrate import quad
 
 from numcosmo_py import Ncm
 
-from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
+from firecrown.metadata.two_point import (
+    InferredGalaxyZDist,
+    Measurement,
+    Galaxies,
+    CMB,
+    Clusters,
+    ALL_MEASUREMENT_TYPES,
+)
+
 
 Y1_ALPHA = 0.94
 Y1_BETA = 2.0
@@ -128,7 +136,7 @@ class ZDistLSSTSRD:
         sigma_z: float,
         z: npt.NDArray,
         name: str,
-        measured_type: MeasuredType,
+        measurement: Measurement,
         use_autoknot: bool = False,
         autoknots_reltol: float = 1.0e-4,
         autoknots_abstol: float = 1.0e-15,

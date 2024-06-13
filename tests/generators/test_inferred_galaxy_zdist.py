@@ -16,7 +16,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
     Y1_SOURCE_BINS,
     Y10_SOURCE_BINS,
 )
-from firecrown.metadata.two_point import GalaxyMeasuredType
+from firecrown.metadata.two_point import Galaxies
 
 
 @pytest.fixture(name="zdist", params=[ZDistLSSTSRD.year_1(), ZDistLSSTSRD.year_10()])
@@ -64,7 +64,7 @@ def test_compute_one_bin_dist_fix_z(
         sigma_z=bins["sigma_z"],
         z=z_array,
         name="lens0_y1",
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
 
     assert_array_equal(Pz.z, z_array)
@@ -85,7 +85,7 @@ def test_compute_all_bins_dist_fix_z(
             sigma_z=bins["sigma_z"],
             z=z_array,
             name="lens_y1",
-            measured_type=GalaxyMeasuredType.COUNTS,
+            measurement=Galaxies.COUNTS,
         )
 
         assert_array_equal(Pz.z, z_array)
@@ -106,7 +106,7 @@ def test_compute_one_bin_dist_autoknot(
         sigma_z=bins["sigma_z"],
         z=z_array,
         name="lens0_y1",
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
         use_autoknot=True,
         autoknots_reltol=reltol,
     )
@@ -129,7 +129,7 @@ def test_compute_all_bins_dist_autoknot(
             sigma_z=bins["sigma_z"],
             z=z_array,
             name="lens_y1",
-            measured_type=GalaxyMeasuredType.COUNTS,
+            measurement=Galaxies.COUNTS,
             use_autoknot=True,
             autoknots_reltol=reltol,
         )

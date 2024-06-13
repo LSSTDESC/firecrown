@@ -31,7 +31,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
     InferredGalaxyZDist,
     ZDistLSSTSRD,
 )
-from firecrown.metadata.two_point import GalaxyMeasuredType, MeasuredType
+from firecrown.metadata.two_point import Galaxies, Measurement
 
 zdist_y1 = ZDistLSSTSRD.year_1()
 
@@ -44,7 +44,7 @@ count_bins = [
         sigma_z=Y1_LENS_BINS["sigma_z"],
         z=z,
         name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
         use_autoknot=True,
         autoknots_reltol=1.0e-5,
     )
@@ -58,7 +58,7 @@ shear_bins = [
         sigma_z=Y1_SOURCE_BINS["sigma_z"],
         z=z,
         name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
-        measured_type=GalaxyMeasuredType.SHEAR_E,
+        measurement=Galaxies.SHEAR_E,
         use_autoknot=True,
         autoknots_reltol=1.0e-5,
     )
@@ -155,7 +155,7 @@ all_two_point_functions = tp.TwoPoint.from_metadata_cells(
 ## Setting Up the Two-Point Statistics
 
 Setting up the two-point statistics requires a cosmology and a set of parameters. 
-The parameters necessary in our analysis depend on the two-point statistic measured types and the systematics we are considering. 
+The parameters necessary in our analysis depend on the two-point statistic measurements and the systematics we are considering. 
 In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the parameters' default values:
 
 ```{python}
@@ -229,7 +229,7 @@ data = pd.DataFrame(
         "Cell": tv0,
         "bin-x": meta0.XY.x.bin_name,
         "bin-y": meta0.XY.y.bin_name,
-        "measured_type": meta0.get_sacc_name(),
+        "measurement": meta0.get_sacc_name(),
     }
 )
 
@@ -260,7 +260,7 @@ for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
                 "Cell": np.abs(two_point.compute_theory_vector(tools)),
                 "bin-x": meta.XY.x.bin_name,
                 "bin-y": meta.XY.y.bin_name,
-                "measured_type": meta.get_sacc_name(),
+                "measurement": meta.get_sacc_name(),
             }
         )
     )
@@ -273,7 +273,7 @@ data = pd.concat(two_point_pd_list)
     + labs(x=r"$\ell$", y=r"$C_\ell$")
     + scale_x_log10()
     + scale_y_log10()
-    + facet_wrap("measured_type")
+    + facet_wrap("measurement")
     + doc_theme()
 )
 ```

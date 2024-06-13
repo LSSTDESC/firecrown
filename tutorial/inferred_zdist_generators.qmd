@@ -113,7 +113,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
     Y1_SOURCE_BINS,
     Y10_SOURCE_BINS,
 )
-from firecrown.metadata.two_point import MeasuredType, GalaxyMeasuredType
+from firecrown.metadata.two_point import Measurement, Galaxies
 
 # These are the values at which we will evaluate the distribution.
 z = np.linspace(0.0, 0.6, 100)
@@ -126,7 +126,7 @@ Pz_lens0_y1 = zdist_y1.binned_distribution(
     sigma_z=Y1_LENS_BINS["sigma_z"],
     z=z,
     name="lens0_y1",
-    measured_type=GalaxyMeasuredType.COUNTS,
+    measurement=Galaxies.COUNTS,
 )
 Pz_source0_y1 = zdist_y1.binned_distribution(
     zpl=Y1_SOURCE_BINS["edges"][0],
@@ -134,7 +134,7 @@ Pz_source0_y1 = zdist_y1.binned_distribution(
     sigma_z=Y1_SOURCE_BINS["sigma_z"],
     z=z,
     name="source0_y1",
-    measured_type=GalaxyMeasuredType.SHEAR_E,
+    measurement=Galaxies.SHEAR_E,
 )
 Pz_lens0_y10 = zdist_y10.binned_distribution(
     zpl=Y10_LENS_BINS["edges"][0],
@@ -142,7 +142,7 @@ Pz_lens0_y10 = zdist_y10.binned_distribution(
     sigma_z=Y10_LENS_BINS["sigma_z"],
     z=z,
     name="lens0_y10",
-    measured_type=GalaxyMeasuredType.COUNTS,
+    measurement=Galaxies.COUNTS,
 )
 Pz_source0_y10 = zdist_y10.binned_distribution(
     zpl=Y10_SOURCE_BINS["edges"][0],
@@ -150,7 +150,7 @@ Pz_source0_y10 = zdist_y10.binned_distribution(
     sigma_z=Y10_SOURCE_BINS["sigma_z"],
     z=z,
     name="source0_y10",
-    measured_type=GalaxyMeasuredType.SHEAR_E,
+    measurement=Galaxies.SHEAR_E,
 )
 
 # Next we check that the objects we created are of the expected type.
@@ -235,7 +235,7 @@ all_y1_bins = [
         sigma_z=Y1_LENS_BINS["sigma_z"],
         z=z,
         name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
         use_autoknot=True,
         autoknots_reltol=1.0e-5,
     )
@@ -247,7 +247,7 @@ all_y1_bins = [
         sigma_z=Y1_SOURCE_BINS["sigma_z"],
         z=z,
         name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
-        measured_type=GalaxyMeasuredType.SHEAR_E,
+        measurement=Galaxies.SHEAR_E,
         use_autoknot=True,
         autoknots_reltol=1.0e-5,
     )
@@ -271,7 +271,7 @@ d_y1 = pd.concat(
                 "z": Pz.z,
                 "dndz": Pz.dndz,
                 "bin": Pz.bin_name,
-                "measured_type": Pz.measured_type,
+                "measurement": Pz.measurement,
                 "legend": f"{Pz.bin_name}, {len(Pz.z)}",
             }
         )
@@ -283,7 +283,7 @@ d_y1 = pd.concat(
     ggplot(d_y1, aes("z", "dndz", color="legend"))
     + geom_point()
     + labs(y="dN/dz")
-    + facet_wrap("~ measured_type", nrow=2)
+    + facet_wrap("~ measurement", nrow=2)
     + doc_theme()
 )
 ```

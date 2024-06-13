@@ -31,7 +31,7 @@ from firecrown.likelihood.statistic import (
     TheoryVector,
 )
 from firecrown.metadata.two_point import (
-    GalaxyMeasuredType,
+    Galaxies,
     InferredGalaxyZDist,
     TRACER_NAMES_TOTAL,
     TracerNames,
@@ -233,16 +233,16 @@ def use_source_factory(
 ) -> WeakLensing | NumberCounts:
     """Apply the factory to the inferred galaxy redshift distribution."""
     source: WeakLensing | NumberCounts
-    match inferred_galaxy_zdist.measured_type:
-        case GalaxyMeasuredType.COUNTS:
+    match inferred_galaxy_zdist.measurement:
+        case Galaxies.COUNTS:
             assert nc_factory is not None
             source = nc_factory.create(inferred_galaxy_zdist)
-        case GalaxyMeasuredType.SHEAR_E | GalaxyMeasuredType.SHEAR_T:
+        case Galaxies.SHEAR_E | Galaxies.SHEAR_T:
             assert wl_factory is not None
             source = wl_factory.create(inferred_galaxy_zdist)
         case _:
             raise ValueError(
-                f"Measured type {inferred_galaxy_zdist.measured_type} not supported!"
+                f"Measurement {inferred_galaxy_zdist.measurement} not supported!"
             )
     return source
 
