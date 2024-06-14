@@ -6,6 +6,7 @@ project:
     - intro_article.qmd
     - development_example.qmd
     - theoretical_predictions_tutorial.qmd
+    - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
     - two_point_generators.qmd
 
@@ -27,6 +28,8 @@ website:
               text: "Development Example"
         - section: "Tutorials"
           contents:
+            - href: inferred_zdist.qmd
+              text: "Inferred Redshift Distributions"
             - href: inferred_zdist_generators.qmd
               text: "Redshift Distribution Generators"
             - href: two_point_generators.qmd

@@ -30,7 +30,7 @@ class YAMLSerializable:
 
     def to_yaml(self: ST) -> str:
         """Return the YAML representation of the object."""
-        return yaml.dump(self, Dumper=Dumper)
+        return yaml.dump(self, Dumper=Dumper, sort_keys=False)
 
     @classmethod
     def from_yaml(cls: Type[ST], yaml_str: str) -> ST:
