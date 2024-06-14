@@ -7,7 +7,12 @@ format: html
 
 ## Purpose of this document
 
-Firecrown provides facilities for creating distributions for galaxies
+In the previous [tutorial](inferred_zdist.qmd), we explored how to use `InferredGalaxyZDist` objects to represent redshift distributions for galaxies. 
+These distributions are necessary for modeling galaxy redshift distributions and can be created using various methods.
+In this tutorial, we will focus on generating these distributions using the `ZDistLSSTSRD` class in Firecrown. 
+This class generates redshift distributions in accordance with the LSST Science Requirements Document (SRD).
+
+The distributions for galaxies are represented by the probability density function $P(z|B_i, \theta)$:
 $$
 P(z|B_i, \theta) \equiv \frac{\mathrm{d}n}{\mathrm{d}z}(z;B_i, \theta),
 $${#eq-Pi}
@@ -16,7 +21,7 @@ where $B_i$ is the $i$-th bin of the photometric redshifts, and $\theta$ is a se
 In Firecrown this distribution is represented as an object of type `InferredGalaxyZDist`[^1].
 An object of this type contains the redshifts, the corresponding probabilities, and the data-type of the measurements.
 Firecrown also provides facilities to generate these distributions, given a chosen model.
-In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which can be used to generate redshift distributions according to the LSST Science Requirements Document (SRD).
+In `firecrown.generators`, we have the `ZDistLSSTSRD` class, which can be used to generate redshift distributions according to the LSST SRD.
 
 [^1]: The metadata classes described in this tutorial, unless otherwise noted, are defined in the package `firecrown.metadata`.
 

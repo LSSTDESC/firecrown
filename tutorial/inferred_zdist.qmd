@@ -5,7 +5,7 @@ format: html
 
 {{< include _functions.qmd >}}
 
-## Purpose
+## Purpose {#sec-purpose}
 
 This document serves as a guide for utilizing Firecrown's capabilities in describing galaxy redshift distributions for cosmological analyses. 
 The galaxy redshift distributions play a crucial role in modeling the distribution of galaxies within specific photometric redshift bins.
@@ -85,7 +85,7 @@ Above we use the `NumberCountsFactory` to create the `TwoPoint` object.
 The source factories will be discussed in another tutorial.
 
 Depending on the theoretical model, the `TwoPoint` object may require additional parameters.
-To obtain a list of available factories, one can use the following command:
+To obtain a list of required parameters, one can use the following commands:
 
 ```{python}
 from firecrown.parameters import ParamsMap
@@ -95,10 +95,15 @@ default_values = req_params.get_default_values()
 params = ParamsMap(default_values)
 ```
 
-We can use Firecrown's `ParamsMap` to obtain the required parameters for the theoretical model and their default values.
+Theory objects that require parameters are subclasses of `Updatable`. 
+For these objects, the `required_parameters` method can be used to obtain the list of required parameters through the `RequiredParameters` object.
 
-Before generating the two-point statistics, it's necessary to set the parameters to their default values. 
-These default values are:
+The get_default_values method returns a dictionary containing the default values for these required parameters. 
+This dictionary is then used to create a `ParamsMap` object.
+
+In this example the `default_values` dictionary includes a single parameter `lens0_bias`, with a default value of $1.5$.
+Note that the parameter names are constructed using the bin name and the parameter name, separated by an underscore. 
+Consequently, parameters specific to a bin will have the bin name as a prefix.
 
 ```{python}
 # | code-fold: true
@@ -125,7 +130,6 @@ tools.update(params)
 tools.prepare(ccl_cosmo)
 two_point_lens0_lens0.update(params)
 theory_vector = two_point_lens0_lens0.compute_theory_vector(tools)
-
 
 ```
 
