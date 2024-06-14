@@ -73,9 +73,13 @@ class FirecrownLikelihood:
             print(f"The Firecrown likelihood needs a required parameter: {err}")
             print("*" * 30)
             raise
-        self.map: MappingCosmoSIS = mapping_builder(
+        # We have to do some extra type-fiddling here because mapping_builder
+        # has a declared return type of the base class.
+        new_mapping = mapping_builder(
             input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
         )
+        assert isinstance(new_mapping, MappingCosmoSIS)
+        self.map = new_mapping
 
         # If sampling_sections  is empty, but we have required parameters, then
         # we have a configuration problem, and ParamsMap can never be built

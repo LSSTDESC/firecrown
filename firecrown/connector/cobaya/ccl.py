@@ -11,7 +11,7 @@ import pyccl
 
 from cobaya.theory import Theory
 
-from firecrown.connector.mapping import mapping_builder
+from firecrown.connector.mapping import mapping_builder, MappingCAMB
 
 
 class CCLConnector(Theory):
@@ -28,7 +28,11 @@ class CCLConnector(Theory):
         Cobaya does not allow us to override __init__.
         """
         assert self.input_style
-        self.map = mapping_builder(input_style=self.input_style)
+        # We have to do some extra type-fiddling here because mapping_builder
+        # has a declared return type of the base class.
+        new_mapping = mapping_builder(input_style=self.input_style)
+        assert isinstance(new_mapping, MappingCAMB)
+        self.map = new_mapping
 
         self.a_bg = np.linspace(0.1, 1.0, 50)
         self.z_bg = 1.0 / self.a_bg - 1.0

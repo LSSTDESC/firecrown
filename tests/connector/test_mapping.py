@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 import numpy as np
 from firecrown.connector import mapping
-from firecrown.connector.mapping import Mapping, mapping_builder
+from firecrown.connector.mapping import Mapping, mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.likelihood import NamedParameters
 
 
@@ -41,6 +41,7 @@ def test_conversion_from_cosmosis_camb():
     }
     named_params = NamedParameters(cosmosis_params)
     p = mapping.mapping_builder(input_style="CosmoSIS")
+    assert isinstance(p, MappingCosmoSIS)
     p.set_params_from_cosmosis(named_params)
     assert p.Omega_c == cosmosis_params["omega_c"]
     assert p.Omega_b == cosmosis_params["omega_b"]
@@ -89,6 +90,7 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
     }
     named_params = NamedParameters(cosmosis_params)
     p = mapping.mapping_builder(input_style="CosmoSIS")
+    assert isinstance(p, MappingCosmoSIS)
     p.set_params_from_cosmosis(named_params)
     assert p.Neff == pytest.approx(3.171)
 
