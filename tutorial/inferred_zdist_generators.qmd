@@ -217,7 +217,7 @@ data = pd.concat([d_lens0_y1, d_source0_y1, d_lens0_y10, d_source0_y10])
 )
 ```
 
-## Generating the redshift distribution for all bins at once
+## Generating the redshift distribution for all bins at once {#sec-all-bins}
 
 The `ZDistLSSTSRD` object can also be used to generate the redshift distribution for all bins at once.
 The following code block demonstrates how to do this.

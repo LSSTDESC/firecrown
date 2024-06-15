@@ -7,7 +7,8 @@ format: html
 
 ## Purpose of this Document
 
-In the tutorial [redshift distributions](inferred_zdist_generators.html) we illustrate the process of using Firecrown to create redshift distributions based on specified parameters describing the distributions.
+In the tutorial [redshift distributions](inferred_zdist_generators.qmd) we illustrate the process of using Firecrown to create redshift distributions based on specified parameters describing the distributions.
+Additionally, in [serializable redshift distributions](inferred_zdist_serialization.qmd) we demonstrate how to generate redshift distributions using serializable objects.
 This document outlines how to use `InferredGalaxyZDist` objects to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
 
 ## Two-point statistics
@@ -18,52 +19,19 @@ In Firecrown, two-point statistics are represented by the `TwoPoint` class, in t
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
-Our initial step involves generating all photometric redshift bins necessary for the LSST year 1 redshift distribution.
+Our initial step involves generating all photometric redshift bins necessary for the LSST year 1 redshift distribution. 
+This process is detailed [here](inferred_zdist_generators.qmd#sec-all-bins) in the tutorial on redshift distributions.
+In the serialization [tutorial](inferred_zdist_serialization.qmd#sec-lsst-srd), we demonstrate how to get the LSST SRD redshift distributions.
+Here we will use the LSST SRD year 1 redshift distribution to generate the two-point statistics.
 
 ```{python}
-from itertools import pairwise
-
-import firecrown
-import numpy as np
 from firecrown.generators.inferred_galaxy_zdist import (
-    Y1_LENS_BINS,
-    Y1_SOURCE_BINS,
-    InferredGalaxyZDist,
-    ZDistLSSTSRD,
+    LSST_Y1_LENS_BIN_COLLECTION,
+    LSST_Y1_SOURCE_BIN_COLLECTION,
 )
-from firecrown.metadata.two_point import Galaxies, Measurement
 
-zdist_y1 = ZDistLSSTSRD.year_1()
-
-z = np.linspace(0.0, 1.5, 1000)
-
-count_bins = [
-    zdist_y1.binned_distribution(
-        zpl=zpl,
-        zpu=zpu,
-        sigma_z=Y1_LENS_BINS["sigma_z"],
-        z=z,
-        name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
-        measurement=Galaxies.COUNTS,
-        use_autoknot=True,
-        autoknots_reltol=1.0e-5,
-    )
-    for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
-]
-
-shear_bins = [
-    zdist_y1.binned_distribution(
-        zpl=zpl,
-        zpu=zpu,
-        sigma_z=Y1_SOURCE_BINS["sigma_z"],
-        z=z,
-        name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
-        measurement=Galaxies.SHEAR_E,
-        use_autoknot=True,
-        autoknots_reltol=1.0e-5,
-    )
-    for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
-]
+count_bins = LSST_Y1_LENS_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_BIN_COLLECTION.generate()
 all_y1_bins = count_bins + shear_bins
 ```
 
@@ -74,6 +42,7 @@ For instance, demonstrated below is the computation of all feasible metadata tai
 
 ```{python}
 
+import numpy as np
 from firecrown.metadata.two_point import make_all_photoz_bin_combinations, TwoPointCells
 
 all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)

@@ -8,6 +8,7 @@ project:
     - theoretical_predictions_tutorial.qmd
     - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
+    - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
 
 website:
@@ -32,6 +33,8 @@ website:
               text: "Inferred Redshift Distributions"
             - href: inferred_zdist_generators.qmd
               text: "Redshift Distribution Generators"
+            - href: inferred_zdist_serialization.qmd
+              text: "Redshift Distribution Serialization"
             - href: two_point_generators.qmd
               text: "Two-Point Function Generators"
         - section: "Firecrown on GitHub"
