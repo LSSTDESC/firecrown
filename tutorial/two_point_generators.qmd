@@ -107,6 +107,30 @@ ncf = nc.NumberCountsFactory(
 )
 ```
 
+The choice of systematics is dependent on the specific analysis being conducted.
+In order to allow sharing of the systematics between different analyses, the factories can be serialized and deserialized.
+
+For example, the factories can be serialized as follows:
+```{python}
+from firecrown.utils import base_model_to_yaml
+
+wl_yaml = base_model_to_yaml(wlf)
+nc_yaml = base_model_to_yaml(ncf)
+
+```
+
+The generated YAML for the weak lensing factory is:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{wl_yaml}\n```")
+```
+The generated YAML for the number counts factory is:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{nc_yaml}\n```")
+```
+
+
 ## Generating the Two-Point Statistics
 
 To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics. 
