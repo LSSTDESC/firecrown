@@ -229,13 +229,17 @@ def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_s
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
-    global_systematics = [wl.LinearAlignmentSystematic(sacc_tracer="")]
+    global_systematics = [wl.LinearAlignmentSystematicFactory()]
     wl_factory = wl.WeakLensingFactory(
         per_bin_systematics=[], global_systematics=global_systematics
     )
     source_ready = wl_factory.create(inferred_zdist=src0)
 
-    source_read = wl.WeakLensing(sacc_tracer="src0", systematics=global_systematics)
+    # pylint: disable=protected-access
+    source_read = wl.WeakLensing(
+        sacc_tracer="src0", systematics=wl_factory._global_systematics_instances
+    )
+    # pylint: enable=protected-access
     source_read.read(sacc_data)
 
     assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
@@ -314,13 +318,18 @@ def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
-    global_systematics = [nc.PTNonLinearBiasSystematic(sacc_tracer="")]
+    global_systematics = [nc.PTNonLinearBiasSystematicFactory()]
     nc_factory = nc.NumberCountsFactory(
-        per_bin_systematics=[], global_systematics=global_systematics
+        per_bin_systematics=[],
+        global_systematics=global_systematics,
     )
     source_ready = nc_factory.create(inferred_zdist=lens0)
 
-    source_read = nc.NumberCounts(sacc_tracer="lens0", systematics=global_systematics)
+    # pylint: disable=protected-access
+    source_read = nc.NumberCounts(
+        sacc_tracer="lens0", systematics=nc_factory._global_systematics_instances
+    )
+    # pylint: enable=protected-access
     source_read.read(sacc_data)
 
     assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)

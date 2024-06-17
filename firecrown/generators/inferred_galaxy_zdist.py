@@ -3,7 +3,7 @@
 from typing import TypedDict, Annotated, Any
 from itertools import pairwise
 
-from pydantic import BaseModel, Field, field_serializer, BeforeValidator, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, BeforeValidator
 
 import numpy as np
 import numpy.typing as npt
@@ -190,7 +190,7 @@ class ZDistLSSTSRD:
 class LinearGrid1d(BaseModel):
     """A 1D linear grid."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     start: float
     end: float
@@ -204,7 +204,7 @@ class LinearGrid1d(BaseModel):
 class RawGrid1d(BaseModel):
     """A 1D grid."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     values: list[float]
 
@@ -279,7 +279,7 @@ class ZDistLSSTSRDBin(BaseModel):
 class ZDistLSSTSRDBinCollection(BaseModel):
     """LSST Inferred galaxy redshift distributions in bins."""
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     alpha: float
     beta: float
