@@ -87,7 +87,7 @@ import firecrown.likelihood.two_point as tp
 import warnings
 
 # WeakLensing systematics -- global
-ia_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
+ia_systematic = wl.LinearAlignmentSystematicFactory()
 # WeakLensing systematics -- per-bin
 wl_photoz = wl.PhotoZShiftFactory()
 wl_mult_bias = wl.MultiplicativeShearBiasFactory()
