@@ -127,12 +127,12 @@ with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
     # nz_lens
     dndz = data["nz_lens"].read()
     for i in range(1, n_lens + 1):
-        sacc_data.add_tracer("NZ", f"lens{i-1}", dndz["Z_MID"], dndz[f"BIN{i}"])
+        sacc_data.add_tracer("NZ", f"lens{i - 1}", dndz["Z_MID"], dndz[f"BIN{i}"])
 
     # nz_src
     dndz = data["nz_source"].read()
     for i in range(1, n_srcs + 1):
-        sacc_data.add_tracer("NZ", f"src{i-1}", dndz["Z_MID"], dndz[f"BIN{i}"])
+        sacc_data.add_tracer("NZ", f"src{i - 1}", dndz["Z_MID"], dndz[f"BIN{i}"])
 
     # xip
     xip = data["xip"].read()
@@ -148,8 +148,8 @@ with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
 
             sacc_data.add_theta_xi(
                 "galaxy_shear_xi_plus",
-                f"src{i-1}",
-                f"src{j-1}",
+                f"src{i - 1}",
+                f"src{j - 1}",
                 xip_ij["ANG"][msk],
                 xip_ij["VALUE"][msk],
             )
@@ -168,8 +168,8 @@ with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
 
             sacc_data.add_theta_xi(
                 "galaxy_shear_xi_minus",
-                f"src{i-1}",
-                f"src{j-1}",
+                f"src{i - 1}",
+                f"src{j - 1}",
                 xim_ij["ANG"][msk],
                 xim_ij["VALUE"][msk],
             )
@@ -188,8 +188,8 @@ with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
 
             sacc_data.add_theta_xi(
                 "galaxy_shearDensity_xi_t",
-                f"lens{i-1}",
-                f"src{j-1}",
+                f"lens{i - 1}",
+                f"src{j - 1}",
                 gammat_ij["ANG"][msk],
                 gammat_ij["VALUE"][msk],
             )
@@ -207,8 +207,8 @@ with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
 
         sacc_data.add_theta_xi(
             "galaxy_density_xi",
-            f"lens{i-1}",
-            f"lens{i-1}",
+            f"lens{i - 1}",
+            f"lens{i - 1}",
             wtheta_ii["ANG"][msk],
             wtheta_ii["VALUE"][msk],
         )
