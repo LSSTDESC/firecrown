@@ -78,6 +78,8 @@ def test_tracer_names():
 
 
 def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window):
+    """This test also makes sure that TwoPoint theory calculations are
+    repeatable."""
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -93,8 +95,46 @@ def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window):
     assert statistic.window.ells_for_interpolation is not None
     assert all(np.isfinite(statistic.window.ells_for_interpolation))
 
+    statistic.reset()
     statistic.update(ParamsMap())
-    statistic.compute_theory_vector(tools)
+    tools.update(ParamsMap())
+    result1 = statistic.compute_theory_vector(tools)
+    assert all(np.isfinite(result1))
+
+    statistic.reset()
+    statistic.update(ParamsMap())
+    tools.update(ParamsMap())
+    result2 = statistic.compute_theory_vector(tools)
+    assert np.array_equal(result1, result2)
+
+
+def test_two_point_src0_src0_no_window(sacc_galaxy_cells_src0_src0_no_window):
+    """This test also makes sure that TwoPoint theory calculations are
+    repeatable."""
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
+
+    src0 = WeakLensing(sacc_tracer="src0")
+
+    statistic = TwoPoint("galaxy_shear_cl_ee", src0, src0)
+    statistic.read(sacc_data)
+
+    tools = ModelingTools()
+    tools.update(ParamsMap())
+    tools.prepare(pyccl.CosmologyVanillaLCDM())
+
+    assert statistic.window is None
+
+    statistic.reset()
+    statistic.update(ParamsMap())
+    tools.update(ParamsMap())
+    result1 = statistic.compute_theory_vector(tools)
+    assert all(np.isfinite(result1))
+
+    statistic.reset()
+    statistic.update(ParamsMap())
+    tools.update(ParamsMap())
+    result2 = statistic.compute_theory_vector(tools)
+    assert np.array_equal(result1, result2)
 
 
 def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data):
