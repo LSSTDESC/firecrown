@@ -24,6 +24,9 @@ def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
 
     If hi_cosmo does not have a HIPrim object, a ValueError is raised.
     If the HIPrim object is not of type HIPrimPowerLaw, a ValueError is raised.
+
+    :param hi_cosmo: NumCosmo HICosmo object
+    :return: the HIPrim object contained in hi_cosmo
     """
     hiprim = hi_cosmo.peek_submodel_by_mid(Nc.HIPrim.id())
     if not hiprim:
@@ -49,8 +52,14 @@ class MappingNumCosmo(GObject.Object):
         p_ml: None | Nc.PowspecML = None,
         p_mnl: None | Nc.PowspecMNL = None,
         dist: None | Nc.Distance = None,
-    ):
-        """Initialize a MappingNumCosmo object."""
+    ) -> None:
+        """Initialize a MappingNumCosmo object.
+
+        :param require_nonlinear_pk: whether to require a nonlinear power spectrum
+        :param p_ml: optional PowspecML object
+        :param p_mnl: optional PowspecMNL object
+        :param dist: optional Distance object
+        """
         super().__init__(  # type: ignore
             require_nonlinear_pk=require_nonlinear_pk, p_ml=p_ml, p_mnl=p_mnl, dist=dist
         )
@@ -67,11 +76,20 @@ class MappingNumCosmo(GObject.Object):
             self._p_mnl = None
 
     def _get_mapping_name(self) -> str:
-        """Return the mapping name."""
+        """Return the mapping name.
+
+        :return: the name of the mapping.
+        """
         return self._mapping_name
 
-    def _set_mapping_name(self, value: str):
-        """Set the mapping name."""
+    def _set_mapping_name(self, value: str) -> None:
+        """Set the mapping name.
+
+        This method also sets the :attr:`mapping` property to a default-
+        initialized :class:`Mapping` object.
+
+        :param value: the new name of the mapping
+        """
         self._mapping_name = value
         self.mapping = Mapping()
 
@@ -84,11 +102,17 @@ class MappingNumCosmo(GObject.Object):
     )
 
     def _get_require_nonlinear_pk(self) -> bool:
-        """Return whether nonlinear power spectra are required."""
+        """Return whether nonlinear power spectra are required.
+
+        :return: whether nonlinear power spectra are required
+        """
         return self.mapping.require_nonlinear_pk
 
-    def _set_require_nonlinear_pk(self, value: bool):
-        """Set whether nonlinear power spectra are required."""
+    def _set_require_nonlinear_pk(self, value: bool) -> None:
+        """Set whether nonlinear power spectra are required.
+
+        :param value: whether nonlinear power spectra are required
+        """
         self.mapping.require_nonlinear_pk = value
 
     require_nonlinear_pk = GObject.Property(
@@ -100,11 +124,17 @@ class MappingNumCosmo(GObject.Object):
     )
 
     def _get_p_ml(self) -> None | Nc.PowspecML:
-        """Return the NumCosmo PowspecML object."""
+        """Return the NumCosmo PowspecML object.
+
+        :param value: the NumCosmo PowspecML object, or None
+        """
         return self._p_ml
 
-    def _set_p_ml(self, value: None | Nc.PowspecML):
-        """Set the NumCosmo PowspecML object."""
+    def _set_p_ml(self, value: None | Nc.PowspecML) -> None:
+        """Set the NumCosmo PowspecML object.
+
+        :param value: the new value to be set
+        """
         self._p_ml = value
 
     p_ml = GObject.Property(
@@ -115,11 +145,17 @@ class MappingNumCosmo(GObject.Object):
     )
 
     def _get_p_mnl(self) -> None | Nc.PowspecMNL:
-        """Return the NumCosmo PowspecMNL object."""
+        """Return the NumCosmo PowspecMNL object.
+
+        :return: the NumCosmo PowspecMNL object, or None
+        """
         return self._p_mnl
 
-    def _set_p_mnl(self, value: None | Nc.PowspecMNL):
-        """Set the NumCosmo PowspecMNL object."""
+    def _set_p_mnl(self, value: None | Nc.PowspecMNL) -> None:
+        """Set the NumCosmo PowspecMNL object.
+
+        :param value: the new value to be set
+        """
         self._p_mnl = value
 
     p_mnl = GObject.Property(
@@ -130,10 +166,13 @@ class MappingNumCosmo(GObject.Object):
     )
 
     def _get_dist(self) -> None | Nc.Distance:
-        """Return the NumCosmo Distance object."""
+        """Return the NumCosmo Distance object.
+
+        :return: the NumCosmo Distance object, or None
+        """
         return self._dist
 
-    def _set_dist(self, value: Nc.Distance):
+    def _set_dist(self, value: Nc.Distance) -> None:
         """Set the NumCosmo Distance object."""
         self._dist = value
 
@@ -146,10 +185,10 @@ class MappingNumCosmo(GObject.Object):
 
     def set_params_from_numcosmo(
         self, mset: Ncm.MSet
-    ):  # pylint: disable-msg=too-many-locals
-        """Return a PyCCLCosmologyConstants object.
+    ) -> None:  # pylint: disable-msg=too-many-locals
+        """Set the parameters of the contained Mapping object.
 
-        This object will have parameters equivalent to those read from NumCosmo.
+        :param mset: the NumCosmo MSet object from which to get the parameters
         """
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
@@ -204,8 +243,14 @@ class MappingNumCosmo(GObject.Object):
         )
         # pylint: enable=duplicate-code
 
-    def calculate_ccl_args(self, mset: Ncm.MSet):  # pylint: disable-msg=too-many-locals
-        """Calculate the arguments necessary for CCL for this sample."""
+    def calculate_ccl_args(
+        self, mset: Ncm.MSet
+    ) -> dict[str, Any]:  # pylint: disable-msg=too-many-locals
+        """Calculate the arguments necessary for CCL for this sample.
+
+        :param mset: the NumCosmo MSet object from which to get the parameters
+        :return: a dictionary of the arguments required by CCL
+        """
         ccl_args: dict[str, Any] = {}
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
@@ -276,7 +321,12 @@ class MappingNumCosmo(GObject.Object):
         return ccl_args
 
     def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
-        """Create a ParamsMap from a NumCosmo MSet."""
+        """Create a ParamsMap from a NumCosmo MSet.
+
+        :param model_list: list of model names
+        :param mset: the NumCosmo MSet object from which to get the parameters
+        :return: a ParamsMap containing the parameters of the models in model_list
+        """
         params_map = ParamsMap()
         for model_ns in model_list:
             mid = mset.get_id_by_ns(model_ns)
@@ -313,6 +363,10 @@ class NumCosmoData(Ncm.Data):
     __gtype_name__ = "FirecrownNumCosmoData"
 
     def __init__(self):
+        """Initialize a NumCosmoData object.
+
+        Default values are provided for all attributes; most default are None.
+        """
         super().__init__()
         self.likelihood: Likelihood
         self.tools: ModelingTools
@@ -327,11 +381,17 @@ class NumCosmoData(Ncm.Data):
         self.set_init(True)
 
     def _get_model_list(self) -> list[str]:
-        """Return the list of models."""
+        """Return the list of model names.
+
+        :return: the names of the contained models
+        """
         return self._model_list
 
-    def _set_model_list(self, value: list[str]):
-        """Set the list of models."""
+    def _set_model_list(self, value: list[str]) -> None:
+        """Set the list of model names.
+
+        :param value: the new of model names
+        """
         self._model_list = value
 
     model_list = GObject.Property(
@@ -342,11 +402,17 @@ class NumCosmoData(Ncm.Data):
     )
 
     def _get_nc_mapping(self) -> MappingNumCosmo:
-        """Return the MappingNumCosmo object."""
+        """Return the MappingNumCosmo object.
+
+        :return: the MappingNumCosmo object
+        """
         return self._nc_mapping
 
-    def _set_nc_mapping(self, value: MappingNumCosmo):
-        """Set the MappingNumCosmo object."""
+    def _set_nc_mapping(self, value: MappingNumCosmo) -> None:
+        """Set the MappingNumCosmo object.
+
+        :param: the new value for the MappingNumCosmo object
+        """
         self._nc_mapping = value
 
     nc_mapping = GObject.Property(
@@ -356,7 +422,7 @@ class NumCosmoData(Ncm.Data):
         setter=_set_nc_mapping,
     )
 
-    def _set_likelihood_from_factory(self):
+    def _set_likelihood_from_factory(self) -> None:
         """Deserialize the likelihood."""
         assert self._likelihood_source is not None
         assert self._likelihood_build_parameters is not None
@@ -369,11 +435,17 @@ class NumCosmoData(Ncm.Data):
         self.tools = tools
 
     def _get_likelihood_source(self) -> None | str:
-        """Return the likelihood string defining the factory function."""
+        """Return the likelihood string defining the factory function.
+
+        :return: the filename of the likelihood factory function
+        """
         return self._likelihood_source
 
     def _set_likelihood_source(self, value: None | str):
-        """Set the likelihood string defining the factory function."""
+        """Set the likelihood string defining the factory function.
+
+        :param value: the filename of the likelihood factory function
+        """
         if value is not None:
             self._likelihood_source = value
             if self._starting_deserialization:
@@ -397,8 +469,11 @@ class NumCosmoData(Ncm.Data):
             self._likelihood_build_parameters.convert_to_basic_dict()
         )
 
-    def _set_likelihood_build_parameters(self, value: None | Ncm.VarDict):
-        """Set the likelihood build parameters."""
+    def _set_likelihood_build_parameters(self, value: None | Ncm.VarDict) -> None:
+        """Set the likelihood build parameters.
+
+        :param value: the parameters used to build the likelihood
+        """
         self._likelihood_build_parameters = NamedParameters()
         if value is not None:
             self._likelihood_build_parameters.set_from_basic_dict(
@@ -427,10 +502,17 @@ class NumCosmoData(Ncm.Data):
         nc_mapping: MappingNumCosmo,
         likelihood_source: None | str = None,
         likelihood_build_parameters: None | NamedParameters = None,
-    ):
+    ) -> "NumCosmoData":
         """Initialize a NumCosmoGaussCov object.
 
         This object represents a Gaussian likelihood with a constant covariance.
+
+        :param likelihood: the likelihood object
+        :param model_list: the list of model names
+        :param tools: the modeling tools
+        :param nc_mapping: the mapping object
+        :param likelihood_source: the filename for the likelihood factory function
+        :param likelihood_build_parameters: the build parameters of the likelihood
         """
         nc_data: NumCosmoData = GObject.new(
             cls,
@@ -447,15 +529,21 @@ class NumCosmoData(Ncm.Data):
 
         return nc_data
 
-    def do_get_length(self):  # pylint: disable-msg=arguments-differ
-        """Implements the virtual Ncm.Data method get_length."""
+    def do_get_length(self) -> int:  # pylint: disable-msg=arguments-differ
+        """Implements the virtual Ncm.Data method get_length.
+
+        :return: the number of data points in the likelihood
+        """
         return self.len
 
-    def do_get_dof(self):  # pylint: disable-msg=arguments-differ
-        """Implements the virtual Ncm.Data method get_dof."""
+    def do_get_dof(self) -> int:  # pylint: disable-msg=arguments-differ
+        """Implements the virtual Ncm.Data method get_dof.
+
+        :return: the number of degrees of freedom in the likelihood
+        """
         return self.dof
 
-    def do_begin(self):  # pylint: disable-msg=arguments-differ
+    def do_begin(self) -> None:  # pylint: disable-msg=arguments-differ
         """Implements the virtual Ncm.Data method `begin`.
 
         This method usually do some groundwork in the data
@@ -464,11 +552,15 @@ class NumCosmoData(Ncm.Data):
         during `begin` once and then used afterwards.
         """
 
-    def do_prepare(self, mset: Ncm.MSet):  # pylint: disable-msg=arguments-differ
+    def do_prepare(
+        self, mset: Ncm.MSet
+    ) -> None:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method Ncm.Data `prepare`.
 
         This method should do all the necessary calculations using mset
         to be able to calculate the likelihood afterwards.
+
+        :param mset: the model set
         """
         self.dof = self.len - mset.fparams_len()
         self.likelihood.reset()
@@ -485,11 +577,13 @@ class NumCosmoData(Ncm.Data):
         self.tools.update(params_map)
         self.tools.prepare(self.ccl_cosmo)
 
-    def do_m2lnL_val(self, _):  # pylint: disable-msg=arguments-differ
+    def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method `m2lnL`.
 
         This method should calculate the value of the likelihood for
         the model set `mset`.
+
+        :param _: unused, but required by interface
         """
         loglike = self.likelihood.compute_loglike(self.tools)
         return -2.0 * loglike
@@ -504,7 +598,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
     __gtype_name__ = "FirecrownNumCosmoGaussCov"
 
-    def __init__(self):
+    def __init__(self) -> None:
         """Initialize a NumCosmoGaussCov object.
 
         This class is a subclass of Ncm.DataGaussCov and implements NumCosmo
@@ -515,7 +609,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         argument, and the properties must be set after construction.
 
         In python one should use the `new_from_likelihood` method to create a
-        NumCosmoGaussCov object from a ConstGaussian object. This constuctor
+        NumCosmoGaussCov object from a ConstGaussian object. This constructor
         has the correct signature for type checking.
         """
         super().__init__()
@@ -531,11 +625,17 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self._starting_deserialization: bool = False
 
     def _get_model_list(self) -> list[str]:
-        """Return the list of models."""
+        """Return the list of models.
+
+        :return: the current names of the models
+        """
         return self._model_list
 
-    def _set_model_list(self, value: list[str]):
-        """Set the list of models."""
+    def _set_model_list(self, value: list[str]) -> None:
+        """Set the list of models.
+
+        :param value: the new list of model names
+        """
         self._model_list = value
 
     model_list = GObject.Property(
@@ -546,11 +646,17 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     )
 
     def _get_nc_mapping(self) -> MappingNumCosmo:
-        """Return the :class:`MappingNumCosmo` object."""
+        """Return the :class:`MappingNumCosmo` object.
+
+        :return: the current value of the mapping
+        """
         return self._nc_mapping
 
     def _set_nc_mapping(self, value: MappingNumCosmo):
-        """Set the MappingNumCosmo object."""
+        """Set the MappingNumCosmo object.
+
+        :param: the new value for the MappingNumCosmo object
+        """
         self._nc_mapping = value
 
     nc_mapping = GObject.Property(
@@ -560,7 +666,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         setter=_set_nc_mapping,
     )
 
-    def _configure_object(self):
+    def _configure_object(self) -> None:
         """Configure the object."""
         assert self.likelihood is not None
 
@@ -584,7 +690,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         self.set_init(True)
 
-    def _set_likelihood_from_factory(self):
+    def _set_likelihood_from_factory(self) -> None:
         """Deserialize the likelihood."""
         assert self._likelihood_source is not None
         assert self._likelihood_build_parameters is not None
@@ -598,11 +704,17 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self._configure_object()
 
     def _get_likelihood_source(self) -> None | str:
-        """Return the likelihood string defining the factory function."""
+        """Return the likelihood string defining the factory function.
+
+        :return: the filename of the likelihood factory function
+        """
         return self._likelihood_source
 
-    def _set_likelihood_source(self, value: None | str):
-        """Set the likelihood string defining the factory function."""
+    def _set_likelihood_source(self, value: None | str) -> None:
+        """Set the likelihood string defining the factory function.
+
+        :param value: the filename of the likelihood factory function
+        """
         if value is not None:
             self._likelihood_source = value
             if self._starting_deserialization:
@@ -619,15 +731,21 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     )
 
     def _get_likelihood_build_parameters(self) -> None | Ncm.VarDict:
-        """Return the likelihood build parameters."""
+        """Return the likelihood build parameters.
+
+        :return: the likelihood build parameters
+        """
         if self._likelihood_build_parameters is None:
             return None
         return dict_to_var_dict(
             self._likelihood_build_parameters.convert_to_basic_dict()
         )
 
-    def _set_likelihood_build_parameters(self, value: None | Ncm.VarDict):
-        """Set the likelihood build parameters."""
+    def _set_likelihood_build_parameters(self, value: None | Ncm.VarDict) -> None:
+        """Set the likelihood build parameters.
+
+        :param value: the likelihood build parameters
+        """
         self._likelihood_build_parameters = NamedParameters()
         if value is not None:
             self._likelihood_build_parameters.set_from_basic_dict(
@@ -659,6 +777,11 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         """Initialize a NumCosmoGaussCov object.
 
         This object represents a Gaussian likelihood with a constant covariance.
+        :param likelihood: the likelihood object
+        :param model_list: the list of model names
+        :param nc_mapping: the mapping object
+        :param likelihood_source: the filename for the likelihood factory function
+        :param likelihood_build_parameters: the build parameters of the likelihood
         """
         cov = likelihood.get_cov()
         nrows, ncols = cov.shape
@@ -684,15 +807,21 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         return nc_gauss_cov
 
-    def do_get_length(self):  # pylint: disable-msg=arguments-differ
-        """Implements the virtual `Ncm.Data` method `get_length`."""
+    def do_get_length(self) -> int:  # pylint: disable-msg=arguments-differ
+        """Implements the virtual `Ncm.Data` method `get_length`.
+
+        :return: the number of data points in the likelihood
+        """
         return self.len
 
-    def do_get_dof(self):  # pylint: disable-msg=arguments-differ
-        """Implements the virtual `Ncm.Data` method `get_dof`."""
+    def do_get_dof(self) -> int:  # pylint: disable-msg=arguments-differ
+        """Implements the virtual `Ncm.Data` method `get_dof`.
+
+        :return: the number of degrees of freedom in the likelihood
+        """
         return self.dof
 
-    def do_begin(self):  # pylint: disable-msg=arguments-differ
+    def do_begin(self) -> None:  # pylint: disable-msg=arguments-differ
         """Implements the virtual `Ncm.Data` method `begin`.
 
         This method usually do some groundwork in the data
@@ -701,11 +830,14 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         during `begin` once and then used afterwards.
         """
 
-    def do_prepare(self, mset: Ncm.MSet):  # pylint: disable-msg=arguments-differ
+    def do_prepare(
+        self, mset: Ncm.MSet
+    ) -> None:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method Ncm.Data `prepare`.
 
         This method should do all the necessary calculations using mset
         to be able to calculate the likelihood afterwards.
+        :param mset: the model set
         """
         self.dof = self.len - mset.fparams_len()
         self.likelihood.reset()
@@ -724,11 +856,14 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.tools.prepare(self.ccl_cosmo)
 
     # pylint: disable-next=arguments-differ
-    def do_mean_func(self, _, vp):
+    def do_mean_func(self, _, vp) -> None:
         """Implements the virtual `Ncm.DataGaussCov` method `mean_func`.
 
         This method should compute the theoretical mean for the gaussian
         distribution.
+
+        :param _: unused, but required by interface
+        :param vp: the vector to set
         """
         theory_vector = self.likelihood.compute_theory_vector(self.tools)
         vp.set_array(theory_vector)
@@ -756,7 +891,14 @@ class NumCosmoFactory:
         build_parameters: NamedParameters,
         mapping: MappingNumCosmo,
         model_list: list[str],
-    ):
+    ) -> None:
+        """Initialize a NumCosmoFactory.
+
+        :param likelihood_source: the filename for the likelihood factory function
+        :param build_parameters: the build parameters
+        :param mapping: the mapping
+        :param model_list: the model list
+        """
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
         self.data: NumCosmoGaussCov | NumCosmoData
@@ -781,13 +923,22 @@ class NumCosmoFactory:
             )
 
     def get_data(self) -> Ncm.Data:
-        """This method return the appropriated Ncm.Data class to be used by NumCosmo."""
+        """This method return the appropriate Ncm.Data class to be used by NumCosmo.
+
+        :return: the data used by NumCosmo
+        """
         return self.data
 
     def get_mapping(self) -> MappingNumCosmo:
-        """This method return the current MappingNumCosmo."""
+        """This method return the current MappingNumCosmo.
+
+        :return: the current mapping.
+        """
         return self.mapping
 
     def get_firecrown_likelihood(self) -> Likelihood:
-        """This method returns the firecrown Likelihood."""
+        """This method returns the Firecrown Likelihood.
+
+        :return: the likelihood
+        """
         return self.data.likelihood
