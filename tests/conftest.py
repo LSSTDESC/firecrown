@@ -513,7 +513,7 @@ def fixture_sacc_galaxy_xis_lens0_lens0_no_data():
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_window")
 def fixture_sacc_galaxy_cells_src0_src0_window():
-    """Fixture for a SACC data without window functions."""
+    """Fixture for a SACC data with a window function."""
     sacc_data = sacc.Sacc()
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -529,6 +529,26 @@ def fixture_sacc_galaxy_cells_src0_src0_window():
     sacc_data.add_ell_cl(
         "galaxy_shear_cl_ee", "src0", "src0", ells, Cells, window=window
     )
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, dndz
+
+
+@pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_window")
+def fixture_sacc_galaxy_cells_src0_src0_no_window():
+    """Fixture for a SACC data without a window function."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
