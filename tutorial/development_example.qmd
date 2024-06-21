@@ -1,6 +1,6 @@
 ---
 title: "Developing a New Likelihood"
-subtitle: "Version 1.7.4"
+subtitle: "Version 1.7.5"
 authors:
   - Marc Paterno
   - Sandro Vitenti
