@@ -620,7 +620,6 @@ class TwoPoint(Statistic):
         assert self.thetas is not None
         assert self.ells_for_xi is not None
 
-        self.cells = {}
         print(self.source0.parameter_prefix, self.source1.parameter_prefix)
         cells_for_xi = self.compute_cells(
             self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
@@ -724,6 +723,7 @@ class TwoPoint(Statistic):
         tracers1: Sequence[Tracer],
     ) -> npt.NDArray[np.float64]:
         """Compute the power spectrum for the given ells and tracers."""
+        self.cells = {}
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
