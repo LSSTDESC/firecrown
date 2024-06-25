@@ -19,6 +19,7 @@ from firecrown.metadata.two_point import (
     CMB,
     Clusters,
     ALL_MEASUREMENT_TYPES,
+    make_measurement_dict,
 )
 
 BinsType = TypedDict("BinsType", {"edges": npt.NDArray, "sigma_z": float})
@@ -233,11 +234,6 @@ def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
             return Clusters[value["property"]]
         case _:
             raise ValueError(f"Invalid Measurement: {value}")
-
-
-def make_measurement_dict(value: Measurement) -> dict[str, str]:
-    """Create a dictionary from a Measurement object."""
-    return {"subject": type(value).__name__, "property": value.name}
 
 
 class ZDistLSSTSRDBin(BaseModel):

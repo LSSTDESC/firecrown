@@ -253,6 +253,14 @@ HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
 REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T,)
 
 
+def make_measurement_dict(value: Measurement) -> dict[str, str]:
+    """Create a dictionary from a Measurement object.
+
+    :param value: the measurement to turn into a dictionary
+    """
+    return {"subject": type(value).__name__, "property": value.name}
+
+
 def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     """Check if two Measurement are compatible.
 
