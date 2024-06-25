@@ -19,7 +19,7 @@ In Firecrown, two-point statistics are represented by the `TwoPoint` class, in t
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
-Our initial step involves generating all photometric redshift bins necessary for the LSST year 1 redshift distribution. 
+Our initial step involves generating all photometric redshift bins necessary for the LSST year 1 redshift distribution.
 This process is detailed [here](inferred_zdist_generators.qmd#sec-all-bins) in the tutorial on redshift distributions.
 In the serialization [tutorial](inferred_zdist_serialization.qmd#sec-lsst-srd), we demonstrate how to get the LSST SRD redshift distributions.
 Here we will use the LSST SRD year 1 redshift distribution to generate the two-point statistics.
@@ -65,7 +65,7 @@ df = pd.DataFrame(two_point_names, columns=["bin-x", "bin-y", "SACC data-type"])
 Markdown(df.to_markdown())
 ```
 
-## Defining Two-Point Statistics Factories
+## Defining Two-Point Statistics Factories {#sec-factories}
 
 In Firecrown, "systematics" are classes that are used to represent modifications to physical models which incorporate corrections for various modeling imperfections.
 Some examples are the intrinsic alignment (IA) of galaxies, the multiplicative bias of weak lensing, and photo-z shifts.
@@ -75,7 +75,7 @@ The purpose of the factories is to ensure that each of the systematics created b
 
 [^1]: The classes `LinearAlignmentSystematic`, `MultiplicativeShearBias`, and `PhotoZShift` are all found in the module `firecrown.likelihood.weak_lensing`.
 
-In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics. 
+In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics.
 These factories are responsible for generating the systematics that will be applied to the two-point statistics.
 The code below defines the factories for the weak lensing and number counts systematics:
 
@@ -133,8 +133,8 @@ Markdown(f"```yaml\n{nc_yaml}\n```")
 
 ## Generating the Two-Point Statistics
 
-To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics. 
-These factories are responsible for producing the necessary systematics applied to the two-point statistics. 
+To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics.
+These factories are responsible for producing the necessary systematics applied to the two-point statistics.
 Below is the code defining the factories for weak lensing and number counts systematics:
 
 ```{python}
@@ -147,8 +147,8 @@ all_two_point_functions = tp.TwoPoint.from_metadata_cells(
 
 ## Setting Up the Two-Point Statistics
 
-Setting up the two-point statistics requires a cosmology and a set of parameters. 
-The parameters necessary in our analysis depend on the two-point statistic measurements and the systematics we are considering. 
+Setting up the two-point statistics requires a cosmology and a set of parameters.
+The parameters necessary in our analysis depend on the two-point statistic measurements and the systematics we are considering.
 In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the parameters' default values:
 
 ```{python}
@@ -160,7 +160,7 @@ params = ParamsMap(default_values)
 
 ```
 
-Before generating the two-point statistics, it's necessary to set the parameters to their default values. 
+Before generating the two-point statistics, it's necessary to set the parameters to their default values.
 These default values are:
 
 ```{python}
@@ -191,7 +191,7 @@ all_two_point_functions.update(params)
 
 # Computing the Two-Point Statistics
 
-With the cosmology configured and the two-point statistics prepared, we can now proceed to compute the two-point statistics. 
+With the cosmology configured and the two-point statistics prepared, we can now proceed to compute the two-point statistics.
 Let's begin by computing the first two-point statistic as an example:
 
 
@@ -238,7 +238,7 @@ data = pd.DataFrame(
 
 ```
 
-The plot above illustrates the first pair of bins. 
+The plot above illustrates the first pair of bins.
 To complete the analysis, we can generate the two-point statistics for all bin pairs.
 
 ```{python}

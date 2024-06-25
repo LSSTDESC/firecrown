@@ -7,14 +7,14 @@ format: html
 
 ## Purpose {#sec-purpose}
 
-This document serves as a guide for utilizing Firecrown's capabilities in describing galaxy redshift distributions for cosmological analyses. 
+This document serves as a guide for utilizing Firecrown's capabilities in describing galaxy redshift distributions for cosmological analyses.
 The galaxy redshift distributions play a crucial role in modeling the distribution of galaxies within specific photometric redshift bins.
 
 ## Overview
 
-Firecrown employs `InferredGalaxyZDist` objects to encapsulate these distributions. 
-These objects are essential for representing the redshift distribution of galaxies within predefined photometric redshift bins. 
-Additionally, Firecrown utilizes metadata dataclasses to handle metadata and calibration data pertinent to cosmological analyses. 
+Firecrown employs `InferredGalaxyZDist` objects to encapsulate these distributions.
+These objects are essential for representing the redshift distribution of galaxies within predefined photometric redshift bins.
+Additionally, Firecrown utilizes metadata dataclasses to handle metadata and calibration data pertinent to cosmological analyses.
 These dataclasses can be constructed directly, extracted from SACC objects, or generated through Firecrown's provided functionalities.
 
 This document outlines the process of creating `InferredGalaxyZDist` objects directly and demonstrates their utilization in cosmological analyses.
@@ -38,9 +38,9 @@ lens0 = InferredGalaxyZDist(
 
 ```
 
-This dataclass can be serialized, but the resulting object will not be human-readable. 
-To obtain a human-readable format, Firecrown introduces generators that describe the data layout in a more readable way. 
-This will be discussed in another tutorial.
+This dataclass can be serialized, but the resulting object will not be human-readable.
+To obtain a human-readable format, Firecrown introduces generators that describe the data layout in a more readable way.
+This is described in the [tutorial on inferred distribution serialization](inferred_zdist_serialization.qmd).
 
 ## Creating a TwoPointCell Object
 
@@ -49,6 +49,7 @@ Using the `lens0` object created above, we can create a `TwoPointCell` object as
 
 ```{python}
 from firecrown.metadata.two_point import TwoPointXY, TwoPointCells
+from firecrown.generators.two_point import LogLinearElls
 
 lens0_lens0 = TwoPointXY(
     x=lens0,
@@ -64,8 +65,8 @@ lens0_lens0_cell = TwoPointCells(
 )
 ```
 
-The `TwoPointCells` is created by providing the `TwoPointXY` object and the ells array. 
-The reason for separating the `TwoPointXY` and `TwoPointCells` objects is to accommodate the creation of other types of two-point correlation functions. 
+The `TwoPointCells` is created by providing the `TwoPointXY` object and the ells array.
+The reason for separating the `TwoPointXY` and `TwoPointCells` objects is to accommodate the creation of other types of two-point correlation functions.
 For example, from a `TwoPointXY`, one can also create a `TwoPointXiTheta` object for the two-point correlation function in real space, or a `TwoPointCWindow` object for the two-point correlation function in harmonic space with a window function.
 
 ## Creating a TwoPoint Theory Object
@@ -76,15 +77,16 @@ Using the `lens0_lens0_cell` object created above, we can create a `TwoPoint` ob
 ```{python}
 from firecrown.likelihood.two_point import TwoPoint, NumberCountsFactory
 
-two_point_lens0_lens0 = TwoPoint.from_metadata_cells(
-    [lens0_lens0_cell],
+# Generate a list of TwoPoint objects, one for each bin provided
+all_two_points = TwoPoint.from_metadata_cells(
+    [lens0_lens0_cell], # Note we are passing a list with 1 bin; you could pass several
     nc_factory=NumberCountsFactory(global_systematics=[], per_bin_systematics=[]),
-)[0]
-
+)
+two_point_lens0_lens0 = all_two_points[0]
 ```
 
 Above we use the `NumberCountsFactory` to create the `TwoPoint` object.
-The source factories will be discussed in another tutorial.
+The source factories are discussed in [the tutorial on generators](two_point_generators.qmd#sec-factories).
 
 Depending on the theoretical model, the `TwoPoint` object may require additional parameters.
 To obtain a list of required parameters, one can use the following commands:
@@ -97,14 +99,14 @@ default_values = req_params.get_default_values()
 params = ParamsMap(default_values)
 ```
 
-Theory objects that require parameters are subclasses of `Updatable`. 
+Theory objects that require parameters are subclasses of `Updatable`.
 For these objects, the `required_parameters` method can be used to obtain the list of required parameters through the `RequiredParameters` object.
 
-The get_default_values method returns a dictionary containing the default values for these required parameters. 
+The get_default_values method returns a dictionary containing the default values for these required parameters.
 This dictionary is then used to create a `ParamsMap` object.
 
 In this example the `default_values` dictionary includes a single parameter `lens0_bias`, with a default value of $1.5$.
-Note that the parameter names are constructed using the bin name and the parameter name, separated by an underscore. 
+Note that the parameter names are constructed using the bin name and the parameter name, separated by an underscore.
 Consequently, parameters specific to a bin will have the bin name as a prefix.
 
 ```{python}
@@ -139,7 +141,7 @@ Below, we plot the two-point correlation function for the bin pair `(lens0, lens
 
 ```{python}
 # | label: fig-fz
-# | fig-cap: Two-point correlation function for the bin pair (lens0, lens0).
+# | fig-cap: Two-point correlation function for the bin pair (lens0, lens0). The dots indicate the values of $\ell$  at which we evaluate the $C_\ell$.
 # | fig-cap-location: margin
 # | code-fold: true
 from plotnine import *  # bad form in programs, but seems OK for plotnine
@@ -161,6 +163,7 @@ data = pd.DataFrame(
 # Now we can generate the plot.
 (
     ggplot(data, aes("ell", "Cell"))
+    + geom_point()
     + geom_line()
     + labs(x=r"$\ell$", y=r"$C_\ell$")
     + scale_x_log10()
@@ -172,9 +175,9 @@ data = pd.DataFrame(
 
 ## Conclusion
 
-This document has provided an overview of Firecrown's capabilities in representing galaxy redshift distributions and utilizing them in cosmological analyses. 
-The `InferredGalaxyZDist` object encapsulates the redshift distribution of galaxies within predefined photometric redshift bins. 
-The `TwoPointCell` object is used to encapsulate the two-point correlation function in harmonic space, while the `TwoPoint` object encapsulates the theoretical model for the two-point correlation function. 
+This document has provided an overview of Firecrown's capabilities in representing galaxy redshift distributions and utilizing them in cosmological analyses.
+The `InferredGalaxyZDist` object encapsulates the redshift distribution of galaxies within predefined photometric redshift bins.
+The `TwoPointCell` object is used to encapsulate the two-point correlation function in harmonic space, while the `TwoPoint` object encapsulates the theoretical model for the two-point correlation function.
 These objects are essential for modeling the distribution of galaxies within specific photometric redshift bins and are crucial for cosmological analyses.
 
 The following tutorials will delve deeper into the creation of metadata dataclasses, the generation of two-point statistics, and the utilization of source factories for theoretical models.

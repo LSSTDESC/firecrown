@@ -7,17 +7,20 @@ format: html
 
 ## Purpose of this document
 
-In the previous [tutorial](inferred_zdist_generators.qmd), we discussed using the ZDistLSSTSRD class in Firecrown to generate redshift distributions for galaxies. In this tutorial, we will cover how to serialize these distributions to disk and read them back in.
+In the previous [tutorial](inferred_zdist_generators.qmd), we discussed using the `ZDistLSSTSRD` class in Firecrown to generate redshift distributions for galaxies. In this tutorial, we will cover how to serialize these distributions to disk and read them back in.
 
-While InferredGalaxyZDist objects can be serialized, the resulting files are not human-readable because they contain the final redshift distribution. 
+While `InferredGalaxyZDist` objects can be serialized, the resulting files are not human-readable because they contain the final redshift distribution.
 To achieve a human-readable format, we need to serialize the parameters used to generate the distribution.
 
-Firecrown addresses this by introducing the ZDistLSSTSRDBin and ZDistLSSTSRDBinCollection dataclasses. 
-These classes store the parameters used to generate the redshift distributions and can be serialized to disk and read back in, providing a human-readable representation. These files can be shared and modified by users to generate new redshift distributions.
+Firecrown addresses this by introducing the `ZDistLSSTSRDBin` and `ZDistLSSTSRDBinCollection` dataclasses.[^1]
+These classes store the parameters used to generate the redshift distributions and can be serialized to disk and read back in, providing a human-readable representation.
+These files can be shared and modified by users to generate new redshift distributions.
+
+[^1]: Strictly speaking, these are subclasses of `pydantic.BaseModel`. In most cases, these behave like `dataclasses.dataclass` subtypes.
 
 In this tutorial, we will demonstrate how to serialize and read back these dataclasses.
 
-## Serializing and reading back ZDistLSSTSRDBin
+## Serializing and reading back `ZDistLSSTSRDBin`
 
 First, we discuss the `ZDistLSSTSRDBin` dataclass. This class stores the parameters used to generate a single photometric redshift bin.
 The code snippet below demonstrates how to initialize and serialize this dataclass.
@@ -39,7 +42,6 @@ bin0 = ZDistLSSTSRDBin(
 )
 
 bin0_yaml = base_model_to_yaml(bin0)
-
 ```
 
 When serilized, the `ZDistLSSTSRDBin` object produces a human-readable YAML file.
@@ -56,8 +58,8 @@ Alternatively, you can use `RawGrid1D`, which holds a list of redshifts.
 
 ## Serializing and reading back ZDistLSSTSRDBinCollection
 
-Next, we discuss the `ZDistLSSTSRDBinCollection` dataclass. 
-This class stores the parameters used to generate all the photometric redshift bins, including the `ZDistLSSTSRD` parameters. 
+Next, we discuss the `ZDistLSSTSRDBinCollection` dataclass.
+This class stores the parameters used to generate all the photometric redshift bins, including the `ZDistLSSTSRD` parameters.
 The code snippet below demonstrates how to initialize and serialize this dataclass.
 ```{python}
 from firecrown.generators.inferred_galaxy_zdist import (
@@ -67,11 +69,20 @@ from firecrown.generators.inferred_galaxy_zdist import (
     Y1_Z0,
 )
 
+# We add a bin1, to demonstrate the use of multiple bins.
+# We want the new bin to be like the old, but with a different
+# range of integration (and a new name, of course).
+
+# To create the bin, we go through a dictionary...
+d = bin0.model_dump()
+d.update(bin_name="bin1", zpl=0.2, zpu=0.3)
+bin1 = ZDistLSSTSRDBin.model_validate(d)
+
 bin_collection = ZDistLSSTSRDBinCollection(
     alpha=Y1_ALPHA,
     beta=Y1_BETA,
     z0=Y1_Z0,
-    bins=[bin0],
+    bins=[bin0, bin1],
 )
 
 bin_collection_yaml = base_model_to_yaml(bin_collection)
@@ -96,6 +107,7 @@ bin_collection_read = base_model_from_yaml(
 assert bin_collection.alpha == bin_collection_read.alpha
 assert bin_collection.beta == bin_collection_read.beta
 assert bin_collection.z0 == bin_collection_read.z0
+assert len(bin_collection.bins) == 2
 assert bin_collection.bins[0].zpl == bin_collection_read.bins[0].zpl
 assert bin_collection.bins[0].zpu == bin_collection_read.bins[0].zpu
 assert bin_collection.bins[0].sigma_z == bin_collection_read.bins[0].sigma_z
@@ -115,8 +127,8 @@ pprint(zdist)
 
 ## LSST SRD redshift distributions {#sec-lsst-srd}
 
-The LSST SRD provides the parameters used to generate the redshift distributions. 
-Firecrown includes dataclass instances `LSST_Y1_LENS_BIN_COLLECTION` and `LSST_Y1_SOURCE_BIN_COLLECTION`, which store the parameters for generating redshift distributions for the Y1 lens and source samples, respectively. 
+The LSST SRD provides the parameters used to generate the redshift distributions.
+Firecrown includes dataclass instances `LSST_Y1_LENS_BIN_COLLECTION` and `LSST_Y1_SOURCE_BIN_COLLECTION`, which store the parameters for generating redshift distributions for the Y1 lens and source samples, respectively.
 Similar collections, `LSST_Y10_LENS_BIN_COLLECTION` and `LSST_Y10_SOURCE_BIN_COLLECTION`, exist for the Y10 samples.
 
 Below is a code snippet demonstrating how to serialize and read back these dataclasses:
@@ -144,5 +156,5 @@ Markdown(f"```yaml\n{lsst_y1_source_yaml}\n```")
 
 ## Conclusion
 
-In this tutorial, we demonstrated how to serialize and read back the ZDistLSSTSRDBin and ZDistLSSTSRDBinCollection dataclasses. 
+In this tutorial, we demonstrated how to serialize and read back the `ZDistLSSTSRDBin` and `ZDistLSSTSRDBinCollection` dataclasses.
 We also showed how to serialize and read back the LSST SRD redshift distributions.
