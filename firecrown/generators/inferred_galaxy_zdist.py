@@ -38,10 +38,15 @@ Y10_SOURCE_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 
 
 
 class ZDistLSSTSRD:
-    """LSST Inferred galaxy redshift distributions.
+    r"""LSST Inferred galaxy redshift distributions.
 
-    Inferred galaxy redshift distribution based on the LSST Science Requirements
-    Document (SRD).
+    Inferred galaxy redshift distribution is based on the LSST Science
+    Requirements Document (SRD), equation 5. Note that the SRD fixes
+    $\beta = 2$.
+
+    The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
+    `ZDistLLSTSRD` provides these values as defaults and allows for greater
+    flexibility when desired.
     """
 
     def __init__(self, alpha: float, beta: float, z0: float) -> None:
@@ -64,9 +69,9 @@ class ZDistLSSTSRD:
         It uses the default values of the alpha, beta and z0 parameters from
         the LSST SRD Year 1.
 
-        :param alpha: The alpha parameter using the default value of 0.94.
-        :param beta: The beta parameter using the default value of 2.0.
-        :param z0: The z0 parameter using the default value of 0.26.
+        :param alpha: The alpha parameter of the distribution
+        :param beta: The beta parameter of the distribution
+        :param z0: The z0 parameter of the distribution
         :return: A ZDistLSSTSRD object.
         """
         return cls(alpha=alpha, beta=beta, z0=z0)
@@ -80,15 +85,19 @@ class ZDistLSSTSRD:
         It uses the default values of the alpha, beta and z0 parameters from
         the LSST SRD Year 10.
 
-        :param alpha: The alpha parameter using the default value of 0.90.
-        :param beta: The beta parameter using the default value of 2.0.
-        :param z0: The z0 parameter using the default value of 0.28.
+        :param alpha: The alpha parameter of the distribution
+        :param beta: The beta parameter of the distribution
+        :param z0: The z0 parameter of the distribution
         :return: A ZDistLSSTSRD object.
         """
         return cls(alpha=alpha, beta=beta, z0=z0)
 
     def distribution(self, z: npt.NDArray) -> npt.NDArray:
-        """Generate the inferred galaxy redshift distribution."""
+        """Generate the inferred galaxy redshift distribution.
+
+        :param z: The redshifts at which to evaluate the distribution
+        :return: The inferred galaxy redshift distribution
+        """
         norma = self.alpha / (self.z0 * gamma((1.0 + self.beta) / self.alpha))
 
         return (
@@ -98,7 +107,14 @@ class ZDistLSSTSRD:
     def _integrated_gaussian_scalar(
         self, zpl: float, zpu: float, sigma_z: float, z: float
     ) -> float:
-        """Generate the integrated Gaussian distribution."""
+        """Generate the integrated Gaussian distribution.
+
+        :param zpl: The lower bound of the integration
+        :param zpu: The upper bound of the integration
+        :param sigma_z: The resolution parameter
+        :param z: The redshifts at which to evaluate the distribution
+        :return: The integrated distribution
+        """
         denom = np.sqrt(2.0) * sigma_z * (1.0 + z)
         if (z - zpu) > 0.0:
             return -(erfc((z - zpl) / denom) - erfc((z - zpu) / denom)) / erfc(
@@ -148,9 +164,26 @@ class ZDistLSSTSRD:
         autoknots_reltol: float = 1.0e-4,
         autoknots_abstol: float = 1.0e-15,
     ) -> InferredGalaxyZDist:
-        """Generate the inferred galaxy redshift distribution in bins."""
+        """Generate the inferred galaxy redshift distribution in bins.
+
+        :param zpl: The lower bound of the integration
+        :param zpu: The upper bound of the integration
+        :param sigma_z: The resolution parameter
+        :param z: The redshifts at which to evaluate the distribution
+        :param name: The name of the distribution
+        :param measured_type: The measured type of the distribution
+        :param use_autoknot: Whether to use the NotAKnot algorithm of NumCosmo
+        :param autoknots_reltol: The relative tolerance for the NotAKnot algorithm
+        :param autoknots_abstol: The absolute tolerance for the NotAKnot algorithm
+        :return: The inferred galaxy redshift distribution
+        """
 
         def _P(z, _):
+            """A local closure.
+
+            Used to create a function that captures the ZDistLSSTSRD state and
+            provides an integrand suitable for scipy.integrate.quad.
+            """
             return (
                 self.distribution(z)
                 * self._integrated_gaussian_scalar(zpl, zpu, sigma_z, z)
