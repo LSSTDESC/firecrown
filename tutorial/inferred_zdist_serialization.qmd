@@ -23,11 +23,11 @@ First, we discuss the `ZDistLSSTSRDBin` dataclass. This class stores the paramet
 The code snippet below demonstrates how to initialize and serialize this dataclass.
 ```{python}
 
-from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRDBin, LinearGrid1d
+from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRDBin, LinearGrid1D
 from firecrown.metadata.two_point import Galaxies
 from firecrown.utils import base_model_to_yaml
 
-z = LinearGrid1d(start=0.01, end=0.5, num=20)
+z = LinearGrid1D(start=0.01, end=0.5, num=20)
 
 bin0 = ZDistLSSTSRDBin(
     zpl=0.1,
@@ -51,8 +51,8 @@ from IPython.display import Markdown
 Markdown(f"```yaml\n{bin0_yaml}\n```")
 ```
 
-Note that since the redshift array needs to be serialized, we used the `LinearGrid1d` class to generate a linear grid of redshifts. 
-Alternatively, you can use `RawGrid1d`, which holds a list of redshifts.
+Note that since the redshift array needs to be serialized, we used the `LinearGrid1D` class to generate a linear grid of redshifts.
+Alternatively, you can use `RawGrid1D`, which holds a list of redshifts.
 
 ## Serializing and reading back ZDistLSSTSRDBinCollection
 

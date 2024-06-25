@@ -17,7 +17,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
     Y10_LENS_BINS,
     Y1_SOURCE_BINS,
     Y10_SOURCE_BINS,
-    LinearGrid1d,
+    LinearGrid1D,
     ZDistLSSTSRDBin,
     ZDistLSSTSRDBinCollection,
     LSST_Y1_LENS_BIN_COLLECTION,
@@ -185,7 +185,7 @@ def test_zdist_bin():
     zpl = 0.1
     zpu = 0.2
     sigma_z = 0.01
-    z = LinearGrid1d(start=0.0, end=3.0, num=100)
+    z = LinearGrid1D(start=0.0, end=3.0, num=100)
     bin_name = "lens0_y1"
     measurement = Galaxies.COUNTS
 
@@ -213,7 +213,7 @@ def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
     zpl = 0.1
     zpu = 0.2
     sigma_z = 0.01
-    z = LinearGrid1d(start=0.0, end=3.0, num=100)
+    z = LinearGrid1D(start=0.0, end=3.0, num=100)
     bin_name = "lens0_y1"
     measurement = Galaxies.COUNTS
 
@@ -270,12 +270,12 @@ def test_zdist_bin_to_yaml():
         zpl=0.1,
         zpu=0.2,
         sigma_z=0.01,
-        z=LinearGrid1d(start=0.0, end=3.0, num=100),
+        z=LinearGrid1D(start=0.0, end=3.0, num=100),
         bin_name="lens0_y1",
         measurement=Galaxies.COUNTS,
     )
     assert isinstance(zbin, ZDistLSSTSRDBin)
-    assert isinstance(zbin.z, LinearGrid1d)
+    assert isinstance(zbin.z, LinearGrid1D)
 
     yaml_str = base_model_to_yaml(zbin)
     yaml_dict = yaml.safe_load(yaml_str)

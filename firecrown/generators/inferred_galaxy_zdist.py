@@ -187,7 +187,7 @@ class ZDistLSSTSRD:
         )
 
 
-class LinearGrid1d(BaseModel):
+class LinearGrid1D(BaseModel):
     """A 1D linear grid."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -201,7 +201,7 @@ class LinearGrid1d(BaseModel):
         return np.linspace(self.start, self.end, self.num)
 
 
-class RawGrid1d(BaseModel):
+class RawGrid1D(BaseModel):
     """A 1D grid."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
@@ -213,7 +213,7 @@ class RawGrid1d(BaseModel):
         return np.array(self.values)
 
 
-Grid1d = LinearGrid1d | RawGrid1d
+Grid1D = LinearGrid1D | RawGrid1D
 
 
 def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
@@ -248,7 +248,7 @@ class ZDistLSSTSRDBin(BaseModel):
     zpl: float
     zpu: float
     sigma_z: float
-    z: Annotated[Grid1d, Field(union_mode="left_to_right")]
+    z: Annotated[Grid1D, Field(union_mode="left_to_right")]
     bin_name: str
     measurement: Annotated[Measurement, BeforeValidator(make_measurement)]
     use_autoknot: bool = False
@@ -301,7 +301,7 @@ LSST_Y1_LENS_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
             zpl=zpl,
             zpu=zpu,
             sigma_z=Y1_LENS_BINS["sigma_z"],
-            z=RawGrid1d(values=[0.0, 3.0]),
+            z=RawGrid1D(values=[0.0, 3.0]),
             bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
             measurement=Galaxies.COUNTS,
             use_autoknot=True,
@@ -320,7 +320,7 @@ LSST_Y1_SOURCE_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
             zpl=zpl,
             zpu=zpu,
             sigma_z=Y1_SOURCE_BINS["sigma_z"],
-            z=RawGrid1d(values=[0.0, 3.0]),
+            z=RawGrid1D(values=[0.0, 3.0]),
             bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
             measurement=Galaxies.SHEAR_E,
             use_autoknot=True,
@@ -339,7 +339,7 @@ LSST_Y10_LENS_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
             zpl=zpl,
             zpu=zpu,
             sigma_z=Y10_LENS_BINS["sigma_z"],
-            z=RawGrid1d(values=[0.0, 3.0]),
+            z=RawGrid1D(values=[0.0, 3.0]),
             bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y10",
             measurement=Galaxies.COUNTS,
             use_autoknot=True,
@@ -358,7 +358,7 @@ LSSST_Y10_SOURCE_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
             zpl=zpl,
             zpu=zpu,
             sigma_z=Y10_SOURCE_BINS["sigma_z"],
-            z=RawGrid1d(values=[0.0, 3.0]),
+            z=RawGrid1D(values=[0.0, 3.0]),
             bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y10",
             measurement=Galaxies.SHEAR_E,
             use_autoknot=True,
