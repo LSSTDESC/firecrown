@@ -234,6 +234,26 @@ def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
     assert Pz.measurement == measurement
 
 
+def test_zdist_bin_from_bad_yaml():
+    """Test that the right exception is thrown if the yaml is malformed."""
+    bin_yaml = """
+    zpl: 0.1
+    zpu: 0.2
+    sigma_z: 0.01
+    z:
+        start: 0.0
+        end: 3.0
+        num: 100
+    bin_name: lens0_y1
+    measurement:
+        subject: frogs
+        property: COUNTS
+    """
+
+    with pytest.raises(ValueError, match="Error creating ZDistLSSTSRDBin from yaml"):
+        _ = base_model_from_yaml(ZDistLSSTSRDBin, bin_yaml)
+
+
 def test_zdist_bin_from_yaml():
     """Test the ZDistLSSTSRDBin class from_json method."""
     zpl = 0.1
