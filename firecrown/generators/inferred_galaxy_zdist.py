@@ -223,9 +223,14 @@ def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
         return value
 
     if not isinstance(value, dict):
-        raise ValueError(f"Invalid Measurement: {value}")
+        raise ValueError(f"Invalid Measurement: {value} is not a dictionary")
 
-    match value["subject"]:
+    if "subject" not in value:
+        raise ValueError("Invalid Measurement: dictionary does not contain 'subject'")
+
+    subject = value["subject"]
+
+    match subject:
         case "Galaxies":
             return Galaxies[value["property"]]
         case "CMB":
@@ -233,7 +238,9 @@ def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
         case "Clusters":
             return Clusters[value["property"]]
         case _:
-            raise ValueError(f"Invalid Measurement: {value}")
+            raise ValueError(
+                f"Invalid Measurement: subject: '{subject}' is not recognized"
+            )
 
 
 class ZDistLSSTSRDBin(BaseModel):

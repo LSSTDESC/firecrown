@@ -22,9 +22,10 @@ from firecrown.generators.inferred_galaxy_zdist import (
     ZDistLSSTSRDBinCollection,
     LSST_Y1_LENS_BIN_COLLECTION,
     LSST_Y1_SOURCE_BIN_COLLECTION,
+    make_measurement,
     make_measurement_dict,
 )
-from firecrown.metadata.two_point import Galaxies
+from firecrown.metadata.two_point import Galaxies, Clusters, CMB
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 
@@ -416,3 +417,35 @@ def test_zdist_bin_collection_from_yaml(zdist_bins):
         assert zbin.use_autoknot == zbin_from_yaml.use_autoknot
         assert zbin.autoknots_reltol == zbin_from_yaml.autoknots_reltol
         assert zbin.autoknots_abstol == zbin_from_yaml.autoknots_abstol
+
+
+def test_make_measurement_from_measurement():
+    cluster_meas = Clusters.COUNTS
+    galaxy_meas = Galaxies.SHEAR_E
+    cmb_meas = CMB.CONVERGENCE
+    assert make_measurement(cluster_meas) == cluster_meas
+    assert make_measurement(galaxy_meas) == galaxy_meas
+    assert make_measurement(cmb_meas) == cmb_meas
+
+
+def test_make_measurement_from_dictionary():
+    cluster_info = {"subject": "Clusters", "property": "COUNTS"}
+    galaxy_info = {"subject": "Galaxies", "property": "SHEAR_E"}
+    cmb_info = {"subject": "CMB", "property": "CONVERGENCE"}
+
+    assert make_measurement(cluster_info) == Clusters.COUNTS
+    assert make_measurement(galaxy_info) == Galaxies.SHEAR_E
+    assert make_measurement(cmb_info) == CMB.CONVERGENCE
+
+    with pytest.raises(
+        ValueError, match="Invalid Measurement: subject: 'frogs' is not recognized"
+    ):
+        _ = make_measurement({"subject": "frogs", "property": "SHEAR_E"})
+
+    with pytest.raises(
+        ValueError, match="Invalid Measurement: dictionary does not contain 'subject'"
+    ):
+        _ = make_measurement({})
+
+    with pytest.raises(ValueError, match="Invalid Measurement: 3 is not a dictionary"):
+        _ = make_measurement(3)  # type: ignore
