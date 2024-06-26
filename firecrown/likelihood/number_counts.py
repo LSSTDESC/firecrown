@@ -493,7 +493,7 @@ class PhotoZShiftFactory(BaseModel):
 
     def create_global(self) -> PhotoZShift:
         """Create a PhotoZShift object with the given tracer name."""
-        raise ValueError("PhotoZShiftFactory cannot be global.")
+        raise ValueError("PhotoZShift cannot be global.")
 
 
 class LinearBiasSystematicFactory(BaseModel):
@@ -512,7 +512,7 @@ class LinearBiasSystematicFactory(BaseModel):
 
     def create_global(self) -> LinearBiasSystematic:
         """Create a LinearBiasSystematic object with the given tracer name."""
-        raise ValueError("LinearBiasSystematicFactory cannot be global.")
+        raise ValueError("LinearBiasSystematic cannot be global.")
 
 
 class PTNonLinearBiasSystematicFactory(BaseModel):
@@ -552,7 +552,7 @@ class MagnificationBiasSystematicFactory(BaseModel):
 
     def create_global(self) -> MagnificationBiasSystematic:
         """Create a MagnificationBiasSystematic object with the given tracer name."""
-        raise ValueError("MagnificationBiasSystematicFactory cannot be global.")
+        raise ValueError("MagnificationBiasSystematic cannot be global.")
 
 
 class ConstantMagnificationBiasSystematicFactory(BaseModel):
@@ -579,7 +579,7 @@ class ConstantMagnificationBiasSystematicFactory(BaseModel):
 
         Use the inferred_zdist to create the systematic.
         """
-        raise ValueError("ConstantMagnificationBiasSystematicFactory cannot be global.")
+        raise ValueError("ConstantMagnificationBiasSystematic cannot be global.")
 
 
 NumberCountsSystematicFactory = Annotated[

@@ -60,11 +60,13 @@ def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
 @pytest.fixture(
     name="wl_sys_factory",
     params=[
+        wl.LinearAlignmentSystematicFactory(),
         wl.MultiplicativeShearBiasFactory(),
         wl.TattAlignmentSystematicFactory(),
         wl.PhotoZShiftFactory(),
     ],
     ids=[
+        "LinearAlignmentSystematicFactory",
         "MultiplicativeShearBiasFactory",
         "TattAlignmentSystematicFactory",
         "PhotoZShiftFactory",
@@ -354,6 +356,46 @@ def test_number_counts_systematic_factory(nc_sys_factory):
     )
     sys_pz_shift = nc_sys_factory.create(bin_1)
     assert sys_pz_shift.parameter_prefix == "bin_1"
+
+
+def test_wl_photozshitfactory_no_globals():
+    factory = wl.PhotoZShiftFactory()
+    with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_wl_multiplicativeshearbiasfactory_no_globals():
+    factory = wl.MultiplicativeShearBiasFactory()
+    with pytest.raises(ValueError, match="MultiplicativeShearBias cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_photozshitfactory_no_globals():
+    factory = nc.PhotoZShiftFactory()
+    with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_linearbiassystematicfactory_no_globals():
+    factory = nc.LinearBiasSystematicFactory()
+    with pytest.raises(ValueError, match="LinearBiasSystematic cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_magnificationbiassystematicfactory_no_globals():
+    factory = nc.MagnificationBiasSystematicFactory()
+    with pytest.raises(
+        ValueError, match="MagnificationBiasSystematic cannot be global"
+    ):
+        _ = factory.create_global()
+
+
+def test_nc_constantmagnificationbiassystematicfactory_no_globals():
+    factory = nc.ConstantMagnificationBiasSystematicFactory()
+    with pytest.raises(
+        ValueError, match="ConstantMagnificationBiasSystematic cannot be global"
+    ):
+        _ = factory.create_global()
 
 
 def test_weak_lensing_systematic_factory(wl_sys_factory):
