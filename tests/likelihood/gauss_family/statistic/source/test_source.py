@@ -2,6 +2,7 @@
 Tests for the module firecrown.likelihood.statistic.source.
 """
 
+from typing import List
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -231,7 +232,12 @@ def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_s
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
-    global_systematics = [wl.LinearAlignmentSystematicFactory()]
+    global_systematics: List[
+        wl.LinearAlignmentSystematicFactory | wl.TattAlignmentSystematicFactory
+    ] = [
+        wl.LinearAlignmentSystematicFactory(),
+        wl.TattAlignmentSystematicFactory(),
+    ]
     wl_factory = wl.WeakLensingFactory(
         per_bin_systematics=[], global_systematics=global_systematics
     )
