@@ -31,13 +31,14 @@ dependencies:
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
+  - pydantic
   - pylint
   - pytest
   - pytest-cov
   - pyyaml
   - requests
   - sacc >= 0.11
-  - scipy
+  - scipy < 1.14.0
   - sphinx=7.1.2
   - types-pyyaml
   - urllib3

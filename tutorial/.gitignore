@@ -11,6 +11,7 @@ development_example.html
 development_example_files
 inferred_zdist_generators.html
 inferred_zdist_generators_files/
+two_point_generators_files/
 *.html.md
 *.revealjs.md
 

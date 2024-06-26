@@ -4,7 +4,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Sequence, final
+from typing import Sequence, final, Annotated, Literal
+
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 import numpy as np
 import numpy.typing as npt
@@ -148,7 +150,7 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
     :ivar b_s: the stochastic bias.
     """
 
-    def __init__(self, sacc_tracer: str):
+    def __init__(self, sacc_tracer: None | str = None):
         """Initialize the PTNonLinearBiasSystematic.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -211,11 +213,11 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
-        self.r_lim = parameters.register_new_updatable_parameter()
-        self.sig_c = parameters.register_new_updatable_parameter()
-        self.eta = parameters.register_new_updatable_parameter()
-        self.z_c = parameters.register_new_updatable_parameter()
-        self.z_m = parameters.register_new_updatable_parameter()
+        self.r_lim = parameters.register_new_updatable_parameter(default_value=24.0)
+        self.sig_c = parameters.register_new_updatable_parameter(default_value=9.83)
+        self.eta = parameters.register_new_updatable_parameter(default_value=19.0)
+        self.z_c = parameters.register_new_updatable_parameter(default_value=0.39)
+        self.z_m = parameters.register_new_updatable_parameter(default_value=0.055)
 
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
@@ -475,42 +477,72 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         return self.current_tracer_args.scale
 
 
-class NumberCountsSystematicFactory:
-    """Factory class for NumberCountsSystematic objects."""
-
-    @abstractmethod
-    def create(
-        self, inferred_zdist: InferredGalaxyZDist
-    ) -> SourceGalaxySystematic[NumberCountsArgs]:
-        """Create a NumberCountsSystematic object with the given tracer name."""
-
-
-class PhotoZShiftFactory(NumberCountsSystematicFactory):
+class PhotoZShiftFactory(BaseModel):
     """Factory class for PhotoZShift objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftFactory"
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
         """Create a PhotoZShift object with the given tracer name."""
         return PhotoZShift(inferred_zdist.bin_name)
 
+    def create_global(self) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        raise ValueError("PhotoZShift cannot be global.")
 
-class LinearBiasSystematicFactory(NumberCountsSystematicFactory):
+
+class LinearBiasSystematicFactory(BaseModel):
     """Factory class for LinearBiasSystematic objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["LinearBiasSystematicFactory"],
+        Field(description="The type of the systematic."),
+    ] = "LinearBiasSystematicFactory"
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> LinearBiasSystematic:
         """Create a LinearBiasSystematic object with the given tracer name."""
         return LinearBiasSystematic(inferred_zdist.bin_name)
 
+    def create_global(self) -> LinearBiasSystematic:
+        """Create a LinearBiasSystematic object with the given tracer name."""
+        raise ValueError("LinearBiasSystematic cannot be global.")
 
-class PTNonLinearBiasSystematicFactory(NumberCountsSystematicFactory):
+
+class PTNonLinearBiasSystematicFactory(BaseModel):
     """Factory class for PTNonLinearBiasSystematic objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PTNonLinearBiasSystematicFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PTNonLinearBiasSystematicFactory"
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> PTNonLinearBiasSystematic:
         """Create a PTNonLinearBiasSystematic object with the given tracer name."""
         return PTNonLinearBiasSystematic(inferred_zdist.bin_name)
 
+    def create_global(self) -> PTNonLinearBiasSystematic:
+        """Create a PTNonLinearBiasSystematic object with the given tracer name."""
+        return PTNonLinearBiasSystematic()
 
-class MagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
+
+class MagnificationBiasSystematicFactory(BaseModel):
     """Factory class for MagnificationBiasSystematic objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["MagnificationBiasSystematicFactory"],
+        Field(description="The type of the systematic."),
+    ] = "MagnificationBiasSystematicFactory"
 
     def create(
         self, inferred_zdist: InferredGalaxyZDist
@@ -518,9 +550,20 @@ class MagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
         """Create a MagnificationBiasSystematic object with the given tracer name."""
         return MagnificationBiasSystematic(inferred_zdist.bin_name)
 
+    def create_global(self) -> MagnificationBiasSystematic:
+        """Create a MagnificationBiasSystematic object with the given tracer name."""
+        raise ValueError("MagnificationBiasSystematic cannot be global.")
 
-class ConstantMagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
+
+class ConstantMagnificationBiasSystematicFactory(BaseModel):
     """Factory class for ConstantMagnificationBiasSystematic objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["ConstantMagnificationBiasSystematicFactory"],
+        Field(description="The type of the systematic."),
+    ] = "ConstantMagnificationBiasSystematicFactory"
 
     def create(
         self, inferred_zdist: InferredGalaxyZDist
@@ -531,35 +574,56 @@ class ConstantMagnificationBiasSystematicFactory(NumberCountsSystematicFactory):
         """
         return ConstantMagnificationBiasSystematic(inferred_zdist.bin_name)
 
+    def create_global(self) -> ConstantMagnificationBiasSystematic:
+        """Create a ConstantMagnificationBiasSystematic object.
 
-class NumberCountsFactory:
+        Use the inferred_zdist to create the systematic.
+        """
+        raise ValueError("ConstantMagnificationBiasSystematic cannot be global.")
+
+
+NumberCountsSystematicFactory = Annotated[
+    PhotoZShiftFactory
+    | LinearBiasSystematicFactory
+    | PTNonLinearBiasSystematicFactory
+    | MagnificationBiasSystematicFactory
+    | ConstantMagnificationBiasSystematicFactory,
+    Field(discriminator="type", union_mode="left_to_right"),
+]
+
+
+class NumberCountsFactory(BaseModel):
     """Factory class for NumberCounts objects."""
 
-    def __init__(
-        self,
-        per_bin_systematics: list[NumberCountsSystematicFactory],
-        global_systematics: Sequence[NumberCountsSystematic],
-    ) -> None:
+    _cache: dict[int, NumberCounts] = PrivateAttr()
+    _global_systematics_instances: Sequence[
+        SourceGalaxySystematic[NumberCountsArgs]
+    ] = PrivateAttr()
+
+    per_bin_systematics: Sequence[NumberCountsSystematicFactory]
+    global_systematics: Sequence[NumberCountsSystematicFactory]
+
+    def model_post_init(self, __context) -> None:
         """Initialize the NumberCountsFactory."""
-        self.per_bin_systematics: list[NumberCountsSystematicFactory] = (
-            per_bin_systematics
-        )
-        self.global_systematics: Sequence[NumberCountsSystematic] = global_systematics
-        self.cache: dict[int, NumberCounts] = {}
+        self._cache: dict[int, NumberCounts] = {}
+        self._global_systematics_instances = [
+            nc_systematic_factory.create_global()
+            for nc_systematic_factory in self.global_systematics
+        ]
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale."""
         inferred_zdist_id = id(inferred_zdist)
-        if inferred_zdist_id in self.cache:
-            return self.cache[inferred_zdist_id]
+        if inferred_zdist_id in self._cache:
+            return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
             systematic_factory.create(inferred_zdist)
             for systematic_factory in self.per_bin_systematics
         ]
-        systematics.extend(self.global_systematics)
+        systematics.extend(self._global_systematics_instances)
 
         nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
-        self.cache[inferred_zdist_id] = nc
+        self._cache[inferred_zdist_id] = nc
 
         return nc

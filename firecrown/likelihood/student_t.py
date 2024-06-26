@@ -31,7 +31,7 @@ class StudentT(GaussFamily):
         nu: None | float = None,
     ):
         super().__init__(statistics)
-        self.nu = parameters.register_new_updatable_parameter(nu)
+        self.nu = parameters.register_new_updatable_parameter(nu, default_value=3.0)
 
     def compute_loglike(self, tools: ModelingTools):
         """Compute the log-likelihood.

@@ -66,7 +66,6 @@ class Mapping(ABC):
 
     def get_params_names(self) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping."""
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"
@@ -78,7 +77,6 @@ class Mapping(ABC):
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k."""
         assert k_h is not None  # use assertion to silence pylint warning
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"
@@ -89,7 +87,6 @@ class Mapping(ABC):
     def transform_p_k_h3_to_p_k(self, p_k_h3):
         r"""Transform the given :math:`p_k h^3 \to p_k`."""
         assert p_k_h3 is not None  # use assertion to silence pylint warning
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"
@@ -100,7 +97,6 @@ class Mapping(ABC):
     def transform_h_to_h_over_h0(self, h):
         """Transform distances h to :math:`h/h_0`."""
         assert h is not None  # use assertion to silence pylint warning
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"

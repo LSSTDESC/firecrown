@@ -7,6 +7,7 @@ same names as the newmodule imports.
 
 import re
 import types
+import pytest
 
 HIDDEN_NAME_PATTERN = re.compile(r"_\w+")
 
@@ -22,65 +23,78 @@ def diff_module_names(
 
 
 def test_import_binned_cluster_number_counts():
-    import firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts as oldmodule  # pylint: disable=line-too-long # noqa: E501
-    import firecrown.likelihood.binned_cluster_number_counts as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.statistic.binned_cluster_number_counts as oldmodule  # pylint: disable=line-too-long # noqa: E501
+        import firecrown.likelihood.binned_cluster_number_counts as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_gaussian():
-    import firecrown.likelihood.gauss_family.gaussian as oldmodule
-    import firecrown.likelihood.gaussian as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.gaussian as oldmodule
+        import firecrown.likelihood.gaussian as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_number_counts():
-    import firecrown.likelihood.gauss_family.statistic.source.number_counts as oldmodule
-    import firecrown.likelihood.number_counts as newmodule
+    with pytest.deprecated_call():
+        from firecrown.likelihood.gauss_family.statistic.source import (
+            number_counts as oldmodule,
+        )
+        import firecrown.likelihood.number_counts as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_source():
-    import firecrown.likelihood.gauss_family.statistic.source.source as oldmodule
-    import firecrown.likelihood.source as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.statistic.source.source as oldmodule
+        import firecrown.likelihood.source as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_statistic():
-    import firecrown.likelihood.gauss_family.statistic.statistic as oldmodule
-    import firecrown.likelihood.statistic as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.statistic.statistic as oldmodule
+        import firecrown.likelihood.statistic as newmodule
 
-    # The statistic module contains warnings.
-    assert diff_module_names(oldmodule, newmodule) == set()
+        # The statistic module contains warnings.
+        assert diff_module_names(oldmodule, newmodule) == set()
 
 
 def test_import_student_t():
-    import firecrown.likelihood.gauss_family.student_t as oldmodule
-    import firecrown.likelihood.student_t as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.student_t as oldmodule
+        import firecrown.likelihood.student_t as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_two_point():
-    import firecrown.likelihood.gauss_family.statistic.two_point as oldmodule
-    import firecrown.likelihood.two_point as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.statistic.two_point as oldmodule
+        import firecrown.likelihood.two_point as newmodule
 
-    # The two_point module contains warnings.
-    assert diff_module_names(oldmodule, newmodule) == set()
+        # The two_point module contains warnings.
+        assert diff_module_names(oldmodule, newmodule) == set()
 
 
 def test_import_supernova():
-    import firecrown.likelihood.gauss_family.statistic.supernova as oldmodule
-    import firecrown.likelihood.supernova as newmodule
+    with pytest.deprecated_call():
+        import firecrown.likelihood.gauss_family.statistic.supernova as oldmodule
+        import firecrown.likelihood.supernova as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_weak_lensing():
-    import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as oldmodule
-    import firecrown.likelihood.weak_lensing as newmodule
+    with pytest.deprecated_call():
+        from firecrown.likelihood.gauss_family.statistic.source import (
+            weak_lensing as oldmodule,
+        )
+        import firecrown.likelihood.weak_lensing as newmodule
 
-    assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])

@@ -2,6 +2,7 @@
 Tests for the module firecrown.likelihood.statistic.source.
 """
 
+from typing import List
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -21,7 +22,7 @@ import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata.two_point import (
     extract_all_tracers,
     InferredGalaxyZDist,
-    GalaxyMeasuredType,
+    Galaxies,
 )
 from firecrown.parameters import ParamsMap
 
@@ -52,7 +53,7 @@ def fixture_empty_pyccl_tracer():
         "ConstantMagnificationBiasSystematicFactory",
     ],
 )
-def fixture_nc_sys_factory(request):
+def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
     """Fixture for the NumberCountsSystematicFactory class."""
     return request.param
 
@@ -60,11 +61,13 @@ def fixture_nc_sys_factory(request):
 @pytest.fixture(
     name="wl_sys_factory",
     params=[
+        wl.LinearAlignmentSystematicFactory(),
         wl.MultiplicativeShearBiasFactory(),
         wl.TattAlignmentSystematicFactory(),
         wl.PhotoZShiftFactory(),
     ],
     ids=[
+        "LinearAlignmentSystematicFactory",
         "MultiplicativeShearBiasFactory",
         "TattAlignmentSystematicFactory",
         "PhotoZShiftFactory",
@@ -229,13 +232,22 @@ def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_s
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
-    global_systematics = [wl.LinearAlignmentSystematic(sacc_tracer="")]
+    global_systematics: List[
+        wl.LinearAlignmentSystematicFactory | wl.TattAlignmentSystematicFactory
+    ] = [
+        wl.LinearAlignmentSystematicFactory(),
+        wl.TattAlignmentSystematicFactory(),
+    ]
     wl_factory = wl.WeakLensingFactory(
         per_bin_systematics=[], global_systematics=global_systematics
     )
     source_ready = wl_factory.create(inferred_zdist=src0)
 
-    source_read = wl.WeakLensing(sacc_tracer="src0", systematics=global_systematics)
+    # pylint: disable=protected-access
+    source_read = wl.WeakLensing(
+        sacc_tracer="src0", systematics=wl_factory._global_systematics_instances
+    )
+    # pylint: enable=protected-access
     source_read.read(sacc_data)
 
     assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
@@ -314,13 +326,18 @@ def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
-    global_systematics = [nc.PTNonLinearBiasSystematic(sacc_tracer="")]
+    global_systematics = [nc.PTNonLinearBiasSystematicFactory()]
     nc_factory = nc.NumberCountsFactory(
-        per_bin_systematics=[], global_systematics=global_systematics
+        per_bin_systematics=[],
+        global_systematics=global_systematics,
     )
     source_ready = nc_factory.create(inferred_zdist=lens0)
 
-    source_read = nc.NumberCounts(sacc_tracer="lens0", systematics=global_systematics)
+    # pylint: disable=protected-access
+    source_read = nc.NumberCounts(
+        sacc_tracer="lens0", systematics=nc_factory._global_systematics_instances
+    )
+    # pylint: enable=protected-access
     source_read.read(sacc_data)
 
     assert_allclose(source_ready.tracer_args.z, source_read.tracer_args.z)
@@ -341,10 +358,50 @@ def test_number_counts_systematic_factory(nc_sys_factory):
         bin_name="bin_1",
         z=np.array([1.0]),
         dndz=np.array([1.0]),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     sys_pz_shift = nc_sys_factory.create(bin_1)
     assert sys_pz_shift.parameter_prefix == "bin_1"
+
+
+def test_wl_photozshitfactory_no_globals():
+    factory = wl.PhotoZShiftFactory()
+    with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_wl_multiplicativeshearbiasfactory_no_globals():
+    factory = wl.MultiplicativeShearBiasFactory()
+    with pytest.raises(ValueError, match="MultiplicativeShearBias cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_photozshitfactory_no_globals():
+    factory = nc.PhotoZShiftFactory()
+    with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_linearbiassystematicfactory_no_globals():
+    factory = nc.LinearBiasSystematicFactory()
+    with pytest.raises(ValueError, match="LinearBiasSystematic cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_magnificationbiassystematicfactory_no_globals():
+    factory = nc.MagnificationBiasSystematicFactory()
+    with pytest.raises(
+        ValueError, match="MagnificationBiasSystematic cannot be global"
+    ):
+        _ = factory.create_global()
+
+
+def test_nc_constantmagnificationbiassystematicfactory_no_globals():
+    factory = nc.ConstantMagnificationBiasSystematicFactory()
+    with pytest.raises(
+        ValueError, match="ConstantMagnificationBiasSystematic cannot be global"
+    ):
+        _ = factory.create_global()
 
 
 def test_weak_lensing_systematic_factory(wl_sys_factory):
@@ -352,7 +409,7 @@ def test_weak_lensing_systematic_factory(wl_sys_factory):
         bin_name="bin_1",
         z=np.array([1.0]),
         dndz=np.array([1.0]),
-        measured_type=GalaxyMeasuredType.SHEAR_E,
+        measurement=Galaxies.SHEAR_E,
     )
     sys_pz_shift = wl_sys_factory.create(bin_1)
     assert sys_pz_shift.parameter_prefix == "bin_1"

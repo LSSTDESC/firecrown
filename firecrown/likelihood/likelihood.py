@@ -289,7 +289,6 @@ def load_likelihood_from_module_type(
                 f"{module.__file__} does not define "
                 f"a `build_likelihood` factory function."
             )
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "The use of a likelihood variable in Firecrown's initialization "
             "module is deprecated. Any parameters passed to the likelihood "

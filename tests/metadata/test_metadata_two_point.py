@@ -10,15 +10,15 @@ from numpy.testing import assert_array_equal
 
 import sacc_name_mapping as snm
 from firecrown.metadata.two_point import (
-    ALL_MEASURED_TYPES,
-    ClusterMeasuredType,
-    CMBMeasuredType,
+    ALL_MEASUREMENTS,
+    Clusters,
+    CMB,
     compare_enums,
-    GalaxyMeasuredType,
+    Galaxies,
     InferredGalaxyZDist,
-    measured_type_is_compatible as is_compatible,
-    measured_type_supports_harmonic as supports_harmonic,
-    measured_type_supports_real as supports_real,
+    measurement_is_compatible as is_compatible,
+    measurement_supports_harmonic as supports_harmonic,
+    measurement_supports_real as supports_real,
     TracerNames,
     TwoPointCells,
     TwoPointCWindow,
@@ -36,7 +36,7 @@ from firecrown.likelihood.two_point import TwoPoint
 
 @pytest.fixture(
     name="harmonic_bin_1",
-    params=[GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_E],
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
 )
 def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
@@ -44,14 +44,14 @@ def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
         bin_name="bin_1",
         z=np.linspace(0, 1, 5),
         dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measured_type=request.param,
+        measurement=request.param,
     )
     return x
 
 
 @pytest.fixture(
     name="harmonic_bin_2",
-    params=[GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_E],
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
 )
 def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
@@ -59,14 +59,14 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
         bin_name="bin_2",
         z=np.linspace(0, 1, 3),
         dndz=np.array([0.1, 0.5, 0.4]),
-        measured_type=request.param,
+        measurement=request.param,
     )
     return x
 
 
 @pytest.fixture(
     name="real_bin_1",
-    params=[GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_T],
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
 )
 def make_real_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
@@ -74,14 +74,14 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
         bin_name="bin_1",
         z=np.linspace(0, 1, 5),
         dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measured_type=request.param,
+        measurement=request.param,
     )
     return x
 
 
 @pytest.fixture(
     name="real_bin_2",
-    params=[GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_T],
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
 )
 def make_real_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
@@ -89,7 +89,7 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
         bin_name="bin_2",
         z=np.linspace(0, 1, 3),
         dndz=np.array([0.1, 0.5, 0.4]),
-        measured_type=request.param,
+        measurement=request.param,
     )
     return x
 
@@ -134,40 +134,34 @@ def make_nc_factory():
 
 
 def test_order_enums():
-    assert compare_enums(CMBMeasuredType.CONVERGENCE, ClusterMeasuredType.COUNTS) < 0
-    assert compare_enums(ClusterMeasuredType.COUNTS, CMBMeasuredType.CONVERGENCE) > 0
+    assert compare_enums(CMB.CONVERGENCE, Clusters.COUNTS) < 0
+    assert compare_enums(Clusters.COUNTS, CMB.CONVERGENCE) > 0
 
-    assert compare_enums(CMBMeasuredType.CONVERGENCE, GalaxyMeasuredType.COUNTS) < 0
-    assert compare_enums(GalaxyMeasuredType.COUNTS, CMBMeasuredType.CONVERGENCE) > 0
+    assert compare_enums(CMB.CONVERGENCE, Galaxies.COUNTS) < 0
+    assert compare_enums(Galaxies.COUNTS, CMB.CONVERGENCE) > 0
 
-    assert compare_enums(GalaxyMeasuredType.SHEAR_E, GalaxyMeasuredType.SHEAR_T) < 0
-    assert compare_enums(GalaxyMeasuredType.SHEAR_E, GalaxyMeasuredType.COUNTS) < 0
-    assert compare_enums(GalaxyMeasuredType.SHEAR_T, GalaxyMeasuredType.COUNTS) < 0
+    assert compare_enums(Galaxies.SHEAR_E, Galaxies.SHEAR_T) < 0
+    assert compare_enums(Galaxies.SHEAR_E, Galaxies.COUNTS) < 0
+    assert compare_enums(Galaxies.SHEAR_T, Galaxies.COUNTS) < 0
 
-    assert compare_enums(GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_E) > 0
+    assert compare_enums(Galaxies.COUNTS, Galaxies.SHEAR_E) > 0
 
-    for enumerand in ALL_MEASURED_TYPES:
+    for enumerand in ALL_MEASUREMENTS:
         assert compare_enums(enumerand, enumerand) == 0
 
 
 def test_enumeration_equality_galaxy():
-    for e1, e2 in product(
-        GalaxyMeasuredType, chain(CMBMeasuredType, ClusterMeasuredType)
-    ):
+    for e1, e2 in product(Galaxies, chain(CMB, Clusters)):
         assert e1 != e2
 
 
 def test_enumeration_equality_cmb():
-    for e1, e2 in product(
-        CMBMeasuredType, chain(GalaxyMeasuredType, ClusterMeasuredType)
-    ):
+    for e1, e2 in product(CMB, chain(Galaxies, Clusters)):
         assert e1 != e2
 
 
 def test_enumeration_equality_cluster():
-    for e1, e2 in product(
-        ClusterMeasuredType, chain(CMBMeasuredType, GalaxyMeasuredType)
-    ):
+    for e1, e2 in product(Clusters, chain(CMB, Galaxies)):
         assert e1 != e2
 
 
@@ -182,9 +176,9 @@ def test_exact_matches():
 
 
 def test_translation_invariants():
-    for a, b in product(ALL_MEASURED_TYPES, ALL_MEASURED_TYPES):
-        assert isinstance(a, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType))
-        assert isinstance(b, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType))
+    for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
+        assert isinstance(a, (Galaxies, CMB, Clusters))
+        assert isinstance(b, (Galaxies, CMB, Clusters))
         if supports_real(a) and supports_real(b):
             assert real(a, b) == real(b, a)
         if supports_harmonic(a) and supports_harmonic(b):
@@ -202,51 +196,47 @@ def test_unsupported_type_galaxy():
     unknown_type = MagicMock()
     unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
-    with pytest.raises(ValueError, match="Untranslated GalaxyMeasuredType encountered"):
-        GalaxyMeasuredType.sacc_measurement_name(unknown_type)
+    with pytest.raises(ValueError, match="Untranslated Galaxy Measurement encountered"):
+        Galaxies.sacc_measurement_name(unknown_type)
 
-    with pytest.raises(ValueError, match="Untranslated GalaxyMeasuredType encountered"):
-        GalaxyMeasuredType.polarization(unknown_type)
+    with pytest.raises(ValueError, match="Untranslated Galaxy Measurement encountered"):
+        Galaxies.polarization(unknown_type)
 
 
 def test_unsupported_type_cmb():
     unknown_type = MagicMock()
     unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
-    with pytest.raises(ValueError, match="Untranslated CMBMeasuredType encountered"):
-        CMBMeasuredType.sacc_measurement_name(unknown_type)
+    with pytest.raises(ValueError, match="Untranslated CMBMeasurement encountered"):
+        CMB.sacc_measurement_name(unknown_type)
 
-    with pytest.raises(ValueError, match="Untranslated CMBMeasuredType encountered"):
-        CMBMeasuredType.polarization(unknown_type)
+    with pytest.raises(ValueError, match="Untranslated CMBMeasurement encountered"):
+        CMB.polarization(unknown_type)
 
 
 def test_unsupported_type_cluster():
     unknown_type = MagicMock()
     unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
-    with pytest.raises(
-        ValueError, match="Untranslated ClusterMeasuredType encountered"
-    ):
-        ClusterMeasuredType.sacc_measurement_name(unknown_type)
+    with pytest.raises(ValueError, match="Untranslated ClusterMeasurement encountered"):
+        Clusters.sacc_measurement_name(unknown_type)
 
-    with pytest.raises(
-        ValueError, match="Untranslated ClusterMeasuredType encountered"
-    ):
-        ClusterMeasuredType.polarization(unknown_type)
+    with pytest.raises(ValueError, match="Untranslated ClusterMeasurement encountered"):
+        Clusters.polarization(unknown_type)
 
 
 def test_type_hashs():
-    for e1, e2 in product(ALL_MEASURED_TYPES, ALL_MEASURED_TYPES):
+    for e1, e2 in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
         if e1 == e2:
             assert hash(e1) == hash(e2)
         else:
             assert hash(e1) != hash(e2)
 
 
-def test_measured_type_is_compatible():
-    for a, b in product(ALL_MEASURED_TYPES, ALL_MEASURED_TYPES):
-        assert isinstance(a, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType))
-        assert isinstance(b, (GalaxyMeasuredType, CMBMeasuredType, ClusterMeasuredType))
+def test_measurement_is_compatible():
+    for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
+        assert isinstance(a, (Galaxies, CMB, Clusters))
+        assert isinstance(b, (Galaxies, CMB, Clusters))
         if (supports_real(a) and supports_real(b)) or (
             supports_harmonic(a) and supports_harmonic(b)
         ):
@@ -260,14 +250,14 @@ def test_inferred_galaxy_z_dist():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     assert z_dist.bin_name == "bname1"
     assert z_dist.z[0] == 0
     assert z_dist.z[-1] == 1
     assert z_dist.dndz[0] == 1
     assert z_dist.dndz[-1] == 1
-    assert z_dist.measured_type == GalaxyMeasuredType.COUNTS
+    assert z_dist.measurement == Galaxies.COUNTS
 
 
 def test_inferred_galaxy_z_dist_bad_shape():
@@ -278,17 +268,17 @@ def test_inferred_galaxy_z_dist_bad_shape():
             bin_name="bname1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(101),
-            measured_type=ClusterMeasuredType.COUNTS,
+            measurement=Clusters.COUNTS,
         )
 
 
 def test_inferred_galaxy_z_dist_bad_type():
-    with pytest.raises(ValueError, match="The measured_type should be a MeasuredType."):
+    with pytest.raises(ValueError, match="The measurement should be a Measurement."):
         InferredGalaxyZDist(
             bin_name="bname1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
-            measured_type=0,  # type: ignore
+            measurement=0,  # type: ignore
         )
 
 
@@ -298,7 +288,7 @@ def test_inferred_galaxy_z_dist_bad_name():
             bin_name="",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
-            measured_type=GalaxyMeasuredType.COUNTS,
+            measurement=Galaxies.COUNTS,
         )
 
 
@@ -307,13 +297,13 @@ def test_two_point_xy_gal_gal():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     xy = TwoPointXY(x=x, y=y)
     assert xy.x == x
@@ -325,13 +315,13 @@ def test_two_point_xy_cmb_gal():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=CMBMeasuredType.CONVERGENCE,
+        measurement=CMB.CONVERGENCE,
     )
     xy = TwoPointXY(x=x, y=y)
     assert xy.x == x
@@ -343,17 +333,17 @@ def test_two_point_xy_invalid():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.SHEAR_E,
+        measurement=Galaxies.SHEAR_E,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.SHEAR_T,
+        measurement=Galaxies.SHEAR_T,
     )
     with pytest.raises(
         ValueError,
-        match=("Measured types .* and .* are not compatible."),
+        match=("Measurements .* and .* are not compatible."),
     ):
         TwoPointXY(x=x, y=y)
 
@@ -363,13 +353,13 @@ def test_two_point_cells():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     xy = TwoPointXY(x=x, y=y)
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
@@ -377,7 +367,7 @@ def test_two_point_cells():
 
     assert_array_equal(cells.ells, ells)
     assert cells.XY == xy
-    assert cells.get_sacc_name() == harmonic(x.measured_type, y.measured_type)
+    assert cells.get_sacc_name() == harmonic(x.measurement, y.measurement)
 
 
 def test_two_point_cells_invalid_ells():
@@ -385,13 +375,13 @@ def test_two_point_cells_invalid_ells():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     xy = TwoPointXY(x=x, y=y)
     ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
@@ -407,19 +397,19 @@ def test_two_point_cells_invalid_type():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.SHEAR_T,
+        measurement=Galaxies.SHEAR_T,
     )
     xy = TwoPointXY(x=x, y=y)
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     with pytest.raises(
         ValueError,
-        match="Measured types .* and .* must support harmonic-space calculations.",
+        match="Measurements .* and .* must support harmonic-space calculations.",
     ):
         TwoPointCells(ells=ells, XY=xy)
 
@@ -554,13 +544,13 @@ def test_two_point_two_point_cwindow():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     xy = TwoPointXY(x=x, y=y)
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
@@ -568,7 +558,7 @@ def test_two_point_two_point_cwindow():
 
     assert two_point.window == window
     assert two_point.XY == xy
-    assert two_point.get_sacc_name() == harmonic(x.measured_type, y.measured_type)
+    assert two_point.get_sacc_name() == harmonic(x.measurement, y.measurement)
 
 
 def test_two_point_two_point_cwindow_invalid():
@@ -586,19 +576,19 @@ def test_two_point_two_point_cwindow_invalid():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.SHEAR_T,
+        measurement=Galaxies.SHEAR_T,
     )
     xy = TwoPointXY(x=x, y=y)
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     with pytest.raises(
         ValueError,
-        match="Measured types .* and .* must support harmonic-space calculations.",
+        match="Measurements .* and .* must support harmonic-space calculations.",
     ):
         TwoPointCWindow(XY=xy, window=window)
 
@@ -608,13 +598,13 @@ def test_two_point_two_point_cwindow_invalid_window():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.SHEAR_T,
+        measurement=Galaxies.SHEAR_T,
     )
     xy = TwoPointXY(x=x, y=y)
     with pytest.raises(
@@ -630,13 +620,13 @@ def test_two_point_xi_theta():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     xy = TwoPointXY(x=x, y=y)
     theta = np.array(np.linspace(0, 100, 100))
@@ -644,7 +634,7 @@ def test_two_point_xi_theta():
 
     assert_array_equal(two_point.thetas, theta)
     assert two_point.XY == xy
-    assert two_point.get_sacc_name() == real(x.measured_type, y.measured_type)
+    assert two_point.get_sacc_name() == real(x.measurement, y.measurement)
 
 
 def test_two_point_xi_theta_invalid():
@@ -652,19 +642,19 @@ def test_two_point_xi_theta_invalid():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.SHEAR_E,
+        measurement=Galaxies.SHEAR_E,
     )
     xy = TwoPointXY(x=x, y=y)
     theta = np.array(np.linspace(0, 100, 100))
     with pytest.raises(
         ValueError,
-        match="Measured types .* and .* must support real-space calculations.",
+        match="Measurements .* and .* must support real-space calculations.",
     ):
         TwoPointXiTheta(XY=xy, thetas=theta)
 
@@ -673,14 +663,14 @@ def test_harmonic_type_string_invalid():
     with pytest.raises(
         ValueError, match="Harmonic-space correlation not supported for shear T."
     ):
-        harmonic(GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_T)
+        harmonic(Galaxies.COUNTS, Galaxies.SHEAR_T)
 
 
 def test_real_type_string_invalid():
     with pytest.raises(
         ValueError, match="Real-space correlation not supported for shear E."
     ):
-        real(GalaxyMeasuredType.COUNTS, GalaxyMeasuredType.SHEAR_E)
+        real(Galaxies.COUNTS, Galaxies.SHEAR_E)
 
 
 def test_tracer_names_serialization():
@@ -690,8 +680,8 @@ def test_tracer_names_serialization():
     assert tn == recovered
 
 
-def test_measured_type_serialization():
-    for t in ALL_MEASURED_TYPES:
+def test_measurement_serialization():
+    for t in ALL_MEASUREMENTS:
         s = t.to_yaml()
         recovered = type(t).from_yaml(s)
         assert t == recovered
@@ -778,18 +768,18 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=CMBMeasuredType.CONVERGENCE,
+        measurement=CMB.CONVERGENCE,
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measured_type=GalaxyMeasuredType.COUNTS,
+        measurement=Galaxies.COUNTS,
     )
     xy = TwoPointXY(x=x, y=y)
     cells = TwoPointCells(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
-        match="Measured type .* not supported!",
+        match="Measurement .* not supported!",
     ):
         TwoPoint.from_metadata_cells([cells], wl_factory, nc_factory)

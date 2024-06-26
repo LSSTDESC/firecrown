@@ -16,6 +16,7 @@ import scipy.interpolate
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
+from firecrown.generators.two_point import LogLinearElls
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
     WeakLensingFactory,
@@ -31,7 +32,7 @@ from firecrown.likelihood.statistic import (
     TheoryVector,
 )
 from firecrown.metadata.two_point import (
-    GalaxyMeasuredType,
+    Galaxies,
     InferredGalaxyZDist,
     TRACER_NAMES_TOTAL,
     TracerNames,
@@ -70,15 +71,9 @@ def _ell_for_xi(
 
     All values are rounded to the nearest integer.
     """
-    assert minimum >= 0
-    assert minimum < midpoint
-    assert midpoint < maximum
-    lower_range = np.linspace(minimum, midpoint - 1, midpoint - minimum)
-    upper_range = np.logspace(np.log10(midpoint), np.log10(maximum), n_log)
-    concatenated = np.concatenate((lower_range, upper_range))
-    # Round the results to the nearest integer values.
-    # N.B. the dtype of the result is np.dtype[float64]
-    return np.unique(np.around(concatenated)).astype(np.int64)
+    return LogLinearElls(
+        minimum=minimum, midpoint=midpoint, maximum=maximum, n_log=n_log
+    ).generate()
 
 
 def _generate_ell_or_theta(*, minimum, maximum, n, binning="log"):
@@ -233,16 +228,16 @@ def use_source_factory(
 ) -> WeakLensing | NumberCounts:
     """Apply the factory to the inferred galaxy redshift distribution."""
     source: WeakLensing | NumberCounts
-    match inferred_galaxy_zdist.measured_type:
-        case GalaxyMeasuredType.COUNTS:
+    match inferred_galaxy_zdist.measurement:
+        case Galaxies.COUNTS:
             assert nc_factory is not None
             source = nc_factory.create(inferred_galaxy_zdist)
-        case GalaxyMeasuredType.SHEAR_E | GalaxyMeasuredType.SHEAR_T:
+        case Galaxies.SHEAR_E | Galaxies.SHEAR_T:
             assert wl_factory is not None
             source = wl_factory.create(inferred_galaxy_zdist)
         case _:
             raise ValueError(
-                f"Measured type {inferred_galaxy_zdist.measured_type} not supported!"
+                f"Measurement {inferred_galaxy_zdist.measurement} not supported!"
             )
     return source
 
@@ -620,7 +615,6 @@ class TwoPoint(Statistic):
         assert self.thetas is not None
         assert self.ells_for_xi is not None
 
-        print(self.source0.parameter_prefix, self.source1.parameter_prefix)
         cells_for_xi = self.compute_cells(
             self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
         )

@@ -7,7 +7,8 @@ format: html
 
 ## Purpose of this Document
 
-In the tutorial [redshift distributions](inferred_zdist_generators.html) we illustrate the process of using Firecrown to create redshift distributions based on specified parameters describing the distributions.
+In the tutorial [redshift distributions](inferred_zdist_generators.qmd) we illustrate the process of using Firecrown to create redshift distributions based on specified parameters describing the distributions.
+Additionally, in [serializable redshift distributions](inferred_zdist_serialization.qmd) we demonstrate how to generate redshift distributions using serializable objects.
 This document outlines how to use `InferredGalaxyZDist` objects to derive the two-point statistics pertinent to the Large Synoptic Survey Telescope (LSST), employing the redshift distribution outlined in the LSST Science Requirements Document (SRD).
 
 ## Two-point statistics
@@ -19,51 +20,18 @@ In Firecrown, two-point statistics are represented by the `TwoPoint` class, in t
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
 Our initial step involves generating all photometric redshift bins necessary for the LSST year 1 redshift distribution.
+This process is detailed [here](inferred_zdist_generators.qmd#sec-all-bins) in the tutorial on redshift distributions.
+In the serialization [tutorial](inferred_zdist_serialization.qmd#sec-lsst-srd), we demonstrate how to get the LSST SRD redshift distributions.
+Here we will use the LSST SRD year 1 redshift distribution to generate the two-point statistics.
 
 ```{python}
-from itertools import pairwise
-
-import firecrown
-import numpy as np
 from firecrown.generators.inferred_galaxy_zdist import (
-    Y1_LENS_BINS,
-    Y1_SOURCE_BINS,
-    InferredGalaxyZDist,
-    ZDistLSSTSRD,
+    LSST_Y1_LENS_BIN_COLLECTION,
+    LSST_Y1_SOURCE_BIN_COLLECTION,
 )
-from firecrown.metadata.two_point import GalaxyMeasuredType, MeasuredType
 
-zdist_y1 = ZDistLSSTSRD.year_1()
-
-z = np.linspace(0.0, 1.5, 1000)
-
-count_bins = [
-    zdist_y1.binned_distribution(
-        zpl=zpl,
-        zpu=zpu,
-        sigma_z=Y1_LENS_BINS["sigma_z"],
-        z=z,
-        name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
-        measured_type=GalaxyMeasuredType.COUNTS,
-        use_autoknot=True,
-        autoknots_reltol=1.0e-5,
-    )
-    for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
-]
-
-shear_bins = [
-    zdist_y1.binned_distribution(
-        zpl=zpl,
-        zpu=zpu,
-        sigma_z=Y1_SOURCE_BINS["sigma_z"],
-        z=z,
-        name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
-        measured_type=GalaxyMeasuredType.SHEAR_E,
-        use_autoknot=True,
-        autoknots_reltol=1.0e-5,
-    )
-    for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
-]
+count_bins = LSST_Y1_LENS_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_BIN_COLLECTION.generate()
 all_y1_bins = count_bins + shear_bins
 ```
 
@@ -74,6 +42,7 @@ For instance, demonstrated below is the computation of all feasible metadata tai
 
 ```{python}
 
+import numpy as np
 from firecrown.metadata.two_point import make_all_photoz_bin_combinations, TwoPointCells
 
 all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
@@ -96,7 +65,7 @@ df = pd.DataFrame(two_point_names, columns=["bin-x", "bin-y", "SACC data-type"])
 Markdown(df.to_markdown())
 ```
 
-## Defining Two-Point Statistics Factories
+## Defining Two-Point Statistics Factories {#sec-factories}
 
 In Firecrown, "systematics" are classes that are used to represent modifications to physical models which incorporate corrections for various modeling imperfections.
 Some examples are the intrinsic alignment (IA) of galaxies, the multiplicative bias of weak lensing, and photo-z shifts.
@@ -106,7 +75,7 @@ The purpose of the factories is to ensure that each of the systematics created b
 
 [^1]: The classes `LinearAlignmentSystematic`, `MultiplicativeShearBias`, and `PhotoZShift` are all found in the module `firecrown.likelihood.weak_lensing`.
 
-In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics. 
+In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics.
 These factories are responsible for generating the systematics that will be applied to the two-point statistics.
 The code below defines the factories for the weak lensing and number counts systematics:
 
@@ -118,7 +87,7 @@ import firecrown.likelihood.two_point as tp
 import warnings
 
 # WeakLensing systematics -- global
-ia_systematic = wl.LinearAlignmentSystematic(sacc_tracer="")
+ia_systematic = wl.LinearAlignmentSystematicFactory()
 # WeakLensing systematics -- per-bin
 wl_photoz = wl.PhotoZShiftFactory()
 wl_mult_bias = wl.MultiplicativeShearBiasFactory()
@@ -138,10 +107,34 @@ ncf = nc.NumberCountsFactory(
 )
 ```
 
+The choice of systematics is dependent on the specific analysis being conducted.
+In order to allow sharing of the systematics between different analyses, the factories can be serialized and deserialized.
+
+For example, the factories can be serialized as follows:
+```{python}
+from firecrown.utils import base_model_to_yaml
+
+wl_yaml = base_model_to_yaml(wlf)
+nc_yaml = base_model_to_yaml(ncf)
+
+```
+
+The generated YAML for the weak lensing factory is:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{wl_yaml}\n```")
+```
+The generated YAML for the number counts factory is:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{nc_yaml}\n```")
+```
+
+
 ## Generating the Two-Point Statistics
 
-To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics. 
-These factories are responsible for producing the necessary systematics applied to the two-point statistics. 
+To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics.
+These factories are responsible for producing the necessary systematics applied to the two-point statistics.
 Below is the code defining the factories for weak lensing and number counts systematics:
 
 ```{python}
@@ -154,8 +147,8 @@ all_two_point_functions = tp.TwoPoint.from_metadata_cells(
 
 ## Setting Up the Two-Point Statistics
 
-Setting up the two-point statistics requires a cosmology and a set of parameters. 
-The parameters necessary in our analysis depend on the two-point statistic measured types and the systematics we are considering. 
+Setting up the two-point statistics requires a cosmology and a set of parameters.
+The parameters necessary in our analysis depend on the two-point statistic measurements and the systematics we are considering.
 In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the parameters' default values:
 
 ```{python}
@@ -167,7 +160,7 @@ params = ParamsMap(default_values)
 
 ```
 
-Before generating the two-point statistics, it's necessary to set the parameters to their default values. 
+Before generating the two-point statistics, it's necessary to set the parameters to their default values.
 These default values are:
 
 ```{python}
@@ -198,7 +191,7 @@ all_two_point_functions.update(params)
 
 # Computing the Two-Point Statistics
 
-With the cosmology configured and the two-point statistics prepared, we can now proceed to compute the two-point statistics. 
+With the cosmology configured and the two-point statistics prepared, we can now proceed to compute the two-point statistics.
 Let's begin by computing the first two-point statistic as an example:
 
 
@@ -229,7 +222,7 @@ data = pd.DataFrame(
         "Cell": tv0,
         "bin-x": meta0.XY.x.bin_name,
         "bin-y": meta0.XY.y.bin_name,
-        "measured_type": meta0.get_sacc_name(),
+        "measurement": meta0.get_sacc_name(),
     }
 )
 
@@ -245,7 +238,7 @@ data = pd.DataFrame(
 
 ```
 
-The plot above illustrates the first pair of bins. 
+The plot above illustrates the first pair of bins.
 To complete the analysis, we can generate the two-point statistics for all bin pairs.
 
 ```{python}
@@ -260,7 +253,7 @@ for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
                 "Cell": np.abs(two_point.compute_theory_vector(tools)),
                 "bin-x": meta.XY.x.bin_name,
                 "bin-y": meta.XY.y.bin_name,
-                "measured_type": meta.get_sacc_name(),
+                "measurement": meta.get_sacc_name(),
             }
         )
     )
@@ -273,7 +266,7 @@ data = pd.concat(two_point_pd_list)
     + labs(x=r"$\ell$", y=r"$C_\ell$")
     + scale_x_log10()
     + scale_y_log10()
-    + facet_wrap("measured_type")
+    + facet_wrap("measurement")
     + doc_theme()
 )
 ```

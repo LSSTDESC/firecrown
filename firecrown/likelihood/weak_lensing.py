@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Sequence, final
+from typing import Sequence, final, Annotated, Literal
 
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -128,7 +129,7 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
     :ivar z_piv: the pivot redshift for the intrinsic alignment bias.
     """
 
-    def __init__(self, sacc_tracer: None | str = None, alphag=1.0):
+    def __init__(self, sacc_tracer: None | str = None, alphag: None | float = 1.0):
         """Create a LinearAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -347,18 +348,15 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         return self.current_tracer_args.scale
 
 
-class WeakLensingSystematicFactory:
-    """Factory class for WeakLensingSystematic objects."""
-
-    @abstractmethod
-    def create(
-        self, inferred_zdist: InferredGalaxyZDist
-    ) -> SourceGalaxySystematic[WeakLensingArgs]:
-        """Create a WeakLensingSystematic object with the given tracer name."""
-
-
-class MultiplicativeShearBiasFactory(WeakLensingSystematicFactory):
+class MultiplicativeShearBiasFactory(BaseModel):
     """Factory class for MultiplicativeShearBias objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["MultiplicativeShearBiasFactory"],
+        Field(description="The type of the systematic."),
+    ] = "MultiplicativeShearBiasFactory"
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> MultiplicativeShearBias:
         """Create a MultiplicativeShearBias object.
@@ -369,9 +367,52 @@ class MultiplicativeShearBiasFactory(WeakLensingSystematicFactory):
         """
         return MultiplicativeShearBias(inferred_zdist.bin_name)
 
+    def create_global(self) -> MultiplicativeShearBias:
+        """Create a MultiplicativeShearBias object.
 
-class TattAlignmentSystematicFactory(WeakLensingSystematicFactory):
+        :return: The created MultiplicativeShearBias object.
+        """
+        raise ValueError("MultiplicativeShearBias cannot be global")
+
+
+class LinearAlignmentSystematicFactory(BaseModel):
+    """Factory class for LinearAlignmentSystematic objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["LinearAlignmentSystematicFactory"],
+        Field(description="The type of the systematic."),
+    ] = "LinearAlignmentSystematicFactory"
+
+    alphag: None | float = 1.0
+
+    def create(self, inferred_zdist: InferredGalaxyZDist) -> LinearAlignmentSystematic:
+        """Create a LinearAlignmentSystematic object.
+
+        :param inferred_zdist: The inferred galaxy redshift distribution for
+            the created LinearAlignmentSystematic object.
+        :return: The created LinearAlignmentSystematic object.
+        """
+        return LinearAlignmentSystematic(inferred_zdist.bin_name)
+
+    def create_global(self) -> LinearAlignmentSystematic:
+        """Create a LinearAlignmentSystematic object.
+
+        :return: The created LinearAlignmentSystematic object.
+        """
+        return LinearAlignmentSystematic(sacc_tracer=None, alphag=self.alphag)
+
+
+class TattAlignmentSystematicFactory(BaseModel):
     """Factory class for TattAlignmentSystematic objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["TattAlignmentSystematicFactory"],
+        Field(description="The type of the systematic."),
+    ] = "TattAlignmentSystematicFactory"
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
@@ -382,9 +423,22 @@ class TattAlignmentSystematicFactory(WeakLensingSystematicFactory):
         """
         return TattAlignmentSystematic(inferred_zdist.bin_name)
 
+    def create_global(self) -> TattAlignmentSystematic:
+        """Create a TattAlignmentSystematic object.
 
-class PhotoZShiftFactory(WeakLensingSystematicFactory):
+        :return: The created TattAlignmentSystematic object.
+        """
+        return TattAlignmentSystematic(None)
+
+
+class PhotoZShiftFactory(BaseModel):
     """Factory class for PhotoZShift objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftFactory"], Field(description="The type of the systematic.")
+    ] = "PhotoZShiftFactory"
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
         """Create a PhotoZShift object.
@@ -395,34 +449,57 @@ class PhotoZShiftFactory(WeakLensingSystematicFactory):
         """
         return PhotoZShift(inferred_zdist.bin_name)
 
+    def create_global(self) -> PhotoZShift:
+        """Create a PhotoZShift object.
 
-class WeakLensingFactory:
+        :return: The created PhotoZShift object.
+        """
+        raise ValueError("PhotoZShift cannot be global")
+
+
+WeakLensingSystematicFactory = Annotated[
+    MultiplicativeShearBiasFactory
+    | LinearAlignmentSystematicFactory
+    | TattAlignmentSystematicFactory
+    | PhotoZShiftFactory,
+    Field(discriminator="type", union_mode="left_to_right"),
+]
+
+
+class WeakLensingFactory(BaseModel):
     """Factory class for WeakLensing objects."""
 
-    def __init__(
-        self,
-        per_bin_systematics: list[WeakLensingSystematicFactory],
-        global_systematics: Sequence[WeakLensingSystematic],
-    ) -> None:
-        self.per_bin_systematics: list[WeakLensingSystematicFactory] = (
-            per_bin_systematics
-        )
-        self.global_systematics: Sequence[WeakLensingSystematic] = global_systematics
-        self.cache: dict[int, WeakLensing] = {}
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    _cache: dict[int, WeakLensing] = PrivateAttr()
+    _global_systematics_instances: Sequence[SourceGalaxySystematic[WeakLensingArgs]] = (
+        PrivateAttr()
+    )
+
+    per_bin_systematics: Sequence[WeakLensingSystematicFactory]
+    global_systematics: Sequence[WeakLensingSystematicFactory]
+
+    def model_post_init(self, __context) -> None:
+        """Initialize the WeakLensingFactory object."""
+        self._cache: dict[int, WeakLensing] = {}
+        self._global_systematics_instances = [
+            wl_systematic_factory.create_global()
+            for wl_systematic_factory in self.global_systematics
+        ]
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
         inferred_zdist_id = id(inferred_zdist)
-        if inferred_zdist_id in self.cache:
-            return self.cache[inferred_zdist_id]
+        if inferred_zdist_id in self._cache:
+            return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
             systematic_factory.create(inferred_zdist)
             for systematic_factory in self.per_bin_systematics
         ]
-        systematics.extend(self.global_systematics)
+        systematics.extend(self._global_systematics_instances)
 
         wl = WeakLensing.create_ready(inferred_zdist, systematics)
-        self.cache[inferred_zdist_id] = wl
+        self._cache[inferred_zdist_id] = wl
 
         return wl

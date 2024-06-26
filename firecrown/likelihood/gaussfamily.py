@@ -307,7 +307,6 @@ class GaussFamily(Likelihood):
         self, tools: ModelingTools
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Calculate and return both the data and theory vectors."""
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "The use of the `compute` method on Statistic is deprecated."
             "The Statistic objects should implement `get_data` and "

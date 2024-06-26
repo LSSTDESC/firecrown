@@ -1,5 +1,10 @@
 """Generation of inferred galaxy redshift distributions."""
 
+from typing import TypedDict, Annotated, Any
+from itertools import pairwise
+
+from pydantic import BaseModel, ConfigDict, Field, field_serializer, BeforeValidator
+
 import numpy as np
 import numpy.typing as npt
 from scipy.special import gamma, erf, erfc
@@ -7,19 +12,29 @@ from scipy.integrate import quad
 
 from numcosmo_py import Ncm
 
-from firecrown.metadata.two_point import InferredGalaxyZDist, MeasuredType
+from firecrown.metadata.two_point import (
+    InferredGalaxyZDist,
+    Measurement,
+    Galaxies,
+    CMB,
+    Clusters,
+    ALL_MEASUREMENT_TYPES,
+    make_measurement_dict,
+)
+
+BinsType = TypedDict("BinsType", {"edges": npt.NDArray, "sigma_z": float})
 
 Y1_ALPHA = 0.94
 Y1_BETA = 2.0
 Y1_Z0 = 0.26
-Y1_LENS_BINS = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}
-Y1_SOURCE_BINS = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.05}
+Y1_LENS_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}
+Y1_SOURCE_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.05}
 
 Y10_ALPHA = 0.90
 Y10_BETA = 2.0
 Y10_Z0 = 0.28
-Y10_LENS_BINS = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.03}
-Y10_SOURCE_BINS = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.05}
+Y10_LENS_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.03}
+Y10_SOURCE_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.05}
 
 
 class ZDistLSSTSRD:
@@ -128,7 +143,7 @@ class ZDistLSSTSRD:
         sigma_z: float,
         z: npt.NDArray,
         name: str,
-        measured_type: MeasuredType,
+        measurement: Measurement,
         use_autoknot: bool = False,
         autoknots_reltol: float = 1.0e-4,
         autoknots_abstol: float = 1.0e-15,
@@ -169,5 +184,189 @@ class ZDistLSSTSRD:
             )
 
         return InferredGalaxyZDist(
-            bin_name=name, z=z_knots, dndz=dndz, measured_type=measured_type
+            bin_name=name, z=z_knots, dndz=dndz, measurement=measurement
         )
+
+
+class LinearGrid1D(BaseModel):
+    """A 1D linear grid."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    start: float
+    end: float
+    num: int
+
+    def generate(self) -> npt.NDArray:
+        """Generate the 1D linear grid."""
+        return np.linspace(self.start, self.end, self.num)
+
+
+class RawGrid1D(BaseModel):
+    """A 1D grid."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    values: list[float]
+
+    def generate(self) -> npt.NDArray:
+        """Generate the 1D grid."""
+        return np.array(self.values)
+
+
+Grid1D = LinearGrid1D | RawGrid1D
+
+
+def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
+    """Create a Measurement object from a dictionary."""
+    if isinstance(value, ALL_MEASUREMENT_TYPES):
+        return value
+
+    if not isinstance(value, dict):
+        raise ValueError(f"Invalid Measurement: {value} is not a dictionary")
+
+    if "subject" not in value:
+        raise ValueError("Invalid Measurement: dictionary does not contain 'subject'")
+
+    subject = value["subject"]
+
+    match subject:
+        case "Galaxies":
+            return Galaxies[value["property"]]
+        case "CMB":
+            return CMB[value["property"]]
+        case "Clusters":
+            return Clusters[value["property"]]
+        case _:
+            raise ValueError(
+                f"Invalid Measurement: subject: '{subject}' is not recognized"
+            )
+
+
+class ZDistLSSTSRDBin(BaseModel):
+    """LSST Inferred galaxy redshift distributions in bins."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    zpl: float
+    zpu: float
+    sigma_z: float
+    z: Annotated[Grid1D, Field(union_mode="left_to_right")]
+    bin_name: str
+    measurement: Annotated[Measurement, BeforeValidator(make_measurement)]
+    use_autoknot: bool = False
+    autoknots_reltol: float = 1.0e-4
+    autoknots_abstol: float = 1.0e-15
+
+    @field_serializer("measurement")
+    @classmethod
+    def serialize_measurement(cls, value: Measurement) -> dict:
+        """Serialize the Measurement."""
+        return make_measurement_dict(value)
+
+    def generate(self, zdist: ZDistLSSTSRD) -> InferredGalaxyZDist:
+        """Generate the inferred galaxy redshift distribution in bins."""
+        return zdist.binned_distribution(
+            zpl=self.zpl,
+            zpu=self.zpu,
+            sigma_z=self.sigma_z,
+            z=self.z.generate(),
+            name=self.bin_name,
+            measurement=self.measurement,
+            use_autoknot=self.use_autoknot,
+            autoknots_reltol=self.autoknots_reltol,
+            autoknots_abstol=self.autoknots_abstol,
+        )
+
+
+class ZDistLSSTSRDBinCollection(BaseModel):
+    """LSST Inferred galaxy redshift distributions in bins."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    alpha: float
+    beta: float
+    z0: float
+    bins: list[ZDistLSSTSRDBin]
+
+    def generate(self) -> list[InferredGalaxyZDist]:
+        """Generate the inferred galaxy redshift distributions in bins."""
+        zdist = ZDistLSSTSRD(alpha=self.alpha, beta=self.beta, z0=self.z0)
+        return [bin.generate(zdist) for bin in self.bins]
+
+
+LSST_Y1_LENS_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
+    alpha=Y1_ALPHA,
+    beta=Y1_BETA,
+    z0=Y1_Z0,
+    bins=[
+        ZDistLSSTSRDBin(
+            zpl=zpl,
+            zpu=zpu,
+            sigma_z=Y1_LENS_BINS["sigma_z"],
+            z=RawGrid1D(values=[0.0, 3.0]),
+            bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
+            measurement=Galaxies.COUNTS,
+            use_autoknot=True,
+            autoknots_reltol=1.0e-5,
+        )
+        for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
+    ],
+)
+
+LSST_Y1_SOURCE_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
+    alpha=Y1_ALPHA,
+    beta=Y1_BETA,
+    z0=Y1_Z0,
+    bins=[
+        ZDistLSSTSRDBin(
+            zpl=zpl,
+            zpu=zpu,
+            sigma_z=Y1_SOURCE_BINS["sigma_z"],
+            z=RawGrid1D(values=[0.0, 3.0]),
+            bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
+            measurement=Galaxies.SHEAR_E,
+            use_autoknot=True,
+            autoknots_reltol=1.0e-5,
+        )
+        for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
+    ],
+)
+
+LSST_Y10_LENS_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
+    alpha=Y10_ALPHA,
+    beta=Y10_BETA,
+    z0=Y10_Z0,
+    bins=[
+        ZDistLSSTSRDBin(
+            zpl=zpl,
+            zpu=zpu,
+            sigma_z=Y10_LENS_BINS["sigma_z"],
+            z=RawGrid1D(values=[0.0, 3.0]),
+            bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y10",
+            measurement=Galaxies.COUNTS,
+            use_autoknot=True,
+            autoknots_reltol=1.0e-5,
+        )
+        for zpl, zpu in pairwise(Y10_LENS_BINS["edges"])
+    ],
+)
+
+LSSST_Y10_SOURCE_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
+    alpha=Y10_ALPHA,
+    beta=Y10_BETA,
+    z0=Y10_Z0,
+    bins=[
+        ZDistLSSTSRDBin(
+            zpl=zpl,
+            zpu=zpu,
+            sigma_z=Y10_SOURCE_BINS["sigma_z"],
+            z=RawGrid1D(values=[0.0, 3.0]),
+            bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y10",
+            measurement=Galaxies.SHEAR_E,
+            use_autoknot=True,
+            autoknots_reltol=1.0e-5,
+        )
+        for zpl, zpu in pairwise(Y10_SOURCE_BINS["edges"])
+    ],
+)

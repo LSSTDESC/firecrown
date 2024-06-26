@@ -19,6 +19,7 @@ dependencies:
     - cobaya
     - pygobject-stubs
   - pyccl>=2.8.0
+  - pydantic
   - pytest
   - quarto
   - sacc>=0.11
