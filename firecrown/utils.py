@@ -28,7 +28,7 @@ def base_model_from_yaml(cls: type, yaml_str: str):
         ) from e
 
 
-def base_model_to_yaml(model: BaseModel):
+def base_model_to_yaml(model: BaseModel) -> str:
     """Convert a base model to a yaml string."""
     return yaml.dump(model.model_dump(), default_flow_style=False, sort_keys=False)
 
