@@ -11,7 +11,7 @@ import pyccl
 
 from cobaya.theory import Theory
 
-from firecrown.connector.mapping import mapping_builder
+from firecrown.connector.mapping import mapping_builder, MappingCAMB
 
 
 class CCLConnector(Theory):
@@ -19,7 +19,7 @@ class CCLConnector(Theory):
 
     input_style: str | None = None
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Initialize a CCLConnector object.
 
         Required by Cobaya.
@@ -28,14 +28,18 @@ class CCLConnector(Theory):
         Cobaya does not allow us to override __init__.
         """
         assert self.input_style
-        self.map = mapping_builder(input_style=self.input_style)
+        # We have to do some extra type-fiddling here because mapping_builder
+        # has a declared return type of the base class.
+        new_mapping = mapping_builder(input_style=self.input_style)
+        assert isinstance(new_mapping, MappingCAMB)
+        self.map = new_mapping
 
         self.a_bg = np.linspace(0.1, 1.0, 50)
         self.z_bg = 1.0 / self.a_bg - 1.0
         self.z_Pk = np.arange(0.0, 6.0, 1)
         self.Pk_kmax = 1.0
 
-    def initialize_with_params(self):
+    def initialize_with_params(self) -> None:
         """Complete the initialization of a CCLConnector object.
 
         Required by Cobaya.
@@ -44,7 +48,7 @@ class CCLConnector(Theory):
         that point. This version has nothing to do.
         """
 
-    def initialize_with_provider(self, provider):
+    def initialize_with_provider(self, provider) -> None:
         """Set the object's provider.
 
         Required by Cobaya.
@@ -53,7 +57,7 @@ class CCLConnector(Theory):
         """
         self.provider = provider
 
-    def get_can_provide_params(self):
+    def get_can_provide_params(self) -> list[str]:
         """Return the list of params provided.
 
         Required by Cobaya.
@@ -70,7 +74,7 @@ class CCLConnector(Theory):
         """
         return self.map.get_params_names()
 
-    def get_allow_agnostic(self):
+    def get_allow_agnostic(self) -> bool:
         """Is it allowed to pass all unassigned input parameters to this component.
 
         Required by Cobaya.
@@ -100,7 +104,7 @@ class CCLConnector(Theory):
 
         return pyccl_calculator_requires
 
-    def must_provide(self, **requirements):
+    def must_provide(self, **requirements) -> None:
         """Required by Cobaya.
 
         This version does nothing.
