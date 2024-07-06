@@ -41,6 +41,8 @@ from firecrown.metadata.two_point import (
     TwoPointXiTheta,
     Window,
     extract_window_function,
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import UpdatableCollection
@@ -429,9 +431,7 @@ class TwoPoint(Statistic):
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
-            raise ValueError(
-                f"The SACC data type {sacc_data_type}'%s' is not " f"supported!"
-            )
+            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
     @classmethod
     def _from_metadata(
@@ -457,6 +457,7 @@ class TwoPoint(Statistic):
 
     def _init_from_cells(self, metadata: TwoPointCells):
         """Initialize the TwoPoint statistic from a TwoPointCells metadata object."""
+        self.sacc_tracers = metadata.XY.get_tracer_names()
         self.ells = metadata.ells
         self.window = None
         if metadata.Cell is not None:
@@ -465,27 +466,39 @@ class TwoPoint(Statistic):
 
     def _init_from_cwindow(self, metadata: TwoPointCWindow):
         """Initialize the TwoPoint statistic from a TwoPointCWindow metadata object."""
+        self.sacc_tracers = metadata.XY.get_tracer_names()
         self.window = metadata.window
+        if self.window.ells_for_interpolation is None:
+            self.window.ells_for_interpolation = calculate_ells_for_interpolation(
+                self.window
+            )
         if metadata.Cell is not None:
             self.sacc_indices = metadata.Cell.indices
             self.data_vector = DataVector.create(metadata.Cell.data)
 
     def _init_from_xi_theta(self, metadata: TwoPointXiTheta):
         """Initialize the TwoPoint statistic from a TwoPointXiTheta metadata object."""
+        self.sacc_tracers = metadata.XY.get_tracer_names()
         self.thetas = metadata.thetas
         self.window = None
+        self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
         if metadata.xis is not None:
             self.sacc_indices = metadata.xis.indices
             self.data_vector = DataVector.create(metadata.xis.data)
 
     @classmethod
-    def from_metadata_cells(
+    def _from_metadata_any(
         cls,
         metadata: Sequence[TwoPointCells | TwoPointCWindow | TwoPointXiTheta],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint statistic from a TwoPointCells metadata object."""
+        """Create an UpdatableCollection of TwoPoint statistics.
+
+        This constructor creates an UpdatableCollection of TwoPoint statistics from a
+        list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
+        The metadata objects are used to initialize the TwoPoint statistics.
+        """
         two_point_list = [
             cls._from_metadata(
                 sacc_data_type=cell.get_sacc_name(),
@@ -501,6 +514,52 @@ class TwoPoint(Statistic):
         ]
 
         return UpdatableCollection(two_point_list)
+
+    @classmethod
+    def from_metadata_harmonic(
+        cls,
+        metadata: Sequence[TwoPointCells | TwoPointCWindow],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+        check_consistence: bool = False,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create an UpdatableCollection of harmonic space TwoPoint statistics.
+
+        This constructor creates an UpdatableCollection of TwoPoint statistics from a
+        list of TwoPointCells or TwoPointCWindow metadata objects. The metadata objects
+        are used to initialize the TwoPoint statistics.
+
+        :param metadata: The metadata objects to initialize the TwoPoint statistics.
+        :param wl_factory: The weak lensing factory to use.
+        :param nc_factory: The number counts factory to use.
+        :param check_consistence: Whether to check the consistence of the metadata.
+        """
+        if check_consistence:
+            check_two_point_consistence_harmonic(metadata)
+        return cls._from_metadata_any(metadata, wl_factory, nc_factory)
+
+    @classmethod
+    def from_metadata_real(
+        cls,
+        metadata: Sequence[TwoPointXiTheta],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+        check_consistence: bool = False,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create an UpdatableCollection of real space TwoPoint statistics.
+
+        This constructor creates an UpdatableCollection of TwoPoint statistics from a
+        list of TwoPointXiTheta metadata objects. The metadata objects are used to
+        initialize the TwoPoint statistics.
+
+        :param metadata: The metadata objects to initialize the TwoPoint statistics.
+        :param wl_factory: The weak lensing factory to use.
+        :param nc_factory: The number counts factory to use.
+        :param check_consistence: Whether to check the consistence of the metadata.
+        """
+        if check_consistence:
+            check_two_point_consistence_real(metadata)
+        return cls._from_metadata_any(metadata, wl_factory, nc_factory)
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
@@ -709,7 +768,7 @@ class TwoPoint(Statistic):
         scale1 = self.source1.get_scale()
 
         assert self.ccl_kind == "cl"
-        assert self.ells is not None
+        assert (self.ells is not None) or (self.window is not None)
 
         if self.window is not None:
             # If a window function is provided, we need to compute the Cl's

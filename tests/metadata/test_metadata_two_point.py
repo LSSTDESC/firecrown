@@ -29,8 +29,6 @@ from firecrown.metadata.two_point import (
     Window,
 )
 from firecrown.likelihood.source import SourceGalaxy
-import firecrown.likelihood.weak_lensing as wl
-import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood.two_point import TwoPoint
 
 
@@ -119,18 +117,6 @@ def make_two_point_cwindow_1(
     xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
     two_point = TwoPointCWindow(XY=xy, window=window_1)
     return two_point
-
-
-@pytest.fixture(name="wl_factory")
-def make_wl_factory():
-    """Generate a WeakLensingFactory object."""
-    return wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
-
-
-@pytest.fixture(name="nc_factory")
-def make_nc_factory():
-    """Generate a NumberCountsFactory object."""
-    return nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
 
 
 def test_order_enums():
@@ -746,7 +732,7 @@ def test_two_point_from_metadata_cells(
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
     cells = TwoPointCells(ells=ells, XY=xy)
-    two_point = TwoPoint.from_metadata_cells([cells], wl_factory, nc_factory).pop()
+    two_point = TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
@@ -760,6 +746,53 @@ def test_two_point_from_metadata_cells(
 
     assert_array_equal(two_point.source0.tracer_args.dndz, harmonic_bin_1.dndz)
     assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_bin_2.dndz)
+
+
+def test_two_point_from_metadata_cwindow(two_point_cwindow_1, wl_factory, nc_factory):
+    two_point = TwoPoint.from_metadata_harmonic(
+        [two_point_cwindow_1], wl_factory, nc_factory
+    ).pop()
+
+    assert two_point is not None
+    assert isinstance(two_point, TwoPoint)
+    assert two_point.sacc_data_type == two_point_cwindow_1.get_sacc_name()
+
+    assert isinstance(two_point.source0, SourceGalaxy)
+    assert isinstance(two_point.source1, SourceGalaxy)
+
+    assert_array_equal(two_point.source0.tracer_args.z, two_point_cwindow_1.XY.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, two_point_cwindow_1.XY.y.z)
+
+    assert_array_equal(
+        two_point.source0.tracer_args.dndz, two_point_cwindow_1.XY.x.dndz
+    )
+    assert_array_equal(
+        two_point.source1.tracer_args.dndz, two_point_cwindow_1.XY.y.dndz
+    )
+
+
+def test_two_point_from_metadata_xi_theta(
+    real_bin_1, real_bin_2, wl_factory, nc_factory
+):
+    theta = np.array(np.linspace(0, 100, 100))
+    xy = TwoPointXY(x=real_bin_1, y=real_bin_2)
+    xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
+    if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
+        return
+    two_point = TwoPoint.from_metadata_real([xi_theta], wl_factory, nc_factory).pop()
+
+    assert two_point is not None
+    assert isinstance(two_point, TwoPoint)
+    assert two_point.sacc_data_type == xi_theta.get_sacc_name()
+
+    assert isinstance(two_point.source0, SourceGalaxy)
+    assert isinstance(two_point.source1, SourceGalaxy)
+
+    assert_array_equal(two_point.source0.tracer_args.z, real_bin_1.z)
+    assert_array_equal(two_point.source1.tracer_args.z, real_bin_2.z)
+
+    assert_array_equal(two_point.source0.tracer_args.dndz, real_bin_1.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, real_bin_2.dndz)
 
 
 def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
@@ -782,4 +815,4 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
         ValueError,
         match="Measurement .* not supported!",
     ):
-        TwoPoint.from_metadata_cells([cells], wl_factory, nc_factory)
+        TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory)

@@ -10,6 +10,7 @@ from numpy.testing import assert_array_equal
 
 import sacc
 
+from firecrown.parameters import ParamsMap
 from firecrown.metadata.two_point import (
     extract_all_data_types_cells,
     extract_all_data_types_xi_thetas,
@@ -25,6 +26,7 @@ from firecrown.metadata.two_point import (
     TwoPointCells,
     TwoPointXiTheta,
 )
+from firecrown.likelihood.two_point import TwoPoint, use_source_factory
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
@@ -628,11 +630,17 @@ def test_extract_all_two_point_cwindows(sacc_galaxy_cwindows):
         tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
         assert tracer_names in tracer_pairs
 
-        datatype, ells, Cell = tracer_pairs[tracer_names]
+        datatype, ells, Cell, window = tracer_pairs[tracer_names]
         assert two_point.get_sacc_name() == datatype
         assert_array_equal(two_point.window.ells, ells)
         assert two_point.Cell is not None
         assert_array_equal(two_point.Cell.data, Cell)
+        assert two_point.window is not None
+
+        assert_array_equal(
+            two_point.window.weights, window.weight / window.weight.sum(axis=0)
+        )
+        assert_array_equal(two_point.window.ells, window.values)
 
     check_two_point_consistence_harmonic(two_point_cwindows)
 
@@ -654,3 +662,216 @@ def test_extract_all_data_xi_thetas(sacc_galaxy_xis):
         assert_array_equal(two_point.xis.data, xi)
 
     check_two_point_consistence_real(two_point_xis)
+
+
+def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+
+    two_point_cells, _ = extract_all_data_cells(sacc_data)
+
+    two_points_new = TwoPoint.from_metadata_harmonic(
+        two_point_cells, wl_factory, nc_factory
+    )
+
+    assert two_points_new is not None
+
+    for two_point in two_points_new:
+        assert two_point.sacc_tracers in tracer_pairs
+        assert two_point.sacc_data_type == tracer_pairs[two_point.sacc_tracers][0]
+        assert two_point.ells is not None
+        assert_array_equal(two_point.ells, tracer_pairs[two_point.sacc_tracers][1])
+        assert_array_equal(
+            two_point.get_data_vector(), tracer_pairs[two_point.sacc_tracers][2]
+        )
+
+
+def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
+
+    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+
+    two_points_new = TwoPoint.from_metadata_harmonic(
+        two_point_cwindows, wl_factory, nc_factory
+    )
+
+    assert two_points_new is not None
+
+    for two_point in two_points_new:
+        sacc_data_type, _, Cell, window = tracer_pairs[two_point.sacc_tracers]
+
+        assert two_point.sacc_tracers in tracer_pairs
+        assert two_point.sacc_data_type == sacc_data_type
+        assert two_point.ells is None
+        assert_array_equal(two_point.get_data_vector(), Cell)
+        assert two_point.window is not None
+        assert_array_equal(
+            two_point.window.weights,
+            window.weight / window.weight.sum(axis=0),
+        )
+        assert_array_equal(two_point.window.ells, window.values)
+
+
+def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
+    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+
+    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+
+    two_points_new = TwoPoint.from_metadata_real(two_point_xis, wl_factory, nc_factory)
+
+    assert two_points_new is not None
+
+    for two_point in two_points_new:
+        assert two_point.sacc_tracers in tracer_pairs
+        assert two_point.sacc_data_type == tracer_pairs[two_point.sacc_tracers][0]
+        assert two_point.thetas is not None
+        assert_array_equal(two_point.thetas, tracer_pairs[two_point.sacc_tracers][1])
+        assert_array_equal(
+            two_point.get_data_vector(), tracer_pairs[two_point.sacc_tracers][2]
+        )
+
+
+def test_compare_constructors_cells(
+    sacc_galaxy_cells, wl_factory, nc_factory, tools_with_vanilla_cosmology
+):
+    sacc_data, _, _ = sacc_galaxy_cells
+
+    two_point_cells, _ = extract_all_data_cells(sacc_data)
+
+    two_points_harmonic = TwoPoint.from_metadata_harmonic(
+        two_point_cells, wl_factory, nc_factory
+    )
+
+    params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
+
+    two_points_old = []
+    for cell in two_point_cells:
+        sacc_data_type = cell.get_sacc_name()
+        source0 = use_source_factory(
+            cell.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+        )
+        source1 = use_source_factory(
+            cell.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+        )
+        two_point = TwoPoint(sacc_data_type, source0, source1)
+        two_point.read(sacc_data)
+        two_points_old.append(two_point)
+
+    assert len(two_points_harmonic) == len(two_points_old)
+
+    for two_point, two_point_old in zip(two_points_harmonic, two_points_old):
+        assert two_point.sacc_tracers == two_point_old.sacc_tracers
+        assert two_point.sacc_data_type == two_point_old.sacc_data_type
+        assert two_point.ells is not None
+        assert two_point_old.ells is not None
+        assert_array_equal(two_point.ells, two_point_old.ells)
+        assert_array_equal(two_point.get_data_vector(), two_point_old.get_data_vector())
+        assert two_point.sacc_indices is not None
+        assert two_point_old.sacc_indices is not None
+        assert_array_equal(two_point.sacc_indices, two_point_old.sacc_indices)
+
+        two_point.update(params)
+        two_point_old.update(params)
+
+        assert_array_equal(
+            two_point.compute_theory_vector(tools_with_vanilla_cosmology),
+            two_point_old.compute_theory_vector(tools_with_vanilla_cosmology),
+        )
+
+
+def test_compare_constructors_cwindows(
+    sacc_galaxy_cwindows, wl_factory, nc_factory, tools_with_vanilla_cosmology
+):
+    sacc_data, _, _ = sacc_galaxy_cwindows
+
+    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+
+    two_points_harmonic = TwoPoint.from_metadata_harmonic(
+        two_point_cwindows, wl_factory, nc_factory
+    )
+
+    params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
+
+    two_points_old = []
+    for cwindow in two_point_cwindows:
+        sacc_data_type = cwindow.get_sacc_name()
+        source0 = use_source_factory(
+            cwindow.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+        )
+        source1 = use_source_factory(
+            cwindow.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+        )
+        two_point = TwoPoint(sacc_data_type, source0, source1)
+        two_point.read(sacc_data)
+        two_points_old.append(two_point)
+
+    assert len(two_points_harmonic) == len(two_points_old)
+
+    for two_point, two_point_old in zip(two_points_harmonic, two_points_old):
+        assert two_point.sacc_tracers == two_point_old.sacc_tracers
+        assert two_point.sacc_data_type == two_point_old.sacc_data_type
+        assert two_point.ells is None
+        assert (
+            two_point_old.ells is not None
+        )  # The old constructor always sets the ells
+        assert_array_equal(two_point.get_data_vector(), two_point_old.get_data_vector())
+        assert two_point.window is not None
+        assert two_point_old.window is not None
+        assert_array_equal(two_point.window.weights, two_point_old.window.weights)
+        assert_array_equal(two_point.window.ells, two_point_old.window.ells)
+        assert two_point.sacc_indices is not None
+        assert two_point_old.sacc_indices is not None
+        assert_array_equal(two_point.sacc_indices, two_point_old.sacc_indices)
+
+        two_point.update(params)
+        two_point_old.update(params)
+
+        assert_array_equal(
+            two_point.compute_theory_vector(tools_with_vanilla_cosmology),
+            two_point_old.compute_theory_vector(tools_with_vanilla_cosmology),
+        )
+
+
+def test_compare_constructors_xis(
+    sacc_galaxy_xis, wl_factory, nc_factory, tools_with_vanilla_cosmology
+):
+    sacc_data, _, _ = sacc_galaxy_xis
+
+    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+
+    two_points_real = TwoPoint.from_metadata_real(two_point_xis, wl_factory, nc_factory)
+
+    params = ParamsMap(two_points_real.required_parameters().get_default_values())
+
+    two_points_old = []
+    for xi in two_point_xis:
+        sacc_data_type = xi.get_sacc_name()
+        source0 = use_source_factory(
+            xi.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+        )
+        source1 = use_source_factory(
+            xi.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+        )
+        two_point = TwoPoint(sacc_data_type, source0, source1)
+        two_point.read(sacc_data)
+        two_points_old.append(two_point)
+
+    assert len(two_points_real) == len(two_points_old)
+
+    for two_point, two_point_old in zip(two_points_real, two_points_old):
+        assert two_point.sacc_tracers == two_point_old.sacc_tracers
+        assert two_point.sacc_data_type == two_point_old.sacc_data_type
+        assert two_point.thetas is not None
+        assert two_point_old.thetas is not None
+        assert_array_equal(two_point.thetas, two_point_old.thetas)
+        assert_array_equal(two_point.get_data_vector(), two_point_old.get_data_vector())
+        assert two_point.sacc_indices is not None
+        assert two_point_old.sacc_indices is not None
+        assert_array_equal(two_point.sacc_indices, two_point_old.sacc_indices)
+
+        two_point.update(params)
+        two_point_old.update(params)
+
+        assert_array_equal(
+            two_point.compute_theory_vector(tools_with_vanilla_cosmology),
+            two_point_old.compute_theory_vector(tools_with_vanilla_cosmology),
+        )

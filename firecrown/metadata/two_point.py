@@ -133,6 +133,10 @@ class TwoPointXY(YAMLSerializable):
         """Return a string representation of the TwoPointXY object."""
         return f"({self.x.bin_name}, {self.y.bin_name})"
 
+    def get_tracer_names(self) -> TracerNames:
+        """Return the TracerNames object for the TwoPointXY object."""
+        return TracerNames(self.x.bin_name, self.y.bin_name)
+
 
 @dataclass(frozen=True, kw_only=True)
 class TwoPointMeasurement(YAMLSerializable):

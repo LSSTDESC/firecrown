@@ -19,6 +19,8 @@ from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata.two_point import TracerNames
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
 
 
 def pytest_addoption(parser):
@@ -147,6 +149,8 @@ def fixture_tools_with_vanilla_cosmology():
     result = ModelingTools()
     result.update(ParamsMap())
     result.prepare(pyccl.CosmologyVanillaLCDM())
+
+    return result
 
 
 @pytest.fixture(name="cluster_sacc_data")
@@ -437,7 +441,10 @@ def fixture_sacc_galaxy_cwindows():
 
     tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
     tracer_pairs: dict[
-        TracerNames, tuple[str, npt.NDArray[np.int64], npt.NDArray[np.float64]]
+        TracerNames,
+        tuple[
+            str, npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow
+        ],
     ] = {}
 
     for i, mn in enumerate(src_bins_centers):
@@ -471,6 +478,7 @@ def fixture_sacc_galaxy_cwindows():
             "galaxy_shear_cl_ee",
             ells,
             Cells,
+            window,
         )
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
@@ -493,6 +501,7 @@ def fixture_sacc_galaxy_cwindows():
             "galaxy_density_cl",
             ells,
             Cells,
+            window,
         )
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
@@ -515,6 +524,7 @@ def fixture_sacc_galaxy_cwindows():
             "galaxy_shearDensity_cl_e",
             ells,
             Cells,
+            window,
         )
 
     sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
@@ -654,3 +664,15 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window():
     sacc_data.add_covariance(cov)
 
     return sacc_data, z, dndz
+
+
+@pytest.fixture(name="wl_factory")
+def make_wl_factory():
+    """Generate a WeakLensingFactory object."""
+    return wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+
+
+@pytest.fixture(name="nc_factory")
+def make_nc_factory():
+    """Generate a NumberCountsFactory object."""
+    return nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
