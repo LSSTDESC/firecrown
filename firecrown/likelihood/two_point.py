@@ -692,7 +692,6 @@ class TwoPoint(Statistic):
             theta=self.thetas / 60,
             type=self.ccl_kind,
         )
-        assert self.data_vector is not None
         return TheoryVector.create(theory_vector)
 
     def compute_theory_vector_harmonic_space(
@@ -763,7 +762,6 @@ class TwoPoint(Statistic):
             tracers1,
         )
 
-        assert self.data_vector is not None
         return TheoryVector.create(theory_vector)
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
