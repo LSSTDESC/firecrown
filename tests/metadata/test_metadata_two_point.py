@@ -9,11 +9,11 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 import sacc_name_mapping as snm
+from firecrown.metadata.two_point_types import compare_enums
 from firecrown.metadata.two_point import (
     ALL_MEASUREMENTS,
     Clusters,
     CMB,
-    compare_enums,
     Galaxies,
     InferredGalaxyZDist,
     measurement_is_compatible as is_compatible,

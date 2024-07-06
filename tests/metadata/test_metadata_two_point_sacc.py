@@ -16,6 +16,10 @@ from firecrown.metadata.two_point import (
     extract_all_photoz_bin_combinations,
     extract_all_tracers,
     extract_window_function,
+    extract_all_data_cells,
+    extract_all_data_xi_thetas,
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
     Galaxies,
     TracerNames,
     TwoPointCells,
@@ -590,3 +594,63 @@ def test_make_xis(sacc_galaxy_xis):
         assert_array_equal(two_point_xis.thetas, thetas)
         assert two_point_xis.XY is not None
         assert two_point_xis.XY == bin_comb
+
+
+def test_extract_all_two_point_cells(sacc_galaxy_cells):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+
+    two_point_cells, two_point_cwindows = extract_all_data_cells(sacc_data)
+    assert len(two_point_cells) + len(two_point_cwindows) == len(tracer_pairs)
+
+    assert len(two_point_cwindows) == 0
+
+    for two_point in two_point_cells:
+        tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
+        assert tracer_names in tracer_pairs
+
+        datatype, ells, Cell = tracer_pairs[tracer_names]
+        assert two_point.get_sacc_name() == datatype
+        assert_array_equal(two_point.ells, ells)
+        assert two_point.Cell is not None
+        assert_array_equal(two_point.Cell.data, Cell)
+
+    check_two_point_consistence_harmonic(two_point_cells)
+
+
+def test_extract_all_two_point_cwindows(sacc_galaxy_cwindows):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
+
+    two_point_cells, two_point_cwindows = extract_all_data_cells(sacc_data)
+    assert len(two_point_cells) + len(two_point_cwindows) == len(tracer_pairs)
+    assert len(two_point_cells) == 0
+
+    for two_point in two_point_cwindows:
+        tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
+        assert tracer_names in tracer_pairs
+
+        datatype, ells, Cell = tracer_pairs[tracer_names]
+        assert two_point.get_sacc_name() == datatype
+        assert_array_equal(two_point.window.ells, ells)
+        assert two_point.Cell is not None
+        assert_array_equal(two_point.Cell.data, Cell)
+
+    check_two_point_consistence_harmonic(two_point_cwindows)
+
+
+def test_extract_all_data_xi_thetas(sacc_galaxy_xis):
+    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+
+    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    assert len(two_point_xis) == len(tracer_pairs)
+
+    for two_point in two_point_xis:
+        tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
+        assert tracer_names in tracer_pairs
+
+        datatype, thetas, xi = tracer_pairs[tracer_names]
+        assert two_point.get_sacc_name() == datatype
+        assert_array_equal(two_point.thetas, thetas)
+        assert two_point.xis is not None
+        assert_array_equal(two_point.xis.data, xi)
+
+    check_two_point_consistence_real(two_point_xis)

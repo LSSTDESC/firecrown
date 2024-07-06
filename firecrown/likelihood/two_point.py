@@ -31,12 +31,14 @@ from firecrown.likelihood.statistic import (
     Statistic,
     TheoryVector,
 )
+from firecrown.metadata.two_point_types import TRACER_NAMES_TOTAL
 from firecrown.metadata.two_point import (
     Galaxies,
     InferredGalaxyZDist,
-    TRACER_NAMES_TOTAL,
     TracerNames,
     TwoPointCells,
+    TwoPointCWindow,
+    TwoPointXiTheta,
     Window,
     extract_window_function,
 )
@@ -374,31 +376,56 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.sacc_data_type: str = sacc_data_type
+        self.sacc_data_type: str
+        self.ccl_kind: str
         self.source0: Source = source0
-        self.source1 = source1
-        self.ell_for_xi_config: dict[str, int] = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        self.source1: Source = source1
+
+        self.ell_for_xi_config: dict[str, int]
+        self.ell_or_theta_config: None | EllOrThetaConfig
+        self.ell_or_theta_min: None | float | int
+        self.ell_or_theta_max: None | float | int
+        self.window: None | Window
+        self.data_vector: None | DataVector
+        self.theory_vector: None | TheoryVector
+        self.sacc_tracers: TracerNames
+        self.ells: None | npt.NDArray[np.int64]
+        self.thetas: None | npt.NDArray[np.float64]
+        self.mean_ells: None | npt.NDArray[np.float64]
+        self.ells_for_xi: None | npt.NDArray[np.int64]
+        self.cells: dict[TracerNames, npt.NDArray[np.float64]]
+
+        self._init_empty_default_attribs()
         if ell_for_xi is not None:
             self.ell_for_xi_config.update(ell_for_xi)
-        # What is the difference between the following 3 instance variables?
-        #        ell_or_theta
-        #        _ell_or_theta
-        #        ell_or_theta_
         self.ell_or_theta_config = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
-        self.window: None | Window = None
 
-        self.data_vector: None | DataVector = None
-        self.theory_vector: None | TheoryVector = None
+        self._set_ccl_kind(sacc_data_type)
 
-        self.sacc_tracers: TracerNames
-        self.ells: None | npt.NDArray[np.int64] = None
-        self.thetas: None | npt.NDArray[np.float64] = None
-        self.mean_ells: None | npt.NDArray[np.float64] = None
-        self.ells_for_xi: None | npt.NDArray[np.int64] = None
+    def _init_empty_default_attribs(self):
+        """Initialize the empty and default attributes."""
+        self.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        self.ell_or_theta_config = None
+        self.ell_or_theta_min = None
+        self.ell_or_theta_max = None
 
-        self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
+        self.window = None
+
+        self.data_vector = None
+        self.theory_vector = None
+
+        self.ells = None
+        self.thetas = None
+        self.mean_ells = None
+        self.ells_for_xi = None
+
+        self.cells = {}
+
+    def _set_ccl_kind(self, sacc_data_type):
+        """Set the CCL kind for this statistic."""
+        self.sacc_data_type = sacc_data_type
         if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
             self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
         else:
@@ -407,32 +434,71 @@ class TwoPoint(Statistic):
             )
 
     @classmethod
+    def _from_metadata(
+        cls,
+        *,
+        sacc_data_type: str,
+        source0: Source,
+        source1: Source,
+        metadata: TwoPointCells | TwoPointCWindow | TwoPointXiTheta,
+    ) -> TwoPoint:
+        """Create a TwoPoint statistic from a TwoPointCells metadata object."""
+        two_point = cls(sacc_data_type, source0, source1)
+        match metadata:
+            case TwoPointCells():
+                two_point._init_from_cells(metadata)
+            case TwoPointCWindow():
+                two_point._init_from_cwindow(metadata)
+            case TwoPointXiTheta():
+                two_point._init_from_xi_theta(metadata)
+            case _:
+                raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
+        return two_point
+
+    def _init_from_cells(self, metadata: TwoPointCells):
+        """Initialize the TwoPoint statistic from a TwoPointCells metadata object."""
+        self.ells = metadata.ells
+        self.window = None
+        if metadata.Cell is not None:
+            self.sacc_indices = metadata.Cell.indices
+            self.data_vector = DataVector.create(metadata.Cell.data)
+
+    def _init_from_cwindow(self, metadata: TwoPointCWindow):
+        """Initialize the TwoPoint statistic from a TwoPointCWindow metadata object."""
+        self.window = metadata.window
+        if metadata.Cell is not None:
+            self.sacc_indices = metadata.Cell.indices
+            self.data_vector = DataVector.create(metadata.Cell.data)
+
+    def _init_from_xi_theta(self, metadata: TwoPointXiTheta):
+        """Initialize the TwoPoint statistic from a TwoPointXiTheta metadata object."""
+        self.thetas = metadata.thetas
+        self.window = None
+        if metadata.xis is not None:
+            self.sacc_indices = metadata.xis.indices
+            self.data_vector = DataVector.create(metadata.xis.data)
+
+    @classmethod
     def from_metadata_cells(
         cls,
-        metadata: list[TwoPointCells],
+        metadata: Sequence[TwoPointCells | TwoPointCWindow | TwoPointXiTheta],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create a TwoPoint statistic from a TwoPointCells metadata object."""
-        sacc_data = create_sacc(metadata)
-
         two_point_list = [
-            cls(
-                cell.get_sacc_name(),
-                use_source_factory(
+            cls._from_metadata(
+                sacc_data_type=cell.get_sacc_name(),
+                source0=use_source_factory(
                     cell.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
-                use_source_factory(
+                source1=use_source_factory(
                     cell.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
+                metadata=cell,
             )
             for cell in metadata
         ]
-
-        for two_point in two_point_list:
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                two_point.read(sacc_data)
 
         return UpdatableCollection(two_point_list)
 

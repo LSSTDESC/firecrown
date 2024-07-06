@@ -151,6 +151,7 @@ def fixture_tools_with_vanilla_cosmology():
 
 @pytest.fixture(name="cluster_sacc_data")
 def fixture_cluster_sacc_data() -> sacc.Sacc:
+    """Return a Sacc object with cluster data."""
     # pylint: disable=no-member
     cc = sacc.standard_types.cluster_counts
     # pylint: disable=no-member
@@ -418,6 +419,105 @@ def fixture_sacc_galaxy_cells():
     cov = np.diag(np.ones_like(delta_v) * 0.01)
 
     sacc_data.add_covariance(cov)
+
+    return sacc_data, tracers, tracer_pairs
+
+
+@pytest.fixture(name="sacc_galaxy_cwindows")
+def fixture_sacc_galaxy_cwindows():
+    """Fixture for a SACC data with window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+    nobs = len(ells) - 5
+
+    src_bins_centers = np.linspace(0.25, 0.75, 5)
+    lens_bins_centers = np.linspace(0.1, 0.6, 5)
+
+    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
+    tracer_pairs: dict[
+        TracerNames, tuple[str, npt.NDArray[np.int64], npt.NDArray[np.float64]]
+    ] = {}
+
+    for i, mn in enumerate(src_bins_centers):
+        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
+        tracers[f"src{i}"] = (z, dndz)
+
+    for i, mn in enumerate(lens_bins_centers):
+        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        sacc_data.add_tracer("NZ", f"lens{i}", z, dndz)
+        tracers[f"lens{i}"] = (z, dndz)
+
+    for i, j in upper_triangle_indices(len(src_bins_centers)):
+
+        weights = (
+            np.eye(ells.shape[0], nobs, dtype=np.float64)
+            + np.eye(ells.shape[0], nobs, k=5, dtype=np.float64)
+            + np.eye(ells.shape[0], nobs, k=-5, dtype=np.float64)
+        )
+        window = sacc.BandpowerWindow(ells, weights)
+        Cells = np.random.normal(size=nobs)
+        sacc_data.add_ell_cl(
+            "galaxy_shear_cl_ee",
+            f"src{i}",
+            f"src{j}",
+            weights.T.dot(ells),
+            Cells,
+            window=window,
+        )
+        tracer_pairs[TracerNames(f"src{i}", f"src{j}")] = (
+            "galaxy_shear_cl_ee",
+            ells,
+            Cells,
+        )
+
+    for i, j in upper_triangle_indices(len(lens_bins_centers)):
+        weights = (
+            np.eye(ells.shape[0], nobs, dtype=np.float64)
+            + np.eye(ells.shape[0], nobs, k=5, dtype=np.float64)
+            + np.eye(ells.shape[0], nobs, k=-5, dtype=np.float64)
+        )
+        window = sacc.BandpowerWindow(ells, weights)
+        Cells = np.random.normal(size=nobs)
+        sacc_data.add_ell_cl(
+            "galaxy_density_cl",
+            f"lens{i}",
+            f"lens{j}",
+            weights.T.dot(ells),
+            Cells,
+            window=window,
+        )
+        tracer_pairs[TracerNames(f"lens{i}", f"lens{j}")] = (
+            "galaxy_density_cl",
+            ells,
+            Cells,
+        )
+
+    for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
+        weights = (
+            np.eye(ells.shape[0], nobs, dtype=np.float64)
+            + np.eye(ells.shape[0], nobs, k=5, dtype=np.float64)
+            + np.eye(ells.shape[0], nobs, k=-5, dtype=np.float64)
+        )
+        window = sacc.BandpowerWindow(ells, weights)
+        Cells = np.random.normal(size=nobs)
+        sacc_data.add_ell_cl(
+            "galaxy_shearDensity_cl_e",
+            f"src{i}",
+            f"lens{j}",
+            weights.T.dot(ells),
+            Cells,
+            window=window,
+        )
+        tracer_pairs[TracerNames(f"src{i}", f"lens{j}")] = (
+            "galaxy_shearDensity_cl_e",
+            ells,
+            Cells,
+        )
+
+    sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
 
     return sacc_data, tracers, tracer_pairs
 
