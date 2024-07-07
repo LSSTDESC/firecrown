@@ -463,6 +463,7 @@ class TwoPoint(Statistic):
         if metadata.Cell is not None:
             self.sacc_indices = metadata.Cell.indices
             self.data_vector = DataVector.create(metadata.Cell.data)
+        self.ready = True
 
     def _init_from_cwindow(self, metadata: TwoPointCWindow):
         """Initialize the TwoPoint statistic from a TwoPointCWindow metadata object."""
@@ -475,6 +476,7 @@ class TwoPoint(Statistic):
         if metadata.Cell is not None:
             self.sacc_indices = metadata.Cell.indices
             self.data_vector = DataVector.create(metadata.Cell.data)
+        self.ready = True
 
     def _init_from_xi_theta(self, metadata: TwoPointXiTheta):
         """Initialize the TwoPoint statistic from a TwoPointXiTheta metadata object."""
@@ -485,6 +487,7 @@ class TwoPoint(Statistic):
         if metadata.xis is not None:
             self.sacc_indices = metadata.xis.indices
             self.data_vector = DataVector.create(metadata.xis.data)
+        self.ready = True
 
     @classmethod
     def _from_metadata_any(
