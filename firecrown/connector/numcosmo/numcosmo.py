@@ -243,9 +243,9 @@ class MappingNumCosmo(GObject.Object):
         )
         # pylint: enable=duplicate-code
 
-    def calculate_ccl_args(
+    def calculate_ccl_args(  # pylint: disable-msg=too-many-locals
         self, mset: Ncm.MSet
-    ) -> dict[str, Any]:  # pylint: disable-msg=too-many-locals
+    ) -> dict[str, Any]:
         """Calculate the arguments necessary for CCL for this sample.
 
         :param mset: the NumCosmo MSet object from which to get the parameters
@@ -552,9 +552,9 @@ class NumCosmoData(Ncm.Data):
         during `begin` once and then used afterwards.
         """
 
-    def do_prepare(
+    def do_prepare(  # pylint: disable-msg=arguments-differ
         self, mset: Ncm.MSet
-    ) -> None:  # pylint: disable-msg=arguments-differ
+    ) -> None:
         """Implements the virtual method Ncm.Data `prepare`.
 
         This method should do all the necessary calculations using mset
@@ -830,9 +830,9 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         during `begin` once and then used afterwards.
         """
 
-    def do_prepare(
+    def do_prepare(  # pylint: disable-msg=arguments-differ
         self, mset: Ncm.MSet
-    ) -> None:  # pylint: disable-msg=arguments-differ
+    ) -> None:
         """Implements the virtual method Ncm.Data `prepare`.
 
         This method should do all the necessary calculations using mset
