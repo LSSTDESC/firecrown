@@ -34,15 +34,19 @@ from firecrown.likelihood.statistic import (
 from firecrown.metadata.two_point_types import TRACER_NAMES_TOTAL
 from firecrown.metadata.two_point import (
     Galaxies,
+    Measurement,
     InferredGalaxyZDist,
     TracerNames,
     TwoPointCells,
     TwoPointCWindow,
     TwoPointXiTheta,
+    TwoPointCellsIndex,
+    TwoPointXiThetaIndex,
     Window,
     extract_window_function,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
+    MEASURED_TYPE_STRING_MAP,
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import UpdatableCollection
@@ -236,13 +240,43 @@ def use_source_factory(
         case Galaxies.COUNTS:
             assert nc_factory is not None
             source = nc_factory.create(inferred_galaxy_zdist)
-        case Galaxies.SHEAR_E | Galaxies.SHEAR_T:
+        case (
+            Galaxies.SHEAR_E
+            | Galaxies.SHEAR_T
+            | Galaxies.SHEAR_MINUS
+            | Galaxies.SHEAR_PLUS
+        ):
             assert wl_factory is not None
             source = wl_factory.create(inferred_galaxy_zdist)
         case _:
             raise ValueError(
                 f"Measurement {inferred_galaxy_zdist.measurement} not supported!"
             )
+    return source
+
+
+def use_source_factory_metadata_only(
+    sacc_tracer: str,
+    measurement: Measurement,
+    wl_factory: WeakLensingFactory | None = None,
+    nc_factory: NumberCountsFactory | None = None,
+) -> WeakLensing | NumberCounts:
+    """Apply the factory to create a source from metadata only."""
+    source: WeakLensing | NumberCounts
+    match measurement:
+        case Galaxies.COUNTS:
+            assert nc_factory is not None
+            source = nc_factory.create_from_metadata_only(sacc_tracer)
+        case (
+            Galaxies.SHEAR_E
+            | Galaxies.SHEAR_T
+            | Galaxies.SHEAR_MINUS
+            | Galaxies.SHEAR_PLUS
+        ):
+            assert wl_factory is not None
+            source = wl_factory.create_from_metadata_only(sacc_tracer)
+        case _:
+            raise ValueError(f"Measurement {measurement} not supported!")
     return source
 
 
@@ -519,6 +553,40 @@ class TwoPoint(Statistic):
         return UpdatableCollection(two_point_list)
 
     @classmethod
+    def _from_metadata_only_any(
+        cls,
+        metadata: Sequence[TwoPointCellsIndex | TwoPointXiThetaIndex],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create an UpdatableCollection of TwoPoint statistics.
+
+        This constructor creates an UpdatableCollection of TwoPoint statistics from a
+        list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
+        The metadata objects are used to initialize the TwoPoint statistics.
+        """
+        two_point_list = [
+            cls(
+                sacc_data_type=cell_index["data_type"],
+                source0=use_source_factory_metadata_only(
+                    cell_index["tracer_names"][0],
+                    MEASURED_TYPE_STRING_MAP[cell_index["data_type"]][0],
+                    wl_factory=wl_factory,
+                    nc_factory=nc_factory,
+                ),
+                source1=use_source_factory_metadata_only(
+                    cell_index["tracer_names"][1],
+                    MEASURED_TYPE_STRING_MAP[cell_index["data_type"]][1],
+                    wl_factory=wl_factory,
+                    nc_factory=nc_factory,
+                ),
+            )
+            for cell_index in metadata
+        ]
+
+        return UpdatableCollection(two_point_list)
+
+    @classmethod
     def from_metadata_harmonic(
         cls,
         metadata: Sequence[TwoPointCells | TwoPointCWindow],
@@ -535,7 +603,8 @@ class TwoPoint(Statistic):
         :param metadata: The metadata objects to initialize the TwoPoint statistics.
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
-        :param check_consistence: Whether to check the consistence of the metadata.
+        :param check_consistence: Whether to check the consistence of the
+            metadata and data.
         """
         if check_consistence:
             check_two_point_consistence_harmonic(metadata)
@@ -558,11 +627,32 @@ class TwoPoint(Statistic):
         :param metadata: The metadata objects to initialize the TwoPoint statistics.
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
-        :param check_consistence: Whether to check the consistence of the metadata.
+        :param check_consistence: Whether to check the consistence of the
+            metadata and data.
         """
         if check_consistence:
             check_two_point_consistence_real(metadata)
         return cls._from_metadata_any(metadata, wl_factory, nc_factory)
+
+    @classmethod
+    def from_metadata_only_harmonic(
+        cls,
+        metadata: list[TwoPointCellsIndex],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create a TwoPoint from metadata only."""
+        return cls._from_metadata_only_any(metadata, wl_factory, nc_factory)
+
+    @classmethod
+    def from_metadata_only_real(
+        cls,
+        metadata: list[TwoPointXiThetaIndex],
+        wl_factory: WeakLensingFactory | None = None,
+        nc_factory: NumberCountsFactory | None = None,
+    ) -> UpdatableCollection[TwoPoint]:
+        """Create a TwoPoint from metadata only."""
+        return cls._from_metadata_only_any(metadata, wl_factory, nc_factory)
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames

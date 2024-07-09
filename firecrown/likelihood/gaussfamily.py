@@ -161,6 +161,9 @@ class GaussFamily(Likelihood):
         cls, statistics: Sequence[Statistic], covariance: npt.NDArray[np.float64]
     ) -> GaussFamily:
         """Create a GaussFamily object in the READY state."""
+        for stat in statistics:
+            if not stat.ready:
+                raise RuntimeError(f"The statistic {stat} is not ready to be used.")
         obj = cls(statistics)
         obj._set_covariance(covariance)
         obj.state = State.READY

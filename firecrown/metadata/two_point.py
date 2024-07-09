@@ -26,6 +26,7 @@ from firecrown.metadata.two_point_types import (
     ALL_MEASUREMENT_TYPES,
     HARMONIC_ONLY_MEASUREMENTS,
     REAL_ONLY_MEASUREMENTS,
+    EXACT_MATCH_MEASUREMENTS,
     ALL_MEASUREMENTS,
 )
 
@@ -49,6 +50,8 @@ def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     if a in HARMONIC_ONLY_MEASUREMENTS and b in REAL_ONLY_MEASUREMENTS:
         return False
     if a in REAL_ONLY_MEASUREMENTS and b in HARMONIC_ONLY_MEASUREMENTS:
+        return False
+    if a in EXACT_MATCH_MEASUREMENTS and a != b:
         return False
     return True
 
@@ -855,7 +858,12 @@ def type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
     between measurements of x and y.
     """
     a, b = sorted([x, y])
-    suffix = f"{a.polarization()}{b.polarization()}"
+    if a in EXACT_MATCH_MEASUREMENTS:
+        print(a, b)
+        assert a == b
+        suffix = f"{a.polarization()}"
+    else:
+        suffix = f"{a.polarization()}{b.polarization()}"
 
     if a in HARMONIC_ONLY_MEASUREMENTS or b in HARMONIC_ONLY_MEASUREMENTS:
         raise ValueError("Real-space correlation not supported for shear E.")
@@ -881,9 +889,13 @@ def type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
 MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
     type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_supports_real(a) and measurement_supports_real(b)
+    if measurement_supports_real(a)
+    and measurement_supports_real(b)
+    and measurement_is_compatible(a, b)
 } | {
     type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_supports_harmonic(a) and measurement_supports_harmonic(b)
+    if measurement_supports_harmonic(a)
+    and measurement_supports_harmonic(b)
+    and measurement_is_compatible(a, b)
 }

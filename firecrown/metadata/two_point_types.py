@@ -49,6 +49,8 @@ class Galaxies(YAMLSerializable, str, Enum):
 
     SHEAR_E = auto()
     SHEAR_T = auto()
+    SHEAR_MINUS = auto()
+    SHEAR_PLUS = auto()
     COUNTS = auto()
 
     def sacc_type_name(self) -> str:
@@ -69,6 +71,10 @@ class Galaxies(YAMLSerializable, str, Enum):
             return "shear"
         if self == Galaxies.SHEAR_T:
             return "shear"
+        if self == Galaxies.SHEAR_MINUS:
+            return "shear"
+        if self == Galaxies.SHEAR_PLUS:
+            return "shear"
         if self == Galaxies.COUNTS:
             return "density"
         raise ValueError("Untranslated Galaxy Measurement encountered")
@@ -83,6 +89,10 @@ class Galaxies(YAMLSerializable, str, Enum):
             return "e"
         if self == Galaxies.SHEAR_T:
             return "t"
+        if self == Galaxies.SHEAR_MINUS:
+            return "minus"
+        if self == Galaxies.SHEAR_PLUS:
+            return "plus"
         if self == Galaxies.COUNTS:
             return ""
         raise ValueError("Untranslated Galaxy Measurement encountered")
@@ -222,7 +232,8 @@ Measurement = Galaxies | CMB | Clusters
 ALL_MEASUREMENTS: list[Measurement] = list(chain(Galaxies, CMB, Clusters))
 ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
 HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
-REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T,)
+REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T, Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
+EXACT_MATCH_MEASUREMENTS = (Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
 
 
 def compare_enums(a: Measurement, b: Measurement) -> int:

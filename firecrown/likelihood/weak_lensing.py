@@ -358,14 +358,14 @@ class MultiplicativeShearBiasFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "MultiplicativeShearBiasFactory"
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> MultiplicativeShearBias:
+    def create(self, bin_name: str) -> MultiplicativeShearBias:
         """Create a MultiplicativeShearBias object.
 
         :param inferred_zdist: The inferred galaxy redshift distribution for
             the created MultiplicativeShearBias object.
         :return: The created MultiplicativeShearBias object.
         """
-        return MultiplicativeShearBias(inferred_zdist.bin_name)
+        return MultiplicativeShearBias(bin_name)
 
     def create_global(self) -> MultiplicativeShearBias:
         """Create a MultiplicativeShearBias object.
@@ -387,14 +387,14 @@ class LinearAlignmentSystematicFactory(BaseModel):
 
     alphag: None | float = 1.0
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> LinearAlignmentSystematic:
+    def create(self, bin_name: str) -> LinearAlignmentSystematic:
         """Create a LinearAlignmentSystematic object.
 
         :param inferred_zdist: The inferred galaxy redshift distribution for
             the created LinearAlignmentSystematic object.
         :return: The created LinearAlignmentSystematic object.
         """
-        return LinearAlignmentSystematic(inferred_zdist.bin_name)
+        return LinearAlignmentSystematic(bin_name)
 
     def create_global(self) -> LinearAlignmentSystematic:
         """Create a LinearAlignmentSystematic object.
@@ -414,14 +414,14 @@ class TattAlignmentSystematicFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "TattAlignmentSystematicFactory"
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> TattAlignmentSystematic:
+    def create(self, bin_name: str) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
 
         :param inferred_zdist: The inferred galaxy redshift distribution for
             the created TattAlignmentSystematic object.
         :return: The created TattAlignmentSystematic object.
         """
-        return TattAlignmentSystematic(inferred_zdist.bin_name)
+        return TattAlignmentSystematic(bin_name)
 
     def create_global(self) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
@@ -440,14 +440,14 @@ class PhotoZShiftFactory(BaseModel):
         Literal["PhotoZShiftFactory"], Field(description="The type of the systematic.")
     ] = "PhotoZShiftFactory"
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+    def create(self, bin_name: str) -> PhotoZShift:
         """Create a PhotoZShift object.
 
         :param inferred_zdist: The inferred galaxy redshift distribution for
             the created PhotoZShift object.
         :return: The created PhotoZShift object.
         """
-        return PhotoZShift(inferred_zdist.bin_name)
+        return PhotoZShift(bin_name)
 
     def create_global(self) -> PhotoZShift:
         """Create a PhotoZShift object.
@@ -494,12 +494,31 @@ class WeakLensingFactory(BaseModel):
             return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
-            systematic_factory.create(inferred_zdist)
+            systematic_factory.create(inferred_zdist.bin_name)
             for systematic_factory in self.per_bin_systematics
         ]
         systematics.extend(self._global_systematics_instances)
 
         wl = WeakLensing.create_ready(inferred_zdist, systematics)
         self._cache[inferred_zdist_id] = wl
+
+        return wl
+
+    def create_from_metadata_only(
+        self,
+        sacc_tracer: str,
+    ) -> WeakLensing:
+        """Create an WeakLensing object with the given tracer name and scale."""
+        sacc_tracer_id = hash(sacc_tracer)  # Improve this
+        if sacc_tracer_id in self._cache:
+            return self._cache[sacc_tracer_id]
+        systematics: list[SourceGalaxySystematic[WeakLensingArgs]] = [
+            systematic_factory.create(sacc_tracer)
+            for systematic_factory in self.per_bin_systematics
+        ]
+        systematics.extend(self._global_systematics_instances)
+
+        wl = WeakLensing(sacc_tracer=sacc_tracer)
+        self._cache[sacc_tracer_id] = wl
 
         return wl
