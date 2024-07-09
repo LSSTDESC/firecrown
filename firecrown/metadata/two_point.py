@@ -127,6 +127,8 @@ class InferredGalaxyZDist(YAMLSerializable):
         Two InferredGalaxyZDist are equal if they have equal bin_name, z, dndz, and
         measurement.
         """
+
+        assert isinstance(other, InferredGalaxyZDist)
         return (
             self.bin_name == other.bin_name
             and np.array_equal(self.z, other.z)
@@ -442,6 +444,87 @@ TwoPointCellsIndex = TypedDict(
     },
 )
 
+GALAXY_SOURCE_TYPES = (
+    Galaxies.SHEAR_E,
+    Galaxies.SHEAR_T,
+    Galaxies.SHEAR_MINUS,
+    Galaxies.SHEAR_PLUS,
+)
+
+
+def _extract_all_candidate_data_types(
+    data_points: list[sacc.DataPoint],
+) -> dict[str, set[Measurement]]:
+    """Extract all candidate Measurement from the data points.
+
+    The candidate Measurement are the ones that appear in the data points.
+    """
+    all_data_types: set[tuple[str, str, str]] = {
+        (d.data_type, d.tracers[0], d.tracers[1]) for d in data_points
+    }
+    sure_types: dict[str, set[Measurement]] = {}
+    maybe_types: dict[str, set[Measurement]] = {}
+
+    for data_type, tracer1, tracer2 in all_data_types:
+        sure_types[tracer1] = set()
+        sure_types[tracer2] = set()
+        maybe_types[tracer1] = set()
+        maybe_types[tracer2] = set()
+
+    # Getting the sure and maybe types for each tracer.
+    for data_type, tracer1, tracer2 in all_data_types:
+        if data_type not in MEASURED_TYPE_STRING_MAP:
+            continue
+        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+        if a == b:
+            sure_types[tracer1].update({a})
+            sure_types[tracer2].update({a})
+        else:
+            name_match = False
+            for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
+                if LENS_REGEX.match(n1) and SOURCE_REGEX.match(n2):
+                    name_match = True
+                    if a in GALAXY_SOURCE_TYPES and b == Galaxies.COUNTS:
+                        sure_types[n2].update({a})
+                        sure_types[n1].update({b})
+                    elif b in GALAXY_SOURCE_TYPES and a == Galaxies.COUNTS:
+                        sure_types[n1].update({a})
+                        sure_types[n2].update({b})
+                    else:
+                        raise ValueError(
+                            "Invalid SACC file, tracer names do not respect "
+                            "the naming convetion."
+                        )
+            if not name_match:
+                maybe_types[tracer1].update({a, b})
+                maybe_types[tracer2].update({a, b})
+
+    # Remove the sure types from the maybe types.
+    for tracer0, sure_types0 in sure_types.items():
+        maybe_types[tracer0] -= sure_types0
+
+    # Filter maybe types.
+    for data_type, tracer1, tracer2 in all_data_types:
+        if data_type not in MEASURED_TYPE_STRING_MAP:
+            continue
+        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+        if a == b:
+            continue
+
+        if a in sure_types[tracer1] and b in sure_types[tracer2]:
+            maybe_types[tracer1].discard(b)
+            maybe_types[tracer2].discard(a)
+        elif a in sure_types[tracer2] and b in sure_types[tracer1]:
+            maybe_types[tracer1].discard(a)
+            maybe_types[tracer2].discard(b)
+
+    return {
+        tracer0: sure_types0 | maybe_types[tracer0]
+        for tracer0, sure_types0 in sure_types.items()
+    }
+
 
 def _extract_candidate_data_types(
     tracer_name: str, data_points: list[sacc.DataPoint]
@@ -450,7 +533,7 @@ def _extract_candidate_data_types(
 
     An exception is raise if the tracer does not have any associated data points.
     """
-    tracer_associated_types = {
+    tracer_associated_types: set[str] = {
         d.data_type for d in data_points if tracer_name in d.tracers
     }
     tracer_associated_types_len = len(tracer_associated_types)
@@ -512,6 +595,22 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
         )
 
     return inferred_galaxy_zdists
+
+
+def extract_all_tracers_types(
+    sacc_data: sacc.Sacc,
+) -> dict[str, set[Measurement]]:
+    """Extracts the two-point function metadata from a Sacc object.
+
+    The Sacc object contains a set of tracers (one-dimensional bins) and data
+    points (measurements of the correlation between two tracers).
+
+    This function extracts the two-point function metadata from the Sacc object
+    and returns it in a list.
+    """
+    data_points = sacc_data.get_data_points()
+
+    return _extract_all_candidate_data_types(data_points)
 
 
 def extract_measurement(
@@ -712,6 +811,48 @@ def extract_all_data_cells(
     return two_point_cells, two_point_cwindows
 
 
+def extract_all_data_xi_thetas(
+    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+) -> list[TwoPointXiTheta]:
+    """Extract the two-point function metadata and data from a sacc file."""
+    inferred_galaxy_zdists_dict = {
+        igz.bin_name: igz for igz in extract_all_tracers(sacc_data)
+    }
+
+    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
+
+    two_point_xi_thetas = []
+    for xi_theta_index in extract_all_data_types_xi_thetas(
+        sacc_data, allowed_data_type
+    ):
+        tracer_names = xi_theta_index["tracer_names"]
+        thetas = xi_theta_index["thetas"]
+        data_type = xi_theta_index["data_type"]
+
+        XY = TwoPointXY(
+            x=inferred_galaxy_zdists_dict[tracer_names[0]],
+            y=inferred_galaxy_zdists_dict[tracer_names[1]],
+        )
+
+        thetas, Xis, indices = sacc_data.get_theta_xi(
+            data_type=data_type,
+            tracer1=tracer_names[0],
+            tracer2=tracer_names[1],
+            return_cov=False,
+            return_ind=True,
+        )
+
+        Xi = TwoPointMeasurement(
+            data=Xis,
+            indices=indices,
+            covariance_name=cov_hash,
+        )
+
+        two_point_xi_thetas.append(TwoPointXiTheta(XY=XY, thetas=thetas, xis=Xi))
+
+    return two_point_xi_thetas
+
+
 def check_two_point_consistence_harmonic(
     two_point_cells: Sequence[TwoPointCells | TwoPointCWindow],
 ) -> None:
@@ -793,48 +934,6 @@ def check_two_point_consistence_real(
                         f"and {two_point_xi_theta} are not unique."
                     )
         all_indices_set.update(index_set)
-
-
-def extract_all_data_xi_thetas(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
-) -> list[TwoPointXiTheta]:
-    """Extract the two-point function metadata and data from a sacc file."""
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz for igz in extract_all_tracers(sacc_data)
-    }
-
-    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
-
-    two_point_xi_thetas = []
-    for xi_theta_index in extract_all_data_types_xi_thetas(
-        sacc_data, allowed_data_type
-    ):
-        tracer_names = xi_theta_index["tracer_names"]
-        thetas = xi_theta_index["thetas"]
-        data_type = xi_theta_index["data_type"]
-
-        XY = TwoPointXY(
-            x=inferred_galaxy_zdists_dict[tracer_names[0]],
-            y=inferred_galaxy_zdists_dict[tracer_names[1]],
-        )
-
-        thetas, Xis, indices = sacc_data.get_theta_xi(
-            data_type=data_type,
-            tracer1=tracer_names[0],
-            tracer2=tracer_names[1],
-            return_cov=False,
-            return_ind=True,
-        )
-
-        Xi = TwoPointMeasurement(
-            data=Xis,
-            indices=indices,
-            covariance_name=cov_hash,
-        )
-
-        two_point_xi_thetas.append(TwoPointXiTheta(XY=XY, thetas=thetas, xis=Xi))
-
-    return two_point_xi_thetas
 
 
 def make_all_photoz_bin_combinations(
