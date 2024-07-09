@@ -17,6 +17,8 @@ from firecrown.metadata.two_point import (
     Galaxies,
     InferredGalaxyZDist,
     measurement_is_compatible as is_compatible,
+    measurement_is_compatible_real as is_compatible_real,
+    measurement_is_compatible_harmonic as is_compatible_harmonic,
     measurement_supports_harmonic as supports_harmonic,
     measurement_supports_real as supports_real,
     TracerNames,
@@ -166,9 +168,9 @@ def test_translation_invariants():
     for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
         assert isinstance(a, (Galaxies, CMB, Clusters))
         assert isinstance(b, (Galaxies, CMB, Clusters))
-        if supports_real(a) and supports_real(b):
+        if is_compatible_real(a, b):
             assert real(a, b) == real(b, a)
-        if supports_harmonic(a) and supports_harmonic(b):
+        if is_compatible_harmonic(a, b):
             assert harmonic(a, b) == harmonic(b, a)
         if (
             supports_harmonic(a)
@@ -224,9 +226,7 @@ def test_measurement_is_compatible():
     for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
         assert isinstance(a, (Galaxies, CMB, Clusters))
         assert isinstance(b, (Galaxies, CMB, Clusters))
-        if (supports_real(a) and supports_real(b)) or (
-            supports_harmonic(a) and supports_harmonic(b)
-        ):
+        if is_compatible_real(a, b) or is_compatible_harmonic(a, b):
             assert is_compatible(a, b)
         else:
             assert not is_compatible(a, b)

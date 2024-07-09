@@ -51,7 +51,7 @@ def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
         return False
     if a in REAL_ONLY_MEASUREMENTS and b in HARMONIC_ONLY_MEASUREMENTS:
         return False
-    if a in EXACT_MATCH_MEASUREMENTS and a != b:
+    if (a in EXACT_MATCH_MEASUREMENTS or b in EXACT_MATCH_MEASUREMENTS) and a != b:
         return False
     return True
 
@@ -64,6 +64,32 @@ def measurement_supports_real(x: Measurement) -> bool:
 def measurement_supports_harmonic(x: Measurement) -> bool:
     """Return True if x supports harmonic-space calculations."""
     return x not in REAL_ONLY_MEASUREMENTS
+
+
+def measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
+    """Check if two Measurement are compatible for real-space calculations.
+
+    Two Measurement are compatible if they can be correlated in a real-space two-point
+    function.
+    """
+    return (
+        measurement_supports_real(a)
+        and measurement_supports_real(b)
+        and measurement_is_compatible(a, b)
+    )
+
+
+def measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
+    """Check if two Measurement are compatible for harmonic-space calculations.
+
+    Two Measurement are compatible if they can be correlated in a harmonic-space
+    two-point function.
+    """
+    return (
+        measurement_supports_harmonic(a)
+        and measurement_supports_harmonic(b)
+        and measurement_is_compatible(a, b)
+    )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -888,13 +914,9 @@ def type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
 MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
     type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_supports_real(a)
-    and measurement_supports_real(b)
-    and measurement_is_compatible(a, b)
+    if measurement_is_compatible_real(a, b)
 } | {
     type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_supports_harmonic(a)
-    and measurement_supports_harmonic(b)
-    and measurement_is_compatible(a, b)
+    if measurement_is_compatible_harmonic(a, b)
 }
