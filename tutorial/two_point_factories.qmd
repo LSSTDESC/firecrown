@@ -1,0 +1,19 @@
+---
+title: "Using Firecrown Factories to Initialize Two-Point Objects"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+In the tutorial [Two Point Generators](two_point_generators.qmd) we show how to use generators to create the necessary metadata to instantiate `TwoPoint` objects.
+In addition to generators, the user has also the option to use data already saved in a `SACC` object (or file) to initialize the `TwoPoint` objects.
+In this tutorial we show how to extract the metadata and data from `SACC` object and use the metadata and a factory to initialize the objects.
+
+## `SACC` objects
+
+The `SACC` objects are used to store all necessary information for a statistical analysis. 
+In practice, it stores metadata (data layout, data type, bins, dependent variables, etc), calibration data (redshift distribution per bin $\mathrm{d}n/\mathrm{d}z$) and the covariance between all measurements. 
+In the tutorials [`InferredGalaxyZDist`](inferred_zdist.qmd), [`InferredGalaxyZDist` Generators](inferred_zdist_generators.qmd) and [`InferredGalaxyZDist` Serialization](inferred_zdist_serialization.qmd) we show how to use, generate and serialize the `InferredGalaxyZDist` objects describing the redshift distributions. In this document we extract these components from a `SACC` object.
+
