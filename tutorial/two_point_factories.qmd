@@ -97,4 +97,15 @@ two_point_list = TwoPoint.from_metadata_only_real(
 )
 ```
 
+## Creating a `Likelihood` object
 
+Now we can create a `Likelihood` object using the `TwoPoint` objects.
+Since we are using the metadata only, we need to pass the `SACC` object to the `read` method.
+```{python}
+from firecrown.likelihood.gaussian import ConstGaussian
+
+likelihood = ConstGaussian(two_point_list)
+
+likelihood.read(sacc_data)
+
+```
