@@ -17,3 +17,84 @@ The `SACC` objects are used to store all necessary information for a statistical
 In practice, it stores metadata (data layout, data type, bins, dependent variables, etc), calibration data (redshift distribution per bin $\mathrm{d}n/\mathrm{d}z$) and the covariance between all measurements. 
 In the tutorials [`InferredGalaxyZDist`](inferred_zdist.qmd), [`InferredGalaxyZDist` Generators](inferred_zdist_generators.qmd) and [`InferredGalaxyZDist` Serialization](inferred_zdist_serialization.qmd) we show how to use, generate and serialize the `InferredGalaxyZDist` objects describing the redshift distributions. In this document we extract these components from a `SACC` object.
 
+## Metadata only `SACC`
+
+Up to the version 1.7 Firecrown relied on a two phase construction for its likelihoods.
+During the first phase, the `Likelihood`, `Statistics` and `Systematics` objects are created with metadata only.
+Then, the user must call the `read` method passing a `SACC` object to finish the object construction.
+
+One shortcoming of this methodology is that the user must know the `SACC` object struct beforehand, so they can create the necessary objects.
+Then, a matching `SACC` object must be passed in the `read` phase.
+To simplify this, we introduced functions to extract the metadata from the `SACC` file, such that it can be used toguether with the factories to create the objects.
+
+In the code below we extract the metadata from the `examples/des_y1_3x2pt` `SACC` file.
+```{python}
+from firecrown.metadata.two_point import extract_all_data_types_xi_thetas
+import sacc
+
+sacc_data = sacc.Sacc.load_fits("../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits")
+
+all_meta = extract_all_data_types_xi_thetas(sacc_data)
+```
+
+The metadata can be seem below:
+```{python}
+# | code-fold: true
+import yaml
+from IPython.display import Markdown
+
+all_meta_prune = [
+    {
+        "data_type": meta["data_type"],
+        "tracer1": str(meta["tracer_names"].name1),
+        "tracer2": str(meta["tracer_names"].name2),
+    }
+    for meta in all_meta
+]
+
+all_meta_yaml = yaml.safe_dump(all_meta_prune, default_flow_style=False)
+
+Markdown(f"```yaml\n{all_meta_yaml}\n```")
+```
+
+The tracer names above are ones from the `SACC` object. 
+The user needs to know the tracer names to create the `TwoPoint` objects.
+However, now the user can use the metadata to create the objects.
+
+## Factories
+
+The factories are used to create the `TwoPoint` objects.
+In Firecrown, we write factories using Pydantic, a library to validate and parse data.
+This gives us the advantage of having a schema for the data, and the user can use the factories to validate the data before creating the objects.
+
+For example, we can organize the factories in a YAML file:
+```{python}
+
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.weak_lensing import WeakLensingFactory
+from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.utils import base_model_from_yaml
+
+weak_lensing_yaml = """
+per_bin_systematics:
+- type: MultiplicativeShearBiasFactory
+- type: PhotoZShiftFactory
+global_systematics:
+- type: LinearAlignmentSystematicFactory
+  alphag: 1.0
+"""
+number_counts_yaml = """
+per_bin_systematics:
+- type: PhotoZShiftFactory
+global_systematics: []
+"""
+
+weak_lensing_factory = base_model_from_yaml(WeakLensingFactory, weak_lensing_yaml)
+number_counts_factory = base_model_from_yaml(NumberCountsFactory, number_counts_yaml)
+
+two_point_list = TwoPoint.from_metadata_only_real(
+    metadata=all_meta, wl_factory=weak_lensing_factory, nc_factory=number_counts_factory
+)
+```
+
+
