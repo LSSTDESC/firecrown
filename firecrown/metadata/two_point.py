@@ -859,7 +859,6 @@ def type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
     """
     a, b = sorted([x, y])
     if a in EXACT_MATCH_MEASUREMENTS:
-        print(a, b)
         assert a == b
         suffix = f"{a.polarization()}"
     else:
