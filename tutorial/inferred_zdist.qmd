@@ -33,7 +33,7 @@ lens0 = InferredGalaxyZDist(
     bin_name="lens0",
     z=z,
     dndz=np.exp(-0.5 * ((z - 0.5) / 0.02) ** 2) / np.sqrt(2 * np.pi) / 0.02,
-    measurement=Galaxies.COUNTS,
+    measurements={Galaxies.COUNTS},
 )
 
 ```
@@ -54,15 +54,14 @@ from firecrown.generators.two_point import LogLinearElls
 lens0_lens0 = TwoPointXY(
     x=lens0,
     y=lens0,
+    x_measurement=Galaxies.COUNTS,
+    y_measurement=Galaxies.COUNTS,
 )
 # Note that we are leaving out the monopole (l=0) and dipole (l=1)
 # terms. Firecrown allows their inclusion, if you so desire.
 ells_generator = LogLinearElls(minimum=2, midpoint=20, maximum=200, n_log=20)
 
-lens0_lens0_cell = TwoPointCells(
-    XY=lens0_lens0,
-    ells=ells_generator.generate()
-)
+lens0_lens0_cell = TwoPointCells(XY=lens0_lens0, ells=ells_generator.generate())
 ```
 
 The `TwoPointCells` is created by providing the `TwoPointXY` object and the ells array.
