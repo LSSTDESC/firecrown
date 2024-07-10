@@ -4,7 +4,7 @@ It contains all data classes and functions for store and extract two-point funct
 metadata from a sacc file.
 """
 
-from itertools import combinations_with_replacement
+from itertools import combinations_with_replacement, product
 import hashlib
 from typing import TypedDict, Sequence
 from dataclasses import dataclass
@@ -23,7 +23,8 @@ from firecrown.metadata.two_point_types import (
     CMB,
     Clusters,
     Measurement,
-    ALL_MEASUREMENT_TYPES,
+    InferredGalaxyZDist,
+    TwoPointMeasurement,
     HARMONIC_ONLY_MEASUREMENTS,
     REAL_ONLY_MEASUREMENTS,
     EXACT_MATCH_MEASUREMENTS,
@@ -34,12 +35,15 @@ LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 
 
-def make_measurement_dict(value: Measurement) -> dict[str, str]:
+def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
     """Create a dictionary from a Measurement object.
 
     :param value: the measurement to turn into a dictionary
     """
-    return {"subject": type(value).__name__, "property": value.name}
+    return [
+        {"subject": type(measurement).__name__, "property": measurement.name}
+        for measurement in value
+    ]
 
 
 def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
@@ -93,51 +97,6 @@ def measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
 
 
 @dataclass(frozen=True, kw_only=True)
-class InferredGalaxyZDist(YAMLSerializable):
-    """The class used to store the redshift resolution data for a sacc file.
-
-    The sacc file is a complicated set of tracers (bins) and surveys. This class is
-    used to store the redshift resolution data for a single photometric bin.
-    """
-
-    bin_name: str
-    z: np.ndarray
-    dndz: np.ndarray
-    measurement: Measurement
-
-    def __post_init__(self) -> None:
-        """Validate the redshift resolution data.
-
-        - Make sure the z and dndz arrays have the same shape;
-        - The measurement must be of type Measurement.
-        - The bin_name should not be empty.
-        """
-        if self.z.shape != self.dndz.shape:
-            raise ValueError("The z and dndz arrays should have the same shape.")
-
-        if not isinstance(self.measurement, ALL_MEASUREMENT_TYPES):
-            raise ValueError("The measurement should be a Measurement.")
-
-        if self.bin_name == "":
-            raise ValueError("The bin_name should not be empty.")
-
-    def __eq__(self, other):
-        """Equality test for InferredGalaxyZDist.
-
-        Two InferredGalaxyZDist are equal if they have equal bin_name, z, dndz, and
-        measurement.
-        """
-
-        assert isinstance(other, InferredGalaxyZDist)
-        return (
-            self.bin_name == other.bin_name
-            and np.array_equal(self.z, other.z)
-            and np.array_equal(self.dndz, other.dndz)
-            and self.measurement == other.measurement
-        )
-
-
-@dataclass(frozen=True, kw_only=True)
 class TwoPointXY(YAMLSerializable):
     """Class defining a two-point correlation pair of redshift resolutions.
 
@@ -147,18 +106,35 @@ class TwoPointXY(YAMLSerializable):
 
     x: InferredGalaxyZDist
     y: InferredGalaxyZDist
+    x_measurement: Measurement
+    y_measurement: Measurement
 
     def __post_init__(self) -> None:
         """Make sure the two redshift resolutions are compatible."""
-        if not measurement_is_compatible(self.x.measurement, self.y.measurement):
+        if self.x_measurement not in self.x.measurements:
             raise ValueError(
-                f"Measurements {self.x.measurement} and {self.y.measurement} "
+                f"Measurement {self.x_measurement} not in the measurements of "
+                f"{self.x.bin_name}."
+            )
+        if self.y_measurement not in self.y.measurements:
+            raise ValueError(
+                f"Measurement {self.y_measurement} not in the measurements of "
+                f"{self.y.bin_name}."
+            )
+        if not measurement_is_compatible(self.x_measurement, self.y_measurement):
+            raise ValueError(
+                f"Measurements {self.x_measurement} and {self.y_measurement} "
                 f"are not compatible."
             )
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointXY objects."""
-        return self.x == other.x and self.y == other.y
+        return (
+            self.x == other.x
+            and self.y == other.y
+            and self.x_measurement == other.x_measurement
+            and self.y_measurement == other.y_measurement
+        )
 
     def __str__(self) -> str:
         """Return a string representation of the TwoPointXY object."""
@@ -167,37 +143,6 @@ class TwoPointXY(YAMLSerializable):
     def get_tracer_names(self) -> TracerNames:
         """Return the TracerNames object for the TwoPointXY object."""
         return TracerNames(self.x.bin_name, self.y.bin_name)
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointMeasurement(YAMLSerializable):
-    """Class defining the metadata for a two-point measurement.
-
-    The class used to store the metadata for a two-point function measured on a sphere.
-
-    This includes the measured two-point function and their indices in the covariance
-    matrix.
-    """
-
-    data: npt.NDArray[np.float64]
-    indices: npt.NDArray[np.int64]
-    covariance_name: str
-
-    def __post_init__(self) -> None:
-        """Make sure the data and indices have the same shape."""
-        if len(self.data.shape) != 1:
-            raise ValueError("Data should be a 1D array.")
-
-        if self.data.shape != self.indices.shape:
-            raise ValueError("Data and indices should have the same shape.")
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointMeasurement objects."""
-        return (
-            np.array_equal(self.data, other.data)
-            and np.array_equal(self.indices, other.indices)
-            and self.covariance_name == other.covariance_name
-        )
 
 
 @dataclass(frozen=True, kw_only=True)
@@ -229,11 +174,11 @@ class TwoPointCells(YAMLSerializable):
             raise ValueError("Cell should have the same shape as ells.")
 
         if not measurement_supports_harmonic(
-            self.XY.x.measurement
-        ) or not measurement_supports_harmonic(self.XY.y.measurement):
+            self.XY.x_measurement
+        ) or not measurement_supports_harmonic(self.XY.y_measurement):
             raise ValueError(
-                f"Measurements {self.XY.x.measurement} and "
-                f"{self.XY.y.measurement} must support harmonic-space calculations."
+                f"Measurements {self.XY.x_measurement} and "
+                f"{self.XY.y_measurement} must support harmonic-space calculations."
             )
 
     def __eq__(self, other) -> bool:
@@ -251,7 +196,7 @@ class TwoPointCells(YAMLSerializable):
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
         return type_to_sacc_string_harmonic(
-            self.XY.x.measurement, self.XY.y.measurement
+            self.XY.x_measurement, self.XY.y_measurement
         )
 
     def has_data(self) -> bool:
@@ -343,17 +288,17 @@ class TwoPointCWindow(YAMLSerializable):
                 )
 
         if not measurement_supports_harmonic(
-            self.XY.x.measurement
-        ) or not measurement_supports_harmonic(self.XY.y.measurement):
+            self.XY.x_measurement
+        ) or not measurement_supports_harmonic(self.XY.y_measurement):
             raise ValueError(
-                f"Measurements {self.XY.x.measurement} and "
-                f"{self.XY.y.measurement} must support harmonic-space calculations."
+                f"Measurements {self.XY.x_measurement} and "
+                f"{self.XY.y_measurement} must support harmonic-space calculations."
             )
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
         return type_to_sacc_string_harmonic(
-            self.XY.x.measurement, self.XY.y.measurement
+            self.XY.x_measurement, self.XY.y_measurement
         )
 
     def __eq__(self, other) -> bool:
@@ -397,16 +342,16 @@ class TwoPointXiTheta(YAMLSerializable):
             raise ValueError("Xis should have the same shape as thetas.")
 
         if not measurement_supports_real(
-            self.XY.x.measurement
-        ) or not measurement_supports_real(self.XY.y.measurement):
+            self.XY.x_measurement
+        ) or not measurement_supports_real(self.XY.y_measurement):
             raise ValueError(
-                f"Measurements {self.XY.x.measurement} and "
-                f"{self.XY.y.measurement} must support real-space calculations."
+                f"Measurements {self.XY.x_measurement} and "
+                f"{self.XY.y_measurement} must support real-space calculations."
             )
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_real(self.XY.x.measurement, self.XY.y.measurement)
+        return type_to_sacc_string_real(self.XY.x_measurement, self.XY.y_measurement)
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointXiTheta objects."""
@@ -454,6 +399,7 @@ GALAXY_SOURCE_TYPES = (
 
 def _extract_all_candidate_data_types(
     data_points: list[sacc.DataPoint],
+    include_maybe_types: bool = False,
 ) -> dict[str, set[Measurement]]:
     """Extract all candidate Measurement from the data points.
 
@@ -462,6 +408,36 @@ def _extract_all_candidate_data_types(
     all_data_types: set[tuple[str, str, str]] = {
         (d.data_type, d.tracers[0], d.tracers[1]) for d in data_points
     }
+    sure_types, maybe_types = _extracy_sure_and_maybe_types(all_data_types)
+
+    # Remove the sure types from the maybe types.
+    for tracer0, sure_types0 in sure_types.items():
+        maybe_types[tracer0] -= sure_types0
+
+    # Filter maybe types.
+    for data_type, tracer1, tracer2 in all_data_types:
+        if data_type not in MEASURED_TYPE_STRING_MAP:
+            continue
+        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+        if a == b:
+            continue
+
+        if a in sure_types[tracer1] and b in sure_types[tracer2]:
+            maybe_types[tracer1].discard(b)
+            maybe_types[tracer2].discard(a)
+        elif a in sure_types[tracer2] and b in sure_types[tracer1]:
+            maybe_types[tracer1].discard(a)
+            maybe_types[tracer2].discard(b)
+    if include_maybe_types:
+        return {
+            tracer0: sure_types0 | maybe_types[tracer0]
+            for tracer0, sure_types0 in sure_types.items()
+        }
+    return sure_types
+
+
+def _extracy_sure_and_maybe_types(all_data_types):
     sure_types: dict[str, set[Measurement]] = {}
     maybe_types: dict[str, set[Measurement]] = {}
 
@@ -499,31 +475,7 @@ def _extract_all_candidate_data_types(
             if not name_match:
                 maybe_types[tracer1].update({a, b})
                 maybe_types[tracer2].update({a, b})
-
-    # Remove the sure types from the maybe types.
-    for tracer0, sure_types0 in sure_types.items():
-        maybe_types[tracer0] -= sure_types0
-
-    # Filter maybe types.
-    for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in MEASURED_TYPE_STRING_MAP:
-            continue
-        a, b = MEASURED_TYPE_STRING_MAP[data_type]
-
-        if a == b:
-            continue
-
-        if a in sure_types[tracer1] and b in sure_types[tracer2]:
-            maybe_types[tracer1].discard(b)
-            maybe_types[tracer2].discard(a)
-        elif a in sure_types[tracer2] and b in sure_types[tracer1]:
-            maybe_types[tracer1].discard(a)
-            maybe_types[tracer2].discard(b)
-
-    return {
-        tracer0: sure_types0 | maybe_types[tracer0]
-        for tracer0, sure_types0 in sure_types.items()
-    }
+    return sure_types, maybe_types
 
 
 def _extract_candidate_data_types(
@@ -575,30 +527,29 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     and returns it in a list.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
+    tracer_types = extract_all_tracers_types(sacc_data)
 
-    data_points = sacc_data.get_data_points()
-
-    inferred_galaxy_zdists = []
-
-    for tracer in tracers:
-        candidate_measurements = _extract_candidate_data_types(tracer.name, data_points)
-
-        measurement = extract_measurement(candidate_measurements, tracer)
-
-        inferred_galaxy_zdists.append(
-            InferredGalaxyZDist(
-                bin_name=tracer.name,
-                z=tracer.z,
-                dndz=tracer.nz,
-                measurement=measurement,
+    for tracer0, tracer_types0 in tracer_types.items():
+        if len(tracer_types0) == 0:
+            raise ValueError(
+                f"Tracer {tracer0} does not have data points associated with it. "
+                f"Inconsistent SACC object."
             )
-        )
 
-    return inferred_galaxy_zdists
+    return [
+        InferredGalaxyZDist(
+            bin_name=tracer.name,
+            z=tracer.z,
+            dndz=tracer.nz,
+            measurements=tracer_types[tracer.name],
+        )
+        for tracer in tracers
+    ]
 
 
 def extract_all_tracers_types(
     sacc_data: sacc.Sacc,
+    include_maybe_types: bool = False,
 ) -> dict[str, set[Measurement]]:
     """Extracts the two-point function metadata from a Sacc object.
 
@@ -610,7 +561,7 @@ def extract_all_tracers_types(
     """
     data_points = sacc_data.get_data_points()
 
-    return _extract_all_candidate_data_types(data_points)
+    return _extract_all_candidate_data_types(data_points, include_maybe_types)
 
 
 def extract_measurement(
@@ -766,6 +717,33 @@ def extract_window_function(
     )
 
 
+def _build_two_point_xy(
+    inferred_galaxy_zdists_dict, tracer_names, data_type
+) -> TwoPointXY:
+    """Build a TwoPointXY object from the inferred galaxy z distributions.
+
+    The TwoPointXY object is built from the inferred galaxy z distributions, the data
+    type, and the tracer names.
+    """
+    a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+    igz1 = inferred_galaxy_zdists_dict[tracer_names[0]]
+    igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
+
+    ab = a in igz1.measurements and b in igz2.measurements
+    ba = b in igz1.measurements and a in igz2.measurements
+    if a != b and ab and ba:
+        raise ValueError(
+            f"Ambiguous measurements for tracers {tracer_names}."
+            f"Impossible to determine which measurement is from which tracer."
+        )
+    XY = TwoPointXY(
+        x=igz1, y=igz2, x_measurement=a if ab else b, y_measurement=b if ab else a
+    )
+
+    return XY
+
+
 def extract_all_data_cells(
     sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
 ) -> tuple[list[TwoPointCells], list[TwoPointCWindow]]:
@@ -783,10 +761,7 @@ def extract_all_data_cells(
         ells = cell_index["ells"]
         data_type = cell_index["data_type"]
 
-        XY = TwoPointXY(
-            x=inferred_galaxy_zdists_dict[tracer_names[0]],
-            y=inferred_galaxy_zdists_dict[tracer_names[1]],
-        )
+        XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
 
         ells, Cells, indices = sacc_data.get_ell_cl(
             data_type=data_type,
@@ -829,10 +804,7 @@ def extract_all_data_xi_thetas(
         thetas = xi_theta_index["thetas"]
         data_type = xi_theta_index["data_type"]
 
-        XY = TwoPointXY(
-            x=inferred_galaxy_zdists_dict[tracer_names[0]],
-            y=inferred_galaxy_zdists_dict[tracer_names[1]],
-        )
+        XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
 
         thetas, Xis, indices = sacc_data.get_theta_xi(
             data_type=data_type,
@@ -941,9 +913,14 @@ def make_all_photoz_bin_combinations(
 ) -> list[TwoPointXY]:
     """Extract the two-point function metadata from a sacc file."""
     bin_combinations = [
-        TwoPointXY(x=igz1, y=igz2)
+        TwoPointXY(
+            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
+        )
         for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
-        if measurement_is_compatible(igz1.measurement, igz2.measurement)
+        for x_measurement, y_measurement in product(
+            igz1.measurements, igz2.measurements
+        )
+        if measurement_is_compatible(x_measurement, y_measurement)
     ]
 
     return bin_combinations

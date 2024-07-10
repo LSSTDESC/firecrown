@@ -7,6 +7,9 @@ from itertools import chain
 from dataclasses import dataclass
 from enum import Enum, auto
 
+import numpy as np
+import numpy.typing as npt
+
 from firecrown.utils import YAMLSerializable
 
 
@@ -247,3 +250,79 @@ def compare_enums(a: Measurement, b: Measurement) -> int:
     if main_type_index_a == main_type_index_b:
         return int(a) - int(b)
     return main_type_index_a - main_type_index_b
+
+
+@dataclass(frozen=True, kw_only=True)
+class InferredGalaxyZDist(YAMLSerializable):
+    """The class used to store the redshift resolution data for a sacc file.
+
+    The sacc file is a complicated set of tracers (bins) and surveys. This class is
+    used to store the redshift resolution data for a single photometric bin.
+    """
+
+    bin_name: str
+    z: np.ndarray
+    dndz: np.ndarray
+    measurements: set[Measurement]
+
+    def __post_init__(self) -> None:
+        """Validate the redshift resolution data.
+
+        - Make sure the z and dndz arrays have the same shape;
+        - The measurement must be of type Measurement.
+        - The bin_name should not be empty.
+        """
+        if self.z.shape != self.dndz.shape:
+            raise ValueError("The z and dndz arrays should have the same shape.")
+
+        for measurement in self.measurements:
+            if not isinstance(measurement, ALL_MEASUREMENT_TYPES):
+                raise ValueError("The measurement should be a Measurement.")
+
+        if self.bin_name == "":
+            raise ValueError("The bin_name should not be empty.")
+
+    def __eq__(self, other):
+        """Equality test for InferredGalaxyZDist.
+
+        Two InferredGalaxyZDist are equal if they have equal bin_name, z, dndz, and
+        measurement.
+        """
+        assert isinstance(other, InferredGalaxyZDist)
+        return (
+            self.bin_name == other.bin_name
+            and np.array_equal(self.z, other.z)
+            and np.array_equal(self.dndz, other.dndz)
+            and self.measurements == other.measurements
+        )
+
+
+@dataclass(frozen=True, kw_only=True)
+class TwoPointMeasurement(YAMLSerializable):
+    """Class defining the metadata for a two-point measurement.
+
+    The class used to store the metadata for a two-point function measured on a sphere.
+
+    This includes the measured two-point function and their indices in the covariance
+    matrix.
+    """
+
+    data: npt.NDArray[np.float64]
+    indices: npt.NDArray[np.int64]
+    covariance_name: str
+
+    def __post_init__(self) -> None:
+        """Make sure the data and indices have the same shape."""
+        if len(self.data.shape) != 1:
+            raise ValueError("Data should be a 1D array.")
+
+        if self.data.shape != self.indices.shape:
+            raise ValueError("Data and indices should have the same shape.")
+
+    def __eq__(self, other) -> bool:
+        """Equality test for TwoPointMeasurement objects."""
+        return (
+            np.array_equal(self.data, other.data)
+            and np.array_equal(self.indices, other.indices)
+            and self.covariance_name == other.covariance_name
+        )

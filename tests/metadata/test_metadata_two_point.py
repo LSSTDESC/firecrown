@@ -45,7 +45,7 @@ def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
         bin_name="bin_1",
         z=np.linspace(0, 1, 5),
         dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measurement=request.param,
+        measurements={request.param},
     )
     return x
 
@@ -60,7 +60,7 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
         bin_name="bin_2",
         z=np.linspace(0, 1, 3),
         dndz=np.array([0.1, 0.5, 0.4]),
-        measurement=request.param,
+        measurements={request.param},
     )
     return x
 
@@ -75,7 +75,7 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
         bin_name="bin_1",
         z=np.linspace(0, 1, 5),
         dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measurement=request.param,
+        measurements={request.param},
     )
     return x
 
@@ -90,7 +90,7 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
         bin_name="bin_2",
         z=np.linspace(0, 1, 3),
         dndz=np.array([0.1, 0.5, 0.4]),
-        measurement=request.param,
+        measurements={request.param},
     )
     return x
 
@@ -117,7 +117,12 @@ def make_two_point_cwindow_1(
     harmonic_bin_2: InferredGalaxyZDist,
 ) -> TwoPointCWindow:
     """Generate a TwoPointCWindow object with 100 ells."""
-    xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
     two_point = TwoPointCWindow(XY=xy, window=window_1)
     return two_point
 
@@ -237,14 +242,14 @@ def test_inferred_galaxy_z_dist():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     assert z_dist.bin_name == "bname1"
     assert z_dist.z[0] == 0
     assert z_dist.z[-1] == 1
     assert z_dist.dndz[0] == 1
     assert z_dist.dndz[-1] == 1
-    assert z_dist.measurement == Galaxies.COUNTS
+    assert z_dist.measurements == {Galaxies.COUNTS}
 
 
 def test_inferred_galaxy_z_dist_bad_shape():
@@ -255,7 +260,7 @@ def test_inferred_galaxy_z_dist_bad_shape():
             bin_name="bname1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(101),
-            measurement=Clusters.COUNTS,
+            measurements={Clusters.COUNTS},
         )
 
 
@@ -265,7 +270,7 @@ def test_inferred_galaxy_z_dist_bad_type():
             bin_name="bname1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
-            measurement=0,  # type: ignore
+            measurements={0},  # type: ignore
         )
 
 
@@ -275,7 +280,7 @@ def test_inferred_galaxy_z_dist_bad_name():
             bin_name="",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
-            measurement=Galaxies.COUNTS,
+            measurements={Galaxies.COUNTS},
         )
 
 
@@ -284,17 +289,21 @@ def test_two_point_xy_gal_gal():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+    )
     assert xy.x == x
     assert xy.y == y
+    assert xy.x_measurement == Galaxies.COUNTS
+    assert xy.y_measurement == Galaxies.COUNTS
 
 
 def test_two_point_xy_cmb_gal():
@@ -302,17 +311,21 @@ def test_two_point_xy_cmb_gal():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=CMB.CONVERGENCE,
+        measurements={CMB.CONVERGENCE},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=CMB.CONVERGENCE
+    )
     assert xy.x == x
     assert xy.y == y
+    assert xy.x_measurement == Galaxies.COUNTS
+    assert xy.y_measurement == CMB.CONVERGENCE
 
 
 def test_two_point_xy_invalid():
@@ -320,19 +333,21 @@ def test_two_point_xy_invalid():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.SHEAR_E,
+        measurements={Galaxies.SHEAR_E},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.SHEAR_T,
+        measurements={Galaxies.SHEAR_T},
     )
     with pytest.raises(
         ValueError,
         match=("Measurements .* and .* are not compatible."),
     ):
-        TwoPointXY(x=x, y=y)
+        TwoPointXY(
+            x=x, y=y, x_measurement=Galaxies.SHEAR_E, y_measurement=Galaxies.SHEAR_T
+        )
 
 
 def test_two_point_cells():
@@ -340,21 +355,23 @@ def test_two_point_cells():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointCells(ells=ells, XY=xy)
 
     assert_array_equal(cells.ells, ells)
     assert cells.XY == xy
-    assert cells.get_sacc_name() == harmonic(x.measurement, y.measurement)
+    assert cells.get_sacc_name() == harmonic(xy.x_measurement, xy.y_measurement)
 
 
 def test_two_point_cells_invalid_ells():
@@ -362,15 +379,17 @@ def test_two_point_cells_invalid_ells():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+    )
     ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
     with pytest.raises(
         ValueError,
@@ -384,15 +403,17 @@ def test_two_point_cells_invalid_type():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.SHEAR_T,
+        measurements={Galaxies.SHEAR_T},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     with pytest.raises(
         ValueError,
@@ -531,21 +552,23 @@ def test_two_point_two_point_cwindow():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     two_point = TwoPointCWindow(XY=xy, window=window)
 
     assert two_point.window == window
     assert two_point.XY == xy
-    assert two_point.get_sacc_name() == harmonic(x.measurement, y.measurement)
+    assert two_point.get_sacc_name() == harmonic(xy.x_measurement, xy.y_measurement)
 
 
 def test_two_point_two_point_cwindow_invalid():
@@ -563,15 +586,17 @@ def test_two_point_two_point_cwindow_invalid():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.SHEAR_T,
+        measurements={Galaxies.SHEAR_T},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     with pytest.raises(
         ValueError,
@@ -585,15 +610,17 @@ def test_two_point_two_point_cwindow_invalid_window():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.SHEAR_T,
+        measurements={Galaxies.SHEAR_T},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
     with pytest.raises(
         ValueError,
         match="Window should be a Window object.",
@@ -607,21 +634,23 @@ def test_two_point_xi_theta():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+    )
     theta = np.array(np.linspace(0, 100, 100))
     two_point = TwoPointXiTheta(XY=xy, thetas=theta)
 
     assert_array_equal(two_point.thetas, theta)
     assert two_point.XY == xy
-    assert two_point.get_sacc_name() == real(x.measurement, y.measurement)
+    assert two_point.get_sacc_name() == real(xy.x_measurement, xy.y_measurement)
 
 
 def test_two_point_xi_theta_invalid():
@@ -629,15 +658,17 @@ def test_two_point_xi_theta_invalid():
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.SHEAR_E,
+        measurements={Galaxies.SHEAR_E},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_E
+    )
     theta = np.array(np.linspace(0, 100, 100))
     with pytest.raises(
         ValueError,
@@ -685,14 +716,24 @@ def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: InferredGalaxyZDist
 def test_two_point_xy_str(
     harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
 ):
-    xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
     assert str(xy) == f"({harmonic_bin_1.bin_name}, {harmonic_bin_2.bin_name})"
 
 
 def test_two_point_xy_serialization(
     harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
 ):
-    xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
     s = xy.to_yaml()
     # Take a look at how hideous the generated string
     # is.
@@ -705,7 +746,12 @@ def test_two_point_cells_str(
     harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
 ):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
     cells = TwoPointCells(ells=ells, XY=xy)
     assert str(cells) == f"{str(xy)}[{cells.get_sacc_name()}]"
 
@@ -714,7 +760,12 @@ def test_two_point_cells_serialization(
     harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
 ):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
     cells = TwoPointCells(ells=ells, XY=xy)
     s = cells.to_yaml()
     recovered = TwoPointCells.from_yaml(s)
@@ -738,7 +789,13 @@ def test_two_point_cwindow_serialization(two_point_cwindow_1: TwoPointCWindow):
 def test_two_point_xi_theta_serialization(
     real_bin_1: InferredGalaxyZDist, real_bin_2: InferredGalaxyZDist
 ):
-    xy = TwoPointXY(x=real_bin_1, y=real_bin_2)
+    xy = TwoPointXY(
+        x=real_bin_1,
+        y=real_bin_2,
+        x_measurement=list(real_bin_1.measurements)[0],
+        y_measurement=list(real_bin_2.measurements)[0],
+    )
+
     theta = np.array(np.linspace(0, 10, 10))
     xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
     s = xi_theta.to_yaml()
@@ -752,7 +809,12 @@ def test_two_point_from_metadata_cells(
     harmonic_bin_1, harmonic_bin_2, wl_factory, nc_factory
 ):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(x=harmonic_bin_1, y=harmonic_bin_2)
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
     cells = TwoPointCells(ells=ells, XY=xy)
     two_point = TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory).pop()
 
@@ -797,7 +859,12 @@ def test_two_point_from_metadata_xi_theta(
     real_bin_1, real_bin_2, wl_factory, nc_factory
 ):
     theta = np.array(np.linspace(0, 100, 100))
-    xy = TwoPointXY(x=real_bin_1, y=real_bin_2)
+    xy = TwoPointXY(
+        x=real_bin_1,
+        y=real_bin_2,
+        x_measurement=list(real_bin_1.measurements)[0],
+        y_measurement=list(real_bin_2.measurements)[0],
+    )
     xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
         return
@@ -823,15 +890,17 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=CMB.CONVERGENCE,
+        measurements={CMB.CONVERGENCE},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
-    xy = TwoPointXY(x=x, y=y)
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=CMB.CONVERGENCE, y_measurement=Galaxies.COUNTS
+    )
     cells = TwoPointCells(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
@@ -846,9 +915,7 @@ def test_two_point_measurement():
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
     measure = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
+        data=data, indices=indices, covariance_name=covariance_name
     )
     assert_array_equal(measure.data, data)
     assert_array_equal(measure.indices, indices)
@@ -863,11 +930,7 @@ def test_two_point_measurement_invalid_data():
         ValueError,
         match="Data should be a 1D array.",
     ):
-        TwoPointMeasurement(
-            data=data,
-            indices=indices,
-            covariance_name=covariance_name,
-        )
+        TwoPointMeasurement(data=data, indices=indices, covariance_name=covariance_name)
 
 
 def test_two_point_measurement_invalid_indices():
@@ -878,11 +941,7 @@ def test_two_point_measurement_invalid_indices():
         ValueError,
         match="Data and indices should have the same shape.",
     ):
-        TwoPointMeasurement(
-            data=data,
-            indices=indices,
-            covariance_name=covariance_name,
-        )
+        TwoPointMeasurement(data=data, indices=indices, covariance_name=covariance_name)
 
 
 def test_two_point_measurement_eq():
@@ -890,14 +949,10 @@ def test_two_point_measurement_eq():
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
     measure_1 = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
+        data=data, indices=indices, covariance_name=covariance_name
     )
     measure_2 = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
+        data=data, indices=indices, covariance_name=covariance_name
     )
     assert measure_1 == measure_2
 
@@ -911,31 +966,19 @@ def test_two_point_measurement_neq():
         indices=indices,
         covariance_name=covariance_name,
     )
-    measure_2 = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name="cov2",
-    )
+    measure_2 = TwoPointMeasurement(data=data, indices=indices, covariance_name="cov2")
     assert measure_1 != measure_2
     measure_3 = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
+        data=data, indices=indices, covariance_name=covariance_name
     )
     measure_4 = TwoPointMeasurement(
-        data=data,
-        indices=indices + 1,
-        covariance_name=covariance_name,
+        data=data, indices=indices + 1, covariance_name=covariance_name
     )
     assert measure_3 != measure_4
     measure_5 = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
+        data=data, indices=indices, covariance_name=covariance_name
     )
     measure_6 = TwoPointMeasurement(
-        data=data + 1.0,
-        indices=indices,
-        covariance_name=covariance_name,
+        data=data + 1.0, indices=indices, covariance_name=covariance_name
     )
     assert measure_5 != measure_6

@@ -239,7 +239,7 @@ def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
         assert_array_equal(tracer.z, z)
         assert_array_equal(tracer.dndz, dndz)
         assert tracer.bin_name == "src0"
-        assert tracer.measurement == Galaxies.SHEAR_E
+        assert tracer.measurements == {Galaxies.SHEAR_E}
 
 
 def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
@@ -251,7 +251,7 @@ def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
 
     for tracer in all_tracers:
         assert_array_equal(tracer.z, z)
-        assert tracer.measurement == Galaxies.SHEAR_E
+        assert tracer.measurements == {Galaxies.SHEAR_E}
         if tracer.bin_name == "src0":
             assert_array_equal(tracer.dndz, dndz0)
         elif tracer.bin_name == "src1":
@@ -269,7 +269,7 @@ def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
         assert_array_equal(tracer.z, z)
         assert_array_equal(tracer.dndz, dndz)
         assert tracer.bin_name == "lens0"
-        assert tracer.measurement == Galaxies.COUNTS
+        assert tracer.measurements == {Galaxies.COUNTS}
 
 
 def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
@@ -281,7 +281,7 @@ def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
 
     for tracer in all_tracers:
         assert_array_equal(tracer.z, z)
-        assert tracer.measurement == Galaxies.COUNTS
+        assert tracer.measurements == {Galaxies.COUNTS}
         if tracer.bin_name == "lens0":
             assert_array_equal(tracer.dndz, dndz0)
         elif tracer.bin_name == "lens1":
@@ -299,7 +299,7 @@ def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
         assert_array_equal(tracer.z, z)
         assert_array_equal(tracer.dndz, dndz)
         assert tracer.bin_name == "lens0"
-        assert tracer.measurement == Galaxies.COUNTS
+        assert tracer.measurements == {Galaxies.COUNTS}
 
 
 def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
@@ -311,7 +311,7 @@ def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
 
     for tracer in all_tracers:
         assert_array_equal(tracer.z, z)
-        assert tracer.measurement == Galaxies.COUNTS
+        assert tracer.measurements == {Galaxies.COUNTS}
         if tracer.bin_name == "lens0":
             assert_array_equal(tracer.dndz, dndz0)
         elif tracer.bin_name == "lens1":
@@ -329,11 +329,11 @@ def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
         if tracer.bin_name == "src0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz0)
-            assert tracer.measurement == Galaxies.SHEAR_E
+            assert tracer.measurements == {Galaxies.SHEAR_E}
         elif tracer.bin_name == "lens0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz1)
-            assert tracer.measurement == Galaxies.COUNTS
+            assert tracer.measurements == {Galaxies.COUNTS}
 
 
 def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
@@ -347,11 +347,11 @@ def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
         if tracer.bin_name == "src0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz0)
-            assert tracer.measurement == Galaxies.SHEAR_T
+            assert tracer.measurements == {Galaxies.SHEAR_T}
         elif tracer.bin_name == "lens0":
             assert_array_equal(tracer.z, z)
             assert_array_equal(tracer.dndz, dndz1)
-            assert tracer.measurement == Galaxies.COUNTS
+            assert tracer.measurements == {Galaxies.COUNTS}
 
 
 def test_extract_all_tracers_invalid_data_type(
@@ -372,7 +372,7 @@ def test_extract_all_tracers_bad_lens_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match="Tracer non_informative_label does not have a compatible Measurement.",
+        match="Tracer src0 does not have data points associated with it.",
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -384,7 +384,9 @@ def test_extract_all_tracers_bad_source_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=("Tracer non_informative_label does not have a compatible Measurement."),
+        match=(
+            "Tracer non_informative_label does not have data points associated with it."
+        ),
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -396,10 +398,7 @@ def test_extract_all_tracers_inconsistent_lens_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=(
-            "Tracer lens0 matches the lens regex but does "
-            "not have a compatible Measurement."
-        ),
+        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -411,10 +410,7 @@ def test_extract_all_tracers_inconsistent_source_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=(
-            "Tracer src0 matches the source regex but does "
-            "not have a compatible Measurement."
-        ),
+        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
     ):
         _ = extract_all_tracers(sacc_data)
 
@@ -747,10 +743,16 @@ def test_compare_constructors_cells(
     for cell in two_point_cells:
         sacc_data_type = cell.get_sacc_name()
         source0 = use_source_factory(
-            cell.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+            cell.XY.x,
+            cell.XY.x_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
         )
         source1 = use_source_factory(
-            cell.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+            cell.XY.y,
+            cell.XY.y_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)
@@ -795,10 +797,16 @@ def test_compare_constructors_cwindows(
     for cwindow in two_point_cwindows:
         sacc_data_type = cwindow.get_sacc_name()
         source0 = use_source_factory(
-            cwindow.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+            cwindow.XY.x,
+            cwindow.XY.x_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
         )
         source1 = use_source_factory(
-            cwindow.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+            cwindow.XY.y,
+            cwindow.XY.y_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)
@@ -846,10 +854,10 @@ def test_compare_constructors_xis(
     for xi in two_point_xis:
         sacc_data_type = xi.get_sacc_name()
         source0 = use_source_factory(
-            xi.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+            xi.XY.x, xi.XY.x_measurement, wl_factory=wl_factory, nc_factory=nc_factory
         )
         source1 = use_source_factory(
-            xi.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+            xi.XY.y, xi.XY.y_measurement, wl_factory=wl_factory, nc_factory=nc_factory
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)

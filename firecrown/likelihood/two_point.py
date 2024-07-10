@@ -231,12 +231,19 @@ def apply_theta_min_max(
 
 def use_source_factory(
     inferred_galaxy_zdist: InferredGalaxyZDist,
+    measurement: Measurement,
     wl_factory: WeakLensingFactory | None = None,
     nc_factory: NumberCountsFactory | None = None,
 ) -> WeakLensing | NumberCounts:
     """Apply the factory to the inferred galaxy redshift distribution."""
     source: WeakLensing | NumberCounts
-    match inferred_galaxy_zdist.measurement:
+    if measurement not in inferred_galaxy_zdist.measurements:
+        raise ValueError(
+            f"Measurement {measurement} not found in inferred galaxy redshift "
+            f"distribution {inferred_galaxy_zdist.bin_name}!"
+        )
+
+    match measurement:
         case Galaxies.COUNTS:
             assert nc_factory is not None
             source = nc_factory.create(inferred_galaxy_zdist)
@@ -249,9 +256,7 @@ def use_source_factory(
             assert wl_factory is not None
             source = wl_factory.create(inferred_galaxy_zdist)
         case _:
-            raise ValueError(
-                f"Measurement {inferred_galaxy_zdist.measurement} not supported!"
-            )
+            raise ValueError(f"Measurement {measurement} not supported!")
     return source
 
 
@@ -540,10 +545,16 @@ class TwoPoint(Statistic):
             cls._from_metadata(
                 sacc_data_type=cell.get_sacc_name(),
                 source0=use_source_factory(
-                    cell.XY.x, wl_factory=wl_factory, nc_factory=nc_factory
+                    cell.XY.x,
+                    cell.XY.x_measurement,
+                    wl_factory=wl_factory,
+                    nc_factory=nc_factory,
                 ),
                 source1=use_source_factory(
-                    cell.XY.y, wl_factory=wl_factory, nc_factory=nc_factory
+                    cell.XY.y,
+                    cell.XY.y_measurement,
+                    wl_factory=wl_factory,
+                    nc_factory=nc_factory,
                 ),
                 metadata=cell,
             )
