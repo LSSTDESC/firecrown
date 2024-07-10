@@ -171,6 +171,16 @@ params = ParamsMap(default_values)
 
 ```
 Note that the required parameters are the same for both likelihoods.
+Before generating the two-point statistics, we use the following default values:
+```{python}
+# | code-fold: true
+import yaml
+
+default_values_yaml = yaml.dump(default_values, default_flow_style=False)
+
+Markdown(f"```yaml\n{default_values_yaml}\n```")
+```
+
 
 Finally, we can prepare both likelihoods and compare the loglike values.
 ```{python}
