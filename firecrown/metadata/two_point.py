@@ -395,6 +395,7 @@ GALAXY_SOURCE_TYPES = (
     Galaxies.SHEAR_MINUS,
     Galaxies.SHEAR_PLUS,
 )
+GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 
 
 def _extract_all_candidate_data_types(
@@ -408,7 +409,7 @@ def _extract_all_candidate_data_types(
     all_data_types: set[tuple[str, str, str]] = {
         (d.data_type, d.tracers[0], d.tracers[1]) for d in data_points
     }
-    sure_types, maybe_types = _extracy_sure_and_maybe_types(all_data_types)
+    sure_types, maybe_types = _extract_sure_and_maybe_types(all_data_types)
 
     # Remove the sure types from the maybe types.
     for tracer0, sure_types0 in sure_types.items():
@@ -429,6 +430,7 @@ def _extract_all_candidate_data_types(
         elif a in sure_types[tracer2] and b in sure_types[tracer1]:
             maybe_types[tracer1].discard(a)
             maybe_types[tracer2].discard(b)
+
     if include_maybe_types:
         return {
             tracer0: sure_types0 | maybe_types[tracer0]
@@ -437,7 +439,7 @@ def _extract_all_candidate_data_types(
     return sure_types
 
 
-def _extracy_sure_and_maybe_types(all_data_types):
+def _extract_sure_and_maybe_types(all_data_types):
     sure_types: dict[str, set[Measurement]] = {}
     maybe_types: dict[str, set[Measurement]] = {}
 
@@ -457,64 +459,45 @@ def _extracy_sure_and_maybe_types(all_data_types):
             sure_types[tracer1].update({a})
             sure_types[tracer2].update({a})
         else:
-            name_match = False
-            for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
-                if LENS_REGEX.match(n1) and SOURCE_REGEX.match(n2):
-                    name_match = True
-                    if a in GALAXY_SOURCE_TYPES and b == Galaxies.COUNTS:
-                        sure_types[n2].update({a})
-                        sure_types[n1].update({b})
-                    elif b in GALAXY_SOURCE_TYPES and a == Galaxies.COUNTS:
-                        sure_types[n1].update({a})
-                        sure_types[n2].update({b})
-                    else:
-                        raise ValueError(
-                            "Invalid SACC file, tracer names do not respect "
-                            "the naming convetion."
-                        )
+            name_match, n1, a, n2, b = _match_name_type(tracer1, tracer2, a, b)
+            if name_match:
+                sure_types[n1].update({a})
+                sure_types[n2].update({b})
             if not name_match:
                 maybe_types[tracer1].update({a, b})
                 maybe_types[tracer2].update({a, b})
     return sure_types, maybe_types
 
 
-def _extract_candidate_data_types(
-    tracer_name: str, data_points: list[sacc.DataPoint]
-) -> list[Measurement]:
-    """Extract the candidate Measurement for a tracer.
+def _match_name_type(
+    tracer1: str,
+    tracer2: str,
+    a: Measurement,
+    b: Measurement,
+    require_convetion: bool = False,
+) -> tuple[bool, str, Measurement, str, Measurement]:
+    for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
+        if LENS_REGEX.match(n1) and SOURCE_REGEX.match(n2):
+            if a in GALAXY_SOURCE_TYPES and b in GALAXY_LENS_TYPES:
+                return True, n1, b, n2, a
+            if b in GALAXY_SOURCE_TYPES and a in GALAXY_LENS_TYPES:
+                return True, n1, a, n2, b
+            raise ValueError(
+                "Invalid SACC file, tracer names do not respect "
+                "the naming convetion."
+            )
+    if require_convetion:
+        if LENS_REGEX.match(tracer1) and LENS_REGEX.match(tracer2):
+            return False, tracer1, a, tracer2, b
+        if SOURCE_REGEX.match(tracer1) and SOURCE_REGEX.match(tracer2):
+            return False, tracer1, a, tracer2, b
 
-    An exception is raise if the tracer does not have any associated data points.
-    """
-    tracer_associated_types: set[str] = {
-        d.data_type for d in data_points if tracer_name in d.tracers
-    }
-    tracer_associated_types_len = len(tracer_associated_types)
-
-    type_count: dict[Measurement, int] = {
-        measurement: 0 for measurement in ALL_MEASUREMENTS
-    }
-    for data_type in tracer_associated_types:
-        if data_type not in MEASURED_TYPE_STRING_MAP:
-            continue
-        a, b = MEASURED_TYPE_STRING_MAP[data_type]
-
-        if a != b:
-            type_count[a] += 1
-            type_count[b] += 1
-        else:
-            type_count[a] += 1
-
-    result = [
-        measurement
-        for measurement, count in type_count.items()
-        if count == tracer_associated_types_len
-    ]
-    if len(result) == 0:
         raise ValueError(
-            f"Tracer {tracer_name} does not have data points associated with it. "
-            f"Inconsistent SACC object."
+            f"Invalid SACC file, tracer names ({tracer1}, {tracer2}) "
+            f"do not respect the naming convetion."
         )
-    return result
+
+    return False, tracer1, a, tracer2, b
 
 
 def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
@@ -528,7 +511,6 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
     tracer_types = extract_all_tracers_types(sacc_data)
-
     for tracer0, tracer_types0 in tracer_types.items():
         if len(tracer_types0) == 0:
             raise ValueError(
@@ -996,3 +978,18 @@ MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
     if measurement_is_compatible_harmonic(a, b)
 }
+
+
+def measurements_from_index(
+    index: TwoPointXiThetaIndex | TwoPointCellsIndex,
+) -> tuple[str, Measurement, str, Measurement]:
+    """Return the measurements from a TwoPointXiThetaIndex object."""
+    a, b = MEASURED_TYPE_STRING_MAP[index["data_type"]]
+    _, n1, a, n2, b = _match_name_type(
+        index["tracer_names"].name1,
+        index["tracer_names"].name2,
+        a,
+        b,
+        require_convetion=True,
+    )
+    return n1, a, n2, b

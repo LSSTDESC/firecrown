@@ -46,7 +46,7 @@ from firecrown.metadata.two_point import (
     extract_window_function,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
-    MEASURED_TYPE_STRING_MAP,
+    measurements_from_index,
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import UpdatableCollection
@@ -576,24 +576,19 @@ class TwoPoint(Statistic):
         list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
         The metadata objects are used to initialize the TwoPoint statistics.
         """
-        two_point_list = [
-            cls(
+        two_point_list = []
+        for cell_index in metadata:
+            n1, a, n2, b = measurements_from_index(cell_index)
+            two_point = cls(
                 sacc_data_type=cell_index["data_type"],
                 source0=use_source_factory_metadata_only(
-                    cell_index["tracer_names"][0],
-                    MEASURED_TYPE_STRING_MAP[cell_index["data_type"]][0],
-                    wl_factory=wl_factory,
-                    nc_factory=nc_factory,
+                    n1, a, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
                 source1=use_source_factory_metadata_only(
-                    cell_index["tracer_names"][1],
-                    MEASURED_TYPE_STRING_MAP[cell_index["data_type"]][1],
-                    wl_factory=wl_factory,
-                    nc_factory=nc_factory,
+                    n2, b, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
             )
-            for cell_index in metadata
-        ]
+            two_point_list.append(two_point)
 
         return UpdatableCollection(two_point_list)
 
@@ -964,7 +959,6 @@ class TwoPoint(Statistic):
                     * scale0
                     * scale1
                 )
-        # Add up all the contributions to the cells
         self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
         theory_vector = self.cells[TRACER_NAMES_TOTAL]
         return theory_vector

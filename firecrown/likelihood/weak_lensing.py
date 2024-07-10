@@ -518,7 +518,7 @@ class WeakLensingFactory(BaseModel):
         ]
         systematics.extend(self._global_systematics_instances)
 
-        wl = WeakLensing(sacc_tracer=sacc_tracer)
+        wl = WeakLensing(sacc_tracer=sacc_tracer, systematics=systematics)
         self._cache[sacc_tracer_id] = wl
 
         return wl

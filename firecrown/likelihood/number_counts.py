@@ -638,7 +638,7 @@ class NumberCountsFactory(BaseModel):
         ]
         systematics.extend(self._global_systematics_instances)
 
-        wl = NumberCounts(sacc_tracer=sacc_tracer)
-        self._cache[sacc_tracer_id] = wl
+        nc = NumberCounts(sacc_tracer=sacc_tracer, systematics=systematics)
+        self._cache[sacc_tracer_id] = nc
 
-        return wl
+        return nc
