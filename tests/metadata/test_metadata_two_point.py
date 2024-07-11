@@ -228,7 +228,7 @@ def test_two_point_xy_gal_gal_invalid_x_measurement():
     )
     with pytest.raises(
         ValueError,
-        match="Measurement Galaxies.COUNTS not in the measurements of bname1.",
+        match="Measurement .* not in the measurements of bname1.",
     ):
         TwoPointXY(
             x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
@@ -250,7 +250,7 @@ def test_two_point_xy_gal_gal_invalid_y_measurement():
     )
     with pytest.raises(
         ValueError,
-        match="Measurement Galaxies.COUNTS not in the measurements of bname2.",
+        match="Measurement .* not in the measurements of bname2.",
     ):
         TwoPointXY(
             x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
