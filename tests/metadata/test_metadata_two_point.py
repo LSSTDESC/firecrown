@@ -29,102 +29,9 @@ from firecrown.metadata.two_point import (
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
     Window,
-    TwoPointMeasurement,
 )
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
-
-
-@pytest.fixture(
-    name="harmonic_bin_1",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
-)
-def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 5 bins."""
-    x = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.linspace(0, 1, 5),
-        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measurements={request.param},
-    )
-    return x
-
-
-@pytest.fixture(
-    name="harmonic_bin_2",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
-)
-def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 3 bins."""
-    x = InferredGalaxyZDist(
-        bin_name="bin_2",
-        z=np.linspace(0, 1, 3),
-        dndz=np.array([0.1, 0.5, 0.4]),
-        measurements={request.param},
-    )
-    return x
-
-
-@pytest.fixture(
-    name="real_bin_1",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
-)
-def make_real_bin_1(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 5 bins."""
-    x = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.linspace(0, 1, 5),
-        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measurements={request.param},
-    )
-    return x
-
-
-@pytest.fixture(
-    name="real_bin_2",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
-)
-def make_real_bin_2(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 3 bins."""
-    x = InferredGalaxyZDist(
-        bin_name="bin_2",
-        z=np.linspace(0, 1, 3),
-        dndz=np.array([0.1, 0.5, 0.4]),
-        measurements={request.param},
-    )
-    return x
-
-
-@pytest.fixture(name="window_1")
-def make_window_1() -> Window:
-    """Generate a Window object with 100 ells."""
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 4)
-
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
-    return window
-
-
-@pytest.fixture(name="two_point_cwindow_1")
-def make_two_point_cwindow_1(
-    window_1: Window,
-    harmonic_bin_1: InferredGalaxyZDist,
-    harmonic_bin_2: InferredGalaxyZDist,
-) -> TwoPointCWindow:
-    """Generate a TwoPointCWindow object with 100 ells."""
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    two_point = TwoPointCWindow(XY=xy, window=window_1)
-    return two_point
 
 
 def test_order_enums():
@@ -304,6 +211,50 @@ def test_two_point_xy_gal_gal():
     assert xy.y == y
     assert xy.x_measurement == Galaxies.COUNTS
     assert xy.y_measurement == Galaxies.COUNTS
+
+
+def test_two_point_xy_gal_gal_invalid_x_measurement():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    with pytest.raises(
+        ValueError,
+        match="Measurement Galaxies.COUNTS not in the measurements of bname1.",
+    ):
+        TwoPointXY(
+            x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+        )
+
+
+def test_two_point_xy_gal_gal_invalid_y_measurement():
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    with pytest.raises(
+        ValueError,
+        match="Measurement Galaxies.COUNTS not in the measurements of bname2.",
+    ):
+        TwoPointXY(
+            x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
+        )
 
 
 def test_two_point_xy_cmb_gal():
@@ -907,78 +858,3 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
         match="Measurement .* not supported!",
     ):
         TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory)
-
-
-def test_two_point_measurement():
-
-    data = np.array([1, 2, 3, 4, 5])
-    indices = np.array([1, 2, 3, 4, 5])
-    covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
-    assert_array_equal(measure.data, data)
-    assert_array_equal(measure.indices, indices)
-    assert measure.covariance_name == covariance_name
-
-
-def test_two_point_measurement_invalid_data():
-    data = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
-    indices = np.array([1, 2, 3, 4, 5])
-    covariance_name = "cov"
-    with pytest.raises(
-        ValueError,
-        match="Data should be a 1D array.",
-    ):
-        TwoPointMeasurement(data=data, indices=indices, covariance_name=covariance_name)
-
-
-def test_two_point_measurement_invalid_indices():
-    data = np.array([1, 2, 3, 4, 5])
-    indices = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
-    covariance_name = "cov"
-    with pytest.raises(
-        ValueError,
-        match="Data and indices should have the same shape.",
-    ):
-        TwoPointMeasurement(data=data, indices=indices, covariance_name=covariance_name)
-
-
-def test_two_point_measurement_eq():
-    data = np.array([1, 2, 3, 4, 5])
-    indices = np.array([1, 2, 3, 4, 5])
-    covariance_name = "cov"
-    measure_1 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
-    measure_2 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
-    assert measure_1 == measure_2
-
-
-def test_two_point_measurement_neq():
-    data = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-    indices = np.array([1, 2, 3, 4, 5])
-    covariance_name = "cov"
-    measure_1 = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
-    )
-    measure_2 = TwoPointMeasurement(data=data, indices=indices, covariance_name="cov2")
-    assert measure_1 != measure_2
-    measure_3 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
-    measure_4 = TwoPointMeasurement(
-        data=data, indices=indices + 1, covariance_name=covariance_name
-    )
-    assert measure_3 != measure_4
-    measure_5 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
-    measure_6 = TwoPointMeasurement(
-        data=data + 1.0, indices=indices, covariance_name=covariance_name
-    )
-    assert measure_5 != measure_6

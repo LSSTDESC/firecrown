@@ -18,7 +18,14 @@ from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata.two_point import TracerNames
+from firecrown.metadata.two_point import (
+    TracerNames,
+    Galaxies,
+    InferredGalaxyZDist,
+    Window,
+    TwoPointXY,
+    TwoPointCWindow,
+)
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 
@@ -151,6 +158,98 @@ def fixture_tools_with_vanilla_cosmology():
     result.prepare(pyccl.CosmologyVanillaLCDM())
 
     return result
+
+
+@pytest.fixture(
+    name="harmonic_bin_1",
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
+)
+def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 5 bins."""
+    x = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.linspace(0, 1, 5),
+        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
+        measurements={request.param},
+    )
+    return x
+
+
+@pytest.fixture(
+    name="harmonic_bin_2",
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
+)
+def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 3 bins."""
+    x = InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.linspace(0, 1, 3),
+        dndz=np.array([0.1, 0.5, 0.4]),
+        measurements={request.param},
+    )
+    return x
+
+
+@pytest.fixture(
+    name="real_bin_1",
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
+)
+def make_real_bin_1(request) -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 5 bins."""
+    x = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.linspace(0, 1, 5),
+        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
+        measurements={request.param},
+    )
+    return x
+
+
+@pytest.fixture(
+    name="real_bin_2",
+    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
+)
+def make_real_bin_2(request) -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 3 bins."""
+    x = InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.linspace(0, 1, 3),
+        dndz=np.array([0.1, 0.5, 0.4]),
+        measurements={request.param},
+    )
+    return x
+
+
+@pytest.fixture(name="window_1")
+def make_window_1() -> Window:
+    """Generate a Window object with 100 ells."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+    return window
+
+
+@pytest.fixture(name="two_point_cwindow_1")
+def make_two_point_cwindow_1(
+    window_1: Window,
+    harmonic_bin_1: InferredGalaxyZDist,
+    harmonic_bin_2: InferredGalaxyZDist,
+) -> TwoPointCWindow:
+    """Generate a TwoPointCWindow object with 100 ells."""
+    xy = TwoPointXY(
+        x=harmonic_bin_1,
+        y=harmonic_bin_2,
+        x_measurement=list(harmonic_bin_1.measurements)[0],
+        y_measurement=list(harmonic_bin_2.measurements)[0],
+    )
+    two_point = TwoPointCWindow(XY=xy, window=window_1)
+    return two_point
 
 
 @pytest.fixture(name="cluster_sacc_data")
