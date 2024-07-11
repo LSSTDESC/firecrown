@@ -223,6 +223,7 @@ def run_likelihood() -> None:
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
+    tools.update(systematics_params)
 
     # Prepare the cosmology object
     tools.prepare(ccl_cosmo)
@@ -296,7 +297,7 @@ def plot_predicted_and_measured_statistics(
     # pylint: disable=import-outside-toplevel
     import matplotlib.pyplot as plt
 
-    ells = stat0.ells
+    ells = stat0.ells_for_xi
     cells = CElls(stat0, stat2, stat3)
 
     # Code that computes effect from IA using that Pk2D object
@@ -339,6 +340,9 @@ def plot_predicted_and_measured_statistics(
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 6))
     fig.subplots_adjust(hspace=0)
     # ax[0].plot(x, y_theory, label="Total")
+    assert isinstance(ax, np.ndarray)
+    assert isinstance(ax[0], plt.Axes)
+    assert isinstance(ax[1], plt.Axes)
     ax[0].plot(ells, cells.GG, label="GG firecrown")
     ax[0].plot(ells, cl_GG, ls="--", label="GG CCL")
     ax[0].plot(ells, -cells.GI, label="-GI firecrown")
