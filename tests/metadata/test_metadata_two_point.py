@@ -664,64 +664,34 @@ def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: InferredGalaxyZDist
     assert harmonic_bin_1 == recovered
 
 
-def test_two_point_xy_str(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
+def test_two_point_xy_str(harmonic_two_point_xy):
+    assert str(harmonic_two_point_xy) == (
+        f"({harmonic_two_point_xy.x.bin_name}, " f"{harmonic_two_point_xy.y.bin_name})"
     )
-    assert str(xy) == f"({harmonic_bin_1.bin_name}, {harmonic_bin_2.bin_name})"
 
 
-def test_two_point_xy_serialization(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    s = xy.to_yaml()
+def test_two_point_xy_serialization(harmonic_two_point_xy):
+    s = harmonic_two_point_xy.to_yaml()
     # Take a look at how hideous the generated string
     # is.
     recovered = TwoPointXY.from_yaml(s)
-    assert xy == recovered
-    assert str(xy) == str(recovered)
+    assert harmonic_two_point_xy == recovered
+    assert str(harmonic_two_point_xy) == str(recovered)
 
 
-def test_two_point_cells_str(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
+def test_two_point_cells_str(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    cells = TwoPointCells(ells=ells, XY=xy)
-    assert str(cells) == f"{str(xy)}[{cells.get_sacc_name()}]"
+    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    assert str(cells) == f"{str(harmonic_two_point_xy)}[{cells.get_sacc_name()}]"
 
 
-def test_two_point_cells_serialization(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
+def test_two_point_cells_serialization(harmonic_two_point_xy):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    cells = TwoPointCells(ells=ells, XY=xy)
+    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
     s = cells.to_yaml()
     recovered = TwoPointCells.from_yaml(s)
     assert cells == recovered
-    assert str(xy) == str(recovered.XY)
+    assert str(harmonic_two_point_xy) == str(recovered.XY)
     assert str(cells) == str(recovered)
 
 
@@ -737,36 +707,19 @@ def test_two_point_cwindow_serialization(two_point_cwindow_1: TwoPointCWindow):
     assert two_point_cwindow_1 == recovered
 
 
-def test_two_point_xi_theta_serialization(
-    real_bin_1: InferredGalaxyZDist, real_bin_2: InferredGalaxyZDist
-):
-    xy = TwoPointXY(
-        x=real_bin_1,
-        y=real_bin_2,
-        x_measurement=list(real_bin_1.measurements)[0],
-        y_measurement=list(real_bin_2.measurements)[0],
-    )
-
+def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10, 10))
-    xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
+    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
     s = xi_theta.to_yaml()
     recovered = TwoPointXiTheta.from_yaml(s)
     assert xi_theta == recovered
-    assert str(xy) == str(recovered.XY)
+    assert str(real_two_point_xy) == str(recovered.XY)
     assert str(xi_theta) == str(recovered)
 
 
-def test_two_point_from_metadata_cells(
-    harmonic_bin_1, harmonic_bin_2, wl_factory, nc_factory
-):
+def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    cells = TwoPointCells(ells=ells, XY=xy)
+    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
     two_point = TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory).pop()
 
     assert two_point is not None
@@ -776,11 +729,11 @@ def test_two_point_from_metadata_cells(
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
 
-    assert_array_equal(two_point.source0.tracer_args.z, harmonic_bin_1.z)
-    assert_array_equal(two_point.source0.tracer_args.z, harmonic_bin_1.z)
+    assert_array_equal(two_point.source0.tracer_args.z, harmonic_two_point_xy.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, harmonic_two_point_xy.y.z)
 
-    assert_array_equal(two_point.source0.tracer_args.dndz, harmonic_bin_1.dndz)
-    assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_bin_2.dndz)
+    assert_array_equal(two_point.source0.tracer_args.dndz, harmonic_two_point_xy.x.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_two_point_xy.y.dndz)
 
 
 def test_two_point_from_metadata_cwindow(two_point_cwindow_1, wl_factory, nc_factory):
@@ -806,17 +759,9 @@ def test_two_point_from_metadata_cwindow(two_point_cwindow_1, wl_factory, nc_fac
     )
 
 
-def test_two_point_from_metadata_xi_theta(
-    real_bin_1, real_bin_2, wl_factory, nc_factory
-):
+def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_factory):
     theta = np.array(np.linspace(0, 100, 100))
-    xy = TwoPointXY(
-        x=real_bin_1,
-        y=real_bin_2,
-        x_measurement=list(real_bin_1.measurements)[0],
-        y_measurement=list(real_bin_2.measurements)[0],
-    )
-    xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
+    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
         return
     two_point = TwoPoint.from_metadata_real([xi_theta], wl_factory, nc_factory).pop()
@@ -828,11 +773,11 @@ def test_two_point_from_metadata_xi_theta(
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
 
-    assert_array_equal(two_point.source0.tracer_args.z, real_bin_1.z)
-    assert_array_equal(two_point.source1.tracer_args.z, real_bin_2.z)
+    assert_array_equal(two_point.source0.tracer_args.z, real_two_point_xy.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, real_two_point_xy.y.z)
 
-    assert_array_equal(two_point.source0.tracer_args.dndz, real_bin_1.dndz)
-    assert_array_equal(two_point.source1.tracer_args.dndz, real_bin_2.dndz)
+    assert_array_equal(two_point.source0.tracer_args.dndz, real_two_point_xy.x.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, real_two_point_xy.y.dndz)
 
 
 def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):

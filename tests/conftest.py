@@ -24,7 +24,11 @@ from firecrown.metadata.two_point import (
     InferredGalaxyZDist,
     Window,
     TwoPointXY,
+    TwoPointCells,
     TwoPointCWindow,
+    TwoPointXiTheta,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
 )
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
@@ -192,7 +196,12 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
 
 @pytest.fixture(
     name="real_bin_1",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
+    params=[
+        Galaxies.COUNTS,
+        Galaxies.SHEAR_T,
+        Galaxies.SHEAR_MINUS,
+        Galaxies.SHEAR_PLUS,
+    ],
 )
 def make_real_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
@@ -207,7 +216,12 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
 
 @pytest.fixture(
     name="real_bin_2",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_T],
+    params=[
+        Galaxies.COUNTS,
+        Galaxies.SHEAR_T,
+        Galaxies.SHEAR_MINUS,
+        Galaxies.SHEAR_PLUS,
+    ],
 )
 def make_real_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
@@ -235,21 +249,59 @@ def make_window_1() -> Window:
     return window
 
 
-@pytest.fixture(name="two_point_cwindow_1")
-def make_two_point_cwindow_1(
-    window_1: Window,
+@pytest.fixture(name="harmonic_two_point_xy")
+def make_harmonic_two_point_xy(
     harmonic_bin_1: InferredGalaxyZDist,
     harmonic_bin_2: InferredGalaxyZDist,
+) -> TwoPointXY:
+    """Generate a TwoPointCWindow object with 100 ells."""
+    m1 = list(harmonic_bin_1.measurements)[0]
+    m2 = list(harmonic_bin_2.measurements)[0]
+    if not measurement_is_compatible_harmonic(m1, m2):
+        pytest.skip("Incompatible measurements")
+    xy = TwoPointXY(
+        x=harmonic_bin_1, y=harmonic_bin_2, x_measurement=m1, y_measurement=m2
+    )
+    return xy
+
+
+@pytest.fixture(name="real_two_point_xy")
+def make_real_two_point_xy(
+    real_bin_1: InferredGalaxyZDist,
+    real_bin_2: InferredGalaxyZDist,
+) -> TwoPointXY:
+    """Generate a TwoPointCWindow object with 100 ells."""
+    m1 = list(real_bin_1.measurements)[0]
+    m2 = list(real_bin_2.measurements)[0]
+    if not measurement_is_compatible_real(m1, m2):
+        pytest.skip("Incompatible measurements")
+    xy = TwoPointXY(x=real_bin_1, y=real_bin_2, x_measurement=m1, y_measurement=m2)
+    return xy
+
+
+@pytest.fixture(name="two_point_cwindow_1")
+def make_two_point_cwindow_1(
+    window_1: Window, harmonic_two_point_xy: TwoPointXY
 ) -> TwoPointCWindow:
     """Generate a TwoPointCWindow object with 100 ells."""
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    two_point = TwoPointCWindow(XY=xy, window=window_1)
+    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window_1)
     return two_point
+
+
+@pytest.fixture(name="two_point_cell")
+def make_two_point_cell(
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointCells:
+    """Generate a TwoPointCWindow object with 100 ells."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    return TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+
+
+@pytest.fixture(name="two_point_xi_theta")
+def make_two_point_xi_theta(real_two_point_xy: TwoPointXY) -> TwoPointXiTheta:
+    """Generate a TwoPointCWindow object with 100 ells."""
+    thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
+    return TwoPointXiTheta(thetas=thetas, XY=real_two_point_xy)
 
 
 @pytest.fixture(name="cluster_sacc_data")
