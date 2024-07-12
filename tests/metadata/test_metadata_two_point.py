@@ -664,13 +664,13 @@ def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: InferredGalaxyZDist
     assert harmonic_bin_1 == recovered
 
 
-def test_two_point_xy_str(harmonic_two_point_xy):
+def test_two_point_xy_str(harmonic_two_point_xy: TwoPointXY):
     assert str(harmonic_two_point_xy) == (
         f"({harmonic_two_point_xy.x.bin_name}, " f"{harmonic_two_point_xy.y.bin_name})"
     )
 
 
-def test_two_point_xy_serialization(harmonic_two_point_xy):
+def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY):
     s = harmonic_two_point_xy.to_yaml()
     # Take a look at how hideous the generated string
     # is.
@@ -685,7 +685,7 @@ def test_two_point_cells_str(harmonic_two_point_xy: TwoPointXY):
     assert str(cells) == f"{str(harmonic_two_point_xy)}[{cells.get_sacc_name()}]"
 
 
-def test_two_point_cells_serialization(harmonic_two_point_xy):
+def test_two_point_cells_serialization(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
     s = cells.to_yaml()
@@ -693,6 +693,15 @@ def test_two_point_cells_serialization(harmonic_two_point_xy):
     assert cells == recovered
     assert str(harmonic_two_point_xy) == str(recovered.XY)
     assert str(cells) == str(recovered)
+
+
+def test_two_point_cells_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
+    ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Ells should be a 1D array.",
+    ):
+        TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
 
 
 def test_window_serialization(window_1: Window):
@@ -715,6 +724,15 @@ def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
     assert xi_theta == recovered
     assert str(real_two_point_xy) == str(recovered.XY)
     assert str(xi_theta) == str(recovered)
+
+
+def test_two_point_xi_theta_wrong_shape(real_two_point_xy: TwoPointXY):
+    theta = np.array(np.linspace(0, 10), dtype=np.float64).reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Thetas should be a 1D array.",
+    ):
+        TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
 
 
 def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
