@@ -102,7 +102,7 @@ def build_likelihood(_):
     # We load the correct SACC file.
     saccfile = os.path.expanduser(
         os.path.expandvars(
-            "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
+            "des_y1_3x2pt_sacc_data.fits"
         )
     )
     sacc_data = sacc.Sacc.load_fits(saccfile)

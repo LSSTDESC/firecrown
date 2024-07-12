@@ -1,0 +1,197 @@
+firecrown_two_point:
+  &S0 NcmModelBuilder:
+    parent-type-string: 'NcmModel'
+    name: 'FirecrownTwoPoint'
+    description: 'Model from cosmosis ini section firecrown_two_point'
+    sparams:
+    - &S1 NcmSParam:
+        name: 'ia_bias'
+        symbol: 'ia_bias'
+        lower-bound: -5.0
+        upper-bound: 5.0
+        scale: 0.10000000000000001
+        absolute-tolerance: 0.0
+        default-value: 0.5
+        fit-type: 0
+    - &S2 NcmSParam:
+        name: 'alphaz'
+        symbol: 'alphaz'
+        lower-bound: -5.0
+        upper-bound: 5.0
+        scale: 0.10000000000000001
+        absolute-tolerance: 0.0
+        default-value: 0.0
+        fit-type: 0
+    - &S3 NcmSParam:
+        name: 'z_piv'
+        symbol: 'z_piv'
+        lower-bound: 0.496
+        upper-bound: 0.74399999999999999
+        scale: 0.0061999999999999998
+        absolute-tolerance: 0.0
+        default-value: 0.62
+        fit-type: 1
+    - &S4 NcmSParam:
+        name: 'lens0_bias'
+        symbol: 'lens0_bias'
+        lower-bound: 0.80000000000000004
+        upper-bound: 3.0
+        scale: 0.022000000000000002
+        absolute-tolerance: 0.0
+        default-value: 1.3999999999999999
+        fit-type: 0
+    - &S5 NcmSParam:
+        name: 'lens1_bias'
+        symbol: 'lens1_bias'
+        lower-bound: 0.80000000000000004
+        upper-bound: 3.0
+        scale: 0.022000000000000002
+        absolute-tolerance: 0.0
+        default-value: 1.6000000000000001
+        fit-type: 0
+    - &S6 NcmSParam:
+        name: 'lens2_bias'
+        symbol: 'lens2_bias'
+        lower-bound: 0.80000000000000004
+        upper-bound: 3.0
+        scale: 0.022000000000000002
+        absolute-tolerance: 0.0
+        default-value: 1.6000000000000001
+        fit-type: 0
+    - &S7 NcmSParam:
+        name: 'lens3_bias'
+        symbol: 'lens3_bias'
+        lower-bound: 0.80000000000000004
+        upper-bound: 3.0
+        scale: 0.022000000000000002
+        absolute-tolerance: 0.0
+        default-value: 1.8999999999999999
+        fit-type: 0
+    - &S8 NcmSParam:
+        name: 'lens4_bias'
+        symbol: 'lens4_bias'
+        lower-bound: 0.80000000000000004
+        upper-bound: 3.0
+        scale: 0.022000000000000002
+        absolute-tolerance: 0.0
+        default-value: 2.0
+        fit-type: 0
+    - &S9 NcmSParam:
+        name: 'src0_delta_z'
+        symbol: 'src0_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: -0.001
+        fit-type: 0
+    - &S10 NcmSParam:
+        name: 'src1_delta_z'
+        symbol: 'src1_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: -0.019
+        fit-type: 0
+    - &S11 NcmSParam:
+        name: 'src2_delta_z'
+        symbol: 'src2_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.0089999999999999993
+        fit-type: 0
+    - &S12 NcmSParam:
+        name: 'src3_delta_z'
+        symbol: 'src3_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: -0.017999999999999999
+        fit-type: 0
+    - &S13 NcmSParam:
+        name: 'lens0_delta_z'
+        symbol: 'lens0_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.001
+        fit-type: 0
+    - &S14 NcmSParam:
+        name: 'lens1_delta_z'
+        symbol: 'lens1_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.002
+        fit-type: 0
+    - &S15 NcmSParam:
+        name: 'lens2_delta_z'
+        symbol: 'lens2_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.001
+        fit-type: 0
+    - &S16 NcmSParam:
+        name: 'lens3_delta_z'
+        symbol: 'lens3_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.0030000000000000001
+        fit-type: 0
+    - &S17 NcmSParam:
+        name: 'lens4_delta_z'
+        symbol: 'lens4_delta_z'
+        lower-bound: -0.050000000000000003
+        upper-bound: 0.050000000000000003
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.0
+        fit-type: 0
+    - &S18 NcmSParam:
+        name: 'src0_mult_bias'
+        symbol: 'src0_mult_bias'
+        lower-bound: 0.001
+        upper-bound: 0.10000000000000001
+        scale: 0.00098999999999999999
+        absolute-tolerance: 0.0
+        default-value: 0.012
+        fit-type: 0
+    - &S19 NcmSParam:
+        name: 'src1_mult_bias'
+        symbol: 'src1_mult_bias'
+        lower-bound: 0.001
+        upper-bound: 0.10000000000000001
+        scale: 0.00098999999999999999
+        absolute-tolerance: 0.0
+        default-value: 0.012
+        fit-type: 0
+    - &S20 NcmSParam:
+        name: 'src2_mult_bias'
+        symbol: 'src2_mult_bias'
+        lower-bound: 0.001
+        upper-bound: 0.10000000000000001
+        scale: 0.00098999999999999999
+        absolute-tolerance: 0.0
+        default-value: 0.012
+        fit-type: 0
+    - &S21 NcmSParam:
+        name: 'src3_mult_bias'
+        symbol: 'src3_mult_bias'
+        lower-bound: 0.001
+        upper-bound: 0.10000000000000001
+        scale: 0.00098999999999999999
+        absolute-tolerance: 0.0
+        default-value: 0.012
+        fit-type: 0
+    vparams: []
+    stackable: false
