@@ -759,6 +759,86 @@ def fixture_sacc_galaxy_xis():
     return sacc_data, tracers, tracer_pairs
 
 
+@pytest.fixture(name="sacc_galaxy_xis_inverted")
+def fixture_sacc_galaxy_xis_inverted():
+    """Fixture for a SACC data without window functions."""
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    sacc_data = sacc.Sacc()
+
+    src_bins_centers = np.linspace(0.25, 0.75, 5)
+    lens_bins_centers = np.linspace(0.1, 0.6, 5)
+
+    tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
+    tracer_pairs: dict[
+        tuple[TracerNames, str], tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
+    ] = {}
+
+    for i, mn in enumerate(src_bins_centers):
+        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        sacc_data.add_tracer("NZ", f"src{i}", z, dndz)
+        tracers[f"src{i}"] = (z, dndz)
+
+    for i, mn in enumerate(lens_bins_centers):
+        dndz = np.exp(-0.5 * (z - mn) ** 2 / 0.05 / 0.05)
+        sacc_data.add_tracer("NZ", f"lens{i}", z, dndz)
+        tracers[f"lens{i}"] = (z, dndz)
+
+    dv = []
+
+    for i, j in upper_triangle_indices(len(lens_bins_centers)):
+        xis = np.random.normal(size=thetas.shape[0])
+        sacc_data.add_theta_xi("galaxy_density_xi", f"lens{j}", f"lens{i}", thetas, xis)
+        tracer_pairs[(TracerNames(f"lens{j}", f"lens{i}"), "galaxy_density_xi")] = (
+            thetas,
+            xis,
+        )
+        dv.append(xis)
+
+    for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
+        xis = np.random.normal(size=thetas.shape[0])
+        sacc_data.add_theta_xi(
+            "galaxy_shearDensity_xi_t", f"lens{i}", f"src{j}", thetas, xis
+        )
+        tracer_pairs[
+            (TracerNames(f"lens{j}", f"src{i}"), "galaxy_shearDensity_xi_t")
+        ] = (
+            thetas,
+            xis,
+        )
+        dv.append(xis)
+
+    for i, j in upper_triangle_indices(len(src_bins_centers)):
+        xis = np.random.normal(size=thetas.shape[0])
+        sacc_data.add_theta_xi(
+            "galaxy_shear_xi_minus", f"src{j}", f"src{i}", thetas, xis
+        )
+        tracer_pairs[(TracerNames(f"src{j}", f"src{i}"), "galaxy_shear_xi_minus")] = (
+            thetas,
+            xis,
+        )
+        dv.append(xis)
+    for i, j in upper_triangle_indices(len(src_bins_centers)):
+        xis = np.random.normal(size=thetas.shape[0])
+        sacc_data.add_theta_xi(
+            "galaxy_shear_xi_plus", f"src{j}", f"src{i}", thetas, xis
+        )
+        tracer_pairs[(TracerNames(f"src{j}", f"src{i}"), "galaxy_shear_xi_plus")] = (
+            thetas,
+            xis,
+        )
+        dv.append(xis)
+
+    delta_v = np.concatenate(dv, axis=0)
+    cov = np.diag(np.ones_like(delta_v) * 0.01)
+
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, tracers, tracer_pairs
+
+
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
 def fixture_sacc_galaxy_cells_src0_src0_no_data():
     """Fixture for a SACC data without window functions."""

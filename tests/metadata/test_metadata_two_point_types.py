@@ -205,6 +205,25 @@ def test_extract_all_tracers_types_xi_thetas(
             }
 
 
+def test_extract_all_tracers_types_xi_thetas_inverted(
+    sacc_galaxy_xis_inverted: tuple[sacc.Sacc, dict, dict]
+):
+    sacc_data, _, _ = sacc_galaxy_xis_inverted
+
+    tracers = extract_all_tracers_types(sacc_data)
+
+    for tracer, measurements in tracers.items():
+        if LENS_REGEX.match(tracer):
+            for measurement in measurements:
+                assert measurement == Galaxies.COUNTS
+        if SOURCE_REGEX.match(tracer):
+            assert measurements == {
+                Galaxies.SHEAR_T,
+                Galaxies.SHEAR_MINUS,
+                Galaxies.SHEAR_PLUS,
+            }
+
+
 def test_extract_all_tracers_types_cells_include_maybe(
     sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
 ):
