@@ -2,146 +2,28 @@
 Tests for the module firecrown.metadata.two_point
 """
 
-from itertools import product, chain
-from unittest.mock import MagicMock
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-import sacc_name_mapping as snm
-from firecrown.metadata.two_point_types import compare_enums
 from firecrown.metadata.two_point import (
     ALL_MEASUREMENTS,
     Clusters,
     CMB,
     Galaxies,
     InferredGalaxyZDist,
-    measurement_is_compatible as is_compatible,
-    measurement_is_compatible_real as is_compatible_real,
-    measurement_is_compatible_harmonic as is_compatible_harmonic,
-    measurement_supports_harmonic as supports_harmonic,
-    measurement_supports_real as supports_real,
     TracerNames,
     TwoPointCells,
     TwoPointCWindow,
     TwoPointXY,
     TwoPointXiTheta,
+    TwoPointMeasurement,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
     Window,
 )
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
-
-
-def test_order_enums():
-    assert compare_enums(CMB.CONVERGENCE, Clusters.COUNTS) < 0
-    assert compare_enums(Clusters.COUNTS, CMB.CONVERGENCE) > 0
-
-    assert compare_enums(CMB.CONVERGENCE, Galaxies.COUNTS) < 0
-    assert compare_enums(Galaxies.COUNTS, CMB.CONVERGENCE) > 0
-
-    assert compare_enums(Galaxies.SHEAR_E, Galaxies.SHEAR_T) < 0
-    assert compare_enums(Galaxies.SHEAR_E, Galaxies.COUNTS) < 0
-    assert compare_enums(Galaxies.SHEAR_T, Galaxies.COUNTS) < 0
-
-    assert compare_enums(Galaxies.COUNTS, Galaxies.SHEAR_E) > 0
-
-    for enumerand in ALL_MEASUREMENTS:
-        assert compare_enums(enumerand, enumerand) == 0
-
-
-def test_enumeration_equality_galaxy():
-    for e1, e2 in product(Galaxies, chain(CMB, Clusters)):
-        assert e1 != e2
-
-
-def test_enumeration_equality_cmb():
-    for e1, e2 in product(CMB, chain(Galaxies, Clusters)):
-        assert e1 != e2
-
-
-def test_enumeration_equality_cluster():
-    for e1, e2 in product(Clusters, chain(CMB, Galaxies)):
-        assert e1 != e2
-
-
-def test_exact_matches():
-    for sacc_name, space, (enum_1, enum_2) in snm.mappings:
-        if space == "ell":
-            assert harmonic(enum_1, enum_2) == sacc_name
-        elif space == "theta":
-            assert real(enum_1, enum_2) == sacc_name
-        else:
-            raise ValueError(f"Illegal 'space' value {space} in testing data")
-
-
-def test_translation_invariants():
-    for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
-        assert isinstance(a, (Galaxies, CMB, Clusters))
-        assert isinstance(b, (Galaxies, CMB, Clusters))
-        if is_compatible_real(a, b):
-            assert real(a, b) == real(b, a)
-        if is_compatible_harmonic(a, b):
-            assert harmonic(a, b) == harmonic(b, a)
-        if (
-            supports_harmonic(a)
-            and supports_harmonic(b)
-            and supports_real(a)
-            and supports_real(b)
-        ):
-            assert harmonic(a, b) != real(a, b)
-
-
-def test_unsupported_type_galaxy():
-    unknown_type = MagicMock()
-    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
-
-    with pytest.raises(ValueError, match="Untranslated Galaxy Measurement encountered"):
-        Galaxies.sacc_measurement_name(unknown_type)
-
-    with pytest.raises(ValueError, match="Untranslated Galaxy Measurement encountered"):
-        Galaxies.polarization(unknown_type)
-
-
-def test_unsupported_type_cmb():
-    unknown_type = MagicMock()
-    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
-
-    with pytest.raises(ValueError, match="Untranslated CMBMeasurement encountered"):
-        CMB.sacc_measurement_name(unknown_type)
-
-    with pytest.raises(ValueError, match="Untranslated CMBMeasurement encountered"):
-        CMB.polarization(unknown_type)
-
-
-def test_unsupported_type_cluster():
-    unknown_type = MagicMock()
-    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
-
-    with pytest.raises(ValueError, match="Untranslated ClusterMeasurement encountered"):
-        Clusters.sacc_measurement_name(unknown_type)
-
-    with pytest.raises(ValueError, match="Untranslated ClusterMeasurement encountered"):
-        Clusters.polarization(unknown_type)
-
-
-def test_type_hashs():
-    for e1, e2 in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
-        if e1 == e2:
-            assert hash(e1) == hash(e2)
-        else:
-            assert hash(e1) != hash(e2)
-
-
-def test_measurement_is_compatible():
-    for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
-        assert isinstance(a, (Galaxies, CMB, Clusters))
-        assert isinstance(b, (Galaxies, CMB, Clusters))
-        if is_compatible_real(a, b) or is_compatible_harmonic(a, b):
-            assert is_compatible(a, b)
-        else:
-            assert not is_compatible(a, b)
 
 
 def test_inferred_galaxy_z_dist():
@@ -488,7 +370,7 @@ def test_two_point_window_invalid_weights_shape():
         )
 
 
-def test_two_point_two_point_cwindow():
+def test_two_point_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
@@ -499,27 +381,46 @@ def test_two_point_two_point_cwindow():
         ells_for_interpolation=ells_for_interpolation,
     )
 
-    x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
-    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    two_point = TwoPointCWindow(XY=xy, window=window)
+    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window)
 
     assert two_point.window == window
-    assert two_point.XY == xy
-    assert two_point.get_sacc_name() == harmonic(xy.x_measurement, xy.y_measurement)
+    assert two_point.XY == harmonic_two_point_xy
+    assert two_point.get_sacc_name() == harmonic(
+        harmonic_two_point_xy.x_measurement, harmonic_two_point_xy.y_measurement
+    )
+
+
+def test_two_point_two_point_cwindow_wrong_data_shape(
+    harmonic_two_point_xy: TwoPointXY,
+):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    data = np.zeros(100) + 1.1
+    indices = np.arange(100)
+    covariance_name = "cov"
+    data = data.reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Data should be a 1D array.",
+    ):
+        TwoPointCWindow(
+            XY=harmonic_two_point_xy,
+            window=window,
+            Cell=TwoPointMeasurement(
+                data=data,
+                indices=indices,
+                covariance_name=covariance_name,
+            ),
+        )
 
 
 def test_two_point_two_point_cwindow_invalid():

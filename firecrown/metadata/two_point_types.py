@@ -245,6 +245,11 @@ def compare_enums(a: Measurement, b: Measurement) -> int:
     Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
     """
     order = (CMB, Clusters, Galaxies)
+    if type(a) not in order or type(b) not in order:
+        raise ValueError(
+            f"Unknown measurement type encountered ({type(a)}, {type(b)})."
+        )
+
     main_type_index_a = order.index(type(a))
     main_type_index_b = order.index(type(b))
     if main_type_index_a == main_type_index_b:

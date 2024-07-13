@@ -511,7 +511,7 @@ def fixture_sacc_galaxy_xis_src0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_cells")
-def fixture_sacc_galaxy_cells():
+def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -523,7 +523,7 @@ def fixture_sacc_galaxy_cells():
 
     tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
     tracer_pairs: dict[
-        TracerNames, tuple[str, npt.NDArray[np.int64], npt.NDArray[np.float64]]
+        tuple[TracerNames, str], tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]
     ] = {}
 
     for i, mn in enumerate(src_bins_centers):
@@ -541,8 +541,7 @@ def fixture_sacc_galaxy_cells():
     for i, j in upper_triangle_indices(len(src_bins_centers)):
         Cells = np.random.normal(size=ells.shape[0])
         sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"src{i}", f"src{j}", ells, Cells)
-        tracer_pairs[TracerNames(f"src{i}", f"src{j}")] = (
-            "galaxy_shear_cl_ee",
+        tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_cl_ee")] = (
             ells,
             Cells,
         )
@@ -551,8 +550,7 @@ def fixture_sacc_galaxy_cells():
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
         Cells = np.random.normal(size=ells.shape[0])
         sacc_data.add_ell_cl("galaxy_density_cl", f"lens{i}", f"lens{j}", ells, Cells)
-        tracer_pairs[TracerNames(f"lens{i}", f"lens{j}")] = (
-            "galaxy_density_cl",
+        tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_cl")] = (
             ells,
             Cells,
         )
@@ -563,8 +561,9 @@ def fixture_sacc_galaxy_cells():
         sacc_data.add_ell_cl(
             "galaxy_shearDensity_cl_e", f"src{i}", f"lens{j}", ells, Cells
         )
-        tracer_pairs[TracerNames(f"src{i}", f"lens{j}")] = (
-            "galaxy_shearDensity_cl_e",
+        tracer_pairs[
+            (TracerNames(f"src{i}", f"lens{j}"), "galaxy_shearDensity_cl_e")
+        ] = (
             ells,
             Cells,
         )
@@ -592,10 +591,8 @@ def fixture_sacc_galaxy_cwindows():
 
     tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
     tracer_pairs: dict[
-        TracerNames,
-        tuple[
-            str, npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow
-        ],
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
     ] = {}
 
     for i, mn in enumerate(src_bins_centers):
@@ -625,8 +622,7 @@ def fixture_sacc_galaxy_cwindows():
             Cells,
             window=window,
         )
-        tracer_pairs[TracerNames(f"src{i}", f"src{j}")] = (
-            "galaxy_shear_cl_ee",
+        tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_cl_ee")] = (
             ells,
             Cells,
             window,
@@ -648,8 +644,7 @@ def fixture_sacc_galaxy_cwindows():
             Cells,
             window=window,
         )
-        tracer_pairs[TracerNames(f"lens{i}", f"lens{j}")] = (
-            "galaxy_density_cl",
+        tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_cl")] = (
             ells,
             Cells,
             window,
@@ -671,8 +666,9 @@ def fixture_sacc_galaxy_cwindows():
             Cells,
             window=window,
         )
-        tracer_pairs[TracerNames(f"src{i}", f"lens{j}")] = (
-            "galaxy_shearDensity_cl_e",
+        tracer_pairs[
+            (TracerNames(f"src{i}", f"lens{j}"), "galaxy_shearDensity_cl_e")
+        ] = (
             ells,
             Cells,
             window,
@@ -697,7 +693,7 @@ def fixture_sacc_galaxy_xis():
 
     tracers: dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]] = {}
     tracer_pairs: dict[
-        TracerNames, tuple[str, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+        tuple[TracerNames, str], tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]
     ] = {}
 
     for i, mn in enumerate(src_bins_centers):
@@ -715,8 +711,7 @@ def fixture_sacc_galaxy_xis():
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
         xis = np.random.normal(size=thetas.shape[0])
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{i}", f"lens{j}", thetas, xis)
-        tracer_pairs[TracerNames(f"lens{i}", f"lens{j}")] = (
-            "galaxy_density_xi",
+        tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_xi")] = (
             thetas,
             xis,
         )
@@ -727,8 +722,30 @@ def fixture_sacc_galaxy_xis():
         sacc_data.add_theta_xi(
             "galaxy_shearDensity_xi_t", f"src{i}", f"lens{j}", thetas, xis
         )
-        tracer_pairs[TracerNames(f"src{i}", f"lens{j}")] = (
-            "galaxy_shearDensity_xi_t",
+        tracer_pairs[
+            (TracerNames(f"src{i}", f"lens{j}"), "galaxy_shearDensity_xi_t")
+        ] = (
+            thetas,
+            xis,
+        )
+        dv.append(xis)
+
+    for i, j in upper_triangle_indices(len(src_bins_centers)):
+        xis = np.random.normal(size=thetas.shape[0])
+        sacc_data.add_theta_xi(
+            "galaxy_shear_xi_minus", f"src{i}", f"src{j}", thetas, xis
+        )
+        tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_xi_minus")] = (
+            thetas,
+            xis,
+        )
+        dv.append(xis)
+    for i, j in upper_triangle_indices(len(src_bins_centers)):
+        xis = np.random.normal(size=thetas.shape[0])
+        sacc_data.add_theta_xi(
+            "galaxy_shear_xi_plus", f"src{i}", f"src{j}", thetas, xis
+        )
+        tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_xi_plus")] = (
             thetas,
             xis,
         )
