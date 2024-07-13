@@ -6,6 +6,7 @@ from itertools import product, chain
 from unittest.mock import MagicMock
 import re
 import pytest
+import numpy as np
 
 
 import sacc
@@ -16,6 +17,7 @@ from firecrown.metadata.two_point_types import (
     CMB,
     ALL_MEASUREMENTS,
     compare_enums,
+    TracerNames,
 )
 
 
@@ -28,8 +30,11 @@ from firecrown.metadata.two_point import (
     measurement_is_compatible_harmonic as is_compatible_harmonic,
     measurement_supports_harmonic as supports_harmonic,
     measurement_supports_real as supports_real,
+    measurements_from_index,
     LENS_REGEX,
     SOURCE_REGEX,
+    TwoPointXiThetaIndex,
+    match_name_type,
 )
 
 
@@ -252,3 +257,81 @@ def test_extract_all_tracers_types_xi_thetas_include_maybe(
     assert extract_all_tracers_types(
         sacc_data, include_maybe_types=True
     ) == extract_all_tracers_types(sacc_data)
+
+
+def test_measurements_from_index1():
+    index: TwoPointXiThetaIndex = {
+        "data_type": "galaxy_shearDensity_xi_t",
+        "tracer_names": TracerNames("src0", "lens0"),
+        "thetas": np.linspace(0.0, 1.0, 100),
+    }
+    n1, a, n2, b = measurements_from_index(index)
+    assert n1 == "lens0"
+    assert a == Galaxies.COUNTS
+    assert n2 == "src0"
+    assert b == Galaxies.SHEAR_T
+
+
+def test_measurements_from_index2():
+    index: TwoPointXiThetaIndex = {
+        "data_type": "galaxy_shearDensity_xi_t",
+        "tracer_names": TracerNames("lens0", "src0"),
+        "thetas": np.linspace(0.0, 1.0, 100),
+    }
+    n1, a, n2, b = measurements_from_index(index)
+    assert n1 == "lens0"
+    assert a == Galaxies.COUNTS
+    assert n2 == "src0"
+    assert b == Galaxies.SHEAR_T
+
+
+def test_match_name_type1():
+    match, n1, a, n2, b = match_name_type(
+        "src0", "lens0", Galaxies.SHEAR_T, Galaxies.COUNTS
+    )
+    assert (
+        match
+        and n1 == "lens0"
+        and a == Galaxies.COUNTS
+        and n2 == "src0"
+        and b == Galaxies.SHEAR_T
+    )
+
+
+def test_match_name_type2():
+    match, n1, a, n2, b = match_name_type(
+        "src0", "lens0", Galaxies.COUNTS, Galaxies.SHEAR_T
+    )
+    assert (
+        match
+        and n1 == "lens0"
+        and a == Galaxies.COUNTS
+        and n2 == "src0"
+        and b == Galaxies.SHEAR_T
+    )
+
+
+def test_match_name_type3():
+    match, n1, a, n2, b = match_name_type(
+        "lens0", "src0", Galaxies.SHEAR_T, Galaxies.COUNTS
+    )
+    assert (
+        match
+        and n1 == "lens0"
+        and a == Galaxies.COUNTS
+        and n2 == "src0"
+        and b == Galaxies.SHEAR_T
+    )
+
+
+def test_match_name_type4():
+    match, n1, a, n2, b = match_name_type(
+        "lens0", "src0", Galaxies.COUNTS, Galaxies.SHEAR_T
+    )
+    assert (
+        match
+        and n1 == "lens0"
+        and a == Galaxies.COUNTS
+        and n2 == "src0"
+        and b == Galaxies.SHEAR_T
+    )

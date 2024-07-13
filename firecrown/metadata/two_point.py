@@ -459,7 +459,7 @@ def _extract_sure_and_maybe_types(all_data_types):
             sure_types[tracer1].update({a})
             sure_types[tracer2].update({a})
         else:
-            name_match, n1, a, n2, b = _match_name_type(tracer1, tracer2, a, b)
+            name_match, n1, a, n2, b = match_name_type(tracer1, tracer2, a, b)
             if name_match:
                 sure_types[n1].update({a})
                 sure_types[n2].update({b})
@@ -469,7 +469,7 @@ def _extract_sure_and_maybe_types(all_data_types):
     return sure_types, maybe_types
 
 
-def _match_name_type(
+def match_name_type(
     tracer1: str,
     tracer2: str,
     a: Measurement,
@@ -985,7 +985,7 @@ def measurements_from_index(
 ) -> tuple[str, Measurement, str, Measurement]:
     """Return the measurements from a TwoPointXiThetaIndex object."""
     a, b = MEASURED_TYPE_STRING_MAP[index["data_type"]]
-    _, n1, a, n2, b = _match_name_type(
+    _, n1, a, n2, b = match_name_type(
         index["tracer_names"].name1,
         index["tracer_names"].name2,
         a,
