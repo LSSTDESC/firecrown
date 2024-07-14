@@ -476,6 +476,7 @@ def match_name_type(
     b: Measurement,
     require_convetion: bool = False,
 ) -> tuple[bool, str, Measurement, str, Measurement]:
+    """Use the naming convention to assign the right measurement to each tracer."""
     for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
         if LENS_REGEX.match(n1) and SOURCE_REGEX.match(n2):
             if a in GALAXY_SOURCE_TYPES and b in GALAXY_LENS_TYPES:
