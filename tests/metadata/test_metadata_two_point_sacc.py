@@ -881,3 +881,13 @@ def test_compare_constructors_xis(
             two_point.compute_theory_vector(tools_with_vanilla_cosmology),
             two_point_old.compute_theory_vector(tools_with_vanilla_cosmology),
         )
+
+
+def test_extract_all_data_cells_no_cov(sacc_galaxy_cells):
+    sacc_data, _, _ = sacc_galaxy_cells
+    sacc_data.covariance = None
+    with pytest.raises(
+        ValueError,
+        match=("The SACC object does not have a covariance matrix."),
+    ):
+        _ = extract_all_data_cells(sacc_data, include_maybe_types=True)

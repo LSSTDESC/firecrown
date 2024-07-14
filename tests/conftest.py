@@ -841,6 +841,26 @@ def fixture_sacc_galaxy_xis_inverted():
     return sacc_data, tracers, tracer_pairs
 
 
+@pytest.fixture(name="sacc_galaxy_cells_ambiguous")
+def fixture_sacc_galaxy_cells_ambiguous() -> sacc.Sacc:
+    """Fixture for a SACC data without window functions with ambiguous tracers."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "bin0", z, dndz)
+    sacc_data.add_tracer("NZ", "bin1", z, dndz)
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", "bin0", "bin1", ells, Cells)
+    cov = np.diag(np.zeros(len(ells)) + 0.01)
+
+    sacc_data.add_covariance(cov)
+
+    return sacc_data
+
+
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
 def fixture_sacc_galaxy_cells_src0_src0_no_data():
     """Fixture for a SACC data without window functions."""

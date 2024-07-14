@@ -168,7 +168,9 @@ def match_name_type(
     return False, tracer1, a, tracer2, b
 
 
-def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
+def extract_all_tracers(
+    sacc_data: sacc.Sacc, include_maybe_types=False
+) -> list[InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -178,7 +180,9 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     and returns it in a list.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
-    tracer_types = extract_all_tracers_types(sacc_data)
+    tracer_types = extract_all_tracers_types(
+        sacc_data, include_maybe_types=include_maybe_types
+    )
     for tracer0, tracer_types0 in tracer_types.items():
         if len(tracer_types0) == 0:
             raise ValueError(
@@ -343,9 +347,12 @@ def extract_all_data_types_cells(
 
 def extract_all_photoz_bin_combinations(
     sacc_data: sacc.Sacc,
+    include_maybe_types: bool = False,
 ) -> list[TwoPointXY]:
     """Extracts the two-point function metadata from a sacc file."""
-    inferred_galaxy_zdists = extract_all_tracers(sacc_data)
+    inferred_galaxy_zdists = extract_all_tracers(
+        sacc_data, include_maybe_types=include_maybe_types
+    )
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
     return bin_combinations
@@ -384,7 +391,7 @@ def _build_two_point_xy(
     ba = b in igz1.measurements and a in igz2.measurements
     if a != b and ab and ba:
         raise ValueError(
-            f"Ambiguous measurements for tracers {tracer_names}."
+            f"Ambiguous measurements for tracers {tracer_names}. "
             f"Impossible to determine which measurement is from which tracer."
         )
     XY = TwoPointXY(
@@ -395,13 +402,20 @@ def _build_two_point_xy(
 
 
 def extract_all_data_cells(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allowed_data_type: None | list[str] = None,
+    include_maybe_types=False,
 ) -> tuple[list[TwoPointCells], list[TwoPointCWindow]]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz for igz in extract_all_tracers(sacc_data)
+        igz.bin_name: igz
+        for igz in extract_all_tracers(
+            sacc_data, include_maybe_types=include_maybe_types
+        )
     }
 
+    if sacc_data.covariance is None or sacc_data.covariance.dense is None:
+        raise ValueError("The SACC object does not have a covariance matrix.")
     cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
 
     two_point_cells = []
@@ -421,27 +435,46 @@ def extract_all_data_cells(
             return_ind=True,
         )
 
-        Cell = TwoPointMeasurement(
-            data=Cells,
-            indices=indices,
-            covariance_name=cov_hash,
-        )
-
         window = extract_window_function(sacc_data, indices)
         if window is not None:
-            two_point_cwindows.append(TwoPointCWindow(XY=XY, window=window, Cell=Cell))
+            two_point_cwindows.append(
+                TwoPointCWindow(
+                    XY=XY,
+                    window=window,
+                    Cell=TwoPointMeasurement(
+                        data=Cells,
+                        indices=indices,
+                        covariance_name=cov_hash,
+                    ),
+                )
+            )
         else:
-            two_point_cells.append(TwoPointCells(XY=XY, ells=ells, Cell=Cell))
+            two_point_cells.append(
+                TwoPointCells(
+                    XY=XY,
+                    ells=ells,
+                    Cell=TwoPointMeasurement(
+                        data=Cells,
+                        indices=indices,
+                        covariance_name=cov_hash,
+                    ),
+                )
+            )
 
     return two_point_cells, two_point_cwindows
 
 
 def extract_all_data_xi_thetas(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allowed_data_type: None | list[str] = None,
+    include_maybe_types=False,
 ) -> list[TwoPointXiTheta]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz for igz in extract_all_tracers(sacc_data)
+        igz.bin_name: igz
+        for igz in extract_all_tracers(
+            sacc_data, include_maybe_types=include_maybe_types
+        )
     }
 
     cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
