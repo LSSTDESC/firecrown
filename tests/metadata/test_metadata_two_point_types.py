@@ -335,3 +335,50 @@ def test_match_name_type4():
         and n2 == "src0"
         and b == Galaxies.SHEAR_T
     )
+
+
+def test_match_name_type_convention1():
+    match, n1, a, n2, b = match_name_type(
+        "lens0", "no_convention", Galaxies.COUNTS, Galaxies.COUNTS
+    )
+    assert not match
+    assert n1 == "lens0"
+    assert a == Galaxies.COUNTS
+    assert n2 == "no_convention"
+    assert b == Galaxies.COUNTS
+
+
+def test_match_name_type_convention2():
+    match, n1, a, n2, b = match_name_type(
+        "no_convention", "lens0", Galaxies.COUNTS, Galaxies.COUNTS
+    )
+    assert not match
+    assert n1 == "no_convention"
+    assert a == Galaxies.COUNTS
+    assert n2 == "lens0"
+    assert b == Galaxies.COUNTS
+
+
+def test_match_name_type_convention3():
+    match, n1, a, n2, b = match_name_type(
+        "no_convention", "here_too", Galaxies.COUNTS, Galaxies.SHEAR_T
+    )
+    assert not match
+    assert n1 == "no_convention"
+    assert a == Galaxies.COUNTS
+    assert n2 == "here_too"
+    assert b == Galaxies.SHEAR_T
+
+
+def test_match_name_type_require_convention():
+    with pytest.raises(
+        ValueError,
+        match="Invalid tracer names (.*) do not respect the naming convetion.",
+    ):
+        match_name_type(
+            "no_convention",
+            "here_too",
+            Galaxies.COUNTS,
+            Galaxies.SHEAR_T,
+            require_convetion=True,
+        )

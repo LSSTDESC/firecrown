@@ -494,7 +494,7 @@ def match_name_type(
             return False, tracer1, a, tracer2, b
 
         raise ValueError(
-            f"Invalid SACC file, tracer names ({tracer1}, {tracer2}) "
+            f"Invalid tracer names ({tracer1}, {tracer2}) "
             f"do not respect the naming convetion."
         )
 
