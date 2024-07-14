@@ -281,8 +281,8 @@ def make_real_two_point_xy(
     return xy
 
 
-@pytest.fixture(name="two_point_cwindow_1")
-def make_two_point_cwindow_1(
+@pytest.fixture(name="two_point_cwindow")
+def make_two_point_cwindow(
     window_1: Window, harmonic_two_point_xy: TwoPointXY
 ) -> TwoPointCWindow:
     """Generate a TwoPointCWindow object with 100 ells."""

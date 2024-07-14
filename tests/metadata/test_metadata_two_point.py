@@ -483,7 +483,6 @@ def test_two_point_two_point_cwindow_invalid_window():
 
 
 def test_two_point_xi_theta():
-
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -613,10 +612,10 @@ def test_window_serialization(window_1: Window):
     assert window_1 == recovered
 
 
-def test_two_point_cwindow_serialization(two_point_cwindow_1: TwoPointCWindow):
-    s = two_point_cwindow_1.to_yaml()
+def test_two_point_cwindow_serialization(two_point_cwindow: TwoPointCWindow):
+    s = two_point_cwindow.to_yaml()
     recovered = TwoPointCWindow.from_yaml(s)
-    assert two_point_cwindow_1 == recovered
+    assert two_point_cwindow == recovered
 
 
 def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
@@ -657,27 +656,23 @@ def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_fac
     assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_two_point_xy.y.dndz)
 
 
-def test_two_point_from_metadata_cwindow(two_point_cwindow_1, wl_factory, nc_factory):
+def test_two_point_from_metadata_cwindow(two_point_cwindow, wl_factory, nc_factory):
     two_point = TwoPoint.from_metadata_harmonic(
-        [two_point_cwindow_1], wl_factory, nc_factory
+        [two_point_cwindow], wl_factory, nc_factory
     ).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
-    assert two_point.sacc_data_type == two_point_cwindow_1.get_sacc_name()
+    assert two_point.sacc_data_type == two_point_cwindow.get_sacc_name()
 
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
 
-    assert_array_equal(two_point.source0.tracer_args.z, two_point_cwindow_1.XY.x.z)
-    assert_array_equal(two_point.source1.tracer_args.z, two_point_cwindow_1.XY.y.z)
+    assert_array_equal(two_point.source0.tracer_args.z, two_point_cwindow.XY.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, two_point_cwindow.XY.y.z)
 
-    assert_array_equal(
-        two_point.source0.tracer_args.dndz, two_point_cwindow_1.XY.x.dndz
-    )
-    assert_array_equal(
-        two_point.source1.tracer_args.dndz, two_point_cwindow_1.XY.y.dndz
-    )
+    assert_array_equal(two_point.source0.tracer_args.dndz, two_point_cwindow.XY.x.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, two_point_cwindow.XY.y.dndz)
 
 
 def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_factory):

@@ -511,7 +511,7 @@ def check_two_point_consistence_harmonic(
                 if index_set_a & index_set:
                     raise ValueError(
                         f"The indices of the TwoPointCells {two_point_cells[i]} and "
-                        f"{two_point_cell} are not unique."
+                        f"{two_point_cell} overlap."
                     )
         all_indices_set.update(index_set)
 
@@ -553,7 +553,7 @@ def check_two_point_consistence_real(
                 if index_set_a & index_set:
                     raise ValueError(
                         f"The indices of the TwoPointXiTheta {two_point_xi_thetas[i]} "
-                        f"and {two_point_xi_theta} are not unique."
+                        f"and {two_point_xi_theta} overlap."
                     )
         all_indices_set.update(index_set)
 

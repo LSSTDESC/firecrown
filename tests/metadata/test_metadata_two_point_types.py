@@ -16,13 +16,10 @@ from firecrown.metadata.two_point_types import (
     Galaxies,
     Clusters,
     CMB,
-    ALL_MEASUREMENTS,
-    compare_enums,
     TracerNames,
     TwoPointMeasurement,
-)
-
-from firecrown.metadata.two_point_types import (
+    ALL_MEASUREMENTS,
+    compare_enums,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
     measurement_is_compatible as is_compatible,
@@ -41,6 +38,8 @@ from firecrown.metadata.two_point import (
     match_name_type,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
+    extract_all_data_cells,
+    extract_all_data_xi_thetas,
 )
 
 
@@ -418,3 +417,122 @@ def test_check_two_point_consistence_real_missing_xis(two_point_xi_theta):
         match="The TwoPointXiTheta \\(.*, .*\\)\\[.*\\] does not contain a data.",
     ):
         check_two_point_consistence_real([two_point_xi_theta])
+
+
+def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
+    sacc_data, _, _ = sacc_galaxy_cells
+
+    two_point_cells, _ = extract_all_data_cells(sacc_data)
+
+    assert two_point_cells[0].Cell is not None
+    two_point_cells[0] = replace(
+        two_point_cells[0],
+        Cell=replace(two_point_cells[0].Cell, covariance_name="wrong_cov_name"),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointCells .* has a different covariance name .* "
+            "than the previous TwoPointCells wrong_cov_name."
+        ),
+    ):
+        check_two_point_consistence_harmonic(two_point_cells)
+
+
+def test_check_two_point_consistence_real_mixing_cov(sacc_galaxy_xis):
+    sacc_data, _, _ = sacc_galaxy_xis
+
+    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    assert two_point_xis[0].xis is not None
+    two_point_xis[0] = replace(
+        two_point_xis[0],
+        xis=replace(two_point_xis[0].xis, covariance_name="wrong_cov_name"),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointXiTheta .* has a different covariance name .* than the "
+            "previous TwoPointXiTheta wrong_cov_name."
+        ),
+    ):
+        check_two_point_consistence_real(two_point_xis)
+
+
+def test_check_two_point_consistence_harmonic_non_unique_indices(sacc_galaxy_cells):
+    sacc_data, _, _ = sacc_galaxy_cells
+
+    two_point_cells, _ = extract_all_data_cells(sacc_data)
+
+    assert two_point_cells[0].Cell is not None
+    new_indices = two_point_cells[0].Cell.indices
+    new_indices[0] = 3
+    two_point_cells[0] = replace(
+        two_point_cells[0],
+        Cell=replace(two_point_cells[0].Cell, indices=new_indices),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="The indices of the TwoPointCells .* are not unique.",
+    ):
+        check_two_point_consistence_harmonic(two_point_cells)
+
+
+def test_check_two_point_consistence_real_non_unique_indices(sacc_galaxy_xis):
+    sacc_data, _, _ = sacc_galaxy_xis
+
+    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    assert two_point_xis[0].xis is not None
+    new_indices = two_point_xis[0].xis.indices
+    new_indices[0] = 3
+    two_point_xis[0] = replace(
+        two_point_xis[0],
+        xis=replace(two_point_xis[0].xis, indices=new_indices),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="The indices of the TwoPointXiTheta .* are not unique.",
+    ):
+        check_two_point_consistence_real(two_point_xis)
+
+
+def test_check_two_point_consistence_harmonic_indices_overlap(sacc_galaxy_cells):
+    sacc_data, _, _ = sacc_galaxy_cells
+
+    two_point_cells, _ = extract_all_data_cells(sacc_data)
+
+    assert two_point_cells[1].Cell is not None
+    new_indices = two_point_cells[1].Cell.indices
+    new_indices[1] = 3
+    two_point_cells[1] = replace(
+        two_point_cells[1],
+        Cell=replace(two_point_cells[1].Cell, indices=new_indices),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="The indices of the TwoPointCells .* overlap.",
+    ):
+        check_two_point_consistence_harmonic(two_point_cells)
+
+
+def test_check_two_point_consistence_real_indices_overlap(sacc_galaxy_xis):
+    sacc_data, _, _ = sacc_galaxy_xis
+
+    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    assert two_point_xis[1].xis is not None
+    new_indices = two_point_xis[1].xis.indices
+    new_indices[1] = 3
+    two_point_xis[1] = replace(
+        two_point_xis[1],
+        xis=replace(two_point_xis[1].xis, indices=new_indices),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="The indices of the TwoPointXiTheta .* overlap.",
+    ):
+        check_two_point_consistence_real(two_point_xis)
