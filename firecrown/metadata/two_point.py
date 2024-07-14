@@ -295,6 +295,10 @@ class TwoPointCWindow(YAMLSerializable):
                 f"{self.XY.y_measurement} must support harmonic-space calculations."
             )
 
+    def __str__(self) -> str:
+        """Return a string representation of the TwoPointCWindow object."""
+        return f"{self.XY}[{self.get_sacc_name()}]"
+
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
         return type_to_sacc_string_harmonic(
@@ -348,6 +352,10 @@ class TwoPointXiTheta(YAMLSerializable):
                 f"Measurements {self.XY.x_measurement} and "
                 f"{self.XY.y_measurement} must support real-space calculations."
             )
+
+    def __str__(self) -> str:
+        """Return a string representation of the TwoPointXiTheta object."""
+        return f"{self.XY}[{self.get_sacc_name()}]"
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""

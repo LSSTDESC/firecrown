@@ -2,6 +2,7 @@
 Tests for the module firecrown.metadata.two_point
 """
 
+from dataclasses import replace
 from itertools import product, chain
 from unittest.mock import MagicMock
 import re
@@ -18,6 +19,7 @@ from firecrown.metadata.two_point_types import (
     ALL_MEASUREMENTS,
     compare_enums,
     TracerNames,
+    TwoPointMeasurement,
 )
 
 
@@ -35,6 +37,8 @@ from firecrown.metadata.two_point import (
     SOURCE_REGEX,
     TwoPointXiThetaIndex,
     match_name_type,
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
 )
 
 
@@ -382,3 +386,33 @@ def test_match_name_type_require_convention():
             Galaxies.SHEAR_T,
             require_convetion=True,
         )
+
+
+def test_check_two_point_consistence_harmonic(two_point_cell):
+    Cell = TwoPointMeasurement(
+        data=np.zeros(100), indices=np.arange(100), covariance_name="cov"
+    )
+    check_two_point_consistence_harmonic([replace(two_point_cell, Cell=Cell)])
+
+
+def test_check_two_point_consistence_harmonic_missing_cell(two_point_cell):
+    with pytest.raises(
+        ValueError,
+        match="The TwoPointCells \\(.*, .*\\)\\[.*\\] does not contain a data.",
+    ):
+        check_two_point_consistence_harmonic([two_point_cell])
+
+
+def test_check_two_point_consistence_real(two_point_xi_theta):
+    xis = TwoPointMeasurement(
+        data=np.zeros(100), indices=np.arange(100), covariance_name="cov"
+    )
+    check_two_point_consistence_real([replace(two_point_xi_theta, xis=xis)])
+
+
+def test_check_two_point_consistence_real_missing_xis(two_point_xi_theta):
+    with pytest.raises(
+        ValueError,
+        match="The TwoPointXiTheta \\(.*, .*\\)\\[.*\\] does not contain a data.",
+    ):
+        check_two_point_consistence_real([two_point_xi_theta])
