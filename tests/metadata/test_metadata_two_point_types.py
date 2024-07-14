@@ -375,7 +375,7 @@ def test_match_name_type_convention3():
     assert b == Galaxies.SHEAR_T
 
 
-def test_match_name_type_require_convention():
+def test_match_name_type_require_convention_fail():
     with pytest.raises(
         ValueError,
         match="Invalid tracer names (.*) do not respect the naming convetion.",
@@ -387,6 +387,36 @@ def test_match_name_type_require_convention():
             Galaxies.SHEAR_T,
             require_convetion=True,
         )
+
+
+def test_match_name_type_require_convention_lens():
+    match, n1, a, n2, b = match_name_type(
+        "lens0",
+        "lens0",
+        Galaxies.COUNTS,
+        Galaxies.COUNTS,
+        require_convetion=True,
+    )
+    assert not match
+    assert n1 == "lens0"
+    assert a == Galaxies.COUNTS
+    assert n2 == "lens0"
+    assert b == Galaxies.COUNTS
+
+
+def test_match_name_type_require_convention_source():
+    match, n1, a, n2, b = match_name_type(
+        "src0",
+        "src0",
+        Galaxies.SHEAR_MINUS,
+        Galaxies.SHEAR_MINUS,
+        require_convetion=True,
+    )
+    assert not match
+    assert n1 == "src0"
+    assert a == Galaxies.SHEAR_MINUS
+    assert n2 == "src0"
+    assert b == Galaxies.SHEAR_MINUS
 
 
 def test_check_two_point_consistence_harmonic(two_point_cell):
