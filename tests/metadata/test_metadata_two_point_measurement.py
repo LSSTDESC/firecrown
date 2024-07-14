@@ -6,6 +6,10 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 
+from firecrown.metadata.two_point_types import (
+    type_to_sacc_string_harmonic as harmonic,
+    type_to_sacc_string_real as real,
+)
 from firecrown.metadata.two_point import (
     TwoPointCells,
     TwoPointCWindow,
@@ -13,8 +17,6 @@ from firecrown.metadata.two_point import (
     TwoPointXY,
     TwoPointMeasurement,
     Window,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
 )
 
 

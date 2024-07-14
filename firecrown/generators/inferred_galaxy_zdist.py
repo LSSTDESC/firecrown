@@ -16,12 +16,12 @@ from firecrown.metadata.two_point_types import (
     InferredGalaxyZDist,
     ALL_MEASUREMENT_TYPES,
 )
+from firecrown.metadata.two_point_types import make_measurements_dict
 from firecrown.metadata.two_point import (
     Measurement,
     Galaxies,
     CMB,
     Clusters,
-    make_measurements_dict,
 )
 
 BinsType = TypedDict("BinsType", {"edges": npt.NDArray, "sigma_z": float})

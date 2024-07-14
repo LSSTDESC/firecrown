@@ -11,6 +11,10 @@ from numpy.testing import assert_array_equal
 import sacc
 
 from firecrown.parameters import ParamsMap
+from firecrown.metadata.two_point_types import (
+    type_to_sacc_string_harmonic,
+    type_to_sacc_string_real,
+)
 from firecrown.metadata.two_point import (
     extract_all_data_types_cells,
     extract_all_data_types_xi_thetas,
@@ -21,8 +25,6 @@ from firecrown.metadata.two_point import (
     extract_all_data_xi_thetas,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
-    type_to_sacc_string_real,
-    type_to_sacc_string_harmonic,
     Galaxies,
     TracerNames,
     TwoPointCells,

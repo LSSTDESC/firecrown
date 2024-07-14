@@ -18,6 +18,10 @@ from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
+from firecrown.metadata.two_point_types import (
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
+)
 from firecrown.metadata.two_point import (
     TracerNames,
     Galaxies,
@@ -27,8 +31,6 @@ from firecrown.metadata.two_point import (
     TwoPointCells,
     TwoPointCWindow,
     TwoPointXiTheta,
-    measurement_is_compatible_harmonic,
-    measurement_is_compatible_real,
 )
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc

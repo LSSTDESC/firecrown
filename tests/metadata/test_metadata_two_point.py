@@ -5,9 +5,13 @@ Tests for the module firecrown.metadata.two_point
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
+from firecrown.metadata.two_point_types import (
+    ALL_MEASUREMENTS,
+    type_to_sacc_string_harmonic as harmonic,
+    type_to_sacc_string_real as real,
+)
 
 from firecrown.metadata.two_point import (
-    ALL_MEASUREMENTS,
     Clusters,
     CMB,
     Galaxies,
@@ -18,8 +22,6 @@ from firecrown.metadata.two_point import (
     TwoPointXY,
     TwoPointXiTheta,
     TwoPointMeasurement,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
     Window,
 )
 from firecrown.likelihood.source import SourceGalaxy

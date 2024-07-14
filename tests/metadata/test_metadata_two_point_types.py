@@ -22,16 +22,18 @@ from firecrown.metadata.two_point_types import (
     TwoPointMeasurement,
 )
 
-
-from firecrown.metadata.two_point import (
+from firecrown.metadata.two_point_types import (
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
-    extract_all_tracers_types,
     measurement_is_compatible as is_compatible,
     measurement_is_compatible_real as is_compatible_real,
     measurement_is_compatible_harmonic as is_compatible_harmonic,
     measurement_supports_harmonic as supports_harmonic,
     measurement_supports_real as supports_real,
+)
+
+from firecrown.metadata.two_point import (
+    extract_all_tracers_types,
     measurements_from_index,
     LENS_REGEX,
     SOURCE_REGEX,
