@@ -35,6 +35,10 @@ from firecrown.metadata.two_point_types import (
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
 )
+from firecrown.metadata.two_point import (
+    TwoPointCellsIndex,
+    TwoPointXiThetaIndex,
+)
 
 
 @pytest.fixture(name="source_0")
@@ -475,3 +479,37 @@ def test_use_source_factory_metadata_only_wrong_measurement():
         use_source_factory_metadata_only(
             "bin1", unknown_type, wl_factory=None, nc_factory=None
         )
+
+
+def test_from_metadata_only_harmonic():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    metadata: TwoPointCellsIndex = {
+        "data_type": "galaxy_density_xi",
+        "tracer_names": TracerNames("lens0", "lens0"),
+        "ells": np.array(np.linspace(0, 100, 100), dtype=np.int64),
+    }
+    two_point = TwoPoint.from_metadata_only_harmonic(
+        [metadata],
+        wl_factory=wl_factory,
+        nc_factory=nc_factory,
+    ).pop()
+    assert isinstance(two_point, TwoPoint)
+    assert not two_point.ready
+
+
+def test_from_metadata_only_real():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    metadata: TwoPointXiThetaIndex = {
+        "data_type": "galaxy_shear_xi_plus",
+        "tracer_names": TracerNames("src0", "src0"),
+        "thetas": np.linspace(0.0, 1.0, 100),
+    }
+    two_point = TwoPoint.from_metadata_only_real(
+        [metadata],
+        wl_factory=wl_factory,
+        nc_factory=nc_factory,
+    ).pop()
+    assert isinstance(two_point, TwoPoint)
+    assert not two_point.ready
