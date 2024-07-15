@@ -243,10 +243,17 @@ class GaussFamily(Likelihood):
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
 
-        if covariance.shape != (len(indices), len(indices)):
+        largest_index = np.max(indices)
+
+        if not (
+            covariance.ndim == 2
+            and covariance.shape[0] == covariance.shape[1]
+            and largest_index < covariance.shape[0]
+        ):
             raise ValueError(
                 f"The covariance matrix has shape {covariance.shape}, "
-                f"but the expected shape is {(len(indices), len(indices))}."
+                f"but the expected shape is at least "
+                f"{(largest_index+1, largest_index+1)}."
             )
 
         for new_i, old_i in enumerate(indices):

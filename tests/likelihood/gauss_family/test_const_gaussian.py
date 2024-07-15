@@ -508,7 +508,7 @@ def test_create_ready_wrong_size(sacc_galaxy_cwindows):
         ValueError,
         match=re.escape(
             f"The covariance matrix has shape (3, 3), "
-            f"but the expected shape is ({size}, {size})."
+            f"but the expected shape is at least ({size}, {size})."
         ),
     ):
         ConstGaussian.create_ready(two_points, np.diag([1.0, 2.0, 3.0]))
