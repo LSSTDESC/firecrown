@@ -218,49 +218,6 @@ def extract_all_tracers_types(
     return _extract_all_candidate_data_types(data_points, include_maybe_types)
 
 
-def extract_measurement(
-    candidate_measurements: list[Galaxies | CMB | Clusters],
-    tracer: sacc.tracers.BaseTracer,
-) -> Galaxies | CMB | Clusters:
-    """Extract from tracer a single type of measurement.
-
-    Only types in candidate_measurements will be considered.
-    """
-    if len(candidate_measurements) == 1:
-        # Only one Measurement appears in all associated data points.
-        # We can infer the Measurement from the data points.
-        measurement = candidate_measurements[0]
-    else:
-        # We cannot infer the Measurement from the associated data points.
-        # We need to check the tracer name.
-        if LENS_REGEX.match(tracer.name):
-            if Galaxies.COUNTS not in candidate_measurements:
-                raise ValueError(
-                    f"Tracer {tracer.name} matches the lens regex but does "
-                    f"not have a compatible Measurement. Inconsistent SACC "
-                    f"object."
-                )
-            measurement = Galaxies.COUNTS
-        elif SOURCE_REGEX.match(tracer.name):
-            # The source tracers can be either shear E or shear T.
-            if Galaxies.SHEAR_E in candidate_measurements:
-                measurement = Galaxies.SHEAR_E
-            elif Galaxies.SHEAR_T in candidate_measurements:
-                measurement = Galaxies.SHEAR_T
-            else:
-                raise ValueError(
-                    f"Tracer {tracer.name} matches the source regex but does "
-                    f"not have a compatible Measurement. Inconsistent SACC "
-                    f"object."
-                )
-        else:
-            raise ValueError(
-                f"Tracer {tracer.name} does not have a compatible Measurement. "
-                f"Inconsistent SACC object."
-            )
-    return measurement
-
-
 def extract_all_data_types_xi_thetas(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,

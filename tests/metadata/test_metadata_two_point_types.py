@@ -569,7 +569,6 @@ def test_check_two_point_consistence_real_indices_overlap(sacc_galaxy_xis):
 
 
 def test_extract_all_data_cells_ambiguous(sacc_galaxy_cells_ambiguous):
-
     with pytest.raises(
         ValueError,
         match=(
