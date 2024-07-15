@@ -11,7 +11,7 @@ from firecrown.metadata.two_point_types import (
     type_to_sacc_string_real as real,
 )
 
-from firecrown.metadata.two_point import (
+from firecrown.metadata.two_point_types import (
     Clusters,
     CMB,
     Galaxies,
@@ -24,6 +24,7 @@ from firecrown.metadata.two_point import (
     TwoPointMeasurement,
     Window,
 )
+
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
 
@@ -423,6 +424,24 @@ def test_two_point_two_point_cwindow_wrong_data_shape(
                 covariance_name=covariance_name,
             ),
         )
+
+
+def test_two_point_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window)
+
+    assert (
+        str(two_point) == f"{str(harmonic_two_point_xy)}[{two_point.get_sacc_name()}]"
+    )
 
 
 def test_two_point_two_point_cwindow_invalid():

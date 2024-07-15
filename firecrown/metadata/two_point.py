@@ -16,8 +16,6 @@ from sacc.data_types import required_tags
 from firecrown.metadata.two_point_types import (
     Galaxies,
     TracerNames,
-    CMB,
-    Clusters,
     Measurement,
     InferredGalaxyZDist,
     TwoPointXY,
