@@ -26,7 +26,11 @@ from firecrown.likelihood.two_point import (
     WeakLensingFactory,
     NumberCountsFactory,
 )
-from firecrown.metadata.two_point import extract_all_data_cells
+from firecrown.metadata.two_point import (
+    extract_all_data_cells,
+    TwoPointCellsIndex,
+    TracerNames,
+)
 
 
 class StatisticWithoutIndices(TrivialStatistic):
@@ -512,3 +516,24 @@ def test_create_ready_wrong_size(sacc_galaxy_cwindows):
         ),
     ):
         ConstGaussian.create_ready(two_points, np.diag([1.0, 2.0, 3.0]))
+
+
+def test_create_ready_not_ready():
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    metadata: TwoPointCellsIndex = {
+        "data_type": "galaxy_density_xi",
+        "tracer_names": TracerNames("lens0", "lens0"),
+        "ells": np.array(np.linspace(0, 100, 100), dtype=np.int64),
+    }
+
+    two_points = TwoPoint.from_metadata_only_harmonic(
+        [metadata], wl_factory, nc_factory
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* is not ready to be used.",
+    ):
+        ConstGaussian.create_ready(two_points, np.diag(np.ones(11)))
