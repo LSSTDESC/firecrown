@@ -664,7 +664,7 @@ def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
     two_point_cells, _ = extract_all_data_cells(sacc_data)
 
     two_points_new = TwoPoint.from_metadata_harmonic(
-        two_point_cells, wl_factory, nc_factory
+        two_point_cells, wl_factory, nc_factory, check_consistence=True
     )
 
     assert two_points_new is not None
@@ -710,7 +710,9 @@ def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
 
     two_point_xis = extract_all_data_xi_thetas(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata_real(two_point_xis, wl_factory, nc_factory)
+    two_points_new = TwoPoint.from_metadata_real(
+        two_point_xis, wl_factory, nc_factory, check_consistence=True
+    )
 
     assert two_points_new is not None
 

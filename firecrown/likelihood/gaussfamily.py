@@ -243,6 +243,12 @@ class GaussFamily(Likelihood):
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
 
+        if covariance.shape != (len(indices), len(indices)):
+            raise ValueError(
+                f"The covariance matrix has shape {covariance.shape}, "
+                f"but the expected shape is {(len(indices), len(indices))}."
+            )
+
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):
                 cov[new_i, new_j] = covariance[old_i, old_j]
