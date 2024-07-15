@@ -12,6 +12,7 @@ import sacc
 
 from firecrown.parameters import ParamsMap
 from firecrown.metadata.two_point_types import (
+    Galaxies,
     type_to_sacc_string_harmonic,
     type_to_sacc_string_real,
 )
@@ -25,7 +26,6 @@ from firecrown.metadata.two_point import (
     extract_all_data_xi_thetas,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
-    Galaxies,
     TracerNames,
     TwoPointCells,
     TwoPointXiTheta,

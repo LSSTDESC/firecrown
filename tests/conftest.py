@@ -19,12 +19,12 @@ from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata.two_point_types import (
+    Galaxies,
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
 )
 from firecrown.metadata.two_point import (
     TracerNames,
-    Galaxies,
     InferredGalaxyZDist,
     Window,
     TwoPointXY,

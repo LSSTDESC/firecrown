@@ -14,7 +14,6 @@ import sacc
 from sacc.data_types import required_tags
 
 from firecrown.metadata.two_point_types import (
-    Galaxies,
     TracerNames,
     Measurement,
     InferredGalaxyZDist,
@@ -28,6 +27,8 @@ from firecrown.metadata.two_point_types import (
     SOURCE_REGEX,
     MEASURED_TYPE_STRING_MAP,
     measurement_is_compatible,
+    GALAXY_LENS_TYPES,
+    GALAXY_SOURCE_TYPES,
 )
 
 
@@ -53,14 +54,6 @@ TwoPointCellsIndex = TypedDict(
         "ells": npt.NDArray[np.int64],
     },
 )
-
-GALAXY_SOURCE_TYPES = (
-    Galaxies.SHEAR_E,
-    Galaxies.SHEAR_T,
-    Galaxies.SHEAR_MINUS,
-    Galaxies.SHEAR_PLUS,
-)
-GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 
 
 def _extract_all_candidate_data_types(

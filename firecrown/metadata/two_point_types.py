@@ -240,6 +240,13 @@ REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T, Galaxies.SHEAR_MINUS, Galaxies.SHEAR
 EXACT_MATCH_MEASUREMENTS = (Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
 LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
+GALAXY_SOURCE_TYPES = (
+    Galaxies.SHEAR_E,
+    Galaxies.SHEAR_T,
+    Galaxies.SHEAR_MINUS,
+    Galaxies.SHEAR_PLUS,
+)
+GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 
 
 def compare_enums(a: Measurement, b: Measurement) -> int:
