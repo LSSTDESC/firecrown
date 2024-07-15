@@ -3,6 +3,7 @@ Tests for the TwoPoint module.
 """
 
 import re
+from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
@@ -463,4 +464,14 @@ def test_from_metadata_harmonic_wrong_metadata():
             source0=NumberCounts(sacc_tracer="lens_0"),
             source1=NumberCounts(sacc_tracer="lens_0"),
             metadata="NotAMetadata",  # type: ignore
+        )
+
+
+def test_use_source_factory_metadata_only_wrong_measurement():
+    unknown_type = MagicMock()
+    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
+
+    with pytest.raises(ValueError, match="Measurement .* not supported!"):
+        use_source_factory_metadata_only(
+            "bin1", unknown_type, wl_factory=None, nc_factory=None
         )
