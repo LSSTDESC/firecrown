@@ -253,7 +253,7 @@ class GaussFamily(Likelihood):
             raise ValueError(
                 f"The covariance matrix has shape {covariance.shape}, "
                 f"but the expected shape is at least "
-                f"{(largest_index+1, largest_index+1)}."
+                f"{(largest_index + 1, largest_index + 1)}."
             )
 
         for new_i, old_i in enumerate(indices):
