@@ -156,6 +156,16 @@ class GaussFamily(Likelihood):
         self.theory_vector: None | npt.NDArray[np.double] = None
         self.data_vector: None | npt.NDArray[np.double] = None
 
+    @classmethod
+    def create_ready(
+        cls, statistics: Sequence[Statistic], covariance: npt.NDArray[np.float64]
+    ) -> GaussFamily:
+        """Create a GaussFamily object in the READY state."""
+        obj = cls(statistics)
+        obj._set_covariance(covariance)
+        obj.state = State.READY
+        return obj
+
     @enforce_states(
         initial=State.READY,
         terminal=State.UPDATED,
@@ -199,12 +209,26 @@ class GaussFamily(Likelihood):
             )
             raise RuntimeError(msg)
 
+        for stat in self.statistics:
+            stat.read(sacc_data)
+
         covariance = sacc_data.covariance.dense
 
+        self._set_covariance(covariance)
+
+    def _set_covariance(self, covariance):
+        """Set the covariance matrix.
+
+        This method is used to set the covariance matrix and perform the
+        necessary calculations to prepare the likelihood for computation.
+        """
         indices_list = []
         data_vector_list = []
         for stat in self.statistics:
-            stat.read(sacc_data)
+            if not stat.statistic.ready:
+                raise RuntimeError(
+                    f"The statistic {stat.statistic} is not ready to be used."
+                )
             if stat.statistic.sacc_indices is None:
                 raise RuntimeError(
                     f"The statistic {stat.statistic} has no sacc_indices."
@@ -215,6 +239,19 @@ class GaussFamily(Likelihood):
         indices = np.concatenate(indices_list)
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
+
+        largest_index = np.max(indices)
+
+        if not (
+            covariance.ndim == 2
+            and covariance.shape[0] == covariance.shape[1]
+            and largest_index < covariance.shape[0]
+        ):
+            raise ValueError(
+                f"The covariance matrix has shape {covariance.shape}, "
+                f"but the expected shape is at least "
+                f"{(largest_index + 1, largest_index + 1)}."
+            )
 
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):

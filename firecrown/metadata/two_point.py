@@ -4,531 +4,32 @@ It contains all data classes and functions for store and extract two-point funct
 metadata from a sacc file.
 """
 
-from itertools import combinations_with_replacement, chain
-from typing import TypedDict, TypeVar, Type
-from dataclasses import dataclass
-from enum import Enum, auto
-import re
+from itertools import combinations_with_replacement, product
+import hashlib
+from typing import TypedDict, Sequence
 
 import numpy as np
 import numpy.typing as npt
-
-import yaml
-from yaml import CLoader as Loader
-from yaml import CDumper as Dumper
-
 import sacc
 from sacc.data_types import required_tags
 
-from firecrown.utils import compare_optional_arrays
-
-ST = TypeVar("ST")  # This will be used in YAMLSerializable
-
-
-class YAMLSerializable:
-    """Protocol for classes that can be serialized to and from YAML."""
-
-    def to_yaml(self: ST) -> str:
-        """Return the YAML representation of the object."""
-        return yaml.dump(self, Dumper=Dumper, sort_keys=False)
-
-    @classmethod
-    def from_yaml(cls: Type[ST], yaml_str: str) -> ST:
-        """Load the object from YAML."""
-        return yaml.load(yaml_str, Loader=Loader)
-
-
-@dataclass(frozen=True)
-class TracerNames(YAMLSerializable):
-    """The names of the two tracers in the sacc file."""
-
-    name1: str
-    name2: str
-
-    def __getitem__(self, item):
-        """Get the name of the tracer at the given index."""
-        if item == 0:
-            return self.name1
-        if item == 1:
-            return self.name2
-        raise IndexError
-
-    def __iter__(self):
-        """Iterate through the data members.
-
-        This is to allow automatic unpacking.
-        """
-        yield self.name1
-        yield self.name2
-
-
-TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
-
-
-class Galaxies(YAMLSerializable, str, Enum):
-    """This enumeration type for galaxy measurements.
-
-    It provides identifiers for the different types of galaxy-related types of
-    measurement.
-
-    SACC has some notion of supporting other types, but incomplete implementation. When
-    support for more types is added to SACC this enumeration needs to be updated.
-    """
-
-    SHEAR_E = auto()
-    SHEAR_T = auto()
-    COUNTS = auto()
-
-    def sacc_type_name(self) -> str:
-        """Return the lower-case form of the main measurement type.
-
-        This is the first part of the SACC string used to denote a correlation between
-        measurements of this type.
-        """
-        return "galaxy"
-
-    def sacc_measurement_name(self) -> str:
-        """Return the lower-case form of the specific measurement type.
-
-        This is the second part of the SACC string used to denote the specific
-        measurement type.
-        """
-        if self == Galaxies.SHEAR_E:
-            return "shear"
-        if self == Galaxies.SHEAR_T:
-            return "shear"
-        if self == Galaxies.COUNTS:
-            return "density"
-        raise ValueError("Untranslated Galaxy Measurement encountered")
-
-    def polarization(self) -> str:
-        """Return the SACC polarization code.
-
-        This is the third part of the SACC string used to denote the specific
-        measurement type.
-        """
-        if self == Galaxies.SHEAR_E:
-            return "e"
-        if self == Galaxies.SHEAR_T:
-            return "t"
-        if self == Galaxies.COUNTS:
-            return ""
-        raise ValueError("Untranslated Galaxy Measurement encountered")
-
-    def __lt__(self, other):
-        """Define a comparison function for the Galaxy Measurement enumeration."""
-        return compare_enums(self, other) < 0
-
-    def __eq__(self, other):
-        """Define an equality test for Galaxy Measurement enumeration."""
-        return compare_enums(self, other) == 0
-
-    def __ne__(self, other):
-        """Negation of __eq__."""
-        return not self.__eq__(other)
-
-    def __hash__(self) -> int:
-        """Define a hash function that uses both type and value information."""
-        return hash((Galaxies, self.value))
-
-
-class CMB(YAMLSerializable, str, Enum):
-    """This enumeration type for CMB measurements.
-
-    It provides identifiers for the different types of CMB-related types of
-    measurement.
-
-    SACC has some notion of supporting other types, but incomplete implementation. When
-    support for more types is added to SACC this enumeration needs to be updated.
-    """
-
-    CONVERGENCE = auto()
-
-    def sacc_type_name(self) -> str:
-        """Return the lower-case form of the main measurement type.
-
-        This is the first part of the SACC string used to denote a correlation between
-        measurements of this type.
-        """
-        return "cmb"
-
-    def sacc_measurement_name(self) -> str:
-        """Return the lower-case form of the specific measurement type.
-
-        This is the second part of the SACC string used to denote the specific
-        measurement type.
-        """
-        if self == CMB.CONVERGENCE:
-            return "convergence"
-        raise ValueError("Untranslated CMBMeasurement encountered")
-
-    def polarization(self) -> str:
-        """Return the SACC polarization code.
-
-        This is the third part of the SACC string used to denote the specific
-        measurement type.
-        """
-        if self == CMB.CONVERGENCE:
-            return ""
-        raise ValueError("Untranslated CMBMeasurement encountered")
-
-    def __lt__(self, other):
-        """Define a comparison function for the CMBMeasurement enumeration."""
-        return compare_enums(self, other) < 0
-
-    def __eq__(self, other):
-        """Define an equality test for CMBMeasurement enumeration."""
-        return compare_enums(self, other) == 0
-
-    def __ne__(self, other):
-        """Negation of __eq__."""
-        return not self.__eq__(other)
-
-    def __hash__(self) -> int:
-        """Define a hash function that uses both type and value information."""
-        return hash((CMB, self.value))
-
-
-class Clusters(YAMLSerializable, str, Enum):
-    """This enumeration type for cluster measurements.
-
-    It provides identifiers for the different types of cluster-related types of
-    measurement.
-
-    SACC has some notion of supporting other types, but incomplete implementation. When
-    support for more types is added to SACC this enumeration needs to be updated.
-    """
-
-    COUNTS = auto()
-
-    def sacc_type_name(self) -> str:
-        """Return the lower-case form of the main measurement type.
-
-        This is the first part of the SACC string used to denote a correlation between
-        measurements of this type.
-        """
-        return "cluster"
-
-    def sacc_measurement_name(self) -> str:
-        """Return the lower-case form of the specific measurement type.
-
-        This is the second part of the SACC string used to denote the specific
-        measurement type.
-        """
-        if self == Clusters.COUNTS:
-            return "density"
-        raise ValueError("Untranslated ClusterMeasurement encountered")
-
-    def polarization(self) -> str:
-        """Return the SACC polarization code.
-
-        This is the third part of the SACC string used to denote the specific
-        measurement type.
-        """
-        if self == Clusters.COUNTS:
-            return ""
-        raise ValueError("Untranslated ClusterMeasurement encountered")
-
-    def __lt__(self, other):
-        """Define a comparison function for the ClusterMeasurement enumeration."""
-        return compare_enums(self, other) < 0
-
-    def __eq__(self, other):
-        """Define an equality test for ClusterMeasurement enumeration."""
-        return compare_enums(self, other) == 0
-
-    def __ne__(self, other):
-        """Negation of __eq__."""
-        return not self.__eq__(other)
-
-    def __hash__(self) -> int:
-        """Define a hash function that uses both type and value information."""
-        return hash((Clusters, self.value))
-
-
-Measurement = Galaxies | CMB | Clusters
-ALL_MEASUREMENTS: list[Measurement] = list(chain(Galaxies, CMB, Clusters))
-ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
-HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
-REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T,)
-
-
-def make_measurement_dict(value: Measurement) -> dict[str, str]:
-    """Create a dictionary from a Measurement object.
-
-    :param value: the measurement to turn into a dictionary
-    """
-    return {"subject": type(value).__name__, "property": value.name}
-
-
-def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
-    """Check if two Measurement are compatible.
-
-    Two Measurement are compatible if they can be correlated in a two-point function.
-    """
-    if a in HARMONIC_ONLY_MEASUREMENTS and b in REAL_ONLY_MEASUREMENTS:
-        return False
-    if a in REAL_ONLY_MEASUREMENTS and b in HARMONIC_ONLY_MEASUREMENTS:
-        return False
-    return True
-
-
-def measurement_supports_real(x: Measurement) -> bool:
-    """Return True if x supports real-space calculations."""
-    return x not in HARMONIC_ONLY_MEASUREMENTS
-
-
-def measurement_supports_harmonic(x: Measurement) -> bool:
-    """Return True if x supports harmonic-space calculations."""
-    return x not in REAL_ONLY_MEASUREMENTS
-
-
-def compare_enums(a: Measurement, b: Measurement) -> int:
-    """Define a comparison function for the Measurement enumeration.
-
-    Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
-    """
-    order = (CMB, Clusters, Galaxies)
-    main_type_index_a = order.index(type(a))
-    main_type_index_b = order.index(type(b))
-    if main_type_index_a == main_type_index_b:
-        return int(a) - int(b)
-    return main_type_index_a - main_type_index_b
-
-
-@dataclass(frozen=True, kw_only=True)
-class InferredGalaxyZDist(YAMLSerializable):
-    """The class used to store the redshift resolution data for a sacc file.
-
-    The sacc file is a complicated set of tracers (bins) and surveys. This class is
-    used to store the redshift resolution data for a single photometric bin.
-    """
-
-    bin_name: str
-    z: np.ndarray
-    dndz: np.ndarray
-    measurement: Measurement
-
-    def __post_init__(self) -> None:
-        """Validate the redshift resolution data.
-
-        - Make sure the z and dndz arrays have the same shape;
-        - The measurement must be of type Measurement.
-        - The bin_name should not be empty.
-        """
-        if self.z.shape != self.dndz.shape:
-            raise ValueError("The z and dndz arrays should have the same shape.")
-
-        if not isinstance(self.measurement, ALL_MEASUREMENT_TYPES):
-            raise ValueError("The measurement should be a Measurement.")
-
-        if self.bin_name == "":
-            raise ValueError("The bin_name should not be empty.")
-
-    def __eq__(self, other):
-        """Equality test for InferredGalaxyZDist.
-
-        Two InferredGalaxyZDist are equal if they have equal bin_name, z, dndz, and
-        measurement.
-        """
-        return (
-            self.bin_name == other.bin_name
-            and np.array_equal(self.z, other.z)
-            and np.array_equal(self.dndz, other.dndz)
-            and self.measurement == other.measurement
-        )
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointXY(YAMLSerializable):
-    """Class defining a two-point correlation pair of redshift resolutions.
-
-    It is used to store the two redshift resolutions for the two bins being
-    correlated.
-    """
-
-    x: InferredGalaxyZDist
-    y: InferredGalaxyZDist
-
-    def __post_init__(self) -> None:
-        """Make sure the two redshift resolutions are compatible."""
-        if not measurement_is_compatible(self.x.measurement, self.y.measurement):
-            raise ValueError(
-                f"Measurements {self.x.measurement} and {self.y.measurement} "
-                f"are not compatible."
-            )
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointXY objects."""
-        return self.x == other.x and self.y == other.y
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointCells(YAMLSerializable):
-    """Class defining the metadata for an harmonic-space two-point measurement.
-
-    The class used to store the metadata for a (spherical) harmonic-space two-point
-    function measured on a sphere.
-
-    This includes the two redshift resolutions (one for each binned quantity) and the
-    array of (integer) l's at which the two-point function which has this metadata were
-    calculated.
-    """
-
-    XY: TwoPointXY
-    ells: npt.NDArray[np.int64]
-
-    def __post_init__(self) -> None:
-        """Validate the TwoPointCells data.
-
-        Make sure the ells are a 1D array and X and Y are compatible
-        with harmonic-space calculations.
-        """
-        if len(self.ells.shape) != 1:
-            raise ValueError("Ells should be a 1D array.")
-
-        if not measurement_supports_harmonic(
-            self.XY.x.measurement
-        ) or not measurement_supports_harmonic(self.XY.y.measurement):
-            raise ValueError(
-                f"Measurements {self.XY.x.measurement} and "
-                f"{self.XY.y.measurement} must support harmonic-space calculations."
-            )
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointCells objects."""
-        return self.XY == other.XY and np.array_equal(self.ells, other.ells)
-
-    def get_sacc_name(self) -> str:
-        """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_harmonic(
-            self.XY.x.measurement, self.XY.y.measurement
-        )
-
-
-@dataclass(kw_only=True)
-class Window(YAMLSerializable):
-    """The class used to represent a window function.
-
-    It contains the ells at which the window function is defined, the weights
-    of the window function, and the ells at which the window function is
-    interpolated.
-
-    It may contain the ells for interpolation if the theory prediction is
-    calculated at a different set of ells than the window function.
-    """
-
-    ells: npt.NDArray[np.int64]
-    weights: npt.NDArray[np.float64]
-    ells_for_interpolation: None | npt.NDArray[np.int64] = None
-
-    def __post_init__(self) -> None:
-        """Make sure the weights have the right shape."""
-        if len(self.ells.shape) != 1:
-            raise ValueError("Ells should be a 1D array.")
-        if len(self.weights.shape) != 2:
-            raise ValueError("Weights should be a 2D array.")
-        if self.weights.shape[0] != len(self.ells):
-            raise ValueError("Weights should have the same number of rows as ells.")
-        if (
-            self.ells_for_interpolation is not None
-            and len(self.ells_for_interpolation.shape) != 1
-        ):
-            raise ValueError("Ells for interpolation should be a 1D array.")
-
-    def n_observations(self) -> int:
-        """Return the number of observations supported by the window function."""
-        return self.weights.shape[1]
-
-    def __eq__(self, other) -> bool:
-        """Equality test for Window objects."""
-        assert isinstance(other, Window)
-        # We will need special handling for the optional ells_for_interpolation.
-        # First handle the non-optinal parts.
-        partial_result = np.array_equal(self.ells, other.ells) and np.array_equal(
-            self.weights, other.weights
-        )
-        if not partial_result:
-            return False
-        return compare_optional_arrays(
-            self.ells_for_interpolation, other.ells_for_interpolation
-        )
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointCWindow(YAMLSerializable):
-    """Two-point function with a window function.
-
-    The class used to store the metadata for a (spherical) harmonic-space two-point
-    function measured on a sphere, with an associated window function.
-
-    This includes the two redshift resolutions (one for each binned quantity) and the
-    matrix (window function) that relates the measured Cl's with the predicted Cl's.
-
-    Note that the matrix `window` always has l=0 and l=1 suppressed.
-    """
-
-    XY: TwoPointXY
-    window: Window
-
-    def __post_init__(self):
-        """Validate the TwoPointCWindow data.
-
-        Make sure the window is
-        """
-        if not isinstance(self.window, Window):
-            raise ValueError("Window should be a Window object.")
-
-        if not measurement_supports_harmonic(
-            self.XY.x.measurement
-        ) or not measurement_supports_harmonic(self.XY.y.measurement):
-            raise ValueError(
-                f"Measurements {self.XY.x.measurement} and "
-                f"{self.XY.y.measurement} must support harmonic-space calculations."
-            )
-
-    def get_sacc_name(self) -> str:
-        """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_harmonic(
-            self.XY.x.measurement, self.XY.y.measurement
-        )
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointXiTheta(YAMLSerializable):
-    """Class defining the metadata for a real-space two-point measurement.
-
-    The class used to store the metadata for a real-space two-point function measured
-    on a sphere.
-
-    This includes the two redshift resolutions (one for each binned quantity) and the a
-    array of (floating point) theta (angle) values at which the two-point function
-    which has  this metadata were calculated.
-    """
-
-    XY: TwoPointXY
-    thetas: npt.NDArray[np.float64]
-
-    def __post_init__(self):
-        """Validate the TwoPointCWindow data.
-
-        Make sure the window is
-        """
-        if not measurement_supports_real(
-            self.XY.x.measurement
-        ) or not measurement_supports_real(self.XY.y.measurement):
-            raise ValueError(
-                f"Measurements {self.XY.x.measurement} and "
-                f"{self.XY.y.measurement} must support real-space calculations."
-            )
-
-    def get_sacc_name(self) -> str:
-        """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_real(self.XY.x.measurement, self.XY.y.measurement)
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointXiTheta objects."""
-        return self.XY == other.XY and np.array_equal(self.thetas, other.thetas)
+from firecrown.metadata.two_point_types import (
+    TracerNames,
+    Measurement,
+    InferredGalaxyZDist,
+    TwoPointXY,
+    Window,
+    TwoPointCells,
+    TwoPointCWindow,
+    TwoPointXiTheta,
+    TwoPointMeasurement,
+    LENS_REGEX,
+    SOURCE_REGEX,
+    MEASURED_TYPE_STRING_MAP,
+    measurement_is_compatible,
+    GALAXY_LENS_TYPES,
+    GALAXY_SOURCE_TYPES,
+)
 
 
 # TwoPointXiThetaIndex is a type used to create intermediate objects when
@@ -555,46 +56,112 @@ TwoPointCellsIndex = TypedDict(
 )
 
 
-def _extract_candidate_data_types(
-    tracer_name: str, data_points: list[sacc.DataPoint]
-) -> list[Measurement]:
-    """Extract the candidate Measurement for a tracer.
+def _extract_all_candidate_data_types(
+    data_points: list[sacc.DataPoint],
+    include_maybe_types: bool = False,
+) -> dict[str, set[Measurement]]:
+    """Extract all candidate Measurement from the data points.
 
-    An exception is raise if the tracer does not have any associated data points.
+    The candidate Measurement are the ones that appear in the data points.
     """
-    tracer_associated_types = {
-        d.data_type for d in data_points if tracer_name in d.tracers
+    all_data_types: set[tuple[str, str, str]] = {
+        (d.data_type, d.tracers[0], d.tracers[1]) for d in data_points
     }
-    tracer_associated_types_len = len(tracer_associated_types)
+    sure_types, maybe_types = _extract_sure_and_maybe_types(all_data_types)
 
-    type_count: dict[Measurement, int] = {
-        measurement: 0 for measurement in ALL_MEASUREMENTS
-    }
-    for data_type in tracer_associated_types:
+    # Remove the sure types from the maybe types.
+    for tracer0, sure_types0 in sure_types.items():
+        maybe_types[tracer0] -= sure_types0
+
+    # Filter maybe types.
+    for data_type, tracer1, tracer2 in all_data_types:
         if data_type not in MEASURED_TYPE_STRING_MAP:
             continue
         a, b = MEASURED_TYPE_STRING_MAP[data_type]
 
-        if a != b:
-            type_count[a] += 1
-            type_count[b] += 1
+        if a == b:
+            continue
+
+        if a in sure_types[tracer1] and b in sure_types[tracer2]:
+            maybe_types[tracer1].discard(b)
+            maybe_types[tracer2].discard(a)
+        elif a in sure_types[tracer2] and b in sure_types[tracer1]:
+            maybe_types[tracer1].discard(a)
+            maybe_types[tracer2].discard(b)
+
+    if include_maybe_types:
+        return {
+            tracer0: sure_types0 | maybe_types[tracer0]
+            for tracer0, sure_types0 in sure_types.items()
+        }
+    return sure_types
+
+
+def _extract_sure_and_maybe_types(all_data_types):
+    sure_types: dict[str, set[Measurement]] = {}
+    maybe_types: dict[str, set[Measurement]] = {}
+
+    for data_type, tracer1, tracer2 in all_data_types:
+        sure_types[tracer1] = set()
+        sure_types[tracer2] = set()
+        maybe_types[tracer1] = set()
+        maybe_types[tracer2] = set()
+
+    # Getting the sure and maybe types for each tracer.
+    for data_type, tracer1, tracer2 in all_data_types:
+        if data_type not in MEASURED_TYPE_STRING_MAP:
+            continue
+        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+        if a == b:
+            sure_types[tracer1].update({a})
+            sure_types[tracer2].update({a})
         else:
-            type_count[a] += 1
+            name_match, n1, a, n2, b = match_name_type(tracer1, tracer2, a, b)
+            if name_match:
+                sure_types[n1].update({a})
+                sure_types[n2].update({b})
+            if not name_match:
+                maybe_types[tracer1].update({a, b})
+                maybe_types[tracer2].update({a, b})
+    return sure_types, maybe_types
 
-    result = [
-        measurement
-        for measurement, count in type_count.items()
-        if count == tracer_associated_types_len
-    ]
-    if len(result) == 0:
+
+def match_name_type(
+    tracer1: str,
+    tracer2: str,
+    a: Measurement,
+    b: Measurement,
+    require_convetion: bool = False,
+) -> tuple[bool, str, Measurement, str, Measurement]:
+    """Use the naming convention to assign the right measurement to each tracer."""
+    for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
+        if LENS_REGEX.match(n1) and SOURCE_REGEX.match(n2):
+            if a in GALAXY_SOURCE_TYPES and b in GALAXY_LENS_TYPES:
+                return True, n1, b, n2, a
+            if b in GALAXY_SOURCE_TYPES and a in GALAXY_LENS_TYPES:
+                return True, n1, a, n2, b
+            raise ValueError(
+                "Invalid SACC file, tracer names do not respect "
+                "the naming convetion."
+            )
+    if require_convetion:
+        if LENS_REGEX.match(tracer1) and LENS_REGEX.match(tracer2):
+            return False, tracer1, a, tracer2, b
+        if SOURCE_REGEX.match(tracer1) and SOURCE_REGEX.match(tracer2):
+            return False, tracer1, a, tracer2, b
+
         raise ValueError(
-            f"Tracer {tracer_name} does not have data points associated with it. "
-            f"Inconsistent SACC object."
+            f"Invalid tracer names ({tracer1}, {tracer2}) "
+            f"do not respect the naming convetion."
         )
-    return result
+
+    return False, tracer1, a, tracer2, b
 
 
-def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
+def extract_all_tracers(
+    sacc_data: sacc.Sacc, include_maybe_types=False
+) -> list[InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -604,69 +171,42 @@ def extract_all_tracers(sacc_data: sacc.Sacc) -> list[InferredGalaxyZDist]:
     and returns it in a list.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
-
-    data_points = sacc_data.get_data_points()
-
-    inferred_galaxy_zdists = []
-
-    for tracer in tracers:
-        candidate_measurements = _extract_candidate_data_types(tracer.name, data_points)
-
-        measurement = extract_measurement(candidate_measurements, tracer)
-
-        inferred_galaxy_zdists.append(
-            InferredGalaxyZDist(
-                bin_name=tracer.name,
-                z=tracer.z,
-                dndz=tracer.nz,
-                measurement=measurement,
-            )
-        )
-
-    return inferred_galaxy_zdists
-
-
-def extract_measurement(
-    candidate_measurements: list[Galaxies | CMB | Clusters],
-    tracer: sacc.tracers.BaseTracer,
-) -> Galaxies | CMB | Clusters:
-    """Extract from tracer a single type of measurement.
-
-    Only types in candidate_measurements will be considered.
-    """
-    if len(candidate_measurements) == 1:
-        # Only one Measurement appears in all associated data points.
-        # We can infer the Measurement from the data points.
-        measurement = candidate_measurements[0]
-    else:
-        # We cannot infer the Measurement from the associated data points.
-        # We need to check the tracer name.
-        if LENS_REGEX.match(tracer.name):
-            if Galaxies.COUNTS not in candidate_measurements:
-                raise ValueError(
-                    f"Tracer {tracer.name} matches the lens regex but does "
-                    f"not have a compatible Measurement. Inconsistent SACC "
-                    f"object."
-                )
-            measurement = Galaxies.COUNTS
-        elif SOURCE_REGEX.match(tracer.name):
-            # The source tracers can be either shear E or shear T.
-            if Galaxies.SHEAR_E in candidate_measurements:
-                measurement = Galaxies.SHEAR_E
-            elif Galaxies.SHEAR_T in candidate_measurements:
-                measurement = Galaxies.SHEAR_T
-            else:
-                raise ValueError(
-                    f"Tracer {tracer.name} matches the source regex but does "
-                    f"not have a compatible Measurement. Inconsistent SACC "
-                    f"object."
-                )
-        else:
+    tracer_types = extract_all_tracers_types(
+        sacc_data, include_maybe_types=include_maybe_types
+    )
+    for tracer0, tracer_types0 in tracer_types.items():
+        if len(tracer_types0) == 0:
             raise ValueError(
-                f"Tracer {tracer.name} does not have a compatible Measurement. "
+                f"Tracer {tracer0} does not have data points associated with it. "
                 f"Inconsistent SACC object."
             )
-    return measurement
+
+    return [
+        InferredGalaxyZDist(
+            bin_name=tracer.name,
+            z=tracer.z,
+            dndz=tracer.nz,
+            measurements=tracer_types[tracer.name],
+        )
+        for tracer in tracers
+    ]
+
+
+def extract_all_tracers_types(
+    sacc_data: sacc.Sacc,
+    include_maybe_types: bool = False,
+) -> dict[str, set[Measurement]]:
+    """Extracts the two-point function metadata from a Sacc object.
+
+    The Sacc object contains a set of tracers (one-dimensional bins) and data
+    points (measurements of the correlation between two tracers).
+
+    This function extracts the two-point function metadata from the Sacc object
+    and returns it in a list.
+    """
+    data_points = sacc_data.get_data_points()
+
+    return _extract_all_candidate_data_types(data_points, include_maybe_types)
 
 
 def extract_all_data_types_xi_thetas(
@@ -755,9 +295,12 @@ def extract_all_data_types_cells(
 
 def extract_all_photoz_bin_combinations(
     sacc_data: sacc.Sacc,
+    include_maybe_types: bool = False,
 ) -> list[TwoPointXY]:
     """Extracts the two-point function metadata from a sacc file."""
-    inferred_galaxy_zdists = extract_all_tracers(sacc_data)
+    inferred_galaxy_zdists = extract_all_tracers(
+        sacc_data, include_maybe_types=include_maybe_types
+    )
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
     return bin_combinations
@@ -779,8 +322,221 @@ def extract_window_function(
     )
 
 
-LENS_REGEX = re.compile(r"^lens\d+$")
-SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
+def _build_two_point_xy(
+    inferred_galaxy_zdists_dict, tracer_names, data_type
+) -> TwoPointXY:
+    """Build a TwoPointXY object from the inferred galaxy z distributions.
+
+    The TwoPointXY object is built from the inferred galaxy z distributions, the data
+    type, and the tracer names.
+    """
+    a, b = MEASURED_TYPE_STRING_MAP[data_type]
+
+    igz1 = inferred_galaxy_zdists_dict[tracer_names[0]]
+    igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
+
+    ab = a in igz1.measurements and b in igz2.measurements
+    ba = b in igz1.measurements and a in igz2.measurements
+    if a != b and ab and ba:
+        raise ValueError(
+            f"Ambiguous measurements for tracers {tracer_names}. "
+            f"Impossible to determine which measurement is from which tracer."
+        )
+    XY = TwoPointXY(
+        x=igz1, y=igz2, x_measurement=a if ab else b, y_measurement=b if ab else a
+    )
+
+    return XY
+
+
+def extract_all_data_cells(
+    sacc_data: sacc.Sacc,
+    allowed_data_type: None | list[str] = None,
+    include_maybe_types=False,
+) -> tuple[list[TwoPointCells], list[TwoPointCWindow]]:
+    """Extract the two-point function metadata and data from a sacc file."""
+    inferred_galaxy_zdists_dict = {
+        igz.bin_name: igz
+        for igz in extract_all_tracers(
+            sacc_data, include_maybe_types=include_maybe_types
+        )
+    }
+
+    if sacc_data.covariance is None or sacc_data.covariance.dense is None:
+        raise ValueError("The SACC object does not have a covariance matrix.")
+    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
+
+    two_point_cells = []
+    two_point_cwindows = []
+    for cell_index in extract_all_data_types_cells(sacc_data, allowed_data_type):
+        tracer_names = cell_index["tracer_names"]
+        ells = cell_index["ells"]
+        data_type = cell_index["data_type"]
+
+        XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
+
+        ells, Cells, indices = sacc_data.get_ell_cl(
+            data_type=data_type,
+            tracer1=tracer_names[0],
+            tracer2=tracer_names[1],
+            return_cov=False,
+            return_ind=True,
+        )
+
+        window = extract_window_function(sacc_data, indices)
+        if window is not None:
+            two_point_cwindows.append(
+                TwoPointCWindow(
+                    XY=XY,
+                    window=window,
+                    Cell=TwoPointMeasurement(
+                        data=Cells,
+                        indices=indices,
+                        covariance_name=cov_hash,
+                    ),
+                )
+            )
+        else:
+            two_point_cells.append(
+                TwoPointCells(
+                    XY=XY,
+                    ells=ells,
+                    Cell=TwoPointMeasurement(
+                        data=Cells,
+                        indices=indices,
+                        covariance_name=cov_hash,
+                    ),
+                )
+            )
+
+    return two_point_cells, two_point_cwindows
+
+
+def extract_all_data_xi_thetas(
+    sacc_data: sacc.Sacc,
+    allowed_data_type: None | list[str] = None,
+    include_maybe_types=False,
+) -> list[TwoPointXiTheta]:
+    """Extract the two-point function metadata and data from a sacc file."""
+    inferred_galaxy_zdists_dict = {
+        igz.bin_name: igz
+        for igz in extract_all_tracers(
+            sacc_data, include_maybe_types=include_maybe_types
+        )
+    }
+
+    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
+
+    two_point_xi_thetas = []
+    for xi_theta_index in extract_all_data_types_xi_thetas(
+        sacc_data, allowed_data_type
+    ):
+        tracer_names = xi_theta_index["tracer_names"]
+        thetas = xi_theta_index["thetas"]
+        data_type = xi_theta_index["data_type"]
+
+        XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
+
+        thetas, Xis, indices = sacc_data.get_theta_xi(
+            data_type=data_type,
+            tracer1=tracer_names[0],
+            tracer2=tracer_names[1],
+            return_cov=False,
+            return_ind=True,
+        )
+
+        Xi = TwoPointMeasurement(
+            data=Xis,
+            indices=indices,
+            covariance_name=cov_hash,
+        )
+
+        two_point_xi_thetas.append(TwoPointXiTheta(XY=XY, thetas=thetas, xis=Xi))
+
+    return two_point_xi_thetas
+
+
+def check_two_point_consistence_harmonic(
+    two_point_cells: Sequence[TwoPointCells | TwoPointCWindow],
+) -> None:
+    """Check the indices of the harmonic-space two-point functions.
+
+    Make sure the indices of the harmonic-space two-point functions are consistent.
+    """
+    all_indices_set: set[int] = set()
+    index_set_list = []
+    cov_name: None | str = None
+
+    for two_point_cell in two_point_cells:
+        if two_point_cell.Cell is None:
+            raise ValueError(
+                f"The TwoPointCells {two_point_cell} does not contain a data."
+            )
+        if cov_name is None:
+            cov_name = two_point_cell.Cell.covariance_name
+        elif cov_name != two_point_cell.Cell.covariance_name:
+            raise ValueError(
+                f"The TwoPointCells {two_point_cell} has a different covariance name "
+                f"{two_point_cell.Cell.covariance_name} than the previous "
+                f"TwoPointCells {cov_name}."
+            )
+        index_set = set(two_point_cell.Cell.indices)
+        index_set_list.append(index_set)
+        if len(index_set) != len(two_point_cell.Cell.indices):
+            raise ValueError(
+                f"The indices of the TwoPointCells {two_point_cell} are not unique."
+            )
+
+        if all_indices_set & index_set:
+            for i, index_set_a in enumerate(index_set_list):
+                if index_set_a & index_set:
+                    raise ValueError(
+                        f"The indices of the TwoPointCells {two_point_cells[i]} and "
+                        f"{two_point_cell} overlap."
+                    )
+        all_indices_set.update(index_set)
+
+
+def check_two_point_consistence_real(
+    two_point_xi_thetas: Sequence[TwoPointXiTheta],
+) -> None:
+    """Check the indices of the real-space two-point functions.
+
+    Make sure the indices of the real-space two-point functions are consistent.
+    """
+    all_indices_set: set[int] = set()
+    index_set_list = []
+    cov_name: None | str = None
+
+    for two_point_xi_theta in two_point_xi_thetas:
+        if two_point_xi_theta.xis is None:
+            raise ValueError(
+                f"The TwoPointXiTheta {two_point_xi_theta} does not contain a data."
+            )
+        if cov_name is None:
+            cov_name = two_point_xi_theta.xis.covariance_name
+        elif cov_name != two_point_xi_theta.xis.covariance_name:
+            raise ValueError(
+                f"The TwoPointXiTheta {two_point_xi_theta} has a different covariance "
+                f"name {two_point_xi_theta.xis.covariance_name} than the previous "
+                f"TwoPointXiTheta {cov_name}."
+            )
+        index_set = set(two_point_xi_theta.xis.indices)
+        index_set_list.append(index_set)
+        if len(index_set) != len(two_point_xi_theta.xis.indices):
+            raise ValueError(
+                f"The indices of the TwoPointXiTheta {two_point_xi_theta} "
+                f"are not unique."
+            )
+
+        if all_indices_set & index_set:
+            for i, index_set_a in enumerate(index_set_list):
+                if index_set_a & index_set:
+                    raise ValueError(
+                        f"The indices of the TwoPointXiTheta {two_point_xi_thetas[i]} "
+                        f"and {two_point_xi_theta} overlap."
+                    )
+        all_indices_set.update(index_set)
 
 
 def make_all_photoz_bin_combinations(
@@ -788,77 +544,29 @@ def make_all_photoz_bin_combinations(
 ) -> list[TwoPointXY]:
     """Extract the two-point function metadata from a sacc file."""
     bin_combinations = [
-        TwoPointXY(x=igz1, y=igz2)
+        TwoPointXY(
+            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
+        )
         for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
-        if measurement_is_compatible(igz1.measurement, igz2.measurement)
+        for x_measurement, y_measurement in product(
+            igz1.measurements, igz2.measurements
+        )
+        if measurement_is_compatible(x_measurement, y_measurement)
     ]
 
     return bin_combinations
 
 
-def _type_to_sacc_string_common(x: Measurement, y: Measurement) -> str:
-    """Return the first two parts of the SACC string.
-
-    The first two parts of the SACC string is used to denote a correlation between
-    measurements of x and y.
-    """
-    a, b = sorted([x, y])
-    if isinstance(a, type(b)):
-        part_1 = f"{a.sacc_type_name()}_"
-        if a == b:
-            part_2 = f"{a.sacc_measurement_name()}_"
-        else:
-            part_2 = (
-                f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
-            )
-    else:
-        part_1 = f"{a.sacc_type_name()}{b.sacc_type_name().capitalize()}_"
-        if a.sacc_measurement_name() == b.sacc_measurement_name():
-            part_2 = f"{a.sacc_measurement_name()}_"
-        else:
-            part_2 = (
-                f"{a.sacc_measurement_name()}{b.sacc_measurement_name().capitalize()}_"
-            )
-
-    return part_1 + part_2
-
-
-def type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
-    """Return the final SACC string used to denote the real-space correlation.
-
-    The SACC string used to denote the real-space correlation type
-    between measurements of x and y.
-    """
-    a, b = sorted([x, y])
-    suffix = f"{a.polarization()}{b.polarization()}"
-
-    if a in HARMONIC_ONLY_MEASUREMENTS or b in HARMONIC_ONLY_MEASUREMENTS:
-        raise ValueError("Real-space correlation not supported for shear E.")
-
-    return _type_to_sacc_string_common(x, y) + (f"xi_{suffix}" if suffix else "xi")
-
-
-def type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
-    """Return the final SACC string used to denote the harmonic-space correlation.
-
-    the SACC string used to denote the harmonic-space correlation type
-    between measurements of x and y.
-    """
-    a, b = sorted([x, y])
-    suffix = f"{a.polarization()}{b.polarization()}"
-
-    if a in REAL_ONLY_MEASUREMENTS or b in REAL_ONLY_MEASUREMENTS:
-        raise ValueError("Harmonic-space correlation not supported for shear T.")
-
-    return _type_to_sacc_string_common(x, y) + (f"cl_{suffix}" if suffix else "cl")
-
-
-MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
-    type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
-    for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_supports_real(a) and measurement_supports_real(b)
-} | {
-    type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
-    for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_supports_harmonic(a) and measurement_supports_harmonic(b)
-}
+def measurements_from_index(
+    index: TwoPointXiThetaIndex | TwoPointCellsIndex,
+) -> tuple[str, Measurement, str, Measurement]:
+    """Return the measurements from a TwoPointXiThetaIndex object."""
+    a, b = MEASURED_TYPE_STRING_MAP[index["data_type"]]
+    _, n1, a, n2, b = match_name_type(
+        index["tracer_names"].name1,
+        index["tracer_names"].name2,
+        a,
+        b,
+        require_convetion=True,
+    )
+    return n1, a, n2, b

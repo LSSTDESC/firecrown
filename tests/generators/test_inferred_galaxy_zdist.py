@@ -4,6 +4,7 @@ from typing import Any
 from itertools import pairwise, product
 import copy
 
+import re
 import pytest
 import numpy as np
 import numpy.typing as npt
@@ -22,10 +23,11 @@ from firecrown.generators.inferred_galaxy_zdist import (
     ZDistLSSTSRDBinCollection,
     LSST_Y1_LENS_BIN_COLLECTION,
     LSST_Y1_SOURCE_BIN_COLLECTION,
-    make_measurement,
-    make_measurement_dict,
+    Measurement,
+    make_measurements,
+    make_measurements_dict,
 )
-from firecrown.metadata.two_point import Galaxies, Clusters, CMB
+from firecrown.metadata.two_point_types import Galaxies, Clusters, CMB
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 
@@ -108,7 +110,7 @@ def test_compute_one_bin_dist_fix_z(
         sigma_z=bins["sigma_z"],
         z=z_array,
         name="lens0_y1",
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
 
     assert_array_equal(Pz.z, z_array)
@@ -129,7 +131,7 @@ def test_compute_all_bins_dist_fix_z(
             sigma_z=bins["sigma_z"],
             z=z_array,
             name="lens_y1",
-            measurement=Galaxies.COUNTS,
+            measurements={Galaxies.COUNTS},
         )
 
         assert_array_equal(Pz.z, z_array)
@@ -150,7 +152,7 @@ def test_compute_one_bin_dist_autoknot(
         sigma_z=bins["sigma_z"],
         z=z_array,
         name="lens0_y1",
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
         use_autoknot=True,
         autoknots_reltol=reltol,
     )
@@ -173,7 +175,7 @@ def test_compute_all_bins_dist_autoknot(
             sigma_z=bins["sigma_z"],
             z=z_array,
             name="lens_y1",
-            measurement=Galaxies.COUNTS,
+            measurements={Galaxies.COUNTS},
             use_autoknot=True,
             autoknots_reltol=reltol,
         )
@@ -188,7 +190,7 @@ def test_zdist_bin():
     sigma_z = 0.01
     z = LinearGrid1D(start=0.0, end=3.0, num=100)
     bin_name = "lens0_y1"
-    measurement = Galaxies.COUNTS
+    measurements: set[Measurement] = {Galaxies.COUNTS}
 
     zbin = ZDistLSSTSRDBin(
         zpl=zpl,
@@ -196,17 +198,15 @@ def test_zdist_bin():
         sigma_z=sigma_z,
         z=z,
         bin_name=bin_name,
-        measurement=measurement,
+        measurements=measurements,
     )
-
-    print(zbin.model_dump_json(indent=2))
 
     assert zbin.zpl == zpl
     assert zbin.zpu == zpu
     assert zbin.sigma_z == sigma_z
     assert_array_equal(zbin.z.generate(), z.generate())
     assert zbin.bin_name == bin_name
-    assert zbin.measurement == measurement
+    assert zbin.measurements == measurements
 
 
 def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
@@ -216,7 +216,7 @@ def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
     sigma_z = 0.01
     z = LinearGrid1D(start=0.0, end=3.0, num=100)
     bin_name = "lens0_y1"
-    measurement = Galaxies.COUNTS
+    measurements: set[Measurement] = {Galaxies.COUNTS}
 
     zbin = ZDistLSSTSRDBin(
         zpl=zpl,
@@ -224,14 +224,14 @@ def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
         sigma_z=sigma_z,
         z=z,
         bin_name=bin_name,
-        measurement=measurement,
+        measurements=measurements,
     )
 
     Pz = zbin.generate(zdist)
 
     assert_array_equal(Pz.z, z.generate())
     assert Pz.bin_name == bin_name
-    assert Pz.measurement == measurement
+    assert Pz.measurements == measurements
 
 
 def test_zdist_bin_from_bad_yaml():
@@ -260,7 +260,7 @@ def test_zdist_bin_from_yaml():
     zpu = 0.2
     sigma_z = 0.01
     bin_name = "lens0_y1"
-    measurement = Galaxies.COUNTS
+    measurements = {Galaxies.COUNTS}
     bin_yaml = """
     zpl: 0.1
     zpu: 0.2
@@ -270,9 +270,9 @@ def test_zdist_bin_from_yaml():
         end: 3.0
         num: 100
     bin_name: lens0_y1
-    measurement:
-        subject: Galaxies
-        property: COUNTS
+    measurements:
+        - subject: Galaxies
+          property: COUNTS
     """
 
     zbin = base_model_from_yaml(ZDistLSSTSRDBin, bin_yaml)
@@ -282,7 +282,7 @@ def test_zdist_bin_from_yaml():
     assert zbin.sigma_z == sigma_z
     assert_array_equal(zbin.z.generate(), np.linspace(0.0, 3.0, 100))
     assert zbin.bin_name == bin_name
-    assert zbin.measurement == measurement
+    assert zbin.measurements == measurements
 
 
 def test_zdist_bin_to_yaml():
@@ -293,7 +293,7 @@ def test_zdist_bin_to_yaml():
         sigma_z=0.01,
         z=LinearGrid1D(start=0.0, end=3.0, num=100),
         bin_name="lens0_y1",
-        measurement=Galaxies.COUNTS,
+        measurements={Galaxies.COUNTS},
     )
     assert isinstance(zbin, ZDistLSSTSRDBin)
     assert isinstance(zbin.z, LinearGrid1D)
@@ -307,7 +307,7 @@ def test_zdist_bin_to_yaml():
         "sigma_z": zbin.sigma_z,
         "z": {"start": zbin.z.start, "end": zbin.z.end, "num": zbin.z.num},
         "bin_name": zbin.bin_name,
-        "measurement": make_measurement_dict(zbin.measurement),
+        "measurements": make_measurements_dict(zbin.measurements),
         "use_autoknot": zbin.use_autoknot,
         "autoknots_reltol": zbin.autoknots_reltol,
         "autoknots_abstol": zbin.autoknots_abstol,
@@ -355,7 +355,7 @@ def test_zdist_bin_collection_generate(zdist_bins):
             assert not np.array_equal(Pz.z, zbin.z.generate())
 
         assert Pz.bin_name == zbin.bin_name
-        assert Pz.measurement == zbin.measurement
+        assert Pz.measurements == zbin.measurements
 
 
 def test_zdist_bin_collection_to_yaml(zdist_bins):
@@ -384,7 +384,7 @@ def test_zdist_bin_collection_to_yaml(zdist_bins):
                 "sigma_z": zbin.sigma_z,
                 "z": zbin.z.model_dump(),
                 "bin_name": zbin.bin_name,
-                "measurement": make_measurement_dict(zbin.measurement),
+                "measurements": make_measurements_dict(zbin.measurements),
                 "use_autoknot": zbin.use_autoknot,
                 "autoknots_reltol": zbin.autoknots_reltol,
                 "autoknots_abstol": zbin.autoknots_abstol,
@@ -411,7 +411,7 @@ def test_zdist_bin_collection_from_yaml(zdist_bins):
                 "sigma_z": zbin.sigma_z,
                 "z": zbin.z.model_dump(),
                 "bin_name": zbin.bin_name,
-                "measurement": make_measurement_dict(zbin.measurement),
+                "measurements": make_measurements_dict(zbin.measurements),
                 "use_autoknot": zbin.use_autoknot,
                 "autoknots_reltol": zbin.autoknots_reltol,
                 "autoknots_abstol": zbin.autoknots_abstol,
@@ -433,39 +433,41 @@ def test_zdist_bin_collection_from_yaml(zdist_bins):
         assert zbin.sigma_z == zbin_from_yaml.sigma_z
         assert_array_equal(zbin.z.generate(), zbin_from_yaml.z.generate())
         assert zbin.bin_name == zbin_from_yaml.bin_name
-        assert zbin.measurement == zbin_from_yaml.measurement
+        assert zbin.measurements == zbin_from_yaml.measurements
         assert zbin.use_autoknot == zbin_from_yaml.use_autoknot
         assert zbin.autoknots_reltol == zbin_from_yaml.autoknots_reltol
         assert zbin.autoknots_abstol == zbin_from_yaml.autoknots_abstol
 
 
 def test_make_measurement_from_measurement():
-    cluster_meas = Clusters.COUNTS
-    galaxy_meas = Galaxies.SHEAR_E
-    cmb_meas = CMB.CONVERGENCE
-    assert make_measurement(cluster_meas) == cluster_meas
-    assert make_measurement(galaxy_meas) == galaxy_meas
-    assert make_measurement(cmb_meas) == cmb_meas
+    cluster_meas: set[Measurement] = {Clusters.COUNTS}
+    galaxy_meas: set[Measurement] = {Galaxies.SHEAR_E}
+    cmb_meas: set[Measurement] = {CMB.CONVERGENCE}
+    assert make_measurements(cluster_meas) == cluster_meas
+    assert make_measurements(galaxy_meas) == galaxy_meas
+    assert make_measurements(cmb_meas) == cmb_meas
 
 
 def test_make_measurement_from_dictionary():
-    cluster_info = {"subject": "Clusters", "property": "COUNTS"}
-    galaxy_info = {"subject": "Galaxies", "property": "SHEAR_E"}
-    cmb_info = {"subject": "CMB", "property": "CONVERGENCE"}
+    cluster_info = [{"subject": "Clusters", "property": "COUNTS"}]
+    galaxy_info = [{"subject": "Galaxies", "property": "SHEAR_E"}]
+    cmb_info = [{"subject": "CMB", "property": "CONVERGENCE"}]
 
-    assert make_measurement(cluster_info) == Clusters.COUNTS
-    assert make_measurement(galaxy_info) == Galaxies.SHEAR_E
-    assert make_measurement(cmb_info) == CMB.CONVERGENCE
+    assert make_measurements(cluster_info) == {Clusters.COUNTS}
+    assert make_measurements(galaxy_info) == {Galaxies.SHEAR_E}
+    assert make_measurements(cmb_info) == {CMB.CONVERGENCE}
 
     with pytest.raises(
         ValueError, match="Invalid Measurement: subject: 'frogs' is not recognized"
     ):
-        _ = make_measurement({"subject": "frogs", "property": "SHEAR_E"})
+        _ = make_measurements([{"subject": "frogs", "property": "SHEAR_E"}])
 
     with pytest.raises(
         ValueError, match="Invalid Measurement: dictionary does not contain 'subject'"
     ):
-        _ = make_measurement({})
+        _ = make_measurements([{}])
 
-    with pytest.raises(ValueError, match="Invalid Measurement: 3 is not a dictionary"):
-        _ = make_measurement(3)  # type: ignore
+    with pytest.raises(
+        ValueError, match=re.escape(r"Invalid Measurement: {3} is not a dictionary")
+    ):
+        _ = make_measurements({3})  # type: ignore

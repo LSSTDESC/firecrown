@@ -3,6 +3,7 @@ Tests for the TwoPoint module.
 """
 
 import re
+from unittest.mock import MagicMock
 import numpy as np
 import pytest
 
@@ -23,6 +24,20 @@ from firecrown.likelihood.two_point import (
     TracerNames,
     TRACER_NAMES_TOTAL,
     EllOrThetaConfig,
+    use_source_factory,
+    use_source_factory_metadata_only,
+    WeakLensingFactory,
+    NumberCountsFactory,
+)
+from firecrown.metadata.two_point_types import (
+    Galaxies,
+    InferredGalaxyZDist,
+    GALAXY_LENS_TYPES,
+    GALAXY_SOURCE_TYPES,
+)
+from firecrown.metadata.two_point import (
+    TwoPointCellsIndex,
+    TwoPointXiThetaIndex,
 )
 
 
@@ -385,3 +400,116 @@ def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0):
         ),
     ):
         statistic.read(sacc_data)
+
+
+def test_use_source_factory(harmonic_bin_1: InferredGalaxyZDist):
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+
+    measurement = list(harmonic_bin_1.measurements)[0]
+    source = use_source_factory(harmonic_bin_1, measurement, wl_factory, nc_factory)
+
+    if measurement in GALAXY_LENS_TYPES:
+        assert isinstance(source, NumberCounts)
+    elif measurement in GALAXY_SOURCE_TYPES:
+        assert isinstance(source, WeakLensing)
+    else:
+        assert False, f"Unknown measurement type: {measurement}"
+
+
+def test_use_source_factory_invalid_measurement(harmonic_bin_1: InferredGalaxyZDist):
+    with pytest.raises(
+        ValueError,
+        match="Measurement .* not found in inferred galaxy redshift distribution .*",
+    ):
+        use_source_factory(harmonic_bin_1, Galaxies.SHEAR_MINUS, None, None)
+
+
+def test_use_source_factory_metadata_only_counts():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    source = use_source_factory_metadata_only(
+        "bin1", Galaxies.COUNTS, wl_factory=wl_factory, nc_factory=nc_factory
+    )
+    assert isinstance(source, NumberCounts)
+
+
+def test_use_source_factory_metadata_only_shear():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    source = use_source_factory_metadata_only(
+        "bin1", Galaxies.SHEAR_E, wl_factory=wl_factory, nc_factory=nc_factory
+    )
+    assert isinstance(source, WeakLensing)
+
+
+def test_use_source_factory_metadata_only_invalid_measurement():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    with pytest.raises(ValueError, match="Unknown measurement type encountered .*"):
+        use_source_factory_metadata_only(
+            "bin1", 120, wl_factory=wl_factory, nc_factory=nc_factory  # type: ignore
+        )
+
+
+def test_two_point_wrong_type():
+    with pytest.raises(ValueError, match="The SACC data type cow is not supported!"):
+        TwoPoint(
+            "cow", WeakLensing(sacc_tracer="calma"), WeakLensing(sacc_tracer="fernando")
+        )
+
+
+def test_from_metadata_harmonic_wrong_metadata():
+    with pytest.raises(
+        ValueError, match=re.escape("Metadata of type <class 'str'> is not supported")
+    ):
+        TwoPoint._from_metadata(  # pylint: disable=protected-access
+            sacc_data_type="galaxy_density_xi",
+            source0=NumberCounts(sacc_tracer="lens_0"),
+            source1=NumberCounts(sacc_tracer="lens_0"),
+            metadata="NotAMetadata",  # type: ignore
+        )
+
+
+def test_use_source_factory_metadata_only_wrong_measurement():
+    unknown_type = MagicMock()
+    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
+
+    with pytest.raises(ValueError, match="Measurement .* not supported!"):
+        use_source_factory_metadata_only(
+            "bin1", unknown_type, wl_factory=None, nc_factory=None
+        )
+
+
+def test_from_metadata_only_harmonic():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    metadata: TwoPointCellsIndex = {
+        "data_type": "galaxy_density_xi",
+        "tracer_names": TracerNames("lens0", "lens0"),
+        "ells": np.array(np.linspace(0, 100, 100), dtype=np.int64),
+    }
+    two_point = TwoPoint.from_metadata_only_harmonic(
+        [metadata],
+        wl_factory=wl_factory,
+        nc_factory=nc_factory,
+    ).pop()
+    assert isinstance(two_point, TwoPoint)
+    assert not two_point.ready
+
+
+def test_from_metadata_only_real():
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    metadata: TwoPointXiThetaIndex = {
+        "data_type": "galaxy_shear_xi_plus",
+        "tracer_names": TracerNames("src0", "src0"),
+        "thetas": np.linspace(0.0, 1.0, 100),
+    }
+    two_point = TwoPoint.from_metadata_only_real(
+        [metadata],
+        wl_factory=wl_factory,
+        nc_factory=nc_factory,
+    ).pop()
+    assert isinstance(two_point, TwoPoint)
+    assert not two_point.ready

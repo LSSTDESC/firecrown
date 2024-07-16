@@ -9,6 +9,7 @@ from firecrown.utils import (
     upper_triangle_indices,
     save_to_sacc,
     compare_optional_arrays,
+    compare_optionals,
     base_model_from_yaml,
 )
 
@@ -74,3 +75,21 @@ def test_compare_optional_arrays_():
 def test_base_model_from_yaml_wrong():
     with pytest.raises(ValueError):
         _ = base_model_from_yaml(str, "wrong")
+
+
+def test_compare_optionals():
+    x = "test"
+    y = "test"
+    assert compare_optionals(x, y)
+
+    z = "test2"
+    assert not compare_optionals(x, z)
+
+    a = None
+    b = None
+    assert compare_optionals(a, b)
+
+    q = np.array([1, 2, 3])
+    assert not compare_optionals(q, a)
+
+    assert not compare_optionals(a, q)

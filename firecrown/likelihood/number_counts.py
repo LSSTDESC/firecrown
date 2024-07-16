@@ -487,9 +487,9 @@ class PhotoZShiftFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "PhotoZShiftFactory"
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> PhotoZShift:
+    def create(self, bin_name: str) -> PhotoZShift:
         """Create a PhotoZShift object with the given tracer name."""
-        return PhotoZShift(inferred_zdist.bin_name)
+        return PhotoZShift(bin_name)
 
     def create_global(self) -> PhotoZShift:
         """Create a PhotoZShift object with the given tracer name."""
@@ -506,9 +506,9 @@ class LinearBiasSystematicFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "LinearBiasSystematicFactory"
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> LinearBiasSystematic:
+    def create(self, bin_name: str) -> LinearBiasSystematic:
         """Create a LinearBiasSystematic object with the given tracer name."""
-        return LinearBiasSystematic(inferred_zdist.bin_name)
+        return LinearBiasSystematic(bin_name)
 
     def create_global(self) -> LinearBiasSystematic:
         """Create a LinearBiasSystematic object with the given tracer name."""
@@ -525,9 +525,9 @@ class PTNonLinearBiasSystematicFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "PTNonLinearBiasSystematicFactory"
 
-    def create(self, inferred_zdist: InferredGalaxyZDist) -> PTNonLinearBiasSystematic:
+    def create(self, bin_name: str) -> PTNonLinearBiasSystematic:
         """Create a PTNonLinearBiasSystematic object with the given tracer name."""
-        return PTNonLinearBiasSystematic(inferred_zdist.bin_name)
+        return PTNonLinearBiasSystematic(bin_name)
 
     def create_global(self) -> PTNonLinearBiasSystematic:
         """Create a PTNonLinearBiasSystematic object with the given tracer name."""
@@ -544,11 +544,9 @@ class MagnificationBiasSystematicFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "MagnificationBiasSystematicFactory"
 
-    def create(
-        self, inferred_zdist: InferredGalaxyZDist
-    ) -> MagnificationBiasSystematic:
+    def create(self, bin_name: str) -> MagnificationBiasSystematic:
         """Create a MagnificationBiasSystematic object with the given tracer name."""
-        return MagnificationBiasSystematic(inferred_zdist.bin_name)
+        return MagnificationBiasSystematic(bin_name)
 
     def create_global(self) -> MagnificationBiasSystematic:
         """Create a MagnificationBiasSystematic object with the given tracer name."""
@@ -565,14 +563,12 @@ class ConstantMagnificationBiasSystematicFactory(BaseModel):
         Field(description="The type of the systematic."),
     ] = "ConstantMagnificationBiasSystematicFactory"
 
-    def create(
-        self, inferred_zdist: InferredGalaxyZDist
-    ) -> ConstantMagnificationBiasSystematic:
+    def create(self, bin_name: str) -> ConstantMagnificationBiasSystematic:
         """Create a ConstantMagnificationBiasSystematic object.
 
         Use the inferred_zdist to create the systematic.
         """
-        return ConstantMagnificationBiasSystematic(inferred_zdist.bin_name)
+        return ConstantMagnificationBiasSystematic(bin_name)
 
     def create_global(self) -> ConstantMagnificationBiasSystematic:
         """Create a ConstantMagnificationBiasSystematic object.
@@ -618,12 +614,31 @@ class NumberCountsFactory(BaseModel):
             return self._cache[inferred_zdist_id]
 
         systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
-            systematic_factory.create(inferred_zdist)
+            systematic_factory.create(inferred_zdist.bin_name)
             for systematic_factory in self.per_bin_systematics
         ]
         systematics.extend(self._global_systematics_instances)
 
         nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
         self._cache[inferred_zdist_id] = nc
+
+        return nc
+
+    def create_from_metadata_only(
+        self,
+        sacc_tracer: str,
+    ) -> NumberCounts:
+        """Create an WeakLensing object with the given tracer name and scale."""
+        sacc_tracer_id = hash(sacc_tracer)  # Improve this
+        if sacc_tracer_id in self._cache:
+            return self._cache[sacc_tracer_id]
+        systematics: list[SourceGalaxySystematic[NumberCountsArgs]] = [
+            systematic_factory.create(sacc_tracer)
+            for systematic_factory in self.per_bin_systematics
+        ]
+        systematics.extend(self._global_systematics_instances)
+
+        nc = NumberCounts(sacc_tracer=sacc_tracer, systematics=systematics)
+        self._cache[sacc_tracer_id] = nc
 
         return nc

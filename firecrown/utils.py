@@ -1,7 +1,7 @@
 """Some utility functions for patterns common in Firecrown."""
 
 from __future__ import annotations
-from typing import Generator
+from typing import Generator, TypeVar, Type
 
 import numpy as np
 import numpy.typing as npt
@@ -10,6 +10,23 @@ from pydantic import BaseModel
 import sacc
 
 import yaml
+from yaml import CLoader as Loader
+from yaml import CDumper as Dumper
+
+ST = TypeVar("ST")  # This will be used in YAMLSerializable
+
+
+class YAMLSerializable:
+    """Protocol for classes that can be serialized to and from YAML."""
+
+    def to_yaml(self: ST) -> str:
+        """Return the YAML representation of the object."""
+        return yaml.dump(self, Dumper=Dumper, sort_keys=False)
+
+    @classmethod
+    def from_yaml(cls: Type[ST], yaml_str: str) -> ST:
+        """Load the object from YAML."""
+        return yaml.load(yaml_str, Loader=Loader)
 
 
 def base_model_from_yaml(cls: type, yaml_str: str):
@@ -99,5 +116,20 @@ def compare_optional_arrays(x: None | npt.NDArray, y: None | npt.NDArray) -> boo
         return True
     if x is not None and y is not None:
         return np.array_equal(x, y)
+    # One is None and the other is not.
+    return False
+
+
+def compare_optionals(x: None | object, y: None | object) -> bool:
+    """Compare two objects, allowing for either or both to be None.
+
+    :param x: first object
+    :param y: second object
+    :return: whether the objects are equal
+    """
+    if x is None and y is None:
+        return True
+    if x is not None and y is not None:
+        return x == y
     # One is None and the other is not.
     return False

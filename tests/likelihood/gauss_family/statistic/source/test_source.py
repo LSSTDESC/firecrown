@@ -19,11 +19,7 @@ from firecrown.likelihood.source import (
 )
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
-from firecrown.metadata.two_point import (
-    extract_all_tracers,
-    InferredGalaxyZDist,
-    Galaxies,
-)
+from firecrown.metadata.two_point import extract_all_tracers
 from firecrown.parameters import ParamsMap
 
 
@@ -353,14 +349,10 @@ def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
         source.read(sacc_data)
 
 
-def test_number_counts_systematic_factory(nc_sys_factory):
-    bin_1 = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.array([1.0]),
-        dndz=np.array([1.0]),
-        measurement=Galaxies.COUNTS,
-    )
-    sys_pz_shift = nc_sys_factory.create(bin_1)
+def test_number_counts_systematic_factory(
+    nc_sys_factory: nc.NumberCountsSystematicFactory,
+):
+    sys_pz_shift = nc_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
 
 
@@ -404,12 +396,8 @@ def test_nc_constantmagnificationbiassystematicfactory_no_globals():
         _ = factory.create_global()
 
 
-def test_weak_lensing_systematic_factory(wl_sys_factory):
-    bin_1 = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.array([1.0]),
-        dndz=np.array([1.0]),
-        measurement=Galaxies.SHEAR_E,
-    )
-    sys_pz_shift = wl_sys_factory.create(bin_1)
+def test_weak_lensing_systematic_factory(
+    wl_sys_factory: wl.WeakLensingSystematicFactory,
+):
+    sys_pz_shift = wl_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"

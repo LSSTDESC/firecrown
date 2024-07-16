@@ -27,7 +27,7 @@ The code snippet below demonstrates how to initialize and serialize this datacla
 ```{python}
 
 from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRDBin, LinearGrid1D
-from firecrown.metadata.two_point import Galaxies
+from firecrown.metadata.two_point_types import Galaxies
 from firecrown.utils import base_model_to_yaml
 
 z = LinearGrid1D(start=0.01, end=0.5, num=20)
@@ -38,7 +38,7 @@ bin0 = ZDistLSSTSRDBin(
     sigma_z=0.03,
     z=z,
     bin_name="bin0",
-    measurement=Galaxies.COUNTS,
+    measurements={Galaxies.COUNTS},
 )
 
 bin0_yaml = base_model_to_yaml(bin0)
@@ -112,7 +112,7 @@ assert bin_collection.bins[0].zpl == bin_collection_read.bins[0].zpl
 assert bin_collection.bins[0].zpu == bin_collection_read.bins[0].zpu
 assert bin_collection.bins[0].sigma_z == bin_collection_read.bins[0].sigma_z
 assert bin_collection.bins[0].bin_name == bin_collection_read.bins[0].bin_name
-assert bin_collection.bins[0].measurement == bin_collection_read.bins[0].measurement
+assert bin_collection.bins[0].measurements == bin_collection_read.bins[0].measurements
 assert bin_collection.bins[0].z == bin_collection_read.bins[0].z
 ```
 
