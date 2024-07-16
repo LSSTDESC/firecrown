@@ -65,8 +65,15 @@ class Mapping(ABC):
     w0 = TypeFloat()
     wa = TypeFloat()
     T_CMB = TypeFloat()
+    mu_mg = TypeFloat()
+    sigma_mg = TypeFloat()
+    c1_mg = TypeFloat()
+    c2_mg = TypeFloat()
+    lambda_mg = TypeFloat()
 
-    def __init__(self, *, require_nonlinear_pk: bool = False) -> None:
+    def __init__(
+        self, *, require_nonlinear_pk: bool = False, use_ccl_mu_sigma: bool = False
+    ) -> None:
         """Initialize the Mapping object.
 
         :param require_nonlinear_pk: Whether the mapping requires the
@@ -74,6 +81,7 @@ class Mapping(ABC):
         """
         self.require_nonlinear_pk = require_nonlinear_pk
         self.m_nu: float | list[float] | None = None
+        self.use_ccl_mu_sigma = use_ccl_mu_sigma
 
     def get_params_names(self) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping."""
@@ -190,6 +198,29 @@ class Mapping(ABC):
         self.w0 = w0
         self.wa = wa
         self.T_CMB = T_CMB
+
+    def set_params_mu_sigma(
+        self,
+        *,
+        mu_mg: float,
+        sigma_mg: float,
+        c1_mg: float,
+        c2_mg: float,
+        lambda_mg: float,
+    ):
+        """Sets the cosmological constants suitable a pyccl.core.CosmologyCalculator.
+
+
+        :param T_CMB: cosmic microwave background temperature today
+        """
+        # Typecheck is done automatically using the descriptors and is done to
+        # avoid void very confusing error messages at a later time in case of
+        # error.
+        self.mu_mg = mu_mg
+        self.sigma_mg = sigma_mg
+        self.c1_mg = c1_mg
+        self.c2_mg = c2_mg
+        self.lambda_mg = lambda_mg
 
     @staticmethod
     def redshift_to_scale_factor(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
@@ -350,6 +381,13 @@ class MappingCosmoSIS(Mapping):
         w0 = cosmosis_params.get_float("w")
         wa = cosmosis_params.get_float("wa")
 
+        if self.use_ccl_mu_sigma:
+            mu_mg = cosmosis_params.get_float("mu_mg")
+            sigma_mg = cosmosis_params.get_float("sigma_mg")
+            c1_mg = cosmosis_params.get_float("c1_mg")
+            c2_mg = cosmosis_params.get_float("c2_mg")
+            lambda_mg = cosmosis_params.get_float("lambda_mg")
+
         # pylint: disable=duplicate-code
         self.set_params(
             Omega_c=Omega_c,
@@ -366,6 +404,16 @@ class MappingCosmoSIS(Mapping):
             T_CMB=2.7255,
             # Modify CosmoSIS to make this available in the datablock
         )
+
+        if self.use_ccl_mu_sigma:
+            self.set_params_mu_sigma(
+                mu_mg=mu_mg,
+                sigma_mg=sigma_mg,
+                c1_mg=c1_mg,
+                c2_mg=c2_mg,
+                lambda_mg=lambda_mg,
+            )
+
         # pylint: enable=duplicate-code
 
     def calculate_ccl_args(self, sample: cosmosis.datablock) -> dict[str, Any]:
