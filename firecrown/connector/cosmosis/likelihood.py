@@ -12,6 +12,7 @@ import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
 import pyccl as ccl
+from pyccl.modified_gravity import MuSigmaMG
 
 from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.gaussfamily import GaussFamily
@@ -56,6 +57,8 @@ class FirecrownLikelihood:
             option_section, "require_nonlinear_pk", False
         )
 
+        use_ccl_mu_sigma = config.get_bool(option_section, "use_ccl_mu_sigma", False)
+
         build_parameters = extract_section(config, option_section)
 
         sections = config.get_string(option_section, "sampling_parameters_sections", "")
@@ -76,7 +79,9 @@ class FirecrownLikelihood:
         # We have to do some extra type-fiddling here because mapping_builder
         # has a declared return type of the base class.
         new_mapping = mapping_builder(
-            input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
+            input_style="CosmoSIS",
+            require_nonlinear_pk=require_nonlinear_pk,
+            use_ccl_mu_sigma=use_ccl_mu_sigma,
         )
         assert isinstance(new_mapping, MappingCosmoSIS)
         self.map = new_mapping
@@ -112,9 +117,34 @@ class FirecrownLikelihood:
         )
         self.map.set_params_from_cosmosis(cosmological_params)
 
-        ccl_cosmo = ccl.CosmologyCalculator(
-            **self.map.asdict(), **self.map.calculate_ccl_args(sample)
-        )
+        if self.map.use_ccl_mu_sigma:
+
+            ccl_cosmo = ccl.Cosmology(
+                Omega_c=self.map.Omega_c,
+                Omega_b=self.map.Omega_b,
+                h=self.map.h,
+                sigma8=self.map.sigma8,
+                n_s=self.map.n_s,
+                Neff=self.map.Neff,
+                m_nu=self.map.m_nu,
+                mg_parametrization=MuSigmaMG(
+                    mu_0=self.map.mu_mg,
+                    sigma_0=self.map.sigma_mg,
+                    c1_mg=self.map.c1_mg,
+                    c2_mg=self.map.c2_mg,
+                    lambda_mg=self.map.lambda_mg,
+                ),
+                matter_power_spectrum="linear",
+                transfer_function="boltzmann_isitgr",
+            )
+
+            # Pk_1_C = ccl.linear_matter_power(ccl_cosmo, k, a=1.)
+
+        else:
+
+            ccl_cosmo = ccl.CosmologyCalculator(
+                **self.map.asdict(), **self.map.calculate_ccl_args(sample)
+            )
 
         # TODO: Future development will need to capture elements that get put into the
         # datablock. This probably will be in a different "physics module" and not in
