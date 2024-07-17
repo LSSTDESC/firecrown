@@ -2,42 +2,35 @@
 
 """Defines a function to generate a SACC file for cluster number counts."""
 
-# # Cluster count-only SACC file creation
-#
-# This notebook examplifies the creation of a SACC file for cluster count, using
-# NumCosmo facilities to simulate cluster data.
+# Cluster SACC file creation for SDSS Count+Mean(logM) data vector
+# in Costanzi et al. 2019, https://arxiv.org/pdf/1810.09456
 
-import math
 import itertools
-
 import numpy as np
-
-from numcosmo_py import Nc
 from numcosmo_py import Ncm
-
-from astropy.table import Table
-
-from astropy.io import fits
-from scipy import stats
 from typing import Any
 import sacc
 
 
 def generate_SDSSCL_sacc_file() -> Any:
-    
-    ## settting cluster data vector according to this Costanzi et al. 2019: https://arxiv.org/pdf/1810.09456
-    area = 10263.037032448827 
-    N_richness = 5
-    N_z=1
+    """
+    Generate a SACC file with SDSS cluster number counts and Mean(logM).
+
+    According to SDSS Costanzai et al. 2019, arxiv 1810.09456.
+    Output: will save a fits file to disk.
+    """
+    # settting cluster data vector
+    # according to this Costanzi et al. 2019 arxiv 1810.09456
+    area = 10263.037032448827
     z_edges = np.array([0.1, 0.3])
     richness_edges = np.array([20, 27.9, 37.6, 50.3, 69.3, 140])
     cluster_counts = np.array([3711, 1788, 978, 476, 223])
     mean_logM = np.array([14.111, 14.263, 14.380, 14.609, 14.928])
-    std_logM1= np.array([0.024, 0.030, 0.033, 0.036, 0.029])
+    std_logM1 = np.array([0.024, 0.030, 0.033, 0.036, 0.029])
     std_logM2 = np.array([0.026, 0.024, 0.026, 0.028, 0.036])
     std_counts = np.array([100, 61, 41, 27, 18])
     var_mean_logM = std_logM1**2 + std_logM2**2
-    var_counts=std_counts**2
+    var_counts = std_counts**2
 
     # ** Correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
     # In each redshift bin are the $N_{\rm richness}$ richness bins.**
