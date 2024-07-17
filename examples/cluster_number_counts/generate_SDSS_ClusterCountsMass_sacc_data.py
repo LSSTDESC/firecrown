@@ -23,7 +23,7 @@ def generate_SDSSCL_sacc_file() -> Any:
     # according to this Costanzi et al. 2019 arxiv 1810.09456
     area = 10263.037032448827
     z_edges = np.array([0.1, 0.3])
-    richness_edges = np.array([20, 27.9, 37.6, 50.3, 69.3, 140])
+    richness_edges = np.log10(np.array([20, 27.9, 37.6, 50.3, 69.3, 140]))
     cluster_counts = np.array([3711, 1788, 978, 476, 223])
     mean_logM = np.array([14.111, 14.263, 14.380, 14.609, 14.928])
     std_logM1 = np.array([0.024, 0.030, 0.033, 0.036, 0.029])
