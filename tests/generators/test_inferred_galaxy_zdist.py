@@ -27,7 +27,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
     make_measurements,
     make_measurements_dict,
 )
-from firecrown.metadata.two_point import Galaxies, Clusters, CMB
+from firecrown.metadata.two_point_types import Galaxies, Clusters, CMB
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 

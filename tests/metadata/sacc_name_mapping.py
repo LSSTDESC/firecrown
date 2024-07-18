@@ -1,6 +1,6 @@
 """Module containing testing data for translation of SACC names."""
 
-from firecrown.metadata.two_point import (
+from firecrown.metadata.two_point_types import (
     Clusters,
     CMB,
     Galaxies,

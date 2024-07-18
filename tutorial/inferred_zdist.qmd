@@ -25,7 +25,7 @@ The `InferredGalaxyZDist` object serves as the cornerstone for representing the 
 
 The `InferredGalaxyZDist` object can be created by providing the following parameters:
 ```{python}
-from firecrown.metadata.two_point import Galaxies, InferredGalaxyZDist
+from firecrown.metadata.two_point_types import Galaxies, InferredGalaxyZDist
 import numpy as np
 
 z = np.linspace(0.0, 1.0, 200)

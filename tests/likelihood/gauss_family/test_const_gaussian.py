@@ -21,6 +21,16 @@ from firecrown.parameters import (
     DerivedParameterCollection,
     SamplerParameter,
 )
+from firecrown.likelihood.two_point import (
+    TwoPoint,
+    WeakLensingFactory,
+    NumberCountsFactory,
+)
+from firecrown.metadata.two_point import (
+    extract_all_data_cells,
+    TwoPointCellsIndex,
+    TracerNames,
+)
 
 
 class StatisticWithoutIndices(TrivialStatistic):
@@ -469,3 +479,61 @@ def test_access_required_parameters(
     likelihood = ConstGaussian(statistics=trivial_stats)
     params = likelihood.required_parameters().get_default_values()
     assert params == {"mean": 0.0}
+
+
+def test_create_ready(sacc_galaxy_cwindows):
+    sacc_data, _, _ = sacc_galaxy_cwindows
+    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    two_points = TwoPoint.from_metadata_harmonic(
+        two_point_cwindows, wl_factory, nc_factory
+    )
+    size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
+
+    likelihood = ConstGaussian.create_ready(two_points, np.diag(np.ones(size)))
+    assert likelihood is not None
+    assert isinstance(likelihood, ConstGaussian)
+
+
+def test_create_ready_wrong_size(sacc_galaxy_cwindows):
+    sacc_data, _, _ = sacc_galaxy_cwindows
+    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    two_points = TwoPoint.from_metadata_harmonic(
+        two_point_cwindows, wl_factory, nc_factory
+    )
+    size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"The covariance matrix has shape (3, 3), "
+            f"but the expected shape is at least ({size}, {size})."
+        ),
+    ):
+        ConstGaussian.create_ready(two_points, np.diag([1.0, 2.0, 3.0]))
+
+
+def test_create_ready_not_ready():
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    metadata: TwoPointCellsIndex = {
+        "data_type": "galaxy_density_xi",
+        "tracer_names": TracerNames("lens0", "lens0"),
+        "ells": np.array(np.linspace(0, 100, 100), dtype=np.int64),
+    }
+
+    two_points = TwoPoint.from_metadata_only_harmonic(
+        [metadata], wl_factory, nc_factory
+    )
+
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* is not ready to be used.",
+    ):
+        ConstGaussian.create_ready(two_points, np.diag(np.ones(11)))

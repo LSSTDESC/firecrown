@@ -2,146 +2,31 @@
 Tests for the module firecrown.metadata.two_point
 """
 
-from itertools import product, chain
-from unittest.mock import MagicMock
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
-
-import sacc_name_mapping as snm
-from firecrown.metadata.two_point_types import compare_enums
-from firecrown.metadata.two_point import (
+from firecrown.metadata.two_point_types import (
     ALL_MEASUREMENTS,
+    type_to_sacc_string_harmonic as harmonic,
+    type_to_sacc_string_real as real,
+)
+
+from firecrown.metadata.two_point_types import (
     Clusters,
     CMB,
     Galaxies,
     InferredGalaxyZDist,
-    measurement_is_compatible as is_compatible,
-    measurement_is_compatible_real as is_compatible_real,
-    measurement_is_compatible_harmonic as is_compatible_harmonic,
-    measurement_supports_harmonic as supports_harmonic,
-    measurement_supports_real as supports_real,
     TracerNames,
     TwoPointCells,
     TwoPointCWindow,
     TwoPointXY,
     TwoPointXiTheta,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
+    TwoPointMeasurement,
     Window,
 )
+
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
-
-
-def test_order_enums():
-    assert compare_enums(CMB.CONVERGENCE, Clusters.COUNTS) < 0
-    assert compare_enums(Clusters.COUNTS, CMB.CONVERGENCE) > 0
-
-    assert compare_enums(CMB.CONVERGENCE, Galaxies.COUNTS) < 0
-    assert compare_enums(Galaxies.COUNTS, CMB.CONVERGENCE) > 0
-
-    assert compare_enums(Galaxies.SHEAR_E, Galaxies.SHEAR_T) < 0
-    assert compare_enums(Galaxies.SHEAR_E, Galaxies.COUNTS) < 0
-    assert compare_enums(Galaxies.SHEAR_T, Galaxies.COUNTS) < 0
-
-    assert compare_enums(Galaxies.COUNTS, Galaxies.SHEAR_E) > 0
-
-    for enumerand in ALL_MEASUREMENTS:
-        assert compare_enums(enumerand, enumerand) == 0
-
-
-def test_enumeration_equality_galaxy():
-    for e1, e2 in product(Galaxies, chain(CMB, Clusters)):
-        assert e1 != e2
-
-
-def test_enumeration_equality_cmb():
-    for e1, e2 in product(CMB, chain(Galaxies, Clusters)):
-        assert e1 != e2
-
-
-def test_enumeration_equality_cluster():
-    for e1, e2 in product(Clusters, chain(CMB, Galaxies)):
-        assert e1 != e2
-
-
-def test_exact_matches():
-    for sacc_name, space, (enum_1, enum_2) in snm.mappings:
-        if space == "ell":
-            assert harmonic(enum_1, enum_2) == sacc_name
-        elif space == "theta":
-            assert real(enum_1, enum_2) == sacc_name
-        else:
-            raise ValueError(f"Illegal 'space' value {space} in testing data")
-
-
-def test_translation_invariants():
-    for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
-        assert isinstance(a, (Galaxies, CMB, Clusters))
-        assert isinstance(b, (Galaxies, CMB, Clusters))
-        if is_compatible_real(a, b):
-            assert real(a, b) == real(b, a)
-        if is_compatible_harmonic(a, b):
-            assert harmonic(a, b) == harmonic(b, a)
-        if (
-            supports_harmonic(a)
-            and supports_harmonic(b)
-            and supports_real(a)
-            and supports_real(b)
-        ):
-            assert harmonic(a, b) != real(a, b)
-
-
-def test_unsupported_type_galaxy():
-    unknown_type = MagicMock()
-    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
-
-    with pytest.raises(ValueError, match="Untranslated Galaxy Measurement encountered"):
-        Galaxies.sacc_measurement_name(unknown_type)
-
-    with pytest.raises(ValueError, match="Untranslated Galaxy Measurement encountered"):
-        Galaxies.polarization(unknown_type)
-
-
-def test_unsupported_type_cmb():
-    unknown_type = MagicMock()
-    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
-
-    with pytest.raises(ValueError, match="Untranslated CMBMeasurement encountered"):
-        CMB.sacc_measurement_name(unknown_type)
-
-    with pytest.raises(ValueError, match="Untranslated CMBMeasurement encountered"):
-        CMB.polarization(unknown_type)
-
-
-def test_unsupported_type_cluster():
-    unknown_type = MagicMock()
-    unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
-
-    with pytest.raises(ValueError, match="Untranslated ClusterMeasurement encountered"):
-        Clusters.sacc_measurement_name(unknown_type)
-
-    with pytest.raises(ValueError, match="Untranslated ClusterMeasurement encountered"):
-        Clusters.polarization(unknown_type)
-
-
-def test_type_hashs():
-    for e1, e2 in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
-        if e1 == e2:
-            assert hash(e1) == hash(e2)
-        else:
-            assert hash(e1) != hash(e2)
-
-
-def test_measurement_is_compatible():
-    for a, b in product(ALL_MEASUREMENTS, ALL_MEASUREMENTS):
-        assert isinstance(a, (Galaxies, CMB, Clusters))
-        assert isinstance(b, (Galaxies, CMB, Clusters))
-        if is_compatible_real(a, b) or is_compatible_harmonic(a, b):
-            assert is_compatible(a, b)
-        else:
-            assert not is_compatible(a, b)
 
 
 def test_inferred_galaxy_z_dist():
@@ -488,7 +373,7 @@ def test_two_point_window_invalid_weights_shape():
         )
 
 
-def test_two_point_two_point_cwindow():
+def test_two_point_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
@@ -499,27 +384,64 @@ def test_two_point_two_point_cwindow():
         ells_for_interpolation=ells_for_interpolation,
     )
 
-    x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
-    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    two_point = TwoPointCWindow(XY=xy, window=window)
+    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window)
 
     assert two_point.window == window
-    assert two_point.XY == xy
-    assert two_point.get_sacc_name() == harmonic(xy.x_measurement, xy.y_measurement)
+    assert two_point.XY == harmonic_two_point_xy
+    assert two_point.get_sacc_name() == harmonic(
+        harmonic_two_point_xy.x_measurement, harmonic_two_point_xy.y_measurement
+    )
+
+
+def test_two_point_two_point_cwindow_wrong_data_shape(
+    harmonic_two_point_xy: TwoPointXY,
+):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    data = np.zeros(100) + 1.1
+    indices = np.arange(100)
+    covariance_name = "cov"
+    data = data.reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Data should be a 1D array.",
+    ):
+        TwoPointCWindow(
+            XY=harmonic_two_point_xy,
+            window=window,
+            Cell=TwoPointMeasurement(
+                data=data,
+                indices=indices,
+                covariance_name=covariance_name,
+            ),
+        )
+
+
+def test_two_point_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    window = Window(
+        ells=ells,
+        weights=weights,
+        ells_for_interpolation=ells_for_interpolation,
+    )
+
+    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window)
+
+    assert (
+        str(two_point) == f"{str(harmonic_two_point_xy)}[{two_point.get_sacc_name()}]"
+    )
 
 
 def test_two_point_two_point_cwindow_invalid():
@@ -580,7 +502,6 @@ def test_two_point_two_point_cwindow_invalid_window():
 
 
 def test_two_point_xi_theta():
-
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -664,65 +585,44 @@ def test_inferred_galaxy_zdist_serialization(harmonic_bin_1: InferredGalaxyZDist
     assert harmonic_bin_1 == recovered
 
 
-def test_two_point_xy_str(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
+def test_two_point_xy_str(harmonic_two_point_xy: TwoPointXY):
+    assert str(harmonic_two_point_xy) == (
+        f"({harmonic_two_point_xy.x.bin_name}, " f"{harmonic_two_point_xy.y.bin_name})"
     )
-    assert str(xy) == f"({harmonic_bin_1.bin_name}, {harmonic_bin_2.bin_name})"
 
 
-def test_two_point_xy_serialization(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    s = xy.to_yaml()
+def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY):
+    s = harmonic_two_point_xy.to_yaml()
     # Take a look at how hideous the generated string
     # is.
     recovered = TwoPointXY.from_yaml(s)
-    assert xy == recovered
-    assert str(xy) == str(recovered)
+    assert harmonic_two_point_xy == recovered
+    assert str(harmonic_two_point_xy) == str(recovered)
 
 
-def test_two_point_cells_str(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
+def test_two_point_cells_str(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    cells = TwoPointCells(ells=ells, XY=xy)
-    assert str(cells) == f"{str(xy)}[{cells.get_sacc_name()}]"
+    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    assert str(cells) == f"{str(harmonic_two_point_xy)}[{cells.get_sacc_name()}]"
 
 
-def test_two_point_cells_serialization(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
-):
+def test_two_point_cells_serialization(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    cells = TwoPointCells(ells=ells, XY=xy)
+    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
     s = cells.to_yaml()
     recovered = TwoPointCells.from_yaml(s)
     assert cells == recovered
-    assert str(xy) == str(recovered.XY)
+    assert str(harmonic_two_point_xy) == str(recovered.XY)
     assert str(cells) == str(recovered)
+
+
+def test_two_point_cells_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
+    ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Ells should be a 1D array.",
+    ):
+        TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
 
 
 def test_window_serialization(window_1: Window):
@@ -731,42 +631,34 @@ def test_window_serialization(window_1: Window):
     assert window_1 == recovered
 
 
-def test_two_point_cwindow_serialization(two_point_cwindow_1: TwoPointCWindow):
-    s = two_point_cwindow_1.to_yaml()
+def test_two_point_cwindow_serialization(two_point_cwindow: TwoPointCWindow):
+    s = two_point_cwindow.to_yaml()
     recovered = TwoPointCWindow.from_yaml(s)
-    assert two_point_cwindow_1 == recovered
+    assert two_point_cwindow == recovered
 
 
-def test_two_point_xi_theta_serialization(
-    real_bin_1: InferredGalaxyZDist, real_bin_2: InferredGalaxyZDist
-):
-    xy = TwoPointXY(
-        x=real_bin_1,
-        y=real_bin_2,
-        x_measurement=list(real_bin_1.measurements)[0],
-        y_measurement=list(real_bin_2.measurements)[0],
-    )
-
+def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10, 10))
-    xi_theta = TwoPointXiTheta(XY=xy, thetas=theta)
+    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
     s = xi_theta.to_yaml()
     recovered = TwoPointXiTheta.from_yaml(s)
     assert xi_theta == recovered
-    assert str(xy) == str(recovered.XY)
+    assert str(real_two_point_xy) == str(recovered.XY)
     assert str(xi_theta) == str(recovered)
 
 
-def test_two_point_from_metadata_cells(
-    harmonic_bin_1, harmonic_bin_2, wl_factory, nc_factory
-):
+def test_two_point_xi_theta_wrong_shape(real_two_point_xy: TwoPointXY):
+    theta = np.array(np.linspace(0, 10), dtype=np.float64).reshape(-1, 10)
+    with pytest.raises(
+        ValueError,
+        match="Thetas should be a 1D array.",
+    ):
+        TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
+
+
+def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    xy = TwoPointXY(
-        x=harmonic_bin_1,
-        y=harmonic_bin_2,
-        x_measurement=list(harmonic_bin_1.measurements)[0],
-        y_measurement=list(harmonic_bin_2.measurements)[0],
-    )
-    cells = TwoPointCells(ells=ells, XY=xy)
+    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
     two_point = TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory).pop()
 
     assert two_point is not None
@@ -776,11 +668,51 @@ def test_two_point_from_metadata_cells(
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
 
-    assert_array_equal(two_point.source0.tracer_args.z, harmonic_bin_1.z)
-    assert_array_equal(two_point.source0.tracer_args.z, harmonic_bin_1.z)
+    assert_array_equal(two_point.source0.tracer_args.z, harmonic_two_point_xy.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, harmonic_two_point_xy.y.z)
 
-    assert_array_equal(two_point.source0.tracer_args.dndz, harmonic_bin_1.dndz)
-    assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_bin_2.dndz)
+    assert_array_equal(two_point.source0.tracer_args.dndz, harmonic_two_point_xy.x.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_two_point_xy.y.dndz)
+
+
+def test_two_point_from_metadata_cwindow(two_point_cwindow, wl_factory, nc_factory):
+    two_point = TwoPoint.from_metadata_harmonic(
+        [two_point_cwindow], wl_factory, nc_factory
+    ).pop()
+
+    assert two_point is not None
+    assert isinstance(two_point, TwoPoint)
+    assert two_point.sacc_data_type == two_point_cwindow.get_sacc_name()
+
+    assert isinstance(two_point.source0, SourceGalaxy)
+    assert isinstance(two_point.source1, SourceGalaxy)
+
+    assert_array_equal(two_point.source0.tracer_args.z, two_point_cwindow.XY.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, two_point_cwindow.XY.y.z)
+
+    assert_array_equal(two_point.source0.tracer_args.dndz, two_point_cwindow.XY.x.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, two_point_cwindow.XY.y.dndz)
+
+
+def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_factory):
+    theta = np.array(np.linspace(0, 100, 100))
+    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
+    if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
+        return
+    two_point = TwoPoint.from_metadata_real([xi_theta], wl_factory, nc_factory).pop()
+
+    assert two_point is not None
+    assert isinstance(two_point, TwoPoint)
+    assert two_point.sacc_data_type == xi_theta.get_sacc_name()
+
+    assert isinstance(two_point.source0, SourceGalaxy)
+    assert isinstance(two_point.source1, SourceGalaxy)
+
+    assert_array_equal(two_point.source0.tracer_args.z, real_two_point_xy.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, real_two_point_xy.y.z)
+
+    assert_array_equal(two_point.source0.tracer_args.dndz, real_two_point_xy.x.dndz)
+    assert_array_equal(two_point.source1.tracer_args.dndz, real_two_point_xy.y.dndz)
 
 
 def test_two_point_from_metadata_cwindow(two_point_cwindow_1, wl_factory, nc_factory):

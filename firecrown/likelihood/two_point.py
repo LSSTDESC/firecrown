@@ -31,11 +31,14 @@ from firecrown.likelihood.statistic import (
     Statistic,
     TheoryVector,
 )
-from firecrown.metadata.two_point_types import TRACER_NAMES_TOTAL
-from firecrown.metadata.two_point import (
+from firecrown.metadata.two_point_types import (
+    TRACER_NAMES_TOTAL,
+    InferredGalaxyZDist,
     Galaxies,
     Measurement,
-    InferredGalaxyZDist,
+)
+
+from firecrown.metadata.two_point import (
     TracerNames,
     TwoPointCells,
     TwoPointCWindow,
@@ -283,36 +286,6 @@ def use_source_factory_metadata_only(
         case _:
             raise ValueError(f"Measurement {measurement} not supported!")
     return source
-
-
-def create_sacc(metadata: list[TwoPointCells]):
-    """Fill the SACC file with the inferred galaxy redshift distributions."""
-    sacc_data = sacc.Sacc()
-
-    dv = []
-    for cell in metadata:
-        for inferred_galaxy_zdist in (cell.XY.x, cell.XY.y):
-            if inferred_galaxy_zdist.bin_name not in sacc_data.tracers:
-                sacc_data.add_tracer(
-                    "NZ",
-                    inferred_galaxy_zdist.bin_name,
-                    inferred_galaxy_zdist.z,
-                    inferred_galaxy_zdist.dndz,
-                )
-        cells = np.ones_like(cell.ells)
-        sacc_data.add_ell_cl(
-            cell.get_sacc_name(),
-            cell.XY.x.bin_name,
-            cell.XY.y.bin_name,
-            ell=cell.ells,
-            x=cells,
-        )
-        dv.append(cells)
-
-    delta_v = np.concatenate(dv, axis=0)
-    sacc_data.add_covariance(np.diag(np.ones_like(delta_v)))
-
-    return sacc_data
 
 
 class TwoPoint(Statistic):

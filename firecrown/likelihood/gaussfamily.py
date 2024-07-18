@@ -161,9 +161,6 @@ class GaussFamily(Likelihood):
         cls, statistics: Sequence[Statistic], covariance: npt.NDArray[np.float64]
     ) -> GaussFamily:
         """Create a GaussFamily object in the READY state."""
-        for stat in statistics:
-            if not stat.ready:
-                raise RuntimeError(f"The statistic {stat} is not ready to be used.")
         obj = cls(statistics)
         obj._set_covariance(covariance)
         obj.state = State.READY
@@ -242,6 +239,19 @@ class GaussFamily(Likelihood):
         indices = np.concatenate(indices_list)
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
+
+        largest_index = np.max(indices)
+
+        if not (
+            covariance.ndim == 2
+            and covariance.shape[0] == covariance.shape[1]
+            and largest_index < covariance.shape[0]
+        ):
+            raise ValueError(
+                f"The covariance matrix has shape {covariance.shape}, "
+                f"but the expected shape is at least "
+                f"{(largest_index + 1, largest_index + 1)}."
+            )
 
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):

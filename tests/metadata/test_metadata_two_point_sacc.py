@@ -11,6 +11,11 @@ from numpy.testing import assert_array_equal
 import sacc
 
 from firecrown.parameters import ParamsMap
+from firecrown.metadata.two_point_types import (
+    Galaxies,
+    type_to_sacc_string_harmonic,
+    type_to_sacc_string_real,
+)
 from firecrown.metadata.two_point import (
     extract_all_data_types_cells,
     extract_all_data_types_xi_thetas,
@@ -21,7 +26,6 @@ from firecrown.metadata.two_point import (
     extract_all_data_xi_thetas,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
-    Galaxies,
     TracerNames,
     TwoPointCells,
     TwoPointXiTheta,
@@ -423,31 +427,26 @@ def test_extract_all_data_cells(sacc_galaxy_cells):
 
     for two_point in all_data:
         tracer_names = two_point["tracer_names"]
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
-        tracer_pair = tracer_pairs[tracer_names]
-        assert_array_equal(two_point["ells"], tracer_pair[1])
-        assert two_point["data_type"] == tracer_pair[0]
+        tracer_pair = tracer_pairs[(tracer_names, two_point["data_type"])]
+        assert_array_equal(two_point["ells"], tracer_pair[0])
 
 
 def test_extract_all_data_cells_by_type(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    tracer_pairs = {
-        k: v for k, v in tracer_pairs.items() if v[0] == "galaxy_shear_cl_ee"
-    }
     all_data = extract_all_data_types_cells(
         sacc_data, allowed_data_type=["galaxy_shear_cl_ee"]
     )
-    assert len(all_data) == len(tracer_pairs)
+    assert len(all_data) < len(tracer_pairs)
 
     for two_point in all_data:
         tracer_names = two_point["tracer_names"]
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, "galaxy_shear_cl_ee") in tracer_pairs
 
-        tracer_pair = tracer_pairs[tracer_names]
-        assert_array_equal(two_point["ells"], tracer_pair[1])
-        assert two_point["data_type"] == tracer_pair[0]
+        tracer_pair = tracer_pairs[(tracer_names, "galaxy_shear_cl_ee")]
+        assert_array_equal(two_point["ells"], tracer_pair[0])
 
 
 def test_extract_all_data_xis(sacc_galaxy_xis):
@@ -458,32 +457,26 @@ def test_extract_all_data_xis(sacc_galaxy_xis):
 
     for two_point in all_data:
         tracer_names = two_point["tracer_names"]
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
-        tracer_pair = tracer_pairs[tracer_names]
-        assert_array_equal(two_point["thetas"], tracer_pair[1])
-        assert two_point["data_type"] == tracer_pair[0]
+        tracer_pair = tracer_pairs[(tracer_names, two_point["data_type"])]
+        assert_array_equal(two_point["thetas"], tracer_pair[0])
 
 
 def test_extract_all_data_xis_by_type(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    tracer_pairs = {
-        k: v for k, v in tracer_pairs.items() if v[0] == "galaxy_density_xi"
-    }
-
     all_data = extract_all_data_types_xi_thetas(
         sacc_data, allowed_data_type=["galaxy_density_xi"]
     )
-    assert len(all_data) == len(tracer_pairs)
+    assert len(all_data) < len(tracer_pairs)
 
     for two_point in all_data:
         tracer_names = two_point["tracer_names"]
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
-        tracer_pair = tracer_pairs[tracer_names]
-        assert_array_equal(two_point["thetas"], tracer_pair[1])
-        assert two_point["data_type"] == tracer_pair[0]
+        tracer_pair = tracer_pairs[(tracer_names, two_point["data_type"])]
+        assert_array_equal(two_point["thetas"], tracer_pair[0])
 
 
 def test_extract_no_window(sacc_galaxy_cells_src0_src0):
@@ -527,19 +520,22 @@ def test_extract_all_photoz_bin_combinations_xis(sacc_galaxy_xis):
 
     # We get all combinations already present in the data
     tracer_names_list = [
-        TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name)
+        (
+            TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name),
+            type_to_sacc_string_real(bin_comb.x_measurement, bin_comb.y_measurement),
+        )
         for bin_comb in all_bin_combs
     ]
 
     # We check if the particular are present in the list
-    for tracer_names in tracer_pairs:
-        assert tracer_names in tracer_names_list
+    for tracer_names_type in tracer_pairs:
+        assert tracer_names_type in tracer_names_list
 
-        bin_comb = all_bin_combs[tracer_names_list.index(tracer_names)]
+        bin_comb = all_bin_combs[tracer_names_list.index(tracer_names_type)]
         two_point_xis = TwoPointXiTheta(
             XY=bin_comb, thetas=np.linspace(0.0, 2.0 * np.pi, 20)
         )
-        assert two_point_xis.get_sacc_name() == tracer_pairs[tracer_names][0]
+        assert two_point_xis.get_sacc_name() == tracer_names_type[1]
 
 
 def test_extract_all_photoz_bin_combinations_cells(sacc_galaxy_cells):
@@ -549,19 +545,24 @@ def test_extract_all_photoz_bin_combinations_cells(sacc_galaxy_cells):
 
     # We get all combinations already present in the data
     tracer_names_list = [
-        TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name)
+        (
+            TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name),
+            type_to_sacc_string_harmonic(
+                bin_comb.x_measurement, bin_comb.y_measurement
+            ),
+        )
         for bin_comb in all_bin_combs
     ]
 
     # We check if the particular are present in the list
-    for tracer_names in tracer_pairs:
-        assert tracer_names in tracer_names_list
+    for tracer_names_type in tracer_pairs:
+        assert tracer_names_type in tracer_names_list
 
-        bin_comb = all_bin_combs[tracer_names_list.index(tracer_names)]
+        bin_comb = all_bin_combs[tracer_names_list.index(tracer_names_type)]
         two_point_cells = TwoPointCells(
             XY=bin_comb, ells=np.unique(np.logspace(1, 3, 10))
         )
-        assert two_point_cells.get_sacc_name() == tracer_pairs[tracer_names][0]
+        assert two_point_cells.get_sacc_name() == tracer_names_type[1]
 
 
 def test_make_cells(sacc_galaxy_cells):
@@ -604,10 +605,9 @@ def test_extract_all_two_point_cells(sacc_galaxy_cells):
 
     for two_point in two_point_cells:
         tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
 
-        datatype, ells, Cell = tracer_pairs[tracer_names]
-        assert two_point.get_sacc_name() == datatype
+        ells, Cell = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
         assert_array_equal(two_point.ells, ells)
         assert two_point.Cell is not None
         assert_array_equal(two_point.Cell.data, Cell)
@@ -624,10 +624,9 @@ def test_extract_all_two_point_cwindows(sacc_galaxy_cwindows):
 
     for two_point in two_point_cwindows:
         tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
 
-        datatype, ells, Cell, window = tracer_pairs[tracer_names]
-        assert two_point.get_sacc_name() == datatype
+        ells, Cell, window = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
         assert_array_equal(two_point.window.ells, ells)
         assert two_point.Cell is not None
         assert_array_equal(two_point.Cell.data, Cell)
@@ -649,10 +648,9 @@ def test_extract_all_data_xi_thetas(sacc_galaxy_xis):
 
     for two_point in two_point_xis:
         tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
-        assert tracer_names in tracer_pairs
+        assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
 
-        datatype, thetas, xi = tracer_pairs[tracer_names]
-        assert two_point.get_sacc_name() == datatype
+        thetas, xi = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
         assert_array_equal(two_point.thetas, thetas)
         assert two_point.xis is not None
         assert_array_equal(two_point.xis.data, xi)
@@ -666,18 +664,18 @@ def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
     two_point_cells, _ = extract_all_data_cells(sacc_data)
 
     two_points_new = TwoPoint.from_metadata_harmonic(
-        two_point_cells, wl_factory, nc_factory
+        two_point_cells, wl_factory, nc_factory, check_consistence=True
     )
 
     assert two_points_new is not None
 
     for two_point in two_points_new:
-        assert two_point.sacc_tracers in tracer_pairs
-        assert two_point.sacc_data_type == tracer_pairs[two_point.sacc_tracers][0]
+        tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
+        assert tracer_pairs_key in tracer_pairs
         assert two_point.ells is not None
-        assert_array_equal(two_point.ells, tracer_pairs[two_point.sacc_tracers][1])
+        assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key][0])
         assert_array_equal(
-            two_point.get_data_vector(), tracer_pairs[two_point.sacc_tracers][2]
+            two_point.get_data_vector(), tracer_pairs[tracer_pairs_key][1]
         )
 
 
@@ -693,10 +691,10 @@ def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
     assert two_points_new is not None
 
     for two_point in two_points_new:
-        sacc_data_type, _, Cell, window = tracer_pairs[two_point.sacc_tracers]
+        tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
+        _, Cell, window = tracer_pairs[tracer_pairs_key]
 
-        assert two_point.sacc_tracers in tracer_pairs
-        assert two_point.sacc_data_type == sacc_data_type
+        assert tracer_pairs_key in tracer_pairs
         assert two_point.ells is None
         assert_array_equal(two_point.get_data_vector(), Cell)
         assert two_point.window is not None
@@ -712,17 +710,19 @@ def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
 
     two_point_xis = extract_all_data_xi_thetas(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata_real(two_point_xis, wl_factory, nc_factory)
+    two_points_new = TwoPoint.from_metadata_real(
+        two_point_xis, wl_factory, nc_factory, check_consistence=True
+    )
 
     assert two_points_new is not None
 
     for two_point in two_points_new:
-        assert two_point.sacc_tracers in tracer_pairs
-        assert two_point.sacc_data_type == tracer_pairs[two_point.sacc_tracers][0]
+        tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
+        assert tracer_pairs_key in tracer_pairs
         assert two_point.thetas is not None
-        assert_array_equal(two_point.thetas, tracer_pairs[two_point.sacc_tracers][1])
+        assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key][0])
         assert_array_equal(
-            two_point.get_data_vector(), tracer_pairs[two_point.sacc_tracers][2]
+            two_point.get_data_vector(), tracer_pairs[tracer_pairs_key][1]
         )
 
 
@@ -883,3 +883,13 @@ def test_compare_constructors_xis(
             two_point.compute_theory_vector(tools_with_vanilla_cosmology),
             two_point_old.compute_theory_vector(tools_with_vanilla_cosmology),
         )
+
+
+def test_extract_all_data_cells_no_cov(sacc_galaxy_cells):
+    sacc_data, _, _ = sacc_galaxy_cells
+    sacc_data.covariance = None
+    with pytest.raises(
+        ValueError,
+        match=("The SACC object does not have a covariance matrix."),
+    ):
+        _ = extract_all_data_cells(sacc_data, include_maybe_types=True)

@@ -223,6 +223,7 @@ def run_likelihood() -> None:
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
+    tools.update(systematics_params)
 
     # Prepare the cosmology object
     tools.prepare(ccl_cosmo)
@@ -296,7 +297,7 @@ def plot_predicted_and_measured_statistics(
     # pylint: disable=import-outside-toplevel
     import matplotlib.pyplot as plt
 
-    ells = stat0.ells
+    ells = stat0.ells_for_xi
     cells = CElls(stat0, stat2, stat3)
 
     # Code that computes effect from IA using that Pk2D object

@@ -118,7 +118,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
     Y1_SOURCE_BINS,
     Y10_SOURCE_BINS,
 )
-from firecrown.metadata.two_point import Measurement, Galaxies
+from firecrown.metadata.two_point_types import Measurement, Galaxies
 
 # These are the values at which we will evaluate the distribution.
 z = np.linspace(0.0, 0.6, 100)
