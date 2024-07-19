@@ -209,6 +209,7 @@ _SourceGalaxySystematicT = TypeVar(
 
 
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
+SOURCE_GALAXY_SYSTEMATIC_DEFAULT_WIDTH_Z = 0.0
 
 
 class SourceGalaxyPhotoZShift(
@@ -271,6 +272,81 @@ class PhotoZShiftFactory(BaseModel):
     def create_global(self) -> PhotoZShift:
         """Create a PhotoZShift object with the given tracer name."""
         raise ValueError("PhotoZShift cannot be global.")
+
+
+class SourceGalaxyPhotoZShiftandWidth(
+    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
+):
+    """A photo-z shift & width bias.
+
+    This systematic shifts and widens the photo-z distribution by some amount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar delta_z: the photo-z shift.
+    :ivar w_z: the photo-z width.
+    """
+
+    def __init__(self, sacc_tracer: str) -> None:
+        """Create a PhotoZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(parameter_prefix=sacc_tracer)
+
+        self.delta_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+        )
+        self.width_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_WIDTH_Z
+        )
+
+    def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+        """Apply a shift & width to the photo-z distribution of a source."""
+        z = tracer_arg.z
+        dndz = tracer_arg.dndz
+        dndz_interp = Akima1DInterpolator(z, dndz)
+        dndz_mean = np.mean(dndz)
+        width = self.width_z
+        shift = self.delta_z
+
+        dndz = (
+            dndz_interp((z - dndz_mean) / width + dndz_mean + shift, extrapolate=False)
+            / width
+        )
+        # This is dangerous
+        dndz[np.isnan(dndz)] = 0.0
+
+        return replace(
+            tracer_arg,
+            dndz=dndz,
+        )
+
+
+class PhotoZShiftandWidth(SourceGalaxyPhotoZShiftandWidth):
+    """Photo-z shift and width systematic."""
+
+
+class PhotoZShiftandWidthFactory(BaseModel):
+    """Factory class for PhotoZShift objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftandWidthFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftandWidthFactory"
+
+    def create(self, bin_name: str) -> PhotoZShiftandWidth:
+        """Create a PhotoZShiftandWidth object with the given tracer name."""
+        return PhotoZShiftandWidth(bin_name)
+
+    def create_global(self) -> PhotoZShift:
+        """Create a PhotoZShiftandWidth object with the given tracer name."""
+        raise ValueError("PhotoZShiftandWidth cannot be global.")
 
 
 class SourceGalaxySelectField(
