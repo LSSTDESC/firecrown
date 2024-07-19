@@ -1,8 +1,4 @@
-"""This module holds classes needed to predict the binned cluster number counts.
-
-The binned cluster number counts statistic predicts the number of galaxy
-clusters within a single redshift and mass bin.
-"""
+"""Binned cluster number counts statistic support."""
 
 from __future__ import annotations
 
@@ -26,11 +22,7 @@ from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
 class BinnedClusterNumberCounts(Statistic):
-    """The Binned Cluster Number Counts statistic.
-
-    This class will make a prediction for the number of clusters in a z, mass bin
-    and compare that prediction to the data provided in the sacc file.
-    """
+    """A statistic representing the number of clusters in a z, mass bin."""
 
     def __init__(
         self,
@@ -39,6 +31,13 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_recipe: ClusterRecipe,
         systematics: None | list[SourceSystematic] = None,
     ):
+        """Initialize this statistic.
+
+        :param cluster_properties: The cluster observables to use.
+        :param survey_name: The name of the survey to use.
+        :param cluster_recipe: The cluster recipe to use.
+        :param systematics: The systematics to apply to this statistic.
+        """
         super().__init__()
         self.systematics = systematics or []
         self.theory_vector: None | TheoryVector = None
@@ -50,7 +49,10 @@ class BinnedClusterNumberCounts(Statistic):
         self.bins: list[SaccBin] = []
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this statistic and mark it as ready for use."""
+        """Read the data for this statistic and mark it as ready for use.
+
+        :param sacc_data: The data in the sacc format.
+        """
         # Build the data vector and indices needed for the likelihood
         if self.cluster_properties == ClusterProperty.NONE:
             raise ValueError("You must specify at least one cluster property.")
@@ -77,12 +79,19 @@ class BinnedClusterNumberCounts(Statistic):
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
-        """Gets the statistic data vector."""
+        """Gets the statistic data vector.
+
+        :return: The statistic data vector.
+        """
         assert self.data_vector is not None
         return self.data_vector
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a statistic from sources, concrete implementation."""
+        """Compute a statistic from sources, concrete implementation.
+
+        :param tools: The modeling tools used to compute the statistic.
+        :return: The computed statistic.
+        """
         assert tools.cluster_abundance is not None
 
         theory_vector_list: list[float] = []
@@ -116,6 +125,10 @@ class BinnedClusterNumberCounts(Statistic):
         Using the data from the sacc file, this function evaluates the likelihood for
         a single point of the parameter space, and returns the predicted mean mass of
         the clusters in each bin.
+
+        :param cluster_counts: The number of clusters in each bin.
+        :param cluster_properties: The cluster observables to use.
+        :return: The mean count of the clusters in each bin.
         """
         assert tools.cluster_abundance is not None
 
@@ -137,6 +150,9 @@ class BinnedClusterNumberCounts(Statistic):
         Using the data from the sacc file, this function evaluates the likelihood for
         a single point of the parameter space, and returns the predicted number of
         clusters in each bin.
+
+        :param tools: The modeling tools used to compute the statistic.
+        :return: The number of clusters in each bin.
         """
         assert tools.cluster_abundance is not None
 
