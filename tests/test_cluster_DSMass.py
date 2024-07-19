@@ -3,7 +3,7 @@
 import numpy as np
 import pyccl
 import pytest
-
+import clmm
 from firecrown.models.cluster.DS_from_mass import DS_from_mass
 
 
@@ -13,42 +13,51 @@ def fixture_ds_from_mass():
     ds = DS_from_mass()
     return ds
 
-def test_ds_from_mass_init(ds: DS_from_mass):
-    assert ds is not None
-    assert ds.cosmo is None
-        ds.moo, clmm.modeling
+def test_ds_from_mass_init(ds_from_mass: DS_from_mass):
+    assert ds_from_mass is not None
+    assert ds_from_mass.cosmo is None
+    assert isinstance(
+           ds_from_mass.moo, clmm.Modeling
+    )
+    assert isinstance(
+           ds_from_mass.cosmo_clmm, clmm.Cosmology
+    )
+    assert isinstance(
+           ds_from_mass.moo, clmm.Modeling
     )
 
-
-def test_cluster_update_ingredients(cluster_abundance: ClusterAbundance):
+def test_ds_from_mass_update_ingredients(ds_from_mass: DS_from_mass):
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cluster_abundance.update_ingredients(cosmo)
-    assert cluster_abundance.cosmo is not None
-    assert cluster_abundance.cosmo == cosmo
-    # pylint: disable=protected-access
-    assert cluster_abundance._hmf_cache == {}
+    clmm_cosmo=clmm.Cosmology()
+    clmm_cosmo._init_from_cosmo(cosmo)
+    
+    ds_from_mass.update_ingredients(cosmo)
+    assert ds_from_mass.cosmo is not None
+    assert ds_from_mass.cosmo == cosmo
+    assert ds_from_mass.cosmo_clmm is not None
 
 
-def test_abundance_comoving_returns_value(cluster_abundance: ClusterAbundance):
+def test_ds_from_mass_calculate_DS_from_Mass(ds_from_mass: DS_from_mass):
+    
     cosmo = pyccl.CosmologyVanillaLCDM()
-    cluster_abundance.update_ingredients(cosmo)
+    clmm_cosmo=clmm.Cosmology()
+    clmm_cosmo._init_from_cosmo(cosmo)
+    moo = clmm.Modeling(massdef="mean", delta_mdef=200, halo_profile_model="nfw")
+    moo.set_cosmo(clmm_cosmo)
+    moo.set_concentration(4)
+    mass=14.0
+    redshift =1.0
+    moo.set_mass(mass)
+    radii=np.arange(0.1, 1.0, 0.1)
+    profile = moo.eval_excess_surface_density(radii, redshift)
 
-    result = cluster_abundance.comoving_volume(np.linspace(0.1, 1, 10), 360**2)
-    assert isinstance(result, np.ndarray)
-    assert np.issubdtype(result.dtype, np.float64)
-    assert len(result) == 10
-    assert np.all(result > 0)
+    ds_from_mass.update_ingredients(cosmo)
+    
+    assert ds_from_mass.calculate_DS_from_Mass(mass, redshift, radii).all() == profile.all() 
 
 
-@pytest.mark.slow
-def test_abundance_massfunc_returns_value(cluster_abundance: ClusterAbundance):
-    cosmo = pyccl.CosmologyVanillaLCDM()
-    cluster_abundance.update_ingredients(cosmo)
 
-    result = cluster_abundance.mass_function(
-        np.linspace(13, 17, 5), np.linspace(0.1, 1, 5)
-    )
-    assert isinstance(result, np.ndarray)
-    assert np.issubdtype(result.dtype, np.float64)
-    assert len(result) == 5
-    assert np.all(result > 0)
+
+
+
+
