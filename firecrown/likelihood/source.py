@@ -6,7 +6,7 @@ from abc import abstractmethod
 from dataclasses import dataclass, replace
 from typing import Generic, Sequence, TypeVar, final, Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
+from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -248,6 +248,10 @@ class SourceGalaxyPhotoZShift(
             tracer_arg,
             dndz=dndz,
         )
+
+
+class PhotoZShift(SourceGalaxyPhotoZShift):
+    """Photo-z shift systematic."""
 
 
 class PhotoZShiftFactory(BaseModel):
