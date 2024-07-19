@@ -477,6 +477,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         assert self.current_tracer_args
         return self.current_tracer_args.scale
 
+
 class LinearBiasSystematicFactory(BaseModel):
     """Factory class for LinearBiasSystematic objects."""
 

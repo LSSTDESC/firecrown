@@ -431,6 +431,7 @@ class TattAlignmentSystematicFactory(BaseModel):
         """
         return TattAlignmentSystematic(None)
 
+
 WeakLensingSystematicFactory = Annotated[
     MultiplicativeShearBiasFactory
     | LinearAlignmentSystematicFactory
@@ -446,9 +447,9 @@ class WeakLensingFactory(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     _cache: dict[int, WeakLensing] = PrivateAttr()
-    _global_systematics_instances: Sequence[SourceGalaxySystematic[WeakLensingArgs]] = (
-        PrivateAttr()
-    )
+    _global_systematics_instances: Sequence[
+        SourceGalaxySystematic[WeakLensingArgs]
+    ] = PrivateAttr()
 
     per_bin_systematics: Sequence[WeakLensingSystematicFactory]
     global_systematics: Sequence[WeakLensingSystematicFactory]

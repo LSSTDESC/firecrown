@@ -33,6 +33,7 @@ class SourceSystematic(Updatable):
     def read(self, sacc_data: sacc.Sacc):
         """Call to allow this object to read from the appropriate sacc data."""
 
+
 class Source(Updatable):
     """An abstract source class (e.g., a sample of lenses).
 
@@ -248,6 +249,7 @@ class SourceGalaxyPhotoZShift(
             dndz=dndz,
         )
 
+
 class PhotoZShiftFactory(BaseModel):
     """Factory class for PhotoZShift objects."""
 
@@ -312,9 +314,9 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
         self.sacc_tracer = sacc_tracer
         self.current_tracer_args: None | _SourceGalaxyArgsT = None
-        self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
-            UpdatableCollection(systematics)
-        )
+        self.systematics: UpdatableCollection[
+            SourceGalaxySystematic
+        ] = UpdatableCollection(systematics)
         self.tracer_args: _SourceGalaxyArgsT
 
     def _read(self, sacc_data: sacc.Sacc):
