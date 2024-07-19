@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Generic, Sequence, TypeVar, final
+from typing import Generic, Sequence, TypeVar, final, Annotated, Literal
 
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -31,7 +32,6 @@ class SourceSystematic(Updatable):
 
     def read(self, sacc_data: sacc.Sacc):
         """Call to allow this object to read from the appropriate sacc data."""
-
 
 class Source(Updatable):
     """An abstract source class (e.g., a sample of lenses).
@@ -247,6 +247,24 @@ class SourceGalaxyPhotoZShift(
             tracer_arg,
             dndz=dndz,
         )
+
+class PhotoZShiftFactory(BaseModel):
+    """Factory class for PhotoZShift objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftFactory"
+
+    def create(self, bin_name: str) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        return PhotoZShift(bin_name)
+
+    def create_global(self) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        raise ValueError("PhotoZShift cannot be global.")
 
 
 class SourceGalaxySelectField(

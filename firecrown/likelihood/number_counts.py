@@ -22,6 +22,7 @@ from firecrown.likelihood.source import (
     SourceGalaxyPhotoZShift,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
+    PhotoZShiftFactory,
     Tracer,
 )
 from firecrown.metadata.two_point import InferredGalaxyZDist
@@ -475,26 +476,6 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         """Return the scale for this source."""
         assert self.current_tracer_args
         return self.current_tracer_args.scale
-
-
-class PhotoZShiftFactory(BaseModel):
-    """Factory class for PhotoZShift objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    type: Annotated[
-        Literal["PhotoZShiftFactory"],
-        Field(description="The type of the systematic."),
-    ] = "PhotoZShiftFactory"
-
-    def create(self, bin_name: str) -> PhotoZShift:
-        """Create a PhotoZShift object with the given tracer name."""
-        return PhotoZShift(bin_name)
-
-    def create_global(self) -> PhotoZShift:
-        """Create a PhotoZShift object with the given tracer name."""
-        raise ValueError("PhotoZShift cannot be global.")
-
 
 class LinearBiasSystematicFactory(BaseModel):
     """Factory class for LinearBiasSystematic objects."""

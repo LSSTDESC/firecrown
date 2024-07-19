@@ -23,6 +23,7 @@ from firecrown.likelihood.source import (
     SourceGalaxyPhotoZShift,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
+    PhotoZShiftFactory,
     Tracer,
 )
 from firecrown.metadata.two_point import InferredGalaxyZDist
@@ -429,33 +430,6 @@ class TattAlignmentSystematicFactory(BaseModel):
         :return: The created TattAlignmentSystematic object.
         """
         return TattAlignmentSystematic(None)
-
-
-class PhotoZShiftFactory(BaseModel):
-    """Factory class for PhotoZShift objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    type: Annotated[
-        Literal["PhotoZShiftFactory"], Field(description="The type of the systematic.")
-    ] = "PhotoZShiftFactory"
-
-    def create(self, bin_name: str) -> PhotoZShift:
-        """Create a PhotoZShift object.
-
-        :param inferred_zdist: The inferred galaxy redshift distribution for
-            the created PhotoZShift object.
-        :return: The created PhotoZShift object.
-        """
-        return PhotoZShift(bin_name)
-
-    def create_global(self) -> PhotoZShift:
-        """Create a PhotoZShift object.
-
-        :return: The created PhotoZShift object.
-        """
-        raise ValueError("PhotoZShift cannot be global")
-
 
 WeakLensingSystematicFactory = Annotated[
     MultiplicativeShearBiasFactory
