@@ -20,6 +20,7 @@ from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
+    SourceGalaxyPhotoZShift,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
     PhotoZShiftFactory,
@@ -52,6 +53,10 @@ class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
+
+
+class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
+    """Photo-z shift systematic."""
 
 
 class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
