@@ -21,9 +21,11 @@ from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,
+    SourceGalaxyPhotoZShiftandWidth,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
     PhotoZShiftFactory,
+    PhotoZShiftandWidthFactory,
     Tracer,
 )
 from firecrown.metadata.two_point import InferredGalaxyZDist
@@ -53,6 +55,10 @@ class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
+
+
+class PhotoZShiftandWidth(SourceGalaxyPhotoZShiftandWidth[WeakLensingArgs]):
+    """Photo-z shift systematic."""
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
@@ -433,10 +439,11 @@ class TattAlignmentSystematicFactory(BaseModel):
 
 
 WeakLensingSystematicFactory = Annotated[
-    MultiplicativeShearBiasFactory
+    PhotoZShiftFactory
+    | PhotoZShiftandWidthFactory
+    | MultiplicativeShearBiasFactory
     | LinearAlignmentSystematicFactory
-    | TattAlignmentSystematicFactory
-    | PhotoZShiftFactory,
+    | TattAlignmentSystematicFactory,
     Field(discriminator="type", union_mode="left_to_right"),
 ]
 

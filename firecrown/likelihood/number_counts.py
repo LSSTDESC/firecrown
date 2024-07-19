@@ -20,9 +20,11 @@ from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,
+    SourceGalaxyPhotoZShiftandWidth,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
     PhotoZShiftFactory,
+    PhotoZShiftandWidthFactory,
     Tracer,
 )
 from firecrown.metadata.two_point import InferredGalaxyZDist
@@ -57,6 +59,10 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
+    """Photo-z shift systematic."""
+
+
+class PhotoZShiftandWidth(SourceGalaxyPhotoZShiftandWidth[NumberCountsArgs]):
     """Photo-z shift systematic."""
 
 
@@ -562,6 +568,7 @@ class ConstantMagnificationBiasSystematicFactory(BaseModel):
 
 NumberCountsSystematicFactory = Annotated[
     PhotoZShiftFactory
+    | PhotoZShiftandWidthFactory
     | LinearBiasSystematicFactory
     | PTNonLinearBiasSystematicFactory
     | MagnificationBiasSystematicFactory
