@@ -19,7 +19,6 @@ from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
-    SourceGalaxyPhotoZShift,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
     PhotoZShiftFactory,
@@ -54,10 +53,6 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
         """Apply method to include systematics in the tracer_arg."""
-
-
-class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
-    """Photo-z shift systematic."""
 
 
 class SelectField(SourceGalaxySelectField[NumberCountsArgs]):
