@@ -128,7 +128,6 @@ class BinnedClusterNumberCounts(Statistic):
 
         :param cluster_counts: The number of clusters in each bin.
         :param cluster_properties: The cluster observables to use.
-        :return: The mean count of the clusters in each bin.
         """
         assert tools.cluster_abundance is not None
 
