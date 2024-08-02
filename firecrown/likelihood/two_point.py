@@ -289,7 +289,10 @@ def use_source_factory_metadata_only(
 
 
 class TwoPoint(Statistic):
-    """A two-point statistic.
+    """A statistic that represents the correlation between two measurements.
+
+    If the same source is used twice in the same TwoPoint object, this produces
+    an autocorrelation.
 
     For example, shear correlation function, galaxy-shear correlation function, etc.
 
