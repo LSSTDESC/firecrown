@@ -137,8 +137,6 @@ class BinnedClusterNumberCounts(Statistic):
             total_observable = self.cluster_recipe.evaluate_theory_prediction(
                 tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
             )
-            cluster_counts.append(counts)
-
             mean_observable = total_observable / counts
             mean_values.append(mean_observable)
 
