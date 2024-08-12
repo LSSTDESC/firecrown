@@ -256,7 +256,8 @@ class NamedParameters:
     ]:
         """Return the contained data as a set.
 
-        :return the value of the parameter as a set"""
+        :return: the value of the parameter as a set
+        """
         return set(self.data)
 
     def set_from_basic_dict(
