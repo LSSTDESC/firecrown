@@ -21,7 +21,7 @@ def test_vector_create():
     assert vals.dtype == np.float64
     assert vals.shape == (10,)
     for cls in VECTOR_CLASSES:
-        result = cls.create(vals)  # type: ignore
+        result = cls.create(vals)
         assert isinstance(result, cls)
         assert result.shape == (10,)
         assert np.array_equal(vals, result)
@@ -32,7 +32,7 @@ def test_vector_from_list():
     assert isinstance(vals, list)
     assert len(vals) == 4
     for cls in VECTOR_CLASSES:
-        result = cls.from_list(vals)  # type: ignore
+        result = cls.from_list(vals)
         assert isinstance(result, cls)
         assert result.shape == (4,)
         for i, val in enumerate(vals):
@@ -41,7 +41,7 @@ def test_vector_from_list():
 
 def test_vector_slicing():
     for cls in VECTOR_CLASSES:
-        vec = cls.create(np.random.random_sample((12,)))  # type: ignore
+        vec = cls.create(np.random.random_sample((12,)))
         assert isinstance(vec, cls)
         middle_part = vec[3:6]
         assert middle_part.shape == (3,)
@@ -50,7 +50,7 @@ def test_vector_slicing():
 
 def test_vector_copying():
     for cls in VECTOR_CLASSES:
-        vec = cls.create(np.random.random_sample((12,)))  # type: ignore
+        vec = cls.create(np.random.random_sample((12,)))
         assert isinstance(vec, cls)
         vec_copy = vec.copy()
         assert vec_copy is not vec
@@ -70,7 +70,7 @@ def test_ufunc_on_vector():
     data = np.array([0.0, 0.25, 0.50])
     expected = np.sin(data)
     for cls in VECTOR_CLASSES:
-        vec = cls.create(data)  # type: ignore
+        vec = cls.create(data)
         result = np.sin(vec)
         assert isinstance(result, cls)
         assert np.array_equal(result, expected)

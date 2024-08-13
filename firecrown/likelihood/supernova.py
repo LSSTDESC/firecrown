@@ -23,7 +23,7 @@ SNIA_DEFAULT_M = -19.2
 
 
 class Supernova(Statistic):
-    """A supernova statistic.
+    """A statistic representing the distance modulus for a single supernova.
 
     This statistic that applies an additive shift M to a supernova's distance
     modulus.
