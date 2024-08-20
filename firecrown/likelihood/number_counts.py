@@ -231,7 +231,7 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     ) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
-        :param tools: currently unused, by required by the interface
+        :param tools: currently unused, but required by the interface
         :param tracer_arg: a NumberCountsArgs object with values to be updated
 
         :return: an updated NumberCountsArgs object
