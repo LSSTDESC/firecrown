@@ -103,9 +103,6 @@ class Source(Updatable):
     def create_tracers(self, tools: ModelingTools):
         """Abstract method to create tracers for this Source.
 
-        Derived classes that override this method should make sure to call the
-        base class method using:
-
         :param tools: The modeling tools used for creating the tracers
         """
 
