@@ -26,10 +26,12 @@ from firecrown.likelihood.two_point import (
     WeakLensingFactory,
     NumberCountsFactory,
 )
-from firecrown.metadata.two_point import (
-    extract_all_data_cells,
-    TwoPointCellsIndex,
+from firecrown.metadata_types import (
     TracerNames,
+)
+from firecrown.metadata_functions import (
+    TwoPointCellsIndex,
+    extract_all_data_cells,
 )
 
 

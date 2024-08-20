@@ -37,13 +37,13 @@ all_y1_bins = count_bins + shear_bins
 
 ## Generating the Two-Point Metadata
 
-Within `firecrown.metadata`, a suite of functions is available to calculate all possible two-point statistic metadata corresponding to a designated set of bins.
+Within `firecrown.metadata_functions`, a suite of functions is available to calculate all possible two-point statistic metadata corresponding to a designated set of bins.
 For instance, demonstrated below is the computation of all feasible metadata tailored to the LSST year 1 redshift distribution:
 
 ```{python}
 
 import numpy as np
-from firecrown.metadata.two_point import make_all_photoz_bin_combinations, TwoPointCells
+from firecrown.metadata_functions import make_all_photoz_bin_combinations, TwoPointCells
 
 all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
 ells = np.unique(np.geomspace(2, 2000, 128).astype(int))

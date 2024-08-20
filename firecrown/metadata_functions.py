@@ -13,7 +13,7 @@ import numpy.typing as npt
 import sacc
 from sacc.data_types import required_tags
 
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     TracerNames,
     Measurement,
     InferredGalaxyZDist,
@@ -21,7 +21,7 @@ from firecrown.metadata.two_point_types import (
     Window,
     TwoPointCells,
     TwoPointCWindow,
-    TwoPointXiTheta,
+    TwoPointReal,
     TwoPointMeasurement,
     LENS_REGEX,
     SOURCE_REGEX,
@@ -209,7 +209,7 @@ def extract_all_tracers_types(
     return _extract_all_candidate_data_types(data_points, include_maybe_types)
 
 
-def extract_all_data_types_xi_thetas(
+def extract_all_data_types_reals(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointXiThetaIndex]:
@@ -222,25 +222,25 @@ def extract_all_data_types_xi_thetas(
 
     data_types = sacc_data.get_data_types()
 
-    data_types_xi_thetas = [
+    data_types_reals = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
     ]
     if allowed_data_type is not None:
-        data_types_xi_thetas = [
+        data_types_reals = [
             data_type
-            for data_type in data_types_xi_thetas
+            for data_type in data_types_reals
             if data_type in allowed_data_type
         ]
 
-    all_xi_thetas: list[TwoPointXiThetaIndex] = []
-    for data_type in data_types_xi_thetas:
+    all_reals: list[TwoPointXiThetaIndex] = []
+    for data_type in data_types_reals:
         for combo in sacc_data.get_tracer_combinations(data_type):
             if len(combo) != 2:
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
 
-            all_xi_thetas.append(
+            all_reals.append(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
@@ -250,7 +250,7 @@ def extract_all_data_types_xi_thetas(
                 }
             )
 
-    return all_xi_thetas
+    return all_reals
 
 
 def extract_all_data_types_cells(
@@ -412,11 +412,11 @@ def extract_all_data_cells(
     return two_point_cells, two_point_cwindows
 
 
-def extract_all_data_xi_thetas(
+def extract_all_data_reals(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
     include_maybe_types=False,
-) -> list[TwoPointXiTheta]:
+) -> list[TwoPointReal]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
@@ -427,13 +427,11 @@ def extract_all_data_xi_thetas(
 
     cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
 
-    two_point_xi_thetas = []
-    for xi_theta_index in extract_all_data_types_xi_thetas(
-        sacc_data, allowed_data_type
-    ):
-        tracer_names = xi_theta_index["tracer_names"]
-        thetas = xi_theta_index["thetas"]
-        data_type = xi_theta_index["data_type"]
+    two_point_reals = []
+    for real_index in extract_all_data_types_reals(sacc_data, allowed_data_type):
+        tracer_names = real_index["tracer_names"]
+        thetas = real_index["thetas"]
+        data_type = real_index["data_type"]
 
         XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
 
@@ -451,9 +449,9 @@ def extract_all_data_xi_thetas(
             covariance_name=cov_hash,
         )
 
-        two_point_xi_thetas.append(TwoPointXiTheta(XY=XY, thetas=thetas, xis=Xi))
+        two_point_reals.append(TwoPointReal(XY=XY, thetas=thetas, xis=Xi))
 
-    return two_point_xi_thetas
+    return two_point_reals
 
 
 def check_two_point_consistence_harmonic(
@@ -498,7 +496,7 @@ def check_two_point_consistence_harmonic(
 
 
 def check_two_point_consistence_real(
-    two_point_xi_thetas: Sequence[TwoPointXiTheta],
+    two_point_reals: Sequence[TwoPointReal],
 ) -> None:
     """Check the indices of the real-space two-point functions.
 
@@ -508,33 +506,32 @@ def check_two_point_consistence_real(
     index_set_list = []
     cov_name: None | str = None
 
-    for two_point_xi_theta in two_point_xi_thetas:
-        if two_point_xi_theta.xis is None:
+    for two_point_real in two_point_reals:
+        if two_point_real.xis is None:
             raise ValueError(
-                f"The TwoPointXiTheta {two_point_xi_theta} does not contain a data."
+                f"The TwoPointReal {two_point_real} does not contain a data."
             )
         if cov_name is None:
-            cov_name = two_point_xi_theta.xis.covariance_name
-        elif cov_name != two_point_xi_theta.xis.covariance_name:
+            cov_name = two_point_real.xis.covariance_name
+        elif cov_name != two_point_real.xis.covariance_name:
             raise ValueError(
-                f"The TwoPointXiTheta {two_point_xi_theta} has a different covariance "
-                f"name {two_point_xi_theta.xis.covariance_name} than the previous "
-                f"TwoPointXiTheta {cov_name}."
+                f"The TwoPointReal {two_point_real} has a different covariance "
+                f"name {two_point_real.xis.covariance_name} than the previous "
+                f"TwoPointReal {cov_name}."
             )
-        index_set = set(two_point_xi_theta.xis.indices)
+        index_set = set(two_point_real.xis.indices)
         index_set_list.append(index_set)
-        if len(index_set) != len(two_point_xi_theta.xis.indices):
+        if len(index_set) != len(two_point_real.xis.indices):
             raise ValueError(
-                f"The indices of the TwoPointXiTheta {two_point_xi_theta} "
-                f"are not unique."
+                f"The indices of the TwoPointReal {two_point_real} " f"are not unique."
             )
 
         if all_indices_set & index_set:
             for i, index_set_a in enumerate(index_set_list):
                 if index_set_a & index_set:
                     raise ValueError(
-                        f"The indices of the TwoPointXiTheta {two_point_xi_thetas[i]} "
-                        f"and {two_point_xi_theta} overlap."
+                        f"The indices of the TwoPointReal {two_point_reals[i]} "
+                        f"and {two_point_real} overlap."
                     )
         all_indices_set.update(index_set)
 

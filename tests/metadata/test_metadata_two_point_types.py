@@ -1,5 +1,5 @@
 """
-Tests for the module firecrown.metadata.two_point
+Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
 from dataclasses import replace
@@ -12,34 +12,34 @@ import numpy as np
 
 import sacc
 import sacc_name_mapping as snm
-from firecrown.metadata.two_point_types import (
-    Galaxies,
-    Clusters,
-    CMB,
-    TracerNames,
-    TwoPointMeasurement,
+from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
-    compare_enums,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
-    measurement_is_compatible as is_compatible,
-    measurement_is_compatible_real as is_compatible_real,
-    measurement_is_compatible_harmonic as is_compatible_harmonic,
-    measurement_supports_harmonic as supports_harmonic,
-    measurement_supports_real as supports_real,
-)
-
-from firecrown.metadata.two_point import (
-    extract_all_tracers_types,
-    measurements_from_index,
+    CMB,
+    Clusters,
+    Galaxies,
     LENS_REGEX,
     SOURCE_REGEX,
+    TracerNames,
+    TwoPointMeasurement,
+    compare_enums,
+    measurement_is_compatible as is_compatible,
+    measurement_is_compatible_harmonic as is_compatible_harmonic,
+    measurement_is_compatible_real as is_compatible_real,
+    measurement_supports_harmonic as supports_harmonic,
+    measurement_supports_real as supports_real,
+    type_to_sacc_string_harmonic as harmonic,
+    type_to_sacc_string_real as real,
+)
+
+from firecrown.metadata_functions import (
     TwoPointXiThetaIndex,
-    match_name_type,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
     extract_all_data_cells,
-    extract_all_data_xi_thetas,
+    extract_all_data_reals,
+    extract_all_tracers_types,
+    match_name_type,
+    measurements_from_index,
 )
 
 
@@ -196,9 +196,7 @@ def test_extract_all_tracers_types_cwindows(
                 assert measurement == Galaxies.SHEAR_E
 
 
-def test_extract_all_tracers_types_xi_thetas(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
-):
+def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
     sacc_data, _, _ = sacc_galaxy_xis
 
     tracers = extract_all_tracers_types(sacc_data)
@@ -215,7 +213,7 @@ def test_extract_all_tracers_types_xi_thetas(
             }
 
 
-def test_extract_all_tracers_types_xi_thetas_inverted(
+def test_extract_all_tracers_types_reals_inverted(
     sacc_galaxy_xis_inverted: tuple[sacc.Sacc, dict, dict]
 ):
     sacc_data, _, _ = sacc_galaxy_xis_inverted
@@ -434,19 +432,19 @@ def test_check_two_point_consistence_harmonic_missing_cell(two_point_cell):
         check_two_point_consistence_harmonic([two_point_cell])
 
 
-def test_check_two_point_consistence_real(two_point_xi_theta):
+def test_check_two_point_consistence_real(two_point_real):
     xis = TwoPointMeasurement(
         data=np.zeros(100), indices=np.arange(100), covariance_name="cov"
     )
-    check_two_point_consistence_real([replace(two_point_xi_theta, xis=xis)])
+    check_two_point_consistence_real([replace(two_point_real, xis=xis)])
 
 
-def test_check_two_point_consistence_real_missing_xis(two_point_xi_theta):
+def test_check_two_point_consistence_real_missing_xis(two_point_real):
     with pytest.raises(
         ValueError,
-        match="The TwoPointXiTheta \\(.*, .*\\)\\[.*\\] does not contain a data.",
+        match="The TwoPointReal \\(.*, .*\\)\\[.*\\] does not contain a data.",
     ):
-        check_two_point_consistence_real([two_point_xi_theta])
+        check_two_point_consistence_real([two_point_real])
 
 
 def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
@@ -473,7 +471,7 @@ def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
 def test_check_two_point_consistence_real_mixing_cov(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    two_point_xis = extract_all_data_reals(sacc_data)
     assert two_point_xis[0].xis is not None
     two_point_xis[0] = replace(
         two_point_xis[0],
@@ -483,8 +481,8 @@ def test_check_two_point_consistence_real_mixing_cov(sacc_galaxy_xis):
     with pytest.raises(
         ValueError,
         match=(
-            "The TwoPointXiTheta .* has a different covariance name .* than the "
-            "previous TwoPointXiTheta wrong_cov_name."
+            "The TwoPointReal .* has a different covariance name .* than the "
+            "previous TwoPointReal wrong_cov_name."
         ),
     ):
         check_two_point_consistence_real(two_point_xis)
@@ -513,7 +511,7 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(sacc_galaxy_cel
 def test_check_two_point_consistence_real_non_unique_indices(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    two_point_xis = extract_all_data_reals(sacc_data)
     assert two_point_xis[0].xis is not None
     new_indices = two_point_xis[0].xis.indices
     new_indices[0] = 3
@@ -524,7 +522,7 @@ def test_check_two_point_consistence_real_non_unique_indices(sacc_galaxy_xis):
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointXiTheta .* are not unique.",
+        match="The indices of the TwoPointReal .* are not unique.",
     ):
         check_two_point_consistence_real(two_point_xis)
 
@@ -552,7 +550,7 @@ def test_check_two_point_consistence_harmonic_indices_overlap(sacc_galaxy_cells)
 def test_check_two_point_consistence_real_indices_overlap(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    two_point_xis = extract_all_data_reals(sacc_data)
     assert two_point_xis[1].xis is not None
     new_indices = two_point_xis[1].xis.indices
     new_indices[1] = 3
@@ -563,7 +561,7 @@ def test_check_two_point_consistence_real_indices_overlap(sacc_galaxy_xis):
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointXiTheta .* overlap.",
+        match="The indices of the TwoPointReal .* overlap.",
     ):
         check_two_point_consistence_real(two_point_xis)
 

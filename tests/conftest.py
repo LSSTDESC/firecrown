@@ -18,19 +18,17 @@ from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     Galaxies,
+    InferredGalaxyZDist,
+    TracerNames,
+    TwoPointCWindow,
+    TwoPointCells,
+    TwoPointXY,
+    TwoPointReal,
+    Window,
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
-)
-from firecrown.metadata.two_point import (
-    TracerNames,
-    InferredGalaxyZDist,
-    Window,
-    TwoPointXY,
-    TwoPointCells,
-    TwoPointCWindow,
-    TwoPointXiTheta,
 )
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
@@ -299,11 +297,11 @@ def make_two_point_cell(
     return TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
 
 
-@pytest.fixture(name="two_point_xi_theta")
-def make_two_point_xi_theta(real_two_point_xy: TwoPointXY) -> TwoPointXiTheta:
+@pytest.fixture(name="two_point_real")
+def make_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
     """Generate a TwoPointCWindow object with 100 ells."""
     thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
-    return TwoPointXiTheta(thetas=thetas, XY=real_two_point_xy)
+    return TwoPointReal(thetas=thetas, XY=real_two_point_xy)
 
 
 @pytest.fixture(name="cluster_sacc_data")

@@ -1,4 +1,4 @@
-"""Tests for the module firecrown.metadata.two_point.
+"""Tests for the modules firecrown.metata_types and firecrown.metadata_functions.
 
 In this module, we test the functions and classes involved SACC extraction tools.
 """
@@ -11,24 +11,24 @@ from numpy.testing import assert_array_equal
 import sacc
 
 from firecrown.parameters import ParamsMap
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     Galaxies,
+    TracerNames,
+    TwoPointCells,
+    TwoPointReal,
     type_to_sacc_string_harmonic,
     type_to_sacc_string_real,
 )
-from firecrown.metadata.two_point import (
+from firecrown.metadata_functions import (
     extract_all_data_types_cells,
-    extract_all_data_types_xi_thetas,
+    extract_all_data_types_reals,
     extract_all_photoz_bin_combinations,
     extract_all_tracers,
     extract_window_function,
     extract_all_data_cells,
-    extract_all_data_xi_thetas,
+    extract_all_data_reals,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
-    TracerNames,
-    TwoPointCells,
-    TwoPointXiTheta,
 )
 from firecrown.likelihood.two_point import TwoPoint, use_source_factory
 
@@ -452,7 +452,7 @@ def test_extract_all_data_cells_by_type(sacc_galaxy_cells):
 def test_extract_all_data_xis(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    all_data = extract_all_data_types_xi_thetas(sacc_data)
+    all_data = extract_all_data_types_reals(sacc_data)
     assert len(all_data) == len(tracer_pairs)
 
     for two_point in all_data:
@@ -466,7 +466,7 @@ def test_extract_all_data_xis(sacc_galaxy_xis):
 def test_extract_all_data_xis_by_type(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    all_data = extract_all_data_types_xi_thetas(
+    all_data = extract_all_data_types_reals(
         sacc_data, allowed_data_type=["galaxy_density_xi"]
     )
     assert len(all_data) < len(tracer_pairs)
@@ -497,7 +497,7 @@ def test_extract_all_data_types_three_tracers_xis(sacc_galaxy_xis_three_tracers)
             "does not have exactly two tracers."
         ),
     ):
-        _ = extract_all_data_types_xi_thetas(sacc_data)
+        _ = extract_all_data_types_reals(sacc_data)
 
 
 def test_extract_all_data_types_three_tracers_cells(sacc_galaxy_cells_three_tracers):
@@ -532,7 +532,7 @@ def test_extract_all_photoz_bin_combinations_xis(sacc_galaxy_xis):
         assert tracer_names_type in tracer_names_list
 
         bin_comb = all_bin_combs[tracer_names_list.index(tracer_names_type)]
-        two_point_xis = TwoPointXiTheta(
+        two_point_xis = TwoPointReal(
             XY=bin_comb, thetas=np.linspace(0.0, 2.0 * np.pi, 20)
         )
         assert two_point_xis.get_sacc_name() == tracer_names_type[1]
@@ -587,7 +587,7 @@ def test_make_xis(sacc_galaxy_xis):
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
 
     for bin_comb in all_bin_combs:
-        two_point_xis = TwoPointXiTheta(XY=bin_comb, thetas=thetas)
+        two_point_xis = TwoPointReal(XY=bin_comb, thetas=thetas)
 
         assert two_point_xis.thetas is not None
         assert_array_equal(two_point_xis.thetas, thetas)
@@ -640,10 +640,10 @@ def test_extract_all_two_point_cwindows(sacc_galaxy_cwindows):
     check_two_point_consistence_harmonic(two_point_cwindows)
 
 
-def test_extract_all_data_xi_thetas(sacc_galaxy_xis):
+def test_extract_all_data_reals(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    two_point_xis = extract_all_data_reals(sacc_data)
     assert len(two_point_xis) == len(tracer_pairs)
 
     for two_point in two_point_xis:
@@ -708,7 +708,7 @@ def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
 def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    two_point_xis = extract_all_data_reals(sacc_data)
 
     two_points_new = TwoPoint.from_metadata_real(
         two_point_xis, wl_factory, nc_factory, check_consistence=True
@@ -844,7 +844,7 @@ def test_compare_constructors_xis(
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_xi_thetas(sacc_data)
+    two_point_xis = extract_all_data_reals(sacc_data)
 
     two_points_real = TwoPoint.from_metadata_real(two_point_xis, wl_factory, nc_factory)
 

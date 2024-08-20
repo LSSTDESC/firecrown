@@ -1,22 +1,20 @@
 """
-Tests for the module firecrown.metadata.two_point
+Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
+    TwoPointCWindow,
+    TwoPointCells,
+    TwoPointMeasurement,
+    TwoPointXY,
+    TwoPointReal,
+    Window,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
-)
-from firecrown.metadata.two_point import (
-    TwoPointCells,
-    TwoPointCWindow,
-    TwoPointXiTheta,
-    TwoPointXY,
-    TwoPointMeasurement,
-    Window,
 )
 
 
@@ -82,7 +80,7 @@ def test_two_point_xi_theta_with_data(real_two_point_xy: TwoPointXY):
     )
     thetas = np.linspace(0.0, 1.0, 100)
 
-    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=thetas, xis=measure)
+    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=thetas, xis=measure)
 
     assert xi_theta.XY == real_two_point_xy
     assert xi_theta.get_sacc_name() == real(
@@ -152,7 +150,7 @@ def test_two_point_xi_theta_with_invalid_data_size(real_two_point_xy: TwoPointXY
         ValueError,
         match="Xis should have the same shape as thetas.",
     ):
-        TwoPointXiTheta(XY=real_two_point_xy, thetas=thetas, xis=measure)
+        TwoPointReal(XY=real_two_point_xy, thetas=thetas, xis=measure)
 
 
 def test_two_point_measurement_invalid_data():

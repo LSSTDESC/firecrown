@@ -1,17 +1,14 @@
 """
-Tests for the module firecrown.metadata.two_point
+Tests for the module firecrown.metadata_types and firecrown.metadata_functions.
 """
 
 import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
-)
-
-from firecrown.metadata.two_point_types import (
     Clusters,
     CMB,
     Galaxies,
@@ -20,11 +17,10 @@ from firecrown.metadata.two_point_types import (
     TwoPointCells,
     TwoPointCWindow,
     TwoPointXY,
-    TwoPointXiTheta,
+    TwoPointReal,
     TwoPointMeasurement,
     Window,
 )
-
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
 
@@ -518,7 +514,7 @@ def test_two_point_xi_theta():
         x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
     )
     theta = np.array(np.linspace(0, 100, 100))
-    two_point = TwoPointXiTheta(XY=xy, thetas=theta)
+    two_point = TwoPointReal(XY=xy, thetas=theta)
 
     assert_array_equal(two_point.thetas, theta)
     assert two_point.XY == xy
@@ -546,7 +542,7 @@ def test_two_point_xi_theta_invalid():
         ValueError,
         match="Measurements .* and .* must support real-space calculations.",
     ):
-        TwoPointXiTheta(XY=xy, thetas=theta)
+        TwoPointReal(XY=xy, thetas=theta)
 
 
 def test_harmonic_type_string_invalid():
@@ -639,9 +635,9 @@ def test_two_point_cwindow_serialization(two_point_cwindow: TwoPointCWindow):
 
 def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10, 10))
-    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
+    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
     s = xi_theta.to_yaml()
-    recovered = TwoPointXiTheta.from_yaml(s)
+    recovered = TwoPointReal.from_yaml(s)
     assert xi_theta == recovered
     assert str(real_two_point_xy) == str(recovered.XY)
     assert str(xi_theta) == str(recovered)
@@ -653,7 +649,7 @@ def test_two_point_xi_theta_wrong_shape(real_two_point_xy: TwoPointXY):
         ValueError,
         match="Thetas should be a 1D array.",
     ):
-        TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
+        TwoPointReal(XY=real_two_point_xy, thetas=theta)
 
 
 def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
@@ -696,7 +692,7 @@ def test_two_point_from_metadata_cwindow(two_point_cwindow, wl_factory, nc_facto
 
 def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_factory):
     theta = np.array(np.linspace(0, 100, 100))
-    xi_theta = TwoPointXiTheta(XY=real_two_point_xy, thetas=theta)
+    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
         return
     two_point = TwoPoint.from_metadata_real([xi_theta], wl_factory, nc_factory).pop()

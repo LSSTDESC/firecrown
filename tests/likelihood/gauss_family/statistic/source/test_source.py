@@ -19,7 +19,7 @@ from firecrown.likelihood.source import (
 )
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
-from firecrown.metadata.two_point import extract_all_tracers
+from firecrown.metadata_functions import extract_all_tracers
 from firecrown.parameters import ParamsMap
 
 

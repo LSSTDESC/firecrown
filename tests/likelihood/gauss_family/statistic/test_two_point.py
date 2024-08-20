@@ -29,13 +29,13 @@ from firecrown.likelihood.two_point import (
     WeakLensingFactory,
     NumberCountsFactory,
 )
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
 )
-from firecrown.metadata.two_point import (
+from firecrown.metadata_functions import (
     TwoPointCellsIndex,
     TwoPointXiThetaIndex,
 )

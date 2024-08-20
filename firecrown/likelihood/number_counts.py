@@ -24,7 +24,7 @@ from firecrown.likelihood.source import (
     SourceGalaxySystematic,
     Tracer,
 )
-from firecrown.metadata.two_point import InferredGalaxyZDist
+from firecrown.metadata_types import InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import DerivedParameter, DerivedParameterCollection, ParamsMap
 from firecrown.updatable import UpdatableCollection

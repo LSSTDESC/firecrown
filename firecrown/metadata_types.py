@@ -697,7 +697,7 @@ class TwoPointCWindow(YAMLSerializable):
 
 
 @dataclass(frozen=True, kw_only=True)
-class TwoPointXiTheta(YAMLSerializable):
+class TwoPointReal(YAMLSerializable):
     """Class defining the metadata for a real-space two-point measurement.
 
     The class used to store the metadata for a real-space two-point function measured
@@ -732,7 +732,7 @@ class TwoPointXiTheta(YAMLSerializable):
             )
 
     def __str__(self) -> str:
-        """Return a string representation of the TwoPointXiTheta object."""
+        """Return a string representation of the TwoPointReal object."""
         return f"{self.XY}[{self.get_sacc_name()}]"
 
     def get_sacc_name(self) -> str:
@@ -740,7 +740,7 @@ class TwoPointXiTheta(YAMLSerializable):
         return type_to_sacc_string_real(self.XY.x_measurement, self.XY.y_measurement)
 
     def __eq__(self, other) -> bool:
-        """Equality test for TwoPointXiTheta objects."""
+        """Equality test for TwoPointReal objects."""
         return (
             self.XY == other.XY
             and np.array_equal(self.thetas, other.thetas)
@@ -748,5 +748,5 @@ class TwoPointXiTheta(YAMLSerializable):
         )
 
     def has_data(self) -> bool:
-        """Return True if the TwoPointXiTheta object has a xis array."""
+        """Return True if the TwoPointReal object has a xis array."""
         return self.xis is not None

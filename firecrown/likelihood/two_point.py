@@ -31,24 +31,24 @@ from firecrown.likelihood.statistic import (
     Statistic,
     TheoryVector,
 )
-from firecrown.metadata.two_point_types import (
-    TRACER_NAMES_TOTAL,
-    InferredGalaxyZDist,
+from firecrown.metadata_types import (
     Galaxies,
+    InferredGalaxyZDist,
     Measurement,
+    TRACER_NAMES_TOTAL,
+    TracerNames,
+    TwoPointCWindow,
+    TwoPointCells,
+    TwoPointReal,
+    Window,
 )
 
-from firecrown.metadata.two_point import (
-    TracerNames,
-    TwoPointCells,
-    TwoPointCWindow,
-    TwoPointXiTheta,
+from firecrown.metadata_functions import (
     TwoPointCellsIndex,
     TwoPointXiThetaIndex,
-    Window,
-    extract_window_function,
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
+    extract_window_function,
     measurements_from_index,
 )
 from firecrown.modeling_tools import ModelingTools
@@ -170,7 +170,7 @@ def generate_ells_cells(ell_config: EllOrThetaConfig):
     return ells, Cells
 
 
-def generate_theta_xis(theta_config: EllOrThetaConfig):
+def generate_reals(theta_config: EllOrThetaConfig):
     """Generate theta and xi values from the configuration dictionary."""
     thetas = _generate_ell_or_theta(**theta_config)
     xis = np.zeros_like(thetas)
@@ -455,7 +455,7 @@ class TwoPoint(Statistic):
         sacc_data_type: str,
         source0: Source,
         source1: Source,
-        metadata: TwoPointCells | TwoPointCWindow | TwoPointXiTheta,
+        metadata: TwoPointCells | TwoPointCWindow | TwoPointReal,
     ) -> TwoPoint:
         """Create a TwoPoint statistic from a TwoPointCells metadata object."""
         two_point = cls(sacc_data_type, source0, source1)
@@ -464,8 +464,8 @@ class TwoPoint(Statistic):
                 two_point._init_from_cells(metadata)
             case TwoPointCWindow():
                 two_point._init_from_cwindow(metadata)
-            case TwoPointXiTheta():
-                two_point._init_from_xi_theta(metadata)
+            case TwoPointReal():
+                two_point._init_from_real(metadata)
             case _:
                 raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
         return two_point
@@ -493,8 +493,8 @@ class TwoPoint(Statistic):
             self.data_vector = DataVector.create(metadata.Cell.data)
         self.ready = True
 
-    def _init_from_xi_theta(self, metadata: TwoPointXiTheta):
-        """Initialize the TwoPoint statistic from a TwoPointXiTheta metadata object."""
+    def _init_from_real(self, metadata: TwoPointReal):
+        """Initialize the TwoPoint statistic from a TwoPointReal metadata object."""
         self.sacc_tracers = metadata.XY.get_tracer_names()
         self.thetas = metadata.thetas
         self.window = None
@@ -507,14 +507,14 @@ class TwoPoint(Statistic):
     @classmethod
     def _from_metadata_any(
         cls,
-        metadata: Sequence[TwoPointCells | TwoPointCWindow | TwoPointXiTheta],
+        metadata: Sequence[TwoPointCells | TwoPointCWindow | TwoPointReal],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
+        list of TwoPointCells, TwoPointCWindow or TwoPointReal metadata objects.
         The metadata objects are used to initialize the TwoPoint statistics.
         """
         two_point_list = [
@@ -549,7 +549,7 @@ class TwoPoint(Statistic):
         """Create an UpdatableCollection of TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
+        list of TwoPointCells, TwoPointCWindow or TwoPointReal metadata objects.
         The metadata objects are used to initialize the TwoPoint statistics.
         """
         two_point_list = []
@@ -595,7 +595,7 @@ class TwoPoint(Statistic):
     @classmethod
     def from_metadata_real(
         cls,
-        metadata: Sequence[TwoPointXiTheta],
+        metadata: Sequence[TwoPointReal],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
         check_consistence: bool = False,
@@ -603,7 +603,7 @@ class TwoPoint(Statistic):
         """Create an UpdatableCollection of real space TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointXiTheta metadata objects. The metadata objects are used to
+        list of TwoPointReal metadata objects. The metadata objects are used to
         initialize the TwoPoint statistics.
 
         :param metadata: The metadata objects to initialize the TwoPoint statistics.
@@ -658,7 +658,7 @@ class TwoPoint(Statistic):
 
         return ells, Cells, sacc_indices
 
-    def read_theta_xis(
+    def read_reals(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
     ) -> (
         None
@@ -666,7 +666,7 @@ class TwoPoint(Statistic):
     ):
         """Read and return theta and xi."""
         thetas, xis = sacc_data.get_theta_xi(sacc_data_type, *tracers, return_cov=False)
-        # As version 0.13 of sacc, the method get_theta_xi returns the
+        # As version 0.13 of sacc, the method get_real returns the
         # theta values and the xi values in arrays of the same length.
         assert len(thetas) == len(xis)
 
@@ -694,7 +694,7 @@ class TwoPoint(Statistic):
 
     def read_real_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
-        thetas_xis_indices = self.read_theta_xis(
+        thetas_xis_indices = self.read_reals(
             self.sacc_data_type, sacc_data, self.sacc_tracers
         )
         # We do not support window functions for real space statistics
@@ -722,7 +722,7 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input theta values "
                     "were given!"
                 )
-            thetas, xis = generate_theta_xis(self.ell_or_theta_config)
+            thetas, xis = generate_reals(self.ell_or_theta_config)
             sacc_indices = None
         assert isinstance(self.ell_or_theta_min, (float, type(None)))
         assert isinstance(self.ell_or_theta_max, (float, type(None)))
