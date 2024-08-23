@@ -37,10 +37,8 @@ from firecrown.metadata_types import (
     Measurement,
     TRACER_NAMES_TOTAL,
     TracerNames,
-    TwoPointCWindow,
-    TwoPointCells,
+    TwoPointHarmonic,
     TwoPointReal,
-    Window,
 )
 
 from firecrown.metadata_functions import (
@@ -124,7 +122,9 @@ def make_log_interpolator(x, y):
     return lambda x_, intp=intp: intp(np.log(x_))
 
 
-def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.int64]:
+def calculate_ells_for_interpolation(
+    min_ell: int, max_ell: int
+) -> npt.NDArray[np.int64]:
     """See _ell_for_xi.
 
     This method mixes together:
@@ -134,11 +134,9 @@ def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.int64]:
     and then calls _ell_for_xi with those arguments, returning whatever it
     returns.
     """
-    ell_config = {
-        **ELL_FOR_XI_DEFAULTS,
-        "maximum": w.ells[-1],
-    }
-    ell_config["minimum"] = max(ell_config["minimum"], w.ells[0])
+    ell_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+    ell_config["maximum"] = max_ell
+    ell_config["minimum"] = max(ell_config["minimum"], min_ell)
     return _ell_for_xi(**ell_config)
 
 
@@ -402,7 +400,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta_config: None | EllOrThetaConfig
         self.ell_or_theta_min: None | float | int
         self.ell_or_theta_max: None | float | int
-        self.window: None | Window
+        self.window: None | npt.NDArray[np.float64]
         self.data_vector: None | DataVector
         self.theory_vector: None | TheoryVector
         self.sacc_tracers: TracerNames
@@ -455,39 +453,24 @@ class TwoPoint(Statistic):
         sacc_data_type: str,
         source0: Source,
         source1: Source,
-        metadata: TwoPointCells | TwoPointCWindow | TwoPointReal,
+        metadata: TwoPointHarmonic | TwoPointReal,
     ) -> TwoPoint:
-        """Create a TwoPoint statistic from a TwoPointCells metadata object."""
+        """Create a TwoPoint statistic from a TwoPointHarmonic metadata object."""
         two_point = cls(sacc_data_type, source0, source1)
         match metadata:
-            case TwoPointCells():
-                two_point._init_from_cells(metadata)
-            case TwoPointCWindow():
-                two_point._init_from_cwindow(metadata)
+            case TwoPointHarmonic():
+                two_point._init_from_harmonic(metadata)
             case TwoPointReal():
                 two_point._init_from_real(metadata)
             case _:
                 raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
         return two_point
 
-    def _init_from_cells(self, metadata: TwoPointCells):
-        """Initialize the TwoPoint statistic from a TwoPointCells metadata object."""
+    def _init_from_harmonic(self, metadata: TwoPointHarmonic):
+        """Initialize the TwoPoint statistic from a TwoPointHarmonic metadata object."""
         self.sacc_tracers = metadata.XY.get_tracer_names()
         self.ells = metadata.ells
-        self.window = None
-        if metadata.Cell is not None:
-            self.sacc_indices = metadata.Cell.indices
-            self.data_vector = DataVector.create(metadata.Cell.data)
-        self.ready = True
-
-    def _init_from_cwindow(self, metadata: TwoPointCWindow):
-        """Initialize the TwoPoint statistic from a TwoPointCWindow metadata object."""
-        self.sacc_tracers = metadata.XY.get_tracer_names()
         self.window = metadata.window
-        if self.window.ells_for_interpolation is None:
-            self.window.ells_for_interpolation = calculate_ells_for_interpolation(
-                self.window
-            )
         if metadata.Cell is not None:
             self.sacc_indices = metadata.Cell.indices
             self.data_vector = DataVector.create(metadata.Cell.data)
@@ -507,14 +490,14 @@ class TwoPoint(Statistic):
     @classmethod
     def _from_metadata_any(
         cls,
-        metadata: Sequence[TwoPointCells | TwoPointCWindow | TwoPointReal],
+        metadata: Sequence[TwoPointHarmonic | TwoPointReal],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells, TwoPointCWindow or TwoPointReal metadata objects.
+        list of TwoPointHarmonic, TwoPointCWindow or TwoPointReal metadata objects.
         The metadata objects are used to initialize the TwoPoint statistics.
         """
         two_point_list = [
@@ -549,7 +532,7 @@ class TwoPoint(Statistic):
         """Create an UpdatableCollection of TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells, TwoPointCWindow or TwoPointReal metadata objects.
+        list of TwoPointHarmonic, TwoPointCWindow or TwoPointReal metadata objects.
         The metadata objects are used to initialize the TwoPoint statistics.
         """
         two_point_list = []
@@ -571,7 +554,7 @@ class TwoPoint(Statistic):
     @classmethod
     def from_metadata_harmonic(
         cls,
-        metadata: Sequence[TwoPointCells | TwoPointCWindow],
+        metadata: Sequence[TwoPointHarmonic],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
         check_consistence: bool = False,
@@ -579,8 +562,8 @@ class TwoPoint(Statistic):
         """Create an UpdatableCollection of harmonic space TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells or TwoPointCWindow metadata objects. The metadata objects
-        are used to initialize the TwoPoint statistics.
+        list of TwoPointHarmonic or TwoPointCWindow metadata objects. The metadata
+        objects are used to initialize the TwoPoint statistics.
 
         :param metadata: The metadata objects to initialize the TwoPoint statistics.
         :param wl_factory: The weak lensing factory to use.

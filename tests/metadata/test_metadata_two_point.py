@@ -14,7 +14,7 @@ from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
     TracerNames,
-    TwoPointCells,
+    TwoPointHarmonic,
     TwoPointCWindow,
     TwoPointXY,
     TwoPointReal,
@@ -199,7 +199,7 @@ def test_two_point_cells():
         x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
     )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    cells = TwoPointCells(ells=ells, XY=xy)
+    cells = TwoPointHarmonic(ells=ells, XY=xy)
 
     assert_array_equal(cells.ells, ells)
     assert cells.XY == xy
@@ -227,7 +227,7 @@ def test_two_point_cells_invalid_ells():
         ValueError,
         match="Ells should be a 1D array.",
     ):
-        TwoPointCells(ells=ells, XY=xy)
+        TwoPointHarmonic(ells=ells, XY=xy)
 
 
 def test_two_point_cells_invalid_type():
@@ -251,7 +251,7 @@ def test_two_point_cells_invalid_type():
         ValueError,
         match="Measurements .* and .* must support harmonic-space calculations.",
     ):
-        TwoPointCells(ells=ells, XY=xy)
+        TwoPointHarmonic(ells=ells, XY=xy)
 
 
 def test_window_equality():
@@ -598,15 +598,15 @@ def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY):
 
 def test_two_point_cells_str(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     assert str(cells) == f"{str(harmonic_two_point_xy)}[{cells.get_sacc_name()}]"
 
 
 def test_two_point_cells_serialization(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     s = cells.to_yaml()
-    recovered = TwoPointCells.from_yaml(s)
+    recovered = TwoPointHarmonic.from_yaml(s)
     assert cells == recovered
     assert str(harmonic_two_point_xy) == str(recovered.XY)
     assert str(cells) == str(recovered)
@@ -618,7 +618,7 @@ def test_two_point_cells_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
         ValueError,
         match="Ells should be a 1D array.",
     ):
-        TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+        TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
 
 
 def test_window_serialization(window_1: Window):
@@ -654,7 +654,7 @@ def test_two_point_xi_theta_wrong_shape(real_two_point_xy: TwoPointXY):
 
 def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     two_point = TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory).pop()
 
     assert two_point is not None
@@ -728,7 +728,7 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
     xy = TwoPointXY(
         x=x, y=y, x_measurement=CMB.CONVERGENCE, y_measurement=Galaxies.COUNTS
     )
-    cells = TwoPointCells(ells=ells, XY=xy)
+    cells = TwoPointHarmonic(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
         match="Measurement .* not supported!",

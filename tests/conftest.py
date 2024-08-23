@@ -23,7 +23,7 @@ from firecrown.metadata_types import (
     InferredGalaxyZDist,
     TracerNames,
     TwoPointCWindow,
-    TwoPointCells,
+    TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
     Window,
@@ -291,10 +291,10 @@ def make_two_point_cwindow(
 @pytest.fixture(name="two_point_cell")
 def make_two_point_cell(
     harmonic_two_point_xy: TwoPointXY,
-) -> TwoPointCells:
+) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    return TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    return TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
 
 
 @pytest.fixture(name="two_point_real")

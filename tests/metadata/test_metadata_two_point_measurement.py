@@ -8,7 +8,7 @@ from numpy.testing import assert_array_equal
 
 from firecrown.metadata_types import (
     TwoPointCWindow,
-    TwoPointCells,
+    TwoPointHarmonic,
     TwoPointMeasurement,
     TwoPointXY,
     TwoPointReal,
@@ -27,7 +27,7 @@ def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
         data=data, indices=indices, covariance_name=covariance_name
     )
 
-    cells = TwoPointCells(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
+    cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
 
     assert cells.ells[0] == 0
     assert cells.ells[-1] == 100
@@ -106,7 +106,7 @@ def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointX
         ValueError,
         match="Cell should have the same shape as ells.",
     ):
-        TwoPointCells(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
+        TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
 
 
 def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):

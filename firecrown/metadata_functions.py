@@ -18,9 +18,7 @@ from firecrown.metadata_types import (
     Measurement,
     InferredGalaxyZDist,
     TwoPointXY,
-    Window,
-    TwoPointCells,
-    TwoPointCWindow,
+    TwoPointHarmonic,
     TwoPointReal,
     TwoPointMeasurement,
     LENS_REGEX,
@@ -308,18 +306,22 @@ def extract_all_photoz_bin_combinations(
 
 def extract_window_function(
     sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
-) -> None | Window:
-    """Extract a window function from a sacc file that matches the given indices.
+) -> tuple[None | npt.NDArray[np.float64], None | npt.NDArray[np.float64]]:
+    """Extract ells and weights for a window function.
 
-    If there is no appropriate window function, return None.
+    :params sacc_data: the Sacc object from which we read.
+    :params indices: the indices of the data points in the Sacc object which
+        are computed by the window function.
+    :returns: the ells and weights of the window function that match the
+       given indices from a sacc object, or a tuple of (None, None)
+       if the indices represent the measured Cells directly.
     """
     bandpower_window = sacc_data.get_bandpower_windows(indices)
     if bandpower_window is None:
-        return None
-    return Window(
-        ells=bandpower_window.values,
-        weights=bandpower_window.weight / bandpower_window.weight.sum(axis=0),
-    )
+        return None, None
+    ells = bandpower_window.values
+    weights = bandpower_window.weight / bandpower_window.weight.sum(axis=0)
+    return ells, weights
 
 
 def _build_two_point_xy(
@@ -353,7 +355,7 @@ def extract_all_data_cells(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
     include_maybe_types=False,
-) -> tuple[list[TwoPointCells], list[TwoPointCWindow]]:
+) -> list[TwoPointHarmonic]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
@@ -366,8 +368,7 @@ def extract_all_data_cells(
         raise ValueError("The SACC object does not have a covariance matrix.")
     cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
 
-    two_point_cells = []
-    two_point_cwindows = []
+    result: list[TwoPointHarmonic] = []
     for cell_index in extract_all_data_types_cells(sacc_data, allowed_data_type):
         tracer_names = cell_index["tracer_names"]
         ells = cell_index["ells"]
@@ -383,33 +384,24 @@ def extract_all_data_cells(
             return_ind=True,
         )
 
-        window = extract_window_function(sacc_data, indices)
-        if window is not None:
-            two_point_cwindows.append(
-                TwoPointCWindow(
-                    XY=XY,
-                    window=window,
-                    Cell=TwoPointMeasurement(
-                        data=Cells,
-                        indices=indices,
-                        covariance_name=cov_hash,
-                    ),
-                )
-            )
-        else:
-            two_point_cells.append(
-                TwoPointCells(
-                    XY=XY,
-                    ells=ells,
-                    Cell=TwoPointMeasurement(
-                        data=Cells,
-                        indices=indices,
-                        covariance_name=cov_hash,
-                    ),
-                )
-            )
+        replacement_ells, weights = extract_window_function(sacc_data, indices)
+        if replacement_ells is not None:
+            ells = replacement_ells
 
-    return two_point_cells, two_point_cwindows
+        result.append(
+            TwoPointHarmonic(
+                XY=XY,
+                window=weights,
+                ells=ells,
+                Cell=TwoPointMeasurement(
+                    data=Cells,
+                    indices=indices,
+                    covariance_name=cov_hash,
+                ),
+            )
+        )
+
+    return result
 
 
 def extract_all_data_reals(
@@ -455,7 +447,7 @@ def extract_all_data_reals(
 
 
 def check_two_point_consistence_harmonic(
-    two_point_cells: Sequence[TwoPointCells | TwoPointCWindow],
+    two_point_harmonics: Sequence[TwoPointHarmonic],
 ) -> None:
     """Check the indices of the harmonic-space two-point functions.
 
@@ -465,32 +457,32 @@ def check_two_point_consistence_harmonic(
     index_set_list = []
     cov_name: None | str = None
 
-    for two_point_cell in two_point_cells:
-        if two_point_cell.Cell is None:
+    for harmonic in two_point_harmonics:
+        if harmonic.Cell is None:
             raise ValueError(
-                f"The TwoPointCells {two_point_cell} does not contain a data."
+                f"The TwoPointHarmonic {harmonic} does not contain a data."
             )
         if cov_name is None:
-            cov_name = two_point_cell.Cell.covariance_name
-        elif cov_name != two_point_cell.Cell.covariance_name:
+            cov_name = harmonic.Cell.covariance_name
+        elif cov_name != harmonic.Cell.covariance_name:
             raise ValueError(
-                f"The TwoPointCells {two_point_cell} has a different covariance name "
-                f"{two_point_cell.Cell.covariance_name} than the previous "
-                f"TwoPointCells {cov_name}."
+                f"The TwoPointHarmonic {harmonic} has a different covariance "
+                f"name {harmonic.Cell.covariance_name} than the previous "
+                f"TwoPointHarmonic {cov_name}."
             )
-        index_set = set(two_point_cell.Cell.indices)
+        index_set = set(harmonic.Cell.indices)
         index_set_list.append(index_set)
-        if len(index_set) != len(two_point_cell.Cell.indices):
+        if len(index_set) != len(harmonic.Cell.indices):
             raise ValueError(
-                f"The indices of the TwoPointCells {two_point_cell} are not unique."
+                f"The indices of the TwoPointHarmonic {harmonic} are not unique."
             )
 
         if all_indices_set & index_set:
             for i, index_set_a in enumerate(index_set_list):
                 if index_set_a & index_set:
                     raise ValueError(
-                        f"The indices of the TwoPointCells {two_point_cells[i]} and "
-                        f"{two_point_cell} overlap."
+                        f"The indices of the TwoPointHarmonic "
+                        f"{two_point_harmonics[i]} and {harmonic} overlap."
                     )
         all_indices_set.update(index_set)
 

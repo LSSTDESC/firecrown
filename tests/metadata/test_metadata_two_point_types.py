@@ -427,7 +427,7 @@ def test_check_two_point_consistence_harmonic(two_point_cell):
 def test_check_two_point_consistence_harmonic_missing_cell(two_point_cell):
     with pytest.raises(
         ValueError,
-        match="The TwoPointCells \\(.*, .*\\)\\[.*\\] does not contain a data.",
+        match="The TwoPointHarmonic \\(.*, .*\\)\\[.*\\] does not contain a data.",
     ):
         check_two_point_consistence_harmonic([two_point_cell])
 
@@ -461,8 +461,8 @@ def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
     with pytest.raises(
         ValueError,
         match=(
-            "The TwoPointCells .* has a different covariance name .* "
-            "than the previous TwoPointCells wrong_cov_name."
+            "The TwoPointHarmonic .* has a different covariance name .* "
+            "than the previous TwoPointHarmonic wrong_cov_name."
         ),
     ):
         check_two_point_consistence_harmonic(two_point_cells)
@@ -503,7 +503,7 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(sacc_galaxy_cel
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointCells .* are not unique.",
+        match="The indices of the TwoPointHarmonic .* are not unique.",
     ):
         check_two_point_consistence_harmonic(two_point_cells)
 
@@ -542,7 +542,7 @@ def test_check_two_point_consistence_harmonic_indices_overlap(sacc_galaxy_cells)
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointCells .* overlap.",
+        match="The indices of the TwoPointHarmonic .* overlap.",
     ):
         check_two_point_consistence_harmonic(two_point_cells)
 

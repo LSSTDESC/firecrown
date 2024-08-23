@@ -14,7 +14,7 @@ from firecrown.parameters import ParamsMap
 from firecrown.metadata_types import (
     Galaxies,
     TracerNames,
-    TwoPointCells,
+    TwoPointHarmonic,
     TwoPointReal,
     type_to_sacc_string_harmonic,
     type_to_sacc_string_real,
@@ -559,7 +559,7 @@ def test_extract_all_photoz_bin_combinations_cells(sacc_galaxy_cells):
         assert tracer_names_type in tracer_names_list
 
         bin_comb = all_bin_combs[tracer_names_list.index(tracer_names_type)]
-        two_point_cells = TwoPointCells(
+        two_point_cells = TwoPointHarmonic(
             XY=bin_comb, ells=np.unique(np.logspace(1, 3, 10))
         )
         assert two_point_cells.get_sacc_name() == tracer_names_type[1]
@@ -572,7 +572,7 @@ def test_make_cells(sacc_galaxy_cells):
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
 
     for bin_comb in all_bin_combs:
-        two_point_cells = TwoPointCells(XY=bin_comb, ells=ells)
+        two_point_cells = TwoPointHarmonic(XY=bin_comb, ells=ells)
 
         assert two_point_cells.ells is not None
         assert_array_equal(two_point_cells.ells, ells)

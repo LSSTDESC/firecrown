@@ -48,7 +48,7 @@ The `TwoPointCell` object is used to encapsulate the two-point correlation funct
 Using the `lens0` object created above, we can create a `TwoPointCell` object as follows:
 
 ```{python}
-from firecrown.metadata_types import TwoPointXY, TwoPointCells
+from firecrown.metadata_types import TwoPointXY, TwoPointHarmonic
 from firecrown.generators.two_point import LogLinearElls
 
 lens0_lens0 = TwoPointXY(
@@ -61,11 +61,11 @@ lens0_lens0 = TwoPointXY(
 # terms. Firecrown allows their inclusion, if you so desire.
 ells_generator = LogLinearElls(minimum=2, midpoint=20, maximum=200, n_log=20)
 
-lens0_lens0_cell = TwoPointCells(XY=lens0_lens0, ells=ells_generator.generate())
+lens0_lens0_cell = TwoPointHarmonic(XY=lens0_lens0, ells=ells_generator.generate())
 ```
 
-The `TwoPointCells` is created by providing the `TwoPointXY` object and the ells array.
-The reason for separating the `TwoPointXY` and `TwoPointCells` objects is to accommodate the creation of other types of two-point correlation functions.
+The `TwoPointHarmonic` is created by providing the `TwoPointXY` object and the ells array.
+The reason for separating the `TwoPointXY` and `TwoPointHarmonic` objects is to accommodate the creation of other types of two-point correlation functions.
 For example, from a `TwoPointXY`, one can also create a `TwoPointReal` object for the two-point correlation function in real space, or a `TwoPointCWindow` object for the two-point correlation function in harmonic space with a window function.
 
 ## Creating a TwoPoint Theory Object

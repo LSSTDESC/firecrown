@@ -526,7 +526,7 @@ class TwoPointXY(YAMLSerializable):
 
 
 @dataclass(frozen=True, kw_only=True)
-class TwoPointCells(YAMLSerializable):
+class TwoPointHarmonic(YAMLSerializable):
     """Class defining the metadata for an harmonic-space two-point measurement.
 
     The class used to store the metadata for a (spherical) harmonic-space two-point
@@ -539,10 +539,11 @@ class TwoPointCells(YAMLSerializable):
 
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
+    window: None | npt.NDArray[np.float64] = None
     Cell: None | TwoPointMeasurement = None
 
     def __post_init__(self) -> None:
-        """Validate the TwoPointCells data.
+        """Validate the TwoPointHarmonic data.
 
         Make sure the ells are a 1D array and X and Y are compatible
         with harmonic-space calculations.
@@ -550,119 +551,20 @@ class TwoPointCells(YAMLSerializable):
         if len(self.ells.shape) != 1:
             raise ValueError("Ells should be a 1D array.")
 
-        if self.Cell is not None and self.Cell.data.shape != self.ells.shape:
-            raise ValueError("Cell should have the same shape as ells.")
-
-        if not measurement_supports_harmonic(
-            self.XY.x_measurement
-        ) or not measurement_supports_harmonic(self.XY.y_measurement):
-            raise ValueError(
-                f"Measurements {self.XY.x_measurement} and "
-                f"{self.XY.y_measurement} must support harmonic-space calculations."
-            )
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointCells objects."""
-        return (
-            self.XY == other.XY
-            and np.array_equal(self.ells, other.ells)
-            and compare_optionals(self.Cell, other.Cell)
-        )
-
-    def __str__(self) -> str:
-        """Return a string representation of the TwoPointCells object."""
-        return f"{self.XY}[{self.get_sacc_name()}]"
-
-    def get_sacc_name(self) -> str:
-        """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_harmonic(
-            self.XY.x_measurement, self.XY.y_measurement
-        )
-
-    def has_data(self) -> bool:
-        """Return True if the TwoPointCells object has a Cell array."""
-        return self.Cell is not None
-
-
-@dataclass(kw_only=True)
-class Window(YAMLSerializable):
-    """The class used to represent a window function.
-
-    It contains the ells at which the window function is defined, the weights
-    of the window function, and the ells at which the window function is
-    interpolated.
-
-    It may contain the ells for interpolation if the theory prediction is
-    calculated at a different set of ells than the window function.
-    """
-
-    ells: npt.NDArray[np.int64]
-    weights: npt.NDArray[np.float64]
-    ells_for_interpolation: None | npt.NDArray[np.int64] = None
-
-    def __post_init__(self) -> None:
-        """Make sure the weights have the right shape."""
-        if len(self.ells.shape) != 1:
-            raise ValueError("Ells should be a 1D array.")
-        if len(self.weights.shape) != 2:
-            raise ValueError("Weights should be a 2D array.")
-        if self.weights.shape[0] != len(self.ells):
-            raise ValueError("Weights should have the same number of rows as ells.")
-        if (
-            self.ells_for_interpolation is not None
-            and len(self.ells_for_interpolation.shape) != 1
-        ):
-            raise ValueError("Ells for interpolation should be a 1D array.")
-
-    def n_observations(self) -> int:
-        """Return the number of observations supported by the window function."""
-        return self.weights.shape[1]
-
-    def __eq__(self, other) -> bool:
-        """Equality test for Window objects."""
-        assert isinstance(other, Window)
-        # We will need special handling for the optional ells_for_interpolation.
-        # First handle the non-optinal parts.
-        partial_result = np.array_equal(self.ells, other.ells) and np.array_equal(
-            self.weights, other.weights
-        )
-        if not partial_result:
-            return False
-        return compare_optional_arrays(
-            self.ells_for_interpolation, other.ells_for_interpolation
-        )
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointCWindow(YAMLSerializable):
-    """Two-point function with a window function.
-
-    The class used to store the metadata for a (spherical) harmonic-space two-point
-    function measured on a sphere, with an associated window function.
-
-    This includes the two redshift resolutions (one for each binned quantity) and the
-    matrix (window function) that relates the measured Cl's with the predicted Cl's.
-
-    Note that the matrix `window` always has l=0 and l=1 suppressed.
-    """
-
-    XY: TwoPointXY
-    window: Window
-    Cell: None | TwoPointMeasurement = None
-
-    def __post_init__(self):
-        """Validate the TwoPointCWindow data.
-
-        Make sure the window is
-        """
-        if not isinstance(self.window, Window):
-            raise ValueError("Window should be a Window object.")
+        if self.window is not None:
+            if len(self.window.shape) != 2:
+                raise ValueError("window should be a 2D array.")
+            if self.window.shape[0] != len(self.ells):
+                raise ValueError("window should have the same number of rows as ells.")
 
         if self.Cell is not None:
-            if len(self.Cell.data) != self.window.n_observations():
+            if len(self.Cell.data.shape) != 1:
+                raise ValueError("Cell should be a 1D array.")
+
+            if len(self.Cell.data) != self.n_observations():
                 raise ValueError(
-                    "Data should have the same number of elements as the number of "
-                    "observations supported by the window function."
+                    "Cell should have the same number of elements as the number"
+                    " of observations."
                 )
 
         if not measurement_supports_harmonic(
@@ -673,8 +575,17 @@ class TwoPointCWindow(YAMLSerializable):
                 f"{self.XY.y_measurement} must support harmonic-space calculations."
             )
 
+    def __eq__(self, other) -> bool:
+        """Equality test for TwoPointHarmonic objects."""
+        return (
+            self.XY == other.XY
+            and np.array_equal(self.ells, other.ells)
+            and compare_optionals(self.Cell, other.Cell)
+            and compare_optional_arrays(self.window, other.window)
+        )
+
     def __str__(self) -> str:
-        """Return a string representation of the TwoPointCWindow object."""
+        """Return a string representation of the TwoPointHarmonic object."""
         return f"{self.XY}[{self.get_sacc_name()}]"
 
     def get_sacc_name(self) -> str:
@@ -683,17 +594,21 @@ class TwoPointCWindow(YAMLSerializable):
             self.XY.x_measurement, self.XY.y_measurement
         )
 
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointCWindow objects."""
-        return (
-            self.XY == other.XY
-            and self.window == other.window
-            and compare_optionals(self.Cell, other.Cell)
-        )
-
     def has_data(self) -> bool:
-        """Return True if the TwoPointCWindow object has a Cell array."""
+        """Return True if the TwoPointHarmonic object has a Cell array.
+
+        :return: True if the TwoPointHarmonic object has a Cell array.
+        """
         return self.Cell is not None
+
+    def n_observations(self) -> int:
+        """Return the number of observations described by these metadata.
+
+        :return: The number of observations.
+        """
+        if self.window is None:
+            return self.ells.shape[0]
+        return self.window.shape[1]
 
 
 @dataclass(frozen=True, kw_only=True)
