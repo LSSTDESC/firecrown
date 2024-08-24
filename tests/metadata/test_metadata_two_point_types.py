@@ -450,12 +450,12 @@ def test_check_two_point_consistence_real_missing_xis(two_point_real):
 def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_cells, _ = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
-    assert two_point_cells[0].Cell is not None
-    two_point_cells[0] = replace(
-        two_point_cells[0],
-        Cell=replace(two_point_cells[0].Cell, covariance_name="wrong_cov_name"),
+    assert two_point_harmonics[0].Cell is not None
+    two_point_harmonics[0] = replace(
+        two_point_harmonics[0],
+        Cell=replace(two_point_harmonics[0].Cell, covariance_name="wrong_cov_name"),
     )
 
     with pytest.raises(
@@ -465,7 +465,7 @@ def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
             "than the previous TwoPointHarmonic wrong_cov_name."
         ),
     ):
-        check_two_point_consistence_harmonic(two_point_cells)
+        check_two_point_consistence_harmonic(two_point_harmonics)
 
 
 def test_check_two_point_consistence_real_mixing_cov(sacc_galaxy_xis):
@@ -491,21 +491,21 @@ def test_check_two_point_consistence_real_mixing_cov(sacc_galaxy_xis):
 def test_check_two_point_consistence_harmonic_non_unique_indices(sacc_galaxy_cells):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_cells, _ = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
-    assert two_point_cells[0].Cell is not None
-    new_indices = two_point_cells[0].Cell.indices
+    assert two_point_harmonics[0].Cell is not None
+    new_indices = two_point_harmonics[0].Cell.indices
     new_indices[0] = 3
-    two_point_cells[0] = replace(
-        two_point_cells[0],
-        Cell=replace(two_point_cells[0].Cell, indices=new_indices),
+    two_point_harmonics[0] = replace(
+        two_point_harmonics[0],
+        Cell=replace(two_point_harmonics[0].Cell, indices=new_indices),
     )
 
     with pytest.raises(
         ValueError,
         match="The indices of the TwoPointHarmonic .* are not unique.",
     ):
-        check_two_point_consistence_harmonic(two_point_cells)
+        check_two_point_consistence_harmonic(two_point_harmonics)
 
 
 def test_check_two_point_consistence_real_non_unique_indices(sacc_galaxy_xis):
@@ -530,21 +530,21 @@ def test_check_two_point_consistence_real_non_unique_indices(sacc_galaxy_xis):
 def test_check_two_point_consistence_harmonic_indices_overlap(sacc_galaxy_cells):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_cells, _ = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
-    assert two_point_cells[1].Cell is not None
-    new_indices = two_point_cells[1].Cell.indices
+    assert two_point_harmonics[1].Cell is not None
+    new_indices = two_point_harmonics[1].Cell.indices
     new_indices[1] = 3
-    two_point_cells[1] = replace(
-        two_point_cells[1],
-        Cell=replace(two_point_cells[1].Cell, indices=new_indices),
+    two_point_harmonics[1] = replace(
+        two_point_harmonics[1],
+        Cell=replace(two_point_harmonics[1].Cell, indices=new_indices),
     )
 
     with pytest.raises(
         ValueError,
         match="The indices of the TwoPointHarmonic .* overlap.",
     ):
-        check_two_point_consistence_harmonic(two_point_cells)
+        check_two_point_consistence_harmonic(two_point_harmonics)
 
 
 def test_check_two_point_consistence_real_indices_overlap(sacc_galaxy_xis):

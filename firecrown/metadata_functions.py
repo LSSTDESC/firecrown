@@ -306,7 +306,7 @@ def extract_all_photoz_bin_combinations(
 
 def extract_window_function(
     sacc_data: sacc.Sacc, indices: npt.NDArray[np.int64]
-) -> tuple[None | npt.NDArray[np.float64], None | npt.NDArray[np.float64]]:
+) -> tuple[None | npt.NDArray[np.int64], None | npt.NDArray[np.float64]]:
     """Extract ells and weights for a window function.
 
     :params sacc_data: the Sacc object from which we read.

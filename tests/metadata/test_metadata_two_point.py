@@ -15,11 +15,9 @@ from firecrown.metadata_types import (
     InferredGalaxyZDist,
     TracerNames,
     TwoPointHarmonic,
-    TwoPointCWindow,
     TwoPointXY,
     TwoPointReal,
     TwoPointMeasurement,
-    Window,
 )
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
@@ -254,136 +252,15 @@ def test_two_point_cells_invalid_type():
         TwoPointHarmonic(ells=ells, XY=xy)
 
 
-def test_window_equality():
-    # Construct two windows with the same parameters, but different objects.
-    window_1 = Window(
-        ells=np.array(np.linspace(0, 100, 100), dtype=np.int64),
-        weights=np.ones(400).reshape(-1, 4),
-        ells_for_interpolation=np.array(np.linspace(0, 100, 100), dtype=np.int64),
-    )
-    window_2 = Window(
-        ells=np.array(np.linspace(0, 100, 100), dtype=np.int64),
-        weights=np.ones(400).reshape(-1, 4),
-        ells_for_interpolation=np.array(np.linspace(0, 100, 100), dtype=np.int64),
-    )
-    # Two windows constructed from the same parameters should be equal.
-    assert window_1 == window_2
-
-    # If we get rid of the ells_for_interpolation from one, they should no
-    # longer be equal.
-    window_2.ells_for_interpolation = None
-    assert window_1 != window_2
-    assert window_2 != window_1
-
-    # If we have nulled out both ells_for_interpolation, they should be equal
-    # again.
-    window_1.ells_for_interpolation = None
-    assert window_1 == window_2
-
-    # And if we change the ells, they should no longer be equal.
-    window_2.ells[0] = window_2.ells[0] + 1
-    assert window_1 != window_2
-
-
-def test_two_point_window():
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 4)
-
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
-
-    assert_array_equal(window.ells, ells)
-    assert_array_equal(window.weights, weights)
-    assert window.ells_for_interpolation is not None
-    assert_array_equal(window.ells_for_interpolation, ells_for_interpolation)
-    assert window.n_observations() == 4
-
-
-def test_two_point_window_invalid_ells():
-    ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
-    weights = np.ones(400).reshape(-1, 4)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-
-    with pytest.raises(
-        ValueError,
-        match="Ells should be a 1D array.",
-    ):
-        Window(
-            ells=ells,
-            weights=weights,
-            ells_for_interpolation=ells_for_interpolation,
-        )
-
-
-def test_two_point_window_invalid_weights():
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 5)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-
-    with pytest.raises(
-        ValueError,
-        match="Weights should have the same number of rows as ells.",
-    ):
-        Window(
-            ells=ells,
-            weights=weights,
-            ells_for_interpolation=ells_for_interpolation,
-        )
-
-
-def test_two_point_window_invalid_ells_for_interpolation():
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 4)
-    ells_for_interpolation = np.array(np.linspace(0, 100), dtype=np.int64).reshape(
-        -1, 10
-    )
-
-    with pytest.raises(
-        ValueError,
-        match="Ells for interpolation should be a 1D array.",
-    ):
-        Window(
-            ells=ells,
-            weights=weights,
-            ells_for_interpolation=ells_for_interpolation,
-        )
-
-
-def test_two_point_window_invalid_weights_shape():
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400)
-    ells_for_interpolation = np.array(np.linspace(0, 100), dtype=np.int64)
-
-    with pytest.raises(
-        ValueError,
-        match="Weights should be a 2D array.",
-    ):
-        Window(
-            ells=ells,
-            weights=weights,
-            ells_for_interpolation=ells_for_interpolation,
-        )
-
-
 def test_two_point_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
-
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window)
+    two_point = TwoPointHarmonic(XY=harmonic_two_point_xy, ells=ells, window=weights)
 
-    assert two_point.window == window
+    assert two_point.window is not None
+    assert_array_equal(two_point.window, weights)
     assert two_point.XY == harmonic_two_point_xy
     assert two_point.get_sacc_name() == harmonic(
         harmonic_two_point_xy.x_measurement, harmonic_two_point_xy.y_measurement
@@ -394,14 +271,7 @@ def test_two_point_two_point_cwindow_wrong_data_shape(
     harmonic_two_point_xy: TwoPointXY,
 ):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
-
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
 
     data = np.zeros(100) + 1.1
     indices = np.arange(100)
@@ -411,9 +281,10 @@ def test_two_point_two_point_cwindow_wrong_data_shape(
         ValueError,
         match="Data should be a 1D array.",
     ):
-        TwoPointCWindow(
+        TwoPointHarmonic(
             XY=harmonic_two_point_xy,
-            window=window,
+            ells=ells,
+            window=weights,
             Cell=TwoPointMeasurement(
                 data=data,
                 indices=indices,
@@ -424,16 +295,9 @@ def test_two_point_two_point_cwindow_wrong_data_shape(
 
 def test_two_point_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
-
-    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window)
+    two_point = TwoPointHarmonic(XY=harmonic_two_point_xy, ells=ells, window=weights)
 
     assert (
         str(two_point) == f"{str(harmonic_two_point_xy)}[{two_point.get_sacc_name()}]"
@@ -442,14 +306,7 @@ def test_two_point_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY
 
 def test_two_point_two_point_cwindow_invalid():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
-
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
 
     x = InferredGalaxyZDist(
         bin_name="bname1",
@@ -471,7 +328,7 @@ def test_two_point_two_point_cwindow_invalid():
         ValueError,
         match="Measurements .* and .* must support harmonic-space calculations.",
     ):
-        TwoPointCWindow(XY=xy, window=window)
+        TwoPointHarmonic(XY=xy, ells=ells, window=weights)
 
 
 def test_two_point_two_point_cwindow_invalid_window():
@@ -492,9 +349,11 @@ def test_two_point_two_point_cwindow_invalid_window():
     )
     with pytest.raises(
         ValueError,
-        match="Window should be a Window object.",
+        match="window should be a ndarray.",
     ):
-        TwoPointCWindow(XY=xy, window="Im not a window")  # type: ignore
+        TwoPointHarmonic(
+            XY=xy, ells=np.array([1.0]), window="Im not a window"  # type: ignore
+        )
 
 
 def test_two_point_xi_theta():
@@ -621,15 +480,9 @@ def test_two_point_cells_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
         TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
 
 
-def test_window_serialization(window_1: Window):
-    s = window_1.to_yaml()
-    recovered = Window.from_yaml(s)
-    assert window_1 == recovered
-
-
-def test_two_point_cwindow_serialization(two_point_cwindow: TwoPointCWindow):
+def test_two_point_cwindow_serialization(two_point_cwindow: TwoPointHarmonic):
     s = two_point_cwindow.to_yaml()
-    recovered = TwoPointCWindow.from_yaml(s)
+    recovered = TwoPointHarmonic.from_yaml(s)
     assert two_point_cwindow == recovered
 
 

@@ -107,8 +107,6 @@ def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window):
     tools.prepare(pyccl.CosmologyVanillaLCDM())
 
     assert statistic.window is not None
-    assert statistic.window.ells_for_interpolation is not None
-    assert all(np.isfinite(statistic.window.ells_for_interpolation))
 
     statistic.reset()
     statistic.update(ParamsMap())

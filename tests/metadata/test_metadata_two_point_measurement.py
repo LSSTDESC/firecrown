@@ -7,12 +7,10 @@ import numpy as np
 from numpy.testing import assert_array_equal
 
 from firecrown.metadata_types import (
-    TwoPointCWindow,
     TwoPointHarmonic,
     TwoPointMeasurement,
     TwoPointXY,
     TwoPointReal,
-    Window,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
 )
@@ -40,14 +38,7 @@ def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
 
 def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
-
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.zeros(4) + 1.1
@@ -57,9 +48,12 @@ def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY
         data=data, indices=indices, covariance_name=covariance_name
     )
 
-    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window, Cell=measure)
+    two_point = TwoPointHarmonic(
+        XY=harmonic_two_point_xy, ells=ells, window=weights, Cell=measure
+    )
 
-    assert two_point.window == window
+    assert two_point.window is not None
+    assert_array_equal(two_point.window, weights)
     assert two_point.XY == harmonic_two_point_xy
     assert two_point.get_sacc_name() == harmonic(
         harmonic_two_point_xy.x_measurement, harmonic_two_point_xy.y_measurement
@@ -104,21 +98,18 @@ def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointX
 
     with pytest.raises(
         ValueError,
-        match="Cell should have the same shape as ells.",
+        match=(
+            "Data should have the same number of elements as the "
+            "number of observations."
+        ),
     ):
         TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
 
 
 def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.zeros(5) + 1.1
     indices = np.arange(5)
@@ -131,10 +122,12 @@ def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPoin
         ValueError,
         match=(
             "Data should have the same number of elements as the number "
-            "of observations supported by the window function."
+            "of observations."
         ),
     ):
-        TwoPointCWindow(XY=harmonic_two_point_xy, window=window, Cell=measure)
+        TwoPointHarmonic(
+            XY=harmonic_two_point_xy, ells=ells, window=weights, Cell=measure
+        )
 
 
 def test_two_point_xi_theta_with_invalid_data_size(real_two_point_xy: TwoPointXY):

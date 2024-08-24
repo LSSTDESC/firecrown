@@ -733,14 +733,16 @@ class TwoPoint(Statistic):
                     f"specified `ell` in the configuration. `ell` is being ignored!",
                     stacklevel=2,
                 )
-            window = extract_window_function(sacc_data, sacc_indices)
+            replacement_ells: None | npt.NDArray[np.int64]
+            window: None | npt.NDArray[np.float64]
+            replacement_ells, window = extract_window_function(sacc_data, sacc_indices)
             if window is not None:
                 # When using a window function, we do not calculate all Cl's.
                 # For this reason we have a default set of ells that we use
                 # to compute Cl's, and we have a set of ells used for
                 # interpolation.
-                window.ells_for_interpolation = calculate_ells_for_interpolation(window)
-
+                assert replacement_ells is not None
+                ells = replacement_ells
         else:
             if self.ell_or_theta_config is None:
                 # The SACC file has no data points, just a tracer, in this case we
@@ -826,17 +828,16 @@ class TwoPoint(Statistic):
         scale1 = self.source1.get_scale()
 
         assert self.ccl_kind == "cl"
-        assert (self.ells is not None) or (self.window is not None)
+        assert self.ells is not None
 
         if self.window is not None:
-            # If a window function is provided, we need to compute the Cl's
-            # for the ells used in the window function. To do this, we will
-            # first compute the Cl's for the ells used in the interpolation
-            # and then interpolate the results to the ells used in the window
-            # function.
-            assert self.window.ells_for_interpolation is not None
-            cells_for_interpolation = self.compute_cells(
-                self.window.ells_for_interpolation,
+            ells_for_interpolation = calculate_ells_for_interpolation(
+                self.ells[0], self.ells[-1]
+            )
+
+            cells_interpolated = self.compute_cells_interpolated(
+                self.ells,
+                ells_for_interpolation,
                 scale0,
                 scale1,
                 tools,
@@ -844,26 +845,11 @@ class TwoPoint(Statistic):
                 tracers1,
             )
 
-            # TODO: There is no code in Firecrown, neither test nor example,
-            # that exercises a theory window function in any way.
-            cell_interpolator = make_log_interpolator(
-                self.window.ells_for_interpolation, cells_for_interpolation
-            )
-            # Deal with ell=0 and ell=1
-            cells_interpolated = np.zeros(self.window.ells.size)
-            cells_interpolated[2:] = cell_interpolator(self.window.ells[2:])
-
-            # Here we left multiply the computed Cl's by the window function
-            # to get the final Cl's.
-            theory_vector = np.einsum(
-                "lb, l -> b",
-                self.window.weights,
-                cells_interpolated,
-            )
+            # Here we left multiply the computed Cl's by the window function to get the
+            # final Cl's.
+            theory_vector = np.einsum("lb, l -> b", self.window, cells_interpolated)
             # We also compute the mean ell value associated with each bin.
-            self.mean_ells = np.einsum(
-                "lb, l -> b", self.window.weights, self.window.ells
-            )
+            self.mean_ells = np.einsum("lb, l -> b", self.window, self.ells)
 
             assert self.data_vector is not None
             return TheoryVector.create(theory_vector)
@@ -921,6 +907,46 @@ class TwoPoint(Statistic):
         self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
         theory_vector = self.cells[TRACER_NAMES_TOTAL]
         return theory_vector
+
+    def compute_cells_interpolated(
+        self,
+        ells: npt.NDArray[np.int64],
+        ells_for_interpolation: npt.NDArray[np.int64],
+        scale0: float,
+        scale1: float,
+        tools: ModelingTools,
+        tracers0: Sequence[Tracer],
+        tracers1: Sequence[Tracer],
+    ) -> npt.NDArray[np.float64]:
+        """Compute the interpolated power spectrum for the given ells and tracers.
+
+        :param ells: The angular wavenumbers at which to compute the power spectrum.
+        :param ells_for_interpolation: The angular wavenumbers at which the power
+            spectrum is computed for interpolation.
+        :param scale0: The scale factor for the first tracer.
+        :param scale1: The scale factor for the second tracer.
+        :param tools: The modeling tools to use.
+        :param tracers0: The first tracers to use.
+        :param tracers1: The second tracers to use.
+
+        Compute the power spectrum for the given ells and tracers and interpolate
+        the result to the ells provided.
+
+        :return: The interpolated power spectrum.
+        """
+        computed_cells = self.compute_cells(
+            ells_for_interpolation, scale0, scale1, tools, tracers0, tracers1
+        )
+        cell_interpolator = make_log_interpolator(
+            ells_for_interpolation, computed_cells
+        )
+        cell_interpolated = np.zeros(len(ells))
+        # We should not interpolate ell 0 and 1
+        ells_larger_than_1 = ells > 1
+        cell_interpolated[ells_larger_than_1] = cell_interpolator(
+            ells[ells_larger_than_1]
+        )
+        return cell_interpolated
 
     def calculate_pk(
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer

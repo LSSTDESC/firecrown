@@ -485,12 +485,12 @@ def test_access_required_parameters(
 
 def test_create_ready(sacc_galaxy_cwindows):
     sacc_data, _, _ = sacc_galaxy_cwindows
-    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
     wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
     nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
 
     two_points = TwoPoint.from_metadata_harmonic(
-        two_point_cwindows, wl_factory, nc_factory
+        two_point_harmonics, wl_factory, nc_factory
     )
     size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
 
@@ -501,12 +501,12 @@ def test_create_ready(sacc_galaxy_cwindows):
 
 def test_create_ready_wrong_size(sacc_galaxy_cwindows):
     sacc_data, _, _ = sacc_galaxy_cwindows
-    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
     wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
     nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
 
     two_points = TwoPoint.from_metadata_harmonic(
-        two_point_cwindows, wl_factory, nc_factory
+        two_point_harmonics, wl_factory, nc_factory
     )
     size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
 

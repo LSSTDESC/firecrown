@@ -484,7 +484,9 @@ def test_extract_no_window(sacc_galaxy_cells_src0_src0):
     indices = np.array([0, 1, 2], dtype=np.int64)
 
     with pytest.warns(UserWarning):
-        assert extract_window_function(sacc_data, indices=indices) is None
+        window = extract_window_function(sacc_data, indices=indices)
+        assert window[0] is None
+        assert window[1] is None
 
 
 def test_extract_all_data_types_three_tracers_xis(sacc_galaxy_xis_three_tracers):
@@ -598,12 +600,10 @@ def test_make_xis(sacc_galaxy_xis):
 def test_extract_all_two_point_cells(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    two_point_cells, two_point_cwindows = extract_all_data_cells(sacc_data)
-    assert len(two_point_cells) + len(two_point_cwindows) == len(tracer_pairs)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
+    assert len(two_point_harmonics) == len(tracer_pairs)
 
-    assert len(two_point_cwindows) == 0
-
-    for two_point in two_point_cells:
+    for two_point in two_point_harmonics:
         tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
         assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
 
@@ -612,32 +612,29 @@ def test_extract_all_two_point_cells(sacc_galaxy_cells):
         assert two_point.Cell is not None
         assert_array_equal(two_point.Cell.data, Cell)
 
-    check_two_point_consistence_harmonic(two_point_cells)
+    check_two_point_consistence_harmonic(two_point_harmonics)
 
 
 def test_extract_all_two_point_cwindows(sacc_galaxy_cwindows):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
-    two_point_cells, two_point_cwindows = extract_all_data_cells(sacc_data)
-    assert len(two_point_cells) + len(two_point_cwindows) == len(tracer_pairs)
-    assert len(two_point_cells) == 0
+    two_point_harmonics = extract_all_data_cells(sacc_data)
+    assert len(two_point_harmonics) == len(tracer_pairs)
 
-    for two_point in two_point_cwindows:
+    for two_point in two_point_harmonics:
         tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
         assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
 
         ells, Cell, window = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
-        assert_array_equal(two_point.window.ells, ells)
+        assert_array_equal(two_point.ells, ells)
         assert two_point.Cell is not None
         assert_array_equal(two_point.Cell.data, Cell)
         assert two_point.window is not None
 
-        assert_array_equal(
-            two_point.window.weights, window.weight / window.weight.sum(axis=0)
-        )
-        assert_array_equal(two_point.window.ells, window.values)
+        assert_array_equal(two_point.window, window.weight / window.weight.sum(axis=0))
+        assert_array_equal(two_point.ells, window.values)
 
-    check_two_point_consistence_harmonic(two_point_cwindows)
+    check_two_point_consistence_harmonic(two_point_harmonics)
 
 
 def test_extract_all_data_reals(sacc_galaxy_xis):
@@ -661,10 +658,10 @@ def test_extract_all_data_reals(sacc_galaxy_xis):
 def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    two_point_cells, _ = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
     two_points_new = TwoPoint.from_metadata_harmonic(
-        two_point_cells, wl_factory, nc_factory, check_consistence=True
+        two_point_harmonics, wl_factory, nc_factory, check_consistence=True
     )
 
     assert two_points_new is not None
@@ -682,10 +679,10 @@ def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
 def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
-    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
     two_points_new = TwoPoint.from_metadata_harmonic(
-        two_point_cwindows, wl_factory, nc_factory
+        two_point_harmonics, wl_factory, nc_factory
     )
 
     assert two_points_new is not None
@@ -695,14 +692,14 @@ def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
         _, Cell, window = tracer_pairs[tracer_pairs_key]
 
         assert tracer_pairs_key in tracer_pairs
-        assert two_point.ells is None
+        assert two_point.ells is not None
         assert_array_equal(two_point.get_data_vector(), Cell)
         assert two_point.window is not None
         assert_array_equal(
-            two_point.window.weights,
+            two_point.window,
             window.weight / window.weight.sum(axis=0),
         )
-        assert_array_equal(two_point.window.ells, window.values)
+        assert_array_equal(two_point.ells, window.values)
 
 
 def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
@@ -731,16 +728,16 @@ def test_compare_constructors_cells(
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_cells, _ = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
     two_points_harmonic = TwoPoint.from_metadata_harmonic(
-        two_point_cells, wl_factory, nc_factory
+        two_point_harmonics, wl_factory, nc_factory
     )
 
     params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
 
     two_points_old = []
-    for cell in two_point_cells:
+    for cell in two_point_harmonics:
         sacc_data_type = cell.get_sacc_name()
         source0 = use_source_factory(
             cell.XY.x,
@@ -785,16 +782,16 @@ def test_compare_constructors_cwindows(
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
-    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_data_cells(sacc_data)
 
     two_points_harmonic = TwoPoint.from_metadata_harmonic(
-        two_point_cwindows, wl_factory, nc_factory
+        two_point_harmonics, wl_factory, nc_factory
     )
 
     params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
 
     two_points_old = []
-    for cwindow in two_point_cwindows:
+    for cwindow in two_point_harmonics:
         sacc_data_type = cwindow.get_sacc_name()
         source0 = use_source_factory(
             cwindow.XY.x,
@@ -817,15 +814,16 @@ def test_compare_constructors_cwindows(
     for two_point, two_point_old in zip(two_points_harmonic, two_points_old):
         assert two_point.sacc_tracers == two_point_old.sacc_tracers
         assert two_point.sacc_data_type == two_point_old.sacc_data_type
-        assert two_point.ells is None
         assert (
             two_point_old.ells is not None
         )  # The old constructor always sets the ells
         assert_array_equal(two_point.get_data_vector(), two_point_old.get_data_vector())
         assert two_point.window is not None
         assert two_point_old.window is not None
-        assert_array_equal(two_point.window.weights, two_point_old.window.weights)
-        assert_array_equal(two_point.window.ells, two_point_old.window.ells)
+        assert_array_equal(two_point.window, two_point_old.window)
+        assert two_point.ells is not None
+        assert two_point_old.ells is not None
+        assert_array_equal(two_point.ells, two_point_old.ells)
         assert two_point.sacc_indices is not None
         assert two_point_old.sacc_indices is not None
         assert_array_equal(two_point.sacc_indices, two_point_old.sacc_indices)

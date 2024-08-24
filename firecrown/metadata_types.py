@@ -552,6 +552,8 @@ class TwoPointHarmonic(YAMLSerializable):
             raise ValueError("Ells should be a 1D array.")
 
         if self.window is not None:
+            if not isinstance(self.window, np.ndarray):
+                raise ValueError("window should be a ndarray.")
             if len(self.window.shape) != 2:
                 raise ValueError("window should be a 2D array.")
             if self.window.shape[0] != len(self.ells):
@@ -563,7 +565,7 @@ class TwoPointHarmonic(YAMLSerializable):
 
             if len(self.Cell.data) != self.n_observations():
                 raise ValueError(
-                    "Cell should have the same number of elements as the number"
+                    "Data should have the same number of elements as the number"
                     " of observations."
                 )
 

@@ -22,11 +22,9 @@ from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
     TracerNames,
-    TwoPointCWindow,
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
-    Window,
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
 )
@@ -235,18 +233,12 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
 
 
 @pytest.fixture(name="window_1")
-def make_window_1() -> Window:
+def make_window_1() -> tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]:
     """Generate a Window object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
-    return window
+    return ells, weights
 
 
 @pytest.fixture(name="harmonic_two_point_xy")
@@ -281,10 +273,13 @@ def make_real_two_point_xy(
 
 @pytest.fixture(name="two_point_cwindow")
 def make_two_point_cwindow(
-    window_1: Window, harmonic_two_point_xy: TwoPointXY
-) -> TwoPointCWindow:
+    window_1: tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
-    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window_1)
+    two_point = TwoPointHarmonic(
+        XY=harmonic_two_point_xy, ells=window_1[0], window=window_1[1]
+    )
     return two_point
 
 
