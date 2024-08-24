@@ -560,9 +560,6 @@ class TwoPointHarmonic(YAMLSerializable):
                 raise ValueError("window should have the same number of rows as ells.")
 
         if self.Cell is not None:
-            if len(self.Cell.data.shape) != 1:
-                raise ValueError("Cell should be a 1D array.")
-
             if len(self.Cell.data) != self.n_observations():
                 raise ValueError(
                     "Data should have the same number of elements as the number"
