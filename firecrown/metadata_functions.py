@@ -1,12 +1,11 @@
-"""This module deals with two-point functions metadata.
+"""This module deals with two-point metadata functions.
 
-It contains all data classes and functions for store and extract two-point functions
-metadata from a sacc file.
+It contains functions used to manipulate two-point metadata, including extracting
+metadata from a sacc file and creating new metadata objects.
 """
 
 from itertools import combinations_with_replacement, product
-import hashlib
-from typing import TypedDict, Sequence
+from typing import TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -20,7 +19,6 @@ from firecrown.metadata_types import (
     TwoPointXY,
     TwoPointHarmonic,
     TwoPointReal,
-    TwoPointMeasurement,
     LENS_REGEX,
     SOURCE_REGEX,
     MEASURED_TYPE_STRING_MAP,
@@ -29,11 +27,10 @@ from firecrown.metadata_types import (
     GALAXY_SOURCE_TYPES,
 )
 
-
-# TwoPointXiThetaIndex is a type used to create intermediate objects when
-# reading SACC objects. They should not be seen directly by users of Firecrown.
-TwoPointXiThetaIndex = TypedDict(
-    "TwoPointXiThetaIndex",
+# TwoPointRealIndex is a type used to create intermediate objects when reading SACC
+# objects. They should not be seen directly by users of Firecrown.
+TwoPointRealIndex = TypedDict(
+    "TwoPointRealIndex",
     {
         "data_type": str,
         "tracer_names": TracerNames,
@@ -41,11 +38,10 @@ TwoPointXiThetaIndex = TypedDict(
     },
 )
 
-
-# TwoPointCellsIndex is a type used to create intermediate objects when reading
-# SACC objects. They should not be seen directly by users of Firecrown.
-TwoPointCellsIndex = TypedDict(
-    "TwoPointCellsIndex",
+# TwoPointHarmonicIndex is a type used to create intermediate objects when reading SACC
+# objects. They should not be seen directly by users of Firecrown.
+TwoPointHarmonicIndex = TypedDict(
+    "TwoPointHarmonicIndex",
     {
         "data_type": str,
         "tracer_names": TracerNames,
@@ -54,7 +50,7 @@ TwoPointCellsIndex = TypedDict(
 )
 
 
-def _extract_all_candidate_data_types(
+def _extract_all_candidate_measurement_types(
     data_points: list[sacc.DataPoint],
     include_maybe_types: bool = False,
 ) -> dict[str, set[Measurement]]:
@@ -157,7 +153,7 @@ def match_name_type(
     return False, tracer1, a, tracer2, b
 
 
-def extract_all_tracers(
+def extract_all_tracers_inferred_galaxy_zdists(
     sacc_data: sacc.Sacc, include_maybe_types=False
 ) -> list[InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
@@ -169,7 +165,7 @@ def extract_all_tracers(
     and returns it in a list.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
-    tracer_types = extract_all_tracers_types(
+    tracer_types = extract_all_measured_types(
         sacc_data, include_maybe_types=include_maybe_types
     )
     for tracer0, tracer_types0 in tracer_types.items():
@@ -190,7 +186,7 @@ def extract_all_tracers(
     ]
 
 
-def extract_all_tracers_types(
+def extract_all_measured_types(
     sacc_data: sacc.Sacc,
     include_maybe_types: bool = False,
 ) -> dict[str, set[Measurement]]:
@@ -204,13 +200,13 @@ def extract_all_tracers_types(
     """
     data_points = sacc_data.get_data_points()
 
-    return _extract_all_candidate_data_types(data_points, include_maybe_types)
+    return _extract_all_candidate_measurement_types(data_points, include_maybe_types)
 
 
-def extract_all_data_types_reals(
+def extract_all_real_metadata_indices(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
-) -> list[TwoPointXiThetaIndex]:
+) -> list[TwoPointRealIndex]:
     """Extract all two-point function metadata from a sacc file.
 
     Extracts the two-point function measurement metadata for all measurements
@@ -230,7 +226,7 @@ def extract_all_data_types_reals(
             if data_type in allowed_data_type
         ]
 
-    all_reals: list[TwoPointXiThetaIndex] = []
+    all_real_indices: list[TwoPointRealIndex] = []
     for data_type in data_types_reals:
         for combo in sacc_data.get_tracer_combinations(data_type):
             if len(combo) != 2:
@@ -238,7 +234,7 @@ def extract_all_data_types_reals(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
 
-            all_reals.append(
+            all_real_indices.append(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
@@ -248,12 +244,12 @@ def extract_all_data_types_reals(
                 }
             )
 
-    return all_reals
+    return all_real_indices
 
 
-def extract_all_data_types_cells(
+def extract_all_harmonic_metadata_indices(
     sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
-) -> list[TwoPointCellsIndex]:
+) -> list[TwoPointHarmonicIndex]:
     """Extracts the two-point function metadata from a sacc file."""
     tag_name = "ell"
 
@@ -270,7 +266,7 @@ def extract_all_data_types_cells(
             if data_type in allowed_data_type
         ]
 
-    all_cell: list[TwoPointCellsIndex] = []
+    all_harmonic_indices: list[TwoPointHarmonicIndex] = []
     for data_type in data_types_cells:
         for combo in sacc_data.get_tracer_combinations(data_type):
             if len(combo) != 2:
@@ -278,7 +274,7 @@ def extract_all_data_types_cells(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
 
-            all_cell.append(
+            all_harmonic_indices.append(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
@@ -288,7 +284,78 @@ def extract_all_data_types_cells(
                 }
             )
 
-    return all_cell
+    return all_harmonic_indices
+
+
+def extract_all_harmonic_metadata(
+    sacc_data: sacc.Sacc,
+    allowed_data_type: None | list[str] = None,
+    include_maybe_types=False,
+) -> list[TwoPointHarmonic]:
+    """Extract the two-point function metadata and data from a sacc file."""
+    inferred_galaxy_zdists_dict = {
+        igz.bin_name: igz
+        for igz in extract_all_tracers_inferred_galaxy_zdists(
+            sacc_data, include_maybe_types=include_maybe_types
+        )
+    }
+
+    result: list[TwoPointHarmonic] = []
+    for cell_index in extract_all_harmonic_metadata_indices(
+        sacc_data, allowed_data_type
+    ):
+        tracer_names = cell_index["tracer_names"]
+        ells = cell_index["ells"]
+        dt = cell_index["data_type"]
+
+        XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+
+        t1, t2 = tracer_names
+        ells, _, indices = sacc_data.get_ell_cl(
+            data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
+        )
+
+        replacement_ells, weights = extract_window_function(sacc_data, indices)
+        if replacement_ells is not None:
+            ells = replacement_ells
+
+        result.append(TwoPointHarmonic(XY=XY, window=weights, ells=ells))
+
+    return result
+
+
+# Extracting all real metadata from a SACC object.
+
+
+def extract_all_real_metadata(
+    sacc_data: sacc.Sacc,
+    allowed_data_type: None | list[str] = None,
+    include_maybe_types=False,
+) -> list[TwoPointReal]:
+    """Extract the two-point function metadata and data from a sacc file."""
+    inferred_galaxy_zdists_dict = {
+        igz.bin_name: igz
+        for igz in extract_all_tracers_inferred_galaxy_zdists(
+            sacc_data, include_maybe_types=include_maybe_types
+        )
+    }
+
+    tprs: list[TwoPointReal] = []
+    for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
+        tracer_names = real_index["tracer_names"]
+        thetas = real_index["thetas"]
+        dt = real_index["data_type"]
+
+        XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
+
+        t1, t2 = tracer_names
+        thetas, _, _ = sacc_data.get_theta_xi(
+            data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
+        )
+
+        tprs.append(TwoPointReal(XY=XY, thetas=thetas))
+
+    return tprs
 
 
 def extract_all_photoz_bin_combinations(
@@ -296,7 +363,7 @@ def extract_all_photoz_bin_combinations(
     include_maybe_types: bool = False,
 ) -> list[TwoPointXY]:
     """Extracts the two-point function metadata from a sacc file."""
-    inferred_galaxy_zdists = extract_all_tracers(
+    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
         sacc_data, include_maybe_types=include_maybe_types
     )
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
@@ -324,13 +391,39 @@ def extract_window_function(
     return ells, weights
 
 
-def _build_two_point_xy(
-    inferred_galaxy_zdists_dict, tracer_names, data_type
+def make_all_photoz_bin_combinations(
+    inferred_galaxy_zdists: list[InferredGalaxyZDist],
+) -> list[TwoPointXY]:
+    """Extract the two-point function metadata from a sacc file."""
+    bin_combinations = [
+        TwoPointXY(
+            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
+        )
+        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
+        for x_measurement, y_measurement in product(
+            igz1.measurements, igz2.measurements
+        )
+        if measurement_is_compatible(x_measurement, y_measurement)
+    ]
+
+    return bin_combinations
+
+
+def make_two_point_xy(
+    inferred_galaxy_zdists_dict: dict[str, InferredGalaxyZDist],
+    tracer_names: TracerNames,
+    data_type: str,
 ) -> TwoPointXY:
     """Build a TwoPointXY object from the inferred galaxy z distributions.
 
     The TwoPointXY object is built from the inferred galaxy z distributions, the data
     type, and the tracer names.
+
+    :param inferred_galaxy_zdists_dict: a dictionary of inferred galaxy z distributions.
+    :param tracer_names: a tuple of tracer names.
+    :param data_type: the data type.
+
+    :returns: a TwoPointXY object.
     """
     a, b = MEASURED_TYPE_STRING_MAP[data_type]
 
@@ -351,203 +444,8 @@ def _build_two_point_xy(
     return XY
 
 
-def extract_all_data_cells(
-    sacc_data: sacc.Sacc,
-    allowed_data_type: None | list[str] = None,
-    include_maybe_types=False,
-) -> list[TwoPointHarmonic]:
-    """Extract the two-point function metadata and data from a sacc file."""
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz
-        for igz in extract_all_tracers(
-            sacc_data, include_maybe_types=include_maybe_types
-        )
-    }
-
-    if sacc_data.covariance is None or sacc_data.covariance.dense is None:
-        raise ValueError("The SACC object does not have a covariance matrix.")
-    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
-
-    result: list[TwoPointHarmonic] = []
-    for cell_index in extract_all_data_types_cells(sacc_data, allowed_data_type):
-        tracer_names = cell_index["tracer_names"]
-        ells = cell_index["ells"]
-        data_type = cell_index["data_type"]
-
-        XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
-
-        ells, Cells, indices = sacc_data.get_ell_cl(
-            data_type=data_type,
-            tracer1=tracer_names[0],
-            tracer2=tracer_names[1],
-            return_cov=False,
-            return_ind=True,
-        )
-
-        replacement_ells, weights = extract_window_function(sacc_data, indices)
-        if replacement_ells is not None:
-            ells = replacement_ells
-
-        result.append(
-            TwoPointHarmonic(
-                XY=XY,
-                window=weights,
-                ells=ells,
-                Cell=TwoPointMeasurement(
-                    data=Cells,
-                    indices=indices,
-                    covariance_name=cov_hash,
-                ),
-            )
-        )
-
-    return result
-
-
-def extract_all_data_reals(
-    sacc_data: sacc.Sacc,
-    allowed_data_type: None | list[str] = None,
-    include_maybe_types=False,
-) -> list[TwoPointReal]:
-    """Extract the two-point function metadata and data from a sacc file."""
-    inferred_galaxy_zdists_dict = {
-        igz.bin_name: igz
-        for igz in extract_all_tracers(
-            sacc_data, include_maybe_types=include_maybe_types
-        )
-    }
-
-    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
-
-    two_point_reals = []
-    for real_index in extract_all_data_types_reals(sacc_data, allowed_data_type):
-        tracer_names = real_index["tracer_names"]
-        thetas = real_index["thetas"]
-        data_type = real_index["data_type"]
-
-        XY = _build_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, data_type)
-
-        thetas, Xis, indices = sacc_data.get_theta_xi(
-            data_type=data_type,
-            tracer1=tracer_names[0],
-            tracer2=tracer_names[1],
-            return_cov=False,
-            return_ind=True,
-        )
-
-        Xi = TwoPointMeasurement(
-            data=Xis,
-            indices=indices,
-            covariance_name=cov_hash,
-        )
-
-        two_point_reals.append(TwoPointReal(XY=XY, thetas=thetas, xis=Xi))
-
-    return two_point_reals
-
-
-def check_two_point_consistence_harmonic(
-    two_point_harmonics: Sequence[TwoPointHarmonic],
-) -> None:
-    """Check the indices of the harmonic-space two-point functions.
-
-    Make sure the indices of the harmonic-space two-point functions are consistent.
-    """
-    all_indices_set: set[int] = set()
-    index_set_list = []
-    cov_name: None | str = None
-
-    for harmonic in two_point_harmonics:
-        if harmonic.Cell is None:
-            raise ValueError(
-                f"The TwoPointHarmonic {harmonic} does not contain a data."
-            )
-        if cov_name is None:
-            cov_name = harmonic.Cell.covariance_name
-        elif cov_name != harmonic.Cell.covariance_name:
-            raise ValueError(
-                f"The TwoPointHarmonic {harmonic} has a different covariance "
-                f"name {harmonic.Cell.covariance_name} than the previous "
-                f"TwoPointHarmonic {cov_name}."
-            )
-        index_set = set(harmonic.Cell.indices)
-        index_set_list.append(index_set)
-        if len(index_set) != len(harmonic.Cell.indices):
-            raise ValueError(
-                f"The indices of the TwoPointHarmonic {harmonic} are not unique."
-            )
-
-        if all_indices_set & index_set:
-            for i, index_set_a in enumerate(index_set_list):
-                if index_set_a & index_set:
-                    raise ValueError(
-                        f"The indices of the TwoPointHarmonic "
-                        f"{two_point_harmonics[i]} and {harmonic} overlap."
-                    )
-        all_indices_set.update(index_set)
-
-
-def check_two_point_consistence_real(
-    two_point_reals: Sequence[TwoPointReal],
-) -> None:
-    """Check the indices of the real-space two-point functions.
-
-    Make sure the indices of the real-space two-point functions are consistent.
-    """
-    all_indices_set: set[int] = set()
-    index_set_list = []
-    cov_name: None | str = None
-
-    for two_point_real in two_point_reals:
-        if two_point_real.xis is None:
-            raise ValueError(
-                f"The TwoPointReal {two_point_real} does not contain a data."
-            )
-        if cov_name is None:
-            cov_name = two_point_real.xis.covariance_name
-        elif cov_name != two_point_real.xis.covariance_name:
-            raise ValueError(
-                f"The TwoPointReal {two_point_real} has a different covariance "
-                f"name {two_point_real.xis.covariance_name} than the previous "
-                f"TwoPointReal {cov_name}."
-            )
-        index_set = set(two_point_real.xis.indices)
-        index_set_list.append(index_set)
-        if len(index_set) != len(two_point_real.xis.indices):
-            raise ValueError(
-                f"The indices of the TwoPointReal {two_point_real} " f"are not unique."
-            )
-
-        if all_indices_set & index_set:
-            for i, index_set_a in enumerate(index_set_list):
-                if index_set_a & index_set:
-                    raise ValueError(
-                        f"The indices of the TwoPointReal {two_point_reals[i]} "
-                        f"and {two_point_real} overlap."
-                    )
-        all_indices_set.update(index_set)
-
-
-def make_all_photoz_bin_combinations(
-    inferred_galaxy_zdists: list[InferredGalaxyZDist],
-) -> list[TwoPointXY]:
-    """Extract the two-point function metadata from a sacc file."""
-    bin_combinations = [
-        TwoPointXY(
-            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
-        )
-        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
-        for x_measurement, y_measurement in product(
-            igz1.measurements, igz2.measurements
-        )
-        if measurement_is_compatible(x_measurement, y_measurement)
-    ]
-
-    return bin_combinations
-
-
 def measurements_from_index(
-    index: TwoPointXiThetaIndex | TwoPointCellsIndex,
+    index: TwoPointRealIndex | TwoPointHarmonicIndex,
 ) -> tuple[str, Measurement, str, Measurement]:
     """Return the measurements from a TwoPointXiThetaIndex object."""
     a, b = MEASURED_TYPE_STRING_MAP[index["data_type"]]

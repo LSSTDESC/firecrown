@@ -8,12 +8,12 @@ from numpy.testing import assert_array_equal
 
 from firecrown.metadata_types import (
     TwoPointHarmonic,
-    TwoPointMeasurement,
     TwoPointXY,
     TwoPointReal,
     type_to_sacc_string_harmonic as harmonic,
     type_to_sacc_string_real as real,
 )
+from firecrown.data_types import TwoPointMeasurement
 
 
 def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
@@ -21,19 +21,21 @@ def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
     data = np.ones_like(ells) * 1.1
     indices = np.arange(100)
     covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy),
     )
+    metadata = tpm.metadata
+    assert isinstance(metadata, TwoPointHarmonic)
 
-    cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
-
-    assert cells.ells[0] == 0
-    assert cells.ells[-1] == 100
-    assert cells.Cell is not None
-    assert cells.has_data()
-    assert_array_equal(cells.Cell.data, data)
-    assert_array_equal(cells.Cell.indices, indices)
-    assert cells.Cell.covariance_name == covariance_name
+    assert metadata.ells[0] == 0
+    assert metadata.ells[-1] == 100
+    assert tpm.data is not None
+    assert_array_equal(tpm.data, data)
+    assert_array_equal(tpm.indices, indices)
+    assert tpm.covariance_name == covariance_name
 
 
 def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY):
@@ -44,47 +46,48 @@ def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY
     data = np.zeros(4) + 1.1
     indices = np.arange(4)
     covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
     )
+    metadata = tpm.metadata
+    assert isinstance(metadata, TwoPointHarmonic)
 
-    two_point = TwoPointHarmonic(
-        XY=harmonic_two_point_xy, ells=ells, window=weights, Cell=measure
-    )
-
-    assert two_point.window is not None
-    assert_array_equal(two_point.window, weights)
-    assert two_point.XY == harmonic_two_point_xy
-    assert two_point.get_sacc_name() == harmonic(
+    assert metadata.window is not None
+    assert_array_equal(metadata.window, weights)
+    assert metadata.XY == harmonic_two_point_xy
+    assert metadata.get_sacc_name() == harmonic(
         harmonic_two_point_xy.x_measurement, harmonic_two_point_xy.y_measurement
     )
-    assert two_point.has_data()
-    assert two_point.Cell is not None
-    assert_array_equal(two_point.Cell.data, data)
-    assert_array_equal(two_point.Cell.indices, indices)
-    assert two_point.Cell.covariance_name == covariance_name
+    assert tpm.data is not None
+    assert_array_equal(tpm.data, data)
+    assert_array_equal(tpm.indices, indices)
+    assert tpm.covariance_name == covariance_name
 
 
 def test_two_point_xi_theta_with_data(real_two_point_xy: TwoPointXY):
+    thetas = np.linspace(0.0, 1.0, 100)
     data = np.zeros(100) + 1.1
     indices = np.arange(100)
     covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
-    thetas = np.linspace(0.0, 1.0, 100)
+    metadata = tpm.metadata
+    assert isinstance(metadata, TwoPointReal)
 
-    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=thetas, xis=measure)
-
-    assert xi_theta.XY == real_two_point_xy
-    assert xi_theta.get_sacc_name() == real(
+    assert metadata.XY == real_two_point_xy
+    assert metadata.get_sacc_name() == real(
         real_two_point_xy.x_measurement, real_two_point_xy.y_measurement
     )
-    assert xi_theta.has_data()
-    assert xi_theta.xis is not None
-    assert_array_equal(xi_theta.xis.data, data)
-    assert_array_equal(xi_theta.xis.indices, indices)
-    assert xi_theta.xis.covariance_name == covariance_name
+    assert_array_equal(tpm.data, data)
+    assert_array_equal(tpm.indices, indices)
+    assert tpm.covariance_name == covariance_name
 
 
 def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
@@ -92,18 +95,17 @@ def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointX
     data = np.zeros(101) + 1.1
     indices = np.arange(101)
     covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
 
     with pytest.raises(
         ValueError,
-        match=(
-            "Data should have the same number of elements as the "
-            "number of observations."
-        ),
+        match="Data and metadata should have the same length.",
     ):
-        TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy, Cell=measure)
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata=TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy),
+        )
 
 
 def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
@@ -114,39 +116,41 @@ def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPoin
     data = np.zeros(5) + 1.1
     indices = np.arange(5)
     covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
 
     with pytest.raises(
         ValueError,
-        match=(
-            "Data should have the same number of elements as the number "
-            "of observations."
-        ),
+        match="Data and metadata should have the same length.",
     ):
-        TwoPointHarmonic(
-            XY=harmonic_two_point_xy, ells=ells, window=weights, Cell=measure
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata=TwoPointHarmonic(
+                XY=harmonic_two_point_xy, ells=ells, window=weights
+            ),
         )
 
 
 def test_two_point_xi_theta_with_invalid_data_size(real_two_point_xy: TwoPointXY):
+    thetas = np.linspace(0.0, 1.0, 100)
     data = np.zeros(101) + 1.1
     indices = np.arange(101)
     covariance_name = "cov"
-    measure = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
-    )
-    thetas = np.linspace(0.0, 1.0, 100)
 
     with pytest.raises(
         ValueError,
-        match="Xis should have the same shape as thetas.",
+        match="Data and metadata should have the same length.",
     ):
-        TwoPointReal(XY=real_two_point_xy, thetas=thetas, xis=measure)
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
+        )
 
 
-def test_two_point_measurement_invalid_data():
+def test_two_point_measurement_invalid_data(real_two_point_xy: TwoPointXY):
+    thetas = np.linspace(0.0, 1.0, 5)
     data = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
@@ -154,10 +158,16 @@ def test_two_point_measurement_invalid_data():
         ValueError,
         match="Data should be a 1D array.",
     ):
-        TwoPointMeasurement(data=data, indices=indices, covariance_name=covariance_name)
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
+        )
 
 
-def test_two_point_measurement_invalid_indices():
+def test_two_point_measurement_invalid_indices(real_two_point_xy: TwoPointXY):
+    thetas = np.linspace(0.0, 1.0, 5)
     data = np.array([1, 2, 3, 4, 5])
     indices = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
     covariance_name = "cov"
@@ -165,23 +175,36 @@ def test_two_point_measurement_invalid_indices():
         ValueError,
         match="Data and indices should have the same shape.",
     ):
-        TwoPointMeasurement(data=data, indices=indices, covariance_name=covariance_name)
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
+        )
 
 
-def test_two_point_measurement_eq():
+def test_two_point_measurement_eq(real_two_point_xy: TwoPointXY):
+    thetas = np.linspace(0.0, 1.0, 5)
     data = np.array([1, 2, 3, 4, 5])
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
     measure_1 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     measure_2 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     assert measure_1 == measure_2
 
 
-def test_two_point_measurement_neq():
+def test_two_point_measurement_neq(real_two_point_xy: TwoPointXY):
+    thetas = np.linspace(0.0, 1.0, 5)
     data = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
@@ -189,20 +212,38 @@ def test_two_point_measurement_neq():
         data=data,
         indices=indices,
         covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
-    measure_2 = TwoPointMeasurement(data=data, indices=indices, covariance_name="cov2")
+    measure_2 = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name="cov2",
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
+    )
     assert measure_1 != measure_2
     measure_3 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     measure_4 = TwoPointMeasurement(
-        data=data, indices=indices + 1, covariance_name=covariance_name
+        data=data,
+        indices=indices + 1,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     assert measure_3 != measure_4
     measure_5 = TwoPointMeasurement(
-        data=data, indices=indices, covariance_name=covariance_name
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     measure_6 = TwoPointMeasurement(
-        data=data + 1.0, indices=indices, covariance_name=covariance_name
+        data=data + 1.0,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     assert measure_5 != measure_6

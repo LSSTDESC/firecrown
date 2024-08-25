@@ -1,6 +1,6 @@
-"""This module deals with two-point types.
+"""This module deals with metadata types.
 
-This module contains two-point types definitions.
+This module contains metadata types definitions.
 """
 
 from itertools import chain, combinations_with_replacement
@@ -11,7 +11,7 @@ from enum import Enum, auto
 import numpy as np
 import numpy.typing as npt
 
-from firecrown.utils import compare_optional_arrays, compare_optionals, YAMLSerializable
+from firecrown.utils import compare_optional_arrays, YAMLSerializable
 
 
 @dataclass(frozen=True)
@@ -312,37 +312,6 @@ class InferredGalaxyZDist(YAMLSerializable):
         )
 
 
-@dataclass(frozen=True, kw_only=True)
-class TwoPointMeasurement(YAMLSerializable):
-    """Class defining the metadata for a two-point measurement.
-
-    The class used to store the metadata for a two-point function measured on a sphere.
-
-    This includes the measured two-point function and their indices in the covariance
-    matrix.
-    """
-
-    data: npt.NDArray[np.float64]
-    indices: npt.NDArray[np.int64]
-    covariance_name: str
-
-    def __post_init__(self) -> None:
-        """Make sure the data and indices have the same shape."""
-        if len(self.data.shape) != 1:
-            raise ValueError("Data should be a 1D array.")
-
-        if self.data.shape != self.indices.shape:
-            raise ValueError("Data and indices should have the same shape.")
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointMeasurement objects."""
-        return (
-            np.array_equal(self.data, other.data)
-            and np.array_equal(self.indices, other.indices)
-            and self.covariance_name == other.covariance_name
-        )
-
-
 def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
     """Create a dictionary from a Measurement object.
 
@@ -540,7 +509,6 @@ class TwoPointHarmonic(YAMLSerializable):
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
     window: None | npt.NDArray[np.float64] = None
-    Cell: None | TwoPointMeasurement = None
 
     def __post_init__(self) -> None:
         """Validate the TwoPointHarmonic data.
@@ -559,13 +527,6 @@ class TwoPointHarmonic(YAMLSerializable):
             if self.window.shape[0] != len(self.ells):
                 raise ValueError("window should have the same number of rows as ells.")
 
-        if self.Cell is not None:
-            if len(self.Cell.data) != self.n_observations():
-                raise ValueError(
-                    "Data should have the same number of elements as the number"
-                    " of observations."
-                )
-
         if not measurement_supports_harmonic(
             self.XY.x_measurement
         ) or not measurement_supports_harmonic(self.XY.y_measurement):
@@ -576,10 +537,12 @@ class TwoPointHarmonic(YAMLSerializable):
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointHarmonic objects."""
+        if not isinstance(other, TwoPointHarmonic):
+            raise ValueError("Can only compare TwoPointHarmonic objects.")
+
         return (
             self.XY == other.XY
             and np.array_equal(self.ells, other.ells)
-            and compare_optionals(self.Cell, other.Cell)
             and compare_optional_arrays(self.window, other.window)
         )
 
@@ -592,13 +555,6 @@ class TwoPointHarmonic(YAMLSerializable):
         return type_to_sacc_string_harmonic(
             self.XY.x_measurement, self.XY.y_measurement
         )
-
-    def has_data(self) -> bool:
-        """Return True if the TwoPointHarmonic object has a Cell array.
-
-        :return: True if the TwoPointHarmonic object has a Cell array.
-        """
-        return self.Cell is not None
 
     def n_observations(self) -> int:
         """Return the number of observations described by these metadata.
@@ -624,7 +580,6 @@ class TwoPointReal(YAMLSerializable):
 
     XY: TwoPointXY
     thetas: npt.NDArray[np.float64]
-    xis: None | TwoPointMeasurement = None
 
     def __post_init__(self):
         """Validate the TwoPointCWindow data.
@@ -633,9 +588,6 @@ class TwoPointReal(YAMLSerializable):
         """
         if len(self.thetas.shape) != 1:
             raise ValueError("Thetas should be a 1D array.")
-
-        if self.xis is not None and self.xis.data.shape != self.thetas.shape:
-            raise ValueError("Xis should have the same shape as thetas.")
 
         if not measurement_supports_real(
             self.XY.x_measurement
@@ -655,12 +607,14 @@ class TwoPointReal(YAMLSerializable):
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointReal objects."""
-        return (
-            self.XY == other.XY
-            and np.array_equal(self.thetas, other.thetas)
-            and compare_optionals(self.xis, other.xis)
-        )
+        if not isinstance(other, TwoPointReal):
+            raise ValueError("Can only compare TwoPointReal objects.")
 
-    def has_data(self) -> bool:
-        """Return True if the TwoPointReal object has a xis array."""
-        return self.xis is not None
+        return self.XY == other.XY and np.array_equal(self.thetas, other.thetas)
+
+    def n_observations(self) -> int:
+        """Return the number of observations described by these metadata.
+
+        :return: The number of observations.
+        """
+        return self.thetas.shape[0]

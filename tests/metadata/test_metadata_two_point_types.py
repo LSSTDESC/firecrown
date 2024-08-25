@@ -20,7 +20,8 @@ from firecrown.metadata_types import (
     LENS_REGEX,
     SOURCE_REGEX,
     TracerNames,
-    TwoPointMeasurement,
+    TwoPointHarmonic,
+    TwoPointReal,
     compare_enums,
     measurement_is_compatible as is_compatible,
     measurement_is_compatible_harmonic as is_compatible_harmonic,
@@ -32,14 +33,18 @@ from firecrown.metadata_types import (
 )
 
 from firecrown.metadata_functions import (
-    TwoPointXiThetaIndex,
-    check_two_point_consistence_harmonic,
-    check_two_point_consistence_real,
-    extract_all_data_cells,
-    extract_all_data_reals,
-    extract_all_tracers_types,
+    TwoPointRealIndex,
+    extract_all_measured_types,
     match_name_type,
     measurements_from_index,
+)
+
+from firecrown.data_types import TwoPointMeasurement
+from firecrown.data_functions import (
+    extract_all_real_data,
+    extract_all_harmonic_data,
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
 )
 
 
@@ -169,7 +174,7 @@ def test_extract_all_tracers_types_cells(
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    tracers = extract_all_tracers_types(sacc_data)
+    tracers = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -185,7 +190,7 @@ def test_extract_all_tracers_types_cwindows(
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
-    tracers = extract_all_tracers_types(sacc_data)
+    tracers = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -199,7 +204,7 @@ def test_extract_all_tracers_types_cwindows(
 def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    tracers = extract_all_tracers_types(sacc_data)
+    tracers = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -218,7 +223,7 @@ def test_extract_all_tracers_types_reals_inverted(
 ):
     sacc_data, _, _ = sacc_galaxy_xis_inverted
 
-    tracers = extract_all_tracers_types(sacc_data)
+    tracers = extract_all_measured_types(sacc_data)
 
     for tracer, measurements in tracers.items():
         if LENS_REGEX.match(tracer):
@@ -237,9 +242,9 @@ def test_extract_all_tracers_types_cells_include_maybe(
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    assert extract_all_tracers_types(
+    assert extract_all_measured_types(
         sacc_data, include_maybe_types=True
-    ) == extract_all_tracers_types(sacc_data)
+    ) == extract_all_measured_types(sacc_data)
 
 
 def test_extract_all_tracers_types_cwindows_include_maybe(
@@ -247,9 +252,9 @@ def test_extract_all_tracers_types_cwindows_include_maybe(
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
-    assert extract_all_tracers_types(
+    assert extract_all_measured_types(
         sacc_data, include_maybe_types=True
-    ) == extract_all_tracers_types(sacc_data)
+    ) == extract_all_measured_types(sacc_data)
 
 
 def test_extract_all_tracers_types_xi_thetas_include_maybe(
@@ -257,13 +262,13 @@ def test_extract_all_tracers_types_xi_thetas_include_maybe(
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    assert extract_all_tracers_types(
+    assert extract_all_measured_types(
         sacc_data, include_maybe_types=True
-    ) == extract_all_tracers_types(sacc_data)
+    ) == extract_all_measured_types(sacc_data)
 
 
 def test_measurements_from_index1():
-    index: TwoPointXiThetaIndex = {
+    index: TwoPointRealIndex = {
         "data_type": "galaxy_shearDensity_xi_t",
         "tracer_names": TracerNames("src0", "lens0"),
         "thetas": np.linspace(0.0, 1.0, 100),
@@ -276,7 +281,7 @@ def test_measurements_from_index1():
 
 
 def test_measurements_from_index2():
-    index: TwoPointXiThetaIndex = {
+    index: TwoPointRealIndex = {
         "data_type": "galaxy_shearDensity_xi_t",
         "tracer_names": TracerNames("lens0", "src0"),
         "thetas": np.linspace(0.0, 1.0, 100),
@@ -417,156 +422,135 @@ def test_match_name_type_require_convention_source():
     assert b == Galaxies.SHEAR_MINUS
 
 
-def test_check_two_point_consistence_harmonic(two_point_cell):
-    Cell = TwoPointMeasurement(
-        data=np.zeros(100), indices=np.arange(100), covariance_name="cov"
+def test_check_two_point_consistence_harmonic(two_point_cell: TwoPointHarmonic):
+    tpm = TwoPointMeasurement(
+        data=np.zeros(100),
+        indices=np.arange(100),
+        covariance_name="cov",
+        metadata=two_point_cell,
     )
-    check_two_point_consistence_harmonic([replace(two_point_cell, Cell=Cell)])
+    check_two_point_consistence_harmonic([tpm])
 
 
-def test_check_two_point_consistence_harmonic_missing_cell(two_point_cell):
-    with pytest.raises(
-        ValueError,
-        match="The TwoPointHarmonic \\(.*, .*\\)\\[.*\\] does not contain a data.",
-    ):
-        check_two_point_consistence_harmonic([two_point_cell])
-
-
-def test_check_two_point_consistence_real(two_point_real):
-    xis = TwoPointMeasurement(
-        data=np.zeros(100), indices=np.arange(100), covariance_name="cov"
+def test_check_two_point_consistence_real(two_point_real: TwoPointReal):
+    tpm = TwoPointMeasurement(
+        data=np.zeros(100),
+        indices=np.arange(100),
+        covariance_name="cov",
+        metadata=two_point_real,
     )
-    check_two_point_consistence_real([replace(two_point_real, xis=xis)])
+    check_two_point_consistence_real([tpm])
 
 
-def test_check_two_point_consistence_real_missing_xis(two_point_real):
-    with pytest.raises(
-        ValueError,
-        match="The TwoPointReal \\(.*, .*\\)\\[.*\\] does not contain a data.",
-    ):
-        check_two_point_consistence_real([two_point_real])
-
-
-def test_check_two_point_consistence_harmonic_mixing_cov(sacc_galaxy_cells):
+def test_check_two_point_consistence_harmonic_mixing_cov(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    tpms = extract_all_harmonic_data(sacc_data)
 
-    assert two_point_harmonics[0].Cell is not None
-    two_point_harmonics[0] = replace(
-        two_point_harmonics[0],
-        Cell=replace(two_point_harmonics[0].Cell, covariance_name="wrong_cov_name"),
-    )
+    tpms[0] = replace(tpms[0], covariance_name="wrong_cov_name")
 
     with pytest.raises(
         ValueError,
         match=(
-            "The TwoPointHarmonic .* has a different covariance name .* "
+            ".* has a different covariance name .* "
             "than the previous TwoPointHarmonic wrong_cov_name."
         ),
     ):
-        check_two_point_consistence_harmonic(two_point_harmonics)
+        check_two_point_consistence_harmonic(tpms)
 
 
-def test_check_two_point_consistence_real_mixing_cov(sacc_galaxy_xis):
+def test_check_two_point_consistence_real_mixing_cov(
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_reals(sacc_data)
-    assert two_point_xis[0].xis is not None
-    two_point_xis[0] = replace(
-        two_point_xis[0],
-        xis=replace(two_point_xis[0].xis, covariance_name="wrong_cov_name"),
-    )
+    tpms = extract_all_real_data(sacc_data)
+    tpms[0] = replace(tpms[0], covariance_name="wrong_cov_name")
 
     with pytest.raises(
         ValueError,
         match=(
-            "The TwoPointReal .* has a different covariance name .* than the "
+            ".* has a different covariance name .* than the "
             "previous TwoPointReal wrong_cov_name."
         ),
     ):
-        check_two_point_consistence_real(two_point_xis)
+        check_two_point_consistence_real(tpms)
 
 
-def test_check_two_point_consistence_harmonic_non_unique_indices(sacc_galaxy_cells):
+def test_check_two_point_consistence_harmonic_non_unique_indices(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    tpms = extract_all_harmonic_data(sacc_data)
 
-    assert two_point_harmonics[0].Cell is not None
-    new_indices = two_point_harmonics[0].Cell.indices
+    new_indices = tpms[0].indices
     new_indices[0] = 3
-    two_point_harmonics[0] = replace(
-        two_point_harmonics[0],
-        Cell=replace(two_point_harmonics[0].Cell, indices=new_indices),
-    )
+    tpms[0] = replace(tpms[0], indices=new_indices)
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointHarmonic .* are not unique.",
+        match=".* are not unique.",
     ):
-        check_two_point_consistence_harmonic(two_point_harmonics)
+        check_two_point_consistence_harmonic(tpms)
 
 
-def test_check_two_point_consistence_real_non_unique_indices(sacc_galaxy_xis):
+def test_check_two_point_consistence_real_non_unique_indices(
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_reals(sacc_data)
-    assert two_point_xis[0].xis is not None
-    new_indices = two_point_xis[0].xis.indices
+    tpms = extract_all_real_data(sacc_data)
+    new_indices = tpms[0].indices
     new_indices[0] = 3
-    two_point_xis[0] = replace(
-        two_point_xis[0],
-        xis=replace(two_point_xis[0].xis, indices=new_indices),
-    )
+    tpms[0] = replace(tpms[0], indices=new_indices)
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointReal .* are not unique.",
+        match=".* are not unique.",
     ):
-        check_two_point_consistence_real(two_point_xis)
+        check_two_point_consistence_real(tpms)
 
 
-def test_check_two_point_consistence_harmonic_indices_overlap(sacc_galaxy_cells):
+def test_check_two_point_consistence_harmonic_indices_overlap(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    tpms = extract_all_harmonic_data(sacc_data)
 
-    assert two_point_harmonics[1].Cell is not None
-    new_indices = two_point_harmonics[1].Cell.indices
+    new_indices = tpms[1].indices
     new_indices[1] = 3
-    two_point_harmonics[1] = replace(
-        two_point_harmonics[1],
-        Cell=replace(two_point_harmonics[1].Cell, indices=new_indices),
-    )
+    tpms[1] = replace(tpms[1], indices=new_indices)
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointHarmonic .* overlap.",
+        match=".* overlap.",
     ):
-        check_two_point_consistence_harmonic(two_point_harmonics)
+        check_two_point_consistence_harmonic(tpms)
 
 
-def test_check_two_point_consistence_real_indices_overlap(sacc_galaxy_xis):
+def test_check_two_point_consistence_real_indices_overlap(
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_reals(sacc_data)
-    assert two_point_xis[1].xis is not None
-    new_indices = two_point_xis[1].xis.indices
+    tpms = extract_all_real_data(sacc_data)
+
+    new_indices = tpms[1].indices
     new_indices[1] = 3
-    two_point_xis[1] = replace(
-        two_point_xis[1],
-        xis=replace(two_point_xis[1].xis, indices=new_indices),
-    )
+    tpms[1] = replace(tpms[1], indices=new_indices)
 
     with pytest.raises(
         ValueError,
-        match="The indices of the TwoPointReal .* overlap.",
+        match=".* overlap.",
     ):
-        check_two_point_consistence_real(two_point_xis)
+        check_two_point_consistence_real(tpms)
 
 
-def test_extract_all_data_cells_ambiguous(sacc_galaxy_cells_ambiguous):
+def test_extract_all_data_cells_ambiguous(sacc_galaxy_cells_ambiguous: sacc.Sacc):
     with pytest.raises(
         ValueError,
         match=(
@@ -574,6 +558,6 @@ def test_extract_all_data_cells_ambiguous(sacc_galaxy_cells_ambiguous):
             "determine which measurement is from which tracer."
         ),
     ):
-        _ = extract_all_data_cells(
+        _ = extract_all_harmonic_data(
             sacc_galaxy_cells_ambiguous, include_maybe_types=True
         )

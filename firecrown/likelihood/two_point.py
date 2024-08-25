@@ -42,13 +42,12 @@ from firecrown.metadata_types import (
 )
 
 from firecrown.metadata_functions import (
-    TwoPointCellsIndex,
-    TwoPointXiThetaIndex,
-    check_two_point_consistence_harmonic,
-    check_two_point_consistence_real,
+    TwoPointHarmonicIndex,
+    TwoPointRealIndex,
     extract_window_function,
     measurements_from_index,
 )
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import UpdatableCollection
 
@@ -261,7 +260,7 @@ def use_source_factory(
     return source
 
 
-def use_source_factory_metadata_only(
+def use_source_factory_metadata_index(
     sacc_tracer: str,
     measurement: Measurement,
     wl_factory: WeakLensingFactory | None = None,
@@ -447,103 +446,36 @@ class TwoPoint(Statistic):
             raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
     @classmethod
-    def _from_metadata(
+    def from_metadata_index(
         cls,
-        *,
-        sacc_data_type: str,
-        source0: Source,
-        source1: Source,
-        metadata: TwoPointHarmonic | TwoPointReal,
-    ) -> TwoPoint:
-        """Create a TwoPoint statistic from a TwoPointHarmonic metadata object."""
-        two_point = cls(sacc_data_type, source0, source1)
-        match metadata:
-            case TwoPointHarmonic():
-                two_point._init_from_harmonic(metadata)
-            case TwoPointReal():
-                two_point._init_from_real(metadata)
-            case _:
-                raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
-        return two_point
-
-    def _init_from_harmonic(self, metadata: TwoPointHarmonic):
-        """Initialize the TwoPoint statistic from a TwoPointHarmonic metadata object."""
-        self.sacc_tracers = metadata.XY.get_tracer_names()
-        self.ells = metadata.ells
-        self.window = metadata.window
-        if metadata.Cell is not None:
-            self.sacc_indices = metadata.Cell.indices
-            self.data_vector = DataVector.create(metadata.Cell.data)
-        self.ready = True
-
-    def _init_from_real(self, metadata: TwoPointReal):
-        """Initialize the TwoPoint statistic from a TwoPointReal metadata object."""
-        self.sacc_tracers = metadata.XY.get_tracer_names()
-        self.thetas = metadata.thetas
-        self.window = None
-        self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
-        if metadata.xis is not None:
-            self.sacc_indices = metadata.xis.indices
-            self.data_vector = DataVector.create(metadata.xis.data)
-        self.ready = True
-
-    @classmethod
-    def _from_metadata_any(
-        cls,
-        metadata: Sequence[TwoPointHarmonic | TwoPointReal],
+        metadata_indices: Sequence[TwoPointHarmonicIndex | TwoPointRealIndex],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointHarmonic, TwoPointCWindow or TwoPointReal metadata objects.
-        The metadata objects are used to initialize the TwoPoint statistics.
-        """
-        two_point_list = [
-            cls._from_metadata(
-                sacc_data_type=cell.get_sacc_name(),
-                source0=use_source_factory(
-                    cell.XY.x,
-                    cell.XY.x_measurement,
-                    wl_factory=wl_factory,
-                    nc_factory=nc_factory,
-                ),
-                source1=use_source_factory(
-                    cell.XY.y,
-                    cell.XY.y_measurement,
-                    wl_factory=wl_factory,
-                    nc_factory=nc_factory,
-                ),
-                metadata=cell,
-            )
-            for cell in metadata
-        ]
+        list of TwoPointCellsIndex or TwoPointXiThetaIndex metadata index objects. The
+        purpose of this constructor is to create a TwoPoint statistic from metadata
+        index, which requires a follow-up call to `read` to read the data and metadata
+        from the SACC object.
 
-        return UpdatableCollection(two_point_list)
+        :param metadata_index: The metadata index objects to initialize the TwoPoint
+            statistics.
+        :param wl_factory: The weak lensing factory to use.
+        :param nc_factory: The number counts factory to use.
 
-    @classmethod
-    def _from_metadata_only_any(
-        cls,
-        metadata: Sequence[TwoPointCellsIndex | TwoPointXiThetaIndex],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create an UpdatableCollection of TwoPoint statistics.
-
-        This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointHarmonic, TwoPointCWindow or TwoPointReal metadata objects.
-        The metadata objects are used to initialize the TwoPoint statistics.
+        :return: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list = []
-        for cell_index in metadata:
-            n1, a, n2, b = measurements_from_index(cell_index)
+        for metadata_index in metadata_indices:
+            n1, a, n2, b = measurements_from_index(metadata_index)
             two_point = cls(
-                sacc_data_type=cell_index["data_type"],
-                source0=use_source_factory_metadata_only(
+                sacc_data_type=metadata_index["data_type"],
+                source0=use_source_factory_metadata_index(
                     n1, a, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
-                source1=use_source_factory_metadata_only(
+                source1=use_source_factory_metadata_index(
                     n2, b, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
             )
@@ -552,72 +484,136 @@ class TwoPoint(Statistic):
         return UpdatableCollection(two_point_list)
 
     @classmethod
-    def from_metadata_harmonic(
+    def _from_metadata_single(
         cls,
-        metadata: Sequence[TwoPointHarmonic],
+        *,
+        metadata: TwoPointHarmonic | TwoPointReal,
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
-        check_consistence: bool = False,
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create an UpdatableCollection of harmonic space TwoPoint statistics.
+    ) -> TwoPoint:
+        """Create a single TwoPoint statistic from metadata.
 
-        This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointHarmonic or TwoPointCWindow metadata objects. The metadata
-        objects are used to initialize the TwoPoint statistics.
+        This constructor creates a single TwoPoint statistic from a TwoPointHarmonic or
+        TwoPointReal metadata object. It requires the sources to be initialized before
+        calling this constructor. The metadata object is used to initialize the TwoPoint
+        statistic. No further calls to `read` are needed.
+        """
+        match metadata:
+            case TwoPointHarmonic():
+                two_point = cls._from_metadata_single_base(
+                    metadata, wl_factory, nc_factory
+                )
+                two_point.ells = metadata.ells
+                two_point.window = metadata.window
+            case TwoPointReal():
+                two_point = cls._from_metadata_single_base(
+                    metadata, wl_factory, nc_factory
+                )
+                two_point.thetas = metadata.thetas
+                two_point.window = None
+                two_point.ells_for_xi = _ell_for_xi(**two_point.ell_for_xi_config)
+            case _:
+                raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
+        two_point.ready = True
+        return two_point
 
-        :param metadata: The metadata objects to initialize the TwoPoint statistics.
+    @classmethod
+    def _from_metadata_single_base(cls, metadata, wl_factory, nc_factory):
+        """Create a single TwoPoint statistic from metadata.
+
+        Base method for creating a single TwoPoint statistic from metadata.
+
+        :param metadata: The metadata object to initialize the TwoPoint statistic.
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
-        :param check_consistence: Whether to check the consistence of the
-            metadata and data.
+
+        :return: A TwoPoint statistic.
         """
-        if check_consistence:
-            check_two_point_consistence_harmonic(metadata)
-        return cls._from_metadata_any(metadata, wl_factory, nc_factory)
+        source0 = use_source_factory(
+            metadata.XY.x,
+            metadata.XY.x_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
+        )
+        source1 = use_source_factory(
+            metadata.XY.y,
+            metadata.XY.y_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
+        )
+        two_point = cls(metadata.get_sacc_name(), source0, source1)
+        two_point.sacc_tracers = metadata.XY.get_tracer_names()
+        return two_point
 
     @classmethod
-    def from_metadata_real(
+    def from_metadata(
         cls,
-        metadata: Sequence[TwoPointReal],
+        metadata_seq: Sequence[TwoPointHarmonic | TwoPointReal],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
-        check_consistence: bool = False,
     ) -> UpdatableCollection[TwoPoint]:
-        """Create an UpdatableCollection of real space TwoPoint statistics.
+        """Create an UpdatableCollection of TwoPoint statistics from metadata.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointReal metadata objects. The metadata objects are used to
-        initialize the TwoPoint statistics.
+        list of TwoPointHarmonic or TwoPointReal metadata objects. The metadata objects
+        are used to initialize the TwoPoint statistics. The sources are initialized
+        using the factories provided.
 
-        :param metadata: The metadata objects to initialize the TwoPoint statistics.
+        Note that TwoPoint created with this constructor are ready to be used, but
+        contain no data.
+
+        :param metadata_seq: The metadata objects to initialize the TwoPoint statistics.
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
-        :param check_consistence: Whether to check the consistence of the
-            metadata and data.
+
+        :return: An UpdatableCollection of TwoPoint statistics.
         """
-        if check_consistence:
-            check_two_point_consistence_real(metadata)
-        return cls._from_metadata_any(metadata, wl_factory, nc_factory)
+        two_point_list = [
+            cls._from_metadata_single(
+                metadata=metadata, wl_factory=wl_factory, nc_factory=nc_factory
+            )
+            for metadata in metadata_seq
+        ]
+
+        return UpdatableCollection(two_point_list)
 
     @classmethod
-    def from_metadata_only_harmonic(
+    def from_measurement(
         cls,
-        metadata: list[TwoPointCellsIndex],
+        measurements: Sequence[TwoPointMeasurement],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint from metadata only."""
-        return cls._from_metadata_only_any(metadata, wl_factory, nc_factory)
+        """Create an UpdatableCollection of TwoPoint statistics from measurements.
 
-    @classmethod
-    def from_metadata_only_real(
-        cls,
-        metadata: list[TwoPointXiThetaIndex],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint from metadata only."""
-        return cls._from_metadata_only_any(metadata, wl_factory, nc_factory)
+        This constructor creates an UpdatableCollection of TwoPoint statistics from a
+        list of TwoPointMeasurement objects. The measurements are used to initialize the
+        TwoPoint statistics. The sources are initialized using the factories provided.
+
+        Note that TwoPoint created with this constructor are ready to be used and
+        contain data.
+
+        :param measurements: The measurements objects to initialize the TwoPoint
+            statistics.
+        :param wl_factory: The weak lensing factory to use.
+        :param nc_factory: The number counts factory to use.
+
+        :return: An UpdatableCollection of TwoPoint statistics.
+        """
+        two_point_list: list[TwoPoint] = []
+        for measurement in measurements:
+            two_point = cls._from_metadata_single(
+                metadata=measurement.metadata,
+                wl_factory=wl_factory,
+                nc_factory=nc_factory,
+            )
+            two_point.sacc_indices = measurement.indices
+            two_point.data_vector = DataVector.create(measurement.data)
+            two_point.ready = True
+
+            two_point_list.append(two_point)
+
+        return UpdatableCollection(two_point_list)
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames

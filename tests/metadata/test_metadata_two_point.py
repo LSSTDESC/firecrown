@@ -17,8 +17,8 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
-    TwoPointMeasurement,
 )
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
 
@@ -202,6 +202,7 @@ def test_two_point_cells():
     assert_array_equal(cells.ells, ells)
     assert cells.XY == xy
     assert cells.get_sacc_name() == harmonic(xy.x_measurement, xy.y_measurement)
+    assert cells.n_observations() == 100
 
 
 def test_two_point_cells_invalid_ells():
@@ -265,6 +266,7 @@ def test_two_point_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     assert two_point.get_sacc_name() == harmonic(
         harmonic_two_point_xy.x_measurement, harmonic_two_point_xy.y_measurement
     )
+    assert two_point.n_observations() == 4
 
 
 def test_two_point_two_point_cwindow_wrong_data_shape(
@@ -281,14 +283,14 @@ def test_two_point_two_point_cwindow_wrong_data_shape(
         ValueError,
         match="Data should be a 1D array.",
     ):
-        TwoPointHarmonic(
-            XY=harmonic_two_point_xy,
-            ells=ells,
-            window=weights,
-            Cell=TwoPointMeasurement(
-                data=data,
-                indices=indices,
-                covariance_name=covariance_name,
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata=TwoPointHarmonic(
+                XY=harmonic_two_point_xy,
+                ells=ells,
+                window=weights,
             ),
         )
 
@@ -432,6 +434,7 @@ def test_two_point_xi_theta():
     assert_array_equal(two_point.thetas, theta)
     assert two_point.XY == xy
     assert two_point.get_sacc_name() == real(xy.x_measurement, xy.y_measurement)
+    assert two_point.n_observations() == 100
 
 
 def test_two_point_xi_theta_invalid():
@@ -562,7 +565,7 @@ def test_two_point_xi_theta_wrong_shape(real_two_point_xy: TwoPointXY):
 def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
-    two_point = TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory).pop()
+    two_point = TwoPoint.from_metadata([cells], wl_factory, nc_factory).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
@@ -579,7 +582,7 @@ def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_fac
 
 
 def test_two_point_from_metadata_cwindow(two_point_cwindow, wl_factory, nc_factory):
-    two_point = TwoPoint.from_metadata_harmonic(
+    two_point = TwoPoint.from_metadata(
         [two_point_cwindow], wl_factory, nc_factory
     ).pop()
 
@@ -602,7 +605,7 @@ def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_fact
     xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
         return
-    two_point = TwoPoint.from_metadata_real([xi_theta], wl_factory, nc_factory).pop()
+    two_point = TwoPoint.from_metadata([xi_theta], wl_factory, nc_factory).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
@@ -640,4 +643,4 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
         ValueError,
         match="Measurement .* not supported!",
     ):
-        TwoPoint.from_metadata_harmonic([cells], wl_factory, nc_factory)
+        TwoPoint.from_metadata([cells], wl_factory, nc_factory)

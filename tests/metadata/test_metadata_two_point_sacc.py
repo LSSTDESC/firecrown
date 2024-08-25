@@ -20,15 +20,19 @@ from firecrown.metadata_types import (
     type_to_sacc_string_real,
 )
 from firecrown.metadata_functions import (
-    extract_all_data_types_cells,
-    extract_all_data_types_reals,
+    extract_all_harmonic_metadata_indices,
+    extract_all_harmonic_metadata,
     extract_all_photoz_bin_combinations,
-    extract_all_tracers,
+    extract_all_real_metadata_indices,
+    extract_all_real_metadata,
+    extract_all_tracers_inferred_galaxy_zdists,
     extract_window_function,
-    extract_all_data_cells,
-    extract_all_data_reals,
+)
+from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
     check_two_point_consistence_real,
+    extract_all_harmonic_data,
+    extract_all_real_data,
 )
 from firecrown.likelihood.two_point import TwoPoint, use_source_factory
 
@@ -213,7 +217,7 @@ def fixture_sacc_galaxy_cells_three_tracers():
 def test_extract_all_tracers_cells(sacc_galaxy_cells):
     sacc_data, tracers, _ = sacc_galaxy_cells
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
@@ -224,7 +228,7 @@ def test_extract_all_tracers_cells(sacc_galaxy_cells):
 def test_extract_all_tracers_xis(sacc_galaxy_xis):
     sacc_data, tracers, _ = sacc_galaxy_xis
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     for tracer in all_tracers:
         orig_tracer = tracers[tracer.bin_name]
@@ -235,7 +239,7 @@ def test_extract_all_tracers_xis(sacc_galaxy_xis):
 def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
     sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -249,7 +253,7 @@ def test_extract_all_tracers_cells_src0_src0(sacc_galaxy_cells_src0_src0):
 def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_src1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -265,7 +269,7 @@ def test_extract_all_tracers_cells_src0_src1(sacc_galaxy_cells_src0_src1):
 def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
     sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -279,7 +283,7 @@ def test_extract_all_tracers_cells_lens0_lens0(sacc_galaxy_cells_lens0_lens0):
 def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_lens0_lens1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -295,7 +299,7 @@ def test_extract_all_tracers_cells_lens0_lens1(sacc_galaxy_cells_lens0_lens1):
 def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
     sacc_data, z, dndz = sacc_galaxy_xis_lens0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 1
 
@@ -309,7 +313,7 @@ def test_extract_all_tracers_xis_lens0_lens0(sacc_galaxy_xis_lens0_lens0):
 def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_lens0_lens1
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -325,7 +329,7 @@ def test_extract_all_tracers_xis_lens0_lens1(sacc_galaxy_xis_lens0_lens1):
 def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_cells_src0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -343,7 +347,7 @@ def test_extract_all_trace_cells_src0_lens0(sacc_galaxy_cells_src0_lens0):
 def test_extract_all_trace_xis_src0_lens0(sacc_galaxy_xis_src0_lens0):
     sacc_data, z, dndz0, dndz1 = sacc_galaxy_xis_src0_lens0
     assert sacc_data is not None
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
     assert len(all_tracers) == 2
 
@@ -366,7 +370,7 @@ def test_extract_all_tracers_invalid_data_type(
     with pytest.raises(
         ValueError, match="Tracer src0 does not have data points associated with it."
     ):
-        _ = extract_all_tracers(sacc_data)
+        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
 def test_extract_all_tracers_bad_lens_label(
@@ -378,7 +382,7 @@ def test_extract_all_tracers_bad_lens_label(
         ValueError,
         match="Tracer src0 does not have data points associated with it.",
     ):
-        _ = extract_all_tracers(sacc_data)
+        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
 def test_extract_all_tracers_bad_source_label(
@@ -392,7 +396,7 @@ def test_extract_all_tracers_bad_source_label(
             "Tracer non_informative_label does not have data points associated with it."
         ),
     ):
-        _ = extract_all_tracers(sacc_data)
+        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
 def test_extract_all_tracers_inconsistent_lens_label(
@@ -404,7 +408,7 @@ def test_extract_all_tracers_inconsistent_lens_label(
         ValueError,
         match=("Invalid SACC file, tracer names do not respect the naming convetion."),
     ):
-        _ = extract_all_tracers(sacc_data)
+        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
 def test_extract_all_tracers_inconsistent_source_label(
@@ -416,13 +420,13 @@ def test_extract_all_tracers_inconsistent_source_label(
         ValueError,
         match=("Invalid SACC file, tracer names do not respect the naming convetion."),
     ):
-        _ = extract_all_tracers(sacc_data)
+        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
-def test_extract_all_data_cells(sacc_galaxy_cells):
+def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    all_data = extract_all_data_types_cells(sacc_data)
+    all_data = extract_all_harmonic_metadata_indices(sacc_data)
     assert len(all_data) == len(tracer_pairs)
 
     for two_point in all_data:
@@ -433,10 +437,10 @@ def test_extract_all_data_cells(sacc_galaxy_cells):
         assert_array_equal(two_point["ells"], tracer_pair[0])
 
 
-def test_extract_all_data_cells_by_type(sacc_galaxy_cells):
+def test_extract_all_metadata_index_harmonics_by_type(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    all_data = extract_all_data_types_cells(
+    all_data = extract_all_harmonic_metadata_indices(
         sacc_data, allowed_data_type=["galaxy_shear_cl_ee"]
     )
     assert len(all_data) < len(tracer_pairs)
@@ -449,10 +453,10 @@ def test_extract_all_data_cells_by_type(sacc_galaxy_cells):
         assert_array_equal(two_point["ells"], tracer_pair[0])
 
 
-def test_extract_all_data_xis(sacc_galaxy_xis):
+def test_extract_all_metadata_index_reals(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    all_data = extract_all_data_types_reals(sacc_data)
+    all_data = extract_all_real_metadata_indices(sacc_data)
     assert len(all_data) == len(tracer_pairs)
 
     for two_point in all_data:
@@ -463,10 +467,10 @@ def test_extract_all_data_xis(sacc_galaxy_xis):
         assert_array_equal(two_point["thetas"], tracer_pair[0])
 
 
-def test_extract_all_data_xis_by_type(sacc_galaxy_xis):
+def test_extract_all_metadata_index_reals_by_type(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    all_data = extract_all_data_types_reals(
+    all_data = extract_all_real_metadata_indices(
         sacc_data, allowed_data_type=["galaxy_density_xi"]
     )
     assert len(all_data) < len(tracer_pairs)
@@ -489,7 +493,7 @@ def test_extract_no_window(sacc_galaxy_cells_src0_src0):
         assert window[1] is None
 
 
-def test_extract_all_data_types_three_tracers_xis(sacc_galaxy_xis_three_tracers):
+def test_extract_all_data_types_three_tracers_reals(sacc_galaxy_xis_three_tracers):
     sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
 
     with pytest.raises(
@@ -499,10 +503,12 @@ def test_extract_all_data_types_three_tracers_xis(sacc_galaxy_xis_three_tracers)
             "does not have exactly two tracers."
         ),
     ):
-        _ = extract_all_data_types_reals(sacc_data)
+        _ = extract_all_real_metadata_indices(sacc_data)
 
 
-def test_extract_all_data_types_three_tracers_cells(sacc_galaxy_cells_three_tracers):
+def test_extract_all_data_types_three_tracers_harmonics(
+    sacc_galaxy_cells_three_tracers,
+):
     sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
 
     with pytest.raises(
@@ -512,10 +518,10 @@ def test_extract_all_data_types_three_tracers_cells(sacc_galaxy_cells_three_trac
             "does not have exactly two tracers."
         ),
     ):
-        _ = extract_all_data_types_cells(sacc_data)
+        _ = extract_all_harmonic_metadata_indices(sacc_data)
 
 
-def test_extract_all_photoz_bin_combinations_xis(sacc_galaxy_xis):
+def test_extract_all_photoz_bin_combinations_reals(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
     # We build all possible combinations of tracers
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
@@ -540,7 +546,7 @@ def test_extract_all_photoz_bin_combinations_xis(sacc_galaxy_xis):
         assert two_point_xis.get_sacc_name() == tracer_names_type[1]
 
 
-def test_extract_all_photoz_bin_combinations_cells(sacc_galaxy_cells):
+def test_extract_all_photoz_bin_combinations_harmonics(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
     # We build all possible combinations of tracers
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
@@ -567,7 +573,7 @@ def test_extract_all_photoz_bin_combinations_cells(sacc_galaxy_cells):
         assert two_point_cells.get_sacc_name() == tracer_names_type[1]
 
 
-def test_make_cells(sacc_galaxy_cells):
+def test_make_harmonics(sacc_galaxy_cells):
     sacc_data, _, _ = sacc_galaxy_cells
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
@@ -582,7 +588,7 @@ def test_make_cells(sacc_galaxy_cells):
         assert two_point_cells.XY == bin_comb
 
 
-def test_make_xis(sacc_galaxy_xis):
+def test_make_reals(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
     thetas = np.linspace(0.0, 2.0 * np.pi, 20)
 
@@ -597,71 +603,91 @@ def test_make_xis(sacc_galaxy_xis):
         assert two_point_xis.XY == bin_comb
 
 
-def test_extract_all_two_point_cells(sacc_galaxy_cells):
+def test_extract_all_harmonic_data(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
     assert len(two_point_harmonics) == len(tracer_pairs)
 
     for two_point in two_point_harmonics:
-        tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
-        assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
+        metadata = two_point.metadata
+        assert isinstance(metadata, TwoPointHarmonic)
+        tracer_names = TracerNames(metadata.XY.x.bin_name, metadata.XY.y.bin_name)
+        assert (tracer_names, metadata.get_sacc_name()) in tracer_pairs
 
-        ells, Cell = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
-        assert_array_equal(two_point.ells, ells)
-        assert two_point.Cell is not None
-        assert_array_equal(two_point.Cell.data, Cell)
+        ells, Cell = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
+        assert_array_equal(metadata.ells, ells)
+        assert_array_equal(two_point.data, Cell)
 
     check_two_point_consistence_harmonic(two_point_harmonics)
 
 
-def test_extract_all_two_point_cwindows(sacc_galaxy_cwindows):
+def test_extract_all_harmonic_with_window_data(sacc_galaxy_cwindows):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
     assert len(two_point_harmonics) == len(tracer_pairs)
 
     for two_point in two_point_harmonics:
-        tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
-        assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
+        metadata = two_point.metadata
+        assert isinstance(metadata, TwoPointHarmonic)
+        tracer_names = TracerNames(metadata.XY.x.bin_name, metadata.XY.y.bin_name)
+        assert (tracer_names, metadata.get_sacc_name()) in tracer_pairs
 
-        ells, Cell, window = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
-        assert_array_equal(two_point.ells, ells)
-        assert two_point.Cell is not None
-        assert_array_equal(two_point.Cell.data, Cell)
-        assert two_point.window is not None
+        ells, Cell, window = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
+        assert_array_equal(metadata.ells, ells)
+        assert_array_equal(two_point.data, Cell)
+        assert metadata.window is not None
 
-        assert_array_equal(two_point.window, window.weight / window.weight.sum(axis=0))
-        assert_array_equal(two_point.ells, window.values)
+        assert_array_equal(metadata.window, window.weight / window.weight.sum(axis=0))
+        assert_array_equal(metadata.ells, window.values)
 
     check_two_point_consistence_harmonic(two_point_harmonics)
 
 
-def test_extract_all_data_reals(sacc_galaxy_xis):
+def test_extract_all_real_data(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_reals(sacc_data)
+    two_point_xis = extract_all_real_data(sacc_data)
     assert len(two_point_xis) == len(tracer_pairs)
 
     for two_point in two_point_xis:
-        tracer_names = TracerNames(two_point.XY.x.bin_name, two_point.XY.y.bin_name)
-        assert (tracer_names, two_point.get_sacc_name()) in tracer_pairs
+        metadata = two_point.metadata
+        assert isinstance(metadata, TwoPointReal)
+        tracer_names = TracerNames(metadata.XY.x.bin_name, metadata.XY.y.bin_name)
+        assert (tracer_names, metadata.get_sacc_name()) in tracer_pairs
 
-        thetas, xi = tracer_pairs[(tracer_names, two_point.get_sacc_name())]
-        assert_array_equal(two_point.thetas, thetas)
-        assert two_point.xis is not None
-        assert_array_equal(two_point.xis.data, xi)
+        thetas, xi = tracer_pairs[(tracer_names, metadata.get_sacc_name())]
+        assert_array_equal(metadata.thetas, thetas)
+        assert_array_equal(two_point.data, xi)
 
     check_two_point_consistence_real(two_point_xis)
 
 
-def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
+def test_constructor_harmonic_metadata(sacc_galaxy_cells, wl_factory, nc_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata_harmonic(
-        two_point_harmonics, wl_factory, nc_factory, check_consistence=True
+    two_points_new = TwoPoint.from_metadata(two_point_harmonics, wl_factory, nc_factory)
+
+    assert two_points_new is not None
+
+    for two_point in two_points_new:
+        tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
+        assert tracer_pairs_key in tracer_pairs
+        assert two_point.ells is not None
+        assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key][0])
+
+
+def test_constructor_harmonic_data(sacc_galaxy_cells, wl_factory, nc_factory):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cells
+
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
+
+    check_two_point_consistence_harmonic(two_point_harmonics)
+    two_points_new = TwoPoint.from_measurement(
+        two_point_harmonics, wl_factory, nc_factory
     )
 
     assert two_points_new is not None
@@ -676,12 +702,40 @@ def test_constructor_cells(sacc_galaxy_cells, wl_factory, nc_factory):
         )
 
 
-def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
+def test_constructor_harmonic_with_window_metadata(
+    sacc_galaxy_cwindows, wl_factory, nc_factory
+):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata_harmonic(
+    two_points_new = TwoPoint.from_metadata(two_point_harmonics, wl_factory, nc_factory)
+
+    assert two_points_new is not None
+
+    for two_point in two_points_new:
+        tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
+        _, _, window = tracer_pairs[tracer_pairs_key]
+
+        assert tracer_pairs_key in tracer_pairs
+        assert two_point.ells is not None
+        assert two_point.window is not None
+        assert_array_equal(
+            two_point.window,
+            window.weight / window.weight.sum(axis=0),
+        )
+        assert_array_equal(two_point.ells, window.values)
+
+
+def test_constructor_harmonic_with_window_data(
+    sacc_galaxy_cwindows, wl_factory, nc_factory
+):
+    sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
+
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
+
+    check_two_point_consistence_harmonic(two_point_harmonics)
+    two_points_new = TwoPoint.from_measurement(
         two_point_harmonics, wl_factory, nc_factory
     )
 
@@ -702,14 +756,29 @@ def test_constructor_cwindows(sacc_galaxy_cwindows, wl_factory, nc_factory):
         assert_array_equal(two_point.ells, window.values)
 
 
-def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
+def test_constructor_reals_metadata(sacc_galaxy_xis, wl_factory, nc_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_reals(sacc_data)
+    two_point_reals = extract_all_real_metadata(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata_real(
-        two_point_xis, wl_factory, nc_factory, check_consistence=True
-    )
+    two_points_new = TwoPoint.from_metadata(two_point_reals, wl_factory, nc_factory)
+
+    assert two_points_new is not None
+
+    for two_point in two_points_new:
+        tracer_pairs_key = (two_point.sacc_tracers, two_point.sacc_data_type)
+        assert tracer_pairs_key in tracer_pairs
+        assert two_point.thetas is not None
+        assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key][0])
+
+
+def test_constructor_reals_data(sacc_galaxy_xis, wl_factory, nc_factory):
+    sacc_data, _, tracer_pairs = sacc_galaxy_xis
+
+    two_point_reals = extract_all_real_data(sacc_data)
+
+    check_two_point_consistence_real(two_point_reals)
+    two_points_new = TwoPoint.from_measurement(two_point_reals, wl_factory, nc_factory)
 
     assert two_points_new is not None
 
@@ -723,31 +792,31 @@ def test_constructor_xis(sacc_galaxy_xis, wl_factory, nc_factory):
         )
 
 
-def test_compare_constructors_cells(
+def test_compare_constructors_harmonic(
     sacc_galaxy_cells, wl_factory, nc_factory, tools_with_vanilla_cosmology
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
-    two_points_harmonic = TwoPoint.from_metadata_harmonic(
+    two_points_harmonic = TwoPoint.from_measurement(
         two_point_harmonics, wl_factory, nc_factory
     )
 
     params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
 
     two_points_old = []
-    for cell in two_point_harmonics:
-        sacc_data_type = cell.get_sacc_name()
+    for tpm in two_point_harmonics:
+        sacc_data_type = tpm.metadata.get_sacc_name()
         source0 = use_source_factory(
-            cell.XY.x,
-            cell.XY.x_measurement,
+            tpm.metadata.XY.x,
+            tpm.metadata.XY.x_measurement,
             wl_factory=wl_factory,
             nc_factory=nc_factory,
         )
         source1 = use_source_factory(
-            cell.XY.y,
-            cell.XY.y_measurement,
+            tpm.metadata.XY.y,
+            tpm.metadata.XY.y_measurement,
             wl_factory=wl_factory,
             nc_factory=nc_factory,
         )
@@ -777,31 +846,31 @@ def test_compare_constructors_cells(
         )
 
 
-def test_compare_constructors_cwindows(
+def test_compare_constructors_harmonic_with_window(
     sacc_galaxy_cwindows, wl_factory, nc_factory, tools_with_vanilla_cosmology
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
-    two_point_harmonics = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
-    two_points_harmonic = TwoPoint.from_metadata_harmonic(
+    two_points_harmonic = TwoPoint.from_measurement(
         two_point_harmonics, wl_factory, nc_factory
     )
 
     params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
 
     two_points_old = []
-    for cwindow in two_point_harmonics:
-        sacc_data_type = cwindow.get_sacc_name()
+    for tpm in two_point_harmonics:
+        sacc_data_type = tpm.metadata.get_sacc_name()
         source0 = use_source_factory(
-            cwindow.XY.x,
-            cwindow.XY.x_measurement,
+            tpm.metadata.XY.x,
+            tpm.metadata.XY.x_measurement,
             wl_factory=wl_factory,
             nc_factory=nc_factory,
         )
         source1 = use_source_factory(
-            cwindow.XY.y,
-            cwindow.XY.y_measurement,
+            tpm.metadata.XY.y,
+            tpm.metadata.XY.y_measurement,
             wl_factory=wl_factory,
             nc_factory=nc_factory,
         )
@@ -837,25 +906,31 @@ def test_compare_constructors_cwindows(
         )
 
 
-def test_compare_constructors_xis(
+def test_compare_constructors_reals(
     sacc_galaxy_xis, wl_factory, nc_factory, tools_with_vanilla_cosmology
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
-    two_point_xis = extract_all_data_reals(sacc_data)
+    two_point_xis = extract_all_real_data(sacc_data)
 
-    two_points_real = TwoPoint.from_metadata_real(two_point_xis, wl_factory, nc_factory)
+    two_points_real = TwoPoint.from_measurement(two_point_xis, wl_factory, nc_factory)
 
     params = ParamsMap(two_points_real.required_parameters().get_default_values())
 
     two_points_old = []
-    for xi in two_point_xis:
-        sacc_data_type = xi.get_sacc_name()
+    for tpm in two_point_xis:
+        sacc_data_type = tpm.metadata.get_sacc_name()
         source0 = use_source_factory(
-            xi.XY.x, xi.XY.x_measurement, wl_factory=wl_factory, nc_factory=nc_factory
+            tpm.metadata.XY.x,
+            tpm.metadata.XY.x_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
         )
         source1 = use_source_factory(
-            xi.XY.y, xi.XY.y_measurement, wl_factory=wl_factory, nc_factory=nc_factory
+            tpm.metadata.XY.y,
+            tpm.metadata.XY.y_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)
@@ -883,11 +958,11 @@ def test_compare_constructors_xis(
         )
 
 
-def test_extract_all_data_cells_no_cov(sacc_galaxy_cells):
+def test_extract_all_data_harmonic_no_cov(sacc_galaxy_cells):
     sacc_data, _, _ = sacc_galaxy_cells
     sacc_data.covariance = None
     with pytest.raises(
         ValueError,
         match=("The SACC object does not have a covariance matrix."),
     ):
-        _ = extract_all_data_cells(sacc_data, include_maybe_types=True)
+        _ = extract_all_harmonic_data(sacc_data, include_maybe_types=True)
