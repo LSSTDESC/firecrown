@@ -180,7 +180,7 @@ def test_two_point_xy_invalid():
         )
 
 
-def test_two_point_cells():
+def test_two_point_harmonic():
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -205,7 +205,7 @@ def test_two_point_cells():
     assert cells.n_observations() == 100
 
 
-def test_two_point_cells_invalid_ells():
+def test_two_point_harmonic_invalid_ells():
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -229,7 +229,7 @@ def test_two_point_cells_invalid_ells():
         TwoPointHarmonic(ells=ells, XY=xy)
 
 
-def test_two_point_cells_invalid_type():
+def test_two_point_harmonic_invalid_type():
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -253,7 +253,7 @@ def test_two_point_cells_invalid_type():
         TwoPointHarmonic(ells=ells, XY=xy)
 
 
-def test_two_point_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -269,7 +269,7 @@ def test_two_point_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     assert two_point.n_observations() == 4
 
 
-def test_two_point_two_point_cwindow_wrong_data_shape(
+def test_two_point_cwindow_wrong_data_shape(
     harmonic_two_point_xy: TwoPointXY,
 ):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
@@ -295,7 +295,23 @@ def test_two_point_two_point_cwindow_wrong_data_shape(
         )
 
 
-def test_two_point_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_measurement_invalid_metadata():
+    data = np.zeros(100) + 1.1
+    indices = np.arange(100)
+    covariance_name = "cov"
+    with pytest.raises(
+        ValueError,
+        match="Metadata should be an instance of TwoPointReal or TwoPointHarmonic.",
+    ):
+        TwoPointMeasurement(
+            data=data,
+            indices=indices,
+            covariance_name=covariance_name,
+            metadata="Im not a metadata",  # type: ignore
+        )
+
+
+def test_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -306,7 +322,7 @@ def test_two_point_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY
     )
 
 
-def test_two_point_two_point_cwindow_invalid():
+def test_two_point_cwindow_invalid():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -333,7 +349,7 @@ def test_two_point_two_point_cwindow_invalid():
         TwoPointHarmonic(XY=xy, ells=ells, window=weights)
 
 
-def test_two_point_two_point_cwindow_invalid_window():
+def test_two_point_cwindow_invalid_window():
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -358,7 +374,7 @@ def test_two_point_two_point_cwindow_invalid_window():
         )
 
 
-def test_two_point_two_point_cwindow_invalid_window_shape():
+def test_two_point_cwindow_invalid_window_shape():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -385,7 +401,7 @@ def test_two_point_two_point_cwindow_invalid_window_shape():
         TwoPointHarmonic(XY=xy, ells=ells, window=weights)
 
 
-def test_two_point_two_point_cwindow_window_ell_not_match():
+def test_two_point_cwindow_window_ell_not_match():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
@@ -412,7 +428,7 @@ def test_two_point_two_point_cwindow_window_ell_not_match():
         TwoPointHarmonic(XY=xy, ells=ells[:10], window=weights)
 
 
-def test_two_point_xi_theta():
+def test_two_point_real():
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -437,7 +453,7 @@ def test_two_point_xi_theta():
     assert two_point.n_observations() == 100
 
 
-def test_two_point_xi_theta_invalid():
+def test_two_point_real_invalid():
     x = InferredGalaxyZDist(
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
@@ -512,13 +528,13 @@ def test_two_point_xy_serialization(harmonic_two_point_xy: TwoPointXY):
     assert str(harmonic_two_point_xy) == str(recovered)
 
 
-def test_two_point_cells_str(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_str(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     assert str(cells) == f"{str(harmonic_two_point_xy)}[{cells.get_sacc_name()}]"
 
 
-def test_two_point_cells_serialization(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_serialization(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
     s = cells.to_yaml()
@@ -528,7 +544,17 @@ def test_two_point_cells_serialization(harmonic_two_point_xy: TwoPointXY):
     assert str(cells) == str(recovered)
 
 
-def test_two_point_cells_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
+def test_two_point_harmonic_cmp_invalid(harmonic_two_point_xy: TwoPointXY):
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
+    with pytest.raises(
+        ValueError,
+        match="Can only compare TwoPointHarmonic objects.",
+    ):
+        _ = cells == "Im not a TwoPointHarmonic"
+
+
+def test_two_point_harmonic_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100), dtype=np.int64).reshape(-1, 10)
     with pytest.raises(
         ValueError,
@@ -537,13 +563,15 @@ def test_two_point_cells_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
         TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
 
 
-def test_two_point_cwindow_serialization(two_point_cwindow: TwoPointHarmonic):
+def test_two_point_harmonic_with_window_serialization(
+    two_point_cwindow: TwoPointHarmonic,
+):
     s = two_point_cwindow.to_yaml()
     recovered = TwoPointHarmonic.from_yaml(s)
     assert two_point_cwindow == recovered
 
 
-def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
+def test_two_point_real_serialization(real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10, 10))
     xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
     s = xi_theta.to_yaml()
@@ -553,7 +581,17 @@ def test_two_point_xi_theta_serialization(real_two_point_xy: TwoPointXY):
     assert str(xi_theta) == str(recovered)
 
 
-def test_two_point_xi_theta_wrong_shape(real_two_point_xy: TwoPointXY):
+def test_two_point_real_cmp_invalid(real_two_point_xy: TwoPointXY):
+    theta = np.array(np.linspace(0, 10, 10))
+    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
+    with pytest.raises(
+        ValueError,
+        match="Can only compare TwoPointReal objects.",
+    ):
+        _ = xi_theta == "Im not a TwoPointReal"
+
+
+def test_two_point_real_wrong_shape(real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10), dtype=np.float64).reshape(-1, 10)
     with pytest.raises(
         ValueError,

@@ -432,6 +432,20 @@ def test_check_two_point_consistence_harmonic(two_point_cell: TwoPointHarmonic):
     check_two_point_consistence_harmonic([tpm])
 
 
+def test_check_two_point_consistence_harmonic_real(two_point_real: TwoPointHarmonic):
+    tpm = TwoPointMeasurement(
+        data=np.zeros(100),
+        indices=np.arange(100),
+        covariance_name="cov",
+        metadata=two_point_real,
+    )
+    with pytest.raises(
+        ValueError,
+        match=(".*is not a measurement of TwoPointHarmonic."),
+    ):
+        check_two_point_consistence_harmonic([tpm])
+
+
 def test_check_two_point_consistence_real(two_point_real: TwoPointReal):
     tpm = TwoPointMeasurement(
         data=np.zeros(100),
@@ -440,6 +454,20 @@ def test_check_two_point_consistence_real(two_point_real: TwoPointReal):
         metadata=two_point_real,
     )
     check_two_point_consistence_real([tpm])
+
+
+def test_check_two_point_consistence_real_harmonic(two_point_cell: TwoPointReal):
+    tpm = TwoPointMeasurement(
+        data=np.zeros(100),
+        indices=np.arange(100),
+        covariance_name="cov",
+        metadata=two_point_cell,
+    )
+    with pytest.raises(
+        ValueError,
+        match=(".*is not a measurement of TwoPointReal."),
+    ):
+        check_two_point_consistence_real([tpm])
 
 
 def test_check_two_point_consistence_harmonic_mixing_cov(
