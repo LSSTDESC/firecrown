@@ -77,7 +77,7 @@ Using the `lens0_lens0_cell` object created above, we can create a `TwoPoint` ob
 from firecrown.likelihood.two_point import TwoPoint, NumberCountsFactory
 
 # Generate a list of TwoPoint objects, one for each bin provided
-all_two_points = TwoPoint.from_metadata_harmonic(
+all_two_points = TwoPoint.from_metadata(
     [lens0_lens0_cell],  # Note we are passing a list with 1 bin; you could pass several
     nc_factory=NumberCountsFactory(global_systematics=[], per_bin_systematics=[]),
 )

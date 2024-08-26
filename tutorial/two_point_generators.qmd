@@ -138,8 +138,8 @@ These factories are responsible for producing the necessary systematics applied 
 Below is the code defining the factories for weak lensing and number counts systematics:
 
 ```{python}
-all_two_point_functions = tp.TwoPoint.from_metadata_harmonic(
-    metadata=all_two_point_cells,
+all_two_point_functions = tp.TwoPoint.from_metadata(
+    metadata_seq=all_two_point_cells,
     wl_factory=wlf,
     nc_factory=ncf,
 )
