@@ -5,6 +5,7 @@ Tests for the TwoPoint module.
 import re
 from unittest.mock import MagicMock
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 
 import pyccl
@@ -18,6 +19,7 @@ from firecrown.likelihood.number_counts import (
 from firecrown.likelihood.weak_lensing import (
     WeakLensing,
 )
+from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
     _ell_for_xi,
     TwoPoint,
@@ -32,6 +34,7 @@ from firecrown.likelihood.two_point import (
 from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
+    TwoPointHarmonic,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
 )
@@ -39,6 +42,7 @@ from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,
 )
+from firecrown.data_types import TwoPointMeasurement
 
 
 @pytest.fixture(name="source_0")
@@ -51,6 +55,47 @@ def fixture_source_0() -> NumberCounts:
 def fixture_tools() -> ModelingTools:
     """Return a trivial ModelingTools object."""
     return ModelingTools()
+
+
+@pytest.fixture(name="harmonic_data_with_window")
+def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+    """Return some fake harmonic data."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    # The window is given by the mean of the ells in each bin times the bin number.
+    weights = np.zeros((100, 4))
+    weights[0:25, 0] = 1.0 / 25.0
+    weights[25:50, 1] = 2.0 / 25.0
+    weights[50:75, 2] = 3.0 / 25.0
+    weights[75:100, 3] = 4.0 / 25.0
+
+    data = np.zeros(4) + 1.1
+    indices = np.arange(4)
+    covariance_name = "cov"
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
+    )
+
+    return tpm
+
+
+@pytest.fixture(name="harmonic_data_no_window")
+def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+    """Return some fake harmonic data."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    data = np.zeros(100) - 1.1
+    indices = np.arange(100)
+    covariance_name = "cov"
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy),
+    )
+
+    return tpm
 
 
 def test_ell_for_xi_no_rounding():
@@ -508,3 +553,86 @@ def test_from_metadata_only_real():
     ).pop()
     assert isinstance(two_point, TwoPoint)
     assert not two_point.ready
+
+
+def test_from_measurement_compute_theory_vector_window(
+    harmonic_data_with_window: TwoPointMeasurement,
+):
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+    two_points = TwoPoint.from_measurement(
+        [harmonic_data_with_window], wl_factory=wl_factory, nc_factory=nc_factory
+    )
+    two_point: TwoPoint = two_points.pop()
+
+    assert isinstance(two_point, TwoPoint)
+    assert two_point.ready
+
+    req_params = two_point.required_parameters()
+    default_values = req_params.get_default_values()
+    params = ParamsMap(default_values)
+
+    tools = ModelingTools()
+    tools.update(params)
+    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    two_point.update(params)
+
+    prediction = two_point.compute_theory_vector(tools)
+
+    assert isinstance(prediction, TheoryVector)
+    assert prediction.shape == (4,)
+
+
+def test_from_measurement_compute_theory_vector_window_check(
+    harmonic_data_with_window: TwoPointMeasurement,
+    harmonic_data_no_window: TwoPointMeasurement,
+):
+    wl_factory = WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+    nc_factory = NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+
+    two_points_with_window = TwoPoint.from_measurement(
+        [harmonic_data_with_window], wl_factory=wl_factory, nc_factory=nc_factory
+    )
+    two_point_with_window: TwoPoint = two_points_with_window.pop()
+
+    two_points_without_window = TwoPoint.from_measurement(
+        [harmonic_data_no_window], wl_factory=wl_factory, nc_factory=nc_factory
+    )
+    two_point_without_window: TwoPoint = two_points_without_window.pop()
+
+    assert isinstance(two_point_with_window, TwoPoint)
+    assert two_point_with_window.ready
+
+    assert isinstance(two_point_without_window, TwoPoint)
+    assert two_point_without_window.ready
+
+    req_params = two_point_with_window.required_parameters()
+    default_values = req_params.get_default_values()
+    params = ParamsMap(default_values)
+
+    tools = ModelingTools()
+    tools.update(params)
+    tools.prepare(pyccl.CosmologyVanillaLCDM())
+
+    two_point_with_window.update(params)
+    two_point_without_window.update(params)
+
+    prediction_with_window = two_point_with_window.compute_theory_vector(tools)
+    prediction_without_window = two_point_without_window.compute_theory_vector(tools)
+
+    assert isinstance(prediction_with_window, TheoryVector)
+    assert prediction_with_window.shape == (4,)
+
+    assert isinstance(prediction_without_window, TheoryVector)
+    assert prediction_without_window.shape == (100,)
+    # Currently the C0 and C1 are set to 0 when a window is present, so we need to do
+    # the same here.
+    prediction_without_window[0:2] = 0.0
+
+    binned_after = [
+        np.mean(prediction_without_window[0:25]) * 1.0,
+        np.mean(prediction_without_window[25:50]) * 2.0,
+        np.mean(prediction_without_window[50:75]) * 3.0,
+        np.mean(prediction_without_window[75:100]) * 4.0,
+    ]
+    assert_allclose(prediction_with_window, binned_after)

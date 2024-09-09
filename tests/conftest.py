@@ -168,11 +168,14 @@ def fixture_tools_with_vanilla_cosmology():
 )
 def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
+    z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
+    z_mean = 0.5
+    z_sigma = 0.05
+    dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
+        np.sqrt(2 * np.pi) * z_sigma
+    )
     x = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.linspace(0, 1, 5),
-        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measurements={request.param},
+        bin_name="bin_1", z=z, dndz=dndz, measurements={request.param}
     )
     return x
 
@@ -183,11 +186,14 @@ def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
 )
 def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
+    z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
+    z_mean = 0.6
+    z_sigma = 0.05
+    dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
+        np.sqrt(2 * np.pi) * z_sigma
+    )
     x = InferredGalaxyZDist(
-        bin_name="bin_2",
-        z=np.linspace(0, 1, 3),
-        dndz=np.array([0.1, 0.5, 0.4]),
-        measurements={request.param},
+        bin_name="bin_2", z=z, dndz=dndz, measurements={request.param}
     )
     return x
 
