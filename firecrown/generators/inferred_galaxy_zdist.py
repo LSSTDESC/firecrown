@@ -12,17 +12,15 @@ from scipy.integrate import quad
 
 from numcosmo_py import Ncm
 
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     InferredGalaxyZDist,
     ALL_MEASUREMENT_TYPES,
-)
-from firecrown.metadata.two_point_types import (
     make_measurements_dict,
-    Measurement,
     Galaxies,
     CMB,
     Clusters,
 )
+from firecrown.metadata_functions import Measurement
 
 
 BinsType = TypedDict("BinsType", {"edges": npt.NDArray, "sigma_z": float})

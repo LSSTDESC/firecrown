@@ -269,7 +269,7 @@ class GaussFamily(Likelihood):
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
 
-        largest_index = np.max(indices)
+        largest_index = int(np.max(indices))
 
         if not (
             covariance.ndim == 2

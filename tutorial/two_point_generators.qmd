@@ -37,17 +37,17 @@ all_y1_bins = count_bins + shear_bins
 
 ## Generating the Two-Point Metadata
 
-Within `firecrown.metadata`, a suite of functions is available to calculate all possible two-point statistic metadata corresponding to a designated set of bins.
+Within `firecrown.metadata_functions`, a suite of functions is available to calculate all possible two-point statistic metadata corresponding to a designated set of bins.
 For instance, demonstrated below is the computation of all feasible metadata tailored to the LSST year 1 redshift distribution:
 
 ```{python}
 
 import numpy as np
-from firecrown.metadata.two_point import make_all_photoz_bin_combinations, TwoPointCells
+from firecrown.metadata_functions import make_all_photoz_bin_combinations, TwoPointHarmonic
 
 all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
 ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
-all_two_point_cells = [TwoPointCells(XY=xy, ells=ells) for xy in all_two_point_xy]
+all_two_point_cells = [TwoPointHarmonic(XY=xy, ells=ells) for xy in all_two_point_xy]
 
 ```
 
@@ -138,8 +138,8 @@ These factories are responsible for producing the necessary systematics applied 
 Below is the code defining the factories for weak lensing and number counts systematics:
 
 ```{python}
-all_two_point_functions = tp.TwoPoint.from_metadata_harmonic(
-    metadata=all_two_point_cells,
+all_two_point_functions = tp.TwoPoint.from_metadata(
+    metadata_seq=all_two_point_cells,
     wl_factory=wlf,
     nc_factory=ncf,
 )

@@ -18,19 +18,15 @@ from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata.two_point_types import (
+from firecrown.metadata_types import (
     Galaxies,
+    InferredGalaxyZDist,
+    TracerNames,
+    TwoPointHarmonic,
+    TwoPointXY,
+    TwoPointReal,
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
-)
-from firecrown.metadata.two_point import (
-    TracerNames,
-    InferredGalaxyZDist,
-    Window,
-    TwoPointXY,
-    TwoPointCells,
-    TwoPointCWindow,
-    TwoPointXiTheta,
 )
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
@@ -169,14 +165,18 @@ def fixture_tools_with_vanilla_cosmology():
 @pytest.fixture(
     name="harmonic_bin_1",
     params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
+    ids=["counts", "shear_e"],
 )
 def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
+    z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
+    z_mean = 0.5
+    z_sigma = 0.05
+    dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
+        np.sqrt(2 * np.pi) * z_sigma
+    )
     x = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.linspace(0, 1, 5),
-        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-        measurements={request.param},
+        bin_name="bin_1", z=z, dndz=dndz, measurements={request.param}
     )
     return x
 
@@ -184,14 +184,18 @@ def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
 @pytest.fixture(
     name="harmonic_bin_2",
     params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
+    ids=["counts", "shear_e"],
 )
 def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
+    z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
+    z_mean = 0.6
+    z_sigma = 0.05
+    dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
+        np.sqrt(2 * np.pi) * z_sigma
+    )
     x = InferredGalaxyZDist(
-        bin_name="bin_2",
-        z=np.linspace(0, 1, 3),
-        dndz=np.array([0.1, 0.5, 0.4]),
-        measurements={request.param},
+        bin_name="bin_2", z=z, dndz=dndz, measurements={request.param}
     )
     return x
 
@@ -204,6 +208,7 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
         Galaxies.SHEAR_MINUS,
         Galaxies.SHEAR_PLUS,
     ],
+    ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
 def make_real_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
@@ -224,6 +229,7 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
         Galaxies.SHEAR_MINUS,
         Galaxies.SHEAR_PLUS,
     ],
+    ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
 def make_real_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
@@ -237,18 +243,12 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
 
 
 @pytest.fixture(name="window_1")
-def make_window_1() -> Window:
+def make_window_1() -> tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]:
     """Generate a Window object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    ells_for_interpolation = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    window = Window(
-        ells=ells,
-        weights=weights,
-        ells_for_interpolation=ells_for_interpolation,
-    )
-    return window
+    return ells, weights
 
 
 @pytest.fixture(name="harmonic_two_point_xy")
@@ -283,27 +283,30 @@ def make_real_two_point_xy(
 
 @pytest.fixture(name="two_point_cwindow")
 def make_two_point_cwindow(
-    window_1: Window, harmonic_two_point_xy: TwoPointXY
-) -> TwoPointCWindow:
+    window_1: tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
-    two_point = TwoPointCWindow(XY=harmonic_two_point_xy, window=window_1)
+    two_point = TwoPointHarmonic(
+        XY=harmonic_two_point_xy, ells=window_1[0], window=window_1[1]
+    )
     return two_point
 
 
 @pytest.fixture(name="two_point_cell")
 def make_two_point_cell(
     harmonic_two_point_xy: TwoPointXY,
-) -> TwoPointCells:
+) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    return TwoPointCells(ells=ells, XY=harmonic_two_point_xy)
+    return TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
 
 
-@pytest.fixture(name="two_point_xi_theta")
-def make_two_point_xi_theta(real_two_point_xy: TwoPointXY) -> TwoPointXiTheta:
+@pytest.fixture(name="two_point_real")
+def make_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
     """Generate a TwoPointCWindow object with 100 ells."""
     thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
-    return TwoPointXiTheta(thetas=thetas, XY=real_two_point_xy)
+    return TwoPointReal(thetas=thetas, XY=real_two_point_xy)
 
 
 @pytest.fixture(name="cluster_sacc_data")
