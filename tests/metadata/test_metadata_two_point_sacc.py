@@ -433,9 +433,6 @@ def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
         tracer_names = two_point["tracer_names"]
         assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
-        tracer_pair = tracer_pairs[(tracer_names, two_point["data_type"])]
-        assert_array_equal(two_point["ells"], tracer_pair[0])
-
 
 def test_extract_all_metadata_index_harmonics_by_type(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
@@ -449,9 +446,6 @@ def test_extract_all_metadata_index_harmonics_by_type(sacc_galaxy_cells):
         tracer_names = two_point["tracer_names"]
         assert (tracer_names, "galaxy_shear_cl_ee") in tracer_pairs
 
-        tracer_pair = tracer_pairs[(tracer_names, "galaxy_shear_cl_ee")]
-        assert_array_equal(two_point["ells"], tracer_pair[0])
-
 
 def test_extract_all_metadata_index_reals(sacc_galaxy_xis):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
@@ -462,9 +456,6 @@ def test_extract_all_metadata_index_reals(sacc_galaxy_xis):
     for two_point in all_data:
         tracer_names = two_point["tracer_names"]
         assert (tracer_names, two_point["data_type"]) in tracer_pairs
-
-        tracer_pair = tracer_pairs[(tracer_names, two_point["data_type"])]
-        assert_array_equal(two_point["thetas"], tracer_pair[0])
 
 
 def test_extract_all_metadata_index_reals_by_type(sacc_galaxy_xis):
@@ -478,9 +469,6 @@ def test_extract_all_metadata_index_reals_by_type(sacc_galaxy_xis):
     for two_point in all_data:
         tracer_names = two_point["tracer_names"]
         assert (tracer_names, two_point["data_type"]) in tracer_pairs
-
-        tracer_pair = tracer_pairs[(tracer_names, two_point["data_type"])]
-        assert_array_equal(two_point["thetas"], tracer_pair[0])
 
 
 def test_extract_no_window(sacc_galaxy_cells_src0_src0):

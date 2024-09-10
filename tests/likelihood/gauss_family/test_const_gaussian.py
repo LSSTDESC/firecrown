@@ -523,7 +523,6 @@ def test_create_ready_not_ready():
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
-        "ells": np.array(np.linspace(0, 100, 100), dtype=np.int64),
     }
 
     two_points = TwoPoint.from_metadata_index([metadata], wl_factory, nc_factory)

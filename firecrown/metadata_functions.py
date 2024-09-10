@@ -34,7 +34,6 @@ TwoPointRealIndex = TypedDict(
     {
         "data_type": str,
         "tracer_names": TracerNames,
-        "thetas": npt.NDArray[np.float64],
     },
 )
 
@@ -45,7 +44,6 @@ TwoPointHarmonicIndex = TypedDict(
     {
         "data_type": str,
         "tracer_names": TracerNames,
-        "ells": npt.NDArray[np.int64],
     },
 )
 
@@ -238,9 +236,6 @@ def extract_all_real_metadata_indices(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
-                    "thetas": np.array(
-                        sacc_data.get_tag(tag_name, data_type=data_type, tracers=combo)
-                    ),
                 }
             )
 
@@ -278,9 +273,6 @@ def extract_all_harmonic_metadata_indices(
                 {
                     "data_type": data_type,
                     "tracer_names": TracerNames(*combo),
-                    "ells": np.array(
-                        sacc_data.get_tag(tag_name, data_type=data_type, tracers=combo)
-                    ).astype(np.int64),
                 }
             )
 
@@ -305,7 +297,6 @@ def extract_all_harmonic_metadata(
         sacc_data, allowed_data_type
     ):
         tracer_names = cell_index["tracer_names"]
-        ells = cell_index["ells"]
         dt = cell_index["data_type"]
 
         XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
@@ -343,7 +334,6 @@ def extract_all_real_metadata(
     tprs: list[TwoPointReal] = []
     for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
         tracer_names = real_index["tracer_names"]
-        thetas = real_index["thetas"]
         dt = real_index["data_type"]
 
         XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)

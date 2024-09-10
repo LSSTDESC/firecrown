@@ -271,7 +271,6 @@ def test_measurements_from_index1():
     index: TwoPointRealIndex = {
         "data_type": "galaxy_shearDensity_xi_t",
         "tracer_names": TracerNames("src0", "lens0"),
-        "thetas": np.linspace(0.0, 1.0, 100),
     }
     n1, a, n2, b = measurements_from_index(index)
     assert n1 == "lens0"
@@ -284,7 +283,6 @@ def test_measurements_from_index2():
     index: TwoPointRealIndex = {
         "data_type": "galaxy_shearDensity_xi_t",
         "tracer_names": TracerNames("lens0", "src0"),
-        "thetas": np.linspace(0.0, 1.0, 100),
     }
     n1, a, n2, b = measurements_from_index(index)
     assert n1 == "lens0"

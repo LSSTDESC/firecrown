@@ -44,7 +44,6 @@ def extract_all_harmonic_data(
         sacc_data, allowed_data_type
     ):
         t1, t2 = cell_index["tracer_names"]
-        ells = cell_index["ells"]
         dt = cell_index["data_type"]
 
         ells, Cells, indices = sacc_data.get_ell_cl(
@@ -94,7 +93,6 @@ def extract_all_real_data(
     result: list[TwoPointMeasurement] = []
     for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
         t1, t2 = real_index["tracer_names"]
-        thetas = real_index["thetas"]
         dt = real_index["data_type"]
 
         thetas, Xis, indices = sacc_data.get_theta_xi(
