@@ -165,6 +165,7 @@ def fixture_tools_with_vanilla_cosmology():
 @pytest.fixture(
     name="harmonic_bin_1",
     params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
+    ids=["counts", "shear_e"],
 )
 def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
@@ -183,6 +184,7 @@ def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
 @pytest.fixture(
     name="harmonic_bin_2",
     params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
+    ids=["counts", "shear_e"],
 )
 def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
@@ -206,6 +208,7 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
         Galaxies.SHEAR_MINUS,
         Galaxies.SHEAR_PLUS,
     ],
+    ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
 def make_real_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
@@ -226,6 +229,7 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
         Galaxies.SHEAR_MINUS,
         Galaxies.SHEAR_PLUS,
     ],
+    ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
 def make_real_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
