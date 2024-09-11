@@ -321,7 +321,9 @@ class NamedParameters:
 
 
 def load_likelihood_from_module_type(
-    module: types.ModuleType, build_parameters: NamedParameters
+    module: types.ModuleType,
+    build_parameters: NamedParameters,
+    build_likelihood_name: str = "build_likelihood",
 ) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood from a module type.
 
@@ -337,28 +339,29 @@ def load_likelihood_from_module_type(
         function parameters
     :return : a tuple of the likelihood and the modeling tools
     """
-    if not hasattr(module, "build_likelihood"):
+    if not hasattr(module, build_likelihood_name):
         if not hasattr(module, "likelihood"):
             raise AttributeError(
                 f"Firecrown initialization module {module.__name__} in "
                 f"{module.__file__} does not define "
-                f"a `build_likelihood` factory function."
+                f"a `{build_likelihood_name}` factory function."
             )
         warnings.warn(
-            "The use of a likelihood variable in Firecrown's initialization "
-            "module is deprecated. Any parameters passed to the likelihood "
-            "will be ignored. The module should define a `build_likelihood` "
-            "factory function.",
+            f"The use of a likelihood variable in Firecrown's initialization "
+            f"module is deprecated. Any parameters passed to the likelihood "
+            f"will be ignored. The module should define the `{build_likelihood_name}` "
+            f"factory function.",
             category=DeprecationWarning,
         )
         likelihood = module.likelihood
         tools = ModelingTools()
     else:
-        if not callable(module.build_likelihood):
+        build_likelihood = getattr(module, build_likelihood_name)
+        if not callable(build_likelihood):
             raise TypeError(
-                "The factory function `build_likelihood` must be a callable."
+                f"The factory function `{build_likelihood_name}` must be a callable."
             )
-        build_return = module.build_likelihood(build_parameters)
+        build_return = build_likelihood(build_parameters)
         if isinstance(build_return, tuple):
             likelihood, tools = build_return
         else:
@@ -443,13 +446,24 @@ def load_likelihood_from_module(
     :return : a tuple of the likelihood and the modeling tools
     """
     try:
-        mod = importlib.import_module(module)
+        # Try importing the entire string as a module first
+        try:
+            mod = importlib.import_module(module)
+            func = "build_likelihood"
+        except ImportError:
+            # If it fails, split and try importing as module.function
+            module0, func = module.rsplit(".", 1)
+            mod = importlib.import_module(module0)
     except ImportError as exc:
         raise ValueError(
-            f"Unrecognized Firecrown initialization module {module}."
+            f"Unrecognized Firecrown initialization module '{module}'. "
+            f"The module must be either a module_name or a module_name.func "
+            f"where func is the factory function."
         ) from exc
 
-    return load_likelihood_from_module_type(mod, build_parameters)
+    return load_likelihood_from_module_type(
+        mod, build_parameters, build_likelihood_name=func
+    )
 
 
 def load_likelihood(

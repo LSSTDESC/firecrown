@@ -1,0 +1,17 @@
+---
+
+# This file contains the configuration for the two-point statistic factories that are
+# used to calculate the two-point statistics for the DES Y1 3x2pt analysis.
+
+
+number_count_factory:
+  global_systematics: []
+  per_bin_systematics:
+    - type: PhotoZShiftFactory
+weak_lensing_factory:
+  global_systematics:
+    - alphag: 1
+      type: LinearAlignmentSystematicFactory
+  per_bin_systematics:
+    - type: MultiplicativeShearBiasFactory
+    - type: PhotoZShiftFactory
