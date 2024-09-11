@@ -450,10 +450,13 @@ def load_likelihood_from_module(
         try:
             mod = importlib.import_module(module)
             func = "build_likelihood"
-        except ImportError:
+        except ImportError as sub_exc:
             # If it fails, split and try importing as module.function
-            module0, func = module.rsplit(".", 1)
-            mod = importlib.import_module(module0)
+            module_func = module.rsplit(".", 1)
+            if len(module_func) != 2:
+                raise sub_exc
+            mod = importlib.import_module(module_func[0])
+            func = module_func[1]
     except ImportError as exc:
         raise ValueError(
             f"Unrecognized Firecrown initialization module '{module}'. "
