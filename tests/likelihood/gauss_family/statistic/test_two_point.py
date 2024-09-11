@@ -505,6 +505,7 @@ def test_use_source_factory(
 
     if measurement in GALAXY_LENS_TYPES:
         assert isinstance(source, NumberCounts)
+        assert source.has_rsd == nc_factory.include_rsd
     elif measurement in GALAXY_SOURCE_TYPES:
         assert isinstance(source, WeakLensing)
     else:
@@ -529,6 +530,7 @@ def test_use_source_factory_metadata_only_counts(
         "bin1", Galaxies.COUNTS, wl_factory=wl_factory, nc_factory=nc_factory
     )
     assert isinstance(source, NumberCounts)
+    assert source.has_rsd == nc_factory.include_rsd
 
 
 def test_use_source_factory_metadata_only_shear(
