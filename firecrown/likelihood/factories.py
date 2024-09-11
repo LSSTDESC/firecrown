@@ -43,7 +43,8 @@ def build_two_point_likelihood(
     which statistic factories to use. The likelihood object is created by combining the
     SACC file with the specified statistic factories.
 
-    :param build_parameters: A NamedParameters object containing the following parameters:
+    :param build_parameters: A NamedParameters object containing the following
+        parameters:
         - sacc_file: The SACC file containing the data.
         - statistic_factories: A YAML file containing the statistic factories to use.
     """
@@ -126,7 +127,6 @@ def _build_two_point_likelihood_harmonic(
 
     :return: A likelihood object for two-point statistics in harmonic space.
     """
-
     tpms = extract_all_harmonic_data(sacc_data)
     check_two_point_consistence_harmonic(tpms)
 
@@ -158,7 +158,6 @@ def _build_two_point_likelihood_real(
 
     :return: A likelihood object for two-point statistics in real space.
     """
-
     tpms = extract_all_real_data(sacc_data)
     check_two_point_consistence_real(tpms)
 
