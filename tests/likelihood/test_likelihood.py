@@ -124,7 +124,9 @@ def test_load_likelihood_from_module():
 def test_load_likelihood_from_module_not_in_path():
     with pytest.raises(
         ValueError,
-        match="Unrecognized Firecrown initialization module lkscript_not_in_path.",
+        match="Unrecognized Firecrown initialization module 'lkscript_not_in_path'. "
+        "The module must be either a module_name or a module_name.func where func "
+        "is the factory function.",
     ):
         _ = load_likelihood_from_module("lkscript_not_in_path", NamedParameters())
 
