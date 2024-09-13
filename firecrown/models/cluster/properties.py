@@ -16,3 +16,4 @@ class ClusterProperty(Flag):
     REDSHIFT = auto()
     SHEAR = auto()
     #SHEAR_APPROX = auto()
+    DELTASIGMA = auto()

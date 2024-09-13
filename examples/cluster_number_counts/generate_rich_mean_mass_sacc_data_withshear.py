@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Defines a function to generate a SACC file for cluster number counts."""
+"""Defines a function to generate a SACC file for cluster number counts and cluster deltasigma."""
 
 # # Cluster count-only SACC file creation
 #
@@ -30,7 +30,7 @@ import clmm
 from clmm import Cosmology
 
 def generate_sacc_file() -> Any:
-    """Generate a SACC file for cluster number counts."""
+    """Generate a SACC file for cluster number counts and cluster deltasigma."""
     H0 = 71.0
     Ob0 = 0.0448
     Odm0 = 0.22
@@ -142,20 +142,12 @@ def generate_sacc_file() -> Any:
         "mean",
         bins=[z_edges, richness_edges],
     ).statistic
-
     std_logM = stats.binned_statistic_2d(
         cluster_z, cluster_richness, cluster_logM, "std", bins=[z_edges, richness_edges]
     ).statistic
 
     var_mean_logM = std_logM**2 / cluster_counts
 
-    # ** Correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
-    # In each redshift bin are the $N_{\rm richness}$ richness bins.**
-
-    covariance = np.diag(
-        np.concatenate((cluster_counts.flatten(), var_mean_logM.flatten()))
-    )
-    
     
     # Use CLMM to create a mock DeltaSigma profile to add to the SACC file later
     cosmo_clmm = Cosmology()
@@ -178,14 +170,59 @@ def generate_sacc_file() -> Any:
         0.3, 6.0, nbins=6, method="evenlog10width"
     )  # 6 radial bins log-spaced between 0.3 and 6 Mpc
 
+    radius_centers = []
+    for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
+        radius_lower, radius_upper = radius_bin
+        radius_center = np.mean(radius_edges[i : i + 1])
+        radius_centers.append(radius_center)
+
+    cluster_DeltaSigma = []
+    for redshift, log_mass in zip(cluster_z, cluster_logM):
+        mass = 10**log_mass
+        moo.set_mass(mass)
+        cluster_DeltaSigma.append(
+            moo.eval_excess_surface_density(radius_centers, redshift)
+        )
+    cluster_DeltaSigma = np.array(cluster_DeltaSigma)
+
+    richness_inds = np.digitize(cluster_richness, richness_edges) - 1
+    z_inds = np.digitize(cluster_z, z_edges) - 1
+    mean_DeltaSigma = np.array(
+        [
+            [
+                np.mean(
+                    cluster_DeltaSigma[(richness_inds == i) * (z_inds == j)], axis=0
+                )
+                for i in range(N_richness)
+            ]
+            for j in range(N_z)
+        ]
+    )
+    std_DeltaSigma = np.array(
+        [
+            [
+                np.std(cluster_DeltaSigma[(richness_inds == i) * (z_inds == j)], axis=0)
+                for i in range(N_richness)
+            ]
+            for j in range(N_z)
+        ]
+    )
+
+    var_mean_DeltaSigma = std_DeltaSigma**2 / cluster_counts[..., None]
+    #correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
+    # In each redshift bin are the $N_{\rm richness}$ richness bins.**
+
+    covariance = np.diag(
+        np.concatenate((cluster_counts.flatten(), var_mean_logM.flatten(), var_mean_DeltaSigma.flatten()))
+    )
+
     # Prepare the SACC file 
     s_count = sacc.Sacc()
     bin_z_labels = []
     bin_richness_labels = []
     bin_radius_labels = []
-    radius_centers = []
 
-    survey_name = "numcosmo_simulated_redshift_richness"
+    survey_name = "numcosmo_simulated_redshift_richness_deltasigma"
     s_count.add_tracer("survey", survey_name, area)
 
     for i, z_bin in enumerate(zip(z_edges[:-1], z_edges[1:])):
@@ -203,7 +240,6 @@ def generate_sacc_file() -> Any:
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
         radius_center = np.mean(radius_edges[i : i + 1])
-        radius_centers.append(radius_center)
         bin_radius_label = f"bin_radius_{i}"
         s_count.add_tracer(
             "bin_radius", bin_radius_label, radius_lower, radius_upper, radius_center
@@ -245,22 +281,22 @@ def generate_sacc_file() -> Any:
         )
 
     for redshift, log_mass, (bin_z_label, bin_richness_label) in redshifts_masses_and_edges:
-        mass = 10**log_mass
-        moo.set_mass(mass)
-        profile = moo.eval_excess_surface_density(radius_centers, redshift)
         for i, bin_radius_label in enumerate(bin_radius_labels):
+            mass = 10**log_mass
+            moo.set_mass(mass)
+            profile = moo.eval_excess_surface_density(radius_centers[i], redshift)
             s_count.add_data_point(
                 cluster_mean_DeltaSigma,
                 (survey_name, bin_z_label, bin_richness_label, bin_radius_label),
-                profile[i],
+                profile,
         )
+ 
         
     # ### Then the add the covariance and save the file
 
     s_count.add_covariance(covariance)
     s_count.to_canonical_order()
-    s_count.save_fits("cluster_redshift_richness_sacc_data.fits", overwrite=True)
-
+    s_count.save_fits("cluster_redshift_richness_shear_sacc_data.fits", overwrite=True)
 
 if __name__ == "__main__":
     Ncm.cfg_init()
