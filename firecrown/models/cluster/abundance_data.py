@@ -62,6 +62,9 @@ class AbundanceData:
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_mean_log_mass
+            elif cluster_property == ClusterProperty.SHEAR:
+                # pylint: disable=no-member
+                data_type = sacc.standard_types.cluster_shear
             else:
                 raise NotImplementedError(cluster_property)
 
@@ -90,12 +93,12 @@ class AbundanceData:
                 f"{data_type} data type."
             )
 
-        if bins_combos_for_type.shape[1] != 3:
-            raise ValueError(
-                "The SACC file must contain 3 tracers for the "
-                "cluster_counts data type: cluster_survey, "
-                "redshift argument and mass argument tracers."
-            )
+        #if bins_combos_for_type.shape[1] != 3:
+        #    raise ValueError(
+        #        "The SACC file must contain 3 tracers for the "
+        #        "cluster_counts data type: cluster_survey, "
+        #        "redshift argument and mass argument tracers."
+        #    )
 
         return bins_combos_for_type
 
@@ -115,6 +118,9 @@ class AbundanceData:
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_mean_log_mass
+            elif cluster_property == ClusterProperty.SHEAR:
+                # pylint: disable=no-member
+                data_type = sacc.standard_types.cluster_shear
             else:
                 raise NotImplementedError(cluster_property)
 
@@ -122,14 +128,103 @@ class AbundanceData:
             my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
             bin_combinations_for_survey = bin_combinations[my_survey_mask]
 
-            for _, z_tracer, mass_tracer in bin_combinations_for_survey:
-                z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
+            for tracers in bin_combinations_for_survey:
+                z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(tracers[1])
                 mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(
-                    mass_tracer
+                    tracers[2]
                 )
-                sacc_bin = SaccBin([z_data, mass_data])
+                _bin_data = [z_data, mass_data]
+                if data_type == sacc.standard_types.cluster_shear:
+                    radius_data: sacc.tracers.BinRadiusTracer = self.sacc_data.get_tracer(
+                        radius_tracers[3]
+                    )
+                    _bin_data.append(radius_data)
+                sacc_bin = SaccBin(_bin_data)
                 bins.append(sacc_bin)
 
         # Remove duplicates while preserving order (i.e. dont use set())
         unique_bins = list(dict.fromkeys(bins))
         return unique_bins
+
+#class ShearData(AbundanceData):
+#    """The class used to wrap a sacc file and return the cluster abundance data.
+#
+#    The sacc file is a complicated set of tracers (bins) and surveys.  This class
+#    manipulates that data and returns only the data relevant for the cluster
+#    number count statistic.  The data in this class is specific to a single
+#    survey name.
+#    """
+#
+#    _survey_index = 0
+#    _redshift_index = 1
+#    _mass_index = 2
+#    _radius_index = 3
+#
+#    def get_observed_data_and_indices_by_survey(
+#        self,
+#        survey_nm: str,
+#        properties: ClusterProperty,
+#    ) -> tuple[list[float], list[int]]:
+#        """Returns the observed data for the specified survey and properties.
+#
+#        For example if the caller has enabled COUNTS then the observed cluster counts
+#        within each N dimensional bin will be returned.
+#        """
+#        data_vectors = []
+#        sacc_indices = []
+#
+#        if properties.SHEAR != ClusterProperty.SHEAR:
+#            raise ValueError(cluster_property)
+#
+#        data_type = sacc.standard_types.cluster_shear
+#        bin_combinations = self._all_bin_combinations_for_data_type(data_type)
+#
+#        my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
+#
+#        return (
+#            list(
+#                self.sacc_data.get_mean(data_type=data_type)[my_survey_mask]
+#            ),
+#            list(
+#                self.sacc_data.indices(data_type=data_type)[my_survey_mask]
+#            )
+#)
+#
+#    def get_bin_edges(
+#        self, survey_nm: str, properties: ClusterProperty
+#    ) -> list[SaccBin]:
+#        """Returns the limits for all z, mass bins for the requested data type."""
+#        bins = []
+#
+#        for cluster_property in ClusterProperty:
+#            if not cluster_property & properties:
+#                continue
+#
+#            if cluster_property == ClusterProperty.COUNTS:
+#                # pylint: disable=no-member
+#                data_type = sacc.standard_types.cluster_counts
+#            elif cluster_property == ClusterProperty.SHEAR:
+#                # pylint: disable=no-member
+#                data_type = sacc.standard_types.cluster_shear
+#            else:
+#                raise NotImplementedError(cluster_property)
+#
+#        bin_combinations = self._all_bin_combinations_for_data_type(data_type)
+#
+#        my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
+#        bin_combinations_for_survey = bin_combinations[my_survey_mask]
+#
+#        for _, z_tracer, mass_tracer, radius_traces in bin_combinations_for_survey:
+#            z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
+#            mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(
+#                mass_tracer
+#            )
+#            radius_data: sacc.tracers.BinRadiusTracer = self.sacc_data.get_tracer(
+#                radius_tracer
+#            )
+#            sacc_bin = SaccBin([z_data, mass_data, radius_data])
+#            bins.append(sacc_bin)
+#
+#        # Remove duplicates while preserving order (i.e. dont use set())
+#        unique_bins = list(dict.fromkeys(bins))
+#        return unique_bins
