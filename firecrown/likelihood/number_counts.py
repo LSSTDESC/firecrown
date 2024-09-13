@@ -646,6 +646,7 @@ class NumberCountsFactory(BaseModel):
 
     per_bin_systematics: Sequence[NumberCountsSystematicFactory]
     global_systematics: Sequence[NumberCountsSystematicFactory]
+    include_rsd: bool = False
 
     def model_post_init(self, _) -> None:
         """Initialize the NumberCountsFactory.
@@ -674,7 +675,9 @@ class NumberCountsFactory(BaseModel):
         ]
         systematics.extend(self._global_systematics_instances)
 
-        nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
+        nc = NumberCounts.create_ready(
+            inferred_zdist, systematics=systematics, has_rsd=self.include_rsd
+        )
         self._cache[inferred_zdist_id] = nc
 
         return nc
@@ -697,7 +700,9 @@ class NumberCountsFactory(BaseModel):
         ]
         systematics.extend(self._global_systematics_instances)
 
-        nc = NumberCounts(sacc_tracer=sacc_tracer, systematics=systematics)
+        nc = NumberCounts(
+            sacc_tracer=sacc_tracer, systematics=systematics, has_rsd=self.include_rsd
+        )
         self._cache[sacc_tracer_id] = nc
 
         return nc
