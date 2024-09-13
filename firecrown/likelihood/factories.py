@@ -15,7 +15,12 @@ These functions are particularly useful when the full set of statistics present 
 SACC file is being used without the need for complex customization.
 """
 
+from typing import Annotated
+from enum import Enum, auto
+from pathlib import Path
+
 import yaml
+from pydantic import BaseModel, ConfigDict, BeforeValidator
 
 import sacc
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
@@ -30,6 +35,75 @@ from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
 )
 from firecrown.modeling_tools import ModelingTools
+from firecrown.utils import YAMLSerializable
+
+
+class TwoPointCorrelationSpace(YAMLSerializable, str, Enum):
+    """This class defines the two-point correlation space.
+
+    The two-point correlation space can be either real or harmonic. The real space
+    corresponds measurements in terms of angular separation, while the harmonic space
+    corresponds to measurements in terms of spherical harmonics decomposition.
+    """
+
+    @staticmethod
+    def _generate_next_value_(name, _start, _count, _last_values):
+        return name.lower()
+
+    REAL = auto()
+    HARMONIC = auto()
+
+
+def _validate_correlation_space(value):
+    if isinstance(value, str):
+        try:
+            return TwoPointCorrelationSpace(value)  # Convert from string to Enum
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid value for TwoPointCorrelationSpace: {value}"
+            ) from exc
+    return value
+
+
+class TwoPointFactory(BaseModel):
+    """Factory class for WeakLensing objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    correlation_space: Annotated[
+        TwoPointCorrelationSpace, BeforeValidator(_validate_correlation_space)
+    ]
+    weak_lensing_factory: WeakLensingFactory
+    number_counts_factory: NumberCountsFactory
+
+    def model_post_init(self, __context) -> None:
+        """Initialize the WeakLensingFactory object."""
+
+
+class DataSourceSacc(BaseModel):
+    """Model for the data source in a likelihood configuration."""
+
+    sacc_data_file: str
+
+    def model_post_init(self, __context) -> None:
+        """Initialize the DataSourceSacc object."""
+        sacc_data_file = Path(self.sacc_data_file)
+        if not sacc_data_file.exists():
+            raise FileNotFoundError(f"File {sacc_data_file} does not exist")
+
+    def get_sacc_data(self) -> sacc.Sacc:
+        """Load the SACC data file."""
+        return sacc.Sacc.load_fits(self.sacc_data_file)
+
+
+class TwoPointExperiment(BaseModel):
+    """Model for the two-point experiment in a likelihood configuration."""
+
+    two_point_factory: TwoPointFactory
+    data_source: DataSourceSacc
+
+    def model_post_init(self, __context) -> None:
+        """Initialize the TwoPointExperiment object."""
 
 
 def build_two_point_likelihood(
@@ -48,64 +122,35 @@ def build_two_point_likelihood(
         - sacc_file: The SACC file containing the data.
         - statistic_factories: A YAML file containing the statistic factories to use.
     """
-    sacc_file = build_parameters.get_string("sacc_file")
-    statistic_factories = build_parameters.get_string("statistic_factories")
-    harmonic = build_parameters.get_bool("harmonic", default_value=False)
-    real = build_parameters.get_bool("real", default_value=False)
+    likelihood_config_file = build_parameters.get_string("likelihood_config")
 
-    if harmonic and real:
-        raise ValueError(
-            "Cannot use both harmonic and real space simultaneously at "
-            "the same analysis"
-        )
-    if not (harmonic or real):
-        raise ValueError("Must use either harmonic or real space at the same analysis")
+    with open(likelihood_config_file, "r", encoding="utf-8") as f:
+        likelihood_config = yaml.safe_load(f)
 
-    if sacc_file is None:
-        raise ValueError("No SACC file provided")
+    if likelihood_config is None:
+        raise ValueError("No likelihood config found")
 
-    if statistic_factories is None:
-        raise ValueError("No statistic factories provided")
-
-    with open(statistic_factories, "r", encoding="utf-8") as f:
-        statistic_factories_yaml = yaml.safe_load(f)
-
-    if statistic_factories_yaml is None:
-        raise ValueError("Error loading statistic factories from YAML")
-
-    if "number_count_factory" not in statistic_factories_yaml:
-        raise ValueError(
-            "Number count factory not found in statistic factories "
-            "[number_count_factory]"
-        )
-    if "weak_lensing_factory" not in statistic_factories_yaml:
-        raise ValueError(
-            "Weak lensing factory not found in statistic factories "
-            "[weak_lensing_factory]"
-        )
-
-    wl_factory = WeakLensingFactory.model_validate(
-        statistic_factories_yaml["weak_lensing_factory"], strict=True
-    )
-    nc_factory = NumberCountsFactory.model_validate(
-        statistic_factories_yaml["number_count_factory"], strict=True
-    )
-
+    exp = TwoPointExperiment.model_validate(likelihood_config, strict=True)
     modeling_tools = ModelingTools()
 
     # Load the SACC file
-    sacc_data = sacc.Sacc.load_fits(sacc_file)
+    sacc_data = exp.data_source.get_sacc_data()
 
-    if harmonic:
-        return (
-            _build_two_point_likelihood_harmonic(sacc_data, wl_factory, nc_factory),
-            modeling_tools,
-        )
+    match exp.two_point_factory.correlation_space:
+        case TwoPointCorrelationSpace.REAL:
+            likelihood = _build_two_point_likelihood_real(
+                sacc_data,
+                exp.two_point_factory.weak_lensing_factory,
+                exp.two_point_factory.number_counts_factory,
+            )
+        case TwoPointCorrelationSpace.HARMONIC:
+            likelihood = _build_two_point_likelihood_harmonic(
+                sacc_data,
+                exp.two_point_factory.weak_lensing_factory,
+                exp.two_point_factory.number_counts_factory,
+            )
 
-    return (
-        _build_two_point_likelihood_real(sacc_data, wl_factory, nc_factory),
-        modeling_tools,
-    )
+    return likelihood, modeling_tools
 
 
 def _build_two_point_likelihood_harmonic(
@@ -128,6 +173,11 @@ def _build_two_point_likelihood_harmonic(
     :return: A likelihood object for two-point statistics in harmonic space.
     """
     tpms = extract_all_harmonic_data(sacc_data)
+    if len(tpms) == 0:
+        raise ValueError(
+            "No two-point measurements in harmonic space found in the SACC file"
+        )
+
     check_two_point_consistence_harmonic(tpms)
 
     two_points = TwoPoint.from_measurement(
@@ -159,6 +209,10 @@ def _build_two_point_likelihood_real(
     :return: A likelihood object for two-point statistics in real space.
     """
     tpms = extract_all_real_data(sacc_data)
+    if len(tpms) == 0:
+        raise ValueError(
+            "No two-point measurements in real space found in the SACC file"
+        )
     check_two_point_consistence_real(tpms)
 
     two_points = TwoPoint.from_measurement(
