@@ -121,16 +121,16 @@ Markdown(f"```yaml\n{default_values_yaml}\n```")
 Now, we must configure the cosmology and prepare the two-point statistics for analysis:
 
 ```{python}
-import pyccl
-
 from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
+from firecrown.parameters import ParamsMap
 
-ccl_cosmo = pyccl.CosmologyVanillaLCDM()
-ccl_cosmo.compute_nonlin_power()
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+params = get_default_params_map(tools, two_point_lens0_lens0)
 
-tools = ModelingTools()
 tools.update(params)
-tools.prepare(ccl_cosmo)
+tools.prepare()
 two_point_lens0_lens0.update(params)
 theory_vector = two_point_lens0_lens0.compute_theory_vector(tools)
 

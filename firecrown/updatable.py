@@ -351,9 +351,9 @@ class UpdatableCollection(UserList[T], Generic[T]):
         super().__init__(iterable)
         self._updated: bool = False
         for item in self:
-            if not isinstance(item, Updatable):
+            if not isinstance(item, (Updatable | UpdatableCollection)):
                 raise TypeError(
-                    "All the items in an UpdatableCollection must be updatable"
+                    f"All the items in an UpdatableCollection must be updatable {item}"
                 )
 
     @final
@@ -437,7 +437,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
         super().__setitem__(key, cast(T, value))
 
 
-def get_default_params_map(*args: Updatable) -> ParamsMap:
+def get_default_params(*args: Updatable) -> dict[str, float]:
     """Get a ParamsMap with the default values of all parameters in the updatables.
 
     :param args: updatables to get the default parameters from
@@ -447,4 +447,13 @@ def get_default_params_map(*args: Updatable) -> ParamsMap:
     required_parameters = updatable_collection.required_parameters()
     default_parameters = required_parameters.get_default_values()
 
-    return ParamsMap(default_parameters)
+    return default_parameters
+
+
+def get_default_params_map(*args: Updatable) -> ParamsMap:
+    """Get a ParamsMap with the default values of all parameters in the updatables.
+
+    :param args: updatables to get the default parameters from
+    :return: a ParamsMap with the default values of all parameters
+    """
+    return ParamsMap(get_default_params(*args))
