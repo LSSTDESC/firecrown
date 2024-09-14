@@ -1,7 +1,7 @@
-"""This module contains the CCLFactory class. 
+"""This module contains the CCLFactory class.
 
 The CCLFactory class is a factory class that creates instances of the
-`pyccl.Cosmology` class. 
+`pyccl.Cosmology` class.
 """
 
 from typing import Annotated
@@ -95,35 +95,49 @@ class CCLFactory(Updatable, BaseModel):
         PoweSpecAmplitudeParameter,
         BeforeValidator(_validade_amplitude_parameter),
         Field(frozen=True),
-    ] = PoweSpecAmplitudeParameter.AS
+    ] = PoweSpecAmplitudeParameter.SIGMA8
     mass_split: Annotated[
         NeutrinoMassSplits,
         BeforeValidator(_validate_neutrino_mass_splits),
         Field(frozen=True),
-    ] = NeutrinoMassSplits.SUM
+    ] = NeutrinoMassSplits.NORMAL
 
     def __init__(self, **data):
         """Initialize the CCLFactory object."""
         parameter_prefix = parameter_prefix = data.pop("parameter_prefix", None)
         BaseModel.__init__(self, **data)
         Updatable.__init__(self, parameter_prefix=parameter_prefix)
-        self.Omega_c = register_new_updatable_parameter(default_value=0.25)
-        self.Omega_b = register_new_updatable_parameter(default_value=0.05)
-        self.Omega_g = register_new_updatable_parameter(default_value=0.0)
-        self.h = register_new_updatable_parameter(default_value=0.7)
-        self.n_s = register_new_updatable_parameter(default_value=0.96)
-        self.Omega_k = register_new_updatable_parameter(default_value=0.0)
-        self.Neff = register_new_updatable_parameter(default_value=3.046)
-        self.m_nu = register_new_updatable_parameter(default_value=0.0)
-        self.w0 = register_new_updatable_parameter(default_value=-1.0)
-        self.wa = register_new_updatable_parameter(default_value=0.0)
-        self.T_CMB = register_new_updatable_parameter(default_value=2.7255)
+
+        self._ccl_cosmo: None | pyccl.Cosmology = None
+
+        ccl_cosmo = pyccl.CosmologyVanillaLCDM()
+
+        self.Omega_c = register_new_updatable_parameter(
+            default_value=ccl_cosmo["Omega_c"]
+        )
+        self.Omega_b = register_new_updatable_parameter(
+            default_value=ccl_cosmo["Omega_b"]
+        )
+        self.h = register_new_updatable_parameter(default_value=ccl_cosmo["h"])
+        self.n_s = register_new_updatable_parameter(default_value=ccl_cosmo["n_s"])
+        self.Omega_k = register_new_updatable_parameter(
+            default_value=ccl_cosmo["Omega_k"]
+        )
+        self.Neff = register_new_updatable_parameter(default_value=ccl_cosmo["Neff"])
+        self.m_nu = register_new_updatable_parameter(default_value=ccl_cosmo["m_nu"])
+        self.w0 = register_new_updatable_parameter(default_value=ccl_cosmo["w0"])
+        self.wa = register_new_updatable_parameter(default_value=ccl_cosmo["wa"])
+        self.T_CMB = register_new_updatable_parameter(default_value=ccl_cosmo["T_CMB"])
 
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
+                # VanillaLCDM has does not have A_s, so we need to add it
                 self.A_s = register_new_updatable_parameter(default_value=2.1e-9)
             case PoweSpecAmplitudeParameter.SIGMA8:
-                self.sigma8 = register_new_updatable_parameter(default_value=0.8)
+                assert ccl_cosmo["sigma8"] is not None
+                self.sigma8 = register_new_updatable_parameter(
+                    default_value=ccl_cosmo["sigma8"]
+                )
             case PoweSpecAmplitudeParameter.LN10E10AS:
                 raise ValueError("Not implemented yet")
             case _:
@@ -139,10 +153,13 @@ class CCLFactory(Updatable, BaseModel):
         if not self.is_updated():
             raise ValueError("Parameters have not been updated yet.")
 
+        if self._ccl_cosmo is not None:
+            return self._ccl_cosmo
+
+        # pylint: disable=duplicate-code
         ccl_args = {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
-            "Omega_g": self.Omega_g,
             "h": self.h,
             "n_s": self.n_s,
             "Omega_k": self.Omega_k,
@@ -151,8 +168,9 @@ class CCLFactory(Updatable, BaseModel):
             "w0": self.w0,
             "wa": self.wa,
             "T_CMB": self.T_CMB,
-            "mass_split": self.mass_split,
+            "mass_split": self.mass_split.value,
         }
+        # pylint: enable=duplicate-code
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
                 ccl_args["A_s"] = self.A_s
@@ -172,4 +190,9 @@ class CCLFactory(Updatable, BaseModel):
 
             return pyccl.CosmologyCalculator(**ccl_args)
 
-        return pyccl.Cosmology(**ccl_args)
+        self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        return self._ccl_cosmo
+
+    def _reset(self) -> None:
+        """Reset the CCLFactory object."""
+        self._ccl_cosmo = None

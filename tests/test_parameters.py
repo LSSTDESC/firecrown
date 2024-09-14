@@ -103,7 +103,7 @@ def test_get_params_names_does_not_allow_mutation():
 
 
 def test_params_map():
-    my_params = ParamsMap({"a": 1})
+    my_params = ParamsMap({"a": 1.0})
     x = my_params.get_from_prefix_param(None, "a")
     assert x == 1
     with pytest.raises(KeyError):

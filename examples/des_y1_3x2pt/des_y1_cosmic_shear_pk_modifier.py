@@ -15,6 +15,7 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap, create
 from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
 from firecrown.likelihood.likelihood import Likelihood
+from firecrown.ccl_factory import CCLFactory
 
 
 SACCFILE = os.path.expanduser(
@@ -56,7 +57,9 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     # Define the power spectrum modification and add it to the ModelingTools
     pk_modifier = vanDaalen19Baryonfication(pk_to_modify="delta_matter:delta_matter")
-    modeling_tools = ModelingTools(pk_modifiers=[pk_modifier])
+    modeling_tools = ModelingTools(
+        pk_modifiers=[pk_modifier], ccl_factory=CCLFactory(require_nonlinear_pk=True)
+    )
 
     # Create the likelihood from the statistics
     likelihood = ConstGaussian(statistics=list(stats.values()))
@@ -123,18 +126,7 @@ def run_likelihood() -> None:
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz
 
-    # Define a ccl.Cosmology object using default parameters
-    ccl_cosmo = ccl.CosmologyVanillaLCDM()
-    ccl_cosmo.compute_nonlin_power()
-
     f_bar = 0.5
-
-    # Calculate the barynic effects directly with CCL
-    vD19 = pyccl.BaryonsvanDaalen19(fbar=f_bar)
-    pk_baryons = vD19.include_baryonic_effects(
-        cosmo=ccl_cosmo, pk=ccl_cosmo.get_nonlin_power()
-    )
-
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
         {
@@ -145,13 +137,20 @@ def run_likelihood() -> None:
             "src3_delta_z": 0.002,
         }
     )
+    # Prepare the cosmology object
+    tools.update(systematics_params)
+    tools.prepare()
+
+    ccl_cosmo = tools.get_ccl_cosmology()
+
+    # Calculate the barynic effects directly with CCL
+    vD19 = pyccl.BaryonsvanDaalen19(fbar=f_bar)
+    pk_baryons = vD19.include_baryonic_effects(
+        cosmo=ccl_cosmo, pk=ccl_cosmo.get_nonlin_power()
+    )
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
-
-    # Prepare the cosmology object
-    tools.update(systematics_params)
-    tools.prepare(ccl_cosmo)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     log_like = likelihood.compute_loglike(tools)

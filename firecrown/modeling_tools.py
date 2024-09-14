@@ -11,12 +11,11 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Collection
 
-from firecrown.parameters import ParamsMap
 import pyccl.nl_pt
 
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.updatable import Updatable, UpdatableCollection
-from firecrown.ccl_factory import CCLFactory
+from firecrown.ccl_factory import CCLFactory, CCLCalculatorArgs
 
 
 class ModelingTools(Updatable):
@@ -42,8 +41,7 @@ class ModelingTools(Updatable):
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
-        if ccl_factory is None:
-            self.ccl_factory = CCLFactory()
+        self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
@@ -76,9 +74,26 @@ class ModelingTools(Updatable):
             return False
         return True
 
-    def _update(self, _: ParamsMap) -> None:
-        """Prepare the ModelingTools for use in likelihoods."""
-        self.ccl_cosmo = self.ccl_factory.create()
+    def prepare(self, *, calculator_args: None | CCLCalculatorArgs = None) -> None:
+        """Prepare the Cosmology for use in likelihoods.
+
+        This method will prepare the ModelingTools for use in likelihoods. This
+        includes building the perturbation theory and halo model calculators
+        if they are needed.
+
+        :param ccl_cosmo: the current CCL cosmology object
+        """
+        if not self.is_updated():
+            raise RuntimeError("ModelingTools has not been updated.")
+
+        if self._prepared:
+            raise RuntimeError("ModelingTools has already been prepared")
+
+        if self.ccl_cosmo is not None:
+            raise RuntimeError("Cosmology has already been set")
+
+        self.ccl_cosmo = self.ccl_factory.create(calculator_args)
+
         if self.pt_calculator is not None:
             self.pt_calculator.update_ingredients(self.ccl_cosmo)
 
@@ -87,6 +102,8 @@ class ModelingTools(Updatable):
 
         if self.cluster_abundance is not None:
             self.cluster_abundance.update_ingredients(self.ccl_cosmo)
+
+        self._prepared = True
 
     def _reset(self) -> None:
         """Resets all CCL objects in ModelingTools.
@@ -99,6 +116,7 @@ class ModelingTools(Updatable):
         # Also reset the power spectra
         # TODO: is that always needed?
         self.powerspectra = {}
+        self._prepared = False
 
     def get_ccl_cosmology(self) -> pyccl.Cosmology:
         """Return the CCL cosmology object."""

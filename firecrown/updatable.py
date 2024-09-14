@@ -46,9 +46,9 @@ class MissingSamplerParameterError(RuntimeError):
         self.parameter = parameter
         msg = (
             f"The parameter `{parameter}` is required to update "
-            "something in this likelihood.\nIt should have been supplied"
-            "by the sampling framework.\nThe object being updated was:\n"
-            "{context}\n"
+            f"something in this likelihood.\nIt should have been supplied "
+            f"by the sampling framework.\nThe object being updated was:\n"
+            f"{self}\n"
         )
         super().__init__(msg)
 
@@ -435,3 +435,16 @@ class UpdatableCollection(UserList[T], Generic[T]):
             )
 
         super().__setitem__(key, cast(T, value))
+
+
+def get_default_params_map(*args: Updatable) -> ParamsMap:
+    """Get a ParamsMap with the default values of all parameters in the updatables.
+
+    :param args: updatables to get the default parameters from
+    :return: a ParamsMap with the default values of all parameters
+    """
+    updatable_collection = UpdatableCollection(args)
+    required_parameters = updatable_collection.required_parameters()
+    default_parameters = required_parameters.get_default_values()
+
+    return ParamsMap(default_parameters)

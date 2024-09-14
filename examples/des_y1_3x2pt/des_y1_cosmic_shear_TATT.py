@@ -11,6 +11,7 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
+from firecrown.ccl_factory import CCLFactory
 
 
 SACCFILE = os.path.expanduser(
@@ -38,7 +39,9 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
         nk_per_decade=20,
     )
 
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools = ModelingTools(
+        pt_calculator=pt_calculator, ccl_factory=CCLFactory(require_nonlinear_pk=True)
+    )
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
     # Read the two-point data from the sacc file
@@ -102,14 +105,30 @@ def run_likelihood() -> None:
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz
 
-    # Define a ccl.Cosmology object using default parameters
-    ccl_cosmo = ccl.CosmologyVanillaLCDM()
-    ccl_cosmo.compute_nonlin_power()
-
     # Bare CCL setup
     a_1 = 1.0
     a_2 = 0.5
     a_d = 0.5
+    # Set the parameters for our systematics
+    systematics_params = ParamsMap(
+        {
+            "ia_a_1": a_1,
+            "ia_a_2": a_2,
+            "ia_a_d": a_d,
+            "src0_delta_z": 0.000,
+            "src1_delta_z": 0.003,
+            "src2_delta_z": -0.001,
+            "src3_delta_z": 0.002,
+        }
+    )
+
+    # Apply the systematics parameters
+    likelihood.update(systematics_params)
+
+    # Prepare the cosmology object
+    tools.prepare()
+    ccl_cosmo = tools.get_ccl_cosmology()
+
     c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
         ccl_cosmo, z=z, a1=a_1, a1delta=a_d, a2=a_2, Om_m2_for_c2=False
     )
@@ -130,25 +149,6 @@ def run_likelihood() -> None:
     # IAs x matter
     pk_im = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_m)
     pk_ii = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_i)
-
-    # Set the parameters for our systematics
-    systematics_params = ParamsMap(
-        {
-            "ia_a_1": a_1,
-            "ia_a_2": a_2,
-            "ia_a_d": a_d,
-            "src0_delta_z": 0.000,
-            "src1_delta_z": 0.003,
-            "src2_delta_z": -0.001,
-            "src3_delta_z": 0.002,
-        }
-    )
-
-    # Apply the systematics parameters
-    likelihood.update(systematics_params)
-
-    # Prepare the cosmology object
-    tools.prepare(ccl_cosmo)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     log_like = likelihood.compute_loglike(tools)
