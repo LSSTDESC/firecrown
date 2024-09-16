@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Sequence, TypedDict
+from typing import Callable, List, Sequence, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -99,7 +99,9 @@ def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
     )
 
 
-def make_log_interpolator(x, y):
+def make_log_interpolator(
+    x: npt.NDArray[np.int64], y: npt.NDArray[np.float64]
+) -> Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]]:
     """Return a function object that does 1D spline interpolation.
 
     If all the y values are greater than 0, the function
@@ -108,17 +110,25 @@ def make_log_interpolator(x, y):
     The resulting interpolater will not extrapolate; if called with
     an out-of-range argument it will raise a ValueError.
     """
-    # TODO: There is no code in Firecrown, neither test nor example, that uses
-    # this in any way.
     if np.all(y > 0):
         # use log-log interpolation
         intp = scipy.interpolate.InterpolatedUnivariateSpline(
             np.log(x), np.log(y), ext=2
         )
-        return lambda x_, intp=intp: np.exp(intp(np.log(x_)))
+
+        def log_log_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+            """Interpolate on log-log scale."""
+            return np.exp(intp(np.log(x_)))
+
+        return log_log_interpolator
     # only use log for x
     intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
-    return lambda x_, intp=intp: intp(np.log(x_))
+
+    def log_x_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+        """Interpolate on log-x scale."""
+        return intp(np.log(x_))
+
+    return log_x_interpolator
 
 
 def calculate_ells_for_interpolation(
