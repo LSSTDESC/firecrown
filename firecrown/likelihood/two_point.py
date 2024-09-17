@@ -84,7 +84,7 @@ def _ell_for_xi(
     ).generate()
 
 
-def _generate_ell_or_theta(
+def generate_bin_centers(
     *, minimum: float, maximum: float, n: int, binning: str = "log"
 ) -> npt.NDArray[np.float64]:
     """Return the centers of bins that span the range from minimum to maximum.
@@ -188,7 +188,7 @@ class EllOrThetaConfig(TypedDict):
 
 def generate_ells_cells(ell_config: EllOrThetaConfig):
     """Generate ells or theta values from the configuration dictionary."""
-    ells = _generate_ell_or_theta(**ell_config)
+    ells = generate_bin_centers(**ell_config)
     Cells = np.zeros_like(ells)
 
     return ells, Cells
@@ -196,7 +196,7 @@ def generate_ells_cells(ell_config: EllOrThetaConfig):
 
 def generate_reals(theta_config: EllOrThetaConfig):
     """Generate theta and xi values from the configuration dictionary."""
-    thetas = _generate_ell_or_theta(**theta_config)
+    thetas = generate_bin_centers(**theta_config)
     xis = np.zeros_like(thetas)
 
     return thetas, xis

@@ -22,7 +22,7 @@ from firecrown.likelihood.weak_lensing import (
 from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
     _ell_for_xi,
-    _generate_ell_or_theta,
+    generate_bin_centers,
     TwoPoint,
     TracerNames,
     TRACER_NAMES_TOTAL,
@@ -199,19 +199,19 @@ def test_two_point_src0_src0_no_window(sacc_galaxy_cells_src0_src0_no_window):
 def test_two_point_generate_ell_or_theta():
     # Logarithmic binning.
     assert np.allclose(
-        _generate_ell_or_theta(minimum=1.0, maximum=1000.0, n=3, binning="log"),
+        generate_bin_centers(minimum=1.0, maximum=1000.0, n=3, binning="log"),
         np.array(np.sqrt([10.0, 1000.0, 100000.0])),
     )
 
     # Linear binning.
     assert np.array_equal(
-        _generate_ell_or_theta(minimum=0.0, maximum=12.0, n=6, binning="lin"),
+        generate_bin_centers(minimum=0.0, maximum=12.0, n=6, binning="lin"),
         np.array([1.0, 3.0, 5.0, 7.0, 9.0, 11.0]),
     )
 
     # Invalid binning.
     with pytest.raises(ValueError, match="Unrecognized binning: cow"):
-        _generate_ell_or_theta(minimum=1, maximum=100, n=5, binning="cow")
+        generate_bin_centers(minimum=1, maximum=100, n=5, binning="cow")
 
 
 def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data):
