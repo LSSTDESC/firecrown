@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import copy
 import warnings
-from typing import Callable, List, Sequence, TypedDict
+from typing import Callable, Sequence, TypedDict
 
 import numpy as np
 import numpy.typing as npt
