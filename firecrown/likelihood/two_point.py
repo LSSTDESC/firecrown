@@ -377,10 +377,6 @@ class TwoPoint(Statistic):
     ell_or_theta_ : npt.NDArray[np.float64]
         The final array of ell/theta values for the statistic. Set after
         `compute` is called.
-    measured_statistic_ : npt.NDArray[np.float64]
-        The measured value for the statistic.
-    predicted_statistic_ : npt.NDArray[np.float64]
-        The final prediction for the statistic. Set after `compute` is called.
 
     """
 
