@@ -21,7 +21,7 @@ from firecrown.likelihood.weak_lensing import (
 )
 from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
-    _ell_for_xi,
+    log_linear_ells,
     generate_bin_centers,
     TwoPoint,
     TracerNames,
@@ -145,15 +145,15 @@ def fixture_two_point_without_window(
     return two_points.pop()
 
 
-def test_ell_for_xi_no_rounding() -> None:
-    res = _ell_for_xi(minimum=0, midpoint=5, maximum=80, n_log=5)
+def test_log_linear_ells_no_rounding() -> None:
+    res = log_linear_ells(minimum=0, midpoint=5, maximum=80, n_log=5)
     expected = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0, 80.0])
     assert res.shape == expected.shape
     assert np.allclose(expected, res)
 
 
-def test_ell_for_xi_doing_rounding() -> None:
-    res = _ell_for_xi(minimum=1, midpoint=3, maximum=100, n_log=5)
+def test_log_linear_ells_doing_rounding() -> None:
+    res = log_linear_ells(minimum=1, midpoint=3, maximum=100, n_log=5)
     expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.allclose(expected, res)
 

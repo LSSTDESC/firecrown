@@ -66,7 +66,7 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 }
 
 
-def _ell_for_xi(
+def log_linear_ells(
     *, minimum: int, midpoint: int, maximum: int, n_log: int
 ) -> npt.NDArray[np.int64]:
     """Create an array of ells to sample the power spectrum.
@@ -149,19 +149,19 @@ def make_log_interpolator(
 def calculate_ells_for_interpolation(
     min_ell: int, max_ell: int
 ) -> npt.NDArray[np.int64]:
-    """See _ell_for_xi.
+    """See log_linear_ells.
 
     This method mixes together:
         1. the default parameters in ELL_FOR_XI_DEFAULTS
         2. the first and last values in w.
 
-    and then calls _ell_for_xi with those arguments, returning whatever it
+    and then calls log_linear_ells with those arguments, returning whatever it
     returns.
     """
     ell_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
     ell_config["maximum"] = max_ell
     ell_config["minimum"] = max(ell_config["minimum"], min_ell)
-    return _ell_for_xi(**ell_config)
+    return log_linear_ells(**ell_config)
 
 
 class EllOrThetaConfig(TypedDict):
@@ -532,7 +532,7 @@ class TwoPoint(Statistic):
                 )
                 two_point.thetas = metadata.thetas
                 two_point.window = None
-                two_point.ells_for_xi = _ell_for_xi(**two_point.ell_for_xi_config)
+                two_point.ells_for_xi = log_linear_ells(**two_point.ell_for_xi_config)
             case _:
                 raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
         two_point.ready = True
@@ -729,7 +729,7 @@ class TwoPoint(Statistic):
         thetas, xis, sacc_indices = apply_theta_min_max(
             thetas, xis, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
         )
-        self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
+        self.ells_for_xi = log_linear_ells(**self.ell_for_xi_config)
         self.thetas = thetas
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(xis)
