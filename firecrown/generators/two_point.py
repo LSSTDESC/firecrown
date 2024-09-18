@@ -7,6 +7,9 @@ import numpy as np
 import numpy.typing as npt
 
 
+ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 60_000, "n_log": 200}
+
+
 class LogLinearElls(BaseModel):
     """Generator for log-linear integral ell values.
 
