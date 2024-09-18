@@ -2,7 +2,6 @@
 
 from typing import Annotated
 from pydantic import BaseModel, Field, model_validator
-
 import numpy as np
 import numpy.typing as npt
 
@@ -68,3 +67,28 @@ def log_linear_ells(
     return LogLinearElls(
         minimum=minimum, midpoint=midpoint, maximum=maximum, n_log=n_log
     ).generate()
+
+
+def generate_bin_centers(
+    *, minimum: float, maximum: float, n: int, binning: str = "log"
+) -> npt.NDArray[np.float64]:
+    """Return the centers of bins that span the range from minimum to maximum.
+
+    If binning is 'log', this will generate logarithmically spaced bins; if
+    binning is 'lin', this will generate linearly spaced bins.
+
+    :param minimum: The low edge of the first bin.
+    :param maximum: The high edge of the last bin.
+    :param n: The number of bins.
+    :param binning: Either 'log' or 'lin'.
+    :return: The centers of the bins.
+    """
+    match binning:
+        case "log":
+            edges = np.logspace(np.log10(minimum), np.log10(maximum), n + 1)
+            return np.sqrt(edges[1:] * edges[:-1])
+        case "lin":
+            edges = np.linspace(minimum, maximum, n + 1)
+            return (edges[1:] + edges[:-1]) / 2.0
+        case _:
+            raise ValueError(f"Unrecognized binning: {binning}")

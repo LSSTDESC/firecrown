@@ -16,7 +16,11 @@ import scipy.interpolate
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
-from firecrown.generators.two_point import ELL_FOR_XI_DEFAULTS, log_linear_ells
+from firecrown.generators.two_point import (
+    ELL_FOR_XI_DEFAULTS,
+    log_linear_ells,
+    generate_bin_centers,
+)
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
     WeakLensingFactory,
@@ -64,31 +68,6 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceDensity_xi": "NN",
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
-
-
-def generate_bin_centers(
-    *, minimum: float, maximum: float, n: int, binning: str = "log"
-) -> npt.NDArray[np.float64]:
-    """Return the centers of bins that span the range from minimum to maximum.
-
-    If binning is 'log', this will generate logarithmically spaced bins; if
-    binning is 'lin', this will generate linearly spaced bins.
-
-    :param minimum: The low edge of the first bin.
-    :param maximum: The high edge of the last bin.
-    :param n: The number of bins.
-    :param binning: Either 'log' or 'lin'.
-    :return: The centers of the bins.
-    """
-    match binning:
-        case "log":
-            edges = np.logspace(np.log10(minimum), np.log10(maximum), n + 1)
-            return np.sqrt(edges[1:] * edges[:-1])
-        case "lin":
-            edges = np.linspace(minimum, maximum, n + 1)
-            return (edges[1:] + edges[:-1]) / 2.0
-        case _:
-            raise ValueError(f"Unrecognized binning: {binning}")
 
 
 # @functools.lru_cache(maxsize=128)

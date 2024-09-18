@@ -21,7 +21,6 @@ from firecrown.likelihood.weak_lensing import (
 )
 from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
-    generate_bin_centers,
     TwoPoint,
     TracerNames,
     TRACER_NAMES_TOTAL,
@@ -31,7 +30,7 @@ from firecrown.likelihood.two_point import (
     WeakLensingFactory,
     NumberCountsFactory,
 )
-from firecrown.generators.two_point import log_linear_ells
+from firecrown.generators.two_point import log_linear_ells, generate_bin_centers
 from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
