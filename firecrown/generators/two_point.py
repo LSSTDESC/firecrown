@@ -52,3 +52,19 @@ class LogLinearElls(BaseModel):
         # Round the results to the nearest integer values.
         # N.B. the dtype of the result is np.dtype[float64]
         return np.unique(np.around(concatenated)).astype(np.int64)
+
+
+def log_linear_ells(
+    *, minimum: int, midpoint: int, maximum: int, n_log: int
+) -> npt.NDArray[np.int64]:
+    """Create an array of ells to sample the power spectrum.
+
+    This is used for for real-space predictions. The result will contain
+    each integral value from min to mid. Starting from mid, and going up
+    to max, there will be n_log logarithmically spaced values.
+
+    All values are rounded to the nearest integer.
+    """
+    return LogLinearElls(
+        minimum=minimum, midpoint=midpoint, maximum=maximum, n_log=n_log
+    ).generate()

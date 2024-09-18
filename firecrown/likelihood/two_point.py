@@ -16,7 +16,7 @@ import scipy.interpolate
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
-from firecrown.generators.two_point import LogLinearElls, ELL_FOR_XI_DEFAULTS
+from firecrown.generators.two_point import ELL_FOR_XI_DEFAULTS, log_linear_ells
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
     WeakLensingFactory,
@@ -64,22 +64,6 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceDensity_xi": "NN",
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
-
-
-def log_linear_ells(
-    *, minimum: int, midpoint: int, maximum: int, n_log: int
-) -> npt.NDArray[np.int64]:
-    """Create an array of ells to sample the power spectrum.
-
-    This is used for for real-space predictions. The result will contain
-    each integral value from min to mid. Starting from mid, and going up
-    to max, there will be n_log logarithmically spaced values.
-
-    All values are rounded to the nearest integer.
-    """
-    return LogLinearElls(
-        minimum=minimum, midpoint=midpoint, maximum=maximum, n_log=n_log
-    ).generate()
 
 
 def generate_bin_centers(
