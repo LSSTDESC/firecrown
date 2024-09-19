@@ -248,8 +248,9 @@ class Mapping(ABC):
             cosmo_dict["A_s"] = self.A_s
         if self.sigma8 is not None:
             cosmo_dict["sigma8"] = self.sigma8
-        if self.Omega_g is not None:
-            cosmo_dict["Omega_g"] = self.Omega_g
+        # Currently we do not support Omega_g
+        # if self.Omega_g is not None:
+        #    cosmo_dict["Omega_g"] = self.Omega_g
         if self.m_nu is not None:
             cosmo_dict["m_nu"] = self.m_nu
 

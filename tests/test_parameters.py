@@ -112,6 +112,20 @@ def test_params_map():
         _ = my_params.get_from_prefix_param(None, "no_such_name")
 
 
+def test_params_map_wrong_type():
+    with pytest.raises(
+        TypeError, match="Value for parameter a is not a float or a list of floats.*"
+    ):
+        _ = ParamsMap({"a": "not a float or a list of floats"})
+
+
+def test_params_map_wrong_type_list():
+    with pytest.raises(
+        TypeError, match="Value for parameter a is not a float or a list of floats.*"
+    ):
+        _ = ParamsMap({"a": ["not a float or a list of floats"]})
+
+
 def test_parameter_get_full_name_reject_empty_name():
     with pytest.raises(ValueError):
         _ = parameter_get_full_name(None, "")
