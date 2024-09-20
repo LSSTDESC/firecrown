@@ -217,15 +217,13 @@ class MappingNumCosmo(GObject.Object):
             case PoweSpecAmplitudeParameter.SIGMA8:
                 if self._p_ml is None:
                     raise ValueError(
-                        "PowspecML object must be provided when using sigma8"
+                        "PowspecML object must be provided when using sigma8."
                     )
                 sigma8 = self._p_ml.sigma_tophat_R(hi_cosmo, 1.0e-7, 0.0, 8.0 / h)
             case PoweSpecAmplitudeParameter.AS:
                 A_s = get_hiprim(hi_cosmo).SA_Ampl()
-            case PoweSpecAmplitudeParameter.LN10E10AS:
-                raise ValueError("Not implemented yet")
-            case _:
-                raise ValueError("Invalid amplitude parameter")
+
+        assert (A_s is not None) or (sigma8 is not None)
 
         # pylint: disable=duplicate-code
         self.mapping.set_params(

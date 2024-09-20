@@ -139,9 +139,7 @@ class CCLFactory(Updatable, BaseModel):
                     default_value=ccl_cosmo["sigma8"]
                 )
             case PoweSpecAmplitudeParameter.LN10E10AS:
-                raise ValueError("Not implemented yet")
-            case _:
-                raise ValueError("Invalid amplitude parameter")
+                raise ValueError("Not implemented yet.")
 
     def model_post_init(self, __context) -> None:
         """Initialize the WeakLensingFactory object."""

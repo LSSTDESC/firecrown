@@ -420,3 +420,27 @@ def test_numcosmo_serialize_likelihood(
     assert id(fc_data_dup.model_list) != id(fc_data.model_list)
     assert isinstance(fc_data_dup.model_list, list)
     assert fc_data_dup.model_list == fc_data.model_list
+
+
+def test_numcosmo_mapping_deprecated_require_nonlinear_pk():
+    """Test the MappingNumCosmo deprecated require_nonlinear_pk."""
+
+    with pytest.deprecated_call():
+        _ = MappingNumCosmo(require_nonlinear_pk=True)
+
+
+def test_numcosmo_mapping_sigma8_missing_pk():
+    """Test the MappingNumCosmo with sigma8 as a parameter but missing pk."""
+
+    cosmo = Nc.HICosmoDEXcdm()
+
+    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
+    mset = Ncm.MSet()
+    mset.set(cosmo)
+
+    with pytest.raises(
+        ValueError, match="PowspecML object must be provided when using sigma8."
+    ):
+        map_cosmo.set_params_from_numcosmo(
+            mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+        )
