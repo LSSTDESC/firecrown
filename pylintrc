@@ -68,4 +68,5 @@ expected-line-ending-format=LF
 
 [DESIGN]
 max-args=20
+max-positional-arguments=20
 max-attributes=20
