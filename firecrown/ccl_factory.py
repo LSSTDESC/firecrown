@@ -216,6 +216,9 @@ class CCLFactory(Updatable, BaseModel):
 
             return pyccl.CosmologyCalculator(**ccl_args)
 
+        if self.require_nonlinear_pk:
+            ccl_args["matter_power_spectrum"] = "halofit"
+
         self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
         return self._ccl_cosmo
 

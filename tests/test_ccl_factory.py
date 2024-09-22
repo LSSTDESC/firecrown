@@ -1,10 +1,15 @@
 """Test the CCLFactory object."""
 
+import numpy as np
 import pytest
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
 
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.ccl_factory import (
+    CCLFactory,
+    PoweSpecAmplitudeParameter,
+    CCLCalculatorArgs,
+)
 from firecrown.updatable import get_default_params_map
 from firecrown.parameters import ParamsMap
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
@@ -29,6 +34,40 @@ def fixture_require_nonlinear_pk(request):
     return request.param
 
 
+BACKGROUND = {
+    "background": {
+        "a": np.linspace(0.1, 1.0, 100),
+        "chi": np.linspace(1.0, 0.0, 100),
+        "h_over_h0": np.linspace(1.0, 100.0, 100),
+    }
+}
+
+PK_LINEAR = {
+    "pk_linear": {
+        "k": np.linspace(0.1, 1.0, 100),
+        "a": np.linspace(0.1, 1.0, 100),
+        "delta_matter:delta_matter": np.ones(100 * 100).reshape(100, 100),
+    }
+}
+
+PK_NONLIN = {
+    "pk_nonlin": {
+        "k": np.linspace(0.1, 1.0, 100),
+        "a": np.linspace(0.1, 1.0, 100),
+        "delta_matter:delta_matter": np.ones(100 * 100).reshape(100, 100),
+    }
+}
+
+
+@pytest.fixture(
+    name="calculator_args",
+    params=[BACKGROUND, BACKGROUND | PK_LINEAR | PK_NONLIN],
+    ids=["background", "background_linear_pk_nonlinear_pk"],
+)
+def fixture_calculator_args(request) -> CCLCalculatorArgs:
+    return request.param
+
+
 def test_ccl_factory_simple(
     amplitude_parameter: PoweSpecAmplitudeParameter,
     neutrino_mass_splits: NeutrinoMassSplits,
@@ -50,6 +89,39 @@ def test_ccl_factory_simple(
     ccl_factory.update(default_params)
 
     cosmo = ccl_factory.create()
+
+    assert cosmo is not None
+    assert isinstance(cosmo, pyccl.Cosmology)
+
+
+def test_ccl_factory_ccl_args(
+    amplitude_parameter: PoweSpecAmplitudeParameter,
+    neutrino_mass_splits: NeutrinoMassSplits,
+    require_nonlinear_pk: bool,
+    calculator_args: CCLCalculatorArgs,
+) -> None:
+    ccl_factory = CCLFactory(
+        amplitude_parameter=amplitude_parameter,
+        mass_split=neutrino_mass_splits,
+        require_nonlinear_pk=require_nonlinear_pk,
+    )
+
+    if require_nonlinear_pk and "pk_linear" not in calculator_args:
+        pytest.skip(
+            "Nonlinear power spectrum requested but "
+            "linear power spectrum not provided."
+        )
+
+    assert ccl_factory is not None
+    assert ccl_factory.amplitude_parameter == amplitude_parameter
+    assert ccl_factory.mass_split == neutrino_mass_splits
+    assert ccl_factory.require_nonlinear_pk == require_nonlinear_pk
+
+    default_params = get_default_params_map(ccl_factory)
+
+    ccl_factory.update(default_params)
+
+    cosmo = ccl_factory.create(calculator_args)
 
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
