@@ -12,7 +12,16 @@ from typing_extensions import NotRequired, TypedDict
 
 import numpy as np
 import numpy.typing as npt
-from pydantic import BaseModel, ConfigDict, BeforeValidator, Field
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    BeforeValidator,
+    SerializerFunctionWrapHandler,
+    SerializationInfo,
+    Field,
+    field_serializer,
+    model_serializer,
+)
 
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
@@ -63,13 +72,14 @@ class PoweSpecAmplitudeParameter(YAMLSerializable, str, Enum):
 
     AS = auto()
     SIGMA8 = auto()
-    LN10E10AS = auto()
 
 
 def _validade_amplitude_parameter(value):
     if isinstance(value, str):
         try:
-            return PoweSpecAmplitudeParameter(value)  # Convert from string to Enum
+            return PoweSpecAmplitudeParameter(
+                value.lower()
+            )  # Convert from string to Enum
         except ValueError as exc:
             raise ValueError(
                 f"Invalid value for PoweSpecAmplitudeParameter: {value}"
@@ -80,7 +90,7 @@ def _validade_amplitude_parameter(value):
 def _validate_neutrino_mass_splits(value):
     if isinstance(value, str):
         try:
-            return NeutrinoMassSplits(value)  # Convert from string to Enum
+            return NeutrinoMassSplits(value.lower())  # Convert from string to Enum
         except ValueError as exc:
             raise ValueError(f"Invalid value for NeutrinoMassSplits: {value}") from exc
     return value
@@ -138,8 +148,28 @@ class CCLFactory(Updatable, BaseModel):
                 self.sigma8 = register_new_updatable_parameter(
                     default_value=ccl_cosmo["sigma8"]
                 )
-            case PoweSpecAmplitudeParameter.LN10E10AS:
-                raise ValueError("Not implemented yet.")
+
+    @model_serializer(mode="wrap")
+    def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
+        """Serialize the CCLFactory object."""
+        model_dump = nxt(self)
+        exclude_params = [param.name for param in self._sampler_parameters] + list(
+            self._internal_parameters.keys()
+        )
+
+        return {k: v for k, v in model_dump.items() if k not in exclude_params}
+
+    @field_serializer("amplitude_parameter")
+    @classmethod
+    def serialize_amplitude_parameter(cls, value: PoweSpecAmplitudeParameter) -> str:
+        """Serialize the amplitude parameter."""
+        return value.name
+
+    @field_serializer("mass_split")
+    @classmethod
+    def serialize_mass_split(cls, value: NeutrinoMassSplits) -> str:
+        """Serialize the mass split parameter."""
+        return value.name
 
     def model_post_init(self, __context) -> None:
         """Initialize the WeakLensingFactory object."""
@@ -152,7 +182,7 @@ class CCLFactory(Updatable, BaseModel):
             raise ValueError("Parameters have not been updated yet.")
 
         if self._ccl_cosmo is not None:
-            return self._ccl_cosmo
+            raise ValueError("CCLFactory object has already been created.")
 
         # pylint: disable=duplicate-code
         ccl_args = {
@@ -174,10 +204,8 @@ class CCLFactory(Updatable, BaseModel):
                 ccl_args["A_s"] = self.A_s
             case PoweSpecAmplitudeParameter.SIGMA8:
                 ccl_args["sigma8"] = self.sigma8
-            case PoweSpecAmplitudeParameter.LN10E10AS:
-                raise ValueError("Not implemented yet")
-            case _:
-                raise ValueError("Invalid amplitude parameter")
+
+        assert ("A_s" in ccl_args) or ("sigma8" in ccl_args)
 
         if calculator_args is not None:
             ccl_args.update(calculator_args)
@@ -194,3 +222,9 @@ class CCLFactory(Updatable, BaseModel):
     def _reset(self) -> None:
         """Reset the CCLFactory object."""
         self._ccl_cosmo = None
+
+    def get(self) -> pyccl.Cosmology:
+        """Return the `pyccl.Cosmology` object."""
+        if self._ccl_cosmo is None:
+            raise ValueError("CCLFactory object has not been created yet.")
+        return self._ccl_cosmo
