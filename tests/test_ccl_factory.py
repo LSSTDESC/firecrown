@@ -20,10 +20,30 @@ def fixture_neutrino_mass_splits(request):
     return request.param
 
 
-def test_ccl_factory_simple() -> None:
-    ccl_factory = CCLFactory()
+@pytest.fixture(
+    name="require_nonlinear_pk",
+    params=[True, False],
+    ids=["require_nonlinear_pk", "no_require_nonlinear_pk"],
+)
+def fixture_require_nonlinear_pk(request):
+    return request.param
+
+
+def test_ccl_factory_simple(
+    amplitude_parameter: PoweSpecAmplitudeParameter,
+    neutrino_mass_splits: NeutrinoMassSplits,
+    require_nonlinear_pk: bool,
+) -> None:
+    ccl_factory = CCLFactory(
+        amplitude_parameter=amplitude_parameter,
+        mass_split=neutrino_mass_splits,
+        require_nonlinear_pk=require_nonlinear_pk,
+    )
 
     assert ccl_factory is not None
+    assert ccl_factory.amplitude_parameter == amplitude_parameter
+    assert ccl_factory.mass_split == neutrino_mass_splits
+    assert ccl_factory.require_nonlinear_pk == require_nonlinear_pk
 
     default_params = get_default_params_map(ccl_factory)
 
@@ -117,14 +137,14 @@ def test_ccl_factory_get() -> None:
     assert cosmo is cosmo2
 
 
-def test_ccl_factor_get_not_created() -> None:
+def test_ccl_factory_get_not_created() -> None:
     ccl_factory = CCLFactory()
 
     with pytest.raises(ValueError, match="CCLFactory object has not been created yet."):
         ccl_factory.get()
 
 
-def test_ccl_factor_create_twice() -> None:
+def test_ccl_factory_create_twice() -> None:
     ccl_factory = CCLFactory()
 
     assert ccl_factory is not None
@@ -139,6 +159,15 @@ def test_ccl_factor_create_twice() -> None:
     assert isinstance(cosmo, pyccl.Cosmology)
 
     with pytest.raises(ValueError, match="CCLFactory object has already been created."):
+        ccl_factory.create()
+
+
+def test_ccl_factory_create_not_updated() -> None:
+    ccl_factory = CCLFactory()
+
+    assert ccl_factory is not None
+
+    with pytest.raises(ValueError, match="Parameters have not been updated yet."):
         ccl_factory.create()
 
 
@@ -169,3 +198,62 @@ def test_ccl_factory_tofrom_yaml() -> None:
     assert isinstance(cosmo2, pyccl.Cosmology)
 
     assert cosmo == cosmo2
+
+
+def test_ccl_factory_tofrom_yaml_all_options(
+    amplitude_parameter: PoweSpecAmplitudeParameter,
+    neutrino_mass_splits: NeutrinoMassSplits,
+    require_nonlinear_pk: bool,
+) -> None:
+    ccl_factory = CCLFactory(
+        amplitude_parameter=amplitude_parameter,
+        mass_split=neutrino_mass_splits,
+        require_nonlinear_pk=require_nonlinear_pk,
+    )
+
+    assert ccl_factory is not None
+    assert ccl_factory.amplitude_parameter == amplitude_parameter
+    assert ccl_factory.mass_split == neutrino_mass_splits
+    assert ccl_factory.require_nonlinear_pk == require_nonlinear_pk
+
+    default_params = get_default_params_map(ccl_factory)
+
+    ccl_factory.update(default_params)
+
+    cosmo = ccl_factory.create()
+
+    assert cosmo is not None
+    assert isinstance(cosmo, pyccl.Cosmology)
+
+    yaml_str = base_model_to_yaml(ccl_factory)
+
+    ccl_factory2 = base_model_from_yaml(CCLFactory, yaml_str)
+
+    assert ccl_factory2 is not None
+    assert ccl_factory2.amplitude_parameter == amplitude_parameter
+    assert ccl_factory2.mass_split == neutrino_mass_splits
+    assert ccl_factory2.require_nonlinear_pk == require_nonlinear_pk
+    ccl_factory2.update(default_params)
+
+    cosmo2 = ccl_factory2.create()
+
+    assert cosmo2 is not None
+    assert isinstance(cosmo2, pyccl.Cosmology)
+
+    assert cosmo == cosmo2
+
+
+def test_ccl_factory_invalid_amplitude_parameter() -> None:
+    with pytest.raises(
+        ValueError,
+        match=".*Invalid value for PoweSpecAmplitudeParameter: Im not a valid value.*",
+    ):
+        CCLFactory(amplitude_parameter="Im not a valid value")
+
+
+def test_ccl_factory_invalid_mass_splits() -> None:
+    with pytest.raises(
+        ValueError,
+        match=".*Invalid value for NeutrinoMassSplits: Im not a valid value.*",
+    ):
+        CCLFactory(mass_split="Im not a valid value")
