@@ -55,7 +55,6 @@ function-naming-style=any
 max-positional-arguments=6
 # Maximum number of arguments for function / method.
 max-args=11
-max-positional-arguments=20
 
 # Maximum number of attributes for a class (see R0902).
 max-attributes=14
