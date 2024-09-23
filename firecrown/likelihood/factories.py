@@ -128,7 +128,7 @@ def build_two_point_likelihood(
         likelihood_config = yaml.safe_load(f)
 
     if likelihood_config is None:
-        raise ValueError("No likelihood config found")
+        raise ValueError("No likelihood config found.")
 
     exp = TwoPointExperiment.model_validate(likelihood_config, strict=True)
     modeling_tools = ModelingTools()

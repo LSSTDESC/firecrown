@@ -295,3 +295,21 @@ data_source:
         ),
     ):
         _ = build_two_point_likelihood(build_parameters)
+
+
+def test_build_two_point_likelihood_empty_likelihood_config(tmp_path: Path) -> None:
+    tmp_experiment_file = tmp_path / "experiment.yaml"
+    tmp_experiment_file.write_text("")
+
+    build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
+    with pytest.raises(ValueError, match="No likelihood config found."):
+        _ = build_two_point_likelihood(build_parameters)
+
+
+def test_build_two_point_likelihood_invalid_likelihood_config(tmp_path: Path) -> None:
+    tmp_experiment_file = tmp_path / "experiment.yaml"
+    tmp_experiment_file.write_text("I'm not a valid YAML file.")
+
+    build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
+    with pytest.raises(ValueError, match=".*validation error for TwoPointExperiment.*"):
+        _ = build_two_point_likelihood(build_parameters)
