@@ -351,3 +351,17 @@ def test_ccl_factory_from_dict() -> None:
     assert ccl_factory.amplitude_parameter == PoweSpecAmplitudeParameter.SIGMA8
     assert ccl_factory.mass_split == NeutrinoMassSplits.EQUAL
     assert ccl_factory.require_nonlinear_pk is True
+
+
+def test_ccl_factory_from_dict_wrong_type() -> None:
+    ccl_factory_dict = {
+        "amplitude_parameter": 0.32,
+        "mass_split": NeutrinoMassSplits.EQUAL,
+        "require_nonlinear_pk": True,
+    }
+
+    with pytest.raises(
+        ValueError,
+        match=".*Input should be.*",
+    ):
+        CCLFactory.model_validate(ccl_factory_dict)
