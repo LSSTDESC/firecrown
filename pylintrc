@@ -67,6 +67,7 @@ ignore-none=false
 expected-line-ending-format=LF
 
 [DESIGN]
+max-positional-arguments=8
 max-args=20
 max-positional-arguments=20
 max-attributes=20
