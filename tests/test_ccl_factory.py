@@ -34,35 +34,42 @@ def fixture_require_nonlinear_pk(request):
     return request.param
 
 
+Z_ARRAY = np.linspace(0.0, 5.0, 100)
+A_ARRAY = 1.0 / (1.0 + np.flip(Z_ARRAY))
+K_ARRAY = np.geomspace(1.0e-5, 10.0, 100)
+A_GRID, K_GRID = np.meshgrid(A_ARRAY, K_ARRAY, indexing="ij")
+
+CHI_ARRAY = np.linspace(100.0, 0.0, 100)
+H_OVER_H0_ARRAY = np.linspace(1.0, 100.0, 100)
+# Simple power spectrum model for testing
+PK_ARRAY = (
+    2.0e-9
+    * (K_GRID / 0.05) ** (0.96)
+    * (np.log(1 + 2.34 * K_GRID / 0.30) / (2.34 * K_GRID / 0.30))
+    * (1 / (1 + (K_GRID / (0.1 * 0.05)) ** (3 * 0.96)) * A_GRID)
+)
+
 BACKGROUND = {
-    "background": {
-        "a": np.linspace(0.1, 1.0, 100),
-        "chi": np.linspace(1.0, 0.0, 100),
-        "h_over_h0": np.linspace(1.0, 100.0, 100),
-    }
+    "background": {"a": A_ARRAY, "chi": CHI_ARRAY, "h_over_h0": H_OVER_H0_ARRAY}
 }
 
 PK_LINEAR = {
-    "pk_linear": {
-        "k": np.linspace(0.1, 1.0, 100),
-        "a": np.linspace(0.1, 1.0, 100),
-        "delta_matter:delta_matter": np.ones(100 * 100).reshape(100, 100),
-    }
+    "pk_linear": {"k": K_ARRAY, "a": A_ARRAY, "delta_matter:delta_matter": PK_ARRAY}
 }
 
 PK_NONLIN = {
     "pk_nonlin": {
         "k": np.linspace(0.1, 1.0, 100),
         "a": np.linspace(0.1, 1.0, 100),
-        "delta_matter:delta_matter": np.ones(100 * 100).reshape(100, 100),
+        "delta_matter:delta_matter": PK_ARRAY,
     }
 }
 
 
 @pytest.fixture(
     name="calculator_args",
-    params=[BACKGROUND, BACKGROUND | PK_LINEAR | PK_NONLIN],
-    ids=["background", "background_linear_pk_nonlinear_pk"],
+    params=[BACKGROUND, BACKGROUND | PK_LINEAR, BACKGROUND | PK_LINEAR | PK_NONLIN],
+    ids=["background", "background_linear_pk", "background_linear_pk_nonlinear_pk"],
 )
 def fixture_calculator_args(request) -> CCLCalculatorArgs:
     return request.param
@@ -329,3 +336,18 @@ def test_ccl_factory_invalid_mass_splits() -> None:
         match=".*Invalid value for NeutrinoMassSplits: Im not a valid value.*",
     ):
         CCLFactory(mass_split="Im not a valid value")
+
+
+def test_ccl_factory_from_dict() -> None:
+    ccl_factory_dict = {
+        "amplitude_parameter": PoweSpecAmplitudeParameter.SIGMA8,
+        "mass_split": NeutrinoMassSplits.EQUAL,
+        "require_nonlinear_pk": True,
+    }
+
+    ccl_factory = CCLFactory.model_validate(ccl_factory_dict)
+
+    assert ccl_factory is not None
+    assert ccl_factory.amplitude_parameter == PoweSpecAmplitudeParameter.SIGMA8
+    assert ccl_factory.mass_split == NeutrinoMassSplits.EQUAL
+    assert ccl_factory.require_nonlinear_pk is True
