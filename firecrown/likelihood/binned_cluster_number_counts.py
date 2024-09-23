@@ -148,3 +148,76 @@ class BinnedClusterNumberCounts(Statistic):
             cluster_counts.append(counts)
 
         return cluster_counts
+
+class BinnedClusterShear(Statistic):
+    """The Binned Cluster Number Counts statistic.
+
+    This class will make a prediction for the number of clusters in a z, mass bin
+    and compare that prediction to the data provided in the sacc file.
+    """
+
+    def __init__(
+        self,
+        cluster_properties: ClusterProperty,
+        survey_name: str,
+        cluster_recipe: ClusterRecipe,
+        systematics: None | list[SourceSystematic] = None,
+    ):
+        super().__init__()
+        self.systematics = systematics or []
+        self.theory_vector: None | TheoryVector = None
+        self.cluster_properties = cluster_properties
+        self.survey_name = survey_name
+        self.cluster_recipe = cluster_recipe
+        self.data_vector = DataVector.from_list([])
+        self.bins: list[SaccBin] = []
+
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the data for this statistic and mark it as ready for use."""
+        # Build the data vector and indices needed for the likelihood
+        if self.cluster_properties != ClusterProperty.SHEAR:
+            raise ValueError("You must specify at least one cluster property.")
+
+        sacc_adapter = AbundanceData(sacc_data)
+
+        data, indices = sacc_adapter.get_observed_data_and_indices_by_survey(
+            self.survey_name, self.cluster_properties
+        )
+        self.data_vector = DataVector.from_list(data)
+        self.sacc_indices = np.array(indices)
+
+        self.bins = sacc_adapter.get_bin_edges(
+            self.survey_name, self.cluster_properties
+        )
+        for bin_edge in self.bins:
+            if bin_edge.dimension != self.bins[0].dimension:
+                raise ValueError(
+                    "The cluster number counts statistic requires all bins to be the "
+                    "same dimension."
+                )
+
+        super().read(sacc_data)
+
+    def get_data_vector(self) -> DataVector:
+        """Gets the statistic data vector."""
+        assert self.data_vector is not None
+        return self.data_vector
+
+    def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
+        """Compute a statistic from sources, concrete implementation."""
+        assert tools.cluster_abundance is not None
+
+
+        mean_values = []
+        for this_bin in self.bins:
+            counts = self.cluster_recipe.evaluate_theory_prediction(
+                tools.cluster_abundance, this_bin
+            )
+            total_observable = self.cluster_recipe.evaluate_theory_prediction(
+                tools.cluster_abundance, this_bin, cluster_properties
+            )
+
+            mean_observable = total_observable / counts
+            mean_values.append(mean_observable)
+
+        return TheoryVector.from_list(mean_values)
