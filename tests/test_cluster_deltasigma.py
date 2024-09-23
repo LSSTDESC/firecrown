@@ -38,13 +38,14 @@ def test_cluster_update_ingredients(cluster_deltasigma: ClusterDeltaSigma):
     # pylint: disable=protected-access
     assert cluster_deltasigma._hmf_cache == {}
 
+
 @pytest.mark.slow
 def test_deltasigma_profile_returns_value(cluster_deltasigma: ClusterDeltaSigma):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cluster_deltasigma.update_ingredients(cosmo)
 
     result = cluster_deltasigma.delta_sigma(
-         np.linspace(13, 17, 5), np.linspace(0.1, 1, 5), np.linspace(1, 5, 5)
+        np.linspace(13, 17, 5), np.linspace(0.1, 1, 5), np.linspace(1, 5, 5)
     )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)

@@ -63,7 +63,7 @@ class AbundanceData:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_mean_log_mass
             else:
-                raise NotImplementedError(cluster_property)
+                continue
 
             bin_combinations = self._all_bin_combinations_for_data_type(data_type)
 
@@ -116,7 +116,7 @@ class AbundanceData:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_mean_log_mass
             else:
-                raise NotImplementedError(cluster_property)
+                continue
 
             bin_combinations = self._all_bin_combinations_for_data_type(data_type)
             my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm

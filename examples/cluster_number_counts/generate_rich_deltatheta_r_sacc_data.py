@@ -24,13 +24,14 @@ import sacc
 
 import os
 
-os.environ[
-    "CLMM_MODELING_BACKEND"
-] = "nc"  # Need to use NumCosmo as CLMM's backend as well.
+os.environ["CLMM_MODELING_BACKEND"] = (
+    "nc"  # Need to use NumCosmo as CLMM's backend as well.
+)
 import clmm
 from clmm import Cosmology
 
 from gen_sacc_aux import convert_binned_profile_to_sacc
+
 
 def generate_sacc_file() -> Any:
     """Generate a SACC file for cluster number counts."""
@@ -203,8 +204,6 @@ def generate_sacc_file() -> Any:
         area,
     )
     s_count.save_fits("cluster_redshift_richness_sacc_data.fits", overwrite=True)
-
-
 
 
 if __name__ == "__main__":

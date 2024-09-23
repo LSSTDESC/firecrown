@@ -75,7 +75,6 @@ class SaccBin(NDimensionalBin):
             raise ValueError("SaccBin must have exactly one radius bin")
         return radius_bin[0].center
 
-
     def __eq__(self, other: object) -> bool:
         """Two bins are equal if they have the same lower/upper bound."""
         if not isinstance(other, SaccBin):
@@ -136,8 +135,6 @@ class TupleBin(NDimensionalBin):
         """Radius bin center."""
         radius_bin = self.coordinate_bins[2]
         return radius_bin[2]
-
-
 
     def __eq__(self, other: object) -> bool:
         """Two bins are equal if they have the same lower/upper bound."""

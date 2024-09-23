@@ -19,16 +19,16 @@ from firecrown.likelihood.statistic import (
     TheoryVector,
 )
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster.abundance_data import AbundanceData
+from firecrown.models.cluster.deltasigma_data import DeltaSigmaData
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
-class BinnedClusterNumberCounts(Statistic):
-    """The Binned Cluster Number Counts statistic.
+class BinnedClusterDeltaSigma(Statistic):
+    """The Binned Cluster Delta Sigma statistic.
 
-    This class will make a prediction for the number of clusters in a z, mass bin
+    This class will make a prediction for the deltasigma of clusters in a z, mass, radial bin
     and compare that prediction to the data provided in the sacc file.
     """
 
@@ -55,7 +55,7 @@ class BinnedClusterNumberCounts(Statistic):
         if self.cluster_properties == ClusterProperty.NONE:
             raise ValueError("You must specify at least one cluster property.")
 
-        sacc_adapter = AbundanceData(sacc_data)
+        sacc_adapter = DeltaSigmaData(sacc_data)
         self.sky_area = sacc_adapter.get_survey_tracer(self.survey_name).sky_area
 
         data, indices = sacc_adapter.get_observed_data_and_indices_by_survey(
@@ -63,17 +63,15 @@ class BinnedClusterNumberCounts(Statistic):
         )
         self.data_vector = DataVector.from_list(data)
         self.sacc_indices = np.array(indices)
-
         self.bins = sacc_adapter.get_bin_edges(
             self.survey_name, self.cluster_properties
         )
         for bin_edge in self.bins:
             if bin_edge.dimension != self.bins[0].dimension:
                 raise ValueError(
-                    "The cluster number counts statistic requires all bins to be the "
+                    "The cluster deltasigma statistic requrires all bins to be the "
                     "same dimension."
                 )
-
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
@@ -84,25 +82,19 @@ class BinnedClusterNumberCounts(Statistic):
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a statistic from sources, concrete implementation."""
         assert tools.cluster_abundance is not None
-
+        assert tools.cluster_deltasigma is not None
         theory_vector_list: list[float] = []
         cluster_counts = []
-
-        cluster_counts = self.get_binned_cluster_counts(tools)
+        # cluster_counts = self.get_binned_cluster_counts(tools)
 
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:
                 continue
-
-            if cl_property == ClusterProperty.COUNTS:
-                theory_vector_list += cluster_counts
-                continue
             if cl_property == ClusterProperty.DELTASIGMA:
-                continue
-            theory_vector_list += self.get_binned_cluster_property(
-                tools, cluster_counts, cl_property
-            )
+                theory_vector_list += self.get_binned_cluster_property(
+                    tools, cluster_counts, cl_property
+                )
         return TheoryVector.from_list(theory_vector_list)
 
     def get_binned_cluster_property(
@@ -111,40 +103,30 @@ class BinnedClusterNumberCounts(Statistic):
         cluster_counts: list[float],
         cluster_properties: ClusterProperty,
     ) -> list[float]:
-        """Computes the mean mass of clusters in each bin.
+        """Computes the mean deltasigma of clusters in each bin.
 
         Using the data from the sacc file, this function evaluates the likelihood for
-        a single point of the parameter space, and returns the predicted mean mass of
+        a single point of the parameter space, and returns the predicted mean deltasigma of
         the clusters in each bin.
         """
         assert tools.cluster_abundance is not None
-
         mean_values = []
-        for this_bin, counts in zip(self.bins, cluster_counts):
+        mass_edges = None
+        z_edges = None
+        for this_bin in self.bins:
+            if mass_edges != this_bin.mass_proxy_edges or z_edges != this_bin.z_edges:
+                mass_edges = this_bin.mass_proxy_edges
+                z_edges = this_bin.z_edges
+                counts = self.cluster_recipe.evaluate_theory_prediction_counts(
+                    tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
+                )
             total_observable = self.cluster_recipe.evaluate_theory_prediction(
-                tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
+                tools.cluster_abundance,
+                tools.cluster_deltasigma,
+                this_bin,
+                self.sky_area,
+                cluster_properties,
             )
-            cluster_counts.append(counts)
-
             mean_observable = total_observable / counts
             mean_values.append(mean_observable)
-
         return mean_values
-
-    def get_binned_cluster_counts(self, tools: ModelingTools) -> list[float]:
-        """Computes the number of clusters in each bin.
-
-        Using the data from the sacc file, this function evaluates the likelihood for
-        a single point of the parameter space, and returns the predicted number of
-        clusters in each bin.
-        """
-        assert tools.cluster_abundance is not None
-
-        cluster_counts = []
-        for this_bin in self.bins:
-            counts = self.cluster_recipe.evaluate_theory_prediction(
-                tools.cluster_abundance, this_bin, self.sky_area
-            )
-            cluster_counts.append(counts)
-
-        return cluster_counts

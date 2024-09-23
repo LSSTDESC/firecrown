@@ -4,17 +4,20 @@ The galaxy cluster delta sigma integral is a combination of both theoretical
 and phenomenological predictions.  This module contains the classes and
 functions that produce those predictions.
 """
+
 import os
 import numpy as np
 import numpy.typing as npt
 import pyccl
 import pyccl.background as bkg
-os.environ["CLMM_MODELING_BACKEND"] = (
-    "nc"
-)
+
+# os.environ["CLMM_MODELING_BACKEND"] = (
+#    "nc"
+# )
 import clmm
 from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
+
 
 class ClusterDeltaSigma(Updatable):
     """The class that calculates the predicted delta sigma of galaxy clusters.
@@ -52,10 +55,10 @@ class ClusterDeltaSigma(Updatable):
         """Update the cluster abundance calculation with a new cosmology."""
         self._cosmo = cosmo
         self._hmf_cache = {}
-    
+
     def delta_sigma(
         self,
-        mass: npt.NDArray[np.float64],
+        log_mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
         radius_centers: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
@@ -67,9 +70,9 @@ class ClusterDeltaSigma(Updatable):
         # assuming the same concentration for all masses. Not realistic, but avoid having to call a mass-concentration relation.
         moo.set_concentration(4)
         return_vals = []
-        for m, redshift, r in zip(mass, z, radius_centers):
-            val = moo.eval_excess_surface_density(r, redshift)
+        for log_m, redshift in zip(log_mass, z):
+            moo.set_mass(10**log_m)
+            val = moo.eval_excess_surface_density(radius_centers, redshift)
             return_vals.append(val)
 
         return np.asarray(return_vals, dtype=np.float64)
-

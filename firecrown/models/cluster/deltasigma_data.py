@@ -51,35 +51,29 @@ class DeltaSigmaData:
         """
         data_vectors = []
         sacc_indices = []
-
+        data_type = None
         for cluster_property in ClusterProperty:
             include_prop = cluster_property & properties
-            if not include_prop:
+            if include_prop != ClusterProperty.DELTASIGMA:
                 continue
-
-            if cluster_property == ClusterProperty.COUNTS:
-                # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_counts
-            elif cluster_property == ClusterProperty.MASS:
-                # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_mean_log_mass
-            elif cluster_property == ClusterProperty.DELTASIGMA:
-                # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_shear
             else:
-                raise NotImplementedError(cluster_property)
-
-            bin_combinations = self._all_bin_combinations_for_data_type(data_type)
-
-            my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
-
-            data_vectors += list(
-                self.sacc_data.get_mean(data_type=data_type)[my_survey_mask]
+                data_type = sacc.standard_types.cluster_shear
+        if data_type == None:
+            raise ValueError(
+                f"The SACC file does not contain the {sacc.standard_types.cluster_shear} data type"
             )
 
-            sacc_indices += list(
-                self.sacc_data.indices(data_type=data_type)[my_survey_mask]
-            )
+        bin_combinations = self._all_bin_combinations_for_data_type(data_type)
+
+        my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
+
+        data_vectors += list(
+            self.sacc_data.get_mean(data_type=data_type)[my_survey_mask]
+        )
+
+        sacc_indices += list(
+            self.sacc_data.indices(data_type=data_type)[my_survey_mask]
+        )
 
         return data_vectors, sacc_indices
 
@@ -108,38 +102,33 @@ class DeltaSigmaData:
     ) -> list[SaccBin]:
         """Returns the limits for all z, mass bins for the requested data type."""
         bins = []
-
+        data_type = None
         for cluster_property in ClusterProperty:
             if not cluster_property & properties:
                 continue
-
-            if cluster_property == ClusterProperty.COUNTS:
-                # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_counts
-            elif cluster_property == ClusterProperty.MASS:
-                # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_mean_log_mass
-            elif cluster_property == ClusterProperty.DELTASIGMA:
+            if cluster_property == ClusterProperty.DELTASIGMA:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_shear
-            else:
-                raise NotImplementedError(cluster_property)
+        if data_type == None:
+            raise ValueError(
+                f"The SACC file does not contain the {sacc.standard_types.cluster_shear} data type"
+            )
 
-            bin_combinations = self._all_bin_combinations_for_data_type(data_type)
-            my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
-            bin_combinations_for_survey = bin_combinations[my_survey_mask]
+        bin_combinations = self._all_bin_combinations_for_data_type(data_type)
+        my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
+        bin_combinations_for_survey = bin_combinations[my_survey_mask]
 
-            for _, z_tracer, mass_tracer, radius_tracer in bin_combinations_for_survey:
-                z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
-                mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(
-                    mass_tracer
-                )
-                deltasigma_data: sacc.tracers.BinRadiusTracer = self.sacc_data.get_tracer(
-                    radius_tracer
-                )
+        for _, z_tracer, mass_tracer, radius_tracer in bin_combinations_for_survey:
+            z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
+            mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(
+                mass_tracer
+            )
+            radius_data: sacc.tracers.BinRadiusTracer = self.sacc_data.get_tracer(
+                radius_tracer
+            )
 
-                sacc_bin = SaccBin([z_data, mass_data, deltasigma_data])
-                bins.append(sacc_bin)
+            sacc_bin = SaccBin([z_data, mass_data, radius_data])
+            bins.append(sacc_bin)
 
         # Remove duplicates while preserving order (i.e. dont use set())
         unique_bins = list(dict.fromkeys(bins))

@@ -30,6 +30,7 @@ class ModelingTools(Updatable):
         pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = None,
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
+        cluster_deltasigma: None | ClusterDeltaSigma = None,
     ):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
@@ -39,6 +40,7 @@ class ModelingTools(Updatable):
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
+        self.cluster_deltasigma = cluster_deltasigma
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
@@ -99,6 +101,8 @@ class ModelingTools(Updatable):
         if self.cluster_abundance is not None:
             self.cluster_abundance.update_ingredients(ccl_cosmo)
 
+        if self.cluster_deltasigma is not None:
+            self.cluster_deltasigma.update_ingredients(ccl_cosmo)
         self._prepared = True
 
     def _reset(self) -> None:

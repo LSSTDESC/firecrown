@@ -45,7 +45,6 @@ def test_sacc_bin_z_edges():
     assert sb.z_edges == (0, 1)
 
 
-
 def test_sacc_bin_z_edges_throws_when_multiple_z_bins():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
@@ -75,6 +74,7 @@ def test_sacc_bin_richness_edges():
     sb = SaccBin([tracer_lambda, tracer_z])
     assert sb.mass_proxy_edges == (4, 5)
 
+
 def test_sacc_bin_radius_edges():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
@@ -94,6 +94,7 @@ def test_sacc_bin_radius_edges():
     sb = SaccBin([tracer_lambda, tracer_radius, tracer_z])
     assert sb.radius_edges == (1, 2)
 
+
 def test_sacc_bin_radius_center():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
@@ -112,6 +113,7 @@ def test_sacc_bin_radius_center():
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
     sb = SaccBin([tracer_lambda, tracer_radius, tracer_z])
     assert sb.radius_center == (1.5)
+
 
 def test_equal_sacc_bins_are_equal():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
@@ -176,7 +178,7 @@ def test_sacc_bin_must_be_equal_type():
 def test_create_tuple_bin():
     tb = TupleBin([(1, 2), (3, 4), (1, 2, 1.5)])
     assert tb is not None
-    assert tb.dimension == 3 
+    assert tb.dimension == 3
     assert tb.mass_proxy_edges == (1, 2)
     assert tb.z_edges == (3, 4)
     assert tb.radius_edges == (1, 2)

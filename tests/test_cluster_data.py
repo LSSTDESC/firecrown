@@ -24,6 +24,7 @@ def test_create_abundance_data():
     # pylint: disable=protected-access
     assert dsd._radius_index == 3
 
+
 def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
     dsd = DeltaSigmaData(cluster_sacc_data)
@@ -69,10 +70,12 @@ def test_get_bin_edges_cluster_mass(cluster_sacc_data: sacc.Sacc):
     bins = ad.get_bin_edges("my_survey", ClusterProperty.MASS)
     assert len(bins) == 2
 
+
 def test_get_bin_edges_cluster_radius(cluster_sacc_data: sacc.Sacc):
     dsd = DeltaSigmaData(cluster_sacc_data)
     bins = dsd.get_bin_edges("my_survey", ClusterProperty.DELTASIGMA)
     assert len(bins) == 2
+
 
 def test_get_bin_edges_counts_and_mass(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
@@ -111,6 +114,7 @@ def test_observed_data_and_indices_by_survey_cluster_mass(
     assert len(data) == 2
     assert len(indices) == 2
 
+
 def test_observed_data_and_indices_by_survey_cluster_deltasigma(
     cluster_sacc_data: sacc.Sacc,
 ):
@@ -131,6 +135,7 @@ def test_observed_data_and_indices_by_survey_cluster_counts_and_mass(
     )
     assert len(data) == 4
     assert len(indices) == 4
+
 
 def test_observed_data_and_indices_by_survey_not_implemented_throws(
     cluster_sacc_data: sacc.Sacc,
