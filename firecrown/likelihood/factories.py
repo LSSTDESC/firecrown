@@ -175,7 +175,7 @@ def _build_two_point_likelihood_harmonic(
     tpms = extract_all_harmonic_data(sacc_data)
     if len(tpms) == 0:
         raise ValueError(
-            "No two-point measurements in harmonic space found in the SACC file"
+            "No two-point measurements in harmonic space found in the SACC file."
         )
 
     check_two_point_consistence_harmonic(tpms)
@@ -211,7 +211,7 @@ def _build_two_point_likelihood_real(
     tpms = extract_all_real_data(sacc_data)
     if len(tpms) == 0:
         raise ValueError(
-            "No two-point measurements in real space found in the SACC file"
+            "No two-point measurements in real space found in the SACC file."
         )
     check_two_point_consistence_real(tpms)
 
