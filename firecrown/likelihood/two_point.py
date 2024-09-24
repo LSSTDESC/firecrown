@@ -31,26 +31,23 @@ from firecrown.likelihood.statistic import (
     Statistic,
     TheoryVector,
 )
-from firecrown.metadata.two_point_types import (
-    TRACER_NAMES_TOTAL,
-    InferredGalaxyZDist,
+from firecrown.metadata_types import (
     Galaxies,
+    InferredGalaxyZDist,
     Measurement,
+    TRACER_NAMES_TOTAL,
+    TracerNames,
+    TwoPointHarmonic,
+    TwoPointReal,
 )
 
-from firecrown.metadata.two_point import (
-    TracerNames,
-    TwoPointCells,
-    TwoPointCWindow,
-    TwoPointXiTheta,
-    TwoPointCellsIndex,
-    TwoPointXiThetaIndex,
-    Window,
+from firecrown.metadata_functions import (
+    TwoPointHarmonicIndex,
+    TwoPointRealIndex,
     extract_window_function,
-    check_two_point_consistence_harmonic,
-    check_two_point_consistence_real,
     measurements_from_index,
 )
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import UpdatableCollection
 
@@ -124,7 +121,9 @@ def make_log_interpolator(x, y):
     return lambda x_, intp=intp: intp(np.log(x_))
 
 
-def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.int64]:
+def calculate_ells_for_interpolation(
+    min_ell: int, max_ell: int
+) -> npt.NDArray[np.int64]:
     """See _ell_for_xi.
 
     This method mixes together:
@@ -134,11 +133,9 @@ def calculate_ells_for_interpolation(w: Window) -> npt.NDArray[np.int64]:
     and then calls _ell_for_xi with those arguments, returning whatever it
     returns.
     """
-    ell_config = {
-        **ELL_FOR_XI_DEFAULTS,
-        "maximum": w.ells[-1],
-    }
-    ell_config["minimum"] = max(ell_config["minimum"], w.ells[0])
+    ell_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+    ell_config["maximum"] = max_ell
+    ell_config["minimum"] = max(ell_config["minimum"], min_ell)
     return _ell_for_xi(**ell_config)
 
 
@@ -170,7 +167,7 @@ def generate_ells_cells(ell_config: EllOrThetaConfig):
     return ells, Cells
 
 
-def generate_theta_xis(theta_config: EllOrThetaConfig):
+def generate_reals(theta_config: EllOrThetaConfig):
     """Generate theta and xi values from the configuration dictionary."""
     thetas = _generate_ell_or_theta(**theta_config)
     xis = np.zeros_like(thetas)
@@ -263,7 +260,7 @@ def use_source_factory(
     return source
 
 
-def use_source_factory_metadata_only(
+def use_source_factory_metadata_index(
     sacc_tracer: str,
     measurement: Measurement,
     wl_factory: WeakLensingFactory | None = None,
@@ -289,7 +286,10 @@ def use_source_factory_metadata_only(
 
 
 class TwoPoint(Statistic):
-    """A two-point statistic.
+    """A statistic that represents the correlation between two measurements.
+
+    If the same source is used twice in the same TwoPoint object, this produces
+    an autocorrelation.
 
     For example, shear correlation function, galaxy-shear correlation function, etc.
 
@@ -399,7 +399,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta_config: None | EllOrThetaConfig
         self.ell_or_theta_min: None | float | int
         self.ell_or_theta_max: None | float | int
-        self.window: None | Window
+        self.window: None | npt.NDArray[np.float64]
         self.data_vector: None | DataVector
         self.theory_vector: None | TheoryVector
         self.sacc_tracers: TracerNames
@@ -446,118 +446,36 @@ class TwoPoint(Statistic):
             raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
     @classmethod
-    def _from_metadata(
+    def from_metadata_index(
         cls,
-        *,
-        sacc_data_type: str,
-        source0: Source,
-        source1: Source,
-        metadata: TwoPointCells | TwoPointCWindow | TwoPointXiTheta,
-    ) -> TwoPoint:
-        """Create a TwoPoint statistic from a TwoPointCells metadata object."""
-        two_point = cls(sacc_data_type, source0, source1)
-        match metadata:
-            case TwoPointCells():
-                two_point._init_from_cells(metadata)
-            case TwoPointCWindow():
-                two_point._init_from_cwindow(metadata)
-            case TwoPointXiTheta():
-                two_point._init_from_xi_theta(metadata)
-            case _:
-                raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
-        return two_point
-
-    def _init_from_cells(self, metadata: TwoPointCells):
-        """Initialize the TwoPoint statistic from a TwoPointCells metadata object."""
-        self.sacc_tracers = metadata.XY.get_tracer_names()
-        self.ells = metadata.ells
-        self.window = None
-        if metadata.Cell is not None:
-            self.sacc_indices = metadata.Cell.indices
-            self.data_vector = DataVector.create(metadata.Cell.data)
-        self.ready = True
-
-    def _init_from_cwindow(self, metadata: TwoPointCWindow):
-        """Initialize the TwoPoint statistic from a TwoPointCWindow metadata object."""
-        self.sacc_tracers = metadata.XY.get_tracer_names()
-        self.window = metadata.window
-        if self.window.ells_for_interpolation is None:
-            self.window.ells_for_interpolation = calculate_ells_for_interpolation(
-                self.window
-            )
-        if metadata.Cell is not None:
-            self.sacc_indices = metadata.Cell.indices
-            self.data_vector = DataVector.create(metadata.Cell.data)
-        self.ready = True
-
-    def _init_from_xi_theta(self, metadata: TwoPointXiTheta):
-        """Initialize the TwoPoint statistic from a TwoPointXiTheta metadata object."""
-        self.sacc_tracers = metadata.XY.get_tracer_names()
-        self.thetas = metadata.thetas
-        self.window = None
-        self.ells_for_xi = _ell_for_xi(**self.ell_for_xi_config)
-        if metadata.xis is not None:
-            self.sacc_indices = metadata.xis.indices
-            self.data_vector = DataVector.create(metadata.xis.data)
-        self.ready = True
-
-    @classmethod
-    def _from_metadata_any(
-        cls,
-        metadata: Sequence[TwoPointCells | TwoPointCWindow | TwoPointXiTheta],
+        metadata_indices: Sequence[TwoPointHarmonicIndex | TwoPointRealIndex],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
-        The metadata objects are used to initialize the TwoPoint statistics.
-        """
-        two_point_list = [
-            cls._from_metadata(
-                sacc_data_type=cell.get_sacc_name(),
-                source0=use_source_factory(
-                    cell.XY.x,
-                    cell.XY.x_measurement,
-                    wl_factory=wl_factory,
-                    nc_factory=nc_factory,
-                ),
-                source1=use_source_factory(
-                    cell.XY.y,
-                    cell.XY.y_measurement,
-                    wl_factory=wl_factory,
-                    nc_factory=nc_factory,
-                ),
-                metadata=cell,
-            )
-            for cell in metadata
-        ]
+        list of TwoPointCellsIndex or TwoPointXiThetaIndex metadata index objects. The
+        purpose of this constructor is to create a TwoPoint statistic from metadata
+        index, which requires a follow-up call to `read` to read the data and metadata
+        from the SACC object.
 
-        return UpdatableCollection(two_point_list)
+        :param metadata_index: The metadata index objects to initialize the TwoPoint
+            statistics.
+        :param wl_factory: The weak lensing factory to use.
+        :param nc_factory: The number counts factory to use.
 
-    @classmethod
-    def _from_metadata_only_any(
-        cls,
-        metadata: Sequence[TwoPointCellsIndex | TwoPointXiThetaIndex],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create an UpdatableCollection of TwoPoint statistics.
-
-        This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells, TwoPointCWindow or TwoPointXiTheta metadata objects.
-        The metadata objects are used to initialize the TwoPoint statistics.
+        :return: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list = []
-        for cell_index in metadata:
-            n1, a, n2, b = measurements_from_index(cell_index)
+        for metadata_index in metadata_indices:
+            n1, a, n2, b = measurements_from_index(metadata_index)
             two_point = cls(
-                sacc_data_type=cell_index["data_type"],
-                source0=use_source_factory_metadata_only(
+                sacc_data_type=metadata_index["data_type"],
+                source0=use_source_factory_metadata_index(
                     n1, a, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
-                source1=use_source_factory_metadata_only(
+                source1=use_source_factory_metadata_index(
                     n2, b, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
             )
@@ -566,72 +484,136 @@ class TwoPoint(Statistic):
         return UpdatableCollection(two_point_list)
 
     @classmethod
-    def from_metadata_harmonic(
+    def _from_metadata_single(
         cls,
-        metadata: Sequence[TwoPointCells | TwoPointCWindow],
+        *,
+        metadata: TwoPointHarmonic | TwoPointReal,
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
-        check_consistence: bool = False,
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create an UpdatableCollection of harmonic space TwoPoint statistics.
+    ) -> TwoPoint:
+        """Create a single TwoPoint statistic from metadata.
 
-        This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointCells or TwoPointCWindow metadata objects. The metadata objects
-        are used to initialize the TwoPoint statistics.
+        This constructor creates a single TwoPoint statistic from a TwoPointHarmonic or
+        TwoPointReal metadata object. It requires the sources to be initialized before
+        calling this constructor. The metadata object is used to initialize the TwoPoint
+        statistic. No further calls to `read` are needed.
+        """
+        match metadata:
+            case TwoPointHarmonic():
+                two_point = cls._from_metadata_single_base(
+                    metadata, wl_factory, nc_factory
+                )
+                two_point.ells = metadata.ells
+                two_point.window = metadata.window
+            case TwoPointReal():
+                two_point = cls._from_metadata_single_base(
+                    metadata, wl_factory, nc_factory
+                )
+                two_point.thetas = metadata.thetas
+                two_point.window = None
+                two_point.ells_for_xi = _ell_for_xi(**two_point.ell_for_xi_config)
+            case _:
+                raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
+        two_point.ready = True
+        return two_point
 
-        :param metadata: The metadata objects to initialize the TwoPoint statistics.
+    @classmethod
+    def _from_metadata_single_base(cls, metadata, wl_factory, nc_factory):
+        """Create a single TwoPoint statistic from metadata.
+
+        Base method for creating a single TwoPoint statistic from metadata.
+
+        :param metadata: The metadata object to initialize the TwoPoint statistic.
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
-        :param check_consistence: Whether to check the consistence of the
-            metadata and data.
+
+        :return: A TwoPoint statistic.
         """
-        if check_consistence:
-            check_two_point_consistence_harmonic(metadata)
-        return cls._from_metadata_any(metadata, wl_factory, nc_factory)
+        source0 = use_source_factory(
+            metadata.XY.x,
+            metadata.XY.x_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
+        )
+        source1 = use_source_factory(
+            metadata.XY.y,
+            metadata.XY.y_measurement,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
+        )
+        two_point = cls(metadata.get_sacc_name(), source0, source1)
+        two_point.sacc_tracers = metadata.XY.get_tracer_names()
+        return two_point
 
     @classmethod
-    def from_metadata_real(
+    def from_metadata(
         cls,
-        metadata: Sequence[TwoPointXiTheta],
+        metadata_seq: Sequence[TwoPointHarmonic | TwoPointReal],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
-        check_consistence: bool = False,
     ) -> UpdatableCollection[TwoPoint]:
-        """Create an UpdatableCollection of real space TwoPoint statistics.
+        """Create an UpdatableCollection of TwoPoint statistics from metadata.
 
         This constructor creates an UpdatableCollection of TwoPoint statistics from a
-        list of TwoPointXiTheta metadata objects. The metadata objects are used to
-        initialize the TwoPoint statistics.
+        list of TwoPointHarmonic or TwoPointReal metadata objects. The metadata objects
+        are used to initialize the TwoPoint statistics. The sources are initialized
+        using the factories provided.
 
-        :param metadata: The metadata objects to initialize the TwoPoint statistics.
+        Note that TwoPoint created with this constructor are ready to be used, but
+        contain no data.
+
+        :param metadata_seq: The metadata objects to initialize the TwoPoint statistics.
         :param wl_factory: The weak lensing factory to use.
         :param nc_factory: The number counts factory to use.
-        :param check_consistence: Whether to check the consistence of the
-            metadata and data.
+
+        :return: An UpdatableCollection of TwoPoint statistics.
         """
-        if check_consistence:
-            check_two_point_consistence_real(metadata)
-        return cls._from_metadata_any(metadata, wl_factory, nc_factory)
+        two_point_list = [
+            cls._from_metadata_single(
+                metadata=metadata, wl_factory=wl_factory, nc_factory=nc_factory
+            )
+            for metadata in metadata_seq
+        ]
+
+        return UpdatableCollection(two_point_list)
 
     @classmethod
-    def from_metadata_only_harmonic(
+    def from_measurement(
         cls,
-        metadata: list[TwoPointCellsIndex],
+        measurements: Sequence[TwoPointMeasurement],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
     ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint from metadata only."""
-        return cls._from_metadata_only_any(metadata, wl_factory, nc_factory)
+        """Create an UpdatableCollection of TwoPoint statistics from measurements.
 
-    @classmethod
-    def from_metadata_only_real(
-        cls,
-        metadata: list[TwoPointXiThetaIndex],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint from metadata only."""
-        return cls._from_metadata_only_any(metadata, wl_factory, nc_factory)
+        This constructor creates an UpdatableCollection of TwoPoint statistics from a
+        list of TwoPointMeasurement objects. The measurements are used to initialize the
+        TwoPoint statistics. The sources are initialized using the factories provided.
+
+        Note that TwoPoint created with this constructor are ready to be used and
+        contain data.
+
+        :param measurements: The measurements objects to initialize the TwoPoint
+            statistics.
+        :param wl_factory: The weak lensing factory to use.
+        :param nc_factory: The number counts factory to use.
+
+        :return: An UpdatableCollection of TwoPoint statistics.
+        """
+        two_point_list: list[TwoPoint] = []
+        for measurement in measurements:
+            two_point = cls._from_metadata_single(
+                metadata=measurement.metadata,
+                wl_factory=wl_factory,
+                nc_factory=nc_factory,
+            )
+            two_point.sacc_indices = measurement.indices
+            two_point.data_vector = DataVector.create(measurement.data)
+            two_point.ready = True
+
+            two_point_list.append(two_point)
+
+        return UpdatableCollection(two_point_list)
 
     def read_ell_cells(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
@@ -655,7 +637,7 @@ class TwoPoint(Statistic):
 
         return ells, Cells, sacc_indices
 
-    def read_theta_xis(
+    def read_reals(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
     ) -> (
         None
@@ -663,7 +645,7 @@ class TwoPoint(Statistic):
     ):
         """Read and return theta and xi."""
         thetas, xis = sacc_data.get_theta_xi(sacc_data_type, *tracers, return_cov=False)
-        # As version 0.13 of sacc, the method get_theta_xi returns the
+        # As version 0.13 of sacc, the method get_real returns the
         # theta values and the xi values in arrays of the same length.
         assert len(thetas) == len(xis)
 
@@ -691,7 +673,7 @@ class TwoPoint(Statistic):
 
     def read_real_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
-        thetas_xis_indices = self.read_theta_xis(
+        thetas_xis_indices = self.read_reals(
             self.sacc_data_type, sacc_data, self.sacc_tracers
         )
         # We do not support window functions for real space statistics
@@ -719,7 +701,7 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input theta values "
                     "were given!"
                 )
-            thetas, xis = generate_theta_xis(self.ell_or_theta_config)
+            thetas, xis = generate_reals(self.ell_or_theta_config)
             sacc_indices = None
         assert isinstance(self.ell_or_theta_min, (float, type(None)))
         assert isinstance(self.ell_or_theta_max, (float, type(None)))
@@ -747,14 +729,16 @@ class TwoPoint(Statistic):
                     f"specified `ell` in the configuration. `ell` is being ignored!",
                     stacklevel=2,
                 )
-            window = extract_window_function(sacc_data, sacc_indices)
+            replacement_ells: None | npt.NDArray[np.int64]
+            window: None | npt.NDArray[np.float64]
+            replacement_ells, window = extract_window_function(sacc_data, sacc_indices)
             if window is not None:
                 # When using a window function, we do not calculate all Cl's.
                 # For this reason we have a default set of ells that we use
                 # to compute Cl's, and we have a set of ells used for
                 # interpolation.
-                window.ells_for_interpolation = calculate_ells_for_interpolation(window)
-
+                assert replacement_ells is not None
+                ells = replacement_ells
         else:
             if self.ell_or_theta_config is None:
                 # The SACC file has no data points, just a tracer, in this case we
@@ -840,17 +824,16 @@ class TwoPoint(Statistic):
         scale1 = self.source1.get_scale()
 
         assert self.ccl_kind == "cl"
-        assert (self.ells is not None) or (self.window is not None)
+        assert self.ells is not None
 
         if self.window is not None:
-            # If a window function is provided, we need to compute the Cl's
-            # for the ells used in the window function. To do this, we will
-            # first compute the Cl's for the ells used in the interpolation
-            # and then interpolate the results to the ells used in the window
-            # function.
-            assert self.window.ells_for_interpolation is not None
-            cells_for_interpolation = self.compute_cells(
-                self.window.ells_for_interpolation,
+            ells_for_interpolation = calculate_ells_for_interpolation(
+                self.ells[0], self.ells[-1]
+            )
+
+            cells_interpolated = self.compute_cells_interpolated(
+                self.ells,
+                ells_for_interpolation,
                 scale0,
                 scale1,
                 tools,
@@ -858,26 +841,11 @@ class TwoPoint(Statistic):
                 tracers1,
             )
 
-            # TODO: There is no code in Firecrown, neither test nor example,
-            # that exercises a theory window function in any way.
-            cell_interpolator = make_log_interpolator(
-                self.window.ells_for_interpolation, cells_for_interpolation
-            )
-            # Deal with ell=0 and ell=1
-            cells_interpolated = np.zeros(self.window.ells.size)
-            cells_interpolated[2:] = cell_interpolator(self.window.ells[2:])
-
-            # Here we left multiply the computed Cl's by the window function
-            # to get the final Cl's.
-            theory_vector = np.einsum(
-                "lb, l -> b",
-                self.window.weights,
-                cells_interpolated,
-            )
+            # Here we left multiply the computed Cl's by the window function to get the
+            # final Cl's.
+            theory_vector = np.einsum("lb, l -> b", self.window, cells_interpolated)
             # We also compute the mean ell value associated with each bin.
-            self.mean_ells = np.einsum(
-                "lb, l -> b", self.window.weights, self.window.ells
-            )
+            self.mean_ells = np.einsum("lb, l -> b", self.window, self.ells)
 
             assert self.data_vector is not None
             return TheoryVector.create(theory_vector)
@@ -935,6 +903,46 @@ class TwoPoint(Statistic):
         self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
         theory_vector = self.cells[TRACER_NAMES_TOTAL]
         return theory_vector
+
+    def compute_cells_interpolated(
+        self,
+        ells: npt.NDArray[np.int64],
+        ells_for_interpolation: npt.NDArray[np.int64],
+        scale0: float,
+        scale1: float,
+        tools: ModelingTools,
+        tracers0: Sequence[Tracer],
+        tracers1: Sequence[Tracer],
+    ) -> npt.NDArray[np.float64]:
+        """Compute the interpolated power spectrum for the given ells and tracers.
+
+        :param ells: The angular wavenumbers at which to compute the power spectrum.
+        :param ells_for_interpolation: The angular wavenumbers at which the power
+            spectrum is computed for interpolation.
+        :param scale0: The scale factor for the first tracer.
+        :param scale1: The scale factor for the second tracer.
+        :param tools: The modeling tools to use.
+        :param tracers0: The first tracers to use.
+        :param tracers1: The second tracers to use.
+
+        Compute the power spectrum for the given ells and tracers and interpolate
+        the result to the ells provided.
+
+        :return: The interpolated power spectrum.
+        """
+        computed_cells = self.compute_cells(
+            ells_for_interpolation, scale0, scale1, tools, tracers0, tracers1
+        )
+        cell_interpolator = make_log_interpolator(
+            ells_for_interpolation, computed_cells
+        )
+        cell_interpolated = np.zeros(len(ells))
+        # We should not interpolate ell 0 and 1
+        ells_larger_than_1 = ells > 1
+        cell_interpolated[ells_larger_than_1] = cell_interpolator(
+            ells[ells_larger_than_1]
+        )
+        return cell_interpolated
 
     def calculate_pk(
         self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer

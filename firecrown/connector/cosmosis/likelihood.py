@@ -11,7 +11,6 @@ not a specific likelihood.
 import cosmosis.datablock
 from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
-import pyccl as ccl
 
 from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.gaussfamily import GaussFamily
@@ -52,17 +51,16 @@ class FirecrownLikelihood:
         if likelihood_source == "":
             likelihood_source = config[option_section, "firecrown_config"]
 
-        require_nonlinear_pk = config.get_bool(
-            option_section, "require_nonlinear_pk", False
-        )
-
         build_parameters = extract_section(config, option_section)
 
-        sections = config.get_string(option_section, "sampling_parameters_sections", "")
-        sections = sections.split()
+        sections_str: str = config.get_string(
+            option_section, "sampling_parameters_sections", ""
+        )
+        assert isinstance(sections_str, str)
+        sections = sections_str.split()
 
         self.firecrown_module_name = option_section
-        self.sampling_sections = sections
+        self.sampling_sections: list[str] = sections
         self.likelihood: Likelihood
         try:
             self.likelihood, self.tools = load_likelihood(
@@ -75,9 +73,7 @@ class FirecrownLikelihood:
             raise
         # We have to do some extra type-fiddling here because mapping_builder
         # has a declared return type of the base class.
-        new_mapping = mapping_builder(
-            input_style="CosmoSIS", require_nonlinear_pk=require_nonlinear_pk
-        )
+        new_mapping = mapping_builder(input_style="CosmoSIS")
         assert isinstance(new_mapping, MappingCosmoSIS)
         self.map = new_mapping
 
@@ -88,6 +84,8 @@ class FirecrownLikelihood:
             required_parameters = (
                 self.likelihood.required_parameters() + self.tools.required_parameters()
             )
+            required_parameters -= self.tools.ccl_factory.required_parameters()
+
             if len(required_parameters) != 0:
                 msg = (
                     f"The configured likelihood has required "
@@ -111,10 +109,7 @@ class FirecrownLikelihood:
             sample, "cosmological_parameters"
         )
         self.map.set_params_from_cosmosis(cosmological_params)
-
-        ccl_cosmo = ccl.CosmologyCalculator(
-            **self.map.asdict(), **self.map.calculate_ccl_args(sample)
-        )
+        ccl_args = self.map.calculate_ccl_args(sample)
 
         # TODO: Future development will need to capture elements that get put into the
         # datablock. This probably will be in a different "physics module" and not in
@@ -122,9 +117,11 @@ class FirecrownLikelihood:
         # calculations. e.g., data_vector/firecrown_theory  data_vector/firecrown_data
 
         firecrown_params = self.calculate_firecrown_params(sample)
+        firecrown_params = ParamsMap(firecrown_params | self.map.asdict())
+        firecrown_params.use_lower_case_keys(True)
         self.update_likelihood_and_tools(firecrown_params)
 
-        self.tools.prepare(ccl_cosmo)
+        self.tools.prepare(calculator_args=ccl_args)
         loglike = self.likelihood.compute_loglike(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()

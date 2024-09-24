@@ -15,6 +15,7 @@ def test_des_y1_3x2pt_cosmosis():
                 cd examples/des_y1_3x2pt
                 cosmosis des_y1_3x2pt.ini
                 cosmosis des_y1_3x2pt_PT.ini
+                cosmosis des_y1_3x2pt_default_factory.ini
             """,
         ],
         capture_output=True,

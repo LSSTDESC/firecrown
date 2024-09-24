@@ -4,12 +4,12 @@ from typing import Tuple
 import pyccl
 import sacc
 
+from firecrown.updatable import get_default_params_map
 from firecrown.likelihood.number_counts import (
     NumberCounts,
     PTNonLinearBiasSystematic,
 )
 from firecrown.likelihood.two_point import TwoPoint
-from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 
 
@@ -42,17 +42,6 @@ def make_twopoint_with_optional_systematics(
     )
     statistic.read(sacc_data)
     # Note the two sources have identical parameters.
-    param_map = ParamsMap(
-        {
-            "lens0_bias": 1.1,
-            "lens0_b_2": 1.05,
-            "lens0_b_s": 0.99,
-            "lens1_bias": 1.1,
-            "lens1_b_2": 1.05,
-            "lens1_b_s": 0.99,
-        }
-    )
-    statistic.update(param_map)
     tools = ModelingTools(
         pt_calculator=pyccl.nl_pt.EulerianPTCalculator(
             with_NC=True,
@@ -62,8 +51,21 @@ def make_twopoint_with_optional_systematics(
             nk_per_decade=20,
         )
     )
-    tools.update(param_map)
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(tools)
+    params.update(
+        {
+            "lens0_bias": 1.1,
+            "lens0_b_2": 1.05,
+            "lens0_b_s": 0.99,
+            "lens1_bias": 1.1,
+            "lens1_b_2": 1.05,
+            "lens1_b_s": 0.99,
+        }
+    )
+
+    tools.update(params)
+    tools.prepare()
+    statistic.update(params)
     _ = a.get_tracers(tools)
     _ = b.get_tracers(tools)
     assert a.tracers[0].has_pt == first_source_has_systematic

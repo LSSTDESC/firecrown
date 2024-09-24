@@ -5,7 +5,7 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 """
 
 from __future__ import annotations
-from typing import final
+from typing import final, Iterator
 from dataclasses import dataclass
 from abc import abstractmethod
 import warnings
@@ -20,31 +20,47 @@ from firecrown.updatable import Updatable
 
 
 class DataVector(npt.NDArray[np.float64]):
-    """This class wraps a np.ndarray that represents some observed data values."""
+    """Wrapper for a np.ndarray that represents some observed data values."""
 
     @classmethod
     def create(cls, vals: npt.NDArray[np.float64]) -> DataVector:
-        """Create a DataVector that wraps a copy of the given array vals."""
+        """Create a DataVector that wraps a copy of the given array vals.
+
+        :param vals: the array to be copied and wrapped
+        :return: a new DataVector
+        """
         return vals.view(cls)
 
     @classmethod
     def from_list(cls, vals: list[float]) -> DataVector:
-        """Create a DataVector from the given list of floats."""
+        """Create a DataVector from the given list of floats.
+
+        :param vals: the list of floats
+        :return: a new DataVector
+        """
         array = np.array(vals)
         return cls.create(array)
 
 
 class TheoryVector(npt.NDArray[np.float64]):
-    """This class represents an observation predicted by some theory."""
+    """Wrapper for an np.ndarray that represents a prediction by some theory."""
 
     @classmethod
     def create(cls, vals: npt.NDArray[np.float64]) -> TheoryVector:
-        """Create a TheoryVector that wraps a copy of the given array vals."""
+        """Create a TheoryVector that wraps a copy of the given array vals.
+
+        :param vals: the array to be copied and wrapped
+        :return: a new TheoryVector
+        """
         return vals.view(cls)
 
     @classmethod
     def from_list(cls, vals: list[float]) -> TheoryVector:
-        """Create a TheoryVector from the given list of floats."""
+        """Create a TheoryVector from the given list of floats.
+
+        :param vals: the list of floats
+        :return: a new TheoryVector
+        """
         array = np.array(vals)
         return cls.create(array)
 
@@ -61,20 +77,26 @@ def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]
 
 @dataclass
 class StatisticsResult:
-    """This is the type returned by the `compute` method of any `Statistic`."""
+    """An pair of a :python:`DataVector` and a :python:`TheoryVector`.
+
+    This is the type returned by the :meth:`compute` method of any :python:`Statistic`.
+    """
 
     data: DataVector
     theory: TheoryVector
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Make sure the data and theory vectors are of the same shape."""
         assert self.data.shape == self.theory.shape
 
     def residuals(self) -> npt.NDArray[np.float64]:
-        """Return the residuals -- the difference between data and theory."""
+        """Return the residuals -- the difference between data and theory.
+
+        :return: the residuals
+        """
         return self.data - self.theory
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[DataVector | TheoryVector]:
         """Iterate through the data members.
 
         This is to allow automatic unpacking, as if the StatisticsResult were a tuple
@@ -82,6 +104,8 @@ class StatisticsResult:
 
         This method is a temporary measure to help code migrate to the newer,
         safer interface for Statistic.compute().
+
+        :return: an iterator object that yields first the data and then the theory
         """
         warnings.warn(
             "Iteration and tuple unpacking for StatisticsResult is "
@@ -100,6 +124,10 @@ class StatisticUnreadError(RuntimeError):
     """
 
     def __init__(self, stat: Statistic):
+        """Initialize a new StatisticUnreadError.
+
+        :param stat: the statistic that was accessed before `read` was called
+        """
         msg = (
             f"The statistic {stat} was used for calculation before `read` "
             f"was called.\nIt may be that a likelihood factory function did not"
@@ -120,6 +148,18 @@ class Statistic(Updatable):
     """
 
     def __init__(self, parameter_prefix: None | str = None):
+        """Initialize a new Statistic.
+
+        Derived classes should make sure to class this method using:
+
+        .. code-block:: python
+
+            super().__init__(parameter_prefix=parameter_prefix)
+
+        as the last thing they do in `__init__`.
+
+        :param parameter_prefix: The prefix to prepend to all parameter names
+        """
         super().__init__(parameter_prefix=parameter_prefix)
         self.sacc_indices: None | npt.NDArray[np.int64]
         self.ready = False
@@ -129,17 +169,16 @@ class Statistic(Updatable):
     def read(self, _: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.
 
-        Derived classes that override this function should make sure to call the base
-        class method using:
+        Derived classes that override this function should make sure to call the
+        base class method using:
 
         .. code-block:: python
 
             super().read(sacc_data)
 
-        as the last thing they do in `__init__`.
+        as the last thing they do.
 
-        Note that currently the argument is not used; it is present so that this
-        method will have the correct argument type for the override.
+        :param _: currently unused, but required by the interface.
         """
         self.ready = True
         if len(self.get_data_vector()) == 0:
@@ -151,18 +190,32 @@ class Statistic(Updatable):
     def _reset(self):
         """Reset this statistic.
 
-        All subclasses implementations must call super()._reset()
+        Derived classes that override this function should make sure to call the
+        base class method using:
+
+        .. code-block:: python
+
+            super()._reset()
+
+        as the last thing they do.
         """
         self.computed_theory_vector = False
         self.theory_vector = None
 
     @abstractmethod
     def get_data_vector(self) -> DataVector:
-        """Gets the statistic data vector."""
+        """Gets the statistic data vector.
+
+        :return: The data vector.
+        """
 
     @final
     def compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute a statistic from sources, applying any systematics."""
+        """Compute a statistic from sources, applying any systematics.
+
+        :param tools: the modeling tools used to compute the theory vector.
+        :return: The computed theory vector.
+        """
         if not self.is_updated():
             raise RuntimeError(
                 f"The statistic {self} has not been updated with parameters."
@@ -180,6 +233,8 @@ class Statistic(Updatable):
         """Returns the last computed theory vector.
 
         Raises a RuntimeError if the vector has not been computed.
+
+        :return: The already-computed theory vector.
         """
         if not self.computed_theory_vector:
             raise RuntimeError(
@@ -200,7 +255,10 @@ class GuardedStatistic(Updatable):
     """
 
     def __init__(self, stat: Statistic):
-        """Initialize the GuardedStatistic to contain the given :class:`Statistic`."""
+        """Initialize the GuardedStatistic to contain the given :class:`Statistic`.
+
+        :param stat: The statistic to wrap.
+        """
         super().__init__()
         assert isinstance(stat, Statistic)
         self.statistic = stat
@@ -211,6 +269,8 @@ class GuardedStatistic(Updatable):
         After this function is called, the object should be prepared for the
         calling of the methods :meth:`get_data_vector` and
         :meth:`compute_theory_vector`.
+
+        :param sacc_data: The SACC data object to read from.
         """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
@@ -229,6 +289,8 @@ class GuardedStatistic(Updatable):
 
         :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first.
+
+        :return: The most recently calculated  data vector.
         """
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -239,6 +301,9 @@ class GuardedStatistic(Updatable):
 
         :class:`GuardedStatistic` ensures that :meth:`read` has been called.
         first.
+
+        :param tools: the modeling tools used to compute the theory vector.
+        :return: The computed theory vector.
         """
         if not self.statistic.ready:
             raise StatisticUnreadError(self.statistic)
@@ -264,8 +329,11 @@ class TrivialStatistic(Statistic):
         )
         self.computed_theory_vector = False
 
-    def read(self, sacc_data: sacc.Sacc):
-        """Read the necessary items from the sacc data."""
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the necessary items from the sacc data.
+
+        :param sacc_data: The SACC data object to be read
+        """
         our_data = sacc_data.get_mean(data_type="count")
         assert len(our_data) == self.count
         self.data_vector = DataVector.from_list(our_data)
@@ -274,19 +342,32 @@ class TrivialStatistic(Statistic):
 
     @final
     def _required_parameters(self) -> RequiredParameters:
-        """Return an empty RequiredParameters."""
+        """Return an empty RequiredParameters.
+
+        :return: an empty RequiredParameters.
+        """
         return RequiredParameters([])
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
-        """Return an empty DerivedParameterCollection."""
+        """Return an empty DerivedParameterCollection.
+
+        :return: an empty DerivedParameterCollection.
+        """
         return DerivedParameterCollection([])
 
     def get_data_vector(self) -> DataVector:
-        """Return the data vector; raise exception if there is none."""
+        """Return the data vector; raise exception if there is none.
+
+        :return: The data vector.
+        """
         assert self.data_vector is not None
         return self.data_vector
 
     def _compute_theory_vector(self, _: ModelingTools) -> TheoryVector:
-        """Return a fixed theory vector."""
+        """Return a fixed theory vector.
+
+        :param _: unused, but required by the interface
+        :return: A fixed theory vector
+        """
         return TheoryVector.from_list([self.mean] * self.count)

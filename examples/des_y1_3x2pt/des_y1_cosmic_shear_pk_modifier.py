@@ -12,10 +12,12 @@ import pyccl.nl_pt
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap, create
+from firecrown.parameters import ParamsMap, register_new_updatable_parameter
 from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
 from firecrown.likelihood.likelihood import Likelihood
-
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
+from firecrown.metadata_types import TracerNames
 
 SACCFILE = os.path.expanduser(
     os.path.expandvars(
@@ -36,7 +38,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
         super().__init__()
         self.pk_to_modify = pk_to_modify
         self.vD19 = pyccl.baryons.BaryonsvanDaalen19()
-        self.f_bar = create()
+        self.f_bar = register_new_updatable_parameter(default_value=0.5)
 
     def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
         """Compute the 3D power spectrum P(k, z)."""
@@ -56,7 +58,9 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     # Define the power spectrum modification and add it to the ModelingTools
     pk_modifier = vanDaalen19Baryonfication(pk_to_modify="delta_matter:delta_matter")
-    modeling_tools = ModelingTools(pk_modifiers=[pk_modifier])
+    modeling_tools = ModelingTools(
+        pk_modifiers=[pk_modifier], ccl_factory=CCLFactory(require_nonlinear_pk=True)
+    )
 
     # Create the likelihood from the statistics
     likelihood = ConstGaussian(statistics=list(stats.values()))
@@ -123,18 +127,7 @@ def run_likelihood() -> None:
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz
 
-    # Define a ccl.Cosmology object using default parameters
-    ccl_cosmo = ccl.CosmologyVanillaLCDM()
-    ccl_cosmo.compute_nonlin_power()
-
     f_bar = 0.5
-
-    # Calculate the barynic effects directly with CCL
-    vD19 = pyccl.BaryonsvanDaalen19(fbar=f_bar)
-    pk_baryons = vD19.include_baryonic_effects(
-        cosmo=ccl_cosmo, pk=ccl_cosmo.get_nonlin_power()
-    )
-
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
         {
@@ -145,13 +138,22 @@ def run_likelihood() -> None:
             "src3_delta_z": 0.002,
         }
     )
+    # Prepare the cosmology object
+    params = ParamsMap(get_default_params_map(tools) | systematics_params)
+
+    tools.update(params)
+    tools.prepare()
+
+    ccl_cosmo = tools.get_ccl_cosmology()
+
+    # Calculate the barynic effects directly with CCL
+    vD19 = pyccl.BaryonsvanDaalen19(fbar=f_bar)
+    pk_baryons = vD19.include_baryonic_effects(
+        cosmo=ccl_cosmo, pk=ccl_cosmo.get_nonlin_power()
+    )
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
-
-    # Prepare the cosmology object
-    tools.update(systematics_params)
-    tools.prepare(ccl_cosmo)
+    likelihood.update(params)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     log_like = likelihood.compute_loglike(tools)
@@ -166,7 +168,7 @@ def run_likelihood() -> None:
 
     # Predict CCL Cl
     wl_tracer = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
-    ell = two_point_0.ells
+    ell = two_point_0.ells_for_xi
     cl_dm = ccl.angular_cl(
         cosmo=ccl_cosmo,
         tracer1=wl_tracer,
@@ -191,7 +193,7 @@ def make_plot(ell, cl_dm, cl_baryons, two_point_0):
     """Create and show a diagnostic plot."""
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
-    cl_firecrown = two_point_0.cells[("shear", "shear")]
+    cl_firecrown = two_point_0.cells[TracerNames("shear", "shear")]
 
     plt.plot(ell, cl_firecrown / cl_dm, label="firecrown w/ baryons")
     plt.plot(ell, cl_baryons / cl_dm, ls="--", label="CCL w/ baryons")

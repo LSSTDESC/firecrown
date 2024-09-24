@@ -26,11 +26,13 @@ from firecrown.likelihood.two_point import (
     WeakLensingFactory,
     NumberCountsFactory,
 )
-from firecrown.metadata.two_point import (
-    extract_all_data_cells,
-    TwoPointCellsIndex,
+from firecrown.metadata_types import (
     TracerNames,
 )
+from firecrown.metadata_functions import (
+    TwoPointHarmonicIndex,
+)
+from firecrown.data_functions import extract_all_harmonic_data
 
 
 class StatisticWithoutIndices(TrivialStatistic):
@@ -483,13 +485,11 @@ def test_access_required_parameters(
 
 def test_create_ready(sacc_galaxy_cwindows):
     sacc_data, _, _ = sacc_galaxy_cwindows
-    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
     wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
     nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
 
-    two_points = TwoPoint.from_metadata_harmonic(
-        two_point_cwindows, wl_factory, nc_factory
-    )
+    two_points = TwoPoint.from_measurement(two_point_harmonics, wl_factory, nc_factory)
     size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
 
     likelihood = ConstGaussian.create_ready(two_points, np.diag(np.ones(size)))
@@ -499,13 +499,11 @@ def test_create_ready(sacc_galaxy_cwindows):
 
 def test_create_ready_wrong_size(sacc_galaxy_cwindows):
     sacc_data, _, _ = sacc_galaxy_cwindows
-    _, two_point_cwindows = extract_all_data_cells(sacc_data)
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
     wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
     nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
 
-    two_points = TwoPoint.from_metadata_harmonic(
-        two_point_cwindows, wl_factory, nc_factory
-    )
+    two_points = TwoPoint.from_measurement(two_point_harmonics, wl_factory, nc_factory)
     size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
 
     with pytest.raises(
@@ -522,15 +520,12 @@ def test_create_ready_not_ready():
     wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
     nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
 
-    metadata: TwoPointCellsIndex = {
+    metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
-        "ells": np.array(np.linspace(0, 100, 100), dtype=np.int64),
     }
 
-    two_points = TwoPoint.from_metadata_only_harmonic(
-        [metadata], wl_factory, nc_factory
-    )
+    two_points = TwoPoint.from_metadata_index([metadata], wl_factory, nc_factory)
 
     with pytest.raises(
         RuntimeError,

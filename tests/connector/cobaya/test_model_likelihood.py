@@ -1,7 +1,6 @@
 """Unit tests for the cobaya Mapping connector."""
 
 import pytest
-import pyccl as ccl
 from cobaya.model import get_model, Model
 from cobaya.log import LoggedError
 from firecrown.connector.cobaya.ccl import CCLConnector
@@ -69,7 +68,7 @@ def test_cobaya_ccl_model(fiducial_params):
         "likelihood": {
             "test_lk": {
                 "external": lambda _self=None: 0.0,
-                "requires": {"pyccl": None},
+                "requires": {"pyccl_args": None, "pyccl_params": None},
             }
         },
         "theory": {
@@ -82,20 +81,21 @@ def test_cobaya_ccl_model(fiducial_params):
     assert isinstance(model_fiducial, Model)
     model_fiducial.logposterior({})
 
-    cosmo = model_fiducial.provider.get_pyccl()
-    assert isinstance(cosmo, ccl.Cosmology)
+    cosmo_args = model_fiducial.provider.get_pyccl_args()
+    cosmo_params = model_fiducial.provider.get_pyccl_params()
+    assert isinstance(cosmo_args, dict)
 
     h = fiducial_params["H0"] / 100.0
-    assert cosmo["H0"] == pytest.approx(fiducial_params["H0"], rel=1.0e-5)
-    assert cosmo["Omega_c"] == pytest.approx(
+    assert cosmo_params["h"] * 100.0 == pytest.approx(fiducial_params["H0"], rel=1.0e-5)
+    assert cosmo_params["Omega_c"] == pytest.approx(
         fiducial_params["omch2"] / h**2, rel=1.0e-5
     )
-    assert cosmo["Omega_b"] == pytest.approx(
+    assert cosmo_params["Omega_b"] == pytest.approx(
         fiducial_params["ombh2"] / h**2, rel=1.0e-5
     )
-    assert cosmo["Omega_k"] == pytest.approx(0.0, rel=1.0e-5)
-    assert cosmo["A_s"] == pytest.approx(fiducial_params["As"], rel=1.0e-5)
-    assert cosmo["n_s"] == pytest.approx(fiducial_params["ns"], rel=1.0e-5)
+    assert cosmo_params["Omega_k"] == pytest.approx(0.0, rel=1.0e-5)
+    assert cosmo_params["A_s"] == pytest.approx(fiducial_params["As"], rel=1.0e-5)
+    assert cosmo_params["n_s"] == pytest.approx(fiducial_params["ns"], rel=1.0e-5)
     # The following test fails because of we are using the default
     # neutrino hierarchy, which is normal, while CAMB depends on the
     # parameter which we do not have access to.

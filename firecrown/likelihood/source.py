@@ -30,19 +30,15 @@ class SourceSystematic(Updatable):
     the `apply` method of different subclasses are different.
     """
 
-    def read(self, sacc_data: sacc.Sacc):
-        """Call to allow this object to read from the appropriate sacc data."""
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Call to allow this object to read from the appropriate sacc data.
+
+        :param sacc_data: The SACC data object to be read
+        """
 
 
 class Source(Updatable):
-    """An abstract source class (e.g., a sample of lenses).
-
-    Parameters
-    ----------
-    systematics : list of str, optional
-        A list of the source-level systematics to apply to the source. The
-        default of `None` implies no systematics.
-    """
+    """The abstract base class for all sources."""
 
     systematics: Sequence[SourceSystematic]
     cosmo_hash: None | int
@@ -58,22 +54,30 @@ class Source(Updatable):
         self.sacc_tracer = sacc_tracer
 
     @final
-    def read(self, sacc_data: sacc.Sacc):
-        """Read the data for this source from the SACC file."""
+    def read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the data for this source from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
         if hasattr(self, "systematics"):
             for systematic in self.systematics:
                 systematic.read(sacc_data)
         self._read(sacc_data)
 
     @abstractmethod
-    def _read(self, sacc_data: sacc.Sacc):
-        """Abstract method to read the data for this source from the SACC file."""
+    def _read(self, sacc_data: sacc.Sacc) -> None:
+        """Abstract method to read the data for this source from the SACC file.
 
-    def _update_source(self, params: ParamsMap):
+        :param sacc_data: The SACC data object to be read
+        """
+
+    def _update_source(self, params: ParamsMap) -> None:
         """Method to update the source from the given ParamsMap.
 
         Any subclass that needs to do more than update its contained :class:`Updatable`
         objects should implement this method.
+
+        :param params: the parameters to be used for the update
         """
 
     @final
@@ -82,6 +86,8 @@ class Source(Updatable):
 
         This clears the current hash and tracer, and calls the abstract method
         `_update_source`, which must be implemented in all subclasses.
+
+        :param params: the parameters to be used for the update
         """
         self.cosmo_hash = None
         self.tracers = []
@@ -89,11 +95,17 @@ class Source(Updatable):
 
     @abstractmethod
     def get_scale(self) -> float:
-        """Abstract method to return the scales for this `Source`."""
+        """Abstract method to return the scale for this `Source`.
+
+        :return: the scale
+        """
 
     @abstractmethod
     def create_tracers(self, tools: ModelingTools):
-        """Create tracers for this `Source`, for the given cosmology."""
+        """Abstract method to create tracers for this Source.
+
+        :param tools: The modeling tools used for creating the tracers
+        """
 
     @final
     def get_tracers(self, tools: ModelingTools) -> Sequence[Tracer]:
@@ -101,6 +113,9 @@ class Source(Updatable):
 
         This method caches its result, so if called a second time with the same
         cosmology, no calculation needs to be done.
+
+        :param tools: The modeling tools used for creating the tracers
+        :return: the list of tracers
         """
         ccl_cosmo = tools.get_ccl_cosmology()
 
@@ -129,6 +144,10 @@ class Tracer:
 
         It is a static method only to keep it grouped with the class for which it is
         defining the initialization policy.
+
+        :param field: the (stub) name of the field
+        :param tracer: the name of the tracer
+        :return: the full name of the field
         """
         if field is not None:
             return field
@@ -145,7 +164,7 @@ class Tracer:
         halo_profile: None | pyccl.halos.HaloProfile = None,
         halo_2pt: None | pyccl.halos.Profile2pt = None,
     ):
-        """Initialize a new Tracer based on the pyccl.Tracer which must not be None.
+        """Initialize a new Tracer based on the provided tracer.
 
         Note that the :class:`pyccl.Tracer` is not copied; we store a reference to the
         original tracer. Be careful not to accidentally share :class:`pyccl.Tracer`s.
@@ -155,6 +174,13 @@ class Tracer:
 
         If no `field` is given, then the attribute :attr:`field` is set to either
         (1) the tracer_name, if one was given, or (2) 'delta_matter'.
+
+        :param tracer: the pyccl.Tracer used as the basis for this Tracer.
+        :param tracer_name: optional name of the tracer.
+        :param field: optional name of the field associated with the tracer.
+        :param pt_tracer: optional non-linear perturbation theory tracer.
+        :param halo_profile: optional halo profile.
+        :param halo_2pt: optional halo profile 2-point object.
         """
         assert tracer is not None
         self.ccl_tracer = tracer
@@ -166,12 +192,18 @@ class Tracer:
 
     @property
     def has_pt(self) -> bool:
-        """Return True if we have a pt_tracer, and False if not."""
+        """Answer whether we have a perturbation theory tracer.
+
+        :return: True if we have a pt_tracer, and False if not.
+        """
         return self.pt_tracer is not None
 
     @property
     def has_hm(self) -> bool:
-        """Return True if we have a halo_profile, and False if not."""
+        """Answer whether we have a halo profile.
+
+        :return: True if we have a halo_profile, and False if not.
+        """
         return self.halo_profile is not None
 
 
@@ -194,13 +226,19 @@ _SourceGalaxyArgsT = TypeVar("_SourceGalaxyArgsT", bound=SourceGalaxyArgs)
 
 
 class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
-    """Abstract base class for all galaxy based source systematics."""
+    """Abstract base class for all galaxy-based source systematics."""
 
     @abstractmethod
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
     ) -> _SourceGalaxyArgsT:
-        """Apply method to include systematics in the tracer_arg."""
+        """Apply method to include systematics in the tracer_arg.
+
+        :param tools: the modeling tools use to update the tracer arg
+        :param tracer_arg: the original source galaxy tracer arg to which we
+           apply the systematic.
+        :return: a new source galaxy tracer arg with the systematic applied
+        """
 
 
 _SourceGalaxySystematicT = TypeVar(
@@ -238,8 +276,16 @@ class SourceGalaxyPhotoZShift(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
         )
 
-    def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
-        """Apply a shift to the photo-z distribution of a source."""
+    def apply(
+        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
+    ) -> _SourceGalaxyArgsT:
+        """Apply a shift to the photo-z distribution of a source.
+
+        :param tools: the modeling tools use to update the tracer arg
+        :param tracer_arg: the original source galaxy tracer arg to which we
+            apply the systematic.
+        :return: a new source galaxy tracer arg with the systematic applied
+        """
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
 
         dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
@@ -363,7 +409,6 @@ class SourceGalaxySelectField(
         """Specify which 3D field should be used when computing angular power spectra.
 
         :param field: the name of the 3D field that is associated to the tracer.
-            Default: `"delta_matter"`
         """
         super().__init__()
         self.field = field
@@ -371,7 +416,13 @@ class SourceGalaxySelectField(
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
     ) -> _SourceGalaxyArgsT:
-        """Apply method to include systematics in the tracer_arg."""
+        """Apply method to include systematics in the tracer_arg.
+
+        :param tools: the modeling tools used to update the tracer_arg
+        :param tracer_arg: the original source galaxy tracer arg to which we
+            apply the systematics.
+        :return: a new source galaxy tracer arg with the systematic applied
+        """
         return replace(tracer_arg, field=self.field)
 
 
@@ -399,11 +450,13 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         )
         self.tracer_args: _SourceGalaxyArgsT
 
-    def _read(self, sacc_data: sacc.Sacc):
+    def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the galaxy redshift distribution model from a sacc file.
 
         All derived classes must call this method in their own `_read` method
         after they have read their own data and initialized their tracer_args.
+
+        :param sacc_data: The SACC data object to be read
         """
         try:
             tracer_args = self.tracer_args

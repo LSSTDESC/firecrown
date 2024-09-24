@@ -27,7 +27,7 @@ from firecrown.likelihood.source import (
     PhotoZShiftandWidthFactory,
     Tracer,
 )
-from firecrown.metadata.two_point import InferredGalaxyZDist
+from firecrown.metadata_types import InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import DerivedParameter, DerivedParameterCollection, ParamsMap
 from firecrown.updatable import UpdatableCollection
@@ -48,14 +48,23 @@ class NumberCountsArgs(SourceGalaxyArgs):
 class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
     """Abstract base class for systematics for Number Counts sources.
 
-    Derived classes must implement :python`apply` with the correct signature.
+    Derived classes must implement :meth:`apply` with the correct signature.
     """
 
     @abstractmethod
     def apply(
         self, tools: ModelingTools, tracer_arg: NumberCountsArgs
     ) -> NumberCountsArgs:
-        """Apply method to include systematics in the tracer_arg."""
+        """Apply method to include systematics in the tracer_arg.
+
+        This does not modify the supplied tracer_arg; it returns a new
+        one that has been updated.
+
+        :param tools: the Modeling tools used to update the tracer_arg
+        :param tracer_arg: the original NumberCountsArgs to which to apply the
+             systematic
+        :return: the updated NumberCountsArgs
+        """
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
@@ -114,12 +123,10 @@ class LinearBiasSystematic(NumberCountsSystematic):
     ) -> NumberCountsArgs:
         """Apply a linear bias systematic.
 
-        Parameters
-        ----------
-        cosmo : Cosmology
-            A Cosmology object.
-        tracer_arg : NumberCountsArgs
-            The source to which apply the shear bias.
+        :param tools: the ModelingTools used to update the tracer_arg
+        :param tracer_arg: a NumberCountsArgs object with values to be updated
+
+        :return: the updated NumberCountsArgs object
         """
         ccl_cosmo = tools.get_ccl_cosmology()
         pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
@@ -231,10 +238,10 @@ class MagnificationBiasSystematic(NumberCountsSystematic):
     ) -> NumberCountsArgs:
         """Apply a magnification bias systematic.
 
-        :param tools: a ModelingTools object
-        :param tracer_arg: a NumberCountsArgs object
+        :param tools: currently unused, but required by the interface
+        :param tracer_arg: a NumberCountsArgs object with values to be updated
 
-        :return: a NumberCountsArgs object
+        :return: an updated NumberCountsArgs object
         """
         z_bar = self.z_c + self.z_m * (self.r_lim - 24.0)
         # The slope of log(n_tot(z,r_lim)) with respect to r_lim
@@ -293,7 +300,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
         :param tools: currently unused, but required by interface
         :param tracer_arg: a NumberCountsArgs object with values to be updated
 
-        :return: the updated NumberCountsArgs object
+        :return: an updated NumberCountsArgs object
         """
         return replace(
             tracer_arg,
@@ -351,7 +358,19 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         scale: float = 1.0,
         systematics: None | list[SourceGalaxySystematic[NumberCountsArgs]] = None,
     ) -> NumberCounts:
-        """Create a NumberCounts object with the given tracer name and scale."""
+        """Create a NumberCounts object with the given tracer name and scale.
+
+        This is the recommended way to create a NumberCounts object. It creates
+        a fully initialized object.
+
+        :param inferred_zdist: the inferred redshift distribution
+        :param has_rsd: whether to include RSD in the tracer
+        :param derived_scale: whether to include a derived parameter for the scale
+            of the tracer
+        :param scale: the initial scale of the tracer
+        :param systematics: a list of systematics to apply to the tracer
+        :return: a fully initialized NumberCounts object
+        """
         obj = cls(
             sacc_tracer=inferred_zdist.bin_name,
             systematics=systematics,
@@ -372,15 +391,21 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         return obj
 
     @final
-    def _update_source(self, params: ParamsMap):
+    def _update_source(self, params: ParamsMap) -> None:
         """Perform any updates necessary after the parameters have being updated.
 
         This implementation must update all contained Updatable instances.
+
+        :param params: the parameters to be used for the update
         """
         self.systematics.update(params)
 
     @final
     def _get_derived_parameters(self) -> DerivedParameterCollection:
+        """Return the derived parameters for this source.
+
+        :return: the derived parameters
+        """
         if self.derived_scale:
             assert self.current_tracer_args is not None
             derived_scale = DerivedParameter(
@@ -394,13 +419,10 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
 
         return derived_parameters
 
-    def _read(self, sacc_data):
+    def _read(self, sacc_data) -> None:
         """Read the data for this source from the SACC file.
 
-        Parameters
-        ----------
-        sacc_data : sacc.Sacc
-            The data in the sacc format.
+        :param sacc_data: The data in the sacc format.
         """
         # pylint: disable=unexpected-keyword-arg
         self.tracer_args = NumberCountsArgs(
@@ -416,7 +438,11 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
     def create_tracers(
         self, tools: ModelingTools
     ) -> tuple[list[Tracer], NumberCountsArgs]:
-        """Create the tracers for this source."""
+        """Create the tracers for this source.
+
+        :param tools: the ModelingTools used to create the tracers
+        :return: a tuple of tracers and the updated tracer_args
+        """
         tracer_args = self.tracer_args
         tracer_args = replace(tracer_args, bias=self.bias * np.ones_like(tracer_args.z))
 
@@ -478,8 +504,11 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
 
         return tracers, tracer_args
 
-    def get_scale(self):
-        """Return the scale for this source."""
+    def get_scale(self) -> float:
+        """Return the scale for this source.
+
+        :return: the scale for this source.
+        """
         assert self.current_tracer_args
         return self.current_tracer_args.scale
 
@@ -514,11 +543,15 @@ class PTNonLinearBiasSystematicFactory(BaseModel):
     ] = "PTNonLinearBiasSystematicFactory"
 
     def create(self, bin_name: str) -> PTNonLinearBiasSystematic:
-        """Create a PTNonLinearBiasSystematic object with the given tracer name."""
+        """Create a PTNonLinearBiasSystematic object with the given tracer name.
+
+        :param bin_name: the name of the bin
+        :return: the created PTNonLinearBiasSystematic object
+        """
         return PTNonLinearBiasSystematic(bin_name)
 
     def create_global(self) -> PTNonLinearBiasSystematic:
-        """Create a PTNonLinearBiasSystematic object with the given tracer name."""
+        """Create a global PTNonLinearBiasSystematic object."""
         return PTNonLinearBiasSystematic()
 
 
@@ -533,11 +566,18 @@ class MagnificationBiasSystematicFactory(BaseModel):
     ] = "MagnificationBiasSystematicFactory"
 
     def create(self, bin_name: str) -> MagnificationBiasSystematic:
-        """Create a MagnificationBiasSystematic object with the given tracer name."""
+        """Create a MagnificationBiasSystematic object with the given tracer name.
+
+        :param bin_name: the name of the bin
+        :return: the created MagnificationBiasSystematic object
+        """
         return MagnificationBiasSystematic(bin_name)
 
     def create_global(self) -> MagnificationBiasSystematic:
-        """Create a MagnificationBiasSystematic object with the given tracer name."""
+        """Required by the interface, but raises an error.
+
+        MagnificationBiasSystematic systematics cannot be global.
+        """
         raise ValueError("MagnificationBiasSystematic cannot be global.")
 
 
@@ -554,14 +594,15 @@ class ConstantMagnificationBiasSystematicFactory(BaseModel):
     def create(self, bin_name: str) -> ConstantMagnificationBiasSystematic:
         """Create a ConstantMagnificationBiasSystematic object.
 
-        Use the inferred_zdist to create the systematic.
+        :param bin_name: the name of the bin
+        :return: the created ConstantMagnificationBiasSystematic object
         """
         return ConstantMagnificationBiasSystematic(bin_name)
 
     def create_global(self) -> ConstantMagnificationBiasSystematic:
-        """Create a ConstantMagnificationBiasSystematic object.
+        """Required by the interface, but raises an error.
 
-        Use the inferred_zdist to create the systematic.
+        ConstantMagnificationBiasSystematic systematics cannot be global.
         """
         raise ValueError("ConstantMagnificationBiasSystematic cannot be global.")
 
@@ -587,9 +628,13 @@ class NumberCountsFactory(BaseModel):
 
     per_bin_systematics: Sequence[NumberCountsSystematicFactory]
     global_systematics: Sequence[NumberCountsSystematicFactory]
+    include_rsd: bool = False
 
-    def model_post_init(self, __context) -> None:
-        """Initialize the NumberCountsFactory."""
+    def model_post_init(self, _) -> None:
+        """Initialize the NumberCountsFactory.
+
+        :param _: required by the interface but not used
+        """
         self._cache: dict[int, NumberCounts] = {}
         self._global_systematics_instances = [
             nc_systematic_factory.create_global()
@@ -597,7 +642,11 @@ class NumberCountsFactory(BaseModel):
         ]
 
     def create(self, inferred_zdist: InferredGalaxyZDist) -> NumberCounts:
-        """Create a NumberCounts object with the given tracer name and scale."""
+        """Create a NumberCounts object with the given tracer name and scale.
+
+        :param inferred_zdist: the inferred redshift distribution
+        :return: a fully initialized NumberCounts object
+        """
         inferred_zdist_id = id(inferred_zdist)
         if inferred_zdist_id in self._cache:
             return self._cache[inferred_zdist_id]
@@ -608,7 +657,9 @@ class NumberCountsFactory(BaseModel):
         ]
         systematics.extend(self._global_systematics_instances)
 
-        nc = NumberCounts.create_ready(inferred_zdist, systematics=systematics)
+        nc = NumberCounts.create_ready(
+            inferred_zdist, systematics=systematics, has_rsd=self.include_rsd
+        )
         self._cache[inferred_zdist_id] = nc
 
         return nc
@@ -617,7 +668,11 @@ class NumberCountsFactory(BaseModel):
         self,
         sacc_tracer: str,
     ) -> NumberCounts:
-        """Create an WeakLensing object with the given tracer name and scale."""
+        """Create an WeakLensing object with the given tracer name and scale.
+
+        :param sacc_tracer: the name of the tracer
+        :return: a fully initialized NumberCounts object
+        """
         sacc_tracer_id = hash(sacc_tracer)  # Improve this
         if sacc_tracer_id in self._cache:
             return self._cache[sacc_tracer_id]
@@ -627,7 +682,9 @@ class NumberCountsFactory(BaseModel):
         ]
         systematics.extend(self._global_systematics_instances)
 
-        nc = NumberCounts(sacc_tracer=sacc_tracer, systematics=systematics)
+        nc = NumberCounts(
+            sacc_tracer=sacc_tracer, systematics=systematics, has_rsd=self.include_rsd
+        )
         self._cache[sacc_tracer_id] = nc
 
         return nc
