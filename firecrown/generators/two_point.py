@@ -1,6 +1,10 @@
 """Generator support for TwoPoint statistics."""
 
+from __future__ import annotations
+
+import copy
 from typing import Annotated
+
 from pydantic import BaseModel, Field, model_validator
 import numpy as np
 import numpy.typing as npt
@@ -92,3 +96,21 @@ def generate_bin_centers(
             return (edges[1:] + edges[:-1]) / 2.0
         case _:
             raise ValueError(f"Unrecognized binning: {binning}")
+
+
+def calculate_ells_for_interpolation(
+    min_ell: int, max_ell: int
+) -> npt.NDArray[np.int64]:
+    """See log_linear_ells.
+
+    This method mixes together:
+        1. the default parameters in ELL_FOR_XI_DEFAULTS
+        2. the first and last values in w.
+
+    and then calls log_linear_ells with those arguments, returning whatever it
+    returns.
+    """
+    ell_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+    ell_config["maximum"] = max_ell
+    ell_config["minimum"] = max(ell_config["minimum"], min_ell)
+    return log_linear_ells(**ell_config)

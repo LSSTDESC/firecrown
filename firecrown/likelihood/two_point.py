@@ -18,6 +18,7 @@ from firecrown.generators.two_point import (
     ELL_FOR_XI_DEFAULTS,
     log_linear_ells,
     generate_bin_centers,
+    calculate_ells_for_interpolation,
 )
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
@@ -67,24 +68,6 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceDensity_xi": "NN",
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
-
-
-def calculate_ells_for_interpolation(
-    min_ell: int, max_ell: int
-) -> npt.NDArray[np.int64]:
-    """See log_linear_ells.
-
-    This method mixes together:
-        1. the default parameters in ELL_FOR_XI_DEFAULTS
-        2. the first and last values in w.
-
-    and then calls log_linear_ells with those arguments, returning whatever it
-    returns.
-    """
-    ell_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-    ell_config["maximum"] = max_ell
-    ell_config["minimum"] = max(ell_config["minimum"], min_ell)
-    return log_linear_ells(**ell_config)
 
 
 class EllOrThetaConfig(TypedDict):
