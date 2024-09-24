@@ -8,8 +8,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 
-import pyccl
-
+from firecrown.updatable import get_default_params_map
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
@@ -194,20 +193,21 @@ def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window) -> None:
     statistic.read(sacc_data)
 
     tools = ModelingTools()
-    tools.update(ParamsMap())
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
 
     assert statistic.window is not None
 
     statistic.reset()
-    statistic.update(ParamsMap())
-    tools.update(ParamsMap())
+    statistic.update(params)
+    tools.update(params)
     result1 = statistic.compute_theory_vector(tools)
     assert all(np.isfinite(result1))
 
     statistic.reset()
-    statistic.update(ParamsMap())
-    tools.update(ParamsMap())
+    statistic.update(params)
+    tools.update(params)
     result2 = statistic.compute_theory_vector(tools)
     assert np.array_equal(result1, result2)
 
@@ -223,20 +223,21 @@ def test_two_point_src0_src0_no_window(sacc_galaxy_cells_src0_src0_no_window) ->
     statistic.read(sacc_data)
 
     tools = ModelingTools()
-    tools.update(ParamsMap())
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
 
     assert statistic.window is None
 
     statistic.reset()
-    statistic.update(ParamsMap())
-    tools.update(ParamsMap())
+    statistic.update(params)
+    tools.update(params)
     result1 = statistic.compute_theory_vector(tools)
     assert all(np.isfinite(result1))
 
     statistic.reset()
-    statistic.update(ParamsMap())
-    tools.update(ParamsMap())
+    statistic.update(params)
+    tools.update(params)
     result2 = statistic.compute_theory_vector(tools)
     assert np.array_equal(result1, result2)
 
@@ -360,8 +361,9 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
         statistic.read(sacc_data)
 
     tools = ModelingTools()
-    tools.update(ParamsMap())
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
 
     assert statistic.window is None
     assert statistic.ells is not None
@@ -369,7 +371,7 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
     assert all(statistic.ells >= 50)
     assert all(statistic.ells <= 200)
 
-    statistic.update(ParamsMap())
+    statistic.update(params)
     statistic.compute_theory_vector(tools)
 
 
@@ -383,10 +385,11 @@ def test_two_point_lens0_lens0_cuts(sacc_galaxy_xis_lens0_lens0) -> None:
     )
     statistic.read(sacc_data)
 
-    param_map = ParamsMap({"lens0_bias": 1.0})
     tools = ModelingTools()
-    tools.update(param_map)
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(tools)
+    params.update({"lens0_bias": 1.0})
+    tools.update(params)
+    tools.prepare()
 
     assert statistic.window is None
     assert statistic.thetas is not None
@@ -394,7 +397,7 @@ def test_two_point_lens0_lens0_cuts(sacc_galaxy_xis_lens0_lens0) -> None:
     assert all(statistic.thetas >= 0.1)
     assert all(statistic.thetas <= 0.5)
 
-    statistic.update(param_map)
+    statistic.update(params)
     statistic.compute_theory_vector(tools)
 
 
@@ -411,10 +414,11 @@ def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
     )
     statistic.read(sacc_data)
 
-    param_map = ParamsMap({"lens0_bias": 1.0})
     tools = ModelingTools()
-    tools.update(param_map)
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(tools)
+    params.update({"lens0_bias": 1.0})
+    tools.update(params)
+    tools.prepare()
 
     assert statistic.window is None
     assert statistic.thetas is not None
@@ -425,7 +429,7 @@ def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
     # on how many unique ells we get from the log-binning.
     assert len(statistic.ells_for_xi) == 175
 
-    statistic.update(param_map)
+    statistic.update(params)
     statistic.compute_theory_vector(tools)
 
 
@@ -637,13 +641,15 @@ def test_from_measurement_compute_theory_vector_window(
     assert isinstance(two_point_with_window, TwoPoint)
     assert two_point_with_window.ready
 
-    req_params = two_point_with_window.required_parameters()
+    tools = ModelingTools()
+    req_params = (
+        two_point_with_window.required_parameters() + tools.required_parameters()
+    )
     default_values = req_params.get_default_values()
     params = ParamsMap(default_values)
 
-    tools = ModelingTools()
     tools.update(params)
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
+    tools.prepare()
     two_point_with_window.update(params)
 
     prediction = two_point_with_window.compute_theory_vector(tools)
@@ -661,14 +667,15 @@ def test_from_measurement_compute_theory_vector_window_check(
     assert isinstance(two_point_without_window, TwoPoint)
     assert two_point_without_window.ready
 
-    req_params = two_point_with_window.required_parameters()
+    tools = ModelingTools()
+    req_params = (
+        two_point_with_window.required_parameters() + tools.required_parameters()
+    )
     default_values = req_params.get_default_values()
     params = ParamsMap(default_values)
 
-    tools = ModelingTools()
     tools.update(params)
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
-
+    tools.prepare()
     two_point_with_window.update(params)
     two_point_without_window.update(params)
 

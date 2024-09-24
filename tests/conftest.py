@@ -11,8 +11,8 @@ import sacc
 
 import numpy as np
 import numpy.typing as npt
-import pyccl
 
+from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
 from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
@@ -119,7 +119,6 @@ def fixture_mapping_cosmosis() -> MappingCosmoSIS:
         Omega_k=0.0,
         Neff=3.046,
         m_nu=0.0,
-        m_nu_type="normal",
         w0=-1.0,
         wa=0.0,
         T_CMB=2.7255,
@@ -156,8 +155,9 @@ def fixture_tools_with_vanilla_cosmology():
     """Return a ModelingTools object containing the LCDM cosmology from
     pyccl."""
     result = ModelingTools()
-    result.update(ParamsMap())
-    result.prepare(pyccl.CosmologyVanillaLCDM())
+    params = get_default_params_map(result)
+    result.update(params)
+    result.prepare()
 
     return result
 

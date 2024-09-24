@@ -103,13 +103,27 @@ def test_get_params_names_does_not_allow_mutation():
 
 
 def test_params_map():
-    my_params = ParamsMap({"a": 1})
+    my_params = ParamsMap({"a": 1.0})
     x = my_params.get_from_prefix_param(None, "a")
     assert x == 1
     with pytest.raises(KeyError):
         _ = my_params.get_from_prefix_param("no_such_prefix", "a")
     with pytest.raises(KeyError):
         _ = my_params.get_from_prefix_param(None, "no_such_name")
+
+
+def test_params_map_wrong_type():
+    with pytest.raises(
+        TypeError, match="Value for parameter a is not a float or a list of floats.*"
+    ):
+        _ = ParamsMap({"a": "not a float or a list of floats"})
+
+
+def test_params_map_wrong_type_list():
+    with pytest.raises(
+        TypeError, match="Value for parameter a is not a float or a list of floats.*"
+    ):
+        _ = ParamsMap({"a": ["not a float or a list of floats"]})
 
 
 def test_parameter_get_full_name_reject_empty_name():
