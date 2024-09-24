@@ -1,0 +1,29 @@
+---
+
+# This file contains all information about the DES Y1 3x2pt experiment.
+
+# The 'data_source:' field points to the SACC file containing the DES Y1 3x2pt data vector 
+# and covariance matrix, which is used for analysis.
+
+# The 'two_point_factory:' field points to the factory that will create the TwoPoint 
+# objects. These objects represent the chosen theoretical models for each data point 
+# found in the SACC file.
+
+data_source:
+  sacc_data_file: des_y1_3x2pt_sacc_data.fits
+
+# The two point statistics are defined by the TwoPoint objects. The TwoPoint statistics
+# are created using the factories defined in this file.
+two_point_factory:
+  correlation_space: real
+  number_counts_factory:
+    global_systematics: []
+    per_bin_systematics:
+      - type: PhotoZShiftFactory
+  weak_lensing_factory:
+    global_systematics:
+      - alphag: 1
+        type: LinearAlignmentSystematicFactory
+    per_bin_systematics:
+      - type: MultiplicativeShearBiasFactory
+      - type: PhotoZShiftFactory

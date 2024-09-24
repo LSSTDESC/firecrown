@@ -18,10 +18,7 @@ Ncm.cfg_init()
 @pytest.fixture(name="factory_plain")
 def fixture_factory_plain():
     """Create a NumCosmoFactory instance."""
-    map_cosmo = MappingNumCosmo(
-        require_nonlinear_pk=True,
-        dist=Nc.Distance.new(6.0),
-    )
+    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     build_parameters = NamedParameters()
     return NumCosmoFactory(
         "tests/likelihood/lkdir/lkscript.py",
@@ -34,10 +31,7 @@ def fixture_factory_plain():
 @pytest.fixture(name="factory_const_gauss")
 def fixture_factory_const_gauss():
     """Create a NumCosmoFactory instance."""
-    map_cosmo = MappingNumCosmo(
-        require_nonlinear_pk=True,
-        dist=Nc.Distance.new(6.0),
-    )
+    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     build_parameters = NamedParameters()
     return NumCosmoFactory(
         "tests/likelihood/gauss_family/lkscript_const_gaussian.py",
