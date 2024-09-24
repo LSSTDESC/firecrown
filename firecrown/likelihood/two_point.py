@@ -1,17 +1,15 @@
 """Two point statistic support."""
 
 from __future__ import annotations
-
 import copy
 import warnings
-from typing import Callable, Sequence, TypedDict
+from typing import Sequence, TypedDict
 
 import numpy as np
 import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc.windows
-import scipy.interpolate
 
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.
@@ -54,6 +52,7 @@ from firecrown.metadata_functions import (
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import UpdatableCollection
+from firecrown.utils import cached_angular_cl, make_log_interpolator
 
 # only supported types are here, anything else will throw
 # a value error
@@ -68,45 +67,6 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceDensity_xi": "NN",
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
-
-
-# @functools.lru_cache(maxsize=128)
-def _cached_angular_cl(cosmo, tracers, ells, p_of_k_a=None):
-    return pyccl.angular_cl(
-        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
-    )
-
-
-def make_log_interpolator(
-    x: npt.NDArray[np.int64], y: npt.NDArray[np.float64]
-) -> Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]]:
-    """Return a function object that does 1D spline interpolation.
-
-    If all the y values are greater than 0, the function
-    interpolates log(y) as a function of log(x).
-    Otherwise, the function interpolates y as a function of log(x).
-    The resulting interpolater will not extrapolate; if called with
-    an out-of-range argument it will raise a ValueError.
-    """
-    if np.all(y > 0):
-        # use log-log interpolation
-        intp = scipy.interpolate.InterpolatedUnivariateSpline(
-            np.log(x), np.log(y), ext=2
-        )
-
-        def log_log_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
-            """Interpolate on log-log scale."""
-            return np.exp(intp(np.log(x_)))
-
-        return log_log_interpolator
-    # only use log for x
-    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
-
-    def log_x_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
-        """Interpolate on log-x scale."""
-        return intp(np.log(x_))
-
-    return log_x_interpolator
 
 
 def calculate_ells_for_interpolation(
@@ -875,7 +835,7 @@ class TwoPoint(Statistic):
                 pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
 
                 self.cells[tn] = (
-                    _cached_angular_cl(
+                    cached_angular_cl(
                         tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
                         tuple(ells.tolist()),
