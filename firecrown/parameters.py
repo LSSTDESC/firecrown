@@ -35,6 +35,28 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     return param
 
 
+def _validade_params_map_value(name: str, value: float | list[float]) -> None:
+    """Check if the value is a float or a list of floats.
+
+    Raises a TypeError if the value is not a float or a list of floats.
+
+    :param name: name of the parameter
+    :param value: value to be checked
+    """
+    if not isinstance(value, (float, list)):
+        raise TypeError(
+            f"Value for parameter {name} is not a float or a list of floats: "
+            f"{type(value)}"
+        )
+
+    if isinstance(value, list):
+        if not all(isinstance(v, float) for v in value):
+            raise TypeError(
+                f"Value for parameter {name} is not a float or a list of floats: "
+                f"{type(value)}"
+            )
+
+
 class ParamsMap(dict[str, float]):
     """A specialized dict in which all keys are strings and values are floats.
 
@@ -44,6 +66,9 @@ class ParamsMap(dict[str, float]):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
+        for name, value in self.items():
+            _validade_params_map_value(name, value)
+
         self.lower_case: bool = False
 
     def use_lower_case_keys(self, enable: bool) -> None:
@@ -62,11 +87,14 @@ class ParamsMap(dict[str, float]):
 
         Raises a KeyError if the parameter is not found.
         """
-        if self.lower_case:
-            full_name = full_name.lower()
-
         if full_name in self.keys():
             return self[full_name]
+
+        if self.lower_case:
+            full_name_lower = full_name.lower()
+            if full_name_lower in self.keys():
+                return self[full_name_lower]
+
         raise KeyError(f"Key {full_name} not found.")
 
     def get_from_prefix_param(self, prefix: None | str, param: str) -> float:
@@ -108,6 +136,14 @@ class RequiredParameters:
         with either argument to the addition operator.
         """
         return RequiredParameters(self.params_set | other.params_set)
+
+    def __sub__(self, other: RequiredParameters) -> RequiredParameters:
+        """Return a new RequiredParameters with the names in self but not in other.
+
+        Note that this function returns a new object that does not share state
+        with either argument to the subtraction operator.
+        """
+        return RequiredParameters(self.params_set - other.params_set)
 
     def __eq__(self, other: object):
         """Compare two RequiredParameters objects for equality.

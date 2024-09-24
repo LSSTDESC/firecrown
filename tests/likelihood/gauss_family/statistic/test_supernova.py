@@ -4,11 +4,10 @@
 import pytest
 
 import sacc
-import pyccl
 
+from firecrown.updatable import get_default_params_map
 from firecrown.likelihood.supernova import Supernova
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
 
 
 @pytest.fixture(name="minimal_stat")
@@ -48,7 +47,7 @@ def fixture_sacc_data() -> sacc.Sacc:
 
 def test_missing_sacc_tracer_fails_read(
     minimal_stat: Supernova, missing_sacc_tracer: sacc.Sacc
-):
+) -> None:
     with pytest.raises(
         ValueError,
         match="The SACC file does not contain the MiscTracer sn_fake_sample",
@@ -58,7 +57,7 @@ def test_missing_sacc_tracer_fails_read(
 
 def test_wrong_tracer_type_fails_read(
     minimal_stat: Supernova, wrong_tracer_type: sacc.Sacc
-):
+) -> None:
     with pytest.raises(
         ValueError,
         match=f"The SACC tracer {minimal_stat.sacc_tracer} is not a MiscTracer",
@@ -66,7 +65,7 @@ def test_wrong_tracer_type_fails_read(
         minimal_stat.read(wrong_tracer_type)
 
 
-def test_read_works(minimal_stat: Supernova, good_sacc_data: sacc.Sacc):
+def test_read_works(minimal_stat: Supernova, good_sacc_data: sacc.Sacc) -> None:
     """After read() is called, we should be able to get the statistic's
 
     :class:`DataVector` and also should be able to call
@@ -78,9 +77,10 @@ def test_read_works(minimal_stat: Supernova, good_sacc_data: sacc.Sacc):
     assert data_vector[0] == 16.95
 
     tools = ModelingTools()
-    tools.update(ParamsMap())
-    tools.prepare(pyccl.CosmologyVanillaLCDM())
-    params = ParamsMap({"sn_fake_sample_M": 1.1})
+    params = get_default_params_map(tools)
+    params.update({"sn_fake_sample_M": 1.1})
+    tools.update(params)
+    tools.prepare()
     minimal_stat.update(params)
     theory_vector = minimal_stat.compute_theory_vector(tools)
     assert len(theory_vector) == 1

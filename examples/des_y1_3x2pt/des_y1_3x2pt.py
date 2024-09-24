@@ -7,6 +7,8 @@ import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
 
 
 # The likelihood used for DES Y1 3x2pt analysis is a Gaussian likelihood, which
@@ -111,6 +113,8 @@ def build_likelihood(_):
     # file and the sources their respective dndz.
     likelihood.read(sacc_data)
 
+    modeling_tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+
     # This script will be loaded by the appropriated connector. The framework
     # will call the factory function that should return a Likelihood instance.
-    return likelihood
+    return likelihood, modeling_tools

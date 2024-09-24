@@ -2,16 +2,16 @@
 
 import os
 import sacc
-import pyccl
 
 from numpy.testing import assert_allclose
 
+from firecrown.updatable import get_default_params_map
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
-from firecrown.parameters import ParamsMap
+from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 
 def build_likelihood(
@@ -42,7 +42,9 @@ def build_likelihood(
         sacc_data_type="galaxy_density_cl",
     )
 
-    modeling_tools = ModelingTools()
+    modeling_tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
     likelihood = ConstGaussian(statistics=[src2_src2, lens0_lens0, lens0_src2])
 
     likelihood.read(sacc_data)
@@ -119,7 +121,7 @@ LENS0_LENS0_CL_VANILLA_LCDM = [
 ]
 
 
-def test_broken_window_function():
+def test_broken_window_function() -> None:
     likelihood, modeling_tools = build_likelihood(
         build_parameters=NamedParameters({"sacc_data": SACC_FILE})
     )
@@ -127,13 +129,13 @@ def test_broken_window_function():
     assert modeling_tools is not None
 
 
-def test_eval_cl_window_src2_src2():
-    tools = ModelingTools()
-    cosmo = pyccl.CosmologyVanillaLCDM()
-    params = ParamsMap()
-
+def test_eval_cl_window_src2_src2() -> None:
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
+    params = get_default_params_map(tools)
     tools.update(params)
-    tools.prepare(cosmo)
+    tools.prepare()
 
     sacc_data = sacc.Sacc.load_fits(SACC_FILE)
     src2 = wl.WeakLensing(sacc_tracer="src2")
@@ -151,13 +153,13 @@ def test_eval_cl_window_src2_src2():
     assert_allclose(theory_vector, SRC2_SRC2_CL_VANILLA_LCDM, rtol=1e-8)
 
 
-def test_eval_cl_window_lens0_src2():
-    tools = ModelingTools()
-    cosmo = pyccl.CosmologyVanillaLCDM()
-    params = ParamsMap()
-
+def test_eval_cl_window_lens0_src2() -> None:
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
+    params = get_default_params_map(tools)
     tools.update(params)
-    tools.prepare(cosmo)
+    tools.prepare()
 
     sacc_data = sacc.Sacc.load_fits(SACC_FILE)
     src2 = wl.WeakLensing(sacc_tracer="src2")
@@ -176,13 +178,13 @@ def test_eval_cl_window_lens0_src2():
     assert_allclose(theory_vector, LENS0_SRC2_CL_VANILLA_LCDM, rtol=1e-8)
 
 
-def test_eval_cl_window_lens0_lens0():
-    tools = ModelingTools()
-    cosmo = pyccl.CosmologyVanillaLCDM()
-    params = ParamsMap()
-
+def test_eval_cl_window_lens0_lens0() -> None:
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
+    params = get_default_params_map(tools)
     tools.update(params)
-    tools.prepare(cosmo)
+    tools.prepare()
 
     sacc_data = sacc.Sacc.load_fits(SACC_FILE)
     lens0 = wl.WeakLensing(sacc_tracer="lens0")
@@ -200,13 +202,13 @@ def test_eval_cl_window_lens0_lens0():
     assert_allclose(theory_vector, LENS0_LENS0_CL_VANILLA_LCDM, rtol=1e-8)
 
 
-def test_compute_likelihood_src0_src0():
-    tools = ModelingTools()
-    cosmo = pyccl.CosmologyVanillaLCDM()
-    params = ParamsMap()
-
+def test_compute_likelihood_src0_src0() -> None:
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
+    params = get_default_params_map(tools)
     tools.update(params)
-    tools.prepare(cosmo)
+    tools.prepare()
 
     sacc_data = sacc.Sacc.load_fits(SACC_FILE)
     src0 = wl.WeakLensing(sacc_tracer="src0")
