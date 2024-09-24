@@ -12,11 +12,12 @@ import pyccl.nl_pt
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap, create
+from firecrown.parameters import ParamsMap, register_new_updatable_parameter
 from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.ccl_factory import CCLFactory
-
+from firecrown.updatable import get_default_params_map
+from firecrown.metadata_types import TracerNames
 
 SACCFILE = os.path.expanduser(
     os.path.expandvars(
@@ -37,7 +38,7 @@ class vanDaalen19Baryonfication(PowerspectrumModifier):
         super().__init__()
         self.pk_to_modify = pk_to_modify
         self.vD19 = pyccl.baryons.BaryonsvanDaalen19()
-        self.f_bar = create()
+        self.f_bar = register_new_updatable_parameter(default_value=0.5)
 
     def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
         """Compute the 3D power spectrum P(k, z)."""
@@ -138,7 +139,9 @@ def run_likelihood() -> None:
         }
     )
     # Prepare the cosmology object
-    tools.update(systematics_params)
+    params = ParamsMap(get_default_params_map(tools) | systematics_params)
+
+    tools.update(params)
     tools.prepare()
 
     ccl_cosmo = tools.get_ccl_cosmology()
@@ -150,7 +153,7 @@ def run_likelihood() -> None:
     )
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
+    likelihood.update(params)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     log_like = likelihood.compute_loglike(tools)
@@ -165,7 +168,7 @@ def run_likelihood() -> None:
 
     # Predict CCL Cl
     wl_tracer = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
-    ell = two_point_0.ells
+    ell = two_point_0.ells_for_xi
     cl_dm = ccl.angular_cl(
         cosmo=ccl_cosmo,
         tracer1=wl_tracer,
@@ -190,7 +193,7 @@ def make_plot(ell, cl_dm, cl_baryons, two_point_0):
     """Create and show a diagnostic plot."""
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
-    cl_firecrown = two_point_0.cells[("shear", "shear")]
+    cl_firecrown = two_point_0.cells[TracerNames("shear", "shear")]
 
     plt.plot(ell, cl_firecrown / cl_dm, label="firecrown w/ baryons")
     plt.plot(ell, cl_baryons / cl_dm, ls="--", label="CCL w/ baryons")

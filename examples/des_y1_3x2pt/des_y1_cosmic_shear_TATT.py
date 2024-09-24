@@ -12,7 +12,8 @@ from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.ccl_factory import CCLFactory
-
+from firecrown.updatable import get_default_params_map
+from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
 
 SACCFILE = os.path.expanduser(
     os.path.expandvars(
@@ -121,11 +122,14 @@ def run_likelihood() -> None:
             "src3_delta_z": 0.002,
         }
     )
+    # Prepare the cosmology object
+    params = ParamsMap(get_default_params_map(tools) | systematics_params)
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
+    likelihood.update(params)
 
     # Prepare the cosmology object
+    tools.update(params)
     tools.prepare()
     ccl_cosmo = tools.get_ccl_cosmology()
 
@@ -180,11 +184,11 @@ def make_plot(ccl_cosmo, nz, pk_ii, pk_im, two_point_0, z):
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
-    ells = two_point_0.ells
-    cells_gg = two_point_0.cells[("shear", "shear")]
-    cells_gi = two_point_0.cells[("shear", "intrinsic_pt")]
-    cells_ii = two_point_0.cells[("intrinsic_pt", "intrinsic_pt")]
-    cells_total = two_point_0.cells["total"]
+    ells = two_point_0.ells_for_xi
+    cells_gg = two_point_0.cells[TracerNames("shear", "shear")]
+    cells_gi = two_point_0.cells[TracerNames("shear", "intrinsic_pt")]
+    cells_ii = two_point_0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
+    cells_total = two_point_0.cells[TRACER_NAMES_TOTAL]
     # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
