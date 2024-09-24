@@ -148,14 +148,18 @@ all_two_point_functions = tp.TwoPoint.from_metadata(
 ## Setting Up the Two-Point Statistics
 
 Setting up the two-point statistics requires a cosmology and a set of parameters.
-The parameters necessary in our analysis depend on the two-point statistic measurements and the systematics we are considering.
-In the code below, we extract the required parameters for the two-point statistics and create a `ParamsMap` object with the parameters' default values:
+The parameters necessary in our analysis depend on the cosmology, two-point statistic measurements and the systematics we are considering.
+The `ModelingTools` class is used to manage the cosmology and general computation objects.
+In the code below, we extract the required parameters for the cosmology and the two-point statistics and create a `ParamsMap` object with the parameters' default values:
 
 ```{python}
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params
 from firecrown.parameters import ParamsMap
 
-req_params = all_two_point_functions.required_parameters()
-default_values = req_params.get_default_values()
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+default_values = get_default_params(tools, all_two_point_functions)
 params = ParamsMap(default_values)
 
 ```
@@ -167,7 +171,7 @@ These default values are:
 # | code-fold: true
 import yaml
 
-default_values_yaml = yaml.dump(default_values, default_flow_style=False)
+default_values_yaml = yaml.dump(dict(params), default_flow_style=False)
 
 Markdown(f"```yaml\n{default_values_yaml}\n```")
 ```
@@ -175,16 +179,8 @@ Markdown(f"```yaml\n{default_values_yaml}\n```")
 Lastly, we must configure the cosmology and prepare the two-point statistics for analysis:
 
 ```{python}
-import pyccl
-
-from firecrown.modeling_tools import ModelingTools
-
-ccl_cosmo = pyccl.CosmologyVanillaLCDM()
-ccl_cosmo.compute_nonlin_power()
-
-tools = ModelingTools()
 tools.update(params)
-tools.prepare(ccl_cosmo)
+tools.prepare()
 all_two_point_functions.update(params)
 
 ```

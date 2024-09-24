@@ -4,18 +4,18 @@ from unittest.mock import Mock
 import sacc
 import pytest
 import pyccl
+from firecrown.updatable import get_default_params_map
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 from firecrown.likelihood.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.parameters import ParamsMap
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.likelihood.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
 
 
-def test_create_binned_number_counts():
+def test_create_binned_number_counts() -> None:
     recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", recipe)
     assert bnc is not None
@@ -36,7 +36,7 @@ def test_create_binned_number_counts():
     assert bnc.systematics == systematics
 
 
-def test_get_data_vector():
+def test_get_data_vector() -> None:
     recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "Test", recipe)
     dv = bnc.get_data_vector()
@@ -44,7 +44,7 @@ def test_get_data_vector():
     assert len(dv) == 0
 
 
-def test_read_throws_if_no_property(cluster_sacc_data: sacc.Sacc):
+def test_read_throws_if_no_property(cluster_sacc_data: sacc.Sacc) -> None:
     recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(ClusterProperty.NONE, "my_survey", recipe)
 
@@ -55,7 +55,7 @@ def test_read_throws_if_no_property(cluster_sacc_data: sacc.Sacc):
         bnc.read(cluster_sacc_data)
 
 
-def test_read_single_property(cluster_sacc_data: sacc.Sacc):
+def test_read_single_property(cluster_sacc_data: sacc.Sacc) -> None:
     recipe = Mock(spec=ClusterRecipe)
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", recipe)
@@ -75,7 +75,7 @@ def test_read_single_property(cluster_sacc_data: sacc.Sacc):
     assert len(bnc.sacc_indices) == 2
 
 
-def test_read_multiple_properties(cluster_sacc_data: sacc.Sacc):
+def test_read_multiple_properties(cluster_sacc_data: sacc.Sacc) -> None:
     recipe = Mock(spec=ClusterRecipe)
     bnc = BinnedClusterNumberCounts(
         (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", recipe
@@ -88,18 +88,16 @@ def test_read_multiple_properties(cluster_sacc_data: sacc.Sacc):
     assert len(bnc.sacc_indices) == 4
 
 
-def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc):
+def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc) -> None:
     recipe = Mock(spec=ClusterRecipe)
     recipe.evaluate_theory_prediction.return_value = 1.0
     tools = ModelingTools()
 
     hmf = pyccl.halos.MassFuncBocquet16()
-    cosmo = pyccl.cosmology.CosmologyVanillaLCDM()
-    params = ParamsMap()
-
     tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf)
+    params = get_default_params_map(tools)
     tools.update(params)
-    tools.prepare(cosmo)
+    tools.prepare()
 
     bnc = BinnedClusterNumberCounts(ClusterProperty.COUNTS, "my_survey", recipe)
     bnc.read(cluster_sacc_data)

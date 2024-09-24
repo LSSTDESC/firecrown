@@ -7,11 +7,11 @@ from __future__ import annotations
 
 import numpy as np
 import numpy.typing as npt
-import pyccl
 
 from cobaya.theory import Theory
 
 from firecrown.connector.mapping import mapping_builder, MappingCAMB
+from firecrown.ccl_factory import CCLCalculatorArgs
 
 
 class CCLConnector(Theory):
@@ -110,9 +110,7 @@ class CCLConnector(Theory):
         This version does nothing.
         """
 
-    def calculate(
-        self, state: dict[str, float], want_derived=True, **params_values
-    ) -> None:
+    def calculate(self, state: dict, want_derived=True, **params_values) -> None:
         """Calculate the current cosmology, and set state["pyccl"] to the result.
 
         :param state: The state dictionary to update.
@@ -120,10 +118,9 @@ class CCLConnector(Theory):
         :param params_values: The values of the parameters to use.
         """
         self.map.set_params_from_camb(**params_values)
-
         pyccl_params_values = self.map.asdict()
-        # This is the dictionary appropriate for CCL creation
 
+        # This is the dictionary appropriate for CCL creation
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
         k, z, pk = self.provider.get_Pk_grid()
@@ -135,21 +132,23 @@ class CCLConnector(Theory):
         self.a_Pk = self.map.redshift_to_scale_factor(z)
         pk_a = self.map.redshift_to_scale_factor_p_k(pk)
 
-        cosmo = pyccl.CosmologyCalculator(
-            **pyccl_params_values,
-            background={"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
-            pk_linear={
-                "a": self.a_Pk,
-                "k": k,
-                "delta_matter:delta_matter": pk_a,
-            },
-            nonlinear_model="halofit",
-        )
-        state["pyccl"] = cosmo
+        pyccl_args: CCLCalculatorArgs = {
+            "background": {"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
+            "pk_linear": {"a": self.a_Pk, "k": k, "delta_matter:delta_matter": pk_a},
+        }
+        state["pyccl_args"] = pyccl_args
+        state["pyccl_params"] = pyccl_params_values
 
-    def get_pyccl(self) -> pyccl.Cosmology:
-        """Return the current cosmology.
+    def get_pyccl_args(self) -> CCLCalculatorArgs:
+        """Return the current CCL arguments.
 
-        :return: The current cosmology
+        :return: The current CCL arguments
         """
-        return self.current_state["pyccl"]
+        return self.current_state["pyccl_args"]
+
+    def get_pyccl_params(self) -> dict[str, float]:
+        """Return the current cosmological parameters.
+
+        :return: The current cosmological parameters.
+        """
+        return self.current_state["pyccl_params"]
