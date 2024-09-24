@@ -20,6 +20,8 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
 
 
 saccfile = os.path.expanduser(
@@ -137,7 +139,9 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
         nk_per_decade=20,
     )
 
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
+    modeling_tools = ModelingTools(
+        pt_calculator=pt_calculator, ccl_factory=CCLFactory(require_nonlinear_pk=True)
+    )
     # Note that the ordering of the statistics is relevant, because the data
     # vector, theory vector, and covariance matrix will be organized to
     # follow the order used here.
@@ -173,9 +177,11 @@ def run_likelihood() -> None:
     z, nz = src0_tracer.z, src0_tracer.nz
     lens_z, lens_nz = lens0_tracer.z, lens0_tracer.nz
 
-    # Define a ccl.Cosmology object using default parameters
-    ccl_cosmo = ccl.CosmologyVanillaLCDM()
-    ccl_cosmo.compute_nonlin_power()
+    # Setting cosmological parameters
+    cosmo_params = get_default_params_map(tools)
+    tools.update(cosmo_params)
+    tools.prepare()
+    ccl_cosmo = tools.get_ccl_cosmology()
 
     cs = CclSetup()
     c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
@@ -223,9 +229,6 @@ def run_likelihood() -> None:
 
     # Apply the systematics parameters
     likelihood.update(systematics_params)
-
-    # Prepare the cosmology object
-    tools.prepare(ccl_cosmo)
 
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     log_like = likelihood.compute_loglike(tools)
@@ -296,7 +299,7 @@ def plot_predicted_and_measured_statistics(
     # pylint: disable=import-outside-toplevel
     import matplotlib.pyplot as plt
 
-    ells = stat0.ells
+    ells = stat0.ells_for_xi
     cells = CElls(stat0, stat2, stat3)
 
     # Code that computes effect from IA using that Pk2D object
@@ -339,6 +342,9 @@ def plot_predicted_and_measured_statistics(
     fig, ax = plt.subplots(2, 1, sharex=True, figsize=(6, 6))
     fig.subplots_adjust(hspace=0)
     # ax[0].plot(x, y_theory, label="Total")
+    assert isinstance(ax, np.ndarray)
+    assert isinstance(ax[0], plt.Axes)
+    assert isinstance(ax[1], plt.Axes)
     ax[0].plot(ells, cells.GG, label="GG firecrown")
     ax[0].plot(ells, cl_GG, ls="--", label="GG CCL")
     ax[0].plot(ells, -cells.GI, label="-GI firecrown")

@@ -10,6 +10,7 @@ project:
     - inferred_zdist_generators.qmd
     - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
+    - two_point_factories.qmd
 
 website:
   title: "Firecrown Tutorial Documents"
@@ -37,6 +38,8 @@ website:
               text: "Redshift Distribution Serialization"
             - href: two_point_generators.qmd
               text: "Two-Point Function Generators"
+            - href: two_point_factories.qmd
+              text: "Two-Point Function Factories"
         - section: "Firecrown on GitHub"
           contents:
             - text: "Source Code"

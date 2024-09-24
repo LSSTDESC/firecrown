@@ -19,11 +19,7 @@ from firecrown.likelihood.source import (
 )
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
-from firecrown.metadata.two_point import (
-    extract_all_tracers,
-    InferredGalaxyZDist,
-    Galaxies,
-)
+from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.parameters import ParamsMap
 
 
@@ -182,7 +178,7 @@ def test_weak_lensing_source_init(sacc_galaxy_cells_src0_src0):
 def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
@@ -198,7 +194,7 @@ def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
 def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
@@ -215,7 +211,7 @@ def test_weak_lensing_source_factory(sacc_galaxy_cells_src0_src0):
 def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
@@ -228,7 +224,7 @@ def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
 def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_src0):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     src0 = next((obj for obj in all_tracers if obj.bin_name == "src0"), None)
     assert src0 is not None
 
@@ -276,7 +272,7 @@ def test_number_counts_source_init(sacc_galaxy_cells_lens0_lens0):
 def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
@@ -292,7 +288,7 @@ def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):
 def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
@@ -309,7 +305,7 @@ def test_number_counts_source_factory(sacc_galaxy_cells_lens0_lens0):
 def test_number_counts_source_factory_cache(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
@@ -322,7 +318,7 @@ def test_number_counts_source_factory_cache(sacc_galaxy_cells_lens0_lens0):
 def test_number_counts_source_factory_global_systematics(sacc_galaxy_cells_lens0_lens0):
     sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
 
-    all_tracers = extract_all_tracers(sacc_data)
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     lens0 = next((obj for obj in all_tracers if obj.bin_name == "lens0"), None)
     assert lens0 is not None
 
@@ -353,14 +349,10 @@ def test_number_counts_source_init_wrong_name(sacc_galaxy_cells_lens0_lens0):
         source.read(sacc_data)
 
 
-def test_number_counts_systematic_factory(nc_sys_factory):
-    bin_1 = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.array([1.0]),
-        dndz=np.array([1.0]),
-        measurement=Galaxies.COUNTS,
-    )
-    sys_pz_shift = nc_sys_factory.create(bin_1)
+def test_number_counts_systematic_factory(
+    nc_sys_factory: nc.NumberCountsSystematicFactory,
+):
+    sys_pz_shift = nc_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
 
 
@@ -404,12 +396,8 @@ def test_nc_constantmagnificationbiassystematicfactory_no_globals():
         _ = factory.create_global()
 
 
-def test_weak_lensing_systematic_factory(wl_sys_factory):
-    bin_1 = InferredGalaxyZDist(
-        bin_name="bin_1",
-        z=np.array([1.0]),
-        dndz=np.array([1.0]),
-        measurement=Galaxies.SHEAR_E,
-    )
-    sys_pz_shift = wl_sys_factory.create(bin_1)
+def test_weak_lensing_systematic_factory(
+    wl_sys_factory: wl.WeakLensingSystematicFactory,
+):
+    sys_pz_shift = wl_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"

@@ -12,6 +12,8 @@ from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.number_counts import (
     NumberCounts,
 )
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 
 def build_likelihood(params: NamedParameters):
@@ -42,4 +44,9 @@ def build_likelihood(params: NamedParameters):
 
     likelihood = ConstGaussian(statistics=[two_point])
     likelihood.read(sacc_data)
-    return likelihood
+
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
+
+    return likelihood, tools

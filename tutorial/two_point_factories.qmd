@@ -1,0 +1,213 @@
+---
+title: "Using Firecrown Factories to Initialize Two-Point Objects"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+In the tutorial [Two Point Generators](two_point_generators.qmd) we show how to use generators to create the necessary metadata to instantiate `TwoPoint` objects.
+In addition to generators, the user has also the option to use data already saved in a `SACC` object (or file) to initialize the `TwoPoint` objects.
+In this tutorial we show how to extract the metadata and data from `SACC` object and use the metadata and a factory to initialize the objects.
+
+## `SACC` objects
+
+The `SACC` objects are used to store all necessary information for a statistical analysis. 
+In practice, it stores metadata (data layout, data type, bins, dependent variables, etc), calibration data (redshift distribution per bin $\mathrm{d}n/\mathrm{d}z$) and the covariance between all measurements. 
+In the tutorials [`InferredGalaxyZDist`](inferred_zdist.qmd), [`InferredGalaxyZDist` Generators](inferred_zdist_generators.qmd) and [`InferredGalaxyZDist` Serialization](inferred_zdist_serialization.qmd) we show how to use, generate and serialize the `InferredGalaxyZDist` objects describing the redshift distributions. In this document we extract these components from a `SACC` object.
+
+## Metadata only `SACC`
+
+Up to the version 1.7 Firecrown relied on a two phase construction for its likelihoods.
+During the first phase, the `Likelihood`, `Statistics` and `Systematics` objects are created with metadata only.
+Then, the user must call the `read` method passing a `SACC` object to finish the object construction.
+
+One shortcoming of this methodology is that the user must know the `SACC` object struct beforehand, so they can create the necessary objects.
+Then, a matching `SACC` object must be passed in the `read` phase.
+To simplify this, we introduced functions to extract the metadata from the `SACC` file, such that it can be used toguether with the factories to create the objects.
+
+In the code below we extract the metadata indices from the `examples/des_y1_3x2pt` `SACC` file.
+```{python}
+from firecrown.metadata_functions import extract_all_real_metadata_indices
+import sacc
+
+sacc_data = sacc.Sacc.load_fits("../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits")
+
+all_meta = extract_all_real_metadata_indices(sacc_data)
+```
+
+The metadata can be seem below:
+```{python}
+# | code-fold: true
+import yaml
+from IPython.display import Markdown
+
+all_meta_prune = [
+    {
+        "data_type": meta["data_type"],
+        "tracer1": str(meta["tracer_names"].name1),
+        "tracer2": str(meta["tracer_names"].name2),
+    }
+    for meta in all_meta
+]
+
+all_meta_yaml = yaml.safe_dump(all_meta_prune, default_flow_style=False)
+
+Markdown(f"```yaml\n{all_meta_yaml}\n```")
+```
+
+The tracer names above are ones from the `SACC` object. 
+The user needs to know the tracer names to create the `TwoPoint` objects.
+However, now the user can use the metadata to create the objects.
+
+### Factories
+
+The factories are used to create the `TwoPoint` objects.
+In Firecrown, we write factories using Pydantic, a library to validate and parse data.
+This gives us the advantage of having a schema for the data, and the user can use the factories to validate the data before creating the objects.
+
+For example, we can organize the factories in a YAML file:
+```{python}
+
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.weak_lensing import WeakLensingFactory
+from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.utils import base_model_from_yaml
+
+weak_lensing_yaml = """
+per_bin_systematics:
+- type: MultiplicativeShearBiasFactory
+- type: PhotoZShiftFactory
+global_systematics:
+- type: LinearAlignmentSystematicFactory
+  alphag: 1.0
+"""
+number_counts_yaml = """
+per_bin_systematics:
+- type: PhotoZShiftFactory
+global_systematics: []
+"""
+
+weak_lensing_factory = base_model_from_yaml(WeakLensingFactory, weak_lensing_yaml)
+number_counts_factory = base_model_from_yaml(NumberCountsFactory, number_counts_yaml)
+
+two_point_list = TwoPoint.from_metadata_index(
+    metadata_indices=all_meta,
+    wl_factory=weak_lensing_factory,
+    nc_factory=number_counts_factory,
+)
+```
+
+### Creating a `Likelihood` object
+
+Now we can create a `Likelihood` object using the `TwoPoint` objects.
+Since we are using the metadata only, we need to pass the `SACC` object to the `read` method.
+```{python}
+from firecrown.likelihood.gaussian import ConstGaussian
+
+likelihood = ConstGaussian(two_point_list)
+
+likelihood.read(sacc_data)
+
+```
+
+## Extracting the Metadata and Data
+
+In the previous section, we demonstrated how to extract metadata from a `SACC object`. 
+Now, we will show how to extract all components from the `SACC` object, including the metadata, data, and calibration data.
+
+In the upcoming interface for Firecrown, likelihood objects will be created using the complete data. 
+This data may be extracted from a `SACC` object, generated by a custom generator, or provided in any other manner by the user.
+
+In the code below we extract all components from the `examples/des_y1_3x2pt` `SACC` file.
+```{python}
+from firecrown.data_functions import (
+    extract_all_real_data,
+    check_two_point_consistence_real,
+)
+from pprint import pprint
+
+two_point_reals = extract_all_real_data(sacc_data)
+check_two_point_consistence_real(two_point_reals)
+```
+
+The list `two_point_reals` contains all information about real-space two point functions contained in the `SACC` object.
+Therefore, we need to use a different constructor to obtain the two-point objects already in the `ready` state.
+```{python}
+from firecrown.likelihood.two_point import TwoPoint
+
+weak_lensing_factory = base_model_from_yaml(WeakLensingFactory, weak_lensing_yaml)
+number_counts_factory = base_model_from_yaml(NumberCountsFactory, number_counts_yaml)
+
+
+two_points_ready = TwoPoint.from_measurement(
+    two_point_reals,
+    wl_factory=weak_lensing_factory,
+    nc_factory=number_counts_factory,
+)
+
+```
+Note that we used the same factories to instantiate our `TwoPoint` objects. 
+
+Now, to create the likelihood we need to use a different constructor that support creating likelihoods in `ready` state.
+```{python}
+from firecrown.likelihood.gaussian import ConstGaussian
+
+likelihood_ready = ConstGaussian.create_ready(
+    two_points_ready, sacc_data.covariance.dense
+)
+```
+Note that, since we are creating a `Likelihood` in ready state, the constructor requires the statistics covariance.
+
+## Comparing results
+
+We can now compare whether the two methods yield the same results.
+Before we do that, we need to obtain our required parameters.
+```{python}
+from firecrown.parameters import ParamsMap
+
+req_params = likelihood.required_parameters()
+req_params_ready = likelihood_ready.required_parameters()
+
+assert req_params_ready == req_params
+
+default_values = req_params.get_default_values()
+params = ParamsMap(default_values)
+
+```
+Note that the required parameters are the same for both likelihoods.
+Before generating the two-point statistics, we use the following default values:
+```{python}
+# | code-fold: true
+import yaml
+
+default_values_yaml = yaml.dump(default_values, default_flow_style=False)
+
+Markdown(f"```yaml\n{default_values_yaml}\n```")
+```
+
+
+Finally, we can prepare both likelihoods and compare the loglike values.
+```{python}
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
+from firecrown.parameters import ParamsMap
+
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+params = get_default_params_map(tools, likelihood)
+
+tools = ModelingTools()
+tools.update(params)
+tools.prepare()
+
+likelihood.update(params)
+likelihood_ready.update(params)
+```
+```{python}
+# | code-fold: true
+print(f"Loglike from metadata only: {likelihood.compute_loglike(tools)}")
+print(f"Loglike from ready state: {likelihood_ready.compute_loglike(tools)}")
+```
+

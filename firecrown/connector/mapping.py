@@ -9,7 +9,7 @@ Each supported body of code has its own dedicated class.
 import typing
 import warnings
 from abc import ABC
-from typing import Any, Type, final
+from typing import Type, final
 
 import cosmosis.datablock
 import numpy as np
@@ -18,6 +18,7 @@ from pyccl import physical_constants as physics
 
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import CCLCalculatorArgs, PowerSpec, Background
 
 
 def build_ccl_background_dict(
@@ -25,7 +26,7 @@ def build_ccl_background_dict(
     a: npt.NDArray[np.float64],
     chi: npt.NDArray[np.float64],
     h_over_h0: npt.NDArray[np.float64],
-) -> dict[str, npt.NDArray[np.float64]]:
+) -> Background:
     """Builds the CCL dictionary of background quantities.
 
     :param a: The scale factor array
@@ -66,13 +67,8 @@ class Mapping(ABC):
     wa = TypeFloat()
     T_CMB = TypeFloat()
 
-    def __init__(self, *, require_nonlinear_pk: bool = False) -> None:
-        """Initialize the Mapping object.
-
-        :param require_nonlinear_pk: Whether the mapping requires the
-            non-linear power spectrum
-        """
-        self.require_nonlinear_pk = require_nonlinear_pk
+    def __init__(self) -> None:
+        """Initialize the Mapping object."""
         self.m_nu: float | list[float] | None = None
 
     def get_params_names(self) -> list[str]:
@@ -139,7 +135,6 @@ class Mapping(ABC):
         Omega_k: float,
         Neff: float,
         m_nu: float | list[float],
-        m_nu_type: str,
         w0: float,
         wa: float,
         T_CMB: float,
@@ -158,7 +153,6 @@ class Mapping(ABC):
         :param Omega_k: curvature of the universe
         :param Neff: effective number of relativistic neutrino species
         :param m_nu: effective mass of neutrinos
-        :param m_nu_type: type of massive neutrinos
         :param w0: constant of the CPL parameterization of the dark energy
             equation of state
         :param wa: linear coefficient of the CPL parameterization of the
@@ -186,7 +180,6 @@ class Mapping(ABC):
         self.Omega_g = None
         self.Neff = Neff
         self.m_nu = m_nu
-        self.m_nu_type = m_nu_type
         self.w0 = w0
         self.wa = wa
         self.T_CMB = T_CMB
@@ -220,7 +213,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> dict[str, None | float | list[float] | str]:
+    def asdict(self) -> dict[str, float | list[float]]:
         """Return a dictionary containing the cosmological constants.
 
         :return: the dictionary, containing keys:
@@ -234,29 +227,34 @@ class Mapping(ABC):
             - ``Omega_k``: curvature of the universe
             - ``Neff``: effective number of relativistic neutrino species
             - ``m_nu``: effective mass of neutrinos
-            - ``m_nu_type``: type of massive neutrinos
             - ``w0``: constant of the CPL parameterization of the dark energy
                 equation of state
             - ``wa``: linear coefficient of the CPL parameterization of the
                 dark energy equation of state
             - ``T_CMB``: cosmic microwave background temperature today
         """
-        return {
+        cosmo_dict: dict[str, float | list[float]] = {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
             "h": self.h,
-            "A_s": self.A_s,
-            "sigma8": self.sigma8,
             "n_s": self.n_s,
             "Omega_k": self.Omega_k,
-            "Omega_g": self.Omega_g,
             "Neff": self.Neff,
-            "m_nu": self.m_nu,
-            "mass_split": self.m_nu_type,
             "w0": self.w0,
             "wa": self.wa,
             "T_CMB": self.T_CMB,
         }
+        if self.A_s is not None:
+            cosmo_dict["A_s"] = self.A_s
+        if self.sigma8 is not None:
+            cosmo_dict["sigma8"] = self.sigma8
+        # Currently we do not support Omega_g
+        # if self.Omega_g is not None:
+        #    cosmo_dict["Omega_g"] = self.Omega_g
+        if self.m_nu is not None:
+            cosmo_dict["m_nu"] = self.m_nu
+
+        return cosmo_dict
 
     def get_H0(self) -> float:
         """Return the value of H0.
@@ -346,7 +344,6 @@ class MappingCosmoSIS(Mapping):
         Neff = delta_neff + 3.046
         omega_nu = cosmosis_params.get_float("omega_nu")
         m_nu = omega_nu * h * h * 93.14
-        m_nu_type = "normal"
         w0 = cosmosis_params.get_float("w")
         wa = cosmosis_params.get_float("wa")
 
@@ -360,7 +357,6 @@ class MappingCosmoSIS(Mapping):
             Omega_k=Omega_k,
             Neff=Neff,
             m_nu=m_nu,
-            m_nu_type=m_nu_type,
             w0=w0,
             wa=-wa,  # Is this minus sign here correct?
             T_CMB=2.7255,
@@ -368,13 +364,14 @@ class MappingCosmoSIS(Mapping):
         )
         # pylint: enable=duplicate-code
 
-    def calculate_ccl_args(self, sample: cosmosis.datablock) -> dict[str, Any]:
+    def calculate_ccl_args(self, sample: cosmosis.datablock) -> CCLCalculatorArgs:
         """Calculate the arguments necessary for CCL for this sample.
 
         :param sample: the datablock for the current sample
         :return: the arguments required by CCL
         """
-        ccl_args: dict[str, Any] = {}
+        pk_linear: None | PowerSpec = None
+        pk_nonlin: None | PowerSpec = None
         if sample.has_section("matter_power_lin"):
             k = self.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
             z_mpl = sample["matter_power_lin", "z"]
@@ -382,7 +379,7 @@ class MappingCosmoSIS(Mapping):
             p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_lin", "p_k"])
             p_k = self.redshift_to_scale_factor_p_k(p_k)
 
-            ccl_args["pk_linear"] = {
+            pk_linear = {
                 "a": scale_mpl,
                 "k": k,
                 "delta_matter:delta_matter": p_k,
@@ -395,15 +392,11 @@ class MappingCosmoSIS(Mapping):
             p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_nl", "p_k"])
             p_k = self.redshift_to_scale_factor_p_k(p_k)
 
-            ccl_args["pk_nonlin"] = {
+            pk_nonlin = {
                 "a": scale_mpl,
                 "k": k,
                 "delta_matter:delta_matter": p_k,
             }
-        elif self.require_nonlinear_pk:
-            ccl_args["nonlinear_model"] = "halofit"
-        else:
-            ccl_args["nonlinear_model"] = None
 
         # TODO: We should have several configurable modes for this module.
         # In all cases, an exception will be raised (causing a program
@@ -437,9 +430,15 @@ class MappingCosmoSIS(Mapping):
         # h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
         h_over_h0 = self.transform_h_to_h_over_h0(sample["distances", "h"])
 
-        ccl_args["background"] = build_ccl_background_dict(
+        background: Background = build_ccl_background_dict(
             a=scale_distances, chi=chi, h_over_h0=h_over_h0
         )
+        ccl_args: CCLCalculatorArgs = {"background": background}
+
+        if pk_linear is not None:
+            ccl_args.update({"pk_linear": pk_linear})
+        if pk_nonlin is not None:
+            ccl_args.update({"pk_nonlin": pk_nonlin})
 
         return ccl_args
 
@@ -487,7 +486,6 @@ class MappingCAMB(Mapping):
         m_nu = params_values["mnu"]
         Omega_k0 = params_values["omk"]
 
-        m_nu_type = "normal"
         h0 = H0 / 100.0
         h02 = h0 * h0
         Omega_b0 = ombh2 / h02
@@ -513,7 +511,6 @@ class MappingCAMB(Mapping):
             sigma8=None,
             A_s=As,
             m_nu=m_nu,
-            m_nu_type=m_nu_type,
             w0=w,
             wa=wa,
             Neff=Neff,

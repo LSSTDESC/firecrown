@@ -1,4 +1,4 @@
-"""Support for the family of Gaussian likelihood."""
+"""Support for the family of Gaussian likelihoods."""
 
 from __future__ import annotations
 
@@ -30,7 +30,12 @@ from firecrown.utils import save_to_sacc
 
 
 class State(Enum):
-    """The states used in GaussFamily."""
+    """The states used in GaussFamily.
+
+    GaussFamily and all subclasses enforce a statemachine behavior based on
+    these states to ensure that the necessary initialization and setup is done
+    in the correct order.
+    """
 
     INITIALIZED = 1
     READY = 2
@@ -62,6 +67,12 @@ def enforce_states(
     If terminal is None the state of the object is not modified.
     If terminal is not None and the call to the wrapped method returns
     normally the state of the object is set to terminal.
+
+    :param initial: The initial states allowable for the wrapped method
+    :param terminal: The terminal state ensured for the wrapped method. None
+        indicates no state change happens.
+    :param failure_message: The failure message for the AssertionError raised
+    :return: The wrapped method
     """
     initials: list[State]
     if isinstance(initial, list):
@@ -74,6 +85,9 @@ def enforce_states(
 
         This closure is what actually contains the values of initials, terminal, and
         failure_message.
+
+        :param func: The method to be wrapped
+        :return: The wrapped method
         """
 
         @wraps(func)
@@ -132,8 +146,11 @@ class GaussFamily(Likelihood):
     def __init__(
         self,
         statistics: Sequence[Statistic],
-    ):
-        """Initialize the base class parts of a GaussFamily object."""
+    ) -> None:
+        """Initialize the base class parts of a GaussFamily object.
+
+        :param statistics: A list of statistics to be include in chisquared calculations
+        """
         super().__init__()
         self.state: State = State.INITIALIZED
         if len(statistics) == 0:
@@ -156,6 +173,21 @@ class GaussFamily(Likelihood):
         self.theory_vector: None | npt.NDArray[np.double] = None
         self.data_vector: None | npt.NDArray[np.double] = None
 
+    @classmethod
+    def create_ready(
+        cls, statistics: Sequence[Statistic], covariance: npt.NDArray[np.float64]
+    ) -> GaussFamily:
+        """Create a GaussFamily object in the READY state.
+
+        :param statistics: A list of statistics to be include in chisquared calculations
+        :param covariance: The covariance matrix of the statistics
+        :return: A ready GaussFamily object
+        """
+        obj = cls(statistics)
+        obj._set_covariance(covariance)
+        obj.state = State.READY
+        return obj
+
     @enforce_states(
         initial=State.READY,
         terminal=State.UPDATED,
@@ -168,6 +200,8 @@ class GaussFamily(Likelihood):
         for its own reasons must be sure to do what this does: check the state
         at the start of the method, and change the state at the end of the
         method.
+
+        :param _: a ParamsMap object, not used
         """
 
     @enforce_states(
@@ -191,7 +225,10 @@ class GaussFamily(Likelihood):
         failure_message="read() must only be called once",
     )
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the covariance matrix for this likelihood from the SACC file."""
+        """Read the covariance matrix for this likelihood from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
         if sacc_data.covariance is None:
             msg = (
                 f"The {type(self).__name__} likelihood requires a covariance, "
@@ -199,12 +236,28 @@ class GaussFamily(Likelihood):
             )
             raise RuntimeError(msg)
 
+        for stat in self.statistics:
+            stat.read(sacc_data)
+
         covariance = sacc_data.covariance.dense
 
+        self._set_covariance(covariance)
+
+    def _set_covariance(self, covariance: npt.NDArray[np.float64]) -> None:
+        """Set the covariance matrix.
+
+        This method is used to set the covariance matrix and perform the
+        necessary calculations to prepare the likelihood for computation.
+
+        :param covariance: The covariance matrix for this likelihood
+        """
         indices_list = []
         data_vector_list = []
         for stat in self.statistics:
-            stat.read(sacc_data)
+            if not stat.statistic.ready:
+                raise RuntimeError(
+                    f"The statistic {stat.statistic} is not ready to be used."
+                )
             if stat.statistic.sacc_indices is None:
                 raise RuntimeError(
                     f"The statistic {stat.statistic} has no sacc_indices."
@@ -215,6 +268,19 @@ class GaussFamily(Likelihood):
         indices = np.concatenate(indices_list)
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
+
+        largest_index = int(np.max(indices))
+
+        if not (
+            covariance.ndim == 2
+            and covariance.shape[0] == covariance.shape[1]
+            and largest_index < covariance.shape[0]
+        ):
+            raise ValueError(
+                f"The covariance matrix has shape {covariance.shape}, "
+                f"but the expected shape is at least "
+                f"{(largest_index + 1, largest_index + 1)}."
+            )
 
         for new_i, old_i in enumerate(indices):
             for new_j, old_j in enumerate(indices):
@@ -239,6 +305,7 @@ class GaussFamily(Likelihood):
         :param statistic: The statistic for which the sub-covariance matrix
             should be returned. If not specified, return the covariance of all
             statistics.
+        :return: The covariance matrix (or portion thereof)
         """
         assert self.cov is not None
         if statistic is None:
@@ -264,7 +331,10 @@ class GaussFamily(Likelihood):
         failure_message="read() must be called before get_data_vector()",
     )
     def get_data_vector(self) -> npt.NDArray[np.float64]:
-        """Get the data vector from all statistics in the right order."""
+        """Get the data vector from all statistics in the right order.
+
+        :return: The data vector
+        """
         assert self.data_vector is not None
         return self.data_vector
 
@@ -278,6 +348,7 @@ class GaussFamily(Likelihood):
         """Computes the theory vector using the current instance of pyccl.Cosmology.
 
         :param tools: Current ModelingTools object
+        :return: The computed theory vector
         """
         theory_vector_list: list[npt.NDArray[np.float64]] = [
             stat.compute_theory_vector(tools) for stat in self.statistics
@@ -292,7 +363,10 @@ class GaussFamily(Likelihood):
         "get_theory_vector()",
     )
     def get_theory_vector(self) -> npt.NDArray[np.float64]:
-        """Get the theory vector from all statistics in the right order."""
+        """Get the already-computed theory vector from all statistics.
+
+        :return: The theory vector, with all statistics in the right order
+        """
         assert (
             self.theory_vector is not None
         ), "theory_vector is None after compute_theory_vector() has been called"
@@ -306,7 +380,14 @@ class GaussFamily(Likelihood):
     def compute(
         self, tools: ModelingTools
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-        """Calculate and return both the data and theory vectors."""
+        """Calculate and return both the data and theory vectors.
+
+        This method is dprecated and will be removed in a future version of Firecrown.
+
+        :param tools: the ModelingTools to be used in the calculation of the
+            theory vector
+        :return: a tuple containing the data vector and the theory vector
+        """
         warnings.warn(
             "The use of the `compute` method on Statistic is deprecated."
             "The Statistic objects should implement `get_data` and "
@@ -322,7 +403,12 @@ class GaussFamily(Likelihood):
         failure_message="update() must be called before compute_chisq()",
     )
     def compute_chisq(self, tools: ModelingTools) -> float:
-        """Calculate and return the chi-squared for the given cosmology."""
+        """Calculate and return the chi-squared for the given cosmology.
+
+        :param tools: the ModelingTools to be used in the calculation of the
+            theory vector
+        :return: the chi-squared
+        """
         theory_vector: npt.NDArray[np.float64]
         data_vector: npt.NDArray[np.float64]
         residuals: npt.NDArray[np.float64]
@@ -349,6 +435,10 @@ class GaussFamily(Likelihood):
         """Get the SACC indices of the statistic or list of statistics.
 
         If no statistic is given, get the indices of all statistics of the likelihood.
+
+        :param statistics: The statistic or list of statistics for which the
+            SACC indices are desired
+        :return: The SACC indices
         """
         if statistic is None:
             statistic = [stat.statistic for stat in self.statistics]
@@ -372,7 +462,15 @@ class GaussFamily(Likelihood):
     def make_realization(
         self, sacc_data: sacc.Sacc, add_noise: bool = True, strict: bool = True
     ) -> sacc.Sacc:
-        """Create a new realization of the model."""
+        """Create a new realization of the model.
+
+        :param sacc_data: The SACC data object containing the covariance matrix
+            to be read
+        :param add_noise: If True, add noise to the realization.
+        :param strict: If True, check that the indices of the realization cover
+            all the indices of the SACC data object.
+        :return: The SACC data object containing the new realization
+        """
         sacc_indices = self.get_sacc_indices()
 
         if add_noise:

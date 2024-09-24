@@ -7,6 +7,8 @@ import sacc
 
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.supernova import Supernova
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 
 def build_likelihood(_):
@@ -24,4 +26,9 @@ def build_likelihood(_):
     sacc_data.add_data_point("supernova_distance_mu", tracer_tuple, -3.0, z=0.3)
     sacc_data.add_covariance([4.0, 9.0, 16.0])
     likelihood.read(sacc_data)
-    return likelihood
+
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+    )
+
+    return likelihood, tools

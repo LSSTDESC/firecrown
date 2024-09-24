@@ -38,14 +38,17 @@ class MissingSamplerParameterError(RuntimeError):
     update is missing a parameter that should have been provided by the sampler.
     """
 
-    def __init__(self, parameter: str):
-        """Create the error, with a meaning error message."""
+    def __init__(self, parameter: str) -> None:
+        """Create the error, with a meaningful error message.
+
+        :param parameter: name of the missing parameter
+        """
         self.parameter = parameter
         msg = (
             f"The parameter `{parameter}` is required to update "
-            "something in this likelihood.\nIt should have been supplied"
-            "by the sampling framework.\nThe object being updated was:\n"
-            "{context}\n"
+            f"something in this likelihood.\nIt should have been supplied "
+            f"by the sampling framework.\nThe object being updated was:\n"
+            f"{self}\n"
         )
         super().__init__(msg)
 
@@ -63,12 +66,12 @@ class Updatable(ABC):
     def __init__(self, parameter_prefix: None | str = None) -> None:
         """Updatable initialization.
 
-        :param prefix: prefix for all parameters in this Updatable
-
         Parameters created by firecrown.parameters.create will have a prefix
         that is given by the prefix argument to the Updatable constructor. This
         prefix is used to create the full name of the parameter. If `parameter_prefix`
         is None, then the parameter will have no prefix.
+
+        :param parameter_prefix: prefix for all parameters in this Updatable
         """
         self._updated: bool = False
         self._returned_derived: bool = False
@@ -86,6 +89,9 @@ class Updatable(ABC):
         We also keep track of all :class:`Updatable` instance variables added,
         appending a reference to each to :attr:`self._updatables` as well as
         storing the attribute directly.
+
+        :param key: name of the attribute
+        :param value: value for the attribute
         """
         if isinstance(value, (Updatable, UpdatableCollection)):
             self._updatables.append(value)
@@ -101,6 +107,9 @@ class Updatable(ABC):
 
         Assure this InternalParameter or SamplerParameter has not already
         been set, and then set it.
+
+        :param key: name of the attribute
+        :param value: value for the attribute
         """
         if isinstance(value, SamplerParameter):
             value.set_fullname(self.parameter_prefix, key)
@@ -109,7 +118,11 @@ class Updatable(ABC):
             self.set_internal_parameter(key, value)
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
-        """Assure this InternalParameter has not already been set, and then set it."""
+        """Assure this InternalParameter has not already been set, and then set it.
+
+        :param key: name of the attribute
+        :param value: value for the attribute
+        """
         if not isinstance(value, InternalParameter):
             raise TypeError(
                 "Can only add InternalParameter objects to internal_parameters"
@@ -124,7 +137,10 @@ class Updatable(ABC):
         super().__setattr__(key, value.get_value())
 
     def set_sampler_parameter(self, value: SamplerParameter) -> None:
-        """Assure this SamplerParameter has not already been set, and then set it."""
+        """Assure this SamplerParameter has not already been set, and then set it.
+
+        :param value: value for the attribute
+        """
         if not isinstance(value, SamplerParameter):
             raise TypeError(
                 "Can only add SamplerParameter objects to sampler_parameters"
@@ -182,10 +198,11 @@ class Updatable(ABC):
     def is_updated(self) -> bool:
         """Determine if the object has been updated.
 
-        Return True if the object is currently updated, and False if not.
         A default-constructed Updatable has not been updated. After `update`,
         but before `reset`, has been called the object is updated. After
         `reset` has been called, the object is not currently updated.
+
+        :return:  True if the object is currently updated, and False if not.
         """
         return self._updated
 
@@ -240,10 +257,12 @@ class Updatable(ABC):
 
     @final
     def required_parameters(self) -> RequiredParameters:  # pragma: no cover
-        """Returns a RequiredParameters object.
+        """Returns all information about parameters required by this object.
 
-        This object contains the information for all parameters defined in the
-        implementing class, any additional parameter.
+        This object returned contains the information for all parameters
+        defined in the implementing class, and any additional parameters.
+
+        :return: a RequiredParameters object containing all relevant parameters
         """
         sampler_parameters = RequiredParameters(self._sampler_parameters)
         additional_parameters = self._required_parameters()
@@ -262,6 +281,8 @@ class Updatable(ABC):
 
         The base class implementation returns a list with all SamplerParameter
         objects properties.
+
+        :return: a RequiredParameters containing all relevant parameters
         """
         return RequiredParameters([])
 
@@ -273,6 +294,8 @@ class Updatable(ABC):
 
         This occurs once per iteration of the statistical analysis. First call returns
         the DerivedParameterCollection, further calls return None.
+
+        :return: a collection of derived parameters, or None
         """
         if not self._updated:
             raise RuntimeError(
@@ -296,6 +319,8 @@ class Updatable(ABC):
         Derived classes can override this, returning a DerivedParameterCollection
         containing the derived parameters for the class. The default implementation
         returns an empty DerivedParameterCollection.
+
+        :return: a collection of derived parameters
         """
         return DerivedParameterCollection([])
 
@@ -326,16 +351,16 @@ class UpdatableCollection(UserList[T], Generic[T]):
         super().__init__(iterable)
         self._updated: bool = False
         for item in self:
-            if not isinstance(item, Updatable):
+            if not isinstance(item, (Updatable | UpdatableCollection)):
                 raise TypeError(
-                    "All the items in an UpdatableCollection must be updatable"
+                    f"All the items in an UpdatableCollection must be updatable {item}"
                 )
 
     @final
     def update(self, params: ParamsMap) -> None:
         """Update self by calling update() on each contained item.
 
-        :param params: new parameter values
+        :param params: new parameter values for each contained item
         """
         if self._updated:
             return
@@ -410,3 +435,25 @@ class UpdatableCollection(UserList[T], Generic[T]):
             )
 
         super().__setitem__(key, cast(T, value))
+
+
+def get_default_params(*args: Updatable) -> dict[str, float]:
+    """Get a ParamsMap with the default values of all parameters in the updatables.
+
+    :param args: updatables to get the default parameters from
+    :return: a ParamsMap with the default values of all parameters
+    """
+    updatable_collection = UpdatableCollection(args)
+    required_parameters = updatable_collection.required_parameters()
+    default_parameters = required_parameters.get_default_values()
+
+    return default_parameters
+
+
+def get_default_params_map(*args: Updatable) -> ParamsMap:
+    """Get a ParamsMap with the default values of all parameters in the updatables.
+
+    :param args: updatables to get the default parameters from
+    :return: a ParamsMap with the default values of all parameters
+    """
+    return ParamsMap(get_default_params(*args))
