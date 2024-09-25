@@ -3,7 +3,7 @@
 from __future__ import annotations
 import copy
 import warnings
-from typing import Sequence, TypedDict
+from typing import Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -19,6 +19,7 @@ from firecrown.generators.two_point import (
     log_linear_ells,
     generate_bin_centers,
     calculate_ells_for_interpolation,
+    EllOrThetaConfig,
 )
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
@@ -68,26 +69,6 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceDensity_xi": "NN",
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
-
-
-class EllOrThetaConfig(TypedDict):
-    """A dictionary of options for generating the ell or theta.
-
-    This dictionary contains the minimum, maximum and number of
-    bins to generate the ell or theta values at which to compute the statistics.
-
-    :param minimum: The start of the binning.
-    :param maximum: The end of the binning.
-    :param n: The number of bins.
-    :param binning: Pass 'log' to get logarithmic spaced bins and 'lin' to get linearly
-        spaced bins. Default is 'log'.
-
-    """
-
-    minimum: float
-    maximum: float
-    n: int
-    binning: str
 
 
 def generate_ells_cells(ell_config: EllOrThetaConfig):

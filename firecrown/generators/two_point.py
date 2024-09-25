@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import copy
-from typing import Annotated
+from typing import Annotated, TypedDict
 
 from pydantic import BaseModel, Field, model_validator
 import numpy as np
@@ -114,3 +114,23 @@ def calculate_ells_for_interpolation(
     ell_config["maximum"] = max_ell
     ell_config["minimum"] = max(ell_config["minimum"], min_ell)
     return log_linear_ells(**ell_config)
+
+
+class EllOrThetaConfig(TypedDict):
+    """A dictionary of options for generating the ell or theta.
+
+    This dictionary contains the minimum, maximum and number of
+    bins to generate the ell or theta values at which to compute the statistics.
+
+    :param minimum: The start of the binning.
+    :param maximum: The end of the binning.
+    :param n: The number of bins.
+    :param binning: Pass 'log' to get logarithmic spaced bins and 'lin' to get linearly
+        spaced bins. Default is 'log'.
+
+    """
+
+    minimum: float
+    maximum: float
+    n: int
+    binning: str

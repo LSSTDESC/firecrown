@@ -24,13 +24,16 @@ from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
     TRACER_NAMES_TOTAL,
-    EllOrThetaConfig,
     use_source_factory,
     use_source_factory_metadata_index,
     WeakLensingFactory,
     NumberCountsFactory,
 )
-from firecrown.generators.two_point import log_linear_ells, generate_bin_centers
+from firecrown.generators.two_point import (
+    log_linear_ells,
+    generate_bin_centers,
+    EllOrThetaConfig,
+)
 from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
