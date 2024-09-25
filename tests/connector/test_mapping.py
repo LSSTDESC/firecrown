@@ -53,7 +53,6 @@ def test_conversion_from_cosmosis_camb():
     assert p.Omega_g is None
     assert p.Neff == pytest.approx(3.046)
     assert p.m_nu == pytest.approx(0.3015443336635814)
-    assert p.m_nu_type == "normal"  # Currently the only option
     assert p.w0 == cosmosis_params["w"]
     assert p.wa == cosmosis_params["wa"]
     assert p.T_CMB == 2.7255  # currently hard-wired
@@ -135,7 +134,6 @@ def test_sigma8_and_A_s():
         "Omega_k": 0.0,
         "Neff": 3.046,
         "m_nu": 0.0,
-        "m_nu_type": "normal",
         "w0": -1.0,
         "wa": 0.0,
         "T_CMB": 2.7255,

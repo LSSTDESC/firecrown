@@ -12,6 +12,7 @@ import pyccl as ccl
 import pyccl.nl_pt as pt
 import sacc
 
+from firecrown.updatable import get_default_params_map
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood.two_point import (
@@ -21,7 +22,7 @@ from firecrown.likelihood.two_point import (
 )
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 
 @pytest.fixture(name="weak_lensing_source")
@@ -85,9 +86,13 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         nk_per_decade=4,
         cosmo=ccl_cosmo,
     )
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
-    modeling_tools.update(ParamsMap())
-    modeling_tools.prepare(ccl_cosmo)
+    modeling_tools = ModelingTools(
+        pt_calculator=pt_calculator,
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8),
+    )
+    params = get_default_params_map(modeling_tools)
+    modeling_tools.update(params)
+    modeling_tools.prepare()
 
     # Bare CCL setup
     a_1 = 1.0
@@ -117,7 +122,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     pk_gg = pt_calculator.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_g)
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
+    params.update(
         {
             "ia_a_1": a_1,
             "ia_a_2": a_2,
@@ -132,7 +137,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     )
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
+    likelihood.update(params)
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
@@ -219,7 +224,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cl_cs_theory = cl_GG + 2 * cl_GI + cl_II
     cl_gg_theory = cl_gg + 2 * cl_gm + cl_mm
 
-    print("IDS: ", id(s0), id(s1))
+    # print("IDS: ", id(s0), id(s1))
 
     assert np.allclose(cells_GG, cells_GG_m, atol=0, rtol=1e-127)
 
@@ -282,9 +287,13 @@ def test_pt_mixed_systematics(sacc_data):
         nk_per_decade=4,
         cosmo=ccl_cosmo,
     )
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
-    modeling_tools.update(ParamsMap())
-    modeling_tools.prepare(ccl_cosmo)
+    modeling_tools = ModelingTools(
+        pt_calculator=pt_calculator,
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8),
+    )
+    params = get_default_params_map(modeling_tools)
+    modeling_tools.update(params)
+    modeling_tools.prepare()
 
     # Bare CCL setup
     a_1 = 1.0
@@ -305,7 +314,7 @@ def test_pt_mixed_systematics(sacc_data):
     pk_mi = pt_calculator.get_biased_pk2d(tracer1=ptt_m, tracer2=ptt_i)
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
+    params.update(
         {
             "ia_a_1": a_1,
             "ia_a_2": a_2,
@@ -316,7 +325,7 @@ def test_pt_mixed_systematics(sacc_data):
     )
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
+    likelihood.update(params)
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
