@@ -24,10 +24,11 @@ Please delete options that are not relevant.
 
 ## Checklist:
 
-- [ ] My code follows the style guidelines of this project [contributing](https://firecrown.readthedocs.io/en/latest/contrib.html)
+The following checklist will make sure that you are following the code style and
+guidelines of the project as described in the
+[contributing](https://firecrown.readthedocs.io/en/latest/contrib.html) page.
+
+- [ ] I have run `bash pre-commit-check` and fixed any issues
+- [ ] I have added tests that prove my fix is effective or that my feature works
 - [ ] I have 100% test coverage for my changes
 - [ ] I have made corresponding changes to the documentation
-- [ ] My changes generate no new warnings
-- [ ] I have added tests that prove my fix is effective or that my feature works
-- [ ] New and existing unit tests pass locally with my changes
-- [ ] I have checked my code and corrected any misspellings
