@@ -42,6 +42,11 @@ class LogLinearElls(BaseModel):
         The result will contain each integral value from min to mid. Starting
         from mid, and going up to max, there will be n_log logarithmically
         spaced values.
+
+        :param minimum: The low edge of the first bin.
+        :param midpoint: The high edge of the last in the linear range.
+        :param maximum: The high edge of the last bin.
+        :param n_log: The number of bins in the log section of the range.
         """
         minimum, midpoint, maximum, n_log = (
             self.minimum,
@@ -67,6 +72,11 @@ def log_linear_ells(
     to max, there will be n_log logarithmically spaced values.
 
     All values are rounded to the nearest integer.
+
+    :param minimum: The low edge of the first bin.
+    :param midpoint: The high edge of the last in the linear range.
+    :param maximum: The high edge of the last bin.
+    :param n_log: The number of bins in the log section of the range.
     """
     return LogLinearElls(
         minimum=minimum, midpoint=midpoint, maximum=maximum, n_log=n_log
@@ -158,3 +168,57 @@ def generate_reals(theta_config: EllOrThetaConfig):
     xis = np.zeros_like(thetas)
 
     return thetas, xis
+
+
+def apply_ells_min_max(
+    ells: npt.NDArray[np.int64],
+    Cells: npt.NDArray[np.float64],
+    indices: None | npt.NDArray[np.int64],
+    ell_min: None | int,
+    ell_max: None | int,
+) -> tuple[
+    npt.NDArray[np.int64], npt.NDArray[np.float64], None | npt.NDArray[np.int64]
+]:
+    """Apply the minimum and maximum ell values to the ells and Cells."""
+    if ell_min is not None:
+        locations = np.where(ells >= ell_min)
+        ells = ells[locations]
+        Cells = Cells[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    if ell_max is not None:
+        locations = np.where(ells <= ell_max)
+        ells = ells[locations]
+        Cells = Cells[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    return ells, Cells, indices
+
+
+def apply_theta_min_max(
+    thetas: npt.NDArray[np.float64],
+    xis: npt.NDArray[np.float64],
+    indices: None | npt.NDArray[np.int64],
+    theta_min: None | float,
+    theta_max: None | float,
+) -> tuple[
+    npt.NDArray[np.float64], npt.NDArray[np.float64], None | npt.NDArray[np.int64]
+]:
+    """Apply the minimum and maximum theta values to the thetas and xis."""
+    if theta_min is not None:
+        locations = np.where(thetas >= theta_min)
+        thetas = thetas[locations]
+        xis = xis[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    if theta_max is not None:
+        locations = np.where(thetas <= theta_max)
+        thetas = thetas[locations]
+        xis = xis[locations]
+        if indices is not None:
+            indices = indices[locations]
+
+    return thetas, xis, indices
