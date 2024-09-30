@@ -23,10 +23,12 @@ from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
     TRACER_NAMES_TOTAL,
-    use_source_factory,
-    use_source_factory_metadata_index,
     WeakLensingFactory,
     NumberCountsFactory,
+)
+from firecrown.likelihood.source_factories import (
+    use_source_factory,
+    use_source_factory_metadata_index,
 )
 from firecrown.generators.two_point import (
     log_linear_ells,
