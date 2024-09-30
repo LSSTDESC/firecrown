@@ -134,3 +134,27 @@ class EllOrThetaConfig(TypedDict):
     maximum: float
     n: int
     binning: str
+
+
+def generate_ells_cells(ell_config: EllOrThetaConfig):
+    """Generate ells or theta values from the configuration dictionary.
+
+    :param ell_config: the configuration parameters.
+    :return: ells and Cells
+    """
+    ells = generate_bin_centers(**ell_config)
+    Cells = np.zeros_like(ells)
+
+    return ells, Cells
+
+
+def generate_reals(theta_config: EllOrThetaConfig):
+    """Generate theta and xi values from the configuration dictionary.
+
+    :param ell_config: the configuration parameters.
+    :return: ells and Cells
+    """
+    thetas = generate_bin_centers(**theta_config)
+    xis = np.zeros_like(thetas)
+
+    return thetas, xis

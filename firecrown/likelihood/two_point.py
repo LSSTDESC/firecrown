@@ -17,9 +17,10 @@ import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.generators.two_point import (
     ELL_FOR_XI_DEFAULTS,
     log_linear_ells,
-    generate_bin_centers,
     calculate_ells_for_interpolation,
     EllOrThetaConfig,
+    generate_ells_cells,
+    generate_reals,
 )
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import (
@@ -69,22 +70,6 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
     "cmbGalaxy_convergenceDensity_xi": "NN",
     "cmbGalaxy_convergenceShear_xi_t": "NG",
 }
-
-
-def generate_ells_cells(ell_config: EllOrThetaConfig):
-    """Generate ells or theta values from the configuration dictionary."""
-    ells = generate_bin_centers(**ell_config)
-    Cells = np.zeros_like(ells)
-
-    return ells, Cells
-
-
-def generate_reals(theta_config: EllOrThetaConfig):
-    """Generate theta and xi values from the configuration dictionary."""
-    thetas = generate_bin_centers(**theta_config)
-    xis = np.zeros_like(thetas)
-
-    return thetas, xis
 
 
 def apply_ells_min_max(
