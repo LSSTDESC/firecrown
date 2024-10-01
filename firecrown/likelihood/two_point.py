@@ -73,6 +73,22 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 }
 
 
+class TwoPointTheory:
+    """Making predictions for TwoPoint statistics."""
+
+    def __init__(self, sacc_data_type: str):
+        self.sacc_data_type = sacc_data_type
+        self.ccl_kind: str
+
+    def set_ccl_kind(self, sacc_data_type):
+        """Set the CCL kind for this statistic."""
+        self.sacc_data_type = sacc_data_type
+        if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
+            self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
+        else:
+            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
+
+
 class TwoPoint(Statistic):
     """A statistic that represents the correlation between two measurements.
 
@@ -158,6 +174,16 @@ class TwoPoint(Statistic):
 
     """
 
+    @property
+    def sacc_data_type(self) -> str:
+        """Backwards compatibility for sacc_data_type."""
+        return self.theory.sacc_data_type
+
+    @property
+    def ccl_kind(self) -> str:
+        """Backwards compatibility for ccl_kind."""
+        return self.theory.ccl_kind
+
     def __init__(
         self,
         sacc_data_type: str,
@@ -174,8 +200,8 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.sacc_data_type: str
-        self.ccl_kind: str
+        self.theory = TwoPointTheory(sacc_data_type)
+
         self.source0: Source = source0
         self.source1: Source = source1
 
@@ -200,7 +226,7 @@ class TwoPoint(Statistic):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
 
-        self._set_ccl_kind(sacc_data_type)
+        self.theory.set_ccl_kind(sacc_data_type)
 
     def _init_empty_default_attribs(self):
         """Initialize the empty and default attributes."""
@@ -220,14 +246,6 @@ class TwoPoint(Statistic):
         self.ells_for_xi = None
 
         self.cells = {}
-
-    def _set_ccl_kind(self, sacc_data_type):
-        """Set the CCL kind for this statistic."""
-        self.sacc_data_type = sacc_data_type
-        if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
-            self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
-        else:
-            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
     @classmethod
     def from_metadata_index(
@@ -415,7 +433,9 @@ class TwoPoint(Statistic):
 
         if common_length == 0:
             return None
-        sacc_indices = np.atleast_1d(sacc_data.indices(self.sacc_data_type, tracers))
+        sacc_indices = np.atleast_1d(
+            sacc_data.indices(self.theory.sacc_data_type, tracers)
+        )
         assert sacc_indices is not None  # Needed for mypy
         assert len(sacc_indices) == common_length
 
@@ -436,7 +456,9 @@ class TwoPoint(Statistic):
         common_length = len(thetas)
         if common_length == 0:
             return None
-        sacc_indices = np.atleast_1d(sacc_data.indices(self.sacc_data_type, tracers))
+        sacc_indices = np.atleast_1d(
+            sacc_data.indices(self.theory.sacc_data_type, tracers)
+        )
         assert sacc_indices is not None  # Needed for mypy
         assert len(sacc_indices) == common_length
         return thetas, xis, sacc_indices
@@ -448,7 +470,7 @@ class TwoPoint(Statistic):
         """
         self.sacc_tracers = self.initialize_sources(sacc_data)
 
-        if self.ccl_kind == "cl":
+        if self.theory.ccl_kind == "cl":
             self.read_harmonic_space(sacc_data)
         else:
             self.read_real_space(sacc_data)
@@ -458,7 +480,7 @@ class TwoPoint(Statistic):
     def read_real_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
         thetas_xis_indices = self.read_reals(
-            self.sacc_data_type, sacc_data, self.sacc_tracers
+            self.theory.sacc_data_type, sacc_data, self.sacc_tracers
         )
         # We do not support window functions for real space statistics
         if thetas_xis_indices is not None:
@@ -481,7 +503,7 @@ class TwoPoint(Statistic):
                 # minimum, maximum and number of bins to generate the ell values.
                 raise RuntimeError(
                     f"Tracers '{self.sacc_tracers}' for data type "
-                    f"'{self.sacc_data_type}' "
+                    f"'{self.theory.sacc_data_type}' "
                     "have no 2pt data in the SACC file and no input theta values "
                     "were given!"
                 )
@@ -500,7 +522,7 @@ class TwoPoint(Statistic):
     def read_harmonic_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
         ells_cells_indices = self.read_ell_cells(
-            self.sacc_data_type, sacc_data, self.sacc_tracers
+            self.theory.sacc_data_type, sacc_data, self.sacc_tracers
         )
         if ells_cells_indices is not None:
             ells, Cells, sacc_indices = ells_cells_indices
@@ -531,7 +553,7 @@ class TwoPoint(Statistic):
                 # minimum, maximum and number of bins to generate the ell values.
                 raise RuntimeError(
                     f"Tracers '{self.sacc_tracers}' for data type "
-                    f"'{self.sacc_data_type}' "
+                    f"'{self.theory.sacc_data_type}' "
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
@@ -576,7 +598,7 @@ class TwoPoint(Statistic):
         scale0 = self.source0.get_scale()
         scale1 = self.source1.get_scale()
 
-        assert self.ccl_kind != "cl"
+        assert self.theory.ccl_kind != "cl"
         assert self.thetas is not None
         assert self.ells_for_xi is not None
 
@@ -589,7 +611,7 @@ class TwoPoint(Statistic):
             ell=self.ells_for_xi,
             C_ell=cells_for_xi,
             theta=self.thetas / 60,
-            type=self.ccl_kind,
+            type=self.theory.ccl_kind,
         )
         return TheoryVector.create(theory_vector)
 
@@ -607,7 +629,7 @@ class TwoPoint(Statistic):
         scale0 = self.source0.get_scale()
         scale1 = self.source1.get_scale()
 
-        assert self.ccl_kind == "cl"
+        assert self.theory.ccl_kind == "cl"
         assert self.ells is not None
 
         if self.window is not None:
@@ -649,7 +671,7 @@ class TwoPoint(Statistic):
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic from sources."""
-        if self.ccl_kind == "cl":
+        if self.theory.ccl_kind == "cl":
             return self.compute_theory_vector_harmonic_space(tools)
 
         return self.compute_theory_vector_real_space(tools)
