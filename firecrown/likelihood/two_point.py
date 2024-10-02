@@ -55,7 +55,8 @@ from firecrown.metadata_functions import (
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import UpdatableCollection
+from firecrown.parameters import ParamsMap
+from firecrown.updatable import UpdatableCollection, Updatable
 from firecrown.utils import cached_angular_cl, make_log_interpolator
 
 # only supported types are here, anything else will throw
@@ -73,12 +74,26 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 }
 
 
-class TwoPointTheory:
+class TwoPointTheory(Updatable):
     """Making predictions for TwoPoint statistics."""
 
-    def __init__(self, sacc_data_type: str):
+    def __init__(self, sacc_data_type: str, source0: Source, source1: Source) -> None:
+        """Initialize a new TwoPointTheory object.
+
+        :param sacc_data_type: the name of the SACC data type for this theory.
+        :param source0: the first source
+        :param source1: the second source
+        """
+        super().__init__()
         self.sacc_data_type = sacc_data_type
         self.ccl_kind: str
+        self.source0 = source0
+        self.source1 = source1
+
+    def _update(self, params: ParamsMap) -> None:
+        """Update the theory with new parameters."""
+        self.source0.update(params)
+        self.source1.update(params)
 
     def set_ccl_kind(self, sacc_data_type):
         """Set the CCL kind for this statistic."""
@@ -184,6 +199,16 @@ class TwoPoint(Statistic):
         """Backwards compatibility for ccl_kind."""
         return self.theory.ccl_kind
 
+    @property
+    def source0(self) -> Source:
+        """Backwards compatibility for source0."""
+        return self.theory.source0
+
+    @property
+    def source1(self) -> Source:
+        """Backwards compatibility for source1."""
+        return self.theory.source1
+
     def __init__(
         self,
         sacc_data_type: str,
@@ -200,10 +225,7 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.theory = TwoPointTheory(sacc_data_type)
-
-        self.source0: Source = source0
-        self.source1: Source = source1
+        self.theory = TwoPointTheory(sacc_data_type, source0, source1)
 
         self.ell_for_xi_config: dict[str, int]
         self.ell_or_theta_config: None | EllOrThetaConfig
@@ -574,12 +596,12 @@ class TwoPoint(Statistic):
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
-        self.source0.read(sacc_data)
-        if self.source0 is not self.source1:
-            self.source1.read(sacc_data)
-        assert self.source0.sacc_tracer is not None
-        assert self.source1.sacc_tracer is not None
-        tracers = (self.source0.sacc_tracer, self.source1.sacc_tracer)
+        self.theory.source0.read(sacc_data)
+        if self.theory.source0 is not self.theory.source1:
+            self.theory.source1.read(sacc_data)
+        assert self.theory.source0.sacc_tracer is not None
+        assert self.theory.source1.sacc_tracer is not None
+        tracers = (self.theory.source0.sacc_tracer, self.theory.source1.sacc_tracer)
         return TracerNames(*tracers)
 
     def get_data_vector(self) -> DataVector:
@@ -593,10 +615,10 @@ class TwoPoint(Statistic):
         This method computes the two-point statistic in real space. It first computes
         the Cl's in harmonic space and then translates them to real space using CCL.
         """
-        tracers0 = self.source0.get_tracers(tools)
-        tracers1 = self.source1.get_tracers(tools)
-        scale0 = self.source0.get_scale()
-        scale1 = self.source1.get_scale()
+        tracers0 = self.theory.source0.get_tracers(tools)
+        tracers1 = self.theory.source1.get_tracers(tools)
+        scale0 = self.theory.source0.get_scale()
+        scale1 = self.theory.source1.get_scale()
 
         assert self.theory.ccl_kind != "cl"
         assert self.thetas is not None
@@ -624,10 +646,10 @@ class TwoPoint(Statistic):
         either the Cl's at the ells provided by the SACC file or the ells required
         for the window function.
         """
-        tracers0 = self.source0.get_tracers(tools)
-        tracers1 = self.source1.get_tracers(tools)
-        scale0 = self.source0.get_scale()
-        scale1 = self.source1.get_scale()
+        tracers0 = self.theory.source0.get_tracers(tools)
+        tracers1 = self.theory.source1.get_tracers(tools)
+        scale0 = self.theory.source0.get_scale()
+        scale1 = self.theory.source1.get_scale()
 
         assert self.theory.ccl_kind == "cl"
         assert self.ells is not None
