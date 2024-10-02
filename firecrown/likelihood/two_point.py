@@ -86,9 +86,10 @@ class TwoPointTheory(Updatable):
         """
         super().__init__()
         self.sacc_data_type = sacc_data_type
-        self.ccl_kind: str
+        self.ccl_kind: str = ""
         self.source0 = source0
         self.source1 = source1
+        self.ell_for_xi_config: dict[str, int] = {}
 
     def _update(self, params: ParamsMap) -> None:
         """Update the theory with new parameters."""
@@ -227,7 +228,6 @@ class TwoPoint(Statistic):
 
         self.theory = TwoPointTheory(sacc_data_type, source0, source1)
 
-        self.ell_for_xi_config: dict[str, int]
         self.ell_or_theta_config: None | EllOrThetaConfig
         self.ell_or_theta_min: None | float | int
         self.ell_or_theta_max: None | float | int
@@ -243,7 +243,7 @@ class TwoPoint(Statistic):
 
         self._init_empty_default_attribs()
         if ell_for_xi is not None:
-            self.ell_for_xi_config.update(ell_for_xi)
+            self.theory.ell_for_xi_config.update(ell_for_xi)
         self.ell_or_theta_config = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
@@ -252,7 +252,7 @@ class TwoPoint(Statistic):
 
     def _init_empty_default_attribs(self):
         """Initialize the empty and default attributes."""
-        self.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        self.theory.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         self.ell_or_theta_config = None
         self.ell_or_theta_min = None
         self.ell_or_theta_max = None
@@ -335,7 +335,9 @@ class TwoPoint(Statistic):
                 )
                 two_point.thetas = metadata.thetas
                 two_point.window = None
-                two_point.ells_for_xi = log_linear_ells(**two_point.ell_for_xi_config)
+                two_point.ells_for_xi = log_linear_ells(
+                    **two_point.theory.ell_for_xi_config
+                )
             case _:
                 raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
         two_point.ready = True
@@ -536,7 +538,7 @@ class TwoPoint(Statistic):
         thetas, xis, sacc_indices = apply_theta_min_max(
             thetas, xis, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
         )
-        self.ells_for_xi = log_linear_ells(**self.ell_for_xi_config)
+        self.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
         self.thetas = thetas
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(xis)
