@@ -90,6 +90,7 @@ class TwoPointTheory(Updatable):
         self.source0 = source0
         self.source1 = source1
         self.ell_for_xi_config: dict[str, int] = {}
+        self.ell_or_theta_config: None | EllOrThetaConfig = None
 
     def _update(self, params: ParamsMap) -> None:
         """Update the theory with new parameters."""
@@ -228,7 +229,6 @@ class TwoPoint(Statistic):
 
         self.theory = TwoPointTheory(sacc_data_type, source0, source1)
 
-        self.ell_or_theta_config: None | EllOrThetaConfig
         self.ell_or_theta_min: None | float | int
         self.ell_or_theta_max: None | float | int
         self.window: None | npt.NDArray[np.float64]
@@ -244,7 +244,7 @@ class TwoPoint(Statistic):
         self._init_empty_default_attribs()
         if ell_for_xi is not None:
             self.theory.ell_for_xi_config.update(ell_for_xi)
-        self.ell_or_theta_config = ell_or_theta
+        self.theory.ell_or_theta_config = ell_or_theta
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
 
@@ -253,7 +253,7 @@ class TwoPoint(Statistic):
     def _init_empty_default_attribs(self):
         """Initialize the empty and default attributes."""
         self.theory.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-        self.ell_or_theta_config = None
+        self.theory.ell_or_theta_config = None
         self.ell_or_theta_min = None
         self.ell_or_theta_max = None
 
@@ -509,7 +509,7 @@ class TwoPoint(Statistic):
         # We do not support window functions for real space statistics
         if thetas_xis_indices is not None:
             thetas, xis, sacc_indices = thetas_xis_indices
-            if self.ell_or_theta_config is not None:
+            if self.theory.ell_or_theta_config is not None:
                 # If we have data from our construction, and also have data in the
                 # SACC object, emit a warning and use the information read from the
                 # SACC object.
@@ -520,7 +520,7 @@ class TwoPoint(Statistic):
                     stacklevel=2,
                 )
         else:
-            if self.ell_or_theta_config is None:
+            if self.theory.ell_or_theta_config is None:
                 # The SACC file has no data points, just a tracer, in this case we
                 # are building the statistic from scratch. In this case the user
                 # must have set the dictionary ell_or_theta, containing the
@@ -531,7 +531,7 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input theta values "
                     "were given!"
                 )
-            thetas, xis = generate_reals(self.ell_or_theta_config)
+            thetas, xis = generate_reals(self.theory.ell_or_theta_config)
             sacc_indices = None
         assert isinstance(self.ell_or_theta_min, (float, type(None)))
         assert isinstance(self.ell_or_theta_max, (float, type(None)))
@@ -550,7 +550,7 @@ class TwoPoint(Statistic):
         )
         if ells_cells_indices is not None:
             ells, Cells, sacc_indices = ells_cells_indices
-            if self.ell_or_theta_config is not None:
+            if self.theory.ell_or_theta_config is not None:
                 # If we have data from our construction, and also have data in the
                 # SACC object, emit a warning and use the information read from the
                 # SACC object.
@@ -570,7 +570,7 @@ class TwoPoint(Statistic):
                 assert replacement_ells is not None
                 ells = replacement_ells
         else:
-            if self.ell_or_theta_config is None:
+            if self.theory.ell_or_theta_config is None:
                 # The SACC file has no data points, just a tracer, in this case we
                 # are building the statistic from scratch. In this case the user
                 # must have set the dictionary ell_or_theta, containing the
@@ -581,7 +581,7 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
-            ells, Cells = generate_ells_cells(self.ell_or_theta_config)
+            ells, Cells = generate_ells_cells(self.theory.ell_or_theta_config)
             sacc_indices = None
 
             # When generating the ells and Cells we do not have a window function
