@@ -197,11 +197,6 @@ class TwoPoint(Statistic):
         return self.theory.sacc_data_type
 
     @property
-    def ccl_kind(self) -> str:
-        """Backwards compatibility for ccl_kind."""
-        return self.theory.ccl_kind
-
-    @property
     def source0(self) -> Source:
         """Backwards compatibility for source0."""
         return self.theory.source0
