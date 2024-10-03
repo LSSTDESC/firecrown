@@ -101,6 +101,7 @@ class TwoPointTheory(Updatable):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
         self.window: None | npt.NDArray[np.float64] = None
+        self.sacc_tracers: None | TracerNames = None
 
     def _update(self, params: ParamsMap) -> None:
         """Update the theory with new parameters."""
@@ -221,6 +222,16 @@ class TwoPoint(Statistic):
         """Backwards compatibility for window."""
         return self.theory.window
 
+    @property
+    def sacc_tracers(self) -> None | TracerNames:
+        """Backwards compatibility for sacc_tracers."""
+        return self.theory.sacc_tracers
+
+    @sacc_tracers.setter
+    def sacc_tracers(self, value: TracerNames) -> None:
+        assert value is not None
+        self.theory.sacc_tracers = value
+
     def __init__(
         self,
         sacc_data_type: str,
@@ -241,7 +252,6 @@ class TwoPoint(Statistic):
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
         self.data_vector: None | DataVector
-        self.sacc_tracers: TracerNames
         self.ells: None | npt.NDArray[np.int64]
         self.thetas: None | npt.NDArray[np.float64]
         self.mean_ells: None | npt.NDArray[np.float64]
@@ -369,7 +379,7 @@ class TwoPoint(Statistic):
             nc_factory=nc_factory,
         )
         two_point = cls(metadata.get_sacc_name(), source0, source1)
-        two_point.sacc_tracers = metadata.XY.get_tracer_names()
+        two_point.theory.sacc_tracers = metadata.XY.get_tracer_names()
         return two_point
 
     @classmethod
@@ -493,7 +503,7 @@ class TwoPoint(Statistic):
 
         :param sacc_data: The data in the sacc format.
         """
-        self.sacc_tracers = self.initialize_sources(sacc_data)
+        self.theory.sacc_tracers = self.initialize_sources(sacc_data)
 
         if self.theory.ccl_kind == "cl":
             self.read_harmonic_space(sacc_data)
@@ -504,8 +514,9 @@ class TwoPoint(Statistic):
 
     def read_real_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
+        assert self.theory.sacc_tracers is not None
         thetas_xis_indices = self.read_reals(
-            self.theory.sacc_data_type, sacc_data, self.sacc_tracers
+            self.theory.sacc_data_type, sacc_data, self.theory.sacc_tracers
         )
         # We do not support window functions for real space statistics
         if thetas_xis_indices is not None:
@@ -515,7 +526,7 @@ class TwoPoint(Statistic):
                 # SACC object, emit a warning and use the information read from the
                 # SACC object.
                 warnings.warn(
-                    f"Tracers '{self.sacc_tracers}' have 2pt data and you have "
+                    f"Tracers '{self.theory.sacc_tracers}' have 2pt data and you have "
                     f"specified `theta` in the configuration. `theta` is being "
                     f"ignored!",
                     stacklevel=2,
@@ -527,7 +538,7 @@ class TwoPoint(Statistic):
                 # must have set the dictionary ell_or_theta, containing the
                 # minimum, maximum and number of bins to generate the ell values.
                 raise RuntimeError(
-                    f"Tracers '{self.sacc_tracers}' for data type "
+                    f"Tracers '{self.theory.sacc_tracers}' for data type "
                     f"'{self.theory.sacc_data_type}' "
                     "have no 2pt data in the SACC file and no input theta values "
                     "were given!"
@@ -550,8 +561,9 @@ class TwoPoint(Statistic):
 
     def read_harmonic_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
+        assert self.theory.sacc_tracers is not None
         ells_cells_indices = self.read_ell_cells(
-            self.theory.sacc_data_type, sacc_data, self.sacc_tracers
+            self.theory.sacc_data_type, sacc_data, self.theory.sacc_tracers
         )
         if ells_cells_indices is not None:
             ells, Cells, sacc_indices = ells_cells_indices
@@ -560,7 +572,7 @@ class TwoPoint(Statistic):
                 # SACC object, emit a warning and use the information read from the
                 # SACC object.
                 warnings.warn(
-                    f"Tracers '{self.sacc_tracers}' have 2pt data and you have "
+                    f"Tracers '{self.theory.sacc_tracers}' have 2pt data and you have "
                     f"specified `ell` in the configuration. `ell` is being ignored!",
                     stacklevel=2,
                 )
@@ -581,7 +593,7 @@ class TwoPoint(Statistic):
                 # must have set the dictionary ell_or_theta, containing the
                 # minimum, maximum and number of bins to generate the ell values.
                 raise RuntimeError(
-                    f"Tracers '{self.sacc_tracers}' for data type "
+                    f"Tracers '{self.theory.sacc_tracers}' for data type "
                     f"'{self.theory.sacc_data_type}' "
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
