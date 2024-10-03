@@ -77,7 +77,14 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 class TwoPointTheory(Updatable):
     """Making predictions for TwoPoint statistics."""
 
-    def __init__(self, sacc_data_type: str, source0: Source, source1: Source) -> None:
+    def __init__(
+        self,
+        sacc_data_type: str,
+        source0: Source,
+        source1: Source,
+        ell_or_theta_min: float | int | None = None,
+        ell_or_theta_max: float | int | None = None,
+    ) -> None:
         """Initialize a new TwoPointTheory object.
 
         :param sacc_data_type: the name of the SACC data type for this theory.
@@ -91,6 +98,8 @@ class TwoPointTheory(Updatable):
         self.source1 = source1
         self.ell_for_xi_config: dict[str, int] = {}
         self.ell_or_theta_config: None | EllOrThetaConfig = None
+        self.ell_or_theta_min = ell_or_theta_min
+        self.ell_or_theta_max = ell_or_theta_max
 
     def _update(self, params: ParamsMap) -> None:
         """Update the theory with new parameters."""
@@ -222,10 +231,10 @@ class TwoPoint(Statistic):
         assert isinstance(source0, Source)
         assert isinstance(source1, Source)
 
-        self.theory = TwoPointTheory(sacc_data_type, source0, source1)
+        self.theory = TwoPointTheory(
+            sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
+        )
 
-        self.ell_or_theta_min: None | float | int
-        self.ell_or_theta_max: None | float | int
         self.window: None | npt.NDArray[np.float64]
         self.data_vector: None | DataVector
         self.theory_vector: None | TheoryVector
@@ -240,8 +249,6 @@ class TwoPoint(Statistic):
         if ell_for_xi is not None:
             self.theory.ell_for_xi_config.update(ell_for_xi)
         self.theory.ell_or_theta_config = ell_or_theta
-        self.ell_or_theta_min = ell_or_theta_min
-        self.ell_or_theta_max = ell_or_theta_max
 
         self.theory.set_ccl_kind(sacc_data_type)
 
@@ -249,8 +256,6 @@ class TwoPoint(Statistic):
         """Initialize the empty and default attributes."""
         self.theory.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         self.theory.ell_or_theta_config = None
-        self.ell_or_theta_min = None
-        self.ell_or_theta_max = None
 
         self.window = None
 
@@ -528,10 +533,14 @@ class TwoPoint(Statistic):
                 )
             thetas, xis = generate_reals(self.theory.ell_or_theta_config)
             sacc_indices = None
-        assert isinstance(self.ell_or_theta_min, (float, type(None)))
-        assert isinstance(self.ell_or_theta_max, (float, type(None)))
+        assert isinstance(self.theory.ell_or_theta_min, (float, type(None)))
+        assert isinstance(self.theory.ell_or_theta_max, (float, type(None)))
         thetas, xis, sacc_indices = apply_theta_min_max(
-            thetas, xis, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
+            thetas,
+            xis,
+            sacc_indices,
+            self.theory.ell_or_theta_min,
+            self.theory.ell_or_theta_max,
         )
         self.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
         self.thetas = thetas
@@ -581,12 +590,20 @@ class TwoPoint(Statistic):
 
             # When generating the ells and Cells we do not have a window function
             window = None
-        assert isinstance(self.ell_or_theta_min, (int, type(None)))
-        assert isinstance(self.ell_or_theta_max, (int, type(None)))
+        assert isinstance(self.theory.ell_or_theta_min, (int, type(None)))
+        assert isinstance(self.theory.ell_or_theta_max, (int, type(None)))
         ells, Cells, sacc_indices = apply_ells_min_max(
-            ells, Cells, sacc_indices, self.ell_or_theta_min, self.ell_or_theta_max
+            ells,
+            Cells,
+            sacc_indices,
+            self.theory.ell_or_theta_min,
+            self.theory.ell_or_theta_max,
         )
         self.ells = ells
+        if self.theory.ell_or_theta_min is not None:
+            assert np.min(self.ells) >= self.theory.ell_or_theta_min
+        if self.theory.ell_or_theta_max is not None:
+            assert np.max(self.ells) <= self.theory.ell_or_theta_max
         self.window = window
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(Cells)

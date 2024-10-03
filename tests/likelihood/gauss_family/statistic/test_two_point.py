@@ -21,6 +21,7 @@ from firecrown.likelihood.weak_lensing import (
 from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
     TwoPoint,
+    TwoPointTheory,
     TracerNames,
     TRACER_NAMES_TOTAL,
     WeakLensingFactory,
@@ -352,9 +353,20 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
     assert all(statistic.thetas <= 1.0)
 
 
+def test_two_point_theory_construction() -> None:
+    src0 = WeakLensing(sacc_tracer="src0")
+    theory = TwoPointTheory(
+        "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
+    )
+    assert theory.sacc_data_type == "galaxy_shear_cl_ee"
+    assert theory.source0 is src0
+    assert theory.source1 is src0
+    assert theory.ell_or_theta_min == 50
+    assert theory.ell_or_theta_max == 200
+
+
 def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
-
     src0 = WeakLensing(sacc_tracer="src0")
 
     statistic = TwoPoint(
@@ -364,6 +376,8 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
         UserWarning, match="No bandpower windows associated to these data"
     ):
         statistic.read(sacc_data)
+    assert statistic.theory.ell_or_theta_min == 50
+    assert statistic.theory.ell_or_theta_max == 200
 
     tools = ModelingTools()
     params = get_default_params_map(tools)
