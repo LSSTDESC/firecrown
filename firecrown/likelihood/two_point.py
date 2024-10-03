@@ -227,11 +227,6 @@ class TwoPoint(Statistic):
         """Backwards compatibility for sacc_tracers."""
         return self.theory.sacc_tracers
 
-    @sacc_tracers.setter
-    def sacc_tracers(self, value: TracerNames) -> None:
-        assert value is not None
-        self.theory.sacc_tracers = value
-
     def __init__(
         self,
         sacc_data_type: str,
