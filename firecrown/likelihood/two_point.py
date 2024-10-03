@@ -100,6 +100,7 @@ class TwoPointTheory(Updatable):
         self.ell_or_theta_config: None | EllOrThetaConfig = None
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
+        self.window: None | npt.NDArray[np.float64] = None
 
     def _update(self, params: ParamsMap) -> None:
         """Update the theory with new parameters."""
@@ -215,6 +216,11 @@ class TwoPoint(Statistic):
         """Backwards compatibility for source1."""
         return self.theory.source1
 
+    @property
+    def window(self) -> None | npt.NDArray[np.float64]:
+        """Backwards compatibility for window."""
+        return self.theory.window
+
     def __init__(
         self,
         sacc_data_type: str,
@@ -234,8 +240,6 @@ class TwoPoint(Statistic):
         self.theory = TwoPointTheory(
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
-
-        self.window: None | npt.NDArray[np.float64]
         self.data_vector: None | DataVector
         self.theory_vector: None | TheoryVector
         self.sacc_tracers: TracerNames
@@ -256,8 +260,7 @@ class TwoPoint(Statistic):
         """Initialize the empty and default attributes."""
         self.theory.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         self.theory.ell_or_theta_config = None
-
-        self.window = None
+        self.theory.window = None
 
         self.data_vector = None
         self.theory_vector = None
@@ -328,13 +331,13 @@ class TwoPoint(Statistic):
                     metadata, wl_factory, nc_factory
                 )
                 two_point.ells = metadata.ells
-                two_point.window = metadata.window
+                two_point.theory.window = metadata.window
             case TwoPointReal():
                 two_point = cls._from_metadata_single_base(
                     metadata, wl_factory, nc_factory
                 )
                 two_point.thetas = metadata.thetas
-                two_point.window = None
+                two_point.theory.window = None
                 two_point.ells_for_xi = log_linear_ells(
                     **two_point.theory.ell_for_xi_config
                 )
@@ -604,7 +607,7 @@ class TwoPoint(Statistic):
             assert np.min(self.ells) >= self.theory.ell_or_theta_min
         if self.theory.ell_or_theta_max is not None:
             assert np.max(self.ells) <= self.theory.ell_or_theta_max
-        self.window = window
+        self.theory.window = window
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(Cells)
 
@@ -668,7 +671,7 @@ class TwoPoint(Statistic):
         assert self.theory.ccl_kind == "cl"
         assert self.ells is not None
 
-        if self.window is not None:
+        if self.theory.window is not None:
             ells_for_interpolation = calculate_ells_for_interpolation(
                 self.ells[0], self.ells[-1]
             )
@@ -685,9 +688,11 @@ class TwoPoint(Statistic):
 
             # Here we left multiply the computed Cl's by the window function to get the
             # final Cl's.
-            theory_vector = np.einsum("lb, l -> b", self.window, cells_interpolated)
+            theory_vector = np.einsum(
+                "lb, l -> b", self.theory.window, cells_interpolated
+            )
             # We also compute the mean ell value associated with each bin.
-            self.mean_ells = np.einsum("lb, l -> b", self.window, self.ells)
+            self.mean_ells = np.einsum("lb, l -> b", self.theory.window, self.ells)
 
             assert self.data_vector is not None
             return TheoryVector.create(theory_vector)
