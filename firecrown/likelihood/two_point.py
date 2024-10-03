@@ -241,7 +241,6 @@ class TwoPoint(Statistic):
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
         self.data_vector: None | DataVector
-        self.theory_vector: None | TheoryVector
         self.sacc_tracers: TracerNames
         self.ells: None | npt.NDArray[np.int64]
         self.thetas: None | npt.NDArray[np.float64]
@@ -263,7 +262,6 @@ class TwoPoint(Statistic):
         self.theory.window = None
 
         self.data_vector = None
-        self.theory_vector = None
 
         self.ells = None
         self.thetas = None
