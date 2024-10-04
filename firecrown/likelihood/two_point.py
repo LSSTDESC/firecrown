@@ -55,7 +55,6 @@ from firecrown.metadata_functions import (
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
 from firecrown.updatable import UpdatableCollection, Updatable
 from firecrown.utils import cached_angular_cl, make_log_interpolator
 
@@ -102,11 +101,6 @@ class TwoPointTheory(Updatable):
         self.ell_or_theta_max = ell_or_theta_max
         self.window: None | npt.NDArray[np.float64] = None
         self.sacc_tracers: None | TracerNames = None
-
-    def _update(self, params: ParamsMap) -> None:
-        """Update the theory with new parameters."""
-        self.source0.update(params)
-        self.source1.update(params)
 
     def set_ccl_kind(self, sacc_data_type):
         """Set the CCL kind for this statistic."""
