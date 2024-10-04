@@ -20,15 +20,21 @@ from firecrown.likelihood.weak_lensing import (
 )
 from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
-    _ell_for_xi,
     TwoPoint,
+    TwoPointTheory,
     TracerNames,
     TRACER_NAMES_TOTAL,
-    EllOrThetaConfig,
-    use_source_factory,
-    use_source_factory_metadata_index,
     WeakLensingFactory,
     NumberCountsFactory,
+)
+from firecrown.likelihood.source_factories import (
+    use_source_factory,
+    use_source_factory_metadata_index,
+)
+from firecrown.generators.two_point import (
+    log_linear_ells,
+    generate_bin_centers,
+    EllOrThetaConfig,
 )
 from firecrown.metadata_types import (
     Galaxies,
@@ -143,15 +149,15 @@ def fixture_two_point_without_window(
     return two_points.pop()
 
 
-def test_ell_for_xi_no_rounding() -> None:
-    res = _ell_for_xi(minimum=0, midpoint=5, maximum=80, n_log=5)
+def test_log_linear_ells_no_rounding() -> None:
+    res = log_linear_ells(minimum=0, midpoint=5, maximum=80, n_log=5)
     expected = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0, 80.0])
     assert res.shape == expected.shape
     assert np.allclose(expected, res)
 
 
-def test_ell_for_xi_doing_rounding() -> None:
-    res = _ell_for_xi(minimum=1, midpoint=3, maximum=100, n_log=5)
+def test_log_linear_ells_doing_rounding() -> None:
+    res = log_linear_ells(minimum=1, midpoint=3, maximum=100, n_log=5)
     expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.allclose(expected, res)
 
@@ -242,6 +248,24 @@ def test_two_point_src0_src0_no_window(sacc_galaxy_cells_src0_src0_no_window) ->
     assert np.array_equal(result1, result2)
 
 
+def test_two_point_generate_ell_or_theta() -> None:
+    # Logarithmic binning.
+    assert np.allclose(
+        generate_bin_centers(minimum=1.0, maximum=1000.0, n=3, binning="log"),
+        np.array(np.sqrt([10.0, 1000.0, 100000.0])),
+    )
+
+    # Linear binning.
+    assert np.array_equal(
+        generate_bin_centers(minimum=0.0, maximum=12.0, n=6, binning="lin"),
+        np.array([1.0, 3.0, 5.0, 7.0, 9.0, 11.0]),
+    )
+
+    # Invalid binning.
+    with pytest.raises(ValueError, match="Unrecognized binning: cow"):
+        generate_bin_centers(minimum=1, maximum=100, n=5, binning="cow")
+
+
 def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
 
@@ -329,9 +353,20 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
     assert all(statistic.thetas <= 1.0)
 
 
+def test_two_point_theory_construction() -> None:
+    src0 = WeakLensing(sacc_tracer="src0")
+    theory = TwoPointTheory(
+        "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
+    )
+    assert theory.sacc_data_type == "galaxy_shear_cl_ee"
+    assert theory.source0 is src0
+    assert theory.source1 is src0
+    assert theory.ell_or_theta_min == 50
+    assert theory.ell_or_theta_max == 200
+
+
 def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
-
     src0 = WeakLensing(sacc_tracer="src0")
 
     statistic = TwoPoint(
@@ -341,6 +376,8 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
         UserWarning, match="No bandpower windows associated to these data"
     ):
         statistic.read(sacc_data)
+    assert statistic.theory.ell_or_theta_min == 50
+    assert statistic.theory.ell_or_theta_max == 200
 
     tools = ModelingTools()
     params = get_default_params_map(tools)
