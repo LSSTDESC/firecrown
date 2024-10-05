@@ -101,6 +101,7 @@ class TwoPointTheory(Updatable):
         self.ell_or_theta_max = ell_or_theta_max
         self.window: None | npt.NDArray[np.float64] = None
         self.sacc_tracers: None | TracerNames = None
+        self.ells: None | npt.NDArray[np.int64] = None
 
     def set_ccl_kind(self, sacc_data_type):
         """Set the CCL kind for this statistic."""
@@ -111,6 +112,7 @@ class TwoPointTheory(Updatable):
             raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
 
+# pylint: disable=too-many-public-methods
 class TwoPoint(Statistic):
     """A statistic that represents the correlation between two measurements.
 
@@ -241,7 +243,6 @@ class TwoPoint(Statistic):
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
         self.data_vector: None | DataVector
-        self.ells: None | npt.NDArray[np.int64]
         self.thetas: None | npt.NDArray[np.float64]
         self.mean_ells: None | npt.NDArray[np.float64]
         self.ells_for_xi: None | npt.NDArray[np.int64]
@@ -262,7 +263,6 @@ class TwoPoint(Statistic):
 
         self.data_vector = None
 
-        self.ells = None
         self.thetas = None
         self.mean_ells = None
         self.ells_for_xi = None
@@ -327,7 +327,7 @@ class TwoPoint(Statistic):
                 two_point = cls._from_metadata_single_base(
                     metadata, wl_factory, nc_factory
                 )
-                two_point.ells = metadata.ells
+                two_point.theory.ells = metadata.ells
                 two_point.theory.window = metadata.window
             case TwoPointReal():
                 two_point = cls._from_metadata_single_base(
@@ -601,11 +601,11 @@ class TwoPoint(Statistic):
             self.theory.ell_or_theta_min,
             self.theory.ell_or_theta_max,
         )
-        self.ells = ells
+        self.theory.ells = ells
         if self.theory.ell_or_theta_min is not None:
-            assert np.min(self.ells) >= self.theory.ell_or_theta_min
+            assert np.min(self.theory.ells) >= self.theory.ell_or_theta_min
         if self.theory.ell_or_theta_max is not None:
-            assert np.max(self.ells) <= self.theory.ell_or_theta_max
+            assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
         self.theory.window = window
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(Cells)
@@ -668,15 +668,15 @@ class TwoPoint(Statistic):
         scale1 = self.theory.source1.get_scale()
 
         assert self.theory.ccl_kind == "cl"
-        assert self.ells is not None
+        assert self.theory.ells is not None
 
         if self.theory.window is not None:
             ells_for_interpolation = calculate_ells_for_interpolation(
-                self.ells[0], self.ells[-1]
+                self.theory.ells[0], self.theory.ells[-1]
             )
 
             cells_interpolated = self.compute_cells_interpolated(
-                self.ells,
+                self.theory.ells,
                 ells_for_interpolation,
                 scale0,
                 scale1,
@@ -691,15 +691,17 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory.window, cells_interpolated
             )
             # We also compute the mean ell value associated with each bin.
-            self.mean_ells = np.einsum("lb, l -> b", self.theory.window, self.ells)
+            self.mean_ells = np.einsum(
+                "lb, l -> b", self.theory.window, self.theory.ells
+            )
 
             assert self.data_vector is not None
             return TheoryVector.create(theory_vector)
 
         # If we get here, we are working in harmonic space without a window function.
-        assert self.ells is not None
+        assert self.theory.ells is not None
         theory_vector = self.compute_cells(
-            self.ells,
+            self.theory.ells,
             scale0,
             scale1,
             tools,
