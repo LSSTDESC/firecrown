@@ -104,6 +104,7 @@ class TwoPointTheory(Updatable):
         self.ells: None | npt.NDArray[np.int64] = None
         self.thetas: None | npt.NDArray[np.float64] = None
         self.mean_ells: None | npt.NDArray[np.float64] = None
+        self.ells_for_xi: None | npt.NDArray[np.int64] = None
 
     def set_ccl_kind(self, sacc_data_type):
         """Set the CCL kind for this statistic."""
@@ -235,6 +236,11 @@ class TwoPoint(Statistic):
         """Backwards compatibility for thetas."""
         return self.theory.thetas
 
+    @property
+    def ells_for_xi(self) -> None | npt.NDArray[np.int64]:
+        """Backwards compatibility for ells_for_xi."""
+        return self.theory.ells_for_xi
+
     def __init__(
         self,
         sacc_data_type: str,
@@ -255,7 +261,6 @@ class TwoPoint(Statistic):
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
         self.data_vector: None | DataVector
-        self.ells_for_xi: None | npt.NDArray[np.int64]
         self.cells: dict[TracerNames, npt.NDArray[np.float64]]
 
         self._init_empty_default_attribs()
@@ -272,8 +277,6 @@ class TwoPoint(Statistic):
         self.theory.window = None
 
         self.data_vector = None
-
-        self.ells_for_xi = None
 
         self.cells = {}
 
@@ -343,7 +346,7 @@ class TwoPoint(Statistic):
                 )
                 two_point.theory.thetas = metadata.thetas
                 two_point.theory.window = None
-                two_point.ells_for_xi = log_linear_ells(
+                two_point.theory.ells_for_xi = log_linear_ells(
                     **two_point.theory.ell_for_xi_config
                 )
             case _:
@@ -551,7 +554,7 @@ class TwoPoint(Statistic):
             self.theory.ell_or_theta_min,
             self.theory.ell_or_theta_max,
         )
-        self.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
+        self.theory.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
         self.data_vector = DataVector.create(xis)
@@ -646,15 +649,15 @@ class TwoPoint(Statistic):
 
         assert self.theory.ccl_kind != "cl"
         assert self.theory.thetas is not None
-        assert self.ells_for_xi is not None
+        assert self.theory.ells_for_xi is not None
 
         cells_for_xi = self.compute_cells(
-            self.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
+            self.theory.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
         )
 
         theory_vector = pyccl.correlation(
             tools.get_ccl_cosmology(),
-            ell=self.ells_for_xi,
+            ell=self.theory.ells_for_xi,
             C_ell=cells_for_xi,
             theta=self.theory.thetas / 60,
             type=self.theory.ccl_kind,
