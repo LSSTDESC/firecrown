@@ -103,6 +103,7 @@ class TwoPointTheory(Updatable):
         self.sacc_tracers: None | TracerNames = None
         self.ells: None | npt.NDArray[np.int64] = None
         self.thetas: None | npt.NDArray[np.float64] = None
+        self.mean_ells: None | npt.NDArray[np.float64] = None
 
     def set_ccl_kind(self, sacc_data_type):
         """Set the CCL kind for this statistic."""
@@ -254,7 +255,6 @@ class TwoPoint(Statistic):
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
         self.data_vector: None | DataVector
-        self.mean_ells: None | npt.NDArray[np.float64]
         self.ells_for_xi: None | npt.NDArray[np.int64]
         self.cells: dict[TracerNames, npt.NDArray[np.float64]]
 
@@ -273,7 +273,6 @@ class TwoPoint(Statistic):
 
         self.data_vector = None
 
-        self.mean_ells = None
         self.ells_for_xi = None
 
         self.cells = {}
@@ -700,7 +699,7 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory.window, cells_interpolated
             )
             # We also compute the mean ell value associated with each bin.
-            self.mean_ells = np.einsum(
+            self.theory.mean_ells = np.einsum(
                 "lb, l -> b", self.theory.window, self.theory.ells
             )
 
