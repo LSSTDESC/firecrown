@@ -105,6 +105,7 @@ class TwoPointTheory(Updatable):
         self.thetas: None | npt.NDArray[np.float64] = None
         self.mean_ells: None | npt.NDArray[np.float64] = None
         self.ells_for_xi: None | npt.NDArray[np.int64] = None
+        self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
 
     def set_ccl_kind(self, sacc_data_type):
         """Set the CCL kind for this statistic."""
@@ -241,6 +242,11 @@ class TwoPoint(Statistic):
         """Backwards compatibility for ells_for_xi."""
         return self.theory.ells_for_xi
 
+    @property
+    def cells(self):
+        """Backwards compatibility for cells."""
+        return self.theory.cells
+
     def __init__(
         self,
         sacc_data_type: str,
@@ -261,13 +267,10 @@ class TwoPoint(Statistic):
             sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
         )
         self.data_vector: None | DataVector
-        self.cells: dict[TracerNames, npt.NDArray[np.float64]]
-
         self._init_empty_default_attribs()
         if ell_for_xi is not None:
             self.theory.ell_for_xi_config.update(ell_for_xi)
         self.theory.ell_or_theta_config = ell_or_theta
-
         self.theory.set_ccl_kind(sacc_data_type)
 
     def _init_empty_default_attribs(self):
@@ -277,8 +280,6 @@ class TwoPoint(Statistic):
         self.theory.window = None
 
         self.data_vector = None
-
-        self.cells = {}
 
     @classmethod
     def from_metadata_index(
@@ -739,17 +740,17 @@ class TwoPoint(Statistic):
         tracers1: Sequence[Tracer],
     ) -> npt.NDArray[np.float64]:
         """Compute the power spectrum for the given ells and tracers."""
-        self.cells = {}
+        self.theory.cells = {}
         for tracer0 in tracers0:
             for tracer1 in tracers1:
                 pk_name = f"{tracer0.field}:{tracer1.field}"
                 tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
-                if tn in self.cells:
+                if tn in self.theory.cells:
                     # Already computed this combination, skipping
                     continue
                 pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
 
-                self.cells[tn] = (
+                self.theory.cells[tn] = (
                     cached_angular_cl(
                         tools.get_ccl_cosmology(),
                         (tracer0.ccl_tracer, tracer1.ccl_tracer),
@@ -759,8 +760,10 @@ class TwoPoint(Statistic):
                     * scale0
                     * scale1
                 )
-        self.cells[TRACER_NAMES_TOTAL] = np.array(sum(self.cells.values()))
-        theory_vector = self.cells[TRACER_NAMES_TOTAL]
+        self.theory.cells[TRACER_NAMES_TOTAL] = np.array(
+            sum(self.theory.cells.values())
+        )
+        theory_vector = self.theory.cells[TRACER_NAMES_TOTAL]
         return theory_vector
 
     def compute_cells_interpolated(

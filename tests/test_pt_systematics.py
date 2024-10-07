@@ -161,7 +161,6 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
 
     s1 = likelihood.statistics[1].statistic
     # del weak_lensing_source.cosmo_hash
-    s1.cells = {}
     s1.compute_theory_vector(modeling_tools)
     assert isinstance(s1, TwoPoint)
     ells = s1.ells_for_xi
