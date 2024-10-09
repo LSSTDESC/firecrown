@@ -555,29 +555,3 @@ def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
             mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_nl_p_k)
         ),
     )
-
-
-def test_mapping_cosmosis_pk_nonlin_nonlinear_model(mapping_cosmosis):
-    block = DataBlock()
-
-    block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
-    block.put_double_array_1d("distances", "z", np.linspace(0.0, 2.0, 10))
-    block.put_double_array_1d("distances", "h", np.geomspace(0.1, 10.0, 100))
-
-    mapping_cosmosis.require_nonlinear_pk = True
-    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
-
-    assert "background" in ccl_args
-    assert "pk_linear" not in ccl_args
-    assert "pk_nonlin" not in ccl_args
-    assert "nonlinear_model" in ccl_args
-    assert ccl_args["nonlinear_model"]
-
-    mapping_cosmosis.require_nonlinear_pk = False
-    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
-
-    assert "background" in ccl_args
-    assert "pk_linear" not in ccl_args
-    assert "pk_nonlin" not in ccl_args
-    assert "nonlinear_model" in ccl_args
-    assert not ccl_args["nonlinear_model"]

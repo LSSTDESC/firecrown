@@ -1,6 +1,6 @@
-"""This module deals with two-point types.
+"""This module deals with metadata types.
 
-This module contains two-point types definitions.
+This module contains metadata types definitions.
 """
 
 from itertools import chain, combinations_with_replacement
@@ -11,7 +11,7 @@ from enum import Enum, auto
 import numpy as np
 import numpy.typing as npt
 
-from firecrown.utils import compare_optional_arrays, compare_optionals, YAMLSerializable
+from firecrown.utils import compare_optional_arrays, YAMLSerializable
 
 
 @dataclass(frozen=True)
@@ -312,37 +312,6 @@ class InferredGalaxyZDist(YAMLSerializable):
         )
 
 
-@dataclass(frozen=True, kw_only=True)
-class TwoPointMeasurement(YAMLSerializable):
-    """Class defining the metadata for a two-point measurement.
-
-    The class used to store the metadata for a two-point function measured on a sphere.
-
-    This includes the measured two-point function and their indices in the covariance
-    matrix.
-    """
-
-    data: npt.NDArray[np.float64]
-    indices: npt.NDArray[np.int64]
-    covariance_name: str
-
-    def __post_init__(self) -> None:
-        """Make sure the data and indices have the same shape."""
-        if len(self.data.shape) != 1:
-            raise ValueError("Data should be a 1D array.")
-
-        if self.data.shape != self.indices.shape:
-            raise ValueError("Data and indices should have the same shape.")
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointMeasurement objects."""
-        return (
-            np.array_equal(self.data, other.data)
-            and np.array_equal(self.indices, other.indices)
-            and self.covariance_name == other.covariance_name
-        )
-
-
 def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
     """Create a dictionary from a Measurement object.
 
@@ -526,7 +495,7 @@ class TwoPointXY(YAMLSerializable):
 
 
 @dataclass(frozen=True, kw_only=True)
-class TwoPointCells(YAMLSerializable):
+class TwoPointHarmonic(YAMLSerializable):
     """Class defining the metadata for an harmonic-space two-point measurement.
 
     The class used to store the metadata for a (spherical) harmonic-space two-point
@@ -539,10 +508,10 @@ class TwoPointCells(YAMLSerializable):
 
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
-    Cell: None | TwoPointMeasurement = None
+    window: None | npt.NDArray[np.float64] = None
 
     def __post_init__(self) -> None:
-        """Validate the TwoPointCells data.
+        """Validate the TwoPointHarmonic data.
 
         Make sure the ells are a 1D array and X and Y are compatible
         with harmonic-space calculations.
@@ -550,8 +519,13 @@ class TwoPointCells(YAMLSerializable):
         if len(self.ells.shape) != 1:
             raise ValueError("Ells should be a 1D array.")
 
-        if self.Cell is not None and self.Cell.data.shape != self.ells.shape:
-            raise ValueError("Cell should have the same shape as ells.")
+        if self.window is not None:
+            if not isinstance(self.window, np.ndarray):
+                raise ValueError("window should be a ndarray.")
+            if len(self.window.shape) != 2:
+                raise ValueError("window should be a 2D array.")
+            if self.window.shape[0] != len(self.ells):
+                raise ValueError("window should have the same number of rows as ells.")
 
         if not measurement_supports_harmonic(
             self.XY.x_measurement
@@ -562,15 +536,18 @@ class TwoPointCells(YAMLSerializable):
             )
 
     def __eq__(self, other) -> bool:
-        """Equality test for TwoPointCells objects."""
+        """Equality test for TwoPointHarmonic objects."""
+        if not isinstance(other, TwoPointHarmonic):
+            raise ValueError("Can only compare TwoPointHarmonic objects.")
+
         return (
             self.XY == other.XY
             and np.array_equal(self.ells, other.ells)
-            and compare_optionals(self.Cell, other.Cell)
+            and compare_optional_arrays(self.window, other.window)
         )
 
     def __str__(self) -> str:
-        """Return a string representation of the TwoPointCells object."""
+        """Return a string representation of the TwoPointHarmonic object."""
         return f"{self.XY}[{self.get_sacc_name()}]"
 
     def get_sacc_name(self) -> str:
@@ -578,126 +555,19 @@ class TwoPointCells(YAMLSerializable):
         return type_to_sacc_string_harmonic(
             self.XY.x_measurement, self.XY.y_measurement
         )
-
-    def has_data(self) -> bool:
-        """Return True if the TwoPointCells object has a Cell array."""
-        return self.Cell is not None
-
-
-@dataclass(kw_only=True)
-class Window(YAMLSerializable):
-    """The class used to represent a window function.
-
-    It contains the ells at which the window function is defined, the weights
-    of the window function, and the ells at which the window function is
-    interpolated.
-
-    It may contain the ells for interpolation if the theory prediction is
-    calculated at a different set of ells than the window function.
-    """
-
-    ells: npt.NDArray[np.int64]
-    weights: npt.NDArray[np.float64]
-    ells_for_interpolation: None | npt.NDArray[np.int64] = None
-
-    def __post_init__(self) -> None:
-        """Make sure the weights have the right shape."""
-        if len(self.ells.shape) != 1:
-            raise ValueError("Ells should be a 1D array.")
-        if len(self.weights.shape) != 2:
-            raise ValueError("Weights should be a 2D array.")
-        if self.weights.shape[0] != len(self.ells):
-            raise ValueError("Weights should have the same number of rows as ells.")
-        if (
-            self.ells_for_interpolation is not None
-            and len(self.ells_for_interpolation.shape) != 1
-        ):
-            raise ValueError("Ells for interpolation should be a 1D array.")
 
     def n_observations(self) -> int:
-        """Return the number of observations supported by the window function."""
-        return self.weights.shape[1]
+        """Return the number of observations described by these metadata.
 
-    def __eq__(self, other) -> bool:
-        """Equality test for Window objects."""
-        assert isinstance(other, Window)
-        # We will need special handling for the optional ells_for_interpolation.
-        # First handle the non-optinal parts.
-        partial_result = np.array_equal(self.ells, other.ells) and np.array_equal(
-            self.weights, other.weights
-        )
-        if not partial_result:
-            return False
-        return compare_optional_arrays(
-            self.ells_for_interpolation, other.ells_for_interpolation
-        )
-
-
-@dataclass(frozen=True, kw_only=True)
-class TwoPointCWindow(YAMLSerializable):
-    """Two-point function with a window function.
-
-    The class used to store the metadata for a (spherical) harmonic-space two-point
-    function measured on a sphere, with an associated window function.
-
-    This includes the two redshift resolutions (one for each binned quantity) and the
-    matrix (window function) that relates the measured Cl's with the predicted Cl's.
-
-    Note that the matrix `window` always has l=0 and l=1 suppressed.
-    """
-
-    XY: TwoPointXY
-    window: Window
-    Cell: None | TwoPointMeasurement = None
-
-    def __post_init__(self):
-        """Validate the TwoPointCWindow data.
-
-        Make sure the window is
+        :return: The number of observations.
         """
-        if not isinstance(self.window, Window):
-            raise ValueError("Window should be a Window object.")
-
-        if self.Cell is not None:
-            if len(self.Cell.data) != self.window.n_observations():
-                raise ValueError(
-                    "Data should have the same number of elements as the number of "
-                    "observations supported by the window function."
-                )
-
-        if not measurement_supports_harmonic(
-            self.XY.x_measurement
-        ) or not measurement_supports_harmonic(self.XY.y_measurement):
-            raise ValueError(
-                f"Measurements {self.XY.x_measurement} and "
-                f"{self.XY.y_measurement} must support harmonic-space calculations."
-            )
-
-    def __str__(self) -> str:
-        """Return a string representation of the TwoPointCWindow object."""
-        return f"{self.XY}[{self.get_sacc_name()}]"
-
-    def get_sacc_name(self) -> str:
-        """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_harmonic(
-            self.XY.x_measurement, self.XY.y_measurement
-        )
-
-    def __eq__(self, other) -> bool:
-        """Equality test for TwoPointCWindow objects."""
-        return (
-            self.XY == other.XY
-            and self.window == other.window
-            and compare_optionals(self.Cell, other.Cell)
-        )
-
-    def has_data(self) -> bool:
-        """Return True if the TwoPointCWindow object has a Cell array."""
-        return self.Cell is not None
+        if self.window is None:
+            return self.ells.shape[0]
+        return self.window.shape[1]
 
 
 @dataclass(frozen=True, kw_only=True)
-class TwoPointXiTheta(YAMLSerializable):
+class TwoPointReal(YAMLSerializable):
     """Class defining the metadata for a real-space two-point measurement.
 
     The class used to store the metadata for a real-space two-point function measured
@@ -710,7 +580,6 @@ class TwoPointXiTheta(YAMLSerializable):
 
     XY: TwoPointXY
     thetas: npt.NDArray[np.float64]
-    xis: None | TwoPointMeasurement = None
 
     def __post_init__(self):
         """Validate the TwoPointCWindow data.
@@ -719,9 +588,6 @@ class TwoPointXiTheta(YAMLSerializable):
         """
         if len(self.thetas.shape) != 1:
             raise ValueError("Thetas should be a 1D array.")
-
-        if self.xis is not None and self.xis.data.shape != self.thetas.shape:
-            raise ValueError("Xis should have the same shape as thetas.")
 
         if not measurement_supports_real(
             self.XY.x_measurement
@@ -732,7 +598,7 @@ class TwoPointXiTheta(YAMLSerializable):
             )
 
     def __str__(self) -> str:
-        """Return a string representation of the TwoPointXiTheta object."""
+        """Return a string representation of the TwoPointReal object."""
         return f"{self.XY}[{self.get_sacc_name()}]"
 
     def get_sacc_name(self) -> str:
@@ -740,13 +606,15 @@ class TwoPointXiTheta(YAMLSerializable):
         return type_to_sacc_string_real(self.XY.x_measurement, self.XY.y_measurement)
 
     def __eq__(self, other) -> bool:
-        """Equality test for TwoPointXiTheta objects."""
-        return (
-            self.XY == other.XY
-            and np.array_equal(self.thetas, other.thetas)
-            and compare_optionals(self.xis, other.xis)
-        )
+        """Equality test for TwoPointReal objects."""
+        if not isinstance(other, TwoPointReal):
+            raise ValueError("Can only compare TwoPointReal objects.")
 
-    def has_data(self) -> bool:
-        """Return True if the TwoPointXiTheta object has a xis array."""
-        return self.xis is not None
+        return self.XY == other.XY and np.array_equal(self.thetas, other.thetas)
+
+    def n_observations(self) -> int:
+        """Return the number of observations described by these metadata.
+
+        :return: The number of observations.
+        """
+        return self.thetas.shape[0]

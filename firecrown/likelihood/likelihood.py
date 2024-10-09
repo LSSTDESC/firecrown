@@ -20,7 +20,7 @@ specific case of a :class:`GaussFamily` likelihood, these data include both
 a *data vector* and a *covariance matrix*, which must be present in the
 :class:`Sacc` object given to the :meth:`read` method.
 
-The theory predictions that are used in the calcluation of a likelihood are
+The theory predictions that are used in the calculation of a likelihood are
 expected to change for different calls to the :meth:`compute_loglike` method.
 In order to prepare a :class:`Likelihood` object for each call to
 :meth:`compute_loglike`, the following sequence of calls must be made (note
@@ -75,24 +75,32 @@ class Likelihood(Updatable):
     Concrete subclasses represent specific likelihood forms (e.g. gaussian with
     constant covariance matrix, or Student's t, etc.).
 
-    Concrete subclasses must have an implementation of both *read* and
-    *compute_loglike*. Note that abstract subclasses of Likelihood might implement
+    Concrete subclasses must have an implementation of both :meth:`read` and
+    :meth:`compute_loglike`. Note that abstract subclasses of Likelihood might implement
     these methods, and provide other abstract methods for their subclasses to implement.
     """
 
     def __init__(self, parameter_prefix: None | str = None) -> None:
-        """Default initialization for a base Likelihood object."""
+        """Default initialization for a base Likelihood object.
+
+        :params parameter_prefix: The prefix to prepend to all parameter names
+        """
         super().__init__(parameter_prefix=parameter_prefix)
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the covariance matrix for this likelihood from the SACC file."""
+        """Read the covariance matrix for this likelihood from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
 
     def make_realization_vector(self) -> npt.NDArray[np.float64]:
         """Create a new realization of the model.
 
         This new realization uses the previously computed theory vector and covariance
         matrix.
+
+        :return: the new realization of the theory vector
         """
         raise NotImplementedError(
             "This class does not implement make_realization_vector."
@@ -111,11 +119,17 @@ class Likelihood(Updatable):
             only the theory vector.
         :param strict: If True, check that the indices of the realization cover
             all the indices of the SACC data object.
+
+        :return: the new SACC object containing the new realization
         """
 
     @abstractmethod
     def compute_loglike(self, tools: ModelingTools) -> float:
-        """Compute the log-likelihood of generic CCL data."""
+        """Compute the log-likelihood of generic CCL data.
+
+        :param tools: the ModelingTools to be used in calculating the likelihood
+        :return: the log-likelihood
+        """
 
 
 class NamedParameters:
@@ -142,14 +156,22 @@ class NamedParameters:
             ]
         ) = None,
     ):
-        """Initialize the object from the supplied mapping of values."""
+        """Initialize the object from the supplied mapping of values.
+
+        :param mapping: the mapping from strings to values used for initialization
+        """
         if mapping is None:
             self.data = {}
         else:
             self.data = dict(mapping)
 
     def get_bool(self, name: str, default_value: None | bool = None) -> bool:
-        """Return the named parameter as a bool."""
+        """Return the named parameter as a bool.
+
+        :param name: the name of the parameter to be returned
+        :param default_value: the default value if the parameter is not found
+        :return: the value of the parameter (or the default value)
+        """
         if default_value is None:
             val = self.data[name]
         else:
@@ -159,7 +181,12 @@ class NamedParameters:
         return val
 
     def get_string(self, name: str, default_value: None | str = None) -> str:
-        """Return the named parameter as a string."""
+        """Return the named parameter as a string.
+
+        :param name: the name of the parameter to be returned
+        :param default_value: the default value if the parameter is not found
+        :return: the value of the parameter (or the default value)
+        """
         if default_value is None:
             val = self.data[name]
         else:
@@ -169,7 +196,12 @@ class NamedParameters:
         return val
 
     def get_int(self, name: str, default_value: None | int = None) -> int:
-        """Return the named parameter as an int."""
+        """Return the named parameter as an int.
+
+        :param name: the name of the parameter to be returned
+        :param default_value: the default value if the parameter is not found
+        :return: the value of the parameter (or the default value)
+        """
         if default_value is None:
             val = self.data[name]
         else:
@@ -179,7 +211,12 @@ class NamedParameters:
         return val
 
     def get_float(self, name: str, default_value: None | float = None) -> float:
-        """Return the named parameter as a float."""
+        """Return the named parameter as a float.
+
+        :param name: the name of the parameter to be returned
+        :param default_value: the default value if the parameter is not found
+        :return: the value of the parameter (or the default value)
+        """
         if default_value is None:
             val = self.data[name]
         else:
@@ -189,7 +226,11 @@ class NamedParameters:
         return val
 
     def get_int_array(self, name: str) -> npt.NDArray[np.int64]:
-        """Return the named parameter as a numpy array of int."""
+        """Return the named parameter as a numpy array of int.
+
+        :param name: the name of the parameter to be returned
+        :return: the value of the parameter
+        """
         tmp = self.data[name]
         assert isinstance(tmp, np.ndarray)
         val = tmp.view(dtype=np.int64)
@@ -197,7 +238,11 @@ class NamedParameters:
         return val
 
     def get_float_array(self, name: str) -> npt.NDArray[np.float64]:
-        """Return the named parameter as a numpy array of float."""
+        """Return the named parameter as a numpy array of float.
+
+        :param name: the name of the parameter to be returned
+        :return: the value of the parameter
+        """
         tmp = self.data[name]
         assert isinstance(tmp, np.ndarray)
         val = tmp.view(dtype=np.float64)
@@ -209,7 +254,10 @@ class NamedParameters:
     ) -> set[
         str | int | bool | float | npt.NDArray[np.int64] | npt.NDArray[np.float64]
     ]:
-        """Return the contained data as a set."""
+        """Return the contained data as a set.
+
+        :return: the value of the parameter as a set
+        """
         return set(self.data)
 
     def set_from_basic_dict(
@@ -219,7 +267,10 @@ class NamedParameters:
             str | float | int | bool | Sequence[float] | Sequence[int] | Sequence[bool],
         ],
     ) -> None:
-        """Set the contained data from a dictionary of basic types."""
+        """Set the contained data from a dictionary of basic types.
+
+        :param basic_dict: the mapping from strings to values used for initialization
+        """
         for key, value in basic_dict.items():
             if isinstance(value, (str, float, int, bool)):
                 self.data = dict(self.data, **{key: value})
@@ -245,7 +296,10 @@ class NamedParameters:
         str,
         str | float | int | bool | Sequence[float] | Sequence[int] | Sequence[bool],
     ]:
-        """Convert a NamedParameters object to a dictionary of basic types."""
+        """Convert a NamedParameters object to a dictionary of built-in types.
+
+        :return: a dictionary containing the parameters as built-in Python types
+        """
         basic_dict: dict[
             str,
             str | float | int | bool | Sequence[float] | Sequence[int] | Sequence[bool],
@@ -267,7 +321,9 @@ class NamedParameters:
 
 
 def load_likelihood_from_module_type(
-    module: types.ModuleType, build_parameters: NamedParameters
+    module: types.ModuleType,
+    build_parameters: NamedParameters,
+    build_likelihood_name: str = "build_likelihood",
 ) -> tuple[Likelihood, ModelingTools]:
     """Loads a likelihood from a module type.
 
@@ -281,29 +337,31 @@ def load_likelihood_from_module_type(
     :param module: a loaded module
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
+    :return : a tuple of the likelihood and the modeling tools
     """
-    if not hasattr(module, "build_likelihood"):
+    if not hasattr(module, build_likelihood_name):
         if not hasattr(module, "likelihood"):
             raise AttributeError(
                 f"Firecrown initialization module {module.__name__} in "
                 f"{module.__file__} does not define "
-                f"a `build_likelihood` factory function."
+                f"a `{build_likelihood_name}` factory function."
             )
         warnings.warn(
-            "The use of a likelihood variable in Firecrown's initialization "
-            "module is deprecated. Any parameters passed to the likelihood "
-            "will be ignored. The module should define a `build_likelihood` "
-            "factory function.",
+            f"The use of a likelihood variable in Firecrown's initialization "
+            f"module is deprecated. Any parameters passed to the likelihood "
+            f"will be ignored. The module should define the `{build_likelihood_name}` "
+            f"factory function.",
             category=DeprecationWarning,
         )
         likelihood = module.likelihood
         tools = ModelingTools()
     else:
-        if not callable(module.build_likelihood):
+        build_likelihood = getattr(module, build_likelihood_name)
+        if not callable(build_likelihood):
             raise TypeError(
-                "The factory function `build_likelihood` must be a callable."
+                f"The factory function `{build_likelihood_name}` must be a callable."
             )
-        build_return = module.build_likelihood(build_parameters)
+        build_return = build_likelihood(build_parameters)
         if isinstance(build_return, tuple):
             likelihood, tools = build_return
         else:
@@ -336,6 +394,7 @@ def load_likelihood_from_script(
     :param filename: script filename
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
+    :return : a tuple of the likelihood and the modeling tools
     """
     _, file_extension = os.path.splitext(filename)
 
@@ -384,15 +443,29 @@ def load_likelihood_from_module(
     :param module: module name
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
+    :return : a tuple of the likelihood and the modeling tools
     """
     try:
-        mod = importlib.import_module(module)
+        # Try importing the entire string as a module first
+        try:
+            mod = importlib.import_module(module)
+            func = "build_likelihood"
+        except ImportError as sub_exc:
+            # If it fails, split and try importing as module.function
+            if "." not in module:
+                raise sub_exc
+            module_name, func = module.rsplit(".", 1)
+            mod = importlib.import_module(module_name)
     except ImportError as exc:
         raise ValueError(
-            f"Unrecognized Firecrown initialization module {module}."
+            f"Unrecognized Firecrown initialization module '{module}'. "
+            f"The module must be either a module_name or a module_name.func "
+            f"where func is the factory function."
         ) from exc
 
-    return load_likelihood_from_module_type(mod, build_parameters)
+    return load_likelihood_from_module_type(
+        mod, build_parameters, build_likelihood_name=func
+    )
 
 
 def load_likelihood(
@@ -406,6 +479,7 @@ def load_likelihood(
     :param likelihood_name: script filename or module name
     :param build_parameters: a NamedParameters object containing the factory
         function parameters
+    :return : a tuple of the likelihood and the modeling tools
     """
     try:
         return load_likelihood_from_script(likelihood_name, build_parameters)

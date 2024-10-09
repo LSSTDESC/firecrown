@@ -15,6 +15,7 @@ import pyccl.nl_pt
 
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.updatable import Updatable, UpdatableCollection
+from firecrown.ccl_factory import CCLFactory, CCLCalculatorArgs
 
 
 class ModelingTools(Updatable):
@@ -31,6 +32,7 @@ class ModelingTools(Updatable):
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
         cluster_deltasigma: None | ClusterDeltaSigma = None,
+        ccl_factory: None | CCLFactory = None,
     ):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
@@ -41,6 +43,7 @@ class ModelingTools(Updatable):
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
         self.cluster_deltasigma = cluster_deltasigma
+        self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
@@ -73,7 +76,7 @@ class ModelingTools(Updatable):
             return False
         return True
 
-    def prepare(self, ccl_cosmo: pyccl.Cosmology) -> None:
+    def prepare(self, *, calculator_args: None | CCLCalculatorArgs = None) -> None:
         """Prepare the Cosmology for use in likelihoods.
 
         This method will prepare the ModelingTools for use in likelihoods. This
@@ -90,16 +93,17 @@ class ModelingTools(Updatable):
 
         if self.ccl_cosmo is not None:
             raise RuntimeError("Cosmology has already been set")
-        self.ccl_cosmo = ccl_cosmo
+
+        self.ccl_cosmo = self.ccl_factory.create(calculator_args)
 
         if self.pt_calculator is not None:
-            self.pt_calculator.update_ingredients(ccl_cosmo)
+            self.pt_calculator.update_ingredients(self.ccl_cosmo)
 
         for pkm in self.pk_modifiers:
             self.add_pk(name=pkm.name, powerspectrum=pkm.compute_p_of_k_z(tools=self))
 
         if self.cluster_abundance is not None:
-            self.cluster_abundance.update_ingredients(ccl_cosmo)
+            self.cluster_abundance.update_ingredients(self.ccl_cosmo)
 
         if self.cluster_deltasigma is not None:
             self.cluster_deltasigma.update_ingredients(ccl_cosmo)

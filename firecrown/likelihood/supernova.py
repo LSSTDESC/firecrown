@@ -23,14 +23,18 @@ SNIA_DEFAULT_M = -19.2
 
 
 class Supernova(Statistic):
-    """A supernova statistic.
+    """A statistic representing the distance modulus for a single supernova.
 
     This statistic that applies an additive shift M to a supernova's distance
     modulus.
     """
 
     def __init__(self, sacc_tracer: str) -> None:
-        """Initialize this statistic."""
+        """Initialize a Supernova object.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
         super().__init__(parameter_prefix=sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
@@ -41,7 +45,10 @@ class Supernova(Statistic):
         )
 
     def read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this statistic from the SACC file."""
+        """Read the data for this statistic from the SACC file.
+
+        :param sacc_data: The data in the sacc format.
+        """
         # We do not actually need the tracer, but we want to make sure the SACC
         # data contains this tracer.
         # TODO: remove the work-around when the new version of SACC supporting
@@ -68,12 +75,19 @@ class Supernova(Statistic):
         super().read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
-        """Return the data vector; raise exception if there is none."""
+        """Return the data vector; raise exception if there is none.
+
+        :return: The data vector.
+        """
         assert self.data_vector is not None
         return self.data_vector
 
     def _compute_theory_vector(self, tools: ModelingTools) -> TheoryVector:
-        """Compute SNIa distance statistic using CCL."""
+        """Compute SNIa distance statistic using CCL.
+
+        :param tools: the modeling tools used to compute the theory vector.
+        :return: The computed theory vector.
+        """
         ccl_cosmo = tools.get_ccl_cosmology()
         prediction = self.M + pyccl.distance_modulus(ccl_cosmo, self.a)
         return TheoryVector.create(prediction)
