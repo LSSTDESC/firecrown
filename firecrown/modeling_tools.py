@@ -106,7 +106,7 @@ class ModelingTools(Updatable):
             self.cluster_abundance.update_ingredients(self.ccl_cosmo)
 
         if self.cluster_deltasigma is not None:
-            self.cluster_deltasigma.update_ingredients(ccl_cosmo)
+            self.cluster_deltasigma.update_ingredients(self.ccl_cosmo)
         self._prepared = True
 
     def _reset(self) -> None:
