@@ -17,6 +17,7 @@ import pyccl.background as bkg
 import clmm
 from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
+from firecrown import parameters
 
 
 class ClusterDeltaSigma(Updatable):
@@ -40,6 +41,7 @@ class ClusterDeltaSigma(Updatable):
         min_z: float,
         max_z: float,
         halo_mass_function: pyccl.halos.MassFunc,
+        conc_parameter: bool = False,
     ) -> None:
         super().__init__()
         self.kernels: UpdatableCollection = UpdatableCollection()
@@ -50,6 +52,11 @@ class ClusterDeltaSigma(Updatable):
         self.max_z = max_z
         self._hmf_cache: dict[tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
+        self.conc_parameter = conc_parameter
+        if conc_parameter:
+            self.cluster_conc = parameters.register_new_updatable_parameter(
+              default_value=4.
+            )
 
     def update_ingredients(self, cosmo: Cosmology) -> None:
         """Update the cluster abundance calculation with a new cosmology."""
@@ -65,14 +72,25 @@ class ClusterDeltaSigma(Updatable):
         """delta sigma for clusters."""
         cosmo_clmm = clmm.Cosmology()
         cosmo_clmm._init_from_cosmo(self._cosmo)
-        moo = clmm.Modeling(massdef="mean", delta_mdef=200, halo_profile_model="nfw")
+        mass_def = self.halo_mass_function.mass_def
+        moo = clmm.Modeling(massdef=mass_def.rho_type, delta_mdef=mass_def.Delta, halo_profile_model="nfw")
         moo.set_cosmo(cosmo_clmm)
-        # assuming the same concentration for all masses. Not realistic, but avoid having to call a mass-concentration relation.
-        moo.set_concentration(4)
         return_vals = []
-        for log_m, redshift in zip(log_mass, z):
-            moo.set_mass(10**log_m)
-            val = moo.eval_excess_surface_density(radius_centers, redshift)
-            return_vals.append(val)
-
+        if self.conc_parameter == False:
+            conc = pyccl.halos.concentration.ConcentrationBhattacharya13(mass_def = mass_def)
+            for log_m, redshift in zip(log_mass, z):
+                a = 1./(1. + redshift)
+                conc_val = conc._concentration(self._cosmo, 10**log_m, a)
+                moo.set_concentration(conc_val)
+                moo.set_mass(10**log_m)
+                val = moo.eval_excess_surface_density(radius_centers, redshift)
+                return_vals.append(np.log10(val))
+        else:
+            conc_val = self.cluster_conc
+            moo.set_concentration(conc_val)
+            for log_m, redshift in zip(log_mass, z):
+                moo.set_concentration(conc_val)
+                moo.set_mass(10**log_m)
+                val = moo.eval_excess_surface_density(radius_centers, redshift)
+                return_vals.append(np.log10(val))
         return np.asarray(return_vals, dtype=np.float64)

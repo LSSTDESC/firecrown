@@ -95,7 +95,7 @@ def generate_sacc_file() -> Any:
     # First we need to define the multiplicity function here we will use the tinker
     mulf = Nc.MultiplicityFuncTinker.new()
     mulf.set_linear_interp(True)  # This reproduces the linear interpolation done in CCL
-    mulf.set_mdef(Nc.MultiplicityFuncMassDef.MEAN)
+    mulf.set_mdef(Nc.MultiplicityFuncMassDef.CRITICAL)
     mulf.set_Delta(200)
 
     # Second we need to construct a filtered power spectrum
@@ -136,7 +136,6 @@ def generate_sacc_file() -> Any:
     cluster_counts, z_edges, richness_edges, _ = stats.binned_statistic_2d(
         cluster_z, cluster_richness, cluster_logM, "count", bins=[N_z, N_richness]
     )
-
     mean_logM = stats.binned_statistic_2d(
         cluster_z,
         cluster_richness,
@@ -149,7 +148,6 @@ def generate_sacc_file() -> Any:
     ).statistic
 
     var_mean_logM = std_logM**2 / cluster_counts
-
     # Use CLMM to create a mock DeltaSigma profile to add to the SACC file later
     cosmo_clmm = Cosmology()
     cosmo_clmm._init_from_cosmo(cosmo)
@@ -174,7 +172,7 @@ def generate_sacc_file() -> Any:
     radius_centers = []
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
-        radius_center = np.mean(radius_edges[i : i + 1])
+        radius_center = np.mean(radius_edges[i : i + 2])
         radius_centers.append(radius_center)
 
     cluster_DeltaSigma = []
@@ -184,8 +182,7 @@ def generate_sacc_file() -> Any:
         cluster_DeltaSigma.append(
             moo.eval_excess_surface_density(radius_centers, redshift)
         )
-    cluster_DeltaSigma = np.array(cluster_DeltaSigma)
-
+    cluster_DeltaSigma = np.array(np.log10(cluster_DeltaSigma))
     richness_inds = np.digitize(cluster_richness, richness_edges) - 1
     z_inds = np.digitize(cluster_z, z_edges) - 1
     mean_DeltaSigma = np.array(
@@ -208,7 +205,6 @@ def generate_sacc_file() -> Any:
             for j in range(N_z)
         ]
     )
-
     var_mean_DeltaSigma = std_DeltaSigma**2 / cluster_counts[..., None]
     # correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
     # In each redshift bin are the $N_{\rm richness}$ richness bins.**
@@ -222,7 +218,6 @@ def generate_sacc_file() -> Any:
             )
         )
     )
-
     # Prepare the SACC file
     s_count = sacc.Sacc()
     bin_z_labels = []
@@ -246,7 +241,7 @@ def generate_sacc_file() -> Any:
 
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
-        radius_center = np.mean(radius_edges[i : i + 1])
+        radius_center = np.mean(radius_edges[i : i + 2])
         bin_radius_label = f"bin_radius_{i}"
         s_count.add_tracer(
             "bin_radius", bin_radius_label, radius_lower, radius_upper, radius_center
@@ -294,13 +289,12 @@ def generate_sacc_file() -> Any:
         for i, bin_radius_label in enumerate(bin_radius_labels):
             mass = 10**log_mass
             moo.set_mass(mass)
-            profile = moo.eval_excess_surface_density(radius_centers[i], redshift)
+            profile = np.log10(moo.eval_excess_surface_density(radius_centers[i], redshift))
             s_count.add_data_point(
                 cluster_mean_DeltaSigma,
                 (survey_name, bin_z_label, bin_richness_label, bin_radius_label),
                 profile,
             )
-
     # ### Then the add the covariance and save the file
 
     s_count.add_covariance(covariance)
