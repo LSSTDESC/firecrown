@@ -2,6 +2,8 @@
 Tests for the module firecrown.likelihood.statistic.source.
 """
 
+# pylint: disable=too-many-locals
+
 from typing import List
 import pytest
 import numpy as np
@@ -165,7 +167,9 @@ def test_trivial_source_select_field():
     assert trivial.tracer_args.field == "old_field"
 
 
-def test_weak_lensing_source_init(sacc_galaxy_cells_src0_src0):
+def test_weak_lensing_source_init(
+    sacc_galaxy_cells_src0_src0, tools_with_vanilla_cosmology: ModelingTools
+):
     sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
 
     source = wl.WeakLensing(sacc_tracer="src0")
@@ -173,6 +177,9 @@ def test_weak_lensing_source_init(sacc_galaxy_cells_src0_src0):
 
     assert_allclose(source.tracer_args.z, z)
     assert_allclose(source.tracer_args.dndz, dndz)
+    source.update(ParamsMap())
+    ts = source.get_tracers(tools_with_vanilla_cosmology)
+    assert len(ts) == 1
 
 
 def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
@@ -259,7 +266,10 @@ def test_weak_lensing_source_init_wrong_name(sacc_galaxy_cells_src0_src0):
         source.read(sacc_data)
 
 
-def test_number_counts_source_init(sacc_galaxy_cells_lens0_lens0):
+def test_number_counts_source_init(
+    sacc_galaxy_cells_lens0_lens0, tools_with_vanilla_cosmology: ModelingTools
+):
+
     sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
 
     source = nc.NumberCounts(sacc_tracer="lens0")
@@ -267,6 +277,9 @@ def test_number_counts_source_init(sacc_galaxy_cells_lens0_lens0):
 
     assert_allclose(source.tracer_args.z, z)
     assert_allclose(source.tracer_args.dndz, dndz)
+    source.update(ParamsMap(lens0_bias=1.1))
+    ts = source.get_tracers(tools_with_vanilla_cosmology)
+    assert len(ts) == 1
 
 
 def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):

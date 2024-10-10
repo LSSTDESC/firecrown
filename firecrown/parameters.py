@@ -452,11 +452,16 @@ def register_new_updatable_parameter(
     :return: a `SamplerParameter` if `value` is `None`, otherwise an `InternalParameter`
     :raises TypeError: if `value` is not `None` and not a `float`
     """
+    result: SamplerParameter | InternalParameter
     if value is None:
-        return SamplerParameter(default_value=default_value)
-    if not isinstance(value, float):
+        result = SamplerParameter(default_value=default_value)
+
+    elif not isinstance(value, float):
         raise TypeError(
             f"parameter.create() requires a float parameter or none, "
             f"not {type(value)}"
         )
-    return InternalParameter(value)
+    else:
+        result = InternalParameter(value)
+    assert result is not None
+    return result

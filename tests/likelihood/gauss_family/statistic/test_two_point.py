@@ -21,12 +21,12 @@ from firecrown.likelihood.weak_lensing import (
 from firecrown.likelihood.statistic import TheoryVector
 from firecrown.likelihood.two_point import (
     TwoPoint,
-    TwoPointTheory,
     TracerNames,
     TRACER_NAMES_TOTAL,
     WeakLensingFactory,
     NumberCountsFactory,
 )
+from firecrown.models.two_point import TwoPointTheory
 from firecrown.likelihood.source_factories import (
     use_source_factory,
     use_source_factory_metadata_index,

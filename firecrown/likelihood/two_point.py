@@ -55,65 +55,12 @@ from firecrown.metadata_functions import (
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import UpdatableCollection, Updatable
+from firecrown.models.two_point import TwoPointTheory
+from firecrown.updatable import UpdatableCollection
 from firecrown.utils import cached_angular_cl, make_log_interpolator
 
 # only supported types are here, anything else will throw
 # a value error
-SACC_DATA_TYPE_TO_CCL_KIND = {
-    "galaxy_density_cl": "cl",
-    "galaxy_density_xi": "NN",
-    "galaxy_shearDensity_cl_e": "cl",
-    "galaxy_shearDensity_xi_t": "NG",
-    "galaxy_shear_cl_ee": "cl",
-    "galaxy_shear_xi_minus": "GG-",
-    "galaxy_shear_xi_plus": "GG+",
-    "cmbGalaxy_convergenceDensity_xi": "NN",
-    "cmbGalaxy_convergenceShear_xi_t": "NG",
-}
-
-
-class TwoPointTheory(Updatable):
-    """Making predictions for TwoPoint statistics."""
-
-    def __init__(
-        self,
-        sacc_data_type: str,
-        source0: Source,
-        source1: Source,
-        ell_or_theta_min: float | int | None = None,
-        ell_or_theta_max: float | int | None = None,
-    ) -> None:
-        """Initialize a new TwoPointTheory object.
-
-        :param sacc_data_type: the name of the SACC data type for this theory.
-        :param source0: the first source
-        :param source1: the second source
-        """
-        super().__init__()
-        self.sacc_data_type = sacc_data_type
-        self.ccl_kind: str = ""
-        self.source0 = source0
-        self.source1 = source1
-        self.ell_for_xi_config: dict[str, int] = {}
-        self.ell_or_theta_config: None | EllOrThetaConfig = None
-        self.ell_or_theta_min = ell_or_theta_min
-        self.ell_or_theta_max = ell_or_theta_max
-        self.window: None | npt.NDArray[np.float64] = None
-        self.sacc_tracers: None | TracerNames = None
-        self.ells: None | npt.NDArray[np.int64] = None
-        self.thetas: None | npt.NDArray[np.float64] = None
-        self.mean_ells: None | npt.NDArray[np.float64] = None
-        self.ells_for_xi: None | npt.NDArray[np.int64] = None
-        self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
-
-    def set_ccl_kind(self, sacc_data_type):
-        """Set the CCL kind for this statistic."""
-        self.sacc_data_type = sacc_data_type
-        if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
-            self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
-        else:
-            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
 
 # pylint: disable=too-many-public-methods
@@ -675,9 +622,13 @@ class TwoPoint(Statistic):
         for the window function.
         """
         tracers0 = self.theory.source0.get_tracers(tools)
-        tracers1 = self.theory.source1.get_tracers(tools)
         scale0 = self.theory.source0.get_scale()
-        scale1 = self.theory.source1.get_scale()
+
+        if self.theory.source0 is self.theory.source1:
+            tracers1, scale1 = tracers0, scale0
+        else:
+            tracers1 = self.theory.source1.get_tracers(tools)
+            scale1 = self.theory.source1.get_scale()
 
         assert self.theory.ccl_kind == "cl"
         assert self.theory.ells is not None
