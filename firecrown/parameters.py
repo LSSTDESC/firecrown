@@ -439,12 +439,18 @@ def register_new_updatable_parameter(
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
-    will expect this value to be supplied by the sampling framwork. If `value`
+    will expect this value to be supplied by the sampling framework. If `value`
     is a `float` quantity, then Firecrown will expect this parameter to *not*
     be supplied by the sampling framework, and instead the provided value will
     be used for every sample.
 
     Only `None` or a `float` value is allowed.
+
+    :param value: the value of the parameter
+    :param default_value: the default value of the parameter to be used
+        if `value` is `None`
+    :return: a `SamplerParameter` if `value` is `None`, otherwise an `InternalParameter`
+    :raises TypeError: if `value` is not `None` and not a `float`
     """
     if value is None:
         return SamplerParameter(default_value=default_value)
