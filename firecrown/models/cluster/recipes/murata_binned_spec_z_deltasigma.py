@@ -68,11 +68,10 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
             )
 
             if average_on is None:
-            # pylint: disable=no-member
+                # pylint: disable=no-member
                 raise ValueError(
-                f"The property should be"
-                f" {ClusterProperty.DELTASIGMA}."
-            )
+                    f"The property should be" f" {ClusterProperty.DELTASIGMA}."
+                )
 
             for cluster_prop in ClusterProperty:
                 include_prop = cluster_prop & average_on
