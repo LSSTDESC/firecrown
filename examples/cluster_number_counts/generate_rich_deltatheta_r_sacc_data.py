@@ -8,8 +8,6 @@
 # NumCosmo facilities to simulate cluster data.
 
 import math
-import itertools
-
 import numpy as np
 
 from numcosmo_py import Nc
@@ -20,7 +18,6 @@ from astropy.table import Table
 from astropy.io import fits
 from scipy import stats
 from typing import Any
-import sacc
 
 import os
 
@@ -144,7 +141,8 @@ def generate_sacc_file() -> Any:
     cosmo_clmm._init_from_cosmo(cosmo)
     moo = clmm.Modeling(massdef="mean", delta_mdef=200, halo_profile_model="nfw")
     moo.set_cosmo(cosmo_clmm)
-    # assuming the same concentration for all masses. Not realistic, but avoid having to call a mass-concentration relation.
+    # assuming the same concentration for all masses. Not realistic, but avoid having
+    # to call a mass-concentration relation.
     moo.set_concentration(4)
 
     # Make data

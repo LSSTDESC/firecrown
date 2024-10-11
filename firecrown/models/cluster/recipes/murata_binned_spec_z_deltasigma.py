@@ -27,7 +27,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
 
         self.integrator = NumCosmoIntegrator()
         self.redshift_distribution = SpectroscopicRedshift()
-        pivot_mass, pivot_redshift = 14.3, 0.5# 14.625862906, 0.6
+        pivot_mass, pivot_redshift = 14.3, 0.5  # 14.625862906, 0.6
         self.mass_distribution = MurataBinned(pivot_mass, pivot_redshift)
         self.my_updatables.append(self.mass_distribution)
 
@@ -65,6 +65,13 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
                 * cluster_theory_counts.mass_function(mass, z)
                 * self.redshift_distribution.distribution()
                 * self.mass_distribution.distribution(mass, z, mass_proxy_limits)
+            )
+
+            if average_on is None:
+            # pylint: disable=no-member
+                raise ValueError(
+                f"The property should be"
+                f" {ClusterProperty.DELTASIGMA}."
             )
 
             for cluster_prop in ClusterProperty:
@@ -117,8 +124,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
 
     def evaluate_theory_prediction(
         self,
-        cluster_theory_counts: ClusterAbundance,
-        cluster_theory_deltasigma: ClusterDeltaSigma,
+        cluster_theory_list: list,
         this_bin: NDimensionalBin,
         sky_area: float,
         average_on: None | ClusterProperty = None,
@@ -129,6 +135,8 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
         using the Murata 2019 binned mass-richness relation and assuming perfectly
         measured redshifts.
         """
+        cluster_theory_counts = cluster_theory_list[0]
+        cluster_theory_deltasigma = cluster_theory_list[1]
         self.integrator.integral_bounds = [
             (cluster_theory_counts.min_mass, cluster_theory_counts.max_mass),
             this_bin.z_edges,

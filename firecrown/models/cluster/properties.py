@@ -15,5 +15,5 @@ class ClusterProperty(Flag):
     MASS = auto()
     REDSHIFT = auto()
     SHEAR = auto()
-    #SHEAR_APPROX = auto()
+    # SHEAR_APPROX = auto()
     DELTASIGMA = auto()

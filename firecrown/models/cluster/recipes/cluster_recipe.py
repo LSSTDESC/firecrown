@@ -2,7 +2,6 @@
 
 from abc import ABC, abstractmethod
 
-from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.updatable import Updatable, UpdatableCollection
@@ -22,7 +21,7 @@ class ClusterRecipe(Updatable, ABC):
     @abstractmethod
     def evaluate_theory_prediction(
         self,
-        cluster_theory: ClusterAbundance,
+        cluster_theory_list: list,
         this_bin: SaccBin,
         sky_area: float,
         average_on: None | ClusterProperty = None,

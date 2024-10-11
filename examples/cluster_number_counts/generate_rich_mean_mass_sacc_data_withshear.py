@@ -1,10 +1,11 @@
 #!/usr/bin/env python
 
-"""Defines a function to generate a SACC file for cluster number counts and cluster deltasigma."""
+"""Defines a function to generate a SACC file for cluster number counts
+and cluster deltasigma."""
 
 # # Cluster count-only SACC file creation
 #
-# This notebook examplifies the creation of a SACC file for cluster count, using
+# This file examplifies the creation of a SACC file for cluster count, using
 # NumCosmo facilities to simulate cluster data.
 
 import math
@@ -153,7 +154,8 @@ def generate_sacc_file() -> Any:
     cosmo_clmm._init_from_cosmo(cosmo)
     moo = clmm.Modeling(massdef="mean", delta_mdef=200, halo_profile_model="nfw")
     moo.set_cosmo(cosmo_clmm)
-    # assuming the same concentration for all masses. Not realistic, but avoid having to call a mass-concentration relation.
+    # assuming the same concentration for all masses. Not realistic,
+    # but avoid having to call a mass-concentration relation.
     moo.set_concentration(4)
 
     # we'll need the mean redshift of the clusters in the redshift bin
@@ -289,7 +291,9 @@ def generate_sacc_file() -> Any:
         for i, bin_radius_label in enumerate(bin_radius_labels):
             mass = 10**log_mass
             moo.set_mass(mass)
-            profile = np.log10(moo.eval_excess_surface_density(radius_centers[i], redshift))
+            profile = np.log10(
+                moo.eval_excess_surface_density(radius_centers[i], redshift)
+            )
             s_count.add_data_point(
                 cluster_mean_DeltaSigma,
                 (survey_name, bin_z_label, bin_richness_label, bin_radius_label),

@@ -69,7 +69,7 @@ class SaccBin(NDimensionalBin):
 
     @property
     def radius_center(self) -> tuple[float]:
-        """Radius bin center"""
+        """Radius bin center."""
         radius_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_radius"]
         if len(radius_bin) != 1:
             raise ValueError("SaccBin must have exactly one radius bin")

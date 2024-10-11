@@ -46,21 +46,22 @@ class DeltaSigmaData:
     ) -> tuple[list[float], list[int]]:
         """Returns the observed data for the specified survey and properties.
 
-        For example if the caller has enabled DELTASIGMA then the observed cluster profile
-        within each N dimensional bin will be returned.
+        For example if the caller has enabled DELTASIGMA then the observed
+        cluster profile within each N dimensional bin will be returned.
         """
         data_vectors = []
         sacc_indices = []
         data_type = None
         for cluster_property in ClusterProperty:
             include_prop = cluster_property & properties
-            if include_prop != ClusterProperty.DELTASIGMA:
-                continue
-            else:
+            if include_prop == ClusterProperty.DELTASIGMA:
+                # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_shear
-        if data_type == None:
+        if data_type is None:
+            # pylint: disable=no-member
             raise ValueError(
-                f"The SACC file does not contain the {sacc.standard_types.cluster_shear} data type"
+                f"The SACC file does not contain the"
+                f"{sacc.standard_types.cluster_shear} data type"
             )
 
         bin_combinations = self._all_bin_combinations_for_data_type(data_type)
@@ -109,9 +110,11 @@ class DeltaSigmaData:
             if cluster_property == ClusterProperty.DELTASIGMA:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_shear
-        if data_type == None:
+        if data_type is None:
+            # pylint: disable=no-member
             raise ValueError(
-                f"The SACC file does not contain the {sacc.standard_types.cluster_shear} data type"
+                f"The SACC file does not contain the"
+                f" {sacc.standard_types.cluster_shear} data type"
             )
 
         bin_combinations = self._all_bin_combinations_for_data_type(data_type)

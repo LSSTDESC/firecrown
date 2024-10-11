@@ -7,22 +7,13 @@
 # This notebook examplifies the creation of a SACC file for cluster count, using
 # NumCosmo facilities to simulate cluster data.
 
-import math
 import itertools
-
-import numpy as np
 
 from numcosmo_py import Nc
 from numcosmo_py import Ncm
 
-from astropy.table import Table
-
-from astropy.io import fits
-from scipy import stats
 from typing import Any
 import sacc
-
-import os
 
 
 def convert_binned_profile_to_sacc(
@@ -103,4 +94,3 @@ def convert_binned_profile_to_sacc(
 
 if __name__ == "__main__":
     Ncm.cfg_init()
-    generate_sacc_file()
