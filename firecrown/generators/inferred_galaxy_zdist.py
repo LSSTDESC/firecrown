@@ -249,7 +249,9 @@ class ZDistLSSTSRD:
         stats.set_compute_cdf(True)
         stats.prepare()
 
-        return np.array([stats.eval_inv_pdf((i + 1.0) / n_bins) for i in range(n_bins)])
+        return np.array(
+            [0.0] + [stats.eval_inv_pdf((i + 1.0) / n_bins) for i in range(n_bins)]
+        )
 
     def binned_distribution(
         self,
