@@ -213,12 +213,10 @@ class TwoPoint(Statistic):
             sources=(source0, source1),
             ell_or_theta_min=ell_or_theta_min,
             ell_or_theta_max=ell_or_theta_max,
+            ell_for_xi=ell_for_xi,
+            ell_or_theta=ell_or_theta,
         )
         self.data_vector: None | DataVector = None
-        if ell_for_xi is not None:
-            self.theory.ell_for_xi_config.update(ell_for_xi)
-        self.theory.ell_or_theta_config = ell_or_theta
-        self.theory.set_ccl_kind(sacc_data_type)
 
     @classmethod
     def from_metadata_index(

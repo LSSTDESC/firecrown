@@ -33,6 +33,8 @@ class TwoPointTheory(Updatable):
         sources: tuple[Source, Source],
         ell_or_theta_min: float | int | None = None,
         ell_or_theta_max: float | int | None = None,
+        ell_for_xi: None | dict[str, int] = None,
+        ell_or_theta: None | EllOrThetaConfig = None,
     ) -> None:
         """Initialize a new TwoPointTheory object.
 
@@ -55,9 +57,13 @@ class TwoPointTheory(Updatable):
         self.mean_ells: None | npt.NDArray[np.float64] = None
         self.ells_for_xi: None | npt.NDArray[np.int64] = None
         self.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-        self.ell_or_theta_config = None
         self.window = None
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
+        if ell_for_xi is not None:
+            self.ell_for_xi_config.update(ell_for_xi)
+
+        self.ell_or_theta_config = ell_or_theta
+        self.set_ccl_kind(sacc_data_type)
 
     @property
     def source0(self) -> Source:
