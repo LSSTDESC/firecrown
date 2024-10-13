@@ -393,13 +393,11 @@ class TwoPoint(Statistic):
         | tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
     ):
         """Read and return ell and Cell."""
-        ells, Cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
+        ells, cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
         # As version 0.13 of sacc, the method get_ell_cl returns the
         # ell values and the Cl values in arrays of the same length.
-        assert len(ells) == len(Cells)
+        assert len(ells) == len(cells)
         common_length = len(ells)
-        sacc_indices = None
-
         if common_length == 0:
             return None
         sacc_indices = np.atleast_1d(
@@ -407,8 +405,7 @@ class TwoPoint(Statistic):
         )
         assert sacc_indices is not None  # Needed for mypy
         assert len(sacc_indices) == common_length
-
-        return ells, Cells, sacc_indices
+        return ells, cells, sacc_indices
 
     def read_reals(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
