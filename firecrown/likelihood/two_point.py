@@ -212,7 +212,7 @@ class TwoPoint(Statistic):
             ell_for_xi=ell_for_xi,
             ell_or_theta=ell_or_theta,
         )
-        self.data_vector: None | DataVector = None
+        self._data: None | DataVector = None
 
     @classmethod
     def from_metadata_index(
@@ -379,7 +379,7 @@ class TwoPoint(Statistic):
                 nc_factory=nc_factory,
             )
             two_point.sacc_indices = measurement.indices
-            two_point.data_vector = DataVector.create(measurement.data)
+            two_point.set_data_vector(DataVector.create(measurement.data))
             two_point.ready = True
 
             two_point_list.append(two_point)
@@ -491,7 +491,7 @@ class TwoPoint(Statistic):
         self.theory.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
-        self.data_vector = DataVector.create(xis)
+        self._data = DataVector.create(xis)
 
     def read_harmonic_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -553,7 +553,7 @@ class TwoPoint(Statistic):
             assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
         self.theory.window = window
         self.sacc_indices = sacc_indices
-        self.data_vector = DataVector.create(Cells)
+        self._data = DataVector.create(Cells)
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
@@ -567,8 +567,13 @@ class TwoPoint(Statistic):
 
     def get_data_vector(self) -> DataVector:
         """Return this statistic's data vector."""
-        assert self.data_vector is not None
-        return self.data_vector
+        assert self._data is not None
+        return self._data
+
+    def set_data_vector(self, value: DataVector) -> None:
+        """Set this statistic's data vector."""
+        assert value is not None
+        self._data = value
 
     def compute_theory_vector_real_space(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic in real space.
@@ -644,7 +649,7 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory.window, self.theory.ells
             )
 
-            assert self.data_vector is not None
+            assert self._data is not None
             return TheoryVector.create(theory_vector)
 
         # If we get here, we are working in harmonic space without a window function.
