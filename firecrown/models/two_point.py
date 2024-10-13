@@ -23,6 +23,13 @@ SACC_DATA_TYPE_TO_CCL_KIND = {
 }
 
 
+def determine_ccl_kind(sacc_data_type: str) -> str:
+    """Determine the CCL kind for this SACC data type."""
+    if sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
+        return SACC_DATA_TYPE_TO_CCL_KIND[sacc_data_type]
+    raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
+
+
 class TwoPointTheory(Updatable):
     """Making predictions for TwoPoint statistics."""
 
@@ -39,12 +46,15 @@ class TwoPointTheory(Updatable):
         """Initialize a new TwoPointTheory object.
 
         :param sacc_data_type: the name of the SACC data type for this theory.
-        :param source0: the first source
-        :param source1: the second source
+        :param sources: the sources for this theory; order matters
+        :param ell_or_theta_min: minimum ell for xi
+        :param ell_or_theta_max: maximum ell for xi
+        :param ell_for_xi: ell for xi configuration
+        :param ell_or_theta: ell or theta configuration
         """
         super().__init__()
         self.sacc_data_type = sacc_data_type
-        self.ccl_kind: str = ""
+        self.ccl_kind = determine_ccl_kind(sacc_data_type)
         self.sources = sources
         self.ell_for_xi_config: dict[str, int] = {}
         self.ell_or_theta_config: None | EllOrThetaConfig = None
@@ -57,13 +67,11 @@ class TwoPointTheory(Updatable):
         self.mean_ells: None | npt.NDArray[np.float64] = None
         self.ells_for_xi: None | npt.NDArray[np.int64] = None
         self.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-        self.window = None
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
         if ell_for_xi is not None:
             self.ell_for_xi_config.update(ell_for_xi)
 
         self.ell_or_theta_config = ell_or_theta
-        self.set_ccl_kind(sacc_data_type)
 
     @property
     def source0(self) -> Source:
@@ -92,11 +100,3 @@ class TwoPointTheory(Updatable):
         """
         for s in self.sources:
             s.reset()
-
-    def set_ccl_kind(self, sacc_data_type):
-        """Set the CCL kind for this statistic."""
-        self.sacc_data_type = sacc_data_type
-        if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
-            self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
-        else:
-            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")

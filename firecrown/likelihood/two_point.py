@@ -204,10 +204,6 @@ class TwoPoint(Statistic):
         ell_or_theta_max: None | float | int = None,
     ) -> None:
         super().__init__()
-
-        assert isinstance(source0, Source)
-        assert isinstance(source1, Source)
-
         self.theory = TwoPointTheory(
             sacc_data_type=sacc_data_type,
             sources=(source0, source1),
