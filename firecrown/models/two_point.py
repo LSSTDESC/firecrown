@@ -1,9 +1,10 @@
 """TwoPoint theory support."""
 
+import copy
 import numpy as np
 from numpy import typing as npt
 
-from firecrown.generators.two_point import EllOrThetaConfig
+from firecrown.generators.two_point import EllOrThetaConfig, ELL_FOR_XI_DEFAULTS
 from firecrown.likelihood.source import Source
 from firecrown.metadata_types import TracerNames
 from firecrown.updatable import Updatable
@@ -53,6 +54,9 @@ class TwoPointTheory(Updatable):
         self.thetas: None | npt.NDArray[np.float64] = None
         self.mean_ells: None | npt.NDArray[np.float64] = None
         self.ells_for_xi: None | npt.NDArray[np.int64] = None
+        self.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
+        self.ell_or_theta_config = None
+        self.window = None
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
 
     @property

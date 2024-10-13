@@ -1,7 +1,6 @@
 """Two point statistic support."""
 
 from __future__ import annotations
-import copy
 import warnings
 from typing import Sequence
 
@@ -15,7 +14,6 @@ import sacc.windows
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.generators.two_point import (
-    ELL_FOR_XI_DEFAULTS,
     log_linear_ells,
     calculate_ells_for_interpolation,
     EllOrThetaConfig,
@@ -216,20 +214,11 @@ class TwoPoint(Statistic):
             ell_or_theta_min=ell_or_theta_min,
             ell_or_theta_max=ell_or_theta_max,
         )
-        self.data_vector: None | DataVector
-        self._init_empty_default_attribs()
+        self.data_vector: None | DataVector = None
         if ell_for_xi is not None:
             self.theory.ell_for_xi_config.update(ell_for_xi)
         self.theory.ell_or_theta_config = ell_or_theta
         self.theory.set_ccl_kind(sacc_data_type)
-
-    def _init_empty_default_attribs(self):
-        """Initialize the empty and default attributes."""
-        self.theory.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-        self.theory.ell_or_theta_config = None
-        self.theory.window = None
-
-        self.data_vector = None
 
     @classmethod
     def from_metadata_index(
