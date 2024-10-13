@@ -10,24 +10,27 @@ from firecrown.metadata_types import TracerNames
 from firecrown.updatable import Updatable
 from firecrown.parameters import ParamsMap
 
-SACC_DATA_TYPE_TO_CCL_KIND = {
-    "galaxy_density_cl": "cl",
-    "galaxy_density_xi": "NN",
-    "galaxy_shearDensity_cl_e": "cl",
-    "galaxy_shearDensity_xi_t": "NG",
-    "galaxy_shear_cl_ee": "cl",
-    "galaxy_shear_xi_minus": "GG-",
-    "galaxy_shear_xi_plus": "GG+",
-    "cmbGalaxy_convergenceDensity_xi": "NN",
-    "cmbGalaxy_convergenceShear_xi_t": "NG",
-}
-
 
 def determine_ccl_kind(sacc_data_type: str) -> str:
     """Determine the CCL kind for this SACC data type."""
-    if sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
-        return SACC_DATA_TYPE_TO_CCL_KIND[sacc_data_type]
-    raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
+    match sacc_data_type:
+        case "galaxy_density_cl" | "galaxy_shearDensity_cl_e" | "galaxy_shear_cl_ee":
+            result = "cl"
+        case "galaxy_density_xi":
+            result = "NN"
+        case "galaxy_shearDensity_xi_t":
+            result = "NG"
+        case "galaxy_shear_xi_minus":
+            result = "GG-"
+        case "galaxy_shear_xi_plus":
+            result = "GG+"
+        case "cmbGalaxy_convergenceDensity_xi":
+            result = "NN"
+        case "cmbGalaxy_convergenceShear_xi_t":
+            result = "NG"
+        case _:
+            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
+    return result
 
 
 class TwoPointTheory(Updatable):
