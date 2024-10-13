@@ -457,7 +457,7 @@ class LazyBinsType:
             case "sigma_z":
                 return self.sigma_z
             case _:
-                raise KeyError(key)
+                raise KeyError(f"LazyBinsType does not have key: {key}")
 
 
 Y1_LENS_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}

@@ -480,3 +480,13 @@ def test_make_measurement_from_dictionary():
         ValueError, match=re.escape(r"Invalid Measurement: {3} is not a dictionary")
     ):
         _ = make_measurements({3})  # type: ignore
+
+
+def test_lazy_bins_y1_key_error():
+    with pytest.raises(KeyError, match="LazyBinsType does not have key: frogs"):
+        _ = Y1_SOURCE_BINS["frogs"]
+
+
+def test_lazy_bins_y10_key_error():
+    with pytest.raises(KeyError, match="LazyBinsType does not have key: frogs"):
+        _ = Y10_SOURCE_BINS["frogs"]
