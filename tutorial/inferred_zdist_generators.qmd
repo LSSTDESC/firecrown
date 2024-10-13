@@ -56,23 +56,30 @@ The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
 `ZDistLLSTSRD` provides these values as defaults and allows for greater flexibility when desired.
 
 Below we calculate @eq-fz for year 1 and year 10 parameters from LSST SRD.
-Here we are choosing $100$ equally-spaced points in the range $0 < z < 3$ at which to evaluate the function $f(z)$.
+Here we are choosing $100$ equally-spaced points in the range $0 < z < 3.5$ at which to evaluate the function $f(z)$.
 ```{python}
 import numpy as np
 import firecrown
 from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
 
 # These are the values of z at which we will evalute f(z)
-z = np.linspace(0, 3.0, 100)
+z = np.linspace(0, 3.5, 100)
 
 # We want to evaluate f(z) for both Y1 and Y10, using the SRD prescriptions.
-zdist_y1 = ZDistLSSTSRD.year_1()
-zdist_y10 = ZDistLSSTSRD.year_10()
+zdist_y1_lens = ZDistLSSTSRD.year_1_lens()
+zdist_y10_lens = ZDistLSSTSRD.year_10_lens()
+
+zdist_y1_source = ZDistLSSTSRD.year_1_source()
+zdist_y10_source = ZDistLSSTSRD.year_10_source()
 
 # Now we can generate the values we want to plot.
-# Note that Pz_y1 and Pz_y10 are both numpy arrays:
-Pz_y1 = zdist_y1.distribution(z)
-Pz_y10 = zdist_y10.distribution(z)
+# Note that Pz_y1_* and Pz_y10_* are both numpy arrays:
+Pz_y1_lens = zdist_y1_lens.distribution(z)
+Pz_y10_lens = zdist_y10_lens.distribution(z)
+
+Pz_y1_source = zdist_y1_source.distribution(z)
+Pz_y10_source = zdist_y10_source.distribution(z)
+
 ```
 
 The generated data are plotted in @fig-fz
@@ -87,23 +94,38 @@ import pandas as pd
 
 # The data were not originally generated in a dataframe convenient for
 # plotting, so our first task it to put them into such a form.
-# First we create a dataframe with the raw data.
-data = pd.DataFrame({"z": z, "Y1": Pz_y1, "Y10": Pz_y10})
-# Then we 'melt' the data into a longer form, which is more conveient for
-# making multiple plots on the same axes, or for making panel (faceted) plots.
-long = pd.melt(data, id_vars=["z"], var_name="year", value_name="fz")
+d_y_all = pd.concat(
+    [
+        pd.DataFrame(
+            {
+                "z": z,
+                "dndz": Pz,
+                "year": year,
+                "distribution": dist,
+            }
+        )
+        for Pz, year, dist in [
+            (Pz_y1_lens, "Y1", "lens"),
+            (Pz_y10_lens, "Y10", "lens"),
+            (Pz_y1_source, "Y1", "source"),
+            (Pz_y10_source, "Y10", "source"),
+        ]
+    ]
+)
 
-# Now we can generate the plot.
+# Now we can generate the plot. We need a theme to increase the width
 (
-    ggplot(long, aes("z", "fz", color="year"))
+    ggplot(d_y_all, aes("z", "dndz", color="year"))
     + geom_point()
     + labs(y="dN/dz")
     + doc_theme()
+    + facet_wrap("~ distribution", ncol=2)
+    + theme(figure_size=(10, 4))
 )
 ```
 
 Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
-Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $0.6$.[^3]
+Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $1.0$.[^3]
 
 [^3]: Note that we are making use of several module-level constants in the `firecrown.generators.inferred_galaxy_zdist` module, namely `Y1_LENS_BINS`, `Y10_LENS_BINS`, `Y1_SOURCE_BINS`, and `Y10_SOURCE_BINS`, which are dictionaries that contain the bin edges and the resolution parameter $\sigma_z$ for the bins.
 
@@ -121,11 +143,12 @@ from firecrown.generators.inferred_galaxy_zdist import (
 from firecrown.metadata_types import Measurement, Galaxies
 
 # These are the values at which we will evaluate the distribution.
-z = np.linspace(0.0, 0.6, 100)
+z = np.linspace(0.0, 1.0, 100)
 
-# We use the same zdist_y1 and zdist_y10 that were created above.
+
+# We use the same zdist_y1_* and zdist_y10_* that were created above.
 # We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
-Pz_lens0_y1 = zdist_y1.binned_distribution(
+Pz_lens0_y1 = zdist_y1_lens.binned_distribution(
     zpl=Y1_LENS_BINS["edges"][0],
     zpu=Y1_LENS_BINS["edges"][1],
     sigma_z=Y1_LENS_BINS["sigma_z"],
@@ -133,7 +156,7 @@ Pz_lens0_y1 = zdist_y1.binned_distribution(
     name="lens0_y1",
     measurements={Galaxies.COUNTS},
 )
-Pz_source0_y1 = zdist_y1.binned_distribution(
+Pz_source0_y1 = zdist_y1_source.binned_distribution(
     zpl=Y1_SOURCE_BINS["edges"][0],
     zpu=Y1_SOURCE_BINS["edges"][1],
     sigma_z=Y1_SOURCE_BINS["sigma_z"],
@@ -141,7 +164,7 @@ Pz_source0_y1 = zdist_y1.binned_distribution(
     name="source0_y1",
     measurements={Galaxies.SHEAR_E},
 )
-Pz_lens0_y10 = zdist_y10.binned_distribution(
+Pz_lens0_y10 = zdist_y10_lens.binned_distribution(
     zpl=Y10_LENS_BINS["edges"][0],
     zpu=Y10_LENS_BINS["edges"][1],
     sigma_z=Y10_LENS_BINS["sigma_z"],
@@ -149,7 +172,7 @@ Pz_lens0_y10 = zdist_y10.binned_distribution(
     name="lens0_y10",
     measurements={Galaxies.COUNTS},
 )
-Pz_source0_y10 = zdist_y10.binned_distribution(
+Pz_source0_y10 = zdist_y10_source.binned_distribution(
     zpl=Y10_SOURCE_BINS["edges"][0],
     zpu=Y10_SOURCE_BINS["edges"][1],
     sigma_z=Y10_SOURCE_BINS["sigma_z"],
@@ -232,9 +255,9 @@ from itertools import pairwise
 
 # We use the same zdist_y1 and zdist_y10 that were created above.
 # We create two InferredGalaxyZDist objects, one for Y1 and one for Y10.
-z = np.linspace(0.0, 1.6, 1000)
+z = np.linspace(0.0, 3.5, 1000)
 all_y1_bins = [
-    zdist_y1.binned_distribution(
+    zdist_y1_lens.binned_distribution(
         zpl=zpl,
         zpu=zpu,
         sigma_z=Y1_LENS_BINS["sigma_z"],
@@ -246,7 +269,7 @@ all_y1_bins = [
     )
     for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
 ] + [
-    zdist_y1.binned_distribution(
+    zdist_y1_source.binned_distribution(
         zpl=zpl,
         zpu=zpu,
         sigma_z=Y1_SOURCE_BINS["sigma_z"],
@@ -277,7 +300,7 @@ d_y1 = pd.concat(
                 "dndz": Pz.dndz,
                 "bin": Pz.bin_name,
                 "measurement": list(Pz.measurements)[0],
-                "legend": f"{Pz.bin_name}, {len(Pz.z)}",
+                "legend": f"{Pz.bin_name}, {len(Pz.z)}, {np.trapezoid(Pz.dndz, Pz.z):.2f}",
             }
         )
         for Pz in all_y1_bins

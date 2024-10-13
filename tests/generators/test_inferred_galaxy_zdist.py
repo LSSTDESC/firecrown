@@ -31,7 +31,16 @@ from firecrown.metadata_types import Galaxies, Clusters, CMB
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 
-@pytest.fixture(name="zdist", params=[ZDistLSSTSRD.year_1(), ZDistLSSTSRD.year_10()])
+@pytest.fixture(
+    name="zdist",
+    params=[
+        ZDistLSSTSRD.year_1_lens(),
+        ZDistLSSTSRD.year_10_lens(),
+        ZDistLSSTSRD.year_1_source(),
+        ZDistLSSTSRD.year_10_source(),
+    ],
+    ids=["y1_lens", "y10_lens", "y1_source", "y10_source"],
+)
 def fixture_zdist_y1(request):
     """Fixture for the ZDistLSSTSRD class."""
     return request.param
