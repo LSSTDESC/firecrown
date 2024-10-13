@@ -211,7 +211,10 @@ class TwoPoint(Statistic):
         assert isinstance(source1, Source)
 
         self.theory = TwoPointTheory(
-            sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
+            sacc_data_type=sacc_data_type,
+            sources=(source0, source1),
+            ell_or_theta_min=ell_or_theta_min,
+            ell_or_theta_max=ell_or_theta_max,
         )
         self.data_vector: None | DataVector
         self._init_empty_default_attribs()

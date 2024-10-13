@@ -27,9 +27,9 @@ class TwoPointTheory(Updatable):
 
     def __init__(
         self,
+        *,
         sacc_data_type: str,
-        source0: Source,
-        source1: Source,
+        sources: tuple[Source, Source],
         ell_or_theta_min: float | int | None = None,
         ell_or_theta_max: float | int | None = None,
     ) -> None:
@@ -42,7 +42,7 @@ class TwoPointTheory(Updatable):
         super().__init__()
         self.sacc_data_type = sacc_data_type
         self.ccl_kind: str = ""
-        self.sources = (source0, source1)
+        self.sources = sources
         self.ell_for_xi_config: dict[str, int] = {}
         self.ell_or_theta_config: None | EllOrThetaConfig = None
         self.ell_or_theta_min = ell_or_theta_min

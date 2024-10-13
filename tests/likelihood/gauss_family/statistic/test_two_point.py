@@ -356,7 +356,10 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
 def test_two_point_theory_construction() -> None:
     src0 = WeakLensing(sacc_tracer="src0")
     theory = TwoPointTheory(
-        "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
+        sacc_data_type="galaxy_shear_cl_ee",
+        sources=(src0, src0),
+        ell_or_theta_min=50,
+        ell_or_theta_max=200,
     )
     assert theory.sacc_data_type == "galaxy_shear_cl_ee"
     assert theory.source0 is src0
