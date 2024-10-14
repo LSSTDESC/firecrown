@@ -202,6 +202,7 @@ class TwoPoint(Statistic):
         ell_or_theta: None | EllOrThetaConfig = None,
         ell_or_theta_min: None | float | int = None,
         ell_or_theta_max: None | float | int = None,
+        tracers: None | TracerNames = None,
     ) -> None:
         super().__init__()
         self.theory = TwoPointTheory(
@@ -211,6 +212,7 @@ class TwoPoint(Statistic):
             ell_or_theta_max=ell_or_theta_max,
             ell_for_xi=ell_for_xi,
             ell_or_theta=ell_or_theta,
+            tracers=tracers,
         )
         self._data: None | DataVector = None
 
@@ -311,8 +313,12 @@ class TwoPoint(Statistic):
             wl_factory=wl_factory,
             nc_factory=nc_factory,
         )
-        two_point = cls(metadata.get_sacc_name(), source0, source1)
-        two_point.theory.sacc_tracers = metadata.XY.get_tracer_names()
+        two_point = cls(
+            metadata.get_sacc_name(),
+            source0,
+            source1,
+            tracers=metadata.XY.get_tracer_names(),
+        )
         return two_point
 
     @classmethod

@@ -90,6 +90,7 @@ class TwoPointTheory(Updatable):
         ell_or_theta_max: float | int | None = None,
         ell_for_xi: None | dict[str, int] = None,
         ell_or_theta: None | EllOrThetaConfig = None,
+        tracers: None | TracerNames = None,
     ) -> None:
         """Initialize a new TwoPointTheory object.
 
@@ -109,7 +110,7 @@ class TwoPointTheory(Updatable):
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
         self.window: None | npt.NDArray[np.float64] = None
-        self.sacc_tracers: None | TracerNames = None
+        self.sacc_tracers = tracers
         self.ells: None | npt.NDArray[np.int64] = None
         self.thetas: None | npt.NDArray[np.float64] = None
         self.mean_ells: None | npt.NDArray[np.float64] = None
