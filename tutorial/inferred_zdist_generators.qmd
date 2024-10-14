@@ -125,7 +125,7 @@ d_y_all = pd.concat(
 ```
 
 Next, using the same SRD prescriptions, we want to generate the `InferredGalaxyZDist` objects representing @eq-Pi for a specific binning, and using a specific resolution parameter $\sigma_z$.
-Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $1.0$.[^3]
+Here we show the first bin for the lens and source samples for both Year 1 and Year 10, the functions are evaluated at $100$ points equally spaced between $0$ and $0.6$.[^3]
 
 [^3]: Note that we are making use of several module-level constants in the `firecrown.generators.inferred_galaxy_zdist` module, namely `Y1_LENS_BINS`, `Y10_LENS_BINS`, `Y1_SOURCE_BINS`, and `Y10_SOURCE_BINS`, which are dictionaries that contain the bin edges and the resolution parameter $\sigma_z$ for the bins.
 
@@ -143,7 +143,7 @@ from firecrown.generators.inferred_galaxy_zdist import (
 from firecrown.metadata_types import Measurement, Galaxies
 
 # These are the values at which we will evaluate the distribution.
-z = np.linspace(0.0, 1.0, 100)
+z = np.linspace(0.0, 0.6, 100)
 
 
 # We use the same zdist_y1_* and zdist_y10_* that were created above.
@@ -313,6 +313,7 @@ d_y1 = pd.concat(
     + labs(y="dN/dz")
     + facet_wrap("~ measurement", nrow=2)
     + doc_theme()
+    + theme(figure_size=(10, 6))
 )
 ```
 
