@@ -236,10 +236,8 @@ class TwoPoint(Statistic):
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
-        two_point_list = []
-        for metadata_index in metadata_indices:
-            n1, a, n2, b = measurements_from_index(metadata_index)
-            two_point = cls(
+        two_point_list = [
+            cls(
                 sacc_data_type=metadata_index["data_type"],
                 source0=use_source_factory_metadata_index(
                     n1, a, wl_factory=wl_factory, nc_factory=nc_factory
@@ -248,8 +246,9 @@ class TwoPoint(Statistic):
                     n2, b, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
             )
-            two_point_list.append(two_point)
-
+            for metadata_index in metadata_indices
+            for n1, a, n2, b in [measurements_from_index(metadata_index)]
+        ]
         return UpdatableCollection(two_point_list)
 
     @classmethod
