@@ -354,6 +354,27 @@ class TwoPoint(Statistic):
         return UpdatableCollection(two_point_list)
 
     @classmethod
+    def create_two_point(
+        cls,
+        measurement: TwoPointMeasurement,
+        wl_factory: None | WeakLensingFactory,
+        nc_factory: None | NumberCountsFactory,
+    ) -> TwoPoint:
+        """Create a single TwoPoint statistic from a measurement.
+
+        :param measurement: The measurement object to initialize the TwoPoint statistic.
+        """
+        two_point = cls._from_metadata_single(
+            metadata=measurement.metadata,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
+        )
+        two_point.sacc_indices = measurement.indices
+        two_point.set_data_vector(DataVector.create(measurement.data))
+        two_point.ready = True
+        return two_point
+
+    @classmethod
     def from_measurement(
         cls,
         measurements: Sequence[TwoPointMeasurement],
@@ -376,19 +397,9 @@ class TwoPoint(Statistic):
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
-        two_point_list: list[TwoPoint] = []
-        for measurement in measurements:
-            two_point = cls._from_metadata_single(
-                metadata=measurement.metadata,
-                wl_factory=wl_factory,
-                nc_factory=nc_factory,
-            )
-            two_point.sacc_indices = measurement.indices
-            two_point.set_data_vector(DataVector.create(measurement.data))
-            two_point.ready = True
-
-            two_point_list.append(two_point)
-
+        two_point_list: list[TwoPoint] = [
+            cls.create_two_point(m, wl_factory, nc_factory) for m in measurements
+        ]
         return UpdatableCollection(two_point_list)
 
     def read_ell_cells(
