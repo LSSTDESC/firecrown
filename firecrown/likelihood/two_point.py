@@ -53,7 +53,7 @@ from firecrown.metadata_functions import (
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.two_point import TwoPointTheory
+from firecrown.models.two_point import TwoPointTheory, calculate_pk
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import cached_angular_cl, make_log_interpolator
 
@@ -687,7 +687,7 @@ class TwoPoint(Statistic):
                 if tn in self.theory.cells:
                     # Already computed this combination, skipping
                     continue
-                pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
+                pk = calculate_pk(pk_name, tools, tracer0, tracer1)
 
                 self.theory.cells[tn] = (
                     cached_angular_cl(
@@ -744,33 +744,3 @@ class TwoPoint(Statistic):
             ells[ells_larger_than_1]
         )
         return cell_interpolated
-
-    def calculate_pk(
-        self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
-    ):
-        """Return the power spectrum named by pk_name."""
-        if tools.has_pk(pk_name):
-            # Use existing power spectrum
-            pk = tools.get_pk(pk_name)
-        elif tracer0.has_pt or tracer1.has_pt:
-            if not (tracer0.has_pt and tracer1.has_pt):
-                # Mixture of PT and non-PT tracers
-                # Create a dummy matter PT tracer for the non-PT part
-                matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
-                if not tracer0.has_pt:
-                    tracer0.pt_tracer = matter_pt_tracer
-                else:
-                    tracer1.pt_tracer = matter_pt_tracer
-            # Compute perturbation power spectrum
-
-            pt_calculator = tools.get_pt_calculator()
-            pk = pt_calculator.get_biased_pk2d(
-                tracer1=tracer0.pt_tracer,
-                tracer2=tracer1.pt_tracer,
-            )
-        elif tracer0.has_hm or tracer1.has_hm:
-            # Compute halo model power spectrum
-            raise NotImplementedError("Halo model power spectra not supported yet")
-        else:
-            raise ValueError(f"No power spectrum for {pk_name} can be found.")
-        return pk
