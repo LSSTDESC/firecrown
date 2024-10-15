@@ -24,10 +24,10 @@ import os
 os.environ["CLMM_MODELING_BACKEND"] = (
     "nc"  # Need to use NumCosmo as CLMM's backend as well.
 )
-import clmm
-from clmm import Cosmology
+import clmm  # noqa: E402
+from clmm import Cosmology  # noqa: E402
 
-from gen_sacc_aux import convert_binned_profile_to_sacc
+from gen_sacc_aux import convert_binned_profile_to_sacc  # noqa: E402
 
 
 def generate_sacc_file() -> Any:
@@ -158,7 +158,7 @@ def generate_sacc_file() -> Any:
         cluster_DeltaSigma.append(
             moo.eval_excess_surface_density(radius_centers, redshift)
         )
-    cluster_DeltaSigma = np.array(cluster_DeltaSigma)
+    cluster_DeltaSigma = np.log10(np.array(cluster_DeltaSigma))
 
     richness_inds = np.digitize(cluster_richness, richness_edges) - 1
     z_inds = np.digitize(cluster_z, z_edges) - 1

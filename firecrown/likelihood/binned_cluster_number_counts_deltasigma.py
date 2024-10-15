@@ -22,7 +22,9 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.deltasigma_data import DeltaSigmaData
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
+from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
+    MurataBinnedSpecZDeltaSigmaRecipe,
+)
 
 
 class BinnedClusterDeltaSigma(Statistic):
@@ -36,7 +38,7 @@ class BinnedClusterDeltaSigma(Statistic):
         self,
         cluster_properties: ClusterProperty,
         survey_name: str,
-        cluster_recipe: ClusterRecipe,
+        cluster_recipe: MurataBinnedSpecZDeltaSigmaRecipe,
         systematics: None | list[SourceSystematic] = None,
     ):
         super().__init__()
@@ -84,7 +86,6 @@ class BinnedClusterDeltaSigma(Statistic):
         assert tools.cluster_abundance is not None
         assert tools.cluster_deltasigma is not None
         theory_vector_list: list[float] = []
-        # cluster_counts = self.get_binned_cluster_counts(tools)
 
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
@@ -111,13 +112,13 @@ class BinnedClusterDeltaSigma(Statistic):
         mean_values = []
         mass_edges = None
         z_edges = None
-        counts = float
+        counts = 1.0
         for this_bin in self.bins:
             if mass_edges != this_bin.mass_proxy_edges or z_edges != this_bin.z_edges:
                 mass_edges = this_bin.mass_proxy_edges
                 z_edges = this_bin.z_edges
                 counts = self.cluster_recipe.evaluate_theory_prediction_counts(
-                    tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
+                    tools.cluster_abundance, this_bin, self.sky_area
                 )
             total_observable = self.cluster_recipe.evaluate_theory_prediction(
                 [tools.cluster_abundance, tools.cluster_deltasigma],

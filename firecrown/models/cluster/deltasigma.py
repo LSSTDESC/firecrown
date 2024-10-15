@@ -1,4 +1,4 @@
-"""The module for building the cluster excess surface mass density (delta sigma) calculation.
+"""Module to compute the cluster excess surface mass density (delta sigma).
 
 The galaxy cluster delta sigma integral is a combination of both theoretical
 and phenomenological predictions.  This module contains the classes and
@@ -66,8 +66,11 @@ class ClusterDeltaSigma(Updatable):
     ) -> npt.NDArray[np.float64]:
         """Delta sigma for clusters."""
         cosmo_clmm = clmm.Cosmology()
+        # pylint: disable=protected-access
         cosmo_clmm._init_from_cosmo(self._cosmo)
         mass_def = self.halo_mass_function.mass_def
+        if mass_def.rho_type == "matter":
+            mass_def.rho_type = "mean"
         moo = clmm.Modeling(
             massdef=mass_def.rho_type,
             delta_mdef=mass_def.Delta,
@@ -81,6 +84,7 @@ class ClusterDeltaSigma(Updatable):
             )
             for log_m, redshift in zip(log_mass, z):
                 a = 1.0 / (1.0 + redshift)
+                # pylint: disable=protected-access
                 conc_val = conc._concentration(self._cosmo, 10**log_m, a)
                 moo.set_concentration(conc_val)
                 moo.set_mass(10**log_m)

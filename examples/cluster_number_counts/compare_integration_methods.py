@@ -84,7 +84,9 @@ def compare_integration() -> None:
 
             bin = TupleBin([mass_limits, z_limits])
 
-            counts = cluster_recipe.evaluate_theory_prediction(abundance, bin, sky_area)
+            counts = cluster_recipe.evaluate_theory_prediction(
+                [abundance], bin, sky_area
+            )
             counts_list.append(counts)
 
         t_stop = time.time()

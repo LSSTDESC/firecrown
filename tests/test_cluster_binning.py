@@ -100,19 +100,22 @@ def test_sacc_bin_radius_center():
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
     sb = SaccBin([tracer_z, tracer_lambda, tracer_radius])
-    assert sb.radius_center == (1.5)
+    radius_center = sb.radius_center
+    assert radius_center == 1.5
 
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
     sb = SaccBin([tracer_radius, tracer_lambda, tracer_z])
-    assert sb.radius_center == (1.5)
+    radius_center = sb.radius_center
+    assert radius_center == 1.5
 
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
     tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
     tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
     sb = SaccBin([tracer_lambda, tracer_radius, tracer_z])
-    assert sb.radius_center == (1.5)
+    radius_center = sb.radius_center
+    assert radius_center == 1.5
 
 
 def test_equal_sacc_bins_are_equal():
@@ -182,7 +185,7 @@ def test_create_tuple_bin():
     assert tb.mass_proxy_edges == (1, 2)
     assert tb.z_edges == (3, 4)
     assert tb.radius_edges == (1, 2)
-    assert tb.radius_center == (1.5)
+    assert tb.radius_center == 1.5
 
 
 def test_tuple_bins_are_equal():

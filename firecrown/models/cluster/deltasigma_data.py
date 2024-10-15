@@ -119,9 +119,9 @@ class DeltaSigmaData:
 
         bin_combinations = self._all_bin_combinations_for_data_type(data_type)
         my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
-        bin_combinations_for_survey = bin_combinations[my_survey_mask]
+        bin_combinations = bin_combinations[my_survey_mask]
 
-        for _, z_tracer, mass_tracer, radius_tracer in bin_combinations_for_survey:
+        for _, z_tracer, mass_tracer, radius_tracer in bin_combinations:
             z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
             mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(
                 mass_tracer
@@ -134,5 +134,4 @@ class DeltaSigmaData:
             bins.append(sacc_bin)
 
         # Remove duplicates while preserving order (i.e. dont use set())
-        unique_bins = list(dict.fromkeys(bins))
-        return unique_bins
+        return list(dict.fromkeys(bins))

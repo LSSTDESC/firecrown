@@ -35,7 +35,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
         self,
         cluster_theory_counts: ClusterAbundance,
         cluster_theory_deltasigma: ClusterDeltaSigma,
-        average_on: None | ClusterProperty = None,
+        average_on: None | ClusterProperty = None,  # pylint: disable=unused-argument
     ) -> Callable[
         [
             npt.NDArray[np.float64],
@@ -74,7 +74,6 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
                 )
 
             for cluster_prop in ClusterProperty:
-                include_prop = cluster_prop & average_on
                 if cluster_prop == ClusterProperty.DELTASIGMA:
                     prediction *= cluster_theory_deltasigma.delta_sigma(
                         mass, z, radius_center
@@ -140,8 +139,9 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
             (cluster_theory_counts.min_mass, cluster_theory_counts.max_mass),
             this_bin.z_edges,
         ]
+        radius_center = this_bin.radius_center
         self.integrator.extra_args = np.array(
-            [*this_bin.mass_proxy_edges, sky_area, float(this_bin.radius_center)]
+            [*this_bin.mass_proxy_edges, sky_area, radius_center]
         )
         theory_prediction = self.get_theory_prediction(
             cluster_theory_counts, cluster_theory_deltasigma, average_on
@@ -153,7 +153,6 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
     def get_theory_prediction_counts(
         self,
         cluster_theory: ClusterAbundance,
-        average_on: None | ClusterProperty = None,
     ) -> Callable[
         [npt.NDArray[np.float64], npt.NDArray[np.float64], tuple[float, float], float],
         npt.NDArray[np.float64],
@@ -218,7 +217,6 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
         cluster_theory: ClusterAbundance,
         this_bin: NDimensionalBin,
         sky_area: float,
-        average_on: None | ClusterProperty = None,
     ) -> float:
         """Evaluate the theory prediction for this cluster recipe.
 
@@ -232,9 +230,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
         ]
         self.integrator.extra_args = np.array([*this_bin.mass_proxy_edges, sky_area])
 
-        theory_prediction = self.get_theory_prediction_counts(
-            cluster_theory, average_on
-        )
+        theory_prediction = self.get_theory_prediction_counts(cluster_theory)
         prediction_wrapper = self.get_function_to_integrate_counts(theory_prediction)
 
         counts = self.integrator.integrate(prediction_wrapper)

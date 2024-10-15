@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 
-"""Defines a function to generate a SACC file for cluster number counts
-and cluster deltasigma."""
+"""Function to generate SACC file for cluster number counts and cluster deltasigma."""
 
 # # Cluster count-only SACC file creation
 #
@@ -28,8 +27,8 @@ import os
 os.environ["CLMM_MODELING_BACKEND"] = (
     "nc"  # Need to use NumCosmo as CLMM's backend as well.
 )
-import clmm
-from clmm import Cosmology
+import clmm  # noqa: E402
+from clmm import Cosmology  # noqa: E402
 
 
 def generate_sacc_file() -> Any:
@@ -174,7 +173,7 @@ def generate_sacc_file() -> Any:
     radius_centers = []
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
-        radius_center = np.mean(radius_edges[i : i + 2])
+        radius_center = np.mean(radius_edges[i:i + 2])
         radius_centers.append(radius_center)
 
     cluster_DeltaSigma = []
@@ -184,20 +183,9 @@ def generate_sacc_file() -> Any:
         cluster_DeltaSigma.append(
             moo.eval_excess_surface_density(radius_centers, redshift)
         )
-    cluster_DeltaSigma = np.array(np.log10(cluster_DeltaSigma))
+    cluster_DeltaSigma = np.log10(np.array(cluster_DeltaSigma))
     richness_inds = np.digitize(cluster_richness, richness_edges) - 1
     z_inds = np.digitize(cluster_z, z_edges) - 1
-    mean_DeltaSigma = np.array(
-        [
-            [
-                np.mean(
-                    cluster_DeltaSigma[(richness_inds == i) * (z_inds == j)], axis=0
-                )
-                for i in range(N_richness)
-            ]
-            for j in range(N_z)
-        ]
-    )
     std_DeltaSigma = np.array(
         [
             [
@@ -210,7 +198,6 @@ def generate_sacc_file() -> Any:
     var_mean_DeltaSigma = std_DeltaSigma**2 / cluster_counts[..., None]
     # correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
     # In each redshift bin are the $N_{\rm richness}$ richness bins.**
-    # var_mean_DeltaSigma = np.ones(len(var_mean_DeltaSigma.flatten()))
     covariance = np.diag(
         np.concatenate(
             (
@@ -243,7 +230,7 @@ def generate_sacc_file() -> Any:
 
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
-        radius_center = np.mean(radius_edges[i : i + 2])
+        radius_center = np.mean(radius_edges[i:i + 2])
         bin_radius_label = f"bin_radius_{i}"
         s_count.add_tracer(
             "bin_radius", bin_radius_label, radius_lower, radius_upper, radius_center

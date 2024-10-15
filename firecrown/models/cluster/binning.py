@@ -28,7 +28,7 @@ class NDimensionalBin(ABC):
 
     @property
     @abstractmethod
-    def radius_center(self) -> tuple[float]:
+    def radius_center(self) -> float:
         """Radius bin edges."""
 
     def __str__(self) -> str:
@@ -68,7 +68,7 @@ class SaccBin(NDimensionalBin):
         return radius_bin[0].lower, radius_bin[0].upper
 
     @property
-    def radius_center(self) -> tuple[float]:
+    def radius_center(self) -> float:
         """Radius bin center."""
         radius_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_radius"]
         if len(radius_bin) != 1:
@@ -131,7 +131,7 @@ class TupleBin(NDimensionalBin):
         return radius_bin[0], radius_bin[1]
 
     @property
-    def radius_center(self) -> tuple[float]:
+    def radius_center(self) -> float:
         """Radius bin center."""
         radius_bin = self.coordinate_bins[2]
         return radius_bin[2]

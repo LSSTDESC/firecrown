@@ -9,10 +9,8 @@
 
 import itertools
 
-from numcosmo_py import Nc
 from numcosmo_py import Ncm
 
-from typing import Any
 import sacc
 
 
@@ -27,6 +25,7 @@ def convert_binned_profile_to_sacc(
     area,
     survey_name="numcosmo_simulated_redshift_richness",
 ) -> sacc.Sacc:
+    """Function to generate and store SACC data for cluste counts."""
     N_z = len(z_edges) - 1
     N_richness = len(richness_edges) - 1
     N_radius = len(radius_edges) - 1

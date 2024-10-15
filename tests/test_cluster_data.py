@@ -28,8 +28,8 @@ def test_create_abundance_data():
 def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
     dsd = DeltaSigmaData(cluster_sacc_data)
-    data_list = [ad, dsd]
-    for data_obj in data_list:
+    data_tuple = (ad, dsd)
+    for data_obj in data_tuple:
         with pytest.raises(
             ValueError,
             match="The SACC file does not contain the SurveyTracer the_black_lodge.",
@@ -40,8 +40,8 @@ def test_get_survey_tracer_missing_survey_name(cluster_sacc_data: sacc.Sacc):
 def test_get_survey_tracer_wrong_tracer_type(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
     dsd = DeltaSigmaData(cluster_sacc_data)
-    data_list = [ad, dsd]
-    for data_obj in data_list:
+    data_tuple = (ad, dsd)
+    for data_obj in data_tuple:
         with pytest.raises(
             ValueError,
             match="The SACC tracer z_bin_tracer_1 is not a SurveyTracer.",
@@ -52,8 +52,8 @@ def test_get_survey_tracer_wrong_tracer_type(cluster_sacc_data: sacc.Sacc):
 def test_get_survey_tracer_returns_survey_tracer(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
     dsd = DeltaSigmaData(cluster_sacc_data)
-    data_list = [ad, dsd]
-    for data_obj in data_list:
+    data_tuple = (ad, dsd)
+    for data_obj in data_tuple:
         survey = data_obj.get_survey_tracer("my_survey")
         assert survey is not None
         assert isinstance(survey, sacc.tracers.SurveyTracer)
