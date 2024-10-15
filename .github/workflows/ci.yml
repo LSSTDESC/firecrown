@@ -31,7 +31,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           miniforge-variant: Miniforge
           show-channel-urls: true
-          use-mamba: true
+          use-mamba: false
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
