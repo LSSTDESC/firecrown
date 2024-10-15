@@ -1,4 +1,4 @@
-name: firecrown-ci
+e-mame: firecrown-ci
 
 
 on:
@@ -29,7 +29,7 @@ jobs:
           auto-update-conda: true
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
-          miniforge-variant: Mambaforge
+          miniforge-variant: Miniforge
           show-channel-urls: true
           use-mamba: true
       - name: Cache date
