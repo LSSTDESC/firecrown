@@ -4,6 +4,9 @@ Tests for the TwoPointTheory class and related functions.
 
 import pytest
 import firecrown.models.two_point as models
+from firecrown.likelihood import source
+import firecrown.modeling_tools as mt
+from tests.conftest import TrivialTracer
 
 
 def test_determine_ccl_kind():
@@ -18,3 +21,16 @@ def test_determine_ccl_kind():
     assert models.determine_ccl_kind("cmbGalaxy_convergenceShear_xi_t") == "NG"
     with pytest.raises(ValueError):
         _ = models.determine_ccl_kind("bad_sacc_data_type")
+
+
+def test_calculate_pk_lacking_pk(
+    tools_with_vanilla_cosmology: mt.ModelingTools, empty_pyccl_tracer: source.Tracer
+):
+    dummy = TrivialTracer(empty_pyccl_tracer)
+    with pytest.raises(ValueError):
+        _ = models.calculate_pk(
+            "no such entry",
+            tools_with_vanilla_cosmology,
+            dummy,
+            dummy,
+        )

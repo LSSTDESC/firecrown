@@ -14,7 +14,6 @@ import sacc
 
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.source import (
-    Tracer,
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySelectField,
@@ -23,15 +22,7 @@ import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.parameters import ParamsMap
-
-
-class TrivialTracer(Tracer):
-    """This is the most trivial possible subclass of Tracer."""
-
-
-@pytest.fixture(name="empty_pyccl_tracer")
-def fixture_empty_pyccl_tracer():
-    return pyccl.Tracer()
+from tests.conftest import TrivialTracer
 
 
 @pytest.fixture(
@@ -103,10 +94,7 @@ def test_trivial_tracer_construction(empty_pyccl_tracer):
     # field is "delta_matter".
     assert trivial.field == "delta_matter"
     assert trivial.pt_tracer is None
-    assert trivial.halo_profile is None
-    assert trivial.halo_2pt is None
     assert not trivial.has_pt
-    assert not trivial.has_hm
 
 
 def test_tracer_construction_with_name(empty_pyccl_tracer):
@@ -115,10 +103,7 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
     assert named.tracer_name == "Fred"
     assert named.field == "Fred"
     assert named.pt_tracer is None
-    assert named.halo_profile is None
-    assert named.halo_2pt is None
     assert not named.has_pt
-    assert not named.has_hm
 
 
 def test_linear_bias_systematic():

@@ -70,9 +70,6 @@ def calculate_pk(pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: T
             tracer1=tracer0.pt_tracer,
             tracer2=tracer1.pt_tracer,
         )
-    elif tracer0.has_hm or tracer1.has_hm:
-        # Compute halo model power spectrum
-        raise NotImplementedError("Halo model power spectra not supported yet")
     else:
         raise ValueError(f"No power spectrum for {pk_name} can be found.")
     return pk
