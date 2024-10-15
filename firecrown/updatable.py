@@ -95,6 +95,13 @@ class Updatable(ABC):
         """
         if isinstance(value, (Updatable, UpdatableCollection)):
             self._updatables.append(value)
+        elif isinstance(value, Iterable):
+            # Consider making this a recursive call that handles nested
+            # iterables.
+            for v in value:
+                if isinstance(v, (Updatable, UpdatableCollection)):
+                    self._updatables.append(v)
+
         if isinstance(value, (InternalParameter, SamplerParameter)):
             self.set_parameter(key, value)
         else:

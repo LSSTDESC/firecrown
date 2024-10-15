@@ -7,6 +7,7 @@ Fixtures defined here are available to any test in Firecrown.
 from itertools import product
 import pytest
 
+import pyccl
 import sacc
 
 import numpy as np
@@ -18,6 +19,7 @@ from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
+from firecrown.likelihood.source import Tracer
 from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
@@ -79,6 +81,23 @@ def _skip_tests(items, keyword, reason):
 
 
 # Fixtures
+
+
+class TrivialTracer(Tracer):
+    """This is the most trivial possible subclass of Tracer."""
+
+    @property
+    def has_pt(self) -> bool:
+        """Answer whether we have a perturbation theory tracer.
+
+        :return: False, becauswe this is a dummy tracer.
+        """
+        return False
+
+
+@pytest.fixture(name="empty_pyccl_tracer")
+def fixture_empty_pyccl_tracer():
+    return pyccl.Tracer()
 
 
 @pytest.fixture(name="trivial_stats")

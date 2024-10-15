@@ -1,7 +1,6 @@
 """Two point statistic support."""
 
 from __future__ import annotations
-import copy
 import warnings
 from typing import Sequence
 
@@ -15,7 +14,6 @@ import sacc.windows
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.generators.two_point import (
-    ELL_FOR_XI_DEFAULTS,
     log_linear_ells,
     calculate_ells_for_interpolation,
     EllOrThetaConfig,
@@ -55,65 +53,12 @@ from firecrown.metadata_functions import (
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import UpdatableCollection, Updatable
+from firecrown.models.two_point import TwoPointTheory, calculate_pk
+from firecrown.updatable import UpdatableCollection
 from firecrown.utils import cached_angular_cl, make_log_interpolator
 
 # only supported types are here, anything else will throw
 # a value error
-SACC_DATA_TYPE_TO_CCL_KIND = {
-    "galaxy_density_cl": "cl",
-    "galaxy_density_xi": "NN",
-    "galaxy_shearDensity_cl_e": "cl",
-    "galaxy_shearDensity_xi_t": "NG",
-    "galaxy_shear_cl_ee": "cl",
-    "galaxy_shear_xi_minus": "GG-",
-    "galaxy_shear_xi_plus": "GG+",
-    "cmbGalaxy_convergenceDensity_xi": "NN",
-    "cmbGalaxy_convergenceShear_xi_t": "NG",
-}
-
-
-class TwoPointTheory(Updatable):
-    """Making predictions for TwoPoint statistics."""
-
-    def __init__(
-        self,
-        sacc_data_type: str,
-        source0: Source,
-        source1: Source,
-        ell_or_theta_min: float | int | None = None,
-        ell_or_theta_max: float | int | None = None,
-    ) -> None:
-        """Initialize a new TwoPointTheory object.
-
-        :param sacc_data_type: the name of the SACC data type for this theory.
-        :param source0: the first source
-        :param source1: the second source
-        """
-        super().__init__()
-        self.sacc_data_type = sacc_data_type
-        self.ccl_kind: str = ""
-        self.source0 = source0
-        self.source1 = source1
-        self.ell_for_xi_config: dict[str, int] = {}
-        self.ell_or_theta_config: None | EllOrThetaConfig = None
-        self.ell_or_theta_min = ell_or_theta_min
-        self.ell_or_theta_max = ell_or_theta_max
-        self.window: None | npt.NDArray[np.float64] = None
-        self.sacc_tracers: None | TracerNames = None
-        self.ells: None | npt.NDArray[np.int64] = None
-        self.thetas: None | npt.NDArray[np.float64] = None
-        self.mean_ells: None | npt.NDArray[np.float64] = None
-        self.ells_for_xi: None | npt.NDArray[np.int64] = None
-        self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
-
-    def set_ccl_kind(self, sacc_data_type):
-        """Set the CCL kind for this statistic."""
-        self.sacc_data_type = sacc_data_type
-        if self.sacc_data_type in SACC_DATA_TYPE_TO_CCL_KIND:
-            self.ccl_kind = SACC_DATA_TYPE_TO_CCL_KIND[self.sacc_data_type]
-        else:
-            raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
 
 
 # pylint: disable=too-many-public-methods
@@ -257,29 +202,19 @@ class TwoPoint(Statistic):
         ell_or_theta: None | EllOrThetaConfig = None,
         ell_or_theta_min: None | float | int = None,
         ell_or_theta_max: None | float | int = None,
+        tracers: None | TracerNames = None,
     ) -> None:
         super().__init__()
-
-        assert isinstance(source0, Source)
-        assert isinstance(source1, Source)
-
         self.theory = TwoPointTheory(
-            sacc_data_type, source0, source1, ell_or_theta_min, ell_or_theta_max
+            sacc_data_type=sacc_data_type,
+            sources=(source0, source1),
+            ell_or_theta_min=ell_or_theta_min,
+            ell_or_theta_max=ell_or_theta_max,
+            ell_for_xi=ell_for_xi,
+            ell_or_theta=ell_or_theta,
+            tracers=tracers,
         )
-        self.data_vector: None | DataVector
-        self._init_empty_default_attribs()
-        if ell_for_xi is not None:
-            self.theory.ell_for_xi_config.update(ell_for_xi)
-        self.theory.ell_or_theta_config = ell_or_theta
-        self.theory.set_ccl_kind(sacc_data_type)
-
-    def _init_empty_default_attribs(self):
-        """Initialize the empty and default attributes."""
-        self.theory.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-        self.theory.ell_or_theta_config = None
-        self.theory.window = None
-
-        self.data_vector = None
+        self._data: None | DataVector = None
 
     @classmethod
     def from_metadata_index(
@@ -303,10 +238,8 @@ class TwoPoint(Statistic):
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
-        two_point_list = []
-        for metadata_index in metadata_indices:
-            n1, a, n2, b = measurements_from_index(metadata_index)
-            two_point = cls(
+        two_point_list = [
+            cls(
                 sacc_data_type=metadata_index["data_type"],
                 source0=use_source_factory_metadata_index(
                     n1, a, wl_factory=wl_factory, nc_factory=nc_factory
@@ -315,8 +248,9 @@ class TwoPoint(Statistic):
                     n2, b, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
             )
-            two_point_list.append(two_point)
-
+            for metadata_index in metadata_indices
+            for n1, a, n2, b in [measurements_from_index(metadata_index)]
+        ]
         return UpdatableCollection(two_point_list)
 
     @classmethod
@@ -379,8 +313,12 @@ class TwoPoint(Statistic):
             wl_factory=wl_factory,
             nc_factory=nc_factory,
         )
-        two_point = cls(metadata.get_sacc_name(), source0, source1)
-        two_point.theory.sacc_tracers = metadata.XY.get_tracer_names()
+        two_point = cls(
+            metadata.get_sacc_name(),
+            source0,
+            source1,
+            tracers=metadata.XY.get_tracer_names(),
+        )
         return two_point
 
     @classmethod
@@ -416,6 +354,27 @@ class TwoPoint(Statistic):
         return UpdatableCollection(two_point_list)
 
     @classmethod
+    def create_two_point(
+        cls,
+        measurement: TwoPointMeasurement,
+        wl_factory: None | WeakLensingFactory,
+        nc_factory: None | NumberCountsFactory,
+    ) -> TwoPoint:
+        """Create a single TwoPoint statistic from a measurement.
+
+        :param measurement: The measurement object to initialize the TwoPoint statistic.
+        """
+        two_point = cls._from_metadata_single(
+            metadata=measurement.metadata,
+            wl_factory=wl_factory,
+            nc_factory=nc_factory,
+        )
+        two_point.sacc_indices = measurement.indices
+        two_point.set_data_vector(DataVector.create(measurement.data))
+        two_point.ready = True
+        return two_point
+
+    @classmethod
     def from_measurement(
         cls,
         measurements: Sequence[TwoPointMeasurement],
@@ -438,19 +397,9 @@ class TwoPoint(Statistic):
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
-        two_point_list: list[TwoPoint] = []
-        for measurement in measurements:
-            two_point = cls._from_metadata_single(
-                metadata=measurement.metadata,
-                wl_factory=wl_factory,
-                nc_factory=nc_factory,
-            )
-            two_point.sacc_indices = measurement.indices
-            two_point.data_vector = DataVector.create(measurement.data)
-            two_point.ready = True
-
-            two_point_list.append(two_point)
-
+        two_point_list: list[TwoPoint] = [
+            cls.create_two_point(m, wl_factory, nc_factory) for m in measurements
+        ]
         return UpdatableCollection(two_point_list)
 
     def read_ell_cells(
@@ -460,13 +409,11 @@ class TwoPoint(Statistic):
         | tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
     ):
         """Read and return ell and Cell."""
-        ells, Cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
+        ells, cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
         # As version 0.13 of sacc, the method get_ell_cl returns the
         # ell values and the Cl values in arrays of the same length.
-        assert len(ells) == len(Cells)
+        assert len(ells) == len(cells)
         common_length = len(ells)
-        sacc_indices = None
-
         if common_length == 0:
             return None
         sacc_indices = np.atleast_1d(
@@ -474,8 +421,7 @@ class TwoPoint(Statistic):
         )
         assert sacc_indices is not None  # Needed for mypy
         assert len(sacc_indices) == common_length
-
-        return ells, Cells, sacc_indices
+        return ells, cells, sacc_indices
 
     def read_reals(
         self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
@@ -558,7 +504,7 @@ class TwoPoint(Statistic):
         self.theory.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
-        self.data_vector = DataVector.create(xis)
+        self._data = DataVector.create(xis)
 
     def read_harmonic_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
@@ -620,7 +566,7 @@ class TwoPoint(Statistic):
             assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
         self.theory.window = window
         self.sacc_indices = sacc_indices
-        self.data_vector = DataVector.create(Cells)
+        self._data = DataVector.create(Cells)
 
     def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
         """Initialize this TwoPoint's sources, and return the tracer names."""
@@ -634,8 +580,13 @@ class TwoPoint(Statistic):
 
     def get_data_vector(self) -> DataVector:
         """Return this statistic's data vector."""
-        assert self.data_vector is not None
-        return self.data_vector
+        assert self._data is not None
+        return self._data
+
+    def set_data_vector(self, value: DataVector) -> None:
+        """Set this statistic's data vector."""
+        assert value is not None
+        self._data = value
 
     def compute_theory_vector_real_space(self, tools: ModelingTools) -> TheoryVector:
         """Compute a two-point statistic in real space.
@@ -675,9 +626,13 @@ class TwoPoint(Statistic):
         for the window function.
         """
         tracers0 = self.theory.source0.get_tracers(tools)
-        tracers1 = self.theory.source1.get_tracers(tools)
         scale0 = self.theory.source0.get_scale()
-        scale1 = self.theory.source1.get_scale()
+
+        if self.theory.source0 is self.theory.source1:
+            tracers1, scale1 = tracers0, scale0
+        else:
+            tracers1 = self.theory.source1.get_tracers(tools)
+            scale1 = self.theory.source1.get_scale()
 
         assert self.theory.ccl_kind == "cl"
         assert self.theory.ells is not None
@@ -707,7 +662,7 @@ class TwoPoint(Statistic):
                 "lb, l -> b", self.theory.window, self.theory.ells
             )
 
-            assert self.data_vector is not None
+            assert self._data is not None
             return TheoryVector.create(theory_vector)
 
         # If we get here, we are working in harmonic space without a window function.
@@ -748,7 +703,7 @@ class TwoPoint(Statistic):
                 if tn in self.theory.cells:
                     # Already computed this combination, skipping
                     continue
-                pk = self.calculate_pk(pk_name, tools, tracer0, tracer1)
+                pk = calculate_pk(pk_name, tools, tracer0, tracer1)
 
                 self.theory.cells[tn] = (
                     cached_angular_cl(
@@ -805,33 +760,3 @@ class TwoPoint(Statistic):
             ells[ells_larger_than_1]
         )
         return cell_interpolated
-
-    def calculate_pk(
-        self, pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
-    ):
-        """Return the power spectrum named by pk_name."""
-        if tools.has_pk(pk_name):
-            # Use existing power spectrum
-            pk = tools.get_pk(pk_name)
-        elif tracer0.has_pt or tracer1.has_pt:
-            if not (tracer0.has_pt and tracer1.has_pt):
-                # Mixture of PT and non-PT tracers
-                # Create a dummy matter PT tracer for the non-PT part
-                matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
-                if not tracer0.has_pt:
-                    tracer0.pt_tracer = matter_pt_tracer
-                else:
-                    tracer1.pt_tracer = matter_pt_tracer
-            # Compute perturbation power spectrum
-
-            pt_calculator = tools.get_pt_calculator()
-            pk = pt_calculator.get_biased_pk2d(
-                tracer1=tracer0.pt_tracer,
-                tracer2=tracer1.pt_tracer,
-            )
-        elif tracer0.has_hm or tracer1.has_hm:
-            # Compute halo model power spectrum
-            raise NotImplementedError("Halo model power spectra not supported yet")
-        else:
-            raise ValueError(f"No power spectrum for {pk_name} can be found.")
-        return pk
