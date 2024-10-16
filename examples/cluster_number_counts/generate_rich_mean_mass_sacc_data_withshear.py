@@ -173,7 +173,8 @@ def generate_sacc_file() -> Any:
     radius_centers = []
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
-        radius_center = np.mean(radius_edges[i : i + 2])
+        j = i + 2
+        radius_center = np.mean(radius_edges[i:j])
         radius_centers.append(radius_center)
 
     cluster_DeltaSigma = []
@@ -230,7 +231,8 @@ def generate_sacc_file() -> Any:
 
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
         radius_lower, radius_upper = radius_bin
-        radius_center = np.mean(radius_edges[i : i + 2])
+        j = i + 2
+        radius_center = np.mean(radius_edges[i:j])
         bin_radius_label = f"bin_radius_{i}"
         s_count.add_tracer(
             "bin_radius", bin_radius_label, radius_lower, radius_upper, radius_center
