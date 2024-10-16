@@ -392,13 +392,12 @@ The plot in @fig-source-bins-edges shows the bin edges for the source sample in 
 The red dashed lines represent the bin edges generated using the true distribution, while the blue dotted lines represent the bin edges generated using the photometric distribution.
 The percentage difference in the number of galaxies in each bin is shown in the table below.
 ```{python}
-# | label: table-source-bins-diff
-# | table-cap: Percentage difference in the number of galaxies in each bin for LSST Year 1 using the formulation from the SRD.
-# | table-cap-location: margin
+# | label: tbl-source-bins-diff
+# | tbl-cap: Percentage difference in the number of galaxies in each bin for LSST Year 1 using the formulation from the SRD.
+# | tbl-cap-location: margin
 # | code-fold: true
 
 N_total = stats.eval_pdf(3.5)
-
 N_gal = np.array(
     [
         (stats.eval_pdf(zu) - stats.eval_pdf(zl)) / N_total
@@ -411,41 +410,22 @@ N_gal_phot = np.array(
         for zl, zu in pairwise(source_bins_phot)
     ]
 )
-# Compute the percentage difference for each bin
 percent_diff = 100.0 * (N_gal - N_gal_phot) / N_gal
-
-# Create a DataFrame for the summary table
-# Create the summary DataFrame with clearer column names
-summary_table = pd.DataFrame(
-    {
-        "True Distribution Bin": [
-            f"({i:.3f}, {j:.3f})" for i, j in pairwise(source_bins)
-        ],
-        "Photometric Distribution Bin": [
-            f"({i:.3f}, {j:.3f})" for i, j in pairwise(source_bins_phot)
-        ],
-        "Galaxies (True Dist.)": [f"{n:.3f}" for n in N_gal],
-        "Galaxies (Photometric Dist.)": [f"{n:.3f}" for n in N_gal_phot],
-        "Percent Difference (%)": [f"{p:.1f}%" for p in percent_diff],
-    }
+(
+    pd.DataFrame(
+        {
+            "True Distribution Bin": [
+                f"({i:.3f}, {j:.3f})" for i, j in pairwise(source_bins)
+            ],
+            "Photometric Distribution Bin": [
+                f"({i:.3f}, {j:.3f})" for i, j in pairwise(source_bins_phot)
+            ],
+            "Galaxies (True Dist.)": [f"{n:.3f}" for n in N_gal],
+            "Galaxies (Photometric Dist.)": [f"{n:.3f}" for n in N_gal_phot],
+            "Percent Difference (%)": [f"{p:.1f}%" for p in percent_diff],
+        }
+    )
 )
-
-
-# Define a style function to highlight differences
-def highlight_diff(val):
-    color = "red" if np.abs(float(val.rstrip("%"))) > 1 else "black"
-    return f"color: {color}"
-
-
-styled_table = (
-    summary_table.style.set_properties(**{"text-align": "center"})
-    .map(highlight_diff, subset=["Percent Difference (%)"])
-    .set_table_attributes('class="table table-striped table-hover"')
-    .set_caption("Comparison of Galaxy Counts: True vs Photometric Bins")
-)
-
-styled_table
-
 ```
 
 
