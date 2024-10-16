@@ -66,11 +66,13 @@ from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
 z = np.linspace(0, 3.5, 100)
 
 # We want to evaluate f(z) for both Y1 and Y10, using the SRD prescriptions.
-zdist_y1_lens = ZDistLSSTSRD.year_1_lens()
-zdist_y10_lens = ZDistLSSTSRD.year_10_lens()
+zdist_y1_lens = ZDistLSSTSRD.year_1_lens(use_autoknot=True, autoknots_reltol=1.0e-5)
+zdist_y10_lens = ZDistLSSTSRD.year_10_lens(use_autoknot=True, autoknots_reltol=1.0e-5)
 
-zdist_y1_source = ZDistLSSTSRD.year_1_source()
-zdist_y10_source = ZDistLSSTSRD.year_10_source()
+zdist_y1_source = ZDistLSSTSRD.year_1_source(use_autoknot=True, autoknots_reltol=1.0e-5)
+zdist_y10_source = ZDistLSSTSRD.year_10_source(
+    use_autoknot=True, autoknots_reltol=1.0e-5
+)
 
 # Now we can generate the values we want to plot.
 # Note that Pz_y1_* and Pz_y10_* are both numpy arrays:
@@ -81,6 +83,12 @@ Pz_y1_source = zdist_y1_source.distribution(z)
 Pz_y10_source = zdist_y10_source.distribution(z)
 
 ```
+
+We use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation.
+This allows us to create the knots such that the interpolation error is less than $10^{-5}$.[^4]
+
+[^4]: The `autoknots` method is a part of the NumCosmo package, which is a dependency of Firecrown.
+See [the NumCosmo documentation](https://numcosmo.github.io/manual/NcmSplineCubicNotaknot.html) for more information.
 
 The generated data are plotted in @fig-fz
 
@@ -244,11 +252,6 @@ data = pd.concat([d_lens0_y1, d_source0_y1, d_lens0_y10, d_source0_y10])
 
 The `ZDistLSSTSRD` object can also be used to generate the redshift distribution for all bins at once.
 The following code block demonstrates how to do this.
-Moreover, we also use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation.
-This allows us to create the knots such that the interpolation error is less than $10^{-5}$.[^4]
-
-[^4]: The `autoknots` method is a part of the NumCosmo package, which is a dependency of Firecrown.
-See [the NumCosmo documentation](https://numcosmo.github.io/manual/NcmSplineCubicNotaknot.html) for more information.
 
 ```{python}
 from itertools import pairwise
@@ -264,8 +267,6 @@ all_y1_bins = [
         z=z,
         name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
         measurements={Galaxies.COUNTS},
-        use_autoknot=True,
-        autoknots_reltol=1.0e-5,
     )
     for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
 ] + [
@@ -276,8 +277,6 @@ all_y1_bins = [
         z=z,
         name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
         measurements={Galaxies.SHEAR_E},
-        use_autoknot=True,
-        autoknots_reltol=1.0e-5,
     )
     for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
 ]

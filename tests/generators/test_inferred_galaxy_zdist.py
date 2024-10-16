@@ -25,6 +25,8 @@ from firecrown.generators.inferred_galaxy_zdist import (
     ZDistLSSTSRDBinCollection,
     LSST_Y1_LENS_BIN_COLLECTION,
     LSST_Y1_SOURCE_BIN_COLLECTION,
+    LSST_Y10_LENS_BIN_COLLECTION,
+    LSST_Y10_SOURCE_BIN_COLLECTION,
     Measurement,
     make_measurements,
     make_measurements_dict,
@@ -86,7 +88,18 @@ def fixture_reltol(request):
     return request.param
 
 
-BINS_LIST = ["one_lens", "all_lens", "one_source", "all_source", "lens_and_source"]
+BINS_LIST = [
+    "one_lens_y1",
+    "all_lens_y1",
+    "one_source_y1",
+    "all_source_y1",
+    "lens_and_source_y1",
+    "one_lens_y10",
+    "all_lens_y10",
+    "one_source_y10",
+    "all_source_y10",
+    "lens_and_source_y10",
+]
 
 
 @pytest.fixture(
@@ -100,17 +113,28 @@ BINS_LIST = ["one_lens", "all_lens", "one_source", "all_source", "lens_and_sourc
 def fixture_zdist_bins(request) -> list[ZDistLSSTSRDBin]:
     """Fixture for the ZDistLSSTSRD class."""
     match request.param[0]:
-        case "one_lens":
+        case "one_lens_y1":
             bins = copy.deepcopy(LSST_Y1_LENS_BIN_COLLECTION.bins[0:1])
-        case "all_lens":
+        case "all_lens_y1":
             bins = copy.deepcopy(LSST_Y1_LENS_BIN_COLLECTION.bins)
-        case "one_source":
+        case "one_source_y1":
             bins = copy.deepcopy(LSST_Y1_SOURCE_BIN_COLLECTION.bins[0:1])
-        case "all_source":
+        case "all_source_y1":
             bins = copy.deepcopy(LSST_Y1_SOURCE_BIN_COLLECTION.bins)
-        case "lens_and_source":
+        case "lens_and_source_y1":
             bins = copy.deepcopy(LSST_Y1_LENS_BIN_COLLECTION.bins)
             bins.extend(copy.deepcopy(LSST_Y1_SOURCE_BIN_COLLECTION.bins))
+        case "one_lens_y10":
+            bins = copy.deepcopy(LSST_Y10_LENS_BIN_COLLECTION.bins[0:1])
+        case "all_lens_y10":
+            bins = copy.deepcopy(LSST_Y10_LENS_BIN_COLLECTION.bins)
+        case "one_source_y10":
+            bins = copy.deepcopy(LSST_Y10_SOURCE_BIN_COLLECTION.bins[0:1])
+        case "all_source_y10":
+            bins = copy.deepcopy(LSST_Y10_SOURCE_BIN_COLLECTION.bins)
+        case "lens_and_source_y10":
+            bins = copy.deepcopy(LSST_Y10_LENS_BIN_COLLECTION.bins)
+            bins.extend(copy.deepcopy(LSST_Y10_SOURCE_BIN_COLLECTION.bins))
         case _:
             raise ValueError(f"Invalid parameter: {request.param}")
 
