@@ -4,6 +4,7 @@ import copy
 import numpy as np
 from numpy import typing as npt
 import pyccl
+import sacc
 
 from firecrown.generators.two_point import EllOrThetaConfig, ELL_FOR_XI_DEFAULTS
 from firecrown.likelihood.source import Source, Tracer
@@ -146,3 +147,18 @@ class TwoPointTheory(Updatable):
         """
         for s in self.sources:
             s.reset()
+
+    def initialize_sources(self, sacc_data: sacc.Sacc) -> None:
+        """Initialize this TwoPointTheory's sources  and tracer names.
+
+        :param sacc_data: The data in the from which we read the data.
+        :return: The tracer names.
+        """
+        self.sources[0].read(sacc_data)
+        if self.sources[0] is not self.sources[1]:
+            self.sources[1].read(sacc_data)
+        for s in self.sources:
+            assert s is not None
+            assert s.sacc_tracer is not None
+        tracers = (s.sacc_tracer for s in self.sources)
+        self.sacc_tracers = TracerNames(*tracers)

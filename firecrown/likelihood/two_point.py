@@ -450,7 +450,7 @@ class TwoPoint(Statistic):
 
         :param sacc_data: The data in the sacc format.
         """
-        self.theory.sacc_tracers = self.initialize_sources(sacc_data)
+        self.theory.initialize_sources(sacc_data)
 
         if self.theory.ccl_kind == "cl":
             self.read_harmonic_space(sacc_data)
@@ -567,16 +567,6 @@ class TwoPoint(Statistic):
         self.theory.window = window
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(Cells)
-
-    def initialize_sources(self, sacc_data: sacc.Sacc) -> TracerNames:
-        """Initialize this TwoPoint's sources, and return the tracer names."""
-        self.theory.source0.read(sacc_data)
-        if self.theory.source0 is not self.theory.source1:
-            self.theory.source1.read(sacc_data)
-        assert self.theory.source0.sacc_tracer is not None
-        assert self.theory.source1.sacc_tracer is not None
-        tracers = (self.theory.source0.sacc_tracer, self.theory.source1.sacc_tracer)
-        return TracerNames(*tracers)
 
     def get_data_vector(self) -> DataVector:
         """Return this statistic's data vector."""
