@@ -64,9 +64,9 @@ The code snippet below demonstrates how to initialize and serialize this datacla
 ```{python}
 from firecrown.generators.inferred_galaxy_zdist import (
     ZDistLSSTSRDBinCollection,
-    Y1_ALPHA,
-    Y1_BETA,
-    Y1_Z0,
+    Y1_LENS_ALPHA,
+    Y1_LENS_BETA,
+    Y1_LENS_Z0,
 )
 
 # We add a bin1, to demonstrate the use of multiple bins.
@@ -79,9 +79,9 @@ d.update(bin_name="bin1", zpl=0.2, zpu=0.3)
 bin1 = ZDistLSSTSRDBin.model_validate(d)
 
 bin_collection = ZDistLSSTSRDBinCollection(
-    alpha=Y1_ALPHA,
-    beta=Y1_BETA,
-    z0=Y1_Z0,
+    alpha=Y1_LENS_ALPHA,
+    beta=Y1_LENS_BETA,
+    z0=Y1_LENS_Z0,
     bins=[bin0, bin1],
 )
 
