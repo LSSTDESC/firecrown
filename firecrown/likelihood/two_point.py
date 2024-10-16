@@ -423,28 +423,6 @@ class TwoPoint(Statistic):
         assert len(sacc_indices) == common_length
         return ells, cells, sacc_indices
 
-    def read_reals(
-        self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
-    ) -> (
-        None
-        | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
-    ):
-        """Read and return theta and xi."""
-        thetas, xis = sacc_data.get_theta_xi(sacc_data_type, *tracers, return_cov=False)
-        # As version 0.13 of sacc, the method get_real returns the
-        # theta values and the xi values in arrays of the same length.
-        assert len(thetas) == len(xis)
-
-        common_length = len(thetas)
-        if common_length == 0:
-            return None
-        sacc_indices = np.atleast_1d(
-            sacc_data.indices(self.theory.sacc_data_type, tracers)
-        )
-        assert sacc_indices is not None  # Needed for mypy
-        assert len(sacc_indices) == common_length
-        return thetas, xis, sacc_indices
-
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
 
@@ -462,9 +440,7 @@ class TwoPoint(Statistic):
     def read_real_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
         assert self.theory.sacc_tracers is not None
-        thetas_xis_indices = self.read_reals(
-            self.theory.sacc_data_type, sacc_data, self.theory.sacc_tracers
-        )
+        thetas_xis_indices = read_reals(self.theory, sacc_data)
         # We do not support window functions for real space statistics
         if thetas_xis_indices is not None:
             thetas, xis, sacc_indices = thetas_xis_indices
@@ -750,3 +726,29 @@ class TwoPoint(Statistic):
             ells[ells_larger_than_1]
         )
         return cell_interpolated
+
+
+def read_reals(
+    theory: TwoPointTheory,
+    sacc_data: sacc.Sacc,
+) -> (
+    None
+    | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
+):
+    """Read and return theta and xi."""
+    thetas, xis = sacc_data.get_theta_xi(
+        theory.sacc_data_type, *theory.sacc_tracers, return_cov=False
+    )
+    # As version 0.13 of sacc, the method get_real returns the
+    # theta values and the xi values in arrays of the same length.
+    assert len(thetas) == len(xis)
+
+    common_length = len(thetas)
+    if common_length == 0:
+        return None
+    sacc_indices = np.atleast_1d(
+        sacc_data.indices(theory.sacc_data_type, theory.sacc_tracers)
+    )
+    assert sacc_indices is not None  # Needed for mypy
+    assert len(sacc_indices) == common_length
+    return thetas, xis, sacc_indices
