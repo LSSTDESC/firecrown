@@ -156,7 +156,7 @@ class Statistic(Updatable):
 
             super().__init__(parameter_prefix=parameter_prefix)
 
-        as the last thing they do in `__init__`.
+        as the first thing they do in `__init__`.
 
         :param parameter_prefix: The prefix to prepend to all parameter names
         """
