@@ -402,27 +402,6 @@ class TwoPoint(Statistic):
         ]
         return UpdatableCollection(two_point_list)
 
-    def read_ell_cells(
-        self, sacc_data_type: str, sacc_data: sacc.Sacc, tracers: TracerNames
-    ) -> (
-        None
-        | tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
-    ):
-        """Read and return ell and Cell."""
-        ells, cells = sacc_data.get_ell_cl(sacc_data_type, *tracers, return_cov=False)
-        # As version 0.13 of sacc, the method get_ell_cl returns the
-        # ell values and the Cl values in arrays of the same length.
-        assert len(ells) == len(cells)
-        common_length = len(ells)
-        if common_length == 0:
-            return None
-        sacc_indices = np.atleast_1d(
-            sacc_data.indices(self.theory.sacc_data_type, tracers)
-        )
-        assert sacc_indices is not None  # Needed for mypy
-        assert len(sacc_indices) == common_length
-        return ells, cells, sacc_indices
-
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file.
 
@@ -485,9 +464,7 @@ class TwoPoint(Statistic):
     def read_harmonic_space(self, sacc_data: sacc.Sacc):
         """Read the data for this statistic from the SACC file."""
         assert self.theory.sacc_tracers is not None
-        ells_cells_indices = self.read_ell_cells(
-            self.theory.sacc_data_type, sacc_data, self.theory.sacc_tracers
-        )
+        ells_cells_indices = read_ell_cells(self.theory, sacc_data)
         if ells_cells_indices is not None:
             ells, Cells, sacc_indices = ells_cells_indices
             if self.theory.ell_or_theta_config is not None:
@@ -735,7 +712,12 @@ def read_reals(
     None
     | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
 ):
-    """Read and return theta and xi."""
+    """Read and return theta and xi.
+
+    :param theory: The theory, carrying data type and tracers.
+    :param sacc_data: The SACC data object to be read.
+    :return: The theta and xi values.
+    """
     thetas, xis = sacc_data.get_theta_xi(
         theory.sacc_data_type, *theory.sacc_tracers, return_cov=False
     )
@@ -752,3 +734,31 @@ def read_reals(
     assert sacc_indices is not None  # Needed for mypy
     assert len(sacc_indices) == common_length
     return thetas, xis, sacc_indices
+
+
+def read_ell_cells(
+    theory: TwoPointTheory,
+    sacc_data: sacc.Sacc,
+) -> (
+    None | tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]]
+):
+    """Read and return ell and Cell.
+
+    :param theory: The theory, carrying data type and tracers.
+    :param sacc_data: The SACC data object to be read.
+    :return: The ell and Cell values.
+    """
+    tracers = theory.sacc_tracers
+    ells, cells = sacc_data.get_ell_cl(
+        theory.sacc_data_type, *tracers, return_cov=False
+    )
+    # As version 0.13 of sacc, the method get_ell_cl returns the
+    # ell values and the Cl values in arrays of the same length.
+    assert len(ells) == len(cells)
+    common_length = len(ells)
+    if common_length == 0:
+        return None
+    sacc_indices = np.atleast_1d(sacc_data.indices(theory.sacc_data_type, tracers))
+    assert sacc_indices is not None  # Needed for mypy
+    assert len(sacc_indices) == common_length
+    return ells, cells, sacc_indices
