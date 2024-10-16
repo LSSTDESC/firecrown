@@ -9,7 +9,7 @@ import numpy as np
 import numpy.typing as npt
 import pyccl
 
-import clmm
+import clmm  # pylint: disable=import-error
 from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
