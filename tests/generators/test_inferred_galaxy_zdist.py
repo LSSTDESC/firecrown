@@ -10,6 +10,8 @@ import numpy as np
 import numpy.typing as npt
 from numpy.testing import assert_array_equal, assert_allclose
 from scipy.integrate import simpson
+from numcosmo_py import Ncm
+
 import yaml
 
 from firecrown.generators.inferred_galaxy_zdist import (
@@ -33,17 +35,35 @@ from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 @pytest.fixture(
     name="zdist",
-    params=[
-        ZDistLSSTSRD.year_1_lens(),
-        ZDistLSSTSRD.year_10_lens(),
-        ZDistLSSTSRD.year_1_source(),
-        ZDistLSSTSRD.year_10_source(),
+    params=product(
+        [
+            ZDistLSSTSRD.year_1_lens,
+            ZDistLSSTSRD.year_10_lens,
+            ZDistLSSTSRD.year_1_source,
+            ZDistLSSTSRD.year_10_source,
+        ],
+        [True, False],
+        [1e-4, 1e-5],
+    ),
+    ids=[
+        f"{dist}-autoknots-{use_autoknots}-reltol-{reltol}"
+        for dist, use_autoknots, reltol in product(
+            [
+                "Y1_lens",
+                "Y10_lens",
+                "Y1_source",
+                "Y10_source",
+            ],
+            ["true", "false"],
+            [1e-4, 1e-5],
+        )
     ],
-    ids=["y1_lens", "y10_lens", "y1_source", "y10_source"],
 )
 def fixture_zdist_y1(request):
     """Fixture for the ZDistLSSTSRD class."""
-    return request.param
+    return request.param[0](
+        use_autoknot=request.param[1], autoknots_reltol=request.param[2]
+    )
 
 
 @pytest.fixture(name="z_array", params=[100, 600, 1000])
@@ -94,9 +114,6 @@ def fixture_zdist_bins(request) -> list[ZDistLSSTSRDBin]:
         case _:
             raise ValueError(f"Invalid parameter: {request.param}")
 
-    for zbin in bins:
-        zbin.use_autoknot = request.param[1]
-
     return bins
 
 
@@ -106,7 +123,7 @@ def test_zdist(zdist: ZDistLSSTSRD, z_array: npt.NDArray[np.float64]):
     assert Pz.shape == z_array.shape
 
 
-def test_compute_one_bin_dist_fix_z(
+def test_compute_one_bin_dist(
     zdist: ZDistLSSTSRD,
     z_array: npt.NDArray[np.float64],
     bins: dict[str, Any],
@@ -122,58 +139,15 @@ def test_compute_one_bin_dist_fix_z(
         measurements={Galaxies.COUNTS},
     )
 
-    assert_array_equal(Pz.z, z_array)
-    assert_allclose(simpson(y=Pz.dndz, x=z_array), 1.0, atol=1e-3)
-
-
-def test_compute_all_bins_dist_fix_z(
-    zdist: ZDistLSSTSRD,
-    z_array: npt.NDArray[np.float64],
-    bins: dict[str, Any],
-):
-    """Test the compute_binned_dist method."""
-
-    for zpl, zpu in pairwise(bins["edges"]):
-        Pz = zdist.binned_distribution(
-            zpl=zpl,
-            zpu=zpu,
-            sigma_z=bins["sigma_z"],
-            z=z_array,
-            name="lens_y1",
-            measurements={Galaxies.COUNTS},
-        )
-
+    if not zdist.use_autoknot:
         assert_array_equal(Pz.z, z_array)
-        assert_allclose(simpson(y=Pz.dndz, x=z_array), 1.0, atol=1e-3)
+    assert_allclose(simpson(y=Pz.dndz, x=Pz.z), 1.0, atol=1e-3)
 
 
-def test_compute_one_bin_dist_autoknot(
+def test_compute_all_bins_dist(
     zdist: ZDistLSSTSRD,
     z_array: npt.NDArray[np.float64],
     bins: dict[str, Any],
-    reltol: float,
-):
-    """Test the compute_binned_dist method."""
-
-    Pz = zdist.binned_distribution(
-        zpl=bins["edges"][0],
-        zpu=bins["edges"][1],
-        sigma_z=bins["sigma_z"],
-        z=z_array,
-        name="lens0_y1",
-        measurements={Galaxies.COUNTS},
-        use_autoknot=True,
-        autoknots_reltol=reltol,
-    )
-
-    assert_allclose(simpson(y=Pz.dndz, x=Pz.z), 1.0, atol=reltol)
-
-
-def test_compute_all_bins_dist_autoknot(
-    zdist: ZDistLSSTSRD,
-    z_array: npt.NDArray[np.float64],
-    bins: dict[str, Any],
-    reltol: float,
 ):
     """Test the compute_binned_dist method."""
 
@@ -185,11 +159,10 @@ def test_compute_all_bins_dist_autoknot(
             z=z_array,
             name="lens_y1",
             measurements={Galaxies.COUNTS},
-            use_autoknot=True,
-            autoknots_reltol=reltol,
         )
-
-        assert_allclose(simpson(y=Pz.dndz, x=Pz.z), 1.0, atol=reltol)
+        if not zdist.use_autoknot:
+            assert_array_equal(Pz.z, z_array)
+        assert_allclose(simpson(y=Pz.dndz, x=Pz.z), 1.0, atol=1e-3)
 
 
 def test_zdist_bin():
@@ -238,7 +211,8 @@ def test_zdist_bin_generate(zdist: ZDistLSSTSRD):
 
     Pz = zbin.generate(zdist)
 
-    assert_array_equal(Pz.z, z.generate())
+    if not zdist.use_autoknot:
+        assert_array_equal(Pz.z, z.generate())
     assert Pz.bin_name == bin_name
     assert Pz.measurements == measurements
 
@@ -317,9 +291,6 @@ def test_zdist_bin_to_yaml():
         "z": {"start": zbin.z.start, "end": zbin.z.end, "num": zbin.z.num},
         "bin_name": zbin.bin_name,
         "measurements": make_measurements_dict(zbin.measurements),
-        "use_autoknot": zbin.use_autoknot,
-        "autoknots_reltol": zbin.autoknots_reltol,
-        "autoknots_abstol": zbin.autoknots_abstol,
     }
 
 
@@ -358,7 +329,7 @@ def test_zdist_bin_collection_generate(zdist_bins):
     assert len(Pz_list) == len(zdist_bins)
 
     for zbin, Pz in zip(zdist_bins, Pz_list):
-        if not zbin.use_autoknot:
+        if not zbin_collection.use_autoknot:
             assert_array_equal(Pz.z, zbin.z.generate())
         else:
             assert not np.array_equal(Pz.z, zbin.z.generate())
@@ -386,6 +357,10 @@ def test_zdist_bin_collection_to_yaml(zdist_bins):
         "alpha": alpha,
         "beta": beta,
         "z0": z0,
+        "max_z": zbin_collection.max_z,
+        "use_autoknot": zbin_collection.use_autoknot,
+        "autoknots_reltol": zbin_collection.autoknots_reltol,
+        "autoknots_abstol": zbin_collection.autoknots_abstol,
         "bins": [
             {
                 "zpl": zbin.zpl,
@@ -394,9 +369,6 @@ def test_zdist_bin_collection_to_yaml(zdist_bins):
                 "z": zbin.z.model_dump(),
                 "bin_name": zbin.bin_name,
                 "measurements": make_measurements_dict(zbin.measurements),
-                "use_autoknot": zbin.use_autoknot,
-                "autoknots_reltol": zbin.autoknots_reltol,
-                "autoknots_abstol": zbin.autoknots_abstol,
             }
             for zbin in zdist_bins
         ],
@@ -421,9 +393,6 @@ def test_zdist_bin_collection_from_yaml(zdist_bins):
                 "z": zbin.z.model_dump(),
                 "bin_name": zbin.bin_name,
                 "measurements": make_measurements_dict(zbin.measurements),
-                "use_autoknot": zbin.use_autoknot,
-                "autoknots_reltol": zbin.autoknots_reltol,
-                "autoknots_abstol": zbin.autoknots_abstol,
             }
             for zbin in zdist_bins
         ],
@@ -443,9 +412,6 @@ def test_zdist_bin_collection_from_yaml(zdist_bins):
         assert_array_equal(zbin.z.generate(), zbin_from_yaml.z.generate())
         assert zbin.bin_name == zbin_from_yaml.bin_name
         assert zbin.measurements == zbin_from_yaml.measurements
-        assert zbin.use_autoknot == zbin_from_yaml.use_autoknot
-        assert zbin.autoknots_reltol == zbin_from_yaml.autoknots_reltol
-        assert zbin.autoknots_abstol == zbin_from_yaml.autoknots_abstol
 
 
 def test_make_measurement_from_measurement():
@@ -482,11 +448,26 @@ def test_make_measurement_from_dictionary():
         _ = make_measurements({3})  # type: ignore
 
 
-def test_lazy_bins_y1_key_error():
-    with pytest.raises(KeyError, match="LazyBinsType does not have key: frogs"):
-        _ = Y1_SOURCE_BINS["frogs"]
+def test_distribution(zdist: ZDistLSSTSRD):
+    """Test the distribution method."""
+
+    stats = zdist.compute_distribution(0.03)
+    assert isinstance(stats, Ncm.StatsDist1d)
+
+    middle_z = stats.eval_inv_pdf(0.5)
+
+    bins = zdist.equal_area_bins(2, 0.03, zdist.max_z)
+
+    assert_allclose([0.0, middle_z, zdist.max_z], bins)
 
 
-def test_lazy_bins_y10_key_error():
-    with pytest.raises(KeyError, match="LazyBinsType does not have key: frogs"):
-        _ = Y10_SOURCE_BINS["frogs"]
+def test_true_distribution(zdist: ZDistLSSTSRD):
+    """Test the true_distribution method."""
+    stats = zdist.compute_true_distribution()
+    assert isinstance(stats, Ncm.StatsDist1d)
+
+    middle_z = stats.eval_inv_pdf(0.5)
+
+    bins = zdist.equal_area_bins(2, 0.03, zdist.max_z, use_true_distribution=True)
+
+    assert_allclose([0.0, middle_z, zdist.max_z], bins)

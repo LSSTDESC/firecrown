@@ -1,8 +1,8 @@
 """Generation of inferred galaxy redshift distributions."""
 
-from typing import TypedDict, Annotated, Any, Callable
-from dataclasses import dataclass
+from typing import TypedDict, Annotated, Any, Unpack
 from itertools import pairwise
+from functools import cache
 
 from pydantic import BaseModel, ConfigDict, Field, field_serializer, BeforeValidator
 
@@ -43,6 +43,15 @@ Y10_SOURCE_BETA = 2.0
 Y10_SOURCE_Z0 = 0.11
 
 
+class ZDistLSSTSRDOpt(TypedDict, total=False):
+    """Optional parameters for the LSST Inferred galaxy redshift distribution."""
+
+    max_z: float
+    use_autoknot: bool
+    autoknots_reltol: float
+    autoknots_abstol: float
+
+
 class ZDistLSSTSRD:
     r"""LSST Inferred galaxy redshift distributions.
 
@@ -55,16 +64,36 @@ class ZDistLSSTSRD:
     flexibility when desired.
     """
 
-    def __init__(self, alpha: float, beta: float, z0: float) -> None:
+    def __init__(
+        self,
+        alpha: float,
+        beta: float,
+        z0: float,
+        max_z: float = 5.0,
+        use_autoknot: bool = False,
+        autoknots_reltol: float = 1.0e-4,
+        autoknots_abstol: float = 1.0e-15,
+    ) -> None:
         """Initialize the LSST Inferred galaxy redshift distribution.
+
+        The true redshift distribution is integrated up to `max_z` to generate the
+        photo-z distribution.
 
         :param alpha: The alpha parameter of the distribution.
         :param beta: The beta parameter of the distribution.
         :param z0: The z0 parameter of the distribution.
+        :param max_z: The maximum true redshift to consider.
+        :param use_autoknot: Whether to use the AutoKnots algorithm of NumCosmo
+        :param autoknots_reltol: The relative tolerance for the AutoKnots algorithm
+        :param autoknots_abstol: The absolute tolerance for the AutoKnots algorithm
         """
         self.alpha = alpha
         self.beta = beta
         self.z0 = z0
+        self.max_z = max_z
+        self.use_autoknot = use_autoknot
+        self.autoknots_reltol = autoknots_reltol
+        self.autoknots_abstol = autoknots_abstol
 
     @classmethod
     def year_1_lens(
@@ -72,6 +101,7 @@ class ZDistLSSTSRD:
         alpha: float = Y1_LENS_ALPHA,
         beta: float = Y1_LENS_BETA,
         z0: float = Y1_LENS_Z0,
+        **kwargs: Unpack[ZDistLSSTSRDOpt],
     ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the first year of LSST.
 
@@ -83,7 +113,7 @@ class ZDistLSSTSRD:
         :param z0: The z0 parameter of the distribution
         :return: A ZDistLSSTSRD object.
         """
-        return cls(alpha=alpha, beta=beta, z0=z0)
+        return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
     @classmethod
     def year_1_source(
@@ -91,6 +121,7 @@ class ZDistLSSTSRD:
         alpha: float = Y1_SOURCE_ALPHA,
         beta: float = Y1_SOURCE_BETA,
         z0: float = Y1_SOURCE_Z0,
+        **kwargs: Unpack[ZDistLSSTSRDOpt],
     ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the first year of LSST.
 
@@ -102,7 +133,7 @@ class ZDistLSSTSRD:
         :param z0: The z0 parameter of the distribution
         :return: A ZDistLSSTSRD object.
         """
-        return cls(alpha=alpha, beta=beta, z0=z0)
+        return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
     @classmethod
     def year_10_lens(
@@ -110,6 +141,7 @@ class ZDistLSSTSRD:
         alpha: float = Y10_LENS_ALPHA,
         beta: float = Y10_LENS_BETA,
         z0: float = Y10_LENS_Z0,
+        **kwargs: Unpack[ZDistLSSTSRDOpt],
     ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the tenth year of LSST.
 
@@ -121,7 +153,7 @@ class ZDistLSSTSRD:
         :param z0: The z0 parameter of the distribution
         :return: A ZDistLSSTSRD object.
         """
-        return cls(alpha=alpha, beta=beta, z0=z0)
+        return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
     @classmethod
     def year_10_source(
@@ -129,6 +161,7 @@ class ZDistLSSTSRD:
         alpha: float = Y10_SOURCE_ALPHA,
         beta: float = Y10_SOURCE_BETA,
         z0: float = Y10_SOURCE_Z0,
+        **kwargs: Unpack[ZDistLSSTSRDOpt],
     ) -> "ZDistLSSTSRD":
         """Create a ZDistLSSTSRD object for the tenth year of LSST.
 
@@ -140,7 +173,7 @@ class ZDistLSSTSRD:
         :param z0: The z0 parameter of the distribution
         :return: A ZDistLSSTSRD object.
         """
-        return cls(alpha=alpha, beta=beta, z0=z0)
+        return cls(alpha=alpha, beta=beta, z0=z0, **kwargs)
 
     def distribution(self, z: npt.NDArray) -> npt.NDArray:
         """Generate the inferred galaxy redshift distribution.
@@ -154,7 +187,7 @@ class ZDistLSSTSRD:
             norma * (z / self.z0) ** self.beta * np.exp(-((z / self.z0) ** self.alpha))
         )
 
-    def _gaussian(self, zp: float, sigma_z: float) -> float:
+    def distribution_zp(self, zp: float, sigma_z: float) -> float:
         """Generate the Gaussian convolution of the distribution.
 
         :param sigma_z: The resolution parameter
@@ -172,7 +205,7 @@ class ZDistLSSTSRD:
                 / (sqrt_2pi * lsigma_z * 0.5 * (erf(z / (sqrt_2 * lsigma_z)) + 1.0))
             )
 
-        return quad(integrand, 0.0, 10.0)[0]
+        return quad(integrand, 0.0, self.max_z)[0]
 
     def _integrated_gaussian_scalar(
         self, zpl: float, zpu: float, sigma_z: float, z: float
@@ -221,36 +254,102 @@ class ZDistLSSTSRD:
 
         return result
 
+    def compute_distribution(self, sigma_z: float) -> Ncm.StatsDist1d:
+        """Generate the inferred galaxy redshift distribution.
+
+        Computes the distribution by convolving the true distribution with a
+        Gaussian. The convolution is computed using the AutoKnots algorithm of
+        NumCosmo.
+
+        :param sigma_z: The resolution parameter
+        :return: The inferred galaxy redshift distribution
+        """
+
+        def m2lndist(z, _):
+            return -2.0 * np.log(
+                self.distribution_zp(z, sigma_z) + self.autoknots_abstol
+            )
+
+        s = Ncm.SplineCubicNotaknot()
+        s.set_func1(
+            Ncm.SplineFuncType.FUNCTION_SPLINE,
+            m2lndist,
+            None,
+            0.0,
+            self.max_z,
+            0,
+            self.autoknots_reltol,
+        )
+
+        stats = Ncm.StatsDist1dSpline.new(s)
+        stats.props.abstol = self.autoknots_abstol
+        stats.set_compute_cdf(True)
+        stats.prepare()
+
+        return stats
+
+    def compute_true_distribution(self) -> Ncm.StatsDist1d:
+        """Generate the inferred galaxy redshift distribution.
+
+        Computes the distribution without the convolution with the Gaussian.
+        That is, the true redshift distribution.
+
+        :return: The inferred galaxy redshift distribution
+        """
+
+        def m2lndist(z, _):
+            return -2.0 * np.log(self.distribution(z) + self.autoknots_abstol)
+
+        s = Ncm.SplineCubicNotaknot()
+        s.set_func1(
+            Ncm.SplineFuncType.FUNCTION_SPLINE,
+            m2lndist,
+            None,
+            0.0,
+            self.max_z,
+            0,
+            self.autoknots_reltol,
+        )
+
+        stats = Ncm.StatsDist1dSpline.new(s)
+        stats.props.abstol = self.autoknots_abstol
+        stats.set_compute_cdf(True)
+        stats.prepare()
+
+        return stats
+
     def equal_area_bins(
         self,
         n_bins: int,
         sigma_z: float,
-        max_z: float,
-        autoknots_reltol: float = 1.0e-4,
+        last_z: float,
+        use_true_distribution: bool = False,
     ) -> npt.NDArray:
-        """Generate equal area bins.
+        """Generate equal area bins for the distribution.
+
+        In order to compute the bin edges, the convolution of the distribution
+        with a Gaussian is computed. The bin edges are then computed by
+        inverting the cumulative distribution function of the convolution.
+
+        If the true distribution is used, the convolution is not computed.
+        This provides a faster way to compute the bin edges.
 
         :param n_bins: The number of bins
+        :param sigma_z: The resolution parameter
+        :param last_z: The last redshift to consider
+        :param use_true_distribution: Whether to use the true distribution
+
         :return: The bin edges
         """
-        s = Ncm.SplineCubicNotaknot()
-        s.set_func1(
-            Ncm.SplineFuncType.FUNCTION_SPLINE,
-            lambda z, _: -2.0 * np.log(self._gaussian(z, sigma_z) + 1.0e-15),
-            None,
-            0.0,
-            max_z,
-            0,
-            autoknots_reltol,
-        )
+        if use_true_distribution:
+            stats = self.compute_true_distribution()
+        else:
+            stats = self.compute_distribution(sigma_z)
 
-        stats = Ncm.StatsDist1dSpline.new(s)
-        stats.props.abstol = 1.0e-15  # pylint: disable-msg=no-member
-        stats.set_compute_cdf(True)
-        stats.prepare()
+        total_area = stats.eval_pdf(last_z)
 
         return np.array(
-            [0.0] + [stats.eval_inv_pdf((i + 1.0) / n_bins) for i in range(n_bins)]
+            [stats.eval_inv_pdf(i * total_area / n_bins) for i in range(n_bins + 1)]
         )
 
     def binned_distribution(
@@ -262,9 +361,6 @@ class ZDistLSSTSRD:
         z: npt.NDArray,
         name: str,
         measurements: set[Measurement],
-        use_autoknot: bool = False,
-        autoknots_reltol: float = 1.0e-4,
-        autoknots_abstol: float = 1.0e-15,
     ) -> InferredGalaxyZDist:
         """Generate the inferred galaxy redshift distribution in bins.
 
@@ -274,9 +370,7 @@ class ZDistLSSTSRD:
         :param z: The redshifts at which to evaluate the distribution
         :param name: The name of the distribution
         :param measurements: The set of measurements of the distribution
-        :param use_autoknot: Whether to use the NotAKnot algorithm of NumCosmo
-        :param autoknots_reltol: The relative tolerance for the NotAKnot algorithm
-        :param autoknots_abstol: The absolute tolerance for the NotAKnot algorithm
+
         :return: The inferred galaxy redshift distribution
         """
 
@@ -289,12 +383,12 @@ class ZDistLSSTSRD:
             return (
                 self.distribution(z)
                 * self._integrated_gaussian_scalar(zpl, zpu, sigma_z, z)
-                + autoknots_abstol
+                + self.autoknots_abstol
             )
 
         norma = quad(_P, z[0], z[-1], args=None)[0]
 
-        if not use_autoknot:
+        if not self.use_autoknot:
             z_knots = z
             dndz = (
                 self._integrated_gaussian(zpl, zpu, sigma_z, z)
@@ -310,7 +404,7 @@ class ZDistLSSTSRD:
                 z[0],
                 z[-1],
                 0,
-                autoknots_reltol,
+                self.autoknots_reltol,
             )
             z_knots = np.array(s.peek_xv().dup_array())  # pylint: disable-msg=no-member
             dndz = (
@@ -398,9 +492,6 @@ class ZDistLSSTSRDBin(BaseModel):
     z: Annotated[Grid1D, Field(union_mode="left_to_right")]
     bin_name: str
     measurements: Annotated[set[Measurement], BeforeValidator(make_measurements)]
-    use_autoknot: bool = False
-    autoknots_reltol: float = 1.0e-4
-    autoknots_abstol: float = 1.0e-15
 
     @field_serializer("measurements")
     @classmethod
@@ -417,9 +508,6 @@ class ZDistLSSTSRDBin(BaseModel):
             z=self.z.generate(),
             name=self.bin_name,
             measurements=self.measurements,
-            use_autoknot=self.use_autoknot,
-            autoknots_reltol=self.autoknots_reltol,
-            autoknots_abstol=self.autoknots_abstol,
         )
 
 
@@ -432,118 +520,170 @@ class ZDistLSSTSRDBinCollection(BaseModel):
     beta: float
     z0: float
     bins: list[ZDistLSSTSRDBin]
+    max_z: float = 5.0
+    use_autoknot: bool = True
+    autoknots_reltol: float = 1.0e-4
+    autoknots_abstol: float = 1.0e-15
 
     def generate(self) -> list[InferredGalaxyZDist]:
         """Generate the inferred galaxy redshift distributions in bins."""
-        zdist = ZDistLSSTSRD(alpha=self.alpha, beta=self.beta, z0=self.z0)
+        zdist = ZDistLSSTSRD(
+            alpha=self.alpha,
+            beta=self.beta,
+            z0=self.z0,
+            use_autoknot=self.use_autoknot,
+            autoknots_reltol=self.autoknots_reltol,
+            autoknots_abstol=self.autoknots_abstol,
+        )
         return [bin.generate(zdist) for bin in self.bins]
 
 
-@dataclass
-class LazyBinsType:
-    """A lazy bin type."""
-
-    eval_edges: Callable[[], npt.NDArray]
-    sigma_z: float
-    _edges: npt.NDArray | None = None
-
-    def __getitem__(self, key: str) -> Any:
-        """Get the value of the key with lazy evaluation."""
-        match key:
-            case "edges":
-                if self._edges is None:
-                    self._edges = self.eval_edges()
-                return self._edges
-            case "sigma_z":
-                return self.sigma_z
-            case _:
-                raise KeyError(f"LazyBinsType does not have key: {key}")
+@cache
+def get_y1_lens_bins() -> BinsType:
+    """Get the Year 1 lens bins."""
+    return {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}
 
 
-Y1_LENS_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 5 + 1), "sigma_z": 0.03}
-Y1_SOURCE_BINS: LazyBinsType = LazyBinsType(
-    eval_edges=lambda: ZDistLSSTSRD.year_1_source().equal_area_bins(5, 0.05, 3.5),
-    sigma_z=0.05,
-)
+@cache
+def get_y1_source_bins() -> BinsType:
+    """Get the Year 1 source bins."""
+    return {
+        "edges": ZDistLSSTSRD.year_1_source().equal_area_bins(5, 0.05, 3.5),
+        "sigma_z": 0.05,
+    }
 
-Y10_LENS_BINS: BinsType = {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.03}
-Y10_SOURCE_BINS: LazyBinsType = LazyBinsType(
-    eval_edges=lambda: ZDistLSSTSRD.year_10_source().equal_area_bins(5, 0.05, 3.5),
-    sigma_z=0.05,
-)
 
-LSST_Y1_LENS_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
-    alpha=Y1_LENS_ALPHA,
-    beta=Y1_LENS_BETA,
-    z0=Y1_LENS_Z0,
-    bins=[
-        ZDistLSSTSRDBin(
-            zpl=zpl,
-            zpu=zpu,
-            sigma_z=Y1_LENS_BINS["sigma_z"],
-            z=RawGrid1D(values=[0.0, 3.5]),
-            bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
-            measurements={Galaxies.COUNTS},
-            use_autoknot=True,
-            autoknots_reltol=1.0e-5,
-        )
-        for zpl, zpu in pairwise(Y1_LENS_BINS["edges"])
-    ],
-)
+@cache
+def get_y10_lens_bins() -> BinsType:
+    """Get the Year 10 lens bins."""
+    return {"edges": np.linspace(0.2, 1.2, 10 + 1), "sigma_z": 0.03}
 
-LSST_Y1_SOURCE_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
-    alpha=Y1_SOURCE_ALPHA,
-    beta=Y1_SOURCE_BETA,
-    z0=Y1_SOURCE_Z0,
-    bins=[
-        ZDistLSSTSRDBin(
-            zpl=zpl,
-            zpu=zpu,
-            sigma_z=Y1_SOURCE_BINS["sigma_z"],
-            z=RawGrid1D(values=[0.0, 3.5]),
-            bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
-            measurements={Galaxies.SHEAR_E},
-            use_autoknot=True,
-            autoknots_reltol=1.0e-5,
-        )
-        for zpl, zpu in pairwise(Y1_SOURCE_BINS["edges"])
-    ],
-)
 
-LSST_Y10_LENS_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
-    alpha=Y10_LENS_ALPHA,
-    beta=Y10_LENS_BETA,
-    z0=Y10_LENS_Z0,
-    bins=[
-        ZDistLSSTSRDBin(
-            zpl=zpl,
-            zpu=zpu,
-            sigma_z=Y10_LENS_BINS["sigma_z"],
-            z=RawGrid1D(values=[0.0, 3.5]),
-            bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y10",
-            measurements={Galaxies.COUNTS},
-            use_autoknot=True,
-            autoknots_reltol=1.0e-5,
-        )
-        for zpl, zpu in pairwise(Y10_LENS_BINS["edges"])
-    ],
-)
+@cache
+def get_y10_source_bins() -> BinsType:
+    """Get the Year 10 source bins."""
+    return {
+        "edges": ZDistLSSTSRD.year_10_source().equal_area_bins(5, 0.05, 3.5),
+        "sigma_z": 0.05,
+    }
 
-LSST_Y10_SOURCE_BIN_COLLECTION = ZDistLSSTSRDBinCollection(
-    alpha=Y10_SOURCE_ALPHA,
-    beta=Y10_SOURCE_BETA,
-    z0=Y10_SOURCE_Z0,
-    bins=[
-        ZDistLSSTSRDBin(
-            zpl=zpl,
-            zpu=zpu,
-            sigma_z=Y10_SOURCE_BINS["sigma_z"],
-            z=RawGrid1D(values=[0.0, 3.5]),
-            bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y10",
-            measurements={Galaxies.SHEAR_E},
-            use_autoknot=True,
-            autoknots_reltol=1.0e-5,
-        )
-        for zpl, zpu in pairwise(Y10_SOURCE_BINS["edges"])
-    ],
-)
+
+@cache
+def get_lsst_y1_lens_bin_collection() -> ZDistLSSTSRDBinCollection:
+    """Get the LSST Year 1 lens bin collection."""
+    y1_lens_bins = get_y1_lens_bins()
+    return ZDistLSSTSRDBinCollection(
+        alpha=Y1_LENS_ALPHA,
+        beta=Y1_LENS_BETA,
+        z0=Y1_LENS_Z0,
+        bins=[
+            ZDistLSSTSRDBin(
+                zpl=zpl,
+                zpu=zpu,
+                sigma_z=y1_lens_bins["sigma_z"],
+                z=RawGrid1D(values=[0.0, 3.5]),
+                bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
+                measurements={Galaxies.COUNTS},
+            )
+            for zpl, zpu in pairwise(y1_lens_bins["edges"])
+        ],
+    )
+
+
+@cache
+def get_lsst_y1_source_bin_collection() -> ZDistLSSTSRDBinCollection:
+    """Get the LSST Year 1 source bin collection."""
+    y1_source_bins = get_y1_source_bins()
+    return ZDistLSSTSRDBinCollection(
+        alpha=Y1_SOURCE_ALPHA,
+        beta=Y1_SOURCE_BETA,
+        z0=Y1_SOURCE_Z0,
+        bins=[
+            ZDistLSSTSRDBin(
+                zpl=zpl,
+                zpu=zpu,
+                sigma_z=y1_source_bins["sigma_z"],
+                z=RawGrid1D(values=[0.0, 3.5]),
+                bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
+                measurements={Galaxies.SHEAR_E},
+            )
+            for zpl, zpu in pairwise(y1_source_bins["edges"])
+        ],
+    )
+
+
+@cache
+def get_lsst_y10_lens_bin_collection() -> ZDistLSSTSRDBinCollection:
+    """Get the LSST Year 10 lens bin collection."""
+    y10_lens_bins = get_y10_lens_bins()
+    return ZDistLSSTSRDBinCollection(
+        alpha=Y10_LENS_ALPHA,
+        beta=Y10_LENS_BETA,
+        z0=Y10_LENS_Z0,
+        bins=[
+            ZDistLSSTSRDBin(
+                zpl=zpl,
+                zpu=zpu,
+                sigma_z=y10_lens_bins["sigma_z"],
+                z=RawGrid1D(values=[0.0, 3.5]),
+                bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y10",
+                measurements={Galaxies.COUNTS},
+            )
+            for zpl, zpu in pairwise(y10_lens_bins["edges"])
+        ],
+    )
+
+
+@cache
+def get_lsst_y10_source_bin_collection() -> ZDistLSSTSRDBinCollection:
+    """Get the LSST Year 10 source bin collection."""
+    y10_source_bins = get_y10_source_bins()
+    return ZDistLSSTSRDBinCollection(
+        alpha=Y10_SOURCE_ALPHA,
+        beta=Y10_SOURCE_BETA,
+        z0=Y10_SOURCE_Z0,
+        bins=[
+            ZDistLSSTSRDBin(
+                zpl=zpl,
+                zpu=zpu,
+                sigma_z=y10_source_bins["sigma_z"],
+                z=RawGrid1D(values=[0.0, 3.5]),
+                bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y10",
+                measurements={Galaxies.SHEAR_E},
+            )
+            for zpl, zpu in pairwise(y10_source_bins["edges"])
+        ],
+    )
+
+
+def __getattr__(name: str) -> Any:  # pylint: disable-msg=too-many-return-statements
+    """Lazy evaluation of the bins."""
+    match name:
+        case "Y1_LENS_BINS":
+            return get_y1_lens_bins()
+        case "Y1_SOURCE_BINS":
+            return get_y1_source_bins()
+        case "Y10_LENS_BINS":
+            return get_y10_lens_bins()
+        case "Y10_SOURCE_BINS":
+            return get_y10_source_bins()
+        case "LSST_Y1_LENS_BIN_COLLECTION":
+            return get_lsst_y1_lens_bin_collection()
+        case "LSST_Y1_SOURCE_BIN_COLLECTION":
+            return get_lsst_y1_source_bin_collection()
+        case "LSST_Y10_LENS_BIN_COLLECTION":
+            return get_lsst_y10_lens_bin_collection()
+        case "LSST_Y10_SOURCE_BIN_COLLECTION":
+            return get_lsst_y10_source_bin_collection()
+        case _:
+            raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
+
+Y1_LENS_BINS: BinsType
+Y1_SOURCE_BINS: BinsType
+Y10_LENS_BINS: BinsType
+Y10_SOURCE_BINS: BinsType
+LSST_Y1_LENS_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y1_SOURCE_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y10_LENS_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y10_SOURCE_BIN_COLLECTION: ZDistLSSTSRDBinCollection
