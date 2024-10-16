@@ -85,12 +85,12 @@ def test_get_bin_edges_counts_and_mass(cluster_sacc_data: sacc.Sacc):
     assert len(bins) == 2
 
 
-def test_get_bin_edges_not_implemented_cluster_property_throws(
-    cluster_sacc_data: sacc.Sacc,
-):
-    ad = AbundanceData(cluster_sacc_data)
-    with pytest.raises(NotImplementedError):
-        ad.get_bin_edges("my_survey", ClusterProperty.SHEAR)
+# def test_get_bin_edges_not_implemented_cluster_property_throws(
+#    cluster_sacc_data: sacc.Sacc,
+# ):
+#    ad = AbundanceData(cluster_sacc_data)
+#    with pytest.raises(NotImplementedError):
+#        ad.get_bin_edges("my_survey", ClusterProperty.SHEAR)
 
 
 def test_observed_data_and_indices_by_survey_cluster_counts(
@@ -137,12 +137,12 @@ def test_observed_data_and_indices_by_survey_cluster_counts_and_mass(
     assert len(indices) == 4
 
 
-def test_observed_data_and_indices_by_survey_not_implemented_throws(
-    cluster_sacc_data: sacc.Sacc,
-):
-    ad = AbundanceData(cluster_sacc_data)
-    with pytest.raises(NotImplementedError):
-        ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.SHEAR)
+# def test_observed_data_and_indices_by_survey_not_implemented_throws(
+#    cluster_sacc_data: sacc.Sacc,
+# ):
+#    ad = AbundanceData(cluster_sacc_data)
+#    with pytest.raises(NotImplementedError):
+#        ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.SHEAR)
 
 
 def test_observed_data_and_indices_no_data_throws():

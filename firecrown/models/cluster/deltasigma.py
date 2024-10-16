@@ -14,6 +14,8 @@ from pyccl.cosmology import Cosmology
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
 
+# pylint: disable=duplicate-code
+
 
 class ClusterDeltaSigma(Updatable):
     """The class that calculates the predicted delta sigma of galaxy clusters.

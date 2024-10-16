@@ -26,6 +26,8 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
     MurataBinnedSpecZDeltaSigmaRecipe,
 )
 
+# pylint: disable=duplicate-code
+
 
 class BinnedClusterDeltaSigma(Statistic):
     """The Binned Cluster Delta Sigma statistic.

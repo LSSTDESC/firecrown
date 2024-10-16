@@ -7,6 +7,8 @@ from sacc.tracers import SurveyTracer
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.binning import SaccBin
 
+# pylint: disable=duplicate-code
+
 
 class AbundanceData:
     """The class used to wrap a sacc file and return the cluster abundance data.
