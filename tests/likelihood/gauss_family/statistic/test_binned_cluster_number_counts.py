@@ -94,7 +94,7 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc) -> None:
     tools = ModelingTools()
 
     hmf = pyccl.halos.MassFuncBocquet16()
-    tools.cluster_abundance = ClusterAbundance(13, 17, 0, 2, hmf)
+    tools.cluster_abundance = ClusterAbundance((13, 17), (0, 2), hmf)
     params = get_default_params_map(tools)
     tools.update(params)
     tools.prepare()

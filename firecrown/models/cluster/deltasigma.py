@@ -25,14 +25,12 @@ class ClusterDeltaSigma(ClusterAbundance):
 
     def __init__(
         self,
-        min_mass: float,
-        max_mass: float,
-        min_z: float,
-        max_z: float,
+        mass_interval: tuple[float, float],
+        z_interval: tuple[float, float],
         halo_mass_function: pyccl.halos.MassFunc,
         conc_parameter: bool = False,
     ) -> None:
-        super().__init__(min_mass, max_mass, min_z, max_z, halo_mass_function)
+        super().__init__(mass_interval, z_interval, halo_mass_function)
         self.conc_parameter = conc_parameter
         if conc_parameter:
             self.cluster_conc = parameters.register_new_updatable_parameter(

@@ -22,10 +22,8 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z import (
 def fixture_cluster_abundance() -> ClusterAbundance:
     hmf = pyccl.halos.MassFuncBocquet16()
     cl_abundance = ClusterAbundance(
-        min_z=0,
-        max_z=2,
-        min_mass=13,
-        max_mass=17,
+        z_interval=(0, 2),
+        mass_interval=(13, 17),
         halo_mass_function=hmf,
     )
     cl_abundance.update_ingredients(pyccl.CosmologyVanillaLCDM())

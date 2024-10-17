@@ -31,7 +31,7 @@ def get_cluster_abundance() -> ClusterAbundance:
     hmf = ccl.halos.MassFuncTinker08(mass_def="200c")
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
-    cluster_abundance = ClusterAbundance(min_mass, max_mass, min_z, max_z, hmf)
+    cluster_abundance = ClusterAbundance((min_mass, max_mass), (min_z, max_z), hmf)
 
     return cluster_abundance
 
@@ -41,7 +41,9 @@ def get_cluster_deltasigma() -> ClusterDeltaSigma:
     hmf = ccl.halos.MassFuncTinker08(mass_def="200m")
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
-    cluster_deltasigma = ClusterDeltaSigma(min_mass, max_mass, min_z, max_z, hmf, True)
+    cluster_deltasigma = ClusterDeltaSigma(
+        (min_mass, max_mass), (min_z, max_z), hmf, True
+    )
 
     return cluster_deltasigma
 

@@ -11,7 +11,7 @@ from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
 def fixture_cluster_deltasigma():
     """Test fixture that represents an assembled cluster deltasigma class."""
     hmf = pyccl.halos.MassFuncBocquet16()
-    ca = ClusterDeltaSigma(13, 17, 0, 2, hmf)
+    ca = ClusterDeltaSigma((13, 17), (0, 2), hmf)
     return ca
 
 

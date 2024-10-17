@@ -25,10 +25,8 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
 def fixture_cluster_deltasigma() -> ClusterDeltaSigma:
     hmf = pyccl.halos.MassFuncBocquet16(mass_def="200c")
     cl_deltasigma = ClusterDeltaSigma(
-        min_z=0,
-        max_z=2,
-        min_mass=13,
-        max_mass=17,
+        z_interval=(0, 2),
+        mass_interval=(13, 17),
         halo_mass_function=hmf,
     )
     cl_deltasigma.update_ingredients(pyccl.CosmologyVanillaLCDM())
