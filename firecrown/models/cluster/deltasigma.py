@@ -10,14 +10,11 @@ import numpy.typing as npt
 import pyccl
 
 import clmm  # pylint: disable=import-error
-from pyccl.cosmology import Cosmology
-from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
+from firecrown.models.cluster.abundance import ClusterAbundance
 
-# pylint: disable=duplicate-code
 
-
-class ClusterDeltaSigma(Updatable):
+class ClusterDeltaSigma(ClusterAbundance):
     """The class that calculates the predicted delta sigma of galaxy clusters.
 
     The excess density surface mass density is a function of a specific cosmology,
@@ -25,11 +22,6 @@ class ClusterDeltaSigma(Updatable):
     each kernel represents a different distribution involved in the final cluster
     shear integrand.
     """
-
-    @property
-    def cosmo(self) -> Cosmology:
-        """The cosmology used to predict the cluster number count."""
-        return self._cosmo
 
     def __init__(
         self,
@@ -40,25 +32,12 @@ class ClusterDeltaSigma(Updatable):
         halo_mass_function: pyccl.halos.MassFunc,
         conc_parameter: bool = False,
     ) -> None:
-        super().__init__()
-        self.kernels: UpdatableCollection = UpdatableCollection()
-        self.halo_mass_function = halo_mass_function
-        self.min_mass = min_mass
-        self.max_mass = max_mass
-        self.min_z = min_z
-        self.max_z = max_z
-        self._hmf_cache: dict[tuple[float, float], float] = {}
-        self._cosmo: Cosmology = None
+        super().__init__(min_mass, max_mass, min_z, max_z, halo_mass_function)
         self.conc_parameter = conc_parameter
         if conc_parameter:
             self.cluster_conc = parameters.register_new_updatable_parameter(
                 default_value=4.0
             )
-
-    def update_ingredients(self, cosmo: Cosmology) -> None:
-        """Update the cluster abundance calculation with a new cosmology."""
-        self._cosmo = cosmo
-        self._hmf_cache = {}
 
     def delta_sigma(
         self,
@@ -72,9 +51,11 @@ class ClusterDeltaSigma(Updatable):
         cosmo_clmm._init_from_cosmo(self._cosmo)
         mass_def = self.halo_mass_function.mass_def
         if mass_def.rho_type == "matter":
-            mass_def.rho_type = "mean"
+            clmm_rho_type = "mean"
+        else:
+            clmm_rho_type = mass_def.rho_type
         moo = clmm.Modeling(
-            massdef=mass_def.rho_type,
+            massdef=clmm_rho_type,
             delta_mdef=mass_def.Delta,
             halo_profile_model="nfw",
         )

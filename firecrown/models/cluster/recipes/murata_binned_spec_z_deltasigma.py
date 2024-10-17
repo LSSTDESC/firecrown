@@ -5,7 +5,6 @@ from typing import Callable
 import numpy as np
 import numpy.typing as npt
 
-from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.binning import NDimensionalBin
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 from firecrown.models.cluster.kernel import SpectroscopicRedshift
@@ -27,14 +26,13 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
 
         self.integrator = NumCosmoIntegrator()
         self.redshift_distribution = SpectroscopicRedshift()
-        pivot_mass, pivot_redshift = 14.3, 0.5  # 14.625862906, 0.6
+        pivot_mass, pivot_redshift = 14.625862906, 0.6  # 14.3, 0.5
         self.mass_distribution = MurataBinned(pivot_mass, pivot_redshift)
         self.my_updatables.append(self.mass_distribution)
 
     def get_theory_prediction(
         self,
-        cluster_theory_counts: ClusterAbundance,
-        cluster_theory_deltasigma: ClusterDeltaSigma,
+        cluster_theory: ClusterDeltaSigma,
         average_on: None | ClusterProperty = None,  # pylint: disable=unused-argument
     ) -> Callable[
         [
@@ -61,8 +59,8 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
             radius_center: float,
         ):
             prediction = (
-                cluster_theory_counts.comoving_volume(z, sky_area)
-                * cluster_theory_counts.mass_function(mass, z)
+                cluster_theory.comoving_volume(z, sky_area)
+                * cluster_theory.mass_function(mass, z)
                 * self.redshift_distribution.distribution()
                 * self.mass_distribution.distribution(mass, z, mass_proxy_limits)
             )
@@ -75,9 +73,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
 
             for cluster_prop in ClusterProperty:
                 if cluster_prop == ClusterProperty.DELTASIGMA:
-                    prediction *= cluster_theory_deltasigma.delta_sigma(
-                        mass, z, radius_center
-                    )
+                    prediction *= cluster_theory.delta_sigma(mass, z, radius_center)
                 else:
                     continue
 
@@ -113,16 +109,16 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
             mass_proxy_low = extra_args[0]
             mass_proxy_high = extra_args[1]
             sky_area = extra_args[2]
-            radius_centers = extra_args[3]
+            radius_center = extra_args[3]
             return prediction(
-                mass, z, (mass_proxy_low, mass_proxy_high), sky_area, radius_centers
+                mass, z, (mass_proxy_low, mass_proxy_high), sky_area, radius_center
             )
 
         return function_mapper
 
     def evaluate_theory_prediction(
         self,
-        cluster_theory_list: list,
+        cluster_theory: ClusterDeltaSigma,
         this_bin: NDimensionalBin,
         sky_area: float,
         average_on: None | ClusterProperty = None,
@@ -133,26 +129,22 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
         using the Murata 2019 binned mass-richness relation and assuming perfectly
         measured redshifts.
         """
-        cluster_theory_counts = cluster_theory_list[0]
-        cluster_theory_deltasigma = cluster_theory_list[1]
         self.integrator.integral_bounds = [
-            (cluster_theory_counts.min_mass, cluster_theory_counts.max_mass),
+            (cluster_theory.min_mass, cluster_theory.max_mass),
             this_bin.z_edges,
         ]
         radius_center = this_bin.radius_center
         self.integrator.extra_args = np.array(
             [*this_bin.mass_proxy_edges, sky_area, radius_center]
         )
-        theory_prediction = self.get_theory_prediction(
-            cluster_theory_counts, cluster_theory_deltasigma, average_on
-        )
+        theory_prediction = self.get_theory_prediction(cluster_theory, average_on)
         prediction_wrapper = self.get_function_to_integrate(theory_prediction)
         deltasigma = self.integrator.integrate(prediction_wrapper)
         return deltasigma
 
     def get_theory_prediction_counts(
         self,
-        cluster_theory: ClusterAbundance,
+        cluster_theory: ClusterDeltaSigma,
     ) -> Callable[
         [npt.NDArray[np.float64], npt.NDArray[np.float64], tuple[float, float], float],
         npt.NDArray[np.float64],
@@ -214,7 +206,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
 
     def evaluate_theory_prediction_counts(
         self,
-        cluster_theory: ClusterAbundance,
+        cluster_theory: ClusterDeltaSigma,
         this_bin: NDimensionalBin,
         sky_area: float,
     ) -> float:

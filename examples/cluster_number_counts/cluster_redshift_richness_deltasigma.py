@@ -28,7 +28,7 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z import (
 
 def get_cluster_abundance() -> ClusterAbundance:
     """Creates and returns a ClusterAbundance object."""
-    hmf = ccl.halos.MassFuncTinker08()
+    hmf = ccl.halos.MassFuncTinker08(mass_def="200c")
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
     cluster_abundance = ClusterAbundance(min_mass, max_mass, min_z, max_z, hmf)
@@ -38,10 +38,10 @@ def get_cluster_abundance() -> ClusterAbundance:
 
 def get_cluster_deltasigma() -> ClusterDeltaSigma:
     """Creates and returns a ClusterAbundance object."""
-    hmf = ccl.halos.MassFuncTinker08()
+    hmf = ccl.halos.MassFuncTinker08(mass_def="200m")
     min_mass, max_mass = 13.0, 16.0
     min_z, max_z = 0.2, 0.8
-    cluster_deltasigma = ClusterDeltaSigma(min_mass, max_mass, min_z, max_z, hmf)
+    cluster_deltasigma = ClusterDeltaSigma(min_mass, max_mass, min_z, max_z, hmf, True)
 
     return cluster_deltasigma
 

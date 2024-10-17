@@ -21,7 +21,7 @@ class ClusterRecipe(Updatable, ABC):
     @abstractmethod
     def evaluate_theory_prediction(
         self,
-        cluster_theory_list: list,
+        cluster_theory,
         this_bin: SaccBin,
         sky_area: float,
         average_on: None | ClusterProperty = None,

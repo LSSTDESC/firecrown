@@ -6,7 +6,6 @@ import numpy as np
 import pyccl
 import pytest
 
-from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
 from firecrown.models.cluster.binning import NDimensionalBin
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
@@ -20,20 +19,6 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z import (
 from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
     MurataBinnedSpecZDeltaSigmaRecipe,
 )
-
-
-@pytest.fixture(name="cluster_abundance")
-def fixture_cluster_abundance() -> ClusterAbundance:
-    hmf = pyccl.halos.MassFuncBocquet16(mass_def="200c")
-    cl_abundance = ClusterAbundance(
-        min_z=0,
-        max_z=2,
-        min_mass=13,
-        max_mass=17,
-        halo_mass_function=hmf,
-    )
-    cl_abundance.update_ingredients(pyccl.CosmologyVanillaLCDM())
-    return cl_abundance
 
 
 @pytest.fixture(name="cluster_deltasigma")
@@ -91,12 +76,11 @@ def test_murata_binned_spec_z_deltasigma_init():
 
 
 def test_get_theory_prediction_returns_value(
-    cluster_abundance: ClusterAbundance,
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
 ):
     prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
-        cluster_abundance, cluster_deltasigma, ClusterProperty.DELTASIGMA
+        cluster_deltasigma, ClusterProperty.DELTASIGMA
     )
 
     assert prediction is not None
@@ -116,12 +100,11 @@ def test_get_theory_prediction_returns_value(
 
 
 def test_get_function_to_integrate_returns_value(
-    cluster_abundance: ClusterAbundance,
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
 ):
     prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
-        cluster_abundance, cluster_deltasigma, ClusterProperty.DELTASIGMA
+        cluster_deltasigma, ClusterProperty.DELTASIGMA
     )
     function_to_integrate = murata_binned_spec_z_deltasigma.get_function_to_integrate(
         prediction
@@ -141,7 +124,6 @@ def test_get_function_to_integrate_returns_value(
 
 
 def test_evaluates_theory_prediction_returns_value(
-    cluster_abundance: ClusterAbundance,
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
 ):
@@ -152,7 +134,7 @@ def test_evaluates_theory_prediction_returns_value(
     average_on = ClusterProperty.DELTASIGMA
 
     prediction = murata_binned_spec_z_deltasigma.evaluate_theory_prediction(
-        [cluster_abundance, cluster_deltasigma], mock_bin, 360**2, average_on
+        cluster_deltasigma, mock_bin, 360**2, average_on
     )
 
     assert prediction > 0

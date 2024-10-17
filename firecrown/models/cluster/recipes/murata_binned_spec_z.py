@@ -110,7 +110,7 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
 
     def evaluate_theory_prediction(
         self,
-        cluster_theory_list: list,
+        cluster_theory: ClusterAbundance,
         this_bin: NDimensionalBin,
         sky_area: float,
         average_on: None | ClusterProperty = None,
@@ -121,7 +121,6 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
         using the Murata 2019 binned mass-richness relation and assuming perfectly
         measured redshifts.
         """
-        cluster_theory = cluster_theory_list[0]
         self.integrator.integral_bounds = [
             (cluster_theory.min_mass, cluster_theory.max_mass),
             this_bin.z_edges,

@@ -179,7 +179,7 @@ def test_evaluates_theory_prediction_returns_value(
     mock_bin.z_edges = (0, 1)
 
     prediction = murata_binned_spec_z.evaluate_theory_prediction(
-        [cluster_abundance], mock_bin, 360**2
+        cluster_abundance, mock_bin, 360**2
     )
 
     assert prediction > 0
