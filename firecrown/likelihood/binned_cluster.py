@@ -16,7 +16,6 @@ from firecrown.likelihood.statistic import (
 from firecrown.models.cluster.cluster_data import ClusterData
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
 
 
 class BinnedCluster(Statistic):
@@ -26,7 +25,7 @@ class BinnedCluster(Statistic):
         self,
         cluster_properties: ClusterProperty,
         survey_name: str,
-        cluster_recipe: ClusterRecipe,
+        cluster_recipe,
         systematics: None | list[SourceSystematic] = None,
     ):
         """Initialize this statistic.

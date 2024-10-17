@@ -97,7 +97,6 @@ class BinnedClusterDeltaSigma(BinnedCluster):
                 mass_edges = this_bin.mass_proxy_edges
                 z_edges = this_bin.z_edges
                 counts = self.cluster_recipe.evaluate_theory_prediction_counts(
-                    # type: ignore[attr-defined]
                     tools.cluster_deltasigma,
                     this_bin,
                     self.sky_area,
