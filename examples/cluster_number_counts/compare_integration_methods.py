@@ -49,7 +49,7 @@ def get_cosmology() -> pyccl.Cosmology:
 def compare_integration() -> None:
     """Compare integration methods."""
     hmf = pyccl.halos.MassFuncTinker08()
-    abundance = ClusterAbundance(13, 15, 0, 4, hmf)
+    abundance = ClusterAbundance((13, 15), (0, 4), hmf)
     cluster_recipe = MurataBinnedSpecZRecipe()
 
     cluster_recipe.mass_distribution.mu_p0 = 3.0
