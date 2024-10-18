@@ -1,4 +1,4 @@
-e-mame: firecrown-ci
+name: firecrown-ci
 
 
 on:
