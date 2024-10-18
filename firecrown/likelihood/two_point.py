@@ -461,10 +461,55 @@ class TwoPoint(Statistic):
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(xis)
 
-    def read_harmonic_space(self, sacc_data: sacc.Sacc):
+    def read_harmonic_space(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic from the SACC file."""
         assert self.theory.sacc_tracers is not None
         ells_cells_indices = read_ell_cells(self.theory, sacc_data)
+        Cells, ells, sacc_indices, window = self.read_harmonic_spectrum_data(
+            ells_cells_indices, sacc_data
+        )
+        assert isinstance(self.theory.ell_or_theta_min, (int, type(None)))
+        assert isinstance(self.theory.ell_or_theta_max, (int, type(None)))
+
+        ells, Cells, sacc_indices = apply_ells_min_max(
+            ells,
+            Cells,
+            sacc_indices,
+            self.theory.ell_or_theta_min,
+            self.theory.ell_or_theta_max,
+        )
+        self.theory.ells = ells
+        if self.theory.ell_or_theta_min is not None:
+            assert np.min(self.theory.ells) >= self.theory.ell_or_theta_min
+        if self.theory.ell_or_theta_max is not None:
+            assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
+        self.theory.window = window
+        self.sacc_indices = sacc_indices
+        self._data = DataVector.create(Cells)
+
+    def read_harmonic_spectrum_data(
+        self,
+        ells_cells_indices: (
+            None
+            | tuple[
+                npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.int64]
+            ]
+        ),
+        sacc_data: sacc.Sacc,
+    ) -> tuple[
+        npt.NDArray[np.float64],
+        npt.NDArray[np.int64],
+        npt.NDArray[np.int64] | None,
+        npt.NDArray[np.float64] | None,
+    ]:
+        """Read all the data for this statistic from the SACC file.
+
+        :param ells_cells_indices: The ells, the cells and the indices of the
+            data in the SACC file.
+        :param sacc_data: The data in the sacc format.
+        :return: The ells, the cells and the indices, and window function if
+            there is one.
+        """
         if ells_cells_indices is not None:
             ells, Cells, sacc_indices = ells_cells_indices
             if self.theory.ell_or_theta_config is not None:
@@ -503,23 +548,7 @@ class TwoPoint(Statistic):
 
             # When generating the ells and Cells we do not have a window function
             window = None
-        assert isinstance(self.theory.ell_or_theta_min, (int, type(None)))
-        assert isinstance(self.theory.ell_or_theta_max, (int, type(None)))
-        ells, Cells, sacc_indices = apply_ells_min_max(
-            ells,
-            Cells,
-            sacc_indices,
-            self.theory.ell_or_theta_min,
-            self.theory.ell_or_theta_max,
-        )
-        self.theory.ells = ells
-        if self.theory.ell_or_theta_min is not None:
-            assert np.min(self.theory.ells) >= self.theory.ell_or_theta_min
-        if self.theory.ell_or_theta_max is not None:
-            assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
-        self.theory.window = window
-        self.sacc_indices = sacc_indices
-        self._data = DataVector.create(Cells)
+        return Cells, ells, sacc_indices, window
 
     def get_data_vector(self) -> DataVector:
         """Return this statistic's data vector."""
