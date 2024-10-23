@@ -11,10 +11,10 @@ import pyccl.nl_pt
 
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
+import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
-    TRACER_NAMES_TOTAL,
 )
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
@@ -69,7 +69,7 @@ class CElls:
         self.GG = stat0.cells[TracerNames("shear", "shear")]
         self.GI = stat0.cells[TracerNames("shear", "intrinsic_pt")]
         self.II = stat0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
-        self.cs_total = stat0.cells[TRACER_NAMES_TOTAL]
+        self.cs_total = stat0.cells[mdt.TRACER_NAMES_TOTAL]
 
         self.gG = stat2.cells[TracerNames("galaxies", "shear")]
         self.gI = stat2.cells[TracerNames("galaxies", "intrinsic_pt")]
@@ -77,7 +77,7 @@ class CElls:
 
         self.gg = stat3.cells[TracerNames("galaxies", "galaxies")]
         self.gm = stat3.cells[TracerNames("galaxies", "magnification+rsd")]
-        self.gg_total = stat3.cells[TRACER_NAMES_TOTAL]
+        self.gg_total = stat3.cells[mdt.TRACER_NAMES_TOTAL]
 
 
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
