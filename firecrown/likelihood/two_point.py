@@ -558,14 +558,11 @@ class TwoPoint(Statistic):
         This method computes the two-point statistic in real space. It first computes
         the Cl's in harmonic space and then translates them to real space using CCL.
         """
-        tracers0 = self.theory.source0.get_tracers(tools)
-        tracers1 = self.theory.source1.get_tracers(tools)
-        scale0 = self.theory.source0.get_scale()
-        scale1 = self.theory.source1.get_scale()
-
         assert self.theory.ccl_kind != "cl"
         assert self.theory.thetas is not None
         assert self.theory.ells_for_xi is not None
+
+        tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
 
         cells_for_xi = self.compute_cells(
             self.theory.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
