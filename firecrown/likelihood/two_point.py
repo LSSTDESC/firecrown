@@ -597,14 +597,7 @@ class TwoPoint(Statistic):
         either the Cl's at the ells provided by the SACC file or the ells required
         for the window function.
         """
-        tracers0 = self.theory.source0.get_tracers(tools)
-        scale0 = self.theory.source0.get_scale()
-
-        if self.theory.source0 is self.theory.source1:
-            tracers1, scale1 = tracers0, scale0
-        else:
-            tracers1 = self.theory.source1.get_tracers(tools)
-            scale1 = self.theory.source1.get_scale()
+        tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
 
         assert self.theory.ccl_kind == "cl"
         assert self.theory.ells is not None

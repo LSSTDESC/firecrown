@@ -1,6 +1,7 @@
 """TwoPoint theory support."""
 
 import copy
+from typing import Sequence
 import numpy as np
 from numpy import typing as npt
 import pyccl
@@ -164,3 +165,22 @@ class TwoPointTheory(Updatable):
             assert s.sacc_tracer is not None
         tracers = (s.sacc_tracer for s in self.sources)
         self.sacc_tracers = TracerNames(*tracers)
+
+    def get_tracers_and_scales(
+        self, tools: ModelingTools
+    ) -> tuple[Sequence[Tracer], float, Sequence[Tracer], float]:
+        """Get tracers and scales for both sources.
+
+        :param tools: The modeling tools to use.
+        :result: The tracers and scales for both sources.
+        """
+        tracers0 = self.source0.get_tracers(tools)
+        scale0 = self.source0.get_scale()
+
+        if self.source0 is self.source1:
+            tracers1, scale1 = tracers0, scale0
+        else:
+            tracers1 = self.source1.get_tracers(tools)
+            scale1 = self.source1.get_scale()
+
+        return tracers0, scale0, tracers1, scale1
