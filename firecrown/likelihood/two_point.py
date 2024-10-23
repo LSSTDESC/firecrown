@@ -597,11 +597,10 @@ class TwoPoint(Statistic):
         either the Cl's at the ells provided by the SACC file or the ells required
         for the window function.
         """
-        tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
-
         assert self.theory.ccl_kind == "cl"
         assert self.theory.ells is not None
 
+        tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
         if self.theory.window is not None:
             ells_for_interpolation = calculate_ells_for_interpolation(
                 self.theory.ells[0], self.theory.ells[-1]
