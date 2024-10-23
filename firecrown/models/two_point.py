@@ -40,7 +40,9 @@ def determine_ccl_kind(sacc_data_type: str) -> str:
     return result
 
 
-def calculate_pk(pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer):
+def calculate_pk(
+    pk_name: str, tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
+) -> pyccl.Pk2D:
     """Return the power spectrum named by pk_name.
 
     If the modeling tools already has the power spectrum, it is returned.
