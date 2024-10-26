@@ -46,8 +46,7 @@ from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,
 )
-from firecrown.data_types import TwoPointMeasurement
-from firecrown.likelihood.statistic import TheoryVector
+from firecrown.data_types import TwoPointMeasurement, TheoryVector
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])

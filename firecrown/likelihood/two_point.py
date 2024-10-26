@@ -26,12 +26,9 @@ from firecrown.likelihood.number_counts import (
     NumberCountsFactory,
 )
 from firecrown.likelihood.statistic import (
-    DataVector,
     Statistic,
-    TheoryVector,
 )
 from firecrown.metadata_types import (
-    TRACER_NAMES_TOTAL,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
@@ -43,11 +40,12 @@ from firecrown.metadata_functions import (
     extract_window_function,
     measurements_from_index,
 )
-from firecrown.data_types import TwoPointMeasurement
+from firecrown.data_types import TwoPointMeasurement, DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import TwoPointTheory, calculate_pk
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import cached_angular_cl, make_log_interpolator
+import firecrown.metadata_types as mdt
 
 # only supported types are here, anything else will throw
 # a value error
@@ -668,10 +666,10 @@ class TwoPoint(Statistic):
                     * scale0
                     * scale1
                 )
-        self.theory.cells[TRACER_NAMES_TOTAL] = np.array(
+        self.theory.cells[mdt.TRACER_NAMES_TOTAL] = np.array(
             sum(self.theory.cells.values())
         )
-        theory_vector = self.theory.cells[TRACER_NAMES_TOTAL]
+        theory_vector = self.theory.cells[mdt.TRACER_NAMES_TOTAL]
         return theory_vector
 
     def compute_cells_interpolated(

@@ -15,10 +15,10 @@ import sacc
 from firecrown.updatable import get_default_params_map
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
+import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
-    TRACER_NAMES_TOTAL,
 )
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
@@ -157,7 +157,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_GG = s0.cells[TracerNames("shear", "shear")]
     cells_GI = s0.cells[TracerNames("intrinsic_pt", "shear")]
     cells_II = s0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total = s0.cells[TRACER_NAMES_TOTAL]
+    cells_cs_total = s0.cells[mdt.TRACER_NAMES_TOTAL]
 
     s1 = likelihood.statistics[1].statistic
     # del weak_lensing_source.cosmo_hash
@@ -167,7 +167,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_GG_m = s1.cells[TracerNames("shear", "shear")]
     cells_GI_m = s1.cells[TracerNames("shear", "intrinsic_pt")]
     cells_II_m = s1.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total_m = s1.cells[TRACER_NAMES_TOTAL]
+    cells_cs_total_m = s1.cells[mdt.TRACER_NAMES_TOTAL]
 
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
@@ -182,7 +182,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_gg = s3.cells[TracerNames("galaxies", "galaxies")]
     cells_gm = s3.cells[TracerNames("galaxies", "magnification+rsd")]
     cells_mm = s3.cells[TracerNames("magnification+rsd", "magnification+rsd")]
-    cells_gg_total = s3.cells[TRACER_NAMES_TOTAL]
+    cells_gg_total = s3.cells[mdt.TRACER_NAMES_TOTAL]
     # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))

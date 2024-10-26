@@ -10,10 +10,9 @@ import sacc
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.likelihood.source import SourceSystematic
 from firecrown.likelihood.statistic import (
-    DataVector,
     Statistic,
-    TheoryVector,
 )
+from firecrown.data_types import DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.models.cluster.binning import SaccBin
