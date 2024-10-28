@@ -22,6 +22,7 @@ from firecrown.ccl_factory import (
     PowerSpec,
     CCLFactory,
     PoweSpecAmplitudeParameter,
+    CCLCreationMode,
 )
 
 
@@ -568,12 +569,16 @@ class NumCosmoData(Ncm.Data):
         self.tools.reset()
 
         self._nc_mapping.set_params_from_numcosmo(mset, self.tools.ccl_factory)
-        ccl_args = self._nc_mapping.calculate_ccl_args(mset)
         params_map = self._nc_mapping.create_params_map(self.model_list, mset)
 
         self.likelihood.update(params_map)
         self.tools.update(params_map)
-        self.tools.prepare(calculator_args=ccl_args)
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            self.tools.prepare(
+                calculator_args=self._nc_mapping.calculate_ccl_args(mset)
+            )
+        else:
+            self.tools.prepare()
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method `m2lnL`.
@@ -840,12 +845,16 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.tools.reset()
 
         self._nc_mapping.set_params_from_numcosmo(mset, self.tools.ccl_factory)
-        ccl_args = self._nc_mapping.calculate_ccl_args(mset)
         params_map = self._nc_mapping.create_params_map(self._model_list, mset)
 
         self.likelihood.update(params_map)
         self.tools.update(params_map)
-        self.tools.prepare(calculator_args=ccl_args)
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            self.tools.prepare(
+                calculator_args=self._nc_mapping.calculate_ccl_args(mset)
+            )
+        else:
+            self.tools.prepare()
 
     # pylint: disable-next=arguments-differ
     def do_mean_func(self, _, vp) -> None:
