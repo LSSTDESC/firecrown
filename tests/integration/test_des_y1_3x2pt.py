@@ -13,9 +13,10 @@ def test_des_y1_3x2pt_cosmosis():
             """
                 set -e
                 cd examples/des_y1_3x2pt
-                cosmosis des_y1_3x2pt.ini
-                cosmosis des_y1_3x2pt_PT.ini
-                cosmosis des_y1_3x2pt_default_factory.ini
+                cosmosis cosmosis/factory.ini
+                cosmosis cosmosis/factory_PT.ini
+                cosmosis cosmosis/default_factory.ini
+                cosmosis cosmosis/pure_ccl_default_factory.ini
             """,
         ],
         capture_output=True,
@@ -36,12 +37,28 @@ def test_des_y1_3x2pt_numcosmo():
             """
                 set -e
                 cd examples/des_y1_3x2pt
-                numcosmo from-cosmosis des_y1_3x2pt.ini --matter-ps eisenstein_hu\\
+                mkdir -p numcosmo
+                cd numcosmo
+
+                numcosmo from-cosmosis ../cosmosis/factory.ini \\
+                    --matter-ps eisenstein_hu \\
                     --nonlin-matter-ps halofit
-                numcosmo run test des_y1_3x2pt.yaml
-                numcosmo from-cosmosis des_y1_3x2pt_PT.ini --matter-ps eisenstein_hu\\
+                numcosmo run test factory.yaml
+
+                numcosmo from-cosmosis ../cosmosis/factory_PT.ini \\
+                    --matter-ps eisenstein_hu \\
                     --nonlin-matter-ps halofit
-                numcosmo run test des_y1_3x2pt_PT.yaml
+                numcosmo run test factory_PT.yaml
+
+                numcosmo from-cosmosis ../cosmosis/default_factory.ini \\
+                    --matter-ps eisenstein_hu \\
+                    --nonlin-matter-ps halofit
+                numcosmo run test default_factory.yaml
+
+                numcosmo from-cosmosis ../cosmosis/pure_ccl_default_factory.ini \\
+                    --matter-ps eisenstein_hu \\
+                    --nonlin-matter-ps halofit
+                numcosmo run test pure_ccl_default_factory.yaml
             """,
         ],
         capture_output=True,
@@ -62,8 +79,9 @@ def test_des_y1_3x2pt_cobaya():
             """
                 set -e
                 cd examples/des_y1_3x2pt
-                cobaya-run cobaya_evaluate.yaml
-                cobaya-run cobaya_evaluate_PT.yaml
+                cobaya-run cobaya/evaluate.yaml
+                cobaya-run cobaya/evaluate_PT.yaml
+                cobaya-run cobaya/evaluate_pure_ccl.yaml
             """,
         ],
         capture_output=True,
