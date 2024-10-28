@@ -134,20 +134,21 @@ class MuSigmaModel(Updatable):
 
     def __init__(self):
         """Initialize the MuSigmaModel object."""
-        super().__init__(parameter_prefix="mu_sigma")
+        super().__init__(parameter_prefix="mg_musigma")
 
         self.mu = register_new_updatable_parameter(default_value=1.0)
-        self.sigma = register_new_updatable_parameter(default_value=0.0)
+        self.sigma = register_new_updatable_parameter(default_value=1.0)
         self.c1 = register_new_updatable_parameter(default_value=1.0)
         self.c2 = register_new_updatable_parameter(default_value=1.0)
-        self.lambda_mg = register_new_updatable_parameter(default_value=0.0)
+        # We cannot clash with the lambda keyword
+        self.lambda0 = register_new_updatable_parameter(default_value=1.0)
 
     def create(self) -> MuSigmaMG:
         """Create a `pyccl.modified_gravity.MuSigmaMG` object."""
         if not self.is_updated():
             raise ValueError("Parameters have not been updated yet.")
 
-        return MuSigmaMG(self.mu, self.sigma, self.c1, self.c2, self.lambda_mg)
+        return MuSigmaMG(self.mu, self.sigma, self.c1, self.c2, self.lambda0)
 
 
 class CAMBExtraParams(BaseModel):

@@ -1,6 +1,42 @@
 # DES Y1 3x2pt Analysis
 
-The code here will run a test sample for a Flat LCDM cosmology using either Cobaya or CosmoSIS. 
+The DES Y1 3x2pt analysis is a joint analysis of the DES Y1 cosmic shear, galaxy-galaxy
+lensing, and galaxy clustering data. In this example, we show how to use the DES Y1
+3x2pt data products to calculate the likelihood using `Cobaya`, `CosmoSIS`, and
+`NumCosmo`.
+
+## Likelihood factories
+
+Firecrown likelihood can be constructed through user defined factories. In this example:
+
+  - `factory.py`: The FireCrown factory file for the DES Y1 3x2pt analysis.
+  - `factory_PT.py`: The FireCrown factory file for the DES Y1 3x2pt analysis with
+    perturbation theory.
+
+Firecrown default factories can also be used, in this case they are configure through the
+experiment configuration file:
+
+  - `experiment.yaml`: The FireCrown experiment configuration file for the DES Y1 3x2pt
+    analysis.
+  - `pure_ccl_experiment.yaml`: The FireCrown experiment configuration file for the DES Y1
+    3x2pt analysis using the `pure_ccl` mode.
+  - `mu_sigma_experiment.yaml`: The FireCrown experiment configuration file for the DES Y1
+    3x2pt analysis using the `mu_sigma_isitgr` mode.
+
+
+## Running cosmosis
+
+For each of the likelihood factories, we provide a CosmoSIS pipeline configuration file:
+
+  - `cosmosis/factory.ini`: The CosmoSIS pipeline configuration file for the DES Y1 3x2pt
+    analysis.
+  - `cosmosis/factory_PT.ini`: The CosmoSIS pipeline configuration file for the DES Y1 3x2pt
+    analysis with perturbation theory.
+  - `cosmosis/pure_ccl.ini`: The CosmoSIS pipeline configuration file for the DES Y1 3x2pt
+    analysis using the `pure_ccl` mode.
+  - `cosmosis/mu_sigma.ini`: The CosmoSIS pipeline configuration file for the DES Y1 3x2pt
+
+
 
 ## Running Cobaya
 
@@ -29,7 +65,7 @@ It also creates the directory `des_y1_3x2pt_output` which is populated with the 
 ## Generating the `firecrown` Inputs
 
 Note, this code below only has to be run if you want to generate the firecrown input from the DES Y1 3x2pt data products.
-This file is stored at `examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits`.
+This file is stored at `examples/des_y1_3x2pt/sacc_data.fits`.
 You do not have to make it yourself.
 
 To generate the `firecrown` inputs, first download the DES Y1 3x2pt data products [here](http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits).

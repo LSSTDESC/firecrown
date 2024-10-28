@@ -16,7 +16,8 @@ def test_des_y1_3x2pt_cosmosis():
                 cosmosis cosmosis/factory.ini
                 cosmosis cosmosis/factory_PT.ini
                 cosmosis cosmosis/default_factory.ini
-                cosmosis cosmosis/pure_ccl_default_factory.ini
+                cosmosis cosmosis/pure_ccl.ini
+                cosmosis cosmosis/mu_sigma.ini
             """,
         ],
         capture_output=True,
@@ -55,10 +56,15 @@ def test_des_y1_3x2pt_numcosmo():
                     --nonlin-matter-ps halofit
                 numcosmo run test default_factory.yaml
 
-                numcosmo from-cosmosis ../cosmosis/pure_ccl_default_factory.ini \\
+                numcosmo from-cosmosis ../cosmosis/pure_ccl.ini \\
                     --matter-ps eisenstein_hu \\
                     --nonlin-matter-ps halofit
-                numcosmo run test pure_ccl_default_factory.yaml
+                numcosmo run test pure_ccl.yaml
+
+                numcosmo from-cosmosis ../cosmosis/mu_sigma.ini \\
+                    --matter-ps eisenstein_hu \\
+                    --nonlin-matter-ps halofit
+                numcosmo run test mu_sigma.yaml
             """,
         ],
         capture_output=True,
@@ -82,6 +88,7 @@ def test_des_y1_3x2pt_cobaya():
                 cobaya-run cobaya/evaluate.yaml
                 cobaya-run cobaya/evaluate_PT.yaml
                 cobaya-run cobaya/evaluate_pure_ccl.yaml
+                cobaya-run cobaya/evaluate_mu_sigma.yaml
             """,
         ],
         capture_output=True,

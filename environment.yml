@@ -18,6 +18,7 @@ dependencies:
   - getdist
   - glib
   - idna
+  - isitgr
   - matplotlib-base
   - more-itertools
   - mypy
