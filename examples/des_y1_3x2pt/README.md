@@ -62,11 +62,11 @@ cobaya-run cobaya/factory.yaml
 
 ## Generating the `firecrown` Inputs
 
-Note, this code below only has to be run if you want to generate the firecrown input from the DES Y1 3x2pt data products.
-This file is stored at `examples/des_y1_3x2pt/sacc_data.fits`.
-You do not have to make it yourself.
-
-To generate the `firecrown` inputs, first download the DES Y1 3x2pt data products [here](http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits).
+There is already a `sacc_data.fits` file in this directory that contains the DES Y1
+3x2pt data products. If you want to regenerate the `firecrown` inputs, you can run
+`generate_des_data.py`. To generate the `firecrown` inputs, first download the DES Y1
+3x2pt data products
+[here](http://desdr-server.ncsa.illinois.edu/despublic/y1a1_files/chains/2pt_NG_mcal_1110.fits).
 
 Then run the script
 
