@@ -16,6 +16,7 @@ from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.gaussfamily import GaussFamily
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.likelihood import load_likelihood, Likelihood, NamedParameters
+from firecrown.ccl_factory import CCLCreationMode
 from firecrown.parameters import ParamsMap
 from firecrown.updatable import MissingSamplerParameterError
 
@@ -109,7 +110,6 @@ class FirecrownLikelihood:
             sample, "cosmological_parameters"
         )
         self.map.set_params_from_cosmosis(cosmological_params)
-        ccl_args = self.map.calculate_ccl_args(sample)
 
         # TODO: Future development will need to capture elements that get put into the
         # datablock. This probably will be in a different "physics module" and not in
@@ -121,7 +121,10 @@ class FirecrownLikelihood:
         firecrown_params.use_lower_case_keys(True)
         self.update_likelihood_and_tools(firecrown_params)
 
-        self.tools.prepare(calculator_args=ccl_args)
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            self.tools.prepare(calculator_args=self.map.calculate_ccl_args(sample))
+        else:
+            self.tools.prepare()
         loglike = self.likelihood.compute_loglike(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()

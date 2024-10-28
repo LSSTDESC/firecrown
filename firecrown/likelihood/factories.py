@@ -35,6 +35,7 @@ from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
 )
 from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
 from firecrown.utils import YAMLSerializable
 
 
@@ -101,6 +102,7 @@ class TwoPointExperiment(BaseModel):
 
     two_point_factory: TwoPointFactory
     data_source: DataSourceSacc
+    ccl_factory: CCLFactory | None = None
 
     def model_post_init(self, __context) -> None:
         """Initialize the TwoPointExperiment object."""
@@ -131,7 +133,7 @@ def build_two_point_likelihood(
         raise ValueError("No likelihood config found.")
 
     exp = TwoPointExperiment.model_validate(likelihood_config, strict=True)
-    modeling_tools = ModelingTools()
+    modeling_tools = ModelingTools(ccl_factory=exp.ccl_factory)
 
     # Load the SACC file
     sacc_data = exp.data_source.get_sacc_data()

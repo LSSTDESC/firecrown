@@ -25,6 +25,7 @@ from pydantic import (
 
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
+from pyccl.modified_gravity import MuSigmaMG
 
 from firecrown.updatable import Updatable
 from firecrown.parameters import register_new_updatable_parameter
@@ -96,6 +97,79 @@ def _validate_neutrino_mass_splits(value):
     return value
 
 
+class CCLCreationMode(YAMLSerializable, str, Enum):
+    """This class defines the CCL instance creation mode.
+
+    The DEFAULT mode represents the current CCL behavior. It will use CCL's calculator
+    mode if `prepare` is called with a `CCLCalculatorArgs` object. Otherwise, it will
+    use the default CCL mode.
+
+    The MU_SIGMA_ISITGR mode enables the mu-sigma modified gravity model with the ISiTGR
+    transfer function, it is not compatible with the Calculator mode.
+
+    The PURE_CCL_MODE mode will create a CCL instance with the default parameters. It is
+    not compatible with the Calculator mode.
+    """
+
+    @staticmethod
+    def _generate_next_value_(name, _start, _count, _last_values):
+        return name.lower()
+
+    DEFAULT = auto()
+    MU_SIGMA_ISITGR = auto()
+    PURE_CCL_MODE = auto()
+
+
+def _validate_ccl_creation_mode(value):
+    if isinstance(value, str):
+        try:
+            return CCLCreationMode(value.lower())  # Convert from string to Enum
+        except ValueError as exc:
+            raise ValueError(f"Invalid value for CCLCreationMode: {value}") from exc
+    return value
+
+
+class MuSigmaModel(Updatable):
+    """Model for the mu-sigma modified gravity model."""
+
+    def __init__(self):
+        """Initialize the MuSigmaModel object."""
+        super().__init__(parameter_prefix="mu_sigma")
+
+        self.mu = register_new_updatable_parameter(default_value=1.0)
+        self.sigma = register_new_updatable_parameter(default_value=0.0)
+        self.c1 = register_new_updatable_parameter(default_value=1.0)
+        self.c2 = register_new_updatable_parameter(default_value=1.0)
+        self.lambda_mg = register_new_updatable_parameter(default_value=0.0)
+
+    def create(self) -> MuSigmaMG:
+        """Create a `pyccl.modified_gravity.MuSigmaMG` object."""
+        if not self.is_updated():
+            raise ValueError("Parameters have not been updated yet.")
+
+        return MuSigmaMG(self.mu, self.sigma, self.c1, self.c2, self.lambda_mg)
+
+
+class CAMBExtraParams(BaseModel):
+    """Extra parameters for CAMB."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    halofit_version: Annotated[str | None, Field(frozen=True)] = None
+    HMCode_A_baryon: Annotated[float | None, Field(frozen=True)] = None
+    HMCode_eta_baryon: Annotated[float | None, Field(frozen=True)] = None
+    HMCode_logT_AGN: Annotated[float | None, Field(frozen=True)] = None
+    kmax: Annotated[float | None, Field(frozen=True)] = None
+    lmax: Annotated[int | None, Field(frozen=True)] = None
+    dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
+
+    def get_dict(self) -> dict:
+        """Return the extra parameters as a dictionary."""
+        return {
+            key: value for key, value in self.model_dump().items() if value is not None
+        }
+
+
 class CCLFactory(Updatable, BaseModel):
     """Factory class for creating instances of the `pyccl.Cosmology` class."""
 
@@ -111,6 +185,12 @@ class CCLFactory(Updatable, BaseModel):
         BeforeValidator(_validate_neutrino_mass_splits),
         Field(frozen=True),
     ] = NeutrinoMassSplits.NORMAL
+    creation_mode: Annotated[
+        CCLCreationMode,
+        BeforeValidator(_validate_ccl_creation_mode),
+        Field(frozen=True),
+    ] = CCLCreationMode.DEFAULT
+    camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
 
     def __init__(self, **data):
         """Initialize the CCLFactory object."""
@@ -149,6 +229,11 @@ class CCLFactory(Updatable, BaseModel):
                     default_value=ccl_cosmo["sigma8"]
                 )
 
+        self.mu_sigma_model: None | MuSigmaModel = None
+        match self.creation_mode:
+            case CCLCreationMode.MU_SIGMA_ISITGR:
+                self.mu_sigma_model = MuSigmaModel()
+
     @model_serializer(mode="wrap")
     def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
         """Serialize the CCLFactory object."""
@@ -169,6 +254,12 @@ class CCLFactory(Updatable, BaseModel):
     @classmethod
     def serialize_mass_split(cls, value: NeutrinoMassSplits) -> str:
         """Serialize the mass split parameter."""
+        return value.name
+
+    @field_serializer("creation_mode")
+    @classmethod
+    def serialize_creation_mode(cls, value: CCLCreationMode) -> str:
+        """Serialize the creation mode parameter."""
         return value.name
 
     def model_post_init(self, __context) -> None:
@@ -214,10 +305,37 @@ class CCLFactory(Updatable, BaseModel):
             else:
                 ccl_args["nonlinear_model"] = None
 
-            return pyccl.CosmologyCalculator(**ccl_args)
+            if (self.creation_mode != CCLCreationMode.DEFAULT) or (
+                self.camb_extra_params is not None
+            ):
+                raise ValueError(
+                    "Calculator Mode can only be used with the DEFAULT creation "
+                    "mode and no CAMB extra parameters."
+                )
+
+            self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
+            return self._ccl_cosmo
 
         if self.require_nonlinear_pk:
             ccl_args["matter_power_spectrum"] = "halofit"
+
+        if self.camb_extra_params is not None:
+            ccl_args["extra_parameters"] = {"camb": self.camb_extra_params.get_dict()}
+
+        match self.creation_mode:
+            case CCLCreationMode.DEFAULT:
+                pass
+            case CCLCreationMode.MU_SIGMA_ISITGR:
+                assert self.mu_sigma_model is not None
+                ccl_args.update(
+                    mg_parametrization=self.mu_sigma_model.create(),
+                    matter_power_spectrum="linear",
+                    transfer_function="boltzmann_isitgr",
+                )
+            case CCLCreationMode.PURE_CCL_MODE:
+                pass
+            case _:
+                raise ValueError(f"Invalid creation mode: {self.creation_mode}")
 
         self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
         return self._ccl_cosmo
