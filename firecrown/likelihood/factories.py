@@ -85,16 +85,28 @@ class DataSourceSacc(BaseModel):
     """Model for the data source in a likelihood configuration."""
 
     sacc_data_file: str
+    _path: Path | None = None
 
-    def model_post_init(self, __context) -> None:
-        """Initialize the DataSourceSacc object."""
-        sacc_data_file = Path(self.sacc_data_file)
-        if not sacc_data_file.exists():
-            raise FileNotFoundError(f"File {sacc_data_file} does not exist")
+    def set_path(self, path: Path) -> None:
+        """Set the path for the data source."""
+        self._path = path
 
     def get_sacc_data(self) -> sacc.Sacc:
         """Load the SACC data file."""
-        return sacc.Sacc.load_fits(self.sacc_data_file)
+        sacc_data_path = Path(self.sacc_data_file)
+        # If sacc_data_file is absolute, use it directly
+        if sacc_data_path.is_absolute():
+            return sacc.Sacc.load_fits(self.sacc_data_file)
+        # If path is set, use it to find the file
+        if self._path is not None:
+            full_sacc_data_path = self._path / sacc_data_path
+            if full_sacc_data_path.exists():
+                return sacc.Sacc.load_fits(full_sacc_data_path)
+        # If path is not set, use the current directory
+        if sacc_data_path.exists():
+            return sacc.Sacc.load_fits(sacc_data_path)
+        # If the file does not exist, raise an error
+        raise FileNotFoundError(f"File {sacc_data_path} does not exist")
 
 
 class TwoPointExperiment(BaseModel):
@@ -106,6 +118,21 @@ class TwoPointExperiment(BaseModel):
 
     def model_post_init(self, __context) -> None:
         """Initialize the TwoPointExperiment object."""
+
+    @classmethod
+    def load_from_yaml(cls, file: str | Path) -> "TwoPointExperiment":
+        """Load a TwoPointExperiment object from a YAML file."""
+        if isinstance(file, str):
+            file = Path(file)
+
+        # Determine file directory
+        file_dir = file.parent
+        with open(file, "r", encoding="utf-8") as f:
+            config = yaml.safe_load(f)
+            tpe = cls.model_validate(config, strict=True)
+
+        tpe.data_source.set_path(file_dir)
+        return tpe
 
 
 def build_two_point_likelihood(
@@ -125,14 +152,7 @@ def build_two_point_likelihood(
         - statistic_factories: A YAML file containing the statistic factories to use.
     """
     likelihood_config_file = build_parameters.get_string("likelihood_config")
-
-    with open(likelihood_config_file, "r", encoding="utf-8") as f:
-        likelihood_config = yaml.safe_load(f)
-
-    if likelihood_config is None:
-        raise ValueError("No likelihood config found.")
-
-    exp = TwoPointExperiment.model_validate(likelihood_config, strict=True)
+    exp = TwoPointExperiment.load_from_yaml(likelihood_config_file)
     modeling_tools = ModelingTools(ccl_factory=exp.ccl_factory)
 
     # Load the SACC file
