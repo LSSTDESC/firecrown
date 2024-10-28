@@ -1,0 +1,162 @@
+likelihood:
+  des_y1_3x2pt:
+    external: !!python/name:firecrown.connector.cobaya.likelihood.LikelihoodConnector ''
+    firecrownIni: firecrown.likelihood.factories.build_two_point_likelihood
+    build_parameters:
+      likelihood_config: ../des_y1_3x2pt_pure_ccl_experiment.yaml
+params:
+  sigma8:
+    prior:
+      min: 0.6
+      max: 1.0
+    ref: 0.8
+    proposal: 0.01
+  Omega_b: 0.05
+  Omega_c:
+    prior:
+      min: 0.05
+      max: 0.35
+    ref: 0.25
+    proposal: 0.01
+  Omega_k: 0.0
+  h: 0.682
+  Neff: 3.046
+  m_nu: 0.06
+  n_s: 0.971
+  w0: -1.0
+  wa: 0.0
+  T_CMB: 2.7255
+  
+#   Likelihood params
+#   - IA model
+  ia_bias:
+     ref: 0.5
+     prior:
+        min: -5.0
+        max: +5.0
+  alphaz:
+     ref: 0.0
+     prior:
+        min: -5.0
+        max: +5.0
+
+#   - these parameters are fixed
+  z_piv: 0.62
+
+#   - linear bias for lenses
+  lens0_bias: 
+     ref: 1.4
+     prior:
+        min: 0.8
+        max: 3.0
+  lens1_bias: 
+     ref: 1.6
+     prior:
+        min: 0.8
+        max: 3.0
+  lens2_bias: 
+     ref: 1.6
+     prior:
+        min: 0.8
+        max: 3.0
+  lens3_bias: 
+     ref: 1.9
+     prior:
+        min: 0.8
+        max: 3.0
+  lens4_bias: 
+     ref: 2.0
+     prior:
+        min: 0.8
+        max: 3.0
+
+#   - photoz shifts for the lensing sources
+  src0_delta_z: 
+     ref: -0.001
+     prior:
+        dist: norm
+        loc: -0.001
+        scale: 0.016
+  src1_delta_z: 
+     ref: -0.019
+     prior:
+        dist: norm
+        loc: -0.019
+        scale: 0.013
+  src2_delta_z: 
+     ref: +0.009
+     prior:
+        dist: norm
+        loc: 0.009
+        scale: 0.011
+  src3_delta_z: 
+     ref: -0.018
+     prior:
+        dist: norm
+        loc: -0.018
+        scale: 0.022
+
+#   - photoz shifts for the lenses
+  lens0_delta_z:
+     ref: 0.001
+     prior:
+        dist: norm
+        loc: 0.001
+        scale: 0.008
+  lens1_delta_z: 
+     ref: 0.002
+     prior:
+        dist: norm
+        loc: 0.002
+        scale: 0.007
+  lens2_delta_z: 
+     ref: 0.001
+     prior:
+        dist: norm
+        loc: 0.001
+        scale: 0.007
+  lens3_delta_z: 
+     ref: 0.003
+     prior:
+        dist: norm
+        loc: 0.003
+        scale: 0.01
+  lens4_delta_z: 
+     ref: 0.0
+     prior:
+        dist: norm
+        loc: 0.0
+        scale: 0.01
+
+#   - shear errors
+  src0_mult_bias: 
+     ref: 0.0
+     prior:
+        dist: norm
+        loc: 0.012
+        scale: 0.023
+  src1_mult_bias: 
+     ref: 0.0
+     prior:
+        dist: norm
+        loc: 0.012
+        scale: 0.023
+  src2_mult_bias: 
+     ref: 0.0
+     prior:
+        dist: norm
+        loc: 0.012
+        scale: 0.023
+  src3_mult_bias: 
+     ref: 0.0
+     prior:
+        dist: norm
+        loc: 0.012
+        scale: 0.023
+sampler:
+  evaluate: null
+stop_at_error: true
+output: output_pure_ccl
+packages_path: null
+test: false
+debug: false
