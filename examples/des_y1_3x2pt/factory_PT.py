@@ -25,9 +25,7 @@ from firecrown.updatable import get_default_params_map
 
 
 saccfile = os.path.expanduser(
-    os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
-    )
+    os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits")
 )
 
 

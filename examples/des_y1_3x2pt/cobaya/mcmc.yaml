@@ -10,7 +10,7 @@ theory:
 likelihood:
   des_y1_3x2pt:
     external: !!python/name:firecrown.connector.cobaya.likelihood.LikelihoodConnector ''
-    firecrownIni: ../des_y1_3x2pt.py
+    firecrownIni: ../factory.py
 params:
   As:
     prior:
