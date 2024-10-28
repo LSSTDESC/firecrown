@@ -3,7 +3,7 @@ likelihood:
     external: !!python/name:firecrown.connector.cobaya.likelihood.LikelihoodConnector ''
     firecrownIni: firecrown.likelihood.factories.build_two_point_likelihood
     build_parameters:
-      likelihood_config: ../pure_ccl_experiment.yaml
+      likelihood_config: ${FIRECROWN_DIR}/examples/des_y1_3x2pt/pure_ccl_experiment.yaml
 params:
   sigma8:
     prior:
