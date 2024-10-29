@@ -309,15 +309,15 @@ def test_default_factory():
         "z_piv": 0.3,
         "T_CMB": 2.7255,
     }
+    default_factory = "firecrown.likelihood.factories.build_two_point_likelihood"
+    likelihood_config = "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"
     info_fiducial = {
         "params": fiducial_params,
         "likelihood": {
             "lk_connector": {
                 "external": LikelihoodConnector,
-                "firecrownIni": "firecrown.likelihood.factories.build_two_point_likelihood",
-                "build_parameters": {
-                    "likelihood_config": "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"
-                },
+                "firecrownIni": default_factory,
+                "build_parameters": {"likelihood_config": likelihood_config},
             },
         },
     }
