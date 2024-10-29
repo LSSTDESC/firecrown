@@ -923,7 +923,7 @@ class NumCosmoFactory:
                 build_parameters,
             )
 
-    def get_data(self) -> Ncm.Data:
+    def get_data(self) -> NumCosmoGaussCov | NumCosmoData:
         """This method return the appropriate Ncm.Data class to be used by NumCosmo.
 
         :return: the data used by NumCosmo
