@@ -105,15 +105,24 @@ def fixture_config_with_two_point_real() -> DataBlock:
     return result
 
 
-@pytest.fixture(name="config_with_two_point_harmonic")
-def fixture_config_with_two_point_harmonic() -> DataBlock:
+@pytest.fixture(name="config_with_two_point_harmonic", params=["default", "pure_ccl"])
+def fixture_config_with_two_point_harmonic(request) -> DataBlock:
     result = DataBlock()
+    likelihood_file = ""
+    if request.param == "default":
+        likelihood_file = (
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
+        )
+    elif request.param == "pure_ccl":
+        likelihood_file = (
+            "${FIRECROWN_DIR}/tests/likelihood/"
+            "gauss_family/lkscript_two_point_pure_ccl.py"
+        )
+
     result.put_string(
         option_section,
         "Likelihood_source",
-        expandvars(
-            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
-        ),
+        expandvars(likelihood_file),
     )
     result.put_string(
         option_section,
