@@ -48,7 +48,7 @@ def fixture_sacc_data():
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     saccfile = os.path.join(
         os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
+        "../examples/des_y1_3x2pt/sacc_data.fits",
     )
     return sacc.Sacc.load_fits(saccfile)
 
