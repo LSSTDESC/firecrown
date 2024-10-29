@@ -1,6 +1,7 @@
 """Unit tests for the cobaya Mapping connector."""
 
 import pytest
+import numpy as np
 from cobaya.model import get_model, Model
 from cobaya.log import LoggedError
 from firecrown.connector.cobaya.ccl import CCLConnector
@@ -271,3 +272,56 @@ def test_derived_parameter_likelihood(fiducial_params):
     logpost = model_fiducial.logposterior({})
     assert logpost.logpost == -3.14
     assert logpost.derived[0] == 1.0
+
+
+def test_default_factory():
+    fiducial_params = {
+        "ia_bias": 1.0,
+        "sigma8": 0.8,
+        "alphaz": 1.0,
+        "h": 0.7,
+        "lens0_bias": 1.0,
+        "lens0_delta_z": 0.1,
+        "lens1_bias": 1.0,
+        "lens1_delta_z": 0.1,
+        "lens2_bias": 1.0,
+        "lens2_delta_z": 0.1,
+        "lens3_bias": 1.0,
+        "lens3_delta_z": 0.1,
+        "lens4_delta_z": 0.1,
+        "lens4_bias": 1.0,
+        "m_nu": 0.06,
+        "n_s": 0.96,
+        "Neff": 3.046,
+        "Omega_b": 0.048,
+        "Omega_c": 0.26,
+        "Omega_k": 0.0,
+        "src0_delta_z": 0.1,
+        "src0_mult_bias": 1.0,
+        "src1_delta_z": 0.1,
+        "src1_mult_bias": 1.0,
+        "src2_delta_z": 0.1,
+        "src2_mult_bias": 1.0,
+        "src3_delta_z": 0.1,
+        "src3_mult_bias": 1.0,
+        "w0": -1.0,
+        "wa": 0.0,
+        "z_piv": 0.3,
+        "T_CMB": 2.7255,
+    }
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "firecrown.likelihood.factories.build_two_point_likelihood",
+                "build_parameters": {
+                    "likelihood_config": "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"
+                },
+            },
+        },
+    }
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+    logpost = model_fiducial.logposterior({})
+    assert np.isfinite(logpost.logpost)

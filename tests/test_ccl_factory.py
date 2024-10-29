@@ -1,5 +1,6 @@
 """Test the CCLFactory object."""
 
+import re
 import numpy as np
 import pytest
 import pyccl
@@ -220,7 +221,7 @@ def test_ccl_factory_amplitude_parameter(
 def test_ccl_factory_neutrino_mass_splits(
     neutrino_mass_splits: NeutrinoMassSplits,
 ) -> None:
-    ccl_factory = CCLFactory(neutrino_mass_splits=neutrino_mass_splits)
+    ccl_factory = CCLFactory(mass_split=neutrino_mass_splits)
 
     assert ccl_factory is not None
 
@@ -409,6 +410,7 @@ def test_ccl_factory_from_dict() -> None:
         "amplitude_parameter": PoweSpecAmplitudeParameter.SIGMA8,
         "mass_split": NeutrinoMassSplits.EQUAL,
         "require_nonlinear_pk": True,
+        "creation_mode": CCLCreationMode.DEFAULT,
     }
 
     ccl_factory = CCLFactory.model_validate(ccl_factory_dict)
@@ -453,6 +455,14 @@ def test_ccl_factory_camb_extra_params_invalid_model() -> None:
         match="The only dark energy models CCL supports with CAMB are fluid and ppf.",
     ):
         ccl_cosmo.compute_linear_power()
+
+
+def test_ccl_factory_invalid_extra_params() -> None:
+    with pytest.raises(
+        ValueError,
+        match=re.escape("Invalid parameters: {'not_a_valid_param'}"),
+    ):
+        CCLFactory(not_a_valid_param="Im not a valid value")
 
 
 def test_mu_sigma_model() -> None:

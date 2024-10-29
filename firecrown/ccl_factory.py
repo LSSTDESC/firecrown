@@ -199,6 +199,11 @@ class CCLFactory(Updatable, BaseModel):
         BaseModel.__init__(self, **data)
         Updatable.__init__(self, parameter_prefix=parameter_prefix)
 
+        if set(data) - set(self.model_fields.keys()):
+            raise ValueError(
+                f"Invalid parameters: {set(data) - set(self.model_fields.keys())}"
+            )
+
         self._ccl_cosmo: None | pyccl.Cosmology = None
 
         ccl_cosmo = pyccl.CosmologyVanillaLCDM()
@@ -230,10 +235,10 @@ class CCLFactory(Updatable, BaseModel):
                     default_value=ccl_cosmo["sigma8"]
                 )
 
-        self.mu_sigma_model: None | MuSigmaModel = None
+        self._mu_sigma_model: None | MuSigmaModel = None
         match self.creation_mode:
             case CCLCreationMode.MU_SIGMA_ISITGR:
-                self.mu_sigma_model = MuSigmaModel()
+                self._mu_sigma_model = MuSigmaModel()
 
     @model_serializer(mode="wrap")
     def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
@@ -328,9 +333,9 @@ class CCLFactory(Updatable, BaseModel):
             case CCLCreationMode.DEFAULT:
                 pass
             case CCLCreationMode.MU_SIGMA_ISITGR:
-                assert self.mu_sigma_model is not None
+                assert self._mu_sigma_model is not None
                 ccl_args.update(
-                    mg_parametrization=self.mu_sigma_model.create(),
+                    mg_parametrization=self._mu_sigma_model.create(),
                     matter_power_spectrum="linear",
                     transfer_function="boltzmann_isitgr",
                 )
