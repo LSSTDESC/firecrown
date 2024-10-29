@@ -465,6 +465,26 @@ def test_ccl_factory_invalid_extra_params() -> None:
         CCLFactory(not_a_valid_param="Im not a valid value")
 
 
+def test_validate_creation_mode_incompatible():
+    ccl_factory = CCLFactory(creation_mode=CCLCreationMode.PURE_CCL_MODE)
+    params = get_default_params_map(ccl_factory)
+    ccl_factory.update(params)
+    with pytest.raises(
+        ValueError,
+        match="Calculator Mode can only be used with the DEFAULT "
+        "creation mode and no CAMB extra parameters.",
+    ):
+        ccl_factory.create(
+            calculator_args=CCLCalculatorArgs(
+                background={
+                    "a": A_ARRAY,
+                    "chi": CHI_ARRAY,
+                    "h_over_h0": H_OVER_H0_ARRAY,
+                }
+            )
+        )
+
+
 def test_mu_sigma_model() -> None:
     mu_sigma_model = MuSigmaModel()
 

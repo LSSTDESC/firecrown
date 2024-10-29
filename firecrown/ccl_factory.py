@@ -121,12 +121,11 @@ class CCLCreationMode(YAMLSerializable, str, Enum):
 
 
 def _validate_ccl_creation_mode(value):
-    if isinstance(value, str):
-        try:
-            return CCLCreationMode(value.lower())  # Convert from string to Enum
-        except ValueError as exc:
-            raise ValueError(f"Invalid value for CCLCreationMode: {value}") from exc
-    return value
+    assert isinstance(value, str)
+    try:
+        return CCLCreationMode(value.lower())  # Convert from string to Enum
+    except ValueError as exc:
+        raise ValueError(f"Invalid value for CCLCreationMode: {value}") from exc
 
 
 class MuSigmaModel(Updatable):
@@ -329,9 +328,8 @@ class CCLFactory(Updatable, BaseModel):
             ccl_args["extra_parameters"] = {"camb": self.camb_extra_params.get_dict()}
             ccl_args["matter_power_spectrum"] = "camb"
 
+        assert self.creation_mode in CCLCreationMode
         match self.creation_mode:
-            case CCLCreationMode.DEFAULT:
-                pass
             case CCLCreationMode.MU_SIGMA_ISITGR:
                 assert self._mu_sigma_model is not None
                 ccl_args.update(
@@ -339,10 +337,6 @@ class CCLFactory(Updatable, BaseModel):
                     matter_power_spectrum="linear",
                     transfer_function="boltzmann_isitgr",
                 )
-            case CCLCreationMode.PURE_CCL_MODE:
-                pass
-            case _:
-                raise ValueError(f"Invalid creation mode: {self.creation_mode}")
         self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
         return self._ccl_cosmo
 
