@@ -4,20 +4,55 @@ import subprocess
 import pytest
 
 
+HAS_ISITGR = False
+try:
+    import isitgr
+
+    if isitgr is not None:
+        HAS_ISITGR = True
+except ImportError:
+    HAS_ISITGR = False
+
+INI_FILES = [
+    "factory.ini",
+    "factory_PT.ini",
+    "default_factory.ini",
+    "pure_ccl.ini",
+]
+if HAS_ISITGR:
+    INI_FILES.append("mu_sigma.ini")
+
+COBAYA_YAML_FILES = [
+    "evaluate.yaml",
+    "evaluate_PT.yaml",
+    "evaluate_pure_ccl.yaml",
+]
+if HAS_ISITGR:
+    COBAYA_YAML_FILES.append("evaluate_mu_sigma.yaml")
+
+
+@pytest.fixture(name="ini_file", params=INI_FILES)
+def fixture_ini_file(request) -> str:
+    """Fixture to provide the ini files for the DES Y1 3x2pt analysis."""
+    return request.param
+
+
+@pytest.fixture(name="cobaya_yaml_file", params=COBAYA_YAML_FILES)
+def fixture_cobaya_yaml_file(request) -> str:
+    """Fixture to provide the cobaya yaml files for the DES Y1 3x2pt analysis."""
+    return request.param
+
+
 @pytest.mark.integration
-def test_des_y1_3x2pt_cosmosis():
+def test_des_y1_3x2pt_cosmosis(ini_file: str):
     result = subprocess.run(
         [
             "bash",
             "-c",
-            """
+            f"""
                 set -e
                 cd examples/des_y1_3x2pt
-                cosmosis cosmosis/factory.ini
-                cosmosis cosmosis/factory_PT.ini
-                cosmosis cosmosis/default_factory.ini
-                cosmosis cosmosis/pure_ccl.ini
-                cosmosis cosmosis/mu_sigma.ini
+                cosmosis cosmosis/{ini_file}
             """,
         ],
         capture_output=True,
@@ -30,41 +65,21 @@ def test_des_y1_3x2pt_cosmosis():
 
 
 @pytest.mark.integration
-def test_des_y1_3x2pt_numcosmo():
+def test_des_y1_3x2pt_numcosmo(ini_file: str):
     result = subprocess.run(
         [
             "bash",
             "-c",
-            """
+            f"""
                 set -e
                 cd examples/des_y1_3x2pt
                 mkdir -p numcosmo
                 cd numcosmo
 
-                numcosmo from-cosmosis ../cosmosis/factory.ini \\
+                numcosmo from-cosmosis ../cosmosis/{ini_file} \\
                     --matter-ps eisenstein_hu \\
                     --nonlin-matter-ps halofit
-                numcosmo run test factory.yaml
-
-                numcosmo from-cosmosis ../cosmosis/factory_PT.ini \\
-                    --matter-ps eisenstein_hu \\
-                    --nonlin-matter-ps halofit
-                numcosmo run test factory_PT.yaml
-
-                numcosmo from-cosmosis ../cosmosis/default_factory.ini \\
-                    --matter-ps eisenstein_hu \\
-                    --nonlin-matter-ps halofit
-                numcosmo run test default_factory.yaml
-
-                numcosmo from-cosmosis ../cosmosis/pure_ccl.ini \\
-                    --matter-ps eisenstein_hu \\
-                    --nonlin-matter-ps halofit
-                numcosmo run test pure_ccl.yaml
-
-                numcosmo from-cosmosis ../cosmosis/mu_sigma.ini \\
-                    --matter-ps eisenstein_hu \\
-                    --nonlin-matter-ps halofit
-                numcosmo run test mu_sigma.yaml
+                numcosmo run test {ini_file.replace('.ini', '.yaml')}
             """,
         ],
         capture_output=True,
@@ -77,18 +92,15 @@ def test_des_y1_3x2pt_numcosmo():
 
 
 @pytest.mark.integration
-def test_des_y1_3x2pt_cobaya():
+def test_des_y1_3x2pt_cobaya(cobaya_yaml_file: str):
     result = subprocess.run(
         [
             "bash",
             "-c",
-            """
+            f"""
                 set -e
                 cd examples/des_y1_3x2pt
-                cobaya-run cobaya/evaluate.yaml
-                cobaya-run cobaya/evaluate_PT.yaml
-                cobaya-run cobaya/evaluate_pure_ccl.yaml
-                cobaya-run cobaya/evaluate_mu_sigma.yaml
+                cobaya-run cobaya/{cobaya_yaml_file}
             """,
         ],
         capture_output=True,

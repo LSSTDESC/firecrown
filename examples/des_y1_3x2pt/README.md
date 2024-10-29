@@ -25,6 +25,10 @@ configuration files:
   **pure_ccl** mode.
 - `mu_sigma_experiment.yaml`: Configuration for **mu_sigma_isitgr** mode.
 
+Note that `mu_sigma_experiment.yaml` requires the
+[`isitgr`](https://github.com/mishakb/ISiTGR) package to be installed. This package is
+not installed by default in the Firecrown environment.
+
 ## Running CosmoSIS
 
 For each likelihood factory, a corresponding **CosmoSIS** pipeline configuration file is
