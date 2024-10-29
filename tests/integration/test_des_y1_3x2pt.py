@@ -3,32 +3,20 @@
 import subprocess
 import pytest
 
-
-HAS_ISITGR = False
-try:
-    import isitgr
-
-    if isitgr is not None:
-        HAS_ISITGR = True
-except ImportError:
-    HAS_ISITGR = False
-
 INI_FILES = [
     "factory.ini",
     "factory_PT.ini",
     "default_factory.ini",
     "pure_ccl.ini",
+    "mu_sigma.ini",
 ]
-if HAS_ISITGR:
-    INI_FILES.append("mu_sigma.ini")
 
 COBAYA_YAML_FILES = [
     "evaluate.yaml",
     "evaluate_PT.yaml",
     "evaluate_pure_ccl.yaml",
+    "evaluate_mu_sigma.yaml",
 ]
-if HAS_ISITGR:
-    COBAYA_YAML_FILES.append("evaluate_mu_sigma.yaml")
 
 
 @pytest.fixture(name="ini_file", params=INI_FILES)
