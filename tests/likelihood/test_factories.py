@@ -90,11 +90,37 @@ def test_data_source_sacc_dict() -> None:
     data_source_sacc = DataSourceSacc.model_validate(data_source_sacc_dict)
     assert isinstance(data_source_sacc, DataSourceSacc)
     assert data_source_sacc.sacc_data_file == "tests/bug_398.sacc.gz"
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_data_source_sacc_dict_absolute() -> None:
+    sacc_file = Path("tests/bug_398.sacc.gz").absolute()
+    data_source_sacc_dict = {"sacc_data_file": sacc_file.as_posix()}
+    data_source_sacc = DataSourceSacc.model_validate(data_source_sacc_dict)
+    assert isinstance(data_source_sacc, DataSourceSacc)
+    assert data_source_sacc.sacc_data_file == sacc_file.as_posix()
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
 
 
 def test_data_source_sacc_direct() -> None:
     data_source_sacc = DataSourceSacc(sacc_data_file="tests/bug_398.sacc.gz")
     assert data_source_sacc.sacc_data_file == "tests/bug_398.sacc.gz"
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_data_source_sacc_direct_absolute() -> None:
+    sacc_file = Path("tests/bug_398.sacc.gz").absolute()
+    data_source_sacc = DataSourceSacc(sacc_data_file=sacc_file.as_posix())
+    assert data_source_sacc.sacc_data_file == sacc_file.as_posix()
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
 
 
 def test_data_source_sacc_invalid_file() -> None:
