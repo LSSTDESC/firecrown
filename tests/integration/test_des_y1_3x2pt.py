@@ -66,6 +66,10 @@ def test_des_y1_3x2pt_cosmosis(ini_file: str):
 
 @pytest.mark.integration
 def test_des_y1_3x2pt_numcosmo(ini_file: str):
+    # FIXME: New NumCosmo 0.23.0 on will support the mu_sigma.ini. Update the following
+    # line to remove the skip when the new version is released.
+    if "mu_sigma" in ini_file:
+        pytest.skip("numcosmo does not support mu_sigma.ini")
     result = subprocess.run(
         [
             "bash",
