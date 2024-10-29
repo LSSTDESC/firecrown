@@ -322,6 +322,7 @@ class CCLFactory(Updatable, BaseModel):
 
         if self.camb_extra_params is not None:
             ccl_args["extra_parameters"] = {"camb": self.camb_extra_params.get_dict()}
+            ccl_args["matter_power_spectrum"] = "camb"
 
         match self.creation_mode:
             case CCLCreationMode.DEFAULT:
@@ -337,7 +338,6 @@ class CCLFactory(Updatable, BaseModel):
                 pass
             case _:
                 raise ValueError(f"Invalid creation mode: {self.creation_mode}")
-
         self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
         return self._ccl_cosmo
 
