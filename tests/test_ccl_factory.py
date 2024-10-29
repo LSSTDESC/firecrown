@@ -224,6 +224,7 @@ def test_ccl_factory_neutrino_mass_splits(
     ccl_factory = CCLFactory(mass_split=neutrino_mass_splits)
 
     assert ccl_factory is not None
+    assert ccl_factory.mass_split == neutrino_mass_splits
 
     default_params = get_default_params_map(ccl_factory)
 
