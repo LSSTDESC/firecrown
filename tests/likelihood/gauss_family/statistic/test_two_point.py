@@ -18,11 +18,10 @@ from firecrown.likelihood.number_counts import (
 from firecrown.likelihood.weak_lensing import (
     WeakLensing,
 )
-from firecrown.likelihood.statistic import TheoryVector
+import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
-    TRACER_NAMES_TOTAL,
     WeakLensingFactory,
     NumberCountsFactory,
 )
@@ -47,7 +46,7 @@ from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,
 )
-from firecrown.data_types import TwoPointMeasurement
+from firecrown.data_types import TwoPointMeasurement, TheoryVector
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])
@@ -174,7 +173,7 @@ def test_compute_theory_vector(source_0: NumberCounts) -> None:
 
 
 def test_tracer_names() -> None:
-    assert TracerNames("", "") == TRACER_NAMES_TOTAL
+    assert TracerNames("", "") == mdt.TRACER_NAMES_TOTAL
 
     tn1 = TracerNames("cow", "pig")
     assert tn1[0] == "cow"

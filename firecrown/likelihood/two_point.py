@@ -13,15 +13,7 @@ import sacc.windows
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
-from firecrown.generators.two_point import (
-    log_linear_ells,
-    calculate_ells_for_interpolation,
-    EllOrThetaConfig,
-    generate_ells_cells,
-    generate_reals,
-    apply_ells_min_max,
-    apply_theta_min_max,
-)
+import firecrown.generators.two_point as gen
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.source_factories import (
     use_source_factory,
@@ -34,12 +26,9 @@ from firecrown.likelihood.number_counts import (
     NumberCountsFactory,
 )
 from firecrown.likelihood.statistic import (
-    DataVector,
     Statistic,
-    TheoryVector,
 )
 from firecrown.metadata_types import (
-    TRACER_NAMES_TOTAL,
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
@@ -51,11 +40,12 @@ from firecrown.metadata_functions import (
     extract_window_function,
     measurements_from_index,
 )
-from firecrown.data_types import TwoPointMeasurement
+from firecrown.data_types import TwoPointMeasurement, DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import TwoPointTheory, calculate_pk
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import cached_angular_cl, make_log_interpolator
+import firecrown.metadata_types as mdt
 
 # only supported types are here, anything else will throw
 # a value error
@@ -199,7 +189,7 @@ class TwoPoint(Statistic):
         source1: Source,
         *,
         ell_for_xi: None | dict[str, int] = None,
-        ell_or_theta: None | EllOrThetaConfig = None,
+        ell_or_theta: None | gen.EllOrThetaConfig = None,
         ell_or_theta_min: None | float | int = None,
         ell_or_theta_max: None | float | int = None,
         tracers: None | TracerNames = None,
@@ -281,7 +271,7 @@ class TwoPoint(Statistic):
                 )
                 two_point.theory.thetas = metadata.thetas
                 two_point.theory.window = None
-                two_point.theory.ells_for_xi = log_linear_ells(
+                two_point.theory.ells_for_xi = gen.log_linear_ells(
                     **two_point.theory.ell_for_xi_config
                 )
             case _:
@@ -445,18 +435,18 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input theta values "
                     "were given!"
                 )
-            thetas, xis = generate_reals(self.theory.ell_or_theta_config)
+            thetas, xis = gen.generate_reals(self.theory.ell_or_theta_config)
             sacc_indices = None
         assert isinstance(self.theory.ell_or_theta_min, (float, type(None)))
         assert isinstance(self.theory.ell_or_theta_max, (float, type(None)))
-        thetas, xis, sacc_indices = apply_theta_min_max(
+        thetas, xis, sacc_indices = gen.apply_theta_min_max(
             thetas,
             xis,
             sacc_indices,
             self.theory.ell_or_theta_min,
             self.theory.ell_or_theta_max,
         )
-        self.theory.ells_for_xi = log_linear_ells(**self.theory.ell_for_xi_config)
+        self.theory.ells_for_xi = gen.log_linear_ells(**self.theory.ell_for_xi_config)
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(xis)
@@ -471,7 +461,7 @@ class TwoPoint(Statistic):
         assert isinstance(self.theory.ell_or_theta_min, (int, type(None)))
         assert isinstance(self.theory.ell_or_theta_max, (int, type(None)))
 
-        ells, Cells, sacc_indices = apply_ells_min_max(
+        ells, Cells, sacc_indices = gen.apply_ells_min_max(
             ells,
             Cells,
             sacc_indices,
@@ -543,7 +533,7 @@ class TwoPoint(Statistic):
                     "have no 2pt data in the SACC file and no input ell values "
                     "were given!"
                 )
-            ells, Cells = generate_ells_cells(self.theory.ell_or_theta_config)
+            ells, Cells = gen.generate_ells_cells(self.theory.ell_or_theta_config)
             sacc_indices = None
 
             # When generating the ells and Cells we do not have a window function
@@ -566,14 +556,11 @@ class TwoPoint(Statistic):
         This method computes the two-point statistic in real space. It first computes
         the Cl's in harmonic space and then translates them to real space using CCL.
         """
-        tracers0 = self.theory.source0.get_tracers(tools)
-        tracers1 = self.theory.source1.get_tracers(tools)
-        scale0 = self.theory.source0.get_scale()
-        scale1 = self.theory.source1.get_scale()
-
         assert self.theory.ccl_kind != "cl"
         assert self.theory.thetas is not None
         assert self.theory.ells_for_xi is not None
+
+        tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
 
         cells_for_xi = self.compute_cells(
             self.theory.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
@@ -597,20 +584,12 @@ class TwoPoint(Statistic):
         either the Cl's at the ells provided by the SACC file or the ells required
         for the window function.
         """
-        tracers0 = self.theory.source0.get_tracers(tools)
-        scale0 = self.theory.source0.get_scale()
-
-        if self.theory.source0 is self.theory.source1:
-            tracers1, scale1 = tracers0, scale0
-        else:
-            tracers1 = self.theory.source1.get_tracers(tools)
-            scale1 = self.theory.source1.get_scale()
-
         assert self.theory.ccl_kind == "cl"
         assert self.theory.ells is not None
 
+        tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
         if self.theory.window is not None:
-            ells_for_interpolation = calculate_ells_for_interpolation(
+            ells_for_interpolation = gen.calculate_ells_for_interpolation(
                 self.theory.ells[0], self.theory.ells[-1]
             )
 
@@ -687,10 +666,10 @@ class TwoPoint(Statistic):
                     * scale0
                     * scale1
                 )
-        self.theory.cells[TRACER_NAMES_TOTAL] = np.array(
+        self.theory.cells[mdt.TRACER_NAMES_TOTAL] = np.array(
             sum(self.theory.cells.values())
         )
-        theory_vector = self.theory.cells[TRACER_NAMES_TOTAL]
+        theory_vector = self.theory.cells[mdt.TRACER_NAMES_TOTAL]
         return theory_vector
 
     def compute_cells_interpolated(

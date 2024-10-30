@@ -5,115 +5,17 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 """
 
 from __future__ import annotations
-from typing import final, Iterator
-from dataclasses import dataclass
+from typing import final
 from abc import abstractmethod
-import warnings
 import numpy as np
 import numpy.typing as npt
 import sacc
 
 import firecrown.parameters
+from firecrown.data_types import DataVector, TheoryVector
 from firecrown.parameters import DerivedParameterCollection, RequiredParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import Updatable
-
-
-class DataVector(npt.NDArray[np.float64]):
-    """Wrapper for a np.ndarray that represents some observed data values."""
-
-    @classmethod
-    def create(cls, vals: npt.NDArray[np.float64]) -> DataVector:
-        """Create a DataVector that wraps a copy of the given array vals.
-
-        :param vals: the array to be copied and wrapped
-        :return: a new DataVector
-        """
-        return vals.view(cls)
-
-    @classmethod
-    def from_list(cls, vals: list[float]) -> DataVector:
-        """Create a DataVector from the given list of floats.
-
-        :param vals: the list of floats
-        :return: a new DataVector
-        """
-        array = np.array(vals)
-        return cls.create(array)
-
-
-class TheoryVector(npt.NDArray[np.float64]):
-    """Wrapper for an np.ndarray that represents a prediction by some theory."""
-
-    @classmethod
-    def create(cls, vals: npt.NDArray[np.float64]) -> TheoryVector:
-        """Create a TheoryVector that wraps a copy of the given array vals.
-
-        :param vals: the array to be copied and wrapped
-        :return: a new TheoryVector
-        """
-        return vals.view(cls)
-
-    @classmethod
-    def from_list(cls, vals: list[float]) -> TheoryVector:
-        """Create a TheoryVector from the given list of floats.
-
-        :param vals: the list of floats
-        :return: a new TheoryVector
-        """
-        array = np.array(vals)
-        return cls.create(array)
-
-
-def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]:
-    """Return a bare np.ndarray with the difference between `data` and `theory`.
-
-    This is to be preferred to using arithmetic on the vectors directly.
-    """
-    assert isinstance(data, DataVector)
-    assert isinstance(theory, TheoryVector)
-    return (data - theory).view(np.ndarray)
-
-
-@dataclass
-class StatisticsResult:
-    """An pair of a :python:`DataVector` and a :python:`TheoryVector`.
-
-    This is the type returned by the :meth:`compute` method of any :python:`Statistic`.
-    """
-
-    data: DataVector
-    theory: TheoryVector
-
-    def __post_init__(self) -> None:
-        """Make sure the data and theory vectors are of the same shape."""
-        assert self.data.shape == self.theory.shape
-
-    def residuals(self) -> npt.NDArray[np.float64]:
-        """Return the residuals -- the difference between data and theory.
-
-        :return: the residuals
-        """
-        return self.data - self.theory
-
-    def __iter__(self) -> Iterator[DataVector | TheoryVector]:
-        """Iterate through the data members.
-
-        This is to allow automatic unpacking, as if the StatisticsResult were a tuple
-        of (data, theory).
-
-        This method is a temporary measure to help code migrate to the newer,
-        safer interface for Statistic.compute().
-
-        :return: an iterator object that yields first the data and then the theory
-        """
-        warnings.warn(
-            "Iteration and tuple unpacking for StatisticsResult is "
-            "deprecated.\nPlease use the StatisticsResult class accessors"
-            ".data and .theory by name."
-        )
-        yield self.data
-        yield self.theory
 
 
 class StatisticUnreadError(RuntimeError):
