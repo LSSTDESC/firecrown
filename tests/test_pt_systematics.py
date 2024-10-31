@@ -8,6 +8,7 @@ import os
 import pytest
 
 import numpy as np
+import numpy.typing as npt
 import pyccl as ccl
 import pyccl.nl_pt as pt
 import sacc
@@ -23,6 +24,7 @@ from firecrown.likelihood.two_point import (
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+import firecrown.parameters as fcp
 
 
 @pytest.fixture(name="weak_lensing_source")
@@ -368,3 +370,43 @@ def test_pt_mixed_systematics(sacc_data):
 
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
+
+
+def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
+    a = nc.LinearBiasSystematic("xxx")
+    assert isinstance(a, nc.LinearBiasSystematic)
+    assert a.parameter_prefix == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None
+    assert not a.is_updated()
+    a.update(fcp.ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 2.0, "xxx_z_piv": 1.5}))
+    assert a.is_updated()
+    assert a.alphag == 1.0
+    assert a.alphaz == 2.0
+    assert a.z_piv == 1.5
+
+    orig_nca = nc.NumberCountsArgs(
+        z=np.array([0.5, 1.0]),
+        dndz=np.array([5.0, 4.0]),
+        bias=np.array([1.0, 1.0]),
+        mag_bias=(np.array([2.0, 3.0]), np.array([4.0, 5.0])),
+        has_pt=False,
+        has_hm=False,
+        b_2=(np.array([5.0, 6.0]), np.array([6.0, 7.0])),
+        b_s=(np.array([7.0, 8.0]), np.array([8.0, 9.0])),
+    )
+
+    nca = a.apply(tools_with_vanilla_cosmology, orig_nca)
+    # Answer values determined by code inspection and hand calculation.
+    expected_bias: npt.NDArray[np.float64] = np.array([0.27835299, 0.39158961])
+    assert nca.bias is not None  # needed for mypy
+    new_bias: npt.NDArray[np.float64] = nca.bias  # needed for mypy
+    assert np.allclose(expected_bias, new_bias)
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None
