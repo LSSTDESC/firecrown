@@ -240,6 +240,10 @@ class DerivedParameterCollection:
         for derived_parameter in derived_parameters:
             self.add_required_parameter(derived_parameter)
 
+    def __len__(self) -> int:
+        """Return the number of parameters contained."""
+        return len(self.derived_parameters)
+
     def __add__(self, other: None | DerivedParameterCollection):
         """Add two DerivedParameterCollection objects.
 
