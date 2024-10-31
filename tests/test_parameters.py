@@ -420,3 +420,19 @@ def test_required_parameters_get_default_values_no_default3():
         )
     with pytest.raises(ValueError, match="Parameter name3 has no default value"):
         _ = rp.get_default_values()
+
+
+def test_add_required_parameter():
+    coll = DerivedParameterCollection([])
+    coll.add_required_parameter(
+        DerivedParameter(section="barnyard", name="cow", val=1.0)
+    )
+    assert len(coll) == 1
+
+    with pytest.raises(
+        ValueError,
+        match="RequiredParameter named barnyard--cow is already present in the collection",
+    ):
+        coll.add_required_parameter(
+            DerivedParameter(section="barnyard", name="cow", val=3.14)
+        )
