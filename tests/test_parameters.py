@@ -431,7 +431,7 @@ def test_add_required_parameter():
 
     with pytest.raises(
         ValueError,
-        match="RequiredParameter named barnyard--cow is already present in the collection",
+        match="RequiredParameter named barnyard--cow is already present",
     ):
         coll.add_required_parameter(
             DerivedParameter(section="barnyard", name="cow", val=3.14)
