@@ -165,6 +165,9 @@ def test_weak_lensing_source_init(
     source.update(ParamsMap())
     ts = source.get_tracers(tools_with_vanilla_cosmology)
     assert len(ts) == 1
+    dp = source.get_derived_parameters()
+    assert dp is not None
+    assert len(dp) == 0
 
 
 def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
@@ -263,6 +266,9 @@ def test_number_counts_source_init(
     assert_allclose(source.tracer_args.z, z)
     assert_allclose(source.tracer_args.dndz, dndz)
     source.update(ParamsMap(lens0_bias=1.1))
+    dp = source.get_derived_parameters()
+    assert dp is not None
+    assert len(dp) == 0
     ts = source.get_tracers(tools_with_vanilla_cosmology)
     assert len(ts) == 1
 
