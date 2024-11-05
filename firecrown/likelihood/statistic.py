@@ -82,12 +82,8 @@ class Statistic(Updatable):
 
         :param _: currently unused, but required by the interface.
         """
+        assert len(self.get_data_vector()) > 0
         self.ready = True
-        if len(self.get_data_vector()) == 0:
-            raise RuntimeError(
-                f"the statistic {self} has read a data vector "
-                f"of length 0; the length must be positive"
-            )
 
     def _reset(self):
         """Reset this statistic.
