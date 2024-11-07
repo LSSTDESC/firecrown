@@ -17,6 +17,7 @@ from firecrown.connector.cosmosis.likelihood import (
     extract_section,
     MissingSamplerParameterError,
     execute,
+    form_error_message,
 )
 
 
@@ -573,3 +574,47 @@ def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
             mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_nl_p_k)
         ),
     )
+
+
+def test_form_error_message_with_sampling_sections():
+    sampling_sections = ["section1", "section2"]
+    exc = MissingSamplerParameterError("missing_param")
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was: `section1 section2`\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
+
+
+def test_form_error_message_with_empty_sampling_sections():
+    sampling_sections: list[str] = []
+    exc = MissingSamplerParameterError("missing_param")
+    #  flake8: noqa
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was an empty string.\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
+
+
+def test_form_error_message_with_single_sampling_section():
+    sampling_sections = ["section1"]
+    exc = MissingSamplerParameterError("missing_param")
+    #  flake8: noqa
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was: `section1`\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
+
+
+def test_form_error_message_with_missing_sampler_parameter_error():
+    sampling_sections = ["section1", "section2"]
+    exc = MissingSamplerParameterError("missing_param")
+    assert "missing_param" in form_error_message(sampling_sections, exc)

@@ -228,32 +228,8 @@ class FirecrownLikelihood:
             self.likelihood.update(firecrown_params)
             self.tools.update(firecrown_params)
         except MissingSamplerParameterError as exc:
-            msg = self.form_error_message(exc)
+            msg = form_error_message(self.sampling_sections, exc)
             raise RuntimeError(msg) from exc
-
-    def form_error_message(self, exc: MissingSamplerParameterError) -> str:
-        """Form the error message that will be used to report a missing parameter.
-
-        This error message will also include when that parameter should have been
-        supplied by the sampler.
-
-        :param exc: the missing parameter error
-        :return: the error message
-        """
-        msg = (
-            "A required parameter was not found in any of the "
-            "sections searched on DataBlock.\n"
-            "These are specified by the space-separated string "
-            "`sampling_parameter_sections`.\n"
-            "The supplied value was"
-        )
-        sampling_parameters_sections = " ".join(self.sampling_sections)
-        if sampling_parameters_sections:
-            msg += f": `{sampling_parameters_sections}`"
-        else:
-            msg += " an empty string."
-        msg += f"\nThe missing parameter is named: `{exc.parameter}`\n"
-        return msg
 
     def calculate_firecrown_params(self, sample: cosmosis.datablock) -> ParamsMap:
         """Calculate the ParamsMap for this sample.
@@ -276,6 +252,33 @@ class FirecrownLikelihood:
 
         firecrown_params.use_lower_case_keys(True)
         return firecrown_params
+
+
+def form_error_message(
+    sampling_sections: list[str], exc: MissingSamplerParameterError
+) -> str:
+    """Form the error message that will be used to report a missing parameter.
+
+    This error message will also include when that parameter should have been
+    supplied by the sampler.
+
+    :param exc: the missing parameter error
+    :return: the error message
+    """
+    msg = (
+        "A required parameter was not found in any of the "
+        "sections searched on DataBlock.\n"
+        "These are specified by the space-separated string "
+        "`sampling_parameter_sections`.\n"
+        "The supplied value was"
+    )
+    sampling_parameters_sections = " ".join(sampling_sections)
+    if sampling_parameters_sections:
+        msg += f": `{sampling_parameters_sections}`"
+    else:
+        msg += " an empty string."
+    msg += f"\nThe missing parameter is named: `{exc.parameter}`\n"
+    return msg
 
 
 def setup(config: cosmosis.datablock) -> FirecrownLikelihood:
