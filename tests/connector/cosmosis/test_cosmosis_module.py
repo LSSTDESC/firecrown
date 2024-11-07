@@ -16,6 +16,7 @@ from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
     extract_section,
     MissingSamplerParameterError,
+    execute,
 )
 
 
@@ -351,6 +352,14 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
 ):
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
+
+
+def test_execute_function(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
+):
+    assert execute(sample_with_M, firecrown_mod_with_const_gaussian) == 0
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
 
 
 def test_module_exec_with_two_point_real(
