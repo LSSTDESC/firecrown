@@ -82,12 +82,8 @@ class Statistic(Updatable):
 
         :param _: currently unused, but required by the interface.
         """
+        assert len(self.get_data_vector()) > 0
         self.ready = True
-        if len(self.get_data_vector()) == 0:
-            raise RuntimeError(
-                f"the statistic {self} has read a data vector "
-                f"of length 0; the length must be positive"
-            )
 
     def _reset(self):
         """Reset this statistic.
@@ -176,15 +172,7 @@ class GuardedStatistic(Updatable):
         """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
-        try:
-            self.statistic.read(sacc_data)
-        except TypeError as exc:
-            msg = (
-                f"A statistic of type {type(self.statistic).__name__} has raised "
-                f"an exception during `read`.\nThe problem may be a malformed "
-                f"SACC data object."
-            )
-            raise RuntimeError(msg) from exc
+        self.statistic.read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
         """Return the contained :class:`Statistic`'s data vector.

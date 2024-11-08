@@ -159,8 +159,8 @@ class GaussFamily(Likelihood):
         for i, s in enumerate(statistics):
             if not isinstance(s, Statistic):
                 raise ValueError(
-                    f"statistics[{i}] is not an instance of Statistic: {s}"
-                    f"it is a {type(s)} instead."
+                    f"statistics[{i}] is not an instance of Statistic."
+                    f" It is a {type(s)}."
                 )
 
         self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(

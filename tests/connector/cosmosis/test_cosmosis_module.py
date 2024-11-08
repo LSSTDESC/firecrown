@@ -14,8 +14,11 @@ from cosmosis.datablock import DataBlock, option_section, names as section_names
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
-    extract_section,
     MissingSamplerParameterError,
+    calculate_firecrown_params,
+    execute,
+    extract_section,
+    form_error_message,
 )
 
 
@@ -175,7 +178,12 @@ def fixture_firecrown_mod_with_two_point_harmonic(
 
 @pytest.fixture(name="sample_with_cosmo")
 def fixture_sample_with_cosmo() -> DataBlock:
-    """Return a DataBlock that contains some cosmological parameters."""
+    """Return a DataBlock that contains some cosmological parameters.
+
+    It will have one section, cosmological_parameters.
+    This section will have parameters h0, omega_b, omega_c, omega_k, omega_nu, w,
+    and wa.
+    """
     result = DataBlock()
     params = {
         "h0": 0.83,
@@ -193,11 +201,18 @@ def fixture_sample_with_cosmo() -> DataBlock:
 
 @pytest.fixture(name="minimal_sample")
 def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
+    """Return a DataBlock containing two sections: cosmological_parameters and distances
+
+    See sample_with_cosmo for the parameters in the cosmological_parameters section.
+    The section distances will have parameters d_m, h, and z.
+    All will be double arrays of length 100.
+    """
     with open("tests/distances.yml", encoding="utf-8") as stream:
         rawdata = yaml.load(stream, yaml.CLoader)
     sample = sample_with_cosmo
     for section_name, section_data in rawdata.items():
         for parameter_name, value in section_data.items():
+            assert len(value) == 100
             sample.put(section_name, parameter_name, np.array(value))
     return sample
 
@@ -351,6 +366,14 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
 ):
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
+
+
+def test_execute_function(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
+):
+    assert execute(sample_with_M, firecrown_mod_with_const_gaussian) == 0
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
 
 
 def test_module_exec_with_two_point_real(
@@ -564,3 +587,60 @@ def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
             mapping_cosmosis.transform_p_k_h3_to_p_k(matter_power_nl_p_k)
         ),
     )
+
+
+def test_form_error_message_with_sampling_sections():
+    sampling_sections = ["section1", "section2"]
+    exc = MissingSamplerParameterError("missing_param")
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was: `section1 section2`\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
+
+
+def test_form_error_message_with_empty_sampling_sections():
+    sampling_sections: list[str] = []
+    exc = MissingSamplerParameterError("missing_param")
+    #  flake8: noqa
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was an empty string.\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
+
+
+def test_form_error_message_with_single_sampling_section():
+    sampling_sections = ["section1"]
+    exc = MissingSamplerParameterError("missing_param")
+    #  flake8: noqa
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was: `section1`\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
+
+
+def test_form_error_message_with_missing_sampler_parameter_error():
+    sampling_sections = ["section1", "section2"]
+    exc = MissingSamplerParameterError("missing_param")
+    assert "missing_param" in form_error_message(sampling_sections, exc)
+
+
+def test_same_param_names_in_different_sections_failure(sample_with_M: DataBlock):
+    sample_with_M.put_double("section1", "a", 1.0)
+    sample_with_M.put_double("section2", "a", 10.0)
+    with pytest.raises(
+        RuntimeError,
+        match="The following keys `{'a'}` appear in more than one section used by"
+        " the module firecrown_mod.",
+    ):
+        _ = calculate_firecrown_params(
+            ["section1", "section2"], "firecrown_mod", sample_with_M
+        )

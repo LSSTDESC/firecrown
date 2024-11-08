@@ -99,6 +99,14 @@ def test_guarded_statistic_read_only_once(
         gs.read(sacc_data_for_trivial_stat)
 
 
+def test_guarded_static_read_data_vector(
+    sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: list[stat.TrivialStatistic]
+):
+    gs = stat.GuardedStatistic(trivial_stats.pop())
+    gs.read(sacc_data_for_trivial_stat)
+    assert_allclose(gs.get_data_vector(), [1.0, 4.0, -3.0])
+
+
 def test_guarded_statistic_get_data_before_read(trivial_stats):
     s = trivial_stats.pop()
     with pytest.raises(
@@ -114,6 +122,15 @@ def test_statistic_get_data_vector_before_read():
     s = stat.TrivialStatistic()
     with pytest.raises(AssertionError):
         _ = s.get_data_vector()
+
+
+def test_guarded_statiistic_compute_theory_before_read():
+    gs = stat.GuardedStatistic(stat.TrivialStatistic())
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* was used for calculation before `read` was called",
+    ):
+        gs.compute_theory_vector(ModelingTools())
 
 
 def test_statistic_get_data_vector_after_read(sacc_data_for_trivial_stat):

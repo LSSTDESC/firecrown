@@ -12,6 +12,7 @@ from numpy.testing import assert_allclose
 import pyccl
 import sacc
 
+from firecrown.likelihood.number_counts import NumberCountsArgs
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.source import (
     SourceGalaxy,
@@ -106,7 +107,7 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
     assert not named.has_pt
 
 
-def test_linear_bias_systematic():
+def test_nc_linear_bias_systematic():
     a = nc.LinearBiasSystematic("xxx")
     assert isinstance(a, nc.LinearBiasSystematic)
     assert a.parameter_prefix == "xxx"
@@ -127,6 +128,19 @@ def test_linear_bias_systematic():
     assert a.alphag is None
     assert a.alphaz is None
     assert a.z_piv is None
+
+
+def test_nc_nonlinear_bias_systematic_tracer_args_missing(
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    a = nc.LinearBiasSystematic("xxx")
+    # The values in the ParamsMap and the tracer_args are set to allow easy verification
+    # that a tracer_args of None is handled correctly.
+    a.update(ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 1.0, "xxx_z_piv": 0.0}))
+    tracer_args = NumberCountsArgs(z=np.array([0.0]), dndz=np.array([1.0]))
+    new_tracer_args = a.apply(tools_with_vanilla_cosmology, tracer_args)
+    assert new_tracer_args.bias is not None
+    assert np.allclose(new_tracer_args.bias, np.array([1.0]))
 
 
 def test_trivial_source_galaxy_construction():
