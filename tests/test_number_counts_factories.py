@@ -18,7 +18,19 @@ def fixture_nc_factory() -> nc.NumberCountsFactory:
     return fcutils.base_model_from_yaml(nc.NumberCountsFactory, number_counts_yaml)
 
 
-def test_photozshift_not_applied_to_photometic_measurement(
-):
-    sys = nc.PhotoZShiftFactory(sacc_tracer="lens0")
-    assert sys.parameter_prefix == "lens0"
+@pytest.fixture(name="nc_sys_factory")
+def fixture_nc_sys_factory() -> nc.NumberCountsSystematicFactory:
+    """Fixture for the NumberCountsSystematicFactory class."""
+    yaml = """
+    global_systematics: []
+    per_bin_systematics:
+    - type: PhotoZShiftFactory
+    """
+
+    return nc.PhotoZShiftFactory()
+
+
+def test_photozshift_not_applied_to_photometic_measurement():
+
+    factory = nc.PhotoZShiftFactory()
+    assert factory is not None

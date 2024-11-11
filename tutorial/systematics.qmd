@@ -1,0 +1,11 @@
+---
+title: "Systematics in Firecrown"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this Document
+
+In this tutorial we describe the handling of systematic uncertainties in Firecrown.
+
