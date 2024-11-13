@@ -11,6 +11,7 @@ project:
     - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
     - two_point_factories.qmd
+    - systematics.qmd
 
 website:
   title: "Firecrown Tutorial Documents"
@@ -40,6 +41,8 @@ website:
               text: "Two-Point Function Generators"
             - href: two_point_factories.qmd
               text: "Two-Point Function Factories"
+            - href: systematics.qmd
+              text: "Handling Systematic Uncertainties"
         - section: "Firecrown on GitHub"
           contents:
             - text: "Source Code"
