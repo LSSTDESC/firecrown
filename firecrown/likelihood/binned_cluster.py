@@ -9,10 +9,9 @@ import numpy as np
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.likelihood.source import SourceSystematic
 from firecrown.likelihood.statistic import (
-    DataVector,
     Statistic,
-    TheoryVector,
 )
+from firecrown.data_types import TheoryVector, DataVector
 from firecrown.models.cluster.cluster_data import ClusterData
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.properties import ClusterProperty
