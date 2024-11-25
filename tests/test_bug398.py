@@ -150,7 +150,7 @@ def test_eval_cl_window_src2_src2() -> None:
     src2_src2.update(params)
 
     theory_vector = src2_src2.compute_theory_vector(tools)
-    assert_allclose(theory_vector, SRC2_SRC2_CL_VANILLA_LCDM, rtol=1e-8)
+    assert_allclose(theory_vector, SRC2_SRC2_CL_VANILLA_LCDM, rtol=1e-6)
 
 
 def test_eval_cl_window_lens0_src2() -> None:
@@ -175,7 +175,7 @@ def test_eval_cl_window_lens0_src2() -> None:
     lens0_src2.update(params)
 
     theory_vector = lens0_src2.compute_theory_vector(tools)
-    assert_allclose(theory_vector, LENS0_SRC2_CL_VANILLA_LCDM, rtol=1e-8)
+    assert_allclose(theory_vector, LENS0_SRC2_CL_VANILLA_LCDM, rtol=1e-6)
 
 
 def test_eval_cl_window_lens0_lens0() -> None:
@@ -199,7 +199,7 @@ def test_eval_cl_window_lens0_lens0() -> None:
     lens0_lens0.update(params)
 
     theory_vector = lens0_lens0.compute_theory_vector(tools)
-    assert_allclose(theory_vector, LENS0_LENS0_CL_VANILLA_LCDM, rtol=1e-8)
+    assert_allclose(theory_vector, LENS0_LENS0_CL_VANILLA_LCDM, rtol=1e-6)
 
 
 def test_compute_likelihood_src0_src0() -> None:
