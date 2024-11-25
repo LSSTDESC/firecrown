@@ -48,12 +48,8 @@ class ClusterDeltaSigma(ClusterAbundance):
         # pylint: disable=protected-access
         cosmo_clmm._init_from_cosmo(self._cosmo)
         mass_def = self.halo_mass_function.mass_def
-        if mass_def.rho_type == "matter":
-            clmm_rho_type = "mean"
-        else:
-            clmm_rho_type = mass_def.rho_type
         moo = clmm.Modeling(
-            massdef=clmm_rho_type,
+            massdef="mean",
             delta_mdef=mass_def.Delta,
             halo_profile_model="nfw",
         )
