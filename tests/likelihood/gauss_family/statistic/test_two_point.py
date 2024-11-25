@@ -18,15 +18,14 @@ from firecrown.likelihood.number_counts import (
 from firecrown.likelihood.weak_lensing import (
     WeakLensing,
 )
-from firecrown.likelihood.statistic import TheoryVector
+import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
     TwoPoint,
-    TwoPointTheory,
     TracerNames,
-    TRACER_NAMES_TOTAL,
     WeakLensingFactory,
     NumberCountsFactory,
 )
+from firecrown.models.two_point import TwoPointTheory
 from firecrown.likelihood.source_factories import (
     use_source_factory,
     use_source_factory_metadata_index,
@@ -47,7 +46,7 @@ from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,
 )
-from firecrown.data_types import TwoPointMeasurement
+from firecrown.data_types import TwoPointMeasurement, TheoryVector
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])
@@ -174,7 +173,7 @@ def test_compute_theory_vector(source_0: NumberCounts) -> None:
 
 
 def test_tracer_names() -> None:
-    assert TracerNames("", "") == TRACER_NAMES_TOTAL
+    assert TracerNames("", "") == mdt.TRACER_NAMES_TOTAL
 
     tn1 = TracerNames("cow", "pig")
     assert tn1[0] == "cow"
@@ -356,7 +355,10 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
 def test_two_point_theory_construction() -> None:
     src0 = WeakLensing(sacc_tracer="src0")
     theory = TwoPointTheory(
-        "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
+        sacc_data_type="galaxy_shear_cl_ee",
+        sources=(src0, src0),
+        ell_or_theta_min=50,
+        ell_or_theta_max=200,
     )
     assert theory.sacc_data_type == "galaxy_shear_cl_ee"
     assert theory.source0 is src0

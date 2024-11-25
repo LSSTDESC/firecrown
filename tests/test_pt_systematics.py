@@ -8,6 +8,7 @@ import os
 import pytest
 
 import numpy as np
+import numpy.typing as npt
 import pyccl as ccl
 import pyccl.nl_pt as pt
 import sacc
@@ -15,14 +16,15 @@ import sacc
 from firecrown.updatable import get_default_params_map
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
+import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
-    TRACER_NAMES_TOTAL,
 )
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+import firecrown.parameters as fcp
 
 
 @pytest.fixture(name="weak_lensing_source")
@@ -48,7 +50,7 @@ def fixture_sacc_data():
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     saccfile = os.path.join(
         os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
+        "../examples/des_y1_3x2pt/sacc_data.fits",
     )
     return sacc.Sacc.load_fits(saccfile)
 
@@ -157,7 +159,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_GG = s0.cells[TracerNames("shear", "shear")]
     cells_GI = s0.cells[TracerNames("intrinsic_pt", "shear")]
     cells_II = s0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total = s0.cells[TRACER_NAMES_TOTAL]
+    cells_cs_total = s0.cells[mdt.TRACER_NAMES_TOTAL]
 
     s1 = likelihood.statistics[1].statistic
     # del weak_lensing_source.cosmo_hash
@@ -167,7 +169,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_GG_m = s1.cells[TracerNames("shear", "shear")]
     cells_GI_m = s1.cells[TracerNames("shear", "intrinsic_pt")]
     cells_II_m = s1.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total_m = s1.cells[TRACER_NAMES_TOTAL]
+    cells_cs_total_m = s1.cells[mdt.TRACER_NAMES_TOTAL]
 
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
@@ -182,7 +184,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_gg = s3.cells[TracerNames("galaxies", "galaxies")]
     cells_gm = s3.cells[TracerNames("galaxies", "magnification+rsd")]
     cells_mm = s3.cells[TracerNames("magnification+rsd", "magnification+rsd")]
-    cells_gg_total = s3.cells[TRACER_NAMES_TOTAL]
+    cells_gg_total = s3.cells[mdt.TRACER_NAMES_TOTAL]
     # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
@@ -368,3 +370,43 @@ def test_pt_mixed_systematics(sacc_data):
 
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
+
+
+def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
+    a = nc.LinearBiasSystematic("xxx")
+    assert isinstance(a, nc.LinearBiasSystematic)
+    assert a.parameter_prefix == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None
+    assert not a.is_updated()
+    a.update(fcp.ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 2.0, "xxx_z_piv": 1.5}))
+    assert a.is_updated()
+    assert a.alphag == 1.0
+    assert a.alphaz == 2.0
+    assert a.z_piv == 1.5
+
+    orig_nca = nc.NumberCountsArgs(
+        z=np.array([0.5, 1.0]),
+        dndz=np.array([5.0, 4.0]),
+        bias=np.array([1.0, 1.0]),
+        mag_bias=(np.array([2.0, 3.0]), np.array([4.0, 5.0])),
+        has_pt=False,
+        has_hm=False,
+        b_2=(np.array([5.0, 6.0]), np.array([6.0, 7.0])),
+        b_s=(np.array([7.0, 8.0]), np.array([8.0, 9.0])),
+    )
+
+    nca = a.apply(tools_with_vanilla_cosmology, orig_nca)
+    # Answer values determined by code inspection and hand calculation.
+    expected_bias: npt.NDArray[np.float64] = np.array([0.27835299, 0.39158961])
+    assert nca.bias is not None  # needed for mypy
+    new_bias: npt.NDArray[np.float64] = nca.bias  # needed for mypy
+    assert np.allclose(expected_bias, new_bias)
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None

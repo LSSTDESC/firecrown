@@ -26,7 +26,11 @@ from firecrown.likelihood.source import (
 )
 from firecrown.metadata_types import InferredGalaxyZDist
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import DerivedParameter, DerivedParameterCollection, ParamsMap
+from firecrown.parameters import (
+    DerivedParameter,
+    DerivedParameterCollection,
+    ParamsMap,
+)
 from firecrown.updatable import UpdatableCollection
 
 

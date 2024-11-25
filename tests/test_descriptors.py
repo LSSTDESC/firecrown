@@ -216,6 +216,13 @@ def test_upper_bound_float():
     assert d.x == -math.inf
 
 
+def test_reading_string():
+    d = HasString()
+    d.x = "cow"
+
+    assert d.x == "cow"
+
+
 def test_string_conversion_failure():
     d = HasString()
     with pytest.raises(TypeError):

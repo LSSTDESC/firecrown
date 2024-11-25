@@ -7,12 +7,13 @@ from numpy.testing import assert_allclose
 import pytest
 import sacc
 
+import firecrown.data_types
 import firecrown.likelihood.statistic as stat
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
 
-VECTOR_CLASSES = (stat.TheoryVector, stat.DataVector)
+VECTOR_CLASSES = (firecrown.data_types.TheoryVector, firecrown.data_types.DataVector)
 
 
 def test_vector_create():
@@ -77,9 +78,9 @@ def test_ufunc_on_vector():
 
 
 def test_vector_residuals():
-    theory = stat.TheoryVector.from_list([1.0, 2.0, 3.0])
-    data = stat.DataVector.from_list([1.1, 2.1, 3.1])
-    difference = stat.residuals(data, theory)
+    theory = firecrown.data_types.TheoryVector.from_list([1.0, 2.0, 3.0])
+    data = firecrown.data_types.DataVector.from_list([1.1, 2.1, 3.1])
+    difference = firecrown.data_types.residuals(data, theory)
     assert isinstance(difference, np.ndarray)
     for cls in VECTOR_CLASSES:
         assert not isinstance(difference, cls)
@@ -98,6 +99,14 @@ def test_guarded_statistic_read_only_once(
         gs.read(sacc_data_for_trivial_stat)
 
 
+def test_guarded_static_read_data_vector(
+    sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: list[stat.TrivialStatistic]
+):
+    gs = stat.GuardedStatistic(trivial_stats.pop())
+    gs.read(sacc_data_for_trivial_stat)
+    assert_allclose(gs.get_data_vector(), [1.0, 4.0, -3.0])
+
+
 def test_guarded_statistic_get_data_before_read(trivial_stats):
     s = trivial_stats.pop()
     with pytest.raises(
@@ -113,6 +122,15 @@ def test_statistic_get_data_vector_before_read():
     s = stat.TrivialStatistic()
     with pytest.raises(AssertionError):
         _ = s.get_data_vector()
+
+
+def test_guarded_statiistic_compute_theory_before_read():
+    gs = stat.GuardedStatistic(stat.TrivialStatistic())
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* was used for calculation before `read` was called",
+    ):
+        gs.compute_theory_vector(ModelingTools())
 
 
 def test_statistic_get_data_vector_after_read(sacc_data_for_trivial_stat):

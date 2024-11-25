@@ -90,19 +90,46 @@ def test_data_source_sacc_dict() -> None:
     data_source_sacc = DataSourceSacc.model_validate(data_source_sacc_dict)
     assert isinstance(data_source_sacc, DataSourceSacc)
     assert data_source_sacc.sacc_data_file == "tests/bug_398.sacc.gz"
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_data_source_sacc_dict_absolute() -> None:
+    sacc_file = Path("tests/bug_398.sacc.gz").absolute()
+    data_source_sacc_dict = {"sacc_data_file": sacc_file.as_posix()}
+    data_source_sacc = DataSourceSacc.model_validate(data_source_sacc_dict)
+    assert isinstance(data_source_sacc, DataSourceSacc)
+    assert data_source_sacc.sacc_data_file == sacc_file.as_posix()
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
 
 
 def test_data_source_sacc_direct() -> None:
     data_source_sacc = DataSourceSacc(sacc_data_file="tests/bug_398.sacc.gz")
     assert data_source_sacc.sacc_data_file == "tests/bug_398.sacc.gz"
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_data_source_sacc_direct_absolute() -> None:
+    sacc_file = Path("tests/bug_398.sacc.gz").absolute()
+    data_source_sacc = DataSourceSacc(sacc_data_file=sacc_file.as_posix())
+    assert data_source_sacc.sacc_data_file == sacc_file.as_posix()
+    sacc_data = data_source_sacc.get_sacc_data()
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
 
 
 def test_data_source_sacc_invalid_file() -> None:
     data_source_sacc_dict = {"sacc_data_file": "tests/file_not_found.sacc.gz"}
+    data_source = DataSourceSacc.model_validate(data_source_sacc_dict)
     with pytest.raises(
         FileNotFoundError, match=".*File tests/file_not_found.sacc.gz does not exist.*"
     ):
-        DataSourceSacc.model_validate(data_source_sacc_dict)
+        _ = data_source.get_sacc_data()
 
 
 def test_data_source_sacc_get_sacc_data() -> None:
@@ -209,7 +236,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits
+    sacc_data_file: examples/des_y1_3x2pt/sacc_data.fits
 """
     )
 
@@ -282,7 +309,7 @@ two_point_factory:
         per_bin_systematics: []
         global_systematics: []
 data_source:
-    sacc_data_file: examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits
+    sacc_data_file: examples/des_y1_3x2pt/sacc_data.fits
 """
     )
 
@@ -302,7 +329,7 @@ def test_build_two_point_likelihood_empty_likelihood_config(tmp_path: Path) -> N
     tmp_experiment_file.write_text("")
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
-    with pytest.raises(ValueError, match="No likelihood config found."):
+    with pytest.raises(ValueError, match="validation error for TwoPointExperiment"):
         _ = build_two_point_likelihood(build_parameters)
 
 

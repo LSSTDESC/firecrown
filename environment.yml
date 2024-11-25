@@ -27,6 +27,7 @@ dependencies:
   - pip:
     - autoclasstoc
     - cobaya
+    - isitgr
     - pygobject-stubs
   - portalocker
   - pybobyqa
