@@ -5,10 +5,24 @@ format: html
 
 {{< include _functions.qmd >}}
 
-## Introduction 
+## Introduction
 
 In this tutorial we describe the handling of systematic uncertainties in Firecrown.
-The class `SourceSystemtaic`[^1] is the base class for all source systematics.
+
+In Firecrown, *systematics* are used to modify the way a theory object works, so that the prediction made by the modified theory object reflects an effect not present in the original theory.
+Often they are characterized by some unknown parameter which must be marginalized over in analysis.
+
+Give a simple-to-understand and non-contentious example here, one that we can use throughout the discussion of the rest of this tutorial.
+
+*per-bin systematics*
+
+*global systematics*
+
+Systematics may apply only to certain varieties of measurement, e.g. photometric redshifts an not spectroscopic redshfits.
+
+
+
+The class `SourceSystematic`[^1] is the base class for all source systematics.
 A systematic represents a source of uncertainty in some measurement associated with a source.
 One concreate example is `PhotoZShift`[^2], which encapsulate a shift in the center of redshift bins for measurements based on photometric measurement of the redshift.
 
@@ -19,17 +33,39 @@ One concreate example is `PhotoZShift`[^2], which encapsulate a shift in the cen
 
 Derived from `SourceSystematic`, and defined in the same module, is the class `SourceGalaxySystematic`.
 This class includes the `apply` method which is used to apply the systematic to a source galaxy tracer argument.
-It also introduces a restriction that subclasses of `SourceGalaxySystematic` can only be applied to source galaxy tracers.
-This is done using the Python type systems support of *generics*. [^3]
+It also introduces a restriction that subclasses of `SourceGalaxySystematic` can only be applied to source galaxy tracers.[^other]
 This restriction will be enforced by the `mypy` type checker.
+This is done using the Python type systems support of *generics*. [^3]
+The goal of this restriction is to avoid having systematics intended for one variety of observation (e.g. a weak lensing source) being applied to an inappropriate other variety of observation.
+
+[^3]: You can read about generics in the [online Python documentation](https://docs.python.org/3/library/typing.html#generics).
+[^other]: We expect a future version of Firecrown to introduce non-galaxy based measurements (e.g. CMB), and thus non-galaxy based systematics.
+
 The final abstract parts of the class hierarchy are two subclasses of `SourceGalaxySystematic`: `WeakLensingSystematic` and `NumberCountsSystematic`.
 These classes are used to apply systematics to weak lensing and number counts predictions, respectively.
 The various concrete systematics classes (such as the two `PhotoZShift` classes noted above) directly inherit from one of these two classes.
 
-[^3]: You can read about generics in the [online Python documentation](https://docs.python.org/3/library/typing.html#generics).
-
 ## Creating Systematics Objects: Systematics Factories
 
-## Applying Sysetmatics
+Systematics objects are usually created by *factories*, with each systematic class having an associated factory class.
+The purpose of having the factory is so that the creation of the systematics objects can be characterized in a uniform way, through a YAML document or a fragment of a YAML document.
+
+## Applying Systematics
+
+::: {.callout-important}
+## Provide an example of applying systematics here.
+
+This should continue the example from above, showing how systematics are applied to a prediction by the framework.
+:::
 
 ## Writing a New Systematic
+
+::: {.callout-important}
+## Provide an example of writing a new systematic here.
+
+It would be reproduce, with a different name, an already-existing example that exercises all the features of the systematics framework.
+The example should show:
+1. How to define the systematic class, including documentation.
+2. How to define the factory class, including documentation.
+3. How to test the factory and the systematic.
+:::

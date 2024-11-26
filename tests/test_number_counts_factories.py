@@ -21,11 +21,11 @@ def fixture_nc_factory() -> nc.NumberCountsFactory:
 @pytest.fixture(name="nc_sys_factory")
 def fixture_nc_sys_factory() -> nc.NumberCountsSystematicFactory:
     """Fixture for the NumberCountsSystematicFactory class."""
-    yaml = """
-    global_systematics: []
-    per_bin_systematics:
-    - type: PhotoZShiftFactory
-    """
+    # yaml = """
+    # global_systematics: []
+    # per_bin_systematics:
+    # - type: PhotoZShiftFactory
+    # """
 
     return nc.PhotoZShiftFactory()
 
