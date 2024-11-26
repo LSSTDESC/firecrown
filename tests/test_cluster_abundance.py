@@ -11,7 +11,7 @@ from firecrown.models.cluster.abundance import ClusterAbundance
 def fixture_cluster_abundance():
     """Test fixture that represents an assembled cluster abundance class."""
     hmf = pyccl.halos.MassFuncBocquet16()
-    ca = ClusterAbundance(13, 17, 0, 2, hmf)
+    ca = ClusterAbundance((13, 17), (0, 2), hmf)
     return ca
 
 
