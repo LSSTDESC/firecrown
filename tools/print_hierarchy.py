@@ -63,5 +63,11 @@ if __name__ == "__main__":
         print("Usage: python print_hierarchy.py <typename> [<typename> ...]")
         sys.exit(1)
     typename = sys.argv[1]
-    type_ = import_type(typename)
+    try:
+        type_ = import_type(typename)
+    except Exception as e:
+        print(f"Could not import type {typename}")
+        print("Error message was:\n", e)
+        sys.exit(1)
+
     print_type_hierarchy(type_)
