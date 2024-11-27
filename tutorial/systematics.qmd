@@ -10,13 +10,21 @@ format: html
 In this tutorial we describe the handling of systematic uncertainties in Firecrown.
 
 In Firecrown, *systematics* are used to modify the way a theory object works, so that the prediction made by the modified theory object reflects an effect not present in the original theory.
-Often they are characterized by some unknown parameter which must be marginalized over in analysis.
+Often they are characterized by some unknown parameter which can be marginalized over in analysis.
+
+Systematics do not act on the output of the theory predictions.
+Instead, they act on ...
 
 Give a simple-to-understand and non-contentious example here, one that we can use throughout the discussion of the rest of this tutorial.
 
-*per-bin systematics*
+::: {.callout-important}
+## Other things to write about in this section.
 
-*global systematics*
+* per-bin systematics
+* global systematics
+
+Recall we are considering modifying the design so that systematics are recognized as being per-bin or "global", which means specific to a particaular survey, but not a particular bin, based on either state information in the systematic or perhaps based on the type of the systematic.
+:::
 
 Systematics may apply only to certain varieties of measurement, e.g. photometric redshifts an not spectroscopic redshfits.
 
@@ -45,7 +53,84 @@ The final abstract parts of the class hierarchy are two subclasses of `SourceGal
 These classes are used to apply systematics to weak lensing and number counts predictions, respectively.
 The various concrete systematics classes (such as the two `PhotoZShift` classes noted above) directly inherit from one of these two classes.
 
-## Creating Systematics Objects: Systematics Factories
+## Creating Systematics Objects
+
+### Direct Creation
+
+Systematics objects of all types can be created directly by using the constructor function that takes a single argument, the name of the tracer associated with the data that the systematic is applied to.
+This tracer name is used as a prefix for the parameters of the systematic.
+The systematic will have *attributes* with names corresponding to the parameter names *without* the tracer name prefix; initially, these attribute values will all be `None`.
+The systematic can be queried for the names of its parameters in a slightly roundabout fashion:
+
+```{python}
+import firecrown.likelihood.number_counts as nc
+systematic = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+print("The parameter names of this systematic are:")
+for name in systematic.required_parameters().get_params_names():
+    print(f"\t{name}")
+```
+
+We can also inspect the attributes of the systematic using built-in Python functions.
+Because all systematic classes also inherit from `Updatable`, they also have seveeral additional attributes we can view:
+
+```{python}
+# Continuing from above...
+for name, value in vars(systematic).items():
+    print(f"\t{name}: {value}")
+```
+
+In this case, we see that all of the parameters of this systematic are *sampler parameters*:
+
+```{python}
+# Continuing from above...
+for p in systematic._sampler_parameters:
+  print(f"\tname: {p.name}  value: {p.value}")
+```
+
+::: {.callout-important}
+## Why does a systematic have redundant data?
+
+It appears that this systematic has the names and values of each of its "parameters" two different ways:
+
+1. as an attribute of the object, and
+2. as a `SamplerParameter` object that has the same name and value as the related attribute.
+
+Can we remove the redundancy?
+:::
+
+Before it can be `apply`ed, the systematic object needs to be updated using the `update` method, which takes a `ParamsMap` object that must provide values for all the parameters in that systematic.
+After having been updated, the systematic object will have its attribute values set to the supplied valies.
+
+```{python}
+# Continuing from above...
+import firecrown.parameters as params
+systematic.update(params.ParamsMap({
+    "lens0_r_lim": 24.0,
+    "lens0_eta": 19.0,
+    "lens0_sig_c" :9.83,
+    "lens0_z_c": 0.39,
+    "lens0_z_m": 0.055,
+    }))
+for name, value in vars(systematic).items():
+  print(f"\t{name}: {value}")
+```
+
+But note that the contained sampler parameters have not been updated:
+
+```{python}
+# Continuing from above...
+for p in systematic._sampler_parameters:
+  print(f"\tname: {p.name}  value: {p.value}")
+```
+
+::: {.callout-important}
+## How are the contained _sampler_parameters used?
+
+The `SamplerParameters` contained in the systematic are not given a value when `update` is called.
+How are they used?
+:::
+
+### Systematic Factories
 
 Systematics objects are usually created by *factories*, with each systematic class having an associated factory class.
 The purpose of having the factory is so that the creation of the systematics objects can be characterized in a uniform way, through a YAML document or a fragment of a YAML document.
