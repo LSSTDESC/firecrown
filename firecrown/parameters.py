@@ -322,7 +322,6 @@ class SamplerParameter:
 
         This represents a parameter having its value defined by the sampler.
         """
-        self.value: None | float = None
         self._prefix: None | str = prefix
         self._name: None | str = name
         if default_value is not None:
@@ -334,18 +333,6 @@ class SamplerParameter:
                 category=DeprecationWarning,
             )
             self.default_value = None
-
-    def set_value(self, value: float):
-        """Set the value of this parameter.
-
-        :param value: new value
-        """
-        self.value = value
-
-    def get_value(self) -> float:
-        """Get the current value of this parameter."""
-        assert self.value is not None
-        return self.value
 
     def get_default_value(self) -> None | float:
         """Get the default value of this parameter."""
@@ -393,7 +380,6 @@ class SamplerParameter:
         return (
             self.fullname == other.fullname
             and self.default_value == other.default_value
-            and self.value == other.value
             and self._prefix == other._prefix
             and self._name == other._name
         )
