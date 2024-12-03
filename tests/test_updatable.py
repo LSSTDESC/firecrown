@@ -65,6 +65,7 @@ def test_simple_updatable():
             [SamplerParameter(name="x"), SamplerParameter(name="y")]
         )
     assert obj.required_parameters() == expected_params
+    assert obj.get_params_names() == ["x", "y"]
     assert obj.x is None
     assert obj.y is None
     assert not obj.is_updated()

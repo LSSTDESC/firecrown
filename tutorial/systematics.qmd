@@ -60,13 +60,13 @@ The various concrete systematics classes (such as the two `PhotoZShift` classes 
 Systematics objects of all types can be created directly by using the constructor function that takes a single argument, the name of the tracer associated with the data that the systematic is applied to.
 This tracer name is used as a prefix for the parameters of the systematic.
 The systematic will have *attributes* with names corresponding to the parameter names *without* the tracer name prefix; initially, these attribute values will all be `None`.
-The systematic can be queried for the names of its parameters in a slightly roundabout fashion:
+The systematic can be queried for the names of its parameters:
 
 ```{python}
 import firecrown.likelihood.number_counts as nc
 systematic = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
 print("The parameter names of this systematic are:")
-for name in systematic.required_parameters().get_params_names():
+for name in systematic.get_params_names():
     print(f"\t{name}")
 ```
 
