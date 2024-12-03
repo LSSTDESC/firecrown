@@ -34,7 +34,8 @@ from firecrown.data_functions import (
     extract_all_harmonic_data,
     extract_all_real_data,
 )
-from firecrown.likelihood.two_point import TwoPoint, use_source_factory
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.source_factories import use_source_factory
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")

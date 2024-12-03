@@ -13,10 +13,9 @@ from sacc.tracers import MiscTracer
 import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown import parameters
 from firecrown.likelihood.statistic import (
-    DataVector,
     Statistic,
-    TheoryVector,
 )
+from firecrown.data_types import DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
 
 SNIA_DEFAULT_M = -19.2

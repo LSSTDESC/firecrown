@@ -2,6 +2,8 @@
 Tests for the module firecrown.likelihood.statistic.source.
 """
 
+# pylint: disable=too-many-locals
+
 from typing import List
 import pytest
 import numpy as np
@@ -10,9 +12,9 @@ from numpy.testing import assert_allclose
 import pyccl
 import sacc
 
+from firecrown.likelihood.number_counts import NumberCountsArgs
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.source import (
-    Tracer,
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySelectField,
@@ -21,15 +23,7 @@ import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.parameters import ParamsMap
-
-
-class TrivialTracer(Tracer):
-    """This is the most trivial possible subclass of Tracer."""
-
-
-@pytest.fixture(name="empty_pyccl_tracer")
-def fixture_empty_pyccl_tracer():
-    return pyccl.Tracer()
+from tests.conftest import TrivialTracer
 
 
 @pytest.fixture(
@@ -101,10 +95,7 @@ def test_trivial_tracer_construction(empty_pyccl_tracer):
     # field is "delta_matter".
     assert trivial.field == "delta_matter"
     assert trivial.pt_tracer is None
-    assert trivial.halo_profile is None
-    assert trivial.halo_2pt is None
     assert not trivial.has_pt
-    assert not trivial.has_hm
 
 
 def test_tracer_construction_with_name(empty_pyccl_tracer):
@@ -113,13 +104,10 @@ def test_tracer_construction_with_name(empty_pyccl_tracer):
     assert named.tracer_name == "Fred"
     assert named.field == "Fred"
     assert named.pt_tracer is None
-    assert named.halo_profile is None
-    assert named.halo_2pt is None
     assert not named.has_pt
-    assert not named.has_hm
 
 
-def test_linear_bias_systematic():
+def test_nc_linear_bias_systematic():
     a = nc.LinearBiasSystematic("xxx")
     assert isinstance(a, nc.LinearBiasSystematic)
     assert a.parameter_prefix == "xxx"
@@ -140,6 +128,19 @@ def test_linear_bias_systematic():
     assert a.alphag is None
     assert a.alphaz is None
     assert a.z_piv is None
+
+
+def test_nc_nonlinear_bias_systematic_tracer_args_missing(
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    a = nc.LinearBiasSystematic("xxx")
+    # The values in the ParamsMap and the tracer_args are set to allow easy verification
+    # that a tracer_args of None is handled correctly.
+    a.update(ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 1.0, "xxx_z_piv": 0.0}))
+    tracer_args = NumberCountsArgs(z=np.array([0.0]), dndz=np.array([1.0]))
+    new_tracer_args = a.apply(tools_with_vanilla_cosmology, tracer_args)
+    assert new_tracer_args.bias is not None
+    assert np.allclose(new_tracer_args.bias, np.array([1.0]))
 
 
 def test_trivial_source_galaxy_construction():
@@ -165,7 +166,9 @@ def test_trivial_source_select_field():
     assert trivial.tracer_args.field == "old_field"
 
 
-def test_weak_lensing_source_init(sacc_galaxy_cells_src0_src0):
+def test_weak_lensing_source_init(
+    sacc_galaxy_cells_src0_src0, tools_with_vanilla_cosmology: ModelingTools
+):
     sacc_data, z, dndz = sacc_galaxy_cells_src0_src0
 
     source = wl.WeakLensing(sacc_tracer="src0")
@@ -173,6 +176,12 @@ def test_weak_lensing_source_init(sacc_galaxy_cells_src0_src0):
 
     assert_allclose(source.tracer_args.z, z)
     assert_allclose(source.tracer_args.dndz, dndz)
+    source.update(ParamsMap())
+    ts = source.get_tracers(tools_with_vanilla_cosmology)
+    assert len(ts) == 1
+    dp = source.get_derived_parameters()
+    assert dp is not None
+    assert len(dp) == 0
 
 
 def test_weak_lensing_source_create_ready(sacc_galaxy_cells_src0_src0):
@@ -259,7 +268,10 @@ def test_weak_lensing_source_init_wrong_name(sacc_galaxy_cells_src0_src0):
         source.read(sacc_data)
 
 
-def test_number_counts_source_init(sacc_galaxy_cells_lens0_lens0):
+def test_number_counts_source_init(
+    sacc_galaxy_cells_lens0_lens0, tools_with_vanilla_cosmology: ModelingTools
+):
+
     sacc_data, z, dndz = sacc_galaxy_cells_lens0_lens0
 
     source = nc.NumberCounts(sacc_tracer="lens0")
@@ -267,6 +279,12 @@ def test_number_counts_source_init(sacc_galaxy_cells_lens0_lens0):
 
     assert_allclose(source.tracer_args.z, z)
     assert_allclose(source.tracer_args.dndz, dndz)
+    source.update(ParamsMap(lens0_bias=1.1))
+    dp = source.get_derived_parameters()
+    assert dp is not None
+    assert len(dp) == 0
+    ts = source.get_tracers(tools_with_vanilla_cosmology)
+    assert len(ts) == 1
 
 
 def test_number_counts_source_create_ready(sacc_galaxy_cells_lens0_lens0):

@@ -4,7 +4,6 @@ project:
     - index.qmd
     - about.qmd
     - intro_article.qmd
-    - development_example.qmd
     - theoretical_predictions_tutorial.qmd
     - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
@@ -26,8 +25,6 @@ website:
           contents:
             - href: intro_article.qmd
               text: "Introduction"
-            - href: development_example.qmd
-              text: "Development Example"
         - section: "Tutorials"
           contents:
             - href: inferred_zdist.qmd

@@ -27,6 +27,7 @@ dependencies:
   - pip:
     - autoclasstoc
     - cobaya
+    - isitgr
     - pygobject-stubs
   - portalocker
   - pybobyqa
@@ -35,6 +36,7 @@ dependencies:
   - pylint
   - pytest
   - pytest-cov
+  - python >= 3.10
   - pyyaml
   - requests
   - sacc >= 0.11

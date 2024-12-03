@@ -62,7 +62,7 @@ def test_import_statistic():
         import firecrown.likelihood.statistic as newmodule
 
         # The statistic module contains warnings.
-        assert diff_module_names(oldmodule, newmodule) == set()
+        assert diff_module_names(oldmodule, newmodule) == set(["warnings"])
 
 
 def test_import_student_t():

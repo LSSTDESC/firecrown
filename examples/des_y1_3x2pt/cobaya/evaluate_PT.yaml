@@ -10,7 +10,7 @@ theory:
 likelihood:
   des_y1_3x2pt:
     external: !!python/name:firecrown.connector.cobaya.likelihood.LikelihoodConnector ''
-    firecrownIni: des_y1_3x2pt_PT.py
+    firecrownIni: ${FIRECROWN_DIR}/examples/des_y1_3x2pt/factory_PT.py
 params:
   As:
     prior:
@@ -96,7 +96,7 @@ params:
 sampler:
   evaluate: null
 stop_at_error: true
-output: cobaya_evaluate_output_PT
+output: output_PT
 packages_path: null
 test: false
 debug: false

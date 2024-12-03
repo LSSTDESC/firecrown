@@ -11,14 +11,15 @@ import numpy.typing as npt
 from cobaya.likelihood import Likelihood
 
 from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
+from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
 from firecrown.parameters import ParamsMap
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter, CCLCreationMode
 
 
 class LikelihoodConnector(Likelihood):
     """A class implementing cobaya.likelihood.Likelihood."""
 
-    likelihood: Likelihood
+    likelihood: FirecrownLikelihood
     firecrownIni: str
     derived_parameters: list[str] = []
     build_parameters: NamedParameters
@@ -87,23 +88,26 @@ class LikelihoodConnector(Likelihood):
         Required by Cobaya.
         :return: a dictionary
         """
-        likelihood_requires: dict[
-            str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]
-        ] = {"pyccl_args": None, "pyccl_params": None}
         required_params = (
             self.likelihood.required_parameters() + self.tools.required_parameters()
         )
-        # Cosmological parameters differ from Cobaya's, so we need to remove them.
-        required_params -= self.tools.ccl_factory.required_parameters()
+
+        likelihood_requires: dict[
+            str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]
+        ] = {}
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            likelihood_requires.update(pyccl_args=None, pyccl_params=None)
+            # Cosmological parameters differ from Cobaya's boltzmann interface, so we
+            # need to remove them when using Calculator mode.
+            required_params -= self.tools.ccl_factory.required_parameters()
+            if (
+                self.tools.ccl_factory.amplitude_parameter
+                == PoweSpecAmplitudeParameter.SIGMA8
+            ):
+                likelihood_requires["sigma8"] = None
 
         for param_name in required_params.get_params_names():
             likelihood_requires[param_name] = None
-
-        if (
-            self.tools.ccl_factory.amplitude_parameter
-            == PoweSpecAmplitudeParameter.SIGMA8
-        ):
-            likelihood_requires["sigma8"] = None
 
         return likelihood_requires
 
@@ -119,14 +123,20 @@ class LikelihoodConnector(Likelihood):
         Required by Cobaya.
         :params values: The values of the parameters to use.
         """
-        pyccl_args = self.provider.get_pyccl_args()
-        pyccl_params = self.provider.get_pyccl_params()
-
-        derived = params_values.pop("_derived", {})
-        params = ParamsMap(params_values | pyccl_params)
-        self.likelihood.update(params)
-        self.tools.update(params)
-        self.tools.prepare(calculator_args=pyccl_args)
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            pyccl_args = self.provider.get_pyccl_args()
+            pyccl_params = self.provider.get_pyccl_params()
+            derived = params_values.pop("_derived", {})
+            params = ParamsMap(params_values | pyccl_params)
+            self.likelihood.update(params)
+            self.tools.update(params)
+            self.tools.prepare(calculator_args=pyccl_args)
+        else:
+            derived = params_values.pop("_derived", {})
+            params = ParamsMap(params_values)
+            self.likelihood.update(params)
+            self.tools.update(params)
+            self.tools.prepare()
 
         loglike = self.likelihood.compute_loglike(self.tools)
 

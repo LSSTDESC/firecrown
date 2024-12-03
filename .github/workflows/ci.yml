@@ -23,15 +23,15 @@ jobs:
         python-version: ["3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - name: Setup miniforge
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          mamba-version: "*"
+          miniforge-version: latest
           auto-update-conda: true
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
-          miniforge-variant: Mambaforge
           show-channel-urls: true
-          use-mamba: true
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
