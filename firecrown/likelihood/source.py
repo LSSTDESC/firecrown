@@ -233,7 +233,7 @@ _SourceGalaxySystematicT = TypeVar(
 
 
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
-SOURCE_GALAXY_SYSTEMATIC_DEFAULT_WIDTH_Z = 0.0
+SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
 
 
 class SourceGalaxyPhotoZShift(
@@ -306,10 +306,8 @@ class PhotoZShiftFactory(BaseModel):
         raise ValueError("PhotoZShift cannot be global.")
 
 
-class SourceGalaxyPhotoZShiftandWidth(
-    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
-):
-    """A photo-z shift & width bias.
+class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArgsT]):
+    """A photo-z shift & stretch bias.
 
     This systematic shifts and widens the photo-z distribution by some amount `delta_z`.
 
@@ -318,7 +316,7 @@ class SourceGalaxyPhotoZShiftandWidth(
     prefix for the parameters:
 
     :ivar delta_z: the photo-z shift.
-    :ivar w_z: the photo-z width.
+    :ivar sigma_z: the photo-z stretch.
     """
 
     def __init__(self, sacc_tracer: str) -> None:
@@ -327,27 +325,24 @@ class SourceGalaxyPhotoZShiftandWidth(
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
         """
-        super().__init__(parameter_prefix=sacc_tracer)
+        super().__init__(sacc_tracer)
 
-        self.delta_z = parameters.register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
-        )
-        self.width_z = parameters.register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_WIDTH_Z
+        self.sigma_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
         )
 
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
-        """Apply a shift & width to the photo-z distribution of a source."""
+        """Apply a shift & stretch to the photo-z distribution of a source."""
+        super().__apply__(ModelingTools, _SourceGalaxyArgsT)
         z = tracer_arg.z
         dndz = tracer_arg.dndz
         dndz_interp = Akima1DInterpolator(z, dndz)
-        dndz_mean = np.mean(dndz)
-        width = self.width_z
-        shift = self.delta_z
-
+        dndz_mean = np.average(tracer_arg.z, weights=tracer_arg.dndz)
+        if self.sigma_z <= 0.0:
+            raise ValueError("Stretch Parameter must be positive")
         dndz = (
-            dndz_interp((z - dndz_mean) / width + dndz_mean + shift, extrapolate=False)
-            / width
+            dndz_interp((z - dndz_mean) / self.sigma_z + dndz_mean, extrapolate=False)
+            / self.sigma_z
         )
         # This is dangerous
         dndz[np.isnan(dndz)] = 0.0
@@ -358,27 +353,27 @@ class SourceGalaxyPhotoZShiftandWidth(
         )
 
 
-class PhotoZShiftandWidth(SourceGalaxyPhotoZShiftandWidth):
-    """Photo-z shift and width systematic."""
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
+    """Photo-z shift and stretch systematic."""
 
 
-class PhotoZShiftandWidthFactory(BaseModel):
+class PhotoZShiftandStretchFactory(PhotoZShiftFactory):
     """Factory class for PhotoZShift objects."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     type: Annotated[
-        Literal["PhotoZShiftandWidthFactory"],
+        Literal["PhotoZShiftandStretchFactory"],
         Field(description="The type of the systematic."),
-    ] = "PhotoZShiftandWidthFactory"
+    ] = "PhotoZShiftandStretchFactory"
 
-    def create(self, bin_name: str) -> PhotoZShiftandWidth:
-        """Create a PhotoZShiftandWidth object with the given tracer name."""
-        return PhotoZShiftandWidth(bin_name)
+    def create(self, bin_name: str) -> PhotoZShiftandStretch:
+        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        return PhotoZShiftandStretch(bin_name)
 
     def create_global(self) -> PhotoZShift:
-        """Create a PhotoZShiftandWidth object with the given tracer name."""
-        raise ValueError("PhotoZShiftandWidth cannot be global.")
+        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        raise ValueError("PhotoZShiftandStretch cannot be global.")
 
 
 class SourceGalaxySelectField(

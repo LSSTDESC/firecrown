@@ -30,6 +30,7 @@ from tests.conftest import TrivialTracer
     name="nc_sys_factory",
     params=[
         nc.PhotoZShiftFactory(),
+        nc.PhotoZShiftandStretchFactory(),
         nc.LinearBiasSystematicFactory(),
         nc.PTNonLinearBiasSystematicFactory(),
         nc.MagnificationBiasSystematicFactory(),
@@ -37,6 +38,7 @@ from tests.conftest import TrivialTracer
     ],
     ids=[
         "PhotoZShiftFactory",
+        "PhotoZShiftandStretchFactory",
         "LinearBiasSystematicFactory",
         "PTNonLinearBiasSystematicFactory",
         "MagnificationBiasSystematicFactory",
@@ -55,12 +57,14 @@ def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
         wl.MultiplicativeShearBiasFactory(),
         wl.TattAlignmentSystematicFactory(),
         wl.PhotoZShiftFactory(),
+        wl.PhotoZShiftandStretchFactory(),
     ],
     ids=[
         "LinearAlignmentSystematicFactory",
         "MultiplicativeShearBiasFactory",
         "TattAlignmentSystematicFactory",
         "PhotoZShiftFactory",
+        "PhotoZShiftandStretchFactory",
     ],
 )
 def fixture_wl_sys_factory(request):
@@ -374,9 +378,15 @@ def test_number_counts_systematic_factory(
     assert sys_pz_shift.parameter_prefix == "bin_1"
 
 
-def test_wl_photozshitfactory_no_globals():
+def test_wl_photozshiftfactory_no_globals():
     factory = wl.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_wl_photozshiftandstretchfactory_no_globals():
+    factory = wl.PhotoZShiftandStretchFactory()
+    with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
@@ -386,9 +396,15 @@ def test_wl_multiplicativeshearbiasfactory_no_globals():
         _ = factory.create_global()
 
 
-def test_nc_photozshitfactory_no_globals():
+def test_nc_photozshiftfactory_no_globals():
     factory = nc.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_photozshiftandstretchfactory_no_globals():
+    factory = nc.PhotoZShiftandStretchFactory()
+    with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
