@@ -333,7 +333,7 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
 
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift & stretch to the photo-z distribution of a source."""
-        super().__apply__(ModelingTools, _SourceGalaxyArgsT)
+        super().apply(tools, tracer_arg)
         z = tracer_arg.z
         dndz = tracer_arg.dndz
         dndz_interp = Akima1DInterpolator(z, dndz)
@@ -357,8 +357,8 @@ class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
     """Photo-z shift and stretch systematic."""
 
 
-class PhotoZShiftandStretchFactory(PhotoZShiftFactory):
-    """Factory class for PhotoZShift objects."""
+class PhotoZShiftandStretchFactory(BaseModel):
+    """Factory class for PhotoZShiftandStretch objects."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -371,7 +371,7 @@ class PhotoZShiftandStretchFactory(PhotoZShiftFactory):
         """Create a PhotoZShiftandStretch object with the given tracer name."""
         return PhotoZShiftandStretch(bin_name)
 
-    def create_global(self) -> PhotoZShift:
+    def create_global(self) -> PhotoZShiftandStretch:
         """Create a PhotoZShiftandStretch object with the given tracer name."""
         raise ValueError("PhotoZShiftandStretch cannot be global.")
 
