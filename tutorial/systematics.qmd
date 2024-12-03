@@ -84,29 +84,18 @@ In this case, we see that all of the parameters of this systematic are *sampler 
 ```{python}
 # Continuing from above...
 for p in systematic._sampler_parameters:
-  print(f"\tname: {p.name}  value: {p.value}")
+  print(f"\tname: {p.name}")
 ```
 
-::: {.callout-important}
-## Why does a systematic have redundant data?
-
-It appears that this systematic has the names and values of each of its "parameters" two different ways:
-
-1. as an attribute of the object, and
-2. as a `SamplerParameter` object that has the same name and value as the related attribute.
-
-Can we remove the redundancy?
-:::
-
 Before it can be `apply`ed, the systematic object needs to be updated using the `update` method, which takes a `ParamsMap` object that must provide values for all the parameters in that systematic.
-After having been updated, the systematic object will have its attribute values set to the supplied valies.
+After having been updated, the systematic object will have its attribute values set to the supplied values.
 
 ```{python}
 # Continuing from above...
 import firecrown.parameters as params
 systematic.update(params.ParamsMap({
-    "lens0_r_lim": 24.0,
     "lens0_eta": 19.0,
+    "lens0_r_lim": 24.0,
     "lens0_sig_c" :9.83,
     "lens0_z_c": 0.39,
     "lens0_z_m": 0.055,
@@ -114,21 +103,29 @@ systematic.update(params.ParamsMap({
 for name, value in vars(systematic).items():
   print(f"\t{name}: {value}")
 ```
-
-But note that the contained sampler parameters have not been updated:
+It is also possible to query a newly-created systematic for the names and default values of its parameters:
 
 ```{python}
 # Continuing from above...
-for p in systematic._sampler_parameters:
-  print(f"\tname: {p.name}  value: {p.value}")
+import firecrown.updatable as up
+# make a new systematic object (reusing the name from above)
+systematic = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+# get the default parameter values
+default_parameters = up.get_default_params_map(systematic)
+
+for name, value in default_parameters.items():
+  print(f"\t{name}: {value}")
 ```
 
-::: {.callout-important}
-## How are the contained _sampler_parameters used?
+We can use this `ParamsMap` to update the systematic:
 
-The `SamplerParameters` contained in the systematic are not given a value when `update` is called.
-How are they used?
-:::
+```{python}
+# Continuing from above...
+systematic.update(default_parameters)
+for name, value in vars(systematic).items():
+  print(f"\t{name}: {value}")
+```
+
 
 ### Systematic Factories
 
