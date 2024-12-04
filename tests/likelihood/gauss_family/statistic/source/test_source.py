@@ -465,6 +465,13 @@ def test_wl_photozshiftandstretch_systematic(
     with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
         _ = a.apply(tools_with_vanilla_cosmology, tracer_args)
 
+    a.reset()
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    new_tracer_args = a.apply(tools_with_vanilla_cosmology, tracer_args)
+    assert new_tracer_args.dndz is not None
+    assert_allclose(new_tracer_args.z, tracer_args.z)
+    assert_allclose(new_tracer_args.dndz, tracer_args.dndz)
+
 
 def test_nc_photozshiftandstretch_systematic(
     tools_with_vanilla_cosmology: ModelingTools,
@@ -492,3 +499,10 @@ def test_nc_photozshiftandstretch_systematic(
     tracer_args = NumberCountsArgs(z=np.array([0.0, 0.1]), dndz=np.array([1.0, 1.0]))
     with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
         _ = a.apply(tools_with_vanilla_cosmology, tracer_args)
+
+    a.reset()
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    new_tracer_args = a.apply(tools_with_vanilla_cosmology, tracer_args)
+    assert new_tracer_args.dndz is not None
+    assert_allclose(new_tracer_args.z, tracer_args.z)
+    assert_allclose(new_tracer_args.dndz, tracer_args.dndz)
