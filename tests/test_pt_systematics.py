@@ -135,7 +135,6 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
             "lens0_mag_bias": mag_bias,
             "src0_delta_z": 0.000,
             "lens0_delta_z": 0.000,
-            "lens0_sigma_z": 1.000,
         }
     )
 
