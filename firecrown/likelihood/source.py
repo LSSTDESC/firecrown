@@ -333,7 +333,7 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
 
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift & stretch to the photo-z distribution of a source."""
-        super().apply(tools, tracer_arg)
+        tracer_arg = super().apply(tools, tracer_arg)
         z = tracer_arg.z
         dndz = tracer_arg.dndz
         dndz_interp = Akima1DInterpolator(z, dndz)

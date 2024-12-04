@@ -44,16 +44,6 @@ def fixture_number_counts_source():
     )
 
 
-@pytest.fixture(name="number_counts_source")
-def fixture_number_counts_source_2():
-    pzshift = nc.PhotoZShiftandStretch(sacc_tracer="lens0")
-    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
-    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
-    return nc.NumberCounts(
-        sacc_tracer="lens0", has_rsd=True, systematics=[pzshift, magnification, nl_bias]
-    )
-
-
 @pytest.fixture(name="sacc_data")
 def fixture_sacc_data():
     # Load sacc file

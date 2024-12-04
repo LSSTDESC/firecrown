@@ -13,6 +13,7 @@ import pyccl
 import sacc
 
 from firecrown.likelihood.number_counts import NumberCountsArgs
+from firecrown.likelihood.weak_lensing import WeakLensingArgs
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.source import (
     SourceGalaxy,
@@ -435,3 +436,59 @@ def test_weak_lensing_systematic_factory(
 ):
     sys_pz_shift = wl_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
+
+
+def test_wl_photozshiftandstretch_systematic(
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    a = wl.PhotoZShiftandStretch("xxx")
+    assert isinstance(a, wl.PhotoZShiftandStretch)
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+    assert not a.is_updated()
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    assert a.is_updated()
+    assert a.delta_z == 0.0
+    assert a.sigma_z == 1.0
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": -1.0}))
+    assert a.is_updated()
+    tracer_args = WeakLensingArgs(z=np.array([0.0, 0.1]), dndz=np.array([1.0, 1.0]))
+    with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
+        _ = a.apply(tools_with_vanilla_cosmology, tracer_args)
+
+
+def test_nc_photozshiftandstretch_systematic(
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    a = nc.PhotoZShiftandStretch("xxx")
+    assert isinstance(a, nc.PhotoZShiftandStretch)
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+    assert not a.is_updated()
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    assert a.is_updated()
+    assert a.delta_z == 0.0
+    assert a.sigma_z == 1.0
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": -1.0}))
+    assert a.is_updated()
+    tracer_args = NumberCountsArgs(z=np.array([0.0, 0.1]), dndz=np.array([1.0, 1.0]))
+    with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
+        _ = a.apply(tools_with_vanilla_cosmology, tracer_args)
