@@ -93,6 +93,20 @@ for p in systematic._sampler_parameters:
 Before it can be `apply`ed, the systematic object needs to be updated using the `update` method, which takes a `ParamsMap` object that must provide values for all the parameters in that systematic.
 After having been updated, the systematic object will have its attribute values set to the supplied values.
 
+::: {.callout-important}
+## Why does a systematic have redundant data?
+
+It appears that this systematic has the names and values of each of its "parameters" two different ways:
+
+1. as an attribute of the object, and
+2. as a `SamplerParameter` object that has the same name and value as the related attribute.
+
+Can we remove the redundancy?
+:::
+
+Before it can be `apply`ed, the systematic object needs to be updated using the `update` method, which takes a `ParamsMap` object that must provide values for all the parameters in that systematic.
+After having been updated, the systematic object will have its attribute values set to the supplied valies.
+
 ```{python}
 # Continuing from above...
 import firecrown.parameters as params
@@ -128,7 +142,6 @@ systematic.update(default_parameters)
 for name, value in vars(systematic).items():
   print(f"\t{name}: {value}")
 ```
-
 
 ### Systematic Factories
 
