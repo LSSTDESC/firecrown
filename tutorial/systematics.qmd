@@ -4,6 +4,7 @@ format: html
 ---
 
 {{< include _functions.qmd >}}
+{{< include _definitions.qmd >}}
 
 ## Introduction
 
@@ -13,9 +14,12 @@ In Firecrown, *systematics* are used to modify the way a theory object works, so
 Often they are characterized by some unknown parameter which can be marginalized over in analysis.
 
 Systematics do not act on the output of the theory predictions.
-Instead, they act on ...
+Instead, they act on *tracer arguments* objects, which are *data classes*[^dataclass] that contain the configuration data needed by the theory.
 
+:::{.callout-important}
+## Example
 Give a simple-to-understand and non-contentious example here, one that we can use throughout the discussion of the rest of this tutorial.
+:::
 
 ::: {.callout-important}
 ## Other things to write about in this section.
@@ -26,9 +30,7 @@ Give a simple-to-understand and non-contentious example here, one that we can us
 Recall we are considering modifying the design so that systematics are recognized as being per-bin or "global", which means specific to a particaular survey, but not a particular bin, based on either state information in the systematic or perhaps based on the type of the systematic.
 :::
 
-Systematics may apply only to certain varieties of measurement, e.g. photometric redshifts an not spectroscopic redshfits.
-
-
+A specific systematic may apply only to certain varieties of measurement, e.g. photometric redshifts an not spectroscopic redshfits.
 
 The class `SourceSystematic`[^1] is the base class for all source systematics.
 A systematic represents a source of uncertainty in some measurement associated with a source.
@@ -43,10 +45,10 @@ Derived from `SourceSystematic`, and defined in the same module, is the class `S
 This class includes the `apply` method which is used to apply the systematic to a source galaxy tracer argument.
 It also introduces a restriction that subclasses of `SourceGalaxySystematic` can only be applied to source galaxy tracers.[^other]
 This restriction will be enforced by the `mypy` type checker.
-This is done using the Python type systems support of *generics*. [^3]
+This is done using the Python type systems support of *generics*.[^generics]
 The goal of this restriction is to avoid having systematics intended for one variety of observation (e.g. a weak lensing source) being applied to an inappropriate other variety of observation.
 
-[^3]: You can read about generics in the [online Python documentation](https://docs.python.org/3/library/typing.html#generics).
+[^generics]: You can read about generics in the [online Python documentation](https://docs.python.org/3/library/typing.html#generics).
 [^other]: We expect a future version of Firecrown to introduce non-galaxy based measurements (e.g. CMB), and thus non-galaxy based systematics.
 
 The final abstract parts of the class hierarchy are two subclasses of `SourceGalaxySystematic`: `WeakLensingSystematic` and `NumberCountsSystematic`.
@@ -71,7 +73,7 @@ for name in systematic.get_params_names():
 ```
 
 We can also inspect the attributes of the systematic using built-in Python functions.
-Because all systematic classes also inherit from `Updatable`, they also have seveeral additional attributes we can view:
+Because all systematic classes also inherit from `Updatable`, they also have several additional attributes we can view:
 
 ```{python}
 # Continuing from above...
@@ -79,7 +81,8 @@ for name, value in vars(systematic).items():
     print(f"\t{name}: {value}")
 ```
 
-In this case, we see that all of the parameters of this systematic are *sampler parameters*:
+In this case, we see that all of the parameters of this systematic are *sampler parameters*.
+This means that when using them in a MCMC analysis, the MCMC framework will sample over them.
 
 ```{python}
 # Continuing from above...
