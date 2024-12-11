@@ -279,6 +279,14 @@ class Updatable(ABC):
 
         return sampler_parameters + additional_parameters
 
+    @final
+    def get_params_names(self) -> list[str]:
+        """Return the names of the parameters required by this object.
+
+        :return: a list of parameter names
+        """
+        return list(self.required_parameters().get_params_names())
+
     def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
         """Return a RequiredParameters object containing the information for this class.
 
