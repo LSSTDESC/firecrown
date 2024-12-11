@@ -16,13 +16,14 @@ Often they are characterized by some unknown parameter which can be marginalized
 Systematics do not act on the output of the theory predictions.
 Instead, they act on *tracer arguments* objects, which are *data classes*[^dataclass] that contain the configuration data needed by the theory.
 
-A tracer argument object encapsulates all the information needed to create a `pyccl` tracer object.
-A `SourceSystematic` object modifies a `TracerArg` in some way. Source tracer objects, such as `NumberCounts` and `WeakLensing`, require configuration details, calibration inputs, and model parameters.
+A tracer argument object encapsulates all the information needed to create a `pyccl.Tracer` object.
+A `SourceSystematic` object modifies a tracer argument in some way.
+Source tracer objects, such as `NumberCounts` and `WeakLensing`, require configuration details, calibration inputs, and model parameters.
 
-All source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution). 
+All source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
 To address this, we use a shared `SourceGalaxyArgs` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
 
-This shared structure allows us to define a common set of systematics that can be applied across all source tracers. 
+This shared structure allows us to define a common set of systematics that can be applied across all source tracers.
 For instance, the `PhotoZShift` object modifies the redshift distribution in a `SourceGalaxyArgs` object.
 
 The subclasses `WeakLensingArgs` and `NumberCountsArgs` inherit from `SourceGalaxyArgs` and add additional fields specific to weak lensing and number counts, respectively.
