@@ -62,7 +62,7 @@ def test_simple_updatable():
     obj = SimpleUpdatable()
     with pytest.deprecated_call():
         expected_params = RequiredParameters(
-            [SamplerParameter(name="x"), SamplerParameter(name="y")]
+            [SamplerParameter(name="y"), SamplerParameter(name="x")]
         )
     assert obj.required_parameters() == expected_params
     assert obj.get_params_names() == ["x", "y"]
