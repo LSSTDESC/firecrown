@@ -35,7 +35,7 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     return param
 
 
-def _validade_params_map_value(name: str, value: float | list[float]) -> None:
+def _validate_params_map_value(name: str, value: float | list[float]) -> None:
     """Check if the value is a float or a list of floats.
 
     Raises a TypeError if the value is not a float or a list of floats.
@@ -67,7 +67,7 @@ class ParamsMap(dict[str, float]):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         for name, value in self.items():
-            _validade_params_map_value(name, value)
+            _validate_params_map_value(name, value)
 
         self.lower_case: bool = False
 
