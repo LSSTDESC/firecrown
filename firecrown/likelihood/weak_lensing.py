@@ -21,8 +21,11 @@ from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,
+    SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
+    PhotoZShiftFactory,
+    PhotoZShiftandStretchFactory,
     Tracer,
 )
 from firecrown.metadata_types import InferredGalaxyZDist
@@ -52,6 +55,10 @@ class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
+
+
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[WeakLensingArgs]):
+    """Photo-z shift systematic."""
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
@@ -431,37 +438,12 @@ class TattAlignmentSystematicFactory(BaseModel):
         return TattAlignmentSystematic(None)
 
 
-class PhotoZShiftFactory(BaseModel):
-    """Factory class for PhotoZShift objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    type: Annotated[
-        Literal["PhotoZShiftFactory"], Field(description="The type of the systematic.")
-    ] = "PhotoZShiftFactory"
-
-    def create(self, bin_name: str) -> PhotoZShift:
-        """Create a PhotoZShift object.
-
-        :param inferred_zdist: The inferred galaxy redshift distribution for
-            the created PhotoZShift object.
-        :return: The created PhotoZShift object.
-        """
-        return PhotoZShift(bin_name)
-
-    def create_global(self) -> PhotoZShift:
-        """Create a PhotoZShift object.
-
-        :return: The created PhotoZShift object.
-        """
-        raise ValueError("PhotoZShift cannot be global")
-
-
 WeakLensingSystematicFactory = Annotated[
-    MultiplicativeShearBiasFactory
+    PhotoZShiftFactory
+    | PhotoZShiftandStretchFactory
+    | MultiplicativeShearBiasFactory
     | LinearAlignmentSystematicFactory
-    | TattAlignmentSystematicFactory
-    | PhotoZShiftFactory,
+    | TattAlignmentSystematicFactory,
     Field(discriminator="type", union_mode="left_to_right"),
 ]
 
