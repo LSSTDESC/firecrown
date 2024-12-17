@@ -5,25 +5,25 @@ Tests for the module firecrown.likelihood.statistic.source.
 # pylint: disable=too-many-locals
 
 from typing import List
-import pytest
+
 import numpy as np
+import pyccl
+import pytest
+import sacc
 from numpy.testing import assert_allclose
 
-import pyccl
-import sacc
-
+import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.number_counts import NumberCountsArgs
-from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySelectField,
+    Tracer,
 )
-import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.weak_lensing as wl
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
+from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
-from tests.conftest import TrivialTracer
 
 
 @pytest.fixture(
@@ -76,7 +76,7 @@ class TrivialSourceGalaxy(SourceGalaxy[TrivialSourceGalaxyArgs]):
     """This is the most trivial possible subclass of SourceGalaxy."""
 
     def create_tracers(self, tools: ModelingTools):
-        return TrivialTracer(pyccl.Tracer()), TrivialSourceGalaxyArgs(
+        return Tracer(pyccl.Tracer()), TrivialSourceGalaxyArgs(
             z=np.array([]), dndz=np.array([])
         )
 
@@ -85,7 +85,7 @@ class TrivialSourceGalaxy(SourceGalaxy[TrivialSourceGalaxyArgs]):
 
 
 def test_trivial_tracer_construction(empty_pyccl_tracer):
-    trivial = TrivialTracer(empty_pyccl_tracer)
+    trivial = Tracer(empty_pyccl_tracer)
     assert trivial.ccl_tracer is empty_pyccl_tracer
     # If we have not assigned a name through the initializer, the name of the resulting
     # Tracer object is the class name of the :class:`pyccl.Tracer` that was used to
@@ -99,7 +99,7 @@ def test_trivial_tracer_construction(empty_pyccl_tracer):
 
 
 def test_tracer_construction_with_name(empty_pyccl_tracer):
-    named = TrivialTracer(empty_pyccl_tracer, tracer_name="Fred")
+    named = Tracer(empty_pyccl_tracer, tracer_name="Fred")
     assert named.ccl_tracer is empty_pyccl_tracer
     assert named.tracer_name == "Fred"
     assert named.field == "Fred"
