@@ -15,6 +15,7 @@ from numpy.testing import assert_allclose
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.number_counts import NumberCountsArgs
+from firecrown.likelihood.weak_lensing import WeakLensingArgs
 from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
@@ -30,6 +31,7 @@ from firecrown.parameters import ParamsMap
     name="nc_sys_factory",
     params=[
         nc.PhotoZShiftFactory(),
+        nc.PhotoZShiftandStretchFactory(),
         nc.LinearBiasSystematicFactory(),
         nc.PTNonLinearBiasSystematicFactory(),
         nc.MagnificationBiasSystematicFactory(),
@@ -37,6 +39,7 @@ from firecrown.parameters import ParamsMap
     ],
     ids=[
         "PhotoZShiftFactory",
+        "PhotoZShiftandStretchFactory",
         "LinearBiasSystematicFactory",
         "PTNonLinearBiasSystematicFactory",
         "MagnificationBiasSystematicFactory",
@@ -55,12 +58,14 @@ def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
         wl.MultiplicativeShearBiasFactory(),
         wl.TattAlignmentSystematicFactory(),
         wl.PhotoZShiftFactory(),
+        wl.PhotoZShiftandStretchFactory(),
     ],
     ids=[
         "LinearAlignmentSystematicFactory",
         "MultiplicativeShearBiasFactory",
         "TattAlignmentSystematicFactory",
         "PhotoZShiftFactory",
+        "PhotoZShiftandStretchFactory",
     ],
 )
 def fixture_wl_sys_factory(request):
@@ -374,9 +379,15 @@ def test_number_counts_systematic_factory(
     assert sys_pz_shift.parameter_prefix == "bin_1"
 
 
-def test_wl_photozshitfactory_no_globals():
+def test_wl_photozshiftfactory_no_globals():
     factory = wl.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_wl_photozshiftandstretchfactory_no_globals():
+    factory = wl.PhotoZShiftandStretchFactory()
+    with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
@@ -386,9 +397,15 @@ def test_wl_multiplicativeshearbiasfactory_no_globals():
         _ = factory.create_global()
 
 
-def test_nc_photozshitfactory_no_globals():
+def test_nc_photozshiftfactory_no_globals():
     factory = nc.PhotoZShiftFactory()
     with pytest.raises(ValueError, match="PhotoZShift cannot be global"):
+        _ = factory.create_global()
+
+
+def test_nc_photozshiftandstretchfactory_no_globals():
+    factory = nc.PhotoZShiftandStretchFactory()
+    with pytest.raises(ValueError, match="PhotoZShiftandStretch cannot be global"):
         _ = factory.create_global()
 
 
@@ -419,3 +436,73 @@ def test_weak_lensing_systematic_factory(
 ):
     sys_pz_shift = wl_sys_factory.create("bin_1")
     assert sys_pz_shift.parameter_prefix == "bin_1"
+
+
+def test_wl_photozshiftandstretch_systematic(
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    a = wl.PhotoZShiftandStretch("xxx")
+    assert isinstance(a, wl.PhotoZShiftandStretch)
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+    assert not a.is_updated()
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    assert a.is_updated()
+    assert a.delta_z == 0.0
+    assert a.sigma_z == 1.0
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": -1.0}))
+    assert a.is_updated()
+    tracer_args = WeakLensingArgs(z=np.array([0.0, 0.1]), dndz=np.array([1.0, 1.0]))
+    with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
+        _ = a.apply(tools_with_vanilla_cosmology, tracer_args)
+
+    a.reset()
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    new_tracer_args = a.apply(tools_with_vanilla_cosmology, tracer_args)
+    assert new_tracer_args.dndz is not None
+    assert_allclose(new_tracer_args.z, tracer_args.z)
+    assert_allclose(new_tracer_args.dndz, tracer_args.dndz)
+
+
+def test_nc_photozshiftandstretch_systematic(
+    tools_with_vanilla_cosmology: ModelingTools,
+):
+    a = nc.PhotoZShiftandStretch("xxx")
+    assert isinstance(a, nc.PhotoZShiftandStretch)
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+    assert not a.is_updated()
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    assert a.is_updated()
+    assert a.delta_z == 0.0
+    assert a.sigma_z == 1.0
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.delta_z is None
+    assert a.sigma_z is None
+
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": -1.0}))
+    assert a.is_updated()
+    tracer_args = NumberCountsArgs(z=np.array([0.0, 0.1]), dndz=np.array([1.0, 1.0]))
+    with pytest.raises(ValueError, match="Stretch Parameter must be positive"):
+        _ = a.apply(tools_with_vanilla_cosmology, tracer_args)
+
+    a.reset()
+    a.update(ParamsMap({"xxx_delta_z": 0.0, "xxx_sigma_z": 1.0}))
+    new_tracer_args = a.apply(tools_with_vanilla_cosmology, tracer_args)
+    assert new_tracer_args.dndz is not None
+    assert_allclose(new_tracer_args.z, tracer_args.z)
+    assert_allclose(new_tracer_args.dndz, tracer_args.dndz)
