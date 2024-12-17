@@ -20,6 +20,12 @@ A tracer argument object encapsulates all the information needed to create a `py
 A `SourceSystematic` object modifies a tracer argument in some way.
 Source tracer objects, such as `NumberCounts` and `WeakLensing`, require configuration details, calibration inputs, and model parameters.
 
+In Firecrown, a source represents an observable that contributes to the construction of two-point statistics (like auto-correlations or cross-correlations).
+Examples of observables represented by sources include galaxy number density, weak lensing shear, or CMB lensing convergence.
+Sources connect these observables to their theoretical predictions using tools like the Core Cosmology Library (CCL).
+By representing specific observational data, sources enable the computation of likelihoods in cosmological analyses.
+For more, visit the [introductory article](intro_article.qmd).
+
 All source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
 To address this, we use a shared `SourceGalaxyArgs` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
 
@@ -67,6 +73,14 @@ The goal of this restriction is to avoid having systematics intended for one var
 The final abstract parts of the class hierarchy are two subclasses of `SourceGalaxySystematic`: `WeakLensingSystematic` and `NumberCountsSystematic`.
 These classes are used to apply systematics to weak lensing and number counts predictions, respectively.
 The various concrete systematics classes (such as the two `PhotoZShift` classes noted above) directly inherit from one of these two classes.
+
+## The lifecycle of systematics objects
+
+Systematics objects follow a simple lifecycle:
+
+1. They are created (either directly, or more often through a factory).
+2. They are `update`d, so that their parameter take on the correct values for their next application.
+3. They are `apply`ed to a given tracer arguments object, creating a new tracer arguments object in the modified state.
 
 ## Creating Systematics Objects
 
