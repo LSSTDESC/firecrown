@@ -307,7 +307,8 @@ class Updatable(ABC):
 
         :return: a list of parameter names
         """
-        # The following line is tested by tests/test_updatable.py::test_get_params_names.
+        # The following line is tested by
+        # tests/test_updatable.py::test_get_params_names.
         # pytest coverage is unable to detect that the line is tested.
         return list(self.required_parameters().get_params_names())  # pragma: no cover
 
