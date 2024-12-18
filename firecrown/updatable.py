@@ -283,6 +283,8 @@ class Updatable(ABC):
     def get_params_names(self) -> list[str]:
         """Return the names of the parameters required by this object.
 
+        The order of the returned names is arbitrary.
+
         :return: a list of parameter names
         """
         return list(self.required_parameters().get_params_names())

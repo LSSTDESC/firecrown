@@ -58,6 +58,12 @@ class UpdatableWithDerived(Updatable):
         return derived_parameters
 
 
+def test_get_params_names():
+    obj = SimpleUpdatable()
+    found_names = obj.get_params_names()
+    assert set(found_names) == set(["x", "y"])
+
+
 def test_simple_updatable():
     obj = SimpleUpdatable()
     with pytest.deprecated_call():
