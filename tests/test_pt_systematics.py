@@ -28,14 +28,14 @@ import firecrown.parameters as fcp
 
 
 @pytest.fixture(name="weak_lensing_source")
-def fixture_weak_lensing_source():
+def fixture_weak_lensing_source() -> wl.WeakLensing:
     ia_systematic = wl.TattAlignmentSystematic()
     pzshift = wl.PhotoZShift(sacc_tracer="src0")
     return wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
 
 
 @pytest.fixture(name="number_counts_source")
-def fixture_number_counts_source():
+def fixture_number_counts_source() -> nc.NumberCounts:
     pzshift = nc.PhotoZShift(sacc_tracer="lens0")
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
     nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
@@ -45,7 +45,7 @@ def fixture_number_counts_source():
 
 
 @pytest.fixture(name="sacc_data")
-def fixture_sacc_data():
+def fixture_sacc_data() -> sacc.Sacc:
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     saccfile = os.path.join(

@@ -75,7 +75,7 @@ class PoweSpecAmplitudeParameter(YAMLSerializable, str, Enum):
     SIGMA8 = auto()
 
 
-def _validade_amplitude_parameter(value):
+def _validate_amplitude_parameter(value):
     if isinstance(value, str):
         try:
             return PoweSpecAmplitudeParameter(
@@ -177,7 +177,7 @@ class CCLFactory(Updatable, BaseModel):
     require_nonlinear_pk: Annotated[bool, Field(frozen=True)] = False
     amplitude_parameter: Annotated[
         PoweSpecAmplitudeParameter,
-        BeforeValidator(_validade_amplitude_parameter),
+        BeforeValidator(_validate_amplitude_parameter),
         Field(frozen=True),
     ] = PoweSpecAmplitudeParameter.SIGMA8
     mass_split: Annotated[
