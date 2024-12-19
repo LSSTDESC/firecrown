@@ -654,7 +654,6 @@ def fixture_sacc_galaxy_cwindows():
         tracers[f"lens{i}"] = (z, dndz)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-
         weights = (
             np.eye(ells.shape[0], nobs, dtype=np.float64)
             + np.eye(ells.shape[0], nobs, k=5, dtype=np.float64)

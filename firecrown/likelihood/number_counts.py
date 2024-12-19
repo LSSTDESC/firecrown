@@ -20,8 +20,11 @@ from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,
+    SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
+    PhotoZShiftFactory,
+    PhotoZShiftandStretchFactory,
     Tracer,
 )
 from firecrown.metadata_types import InferredGalaxyZDist
@@ -69,6 +72,10 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
+    """Photo-z shift systematic."""
+
+
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[NumberCountsArgs]):
     """Photo-z shift systematic."""
 
 
@@ -510,32 +517,6 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         return self.current_tracer_args.scale
 
 
-class PhotoZShiftFactory(BaseModel):
-    """Factory class for PhotoZShift objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    type: Annotated[
-        Literal["PhotoZShiftFactory"],
-        Field(description="The type of the systematic."),
-    ] = "PhotoZShiftFactory"
-
-    def create(self, bin_name: str) -> PhotoZShift:
-        """Create a PhotoZShift object with the given tracer name for a bin.
-
-        :param bin_name: the name of the bin
-        :return: the created PhotoZShift object
-        """
-        return PhotoZShift(bin_name)
-
-    def create_global(self) -> PhotoZShift:
-        """Required by the interface, but raises an error.
-
-        PhotoZShift systematics cannot be global.
-        """
-        raise ValueError("PhotoZShift cannot be global.")
-
-
 class LinearBiasSystematicFactory(BaseModel):
     """Factory class for LinearBiasSystematic objects."""
 
@@ -632,6 +613,7 @@ class ConstantMagnificationBiasSystematicFactory(BaseModel):
 
 NumberCountsSystematicFactory = Annotated[
     PhotoZShiftFactory
+    | PhotoZShiftandStretchFactory
     | LinearBiasSystematicFactory
     | PTNonLinearBiasSystematicFactory
     | MagnificationBiasSystematicFactory

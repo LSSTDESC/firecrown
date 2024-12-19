@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Generic, Sequence, TypeVar, final
+from typing import Generic, Sequence, TypeVar, final, Annotated, Literal
 
+from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -232,6 +233,7 @@ _SourceGalaxySystematicT = TypeVar(
 
 
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
+SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
 
 
 class SourceGalaxyPhotoZShift(
@@ -279,6 +281,99 @@ class SourceGalaxyPhotoZShift(
             tracer_arg,
             dndz=dndz,
         )
+
+
+class PhotoZShift(SourceGalaxyPhotoZShift):
+    """Photo-z shift systematic."""
+
+
+class PhotoZShiftFactory(BaseModel):
+    """Factory class for PhotoZShift objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftFactory"
+
+    def create(self, bin_name: str) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        return PhotoZShift(bin_name)
+
+    def create_global(self) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        raise ValueError("PhotoZShift cannot be global.")
+
+
+class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArgsT]):
+    """A photo-z shift & stretch bias.
+
+    This systematic shifts and widens the photo-z distribution by some amount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar delta_z: the photo-z shift.
+    :ivar sigma_z: the photo-z stretch.
+    """
+
+    def __init__(self, sacc_tracer: str) -> None:
+        """Create a PhotoZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__(sacc_tracer)
+
+        self.sigma_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
+        )
+
+    def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+        """Apply a shift & stretch to the photo-z distribution of a source."""
+        tracer_arg = super().apply(tools, tracer_arg)
+        z = tracer_arg.z
+        dndz = tracer_arg.dndz
+        dndz_interp = Akima1DInterpolator(z, dndz)
+        dndz_mean = np.average(tracer_arg.z, weights=tracer_arg.dndz)
+        if self.sigma_z <= 0.0:
+            raise ValueError("Stretch Parameter must be positive")
+        dndz = (
+            dndz_interp((z - dndz_mean) / self.sigma_z + dndz_mean, extrapolate=False)
+            / self.sigma_z
+        )
+        # This is dangerous
+        dndz[np.isnan(dndz)] = 0.0
+
+        return replace(
+            tracer_arg,
+            dndz=dndz,
+        )
+
+
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
+    """Photo-z shift and stretch systematic."""
+
+
+class PhotoZShiftandStretchFactory(BaseModel):
+    """Factory class for PhotoZShiftandStretch objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftandStretchFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftandStretchFactory"
+
+    def create(self, bin_name: str) -> PhotoZShiftandStretch:
+        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        return PhotoZShiftandStretch(bin_name)
+
+    def create_global(self) -> PhotoZShiftandStretch:
+        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        raise ValueError("PhotoZShiftandStretch cannot be global.")
 
 
 class SourceGalaxySelectField(
