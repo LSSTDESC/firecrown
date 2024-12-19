@@ -126,8 +126,8 @@ def test_evaluates_theory_prediction_returns_value(
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
 ):
     mock_bin = Mock(spec=NDimensionalBin)
-    mock_bin.mass_proxy_edges = (0, 5)
-    mock_bin.z_edges = (0, 1)
+    mock_bin.mass_proxy_edges = (2, 5)
+    mock_bin.z_edges = (0.5, 1)
     mock_bin.radius_center = 1.5
     average_on = ClusterProperty.DELTASIGMA
 
