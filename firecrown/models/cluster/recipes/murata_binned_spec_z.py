@@ -70,7 +70,7 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
                 elif cluster_prop == ClusterProperty.REDSHIFT:
                     prediction *= z
                 else:
-                    raise NotImplementedError(f"Average for {cluster_prop}.")
+                    continue
 
             return prediction
 
