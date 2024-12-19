@@ -48,8 +48,11 @@ class ClusterDeltaSigma(ClusterAbundance):
         # pylint: disable=protected-access
         cosmo_clmm._init_from_cosmo(self._cosmo)
         mass_def = self.halo_mass_function.mass_def
+        mass_type = mass_def.rho_type
+        if mass_type == "matter":
+            mass_type = "mean"
         moo = clmm.Modeling(
-            massdef="mean",
+            massdef=mass_type,
             delta_mdef=mass_def.Delta,
             halo_profile_model="nfw",
         )
@@ -66,7 +69,7 @@ class ClusterDeltaSigma(ClusterAbundance):
                 moo.set_concentration(conc_val)
                 moo.set_mass(10**log_m)
                 val = moo.eval_excess_surface_density(radius_center, redshift)
-                return_vals.append(np.log10(val))
+                return_vals.append(val)
         else:
             conc_val = self.cluster_conc
             moo.set_concentration(conc_val)
@@ -74,5 +77,5 @@ class ClusterDeltaSigma(ClusterAbundance):
                 moo.set_concentration(conc_val)
                 moo.set_mass(10**log_m)
                 val = moo.eval_excess_surface_density(radius_center, redshift)
-                return_vals.append(np.log10(val))
+                return_vals.append(val)
         return np.asarray(return_vals, dtype=np.float64)

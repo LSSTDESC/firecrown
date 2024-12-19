@@ -26,7 +26,7 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
 
         self.integrator = NumCosmoIntegrator()
         self.redshift_distribution = SpectroscopicRedshift()
-        pivot_mass, pivot_redshift = 14.625862906, 0.6  # 14.3, 0.5
+        pivot_mass, pivot_redshift = 14.625862906, 0.6
         self.mass_distribution = MurataBinned(pivot_mass, pivot_redshift)
         self.my_updatables.append(self.mass_distribution)
 
@@ -76,7 +76,6 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
                     prediction *= cluster_theory.delta_sigma(mass, z, radius_center)
                 else:
                     continue
-
             return prediction
 
         return theory_prediction

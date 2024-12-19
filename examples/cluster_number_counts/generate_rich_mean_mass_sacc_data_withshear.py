@@ -21,24 +21,26 @@ from astropy.io import fits
 from scipy import stats
 from typing import Any
 import sacc
-
+import pyccl as ccl
 import os
 
 os.environ["CLMM_MODELING_BACKEND"] = (
-    "nc"  # Need to use NumCosmo as CLMM's backend as well.
+    "ccl"  # Need to use NumCosmo as CLMM's backend as well.
 )
 import clmm  # noqa: E402
 from clmm import Cosmology  # noqa: E402
 
 
-def generate_sacc_file() -> Any:
+def generate_sacc_file() -> Any:  # noqa: C901
     """Generate a SACC file for cluster number counts and cluster deltasigma."""
     H0 = 71.0
     Ob0 = 0.0448
     Odm0 = 0.22
     n_s = 0.963
     sigma8 = 0.8
-
+    cosmo_ccl = ccl.Cosmology(
+        Omega_b=Ob0, Omega_c=Odm0, sigma8=sigma8, w0=-1, wa=0, h=H0 / 100.0, n_s=n_s
+    )
     cosmo = Nc.HICosmoDECpl()
     reion = Nc.HIReionCamb.new()
     prim = Nc.HIPrimPowerLaw.new()
@@ -150,21 +152,12 @@ def generate_sacc_file() -> Any:
     var_mean_logM = std_logM**2 / cluster_counts
     # Use CLMM to create a mock DeltaSigma profile to add to the SACC file later
     cosmo_clmm = Cosmology()
-    cosmo_clmm._init_from_cosmo(cosmo)
-    moo = clmm.Modeling(massdef="mean", delta_mdef=200, halo_profile_model="nfw")
+    cosmo_clmm._init_from_cosmo(cosmo_ccl)
+    moo = clmm.Modeling(massdef="critical", delta_mdef=200, halo_profile_model="nfw")
     moo.set_cosmo(cosmo_clmm)
     # assuming the same concentration for all masses. Not realistic,
     # but avoid having to call a mass-concentration relation.
     moo.set_concentration(4)
-
-    # we'll need the mean redshift of the clusters in the redshift bin
-    mean_z = stats.binned_statistic_2d(
-        cluster_z,
-        cluster_richness,
-        cluster_z,
-        "mean",
-        bins=[z_edges, richness_edges],
-    ).statistic
 
     radius_edges = clmm.make_bins(
         0.3, 6.0, nbins=6, method="evenlog10width"
@@ -177,16 +170,27 @@ def generate_sacc_file() -> Any:
         radius_center = np.mean(radius_edges[i:j])
         radius_centers.append(radius_center)
 
-    cluster_DeltaSigma = []
+    cluster_DeltaSigma_list = []
     for redshift, log_mass in zip(cluster_z, cluster_logM):
         mass = 10**log_mass
         moo.set_mass(mass)
-        cluster_DeltaSigma.append(
+        cluster_DeltaSigma_list.append(
             moo.eval_excess_surface_density(radius_centers, redshift)
         )
-    cluster_DeltaSigma = np.log10(np.array(cluster_DeltaSigma))
+    cluster_DeltaSigma = np.array(cluster_DeltaSigma_list)
     richness_inds = np.digitize(cluster_richness, richness_edges) - 1
     z_inds = np.digitize(cluster_z, z_edges) - 1
+    mean_DeltaSigma = np.array(
+        [
+            [
+                np.mean(
+                    cluster_DeltaSigma[(richness_inds == i) * (z_inds == j)], axis=0
+                )
+                for i in range(N_richness)
+            ]
+            for j in range(N_z)
+        ]
+    )
     std_DeltaSigma = np.array(
         [
             [
@@ -254,12 +258,6 @@ def generate_sacc_file() -> Any:
         mean_logM.flatten(), itertools.product(bin_z_labels, bin_richness_labels)
     )
 
-    redshifts_masses_and_edges = zip(
-        mean_z.flatten(),
-        mean_logM.flatten(),
-        itertools.product(bin_z_labels, bin_richness_labels),
-    )
-
     for counts, (bin_z_label, bin_richness_label) in counts_and_edges:
         s_count.add_data_point(
             cluster_count, (survey_name, bin_z_label, bin_richness_label), int(counts)
@@ -271,23 +269,15 @@ def generate_sacc_file() -> Any:
             (survey_name, bin_z_label, bin_richness_label),
             bin_mean_logM,
         )
-
-    for (
-        redshift,
-        log_mass,
-        (bin_z_label, bin_richness_label),
-    ) in redshifts_masses_and_edges:
-        for i, bin_radius_label in enumerate(bin_radius_labels):
-            mass = 10**log_mass
-            moo.set_mass(mass)
-            profile = np.log10(
-                moo.eval_excess_surface_density(radius_centers[i], redshift)
-            )
-            s_count.add_data_point(
-                cluster_mean_DeltaSigma,
-                (survey_name, bin_z_label, bin_richness_label, bin_radius_label),
-                profile,
-            )
+    for j, bin_z_label in enumerate(bin_z_labels):
+        for k, bin_richness_label in enumerate(bin_richness_labels):
+            for i, bin_radius_label in enumerate(bin_radius_labels):
+                profile = mean_DeltaSigma[j][k][i]
+                s_count.add_data_point(
+                    cluster_mean_DeltaSigma,
+                    (survey_name, bin_z_label, bin_richness_label, bin_radius_label),
+                    profile,
+                )
     # ### Then the add the covariance and save the file
 
     s_count.add_covariance(covariance)
