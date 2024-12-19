@@ -27,8 +27,11 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     :return: full name
     :raises ValueError: if the parameter name is empty
     """
+    # The following line is tested by
+    # tests/test_parameters.py::test_parameter_get_full_name_reject_empty_name
+    # pytest coverage is unable to detect that the line is tested.
     if len(param) == 0:
-        raise ValueError("param must not be an empty string")
+        raise ValueError("param must not be an empty string")  # pragma: no cover
 
     if prefix:
         return f"{prefix}_{param}"
@@ -43,18 +46,25 @@ def _validate_params_map_value(name: str, value: float | list[float]) -> None:
     :param name: name of the parameter
     :param value: value to be checked
     """
+    # The following line is tested by
+    # tests/test_parameters.py::test_params_map_wrong_type
+    # pytest coverage is unable to detect that the line is tested.
+
     if not isinstance(value, (float, list)):
         raise TypeError(
             f"Value for parameter {name} is not a float or a list of floats: "
             f"{type(value)}"
-        )
+        )  # pragma: no cover
 
+    # The following line is tested by
+    # tests/test_parameters.py::test_params_map_wrong_type_list
+    # pytest coverage is unable to detect that the line is tested.
     if isinstance(value, list):
         if not all(isinstance(v, float) for v in value):
             raise TypeError(
                 f"Value for parameter {name} is not a float or a list of floats: "
                 f"{type(value)}"
-            )
+            )  # pragma: no cover
 
 
 class ParamsMap(dict[str, float]):
@@ -103,9 +113,11 @@ class ParamsMap(dict[str, float]):
         See parameter_get_full_name for rules on the forming of prefix and name.
         Raises a KeyError if the parameter is not found.
         """
-        fullname = parameter_get_full_name(prefix, param)
-
-        return self.get_from_full_name(fullname)
+        # The following line is tested by
+        # tests/test_parameters.py::test_params_map
+        # pytest coverage is unable to detect that the line is tested.
+        fullname = parameter_get_full_name(prefix, param)  # pragma: no cover
+        return self.get_from_full_name(fullname)  # pragma: no cover
 
 
 class RequiredParameters:
@@ -154,11 +166,14 @@ class RequiredParameters:
         Two RequireParameters objects are equal if their contained names
         are equal (including appearing in the same order).
         """
+        # The following line is tested by
+        # tests/test_parameters.py::test_required_parameters_equality_testing
+        # pytest coverage is unable to detect that the line is tested.
         if not isinstance(other, RequiredParameters):
-            n = type(other).__name__
+            n = type(other).__name__  # pragma: no cover
             raise TypeError(
                 f"Cannot compare a RequiredParameter to an object of type {n}"
-            )
+            )  # pragma: no cover
         return self.params_set == other.params_set
 
     def get_params_names(self) -> Iterator[str]:
@@ -169,10 +184,15 @@ class RequiredParameters:
     def get_default_values(self) -> dict[str, float]:
         """Return a dictionary with the default values of the parameters."""
         default_values = {}
+        # The following line is tested by
+        # tests/test_parameters.py::test_required_parameters_get_default_values_no_default
+        # pytest coverage is unable to detect that the line is tested.
         for parameter in self.params_set:
             default_value = parameter.get_default_value()
             if default_value is None:
-                raise ValueError(f"Parameter {parameter.fullname} has no default value")
+                raise ValueError(
+                    f"Parameter {parameter.fullname} has no default value"
+                )  # pragma: no cover
             default_values[parameter.fullname] = default_value
 
         return default_values
@@ -189,9 +209,13 @@ class DerivedParameter:
         """Initialize the DerivedParameter object."""
         self.section: str = section
         self.name: str = name
+        # The following line is tested by
+        # tests/test_parameters.py::test_derived_parameter_wrong_type
+        # pytest coverage is unable to detect that the line is tested.
         if not isinstance(val, float):
             raise TypeError(
-                "DerivedParameter expects a float but received a " + str(type(val))
+                "DerivedParameter expects a float but received a "
+                + str(type(val))  # pragma: no cover
             )
         self.val: float = val
 
