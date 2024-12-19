@@ -78,11 +78,24 @@ def test_get_theory_prediction_returns_value(
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
 ):
     prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
+        cluster_deltasigma, average_on=None
+    )
+    # with pytest.raises(
+    #    ValueError
+    # ):
+    #    prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
+    #    cluster_deltasigma, average_on = None
+    #    )
+    prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
         cluster_deltasigma, ClusterProperty.DELTASIGMA
     )
-
+    prediction_c = murata_binned_spec_z_deltasigma.get_theory_prediction_counts(
+        cluster_deltasigma
+    )
     assert prediction is not None
+    assert prediction_c is not None
     assert callable(prediction)
+    assert callable(prediction_c)
 
     mass = np.linspace(13, 17, 2)
     z = np.linspace(0.1, 1, 2)
@@ -95,6 +108,12 @@ def test_get_theory_prediction_returns_value(
     assert np.issubdtype(result.dtype, np.float64)
     assert len(result) == 2
     assert np.all(result > 0)
+
+    result_c = prediction_c(mass, z, mass_proxy_limits, sky_area)
+    assert isinstance(result_c, np.ndarray)
+    assert np.issubdtype(result_c.dtype, np.float64)
+    assert len(result_c) == 2
+    assert np.all(result_c > 0)
 
 
 def test_get_function_to_integrate_returns_value(
@@ -120,6 +139,25 @@ def test_get_function_to_integrate_returns_value(
     assert len(result) == 2
     assert np.all(result > 0)
 
+    prediction_c = murata_binned_spec_z_deltasigma.get_theory_prediction_counts(
+        cluster_deltasigma
+    )
+    function_to_integrate = (
+        murata_binned_spec_z_deltasigma.get_function_to_integrate_counts(prediction_c)
+    )
+
+    assert function_to_integrate is not None
+    assert callable(function_to_integrate)
+
+    int_args = np.array([[13.0, 0.1], [17.0, 1.0]])
+    extra_args = np.array([0, 5, 360**2])
+
+    result = function_to_integrate(int_args, extra_args)
+    assert isinstance(result, np.ndarray)
+    assert np.issubdtype(result.dtype, np.float64)
+    assert len(result) == 2
+    assert np.all(result > 0)
+
 
 def test_evaluates_theory_prediction_returns_value(
     cluster_deltasigma: ClusterDeltaSigma,
@@ -134,5 +172,8 @@ def test_evaluates_theory_prediction_returns_value(
     prediction = murata_binned_spec_z_deltasigma.evaluate_theory_prediction(
         cluster_deltasigma, mock_bin, 360**2, average_on
     )
-
+    prediction_c = murata_binned_spec_z_deltasigma.evaluate_theory_prediction_counts(
+        cluster_deltasigma, mock_bin, 360**2
+    )
     assert prediction > 0
+    assert prediction_c > 0
