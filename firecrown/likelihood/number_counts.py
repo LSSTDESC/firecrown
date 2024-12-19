@@ -6,11 +6,10 @@ from abc import abstractmethod
 from dataclasses import dataclass, replace
 from typing import Sequence, final, Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-
 import numpy as np
 import numpy.typing as npt
 import pyccl
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.

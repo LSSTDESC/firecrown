@@ -40,7 +40,6 @@ class SourceSystematic(Updatable):
 class Source(Updatable):
     """The abstract base class for all sources."""
 
-    systematics: Sequence[SourceSystematic]
     cosmo_hash: None | int
     tracers: Sequence[Tracer]
 
@@ -53,15 +52,20 @@ class Source(Updatable):
         super().__init__(parameter_prefix=sacc_tracer)
         self.sacc_tracer = sacc_tracer
 
+    @abstractmethod
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        """Abstract method to read the systematics for this source from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
+
     @final
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this source from the SACC file.
 
         :param sacc_data: The SACC data object to be read
         """
-        if hasattr(self, "systematics"):
-            for systematic in self.systematics:
-                systematic.read(sacc_data)
+        self.read_systematics(sacc_data)
         self._read(sacc_data)
 
     @abstractmethod
@@ -430,6 +434,14 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
             UpdatableCollection(systematics)
         )
         self.tracer_args: _SourceGalaxyArgsT
+
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        """Read the systematics for this source from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
+        for systematic in self.systematics:
+            systematic.read(sacc_data)
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the galaxy redshift distribution model from a sacc file.

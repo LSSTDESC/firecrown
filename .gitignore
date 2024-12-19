@@ -162,3 +162,4 @@ tutorial/theoretical_predictions_tutorial_files
 tutorial/theoretical_predictions_tutorial.html
 
 /.quarto/
+*.tsv
