@@ -4,6 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - python>=3.10
+  - clmm
   - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
   - cython
