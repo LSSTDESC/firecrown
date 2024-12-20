@@ -173,3 +173,13 @@ def test_observed_data_and_indices_no_data_throws():
         ValueError, match="The SACC file does not contain any tracers for the"
     ):
         ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)
+
+    ads = DeltaSigmaData(s)
+
+    with pytest.raises(
+        ValueError, match=f"The property should be related to the "
+                f"{sacc.standard_types.cluster_shear} data type."
+    ):
+        ads.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)
+
+

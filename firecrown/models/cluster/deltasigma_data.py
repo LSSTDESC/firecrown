@@ -38,8 +38,8 @@ class DeltaSigmaData(ClusterData):
         if not data_types:
             # pylint: disable=no-member
             raise ValueError(
-                f"The SACC file does not contain the"
-                f"{sacc.standard_types.cluster_shear} data type"
+                f"The property should be related to the "
+                f"{sacc.standard_types.cluster_shear} data type."
             )
 
         data_vectors, sacc_indices = self._get_observed_data_and_indices_by_survey(

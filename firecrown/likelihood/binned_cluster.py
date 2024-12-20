@@ -57,12 +57,6 @@ class BinnedCluster(Statistic):
         self.bins = sacc_adapter.get_bin_edges(
             self.survey_name, self.cluster_properties
         )
-        for bin_edge in self.bins:
-            if bin_edge.dimension != self.bins[0].dimension:
-                raise ValueError(
-                    "The cluster number counts statistic requires all bins to be the "
-                    "same dimension."
-                )
 
     def get_data_vector(self) -> DataVector:
         """Gets the statistic data vector.

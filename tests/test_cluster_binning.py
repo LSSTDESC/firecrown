@@ -71,6 +71,13 @@ def test_sacc_bin_radius_edges_throws_when_multiple_radius_bins():
     with pytest.raises(ValueError, match="SaccBin must have exactly one radius bin"):
         print(sb.radius_edges)
 
+def test_sacc_bin_radius_center_throws_when_multiple_radius_bins():
+    tracer_z = sacc.tracers.BinZTracer("", 0, 1)
+    tracer_lambda = sacc.tracers.BinRichnessTracer("", 4, 5)
+    tracer_radius = sacc.tracers.BinRadiusTracer("", 1, 2, 1.5)
+    sb = SaccBin([tracer_z, tracer_lambda, tracer_radius, tracer_radius])
+    with pytest.raises(ValueError, match="SaccBin must have exactly one radius bin"):
+        print(sb.radius_center)
 
 def test_sacc_bin_richness_edges():
     tracer_z = sacc.tracers.BinZTracer("", 0, 1)
