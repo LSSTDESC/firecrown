@@ -69,8 +69,6 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
                     prediction *= mass
                 elif cluster_prop == ClusterProperty.REDSHIFT:
                     prediction *= z
-                else:
-                    continue
 
             return prediction
 

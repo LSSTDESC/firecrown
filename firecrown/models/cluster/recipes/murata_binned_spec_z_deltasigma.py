@@ -74,8 +74,6 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
             for cluster_prop in ClusterProperty:
                 if cluster_prop == ClusterProperty.DELTASIGMA:
                     prediction *= cluster_theory.delta_sigma(mass, z, radius_center)
-                else:
-                    continue
             return prediction
 
         return theory_prediction

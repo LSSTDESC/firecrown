@@ -37,8 +37,6 @@ class AbundanceData(ClusterData):
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
                 data_types.append(sacc.standard_types.cluster_mean_log_mass)
-            else:
-                continue
 
         data_vectors, sacc_indices = self._get_observed_data_and_indices_by_survey(
             survey_nm, data_types, 3
@@ -61,8 +59,6 @@ class AbundanceData(ClusterData):
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_mean_log_mass
-            else:
-                continue
 
             bin_combinations_for_survey = (
                 self._all_bin_combinations_for_data_type_and_survey(
