@@ -254,7 +254,7 @@ class Updatable(ABC):
         :param params: a new set of parameter values
         """
 
-    def _reset(self) -> None:  # pragma: no cover
+    def _reset(self) -> None:
         """Abstract method implemented by all concrete classes to update self.
 
         Concrete classes must override this, resetting themselves.
@@ -263,7 +263,7 @@ class Updatable(ABC):
         """
 
     @final
-    def required_parameters(self) -> RequiredParameters:  # pragma: no cover
+    def required_parameters(self) -> RequiredParameters:
         """Returns all information about parameters required by this object.
 
         This object returned contains the information for all parameters
@@ -289,7 +289,7 @@ class Updatable(ABC):
         """
         return list(self.required_parameters().get_params_names())
 
-    def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
+    def _required_parameters(self) -> RequiredParameters:
         """Return a RequiredParameters object containing the information for this class.
 
         This method can be overridden by subclasses to add
