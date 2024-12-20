@@ -418,3 +418,10 @@ def test_add_required_parameter():
         coll.add_required_parameter(
             DerivedParameter(section="barnyard", name="cow", val=3.14)
         )
+
+
+def test_setting_internal_parameter():
+    a_parameter = register_new_updatable_parameter(1.0)
+    assert a_parameter.value == 1.0
+    a_parameter.set_value(2.0)
+    assert a_parameter.value == 2.0
