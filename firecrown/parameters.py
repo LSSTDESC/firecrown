@@ -43,7 +43,6 @@ def _validate_params_map_value(name: str, value: float | list[float]) -> None:
     :param name: name of the parameter
     :param value: value to be checked
     """
-
     if not isinstance(value, (float, list)):
         raise TypeError(
             f"Value for parameter {name} is not a float or a list of floats: "

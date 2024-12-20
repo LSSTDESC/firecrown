@@ -314,7 +314,6 @@ class Updatable(ABC):
 
         :return: a collection of derived parameters, or None
         """
-
         if not self._updated:
             raise RuntimeError(
                 "Derived parameters can only be obtained after update has been called."
