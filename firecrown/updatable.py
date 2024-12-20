@@ -130,19 +130,11 @@ class Updatable(ABC):
         :param key: name of the attribute
         :param value: value for the attribute
         """
-        # The following line is tested by
-        # tests/test_updatable.py::test_set_internal_parameter_rejects_sampler_parameter
-        # pytest coverage is unable to detect that the line is tested.
-        #
-        if not isinstance(value, InternalParameter):  # pragma: no cover
+        if not isinstance(value, InternalParameter):
             raise TypeError(
                 "Can only add InternalParameter objects to internal_parameters"
             )
-        # The following line is tested by
-        # tests/test_updatable.py::test_set_internal_parameter_rejects_sampler_parameter
-        # pytest coverage is unable to detect that the line is tested.
-
-        if key in self._internal_parameters or hasattr(self, key):  # pragma: no cover
+        if key in self._internal_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
                 f"from a parameter supplied in the likelihood factory code"
@@ -155,21 +147,12 @@ class Updatable(ABC):
 
         :param value: value for the attribute
         """
-        # The following line is tested by
-        # tests/test_updatable.py::test_set_sampler_parameter_rejects_internal_parameter
-        # pytest coverage is unable to detect that the line is tested.
-        if not isinstance(value, SamplerParameter):  # pragma: no cover
+        if not isinstance(value, SamplerParameter):
             raise TypeError(
                 "Can only add SamplerParameter objects to sampler_parameters"
             )
 
-        # The following line is tested by
-        # tests/test_updatable.py::test_set_sampler_parameter_rejects_duplicates
-        # pytest coverage is unable to detect that the line is tested.
-
-        if value in self._sampler_parameters or hasattr(
-            self, value.name
-        ):  # pragma: no cover
+        if value in self._sampler_parameters or hasattr(self, value.name):
             raise ValueError(
                 f"attribute {value.name} already set in {self} "
                 f"from a parameter read from the sampler"
@@ -197,15 +180,12 @@ class Updatable(ABC):
             return
 
         internal_params = self._internal_parameters.keys() & params.keys()
-        # The following line is tested by
-        # tests/test_updatable.py::test_update_rejects_internal_parameters
-        # pytest coverage is unable to detect that the line is tested.
 
         if internal_params:
             raise TypeError(
                 f"Items of type InternalParameter cannot be modified through "
                 f"update, but {','.join(internal_params)} was specified."
-            )  # pragma: no cover
+            )
 
         for parameter in self._sampler_parameters:
             try:
@@ -307,10 +287,7 @@ class Updatable(ABC):
 
         :return: a list of parameter names
         """
-        # The following line is tested by
-        # tests/test_updatable.py::test_get_params_names.
-        # pytest coverage is unable to detect that the line is tested.
-        return list(self.required_parameters().get_params_names())  # pragma: no cover
+        return list(self.required_parameters().get_params_names())
 
     def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
         """Return a RequiredParameters object containing the information for this class.
@@ -337,11 +314,8 @@ class Updatable(ABC):
 
         :return: a collection of derived parameters, or None
         """
-        # The following line is tested by
-        # tests/test_updatable.py::test_nesting_updatables_derived_parameters.
-        # pytest coverage is unable to detect that the line is tested.
 
-        if not self._updated:  # pragma: no cover
+        if not self._updated:
             raise RuntimeError(
                 "Derived parameters can only be obtained after update has been called."
             )
@@ -396,13 +370,10 @@ class UpdatableCollection(UserList[T], Generic[T]):
         self._updated: bool = False
 
         for item in self:
-            # The following line is tested by
-            # tests/test_updatable.py::test_updatable_collection_construction
-            # pytest coverage is unable to detect that the line is tested.
             if not isinstance(item, (Updatable | UpdatableCollection)):
                 raise TypeError(
                     f"All the items in an UpdatableCollection must be updatable {item}"
-                )  # pragma: no cover
+                )
 
     @final
     def update(self, params: ParamsMap) -> None:
@@ -426,10 +397,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
         but before `reset`, has been called the object is updated. After
         `reset` has been called, the object is not currently updated.
         """
-        # The following line is tested by
-        # tests/test_updatable.py::test_updatable_collection_is_updated
-        # pytest coverage is unable to detect that the line is tested.
-        return self._updated  # pragma: no cover
+        return self._updated
 
     @final
     def reset(self) -> None:
@@ -472,29 +440,20 @@ class UpdatableCollection(UserList[T], Generic[T]):
 
         :param item: new item to be appended to the list
         """
-        # The following line is tested by
-        # tests/test_updatable.py::test_updatable_collection_rejects_nonupdatables
-        # pytest coverage is unable to detect that the line is tested.
         if not isinstance(item, Updatable):
             raise TypeError(
                 "Only updatable items can be appended to an UpdatableCollection"
-            )  # pragma: no cover
+            )
         super().append(item)
 
     def __setitem__(self, key, value):
         """Set self[key] to value; raise TypeError if Value is not Updatable."""
-        # The following line is tested by
-        # tests/test_updatable.py::test_updatable_collection_rejects_nonupdatables
-        # pytest coverage is unable to detect that the line is tested.
-        if not isinstance(value, Updatable):  # pragma: no cover
+        if not isinstance(value, Updatable):
             raise TypeError(
                 "Only updatable items can be appended to an UpdatableCollection"
             )
 
-        # The following line is tested by
-        # tests/test_updatable.py::test_updatable_collection_insertion
-        # pytest coverage is unable to detect that the line is tested.
-        super().__setitem__(key, cast(T, value))  # pragma: no cover
+        super().__setitem__(key, cast(T, value))
 
 
 def get_default_params(*args: Updatable) -> dict[str, float]:
