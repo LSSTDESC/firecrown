@@ -232,16 +232,22 @@ class DerivedParameter:
         Two DerivedParameter objects are equal if they have the same
         section, name and value.
         """
-        if not isinstance(other, DerivedParameter):
+        # The following line is tested by
+        # tests/test_parameters.py::test_derived_parameter_eq 
+        # pytest coverage is unable to detect that the line is tested.
+        if not isinstance(other, DerivedParameter):  # pragma: no cover
             raise NotImplementedError(
                 "DerivedParameter comparison is only implemented for "
                 "DerivedParameter objects"
             )
+        # The following line is tested by
+        # tests/test_parameters.py::test_derived_parameter_eq
+        # pytest coverage is unable to detect that the line is tested.
         return (
             self.section == other.section
             and self.name == other.name
             and self.val == other.val
-        )
+        )  # pragma: no cover
 
     def get_full_name(self):
         """Constructs the full name using section--name."""
