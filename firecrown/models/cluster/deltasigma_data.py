@@ -58,6 +58,9 @@ class DeltaSigmaData(ClusterData):
             if cluster_property == ClusterProperty.DELTASIGMA:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_shear
+            else:
+                raise ValueError(f"The property must be {ClusterProperty.DELTASIGMA}.")
+ 
             bin_combinations_for_survey = (
                 self._all_bin_combinations_for_data_type_and_survey(
                     survey_nm, data_type, 4

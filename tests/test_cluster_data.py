@@ -48,6 +48,14 @@ def test_get_survey_tracer_wrong_tracer_type(cluster_sacc_data: sacc.Sacc):
         ):
             data_obj.get_survey_tracer("z_bin_tracer_1")
 
+def test_wrong_property(cluster_sacc_data: sacc.Sacc) -> None:
+    dsd = DeltaSigmaData(cluster_sacc_data)
+    with pytest.raises(
+        ValueError,
+        match=f"The property must be {ClusterProperty.DELTASIGMA}.",
+    ):
+        dsd.get_bin_edges("my_survey", ClusterProperty.COUNTS)
+
 
 def test_get_survey_tracer_returns_survey_tracer(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
