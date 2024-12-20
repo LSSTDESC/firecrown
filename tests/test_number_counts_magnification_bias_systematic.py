@@ -23,13 +23,6 @@ def test_creation_nc_magnification_bias_systematic():
 def test_update_nc_magnification_bias_systematic(
     tools_with_vanilla_cosmology: mt.ModelingTools,
 ):
-    from fctools import tracer  # pylint: disable=import-outside-toplevel
-
-    tracefile = tracer.settrace(
-        filename="test_update_nc_magnification_bias_systematic.tsv"
-    )
-
-    # Now we have the read test...
     sys = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     sys.update(
@@ -63,4 +56,3 @@ def test_update_nc_magnification_bias_systematic(
 
     assert np.allclose(new_z, expected_zs)
     assert np.allclose(new_mag_bias, expected_mag_biases)
-    tracer.untrace(tracefile)
