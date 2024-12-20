@@ -169,6 +169,17 @@ def test_compute_theory_vector(cluster_sacc_data: sacc.Sacc) -> None:
     assert tv is not None
     assert len(tv) == 4
 
+    bnc = BinnedClusterNumberCounts(
+        (ClusterProperty.COUNTS | ClusterProperty.MASS | ClusterProperty.DELTASIGMA),
+        "my_survey",
+        recipe,
+    )
+    bnc.read(cluster_sacc_data)
+    bnc.update(params)
+    tv = bnc.compute_theory_vector(tools)
+    assert tv is not None
+    assert len(tv) == 4
+
     bnd = BinnedClusterDeltaSigma(ClusterProperty.DELTASIGMA, "my_survey", recipe_ds)
     bnd.read(cluster_sacc_data)
     bnd.update(params)

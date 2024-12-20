@@ -64,7 +64,6 @@ class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
                 * self.redshift_distribution.distribution()
                 * self.mass_distribution.distribution(mass, z, mass_proxy_limits)
             )
-
             if average_on is None:
                 # pylint: disable=no-member
                 raise ValueError(

@@ -50,7 +50,6 @@ def test_cluster_update_ingredients(cluster_deltasigma: ClusterDeltaSigma):
     assert cluster_deltasigma._hmf_cache == {}
 
 
-@pytest.mark.slow
 def test_deltasigma_profile_returns_value(
     cluster_deltasigma: ClusterDeltaSigma, cluster_deltasigma_conc: ClusterDeltaSigma
 ):
@@ -61,7 +60,7 @@ def test_deltasigma_profile_returns_value(
         np.linspace(13, 17, 5), np.linspace(0.1, 1, 5), 5.0
     )
     cluster_deltasigma_conc.cluster_conc = 5.0
-    result_conc = cluster_deltasigma.delta_sigma(
+    result_conc = cluster_deltasigma_conc.delta_sigma(
         np.linspace(13, 17, 5), np.linspace(0.1, 1, 5), 5.0
     )
     assert isinstance(result, np.ndarray)

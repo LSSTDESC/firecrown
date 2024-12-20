@@ -77,21 +77,16 @@ def test_get_theory_prediction_returns_value(
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
 ):
-    prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
+    prediction_none = murata_binned_spec_z_deltasigma.get_theory_prediction(
         cluster_deltasigma, average_on=None
     )
-    # with pytest.raises(
-    #    ValueError
-    # ):
-    #    prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
-    #    cluster_deltasigma, average_on = None
-    #    )
     prediction = murata_binned_spec_z_deltasigma.get_theory_prediction(
         cluster_deltasigma, ClusterProperty.DELTASIGMA
     )
     prediction_c = murata_binned_spec_z_deltasigma.get_theory_prediction_counts(
         cluster_deltasigma
     )
+
     assert prediction is not None
     assert prediction_c is not None
     assert callable(prediction)
@@ -102,6 +97,11 @@ def test_get_theory_prediction_returns_value(
     mass_proxy_limits = (0, 5)
     sky_area = 360**2
     radius_center = 1.5
+    with pytest.raises(
+        ValueError,
+        match=f"The property should be" f" {ClusterProperty.DELTASIGMA}.",
+    ):
+        result = prediction_none(mass, z, mass_proxy_limits, sky_area, radius_center)
 
     result = prediction(mass, z, mass_proxy_limits, sky_area, radius_center)
     assert isinstance(result, np.ndarray)

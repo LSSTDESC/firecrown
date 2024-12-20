@@ -58,6 +58,20 @@ def test_wrong_property(cluster_sacc_data: sacc.Sacc) -> None:
         dsd.get_bin_edges("my_survey", ClusterProperty.COUNTS)
 
 
+def test_wrong_tracer_number(cluster_sacc_data: sacc.Sacc) -> None:
+    dsd = DeltaSigmaData(cluster_sacc_data)
+    # pylint: disable=no-member
+    cs = sacc.standard_types.cluster_shear
+    tracers_n = 3
+    with pytest.raises(
+        ValueError,
+        match=f"The SACC file must contain {tracers_n} tracers for the "
+        f"{cs} data type.",
+    ):
+        # pylint: disable=protected-access
+        dsd._all_bin_combinations_for_data_type(cs, tracers_n)
+
+
 def test_get_survey_tracer_returns_survey_tracer(cluster_sacc_data: sacc.Sacc):
     ad = AbundanceData(cluster_sacc_data)
     dsd = DeltaSigmaData(cluster_sacc_data)
@@ -94,12 +108,13 @@ def test_get_bin_edges_counts_and_mass(cluster_sacc_data: sacc.Sacc):
     assert len(bins) == 2
 
 
-# def test_get_bin_edges_not_implemented_cluster_property_throws(
-#    cluster_sacc_data: sacc.Sacc,
-# ):
-#    ad = AbundanceData(cluster_sacc_data)
-#    with pytest.raises(NotImplementedError):
-#        ad.get_bin_edges("my_survey", ClusterProperty.SHEAR)
+def test_get_bin_edges_counts_and_mass_and_shear(cluster_sacc_data: sacc.Sacc):
+    ad = AbundanceData(cluster_sacc_data)
+    bins = ad.get_bin_edges(
+        "my_survey",
+        (ClusterProperty.MASS | ClusterProperty.COUNTS | ClusterProperty.DELTASIGMA),
+    )
+    assert len(bins) == 2
 
 
 def test_observed_data_and_indices_by_survey_cluster_counts(
@@ -144,14 +159,6 @@ def test_observed_data_and_indices_by_survey_cluster_counts_and_mass(
     )
     assert len(data) == 4
     assert len(indices) == 4
-
-
-# def test_observed_data_and_indices_by_survey_not_implemented_throws(
-#    cluster_sacc_data: sacc.Sacc,
-# ):
-#    ad = AbundanceData(cluster_sacc_data)
-#    with pytest.raises(NotImplementedError):
-#        ad.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.SHEAR)
 
 
 def test_observed_data_and_indices_no_data_throws():
