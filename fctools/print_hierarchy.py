@@ -65,7 +65,7 @@ if __name__ == "__main__":
     typename = sys.argv[1]
     try:
         type_ = import_type(typename)
-    except Exception as e:
+    except ImportError as e:
         print(f"Could not import type {typename}")
         print("Error message was:\n", e)
         sys.exit(1)

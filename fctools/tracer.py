@@ -1,4 +1,4 @@
-""" Method tracing facility.
+"""Method tracing facility.
 
 This module provides a facility to capture and record tracing data, using the
 `sys.settrace` method. It causes a tab-separated value file to be written, with
@@ -30,8 +30,7 @@ entry = 0  # sequential entry number for each record
 
 
 def settrace(filename: str = "trace.tsv") -> TextIO:
-    """ "Start the tracer, with log being written to a new file with
-    the given name.
+    """Start the tracer, with log being written to a new file with the given name.
 
     :param filename: the name of the new file to be created
     """
@@ -52,6 +51,12 @@ def untrace(tracefile: TextIO) -> None:
 
 
 def trace_call(fr, ev, arg):
+    """Callback used by settrace.
+
+    :param fr: the frame object
+    :param ev: the event type
+    :param arg: the argument
+    """
     code = fr.f_code
     extra = ""
     global entry
