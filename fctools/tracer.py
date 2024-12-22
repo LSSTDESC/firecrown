@@ -3,6 +3,20 @@
 This module provides a facility to capture and record tracing data, using the
 `sys.settrace` method. It causes a tab-separated value file to be written, with
 one record (line) for each captured event.
+
+The columns in the file are:
+
+    entry: a sequential entry number, for each event
+    event: the event type (call, return, exception)
+    level: the call nesting level
+    function: the function name
+    value: for a 'call' entry, the names of the arguments.
+           forl a 'return' entry, the return value
+    extra: for a 'call' entry, the type self, if that is the first argument
+           for a 'return' entry, the type of the return value
+
+N.B.: This tracer should be used only for debugging and development purposes.
+      It interferes with the pytest test coverage measurement process.
 """
 
 import sys
