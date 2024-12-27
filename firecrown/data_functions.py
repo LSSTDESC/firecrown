@@ -4,7 +4,7 @@ It contains functions to manipulate two-point data objects.
 """
 
 import hashlib
-from typing import Sequence
+from typing import Callable, Sequence
 
 import sacc
 
@@ -116,85 +116,83 @@ def extract_all_real_data(
     return result
 
 
+def ensure_no_overlaps(
+    measurement: TwoPointMeasurement,
+    index_set: set[int],
+    index_sets: list[set[int]],
+    other_measurements: Sequence[TwoPointMeasurement],
+) -> None:
+    """Check if the indices of the measurement-space two-point functions overlap.
+
+    Raises a ValueError if they do.
+
+    :param measurement: The TwoPointHarmonic to check.
+    :param index_set: The indices of the current TwoPointHarmonic.
+    :param index_sets: The indices of the other TwoPointHarmonics.
+    :param other_measurements: The other TwoPointHarmonics.
+    """
+    for i, one_set in enumerate(index_sets):
+        if one_set & index_set:
+            raise ValueError(
+                f"The indices of the TwoPointHarmonic "
+                f"{other_measurements[i]} and {measurement} overlap."
+            )
+
+
+def check_consistence(
+    measurements: Sequence[TwoPointMeasurement],
+    is_type_func: Callable[[TwoPointMeasurement], bool],
+    type_name: str,
+) -> None:
+    """Check the indices of the two-point functions.
+
+    Make sure the indices of the two-point functions are consistent.
+
+    :param measurements: The measurements to check.
+    :param is_type_func: A function to verify the type of the measurements.
+    :param type_name: The type of the measurements.
+    """
+    seen_indices: set[int] = set()
+    index_sets = []
+    cov_name: None | str = None
+
+    for measurement in measurements:
+        if not is_type_func(measurement):
+            raise ValueError(
+                f"The metadata of the TwoPointMeasurement {measurement} is not "
+                f"a measurement of {type_name}."
+            )
+        if cov_name is None:
+            cov_name = measurement.covariance_name
+        elif cov_name != measurement.covariance_name:
+            raise ValueError(
+                f"The {type_name} {measurement} has a different covariance "
+                f"name {measurement.covariance_name} than the previous "
+                f"{type_name} {cov_name}."
+            )
+        index_set = set(measurement.indices)
+        index_sets.append(index_set)
+        if len(index_set) != len(measurement.indices):
+            raise ValueError(
+                f"The indices of the {type_name} {measurement} are not unique."
+            )
+
+        if seen_indices & index_set:
+            ensure_no_overlaps(measurement, index_set, index_sets, measurements)
+        seen_indices.update(index_set)
+
+
 def check_two_point_consistence_harmonic(
     two_point_harmonics: Sequence[TwoPointMeasurement],
 ) -> None:
-    """Check the indices of the harmonic-space two-point functions.
-
-    Make sure the indices of the harmonic-space two-point functions are consistent.
-    """
-    all_indices_set: set[int] = set()
-    index_set_list = []
-    cov_name: None | str = None
-
-    for harmonic in two_point_harmonics:
-        if not harmonic.is_harmonic():
-            raise ValueError(
-                f"The metadata of the TwoPointMeasurement {harmonic} is not "
-                f"a measurement of TwoPointHarmonic."
-            )
-        if cov_name is None:
-            cov_name = harmonic.covariance_name
-        elif cov_name != harmonic.covariance_name:
-            raise ValueError(
-                f"The TwoPointHarmonic {harmonic} has a different covariance "
-                f"name {harmonic.covariance_name} than the previous "
-                f"TwoPointHarmonic {cov_name}."
-            )
-        index_set = set(harmonic.indices)
-        index_set_list.append(index_set)
-        if len(index_set) != len(harmonic.indices):
-            raise ValueError(
-                f"The indices of the TwoPointHarmonic {harmonic} are not unique."
-            )
-
-        if all_indices_set & index_set:
-            for i, index_set_a in enumerate(index_set_list):
-                if index_set_a & index_set:
-                    raise ValueError(
-                        f"The indices of the TwoPointHarmonic "
-                        f"{two_point_harmonics[i]} and {harmonic} overlap."
-                    )
-        all_indices_set.update(index_set)
+    """Check the indices of the harmonic-space two-point functions."""
+    check_consistence(
+        two_point_harmonics, lambda m: m.is_harmonic(), "TwoPointHarmonic"
+    )
 
 
 def check_two_point_consistence_real(
     two_point_reals: Sequence[TwoPointMeasurement],
 ) -> None:
-    """Check the indices of the real-space two-point functions.
-
-    Make sure the indices of the real-space two-point functions are consistent.
-    """
-    all_indices_set: set[int] = set()
-    index_set_list = []
-    cov_name: None | str = None
-
-    for two_point_real in two_point_reals:
-        if not two_point_real.is_real():
-            raise ValueError(
-                f"The metadata of the TwoPointMeasurement {two_point_real} is not "
-                f"a measurement of TwoPointReal."
-            )
-        if cov_name is None:
-            cov_name = two_point_real.covariance_name
-        elif cov_name != two_point_real.covariance_name:
-            raise ValueError(
-                f"The TwoPointReal {two_point_real} has a different covariance "
-                f"name {two_point_real.covariance_name} than the previous "
-                f"TwoPointReal {cov_name}."
-            )
-        index_set = set(two_point_real.indices)
-        index_set_list.append(index_set)
-        if len(index_set) != len(two_point_real.indices):
-            raise ValueError(
-                f"The indices of the TwoPointReal {two_point_real} " f"are not unique."
-            )
-
-        if all_indices_set & index_set:
-            for i, index_set_a in enumerate(index_set_list):
-                if index_set_a & index_set:
-                    raise ValueError(
-                        f"The indices of the TwoPointReal {two_point_reals[i]} "
-                        f"and {two_point_real} overlap."
-                    )
-        all_indices_set.update(index_set)
+    """Check the indices of the real-space two-point functions."""
+    check_consistence(two_point_reals, lambda m: m.is_real(), "TwoPointReal")
