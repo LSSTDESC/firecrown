@@ -35,6 +35,59 @@ For instance, the `PhotoZShift` object modifies the redshift distribution in a `
 The subclasses `WeakLensingArgs` and `NumberCountsArgs` inherit from `SourceGalaxyArgs` and add additional fields specific to weak lensing and number counts, respectively.
 The `WeakLensingSystematic` and `NumberCountsSystematic` classes inherit from `SourceGalaxySystematic` using Python's *generics* to enforce that they can only be applied to `WeakLensingArgs` and `NumberCountsArgs` objects, respectively.
 
+We will use the number counts systematic `PTNonLinearBiasSystematic`[^ptnlbs] to illustrate the use of systematics in Firecrown.
+A class diagram for this systematic is shown below.
+
+[^ptnlbs]: `firecrown.likelihood.number_counts.PTNonLenearBiasSystematic` is the full name of this class.
+
+```{mermaid}
+classDiagram
+direction TB
+class NumberCountsSystematic {
+   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
+}
+class PTNonLinearBiasSystematic {
+   b_2: float
+   b_s: float
+   __init__(self, sacc_tracer: None | str = None) 
+   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
+}
+class SourceGalaxySystematic {
+   apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT) 
+}
+class SourceSystematic {
+   read(self, sacc_data: sacc.Sacc) 
+}
+class Updatable {
+    _internal_parameters
+    _returned_derived
+    _sampler_parameters
+    _updatables
+    _updated
+    parameter_prefix
+   __init__(self, parameter_prefix: None | str = None) 
+   __setattr__(self, key: str, value: Any) 
+   _get_derived_parameters(self) 
+   _required_parameters(self) 
+   _reset(self) 
+   _update(self, params: ParamsMap) 
+   get_derived_parameters(self) 
+   get_params_names(self) 
+   is_updated(self) 
+   required_parameters(self) 
+   reset(self) 
+   set_internal_parameter(self, key: str, value: InternalParameter) 
+   set_parameter(self, key: str, value: InternalParameter | SamplerParameter) 
+   set_sampler_parameter(self, value: SamplerParameter) 
+   update(self, params: ParamsMap) 
+}
+
+SourceGalaxySystematic  -->  NumberCountsSystematic 
+NumberCountsSystematic  -->  PTNonLinearBiasSystematic 
+SourceSystematic  -->  SourceGalaxySystematic 
+Updatable  -->  SourceSystematic 
+```
+
 :::{.callout-important}
 ## Example
 Give a simple-to-understand and non-contentious example here, one that we can use throughout the discussion of the rest of this tutorial.

@@ -175,7 +175,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
-
         self.b_2 = parameters.register_new_updatable_parameter(
             default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
         )
