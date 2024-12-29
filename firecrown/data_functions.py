@@ -5,9 +5,9 @@ It contains functions to manipulate two-point data objects.
 
 import hashlib
 from typing import Callable, Sequence
-
+import numpy as np
+import numpy.typing as npt
 import sacc
-
 from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointReal,
@@ -28,6 +28,9 @@ def extract_all_harmonic_data(
     include_maybe_types=False,
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
+    if sacc_data.covariance is None or sacc_data.covariance.dense is None:
+        raise ValueError("The SACC object does not have a covariance matrix.")
+
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
         for igz in extract_all_tracers_inferred_galaxy_zdists(
@@ -35,11 +38,9 @@ def extract_all_harmonic_data(
         )
     }
 
-    if sacc_data.covariance is None or sacc_data.covariance.dense is None:
-        raise ValueError("The SACC object does not have a covariance matrix.")
     cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
 
-    tpms: list[TwoPointMeasurement] = []
+    result: list[TwoPointMeasurement] = []
     for cell_index in extract_all_harmonic_metadata_indices(
         sacc_data, allowed_data_type
     ):
@@ -50,11 +51,9 @@ def extract_all_harmonic_data(
             data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
         )
 
-        replacement_ells, weights = extract_window_function(sacc_data, indices)
-        if replacement_ells is not None:
-            ells = replacement_ells
+        ells, weights = maybe_enforce_window(ells, indices, sacc_data)
 
-        tpms.append(
+        result.append(
             TwoPointMeasurement(
                 data=Cells,
                 indices=indices,
@@ -69,7 +68,23 @@ def extract_all_harmonic_data(
             ),
         )
 
-    return tpms
+    return result
+
+
+def maybe_enforce_window(
+    ells: npt.NDArray[np.int64], indices: npt.NDArray[np.int64], sacc_data: sacc.Sacc
+) -> tuple[npt.NDArray[np.int64], None | npt.NDArray[np.float64]]:
+    """Possibly enforce a window function on the given ells.
+
+    :param ells: The original ell values.
+    :param indices: The indices of the data points in the SACC object.
+    :param sacc_data: The SACC object containing the data.
+    :return: A tuple containing the possibly replaced ells and the window weights.
+    """
+    replacement_ells, weights = extract_window_function(sacc_data, indices)
+    if replacement_ells is not None:
+        ells = replacement_ells
+    return ells, weights
 
 
 # Extracting the two-point function metadata and data from a sacc file
@@ -81,6 +96,8 @@ def extract_all_real_data(
     include_maybe_types=False,
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
+    # TODO: Should there be a check for the covariance matrix here?
+
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
         for igz in extract_all_tracers_inferred_galaxy_zdists(
