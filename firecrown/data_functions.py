@@ -22,6 +22,15 @@ from firecrown.metadata_functions import (
 from firecrown.data_types import TwoPointMeasurement
 
 
+def cov_hash(sacc_data: sacc.Sacc) -> str:
+    """Return a hash of the covariance matrix.
+
+    :param sacc_data: The SACC data object containing the covariance matrix.
+    :return: The hash of the covariance matrix.
+    """
+    return hashlib.sha256(sacc_data.covariance.dense).hexdigest()
+
+
 def extract_all_harmonic_data(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
@@ -37,8 +46,6 @@ def extract_all_harmonic_data(
             sacc_data, include_maybe_types=include_maybe_types
         )
     }
-
-    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
 
     result: list[TwoPointMeasurement] = []
     for cell_index in extract_all_harmonic_metadata_indices(
@@ -57,7 +64,7 @@ def extract_all_harmonic_data(
             TwoPointMeasurement(
                 data=Cells,
                 indices=indices,
-                covariance_name=cov_hash,
+                covariance_name=cov_hash(sacc_data),
                 metadata=TwoPointHarmonic(
                     XY=make_two_point_xy(
                         inferred_galaxy_zdists_dict, cell_index["tracer_names"], dt
@@ -105,8 +112,6 @@ def extract_all_real_data(
         )
     }
 
-    cov_hash = hashlib.sha256(sacc_data.covariance.dense).hexdigest()
-
     result: list[TwoPointMeasurement] = []
     for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
         t1, t2 = real_index["tracer_names"]
@@ -120,7 +125,7 @@ def extract_all_real_data(
             TwoPointMeasurement(
                 data=Xis,
                 indices=indices,
-                covariance_name=cov_hash,
+                covariance_name=cov_hash(sacc_data),
                 metadata=TwoPointReal(
                     XY=make_two_point_xy(
                         inferred_galaxy_zdists_dict, real_index["tracer_names"], dt
