@@ -292,9 +292,11 @@ class MappingNumCosmo(GObject.Object):
         z_dist = np.array(d_spline.get_xv().dup_array())
         c_dist = np.array(d_spline.get_yv().dup_array())
 
-        chi = np.flip(c_dist) * hi_cosmo.RH_Mpc()
+        chi = (np.flip(c_dist) * hi_cosmo.RH_Mpc()).astype(np.float64)
         scale_distances = self.mapping.redshift_to_scale_factor(z_dist)
-        h_over_h0 = np.array([hi_cosmo.E(z) for z in reversed(z_dist)])
+        h_over_h0 = np.array(
+            [hi_cosmo.E(z) for z in reversed(z_dist)], dtype=np.float64
+        )
 
         # Too many points in the redshift spline can result in scale factors
         # that are too close together for CCL to handle. This checks for
@@ -686,7 +688,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         data_vector = self.likelihood.get_data_vector()
         assert len(data_vector) == ncols
         self.peek_mean().set_array(  # pylint: disable-msg=no-member
-            data_vector.tolist()
+            data_vector.ravel().tolist()
         )
 
         self.set_init(True)

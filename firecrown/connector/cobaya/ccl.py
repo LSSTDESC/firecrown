@@ -34,9 +34,9 @@ class CCLConnector(Theory):
         assert isinstance(new_mapping, MappingCAMB)
         self.map = new_mapping
 
-        self.a_bg = np.linspace(0.1, 1.0, 50)
-        self.z_bg = 1.0 / self.a_bg - 1.0
-        self.z_Pk = np.arange(0.0, 6.0, 1)
+        self.a_bg = np.linspace(0.1, 1.0, 50, dtype=np.float64)
+        self.z_bg = (1.0 / self.a_bg - 1.0).astype(np.float64)
+        self.z_Pk = np.arange(0.0, 6.0, 1, dtype=np.float64)
         self.Pk_kmax = 1.0
 
     def initialize_with_params(self) -> None:

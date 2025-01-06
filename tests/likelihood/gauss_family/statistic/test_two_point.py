@@ -78,7 +78,7 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
     weights[50:75, 2] = 3.0 / 25.0
     weights[75:100, 3] = 4.0 / 25.0
 
-    data = np.zeros(4) + 1.1
+    data = (np.zeros(4) + 1.1).astype(np.float64)
     indices = np.arange(4)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(
@@ -95,7 +95,7 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
 def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
     """Return some fake harmonic data."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = np.zeros(100) - 1.1
+    data = (np.zeros(100) - 1.1).astype(np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(

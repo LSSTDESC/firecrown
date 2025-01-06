@@ -71,7 +71,7 @@ class ClusterAbundance(Updatable):
 
         sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
-        return dV * sky_area_rad
+        return np.array(dV * sky_area_rad, dtype=np.float64)
 
     def mass_function(
         self,
@@ -82,7 +82,7 @@ class ClusterAbundance(Updatable):
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
 
-        for m, a in zip(mass, scale_factor):
+        for m, a in zip(mass.astype(float), scale_factor.astype(float)):
             val = self._hmf_cache.get((m, a))
             if val is None:
                 val = self.halo_mass_function(self.cosmo, 10**m, a)
