@@ -22,7 +22,7 @@ def test_numcosmo_integrator_integrate():
         a = int_args[:, 0]
         b = int_args[:, 1]
         result = a * b
-        return result
+        return np.atleast_1d(result).astype(np.float64)
 
     integrator.integral_bounds = [(0, 1), (0, 1)]
     integrator.extra_args = np.array([], dtype=np.float64)
@@ -40,7 +40,7 @@ def test_scipy_integrator_integrate():
     ) -> npt.NDArray[np.float64]:
         # xy
         result = a * b
-        return result
+        return np.atleast_1d(result).astype(np.float64)
 
     integrator.integral_bounds = [(0, 1), (0, 1)]
     integrator.extra_args = np.array([], dtype=np.float64)

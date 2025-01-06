@@ -103,7 +103,7 @@ def generate_bin_centers(
             return np.sqrt(edges[1:] * edges[:-1])
         case "lin":
             edges = np.linspace(minimum, maximum, n + 1)
-            return (edges[1:] + edges[:-1]) / 2.0
+            return np.array((edges[1:] + edges[:-1]) / 2.0, dtype=np.float64)
         case _:
             raise ValueError(f"Unrecognized binning: {binning}")
 

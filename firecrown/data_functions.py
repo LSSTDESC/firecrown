@@ -141,7 +141,7 @@ def check_two_point_consistence_harmonic(
                 f"name {harmonic.covariance_name} than the previous "
                 f"TwoPointHarmonic {cov_name}."
             )
-        index_set = set(harmonic.indices)
+        index_set: set[int] = set(harmonic.indices)
         index_set_list.append(index_set)
         if len(index_set) != len(harmonic.indices):
             raise ValueError(
@@ -183,7 +183,7 @@ def check_two_point_consistence_real(
                 f"name {two_point_real.covariance_name} than the previous "
                 f"TwoPointReal {cov_name}."
             )
-        index_set = set(two_point_real.indices)
+        index_set: set[int] = set(two_point_real.indices)
         index_set_list.append(index_set)
         if len(index_set) != len(two_point_real.indices):
             raise ValueError(
