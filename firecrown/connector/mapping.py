@@ -301,7 +301,7 @@ class MappingCosmoSIS(Mapping):
         :param k_h: the array of wavenumber/h to be transformeed
         :return: the transformed array
         """
-        return k_h * self.h
+        return np.array(k_h * self.h, dtype=np.float64)
 
     def transform_p_k_h3_to_p_k(
         self, p_k_h3: npt.NDArray[np.float64]
@@ -311,7 +311,7 @@ class MappingCosmoSIS(Mapping):
         :param p_k_h3: the array of :math:`p_k h^3` to be transformed
         :return: the transformed array
         """
-        return p_k_h3 / (self.h**3)
+        return np.array(p_k_h3 / (self.h**3), dtype=np.float64)
 
     def transform_h_to_h_over_h0(
         self, h: npt.NDArray[np.float64]

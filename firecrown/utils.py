@@ -94,7 +94,7 @@ def save_to_sacc(
     new_sacc = sacc_data.copy()
 
     if strict:
-        if set(indices.tolist()) != set(sacc_data.indices()):
+        if set(indices.ravel().tolist()) != set(sacc_data.indices()):
             raise RuntimeError(
                 "The data to be saved does not cover all the data in the "
                 "sacc object. To write only the calculated predictions, "

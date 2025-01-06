@@ -526,7 +526,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     src_bins_centers = np.linspace(0.25, 0.75, 5)
@@ -593,7 +593,7 @@ def fixture_sacc_galaxy_cwindows():
     """Fixture for a SACC data with window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
     nobs = len(ells) - 5
 
@@ -693,8 +693,8 @@ def fixture_sacc_galaxy_cwindows():
 def fixture_sacc_galaxy_xis():
     """Fixture for a SACC data without window functions."""
 
-    z = np.linspace(0, 1.0, 256) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
     sacc_data = sacc.Sacc()
 
@@ -773,8 +773,8 @@ def fixture_sacc_galaxy_xis():
 def fixture_sacc_galaxy_xis_inverted():
     """Fixture for a SACC data without window functions."""
 
-    z = np.linspace(0, 1.0, 256) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
     sacc_data = sacc.Sacc()
 

@@ -192,7 +192,7 @@ def check_consistence(
                 f"name {measurement.covariance_name} than the previous "
                 f"{type_name} {cov_name}."
             )
-        index_set = set(measurement.indices)
+        index_set: set[int] = set(measurement.indices)
         index_sets.append(index_set)
         if len(index_set) != len(measurement.indices):
             raise ValueError(
