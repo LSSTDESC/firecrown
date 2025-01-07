@@ -7,6 +7,7 @@ be used without an installation of NumCosmo.
 import warnings
 
 import numpy as np
+from typing_extensions import assert_never
 
 from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
 
@@ -41,6 +42,36 @@ def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
     if not isinstance(hiprim, Nc.HIPrimPowerLaw):
         raise ValueError(f"NumCosmo HIPrim object type {type(hiprim)} not supported.")
     return hiprim
+
+
+def get_amplitude_parameters(
+    ccl_factory: CCLFactory,
+    p_ml: None | Nc.PowspecML,
+    hi_cosmo: Nc.HICosmo,
+) -> tuple[float | None, float | None]:
+    """
+    Calculate the amplitude parameters for CCL.
+
+    :param ccl_factory: the CCL factory object
+    :param p_ml: the NumCosmo PowspecML object, or None
+    :param hi_cosmo: the NumCosmo cosmology object
+    :return: a tuple of the amplitude parameters, (A_s, sigma8), with only one set.
+    """
+    A_s: float | None = None
+    sigma8: float | None = None
+
+    # mypy verifies that the match statement below is exhaustive
+    match ccl_factory.amplitude_parameter:
+        case PoweSpecAmplitudeParameter.SIGMA8:
+            if p_ml is None:
+                raise ValueError("PowspecML object must be provided when using sigma8.")
+            sigma8 = p_ml.sigma_tophat_R(hi_cosmo, 1.0e-7, 0.0, 8.0 / hi_cosmo.h())
+        case PoweSpecAmplitudeParameter.AS:
+            A_s = get_hiprim(hi_cosmo).SA_Ampl()
+        case _ as unreachable:
+            assert_never(unreachable)
+    assert A_s is not None or sigma8 is not None
+    return A_s, sigma8
 
 
 class MappingNumCosmo(GObject.Object):
@@ -190,7 +221,6 @@ class MappingNumCosmo(GObject.Object):
             self._p_mnl.prepare_if_needed(hi_cosmo)
         self._dist.prepare_if_needed(hi_cosmo)
 
-        h = hi_cosmo.h()
         Omega_b = hi_cosmo.Omega_b0()
         Omega_c = hi_cosmo.Omega_c0()
         Omega_k = hi_cosmo.Omega_k0()
@@ -212,17 +242,7 @@ class MappingNumCosmo(GObject.Object):
             case _:
                 raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        A_s = None
-        sigma8 = None
-        match ccl_factory.amplitude_parameter:
-            case PoweSpecAmplitudeParameter.SIGMA8:
-                if self._p_ml is None:
-                    raise ValueError(
-                        "PowspecML object must be provided when using sigma8."
-                    )
-                sigma8 = self._p_ml.sigma_tophat_R(hi_cosmo, 1.0e-7, 0.0, 8.0 / h)
-            case PoweSpecAmplitudeParameter.AS:
-                A_s = get_hiprim(hi_cosmo).SA_Ampl()
+        A_s, sigma8 = get_amplitude_parameters(ccl_factory, self._p_ml, hi_cosmo)
 
         assert (A_s is not None) or (sigma8 is not None)
 
@@ -230,7 +250,7 @@ class MappingNumCosmo(GObject.Object):
         self.mapping.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
-            h=h,
+            h=hi_cosmo.h(),
             A_s=A_s,
             sigma8=sigma8,
             n_s=get_hiprim(hi_cosmo).props.n_SA,
