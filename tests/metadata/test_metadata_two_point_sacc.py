@@ -952,6 +952,6 @@ def test_extract_all_data_harmonic_no_cov(sacc_galaxy_cells):
     sacc_data.covariance = None
     with pytest.raises(
         ValueError,
-        match=("The SACC object does not have a covariance matrix."),
+        match=("The SACC object does not have a dense covariance matrix."),
     ):
         _ = extract_all_harmonic_data(sacc_data, include_maybe_types=True)
