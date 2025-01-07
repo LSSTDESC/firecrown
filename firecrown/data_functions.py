@@ -38,7 +38,7 @@ def extract_all_harmonic_data(
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
-        raise ValueError("The SACC object does not have a covariance matrix.")
+        raise ValueError("The SACC object does not have a dense covariance matrix.")
 
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
@@ -103,7 +103,8 @@ def extract_all_real_data(
     include_maybe_types=False,
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
-    # TODO: Should there be a check for the covariance matrix here?
+    if sacc_data.covariance is None or sacc_data.covariance.dense is None:
+        raise ValueError("The SACC object does not have a dense covariance matrix.")
 
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
