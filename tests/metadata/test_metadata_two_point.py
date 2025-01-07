@@ -275,7 +275,7 @@ def test_two_point_cwindow_wrong_data_shape(
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
 
-    data = np.zeros(100) + 1.1
+    data = (np.zeros(100) + 1.1).astype(np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
     data = data.reshape(-1, 10)
@@ -296,7 +296,7 @@ def test_two_point_cwindow_wrong_data_shape(
 
 
 def test_two_point_measurement_invalid_metadata():
-    data = np.zeros(100) + 1.1
+    data = (np.zeros(100) + 1.1).astype(np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
     with pytest.raises(
@@ -376,7 +376,6 @@ def test_two_point_cwindow_invalid_window():
 
 def test_two_point_cwindow_invalid_window_shape():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 4)
 
     x = InferredGalaxyZDist(
         bin_name="bname1",
@@ -393,7 +392,7 @@ def test_two_point_cwindow_invalid_window_shape():
     xy = TwoPointXY(
         x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
     )
-    weights = np.ones(400)
+    weights = np.ones(400, dtype=np.float64)
     with pytest.raises(
         ValueError,
         match="window should be a 2D array.",

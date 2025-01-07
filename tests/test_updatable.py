@@ -58,13 +58,22 @@ class UpdatableWithDerived(Updatable):
         return derived_parameters
 
 
+def test_get_params_names():
+    obj = SimpleUpdatable()
+    found_names = obj.get_params_names()
+    assert set(found_names) == set(["x", "y"])
+
+
 def test_simple_updatable():
     obj = SimpleUpdatable()
     with pytest.deprecated_call():
         expected_params = RequiredParameters(
-            [SamplerParameter(name="x"), SamplerParameter(name="y")]
+            [SamplerParameter(name="y"), SamplerParameter(name="x")]
         )
     assert obj.required_parameters() == expected_params
+    found_names = obj.get_params_names()
+    assert "x" in found_names
+    assert "y" in found_names
     assert obj.x is None
     assert obj.y is None
     assert not obj.is_updated()

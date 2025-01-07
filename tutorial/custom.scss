@@ -12,6 +12,11 @@ $red: #dc1111;
 
 /*-- scss:rules --*/
 
+.cell-output {
+  border: 1px solid #ccc;
+  padding: 0.5em;
+}
+
 .reveal .alert {
   color: $red;
 }

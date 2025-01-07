@@ -530,7 +530,7 @@ def test_extract_all_photoz_bin_combinations_reals(sacc_galaxy_xis):
 
         bin_comb = all_bin_combs[tracer_names_list.index(tracer_names_type)]
         two_point_xis = TwoPointReal(
-            XY=bin_comb, thetas=np.linspace(0.0, 2.0 * np.pi, 20)
+            XY=bin_comb, thetas=np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
         )
         assert two_point_xis.get_sacc_name() == tracer_names_type[1]
 
@@ -579,7 +579,7 @@ def test_make_harmonics(sacc_galaxy_cells):
 
 def test_make_reals(sacc_galaxy_xis):
     sacc_data, _, _ = sacc_galaxy_xis
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
 
@@ -952,6 +952,16 @@ def test_extract_all_data_harmonic_no_cov(sacc_galaxy_cells):
     sacc_data.covariance = None
     with pytest.raises(
         ValueError,
-        match=("The SACC object does not have a covariance matrix."),
+        match=("The SACC object does not have a dense covariance matrix."),
     ):
         _ = extract_all_harmonic_data(sacc_data, include_maybe_types=True)
+
+
+def test_extract_all_data_real_no_cov(sacc_galaxy_xis):
+    sacc_data, _, _ = sacc_galaxy_xis
+    sacc_data.covariance = None
+    with pytest.raises(
+        ValueError,
+        match=("The SACC object does not have a dense covariance matrix."),
+    ):
+        _ = extract_all_real_data(sacc_data, include_maybe_types=True)

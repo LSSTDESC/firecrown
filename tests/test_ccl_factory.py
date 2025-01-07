@@ -71,13 +71,13 @@ def fixture_camb_extra_params(request) -> CAMBExtraParams | None:
     )
 
 
-Z_ARRAY = np.linspace(0.0, 5.0, 100)
-A_ARRAY = 1.0 / (1.0 + np.flip(Z_ARRAY))
-K_ARRAY = np.geomspace(1.0e-5, 10.0, 100)
+Z_ARRAY = np.linspace(0.0, 5.0, 100, dtype=np.float64)
+A_ARRAY = np.array(1.0 / (1.0 + np.flip(Z_ARRAY)), dtype=np.float64)
+K_ARRAY = np.geomspace(1.0e-5, 10.0, 100, dtype=np.float64)
 A_GRID, K_GRID = np.meshgrid(A_ARRAY, K_ARRAY, indexing="ij")
 
-CHI_ARRAY = np.linspace(100.0, 0.0, 100)
-H_OVER_H0_ARRAY = np.linspace(1.0, 100.0, 100)
+CHI_ARRAY = np.linspace(100.0, 0.0, 100, dtype=np.float64)
+H_OVER_H0_ARRAY = np.linspace(1.0, 100.0, 100, dtype=np.float64)
 # Simple power spectrum model for testing
 PK_ARRAY = (
     2.0e-9

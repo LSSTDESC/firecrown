@@ -292,9 +292,11 @@ class MappingNumCosmo(GObject.Object):
         z_dist = np.array(d_spline.get_xv().dup_array())
         c_dist = np.array(d_spline.get_yv().dup_array())
 
-        chi = np.flip(c_dist) * hi_cosmo.RH_Mpc()
+        chi = (np.flip(c_dist) * hi_cosmo.RH_Mpc()).astype(np.float64)
         scale_distances = self.mapping.redshift_to_scale_factor(z_dist)
-        h_over_h0 = np.array([hi_cosmo.E(z) for z in reversed(z_dist)])
+        h_over_h0 = np.array(
+            [hi_cosmo.E(z) for z in reversed(z_dist)], dtype=np.float64
+        )
 
         # Too many points in the redshift spline can result in scale factors
         # that are too close together for CCL to handle. This checks for
@@ -319,6 +321,9 @@ class MappingNumCosmo(GObject.Object):
     def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
         """Create a ParamsMap from a NumCosmo MSet.
 
+        All the models named in model_list must be in the model set `mset`, or a
+        RuntimeError will be raised.
+
         :param model_list: list of model names
         :param mset: the NumCosmo MSet object from which to get the parameters
         :return: a ParamsMap containing the parameters of the models in model_list
@@ -331,8 +336,11 @@ class MappingNumCosmo(GObject.Object):
                     f"Model name {model_ns} was not found in the model set."
                 )
             model = mset.peek(mid)
-            if model is None:
-                raise RuntimeError(f"Model {model_ns} was not found in the model set.")
+            # Since we have already verified that the model name exists in the
+            # model set, if the model is not found we have encountered an
+            # unrecoverable error.
+            assert model is not None
+
             param_names = model.param_names()
             model_dict = {
                 param: model.param_get_by_name(param) for param in param_names
@@ -686,7 +694,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         data_vector = self.likelihood.get_data_vector()
         assert len(data_vector) == ncols
         self.peek_mean().set_array(  # pylint: disable-msg=no-member
-            data_vector.tolist()
+            data_vector.ravel().tolist()
         )
 
         self.set_init(True)

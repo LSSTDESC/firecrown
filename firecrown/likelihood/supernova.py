@@ -68,7 +68,7 @@ class Supernova(Statistic):
             data_type="supernova_distance_mu", tracers=(self.sacc_tracer,)
         )
         z = np.array([dp.get_tag("z") for dp in data_points])
-        self.a = 1.0 / (1.0 + z)
+        self.a = np.array(1.0 / (1.0 + z), dtype=np.float64)
         self.data_vector = DataVector.from_list([dp.value for dp in data_points])
         self.sacc_indices = np.arange(len(self.data_vector))
         super().read(sacc_data)

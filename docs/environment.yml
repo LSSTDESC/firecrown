@@ -19,6 +19,7 @@ dependencies:
     - autoclasstoc
     - cobaya
     - pygobject-stubs
+    - isitgr
   - pyccl>=2.8.0
   - pydantic
   - pytest
