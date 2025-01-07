@@ -6,11 +6,10 @@ from abc import abstractmethod
 from dataclasses import dataclass, replace
 from typing import Sequence, final, Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-
 import numpy as np
 import numpy.typing as npt
 import pyccl
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 # firecrown is needed for backward compatibility; remove support for deprecated
 # directory structure is removed.
@@ -176,7 +175,6 @@ class PTNonLinearBiasSystematic(NumberCountsSystematic):
 
         """
         super().__init__(parameter_prefix=sacc_tracer)
-
         self.b_2 = parameters.register_new_updatable_parameter(
             default_value=PT_NON_LINEAR_BIAS_DEFAULT_B_2
         )

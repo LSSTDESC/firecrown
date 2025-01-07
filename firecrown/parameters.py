@@ -35,7 +35,7 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     return param
 
 
-def _validade_params_map_value(name: str, value: float | list[float]) -> None:
+def _validate_params_map_value(name: str, value: float | list[float]) -> None:
     """Check if the value is a float or a list of floats.
 
     Raises a TypeError if the value is not a float or a list of floats.
@@ -67,7 +67,7 @@ class ParamsMap(dict[str, float]):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         for name, value in self.items():
-            _validade_params_map_value(name, value)
+            _validate_params_map_value(name, value)
 
         self.lower_case: bool = False
 
@@ -104,7 +104,6 @@ class ParamsMap(dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         fullname = parameter_get_full_name(prefix, param)
-
         return self.get_from_full_name(fullname)
 
 
@@ -322,7 +321,6 @@ class SamplerParameter:
 
         This represents a parameter having its value defined by the sampler.
         """
-        self.value: None | float = None
         self._prefix: None | str = prefix
         self._name: None | str = name
         if default_value is not None:
@@ -334,18 +332,6 @@ class SamplerParameter:
                 category=DeprecationWarning,
             )
             self.default_value = None
-
-    def set_value(self, value: float):
-        """Set the value of this parameter.
-
-        :param value: new value
-        """
-        self.value = value
-
-    def get_value(self) -> float:
-        """Get the current value of this parameter."""
-        assert self.value is not None
-        return self.value
 
     def get_default_value(self) -> None | float:
         """Get the default value of this parameter."""
@@ -393,7 +379,6 @@ class SamplerParameter:
         return (
             self.fullname == other.fullname
             and self.default_value == other.default_value
-            and self.value == other.value
             and self._prefix == other._prefix
             and self._name == other._name
         )

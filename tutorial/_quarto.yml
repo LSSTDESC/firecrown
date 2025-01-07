@@ -10,7 +10,9 @@ project:
     - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
     - two_point_factories.qmd
-
+    - systematics.qmd
+execute:
+  freeze: auto  # re-render only when source changes
 website:
   title: "Firecrown Tutorial Documents"
   favicon: green-backed-firecrown.jpg

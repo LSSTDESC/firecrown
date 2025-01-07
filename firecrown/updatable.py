@@ -134,7 +134,6 @@ class Updatable(ABC):
             raise TypeError(
                 "Can only add InternalParameter objects to internal_parameters"
             )
-
         if key in self._internal_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
@@ -181,6 +180,7 @@ class Updatable(ABC):
             return
 
         internal_params = self._internal_parameters.keys() & params.keys()
+
         if internal_params:
             raise TypeError(
                 f"Items of type InternalParameter cannot be modified through "
@@ -254,7 +254,7 @@ class Updatable(ABC):
         :param params: a new set of parameter values
         """
 
-    def _reset(self) -> None:  # pragma: no cover
+    def _reset(self) -> None:
         """Abstract method implemented by all concrete classes to update self.
 
         Concrete classes must override this, resetting themselves.
@@ -263,7 +263,7 @@ class Updatable(ABC):
         """
 
     @final
-    def required_parameters(self) -> RequiredParameters:  # pragma: no cover
+    def required_parameters(self) -> RequiredParameters:
         """Returns all information about parameters required by this object.
 
         This object returned contains the information for all parameters
@@ -279,7 +279,17 @@ class Updatable(ABC):
 
         return sampler_parameters + additional_parameters
 
-    def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
+    @final
+    def get_params_names(self) -> list[str]:
+        """Return the names of the parameters required by this object.
+
+        The order of the returned names is arbitrary.
+
+        :return: a list of parameter names
+        """
+        return list(self.required_parameters().get_params_names())
+
+    def _required_parameters(self) -> RequiredParameters:
         """Return a RequiredParameters object containing the information for this class.
 
         This method can be overridden by subclasses to add
@@ -357,6 +367,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
         """
         super().__init__(iterable)
         self._updated: bool = False
+
         for item in self:
             if not isinstance(item, (Updatable | UpdatableCollection)):
                 raise TypeError(
