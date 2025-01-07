@@ -6,6 +6,14 @@ format: html
 {{< include _functions.qmd >}}
 {{< include _definitions.qmd >}}
 
+::: {.callout-warning}
+## Warning: this tutorial is still under construction.
+
+This tutorial is currently far from complete.
+It lacks required information, and contains some incorrect and out-of-date information.
+:::
+
+
 ## Introduction
 
 In this tutorial we describe the handling of systematic uncertainties in Firecrown.

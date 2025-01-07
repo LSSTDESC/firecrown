@@ -39,8 +39,6 @@ website:
               text: "Two-Point Function Generators"
             - href: two_point_factories.qmd
               text: "Two-Point Function Factories"
-            - href: systematics.qmd
-              text: "Handling Systematic Uncertainties"
         - section: "Firecrown on GitHub"
           contents:
             - text: "Source Code"
