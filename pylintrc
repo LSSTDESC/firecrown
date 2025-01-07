@@ -70,4 +70,3 @@ expected-line-ending-format=LF
 max-positional-arguments=8
 max-args=20
 max-attributes=20
-max-complexity=8
