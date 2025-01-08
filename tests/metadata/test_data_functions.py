@@ -3,7 +3,6 @@ Tests for the module firecrown.data_functions.
 """
 
 from typing import Literal
-import re
 import pytest
 import numpy as np
 
