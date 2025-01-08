@@ -1,6 +1,7 @@
 """Two point statistic support."""
 
 from __future__ import annotations
+import itertools
 import warnings
 from typing import Sequence
 
@@ -49,6 +50,40 @@ import firecrown.metadata_types as mdt
 
 # only supported types are here, anything else will throw
 # a value error
+
+
+def calculate_angular_cl(
+    ells: npt.NDArray[np.int64],
+    pk_name: str,
+    scale0: float,
+    scale1: float,
+    tools: ModelingTools,
+    tracer0: Tracer,
+    tracer1: Tracer,
+):
+    """Calculate the angular mulitpole moments.
+
+    :param ells: The angular wavenumbers at which to compute the power spectrum.
+    :param pk_name: The name of the power spectrum to return.
+    :param scale0: The scale factor for the first tracer.
+    :param scale1: The scale factor for the second tracer.
+    :param tools: The modeling tools to use.
+    :param tracer0: The first tracer to use.
+    :param tracer1: The second tracer to use.
+    :return: The angular mulitpole moments.
+    """
+    pk = calculate_pk(pk_name, tools, tracer0, tracer1)
+    result = (
+        cached_angular_cl(
+            tools.get_ccl_cosmology(),
+            (tracer0.ccl_tracer, tracer1.ccl_tracer),
+            tuple(ells.tolist()),
+            p_of_k_a=pk,
+        )
+        * scale0
+        * scale1
+    )
+    return result
 
 
 # pylint: disable=too-many-public-methods
@@ -647,25 +682,14 @@ class TwoPoint(Statistic):
     ) -> npt.NDArray[np.float64]:
         """Compute the power spectrum for the given ells and tracers."""
         self.theory.cells = {}
-        for tracer0 in tracers0:
-            for tracer1 in tracers1:
-                pk_name = f"{tracer0.field}:{tracer1.field}"
-                tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
-                if tn in self.theory.cells:
-                    # Already computed this combination, skipping
-                    continue
-                pk = calculate_pk(pk_name, tools, tracer0, tracer1)
-
-                self.theory.cells[tn] = (
-                    cached_angular_cl(
-                        tools.get_ccl_cosmology(),
-                        (tracer0.ccl_tracer, tracer1.ccl_tracer),
-                        tuple(ells.ravel().tolist()),
-                        p_of_k_a=pk,
-                    )
-                    * scale0
-                    * scale1
+        for tracer0, tracer1 in itertools.product(tracers0, tracers1):
+            pk_name = f"{tracer0.field}:{tracer1.field}"
+            tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
+            if tn not in self.theory.cells:
+                result = calculate_angular_cl(
+                    ells, pk_name, scale0, scale1, tools, tracer0, tracer1
                 )
+                self.theory.cells[tn] = result
         self.theory.cells[mdt.TRACER_NAMES_TOTAL] = np.array(
             sum(self.theory.cells.values())
         )
