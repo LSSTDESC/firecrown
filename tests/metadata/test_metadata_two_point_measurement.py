@@ -40,7 +40,16 @@ def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
 
 def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 4)
+    weights = np.zeros((100, 4), dtype=np.float64)
+    # Create a window with 4 bins, each containing 25 elements with a weight of 1.0.
+    # The bins are defined as follows:
+    # - Bin 1: Elements 0 to 24
+    # - Bin 2: Elements 25 to 49
+    # - Bin 3: Elements 50 to 74
+    # - Bin 4: Elements 75 to 99
+    rows = np.arange(100)
+    cols = rows // 25
+    weights[rows, cols] = 1.0
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.array(np.zeros(4) + 1.1, dtype=np.float64)
