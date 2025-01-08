@@ -379,7 +379,7 @@ class TwoPointBinFilterCollection(BaseModel):
                 if not self.allow_empty:
                     # If empty results are not allowed, we raise an error
                     raise ValueError(
-                        f"The TwoPointMeasurement {tpm} does not have any elements "
+                        f"The TwoPointMeasurement {tpm.metadata} does not have any elements "
                         f"matching the filter."
                     )
                 # If the filter is empty, we skip this measurement

@@ -3,6 +3,7 @@ Tests for the module firecrown.data_functions.
 """
 
 from typing import Literal
+import re
 import pytest
 import numpy as np
 
@@ -386,6 +387,84 @@ def test_two_point_harmonic_window_bin_filter_collection_call(
         )
 
 
+def test_two_point_harmonic_bin_filter_collection_call_require(
+    filter_merge_mode: Literal["intersection", "union"],
+    harmonic_bin_1: InferredGalaxyZDist,
+) -> None:
+    harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
+        bin_filters=[TwoPointBinFilter(bin_name="bin_2", bin_filter=(5, 60))],
+        filter_merge_mode=filter_merge_mode,
+        require_filter_for_all=True,
+    )
+    harmonic_bins = [
+        TwoPointMeasurement(
+            metadata=TwoPointHarmonic(
+                XY=xy, ells=np.arange(2, 102, dtype=np.int64), window=None
+            ),
+            data=np.linspace(0.0, 1.0, 100, dtype=np.float64),
+            indices=np.arange(100),
+            covariance_name="cov1",
+        )
+        for xy in make_all_photoz_bin_combinations([harmonic_bin_1])
+    ]
+    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+        _ = harmonic_filter_collection_no_empty(harmonic_bins)
+
+
+def test_two_point_harmonic_bin_filter_collection_call_no_empty(
+    filter_merge_mode: Literal["intersection", "union"],
+    harmonic_bin_1: InferredGalaxyZDist,
+) -> None:
+    harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
+        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(1000, 2000))],
+        filter_merge_mode=filter_merge_mode,
+        require_filter_for_all=True,
+    )
+    harmonic_bins = [
+        TwoPointMeasurement(
+            metadata=TwoPointHarmonic(
+                XY=xy, ells=np.arange(2, 102, dtype=np.int64), window=None
+            ),
+            data=np.linspace(0.0, 1.0, 100, dtype=np.float64),
+            indices=np.arange(100),
+            covariance_name="cov1",
+        )
+        for xy in make_all_photoz_bin_combinations([harmonic_bin_1])
+    ]
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointMeasurement .* "
+            "does not have any elements matching the filter."
+        ),
+    ):
+        _ = harmonic_filter_collection_no_empty(harmonic_bins)
+
+
+def test_two_point_harmonic_bin_filter_collection_call_empty(
+    filter_merge_mode: Literal["intersection", "union"],
+    harmonic_bin_1: InferredGalaxyZDist,
+) -> None:
+    harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
+        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(1000, 2000))],
+        filter_merge_mode=filter_merge_mode,
+        allow_empty=True,
+    )
+    harmonic_bins = [
+        TwoPointMeasurement(
+            metadata=TwoPointHarmonic(
+                XY=xy, ells=np.arange(2, 102, dtype=np.int64), window=None
+            ),
+            data=np.linspace(0.0, 1.0, 100, dtype=np.float64),
+            indices=np.arange(100),
+            covariance_name="cov1",
+        )
+        for xy in make_all_photoz_bin_combinations([harmonic_bin_1])
+    ]
+    filtered_harmonic_bins = harmonic_filter_collection_no_empty(harmonic_bins)
+    assert len(filtered_harmonic_bins) == 0
+
+
 def test_two_point_real_bin_filter_collection_call(
     real_filter_collection: TwoPointBinFilterCollection,
     real_bins: list[TwoPointMeasurement],
@@ -414,3 +493,78 @@ def test_two_point_real_bin_filter_collection_call(
         assert np.all(filtered_bin.indices == original_bin.indices[match_elements])
         assert filtered_bin.covariance_name == original_bin.covariance_name
         assert filtered_bin.metadata.XY == original_bin.metadata.XY
+
+
+def test_two_point_real_bin_filter_collection_call_require(
+    filter_merge_mode: Literal["intersection", "union"], real_bin_1: InferredGalaxyZDist
+) -> None:
+    real_filter_collection_no_empty = TwoPointBinFilterCollection(
+        bin_filters=[TwoPointBinFilter(bin_name="bin_2", bin_filter=(0.1, 0.6))],
+        filter_merge_mode=filter_merge_mode,
+        require_filter_for_all=True,
+    )
+    real_bins = [
+        TwoPointMeasurement(
+            metadata=TwoPointReal(
+                XY=xy, thetas=np.linspace(0.0, 0.25 * np.pi, 100, dtype=np.float64)
+            ),
+            data=np.linspace(0.0, 1.0, 100, dtype=np.float64),
+            indices=np.arange(100),
+            covariance_name="cov1",
+        )
+        for xy in make_all_photoz_bin_combinations([real_bin_1])
+    ]
+    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+        _ = real_filter_collection_no_empty(real_bins)
+
+
+def test_two_point_real_bin_filter_collection_call_no_empty(
+    filter_merge_mode: Literal["intersection", "union"], real_bin_1: InferredGalaxyZDist
+) -> None:
+    real_filter_collection_no_empty = TwoPointBinFilterCollection(
+        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(10.1, 10.6))],
+        filter_merge_mode=filter_merge_mode,
+        require_filter_for_all=True,
+    )
+    real_bins = [
+        TwoPointMeasurement(
+            metadata=TwoPointReal(
+                XY=xy, thetas=np.linspace(0.0, 0.25 * np.pi, 100, dtype=np.float64)
+            ),
+            data=np.linspace(0.0, 1.0, 100, dtype=np.float64),
+            indices=np.arange(100),
+            covariance_name="cov1",
+        )
+        for xy in make_all_photoz_bin_combinations([real_bin_1])
+    ]
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointMeasurement .* "
+            "does not have any elements matching the filter."
+        ),
+    ):
+        _ = real_filter_collection_no_empty(real_bins)
+
+
+def test_two_point_real_bin_filter_collection_call_empty(
+    filter_merge_mode: Literal["intersection", "union"], real_bin_1: InferredGalaxyZDist
+) -> None:
+    real_filter_collection_no_empty = TwoPointBinFilterCollection(
+        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(10.1, 10.6))],
+        filter_merge_mode=filter_merge_mode,
+        allow_empty=True,
+    )
+    real_bins = [
+        TwoPointMeasurement(
+            metadata=TwoPointReal(
+                XY=xy, thetas=np.linspace(0.0, 0.25 * np.pi, 100, dtype=np.float64)
+            ),
+            data=np.linspace(0.0, 1.0, 100, dtype=np.float64),
+            indices=np.arange(100),
+            covariance_name="cov1",
+        )
+        for xy in make_all_photoz_bin_combinations([real_bin_1])
+    ]
+    filtered_real_bins = real_filter_collection_no_empty(real_bins)
+    assert len(filtered_real_bins) == 0
