@@ -19,6 +19,7 @@ from firecrown.data_functions import (
     TwoPointBinFilterCollection,
     TwoPointTracerSpec,
     bin_spec_from_metadata,
+    make_interval_from_list,
 )
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
@@ -180,6 +181,25 @@ def test_two_point_bin_filter_construct_invalid_range():
         ValueError, match="Value error, The bin filter should be a valid range."
     ):
         TwoPointBinFilter(spec=bin_spec, interval=(0.5, 0.1))
+
+
+def test_two_point_bin_filter_construct_empty_spec():
+    with pytest.raises(
+        ValueError, match="The bin_spec must contain one or two elements."
+    ):
+        TwoPointBinFilter(spec=[], interval=(0.1, 0.5))
+
+
+def test_two_point_bin_filter_construct_too_many_spec():
+    bin_spec = [
+        TwoPointTracerSpec(name="bin_1", measurement=Galaxies.COUNTS),
+        TwoPointTracerSpec(name="bin_2", measurement=Galaxies.SHEAR_E),
+        TwoPointTracerSpec(name="bin_3", measurement=Galaxies.SHEAR_E),
+    ]
+    with pytest.raises(
+        ValueError, match="The bin_spec must contain one or two elements."
+    ):
+        TwoPointBinFilter(spec=bin_spec, interval=(0.1, 0.5))
 
 
 def test_two_point_bin_filter_collection_construct():
@@ -575,3 +595,28 @@ def test_to_from_yaml_real(real_filter_collection: TwoPointBinFilterCollection) 
         base_model_from_yaml(TwoPointBinFilterCollection, yaml)
         == real_filter_collection
     )
+
+
+def test_make_interval_from_list_tuple() -> None:
+    interval = make_interval_from_list((0.1, 0.5))
+    assert interval == (0.1, 0.5)
+
+
+def test_make_interval_from_list_list() -> None:
+    interval = make_interval_from_list([0.1, 0.5])
+    assert interval == (0.1, 0.5)
+
+
+def test_make_interval_from_list_list_wrong_len() -> None:
+    with pytest.raises(ValueError, match="The list should have two values."):
+        _ = make_interval_from_list([0.1, 0.5, 0.7])
+
+
+def test_make_interval_from_list_list_wrong_element() -> None:
+    with pytest.raises(ValueError, match="The list should have two float values."):
+        _ = make_interval_from_list([0.1, "0.5"])  # type: ignore
+
+
+def test_make_interval_from_list_wrong_type() -> None:
+    with pytest.raises(ValueError, match="The values should be a list or a tuple."):
+        _ = make_interval_from_list({0.1, 0.5})  # type: ignore

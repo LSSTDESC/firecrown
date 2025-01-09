@@ -18,6 +18,22 @@ from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
+from firecrown.metadata_types import Galaxies
+from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+
+
+@pytest.fixture(name="empty_factory")
+def fixture_empty_factory() -> TwoPointFactory:
+    """Return an empty TwoPointFactory object."""
+    return TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factory=WeakLensingFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+        number_counts_factory=NumberCountsFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+    )
 
 
 def test_two_point_factory_dict() -> None:
@@ -340,3 +356,80 @@ def test_build_two_point_likelihood_invalid_likelihood_config(tmp_path: Path) ->
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     with pytest.raises(ValueError, match=".*validation error for TwoPointExperiment.*"):
         _ = build_two_point_likelihood(build_parameters)
+
+
+def test_data_source_with_filter(empty_factory) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=2,
+                        upper=3000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    assert two_point_experiment.make_likelihood() is not None
+
+
+def test_data_source_with_filter_require_filter(empty_factory) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=2,
+                        upper=3000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=True,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_data_source_with_filter_empty(empty_factory) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=20000,
+                        upper=30000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointMeasurement .* does "
+            "not have any elements matching the filter."
+        ),
+    ):
+        _ = two_point_experiment.make_likelihood()

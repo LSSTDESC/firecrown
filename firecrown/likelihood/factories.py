@@ -136,6 +136,30 @@ class TwoPointExperiment(BaseModel):
         tpe.data_source.set_path(file_dir)
         return tpe
 
+    def make_likelihood(self) -> Likelihood:
+        """Create a likelihood object for two-point statistics from a SACC file."""
+        # Load the SACC file
+        sacc_data = self.data_source.get_sacc_data()
+
+        likelihood: None | Likelihood = None
+        match self.two_point_factory.correlation_space:
+            case TwoPointCorrelationSpace.REAL:
+                likelihood = _build_two_point_likelihood_real(
+                    sacc_data,
+                    self.two_point_factory.weak_lensing_factory,
+                    self.two_point_factory.number_counts_factory,
+                    filters=self.data_source.filters,
+                )
+            case TwoPointCorrelationSpace.HARMONIC:
+                likelihood = _build_two_point_likelihood_harmonic(
+                    sacc_data,
+                    self.two_point_factory.weak_lensing_factory,
+                    self.two_point_factory.number_counts_factory,
+                    filters=self.data_source.filters,
+                )
+        assert likelihood is not None
+        return likelihood
+
 
 def build_two_point_likelihood(
     build_parameters: NamedParameters,
@@ -157,22 +181,7 @@ def build_two_point_likelihood(
     exp = TwoPointExperiment.load_from_yaml(likelihood_config_file)
     modeling_tools = ModelingTools(ccl_factory=exp.ccl_factory)
 
-    # Load the SACC file
-    sacc_data = exp.data_source.get_sacc_data()
-
-    match exp.two_point_factory.correlation_space:
-        case TwoPointCorrelationSpace.REAL:
-            likelihood = _build_two_point_likelihood_real(
-                sacc_data,
-                exp.two_point_factory.weak_lensing_factory,
-                exp.two_point_factory.number_counts_factory,
-            )
-        case TwoPointCorrelationSpace.HARMONIC:
-            likelihood = _build_two_point_likelihood_harmonic(
-                sacc_data,
-                exp.two_point_factory.weak_lensing_factory,
-                exp.two_point_factory.number_counts_factory,
-            )
+    likelihood = exp.make_likelihood()
 
     return likelihood, modeling_tools
 
@@ -202,7 +211,6 @@ def _build_two_point_likelihood_harmonic(
         raise ValueError(
             "No two-point measurements in harmonic space found in the SACC file."
         )
-
     check_two_point_consistence_harmonic(tpms)
     if filters is not None:
         tpms = filters(tpms)

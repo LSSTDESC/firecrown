@@ -293,7 +293,7 @@ class TwoPointBinFilter(BaseModel):
         """Check the bin filter."""
         if self.interval[0] >= self.interval[1]:
             raise ValueError("The bin filter should be a valid range.")
-        if 1 > len(self.spec) > 2:
+        if not 1 <= len(self.spec) <= 2:
             raise ValueError("The bin_spec must contain one or two elements.")
         return self
 
