@@ -2,7 +2,7 @@
 Tests for the module firecrown.data_functions.
 """
 
-from typing import Literal
+import itertools as it
 import pytest
 import numpy as np
 
@@ -10,24 +10,25 @@ from firecrown.metadata_types import (
     TwoPointReal,
     TwoPointHarmonic,
     InferredGalaxyZDist,
+    Galaxies,
 )
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.data_types import TwoPointMeasurement
-from firecrown.data_functions import TwoPointBinFilter, TwoPointBinFilterCollection
-
-
-@pytest.fixture(name="filter_merge_mode", params=["intersection", "union"])
-def fixture_filter_merge_mode(request) -> str:
-    """Fixture for the filter merge mode."""
-    return request.param
+from firecrown.data_functions import (
+    TwoPointBinFilter,
+    TwoPointBinFilterCollection,
+    TwoPointTracerSpec,
+    bin_spec_from_metadata,
+)
+from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 
 @pytest.fixture(name="harmonic_bins")
 def fixture_harmonic_bins(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
+    all_harmonic_bins: list[InferredGalaxyZDist],
 ) -> list[TwoPointMeasurement]:
     """Create a list of TwoPointMeasurement with harmonic metadata."""
-    all_xy = make_all_photoz_bin_combinations([harmonic_bin_1, harmonic_bin_2])
+    all_xy = make_all_photoz_bin_combinations(all_harmonic_bins)
     data = np.linspace(0.0, 1.0, 100, dtype=np.float64)
     indices = np.arange(100, dtype=np.int64)
     ells = np.arange(2, 102, dtype=np.int64)
@@ -44,10 +45,10 @@ def fixture_harmonic_bins(
 
 @pytest.fixture(name="harmonic_window_bins")
 def fixture_harmonic_window_bins(
-    harmonic_bin_1: InferredGalaxyZDist, harmonic_bin_2: InferredGalaxyZDist
+    all_harmonic_bins: list[InferredGalaxyZDist],
 ) -> list[TwoPointMeasurement]:
     """Create a list of TwoPointMeasurement with harmonic metadata."""
-    all_xy = make_all_photoz_bin_combinations([harmonic_bin_1, harmonic_bin_2])
+    all_xy = make_all_photoz_bin_combinations(all_harmonic_bins)
     data = np.linspace(0.0, 1.0, 10, dtype=np.float64)
     indices = np.arange(10, dtype=np.int64)
     ells = np.arange(2, 102, dtype=np.int64)
@@ -69,10 +70,10 @@ def fixture_harmonic_window_bins(
 
 @pytest.fixture(name="real_bins")
 def fixture_real_bins(
-    real_bin_1: InferredGalaxyZDist, real_bin_2: InferredGalaxyZDist
+    all_real_bins: list[InferredGalaxyZDist],
 ) -> list[TwoPointMeasurement]:
     """Create a list of TwoPointMeasurement with real metadata."""
-    all_xy = make_all_photoz_bin_combinations([real_bin_1, real_bin_2])
+    all_xy = make_all_photoz_bin_combinations(all_real_bins)
     data = np.linspace(0.0, 1.0, 100, dtype=np.float64)
     indices = np.arange(100, dtype=np.int64)
     thetas = np.linspace(0.0, 0.25 * np.pi, 100, dtype=np.float64)
@@ -87,108 +88,124 @@ def fixture_real_bins(
     ]
 
 
+ALL_HARMONIC_BINS = list(
+    it.combinations_with_replacement(
+        tuple(it.product(("bin_1", "bin_2"), (Galaxies.COUNTS, Galaxies.SHEAR_E))),
+        2,
+    )
+)
+
+
 @pytest.fixture(
     name="harmonic_filter_collection",
     params=[
-        [("bin_1", (5, 60))],
-        [("bin_2", (40, 95))],
-        [("bin_1", (5, 60)), ("bin_2", (40, 95))],
+        elem
+        for ncomb in range(len(ALL_HARMONIC_BINS) - 1, len(ALL_HARMONIC_BINS) + 1)
+        for elem in it.combinations(ALL_HARMONIC_BINS, ncomb)
     ],
 )
-def fixture_harmonic_filter_collection(
-    request, filter_merge_mode: Literal["intersection", "union"]
-) -> TwoPointBinFilterCollection:
+def fixture_harmonic_filter_collection(request) -> TwoPointBinFilterCollection:
     """Create a TwoPointBinFilterCollection with harmonic filters."""
     bin_filters = [
-        TwoPointBinFilter(bin_name=bin_name, bin_filter=bin_filter)
-        for bin_name, bin_filter in request.param
+        TwoPointBinFilter.from_args(name_a, m_a, name_b, m_b, 20, 60)
+        for (name_a, m_a), (name_b, m_b) in request.param
     ]
-    return TwoPointBinFilterCollection(
-        bin_filters=bin_filters, filter_merge_mode=filter_merge_mode
+
+    return TwoPointBinFilterCollection(bin_filters=bin_filters)
+
+
+ALL_REAL_BINS = list(
+    it.combinations_with_replacement(
+        tuple(it.product(("bin_1", "bin_2"), [Galaxies.COUNTS, Galaxies.SHEAR_T])),
+        2,
     )
+)
 
 
 @pytest.fixture(
     name="real_filter_collection",
     params=[
-        [("bin_1", (0.1, 0.6))],
-        [("bin_2", (0.4, 0.9))],
-        [("bin_1", (0.1, 0.6)), ("bin_2", (0.4, 0.9))],
+        elem
+        for ncomb in range(len(ALL_REAL_BINS) - 1, len(ALL_REAL_BINS) + 1)
+        for elem in it.combinations(ALL_REAL_BINS, ncomb)
     ],
 )
-def fixture_real_filter_collection(
-    request, filter_merge_mode: Literal["intersection", "union"]
-) -> TwoPointBinFilterCollection:
+def fixture_real_filter_collection(request) -> TwoPointBinFilterCollection:
     """Create a TwoPointBinFilterCollection with real filters."""
     bin_filters = [
-        TwoPointBinFilter(bin_name=bin_name, bin_filter=bin_filter)
-        for bin_name, bin_filter in request.param
+        TwoPointBinFilter.from_args(name_a, m_a, name_b, m_b, 0.1, 0.5)
+        for (name_a, m_a), (name_b, m_b) in request.param
     ]
-    return TwoPointBinFilterCollection(
-        bin_filters=bin_filters, filter_merge_mode=filter_merge_mode
-    )
+
+    return TwoPointBinFilterCollection(bin_filters=bin_filters)
 
 
 def test_two_point_bin_filter_construct():
-    bin_filter = TwoPointBinFilter(bin_name="bin_1", bin_filter=(0.1, 0.5))
-    assert bin_filter.bin_name == "bin_1"
+    bin_spec = [
+        TwoPointTracerSpec(bin_name="bin_1", bin_measurement=Galaxies.COUNTS),
+        TwoPointTracerSpec(bin_name="bin_2", bin_measurement=Galaxies.SHEAR_E),
+    ]
+    bin_filter = TwoPointBinFilter(bin_spec=bin_spec, bin_filter=(0.1, 0.5))
+    assert bin_filter.bin_spec == bin_spec
     assert bin_filter.bin_filter == (0.1, 0.5)
+
+    bin_filter_from_args = TwoPointBinFilter.from_args(
+        "bin_1", Galaxies.COUNTS, "bin_2", Galaxies.SHEAR_E, 0.1, 0.5
+    )
+
+    assert bin_filter_from_args.bin_spec == bin_spec
+    assert bin_filter_from_args.bin_filter == (0.1, 0.5)
+
+
+def test_two_point_bin_filter_construct_auto():
+    bin_spec = [TwoPointTracerSpec(bin_name="bin_1", bin_measurement=Galaxies.COUNTS)]
+    bin_filter = TwoPointBinFilter(bin_spec=bin_spec, bin_filter=(0.1, 0.5))
+    assert bin_filter.bin_spec == bin_spec
+    assert bin_filter.bin_filter == (0.1, 0.5)
+
+    bin_filter_from_args = TwoPointBinFilter.from_args_auto(
+        "bin_1", Galaxies.COUNTS, 0.1, 0.5
+    )
+
+    assert bin_filter_from_args.bin_spec == bin_spec
+    assert bin_filter_from_args.bin_filter == (0.1, 0.5)
 
 
 def test_two_point_bin_filter_construct_invalid_range():
+    bin_spec = [
+        TwoPointTracerSpec(bin_name="bin_1", bin_measurement=Galaxies.COUNTS),
+        TwoPointTracerSpec(bin_name="bin_2", bin_measurement=Galaxies.SHEAR_E),
+    ]
     with pytest.raises(
         ValueError, match="Value error, The bin filter should be a valid range."
     ):
-        TwoPointBinFilter(bin_name="bin_2", bin_filter=(0.5, 0.1))
+        TwoPointBinFilter(bin_spec=bin_spec, bin_filter=(0.5, 0.1))
 
 
-def test_two_point_bin_filter_collection_construct(filter_merge_mode):
-    bin_filter_1 = TwoPointBinFilter(bin_name="bin_1", bin_filter=(0.1, 0.5))
-    bin_filter_2 = TwoPointBinFilter(bin_name="bin_2", bin_filter=(0.5, 0.9))
-    bin_filter_collection = TwoPointBinFilterCollection(
-        bin_filters=[bin_filter_1, bin_filter_2],
-        filter_merge_mode=filter_merge_mode,
+def test_two_point_bin_filter_collection_construct():
+    bin_spec = (
+        TwoPointTracerSpec(bin_name="bin_1", bin_measurement=Galaxies.COUNTS),
+        TwoPointTracerSpec(bin_name="bin_2", bin_measurement=Galaxies.SHEAR_E),
     )
-    assert bin_filter_collection.bin_filters == [bin_filter_1, bin_filter_2]
-    assert bin_filter_collection.bin_filter_dict == {
-        "bin_1": (0.1, 0.5),
-        "bin_2": (0.5, 0.9),
-    }
-
-
-def test_two_point_bin_filter_collection_run_merge_filter(
-    filter_merge_mode: Literal["intersection", "union"]
-) -> None:
-    bin_filter_1 = TwoPointBinFilter(bin_name="bin_1", bin_filter=(0.1, 0.5))
-    bin_filter_2 = TwoPointBinFilter(bin_name="bin_2", bin_filter=(0.5, 0.9))
-    bin_filter_collection = TwoPointBinFilterCollection(
-        bin_filters=[bin_filter_1, bin_filter_2],
-        filter_merge_mode=filter_merge_mode,
+    bin_filter = TwoPointBinFilter.from_args(
+        "bin_1", Galaxies.COUNTS, "bin_2", Galaxies.SHEAR_E, 0.1, 0.5
     )
-
-    vals = np.linspace(0, 1, 100, dtype=np.float64)
-    match_elements = bin_filter_collection.run_merge_filter(
-        (0.3, 0.9), (0.1, 0.6), vals
-    )
-    assert len(match_elements) == 100
-    if filter_merge_mode == "intersection":
-        assert np.all(match_elements == (vals >= 0.3) & (vals <= 0.6))
-    elif filter_merge_mode == "union":
-        assert np.all(match_elements == (vals >= 0.1) & (vals <= 0.9))
+    bin_filter_collection = TwoPointBinFilterCollection(bin_filters=[bin_filter])
+    assert bin_filter_collection.bin_filters == [bin_filter]
+    assert bin_filter_collection.bin_filter_dict == {frozenset(bin_spec): (0.1, 0.5)}
 
 
-def test_two_point_bin_filter_collection_construct_same_name(
-    filter_merge_mode: Literal["intersection", "union"],
-) -> None:
-    bin_filter_1 = TwoPointBinFilter(bin_name="bin_1", bin_filter=(0.1, 0.5))
-    bin_filter_2 = TwoPointBinFilter(bin_name="bin_1", bin_filter=(0.5, 0.9))
+def test_two_point_bin_filter_collection_construct_same_name() -> None:
+    bin_spec = [
+        TwoPointTracerSpec(bin_name="bin_1", bin_measurement=Galaxies.COUNTS),
+        TwoPointTracerSpec(bin_name="bin_2", bin_measurement=Galaxies.SHEAR_E),
+    ]
+    bin_filter_1 = TwoPointBinFilter(bin_spec=bin_spec, bin_filter=(0.1, 0.5))
+    bin_filter_2 = TwoPointBinFilter(bin_spec=bin_spec, bin_filter=(0.5, 0.9))
     with pytest.raises(
-        ValueError, match="The bin name bin_1 is repeated in the bin filters."
+        ValueError, match="The bin name .* is repeated in the bin filters."
     ):
-        TwoPointBinFilterCollection(
-            bin_filters=[bin_filter_1, bin_filter_2],
-            filter_merge_mode=filter_merge_mode,
-        )
+        TwoPointBinFilterCollection(bin_filters=[bin_filter_1, bin_filter_2])
 
 
 def test_two_point_harmonic_bin_filter_collection_filter_match(
@@ -196,16 +213,12 @@ def test_two_point_harmonic_bin_filter_collection_filter_match(
     harmonic_bins: list[TwoPointMeasurement],
 ) -> None:
     for harmonic_bin in harmonic_bins:
-        name_x = harmonic_bin.metadata.XY.x.bin_name
-        name_y = harmonic_bin.metadata.XY.y.bin_name
+        bin_spec = bin_spec_from_metadata(harmonic_bin.metadata)
 
         if harmonic_filter_collection.filter_match(harmonic_bin):
-            assert name_x in harmonic_filter_collection.bin_filter_dict
-            assert name_y in harmonic_filter_collection.bin_filter_dict
+            assert bin_spec in harmonic_filter_collection.bin_filter_dict
         else:
-            assert (name_x not in harmonic_filter_collection.bin_filter_dict) or (
-                name_y not in harmonic_filter_collection.bin_filter_dict
-            )
+            assert bin_spec not in harmonic_filter_collection.bin_filter_dict
 
 
 def test_two_point_real_bin_filter_collection_filter_match(
@@ -213,16 +226,12 @@ def test_two_point_real_bin_filter_collection_filter_match(
     real_bins: list[TwoPointMeasurement],
 ) -> None:
     for harmonic_bin in real_bins:
-        name_x = harmonic_bin.metadata.XY.x.bin_name
-        name_y = harmonic_bin.metadata.XY.y.bin_name
+        bin_spec = bin_spec_from_metadata(harmonic_bin.metadata)
 
         if real_filter_collection.filter_match(harmonic_bin):
-            assert name_x in real_filter_collection.bin_filter_dict
-            assert name_y in real_filter_collection.bin_filter_dict
+            assert bin_spec in real_filter_collection.bin_filter_dict
         else:
-            assert (name_x not in real_filter_collection.bin_filter_dict) or (
-                name_y not in real_filter_collection.bin_filter_dict
-            )
+            assert bin_spec not in real_filter_collection.bin_filter_dict
 
 
 def test_two_point_harmonic_bin_filter_collection_apply_filter_single(
@@ -236,13 +245,9 @@ def test_two_point_harmonic_bin_filter_collection_apply_filter_single(
         match_elements, match_obs = harmonic_filter_collection.apply_filter_single(
             harmonic_bin
         )
-        match_ells = harmonic_filter_collection.run_merge_filter(
-            harmonic_filter_collection.bin_filter_dict[
-                harmonic_bin.metadata.XY.x.bin_name
-            ],
-            harmonic_filter_collection.bin_filter_dict[
-                harmonic_bin.metadata.XY.y.bin_name
-            ],
+        bin_spec = bin_spec_from_metadata(harmonic_bin.metadata)
+        match_ells = harmonic_filter_collection.run_bin_filter(
+            harmonic_filter_collection.bin_filter_dict[bin_spec],
             harmonic_bin.metadata.ells,
         )
         assert np.all(match_elements == match_obs)
@@ -260,13 +265,9 @@ def test_two_point_harmonic_window_bin_filter_collection_apply_filter_single(
         match_elements, match_obs = harmonic_filter_collection.apply_filter_single(
             harmonic_bin
         )
-        match_ells = harmonic_filter_collection.run_merge_filter(
-            harmonic_filter_collection.bin_filter_dict[
-                harmonic_bin.metadata.XY.x.bin_name
-            ],
-            harmonic_filter_collection.bin_filter_dict[
-                harmonic_bin.metadata.XY.y.bin_name
-            ],
+        bin_spec = bin_spec_from_metadata(harmonic_bin.metadata)
+        match_ells = harmonic_filter_collection.run_bin_filter(
+            harmonic_filter_collection.bin_filter_dict[bin_spec],
             harmonic_bin.metadata.ells,
         )
         assert np.all(match_elements == match_ells)
@@ -290,16 +291,12 @@ def test_two_point_real_bin_filter_collection_apply_filter_single(
         if not real_filter_collection.filter_match(harmonic_bin):
             continue
         match_elements = real_filter_collection.apply_filter_single(harmonic_bin)
+        bin_spec = bin_spec_from_metadata(harmonic_bin.metadata)
         assert isinstance(harmonic_bin.metadata, TwoPointReal)
         assert np.all(
             match_elements
-            == real_filter_collection.run_merge_filter(
-                real_filter_collection.bin_filter_dict[
-                    harmonic_bin.metadata.XY.x.bin_name
-                ],
-                real_filter_collection.bin_filter_dict[
-                    harmonic_bin.metadata.XY.y.bin_name
-                ],
+            == real_filter_collection.run_bin_filter(
+                real_filter_collection.bin_filter_dict[bin_spec],
                 harmonic_bin.metadata.thetas,
             )
         )
@@ -311,29 +308,20 @@ def test_two_point_harmonic_bin_filter_collection_call(
 ) -> None:
     filtered_bins = harmonic_filter_collection(harmonic_bins)
     assert len(filtered_bins) <= len(harmonic_bins)
-    tracer_names_dict = {
-        bin.metadata.XY.get_tracer_names(): bin for bin in harmonic_bins
+    bin_spec_dict = {bin_spec_from_metadata(bin.metadata): bin for bin in harmonic_bins}
+    filtered_bin_spec_dict = {
+        bin_spec_from_metadata(bin.metadata): bin for bin in filtered_bins
     }
-    filtered_tracer_names_dict = {
-        bin.metadata.XY.get_tracer_names(): bin for bin in filtered_bins
-    }
-    # All filtered tracer names should be in the original tracer names list
-    assert all(
-        filtered_tracer_names in tracer_names_dict
-        for filtered_tracer_names in filtered_tracer_names_dict
-    )
+    # All filtered bin_spec should be in the original bin_specs list
+    assert all(bin_spec in bin_spec_dict for bin_spec in filtered_bin_spec_dict)
 
-    for filtered_tracer_names, filtered_bin in filtered_tracer_names_dict.items():
-        original_bin = tracer_names_dict[filtered_tracer_names]
+    for filtered_bin_spec, filtered_bin in filtered_bin_spec_dict.items():
+        original_bin = bin_spec_dict[filtered_bin_spec]
         assert isinstance(filtered_bin.metadata, TwoPointHarmonic)
         assert isinstance(original_bin.metadata, TwoPointHarmonic)
-        match_elements = harmonic_filter_collection.run_merge_filter(
-            harmonic_filter_collection.bin_filter_dict[
-                original_bin.metadata.XY.x.bin_name
-            ],
-            harmonic_filter_collection.bin_filter_dict[
-                original_bin.metadata.XY.y.bin_name
-            ],
+        bin_spec = bin_spec_from_metadata(original_bin.metadata)
+        match_elements = harmonic_filter_collection.run_bin_filter(
+            harmonic_filter_collection.bin_filter_dict[bin_spec],
             original_bin.metadata.ells,
         )
         assert np.all(
@@ -352,20 +340,22 @@ def test_two_point_harmonic_window_bin_filter_collection_call(
 ) -> None:
     filtered_bins = harmonic_filter_collection(harmonic_window_bins)
     assert len(filtered_bins) <= len(harmonic_window_bins)
-    tracer_names_dict = {
-        bin.metadata.XY.get_tracer_names(): bin for bin in harmonic_window_bins
+    bin_specs_dict = {
+        bin_spec_from_metadata(bin.metadata): bin for bin in harmonic_window_bins
     }
-    filtered_tracer_names_dict = {
-        bin.metadata.XY.get_tracer_names(): bin for bin in filtered_bins
+    filtered_bin_specs_dict = {
+        bin_spec_from_metadata(bin.metadata): bin for bin in filtered_bins
     }
     # All filtered tracer names should be in the original tracer names list
     assert all(
-        filtered_tracer_names in tracer_names_dict
-        for filtered_tracer_names in filtered_tracer_names_dict
+        filtered_bin_specs in bin_specs_dict
+        for filtered_bin_specs in filtered_bin_specs_dict
     )
 
-    for filtered_tracer_names, filtered_bin in filtered_tracer_names_dict.items():
-        original_bin = tracer_names_dict[filtered_tracer_names]
+    for filtered_bin_specs, filtered_bin in filtered_bin_specs_dict.items():
+        if not harmonic_filter_collection.filter_match(filtered_bin):
+            continue
+        original_bin = bin_specs_dict[filtered_bin_specs]
         assert isinstance(filtered_bin.metadata, TwoPointHarmonic)
         assert isinstance(original_bin.metadata, TwoPointHarmonic)
         match_elements, match_obs = harmonic_filter_collection.apply_filter_single(
@@ -387,12 +377,14 @@ def test_two_point_harmonic_window_bin_filter_collection_call(
 
 
 def test_two_point_harmonic_bin_filter_collection_call_require(
-    filter_merge_mode: Literal["intersection", "union"],
     harmonic_bin_1: InferredGalaxyZDist,
 ) -> None:
     harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
-        bin_filters=[TwoPointBinFilter(bin_name="bin_2", bin_filter=(5, 60))],
-        filter_merge_mode=filter_merge_mode,
+        bin_filters=[
+            TwoPointBinFilter.from_args(
+                "bin_2", Galaxies.SHEAR_E, "bin_2", Galaxies.SHEAR_E, 5, 60
+            )
+        ],
         require_filter_for_all=True,
     )
     harmonic_bins = [
@@ -411,12 +403,11 @@ def test_two_point_harmonic_bin_filter_collection_call_require(
 
 
 def test_two_point_harmonic_bin_filter_collection_call_no_empty(
-    filter_merge_mode: Literal["intersection", "union"],
     harmonic_bin_1: InferredGalaxyZDist,
 ) -> None:
+    cm = list(harmonic_bin_1.measurements)[0]
     harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
-        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(1000, 2000))],
-        filter_merge_mode=filter_merge_mode,
+        bin_filters=[TwoPointBinFilter.from_args("bin_1", cm, "bin_1", cm, 1000, 2000)],
         require_filter_for_all=True,
     )
     harmonic_bins = [
@@ -441,12 +432,11 @@ def test_two_point_harmonic_bin_filter_collection_call_no_empty(
 
 
 def test_two_point_harmonic_bin_filter_collection_call_empty(
-    filter_merge_mode: Literal["intersection", "union"],
     harmonic_bin_1: InferredGalaxyZDist,
 ) -> None:
+    cm = list(harmonic_bin_1.measurements)[0]
     harmonic_filter_collection_no_empty = TwoPointBinFilterCollection(
-        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(1000, 2000))],
-        filter_merge_mode=filter_merge_mode,
+        bin_filters=[TwoPointBinFilter.from_args("bin_1", cm, "bin_1", cm, 1000, 2000)],
         allow_empty=True,
     )
     harmonic_bins = [
@@ -470,18 +460,18 @@ def test_two_point_real_bin_filter_collection_call(
 ) -> None:
     filtered_bins = real_filter_collection(real_bins)
     assert len(filtered_bins) <= len(real_bins)
-    tracer_names_dict = {bin.metadata.XY.get_tracer_names(): bin for bin in real_bins}
-    filtered_tracer_names_dict = {
-        bin.metadata.XY.get_tracer_names(): bin for bin in filtered_bins
+    bin_specs_dict = {bin_spec_from_metadata(bin.metadata): bin for bin in real_bins}
+    filtered_bin_specs_dict = {
+        bin_spec_from_metadata(bin.metadata): bin for bin in filtered_bins
     }
     # All filtered tracer names should be in the original tracer names list
     assert all(
-        filtered_tracer_names in tracer_names_dict
-        for filtered_tracer_names in filtered_tracer_names_dict
+        filtered_bin_specs in bin_specs_dict
+        for filtered_bin_specs in filtered_bin_specs_dict
     )
 
-    for filtered_tracer_names, filtered_bin in filtered_tracer_names_dict.items():
-        original_bin = tracer_names_dict[filtered_tracer_names]
+    for filtered_bin_specs, filtered_bin in filtered_bin_specs_dict.items():
+        original_bin = bin_specs_dict[filtered_bin_specs]
         assert isinstance(filtered_bin.metadata, TwoPointReal)
         assert isinstance(original_bin.metadata, TwoPointReal)
         match_elements, _ = real_filter_collection.apply_filter_single(original_bin)
@@ -495,11 +485,11 @@ def test_two_point_real_bin_filter_collection_call(
 
 
 def test_two_point_real_bin_filter_collection_call_require(
-    filter_merge_mode: Literal["intersection", "union"], real_bin_1: InferredGalaxyZDist
+    real_bin_1: InferredGalaxyZDist,
 ) -> None:
+    cm = list(real_bin_1.measurements)[0]
     real_filter_collection_no_empty = TwoPointBinFilterCollection(
-        bin_filters=[TwoPointBinFilter(bin_name="bin_2", bin_filter=(0.1, 0.6))],
-        filter_merge_mode=filter_merge_mode,
+        bin_filters=[TwoPointBinFilter.from_args("bin_2", cm, "bin_2", cm, 0.1, 0.6)],
         require_filter_for_all=True,
     )
     real_bins = [
@@ -518,11 +508,11 @@ def test_two_point_real_bin_filter_collection_call_require(
 
 
 def test_two_point_real_bin_filter_collection_call_no_empty(
-    filter_merge_mode: Literal["intersection", "union"], real_bin_1: InferredGalaxyZDist
+    real_bin_1: InferredGalaxyZDist,
 ) -> None:
+    cm = list(real_bin_1.measurements)[0]
     real_filter_collection_no_empty = TwoPointBinFilterCollection(
-        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(10.1, 10.6))],
-        filter_merge_mode=filter_merge_mode,
+        bin_filters=[TwoPointBinFilter.from_args("bin_1", cm, "bin_1", cm, 10.1, 10.6)],
         require_filter_for_all=True,
     )
     real_bins = [
@@ -547,11 +537,11 @@ def test_two_point_real_bin_filter_collection_call_no_empty(
 
 
 def test_two_point_real_bin_filter_collection_call_empty(
-    filter_merge_mode: Literal["intersection", "union"], real_bin_1: InferredGalaxyZDist
+    real_bin_1: InferredGalaxyZDist,
 ) -> None:
+    cm = list(real_bin_1.measurements)[0]
     real_filter_collection_no_empty = TwoPointBinFilterCollection(
-        bin_filters=[TwoPointBinFilter(bin_name="bin_1", bin_filter=(10.1, 10.6))],
-        filter_merge_mode=filter_merge_mode,
+        bin_filters=[TwoPointBinFilter.from_args("bin_1", cm, "bin_1", cm, 10.1, 10.6)],
         allow_empty=True,
     )
     real_bins = [
@@ -567,3 +557,21 @@ def test_two_point_real_bin_filter_collection_call_empty(
     ]
     filtered_real_bins = real_filter_collection_no_empty(real_bins)
     assert len(filtered_real_bins) == 0
+
+
+def test_to_from_yaml_harmonic(
+    harmonic_filter_collection: TwoPointBinFilterCollection,
+) -> None:
+    yaml = base_model_to_yaml(harmonic_filter_collection)
+    assert (
+        base_model_from_yaml(TwoPointBinFilterCollection, yaml)
+        == harmonic_filter_collection
+    )
+
+
+def test_to_from_yaml_real(real_filter_collection: TwoPointBinFilterCollection) -> None:
+    yaml = base_model_to_yaml(real_filter_collection)
+    assert (
+        base_model_from_yaml(TwoPointBinFilterCollection, yaml)
+        == real_filter_collection
+    )

@@ -4,16 +4,25 @@ It contains functions to manipulate two-point data objects.
 """
 
 import hashlib
-from typing import Callable, Sequence, Literal
+from typing import Callable, Sequence, Annotated
 
 import sacc
-from pydantic import BaseModel, Field, model_validator, ConfigDict, PrivateAttr
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    model_validator,
+    PrivateAttr,
+    field_serializer,
+)
 import numpy as np
 import numpy.typing as npt
 
 from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointReal,
+    Measurement,
 )
 from firecrown.metadata_functions import (
     extract_all_tracers_inferred_galaxy_zdists,
@@ -21,6 +30,8 @@ from firecrown.metadata_functions import (
     extract_all_harmonic_metadata_indices,
     extract_all_real_metadata_indices,
     make_two_point_xy,
+    make_measurement,
+    make_measurement_dict,
 )
 from firecrown.data_types import TwoPointMeasurement
 
@@ -224,24 +235,131 @@ def check_two_point_consistence_real(
     check_consistence(two_point_reals, lambda m: m.is_real(), "TwoPointReal")
 
 
+class TwoPointTracerSpec(BaseModel):
+    """Class defining a tracer bin specification."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    bin_name: Annotated[str, Field(description="The name of the tracer bin.")]
+    bin_measurement: Annotated[
+        Measurement,
+        Field(description="The measurement of the tracer bin."),
+        BeforeValidator(make_measurement),
+    ]
+
+    @field_serializer("bin_measurement")
+    @classmethod
+    def serialize_bin_measurement(cls, value: Measurement) -> dict[str, str]:
+        """Serialize the Measurement."""
+        return make_measurement_dict(value)
+
+
+def make_interval_from_list(
+    values: list[float] | tuple[float, float]
+) -> tuple[float, float]:
+    """Create an interval from a list of values."""
+    if isinstance(values, list):
+        if len(values) != 2:
+            raise ValueError("The list should have two values.")
+        if not all(isinstance(v, float) for v in values):
+            raise ValueError("The list should have two float values.")
+
+        return (values[0], values[1])
+    if isinstance(values, tuple):
+        return values
+
+    raise ValueError("The values should be a list or a tuple.")
+
+
 class TwoPointBinFilter(BaseModel):
     """Class defining a filter for a bin."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    bin_name: str = Field(
-        description="The name of the bin to filter.",
-    )
-    bin_filter: tuple[float, float] = Field(
-        description="The range of the bin to filter.",
-    )
+    bin_spec: Annotated[
+        list[TwoPointTracerSpec],
+        Field(
+            description="The two-point bin specification.",
+        ),
+    ]
+    bin_filter: Annotated[
+        tuple[float, float],
+        BeforeValidator(make_interval_from_list),
+        Field(description="The range of the bin to filter."),
+    ]
 
     @model_validator(mode="after")
     def check_bin_filter(self) -> "TwoPointBinFilter":
         """Check the bin filter."""
         if self.bin_filter[0] >= self.bin_filter[1]:
             raise ValueError("The bin filter should be a valid range.")
+        if 1 > len(self.bin_spec) > 2:
+            raise ValueError("The bin_spec must contain one or two elements.")
         return self
+
+    @field_serializer("bin_filter")
+    @classmethod
+    def serialize_bin_filter(cls, value: tuple[float, float]) -> list[float]:
+        """Serialize the Measurement."""
+        return list(value)
+
+    @classmethod
+    def from_args(
+        cls,
+        bin_name1: str,
+        bin_measurement1: Measurement,
+        bin_name2: str,
+        bin_measurement2: Measurement,
+        bin_lower: float,
+        bin_upper: float,
+    ) -> "TwoPointBinFilter":
+        """Create a TwoPointBinFilter from the arguments."""
+        return cls(
+            bin_spec=[
+                TwoPointTracerSpec(
+                    bin_name=bin_name1, bin_measurement=bin_measurement1
+                ),
+                TwoPointTracerSpec(
+                    bin_name=bin_name2, bin_measurement=bin_measurement2
+                ),
+            ],
+            bin_filter=(bin_lower, bin_upper),
+        )
+
+    @classmethod
+    def from_args_auto(
+        cls,
+        bin_name: str,
+        bin_measurement: Measurement,
+        bin_lower: float,
+        bin_upper: float,
+    ) -> "TwoPointBinFilter":
+        """Create a TwoPointBinFilter from the arguments."""
+        return cls(
+            bin_spec=[
+                TwoPointTracerSpec(bin_name=bin_name, bin_measurement=bin_measurement),
+            ],
+            bin_filter=(bin_lower, bin_upper),
+        )
+
+
+BinSpec = frozenset[TwoPointTracerSpec]
+
+
+def bin_spec_from_metadata(metadata: TwoPointReal | TwoPointHarmonic) -> BinSpec:
+    """Return the bin spec from the metadata."""
+    return frozenset(
+        (
+            TwoPointTracerSpec(
+                bin_name=metadata.XY.x.bin_name,
+                bin_measurement=metadata.XY.x_measurement,
+            ),
+            TwoPointTracerSpec(
+                bin_name=metadata.XY.y.bin_name,
+                bin_measurement=metadata.XY.y_measurement,
+            ),
+        )
+    )
 
 
 class TwoPointBinFilterCollection(BaseModel):
@@ -256,9 +374,6 @@ class TwoPointBinFilterCollection(BaseModel):
         default=False,
         description="If True, all bins should have a filter.",
     )
-    filter_merge_mode: Literal["union", "intersection"] = Field(
-        description="The mode to merge the filters.",
-    )
     allow_empty: bool = Field(
         default=False,
         description=(
@@ -267,77 +382,61 @@ class TwoPointBinFilterCollection(BaseModel):
         ),
     )
 
-    _bin_filter_dict: dict[str, tuple[float, float]] = PrivateAttr()
+    _bin_filter_dict: dict[BinSpec, tuple[float, float]] = PrivateAttr()
 
     @model_validator(mode="after")
     def check_bin_filters(self) -> "TwoPointBinFilterCollection":
         """Check the bin filters."""
-        bin_names = set()
+        bin_specs = set()
         for bin_filter in self.bin_filters:
-            if bin_filter.bin_name in bin_names:
+            bin_spec = frozenset(bin_filter.bin_spec)
+            if bin_spec in bin_specs:
                 raise ValueError(
-                    f"The bin name {bin_filter.bin_name} is repeated "
+                    f"The bin name {bin_filter.bin_spec} is repeated "
                     f"in the bin filters."
                 )
-            bin_names.add(bin_filter.bin_name)
+            bin_specs.add(bin_spec)
 
         self._bin_filter_dict = {
-            bin_filter.bin_name: bin_filter.bin_filter
+            frozenset(bin_filter.bin_spec): bin_filter.bin_filter
             for bin_filter in self.bin_filters
         }
         return self
 
     @property
-    def bin_filter_dict(self) -> dict[str, tuple[float, float]]:
+    def bin_filter_dict(self) -> dict[BinSpec, tuple[float, float]]:
         """Return the bin filter dictionary."""
         return self._bin_filter_dict
 
     def filter_match(self, tpm: TwoPointMeasurement) -> bool:
         """Check if the TwoPointMeasurement matches the filter."""
-        if tpm.metadata.XY.x.bin_name not in self._bin_filter_dict:
-            return False
-        if tpm.metadata.XY.y.bin_name not in self._bin_filter_dict:
+        bin_spec_key = bin_spec_from_metadata(tpm.metadata)
+        if bin_spec_key not in self._bin_filter_dict:
             return False
         return True
 
-    def run_merge_filter(
+    def run_bin_filter(
         self,
-        filter_x: tuple[float, float],
-        filter_y: tuple[float, float],
+        bin_filter: tuple[float, float],
         vals: npt.NDArray[np.float64] | npt.NDArray[np.int64],
     ) -> npt.NDArray[np.bool_]:
         """Run the filter merge."""
-        match self.filter_merge_mode:
-            case "union":
-                match_elements = (vals >= filter_x[0]) & (vals <= filter_x[1]) | (
-                    vals >= filter_y[0]
-                ) & (vals <= filter_y[1])
-
-            case "intersection":
-                match_elements = (
-                    (vals >= filter_x[0])
-                    & (vals <= filter_x[1])
-                    & (vals >= filter_y[0])
-                    & (vals <= filter_y[1])
-                )
-        return match_elements
+        return (vals >= bin_filter[0]) & (vals <= bin_filter[1])
 
     def apply_filter_single(
         self, tpm: TwoPointMeasurement
     ) -> tuple[npt.NDArray[np.bool_], npt.NDArray[np.bool_]]:
         """Apply the filter to a single TwoPointMeasurement."""
         assert self.filter_match(tpm)
-        filter_x = self._bin_filter_dict[tpm.metadata.XY.x.bin_name]
-        filter_y = self._bin_filter_dict[tpm.metadata.XY.y.bin_name]
+        bin_spec_key = bin_spec_from_metadata(tpm.metadata)
+        bin_filter = self._bin_filter_dict[bin_spec_key]
         if tpm.is_real():
             assert isinstance(tpm.metadata, TwoPointReal)
-            match_elements = self.run_merge_filter(
-                filter_x, filter_y, tpm.metadata.thetas
-            )
+            match_elements = self.run_bin_filter(bin_filter, tpm.metadata.thetas)
             return match_elements, match_elements
 
         assert isinstance(tpm.metadata, TwoPointHarmonic)
-        match_elements = self.run_merge_filter(filter_x, filter_y, tpm.metadata.ells)
+        match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
         match_obs = match_elements
         if tpm.metadata.window is not None:
             # The window function is represented by a matrix where each column

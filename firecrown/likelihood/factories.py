@@ -33,6 +33,7 @@ from firecrown.data_functions import (
     extract_all_harmonic_data,
     check_two_point_consistence_real,
     check_two_point_consistence_harmonic,
+    TwoPointBinFilterCollection,
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
@@ -85,6 +86,7 @@ class DataSourceSacc(BaseModel):
     """Model for the data source in a likelihood configuration."""
 
     sacc_data_file: str
+    filters: TwoPointBinFilterCollection | None = None
     _path: Path | None = None
 
     def set_path(self, path: Path) -> None:
@@ -179,6 +181,7 @@ def _build_two_point_likelihood_harmonic(
     sacc_data: sacc.Sacc,
     wl_factory: WeakLensingFactory,
     nc_factory: NumberCountsFactory,
+    filters: TwoPointBinFilterCollection | None = None,
 ):
     """
     Build a likelihood object for two-point statistics in harmonic space.
@@ -201,6 +204,8 @@ def _build_two_point_likelihood_harmonic(
         )
 
     check_two_point_consistence_harmonic(tpms)
+    if filters is not None:
+        tpms = filters(tpms)
 
     two_points = TwoPoint.from_measurement(
         tpms, wl_factory=wl_factory, nc_factory=nc_factory
@@ -215,6 +220,7 @@ def _build_two_point_likelihood_real(
     sacc_data: sacc.Sacc,
     wl_factory: WeakLensingFactory,
     nc_factory: NumberCountsFactory,
+    filters: TwoPointBinFilterCollection | None = None,
 ):
     """
     Build a likelihood object for two-point statistics in real space.
@@ -236,6 +242,8 @@ def _build_two_point_likelihood_real(
             "No two-point measurements in real space found in the SACC file."
         )
     check_two_point_consistence_real(tpms)
+    if filters is not None:
+        tpms = filters(tpms)
 
     two_points = TwoPoint.from_measurement(
         tpms, wl_factory=wl_factory, nc_factory=nc_factory
