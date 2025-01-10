@@ -459,11 +459,9 @@ class TwoPointBinFilterCollection(BaseModel):
         for tpm in tpms:
             if not self.filter_match(tpm):
                 if not self.require_filter_for_all:
+                    result.append(tpm)
                     continue
-                raise ValueError(
-                    f"The bin name {tpm.metadata.XY.get_tracer_names()} "
-                    "does not have a filter."
-                )
+                raise ValueError(f"The bin name {tpm.metadata} does not have a filter.")
 
             match_elements, match_obs = self.apply_filter_single(tpm)
             if not match_obs.any():

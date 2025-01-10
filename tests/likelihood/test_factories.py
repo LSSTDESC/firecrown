@@ -22,11 +22,25 @@ from firecrown.metadata_types import Galaxies
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
 
 
-@pytest.fixture(name="empty_factory")
-def fixture_empty_factory() -> TwoPointFactory:
+@pytest.fixture(name="empty_factory_harmonic")
+def fixture_empty_factory_harmonic() -> TwoPointFactory:
     """Return an empty TwoPointFactory object."""
     return TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factory=WeakLensingFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+        number_counts_factory=NumberCountsFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+    )
+
+
+@pytest.fixture(name="empty_factory_real")
+def fixture_empty_factory_real() -> TwoPointFactory:
+    """Return an empty TwoPointFactory object."""
+    return TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.REAL,
         weak_lensing_factory=WeakLensingFactory(
             per_bin_systematics=[], global_systematics=[]
         ),
@@ -358,9 +372,9 @@ def test_build_two_point_likelihood_invalid_likelihood_config(tmp_path: Path) ->
         _ = build_two_point_likelihood(build_parameters)
 
 
-def test_data_source_with_filter(empty_factory) -> None:
+def test_build_two_point_harmonic_with_filter(empty_factory_harmonic) -> None:
     two_point_experiment = TwoPointExperiment(
-        two_point_factory=empty_factory,
+        two_point_factory=empty_factory_harmonic,
         data_source=DataSourceSacc(
             sacc_data_file="tests/bug_398.sacc.gz",
             filters=TwoPointBinFilterCollection(
@@ -381,9 +395,11 @@ def test_data_source_with_filter(empty_factory) -> None:
     assert two_point_experiment.make_likelihood() is not None
 
 
-def test_data_source_with_filter_require_filter(empty_factory) -> None:
+def test_build_two_point_harmonic_with_filter_require_filter(
+    empty_factory_harmonic,
+) -> None:
     two_point_experiment = TwoPointExperiment(
-        two_point_factory=empty_factory,
+        two_point_factory=empty_factory_harmonic,
         data_source=DataSourceSacc(
             sacc_data_file="tests/bug_398.sacc.gz",
             filters=TwoPointBinFilterCollection(
@@ -405,9 +421,9 @@ def test_data_source_with_filter_require_filter(empty_factory) -> None:
         _ = two_point_experiment.make_likelihood()
 
 
-def test_data_source_with_filter_empty(empty_factory) -> None:
+def test_build_two_point_harmonic_with_filter_empty(empty_factory_harmonic) -> None:
     two_point_experiment = TwoPointExperiment(
-        two_point_factory=empty_factory,
+        two_point_factory=empty_factory_harmonic,
         data_source=DataSourceSacc(
             sacc_data_file="tests/bug_398.sacc.gz",
             filters=TwoPointBinFilterCollection(
@@ -433,3 +449,103 @@ def test_data_source_with_filter_empty(empty_factory) -> None:
         ),
     ):
         _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_real_with_filter(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=0.0,
+                        upper=100.0,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    assert two_point_experiment.make_likelihood() is not None
+
+
+def test_build_two_point_real_with_filter_require_filter(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=0.0,
+                        upper=100.0,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=True,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_real_with_filter_empty(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=20000,
+                        upper=30000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointMeasurement .* does "
+            "not have any elements matching the filter."
+        ),
+    ):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_real_with_filter_allow_empty(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=20000,
+                        upper=30000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=True,
+            ),
+        ),
+    )
+    assert two_point_experiment.make_likelihood() is not None

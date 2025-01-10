@@ -340,6 +340,9 @@ def test_two_point_harmonic_bin_filter_collection_call(
         assert isinstance(filtered_bin.metadata, TwoPointHarmonic)
         assert isinstance(original_bin.metadata, TwoPointHarmonic)
         bin_spec = bin_spec_from_metadata(original_bin.metadata)
+        if bin_spec not in harmonic_filter_collection.bin_filter_dict:
+            assert original_bin is filtered_bin
+            continue
         match_elements = harmonic_filter_collection.run_bin_filter(
             harmonic_filter_collection.bin_filter_dict[bin_spec],
             original_bin.metadata.ells,
@@ -494,6 +497,12 @@ def test_two_point_real_bin_filter_collection_call(
         original_bin = bin_specs_dict[filtered_bin_specs]
         assert isinstance(filtered_bin.metadata, TwoPointReal)
         assert isinstance(original_bin.metadata, TwoPointReal)
+        if (
+            bin_spec_from_metadata(original_bin.metadata)
+            not in real_filter_collection.bin_filter_dict
+        ):
+            assert original_bin is filtered_bin
+            continue
         match_elements, _ = real_filter_collection.apply_filter_single(original_bin)
         assert np.all(
             filtered_bin.metadata.thetas == original_bin.metadata.thetas[match_elements]
