@@ -685,11 +685,11 @@ class TwoPoint(Statistic):
         for tracer0, tracer1 in itertools.product(tracers0, tracers1):
             pk_name = f"{tracer0.field}:{tracer1.field}"
             tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
-            if tn not in self.theory.cells:
-                result = calculate_angular_cl(
-                    ells, pk_name, scale0, scale1, tools, tracer0, tracer1
-                )
-                self.theory.cells[tn] = result
+            assert tn not in self.theory.cells
+            result = calculate_angular_cl(
+                ells, pk_name, scale0, scale1, tools, tracer0, tracer1
+            )
+            self.theory.cells[tn] = result
         self.theory.cells[mdt.TRACER_NAMES_TOTAL] = np.array(
             sum(self.theory.cells.values())
         )
