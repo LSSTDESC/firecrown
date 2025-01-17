@@ -181,6 +181,8 @@ def build_two_point_likelihood(
                 exp.two_point_factory.weak_lensing_factory,
                 exp.two_point_factory.number_counts_factory,
             )
+        case _ as unreachable:
+            assert_never(unreachable)
 
     return likelihood, modeling_tools
 

@@ -8,7 +8,7 @@ from typing import Annotated
 from enum import Enum, auto
 
 # To be moved to the import from typing when migrating to Python 3.11
-from typing_extensions import NotRequired, TypedDict
+from typing_extensions import NotRequired, TypedDict, assert_never
 
 import numpy as np
 import numpy.typing as npt
@@ -233,6 +233,8 @@ class CCLFactory(Updatable, BaseModel):
                 self.sigma8 = register_new_updatable_parameter(
                     default_value=ccl_cosmo["sigma8"]
                 )
+            case _ as unreachable:
+                assert_never(unreachable)
 
         self._mu_sigma_model: None | MuSigmaModel = None
         match self.creation_mode:
@@ -300,6 +302,8 @@ class CCLFactory(Updatable, BaseModel):
                 ccl_args["A_s"] = self.A_s
             case PoweSpecAmplitudeParameter.SIGMA8:
                 ccl_args["sigma8"] = self.sigma8
+            case _ as unreachable:
+                assert_never(unreachable)
 
         assert ("A_s" in ccl_args) or ("sigma8" in ccl_args)
 
