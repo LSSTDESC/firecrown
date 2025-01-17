@@ -98,7 +98,7 @@ jobs:
           pylint --rcfile firecrown/models/pylintrc firecrown/models
       - name: Running unit tests
         shell: bash -l {0}
-        run: python -m pytest -vv --runslow --cov firecrown --cov-report xml
+        run: python -m pytest -vv --runslow --cov firecrown --cov-branch --cov-report xml
       - name: Running integration tests
         shell: bash -l {0}
         run: python -m pytest -vv -s --integration tests/integration 
