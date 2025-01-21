@@ -77,7 +77,7 @@ def calculate_angular_cl(
         cached_angular_cl(
             tools.get_ccl_cosmology(),
             (tracer0.ccl_tracer, tracer1.ccl_tracer),
-            tuple(ells.tolist()),
+            tuple(ells.ravel().tolist()),
             p_of_k_a=pk,
         )
         * scale0
