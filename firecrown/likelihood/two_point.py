@@ -682,10 +682,13 @@ class TwoPoint(Statistic):
     ) -> npt.NDArray[np.float64]:
         """Compute the power spectrum for the given ells and tracers."""
         self.theory.cells = {}
+        if tracers0 == tracers1:
+            assert scale0 == scale1
+        # We should consider how to avoid doing the same calculation twice,
+        # if possible.
         for tracer0, tracer1 in itertools.product(tracers0, tracers1):
             pk_name = f"{tracer0.field}:{tracer1.field}"
             tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
-            assert tn not in self.theory.cells
             result = calculate_angular_cl(
                 ells, pk_name, scale0, scale1, tools, tracer0, tracer1
             )
