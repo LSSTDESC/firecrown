@@ -20,7 +20,6 @@ from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
     CCLCalculatorArgs,
-    PowerSpec,
     CCLFactory,
     PoweSpecAmplitudeParameter,
     CCLCreationMode,
@@ -271,42 +270,8 @@ class MappingNumCosmo(GObject.Object):
         :param mset: the NumCosmo MSet object from which to get the parameters
         :return: a dictionary of the arguments required by CCL
         """
-        pk_linear: None | PowerSpec = None
-        pk_nonlin: None | PowerSpec = None
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
-
-        if self._p_ml:
-            p_m_spline = self._p_ml.get_spline_2d(hi_cosmo)
-            z = np.array(p_m_spline.peek_xv().dup_array())
-            k = np.array(p_m_spline.peek_yv().dup_array())
-
-            scale = self.mapping.redshift_to_scale_factor(z)
-            p_k = np.transpose(
-                np.array(p_m_spline.peek_zm().dup_array()).reshape(len(k), len(z))
-            )
-            p_k = self.mapping.redshift_to_scale_factor_p_k(p_k)
-            pk_linear = {
-                "a": scale,
-                "k": k,
-                "delta_matter:delta_matter": p_k,
-            }
-
-        if self._p_mnl:
-            p_mnl_spline = self._p_mnl.get_spline_2d(hi_cosmo)
-            z = np.array(p_mnl_spline.peek_xv().dup_array())
-            k = np.array(p_mnl_spline.peek_yv().dup_array())
-
-            scale_mpnl = self.mapping.redshift_to_scale_factor(z)
-            p_mnl = np.transpose(
-                np.array(p_mnl_spline.peek_zm().dup_array()).reshape(len(k), len(z))
-            )
-            p_mnl = self.mapping.redshift_to_scale_factor_p_k(p_mnl)
-            pk_nonlin = {
-                "a": scale_mpnl,
-                "k": k,
-                "delta_matter:delta_matter": p_mnl,
-            }
 
         d_spline = self._dist.comoving_distance_spline.peek_spline()
         z_dist = np.array(d_spline.get_xv().dup_array())
@@ -331,10 +296,38 @@ class MappingNumCosmo(GObject.Object):
                 a=scale_distances, chi=chi, h_over_h0=h_over_h0
             )
         }
-        if pk_linear:
-            ccl_args["pk_linear"] = pk_linear
-        if pk_nonlin:
-            ccl_args["pk_nonlin"] = pk_nonlin
+
+        if self._p_ml:
+            p_m_spline = self._p_ml.get_spline_2d(hi_cosmo)
+            z = np.array(p_m_spline.peek_xv().dup_array())
+            k = np.array(p_m_spline.peek_yv().dup_array())
+
+            scale = self.mapping.redshift_to_scale_factor(z)
+            p_k = np.transpose(
+                np.array(p_m_spline.peek_zm().dup_array()).reshape(len(k), len(z))
+            )
+            p_k = self.mapping.redshift_to_scale_factor_p_k(p_k)
+            ccl_args["pk_linear"] = {
+                "a": scale,
+                "k": k,
+                "delta_matter:delta_matter": p_k,
+            }
+
+        if self._p_mnl:
+            p_mnl_spline = self._p_mnl.get_spline_2d(hi_cosmo)
+            z = np.array(p_mnl_spline.peek_xv().dup_array())
+            k = np.array(p_mnl_spline.peek_yv().dup_array())
+
+            scale_mpnl = self.mapping.redshift_to_scale_factor(z)
+            p_mnl = np.transpose(
+                np.array(p_mnl_spline.peek_zm().dup_array()).reshape(len(k), len(z))
+            )
+            p_mnl = self.mapping.redshift_to_scale_factor_p_k(p_mnl)
+            ccl_args["pk_nonlin"] = {
+                "a": scale_mpnl,
+                "k": k,
+                "delta_matter:delta_matter": p_mnl,
+            }
 
         return ccl_args
 
@@ -476,13 +469,13 @@ class NumCosmoData(Ncm.Data):
 
         :param value: the filename of the likelihood factory function
         """
-        if value is not None:
-            self._likelihood_source = value
-            if self._starting_deserialization:
-                self._set_likelihood_from_factory()
-                self._starting_deserialization = False
-            else:
-                self._starting_deserialization = True
+        assert value is not None
+        self._likelihood_source = value
+        if self._starting_deserialization:
+            self._set_likelihood_from_factory()
+            self._starting_deserialization = False
+        else:
+            self._starting_deserialization = True
 
     likelihood_source = GObject.Property(
         type=str,
@@ -742,15 +735,19 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _set_likelihood_source(self, value: None | str) -> None:
         """Set the likelihood string defining the factory function.
 
+        The value should not be None. The type declaration is required
+        because of the nature of the C interface being wrapped, but it
+        is a programming error to pass a null pointer.
+
         :param value: the filename of the likelihood factory function
         """
-        if value is not None:
-            self._likelihood_source = value
-            if self._starting_deserialization:
-                self._set_likelihood_from_factory()
-                self._starting_deserialization = False
-            else:
-                self._starting_deserialization = True
+        assert value is not None
+        self._likelihood_source = value
+        if self._starting_deserialization:
+            self._set_likelihood_from_factory()
+            self._starting_deserialization = False
+        else:
+            self._starting_deserialization = True
 
     likelihood_source = GObject.Property(
         type=str,
