@@ -50,3 +50,21 @@ def get_amplitude_parameters(
             assert_never(unreachable)
     assert A_s is not None or sigma8 is not None
     return A_s, sigma8
+
+
+class PowerSpec:
+    """Represents a power spectrum with linear and optional nonlinear components."""
+
+    def __init__(self, linear=Nc.PowspecML, nonlinear=None | Nc.PowspecMNL):
+        """Initialize the PowerSpec object.
+
+        Note that linear can not be None: all PowerSpec objects have at least the linear
+        spectrum. Only the nonlinear part is optional.
+        """
+        self.linear = linear
+        self.nonlinear = nonlinear
+
+    def prepare_if_needed(self, hi_cosmo: Nc.HICosmo):
+        self.linear.prepare_if_needed(hi_cosmo)
+        if self.nonlinear is not None:
+            self.nonlinear.prepare_if_needed(hi_cosmo)

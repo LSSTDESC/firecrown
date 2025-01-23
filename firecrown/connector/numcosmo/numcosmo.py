@@ -7,6 +7,7 @@ be used without an installation of NumCosmo.
 import warnings
 
 import numpy as np
+from typing_extensions import assert_never
 
 from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
 
@@ -49,10 +50,13 @@ class MappingNumCosmo(GObject.Object):
         :param dist: optional Distance object
         """
         super().__init__(p_ml=p_ml, p_mnl=p_mnl, dist=dist)  # type: ignore
+        if p_mnl is not None:
+            assert (
+                p_ml is not None
+            ), "PowspecML object must be provided when using PowspecMNL."
         self.mapping: Mapping
         self._mapping_name: str
-        self._p_ml: None | Nc.PowspecML
-        self._p_mnl: None | Nc.PowspecMNL
+        self._p: None | helpers.PowerSpec
         self._dist: Nc.Distance
 
         if require_nonlinear_pk is not None:
@@ -64,11 +68,13 @@ class MappingNumCosmo(GObject.Object):
                 stacklevel=2,
             )
 
-        if not hasattr(self, "_p_ml"):
-            self._p_ml = None
-
-        if not hasattr(self, "_p_mnl"):
-            self._p_mnl = None
+        if p_ml:
+            if p_mnl:
+                self._p = helpers.PowerSpec(p_ml, p_mnl)
+            else:
+                self._p = helpers.PowerSpec(p_ml, None)
+        else:
+            self._p = None
 
     def _get_mapping_name(self) -> str:
         """Return the mapping name.
@@ -101,14 +107,19 @@ class MappingNumCosmo(GObject.Object):
 
         :param value: the NumCosmo PowspecML object, or None
         """
-        return self._p_ml
+        if self._p is None:
+            return None
+        return self._p.linear
 
     def _set_p_ml(self, value: None | Nc.PowspecML) -> None:
         """Set the NumCosmo PowspecML object.
 
         :param value: the new value to be set
         """
-        self._p_ml = value
+        if value is None:
+            self._p = None
+        else:
+            self._p = helpers.PowerSpec(value, None)
 
     p_ml = GObject.Property(
         type=Nc.PowspecML,
@@ -122,14 +133,25 @@ class MappingNumCosmo(GObject.Object):
 
         :return: the NumCosmo PowspecMNL object, or None
         """
-        return self._p_mnl
+        if self._p is None:
+            return None
+        return self._p.nonlinear
 
     def _set_p_mnl(self, value: None | Nc.PowspecMNL) -> None:
         """Set the NumCosmo PowspecMNL object.
 
+        It is illegal to set a PowspecMNL object when there is no PowspecML
+        object.
+
         :param value: the new value to be set
         """
-        self._p_mnl = value
+        match self._p, value:
+            case None, None:
+                pass
+            case helpers.PowerSpec(), _:
+                self._p.nonlinear = value
+            case _ as unreachable:
+                assert_never(unreachable)
 
     p_mnl = GObject.Property(
         type=Nc.PowspecMNL,
@@ -166,10 +188,8 @@ class MappingNumCosmo(GObject.Object):
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
-        if self._p_ml is not None:
-            self._p_ml.prepare_if_needed(hi_cosmo)
-        if self._p_mnl is not None:
-            self._p_mnl.prepare_if_needed(hi_cosmo)
+        if self._p is not None:
+            self._p.prepare_if_needed(hi_cosmo)
         self._dist.prepare_if_needed(hi_cosmo)
 
         Omega_b = hi_cosmo.Omega_b0()
@@ -193,9 +213,8 @@ class MappingNumCosmo(GObject.Object):
             case _:
                 raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        A_s, sigma8 = helpers.get_amplitude_parameters(
-            ccl_factory, self._p_ml, hi_cosmo
-        )
+        p_ml = self._p.linear if self._p is not None else None
+        A_s, sigma8 = helpers.get_amplitude_parameters(ccl_factory, p_ml, hi_cosmo)
 
         assert (A_s is not None) or (sigma8 is not None)
 
