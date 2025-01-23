@@ -7,7 +7,6 @@ be used without an installation of NumCosmo.
 import warnings
 
 import numpy as np
-from typing_extensions import assert_never
 
 from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
 
@@ -145,13 +144,11 @@ class MappingNumCosmo(GObject.Object):
 
         :param value: the new value to be set
         """
-        match self._p, value:
-            case None, None:
-                pass
-            case helpers.PowerSpec(), _:
-                self._p.nonlinear = value
-            case _ as unreachable:
-                assert_never(unreachable)
+        if self._p is None:
+            if value is None:
+                return
+            raise ValueError("Cannot set a PowspecMNL without a PowspecML.")
+        self._p.nonlinear = value
 
     p_mnl = GObject.Property(
         type=Nc.PowspecMNL,
@@ -270,39 +267,52 @@ class MappingNumCosmo(GObject.Object):
             )
         }
 
-        if self._p_ml:
-            p_m_spline = self._p_ml.get_spline_2d(hi_cosmo)
-            z = np.array(p_m_spline.peek_xv().dup_array())
-            k = np.array(p_m_spline.peek_yv().dup_array())
-
-            scale = self.mapping.redshift_to_scale_factor(z)
-            p_k = np.transpose(
-                np.array(p_m_spline.peek_zm().dup_array()).reshape(len(k), len(z))
-            )
-            p_k = self.mapping.redshift_to_scale_factor_p_k(p_k)
-            ccl_args["pk_linear"] = {
-                "a": scale,
-                "k": k,
-                "delta_matter:delta_matter": p_k,
-            }
-
-        if self._p_mnl:
-            p_mnl_spline = self._p_mnl.get_spline_2d(hi_cosmo)
-            z = np.array(p_mnl_spline.peek_xv().dup_array())
-            k = np.array(p_mnl_spline.peek_yv().dup_array())
-
-            scale_mpnl = self.mapping.redshift_to_scale_factor(z)
-            p_mnl = np.transpose(
-                np.array(p_mnl_spline.peek_zm().dup_array()).reshape(len(k), len(z))
-            )
-            p_mnl = self.mapping.redshift_to_scale_factor_p_k(p_mnl)
-            ccl_args["pk_nonlin"] = {
-                "a": scale_mpnl,
-                "k": k,
-                "delta_matter:delta_matter": p_mnl,
-            }
-
+        if self._p:
+            ccl_args["pk_linear"] = self.extract_pk_linear(self.mapping, hi_cosmo)
+            if self._p.nonlinear:
+                ccl_args["pk_nonlin"] = self.extract_pk_nonlinear(
+                    self.mapping, hi_cosmo
+                )
         return ccl_args
+
+    def extract_pk_nonlinear(self, mapping, hi_cosmo):
+        """Extract the nonlinear power spectrum from the NumCosmo PowspecMNL object.
+
+        :param mapping: The mapping object used to convert redshift to scale factor.
+        :param hi_cosmo: The NumCosmo HICosmo object containing cosmological parameters.
+        :return: A dictionary containing the nonlinear power spectrum with scale
+                 factors, wave numbers, and power spectrum values.
+        """
+        assert self._p is not None
+        assert self._p.nonlinear is not None
+        spline = self._p.nonlinear.get_spline_2d(hi_cosmo)
+        z = np.array(spline.peek_xv().dup_array())
+        k = np.array(spline.peek_yv().dup_array())
+        scale_mpnl = mapping.redshift_to_scale_factor(z)
+        p_mnl = np.transpose(
+            np.array(spline.peek_zm().dup_array()).reshape(len(k), len(z))
+        )
+        p_mnl = mapping.redshift_to_scale_factor_p_k(p_mnl)
+        return {"a": scale_mpnl, "k": k, "delta_matter:delta_matter": p_mnl}
+
+    def extract_pk_linear(self, mapping, hi_cosmo):
+        """Extract the linear power spectrum from the NumCosmo PowspecMNL object.
+
+        :param mapping: The mapping object used to convert redshift to scale factor.
+        :param hi_cosmo: The NumCosmo HICosmo object containing cosmological parameters.
+        :return: A dictionary containing the linear power spectrum with scale factors,
+                 wave numbers, and power spectrum values.
+        """
+        assert self._p is not None
+        spline = self._p.linear.get_spline_2d(hi_cosmo)
+        z = np.array(spline.peek_xv().dup_array())
+        k = np.array(spline.peek_yv().dup_array())
+        scale = mapping.redshift_to_scale_factor(z)
+        p_k = np.transpose(
+            np.array(spline.peek_zm().dup_array()).reshape(len(k), len(z))
+        )
+        p_k = mapping.redshift_to_scale_factor_p_k(p_k)
+        return {"a": scale, "k": k, "delta_matter:delta_matter": p_k}
 
     def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
         """Create a ParamsMap from a NumCosmo MSet.
