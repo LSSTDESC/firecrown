@@ -65,6 +65,10 @@ class PowerSpec:
         self.nonlinear = nonlinear
 
     def prepare_if_needed(self, hi_cosmo: Nc.HICosmo):
+        """Prepare the power spectrum objects if needed.
+
+        :param hi_cosmo: the NumCosmo HICosmo object
+        """
         self.linear.prepare_if_needed(hi_cosmo)
         if self.nonlinear is not None:
             self.nonlinear.prepare_if_needed(hi_cosmo)
