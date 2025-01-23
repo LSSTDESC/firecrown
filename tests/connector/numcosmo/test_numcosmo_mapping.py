@@ -14,7 +14,7 @@ from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoGaussCov,
     MappingNumCosmo,
     NumCosmoFactory,
-    get_amplitude_parameters,
+    helpers,
 )
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
@@ -476,4 +476,4 @@ def test_get_amplitude_parameters_sigma8_no_powerspectrum(numcosmo_cosmo):
         ValueError, match="PowspecML object must be provided when using sigma8."
     ):
         ccl_factory = CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
-        _, _ = get_amplitude_parameters(ccl_factory, None, numcosmo_cosmo)
+        _, _ = helpers.get_amplitude_parameters(ccl_factory, None, numcosmo_cosmo)

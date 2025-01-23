@@ -7,7 +7,6 @@ be used without an installation of NumCosmo.
 import warnings
 
 import numpy as np
-from typing_extensions import assert_never
 
 from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
 
@@ -21,56 +20,9 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
     CCLCalculatorArgs,
     CCLFactory,
-    PoweSpecAmplitudeParameter,
     CCLCreationMode,
 )
-
-
-def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
-    """Return the HIPrim object from a NumCosmo HICosmo object.
-
-    If hi_cosmo does not have a HIPrim object, a ValueError is raised.
-    If the HIPrim object is not of type HIPrimPowerLaw, a ValueError is raised.
-
-    :param hi_cosmo: NumCosmo HICosmo object
-    :return: the HIPrim object contained in hi_cosmo
-    """
-    hiprim = hi_cosmo.peek_submodel_by_mid(Nc.HIPrim.id())
-    if not hiprim:
-        raise ValueError("NumCosmo object must include a HIPrim object.")
-    if not isinstance(hiprim, Nc.HIPrimPowerLaw):
-        raise ValueError(f"NumCosmo HIPrim object type {type(hiprim)} not supported.")
-    return hiprim
-
-
-def get_amplitude_parameters(
-    ccl_factory: CCLFactory,
-    p_ml: None | Nc.PowspecML,
-    hi_cosmo: Nc.HICosmo,
-) -> tuple[float | None, float | None]:
-    """
-    Calculate the amplitude parameters for CCL.
-
-    :param ccl_factory: the CCL factory object
-    :param p_ml: the NumCosmo PowspecML object, or None
-    :param hi_cosmo: the NumCosmo cosmology object
-    :return: a tuple of the amplitude parameters, (A_s, sigma8), with only one set.
-    """
-    A_s: float | None = None
-    sigma8: float | None = None
-
-    # mypy verifies that the match statement below is exhaustive
-    match ccl_factory.amplitude_parameter:
-        case PoweSpecAmplitudeParameter.SIGMA8:
-            if p_ml is None:
-                raise ValueError("PowspecML object must be provided when using sigma8.")
-            sigma8 = p_ml.sigma_tophat_R(hi_cosmo, 1.0e-7, 0.0, 8.0 / hi_cosmo.h())
-        case PoweSpecAmplitudeParameter.AS:
-            A_s = get_hiprim(hi_cosmo).SA_Ampl()
-        case _ as unreachable:
-            assert_never(unreachable)
-    assert A_s is not None or sigma8 is not None
-    return A_s, sigma8
+from firecrown.connector.numcosmo import helpers
 
 
 class MappingNumCosmo(GObject.Object):
@@ -241,7 +193,9 @@ class MappingNumCosmo(GObject.Object):
             case _:
                 raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        A_s, sigma8 = get_amplitude_parameters(ccl_factory, self._p_ml, hi_cosmo)
+        A_s, sigma8 = helpers.get_amplitude_parameters(
+            ccl_factory, self._p_ml, hi_cosmo
+        )
 
         assert (A_s is not None) or (sigma8 is not None)
 
@@ -252,7 +206,7 @@ class MappingNumCosmo(GObject.Object):
             h=hi_cosmo.h(),
             A_s=A_s,
             sigma8=sigma8,
-            n_s=get_hiprim(hi_cosmo).props.n_SA,
+            n_s=helpers.get_hiprim(hi_cosmo).props.n_SA,
             Omega_k=Omega_k,
             Neff=Neff,
             m_nu=m_nu,
