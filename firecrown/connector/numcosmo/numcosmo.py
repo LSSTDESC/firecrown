@@ -140,15 +140,14 @@ class MappingNumCosmo(GObject.Object):
         """Set the NumCosmo PowspecMNL object.
 
         It is illegal to set a PowspecMNL object when there is no PowspecML
-        object.
+        object. Currently, we can not raise an exception because it does
+        not propagate through the C interface between this code and the
+        Python code that calls it.
 
         :param value: the new value to be set
         """
-        if self._p is None:
-            if value is None:
-                return
-            raise ValueError("Cannot set a PowspecMNL without a PowspecML.")
-        self._p.nonlinear = value
+        if self._p is not None:
+            self._p.nonlinear = value
 
     p_mnl = GObject.Property(
         type=Nc.PowspecMNL,

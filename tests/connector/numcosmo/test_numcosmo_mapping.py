@@ -477,3 +477,40 @@ def test_get_amplitude_parameters_sigma8_no_powerspectrum(numcosmo_cosmo):
     ):
         ccl_factory = CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
         _, _ = helpers.get_amplitude_parameters(ccl_factory, None, numcosmo_cosmo)
+
+
+def test_accessors_with_no_powerspectrum():
+    mapping = MappingNumCosmo()
+    assert mapping.p_ml is None
+    assert mapping.p_mnl is None
+    mapping.p_ml = None
+    assert mapping.p_ml is None
+    mapping.p_mnl = None
+    assert mapping.p_mnl is None
+
+    linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    nonlinear = Nc.PowspecMNLHaloFit.new(linear, 3.0, 1.0e-5)
+    mapping.p_mnl = nonlinear
+    assert mapping._p is None
+
+
+def test_accessors_with_only_linear_powerspectrum():
+    linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    mapping = MappingNumCosmo(p_ml=linear)
+    assert mapping._p is not None
+    mapping.p_ml = linear
+    assert mapping.p_mnl is None
+
+    # Change to a different linear power spectrum
+    other_linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncBBKS.new())
+    mapping.p_ml = other_linear
+    assert mapping._p is not None
+    assert mapping.p_ml == other_linear
+    assert mapping.p_mnl is None
+
+    # Add a non-linear component
+    nonlinear = Nc.PowspecMNLHaloFit.new(other_linear, 3.0, 1.0e-5)
+    mapping.p_mnl = nonlinear
+    assert mapping._p is not None
+    assert mapping.p_ml == other_linear
+    assert mapping.p_mnl == nonlinear
