@@ -92,8 +92,8 @@ def test_get_theory_prediction_returns_value(
     assert callable(prediction)
     assert callable(prediction_c)
 
-    mass = np.linspace(13, 17, 2)
-    z = np.linspace(0.1, 1, 2)
+    mass = np.linspace(13, 17, 2, dtype=np.float64)
+    z = np.linspace(0.1, 1, 2, dtype=np.float64)
     mass_proxy_limits = (0, 5)
     sky_area = 360**2
     radius_center = 1.5

@@ -57,11 +57,11 @@ def test_deltasigma_profile_returns_value(
     cluster_deltasigma.update_ingredients(cosmo)
     cluster_deltasigma_conc.update_ingredients(cosmo)
     result = cluster_deltasigma.delta_sigma(
-        np.linspace(13, 17, 5), np.linspace(0.1, 1, 5), 5.0
+        np.linspace(13, 17, 5, dtype=np.float64), np.linspace(0.1, 1, 5, dtype=np.float64), 5.0
     )
     cluster_deltasigma_conc.cluster_conc = 5.0
     result_conc = cluster_deltasigma_conc.delta_sigma(
-        np.linspace(13, 17, 5), np.linspace(0.1, 1, 5), 5.0
+        np.linspace(13, 17, 5, dtype=np.float64), np.linspace(0.1, 1, 5, dtype=np.float64), 5.0
     )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
