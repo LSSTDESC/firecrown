@@ -135,7 +135,7 @@ class Purity(Updatable):
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
             r = 10**mean_mass
         else:
-            r = np.power(10., mass_proxy).item()
+            r = np.power(10.0, mass_proxy).item()
 
         r_over_rc = r / self._rc(z)
 
