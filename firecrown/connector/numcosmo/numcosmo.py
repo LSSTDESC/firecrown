@@ -209,8 +209,7 @@ class MappingNumCosmo(GObject.Object):
             case _:
                 raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        p_ml = self._p.linear if self._p is not None else None
-        A_s, sigma8 = helpers.get_amplitude_parameters(ccl_factory, p_ml, hi_cosmo)
+        A_s, sigma8 = helpers.get_amplitude_parameters(ccl_factory, self.p_ml, hi_cosmo)
 
         assert (A_s is not None) or (sigma8 is not None)
 
