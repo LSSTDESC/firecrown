@@ -1,6 +1,7 @@
 """Unit tests for the numcosmo Mapping connector."""
 
 from typing import cast
+import unittest.mock as mock
 import pytest
 import pyccl as ccl
 from numcosmo_py import Ncm, Nc, GObject
@@ -13,19 +14,37 @@ from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoGaussCov,
     MappingNumCosmo,
     NumCosmoFactory,
+    helpers,
 )
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 Ncm.cfg_init()
 
 
-def test_numcosmo_mapping_create_params_map_non_existing_model():
+@pytest.fixture(name="map_cosmo_dist")
+def fixture_map_cosmo_dist() -> MappingNumCosmo:
+    """Return a MappingNumCosmo with only distances."""
+    return MappingNumCosmo(dist=Nc.Distance.new(6.0))
+
+
+@pytest.fixture(name="map_cosmo_spec_nl")
+def fixture_map_cosmo_spec_nl(numcosmo_cosmo) -> MappingNumCosmo:
+    """Return a MappingNumCosmo instance with the specified p_ml, p_mnl, and dist."""
+    return MappingNumCosmo(
+        p_ml=numcosmo_cosmo["p_ml"],
+        p_mnl=numcosmo_cosmo["p_mnl"],
+        dist=numcosmo_cosmo["dist"],
+    )
+
+
+def test_numcosmo_mapping_create_params_map_non_existing_model(
+    map_cosmo_dist: MappingNumCosmo,
+):
     """Test the NumCosmo mapping connector create_params_map
     with an non existing type."""
 
     cosmo = Nc.HICosmoDEXcdm()
 
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     mset = Ncm.MSet()
     mset.set(cosmo)
 
@@ -33,16 +52,17 @@ def test_numcosmo_mapping_create_params_map_non_existing_model():
         RuntimeError,
         match="Model name non_existing_model was not found in the model set.",
     ):
-        map_cosmo.create_params_map(["non_existing_model"], mset)
+        map_cosmo_dist.create_params_map(["non_existing_model"], mset)
 
 
-def test_numcosmo_mapping_create_params_map_absent_model():
+def test_numcosmo_mapping_create_params_map_absent_model(
+    map_cosmo_dist: MappingNumCosmo,
+):
     """Test the NumCosmo mapping connector create_params_map
     with an existing type but not present in the model set."""
 
     cosmo = Nc.HICosmoDEXcdm()
 
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     mset = Ncm.MSet()
     mset.set(cosmo)
 
@@ -50,15 +70,16 @@ def test_numcosmo_mapping_create_params_map_absent_model():
         RuntimeError,
         match="Model name MyModel was not found in the model set.",
     ):
-        map_cosmo.create_params_map(["MyModel"], mset)
+        map_cosmo_dist.create_params_map(["MyModel"], mset)
 
 
-def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters():
+def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters(
+    map_cosmo_dist: MappingNumCosmo,
+):
     """Test the NumCosmo mapping connector create_params_map
     with an existing type but not present in the model set."""
 
     cosmo = Nc.HICosmoDEXcdm()
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
 
     mset = Ncm.MSet()
     mset.set(cosmo)
@@ -134,54 +155,51 @@ NcmModelBuilder:
         RuntimeError,
         match="The following keys .* appear in more than one model used by the module",
     ):
-        map_cosmo.create_params_map(["MyModel1", "MyModel2"], mset)
+        map_cosmo_dist.create_params_map(["MyModel1", "MyModel2"], mset)
 
 
-def test_numcosmo_mapping_unsupported():
+def test_numcosmo_mapping_unsupported(map_cosmo_dist: MappingNumCosmo):
     """Test the NumCosmo mapping connector with an unsupported model."""
 
     cosmo = Nc.HICosmoDEJbp()
 
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     mset = Ncm.MSet()
     mset.set(cosmo)
 
     with pytest.raises(ValueError, match="NumCosmo object .* not supported."):
-        map_cosmo.set_params_from_numcosmo(mset, CCLFactory())
+        map_cosmo_dist.set_params_from_numcosmo(mset, CCLFactory())
 
 
-def test_numcosmo_mapping_missing_hiprim():
+def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo):
     """Test the NumCosmo mapping connector with a model missing hiprim."""
 
     cosmo = Nc.HICosmoDECpl()
 
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     mset = Ncm.MSet()
     mset.set(cosmo)
 
     with pytest.raises(
         ValueError, match="NumCosmo object must include a HIPrim object."
     ):
-        map_cosmo.set_params_from_numcosmo(
+        map_cosmo_dist.set_params_from_numcosmo(
             mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.AS)
         )
 
 
-def test_numcosmo_mapping_invalid_hiprim():
+def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo):
     """Test the NumCosmo mapping connector with a model an invalid hiprim."""
 
     cosmo = Nc.HICosmoDECpl()
     prim = Nc.HIPrimAtan()
     cosmo.add_submodel(prim)
 
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     mset = Ncm.MSet()
     mset.set(cosmo)
 
     with pytest.raises(
         ValueError, match="NumCosmo HIPrim object type .* not supported."
     ):
-        map_cosmo.set_params_from_numcosmo(
+        map_cosmo_dist.set_params_from_numcosmo(
             mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.AS)
         )
 
@@ -200,7 +218,6 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
         p_mnl=numcosmo_cosmo["p_mnl"],
         dist=numcosmo_cosmo["dist"],
     )
-
     mset = Ncm.MSet()
     mset.set(cosmo)
 
@@ -429,18 +446,71 @@ def test_numcosmo_mapping_deprecated_require_nonlinear_pk():
         _ = MappingNumCosmo(require_nonlinear_pk=True)
 
 
-def test_numcosmo_mapping_sigma8_missing_pk():
+def test_numcosmo_mapping_sigma8_missing_pk(map_cosmo_dist: MappingNumCosmo):
     """Test the MappingNumCosmo with sigma8 as a parameter but missing pk."""
 
     cosmo = Nc.HICosmoDEXcdm()
 
-    map_cosmo = MappingNumCosmo(dist=Nc.Distance.new(6.0))
     mset = Ncm.MSet()
     mset.set(cosmo)
 
     with pytest.raises(
         ValueError, match="PowspecML object must be provided when using sigma8."
     ):
-        map_cosmo.set_params_from_numcosmo(
+        map_cosmo_dist.set_params_from_numcosmo(
             mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
         )
+
+
+@pytest.fixture(name="numcosmo_cosmo")
+def fixture_numcosmo_cosmo():
+    """Create a mock NumCosmo cosmology instance."""
+    return mock.Mock(spec=Nc.HICosmo)
+
+
+def test_get_amplitude_parameters_sigma8_no_powerspectrum(numcosmo_cosmo):
+    """Test the get_amplitude_parameters function with sigma8 as a parameter but
+    without a power spectrum."""
+
+    with pytest.raises(
+        ValueError, match="PowspecML object must be provided when using sigma8."
+    ):
+        ccl_factory = CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
+        _, _ = helpers.get_amplitude_parameters(ccl_factory, None, numcosmo_cosmo)
+
+
+def test_accessors_with_no_powerspectrum():
+    mapping = MappingNumCosmo()
+    assert mapping.p_ml is None
+    assert mapping.p_mnl is None
+    mapping.p_ml = None
+    assert mapping.p_ml is None
+    mapping.p_mnl = None
+    assert mapping.p_mnl is None
+
+    linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    nonlinear = Nc.PowspecMNLHaloFit.new(linear, 3.0, 1.0e-5)
+    mapping.p_mnl = nonlinear
+    assert mapping._p is None
+
+
+def test_accessors_with_only_linear_powerspectrum():
+    linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    mapping = MappingNumCosmo(p_ml=linear)
+    assert mapping._p is not None
+    mapping.p_ml = linear
+    assert mapping.p_mnl is None
+
+    # Change to a different linear power spectrum
+    other_linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncBBKS.new())
+    mapping.p_ml = other_linear
+    assert mapping._p is not None
+    assert mapping.p_ml == other_linear
+    assert mapping.p_mnl is None
+
+    # Add a non-linear component
+    nonlinear = Nc.PowspecMNLHaloFit.new(other_linear, 3.0, 1.0e-5)
+    mapping.p_mnl = nonlinear
+    assert mapping._p is not None
+    assert mapping.p_ml == other_linear
+    assert mapping.p_mnl == nonlinear

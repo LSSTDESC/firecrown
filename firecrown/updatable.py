@@ -18,6 +18,7 @@ from __future__ import annotations
 from abc import ABC
 from collections import UserList
 from typing import Any, Generic, Iterable, TypeAlias, TypeVar, Union, cast, final
+from typing_extensions import assert_never
 
 from firecrown.parameters import (
     InternalParameter,
@@ -118,11 +119,14 @@ class Updatable(ABC):
         :param key: name of the attribute
         :param value: value for the attribute
         """
-        if isinstance(value, SamplerParameter):
-            value.set_fullname(self.parameter_prefix, key)
-            self.set_sampler_parameter(value)
-        elif isinstance(value, InternalParameter):
-            self.set_internal_parameter(key, value)
+        match value:
+            case SamplerParameter():
+                value.set_fullname(self.parameter_prefix, key)
+                self.set_sampler_parameter(value)
+            case InternalParameter():
+                self.set_internal_parameter(key, value)
+            case _ as unreachable:
+                assert_never(unreachable)
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
         """Assure this InternalParameter has not already been set, and then set it.
