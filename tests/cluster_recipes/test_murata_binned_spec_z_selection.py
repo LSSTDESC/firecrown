@@ -33,7 +33,7 @@ def fixture_cluster_abundance() -> ClusterAbundance:
 
 
 @pytest.fixture(name="murata_binned_spec_z_selection")
-def fixture_murata_binned_spec_z() -> MurataBinnedSpecZSelectionRecipe:
+def fixture_murata_binned_spec_z_selection() -> MurataBinnedSpecZSelectionRecipe:
     cluster_recipe = MurataBinnedSpecZSelectionRecipe()
     cluster_recipe.mass_distribution.mu_p0 = 3.0
     cluster_recipe.mass_distribution.mu_p1 = 0.86
@@ -52,7 +52,7 @@ def fixture_murata_binned_spec_z() -> MurataBinnedSpecZSelectionRecipe:
     return cluster_recipe
 
 
-def test_murata_binned_spec_z_init():
+def test_murata_binned_spec_z_selection_init():
     recipe = MurataBinnedSpecZSelectionRecipe()
 
     assert recipe is not None
