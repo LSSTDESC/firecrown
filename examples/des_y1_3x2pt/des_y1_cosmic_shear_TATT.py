@@ -171,7 +171,6 @@ def run_likelihood() -> None:
     # y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     # y_theory = two_point_0.predicted_statistic_
 
-    # pylint: disable=no-member
     print(list(two_point_0.cells.keys()))
 
     make_plot(ccl_cosmo, nz, pk_ii, pk_im, two_point_0, z)
