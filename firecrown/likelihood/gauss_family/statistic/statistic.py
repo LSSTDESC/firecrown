@@ -1,4 +1,4 @@
-""" "Deprecated module with classes related to Statistic."""
+"""Deprecated module with classes related to Statistic."""
 
 # flake8: noqa
 
