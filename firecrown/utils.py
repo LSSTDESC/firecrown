@@ -82,6 +82,10 @@ def save_to_sacc(
     copied into a new object, and the new information is put into that copy,
     which is returned by this method.
 
+    If `strict` is True (the default), then we must overwrite the entire data
+    vector. If `strict` is False, then we only overwrite the data at the
+    specified indices.
+
     :param sacc_data: SACC object to be copied. It is not modified.
     :param data_vector: Data vector to be saved to the new copy of `sacc_data`.
     :param indices: SACC indices where the data vector should be written.

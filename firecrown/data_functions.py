@@ -140,10 +140,10 @@ def extract_all_real_data(
 
 
 def ensure_no_overlaps(
-    measurement: TwoPointMeasurement,
+    measurement: str,
     index_set: set[int],
     index_sets: list[set[int]],
-    other_measurements: Sequence[TwoPointMeasurement],
+    other_measurements: list[str],
 ) -> None:
     """Check if the indices of the measurement-space two-point functions overlap.
 
@@ -200,8 +200,11 @@ def check_consistence(
                 f"The indices of the {type_name} {measurement} are not unique."
             )
 
+        measurements_names = [f"{m}" for m in measurements]
         if seen_indices & index_set:
-            ensure_no_overlaps(measurement, index_set, index_sets, measurements)
+            ensure_no_overlaps(
+                f"{measurement}", index_set, index_sets, measurements_names
+            )
         seen_indices.update(index_set)
 
 

@@ -17,8 +17,7 @@ This is the procedure we use for create a new release of Firecrown.
     pytest -v tests/test_version.py
 
 11. Update the tutorial files with the new release number.
-    1. development_example.qmd
-    1. intro_article.qmd
+    1. _quarto.yml
     2. introduction_to_firecrown.qmd
     3. `docs/conf.py`
     4. You can find all the files to change with: `rg -g '!*.ipynb' -g '!*.ini' -g '!*.yaml' -g '!*.yml' -l -F x.y` where "x.y" should be replaced with the old release number.

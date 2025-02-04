@@ -6,10 +6,10 @@ from pathlib import Path
 import pytest
 
 import sacc
-
 from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
+    ensure_path,
     TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
@@ -340,3 +340,21 @@ def test_build_two_point_likelihood_invalid_likelihood_config(tmp_path: Path) ->
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     with pytest.raises(ValueError, match=".*validation error for TwoPointExperiment.*"):
         _ = build_two_point_likelihood(build_parameters)
+
+
+@pytest.mark.parametrize(
+    "file, expected",
+    [
+        # Test with string input
+        ("example.txt", Path("example.txt")),
+        # Test with Path object
+        (Path("example.txt"), Path("example.txt")),
+        # Test with absolute path string
+        ("/home/user/example.txt", Path("/home/user/example.txt")),
+        # Test with relative path string
+        ("../example.txt", Path("../example.txt")),
+    ],
+)
+def test_ensure_path(file, expected):
+    result = ensure_path(file)
+    assert result == expected

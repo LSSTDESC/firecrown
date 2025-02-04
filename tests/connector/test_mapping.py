@@ -177,6 +177,22 @@ def test_mapping_cosmosis():
         "w",
         "wa",
     ]
+    mapping_cosmosis.set_params(
+        A_s=2.1e-9,
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=None,
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+    d = mapping_cosmosis.asdict()
+    assert mapping_cosmosis.m_nu is None
+    assert d["m_nu"] == 0.0
 
 
 def test_mapping_cosmosis_k_h_to_h(mapping_cosmosis):

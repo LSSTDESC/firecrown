@@ -54,6 +54,21 @@ def test_save_to_sacc_strict_fail(trivial_stats, sacc_data_for_trivial_stat):
         )
 
 
+def test_save_to_sacc_non_sttrict(trivial_stats, sacc_data_for_trivial_stat):
+    stat = trivial_stats[0]
+    stat.read(sacc_data_for_trivial_stat)
+    idx = np.arange(stat.count)
+    new_data_vector = 3 * stat.get_data_vector()[idx]
+
+    new_sacc = save_to_sacc(
+        sacc_data=sacc_data_for_trivial_stat,
+        data_vector=new_data_vector,
+        indices=idx,
+        strict=False,
+    )
+    assert all(new_sacc.data[i].value == d for i, d in zip(idx, new_data_vector))
+
+
 def test_compare_optional_arrays_():
     x = np.array([1, 2, 3])
     y = np.array([1, 2, 3])
