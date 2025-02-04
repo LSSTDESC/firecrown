@@ -16,7 +16,7 @@ from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoFactory,
     helpers,
 )
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 
 Ncm.cfg_init()
 
@@ -167,7 +167,7 @@ def test_numcosmo_mapping_unsupported(map_cosmo_dist: MappingNumCosmo):
     mset.set(cosmo)
 
     with pytest.raises(ValueError, match="NumCosmo object .* not supported."):
-        map_cosmo_dist.set_params_from_numcosmo(mset, CCLFactory())
+        map_cosmo_dist.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.SIGMA8)
 
 
 def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo):
@@ -181,9 +181,7 @@ def test_numcosmo_mapping_missing_hiprim(map_cosmo_dist: MappingNumCosmo):
     with pytest.raises(
         ValueError, match="NumCosmo object must include a HIPrim object."
     ):
-        map_cosmo_dist.set_params_from_numcosmo(
-            mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.AS)
-        )
+        map_cosmo_dist.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.AS)
 
 
 def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo):
@@ -199,9 +197,7 @@ def test_numcosmo_mapping_invalid_hiprim(map_cosmo_dist: MappingNumCosmo):
     with pytest.raises(
         ValueError, match="NumCosmo HIPrim object type .* not supported."
     ):
-        map_cosmo_dist.set_params_from_numcosmo(
-            mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.AS)
-        )
+        map_cosmo_dist.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.AS)
 
 
 @pytest.mark.parametrize(
@@ -221,7 +217,7 @@ def test_numcosmo_mapping(numcosmo_cosmo_fixture, request):
     mset = Ncm.MSet()
     mset.set(cosmo)
 
-    map_cosmo.set_params_from_numcosmo(mset, CCLFactory())
+    map_cosmo.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.SIGMA8)
     ccl_args = map_cosmo.calculate_ccl_args(mset)
     ccl_cosmo = ccl.CosmologyCalculator(**map_cosmo.mapping.asdict(), **ccl_args)
 
@@ -257,8 +253,8 @@ def test_numcosmo_serialize_mapping(numcosmo_cosmo_fixture, request):
     mset = Ncm.MSet()
     mset.set(cosmo)
 
-    map_cosmo.set_params_from_numcosmo(mset, CCLFactory())
-    map_cosmo_dup.set_params_from_numcosmo(mset, CCLFactory())
+    map_cosmo.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.SIGMA8)
+    map_cosmo_dup.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.SIGMA8)
 
     if map_cosmo_dup.p_ml is None:
         assert map_cosmo_dup.p_ml is None
@@ -457,9 +453,7 @@ def test_numcosmo_mapping_sigma8_missing_pk(map_cosmo_dist: MappingNumCosmo):
     with pytest.raises(
         ValueError, match="PowspecML object must be provided when using sigma8."
     ):
-        map_cosmo_dist.set_params_from_numcosmo(
-            mset, CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
-        )
+        map_cosmo_dist.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.SIGMA8)
 
 
 @pytest.fixture(name="numcosmo_cosmo")
@@ -475,8 +469,9 @@ def test_get_amplitude_parameters_sigma8_no_powerspectrum(numcosmo_cosmo):
     with pytest.raises(
         ValueError, match="PowspecML object must be provided when using sigma8."
     ):
-        ccl_factory = CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8)
-        _, _ = helpers.get_amplitude_parameters(ccl_factory, None, numcosmo_cosmo)
+        _, _ = helpers.get_amplitude_parameters(
+            PoweSpecAmplitudeParameter.SIGMA8, None, numcosmo_cosmo
+        )
 
 
 def test_accessors_with_no_powerspectrum():
@@ -491,26 +486,105 @@ def test_accessors_with_no_powerspectrum():
     linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     nonlinear = Nc.PowspecMNLHaloFit.new(linear, 3.0, 1.0e-5)
     mapping.p_mnl = nonlinear
-    assert mapping._p is None
+    assert mapping._p is None  # pylint: disable=protected-access
 
 
 def test_accessors_with_only_linear_powerspectrum():
     linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     mapping = MappingNumCosmo(p_ml=linear)
-    assert mapping._p is not None
+    assert mapping._p is not None  # pylint: disable=protected-access
     mapping.p_ml = linear
     assert mapping.p_mnl is None
 
     # Change to a different linear power spectrum
     other_linear = Nc.PowspecMLTransfer.new(Nc.TransferFuncBBKS.new())
     mapping.p_ml = other_linear
-    assert mapping._p is not None
+    assert mapping._p is not None  # pylint: disable=protected-access
     assert mapping.p_ml == other_linear
     assert mapping.p_mnl is None
 
     # Add a non-linear component
     nonlinear = Nc.PowspecMNLHaloFit.new(other_linear, 3.0, 1.0e-5)
     mapping.p_mnl = nonlinear
-    assert mapping._p is not None
+    assert mapping._p is not None  # pylint: disable=protected-access
     assert mapping.p_ml == other_linear
     assert mapping.p_mnl == nonlinear
+
+
+def test_mapping_ccl_args_bg_only():
+    """Test the MappingNumCosmo class with background only."""
+    mapping = MappingNumCosmo(dist=Nc.Distance.new(6.0))
+    assert mapping.p_ml is None
+    assert mapping.p_mnl is None
+
+    cosmo = Nc.HICosmoDEXcdm()
+    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
+    cosmo.add_submodel(Nc.HIReionCamb.new())
+
+    mset = Ncm.MSet.new_array([cosmo])
+    mset.prepare_fparam_map()
+
+    mapping.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.AS)
+    ccl_args = mapping.calculate_ccl_args(mset)
+    assert "background" in ccl_args
+    assert "pk_linear" not in ccl_args
+    assert "pk_nonlin" not in ccl_args
+
+
+def test_mapping_ccl_args_bg_pk_ml():
+    """Test the MappingNumCosmo class with background and pk_ml."""
+    mapping = MappingNumCosmo(
+        dist=Nc.Distance.new(6.0),
+        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+    )
+    assert mapping.p_mnl is None
+
+    cosmo = Nc.HICosmoDEXcdm()
+    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
+    cosmo.add_submodel(Nc.HIReionCamb.new())
+
+    mset = Ncm.MSet.new_array([cosmo])
+    mset.prepare_fparam_map()
+
+    mapping.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.AS)
+    ccl_args = mapping.calculate_ccl_args(mset)
+    assert "background" in ccl_args
+    assert "pk_linear" in ccl_args
+    assert "pk_nonlin" not in ccl_args
+
+
+def test_mapping_ccl_args_bg_pk_ml_pk_mnl():
+    """Test the MappingNumCosmo class with background, pk_ml and pk_mnl."""
+    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    mapping = MappingNumCosmo(
+        dist=Nc.Distance.new(6.0),
+        p_ml=p_ml,
+        p_mnl=Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-4),
+    )
+    assert mapping.p_ml is not None
+    assert mapping.p_mnl is not None
+
+    cosmo = Nc.HICosmoDEXcdm()
+    cosmo.add_submodel(Nc.HIPrimPowerLaw.new())
+    cosmo.add_submodel(Nc.HIReionCamb.new())
+
+    mset = Ncm.MSet.new_array([cosmo])
+    mset.prepare_fparam_map()
+
+    mapping.set_params_from_numcosmo(mset, PoweSpecAmplitudeParameter.AS)
+    ccl_args = mapping.calculate_ccl_args(mset)
+    assert "background" in ccl_args
+    assert "pk_linear" in ccl_args
+    assert "pk_nonlin" in ccl_args
+
+
+def test_mapping_ccl_args_bg_pk_mnl():
+    """Test the MappingNumCosmo class with background, pk_ml and pk_mnl."""
+    p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
+    with pytest.raises(
+        AssertionError, match="PowspecML object must be provided when using PowspecMNL"
+    ):
+        _ = MappingNumCosmo(
+            dist=Nc.Distance.new(6.0),
+            p_mnl=Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-4),
+        )
