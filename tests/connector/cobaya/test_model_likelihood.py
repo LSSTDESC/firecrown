@@ -1,5 +1,7 @@
 """Unit tests for the cobaya Mapping connector."""
 
+import types
+import sys
 import pytest
 import numpy as np
 from cobaya.model import get_model, Model
@@ -7,6 +9,10 @@ from cobaya.log import LoggedError
 from firecrown.connector.cobaya.ccl import CCLConnector
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.modeling_tools import ModelingTools
+import firecrown.likelihood.statistic as stat
+import firecrown.ccl_factory as ccl_factory
 
 
 def test_cobaya_ccl_initialize():
@@ -325,3 +331,36 @@ def test_default_factory():
     assert isinstance(model_fiducial, Model)
     logpost = model_fiducial.logposterior({})
     assert np.isfinite(logpost.logpost)
+
+
+def _factory_as(_: NamedParameters):
+    return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
+        ccl_factory=ccl_factory.CCLFactory(
+            amplitude_parameter=ccl_factory.PoweSpecAmplitudeParameter.AS
+        )
+    )
+
+
+def _factory_sigma8(_: NamedParameters):
+    return ConstGaussian([stat.TrivialStatistic()]), ModelingTools(
+        ccl_factory=ccl_factory.CCLFactory(
+            amplitude_parameter=ccl_factory.PoweSpecAmplitudeParameter.SIGMA8
+        )
+    )
+
+
+def test_likelihood_connector_from_module():
+    name = "my_dummy_likelihood_module"
+    factory_full = f"{name}.factory"
+    mod = types.ModuleType(factory_full)
+    mod.factory = _factory_as  # type: ignore
+    sys.modules[name] = mod
+
+    lk_connector = LikelihoodConnector(info={"firecrownIni": factory_full})
+    assert isinstance(lk_connector, LikelihoodConnector)
+    assert "sigma8" not in lk_connector.get_requirements()
+
+    mod.factory = _factory_sigma8  # type: ignore
+    lk_connector = LikelihoodConnector(info={"firecrownIni": factory_full})
+    assert isinstance(lk_connector, LikelihoodConnector)
+    assert "sigma8" in lk_connector.get_requirements()
