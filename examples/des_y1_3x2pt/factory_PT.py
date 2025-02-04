@@ -201,12 +201,9 @@ def run_likelihood() -> None:
     ptt_m = pyccl.nl_pt.PTMatterTracer()
     ptt_g = pyccl.nl_pt.PTNumberCountsTracer(b1=cs.b_1, b2=cs.b_2, bs=cs.b_s)
     # IA
-    pk_im = ptc.get_biased_pk2d(ptt_i, tracer2=ptt_m)
-    pk_ii = ptc.get_biased_pk2d(ptt_i, tracer2=ptt_i)
-    pk_gi = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_i)
+    pk_gi, pk_ii, pk_im = get_ia(ptc, ptt_g, ptt_i, ptt_m)
     # Galaxies
-    pk_gm = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_m)
-    pk_gg = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_g)
+    pk_gg, pk_gm = get_galaxies(ptc, ptt_g, ptt_m)
     # Magnification: just a matter-matter P(k)
     pk_mm = ptc.get_biased_pk2d(ptt_m, tracer2=ptt_m)
 
@@ -274,6 +271,46 @@ def run_likelihood() -> None:
     )
 
 
+def get_galaxies(
+    ptc: pyccl.nl_pt.EulerianPTCalculator,
+    ptt_g: pyccl.nl_pt.PTNumberCountsTracer,
+    ptt_m: pyccl.nl_pt.PTMatterTracer,
+) -> tuple[pyccl.Pk2D, pyccl.Pk2D]:
+    """
+     Compute the predicted power spectra for galaxies.
+
+    :param ptc: The perturbation theory calculator.
+    :param ptt_g: The number counts tracer.
+    :param ptt_m: The matter tracer.
+    :return: The galaxy-matter and galaxy-galaxy power spectra.
+    """
+    pk_gm = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_m)
+    pk_gg = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_g)
+    return pk_gg, pk_gm
+
+
+def get_ia(
+    ptc: pyccl.nl_pt.EulerianPTCalculator,
+    ptt_g: pyccl.nl_pt.PTNumberCountsTracer,
+    ptt_i: pyccl.nl_pt.PTIntrinsicAlignmentTracer,
+    ptt_m: pyccl.nl_pt.PTMatterTracer,
+) -> tuple[pyccl.Pk2D, pyccl.Pk2D, pyccl.Pk2D]:
+    """
+    Compute the predicted power spectra for intrinsic alignments.
+
+    :param ptc: The perturbation theory calculator.
+    :param ptt_g: The number counts tracer.
+    :param ptt_i: The intrinsic alignment tracer.
+    :param ptt_m: The matter tracer.
+    :return: The galaxy-intrinsic alignment, intrinsic-intrinsic, and
+             intrinsic-matter power spectra.
+    """
+    pk_im = ptc.get_biased_pk2d(ptt_i, tracer2=ptt_m)
+    pk_ii = ptc.get_biased_pk2d(ptt_i, tracer2=ptt_i)
+    pk_gi = ptc.get_biased_pk2d(ptt_g, tracer2=ptt_i)
+    return pk_gi, pk_ii, pk_im
+
+
 def plot_predicted_and_measured_statistics(
     ccl_cosmo,
     cs,
@@ -327,13 +364,13 @@ def plot_predicted_and_measured_statistics(
     # The weak gravitational lensing power spectrum
     cl_GG = ccl.angular_cl(ccl_cosmo, t_lens, t_lens, ells)
     # Galaxies
-    cl_gG = ccl.angular_cl(ccl_cosmo, t_g, t_lens, ells, p_of_k_a=pk_gm)
-    cl_gI = ccl.angular_cl(ccl_cosmo, t_g, t_ia, ells, p_of_k_a=pk_gi)
-    cl_gg = ccl.angular_cl(ccl_cosmo, t_g, t_g, ells, p_of_k_a=pk_gg)
+    cl_gG, cl_gI, cl_gg = get_galaxies_angular_cl(
+        ccl_cosmo, ells, pk_gg, pk_gi, pk_gm, t_g, t_ia, t_lens
+    )
     # Magnification
-    cl_mI = ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells, p_of_k_a=pk_im)
-    cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells, p_of_k_a=pk_gm)
-    cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells, p_of_k_a=pk_mm)
+    cl_gm, cl_mI, cl_mm = get_magnification_angular_cl(
+        ccl_cosmo, ells, pk_gm, pk_im, pk_mm, t_g, t_ia, t_m
+    )
     # The observed angular power spectrum is the sum of the two.
     cl_cs_theory = cl_GG + 2 * cl_GI + cl_II
     cl_gg_theory = cl_gg + 2 * cl_gm + cl_mm
@@ -374,6 +411,65 @@ def plot_predicted_and_measured_statistics(
     fig.suptitle("PT Cls, including IA, galaxy bias, magnification")
     fig.savefig("pt_cls.png", facecolor="white", dpi=300)
     plt.show()
+
+
+def get_magnification_angular_cl(
+    ccl_cosmo: pyccl.Cosmology,
+    ells: list[int],
+    pk_gm: pyccl.Pk2D,
+    pk_im: pyccl.Pk2D,
+    pk_mm: pyccl.Pk2D,
+    t_g: pyccl.Tracer,
+    t_ia: pyccl.Tracer,
+    t_m: pyccl.Tracer,
+) -> tuple[pyccl.Pk2D, pyccl.Pk2D, pyccl.Pk2D]:
+    """
+    Compute the predicted power spectra for magnification.
+
+    :param ccl_cosmo: The CCL cosmology object.
+    :param ells: The angular wavenumbers at which to compute the power spectrum.
+    :param pk_gm: The galaxy-magnification power spectrum.
+    :param pk_im: The intrinsic alignment-magnification power spectrum.
+    :param pk_mm: The magnification-magnification power spectrum.
+    :param t_g: The galaxy number counts tracer.
+    :param t_ia: The intrinsic alignment tracer.
+    :param t_m: The magnification tracer.
+    :return: The galaxy-magnification, intrinsic alignment-magnification, and
+             magnification-magnification power spectra.
+    """
+    cl_mI = ccl.angular_cl(ccl_cosmo, t_m, t_ia, ells, p_of_k_a=pk_im)
+    cl_gm = ccl.angular_cl(ccl_cosmo, t_g, t_m, ells, p_of_k_a=pk_gm)
+    cl_mm = ccl.angular_cl(ccl_cosmo, t_m, t_m, ells, p_of_k_a=pk_mm)
+    return cl_gm, cl_mI, cl_mm
+
+
+def get_galaxies_angular_cl(
+    ccl_cosmo: pyccl.Cosmology,
+    ells: list[int],
+    pk_gg: pyccl.Pk2D,
+    pk_gi: pyccl.Pk2D,
+    pk_gm: pyccl.Pk2D,
+    t_g: pyccl.Tracer,
+    t_ia: pyccl.Tracer,
+    t_lens: pyccl.Tracer,
+) -> tuple[pyccl.Pk2D, pyccl.Pk2D, pyccl.Pk2D]:
+    """
+    Compute the predicted power spectra for galaxies.
+
+    :param ccl_cosmo: The CCL cosmology object.
+    :param ells: The angular wavenumbers at which to compute the power spectrum.
+    :param pk_gg: The galaxy-galaxy power spectrum.
+    :param pk_gi: The galaxy-intrinsic alignment power spectrum.
+    :param pk_gm: The galaxy-magnification power spectrum.
+    :param t_g: The galaxy number counts tracer.
+    :param t_ia: The intrinsic alignment tracer.
+    :param t_lens: The lensing tracer.
+    :return: The galaxy-galaxy, galaxy-intrinsic, and galaxy-lensing power spectra.
+    """
+    cl_gG = ccl.angular_cl(ccl_cosmo, t_g, t_lens, ells, p_of_k_a=pk_gm)
+    cl_gI = ccl.angular_cl(ccl_cosmo, t_g, t_ia, ells, p_of_k_a=pk_gi)
+    cl_gg = ccl.angular_cl(ccl_cosmo, t_g, t_g, ells, p_of_k_a=pk_gg)
+    return cl_gG, cl_gI, cl_gg
 
 
 if __name__ == "__main__":
