@@ -13,7 +13,7 @@ from scipy.integrate import quad
 
 from numcosmo_py import Ncm
 
-from firecrown.metadata_types import InferredGalaxyZDist, Galaxies, ALL_MEASUREMENTS
+from firecrown.metadata_types import InferredGalaxyZDist, Galaxies
 from firecrown.metadata_functions import (
     Measurement,
     make_measurements,
