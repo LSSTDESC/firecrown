@@ -5,6 +5,7 @@ It contains functions to manipulate two-point data objects.
 
 import hashlib
 from typing import Callable, Sequence, Annotated
+from typing_extensions import assert_never
 
 import sacc
 from pydantic import (
@@ -497,6 +498,8 @@ class TwoPointBinFilterCollection(BaseModel):
                         ),
                         ells=tpm.metadata.ells[match_elements],
                     )
+                case _ as unreachable:
+                    assert_never(unreachable)
 
             result.append(
                 TwoPointMeasurement(
