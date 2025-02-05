@@ -1,5 +1,4 @@
-"""Tests for the module firecrown.likelihood.factories.
-"""
+"""Tests for the module firecrown.likelihood.factories."""
 
 import re
 from pathlib import Path

@@ -447,7 +447,7 @@ Grid1D = LinearGrid1D | RawGrid1D
 
 
 def make_measurements(
-    value: set[Measurement] | list[dict[str, Any]]
+    value: set[Measurement] | list[dict[str, Any]],
 ) -> set[Measurement]:
     """Create a Measurement object from a dictionary."""
     if isinstance(value, set) and all(

@@ -19,8 +19,8 @@ from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
     CCLCalculatorArgs,
-    CCLFactory,
     CCLCreationMode,
+    PoweSpecAmplitudeParameter,
 )
 from firecrown.connector.numcosmo import helpers
 
@@ -175,7 +175,7 @@ class MappingNumCosmo(GObject.Object):
     )
 
     def set_params_from_numcosmo(
-        self, mset: Ncm.MSet, ccl_factory: CCLFactory
+        self, mset: Ncm.MSet, amplitude_parameter: PoweSpecAmplitudeParameter
     ) -> None:  # pylint: disable-msg=too-many-locals
         """Set the parameters of the contained Mapping object.
 
@@ -209,9 +209,9 @@ class MappingNumCosmo(GObject.Object):
             case _:
                 raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        A_s, sigma8 = helpers.get_amplitude_parameters(ccl_factory, self.p_ml, hi_cosmo)
-
-        assert (A_s is not None) or (sigma8 is not None)
+        A_s, sigma8 = helpers.get_amplitude_parameters(
+            amplitude_parameter, self.p_ml, hi_cosmo
+        )
 
         # pylint: disable=duplicate-code
         self.mapping.set_params(
@@ -570,7 +570,9 @@ class NumCosmoData(Ncm.Data):
         self.likelihood.reset()
         self.tools.reset()
 
-        self._nc_mapping.set_params_from_numcosmo(mset, self.tools.ccl_factory)
+        self._nc_mapping.set_params_from_numcosmo(
+            mset, self.tools.ccl_factory.amplitude_parameter
+        )
         params_map = self._nc_mapping.create_params_map(self.model_list, mset)
 
         self.likelihood.update(params_map)
@@ -850,7 +852,9 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.likelihood.reset()
         self.tools.reset()
 
-        self._nc_mapping.set_params_from_numcosmo(mset, self.tools.ccl_factory)
+        self._nc_mapping.set_params_from_numcosmo(
+            mset, self.tools.ccl_factory.amplitude_parameter
+        )
         params_map = self._nc_mapping.create_params_map(self._model_list, mset)
 
         self.likelihood.update(params_map)

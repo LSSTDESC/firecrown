@@ -23,7 +23,7 @@ def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
 
 
 def get_amplitude_parameters(
-    ccl_factory: fac.CCLFactory,
+    amplitude_parameter: fac.PoweSpecAmplitudeParameter,
     p_ml: None | Nc.PowspecML,
     hi_cosmo: Nc.HICosmo,
 ) -> tuple[float | None, float | None]:
@@ -39,7 +39,7 @@ def get_amplitude_parameters(
     sigma8: float | None = None
 
     # mypy verifies that the match statement below is exhaustive
-    match ccl_factory.amplitude_parameter:
+    match amplitude_parameter:
         case fac.PoweSpecAmplitudeParameter.SIGMA8:
             if p_ml is None:
                 raise ValueError("PowspecML object must be provided when using sigma8.")
