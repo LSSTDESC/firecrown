@@ -1,14 +1,12 @@
 """The module responsible for extracting cluster data from a sacc file."""
 
-import numpy as np
-import numpy.typing as npt
 import sacc
-from sacc.tracers import SurveyTracer
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.binning import SaccBin
+from firecrown.models.cluster.cluster_data import ClusterData
 
 
-class AbundanceData:
+class AbundanceData(ClusterData):
     """The class used to wrap a sacc file and return the cluster abundance data.
 
     The sacc file is a complicated set of tracers (bins) and surveys.  This class
@@ -16,27 +14,6 @@ class AbundanceData:
     number count statistic.  The data in this class is specific to a single
     survey name.
     """
-
-    _survey_index = 0
-    _redshift_index = 1
-    _mass_index = 2
-
-    def __init__(self, sacc_data: sacc.Sacc):
-        self.sacc_data = sacc_data
-
-    def get_survey_tracer(self, survey_nm: str) -> SurveyTracer:
-        """Returns the SurveyTracer for the specified survey name."""
-        try:
-            survey_tracer: SurveyTracer = self.sacc_data.get_tracer(survey_nm)
-        except KeyError as exc:
-            raise ValueError(
-                f"The SACC file does not contain the SurveyTracer " f"{survey_nm}."
-            ) from exc
-
-        if not isinstance(survey_tracer, SurveyTracer):
-            raise ValueError(f"The SACC tracer {survey_nm} is not a SurveyTracer.")
-
-        return survey_tracer
 
     def get_observed_data_and_indices_by_survey(
         self,
@@ -48,9 +25,7 @@ class AbundanceData:
         For example if the caller has enabled COUNTS then the observed cluster counts
         within each N dimensional bin will be returned.
         """
-        data_vectors = []
-        sacc_indices = []
-
+        data_types = []
         for cluster_property in ClusterProperty:
             include_prop = cluster_property & properties
             if not include_prop:
@@ -58,50 +33,22 @@ class AbundanceData:
 
             if cluster_property == ClusterProperty.COUNTS:
                 # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_counts
+                data_types.append(sacc.standard_types.cluster_counts)
             elif cluster_property == ClusterProperty.MASS:
                 # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_mean_log_mass
-            else:
-                raise NotImplementedError(cluster_property)
+                data_types.append(sacc.standard_types.cluster_mean_log_mass)
 
-            bin_combinations = self._all_bin_combinations_for_data_type(data_type)
-
-            my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
-
-            data_vectors += list(
-                self.sacc_data.get_mean(data_type=data_type)[my_survey_mask]
-            )
-
-            sacc_indices += list(
-                self.sacc_data.indices(data_type=data_type)[my_survey_mask]
-            )
-
-        return data_vectors, sacc_indices
-
-    def _all_bin_combinations_for_data_type(self, data_type: str) -> npt.NDArray:
-        bins_combos_for_type = np.array(
-            self.sacc_data.get_tracer_combinations(data_type=data_type)
+        data_vectors, sacc_indices = self._get_observed_data_and_indices_by_survey(
+            survey_nm, data_types, 3
         )
-
-        if len(bins_combos_for_type) == 0:
-            raise ValueError(
-                f"The SACC file does not contain any tracers for the "
-                f"{data_type} data type."
-            )
-
-        assert (
-            bins_combos_for_type.shape[1] == 3
-        ), "The SACC file must contain 3 tracers for the cluster_counts data type."
-
-        return bins_combos_for_type
+        return data_vectors, sacc_indices
 
     def get_bin_edges(
         self, survey_nm: str, properties: ClusterProperty
     ) -> list[SaccBin]:
         """Returns the limits for all z, mass bins for the requested data type."""
         bins = []
-
+        data_type = None
         for cluster_property in ClusterProperty:
             if not cluster_property & properties:
                 continue
@@ -113,12 +60,13 @@ class AbundanceData:
                 # pylint: disable=no-member
                 data_type = sacc.standard_types.cluster_mean_log_mass
             else:
-                raise NotImplementedError(cluster_property)
+                continue
 
-            bin_combinations = self._all_bin_combinations_for_data_type(data_type)
-            my_survey_mask = bin_combinations[:, self._survey_index] == survey_nm
-            bin_combinations_for_survey = bin_combinations[my_survey_mask]
-
+            bin_combinations_for_survey = (
+                self._all_bin_combinations_for_data_type_and_survey(
+                    survey_nm, data_type, 3
+                )
+            )
             for _, z_tracer, mass_tracer in bin_combinations_for_survey:
                 z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)
                 mass_data: sacc.tracers.BinRichnessTracer = self.sacc_data.get_tracer(

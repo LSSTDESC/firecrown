@@ -6,6 +6,7 @@ dependencies:
   - babel
   - black
   - charset-normalizer
+  - clmm
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
