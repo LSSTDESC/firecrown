@@ -19,6 +19,7 @@ from typing import Annotated
 from enum import Enum, auto
 from pathlib import Path
 
+from typing_extensions import assert_never
 import yaml
 from pydantic import BaseModel, ConfigDict, BeforeValidator
 
@@ -111,6 +112,17 @@ class DataSourceSacc(BaseModel):
         raise FileNotFoundError(f"File {sacc_data_path} does not exist")
 
 
+def ensure_path(file: str | Path) -> Path:
+    """Ensure the file path is a Path object."""
+    match file:
+        case str():
+            return Path(file)
+        case Path():
+            return file
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
 class TwoPointExperiment(BaseModel):
     """Model for the two-point experiment in a likelihood configuration."""
 
@@ -124,16 +136,14 @@ class TwoPointExperiment(BaseModel):
     @classmethod
     def load_from_yaml(cls, file: str | Path) -> "TwoPointExperiment":
         """Load a TwoPointExperiment object from a YAML file."""
-        if isinstance(file, str):
-            file = Path(file)
+        filepath = ensure_path(file)
 
-        # Determine file directory
-        file_dir = file.parent
-        with open(file, "r", encoding="utf-8") as f:
+        with open(filepath, "r", encoding="utf-8") as f:
             config = yaml.safe_load(f)
             tpe = cls.model_validate(config, strict=True)
 
-        tpe.data_source.set_path(file_dir)
+        # Record the file directory
+        tpe.data_source.set_path(filepath.parent)
         return tpe
 
     def make_likelihood(self) -> Likelihood:
@@ -157,6 +167,8 @@ class TwoPointExperiment(BaseModel):
                     self.two_point_factory.number_counts_factory,
                     filters=self.data_source.filters,
                 )
+            case _ as unreachable:
+                assert_never(unreachable)
         assert likelihood is not None
         return likelihood
 

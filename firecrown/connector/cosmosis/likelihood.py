@@ -197,18 +197,26 @@ class FirecrownLikelihood:
         """
         assert stat.sacc_tracers is not None
         tracer = f"{stat.sacc_tracers[0]}_{stat.sacc_tracers[1]}"
-        if stat.ells is not None:
+
+        # Determine whether we have ells or thetas -- it must not be both
+        have_ells = stat.ells is not None
+        have_thetas = stat.thetas is not None
+        assert have_ells != have_thetas
+
+        if have_ells:
             sample.put_int_array_1d(
                 "data_vector",
                 f"ell_{stat.sacc_data_type}_{tracer}",
                 stat.ells,
             )
-        elif stat.thetas is not None:
+
+        if have_thetas:
             sample.put_double_array_1d(
                 "data_vector",
                 f"theta_{stat.sacc_data_type}_{tracer}",
                 stat.thetas,
             )
+
         sample.put_double_array_1d(
             "data_vector",
             f"theory_{stat.sacc_data_type}_{tracer}",

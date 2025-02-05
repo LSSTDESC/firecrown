@@ -1,15 +1,14 @@
-"""Tests for the module firecrown.likelihood.factories.
-"""
+"""Tests for the module firecrown.likelihood.factories."""
 
 import re
 from pathlib import Path
 import pytest
 
 import sacc
-
 from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
+    ensure_path,
     TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
@@ -549,3 +548,21 @@ def test_build_two_point_real_with_filter_allow_empty(empty_factory_real) -> Non
         ),
     )
     assert two_point_experiment.make_likelihood() is not None
+
+
+@pytest.mark.parametrize(
+    "file, expected",
+    [
+        # Test with string input
+        ("example.txt", Path("example.txt")),
+        # Test with Path object
+        (Path("example.txt"), Path("example.txt")),
+        # Test with absolute path string
+        ("/home/user/example.txt", Path("/home/user/example.txt")),
+        # Test with relative path string
+        ("../example.txt", Path("../example.txt")),
+    ],
+)
+def test_ensure_path(file, expected):
+    result = ensure_path(file)
+    assert result == expected

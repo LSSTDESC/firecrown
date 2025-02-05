@@ -104,6 +104,9 @@ class LikelihoodConnector(Likelihood):
                 self.tools.ccl_factory.amplitude_parameter
                 == PoweSpecAmplitudeParameter.SIGMA8
             ):
+                # Tell Cobaya we want it to calculate sigma8, and that we do not
+                # provide the way to do that; something else must know how to do
+                # so, or an error will result.
                 likelihood_requires["sigma8"] = None
 
         for param_name in required_params.get_params_names():
