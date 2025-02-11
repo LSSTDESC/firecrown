@@ -106,7 +106,7 @@ class DataSourceSacc(BaseModel):
             if full_sacc_data_path.exists():
                 return sacc.Sacc.load_fits(full_sacc_data_path)
         # If path is not set, use the current directory
-        if sacc_data_path.exists():
+        elif sacc_data_path.exists():
             return sacc.Sacc.load_fits(sacc_data_path)
         # If the file does not exist, raise an error
         raise FileNotFoundError(f"File {sacc_data_path} does not exist")
