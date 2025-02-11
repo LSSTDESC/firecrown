@@ -407,9 +407,7 @@ class TwoPointBinFilterCollection(BaseModel):
     def filter_match(self, tpm: TwoPointMeasurement) -> bool:
         """Check if the TwoPointMeasurement matches the filter."""
         bin_spec_key = bin_spec_from_metadata(tpm.metadata)
-        if bin_spec_key not in self._bin_filter_dict:
-            return False
-        return True
+        return bin_spec_key in self._bin_filter_dict
 
     def run_bin_filter(
         self,
