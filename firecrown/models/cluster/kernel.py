@@ -128,14 +128,14 @@ class Purity(Updatable):
         self,
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: tuple[float, float],
+        mass_proxy_limits: tuple[float, float] = None,
     ) -> npt.NDArray[np.float64]:
         """Evaluates and returns the purity contribution to the integrand."""
         if all(mass_proxy == -1.0):
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
             r = 10**mean_mass
         else:
-            r = np.power(10.0, mass_proxy).item()
+            r = np.power(10.0, mass_proxy)
 
         r_over_rc = r / self._rc(z)
 

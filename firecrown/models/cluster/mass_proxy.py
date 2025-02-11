@@ -93,7 +93,7 @@ class MassRichnessGaussian(Updatable):
 
         normalization = 1 / np.sqrt(2 * np.pi * proxy_sigma**2)
         result = normalization * np.exp(
-            -0.5 * ((mass_proxy - proxy_mean) / proxy_sigma) ** 2
+            -0.5 * ((mass_proxy * np.log(10) - proxy_mean) / proxy_sigma) ** 2
         )
 
         assert isinstance(result, np.ndarray)
