@@ -8,4 +8,4 @@ import firecrown
 
 
 def test_version():
-    assert firecrown.__version__ == "1.8.0"
+    assert firecrown.__version__ == "1.9.0a0"
