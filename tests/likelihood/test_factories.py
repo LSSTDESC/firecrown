@@ -252,10 +252,18 @@ def test_two_point_experiment_direct() -> None:
     assert two_point_experiment.data_source.sacc_data_file == "tests/bug_398.sacc.gz"
 
 
-def test_build_two_point_likelihood_real(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_real(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
   correlation_space: real
   weak_lensing_factory:
@@ -265,7 +273,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: examples/des_y1_3x2pt/sacc_data.fits
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -275,10 +283,18 @@ data_source:
     assert isinstance(tools, ModelingTools)
 
 
-def test_build_two_point_likelihood_harmonic(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_harmonic(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
   correlation_space: harmonic
   weak_lensing_factory:
@@ -288,7 +304,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: tests/bug_398.sacc.gz
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -298,10 +314,18 @@ data_source:
     assert isinstance(tools, ModelingTools)
 
 
-def test_build_two_point_likelihood_real_no_real_data(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_real_no_real_data(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
   correlation_space: real
   weak_lensing_factory:
@@ -311,7 +335,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: tests/bug_398.sacc.gz
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -325,10 +349,18 @@ data_source:
         _ = build_two_point_likelihood(build_parameters)
 
 
-def test_build_two_point_likelihood_harmonic_no_harmonic_data(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_harmonic_no_harmonic_data(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
     correlation_space: harmonic
     weak_lensing_factory:
@@ -338,7 +370,7 @@ two_point_factory:
         per_bin_systematics: []
         global_systematics: []
 data_source:
-    sacc_data_file: examples/des_y1_3x2pt/sacc_data.fits
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
