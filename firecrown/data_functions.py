@@ -363,9 +363,6 @@ class TwoPointBinFilterCollection(BaseModel):
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    filters: list[TwoPointBinFilter] = Field(
-        description="The list of bin filters.",
-    )
     require_filter_for_all: bool = Field(
         default=False,
         description="If True, all bins should match a filter.",
@@ -376,6 +373,9 @@ class TwoPointBinFilterCollection(BaseModel):
             "When true, objects with no elements remaining after applying "
             "the filter will be ignored rather than treated as an error."
         ),
+    )
+    filters: list[TwoPointBinFilter] = Field(
+        description="The list of bin filters.",
     )
 
     _bin_filter_dict: dict[BinSpec, tuple[float, float]] = PrivateAttr()

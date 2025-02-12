@@ -194,6 +194,10 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
 from firecrown.parameters import ParamsMap
+from firecrown.utils import base_model_to_yaml
+from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+from firecrown.metadata_types import Galaxies
+
 
 tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
 params = get_default_params_map(tools, likelihood)
@@ -211,33 +215,37 @@ print(f"Loglike from metadata only: {likelihood.compute_loglike(tools)}")
 print(f"Loglike from ready state: {likelihood_ready.compute_loglike(tools)}")
 ```
 
-### Filtering Data: Scale-cuts
+## Filtering Data: Scale-cuts
 
-Real analyses use only a subset of the measured two-points statistics, where the utilized data is typically limited my the accuracy of the models used to fit the data. It is then useful to define the physical scales (corresponding to the data) that should be analyzed in a given likelihood evaluation of two-point statistics. Firecrown can implement this feature though its factories, noteably by defining a `TwoPointBinFilterCollection` object. This object is a collection of `TwoPointBinFilter` objects, which define the valid data analysis range for a given combination of two-point tracers. For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
+Real analyses use only a subset of the measured two-points statistics, where the utilized data is typically limited my the accuracy of the models used to fit the data. 
+It is then useful to define the physical scales (corresponding to the data) that should be analyzed in a given likelihood evaluation of two-point statistics. 
+Firecrown can implement this feature though its factories, notably by defining a `TwoPointBinFilterCollection` object. 
+This object is a collection of `TwoPointBinFilter` objects, which define the valid data analysis range for a given combination of two-point tracers. 
+For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
 
 ```{python}
-from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
-from firecrown.metadata_types import Galaxies
-TwoPointBinFilterCollection(
-                filters=[
-                    TwoPointBinFilter.from_args(
-                        name1=f"lens{i}",
-                        measurement1=Galaxies.COUNTS,
-                        name2=f"lens{i}",
-                        measurement2=Galaxies.COUNTS,
-                        lower=2,
-                        upper=300,
-                    )
-                    for i in range(5)
-                ],
-                require_filter_for_all=True,
-                allow_empty=True,
+tp_collection = TwoPointBinFilterCollection(
+    filters=[
+        TwoPointBinFilter.from_args(
+            name1=f"lens{i}",
+            measurement1=Galaxies.COUNTS,
+            name2=f"lens{i}",
+            measurement2=Galaxies.COUNTS,
+            lower=2,
+            upper=300,
+        )
+        for i in range(5)
+    ],
+    require_filter_for_all=True,
+    allow_empty=True,
 )
+Markdown(f"```yaml\n{base_model_to_yaml(tp_collection)}\n```")
 ```
+
 Equivalently, we may reduce the complexity of the code slightly and specify the use of auto-correlations only:
 
 ```{python}
-TwoPointBinFilterCollection(
+tp_collection = TwoPointBinFilterCollection(
                 filters=[
                     TwoPointBinFilter.from_args_auto(
                         name=f"lens{i}",
@@ -250,39 +258,38 @@ TwoPointBinFilterCollection(
                 require_filter_for_all=True,
                 allow_empty=True,
 )
+Markdown(f"```yaml\n{base_model_to_yaml(tp_collection)}\n```")
 ```
+
 One may alternatively define the tracers directly (instead of from arguments) as `TwoPointTracerSpec` objects. 
 
-A `TwoPointExperiment` object is able to keep track of the relevant `Factory` instances to generate the two-point configurations of the analysis (either in configuration or harmonic space) and the scale-cut/data filtering choices to evaluate a defined likelihood. The interpretation of the filtered lower and upper limits of the data depend on the definition of the `TwoPointExperiment` factories in either configuration or harmonic space.
+A `TwoPointExperiment` object is able to keep track of the relevant `Factory` instances to generate the two-point configurations of the analysis (either in configuration or harmonic space) and the scale-cut/data filtering choices to evaluate a defined likelihood. 
+The interpretation of the filtered lower and upper limits of the data depend on the definition of the `TwoPointExperiment` factories in either configuration or harmonic space.
 
-With this formalism, we are able to evaluate the likelihood exactly as the previous section by defining filters to be very wide. Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis and do so in the example below by filtering-out all galaxy clustering data. 
+With this formalism, we are able to evaluate the likelihood exactly as the previous section by defining filters to be very wide. 
+Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis and do so in the example below by filtering-out all galaxy clustering data. 
 
 ```{python}
-from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
-from firecrown.updatable import get_default_params_map
-from firecrown.parameters import ParamsMap
 from firecrown.likelihood.factories import (
-    build_two_point_likelihood,
     DataSourceSacc,
-    ensure_path,
     TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
 )
 
-
 tpf = TwoPointFactory(
-                correlation_space=TwoPointCorrelationSpace.REAL,
-                weak_lensing_factory=weak_lensing_factory,
-                number_counts_factory=number_counts_factory,
-            )
+    correlation_space=TwoPointCorrelationSpace.REAL,
+    weak_lensing_factory=weak_lensing_factory,
+    number_counts_factory=number_counts_factory,
+)
 
 two_point_experiment = TwoPointExperiment(
     two_point_factory=tpf,
     data_source=DataSourceSacc(
         sacc_data_file="../examples/des_y1_3x2pt/sacc_data.fits",
         filters=TwoPointBinFilterCollection(
+            require_filter_for_all=False,
+            allow_empty=True,
             filters=[
                 TwoPointBinFilter.from_args_auto(
                     name=f"lens{i}",
@@ -292,8 +299,6 @@ two_point_experiment = TwoPointExperiment(
                 )
                 for i in range(5)
             ],
-            require_filter_for_all=False,
-            allow_empty=True,
         ),
     ),
 )
@@ -303,6 +308,8 @@ two_point_experiment_filtered = TwoPointExperiment(
     data_source=DataSourceSacc(
         sacc_data_file="../examples/des_y1_3x2pt/sacc_data.fits",
         filters=TwoPointBinFilterCollection(
+            require_filter_for_all=False,
+            allow_empty=True,
             filters=[
                 TwoPointBinFilter.from_args_auto(
                     name=f"lens{i}",
@@ -312,13 +319,29 @@ two_point_experiment_filtered = TwoPointExperiment(
                 )
                 for i in range(5)
             ],
-            require_filter_for_all=False,
-            allow_empty=True,
         ),
     ),
 )
+```
 
+The `TwoPointExperiment` objects can also be used to create likelihoods in the ready state. 
+Additionally, they can be serialized into a yaml file, making it easier to share specific analysis choices with other users and collaborators.
 
+The `yaml` below shows the first experiment.
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{base_model_to_yaml(two_point_experiment)}\n```")
+```
+
+The `yaml` below shows the second experiment.
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{base_model_to_yaml(two_point_experiment_filtered)}\n```")
+```
+
+Next, we can create likelihoods from the `TwoPointExperiment` objects and compare the loglike values.
+
+```{python}
 likelihood_tpe = two_point_experiment.make_likelihood()
 
 params = get_default_params_map(tools, likelihood_tpe)
@@ -338,6 +361,7 @@ tools.prepare()
 likelihood_tpe_filtered.update(params)
 
 ```
+
 ```{python}
 # | code-fold: true
 print(f"Loglike from metadata only: {likelihood.compute_loglike(tools)}")

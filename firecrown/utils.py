@@ -49,7 +49,9 @@ def base_model_from_yaml(cls: type, yaml_str: str):
 
 def base_model_to_yaml(model: BaseModel) -> str:
     """Convert a base model to a yaml string."""
-    return yaml.dump(model.model_dump(), default_flow_style=None, sort_keys=False)
+    return yaml.dump(
+        model.model_dump(), default_flow_style=None, sort_keys=False, width=80
+    )
 
 
 def upper_triangle_indices(n: int) -> Generator[tuple[int, int], None, None]:

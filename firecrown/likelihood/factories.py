@@ -21,7 +21,7 @@ from pathlib import Path
 
 from typing_extensions import assert_never
 import yaml
-from pydantic import BaseModel, ConfigDict, BeforeValidator
+from pydantic import BaseModel, ConfigDict, BeforeValidator, field_serializer
 
 import sacc
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
@@ -82,6 +82,12 @@ class TwoPointFactory(BaseModel):
     def model_post_init(self, __context) -> None:
         """Initialize the WeakLensingFactory object."""
 
+    @field_serializer("correlation_space")
+    @classmethod
+    def serialize_correlation_space(cls, value: TwoPointCorrelationSpace) -> str:
+        """Serialize the amplitude parameter."""
+        return value.name
+
 
 class DataSourceSacc(BaseModel):
     """Model for the data source in a likelihood configuration."""
@@ -132,6 +138,8 @@ class TwoPointExperiment(BaseModel):
 
     def model_post_init(self, __context) -> None:
         """Initialize the TwoPointExperiment object."""
+        if self.ccl_factory is None:
+            self.ccl_factory = CCLFactory()
 
     @classmethod
     def load_from_yaml(cls, file: str | Path) -> "TwoPointExperiment":
