@@ -5,7 +5,7 @@ metadata from a sacc file and creating new metadata objects.
 """
 
 from itertools import combinations_with_replacement, product
-from typing import TypedDict
+from typing import TypedDict, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -25,6 +25,10 @@ from firecrown.metadata_types import (
     measurement_is_compatible,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
+    ALL_MEASUREMENT_TYPES,
+    Galaxies,
+    CMB,
+    Clusters,
 )
 
 # TwoPointRealIndex is a type used to create intermediate objects when reading SACC
@@ -46,6 +50,63 @@ TwoPointHarmonicIndex = TypedDict(
         "tracer_names": TracerNames,
     },
 )
+
+
+def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
+    """Create a Measurement object from a dictionary."""
+    if isinstance(value, ALL_MEASUREMENT_TYPES):
+        return value
+
+    if not isinstance(value, dict):
+        raise ValueError(f"Invalid Measurement: {value} is not a dictionary")
+
+    if "subject" not in value:
+        raise ValueError("Invalid Measurement: dictionary does not contain 'subject'")
+
+    subject = value["subject"]
+
+    match subject:
+        case "Galaxies":
+            return Galaxies[value["property"]]
+        case "CMB":
+            return CMB[value["property"]]
+        case "Clusters":
+            return Clusters[value["property"]]
+        case _:
+            raise ValueError(
+                f"Invalid Measurement: subject: '{subject}' is not recognized"
+            )
+
+
+def make_measurements(
+    value: set[Measurement] | list[dict[str, Any]],
+) -> set[Measurement]:
+    """Create a Measurement object from a dictionary."""
+    if isinstance(value, set) and all(
+        isinstance(v, ALL_MEASUREMENT_TYPES) for v in value
+    ):
+        return value
+
+    measurements: set[Measurement] = set()
+    for measurement_dict in value:
+        measurements.update([make_measurement(measurement_dict)])
+    return measurements
+
+
+def make_measurement_dict(value: Measurement) -> dict[str, str]:
+    """Create a dictionary from a Measurement object.
+
+    :param value: the measurement to turn into a dictionary
+    """
+    return {"subject": type(value).__name__, "property": value.name}
+
+
+def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
+    """Create a dictionary from a Measurement object.
+
+    :param value: the measurement to turn into a dictionary
+    """
+    return [make_measurement_dict(measurement) for measurement in value]
 
 
 def _extract_all_candidate_measurement_types(

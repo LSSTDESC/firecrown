@@ -207,6 +207,25 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
 
 
 @pytest.fixture(
+    name="all_harmonic_bins",
+)
+def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    z = np.linspace(0.0, 1.0, 256)
+    dndzs = [
+        np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
+        np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
+    ]
+    return [
+        InferredGalaxyZDist(
+            bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+        )
+        for i in range(2)
+        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
+    ]
+
+
+@pytest.fixture(
     name="real_bin_1",
     params=[
         Galaxies.COUNTS,
@@ -246,6 +265,28 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
         measurements={request.param},
     )
     return x
+
+
+@pytest.fixture(
+    name="all_real_bins",
+)
+def make_all_real_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    return [
+        InferredGalaxyZDist(
+            bin_name=f"bin_{i + 1}",
+            z=np.linspace(0, 1, 5),
+            dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
+            measurements={m},
+        )
+        for i in range(2)
+        for m in [
+            Galaxies.COUNTS,
+            Galaxies.SHEAR_T,
+            Galaxies.SHEAR_MINUS,
+            Galaxies.SHEAR_PLUS,
+        ]
+    ]
 
 
 @pytest.fixture(name="window_1")

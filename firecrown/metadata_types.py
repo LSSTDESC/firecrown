@@ -312,17 +312,6 @@ class InferredGalaxyZDist(YAMLSerializable):
         )
 
 
-def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
-    """Create a dictionary from a Measurement object.
-
-    :param value: the measurement to turn into a dictionary
-    """
-    return [
-        {"subject": type(measurement).__name__, "property": measurement.name}
-        for measurement in value
-    ]
-
-
 def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     """Check if two Measurement are compatible.
 

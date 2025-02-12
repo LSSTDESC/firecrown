@@ -24,7 +24,7 @@ from typing import TextIO
 
 # some global context to be used in the tracing. We are relying on
 # 'trace_call' to act as a closure that captures these names.
-tracefile = None  # the file used for logging
+tracefile: TextIO | None = None  # the file used for logging
 level = 0  # the call nesting level
 entry = 0  # sequential entry number for each record
 

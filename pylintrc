@@ -12,9 +12,6 @@ py-version=3.10
 # Discover python modules and packages in the file system subtree.
 recursive=yes
 
-# Add custom pylint plugins
-load-plugins=pylint_plugins.duplicate_code
-
 [MESSAGES CONTROL]
 
 # Enable the message, report, category or checker with the given id(s). You can

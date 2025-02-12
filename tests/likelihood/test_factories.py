@@ -17,6 +17,36 @@ from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
+from firecrown.metadata_types import Galaxies
+from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+
+
+@pytest.fixture(name="empty_factory_harmonic")
+def fixture_empty_factory_harmonic() -> TwoPointFactory:
+    """Return an empty TwoPointFactory object."""
+    return TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factory=WeakLensingFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+        number_counts_factory=NumberCountsFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+    )
+
+
+@pytest.fixture(name="empty_factory_real")
+def fixture_empty_factory_real() -> TwoPointFactory:
+    """Return an empty TwoPointFactory object."""
+    return TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.REAL,
+        weak_lensing_factory=WeakLensingFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+        number_counts_factory=NumberCountsFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+    )
 
 
 def test_two_point_factory_dict() -> None:
@@ -141,6 +171,22 @@ def test_data_source_sacc_get_sacc_data() -> None:
     assert isinstance(sacc_data, sacc.Sacc)
 
 
+def test_data_source_sacc_get_filepath_throws() -> None:
+    # absolute data file name, no path, no such file.
+    dss = DataSourceSacc(sacc_data_file="/tmp/no such file.fits")
+    with pytest.raises(
+        FileNotFoundError, match="File /tmp/no such file.fits does not exist"
+    ):
+        _ = dss.get_filepath()
+    # relative data file name, path present, no such file.
+    dss = DataSourceSacc(sacc_data_file="no such file.fits")
+    dss.set_path(Path("/tmp"))
+    with pytest.raises(
+        FileNotFoundError, match="File no such file.fits does not exist"
+    ):
+        _ = dss.get_filepath()
+
+
 def test_two_point_experiment_dict() -> None:
     two_point_experiment_dict = {
         "two_point_factory": {
@@ -222,10 +268,18 @@ def test_two_point_experiment_direct() -> None:
     assert two_point_experiment.data_source.sacc_data_file == "tests/bug_398.sacc.gz"
 
 
-def test_build_two_point_likelihood_real(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_real(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
   correlation_space: real
   weak_lensing_factory:
@@ -235,7 +289,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: examples/des_y1_3x2pt/sacc_data.fits
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -245,10 +299,18 @@ data_source:
     assert isinstance(tools, ModelingTools)
 
 
-def test_build_two_point_likelihood_harmonic(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_harmonic(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
   correlation_space: harmonic
   weak_lensing_factory:
@@ -258,7 +320,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: tests/bug_398.sacc.gz
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -268,10 +330,18 @@ data_source:
     assert isinstance(tools, ModelingTools)
 
 
-def test_build_two_point_likelihood_real_no_real_data(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_real_no_real_data(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
   correlation_space: real
   weak_lensing_factory:
@@ -281,7 +351,7 @@ two_point_factory:
     per_bin_systematics: []
     global_systematics: []
 data_source:
-    sacc_data_file: tests/bug_398.sacc.gz
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -295,10 +365,18 @@ data_source:
         _ = build_two_point_likelihood(build_parameters)
 
 
-def test_build_two_point_likelihood_harmonic_no_harmonic_data(tmp_path: Path) -> None:
+def test_build_two_point_likelihood_harmonic_no_harmonic_data(
+    tmp_path: Path, request: pytest.FixtureRequest
+) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
+    top_dir = request.config.rootpath
+    absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
+    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
+        tmp_path, walk_up=True
+    )
+
     tmp_experiment_file.write_text(
-        """
+        f"""
 two_point_factory:
     correlation_space: harmonic
     weak_lensing_factory:
@@ -308,7 +386,7 @@ two_point_factory:
         per_bin_systematics: []
         global_systematics: []
 data_source:
-    sacc_data_file: examples/des_y1_3x2pt/sacc_data.fits
+    sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 
@@ -339,6 +417,185 @@ def test_build_two_point_likelihood_invalid_likelihood_config(tmp_path: Path) ->
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
     with pytest.raises(ValueError, match=".*validation error for TwoPointExperiment.*"):
         _ = build_two_point_likelihood(build_parameters)
+
+
+def test_build_two_point_harmonic_with_filter(empty_factory_harmonic) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_harmonic,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=2,
+                        upper=3000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    assert two_point_experiment.make_likelihood() is not None
+
+
+def test_build_two_point_harmonic_with_filter_require_filter(
+    empty_factory_harmonic,
+) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_harmonic,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=2,
+                        upper=3000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=True,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_harmonic_with_filter_empty(empty_factory_harmonic) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_harmonic,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=20000,
+                        upper=30000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointMeasurement .* does "
+            "not have any elements matching the filter."
+        ),
+    ):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_real_with_filter(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=0.0,
+                        upper=100.0,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    assert two_point_experiment.make_likelihood() is not None
+
+
+def test_build_two_point_real_with_filter_require_filter(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=0.0,
+                        upper=100.0,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=True,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_real_with_filter_empty(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=20000,
+                        upper=30000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=False,
+            ),
+        ),
+    )
+    with pytest.raises(
+        ValueError,
+        match=(
+            "The TwoPointMeasurement .* does "
+            "not have any elements matching the filter."
+        ),
+    ):
+        _ = two_point_experiment.make_likelihood()
+
+
+def test_build_two_point_real_with_filter_allow_empty(empty_factory_real) -> None:
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_real,
+        data_source=DataSourceSacc(
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    TwoPointBinFilter.from_args_auto(
+                        name=f"lens{i}",
+                        measurement=Galaxies.COUNTS,
+                        lower=20000,
+                        upper=30000,
+                    )
+                    for i in range(5)
+                ],
+                require_filter_for_all=False,
+                allow_empty=True,
+            ),
+        ),
+    )
+    assert two_point_experiment.make_likelihood() is not None
 
 
 @pytest.mark.parametrize(
