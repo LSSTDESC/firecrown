@@ -100,22 +100,31 @@ class DataSourceSacc(BaseModel):
         """Set the path for the data source."""
         self._path = path
 
-    def get_sacc_data(self) -> sacc.Sacc:
-        """Load the SACC data file."""
+    def get_filepath(self) -> Path:
+        """Return the filename of the data source.
+
+        Raises a FileNotFoundError if the file does not exist.
+        :return: The filename
+        """
         sacc_data_path = Path(self.sacc_data_file)
         # If sacc_data_file is absolute, use it directly
-        if sacc_data_path.is_absolute():
-            return sacc.Sacc.load_fits(self.sacc_data_file)
+        if sacc_data_path.is_absolute() and sacc_data_path.exists():
+            return Path(self.sacc_data_file)
         # If path is set, use it to find the file
         if self._path is not None:
             full_sacc_data_path = self._path / sacc_data_path
             if full_sacc_data_path.exists():
-                return sacc.Sacc.load_fits(full_sacc_data_path)
+                return full_sacc_data_path
         # If path is not set, use the current directory
         elif sacc_data_path.exists():
-            return sacc.Sacc.load_fits(sacc_data_path)
+            return sacc_data_path
         # If the file does not exist, raise an error
         raise FileNotFoundError(f"File {sacc_data_path} does not exist")
+
+    def get_sacc_data(self) -> sacc.Sacc:
+        """Load the SACC data file."""
+        filename = self.get_filepath()
+        return sacc.Sacc.load_fits(filename)
 
 
 def ensure_path(file: str | Path) -> Path:
