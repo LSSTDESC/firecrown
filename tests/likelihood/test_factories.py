@@ -171,6 +171,22 @@ def test_data_source_sacc_get_sacc_data() -> None:
     assert isinstance(sacc_data, sacc.Sacc)
 
 
+def test_data_source_sacc_get_filepath_throws() -> None:
+    # absolute data file name, no path, no such file.
+    dss = DataSourceSacc(sacc_data_file="/tmp/no such file.fits")
+    with pytest.raises(
+        FileNotFoundError, match="File /tmp/no such file.fits does not exist"
+    ):
+        _ = dss.get_filepath()
+    # relative data file name, path present, no such file.
+    dss = DataSourceSacc(sacc_data_file="no such file.fits")
+    dss.set_path(Path("/tmp"))
+    with pytest.raises(
+        FileNotFoundError, match="File no such file.fits does not exist"
+    ):
+        _ = dss.get_filepath()
+
+
 def test_two_point_experiment_dict() -> None:
     two_point_experiment_dict = {
         "two_point_factory": {
