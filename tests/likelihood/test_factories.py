@@ -19,6 +19,7 @@ from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import Galaxies
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 
 
 @pytest.fixture(name="empty_factory_harmonic")
@@ -64,6 +65,37 @@ def test_two_point_factory_dict() -> None:
     assert two_point_factory.weak_lensing_factory.global_systematics == []
     assert two_point_factory.number_counts_factory.per_bin_systematics == []
     assert two_point_factory.number_counts_factory.global_systematics == []
+
+
+@pytest.mark.parametrize(
+    "correlation_space",
+    [TwoPointCorrelationSpace.HARMONIC, TwoPointCorrelationSpace.REAL],
+)
+def test_two_point_factory_to_from_dict(correlation_space) -> None:
+    two_point_factory = TwoPointFactory(
+        correlation_space=correlation_space,
+        weak_lensing_factory=WeakLensingFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+        number_counts_factory=NumberCountsFactory(
+            per_bin_systematics=[], global_systematics=[]
+        ),
+    )
+
+    yaml_str = base_model_to_yaml(two_point_factory)
+    two_point_factory_from_dict = base_model_from_yaml(TwoPointFactory, yaml_str)
+    assert isinstance(two_point_factory_from_dict, TwoPointFactory)
+    assert isinstance(
+        two_point_factory_from_dict.weak_lensing_factory, WeakLensingFactory
+    )
+    assert isinstance(
+        two_point_factory_from_dict.number_counts_factory, NumberCountsFactory
+    )
+    assert two_point_factory_from_dict.correlation_space == correlation_space
+    assert two_point_factory_from_dict.weak_lensing_factory.per_bin_systematics == []
+    assert two_point_factory_from_dict.weak_lensing_factory.global_systematics == []
+    assert two_point_factory_from_dict.number_counts_factory.per_bin_systematics == []
+    assert two_point_factory_from_dict.number_counts_factory.global_systematics == []
 
 
 def test_two_point_factor_direct() -> None:

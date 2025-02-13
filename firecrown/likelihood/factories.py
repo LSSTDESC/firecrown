@@ -21,7 +21,7 @@ from pathlib import Path
 
 from typing_extensions import assert_never
 import yaml
-from pydantic import BaseModel, ConfigDict, BeforeValidator, field_serializer
+from pydantic import BaseModel, ConfigDict, BeforeValidator, Field, field_serializer
 
 import sacc
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
@@ -57,10 +57,12 @@ class TwoPointCorrelationSpace(YAMLSerializable, str, Enum):
     HARMONIC = auto()
 
 
-def _validate_correlation_space(value):
-    if isinstance(value, str):
+def _validate_correlation_space(value: TwoPointCorrelationSpace | str):
+    if not isinstance(value, TwoPointCorrelationSpace) and isinstance(value, str):
         try:
-            return TwoPointCorrelationSpace(value)  # Convert from string to Enum
+            return TwoPointCorrelationSpace(
+                value.lower()
+            )  # Convert from string to Enum
         except ValueError as exc:
             raise ValueError(
                 f"Invalid value for TwoPointCorrelationSpace: {value}"
@@ -74,7 +76,9 @@ class TwoPointFactory(BaseModel):
     model_config = ConfigDict(extra="forbid", frozen=True)
 
     correlation_space: Annotated[
-        TwoPointCorrelationSpace, BeforeValidator(_validate_correlation_space)
+        TwoPointCorrelationSpace,
+        BeforeValidator(_validate_correlation_space),
+        Field(description="The two-point correlation space."),
     ]
     weak_lensing_factory: WeakLensingFactory
     number_counts_factory: NumberCountsFactory
