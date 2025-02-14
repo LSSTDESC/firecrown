@@ -49,7 +49,9 @@ def base_model_from_yaml(cls: type, yaml_str: str):
 
 def base_model_to_yaml(model: BaseModel) -> str:
     """Convert a base model to a yaml string."""
-    return yaml.dump(model.model_dump(), default_flow_style=False, sort_keys=False)
+    return yaml.dump(
+        model.model_dump(), default_flow_style=None, sort_keys=False, width=80
+    )
 
 
 def upper_triangle_indices(n: int) -> Generator[tuple[int, int], None, None]:
@@ -81,6 +83,10 @@ def save_to_sacc(
     Note that the original object `sacc_data` is not modified. Its contents are
     copied into a new object, and the new information is put into that copy,
     which is returned by this method.
+
+    If `strict` is True (the default), then we must overwrite the entire data
+    vector. If `strict` is False, then we only overwrite the data at the
+    specified indices.
 
     :param sacc_data: SACC object to be copied. It is not modified.
     :param data_vector: Data vector to be saved to the new copy of `sacc_data`.

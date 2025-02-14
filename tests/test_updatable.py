@@ -203,6 +203,15 @@ def test_set_internal_parameter():
     assert my_updatable.the_meaning_of_life == 42.0
 
 
+def test_set_parameter_using_internal_parameter():
+    my_updatable = MinimalUpdatable()
+    ip = parameters.InternalParameter(2112)
+    my_updatable.set_parameter("epic_Rush_album", ip)
+
+    assert hasattr(my_updatable, "epic_Rush_album")
+    assert my_updatable.epic_Rush_album == 2112
+
+
 def test_set_internal_parameter_rejects_sampler_parameter():
     my_updatable = MinimalUpdatable()
     with pytest.raises(TypeError):

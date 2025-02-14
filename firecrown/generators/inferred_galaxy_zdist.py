@@ -13,15 +13,12 @@ from scipy.integrate import quad
 
 from numcosmo_py import Ncm
 
-from firecrown.metadata_types import (
-    InferredGalaxyZDist,
-    ALL_MEASUREMENT_TYPES,
+from firecrown.metadata_types import InferredGalaxyZDist, Galaxies
+from firecrown.metadata_functions import (
+    Measurement,
+    make_measurements,
     make_measurements_dict,
-    Galaxies,
-    CMB,
-    Clusters,
 )
-from firecrown.metadata_functions import Measurement
 
 
 BinsType = TypedDict("BinsType", {"edges": npt.NDArray, "sigma_z": float})
@@ -444,41 +441,6 @@ class RawGrid1D(BaseModel):
 
 
 Grid1D = LinearGrid1D | RawGrid1D
-
-
-def make_measurements(
-    value: set[Measurement] | list[dict[str, Any]]
-) -> set[Measurement]:
-    """Create a Measurement object from a dictionary."""
-    if isinstance(value, set) and all(
-        isinstance(v, ALL_MEASUREMENT_TYPES) for v in value
-    ):
-        return value
-
-    measurements: set[Measurement] = set()
-    for measurement_dict in value:
-        if not isinstance(measurement_dict, dict):
-            raise ValueError(f"Invalid Measurement: {value} is not a dictionary")
-
-        if "subject" not in measurement_dict:
-            raise ValueError(
-                "Invalid Measurement: dictionary does not contain 'subject'"
-            )
-
-        subject = measurement_dict["subject"]
-
-        match subject:
-            case "Galaxies":
-                measurements.update({Galaxies[measurement_dict["property"]]})
-            case "CMB":
-                measurements.update({CMB[measurement_dict["property"]]})
-            case "Clusters":
-                measurements.update({Clusters[measurement_dict["property"]]})
-            case _:
-                raise ValueError(
-                    f"Invalid Measurement: subject: '{subject}' is not recognized"
-                )
-    return measurements
 
 
 class ZDistLSSTSRDBin(BaseModel):

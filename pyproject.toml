@@ -1,0 +1,6 @@
+[tool.coverage.report]
+exclude_also = [
+   # Don't complain about unreachable code
+   '^ +assert_never\(.*?\)$',
+   '^ +case _ as unreachable:$',
+]

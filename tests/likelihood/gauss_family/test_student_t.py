@@ -1,5 +1,4 @@
-"""Unit testsing for Student-t distribution
-"""
+"""Unit testsing for Student-t distribution"""
 
 import pytest
 import numpy as np
