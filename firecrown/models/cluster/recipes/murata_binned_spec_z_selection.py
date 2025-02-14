@@ -40,7 +40,12 @@ class MurataBinnedSpecZSelectionRecipe(ClusterRecipe):
         cluster_theory: ClusterAbundance,
         average_on: None | ClusterProperty = None,
     ) -> Callable[
-        [npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], float],
+        [
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            npt.NDArray[np.float64],
+            float,
+        ],
         npt.NDArray[np.float64],
     ]:
         """Get a callable that evaluates a cluster theory prediction.
@@ -62,9 +67,7 @@ class MurataBinnedSpecZSelectionRecipe(ClusterRecipe):
                 * self.redshift_distribution.distribution()
                 * self.mass_distribution.distribution(mass, z, mass_proxy / np.log(10))
                 * self.completeness_distribution.distribution(mass, z)
-                / self.purity_distribution.distribution(
-                    z, mass_proxy=mass_proxy
-                )
+                / self.purity_distribution.distribution(z, mass_proxy=mass_proxy)
             )
 
             if average_on is None:
@@ -108,8 +111,8 @@ class MurataBinnedSpecZSelectionRecipe(ClusterRecipe):
         ) -> npt.NDArray[np.float64]:
             mass = int_args[:, 0]
             z = int_args[:, 1]
-            mass_proxy = int_args[:,2]
-            
+            mass_proxy = int_args[:, 2]
+
             sky_area = extra_args[0]
 
             return prediction(mass, z, mass_proxy, sky_area)
@@ -131,7 +134,8 @@ class MurataBinnedSpecZSelectionRecipe(ClusterRecipe):
         """
         self.integrator.integral_bounds = [
             (cluster_theory.min_mass, cluster_theory.max_mass),
-            this_bin.z_edges, np.log(10) * np.array(this_bin.mass_proxy_edges),
+            this_bin.z_edges,
+            np.log(10) * np.array(this_bin.mass_proxy_edges),
         ]
         self.integrator.extra_args = np.array([sky_area])
 
