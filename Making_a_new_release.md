@@ -2,7 +2,7 @@
 
 This is the procedure we use for create a new release of Firecrown.
 
-1. Create a local branch in your clone of the repo to be used for the PR that will be started later. Name it for the new release, e.g.:  new_release_v1_6_0
+1. Create a local branch in your clone of the repo to be used for the PR that will be started later. Name it for the new release, e.g.:  v1.9
 2. Update your local conda environment using `mamba update --all` and `pip install -U --no-deps autoclasstoc cobaya pygobject-stubs`
 3. Make sure you have updated the `environment.yml` file to release, or force, any versioning required.
 4. Update your local conda environment to match the possibly-modified `environment.yml`.

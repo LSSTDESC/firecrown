@@ -336,7 +336,9 @@ class MappingCosmoSIS(Mapping):
         :param cosmosis_params: the cosmological parameters read from CosmoSIS
         """
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
+        # Omega_g (regardless of capitalization) does not appear in CosmoSIS or CSL
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
+        # Both delta_neff and n_eff appear in CosmoSIS and the CSL
 
         h = cosmosis_params.get_float("h0")
         Omega_b = cosmosis_params.get_float("omega_b")
