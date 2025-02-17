@@ -1,5 +1,4 @@
-"""Provides type validation as used in connectors.
-
+"""Type validation as used in connectors.
 
 Validators are created using the constructor for each class.
 Access to the data done through the object name, not through any named function.
@@ -12,7 +11,7 @@ has an attribute `x` that is required to be a float in the range
 
 .. code:: python
 
-    class SampleValidatedTHing:
+    class SampleValidatedThing:
         x = TypeFloat(1.0, 3.0, allow_none=True)
 
         def __init__(self):
@@ -26,7 +25,7 @@ has an attribute `x` that is required to be a float in the range
 # pylint: disable=R0903
 
 import math
-from typing import Callable, Optional
+from typing import Callable
 
 
 class TypeFloat:
@@ -34,16 +33,24 @@ class TypeFloat:
 
     def __init__(
         self,
-        minvalue: Optional[float] = None,
-        maxvalue: Optional[float] = None,
+        minvalue: None | float = None,
+        maxvalue: None | float = None,
         allow_none: bool = False,
     ) -> None:
+        """Initialize the TypeFloat object.
+
+        :param minvalue: The minimum value allowed for the attribute.
+        :param maxvalue: The maximum value allowed for the attribute.
+        :param allow_none: Whether the attribute can be None.
+        """
         self.minvalue = minvalue
         self.maxvalue = maxvalue
         self.allow_none = allow_none
 
-    def validate(self, value: Optional[float]) -> None:
-        """Raise an exception if the provided `value` does not meet all of the
+    def validate(self, value: None | float) -> None:
+        """Run all validators on this value.
+
+        Raise an exception if the provided `value` does not meet all of the
         required conditions enforced by this validator.
         """
         if self.allow_none and value is None:
@@ -58,24 +65,34 @@ class TypeFloat:
             raise ValueError("NaN is disallowed in a constrained float")
 
     def _is_constrained(self) -> bool:
-        """Return true if this validation enforces any constraint, and false
-        if it does not."""
+        """Return if this validation enforces any constraint."""
         return not ((self.minvalue is None) and (self.maxvalue is None))
 
     def __set_name__(self, _, name: str) -> None:
-        """Create the name of the private instance variable that will hold the value."""
+        """Create the name of the private instance variable that will hold the value.
+
+        :param name: The name of the private instance variable to be created.
+        """
         self.private_name = "_" + name  # pylint: disable-msg=W0201
 
     def __get__(self, obj, objtype=None) -> float:
         """Accessor method, which reads controlled value.
 
-        This is invoked whenever the validated variable is read."""
+        This is invoked whenever the validated variable is read.
+
+        :param obj: The object that contains the validated variable.
+        :param objtype: The type of the object that contains the validated variable.
+        """
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: Optional[float]) -> None:
+    def __set__(self, obj, value: None | float) -> None:
         """Setter for the validated variable.
 
-        This function invokes the `validate` method of the derived class."""
+        This function invokes the `validate` method of the derived class.
+
+        :param obj: The object that contains the validated variable.
+        :param value: The new value of the validated variable.
+        """
         self.validate(value)
         setattr(obj, self.private_name, value)
 
@@ -83,28 +100,33 @@ class TypeFloat:
 class TypeString:
     """String attribute descriptor.
 
-    TypeString provides several different means of validation of the controlled
-    string attribute, all of which are optional.
-        `minsize` provides a required minimum length for the string
-        `maxsize` provides a required maximum length for the string
-        `predicate` allows specification of a function that must return true
-            when a string is provided to allow use of that string.
+    :classs:`TypeString` provides several different means of validation of the
+    controlled string attribute, all of which are optional.
     """
 
     def __init__(
         self,
-        minsize: Optional[int] = None,
-        maxsize: Optional[int] = None,
-        predicate: Optional[Callable[[str], bool]] = None,
+        minsize: None | int = None,
+        maxsize: None | int = None,
+        predicate: None | Callable[[str], bool] = None,
     ) -> None:
-        """Initialize the TypeString object'"""
+        """Initialize the TypeString object.
+
+        :param minsize: The minimum length allowed for the string.
+        :param maxsize: The maximum length allowed for the string.
+        :param predicate: A function that returns true if the string is allowed.
+        """
         self.minsize = minsize
         self.maxsize = maxsize
         self.predicate = predicate
 
-    def validate(self, value: Optional[str]) -> None:
-        """Raise an exception if the provided `value` does not meet all of the
+    def validate(self, value: None | str) -> None:
+        """Run all validators on this value.
+
+        Raise an exception if the provided `value` does not meet all of the
         required conditions enforced by this validator.
+
+        :param value: The value to be validated.
         """
         if not isinstance(value, str):
             raise TypeError(f"Expected {value!r} to be an str")
@@ -120,18 +142,29 @@ class TypeString:
             raise ValueError(f"Expected {self.predicate} to be true for {value!r}")
 
     def __set_name__(self, _, name: str) -> None:
-        """Create the name of the private instance variable that will hold the value."""
+        """Create the name of the private instance variable that will hold the value.
+
+        :param name: The name of the private instance variable to be created.
+        """
         self.private_name = "_" + name  # pylint: disable-msg=W0201
 
     def __get__(self, obj, objtype=None) -> str:
         """Accessor method, which reads controlled value.
 
-        This is invoked whenever the validated variable is read."""
+        This is invoked whenever the validated variable is read.
+
+        :param obj: The object that contains the validated variable.
+        :param objtype: The type of the object that contains the validated variable.
+        """
         return getattr(obj, self.private_name)
 
-    def __set__(self, obj, value: Optional[str]) -> None:
+    def __set__(self, obj, value: None | str) -> None:
         """Setter for the validated variable.
 
-        This function invokes the `validate` method of the derived class."""
+        This function invokes the `validate` method of the derived class.
+
+        :param obj: The object that contains the validated variable.
+        :param value: The new value of the validated variable.
+        """
         self.validate(value)
         setattr(obj, self.private_name, value)

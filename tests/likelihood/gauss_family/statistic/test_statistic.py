@@ -1,5 +1,5 @@
 """
-Tests for the module firecrown.likelihood.gauss_family.statistic.statistic.
+Tests for the module firecrown.likelihood.statistic.
 """
 
 import numpy as np
@@ -7,12 +7,13 @@ from numpy.testing import assert_allclose
 import pytest
 import sacc
 
-import firecrown.likelihood.gauss_family.statistic.statistic as stat
+import firecrown.data_types
+import firecrown.likelihood.statistic as stat
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
 
-VECTOR_CLASSES = (stat.TheoryVector, stat.DataVector)
+VECTOR_CLASSES = (firecrown.data_types.TheoryVector, firecrown.data_types.DataVector)
 
 
 def test_vector_create():
@@ -21,7 +22,7 @@ def test_vector_create():
     assert vals.dtype == np.float64
     assert vals.shape == (10,)
     for cls in VECTOR_CLASSES:
-        result = cls.create(vals)  # type: ignore
+        result = cls.create(vals)
         assert isinstance(result, cls)
         assert result.shape == (10,)
         assert np.array_equal(vals, result)
@@ -32,7 +33,7 @@ def test_vector_from_list():
     assert isinstance(vals, list)
     assert len(vals) == 4
     for cls in VECTOR_CLASSES:
-        result = cls.from_list(vals)  # type: ignore
+        result = cls.from_list(vals)
         assert isinstance(result, cls)
         assert result.shape == (4,)
         for i, val in enumerate(vals):
@@ -41,7 +42,7 @@ def test_vector_from_list():
 
 def test_vector_slicing():
     for cls in VECTOR_CLASSES:
-        vec = cls.create(np.random.random_sample((12,)))  # type: ignore
+        vec = cls.create(np.random.random_sample((12,)))
         assert isinstance(vec, cls)
         middle_part = vec[3:6]
         assert middle_part.shape == (3,)
@@ -50,7 +51,7 @@ def test_vector_slicing():
 
 def test_vector_copying():
     for cls in VECTOR_CLASSES:
-        vec = cls.create(np.random.random_sample((12,)))  # type: ignore
+        vec = cls.create(np.random.random_sample((12,)))
         assert isinstance(vec, cls)
         vec_copy = vec.copy()
         assert vec_copy is not vec
@@ -70,16 +71,16 @@ def test_ufunc_on_vector():
     data = np.array([0.0, 0.25, 0.50])
     expected = np.sin(data)
     for cls in VECTOR_CLASSES:
-        vec = cls.create(data)  # type: ignore
+        vec = cls.create(data)
         result = np.sin(vec)
         assert isinstance(result, cls)
         assert np.array_equal(result, expected)
 
 
 def test_vector_residuals():
-    theory = stat.TheoryVector.from_list([1.0, 2.0, 3.0])
-    data = stat.DataVector.from_list([1.1, 2.1, 3.1])
-    difference = stat.residuals(data, theory)
+    theory = firecrown.data_types.TheoryVector.from_list([1.0, 2.0, 3.0])
+    data = firecrown.data_types.DataVector.from_list([1.1, 2.1, 3.1])
+    difference = firecrown.data_types.residuals(data, theory)
     assert isinstance(difference, np.ndarray)
     for cls in VECTOR_CLASSES:
         assert not isinstance(difference, cls)
@@ -98,6 +99,14 @@ def test_guarded_statistic_read_only_once(
         gs.read(sacc_data_for_trivial_stat)
 
 
+def test_guarded_static_read_data_vector(
+    sacc_data_for_trivial_stat: sacc.Sacc, trivial_stats: list[stat.TrivialStatistic]
+):
+    gs = stat.GuardedStatistic(trivial_stats.pop())
+    gs.read(sacc_data_for_trivial_stat)
+    assert_allclose(gs.get_data_vector(), [1.0, 4.0, -3.0])
+
+
 def test_guarded_statistic_get_data_before_read(trivial_stats):
     s = trivial_stats.pop()
     with pytest.raises(
@@ -113,6 +122,15 @@ def test_statistic_get_data_vector_before_read():
     s = stat.TrivialStatistic()
     with pytest.raises(AssertionError):
         _ = s.get_data_vector()
+
+
+def test_guarded_statiistic_compute_theory_before_read():
+    gs = stat.GuardedStatistic(stat.TrivialStatistic())
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* was used for calculation before `read` was called",
+    ):
+        gs.compute_theory_vector(ModelingTools())
 
 
 def test_statistic_get_data_vector_after_read(sacc_data_for_trivial_stat):

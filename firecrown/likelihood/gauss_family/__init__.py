@@ -1,10 +1,3 @@
-"""
-
-Gaussian Family Package
-=======================
-
-This package provide all necessary tools for Gaussian family likelihoods.
-
-"""
+"""Backward compatibility support for deprecated directory structure."""
 
 # flake8: noqa

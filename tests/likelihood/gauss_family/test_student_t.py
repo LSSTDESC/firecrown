@@ -1,5 +1,4 @@
-"""Unit testsing for Student-t distribution
-"""
+"""Unit testsing for Student-t distribution"""
 
 import pytest
 import numpy as np
@@ -7,13 +6,14 @@ import numpy as np
 import sacc
 
 import firecrown.parameters
-from firecrown.likelihood.gauss_family.student_t import StudentT
-from firecrown.likelihood.gauss_family.gauss_family import Statistic
+from firecrown.likelihood.student_t import StudentT
+from firecrown.likelihood.gaussfamily import Statistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
     ParamsMap,
+    SamplerParameter,
 )
 
 
@@ -63,7 +63,12 @@ def test_required_parameters(
     likelihood = StudentT(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params_student_t)
-    expected_params = RequiredParameters(params_names=["mean", "nu"])
+    expected_params = RequiredParameters(
+        params=[
+            SamplerParameter(name="mean", default_value=0.0),
+            SamplerParameter(name="nu", default_value=3.0),
+        ]
+    )
     assert likelihood.required_parameters() == expected_params
 
 

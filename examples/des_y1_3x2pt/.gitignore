@@ -1,3 +1,7 @@
 cobaya_evaluate_output*
 *.png
-output
+outputoutput.input.yaml
+output.updated.dill_pickle
+output.updated.yaml
+numcosmo/
+output.input.yaml

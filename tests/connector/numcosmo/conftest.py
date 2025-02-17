@@ -22,11 +22,13 @@ def fixture_numcosmo_cosmo_xcdm():
     cosmo.param_set_by_name("w", -1.0)
 
     prim = Nc.HIPrimPowerLaw.new()
-    prim.param_set_by_name("ln10e10ASA", math.log(1.0e10 * 2.0e-09))
-    prim.param_set_by_name("n_SA", 0.971)
+    prim.param_set_by_name(  # pylint: disable=no-member
+        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
+    )
+    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
 
     reion = Nc.HIReionCamb.new()
-    reion.set_z_from_tau(cosmo, 0.0561)
+    reion.set_z_from_tau(cosmo, 0.0561)  # pylint: disable=no-member
 
     cosmo.add_submodel(prim)
     cosmo.add_submodel(reion)
@@ -34,7 +36,7 @@ def fixture_numcosmo_cosmo_xcdm():
     p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
     dist = Nc.Distance.new(6.0)
-    dist.comoving_distance_spline.set_reltol(1.0e-5)
+    dist.comoving_distance_spline.set_reltol(1.0e-5)  # pylint: disable=no-member
 
     return {"cosmo": cosmo, "p_ml": p_ml, "p_mnl": p_mnl, "dist": dist}
 
@@ -53,11 +55,13 @@ def fixture_numcosmo_cosmo_xcdm_no_nu():
     cosmo.param_set_by_name("w", -1.0)
 
     prim = Nc.HIPrimPowerLaw.new()
-    prim.param_set_by_name("ln10e10ASA", math.log(1.0e10 * 2.0e-09))
-    prim.param_set_by_name("n_SA", 0.971)
+    prim.param_set_by_name(  # pylint: disable=no-member
+        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
+    )
+    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
 
     reion = Nc.HIReionCamb.new()
-    reion.set_z_from_tau(cosmo, 0.0561)
+    reion.set_z_from_tau(cosmo, 0.0561)  # pylint: disable=no-member
 
     cosmo.add_submodel(prim)
     cosmo.add_submodel(reion)
@@ -65,7 +69,7 @@ def fixture_numcosmo_cosmo_xcdm_no_nu():
     p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
     dist = Nc.Distance.new(6.0)
-    dist.comoving_distance_spline.set_reltol(1.0e-5)
+    dist.comoving_distance_spline.set_reltol(1.0e-5)  # pylint: disable=no-member
 
     return {"cosmo": cosmo, "p_ml": p_ml, "p_mnl": p_mnl, "dist": dist}
 
@@ -87,11 +91,13 @@ def fixture_numcosmo_cosmo_cpl():
     cosmo.param_set_by_name("w1", 0.1)
 
     prim = Nc.HIPrimPowerLaw.new()
-    prim.param_set_by_name("ln10e10ASA", math.log(1.0e10 * 2.0e-09))
-    prim.param_set_by_name("n_SA", 0.971)
+    prim.param_set_by_name(  # pylint: disable=no-member
+        "ln10e10ASA", math.log(1.0e10 * 2.0e-09)
+    )
+    prim.param_set_by_name("n_SA", 0.971)  # pylint: disable=no-member
 
     reion = Nc.HIReionCamb.new()
-    reion.set_z_from_tau(cosmo, 0.0561)
+    reion.set_z_from_tau(cosmo, 0.0561)  # pylint: disable=no-member
 
     cosmo.add_submodel(prim)
     cosmo.add_submodel(reion)
@@ -99,7 +105,7 @@ def fixture_numcosmo_cosmo_cpl():
     p_ml = Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new())
     p_mnl = Nc.PowspecMNLHaloFit.new(p_ml, 3.0, 1.0e-5)
     dist = Nc.Distance.new(6.0)
-    dist.comoving_distance_spline.set_reltol(1.0e-5)
+    dist.comoving_distance_spline.set_reltol(1.0e-5)  # pylint: disable=no-member
 
     return {"cosmo": cosmo, "p_ml": p_ml, "p_mnl": p_mnl, "dist": dist}
 
@@ -125,7 +131,8 @@ NcmModelBuilder:
 """
     ser = Ncm.Serialize.new(Ncm.SerializeOpt.NONE)
     mb_model: Ncm.ModelBuilder = cast(
-        Ncm.ModelBuilder, ser.from_yaml(my_model_trivial_yaml)
+        Ncm.ModelBuilder,
+        ser.from_yaml(my_model_trivial_yaml),  # pylint: disable=no-member
     )
     assert isinstance(mb_model, Ncm.ModelBuilder)
     model_type = mb_model.create()

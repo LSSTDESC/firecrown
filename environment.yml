@@ -9,12 +9,14 @@ dependencies:
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
-  - cython < 3.0.0
+  - cython
   - dill
   - fitsio
   - flake8
+  - flake8-docstrings
   - fuzzywuzzy
   - getdist
+  - glib
   - idna
   - matplotlib-base
   - more-itertools
@@ -25,17 +27,20 @@ dependencies:
   - pip:
     - autoclasstoc
     - cobaya
+    - isitgr
     - pygobject-stubs
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
+  - pydantic
   - pylint
   - pytest
   - pytest-cov
+  - python >= 3.10
   - pyyaml
   - requests
   - sacc >= 0.11
-  - scipy
+  - scipy < 1.14.0
   - sphinx=7.1.2
   - types-pyyaml
   - urllib3

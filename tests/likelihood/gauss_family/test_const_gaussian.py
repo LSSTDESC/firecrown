@@ -1,5 +1,4 @@
-"""Unit testsing for ConstGaussian
-"""
+"""Unit testsing for ConstGaussian"""
 
 import re
 
@@ -12,14 +11,27 @@ from scipy.stats import chi2
 import sacc
 
 import firecrown.parameters
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.likelihood.gauss_family.gauss_family import Statistic
-from firecrown.likelihood.gauss_family.statistic.statistic import TrivialStatistic
+from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood.gaussfamily import Statistic
+from firecrown.likelihood.statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
+    SamplerParameter,
 )
+from firecrown.likelihood.two_point import (
+    TwoPoint,
+    WeakLensingFactory,
+    NumberCountsFactory,
+)
+from firecrown.metadata_types import (
+    TracerNames,
+)
+from firecrown.metadata_functions import (
+    TwoPointHarmonicIndex,
+)
+from firecrown.data_functions import extract_all_harmonic_data
 
 
 class StatisticWithoutIndices(TrivialStatistic):
@@ -123,6 +135,15 @@ def test_compute_theory_vector_works_after_read_and_update(
         likelihood.compute_theory_vector(ModelingTools())
         == np.array([10.5, 10.5, 10.5])
     )
+
+
+def test_compute_theory_vector_called_twice(trivial_stats, sacc_data_for_trivial_stat):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    likelihood.read(sacc_data_for_trivial_stat)
+    likelihood.update(firecrown.parameters.ParamsMap(mean=10.5))
+    res_1 = likelihood.compute_theory_vector(ModelingTools())
+    res_2 = likelihood.compute_theory_vector(ModelingTools())
+    assert np.all(res_1 == res_2)
 
 
 def test_get_theory_vector_fails_before_read(trivial_stats):
@@ -245,7 +266,9 @@ def test_required_parameters(trivial_stats, sacc_data_for_trivial_stat, trivial_
     likelihood = ConstGaussian(statistics=trivial_stats)
     likelihood.read(sacc_data_for_trivial_stat)
     likelihood.update(trivial_params)
-    expected_params = RequiredParameters(params_names=["mean"])
+    expected_params = RequiredParameters(
+        params=[SamplerParameter(name="mean", default_value=0.0)]
+    )
     assert likelihood.required_parameters() == expected_params
 
 
@@ -449,3 +472,62 @@ def test_get_sacc_indices_single_stat(
     idx = likelihood.get_sacc_indices(statistic=likelihood.statistics[0].statistic)
 
     assert all(idx == likelihood.statistics[0].statistic.sacc_indices)
+
+
+def test_access_required_parameters(
+    trivial_stats,
+):
+    likelihood = ConstGaussian(statistics=trivial_stats)
+    params = likelihood.required_parameters().get_default_values()
+    assert params == {"mean": 0.0}
+
+
+def test_create_ready(sacc_galaxy_cwindows):
+    sacc_data, _, _ = sacc_galaxy_cwindows
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    two_points = TwoPoint.from_measurement(two_point_harmonics, wl_factory, nc_factory)
+    size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
+
+    likelihood = ConstGaussian.create_ready(two_points, np.diag(np.ones(size)))
+    assert likelihood is not None
+    assert isinstance(likelihood, ConstGaussian)
+
+
+def test_create_ready_wrong_size(sacc_galaxy_cwindows):
+    sacc_data, _, _ = sacc_galaxy_cwindows
+    two_point_harmonics = extract_all_harmonic_data(sacc_data)
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    two_points = TwoPoint.from_measurement(two_point_harmonics, wl_factory, nc_factory)
+    size = np.sum([len(two_point.get_data_vector()) for two_point in two_points])
+
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            f"The covariance matrix has shape (3, 3), "
+            f"but the expected shape is at least ({size}, {size})."
+        ),
+    ):
+        ConstGaussian.create_ready(two_points, np.diag([1.0, 2.0, 3.0]))
+
+
+def test_create_ready_not_ready():
+    wl_factory = WeakLensingFactory(global_systematics=[], per_bin_systematics=[])
+    nc_factory = NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+
+    metadata: TwoPointHarmonicIndex = {
+        "data_type": "galaxy_density_xi",
+        "tracer_names": TracerNames("lens0", "lens0"),
+    }
+
+    two_points = TwoPoint.from_metadata_index([metadata], wl_factory, nc_factory)
+
+    with pytest.raises(
+        RuntimeError,
+        match="The statistic .* is not ready to be used.",
+    ):
+        ConstGaussian.create_ready(two_points, np.diag(np.ones(11)))

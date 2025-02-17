@@ -4,7 +4,7 @@ The continuous integration (CI) system used for Firecrown applies all of these t
 
 Some of the tools we use help to keep the Firecrown code in conformance with the PEP 8[^pep8] style guidelines.
 
-[^pep8]: Python Enhance Proposal (PEP) 8 is the official (from the Python development team) style guide for Python code.
+[^pep8]: Python Enhancement Proposal (PEP) 8 is the official (from the Python development team) style guide for Python code.
   This style guide is used for code in the Python distribution itself.
   It can be read at [https://peps.python.org/pep-0008/](https://peps.python.org/pep-0008/).
 
@@ -52,15 +52,13 @@ The following is the set of commands using these tools that are used by the CI s
 Since a pull request that fails any of these will be automatically rejected by the CI system, we strongly recommend running them before committing and pushing your code.
 Note that we have not yet completed the cleanup of the whole Firecrown repository, and so we do not yet apply `pylint` to all of the code.
 We strongly recommend that any new code you write *should* be checked with `pylint` before it is committed to the repository.
-We are actively working toward full coverage of the code, and will activate additional checking in the CI system as this work progresses.
 
 ```{.bash}
-black --check firecrown tests examples
-flake8 firecrown tests examples
-mypy firecrown tests examples
-pylint --rcfile tests/pylintrc tests
+black firecrown/ tests/ examples/
+flake8 firecrown/ tests/ examples/
+pyline firecrown
 pylint --rcfile firecrown/models/pylintrc firecrown/models
-pylint firecrown/connector firecrown/*.py firecrown/likelihood/*.py \
-    firecrown/likelihood/gauss_family/*.py
-python -m pytest -v tests
+pylint --rcfile tests/pylintrc tests
+mypy -p firecrown -p tests -p examples
+python -m pytest --runslow -vv --integration tests
 ```

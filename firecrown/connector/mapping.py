@@ -6,16 +6,19 @@ constants and functions used by one body of code to another.
 Each supported body of code has its own dedicated class.
 """
 
-from abc import ABC
-from typing import Type, Optional, final, Any, Union
 import typing
 import warnings
+from abc import ABC
+from typing import Type, final
+
+import cosmosis.datablock
 import numpy as np
 import numpy.typing as npt
 from pyccl import physical_constants as physics
-import cosmosis.datablock
+
+from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
-from ..descriptors import TypeFloat, TypeString
+from firecrown.ccl_factory import CCLCalculatorArgs, PowerSpec, Background
 
 
 def build_ccl_background_dict(
@@ -23,8 +26,14 @@ def build_ccl_background_dict(
     a: npt.NDArray[np.float64],
     chi: npt.NDArray[np.float64],
     h_over_h0: npt.NDArray[np.float64],
-):
-    """Builds the CCL dictionary of background quantities."""
+) -> Background:
+    """Builds the CCL dictionary of background quantities.
+
+    :param a: The scale factor array
+    :param chi: The comoving distance array
+    :param h_over_h0: The Hubble parameter divided by H0
+    :return: the dictionary of background quantities
+    """
     return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
 
@@ -53,20 +62,21 @@ class Mapping(ABC):
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
     # m_nu = TypeFloat(minvalue=0.0)
-    m_nu_type = TypeString()
+    m_nu_type = TypeString()  # "inverted", "normal" or "list"
     w0 = TypeFloat()
     wa = TypeFloat()
     T_CMB = TypeFloat()
 
-    def __init__(self, *, require_nonlinear_pk: bool = False):
-        self.require_nonlinear_pk = require_nonlinear_pk
-        self.m_nu: Optional[Union[float, list[float]]] = None
+    def __init__(self) -> None:
+        """Initialize the Mapping object."""
+        # We can have:
+        #    a single neutrino mass (must be non-negative)
+        #    a list of 3 neutrino masses (all must be non-negative)
+        #    None, indicating that all neutrinos are massless
+        self.m_nu: float | list[float] | None = None
 
     def get_params_names(self) -> list[str]:
-        """Return the names of the cosmological parameters that this
-        mapping is expected to deliver.
-        """
-        warnings.simplefilter("always", DeprecationWarning)
+        """Return the names of the expected cosmological parameters for this mapping."""
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"
@@ -76,20 +86,25 @@ class Mapping(ABC):
         return []
 
     def transform_k_h_to_k(self, k_h):
-        """Transform the given k_h (k over h) to k."""
+        """Transform the given k_h (k over h) to k.
+
+        :param k_h: the array of wavenumber/h to be transformed
+        :return: the transformed array
+        """
         assert k_h is not None  # use assertion to silence pylint warning
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
-            "implemented on the appropriated subclasses. This method"
-            "is going to be removed in the next major release.",
+            "implemented in the appropriat subclasses. This method is going to"
+            "be removed in the next major release.",
             category=DeprecationWarning,
         )
 
     def transform_p_k_h3_to_p_k(self, p_k_h3):
-        """Transform the given :math:`p_k h^3 \\to p_k`."""
+        r"""Transform the given :math:`p_k h^3 \to p_k`.
+
+        :param p_k_h3: the array of :math:`p_k h^3` to be transformed
+        """
         assert p_k_h3 is not None  # use assertion to silence pylint warning
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"
@@ -98,9 +113,12 @@ class Mapping(ABC):
         )
 
     def transform_h_to_h_over_h0(self, h):
-        """Transform distances h to :math:`h/h_0`."""
+        """Transform distances h to :math:`h/h_0`.
+
+        :param h: the array of distances to be transformed
+        :return: the transformed array
+        """
         assert h is not None  # use assertion to silence pylint warning
-        warnings.simplefilter("always", DeprecationWarning)
         warnings.warn(
             "This method is implementation specific and should only be "
             "implemented on the appropriated subclasses. This method"
@@ -115,23 +133,36 @@ class Mapping(ABC):
         Omega_c: float,
         Omega_b: float,
         h: float,
-        A_s: Optional[float] = None,
-        sigma8: Optional[float] = None,
+        A_s: None | float = None,
+        sigma8: None | float = None,
         n_s: float,
         Omega_k: float,
         Neff: float,
-        m_nu: Union[float, list[float]],
-        m_nu_type: str,
+        m_nu: float | list[float] | None,
         w0: float,
         wa: float,
         T_CMB: float,
     ):
-        """Sets the cosmological constants suitable for use in constructing a
-        pyccl.core.CosmologyCalculator. See the documentation of that class
-        for an explanation of the choices and meanings of default values
-        of None.
-        """
+        """Sets the cosmological constants suitable a pyccl.core.CosmologyCalculator.
 
+        See the documentation of that class for an explanation of the choices and
+        meanings of default values of None.
+
+        :param Omega_c: fraction of cold dark matter
+        :param Omega_b: fraction of baryons
+        :param h: dimensionless Hubble parameter;  h = H0/(100 km/s/Mpc)
+        :param A_s: amplitude of the primordial power spectrum
+        :param sigma8: s.d. of the matter contrast on a scale of (8 Mpc)/h
+        :param n_s: scalar spectral index of primordial power spectrum
+        :param Omega_k: curvature of the universe
+        :param Neff: effective number of relativistic neutrino species
+        :param m_nu: effective mass of neutrinos; None for massless neutrinos
+        :param w0: constant of the CPL parameterization of the dark energy
+            equation of state
+        :param wa: linear coefficient of the CPL parameterization of the
+            dark energy equation of state
+        :param T_CMB: cosmic microwave background temperature today
+        """
         # Typecheck is done automatically using the descriptors and is done to
         # avoid void very confusing error messages at a later time in case of
         # error.
@@ -153,49 +184,89 @@ class Mapping(ABC):
         self.Omega_g = None
         self.Neff = Neff
         self.m_nu = m_nu
-        self.m_nu_type = m_nu_type
         self.w0 = w0
         self.wa = wa
         self.T_CMB = T_CMB
 
     @staticmethod
-    def redshift_to_scale_factor(z):
-        """Given arrays of redshift returns an array of scale factor with the
-        inverse order."""
+    def redshift_to_scale_factor(z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
+        """Converts redshift to scale factor.
 
+        Given arrays of redshift returns an array of scale factor with the
+        inverse order.
+
+        :param z: array of redshifts
+        :return: array of scale factors
+        """
         scale = np.flip(1.0 / (1.0 + z))
         return scale
 
     @staticmethod
-    def redshift_to_scale_factor_p_k(p_k):
-        """Given an 2d arrays power spectrum ordered by (redshift, mode)
-        return a 2d array with the rows flipped to match the reorderning
-        from redshift to scale factor."""
+    def redshift_to_scale_factor_p_k(
+        p_k: npt.NDArray[np.float64],
+    ) -> npt.NDArray[np.float64]:
+        """Converts power spectrum from redshift to scale factor.
 
+        Given an 2d arrays power spectrum ordered by (redshift, mode)
+        return a 2d array with the rows flipped to match the reordering
+        from redshift to scale factor.
+
+        :param p_k: a power spectrum, ordered by (redshift, mode)
+        :return: array of power spectrum, ordered by (scale factor, mode)
+        """
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> dict[str, Union[Optional[float], list[float], str]]:
-        """Return a dictionary containing the cosmological constants."""
-        return {
+    def asdict(self) -> dict[str, float | list[float]]:
+        """Return a dictionary containing the cosmological constants.
+
+        :return: the dictionary, containing keys:
+
+            - ``Omega_c``: fraction of cold dark matter
+            - ``Omega_b``: fraction of baryons
+            - ``h``: dimensionless Hubble parameter;  h = H0/(100 km/s/Mpc)
+            - ``A_s``: amplitude of the primordial power spectrum
+            - ``sigma8``: s.d. of the matter contrast on a scale of (8 Mpc)/h
+            - ``n_s``: scalar spectral index of primordial power spectrum
+            - ``Omega_k``: curvature of the universe
+            - ``Neff``: effective number of relativistic neutrino species
+            - ``m_nu``: effective mass of neutrinos
+            - ``w0``: constant of the CPL parameterization of the dark energy
+                equation of state
+            - ``wa``: linear coefficient of the CPL parameterization of the
+                dark energy equation of state
+            - ``T_CMB``: cosmic microwave background temperature today
+        """
+        cosmo_dict: dict[str, float | list[float]] = {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
             "h": self.h,
-            "A_s": self.A_s,
-            "sigma8": self.sigma8,
             "n_s": self.n_s,
             "Omega_k": self.Omega_k,
-            "Omega_g": self.Omega_g,
             "Neff": self.Neff,
-            "m_nu": self.m_nu,
-            "mass_split": self.m_nu_type,
             "w0": self.w0,
             "wa": self.wa,
             "T_CMB": self.T_CMB,
         }
+        if self.A_s is not None:
+            cosmo_dict["A_s"] = self.A_s
+        if self.sigma8 is not None:
+            cosmo_dict["sigma8"] = self.sigma8
+        # Currently we do not support Omega_g
+        # if self.Omega_g is not None:
+        #    cosmo_dict["Omega_g"] = self.Omega_g
+        if self.m_nu is None:
+            cosmo_dict["m_nu"] = 0.0
+        else:
+            cosmo_dict["m_nu"] = self.m_nu
+
+        return cosmo_dict
 
     def get_H0(self) -> float:
-        """Return the value of H0."""
+        """Return the value of H0.
+
+        :return: H0 in km/s/Mpc
+        """
         return self.h * 100.0
 
 
@@ -210,7 +281,11 @@ class MappingCLASS(Mapping):
 class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
 
-    def get_params_names(self):
+    def get_params_names(self) -> list[str]:
+        """Return the names of the expected cosmological parameters for this mapping.
+
+        :return: a list of the cosmological parameter names
+        """
         return [
             "h0",
             "omega_b",
@@ -224,19 +299,42 @@ class MappingCosmoSIS(Mapping):
             "wa",
         ]
 
-    def transform_k_h_to_k(self, k_h):
-        return k_h * self.h
+    def transform_k_h_to_k(
+        self, k_h: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        """Transform the given k_h (k over h) to k.
 
-    def transform_p_k_h3_to_p_k(self, p_k_h3):
-        return p_k_h3 / (self.h**3)
+        :param k_h: the array of wavenumber/h to be transformeed
+        :return: the transformed array
+        """
+        return np.array(k_h * self.h, dtype=np.float64)
 
-    def transform_h_to_h_over_h0(self, h):
+    def transform_p_k_h3_to_p_k(
+        self, p_k_h3: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        r"""Transform the given :math:`p_k h^3 \to p_k`.
+
+        :param p_k_h3: the array of :math:`p_k h^3` to be transformed
+        :return: the transformed array
+        """
+        return np.array(p_k_h3 / (self.h**3), dtype=np.float64)
+
+    def transform_h_to_h_over_h0(
+        self, h: npt.NDArray[np.float64]
+    ) -> npt.NDArray[np.float64]:
+        """Transform distances h to :math:`h/h_0`.
+
+        :param h: the array of distances to be transformed
+        :return: the transformed distances
+        """
         hubble_radius_today = physics.CLIGHT * 1e-5 / self.h
         return np.flip(h) * hubble_radius_today
 
-    def set_params_from_cosmosis(self, cosmosis_params: NamedParameters):
-        """Return a PyCCLCosmologyConstants object with parameters equivalent to
-        those read from CosmoSIS when using CAMB."""
+    def set_params_from_cosmosis(self, cosmosis_params: NamedParameters) -> None:
+        """Set the parameters in this mapping from the given CosmoSIS parameters.
+
+        :param cosmosis_params: the cosmological parameters read from CosmoSIS
+        """
         # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
 
@@ -252,7 +350,6 @@ class MappingCosmoSIS(Mapping):
         Neff = delta_neff + 3.046
         omega_nu = cosmosis_params.get_float("omega_nu")
         m_nu = omega_nu * h * h * 93.14
-        m_nu_type = "normal"
         w0 = cosmosis_params.get_float("w")
         wa = cosmosis_params.get_float("wa")
 
@@ -266,7 +363,6 @@ class MappingCosmoSIS(Mapping):
             Omega_k=Omega_k,
             Neff=Neff,
             m_nu=m_nu,
-            m_nu_type=m_nu_type,
             w0=w0,
             wa=-wa,  # Is this minus sign here correct?
             T_CMB=2.7255,
@@ -274,9 +370,14 @@ class MappingCosmoSIS(Mapping):
         )
         # pylint: enable=duplicate-code
 
-    def calculate_ccl_args(self, sample: cosmosis.datablock):
-        """Calculate the arguments necessary for CCL for this sample."""
-        ccl_args: dict[str, Any] = {}
+    def calculate_ccl_args(self, sample: cosmosis.datablock) -> CCLCalculatorArgs:
+        """Calculate the arguments necessary for CCL for this sample.
+
+        :param sample: the datablock for the current sample
+        :return: the arguments required by CCL
+        """
+        pk_linear: None | PowerSpec = None
+        pk_nonlin: None | PowerSpec = None
         if sample.has_section("matter_power_lin"):
             k = self.transform_k_h_to_k(sample["matter_power_lin", "k_h"])
             z_mpl = sample["matter_power_lin", "z"]
@@ -284,7 +385,7 @@ class MappingCosmoSIS(Mapping):
             p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_lin", "p_k"])
             p_k = self.redshift_to_scale_factor_p_k(p_k)
 
-            ccl_args["pk_linear"] = {
+            pk_linear = {
                 "a": scale_mpl,
                 "k": k,
                 "delta_matter:delta_matter": p_k,
@@ -297,15 +398,11 @@ class MappingCosmoSIS(Mapping):
             p_k = self.transform_p_k_h3_to_p_k(sample["matter_power_nl", "p_k"])
             p_k = self.redshift_to_scale_factor_p_k(p_k)
 
-            ccl_args["pk_nonlin"] = {
+            pk_nonlin = {
                 "a": scale_mpl,
                 "k": k,
                 "delta_matter:delta_matter": p_k,
             }
-        elif self.require_nonlinear_pk:
-            ccl_args["nonlinear_model"] = "halofit"
-        else:
-            ccl_args["nonlinear_model"] = None
 
         # TODO: We should have several configurable modes for this module.
         # In all cases, an exception will be raised (causing a program
@@ -339,9 +436,15 @@ class MappingCosmoSIS(Mapping):
         # h_over_h0 = np.flip(sample["distances", "h"]) * hubble_radius_today
         h_over_h0 = self.transform_h_to_h_over_h0(sample["distances", "h"])
 
-        ccl_args["background"] = build_ccl_background_dict(
+        background: Background = build_ccl_background_dict(
             a=scale_distances, chi=chi, h_over_h0=h_over_h0
         )
+        ccl_args: CCLCalculatorArgs = {"background": background}
+
+        if pk_linear is not None:
+            ccl_args.update({"pk_linear": pk_linear})
+        if pk_nonlin is not None:
+            ccl_args.update({"pk_nonlin": pk_nonlin})
 
         return ccl_args
 
@@ -354,8 +457,10 @@ class MappingCAMB(Mapping):
     """
 
     def get_params_names(self) -> list[str]:
-        """
-        Return the list of parameters handled by this mapping.
+        """Return the names of the expected cosmological parameters for this mapping.
+
+        :return: a list of the cosmological parameter names
+
         """
         return [
             "H0",
@@ -371,9 +476,8 @@ class MappingCAMB(Mapping):
             "wa",
         ]
 
-    def set_params_from_camb(self, **params_values):
-        """Read the CAMB-style parameters from params_values, translate them to
-        our conventions, and store them."""
+    def set_params_from_camb(self, **params_values) -> None:
+        """Set the parameters in this mapping from the given CAMB-style parameters."""
         # pylint: disable-msg=R0914
 
         # CAMB can use different parameters in place of H0, we must deal with this
@@ -388,7 +492,6 @@ class MappingCAMB(Mapping):
         m_nu = params_values["mnu"]
         Omega_k0 = params_values["omk"]
 
-        m_nu_type = "normal"
         h0 = H0 / 100.0
         h02 = h0 * h0
         Omega_b0 = ombh2 / h02
@@ -414,7 +517,6 @@ class MappingCAMB(Mapping):
             sigma8=None,
             A_s=As,
             m_nu=m_nu,
-            m_nu_type=m_nu_type,
             w0=w,
             wa=wa,
             Neff=Neff,
@@ -429,10 +531,15 @@ mapping_classes: typing.Mapping[str, Type[Mapping]] = {
 }
 
 
-def mapping_builder(*, input_style: str, **kwargs):
-    """Return the Mapping class for the given input_style. If input_style is not
-    recognized raise an exception."""
+def mapping_builder(*, input_style: str, **kwargs) -> Mapping:
+    """Return the Mapping class for the given input_style.
 
+    If input_style is not recognized raise an exception.
+
+    :param input_style: the name of the mapping
+    :param kwargs: the parameters of the mapping
+    :return: the mapping object
+    """
     if input_style not in mapping_classes:
         raise ValueError(f"input_style must be {*mapping_classes, }, not {input_style}")
 

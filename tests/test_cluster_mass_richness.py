@@ -82,21 +82,21 @@ def test_cluster_observed_mass():
 
 
 def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned):
-    mass_array = np.linspace(7.0, 26.0, 20)
+    mass_array = np.linspace(7.0, 26.0, 20, dtype=np.float64)
     mass_proxy_limits = (1.0, 5.0)
 
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
         for mass1, mass2 in zip(mass_array[:-1], mass_array[1:]):
-            mass1 = np.atleast_1d(mass1)
-            mass2 = np.atleast_1d(mass2)
+            mass1_a = np.atleast_1d(mass1)
+            mass2_a = np.atleast_1d(mass2)
             z = np.atleast_1d(z)
 
             probability_0 = murata_binned_relation.distribution(
-                mass1, z, mass_proxy_limits
+                mass1_a, z, mass_proxy_limits
             )
             probability_1 = murata_binned_relation.distribution(
-                mass2, z, mass_proxy_limits
+                mass2_a, z, mass_proxy_limits
             )
 
             assert probability_0 >= 0
@@ -156,18 +156,22 @@ def test_cluster_murata_binned_variance(murata_binned_relation: MurataBinned):
 
 
 def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUnbinned):
-    mass_array = np.linspace(7.0, 26.0, 20)
+    mass_array = np.linspace(7.0, 26.0, 20, dtype=np.float64)
 
     for z in np.geomspace(1.0e-18, 2.0, 20):
         flip = False
         for mass1, mass2 in zip(mass_array[:-1], mass_array[1:]):
-            mass1 = np.atleast_1d(mass1)
-            mass2 = np.atleast_1d(mass2)
+            mass1_a = np.atleast_1d(mass1)
+            mass2_a = np.atleast_1d(mass2)
             z = np.atleast_1d(z)
             mass_proxy = np.atleast_1d(1)
 
-            probability_0 = murata_unbinned_relation.distribution(mass1, z, mass_proxy)
-            probability_1 = murata_unbinned_relation.distribution(mass2, z, mass_proxy)
+            probability_0 = murata_unbinned_relation.distribution(
+                mass1_a, z, mass_proxy
+            )
+            probability_1 = murata_unbinned_relation.distribution(
+                mass2_a, z, mass_proxy
+            )
 
             # Probability density should be initially monotonically increasing
             # and then monotonically decreasing. It should flip only once.

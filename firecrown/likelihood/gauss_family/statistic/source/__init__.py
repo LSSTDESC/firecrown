@@ -1,5 +1,3 @@
-"""This package contains the base class :class:`Source` for :class:`TwoPoint`
-sources and implementations.
-"""
+"""Backward compatibility support for deprecated directory structure."""
 
 # flake8: noqa

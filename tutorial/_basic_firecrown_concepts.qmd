@@ -46,5 +46,5 @@ Of course, one needs to take care that they are compatible and that the result m
 This is one of the parts of Firecrown that needs more development[^invitation]; we are working to identify the set of types and functions that will help make sure that only meaningful combinations of systematics are created, and that systematic effects are not double-counted.
 
 [^invitation]: We invite contributions to the effort of defining the means of handling systematic effects.
-The Firecrown [issues list](https://github.com/LSSTDESC/firecrown/issues) can be used to discuss ideas for contributions.
+The Firecrown [discussions list](https://github.com/LSSTDESC/firecrown/discussions) can be used to discuss ideas for contributions.
 

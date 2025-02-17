@@ -1,8 +1,9 @@
-"""The mass richness kernel module
+"""The mass richness kernel module.
 
 This module holds the classes that define the mass richness relations
 that can be included in the cluster abundance integrand.  These are
-implementations of Kernels."""
+implementations of Kernels.
+"""
 
 from abc import abstractmethod
 
@@ -26,7 +27,6 @@ class MassRichnessGaussian(Updatable):
         log1p_pivot_redshift: float,
     ) -> npt.NDArray[np.float64]:
         """Return observed quantity corrected by redshift and mass."""
-
         ln_mass = mass * np.log(10)
         delta_ln_mass = ln_mass - pivot_mass
         delta_z = np.log1p(z) - log1p_pivot_redshift
@@ -100,6 +100,14 @@ class MassRichnessGaussian(Updatable):
         return result
 
 
+MURATA_DEFAULT_MU_P0 = 3.0
+MURATA_DEFAULT_MU_P1 = 0.8
+MURATA_DEFAULT_MU_P2 = -0.3
+MURATA_DEFAULT_SIGMA_P0 = 0.3
+MURATA_DEFAULT_SIGMA_P1 = 0.0
+MURATA_DEFAULT_SIGMA_P2 = 0.0
+
+
 class MurataBinned(MassRichnessGaussian):
     """The mass richness relation defined in Murata 19 for a binned data vector."""
 
@@ -114,12 +122,24 @@ class MurataBinned(MassRichnessGaussian):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
-        self.mu_p0 = parameters.register_new_updatable_parameter()
-        self.mu_p1 = parameters.register_new_updatable_parameter()
-        self.mu_p2 = parameters.register_new_updatable_parameter()
-        self.sigma_p0 = parameters.register_new_updatable_parameter()
-        self.sigma_p1 = parameters.register_new_updatable_parameter()
-        self.sigma_p2 = parameters.register_new_updatable_parameter()
+        self.mu_p0 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_MU_P0
+        )
+        self.mu_p1 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_MU_P1
+        )
+        self.mu_p2 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_MU_P2
+        )
+        self.sigma_p0 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_SIGMA_P0
+        )
+        self.sigma_p1 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_SIGMA_P1
+        )
+        self.sigma_p2 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_SIGMA_P2
+        )
 
         # Verify this gets called last or first
 
@@ -128,6 +148,7 @@ class MurataBinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Return observed quantity corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
@@ -141,6 +162,7 @@ class MurataBinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Return observed scatter corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),
             mass,
@@ -173,18 +195,31 @@ class MurataUnbinned(MassRichnessGaussian):
         self.log1p_pivot_redshift = np.log1p(self.pivot_redshift)
 
         # Updatable parameters
-        self.mu_p0 = parameters.register_new_updatable_parameter()
-        self.mu_p1 = parameters.register_new_updatable_parameter()
-        self.mu_p2 = parameters.register_new_updatable_parameter()
-        self.sigma_p0 = parameters.register_new_updatable_parameter()
-        self.sigma_p1 = parameters.register_new_updatable_parameter()
-        self.sigma_p2 = parameters.register_new_updatable_parameter()
+        self.mu_p0 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_MU_P0
+        )
+        self.mu_p1 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_MU_P1
+        )
+        self.mu_p2 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_MU_P2
+        )
+        self.sigma_p0 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_SIGMA_P0
+        )
+        self.sigma_p1 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_SIGMA_P1
+        )
+        self.sigma_p2 = parameters.register_new_updatable_parameter(
+            default_value=MURATA_DEFAULT_SIGMA_P2
+        )
 
     def get_proxy_mean(
         self,
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Return observed quantity corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.mu_p0, self.mu_p1, self.mu_p2),
             mass,
@@ -198,6 +233,7 @@ class MurataUnbinned(MassRichnessGaussian):
         mass: npt.NDArray[np.float64],
         z: npt.NDArray[np.float64],
     ) -> npt.NDArray[np.float64]:
+        """Return observed scatter corrected by redshift and mass."""
         return MassRichnessGaussian.observed_value(
             (self.sigma_p0, self.sigma_p1, self.sigma_p2),
             mass,

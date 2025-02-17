@@ -1,10 +1,5 @@
-"""
+"""A package for the creation of DESC likelihoods."""
 
-A package for creation of DESC likelihoods.
-
-
-"""
-
-from .version import __version__
+from firecrown.version import __version__
 
 # flake8: noqa

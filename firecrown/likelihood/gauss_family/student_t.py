@@ -1,43 +1,20 @@
-"""The Student-t likelihood.
+"""Deprecated module with classes related to the Student T distribution."""
 
-"""
+# flake8: noqa
 
-from __future__ import annotations
-from typing import Optional
+import warnings
 
-import numpy as np
+import firecrown.likelihood.student_t
 
-from .gauss_family import GaussFamily
-from ...modeling_tools import ModelingTools
-from .statistic.statistic import Statistic
-from ... import parameters
+# pylint: disable=unused-import,unused-wildcard-import,wildcard-import
+from firecrown.likelihood.student_t import *
 
+# pylint: enable=unused-import,unused-wildcard-import,wildcard-import
 
-class StudentT(GaussFamily):
-    """A T-distribution for the log-likelihood.
+assert not hasattr(firecrown.likelihood.student_t, "__all__")
 
-    This distribution is appropriate when the covariance has been obtained
-    from a finite number of simulations. See Sellentin & Heavens
-    (2016; arXiv:1511.05969). As the number of simulations increases, the
-    T-distribution approaches a Gaussian.
-
-    :param statistics: list of statistics to build the theory and data vectors
-    :param nu: The Student-t $\\nu$ parameter
-    """
-
-    def __init__(
-        self,
-        statistics: list[Statistic],
-        nu: Optional[float] = None,
-    ):
-        super().__init__(statistics)
-        self.nu = parameters.register_new_updatable_parameter(nu)
-
-    def compute_loglike(self, tools: ModelingTools):
-        """Compute the log-likelihood.
-
-        :param cosmo: Current Cosmology object
-        """
-
-        chi2 = self.compute_chisq(tools)
-        return -0.5 * self.nu * np.log(1.0 + chi2 / (self.nu - 1.0))
+warnings.warn(
+    "This module is deprecated. Use firecrown.likelihood.student_t instead.",
+    DeprecationWarning,
+    stacklevel=2,
+)

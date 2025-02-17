@@ -6,7 +6,7 @@ from typing import Any
 import pytest
 import numpy as np
 from firecrown.connector import mapping
-from firecrown.connector.mapping import Mapping, mapping_builder
+from firecrown.connector.mapping import Mapping, mapping_builder, MappingCosmoSIS
 from firecrown.likelihood.likelihood import NamedParameters
 
 
@@ -41,6 +41,7 @@ def test_conversion_from_cosmosis_camb():
     }
     named_params = NamedParameters(cosmosis_params)
     p = mapping.mapping_builder(input_style="CosmoSIS")
+    assert isinstance(p, MappingCosmoSIS)
     p.set_params_from_cosmosis(named_params)
     assert p.Omega_c == cosmosis_params["omega_c"]
     assert p.Omega_b == cosmosis_params["omega_b"]
@@ -52,7 +53,6 @@ def test_conversion_from_cosmosis_camb():
     assert p.Omega_g is None
     assert p.Neff == pytest.approx(3.046)
     assert p.m_nu == pytest.approx(0.3015443336635814)
-    assert p.m_nu_type == "normal"  # Currently the only option
     assert p.w0 == cosmosis_params["w"]
     assert p.wa == cosmosis_params["wa"]
     assert p.T_CMB == 2.7255  # currently hard-wired
@@ -89,6 +89,7 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
     }
     named_params = NamedParameters(cosmosis_params)
     p = mapping.mapping_builder(input_style="CosmoSIS")
+    assert isinstance(p, MappingCosmoSIS)
     p.set_params_from_cosmosis(named_params)
     assert p.Neff == pytest.approx(3.171)
 
@@ -133,7 +134,6 @@ def test_sigma8_and_A_s():
         "Omega_k": 0.0,
         "Neff": 3.046,
         "m_nu": 0.0,
-        "m_nu_type": "normal",
         "w0": -1.0,
         "wa": 0.0,
         "T_CMB": 2.7255,
@@ -177,6 +177,22 @@ def test_mapping_cosmosis():
         "w",
         "wa",
     ]
+    mapping_cosmosis.set_params(
+        A_s=2.1e-9,
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=None,
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+    d = mapping_cosmosis.asdict()
+    assert mapping_cosmosis.m_nu is None
+    assert d["m_nu"] == 0.0
 
 
 def test_mapping_cosmosis_k_h_to_h(mapping_cosmosis):

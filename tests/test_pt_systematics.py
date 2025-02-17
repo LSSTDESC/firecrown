@@ -8,31 +8,34 @@ import os
 import pytest
 
 import numpy as np
+import numpy.typing as npt
 import pyccl as ccl
 import pyccl.nl_pt as pt
 import sacc
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import (
+from firecrown.updatable import get_default_params_map
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+import firecrown.metadata_types as mdt
+from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
-    TRACER_NAMES_TOTAL,
 )
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap
+from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
+import firecrown.parameters as fcp
 
 
 @pytest.fixture(name="weak_lensing_source")
-def fixture_weak_lensing_source():
+def fixture_weak_lensing_source() -> wl.WeakLensing:
     ia_systematic = wl.TattAlignmentSystematic()
     pzshift = wl.PhotoZShift(sacc_tracer="src0")
     return wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
 
 
 @pytest.fixture(name="number_counts_source")
-def fixture_number_counts_source():
+def fixture_number_counts_source() -> nc.NumberCounts:
     pzshift = nc.PhotoZShift(sacc_tracer="lens0")
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
     nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
@@ -42,12 +45,12 @@ def fixture_number_counts_source():
 
 
 @pytest.fixture(name="sacc_data")
-def fixture_sacc_data():
+def fixture_sacc_data() -> sacc.Sacc:
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     saccfile = os.path.join(
         os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits",
+        "../examples/des_y1_3x2pt/sacc_data.fits",
     )
     return sacc.Sacc.load_fits(saccfile)
 
@@ -85,9 +88,13 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
         nk_per_decade=4,
         cosmo=ccl_cosmo,
     )
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
-    modeling_tools.update(ParamsMap())
-    modeling_tools.prepare(ccl_cosmo)
+    modeling_tools = ModelingTools(
+        pt_calculator=pt_calculator,
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8),
+    )
+    params = get_default_params_map(modeling_tools)
+    modeling_tools.update(params)
+    modeling_tools.prepare()
 
     # Bare CCL setup
     a_1 = 1.0
@@ -117,7 +124,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     pk_gg = pt_calculator.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_g)
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
+    params.update(
         {
             "ia_a_1": a_1,
             "ia_a_2": a_2,
@@ -132,7 +139,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     )
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
+    likelihood.update(params)
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
@@ -148,11 +155,21 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     #  digging  into the innards of a likelihood object.
     s0 = likelihood.statistics[0].statistic
     assert isinstance(s0, TwoPoint)
-    ells = s0.ells
+    ells = s0.ells_for_xi
     cells_GG = s0.cells[TracerNames("shear", "shear")]
-    cells_GI = s0.cells[TracerNames("shear", "intrinsic_pt")]
+    cells_GI = s0.cells[TracerNames("intrinsic_pt", "shear")]
     cells_II = s0.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
-    cells_cs_total = s0.cells[TRACER_NAMES_TOTAL]
+    cells_cs_total = s0.cells[mdt.TRACER_NAMES_TOTAL]
+
+    s1 = likelihood.statistics[1].statistic
+    # del weak_lensing_source.cosmo_hash
+    s1.compute_theory_vector(modeling_tools)
+    assert isinstance(s1, TwoPoint)
+    ells = s1.ells_for_xi
+    cells_GG_m = s1.cells[TracerNames("shear", "shear")]
+    cells_GI_m = s1.cells[TracerNames("shear", "intrinsic_pt")]
+    cells_II_m = s1.cells[TracerNames("intrinsic_pt", "intrinsic_pt")]
+    cells_cs_total_m = s1.cells[mdt.TRACER_NAMES_TOTAL]
 
     # print(list(likelihood.statistics[2].cells.keys()))
     s2 = likelihood.statistics[2].statistic
@@ -167,7 +184,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cells_gg = s3.cells[TracerNames("galaxies", "galaxies")]
     cells_gm = s3.cells[TracerNames("galaxies", "magnification+rsd")]
     cells_mm = s3.cells[TracerNames("magnification+rsd", "magnification+rsd")]
-    cells_gg_total = s3.cells[TRACER_NAMES_TOTAL]
+    cells_gg_total = s3.cells[mdt.TRACER_NAMES_TOTAL]
     # pylint: enable=no-member
     # Code that computes effect from IA using that Pk2D object
     t_lens = ccl.WeakLensingTracer(ccl_cosmo, dndz=(z, nz))
@@ -208,9 +225,16 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     cl_cs_theory = cl_GG + 2 * cl_GI + cl_II
     cl_gg_theory = cl_gg + 2 * cl_gm + cl_mm
 
+    # print("IDS: ", id(s0), id(s1))
+
+    assert np.allclose(cells_GG, cells_GG_m, atol=0, rtol=1e-127)
+
     assert np.allclose(cl_GG, cells_GG, atol=0, rtol=1e-7)
+    assert np.allclose(cl_GG, cells_GG_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_GI, cells_GI, atol=0, rtol=1e-7)
+    assert np.allclose(cl_GI, cells_GI_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_II, cells_II, atol=0, rtol=1e-7)
+    assert np.allclose(cl_II, cells_II_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
     assert np.allclose(cl_gg, cells_gg, atol=0, rtol=1e-7)
@@ -218,6 +242,7 @@ def test_pt_systematics(weak_lensing_source, number_counts_source, sacc_data):
     assert np.allclose(cl_gm, cells_gm, atol=0, rtol=1e-7)
     assert np.allclose(cl_mm, cells_mm, atol=0, rtol=1e-7)
     assert np.allclose(cl_cs_theory, cells_cs_total, atol=0, rtol=1e-7)
+    assert np.allclose(cl_cs_theory, cells_cs_total_m, atol=0, rtol=1e-7)
     assert np.allclose(cl_gg_theory, cells_gg_total, atol=0, rtol=1e-7)
 
 
@@ -263,9 +288,13 @@ def test_pt_mixed_systematics(sacc_data):
         nk_per_decade=4,
         cosmo=ccl_cosmo,
     )
-    modeling_tools = ModelingTools(pt_calculator=pt_calculator)
-    modeling_tools.update(ParamsMap())
-    modeling_tools.prepare(ccl_cosmo)
+    modeling_tools = ModelingTools(
+        pt_calculator=pt_calculator,
+        ccl_factory=CCLFactory(amplitude_parameter=PoweSpecAmplitudeParameter.SIGMA8),
+    )
+    params = get_default_params_map(modeling_tools)
+    modeling_tools.update(params)
+    modeling_tools.prepare()
 
     # Bare CCL setup
     a_1 = 1.0
@@ -286,7 +315,7 @@ def test_pt_mixed_systematics(sacc_data):
     pk_mi = pt_calculator.get_biased_pk2d(tracer1=ptt_m, tracer2=ptt_i)
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
+    params.update(
         {
             "ia_a_1": a_1,
             "ia_a_2": a_2,
@@ -297,7 +326,7 @@ def test_pt_mixed_systematics(sacc_data):
     )
 
     # Apply the systematics parameters
-    likelihood.update(systematics_params)
+    likelihood.update(params)
 
     # Make things faster by only using a couple of ells
     for s in likelihood.statistics:
@@ -311,7 +340,7 @@ def test_pt_mixed_systematics(sacc_data):
 
     s0 = likelihood.statistics[0].statistic
     assert isinstance(s0, TwoPoint)
-    ells = s0.ells
+    ells = s0.ells_for_xi
 
     # print(list(likelihood.statistics[2].cells.keys()))
     cells_gG = s0.cells[TracerNames("galaxies+magnification+rsd", "shear")]
@@ -341,3 +370,43 @@ def test_pt_mixed_systematics(sacc_data):
 
     assert np.allclose(cl_gG, cells_gG, atol=0, rtol=1e-7)
     assert np.allclose(cl_gI, cells_gI, atol=0, rtol=1e-7)
+
+
+def test_linear_bias_systematic(tools_with_vanilla_cosmology: ModelingTools):
+    a = nc.LinearBiasSystematic("xxx")
+    assert isinstance(a, nc.LinearBiasSystematic)
+    assert a.parameter_prefix == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None
+    assert not a.is_updated()
+    a.update(fcp.ParamsMap({"xxx_alphag": 1.0, "xxx_alphaz": 2.0, "xxx_z_piv": 1.5}))
+    assert a.is_updated()
+    assert a.alphag == 1.0
+    assert a.alphaz == 2.0
+    assert a.z_piv == 1.5
+
+    orig_nca = nc.NumberCountsArgs(
+        z=np.array([0.5, 1.0]),
+        dndz=np.array([5.0, 4.0]),
+        bias=np.array([1.0, 1.0]),
+        mag_bias=(np.array([2.0, 3.0]), np.array([4.0, 5.0])),
+        has_pt=False,
+        has_hm=False,
+        b_2=(np.array([5.0, 6.0]), np.array([6.0, 7.0])),
+        b_s=(np.array([7.0, 8.0]), np.array([8.0, 9.0])),
+    )
+
+    nca = a.apply(tools_with_vanilla_cosmology, orig_nca)
+    # Answer values determined by code inspection and hand calculation.
+    expected_bias: npt.NDArray[np.float64] = np.array([0.27835299, 0.39158961])
+    assert nca.bias is not None  # needed for mypy
+    new_bias: npt.NDArray[np.float64] = nca.bias  # needed for mypy
+    assert np.allclose(expected_bias, new_bias)
+
+    a.reset()
+    assert not a.is_updated()
+    assert a.parameter_prefix == "xxx"
+    assert a.alphag is None
+    assert a.alphaz is None
+    assert a.z_piv is None

@@ -1,0 +1,160 @@
+---
+title: "Using Firecrown to Serialize Redshift Distributions"
+format: html
+---
+
+{{< include _functions.qmd >}}
+
+## Purpose of this document
+
+In the previous [tutorial](inferred_zdist_generators.qmd), we discussed using the `ZDistLSSTSRD` class in Firecrown to generate redshift distributions for galaxies. In this tutorial, we will cover how to serialize these distributions to disk and read them back in.
+
+While `InferredGalaxyZDist` objects can be serialized, the resulting files are not human-readable because they contain the final redshift distribution.
+To achieve a human-readable format, we need to serialize the parameters used to generate the distribution.
+
+Firecrown addresses this by introducing the `ZDistLSSTSRDBin` and `ZDistLSSTSRDBinCollection` dataclasses.[^1]
+These classes store the parameters used to generate the redshift distributions and can be serialized to disk and read back in, providing a human-readable representation.
+These files can be shared and modified by users to generate new redshift distributions.
+
+[^1]: Strictly speaking, these are subclasses of `pydantic.BaseModel`. In most cases, these behave like `dataclasses.dataclass` subtypes.
+
+In this tutorial, we will demonstrate how to serialize and read back these dataclasses.
+
+## Serializing and reading back `ZDistLSSTSRDBin`
+
+First, we discuss the `ZDistLSSTSRDBin` dataclass. This class stores the parameters used to generate a single photometric redshift bin.
+The code snippet below demonstrates how to initialize and serialize this dataclass.
+```{python}
+
+from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRDBin, LinearGrid1D
+from firecrown.metadata_types import Galaxies
+from firecrown.utils import base_model_to_yaml
+
+z = LinearGrid1D(start=0.01, end=0.5, num=20)
+
+bin0 = ZDistLSSTSRDBin(
+    zpl=0.1,
+    zpu=0.2,
+    sigma_z=0.03,
+    z=z,
+    bin_name="bin0",
+    measurements={Galaxies.COUNTS},
+)
+
+bin0_yaml = base_model_to_yaml(bin0)
+```
+
+When serilized, the `ZDistLSSTSRDBin` object produces a human-readable YAML file.
+```{python}
+# | code-fold: true
+import yaml
+from IPython.display import Markdown
+
+Markdown(f"```yaml\n{bin0_yaml}\n```")
+```
+
+Note that since the redshift array needs to be serialized, we used the `LinearGrid1D` class to generate a linear grid of redshifts.
+Alternatively, you can use `RawGrid1D`, which holds a list of redshifts.
+
+## Serializing and reading back ZDistLSSTSRDBinCollection
+
+Next, we discuss the `ZDistLSSTSRDBinCollection` dataclass.
+This class stores the parameters used to generate all the photometric redshift bins, including the `ZDistLSSTSRD` parameters.
+The code snippet below demonstrates how to initialize and serialize this dataclass.
+```{python}
+from firecrown.generators.inferred_galaxy_zdist import (
+    ZDistLSSTSRDBinCollection,
+    Y1_LENS_ALPHA,
+    Y1_LENS_BETA,
+    Y1_LENS_Z0,
+)
+
+# We add a bin1, to demonstrate the use of multiple bins.
+# We want the new bin to be like the old, but with a different
+# range of integration (and a new name, of course).
+
+# To create the bin, we go through a dictionary...
+d = bin0.model_dump()
+d.update(bin_name="bin1", zpl=0.2, zpu=0.3)
+bin1 = ZDistLSSTSRDBin.model_validate(d)
+
+bin_collection = ZDistLSSTSRDBinCollection(
+    alpha=Y1_LENS_ALPHA,
+    beta=Y1_LENS_BETA,
+    z0=Y1_LENS_Z0,
+    bins=[bin0, bin1],
+)
+
+bin_collection_yaml = base_model_to_yaml(bin_collection)
+```
+
+When serialized, the `ZDistLSSTSRDBinCollection` object produces a human-readable YAML file.
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{bin_collection_yaml}\n```")
+```
+
+## Reading back the serialized data
+
+To read back the serialized data, use the `base_model_from_yaml` function.
+```{python}
+from firecrown.utils import base_model_from_yaml
+
+bin_collection_read = base_model_from_yaml(
+    ZDistLSSTSRDBinCollection, bin_collection_yaml
+)
+
+assert bin_collection.alpha == bin_collection_read.alpha
+assert bin_collection.beta == bin_collection_read.beta
+assert bin_collection.z0 == bin_collection_read.z0
+assert len(bin_collection.bins) == 2
+assert bin_collection.bins[0].zpl == bin_collection_read.bins[0].zpl
+assert bin_collection.bins[0].zpu == bin_collection_read.bins[0].zpu
+assert bin_collection.bins[0].sigma_z == bin_collection_read.bins[0].sigma_z
+assert bin_collection.bins[0].bin_name == bin_collection_read.bins[0].bin_name
+assert bin_collection.bins[0].measurements == bin_collection_read.bins[0].measurements
+assert bin_collection.bins[0].z == bin_collection_read.bins[0].z
+```
+
+Calling `generate` on the read object will generate the redshift distribution dataclasses `InferredGalaxyZDist`.
+```{python}
+from pprint import pprint
+
+zdist = bin_collection_read.generate()
+pprint(zdist)
+```
+
+
+## LSST SRD redshift distributions {#sec-lsst-srd}
+
+The LSST SRD provides the parameters used to generate the redshift distributions.
+Firecrown includes dataclass instances `LSST_Y1_LENS_BIN_COLLECTION` and `LSST_Y1_SOURCE_BIN_COLLECTION`, which store the parameters for generating redshift distributions for the Y1 lens and source samples, respectively.
+Similar collections, `LSST_Y10_LENS_BIN_COLLECTION` and `LSST_Y10_SOURCE_BIN_COLLECTION`, exist for the Y10 samples.
+
+Below is a code snippet demonstrating how to serialize and read back these dataclasses:
+```{python}
+from firecrown.generators.inferred_galaxy_zdist import (
+    LSST_Y1_LENS_BIN_COLLECTION,
+    LSST_Y1_SOURCE_BIN_COLLECTION,
+)
+
+lsst_y1_lens_yaml = base_model_to_yaml(LSST_Y1_LENS_BIN_COLLECTION)
+lsst_y1_source_yaml = base_model_to_yaml(LSST_Y1_SOURCE_BIN_COLLECTION)
+
+```
+
+The produced YAML for the lens is:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{lsst_y1_lens_yaml}\n```")
+```
+And for the source:
+```{python}
+# | code-fold: true
+Markdown(f"```yaml\n{lsst_y1_source_yaml}\n```")
+```
+
+## Conclusion
+
+In this tutorial, we demonstrated how to serialize and read back the `ZDistLSSTSRDBin` and `ZDistLSSTSRDBinCollection` dataclasses.
+We also showed how to serialize and read back the LSST SRD redshift distributions.

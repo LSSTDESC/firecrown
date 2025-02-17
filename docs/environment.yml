@@ -3,22 +3,24 @@ channels:
   - conda-forge
   - nodefaults
 dependencies:
-  - python>=3.8
+  - python>=3.10
   - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
-  - cython < 3.0.0
+  - cython
   - flake8
   - jupyter
   - mypy
   - numcosmo>=0.21.1
-  - numpy>=1.21.0
-  - plantuml
+  - numpy>=1.23.0
+  - plotnine
   - pip>=20.1  # pip is needed as dependency
   - pip:
     - autoclasstoc
     - cobaya
     - pygobject-stubs
+    - isitgr
   - pyccl>=2.8.0
+  - pydantic
   - pytest
   - quarto
   - sacc>=0.11
@@ -28,3 +30,4 @@ dependencies:
   - sphinx-autodoc-typehints
   - sphinxcontrib-apidoc
   - sphinx-book-theme
+  - tabulate

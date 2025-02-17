@@ -1,18 +1,8 @@
 ---
 title: "Developing a New Likelihood"
-subtitle: "Version 1.7.1"
-authors:
-  - Marc Paterno
-  - Sandro Vitenti
 execute:
   EFL: false
-format:
-  html:
-    toc: true
-    theme: [serif, custom.scss]
-    code-overflow: wrap
-reference-location: margin
-citation-location: margin
+format: html
 ---
 
 ## Prologue
@@ -65,8 +55,8 @@ In Firecrown, this means writing a new *likelihood factory function* -- the func
 ```{python}
 #| eval: false
 import os.path 
-import firecrown.likelihood.gauss_family.statistic.supernova as sn
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+import firecrown.likelihood.supernova as sn
+from firecrown.likelihood.gaussian import ConstGaussian
 import sacc
 
 SACC_FILENAME = os.path.expandvars( \

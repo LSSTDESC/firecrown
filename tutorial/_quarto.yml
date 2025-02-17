@@ -1,0 +1,65 @@
+project:
+  type: website
+  render:
+    - index.qmd
+    - about.qmd
+    - intro_article.qmd
+    - theoretical_predictions_tutorial.qmd
+    - inferred_zdist.qmd
+    - inferred_zdist_generators.qmd
+    - inferred_zdist_serialization.qmd
+    - two_point_generators.qmd
+    - two_point_factories.qmd
+    - systematics.qmd
+execute:
+  freeze: auto  # re-render only when source changes
+website:
+  title: "Firecrown Tutorial Documents"
+  favicon: green-backed-firecrown.jpg
+  navbar:
+    search: true
+    left:
+      - about.qmd
+  sidebar:
+      style: "docked"
+      contents:
+        - section: "Basics"
+          contents:
+            - href: intro_article.qmd
+              text: "Introduction"
+        - section: "Tutorials"
+          contents:
+            - href: inferred_zdist.qmd
+              text: "Inferred Redshift Distributions"
+            - href: inferred_zdist_generators.qmd
+              text: "Redshift Distribution Generators"
+            - href: inferred_zdist_serialization.qmd
+              text: "Redshift Distribution Serialization"
+            - href: two_point_generators.qmd
+              text: "Two-Point Function Generators"
+            - href: two_point_factories.qmd
+              text: "Two-Point Function Factories"
+        - section: "Firecrown on GitHub"
+          contents:
+            - text: "Source Code"
+              href: https://github.com/LSSTDESC/firecrown
+            - text: "Issues"
+              href: https://github.com/LSSTDESC/firecrown/issues
+            - text: "Discussions"
+              href: https://github.com/LSSTDESC/firecrown/discussions
+
+format:
+  html:
+    theme: [serif, custom.scss]
+    toc: true
+    code-overflow: wrap
+    grid:
+      body-width: 1200px
+
+reference-location: margin
+citation-location: margin
+subtitle: "version 1.9.0a0"
+authors:
+  - Marc Paterno
+  - Sandro Vitenti
+jupyter: python3

@@ -1,0 +1,9 @@
+---
+title: "About"
+---
+
+This is the tutorial portion of the Firecrown documentation.
+We recommend first reading the [introductory article](intro_article.html).
+Then read the [installation instructions](https://firecrown.readthedocs.io/en/latest/install_quick.html).
+
+The remaining documentation can be read in any order, as your interest dictates.

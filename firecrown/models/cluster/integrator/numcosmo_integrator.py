@@ -1,10 +1,10 @@
-"""The NumCosmo integrator module
+"""The NumCosmo integrator module.
 
 This module holds the NumCosmo implementation of the integrator classes
 """
 
 from enum import Enum
-from typing import Callable, Optional
+from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -27,7 +27,7 @@ class NumCosmoIntegrator(Integrator):
 
     def __init__(
         self,
-        method: Optional[NumCosmoIntegralMethod] = None,
+        method: None | NumCosmoIntegralMethod = None,
         relative_tolerance: float = 1e-4,
         absolute_tolerance: float = 1e-12,
     ) -> None:
@@ -42,6 +42,7 @@ class NumCosmoIntegrator(Integrator):
             [npt.NDArray[np.float64], npt.NDArray[np.float64]], npt.NDArray[np.float64]
         ],
     ) -> float:
+        """Integrate the provided integrand argument with NumCosmo."""
         Ncm.cfg_init()
 
         int_nd = CountsIntegralND(
@@ -55,7 +56,7 @@ class NumCosmoIntegrator(Integrator):
 
         bl, bu = zip(*self.integral_bounds)
         int_nd.eval(Ncm.Vector.new_array(bl), Ncm.Vector.new_array(bu), res, err)
-        return res.get(0)
+        return res.get(0)  # pylint: disable-msg=no-member
 
 
 class CountsIntegralND(Ncm.IntegralND):
@@ -82,12 +83,12 @@ class CountsIntegralND(Ncm.IntegralND):
     # pylint: disable-next=arguments-differ
     def do_integrand(
         self,
-        x_vec: Ncm.Vector,
+        x: Ncm.Vector,
         dim: int,
         npoints: int,
         _fdim: int,
-        fval_vec: Ncm.Vector,
+        fval: Ncm.Vector,
     ) -> None:
         """Called by NumCosmo to evaluate the integrand."""
-        x = np.array(x_vec.dup_array()).reshape(npoints, dim)
-        fval_vec.set_array(list(self.fun(x, self.extra_args)))
+        x_array = np.array(x.dup_array()).reshape(npoints, dim)
+        fval.set_array(list(self.fun(x_array, self.extra_args)))

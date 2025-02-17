@@ -8,13 +8,17 @@ from os.path import expandvars
 import yaml
 import pytest
 import numpy as np
+
 from cosmosis.datablock import DataBlock, option_section, names as section_names
 
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
-    extract_section,
     MissingSamplerParameterError,
+    calculate_firecrown_params,
+    execute,
+    extract_section,
+    form_error_message,
 )
 
 
@@ -81,6 +85,61 @@ def fixture_config_with_const_gaussian_missing_sampling_parameters_sections() ->
     return result
 
 
+@pytest.fixture(name="config_with_two_point_real")
+def fixture_config_with_two_point_real() -> DataBlock:
+    result = DataBlock()
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
+        ),
+    )
+    result.put_string(
+        option_section,
+        "sampling_parameters_sections",
+        "firecrown_two_point_parameters",
+    )
+    result.put_string(
+        option_section,
+        "projection",
+        "real",
+    )
+    return result
+
+
+@pytest.fixture(name="config_with_two_point_harmonic", params=["default", "pure_ccl"])
+def fixture_config_with_two_point_harmonic(request) -> DataBlock:
+    result = DataBlock()
+    likelihood_file = ""
+    if request.param == "default":
+        likelihood_file = (
+            "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
+        )
+    elif request.param == "pure_ccl":
+        likelihood_file = (
+            "${FIRECROWN_DIR}/tests/likelihood/"
+            "gauss_family/lkscript_two_point_pure_ccl.py"
+        )
+
+    result.put_string(
+        option_section,
+        "Likelihood_source",
+        expandvars(likelihood_file),
+    )
+    result.put_string(
+        option_section,
+        "sampling_parameters_sections",
+        "firecrown_two_point_parameters",
+    )
+    result.put_string(
+        option_section,
+        "projection",
+        "harmonic",
+    )
+    return result
+
+
 @pytest.fixture(name="minimal_firecrown_mod")
 def fixture_minimal_firecrown_mod(minimal_config: DataBlock) -> FirecrownLikelihood:
     return FirecrownLikelihood(minimal_config)
@@ -101,9 +160,30 @@ def fixture_firecrown_mod_with_const_gaussian(
     return result
 
 
+@pytest.fixture(name="firecrown_mod_with_two_point_real")
+def fixture_firecrown_mod_with_two_point_real(
+    config_with_two_point_real: DataBlock,
+) -> FirecrownLikelihood:
+    result = FirecrownLikelihood(config_with_two_point_real)
+    return result
+
+
+@pytest.fixture(name="firecrown_mod_with_two_point_harmonic")
+def fixture_firecrown_mod_with_two_point_harmonic(
+    config_with_two_point_harmonic: DataBlock,
+) -> FirecrownLikelihood:
+    result = FirecrownLikelihood(config_with_two_point_harmonic)
+    return result
+
+
 @pytest.fixture(name="sample_with_cosmo")
 def fixture_sample_with_cosmo() -> DataBlock:
-    """Return a DataBlock that contains some cosmological parameters."""
+    """Return a DataBlock that contains some cosmological parameters.
+
+    It will have one section, cosmological_parameters.
+    This section will have parameters h0, omega_b, omega_c, omega_k, omega_nu, w,
+    and wa.
+    """
     result = DataBlock()
     params = {
         "h0": 0.83,
@@ -121,7 +201,25 @@ def fixture_sample_with_cosmo() -> DataBlock:
 
 @pytest.fixture(name="minimal_sample")
 def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
+    """Return a DataBlock containing two sections: cosmological_parameters and distances
+
+    See sample_with_cosmo for the parameters in the cosmological_parameters section.
+    The section distances will have parameters d_m, h, and z.
+    All will be double arrays of length 100.
+    """
     with open("tests/distances.yml", encoding="utf-8") as stream:
+        rawdata = yaml.load(stream, yaml.CLoader)
+    sample = sample_with_cosmo
+    for section_name, section_data in rawdata.items():
+        for parameter_name, value in section_data.items():
+            assert len(value) == 100
+            sample.put(section_name, parameter_name, np.array(value))
+    return sample
+
+
+@pytest.fixture(name="minimal_sample_with_pk")
+def fixture_minimal_sample_with_pk(sample_with_cosmo: DataBlock) -> DataBlock:
+    with open("tests/distances_and_pk.yml", encoding="utf-8") as stream:
         rawdata = yaml.load(stream, yaml.CLoader)
     sample = sample_with_cosmo
     for section_name, section_data in rawdata.items():
@@ -134,6 +232,12 @@ def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
 def fixture_sample_with_M(minimal_sample: DataBlock) -> DataBlock:
     minimal_sample.put("supernova_parameters", "pantheon_M", 4.5)
     return minimal_sample
+
+
+@pytest.fixture(name="sample_with_lens0_bias")
+def fixture_sample_with_lens0_bias(minimal_sample_with_pk: DataBlock) -> DataBlock:
+    minimal_sample_with_pk.put("firecrown_two_point_parameters", "lens0_bias", 1.0)
+    return minimal_sample_with_pk
 
 
 @pytest.fixture(name="sample_without_M")
@@ -262,6 +366,124 @@ def test_module_exec_working(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
 ):
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
+
+
+def test_execute_function(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
+):
+    assert execute(sample_with_M, firecrown_mod_with_const_gaussian) == 0
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
+
+
+def test_module_exec_with_two_point_real(
+    firecrown_mod_with_two_point_real: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+):
+    assert firecrown_mod_with_two_point_real.execute(sample_with_lens0_bias) == 0
+
+    # CosmoSIS always writes the output to the same section, so we can
+    # check if the connector is writing the expected values.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "firecrown_theory"
+            )
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d("data_vector", "firecrown_data")
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_nd(
+                "data_vector", "firecrown_inverse_covariance"
+            )
+        )
+    )
+
+    # When dealing with a two-point statistic, the connector should write
+    # the related quantities to the datablock.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theta_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theory_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "data_galaxy_density_xi_lens0_lens0"
+            )
+        )
+    )
+
+
+def test_module_exec_with_two_point_harmonic(
+    firecrown_mod_with_two_point_harmonic: FirecrownLikelihood,
+    sample_with_lens0_bias: DataBlock,
+):
+    assert firecrown_mod_with_two_point_harmonic.execute(sample_with_lens0_bias) == 0
+
+    # CosmoSIS always writes the output to the same section, so we can
+    # check if the connector is writing the expected values.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "firecrown_theory"
+            )
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d("data_vector", "firecrown_data")
+        )
+    )
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_nd(
+                "data_vector", "firecrown_inverse_covariance"
+            )
+        )
+    )
+
+    # When dealing with a two-point statistic, the connector should write
+    # the related quantities to the datablock.
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_int_array_1d(
+                "data_vector", "ell_galaxy_density_cl_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "theory_galaxy_density_cl_lens0_lens0"
+            )
+        )
+    )
+
+    assert np.all(
+        np.isfinite(
+            sample_with_lens0_bias.get_double_array_1d(
+                "data_vector", "data_galaxy_density_cl_lens0_lens0"
+            )
+        )
+    )
 
 
 def test_mapping_cosmosis_background(mapping_cosmosis):
@@ -367,27 +589,58 @@ def test_mapping_cosmosis_pk_nonlin(mapping_cosmosis):
     )
 
 
-def test_mapping_cosmosis_pk_nonlin_nonlinear_model(mapping_cosmosis):
-    block = DataBlock()
+def test_form_error_message_with_sampling_sections():
+    sampling_sections = ["section1", "section2"]
+    exc = MissingSamplerParameterError("missing_param")
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was: `section1 section2`\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
 
-    block.put_double_array_1d("distances", "d_m", np.geomspace(0.1, 10.0, 100))
-    block.put_double_array_1d("distances", "z", np.linspace(0.0, 2.0, 10))
-    block.put_double_array_1d("distances", "h", np.geomspace(0.1, 10.0, 100))
 
-    mapping_cosmosis.require_nonlinear_pk = True
-    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+def test_form_error_message_with_empty_sampling_sections():
+    sampling_sections: list[str] = []
+    exc = MissingSamplerParameterError("missing_param")
+    #  flake8: noqa
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was an empty string.\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
 
-    assert "background" in ccl_args
-    assert "pk_linear" not in ccl_args
-    assert "pk_nonlin" not in ccl_args
-    assert "nonlinear_model" in ccl_args
-    assert ccl_args["nonlinear_model"]
 
-    mapping_cosmosis.require_nonlinear_pk = False
-    ccl_args = mapping_cosmosis.calculate_ccl_args(block)
+def test_form_error_message_with_single_sampling_section():
+    sampling_sections = ["section1"]
+    exc = MissingSamplerParameterError("missing_param")
+    #  flake8: noqa
+    expected_msg = (
+        "A required parameter was not found in any of the sections searched on DataBlock.\n"  # noqa
+        "These are specified by the space-separated string `sampling_parameter_sections`.\n"  # noqa
+        "The supplied value was: `section1`\n"
+        "The missing parameter is named: `missing_param`\n"
+    )
+    assert form_error_message(sampling_sections, exc) == expected_msg
 
-    assert "background" in ccl_args
-    assert "pk_linear" not in ccl_args
-    assert "pk_nonlin" not in ccl_args
-    assert "nonlinear_model" in ccl_args
-    assert not ccl_args["nonlinear_model"]
+
+def test_form_error_message_with_missing_sampler_parameter_error():
+    sampling_sections = ["section1", "section2"]
+    exc = MissingSamplerParameterError("missing_param")
+    assert "missing_param" in form_error_message(sampling_sections, exc)
+
+
+def test_same_param_names_in_different_sections_failure(sample_with_M: DataBlock):
+    sample_with_M.put_double("section1", "a", 1.0)
+    sample_with_M.put_double("section2", "a", 10.0)
+    with pytest.raises(
+        RuntimeError,
+        match="The following keys `{'a'}` appear in more than one section used by"
+        " the module firecrown_mod.",
+    ):
+        _ = calculate_firecrown_params(
+            ["section1", "section2"], "firecrown_mod", sample_with_M
+        )
