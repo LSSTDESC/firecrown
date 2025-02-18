@@ -11,9 +11,7 @@ import numpy.typing as npt
 import pyccl
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
+
 from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
