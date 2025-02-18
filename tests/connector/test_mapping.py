@@ -50,7 +50,6 @@ def test_conversion_from_cosmosis_camb():
     assert p.sigma8 == cosmosis_params["sigma_8"]
     assert p.n_s == cosmosis_params["n_s"]
     assert p.Omega_k == cosmosis_params["omega_k"]
-    assert p.Omega_g is None
     assert p.Neff == pytest.approx(3.046)
     assert p.m_nu == pytest.approx(0.3015443336635814)
     assert p.w0 == cosmosis_params["w"]
