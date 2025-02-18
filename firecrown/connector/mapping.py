@@ -54,7 +54,6 @@ class Mapping(ABC):
     # pylint: disable-msg=too-many-instance-attributes
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
-    Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
     sigma8 = TypeFloat(allow_none=True)
@@ -181,7 +180,6 @@ class Mapping(ABC):
 
         self.n_s = n_s
         self.Omega_k = Omega_k
-        self.Omega_g = None
         self.Neff = Neff
         self.m_nu = m_nu
         self.w0 = w0
@@ -252,9 +250,6 @@ class Mapping(ABC):
             cosmo_dict["A_s"] = self.A_s
         if self.sigma8 is not None:
             cosmo_dict["sigma8"] = self.sigma8
-        # Currently we do not support Omega_g
-        # if self.Omega_g is not None:
-        #    cosmo_dict["Omega_g"] = self.Omega_g
         if self.m_nu is None:
             cosmo_dict["m_nu"] = 0.0
         else:
@@ -335,8 +330,6 @@ class MappingCosmoSIS(Mapping):
 
         :param cosmosis_params: the cosmological parameters read from CosmoSIS
         """
-        # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
-        # Omega_g (regardless of capitalization) does not appear in CosmoSIS or CSL
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
         # Both delta_neff and n_eff appear in CosmoSIS and the CSL
 
