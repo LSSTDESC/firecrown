@@ -1,25 +1,27 @@
 """Example of a Firecrown likelihood using the DES Y1 cosmic shear data and
 the halo model for intrinsic alignments."""
 import os
-from typing import Tuple
 import sacc
 import pyccl as ccl
 
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint, TracerNames
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
+import firecrown.likelihood.weak_lensing as wl
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params_map
+from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
 
 saccfile = os.path.expanduser(
     os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
+        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits"
     )
 )
 
 
-def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
+def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Build the likelihood for the DES Y1 cosmic shear data TATT."""
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
@@ -66,7 +68,8 @@ def build_likelihood(_) -> Tuple[Likelihood, ModelingTools]:
     bM = "Tinker10"
 
     modeling_tools = ModelingTools(
-        hm_definition=hmd_200m, hm_function=nM, bias_function=bM, cM_relation=cM
+        hm_definition=hmd_200m, hm_function=nM, bias_function=bM, cM_relation=cM,
+        ccl_factory = CCLFactory(require_nonlinear_pk=True)
     )
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
@@ -95,13 +98,32 @@ def run_likelihood() -> None:
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz  # pylint: disable-msg=invalid-name
 
-    # Define a ccl.Cosmology object using default parameters
-    ccl_cosmo = ccl.CosmologyVanillaLCDM()
-    ccl_cosmo.compute_nonlin_power()
-
-    # Bare CCL setup
+    # Define halo model amplitudes
     a_1h = 1e-3  # 1-halo alignment amplitude.
     a_2h = 1.0  # 2-halo alignment amplitude.
+
+    # Set the parameters for our systematics
+    systematics_params = ParamsMap(
+        {
+            "ia_a_1h": a_1h,
+            "ia_a_2h": a_2h,
+            "src0_delta_z": 0.000,
+        }
+    )
+
+    # Prepare the cosmology object
+    params = ParamsMap(get_default_params_map(tools) | systematics_params)
+
+    # Apply the systematics parameters
+    likelihood.update(params)
+
+    # Prepare the cosmology object
+    tools.update(params)
+    tools.prepare()
+    ccl_cosmo = tools.get_ccl_cosmology()
+
+    # Define a ccl.Cosmology object using default parameters
+    ccl_cosmo.compute_nonlin_power()
 
     # Code that creates a Pk2D object:
     k_arr = np.geomspace(1e-3, 1e3, 128)  # For evaluating
@@ -150,22 +172,6 @@ def run_likelihood() -> None:
     pk_GI = pk_GI_1h + pk_GI_NLA
     pk_II = pk_II_1h + pk_II_NLA
 
-    # Set the parameters for our systematics
-    systematics_params = ParamsMap(
-        {
-            "ia_a_1h": a_1h,
-            "ia_a_2h": a_2h,
-            "src0_delta_z": 0.000,
-        }
-    )
-
-    # Apply the systematics parameters
-    likelihood.update(systematics_params)
-
-    # Prepare the cosmology object
-    tools.update(systematics_params)
-    tools.prepare(ccl_cosmo)
-
     # Compute the log-likelihood, using the ccl.Cosmology object as the input
     log_like = likelihood.compute_loglike(tools)
 
@@ -196,7 +202,7 @@ def make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z):
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
     import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-topleve
 
-    ells = two_point_0.ells
+    ells = two_point_0.ells_for_xi
     cells_gg = two_point_0.cells[TracerNames("shear", "shear")]
     cells_gi = two_point_0.cells[TracerNames("shear", "intrinsic_hm")]
     cells_ig = two_point_0.cells[TracerNames("intrinsic_hm", "shear")]

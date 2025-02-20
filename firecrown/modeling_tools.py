@@ -29,6 +29,8 @@ class ModelingTools(Updatable):
         self,
         *,
         pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = None,
+        hm_calculator: None | pyccl.halos.HMCalculator = None,
+        # FIXME: HMC here but we need to parse non-updatable variables.
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
         ccl_factory: None | CCLFactory = None,
@@ -40,6 +42,7 @@ class ModelingTools(Updatable):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
         self.pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = pt_calculator
+        self.hm_calculator: None | pyccl.halos.HMCalculator = hm_calculator
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
@@ -139,7 +142,6 @@ class ModelingTools(Updatable):
         return self.pt_calculator
 
     def get_hm_calculator(self) -> pyccl.halos.HMCalculator:
-        # TODO: CHECK THESE 2 FUNCTIONS FOR v1.8
         """Return the halo model calculator object."""
 
         if self.hm_definition is None:
