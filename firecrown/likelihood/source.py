@@ -14,9 +14,6 @@ import pyccl.nl_pt
 import sacc
 from scipy.interpolate import Akima1DInterpolator
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown import parameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
