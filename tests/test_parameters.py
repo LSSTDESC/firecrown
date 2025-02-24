@@ -9,41 +9,22 @@ from firecrown.parameters import (
     DerivedParameter,
     DerivedParameterCollection,
     register_new_updatable_parameter,
-    create,
     InternalParameter,
     SamplerParameter,
 )
 
 
-def test_create_with_no_arg():
-    """Calling parameters.create() with no argument should return an
-    SamplerParameter"""
-    with pytest.deprecated_call():
-        a_parameter = create()
-        assert isinstance(a_parameter, SamplerParameter)
-
-
-def test_create_with_float_arg():
-    """Calling parameters.create() with a float argument should return a
-    InternalParameter ."""
-    with pytest.deprecated_call():
-        a_parameter = create(1.5)
-        assert isinstance(a_parameter, InternalParameter)
-        assert a_parameter.value == 1.5
-
-
 def test_register_new_updatable_parameter_with_no_arg():
     """Calling parameters.create() with no argument should return an
     SamplerParameter"""
-    with pytest.deprecated_call():
-        a_parameter = register_new_updatable_parameter()
+    a_parameter = register_new_updatable_parameter(default_value=1.0)
     assert isinstance(a_parameter, SamplerParameter)
 
 
 def test_register_new_updatable_parameter_with_float_arg():
     """Calling parameters.create() with a float argument should return a
     InternalParameter ."""
-    a_parameter = register_new_updatable_parameter(1.5)
+    a_parameter = register_new_updatable_parameter(value=1.5, default_value=1.0)
     assert isinstance(a_parameter, InternalParameter)
     assert a_parameter.get_value() == 1.5
 
@@ -52,28 +33,31 @@ def test_register_new_updatable_parameter_with_wrong_arg():
     """Calling parameters.create() with an org that is neither float nor None should
     raise a TypeError."""
     with pytest.raises(TypeError):
-        _ = register_new_updatable_parameter("cow")  # type: ignore
+        _ = register_new_updatable_parameter(
+            value="cow", default_value="moo"  # type: ignore
+        )
 
 
 def test_required_parameters_length():
     empty = RequiredParameters([])
     assert len(empty) == 0
-    with pytest.deprecated_call():
-        a = RequiredParameters([SamplerParameter(name="a")])
+    a = RequiredParameters([SamplerParameter(name="a", default_value=3.14)])
     assert len(a) == 1
-    with pytest.deprecated_call():
-        b = RequiredParameters([SamplerParameter(name="a"), SamplerParameter(name="b")])
+    b = RequiredParameters(
+        [
+            SamplerParameter(name="a", default_value=3.14),
+            SamplerParameter(name="b", default_value=3),
+        ]
+    )
     assert len(b) == 2
 
 
 def test_required_parameters_equality_testing():
-    with pytest.deprecated_call():
-        a1 = RequiredParameters([SamplerParameter(name="a")])
-        a2 = RequiredParameters([SamplerParameter(name="a")])
+    a1 = RequiredParameters([SamplerParameter(name="a", default_value=2)])
+    a2 = RequiredParameters([SamplerParameter(name="a", default_value=2)])
     assert a1 == a2
     assert a1 is not a2
-    with pytest.deprecated_call():
-        b = RequiredParameters([SamplerParameter(name="b")])
+    b = RequiredParameters([SamplerParameter(name="b", default_value=3)])
     assert a1 != b
     with pytest.raises(
         TypeError, match="Cannot compare a RequiredParameter to an object of type int"
@@ -84,10 +68,12 @@ def test_required_parameters_equality_testing():
 def test_get_params_names_does_not_allow_mutation():
     """The caller of RequiredParameters.get_params_names should not be able to modify
     the state of the object on which the call was made."""
-    with pytest.deprecated_call():
-        orig = RequiredParameters(
-            [SamplerParameter(name="a"), SamplerParameter(name="b")]
-        )
+    orig = RequiredParameters(
+        [
+            SamplerParameter(name="a", default_value=1),
+            SamplerParameter(name="b", default_value=2),
+        ]
+    )
     names = set(orig.get_params_names())
     assert names == {"a", "b"}
     assert names == {"b", "a"}
@@ -277,41 +263,35 @@ def test_derived_parameters_collection_eq_invalid():
 
 
 def test_sampler_parameter_no_prefix():
-    with pytest.deprecated_call():
-        sp = SamplerParameter(name="name1")
+    sp = SamplerParameter(name="name1", default_value=1)
     assert sp.name == "name1"
     assert sp.fullname == "name1"
 
 
 def test_sampler_parameter_with_prefix():
-    with pytest.deprecated_call():
-        sp = SamplerParameter(name="name1", prefix="prefix1")
+    sp = SamplerParameter(name="name1", prefix="prefix1", default_value=1)
     assert sp.name == "name1"
     assert sp.fullname == "prefix1_name1"
 
 
 def test_sampler_parameter_with_value():
-    with pytest.deprecated_call():
-        sp = SamplerParameter(name="name1")
+    sp = SamplerParameter(name="name1", default_value=2)
     assert sp is not None
 
 
 def test_sampler_parameter_with_value_and_prefix():
-    with pytest.deprecated_call():
-        sp = SamplerParameter(name="name1", prefix="prefix1")
+    sp = SamplerParameter(name="name1", prefix="prefix1", default_value=2)
     assert sp is not None
 
 
 def test_sampler_parameter_with_value_and_prefix_and_fullname():
-    with pytest.deprecated_call():
-        sp = SamplerParameter(name="name1", prefix="prefix1")
+    sp = SamplerParameter(name="name1", prefix="prefix1", default_value=2)
     assert sp.fullname == "prefix1_name1"
 
 
 def test_sample_parameter_hash():
-    with pytest.deprecated_call():
-        sp1 = SamplerParameter(name="name1")
-        sp2 = SamplerParameter(name="name1")
+    sp1 = SamplerParameter(name="name1", default_value=3.14)
+    sp2 = SamplerParameter(name="name1", default_value=3.14)
     assert hash(sp1) == hash(sp2)
 
 
@@ -346,24 +326,19 @@ def test_sampler_parameter_default_value():
     assert sp.get_default_value() == 3.14
 
 
-def test_sampler_parameter_default_value_no_default():
-    with pytest.deprecated_call():
-        sp = SamplerParameter(name="name1")
-    assert sp.get_default_value() is None
-
-
 def test_sampler_parameter_default_value_no_name():
-    with pytest.deprecated_call():
-        sp = SamplerParameter()
+    sp = SamplerParameter(default_value=2.72)
     with pytest.raises(ValueError, match="Parameter name is not set"):
         _ = sp.name
 
 
 def test_required_parameters_get_names():
-    with pytest.deprecated_call():
-        rp = RequiredParameters(
-            [SamplerParameter(name="name1"), SamplerParameter(name="name2")]
-        )
+    rp = RequiredParameters(
+        [
+            SamplerParameter(name="name1", default_value=3.14),
+            SamplerParameter(name="name2", default_value=2.72),
+        ]
+    )
     assert set(rp.get_params_names()) == {"name1", "name2"}
 
 
@@ -376,32 +351,6 @@ def test_required_parameters_get_default_values():
         ]
     )
     assert rp.get_default_values() == {"name1": 3.14, "name2": 2.72, "name3": 2.3}
-
-
-def test_required_parameters_get_default_values_no_default():
-    with pytest.deprecated_call():
-        rp = RequiredParameters(
-            [
-                SamplerParameter(name="name1"),
-                SamplerParameter(name="name2", default_value=2.72),
-                SamplerParameter(name="name3", default_value=2.3),
-            ]
-        )
-    with pytest.raises(ValueError, match="Parameter name1 has no default value"):
-        _ = rp.get_default_values()
-
-
-def test_required_parameters_get_default_values_no_default3():
-    with pytest.deprecated_call():
-        rp = RequiredParameters(
-            [
-                SamplerParameter(name="name1", default_value=3.14),
-                SamplerParameter(name="name2", default_value=2.72),
-                SamplerParameter(name="name3"),
-            ]
-        )
-    with pytest.raises(ValueError, match="Parameter name3 has no default value"):
-        _ = rp.get_default_values()
 
 
 def test_add_required_parameter():
@@ -421,7 +370,7 @@ def test_add_required_parameter():
 
 
 def test_setting_internal_parameter():
-    a_parameter = register_new_updatable_parameter(1.0)
+    a_parameter = register_new_updatable_parameter(value=1.0, default_value=2.0)
     assert a_parameter.value == 1.0
     a_parameter.set_value(2.0)
     assert a_parameter.value == 2.0

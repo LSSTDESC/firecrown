@@ -11,9 +11,7 @@ import pyccl
 import pyccl.nl_pt
 import sacc.windows
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
+
 import firecrown.generators.two_point as gen
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.source_factories import (
