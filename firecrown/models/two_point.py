@@ -62,6 +62,7 @@ def calculate_pk(
         if not (tracer0.has_pt and tracer1.has_pt):
             # Mixture of PT and non-PT tracers
             # Create a dummy matter PT tracer for the non-PT part
+            # TODO: What if we are doing GGL, and need galaxies as tracers?
             matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
             if not tracer0.has_pt:
                 tracer0.pt_tracer = matter_pt_tracer
@@ -74,6 +75,66 @@ def calculate_pk(
             tracer1=tracer0.pt_tracer,
             tracer2=tracer1.pt_tracer,
         )
+    elif tracer0.has_hm or tracer1.has_hm:
+        # Compute halo model power spectrum
+        # Fix a_arr because normalization is zero for a<~0.07
+        # FIXME: Is this enough?
+        a_arr = np.linspace(0.1, 1, 16)
+        ccl_cosmo = tools.get_ccl_cosmology()
+        hm_calculator = tools.get_hm_calculator()
+        IA_bias_exponent = (
+            2  # Square IA bias if both tracers are HM (doing II correlation).
+        )
+        if not (tracer0.has_hm and tracer1.has_hm):
+            IA_bias_exponent = (
+                1  # IA bias if not both tracers are HM (doing GI correlation).
+            )
+            if "galaxies" in [tracer0.field, tracer1.field]:
+                other_profile = pyccl.halos.HaloProfileHOD(
+                    mass_def=tools.hm_definition,
+                    concentration=tools.get_cM_relation()
+                )
+            else:
+                other_profile = pyccl.halos.HaloProfileNFW(
+                    mass_def=tools.hm_definition,
+                    concentration=tools.get_cM_relation(),
+                    truncated=True,
+                    fourier_analytic=True,
+                )
+            other_profile.ia_a_2h = (
+                -1.0
+            )  # used in GI contribution, which is negative.
+            if not tracer0.has_hm:
+                profile0 = other_profile
+                profile1 = tracer1.halo_profile
+            else:
+                profile0 = tracer0.halo_profile
+                profile1 = other_profile
+        else:
+            profile0 = tracer0.halo_profile
+            profile1 = tracer1.halo_profile
+        # Compute here the 1-halo power spectrum
+        pk_1h = pyccl.halos.halomod_Pk2D(
+            cosmo=ccl_cosmo,
+            hmc=hm_calculator,
+            prof=profile0,
+            prof2=profile1,
+            a_arr=a_arr,
+            get_2h=False,
+        )
+        # Compute here the 2-halo power spectrum
+        C1rhocrit = (
+            5e-14 * pyccl.physical_constants.RHO_CRITICAL
+        )  # standard IA normalisation
+        pk_2h = pyccl.Pk2D.from_function(
+            pkfunc=lambda k, a: profile0.ia_a_2h
+            * profile1.ia_a_2h
+            * (C1rhocrit * ccl_cosmo["Omega_m"] / ccl_cosmo.growth_factor(a))
+            ** IA_bias_exponent
+            * ccl_cosmo.nonlin_matter_power(k, a),
+            is_logp=False,
+        )
+        pk = pk_1h + pk_2h
     else:
         raise ValueError(f"No power spectrum for {pk_name} can be found.")
     return pk
