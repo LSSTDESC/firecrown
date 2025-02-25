@@ -1,5 +1,6 @@
 """Example of a Firecrown likelihood using the DES Y1 cosmic shear data and
 the halo model for intrinsic alignments."""
+
 import os
 import sacc
 import pyccl as ccl
@@ -15,9 +16,7 @@ from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
 
 saccfile = os.path.expanduser(
-    os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits"
-    )
+    os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits")
 )
 
 
@@ -68,8 +67,11 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     bM = "Tinker10"
 
     modeling_tools = ModelingTools(
-        hm_definition=hmd_200m, hm_function=nM, bias_function=bM, cM_relation=cM,
-        ccl_factory = CCLFactory(require_nonlinear_pk=True)
+        hm_definition=hmd_200m,
+        hm_function=nM,
+        bias_function=bM,
+        cM_relation=cM,
+        ccl_factory=CCLFactory(require_nonlinear_pk=True),
     )
     likelihood = ConstGaussian(statistics=list(stats.values()))
 

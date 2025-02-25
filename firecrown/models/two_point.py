@@ -91,8 +91,7 @@ def calculate_pk(
             )
             if "galaxies" in [tracer0.field, tracer1.field]:
                 other_profile = pyccl.halos.HaloProfileHOD(
-                    mass_def=tools.hm_definition,
-                    concentration=tools.get_cM_relation()
+                    mass_def=tools.hm_definition, concentration=tools.get_cM_relation()
                 )
             else:
                 other_profile = pyccl.halos.HaloProfileNFW(
@@ -101,9 +100,7 @@ def calculate_pk(
                     truncated=True,
                     fourier_analytic=True,
                 )
-            other_profile.ia_a_2h = (
-                -1.0
-            )  # used in GI contribution, which is negative.
+            other_profile.ia_a_2h = -1.0  # used in GI contribution, which is negative.
             if not tracer0.has_hm:
                 profile0 = other_profile
                 profile1 = tracer1.halo_profile

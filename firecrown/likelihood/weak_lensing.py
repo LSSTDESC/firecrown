@@ -252,10 +252,10 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
 HM_ALIGNMENT_DEFAULT_IA_A_1H = 1e-4
 HM_ALIGNMENT_DEFAULT_IA_A_2H = 1.0
-HM_ALIGNMENT_DEFAULT_HM_DEFINITION = 'MassDef200m'
-HM_ALIGNMENT_DEFAULT_HM_FUNCTION = 'Tinker10'
-HM_ALIGNMENT_DEFAULT_BIAS_FUNCTION = 'Tinker10'
-HM_ALIGNMENT_DEFAULT_CM_RELATION = 'Duffy08'
+HM_ALIGNMENT_DEFAULT_HM_DEFINITION = "MassDef200m"
+HM_ALIGNMENT_DEFAULT_HM_FUNCTION = "Tinker10"
+HM_ALIGNMENT_DEFAULT_BIAS_FUNCTION = "Tinker10"
+HM_ALIGNMENT_DEFAULT_CM_RELATION = "Duffy08"
 
 
 class HMAlignmentSystematic(WeakLensingSystematic):
@@ -288,18 +288,18 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         )
         # FIXME: if I want to use HMCalculator straight away, I need a way
         # to connect these strings below with the systematic as input.
-        #self.hm_definition = parameters.register_new_updatable_parameter(
+        # self.hm_definition = parameters.register_new_updatable_parameter(
         #    default_value=HM_ALIGNMENT_DEFAULT_HM_DEFINITION
-        #)
-        #self.hm_function = parameters.register_new_updatable_parameter(
+        # )
+        # self.hm_function = parameters.register_new_updatable_parameter(
         #    default_value=HM_ALIGNMENT_DEFAULT_HM_FUNCTION
-        #)
-        #self.bias_function = parameters.register_new_updatable_parameter(
+        # )
+        # self.bias_function = parameters.register_new_updatable_parameter(
         #    default_value=HM_ALIGNMENT_DEFAULT_BIAS_FUNCTION
-        #)
-        #self.cM_relation = parameters.register_new_updatable_parameter(
+        # )
+        # self.cM_relation = parameters.register_new_updatable_parameter(
         #    default_value=HM_ALIGNMENT_DEFAULT_CM_RELATION
-        #)
+        # )
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -308,12 +308,8 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         tracer_arg, in the context of the given cosmology."""
 
         return replace(
-            tracer_arg,
-            has_hm=True,
-            ia_a_1h=self.ia_a_1h,
-            ia_a_2h=self.ia_a_2h
+            tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
         )
-
 
 
 class WeakLensing(SourceGalaxy[WeakLensingArgs]):
