@@ -1,5 +1,4 @@
-"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data and
-the halo model for intrinsic alignments."""
+"""Example of a Firecrown DES Y1 likelihood using the halo model."""
 
 import os
 import sacc
@@ -13,7 +12,7 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
-from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
+from firecrown.metadata_types import TracerNames
 
 saccfile = os.path.expanduser(
     os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits")
@@ -207,7 +206,6 @@ def make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z):
     ells = two_point_0.ells_for_xi
     cells_gg = two_point_0.cells[TracerNames("shear", "shear")]
     cells_gi = two_point_0.cells[TracerNames("shear", "intrinsic_hm")]
-    cells_ig = two_point_0.cells[TracerNames("intrinsic_hm", "shear")]
     cells_ii = two_point_0.cells[TracerNames("intrinsic_hm", "intrinsic_hm")]
     cells_total = two_point_0.cells[TracerNames("", "")]
     # pylint: enable=no-member

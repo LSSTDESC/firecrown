@@ -143,7 +143,6 @@ class ModelingTools(Updatable):
 
     def get_hm_calculator(self) -> pyccl.halos.HMCalculator:
         """Return the halo model calculator object."""
-
         if self.hm_definition is None:
             raise RuntimeError("A halo mass definition has not been set")
         if self.hm_function is None:
@@ -162,7 +161,6 @@ class ModelingTools(Updatable):
 
     def get_cM_relation(self) -> pyccl.halos.Concentration:
         """Return the concentration-mass relation."""
-
         if self.cM_relation is None:
             raise RuntimeError("A concentration-mass relation has not been set")
         if self.hm_definition is None:

@@ -304,9 +304,12 @@ class HMAlignmentSystematic(WeakLensingSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Return a new halo-model alignment systematic, based on the given
-        tracer_arg, in the context of the given cosmology."""
+        """Return a new halo-model alignment systematic.
 
+        :param tools: A ModelingTools object.
+        :param tracer_arg: The WeakLensingArgs to which apply the systematic.
+        :returns: A new WeakLensingArgs object with the systematic applied.
+        """
         return replace(
             tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
         )
