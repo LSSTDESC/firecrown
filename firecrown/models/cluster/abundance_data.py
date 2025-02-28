@@ -90,12 +90,9 @@ class AbundanceData:
                 f"{data_type} data type."
             )
 
-        if bins_combos_for_type.shape[1] != 3:
-            raise ValueError(
-                "The SACC file must contain 3 tracers for the "
-                "cluster_counts data type: cluster_survey, "
-                "redshift argument and mass argument tracers."
-            )
+        assert (
+            bins_combos_for_type.shape[1] == 3
+        ), "The SACC file must contain 3 tracers for the cluster_counts data type."
 
         return bins_combos_for_type
 

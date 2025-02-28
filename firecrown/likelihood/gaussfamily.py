@@ -15,9 +15,7 @@ import scipy.linalg
 
 import sacc
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
+
 from firecrown.parameters import ParamsMap
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.modeling_tools import ModelingTools
@@ -159,8 +157,8 @@ class GaussFamily(Likelihood):
         for i, s in enumerate(statistics):
             if not isinstance(s, Statistic):
                 raise ValueError(
-                    f"statistics[{i}] is not an instance of Statistic: {s}"
-                    f"it is a {type(s)} instead."
+                    f"statistics[{i}] is not an instance of Statistic."
+                    f" It is a {type(s)}."
                 )
 
         self.statistics: UpdatableCollection[GuardedStatistic] = UpdatableCollection(
@@ -265,7 +263,7 @@ class GaussFamily(Likelihood):
             indices_list.append(stat.statistic.sacc_indices.copy())
             data_vector_list.append(stat.statistic.get_data_vector())
 
-        indices = np.concatenate(indices_list)
+        indices = np.concatenate(indices_list).astype(int)
         data_vector = np.concatenate(data_vector_list)
         cov = np.zeros((len(indices), len(indices)))
 
@@ -290,7 +288,7 @@ class GaussFamily(Likelihood):
         self.cov_index_map = {old_i: new_i for new_i, old_i in enumerate(indices)}
         self.cov = cov
         self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
-        self.inv_cov = np.linalg.inv(cov)
+        self.inv_cov = np.linalg.inv(cov).astype(np.float64)
 
     @final
     @enforce_states(
@@ -336,7 +334,7 @@ class GaussFamily(Likelihood):
         :return: The data vector
         """
         assert self.data_vector is not None
-        return self.data_vector
+        return self.data_vector.astype(np.float64)
 
     @final
     @enforce_states(
@@ -370,7 +368,7 @@ class GaussFamily(Likelihood):
         assert (
             self.theory_vector is not None
         ), "theory_vector is None after compute_theory_vector() has been called"
-        return self.theory_vector
+        return self.theory_vector.astype(np.float64)
 
     @final
     @enforce_states(
@@ -419,7 +417,7 @@ class GaussFamily(Likelihood):
             data_vector, theory_vector = self.compute(tools)
 
         assert len(data_vector) == len(theory_vector)
-        residuals = data_vector - theory_vector
+        residuals = np.array(data_vector - theory_vector, dtype=np.float64)
 
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)

@@ -9,7 +9,7 @@ dependencies:
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
-  - cython < 3.0.0
+  - cython
   - dill
   - fitsio
   - flake8
@@ -27,6 +27,7 @@ dependencies:
   - pip:
     - autoclasstoc
     - cobaya
+    - isitgr
     - pygobject-stubs
   - portalocker
   - pybobyqa
@@ -35,6 +36,7 @@ dependencies:
   - pylint
   - pytest
   - pytest-cov
+  - python >= 3.10
   - pyyaml
   - requests
   - sacc >= 0.11

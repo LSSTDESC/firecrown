@@ -1,10 +1,12 @@
 """Some utility functions for patterns common in Firecrown."""
 
-from __future__ import annotations
-from typing import Generator, TypeVar, Type
+from typing import Generator, TypeVar, Type, Callable
 
+import functools
 import numpy as np
-import numpy.typing as npt
+import pyccl
+import scipy.interpolate
+from numpy import typing as npt
 from pydantic import BaseModel
 
 import sacc
@@ -47,7 +49,9 @@ def base_model_from_yaml(cls: type, yaml_str: str):
 
 def base_model_to_yaml(model: BaseModel) -> str:
     """Convert a base model to a yaml string."""
-    return yaml.dump(model.model_dump(), default_flow_style=False, sort_keys=False)
+    return yaml.dump(
+        model.model_dump(), default_flow_style=None, sort_keys=False, width=80
+    )
 
 
 def upper_triangle_indices(n: int) -> Generator[tuple[int, int], None, None]:
@@ -80,6 +84,10 @@ def save_to_sacc(
     copied into a new object, and the new information is put into that copy,
     which is returned by this method.
 
+    If `strict` is True (the default), then we must overwrite the entire data
+    vector. If `strict` is False, then we only overwrite the data at the
+    specified indices.
+
     :param sacc_data: SACC object to be copied. It is not modified.
     :param data_vector: Data vector to be saved to the new copy of `sacc_data`.
     :param indices: SACC indices where the data vector should be written.
@@ -92,7 +100,7 @@ def save_to_sacc(
     new_sacc = sacc_data.copy()
 
     if strict:
-        if set(indices.tolist()) != set(sacc_data.indices()):
+        if set(indices.ravel().tolist()) != set(sacc_data.indices()):
             raise RuntimeError(
                 "The data to be saved does not cover all the data in the "
                 "sacc object. To write only the calculated predictions, "
@@ -133,3 +141,54 @@ def compare_optionals(x: None | object, y: None | object) -> bool:
         return x == y
     # One is None and the other is not.
     return False
+
+
+@functools.lru_cache(maxsize=128)
+def cached_angular_cl(
+    cosmo: pyccl.Cosmology,
+    tracers: tuple[pyccl.Tracer, pyccl.Tracer],
+    ells: npt.NDArray[np.int64],
+    p_of_k_a=None | Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]],
+):
+    """Wrapper for pyccl.angular_cl, with automatic caching.
+
+    :param cosmo: the current cosmology
+    :param tracers: tracers indicating the measurements to be correlated
+    :param ells: ell values at which to calculate the power spectrum
+    :param p_of_k_a: function that computes the power spectrum
+    """
+    return pyccl.angular_cl(
+        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
+    )
+
+
+def make_log_interpolator(
+    x: npt.NDArray[np.int64], y: npt.NDArray[np.float64]
+) -> Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]]:
+    """Return a function object that does 1D spline interpolation.
+
+    If all the y values are greater than 0, the function
+    interpolates log(y) as a function of log(x).
+    Otherwise, the function interpolates y as a function of log(x).
+    The resulting interpolater will not extrapolate; if called with
+    an out-of-range argument it will raise a ValueError.
+    """
+    if np.all(y > 0):
+        # use log-log interpolation
+        intp = scipy.interpolate.InterpolatedUnivariateSpline(
+            np.log(x), np.log(y), ext=2
+        )
+
+        def log_log_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+            """Interpolate on log-log scale."""
+            return np.exp(intp(np.log(x_)))
+
+        return log_log_interpolator
+    # only use log for x
+    intp = scipy.interpolate.InterpolatedUnivariateSpline(np.log(x), y, ext=2)
+
+    def log_x_interpolator(x_: npt.NDArray[np.int64]) -> npt.NDArray[np.float64]:
+        """Interpolate on log-x scale."""
+        return intp(np.log(x_))
+
+    return log_x_interpolator

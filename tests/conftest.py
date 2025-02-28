@@ -7,6 +7,7 @@ Fixtures defined here are available to any test in Firecrown.
 from itertools import product
 import pytest
 
+import pyccl
 import sacc
 
 import numpy as np
@@ -79,6 +80,11 @@ def _skip_tests(items, keyword, reason):
 
 
 # Fixtures
+
+
+@pytest.fixture(name="empty_pyccl_tracer")
+def fixture_empty_pyccl_tracer() -> pyccl.Tracer:
+    return pyccl.Tracer()
 
 
 @pytest.fixture(name="trivial_stats")
@@ -201,6 +207,25 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
 
 
 @pytest.fixture(
+    name="all_harmonic_bins",
+)
+def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    z = np.linspace(0.0, 1.0, 256)
+    dndzs = [
+        np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
+        np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
+    ]
+    return [
+        InferredGalaxyZDist(
+            bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+        )
+        for i in range(2)
+        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
+    ]
+
+
+@pytest.fixture(
     name="real_bin_1",
     params=[
         Galaxies.COUNTS,
@@ -240,6 +265,28 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
         measurements={request.param},
     )
     return x
+
+
+@pytest.fixture(
+    name="all_real_bins",
+)
+def make_all_real_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    return [
+        InferredGalaxyZDist(
+            bin_name=f"bin_{i + 1}",
+            z=np.linspace(0, 1, 5),
+            dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
+            measurements={m},
+        )
+        for i in range(2)
+        for m in [
+            Galaxies.COUNTS,
+            Galaxies.SHEAR_T,
+            Galaxies.SHEAR_MINUS,
+            Galaxies.SHEAR_PLUS,
+        ]
+    ]
 
 
 @pytest.fixture(name="window_1")
@@ -520,7 +567,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
     src_bins_centers = np.linspace(0.25, 0.75, 5)
@@ -587,7 +634,7 @@ def fixture_sacc_galaxy_cwindows():
     """Fixture for a SACC data with window functions."""
     sacc_data = sacc.Sacc()
 
-    z = np.linspace(0, 1.0, 256) + 0.05
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
     nobs = len(ells) - 5
 
@@ -611,7 +658,6 @@ def fixture_sacc_galaxy_cwindows():
         tracers[f"lens{i}"] = (z, dndz)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-
         weights = (
             np.eye(ells.shape[0], nobs, dtype=np.float64)
             + np.eye(ells.shape[0], nobs, k=5, dtype=np.float64)
@@ -688,8 +734,8 @@ def fixture_sacc_galaxy_cwindows():
 def fixture_sacc_galaxy_xis():
     """Fixture for a SACC data without window functions."""
 
-    z = np.linspace(0, 1.0, 256) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
     sacc_data = sacc.Sacc()
 
@@ -768,8 +814,8 @@ def fixture_sacc_galaxy_xis():
 def fixture_sacc_galaxy_xis_inverted():
     """Fixture for a SACC data without window functions."""
 
-    z = np.linspace(0, 1.0, 256) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+    z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
     sacc_data = sacc.Sacc()
 
