@@ -34,10 +34,10 @@ class ModelingTools(Updatable):
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
         ccl_factory: None | CCLFactory = None,
-        hm_definition: None | [pyccl.halos.MassDef] = None,
-        hm_function: None | [str] = None,
-        bias_function: None | [str] = None,
-        cM_relation: None | [str] = None,
+        hm_definition: None | pyccl.halos.MassDef = None,
+        hm_function: None | str = None,
+        bias_function: None | str = None,
+        cM_relation: None | str = None,
     ):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
@@ -55,7 +55,11 @@ class ModelingTools(Updatable):
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
-        """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
+        """Add a :python:`pyccl.Pk2D` to the table of power spectra.
+
+        :param name: the name of the power spectrum
+        :param powerspectrum: the power spectrum
+        """
         if name in self.powerspectra:
             raise KeyError(f"Power spectrum {name} already exists")
 
@@ -64,8 +68,9 @@ class ModelingTools(Updatable):
     def get_pk(self, name: str) -> pyccl.Pk2D:
         """Access a power spectrum from the table of power spectra.
 
-        Either retrive a pyccl.Pk2D from the table of power spectra, or fall back
+        Either retrieve a pyccl.Pk2D from the table of power spectra, or fall back
         to what the pyccl.Cosmology object can provide.
+        :param name: the name of the desired power spectrum
         """
         if self.ccl_cosmo is None:
             raise RuntimeError("Cosmology has not been set")
