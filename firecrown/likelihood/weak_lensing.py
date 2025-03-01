@@ -272,7 +272,7 @@ class HMAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_a_2h: the 2-halo intrinsic alignment bias parameter (central galaxies).
     """
 
-    def __init__(self, sacc_tracer: None | str = None):
+    def __init__(self, _: None | str = None):
         """Create a HMAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
