@@ -201,7 +201,7 @@ def run_likelihood() -> None:
 def make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z):
     """Create and show a diagnostic plot."""
     import numpy as np  # pylint: disable-msg=import-outside-toplevel
-    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-topleve
+    import matplotlib.pyplot as plt  # pylint: disable-msg=import-outside-toplevel
 
     ells = two_point_0.ells_for_xi
     cells_gg = two_point_0.cells[TracerNames("shear", "shear")]
