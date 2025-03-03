@@ -69,7 +69,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     modeling_tools = ModelingTools(
         hm_calculator=hmc,
         cM_relation=cM,
-        ccl_factory = CCLFactory(require_nonlinear_pk=True),
+        ccl_factory=CCLFactory(require_nonlinear_pk=True),
     )
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
@@ -206,7 +206,7 @@ def make_plot(ccl_cosmo, nz, pk_GI, pk_II, two_point_0, z):
     ells = two_point_0.ells_for_xi
     cells_gg = two_point_0.cells[TracerNames("shear", "shear")]
     cells_gi = two_point_0.cells[TracerNames("shear", "intrinsic_hm")]
-    #cells_ig = two_point_0.cells[TracerNames("intrinsic_hm", "shear")]
+    # cells_ig = two_point_0.cells[TracerNames("intrinsic_hm", "shear")]
     cells_ii = two_point_0.cells[TracerNames("intrinsic_hm", "intrinsic_hm")]
     cells_total = two_point_0.cells[TracerNames("", "")]
     # pylint: enable=no-member

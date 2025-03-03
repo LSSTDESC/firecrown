@@ -79,7 +79,7 @@ def at_least_one_tracer_has_hm(
     """
     # Compute halo model power spectrum
     # Fix a_arr because normalization is zero for a<~0.07
-    # FIXME: Is this enough?
+    # TODO: Test if a_arr sampling is enough.
     a_arr = np.linspace(0.1, 1, 16)
     ccl_cosmo = tools.get_ccl_cosmology()
     hm_calculator = tools.get_hm_calculator()

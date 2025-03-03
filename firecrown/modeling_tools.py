@@ -30,7 +30,7 @@ class ModelingTools(Updatable):
         *,
         pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = None,
         hm_calculator: None | pyccl.halos.HMCalculator = None,
-        cM_relation: None | [str] = None,
+        cM_relation: None | str = None,
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
         ccl_factory: None | CCLFactory = None,
@@ -141,7 +141,6 @@ class ModelingTools(Updatable):
 
     def get_hm_calculator(self) -> pyccl.halos.HMCalculator:
         """Return the halo model calculator object."""
-
         if self.hm_calculator is None:
             raise RuntimeError("A Halo Model calculator has not been set")
         return self.hm_calculator
