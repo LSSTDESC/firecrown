@@ -30,26 +30,19 @@ class ModelingTools(Updatable):
         *,
         pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = None,
         hm_calculator: None | pyccl.halos.HMCalculator = None,
-        # FIXME: HMC here but we need to parse non-updatable variables.
+        cM_relation: None | [str] = None,
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
         ccl_factory: None | CCLFactory = None,
-        hm_definition: None | [pyccl.halos.MassDef] = None,
-        hm_function: None | [str] = None,
-        bias_function: None | [str] = None,
-        cM_relation: None | [str] = None,
     ):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
         self.pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = pt_calculator
         self.hm_calculator: None | pyccl.halos.HMCalculator = hm_calculator
+        self.cM_relation: None | str = cM_relation
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
-        self.hm_definition: None | pyccl.halos.MassDef = hm_definition
-        self.hm_function: None | str = hm_function
-        self.bias_function: None | str = bias_function
-        self.cM_relation: None | str = cM_relation
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
@@ -144,33 +137,16 @@ class ModelingTools(Updatable):
     def get_hm_calculator(self) -> pyccl.halos.HMCalculator:
         """Return the halo model calculator object."""
 
-        if self.hm_definition is None:
-            raise RuntimeError("A halo mass definition has not been set")
-        if self.hm_function is None:
-            raise RuntimeError("A halo mass function has not been set")
-        if self.bias_function is None:
-            raise RuntimeError("A halo bias function has not been set")
-        nM = pyccl.halos.MassFunc.from_name(self.hm_function)(
-            mass_def=self.hm_definition
-        )
-        bM = pyccl.halos.HaloBias.from_name(self.bias_function)(
-            mass_def=self.hm_definition
-        )
-        return pyccl.halos.HMCalculator(
-            mass_function=nM, halo_bias=bM, mass_def=self.hm_definition
-        )
+        if self.hm_calculator is None:
+            raise RuntimeError("A Halo Model calculator has not been set")
+        return self.hm_calculator
 
     def get_cM_relation(self) -> pyccl.halos.Concentration:
         """Return the concentration-mass relation."""
 
         if self.cM_relation is None:
             raise RuntimeError("A concentration-mass relation has not been set")
-        if self.hm_definition is None:
-            raise RuntimeError("A halo mass definition has not been set")
-
-        return pyccl.halos.Concentration.from_name(self.cM_relation)(
-            mass_def=self.hm_definition
-        )
+        return self.cM_relation
 
 
 class PowerspectrumModifier(Updatable, ABC):

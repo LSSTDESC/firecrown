@@ -46,10 +46,6 @@ class WeakLensingArgs(SourceGalaxyArgs):
 
     ia_a_1h: None | npt.NDArray[np.float64] = None
     ia_a_2h: None | npt.NDArray[np.float64] = None
-    hm_definition: None | str = None
-    hm_function: None | str = None
-    bias_function: None | str = None
-    cM_relation: None | str = None
 
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
@@ -252,10 +248,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
 
 HM_ALIGNMENT_DEFAULT_IA_A_1H = 1e-4
 HM_ALIGNMENT_DEFAULT_IA_A_2H = 1.0
-HM_ALIGNMENT_DEFAULT_HM_DEFINITION = 'MassDef200m'
-HM_ALIGNMENT_DEFAULT_HM_FUNCTION = 'Tinker10'
-HM_ALIGNMENT_DEFAULT_BIAS_FUNCTION = 'Tinker10'
-HM_ALIGNMENT_DEFAULT_CM_RELATION = 'Duffy08'
 
 
 class HMAlignmentSystematic(WeakLensingSystematic):
@@ -286,20 +278,6 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         self.ia_a_2h = parameters.register_new_updatable_parameter(
             default_value=HM_ALIGNMENT_DEFAULT_IA_A_2H
         )
-        # FIXME: if I want to use HMCalculator straight away, I need a way
-        # to connect these strings below with the systematic as input.
-        #self.hm_definition = parameters.register_new_updatable_parameter(
-        #    default_value=HM_ALIGNMENT_DEFAULT_HM_DEFINITION
-        #)
-        #self.hm_function = parameters.register_new_updatable_parameter(
-        #    default_value=HM_ALIGNMENT_DEFAULT_HM_FUNCTION
-        #)
-        #self.bias_function = parameters.register_new_updatable_parameter(
-        #    default_value=HM_ALIGNMENT_DEFAULT_BIAS_FUNCTION
-        #)
-        #self.cM_relation = parameters.register_new_updatable_parameter(
-        #    default_value=HM_ALIGNMENT_DEFAULT_CM_RELATION
-        #)
 
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
@@ -417,9 +395,10 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             tracers.append(ia_tracer)
 
         if tracer_args.has_hm:
+            hmc = tools.get_hm_calculator()
             cM = tools.get_cM_relation()
             halo_profile = pyccl.halos.SatelliteShearHOD(
-                mass_def=tools.hm_definition, concentration=cM, a1h=tracer_args.ia_a_1h
+                mass_def=hmc.mass_def, concentration=cM, a1h=tracer_args.ia_a_1h
             )
             ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
                 ccl_cosmo,

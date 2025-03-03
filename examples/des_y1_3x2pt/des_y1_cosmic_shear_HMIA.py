@@ -62,13 +62,14 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     # Create the likelihood from the statistics
     # Define the halo model components. This is one solution but maybe not the best!
-    hmd_200m = ccl.halos.MassDef200m
+    mass_def = "200m"
     cM = "Duffy08"
     nM = "Tinker10"
     bM = "Tinker10"
+    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=mass_def)
 
     modeling_tools = ModelingTools(
-        hm_definition=hmd_200m, hm_function=nM, bias_function=bM, cM_relation=cM,
+        hm_calculator=hmc, cM_relation=cM,
         ccl_factory = CCLFactory(require_nonlinear_pk=True)
     )
     likelihood = ConstGaussian(statistics=list(stats.values()))
@@ -128,16 +129,17 @@ def run_likelihood() -> None:
     # Code that creates a Pk2D object:
     k_arr = np.geomspace(1e-3, 1e3, 128)  # For evaluating
     a_arr = np.linspace(0.1, 1, 16)
-    cM = ccl.halos.ConcentrationDuffy08(mass_def="200m")
-    nM = ccl.halos.MassFuncTinker10(mass_def="200m")
-    bM = ccl.halos.HaloBiasTinker10(mass_def="200m")
-    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def="200m")
+    mass_def = "200m"
+    cM = "Duffy08"
+    nM = "Tinker10"
+    bM = "Tinker10"
+    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=mass_def)
     sat_gamma_HOD = ccl.halos.SatelliteShearHOD(
-        mass_def="200m", concentration=cM, a1h=a_1h, b=-2
+        mass_def=mass_def, concentration=cM, a1h=a_1h, b=-2
     )
     # NFW profile for matter (G)
     NFW = ccl.halos.HaloProfileNFW(
-        mass_def="200m", concentration=cM, truncated=True, fourier_analytic=True
+        mass_def=mass_def, concentration=cM, truncated=True, fourier_analytic=True
     )
     pk_GI_1h = ccl.halos.halomod_Pk2D(
         ccl_cosmo,

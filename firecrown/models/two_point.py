@@ -82,6 +82,7 @@ def calculate_pk(
         a_arr = np.linspace(0.1, 1, 16)
         ccl_cosmo = tools.get_ccl_cosmology()
         hm_calculator = tools.get_hm_calculator()
+        cM_relation = tools.get_cM_relation()
         IA_bias_exponent = (
             2  # Square IA bias if both tracers are HM (doing II correlation).
         )
@@ -91,13 +92,13 @@ def calculate_pk(
             )
             if "galaxies" in [tracer0.field, tracer1.field]:
                 other_profile = pyccl.halos.HaloProfileHOD(
-                    mass_def=tools.hm_definition,
-                    concentration=tools.get_cM_relation()
+                    mass_def=hm_calculator.mass_def,
+                    concentration=cM_relation
                 )
             else:
                 other_profile = pyccl.halos.HaloProfileNFW(
-                    mass_def=tools.hm_definition,
-                    concentration=tools.get_cM_relation(),
+                    mass_def=hm_calculator.mass_def,
+                    concentration=cM_relation,
                     truncated=True,
                     fourier_analytic=True,
                 )
