@@ -8,14 +8,11 @@ import os
 import pytest
 
 import numpy as np
-import numpy.typing as npt
 import pyccl as ccl
-import pyccl.nl_pt as pt
 import sacc
 
 from firecrown.updatable import get_default_params_map
 import firecrown.likelihood.weak_lensing as wl
-import firecrown.likelihood.number_counts as nc
 import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
     TwoPoint,
@@ -23,8 +20,7 @@ from firecrown.likelihood.two_point import (
 )
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
-import firecrown.parameters as fcp
+from firecrown.ccl_factory import CCLFactory
 
 
 @pytest.fixture(name="weak_lensing_source")
@@ -70,10 +66,7 @@ def test_hm_systematics(weak_lensing_source, sacc_data):
     cM = "Duffy08"
     nM = "Tinker10"
     bM = "Tinker10"
-    hmc = ccl.halos.HMCalculator(
-        mass_function=nM,
-        halo_bias=bM,
-        mass_def=mass_def)
+    hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=mass_def)
 
     modeling_tools = ModelingTools(
         hm_calculator=hmc,
@@ -85,7 +78,7 @@ def test_hm_systematics(weak_lensing_source, sacc_data):
     modeling_tools.prepare()
 
     # Bare CCL setup
-    a_1h = 1.e-3
+    a_1h = 1.0e-3
     a_2h = 1.0
 
     hmc = ccl.halos.HMCalculator(mass_function=nM, halo_bias=bM, mass_def=mass_def)
