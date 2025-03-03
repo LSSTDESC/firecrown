@@ -48,7 +48,11 @@ class ModelingTools(Updatable):
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
-        """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
+        """Add a :python:`pyccl.Pk2D` to the table of power spectra.
+
+        :param name: the name of the power spectrum
+        :param powerspectrum: the power spectrum
+        """
         if name in self.powerspectra:
             raise KeyError(f"Power spectrum {name} already exists")
 
@@ -57,8 +61,9 @@ class ModelingTools(Updatable):
     def get_pk(self, name: str) -> pyccl.Pk2D:
         """Access a power spectrum from the table of power spectra.
 
-        Either retrive a pyccl.Pk2D from the table of power spectra, or fall back
+        Either retrieve a pyccl.Pk2D from the table of power spectra, or fall back
         to what the pyccl.Cosmology object can provide.
+        :param name: the name of the desired power spectrum
         """
         if self.ccl_cosmo is None:
             raise RuntimeError("Cosmology has not been set")
@@ -143,7 +148,6 @@ class ModelingTools(Updatable):
 
     def get_cM_relation(self) -> pyccl.halos.Concentration:
         """Return the concentration-mass relation."""
-
         if self.cM_relation is None:
             raise RuntimeError("A concentration-mass relation has not been set")
         return self.cM_relation

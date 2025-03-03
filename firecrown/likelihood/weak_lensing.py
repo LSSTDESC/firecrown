@@ -264,7 +264,7 @@ class HMAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_a_2h: the 2-halo intrinsic alignment bias parameter (central galaxies).
     """
 
-    def __init__(self, sacc_tracer: None | str = None):
+    def __init__(self, _: None | str = None):
         """Create a HMAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -282,16 +282,15 @@ class HMAlignmentSystematic(WeakLensingSystematic):
     def apply(
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
-        """Return a new halo-model alignment systematic, based on the given
-        tracer_arg, in the context of the given cosmology."""
+        """Return a new halo-model alignment systematic.
 
+        :param tools: A ModelingTools object.
+        :param tracer_arg: The WeakLensingArgs to which apply the systematic.
+        :returns: A new WeakLensingArgs object with the systematic applied.
+        """
         return replace(
-            tracer_arg,
-            has_hm=True,
-            ia_a_1h=self.ia_a_1h,
-            ia_a_2h=self.ia_a_2h
+            tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
         )
-
 
 
 class WeakLensing(SourceGalaxy[WeakLensingArgs]):

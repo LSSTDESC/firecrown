@@ -201,7 +201,8 @@ class Tracer:
     def has_hm(self) -> bool:
         """Answer whether we have a halo model profile.
 
-        Return True if we have a halo_profile, and False if not."""
+        Return True if we have a halo_profile, and False if not.
+        """
         return self.halo_profile is not None
 
 
