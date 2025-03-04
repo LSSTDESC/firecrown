@@ -1,4 +1,4 @@
-"""This module contains the CCLFactory class.
+"""This module contains the CCLFactory class and it supporting classes.
 
 The CCLFactory class is a factory class that creates instances of the
 `pyccl.Cosmology` class.
@@ -21,6 +21,7 @@ from pydantic import (
     Field,
     field_serializer,
     model_serializer,
+    model_validator,
 )
 
 import pyccl
@@ -31,6 +32,7 @@ from firecrown.updatable import Updatable
 from firecrown.parameters import register_new_updatable_parameter
 from firecrown.utils import YAMLSerializable
 
+# PowerSpec is a type that represents a power spectrum.
 PowerSpec = TypedDict(
     "PowerSpec",
     {
@@ -40,6 +42,7 @@ PowerSpec = TypedDict(
     },
 )
 
+# Background is a type that represents the cosmological background quantities.
 Background = TypedDict(
     "Background",
     {
@@ -49,6 +52,8 @@ Background = TypedDict(
     },
 )
 
+# CCLCalculatorArgs is a type that represents the arguments for the
+# CCLCalculator.
 CCLCalculatorArgs = TypedDict(
     "CCLCalculatorArgs",
     {
@@ -168,6 +173,74 @@ class CAMBExtraParams(BaseModel):
         return {
             key: value for key, value in self.model_dump().items() if value is not None
         }
+
+
+class CCLSplineParams(BaseModel):
+    """Params to control CCL spline interpolation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # Scale factor splines
+    a_spline_na: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_min: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_minlog_pk: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_min_pk: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_minlog_sm: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_min_sm: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_max: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_minlog: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_nlog: Annotated[int | None, Field(frozen=True)] = None
+
+    # mass splines
+    logm_spline_delta: Annotated[float | None, Field(frozen=True)] = None
+    logm_spline_nm: Annotated[int | None, Field(frozen=True)] = None
+    logm_spline_min: Annotated[float | None, Field(frozen=True)] = None
+    logm_spline_max: Annotated[float | None, Field(frozen=True)] = None
+
+    # PS a and k spline
+    a_spline_na_sm: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_nlog_sm: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_na_pk: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_nlog_pk: Annotated[int | None, Field(frozen=True)] = None
+
+    # k-splines and integrals
+    k_max_spline: Annotated[float | None, Field(frozen=True)] = None
+    k_max: Annotated[float | None, Field(frozen=True)] = None
+    k_min: Annotated[float | None, Field(frozen=True)] = None
+    dlogk_integration: Annotated[float | None, Field(frozen=True)] = None
+    dchi_integration: Annotated[float | None, Field(frozen=True)] = None
+    n_k: Annotated[int | None, Field(frozen=True)] = None
+    n_k_3dcor: Annotated[int | None, Field(frozen=True)] = None
+
+    # Correlation function parameters
+    ell_min_corr: Annotated[float | None, Field(frozen=True)] = None
+    ell_max_corr: Annotated[float | None, Field(frozen=True)] = None
+    n_ell_corr: Annotated[int | None, Field(frozen=True)] = None
+
+    @model_validator(mode="after")
+    def check_spline_params(self) -> "CCLSplineParams":
+        """Check that the spline parameters are valid."""
+        # Ensure the spline boundaries and breakpoint are valid.
+        spline_breaks = [self.a_spline_minlog, self.a_spline_min, self.a_spline_max]
+        spline_breaks = list(filter(lambda x: x is not None, spline_breaks))
+        assert all(
+            a is not None and b is not None and a < b
+            for a, b in zip(spline_breaks, spline_breaks[1:])
+        )
+
+        # Ensure the mass spline boundaries are valid
+        if self.logm_spline_min is not None and self.logm_spline_max is not None:
+            assert self.logm_spline_min < self.logm_spline_max
+
+        # Ensure the k-spline boundaries are valid
+        if self.k_min is not None and self.k_max is not None:
+            assert self.k_min < self.k_max
+
+        # Ensure the ell-spline boundaries are valid
+        if self.ell_min_corr is not None and self.ell_max_corr is not None:
+            assert self.ell_min_corr < self.ell_max_corr
+
+        return self
 
 
 class CCLFactory(Updatable, BaseModel):
