@@ -84,17 +84,14 @@ def at_least_one_tracer_has_hm(
     ccl_cosmo = tools.get_ccl_cosmology()
     hm_calculator = tools.get_hm_calculator()
     cM_relation = tools.get_cM_relation()
-    IA_bias_exponent = (
-        2  # Square IA bias if both tracers are HM (doing II correlation).
-    )
+    IA_bias_exponent = 2  # Square IA bias if both tracers are HM (doing II correlation).
     if not (tracer0.has_hm and tracer1.has_hm):
-        IA_bias_exponent = (
-            1  # IA bias if not both tracers are HM (doing GI correlation).
-        )
-        if "galaxies" in [tracer0.field, tracer1.field]:
+        IA_bias_exponent = 1  # IA bias if not both tracers are HM (doing GI correlation).
+        if ("galaxies" in tracer0.tracer_name) or ("galaxies" in tracer1.tracer_name):
             other_profile = pyccl.halos.HaloProfileHOD(
                 mass_def=hm_calculator.mass_def, concentration=cM_relation
             )
+            other_profile.ia_a_2h = -2#tracer0.bias
         else:
             other_profile = pyccl.halos.HaloProfileNFW(
                 mass_def=hm_calculator.mass_def,
@@ -102,7 +99,7 @@ def at_least_one_tracer_has_hm(
                 truncated=True,
                 fourier_analytic=True,
             )
-        other_profile.ia_a_2h = -1.0  # used in GI contribution, which is negative.
+            other_profile.ia_a_2h = -1.0  # used in GI contribution, which is negative.
         if not tracer0.has_hm:
             profile0 = other_profile
             profile1 = tracer1.halo_profile
@@ -158,7 +155,6 @@ def at_least_one_tracer_has_pt(
     if not (tracer0.has_pt and tracer1.has_pt):
         # Mixture of PT and non-PT tracers
         # Create a dummy matter PT tracer for the non-PT part
-        # TODO: What if we are doing GGL, and need galaxies as tracers?
         matter_pt_tracer = pyccl.nl_pt.PTMatterTracer()
         if not tracer0.has_pt:
             tracer0.pt_tracer = matter_pt_tracer
