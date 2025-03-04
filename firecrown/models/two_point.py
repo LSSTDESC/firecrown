@@ -84,14 +84,18 @@ def at_least_one_tracer_has_hm(
     ccl_cosmo = tools.get_ccl_cosmology()
     hm_calculator = tools.get_hm_calculator()
     cM_relation = tools.get_cM_relation()
-    IA_bias_exponent = 2  # Square IA bias if both tracers are HM (doing II correlation).
+    IA_bias_exponent = (
+        2  # Square IA bias if both tracers are HM (doing II correlation).
+    )
     if not (tracer0.has_hm and tracer1.has_hm):
-        IA_bias_exponent = 1  # IA bias if not both tracers are HM (doing GI correlation).
+        IA_bias_exponent = (
+            1  # IA bias if not both tracers are HM (doing GI correlation).
+        )
         if ("galaxies" in tracer0.tracer_name) or ("galaxies" in tracer1.tracer_name):
             other_profile = pyccl.halos.HaloProfileHOD(
                 mass_def=hm_calculator.mass_def, concentration=cM_relation
             )
-            other_profile.ia_a_2h = -2#tracer0.bias
+            other_profile.ia_a_2h = -2  # tracer0.bias
         else:
             other_profile = pyccl.halos.HaloProfileNFW(
                 mass_def=hm_calculator.mass_def,
