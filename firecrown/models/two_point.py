@@ -88,22 +88,20 @@ def at_least_one_tracer_has_hm(
         2  # Square IA bias if both tracers are HM (doing II correlation).
     )
     if not (tracer0.has_hm and tracer1.has_hm):
+        assert "shear" in [tracer0.tracer_name, tracer1.tracer_name], (
+            "Currently, only cosmic shear is supported "
+            "with the halo model for intrinsic alignemnts."
+        )
         IA_bias_exponent = (
             1  # IA bias if not both tracers are HM (doing GI correlation).
         )
-        if ("galaxies" in tracer0.tracer_name) or ("galaxies" in tracer1.tracer_name):
-            other_profile = pyccl.halos.HaloProfileHOD(
-                mass_def=hm_calculator.mass_def, concentration=cM_relation
-            )
-            other_profile.ia_a_2h = -2  # tracer0.bias
-        else:
-            other_profile = pyccl.halos.HaloProfileNFW(
-                mass_def=hm_calculator.mass_def,
-                concentration=cM_relation,
-                truncated=True,
-                fourier_analytic=True,
-            )
-            other_profile.ia_a_2h = -1.0  # used in GI contribution, which is negative.
+        other_profile = pyccl.halos.HaloProfileNFW(
+            mass_def=hm_calculator.mass_def,
+            concentration=cM_relation,
+            truncated=True,
+            fourier_analytic=True,
+        )
+        other_profile.ia_a_2h = -1.0  # used in GI contribution, which is negative.
         if not tracer0.has_hm:
             profile0 = other_profile
             profile1 = tracer1.halo_profile

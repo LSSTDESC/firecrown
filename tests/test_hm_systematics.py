@@ -152,8 +152,8 @@ def test_hm_systematics(weak_lensing_source, sacc_data):
     assert isinstance(s0, TwoPoint)
     ells = s0.ells_for_xi
     cells_GG = s0.cells[TracerNames("shear", "shear")]
-    cells_GI = s0.cells[TracerNames("shear", "intrinsic_hm")]
-    cells_II = s0.cells[TracerNames("intrinsic_hm", "intrinsic_hm")]
+    cells_GI = s0.cells[TracerNames("shear", "intrinsic_alignment_hm")]
+    cells_II = s0.cells[TracerNames("intrinsic_alignment_hm", "intrinsic_alignment_hm")]
     cells_cs_total = s0.cells[mdt.TRACER_NAMES_TOTAL]
 
     s1 = likelihood.statistics[1].statistic
@@ -162,8 +162,10 @@ def test_hm_systematics(weak_lensing_source, sacc_data):
     assert isinstance(s1, TwoPoint)
     ells = s1.ells_for_xi
     cells_GG_m = s1.cells[TracerNames("shear", "shear")]
-    cells_GI_m = s1.cells[TracerNames("shear", "intrinsic_hm")]
-    cells_II_m = s1.cells[TracerNames("intrinsic_hm", "intrinsic_hm")]
+    cells_GI_m = s1.cells[TracerNames("shear", "intrinsic_alignment_hm")]
+    cells_II_m = s1.cells[
+        TracerNames("intrinsic_alignment_hm", "intrinsic_alignment_hm")
+    ]
     cells_cs_total_m = s1.cells[mdt.TRACER_NAMES_TOTAL]
 
     # pylint: enable=no-member

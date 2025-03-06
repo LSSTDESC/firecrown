@@ -408,7 +408,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             )
             ia_tracer = Tracer(
                 ccl_wl_dummy_tracer,
-                tracer_name="intrinsic_hm",
+                tracer_name="intrinsic_alignment_hm",
                 halo_profile=halo_profile,
             )
             halo_profile.ia_a_2h = (
