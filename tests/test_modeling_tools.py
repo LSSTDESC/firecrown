@@ -85,6 +85,20 @@ def test_modeling_tools_get_pt_calculator_without_setting() -> None:
         tools.get_pt_calculator()
 
 
+def test_modeling_tools_get_hm_calculator_without_setting() -> None:
+    tools = ModelingTools()
+    with pytest.raises(RuntimeError, match="A Halo Model calculator has not been set"):
+        tools.get_hm_calculator()
+
+
+def test_modeling_tools_get_cM_relation_without_setting() -> None:
+    tools = ModelingTools()
+    with pytest.raises(
+        RuntimeError, match="A concentration-mass relation has not been set"
+    ):
+        tools.get_cM_relation()
+
+
 class DummyPowerspectrumModifier(PowerspectrumModifier):
     """Dummy power spectrum modifier for testing."""
 

@@ -133,7 +133,7 @@ class Tracer:
     """Extending the pyccl.Tracer object with additional information.
 
     Bundles together a pyccl.Tracer object with optional information about the
-    underlying 3D field, or a pyccl.nl_pt.PTTracer.
+    underlying 3D field, or a pyccl.nl_pt.PTTracer and halo profiles.
     """
 
     @staticmethod
@@ -162,6 +162,8 @@ class Tracer:
         tracer_name: None | str = None,
         field: None | str = None,
         pt_tracer: None | pyccl.nl_pt.PTTracer = None,
+        halo_profile: None | pyccl.halos.HaloProfile = None,
+        halo_2pt: None | pyccl.halos.Profile2pt = None,
     ):
         """Initialize a new Tracer based on the provided tracer.
 
@@ -184,6 +186,8 @@ class Tracer:
         self.tracer_name: str = tracer_name or tracer.__class__.__name__
         self.field = Tracer.determine_field_name(field, tracer_name)
         self.pt_tracer = pt_tracer
+        self.halo_profile = halo_profile
+        self.halo_2pt = halo_2pt
 
     @property
     def has_pt(self) -> bool:
@@ -192,6 +196,14 @@ class Tracer:
         :return: True if we have a pt_tracer, and False if not.
         """
         return self.pt_tracer is not None
+
+    @property
+    def has_hm(self) -> bool:
+        """Answer whether we have a halo model profile.
+
+        Return True if we have a halo_profile, and False if not.
+        """
+        return self.halo_profile is not None
 
 
 # Sources of galaxy distributions
