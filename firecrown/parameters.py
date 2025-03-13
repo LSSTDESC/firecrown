@@ -6,7 +6,6 @@ provide better type safety.
 
 from __future__ import annotations
 from typing import Iterable, Iterator, Sequence
-import warnings
 
 
 def parameter_get_full_name(prefix: None | str, param: str) -> str:
@@ -169,10 +168,7 @@ class RequiredParameters:
         """Return a dictionary with the default values of the parameters."""
         default_values = {}
         for parameter in self.params_set:
-            default_value = parameter.get_default_value()
-            if default_value is None:
-                raise ValueError(f"Parameter {parameter.fullname} has no default value")
-            default_values[parameter.fullname] = default_value
+            default_values[parameter.fullname] = parameter.get_default_value()
 
         return default_values
 
@@ -313,7 +309,7 @@ class SamplerParameter:
     def __init__(
         self,
         *,
-        default_value: None | float = None,
+        default_value: float,
         name: None | str = None,
         prefix: None | str = None,
     ):
@@ -321,19 +317,11 @@ class SamplerParameter:
 
         This represents a parameter having its value defined by the sampler.
         """
-        self._prefix: None | str = prefix
-        self._name: None | str = name
-        if default_value is not None:
-            self.default_value: None | float = default_value
-        else:
-            warnings.warn(
-                "The default_value argument as optional argument is deprecated. "
-                "All parameters should be created with a default value.",
-                category=DeprecationWarning,
-            )
-            self.default_value = None
+        self._prefix = prefix
+        self._name = name
+        self.default_value = default_value
 
-    def get_default_value(self) -> None | float:
+    def get_default_value(self) -> float:
         """Get the default value of this parameter."""
         return self.default_value
 
@@ -406,24 +394,8 @@ class InternalParameter:
         return self.value
 
 
-# The function create() is intentionally not type-annotated because its use is subtle.
-# See Updatable.__setatrr__ for details.
-def create(value: None | float = None):
-    """Create a new parameter, either a SamplerParameter or an InternalParameter.
-
-    See register_new_updatable_parameter for details.
-    """
-    warnings.warn(
-        "This function is named `create` and will be removed in a future version "
-        "due to its name being too generic."
-        "Use `register_new_updatable_parameter` instead.",
-        category=DeprecationWarning,
-    )
-    return register_new_updatable_parameter(value)
-
-
 def register_new_updatable_parameter(
-    value: None | float = None, *, default_value: None | float = None
+    value: None | float = None, *, default_value: float
 ):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
