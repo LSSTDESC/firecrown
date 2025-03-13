@@ -10,7 +10,7 @@ dependencies:
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
-  - cython < 3.0.0
+  - cython
   - dill
   - fitsio
   - flake8

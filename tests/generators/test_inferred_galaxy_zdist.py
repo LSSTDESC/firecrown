@@ -467,7 +467,7 @@ def test_make_measurement_from_dictionary():
         _ = make_measurements([{}])
 
     with pytest.raises(
-        ValueError, match=re.escape(r"Invalid Measurement: {3} is not a dictionary")
+        ValueError, match=re.escape(r"Invalid Measurement: 3 is not a dictionary")
     ):
         _ = make_measurements({3})  # type: ignore
 

@@ -4,9 +4,6 @@ from __future__ import annotations
 
 import sacc
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown.data_types import TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.abundance_data import AbundanceData
