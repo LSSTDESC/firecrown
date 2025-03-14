@@ -1,5 +1,6 @@
 """Module for defining the classes used in the MurataBinnedSpecZ cluster recipe."""
 
+# pylint: disable=duplicate-code
 from typing import Callable
 
 import numpy as np

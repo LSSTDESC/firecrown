@@ -54,18 +54,13 @@ class DeltaSigmaData(ClusterData):
         """Returns the limits for all z, mass bins for the shear data type."""
         bins = []
         data_type = None
-        for cluster_property in properties:
-            if cluster_property == ClusterProperty.DELTASIGMA:
-                # pylint: disable=no-member
-                data_type = sacc.standard_types.cluster_shear
-            else:
-                raise ValueError(f"The property must be {ClusterProperty.DELTASIGMA}.")
-
-            bin_combinations_for_survey = (
-                self._all_bin_combinations_for_data_type_and_survey(
-                    survey_nm, data_type, 4
-                )
-            )
+        if ClusterProperty.DELTASIGMA not in properties:
+            raise ValueError(f"The property must be {ClusterProperty.DELTASIGMA}.")
+        # pylint: disable=no-member
+        data_type = sacc.standard_types.cluster_shear
+        bin_combinations_for_survey = (
+            self._all_bin_combinations_for_data_type_and_survey(survey_nm, data_type, 4)
+        )
 
         for _, z_tracer, mass_tracer, radius_tracer in bin_combinations_for_survey:
             z_data: sacc.tracers.BinZTracer = self.sacc_data.get_tracer(z_tracer)

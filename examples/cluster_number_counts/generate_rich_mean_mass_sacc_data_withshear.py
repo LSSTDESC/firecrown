@@ -1,59 +1,51 @@
 #!/usr/bin/env python
 
-"""Function to generate SACC file for cluster number counts and cluster deltasigma."""
-
-# # Cluster count-only SACC file creation
-#
-# This file examplifies the creation of a SACC file for cluster count, using
-# NumCosmo facilities to simulate cluster data.
+"""Function to generate a SACC file for cluster number counts and cluster DeltaSigma."""
 
 import math
 import itertools
-
 import numpy as np
-
-from numcosmo_py import Nc
-from numcosmo_py import Ncm
-
+from numcosmo_py import Nc, Ncm
 from astropy.table import Table
-
 from astropy.io import fits
 from scipy import stats
-from typing import Any
+from typing import Tuple
 import sacc
 import pyccl as ccl
 import os
 
-os.environ["CLMM_MODELING_BACKEND"] = (
-    "ccl"  # Need to use NumCosmo as CLMM's backend as well.
-)
+os.environ["CLMM_MODELING_BACKEND"] = "ccl"
 import clmm  # noqa: E402
 from clmm import Cosmology  # noqa: E402
 
 
-def generate_sacc_file() -> Any:  # noqa: C901
-    """Generate a SACC file for cluster number counts and cluster deltasigma."""
-    H0 = 71.0
-    Ob0 = 0.0448
-    Odm0 = 0.22
-    n_s = 0.963
-    sigma8 = 0.8
+def generate_cosmo(
+    H0: float, Ob0: float, Odm0: float, n_s: float, sigma8: float
+) -> Tuple[Nc.HICosmoDECpl, ccl.Cosmology]:
+    """
+    Generate a cosmology object with the given parameters.
+
+    :param H0: Hubble constant in km/s/Mpc.
+    :param Ob0: Baryon density parameter.
+    :param Odm0: Dark matter density parameter.
+    :param n_s: Scalar spectral index.
+    :param sigma8: Amplitude of matter fluctuations on scales of 8 Mpc/h.
+    :return: A tuple containing:
+        - Nc.HICosmoDECpl cosmology object.
+        - pyccl cosmology object.
+    """
+    cosmo = Nc.HICosmoDECpl()
     cosmo_ccl = ccl.Cosmology(
         Omega_b=Ob0, Omega_c=Odm0, sigma8=sigma8, w0=-1, wa=0, h=H0 / 100.0, n_s=n_s
     )
-    cosmo = Nc.HICosmoDECpl()
+
     reion = Nc.HIReionCamb.new()
     prim = Nc.HIPrimPowerLaw.new()
-
     cosmo.add_submodel(reion)
     cosmo.add_submodel(prim)
 
-    dist = Nc.Distance.new(2.0)
     tf = Nc.TransferFuncEH.new()
-
     psml = Nc.PowspecMLTransfer.new(tf)
-
-    # psml = Nc.PowspecMLCBE.new ()
     psml.require_kmin(1.0e-6)
     psml.require_kmax(1.0e3)
 
@@ -63,29 +55,47 @@ def generate_sacc_file() -> Any:  # noqa: C901
     cosmo.props.H0 = H0
     cosmo.props.Omegab = Ob0
     cosmo.props.Omegac = Odm0
-
     cosmo.omega_x2omega_k()
     cosmo.param_set_by_name("Omegak", 0.0)
-
-    prim.props.n_SA = n_s
 
     old_amplitude = math.exp(prim.props.ln10e10ASA)
     prim.props.ln10e10ASA = math.log((sigma8 / cosmo.sigma8(psf)) ** 2 * old_amplitude)
 
-    # CosmoSim_proxy model
-    # M_0, z_0
+    return cosmo, cosmo_ccl
 
-    area = 439.78986
-    lnRl = 0.0
-    lnRu = 5.0
-    zl = 0.2
-    zu = 0.65
 
-    # NumCosmo proxy model based on arxiv 1904.07524v2
+def generate_cluster_data(
+    cosmo: Nc.HICosmoDECpl,
+    area: float,
+    M0: float,
+    z0: float,
+    lnRl: float,
+    lnRu: float,
+    zl: float,
+    zu: float,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Generate cluster data including redshift, richness, and log mass.
+
+    :param cosmo: Nc.HICosmoDECpl cosmology object.
+    :param area: Survey area in square degrees.
+    :param M0: Characteristic mass at z=0 in M_sun/h.
+    :param z0: Characteristic redshift for mass evolution.
+    :param lnRl: Minimum natural log of cluster richness.
+    :param lnRu: Maximum natural log of cluster richness.
+    :param zl: Minimum redshift for clusters.
+    :param zu: Maximum redshift for clusters.
+    :return: Tuple containing:
+        - cluster_z: Redshift array.
+        - cluster_richness: Richness array.
+        - cluster_logM: Log mass array.
+    """
     cluster_z = Nc.ClusterRedshiftNodist(z_max=zu, z_min=zl)
     cluster_m = Nc.ClusterMassAscaso(
-        M0=3.0e14 / 0.71, z0=0.6, lnRichness_min=lnRl, lnRichness_max=lnRu
+        M0=M0, z0=z0, lnRichness_min=lnRl, lnRichness_max=lnRu
     )
+
+    # Set mass parameters based on arXiv 1904.07524v2
     cluster_m.param_set_by_name("mup0", 3.19)
     cluster_m.param_set_by_name("mup1", 2 / np.log(10))
     cluster_m.param_set_by_name("mup2", -0.7 / np.log(10))
@@ -93,45 +103,64 @@ def generate_sacc_file() -> Any:  # noqa: C901
     cluster_m.param_set_by_name("sigmap1", -0.08 / np.log(10))
     cluster_m.param_set_by_name("sigmap2", 0 / np.log(10))
 
-    # Numcosmo Mass Function
-    # First we need to define the multiplicity function here we will use the tinker
+    # Halo Mass Function
     mulf = Nc.MultiplicityFuncTinker.new()
-    mulf.set_linear_interp(True)  # This reproduces the linear interpolation done in CCL
+    mulf.set_linear_interp(True)
     mulf.set_mdef(Nc.MultiplicityFuncMassDef.CRITICAL)
     mulf.set_Delta(200)
 
-    # Second we need to construct a filtered power spectrum
-    hmf = Nc.HaloMassFunction.new(dist, psf, mulf)
-    hmf.set_area_sd(area)
+    hmf = Nc.HaloMassFunction.new(
+        Nc.Distance.new(2.0),
+        Ncm.PowspecFilter.new(
+            Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+            Ncm.PowspecFilterType.TOPHAT,
+        ),
+        mulf,
+    )
 
-    # Cluster Abundance Obj
+    hmf.set_area_sd(area)
     ca = Nc.ClusterAbundance.new(hmf, None)
 
-    # Number Counts object
-    ncount = Nc.DataClusterNCount.new(
-        ca, "NcClusterRedshiftNodist", "NcClusterMassAscaso"
-    )
+    # Prepare cluster abundance object
     ca.prepare(cosmo, cluster_z, cluster_m)
     mset = Ncm.MSet.new_array([cosmo, cluster_z, cluster_m])
 
     rng = Ncm.RNG.seeded_new(None, 2)
+    ncount = Nc.DataClusterNCount.new(
+        ca, "NcClusterRedshiftNodist", "NcClusterMassAscaso"
+    )
     ncount.init_from_sampling(mset, area * ((np.pi / 180) ** 2), rng)
 
+    # Extract data
     ncount.catalog_save("ncount_rich.fits", True)
     ncdata_fits = fits.open("ncount_rich.fits")
-    ncdata_data = ncdata_fits[1].data  # pylint: disable-msg=no-member
+    ncdata_data = ncdata_fits[1].data
     ncdata_Table = Table(ncdata_data)
-
-    # ## Saving in SACC format
 
     data_table = ncdata_Table[ncdata_Table["LNM_OBS"] > 2]
     cluster_z = data_table["Z_OBS"]
-    cluster_lnm = data_table["LNM_OBS"]
-    cluster_richness = cluster_lnm / np.log(10.0)
+    cluster_richness = data_table["LNM_OBS"] / np.log(10.0)
     cluster_logM = data_table["LNM_TRUE"] / np.log(10.0)
 
-    # ## Count halos in the $N_{\rm richness} \times N_z$ richness-redshift plane
+    return cluster_z, cluster_richness, cluster_logM
 
+
+def compute_abundance_deltasigma_statistic(
+    N_richness: float, N_z: float, cosmo_ccl, cluster_z, cluster_richness, cluster_logM
+) -> Tuple[
+    np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray
+]:
+    """Computes abundance statistics and DeltaSigma for clusters.
+
+    :param N_richness: Number of richness bins.
+    :param N_z: Number of redshift bins.
+    :param cosmo_ccl: pyCCL cosmology object.
+    :param cluster_z: Array of cluster redshifts.
+    :param cluster_richness: Array of cluster richness values.
+    :param cluster_logM: Array of cluster log mass values.
+    :return: (Cluster counts, mean log mass, mean DeltaSigma,
+            redshift bin edges, richness bin edges, radius bin edges, covariance matrix)
+    """
     N_richness = 5  # number of richness bins
     N_z = 4  # number of redshift bins
 
@@ -178,28 +207,28 @@ def generate_sacc_file() -> Any:  # noqa: C901
             moo.eval_excess_surface_density(radius_centers, redshift)
         )
     cluster_DeltaSigma = np.array(cluster_DeltaSigma_list)
-    richness_inds = np.digitize(cluster_richness, richness_edges) - 1
-    z_inds = np.digitize(cluster_z, z_edges) - 1
-    mean_DeltaSigma = np.array(
-        [
-            [
-                np.mean(
-                    cluster_DeltaSigma[(richness_inds == i) * (z_inds == j)], axis=0
-                )
-                for i in range(N_richness)
-            ]
-            for j in range(N_z)
-        ]
-    )
-    std_DeltaSigma = np.array(
-        [
-            [
-                np.std(cluster_DeltaSigma[(richness_inds == i) * (z_inds == j)], axis=0)
-                for i in range(N_richness)
-            ]
-            for j in range(N_z)
-        ]
-    )
+    mean_DeltaSigma = np.zeros((N_z, N_richness, len(radius_edges) - 1))
+    std_DeltaSigma = np.zeros((N_z, N_richness, len(radius_edges) - 1))
+    for i, radius_bin in enumerate(radius_edges[:-1]):
+        cluster_DeltaSigma_at_radius = cluster_DeltaSigma[:, i]
+
+        mean_statistic = stats.binned_statistic_2d(
+            cluster_z,
+            cluster_richness,
+            cluster_DeltaSigma_at_radius,
+            "mean",
+            bins=[z_edges, richness_edges],
+        ).statistic
+
+        std_statistic = stats.binned_statistic_2d(
+            cluster_z,
+            cluster_richness,
+            cluster_DeltaSigma_at_radius,
+            "std",
+            bins=[z_edges, richness_edges],
+        ).statistic
+        mean_DeltaSigma[:, :, i] = mean_statistic
+        std_DeltaSigma[:, :, i] = std_statistic
     var_mean_DeltaSigma = std_DeltaSigma**2 / cluster_counts[..., None]
     # correlation matrix - the "large blocks" correspond to the $N_z$ redshift bins.
     # In each redshift bin are the $N_{\rm richness}$ richness bins.**
@@ -211,6 +240,51 @@ def generate_sacc_file() -> Any:  # noqa: C901
                 var_mean_DeltaSigma.flatten(),
             )
         )
+    )
+    return (
+        cluster_counts,
+        mean_logM,
+        mean_DeltaSigma,
+        z_edges,
+        richness_edges,
+        radius_edges,
+        covariance,
+    )
+
+
+def generate_sacc_file() -> None:
+    """Generate and save a SACC file for cluster number counts and DeltaSigma."""
+    # Define parameter values explicitly
+    area = 439.78986
+    H0 = 71.0
+    Ob0 = 0.0448
+    Odm0 = 0.22
+    n_s = 0.963
+    sigma8 = 0.8
+    M0 = 3.0e14 / 0.71
+    z0 = 0.6
+    lnRl = 0.0
+    lnRu = 5.0
+    zl = 0.2
+    zu = 0.65
+    N_richness = 5
+    N_z = 4
+
+    # Generate cosmology and cluster data
+    cosmo, cosmo_ccl = generate_cosmo(H0, Ob0, Odm0, n_s, sigma8)
+    cluster_z, cluster_richness, cluster_logM = generate_cluster_data(
+        cosmo, area, M0, z0, lnRl, lnRu, zl, zu
+    )
+    (
+        cluster_counts,
+        mean_logM,
+        mean_DeltaSigma,
+        z_edges,
+        richness_edges,
+        radius_edges,
+        covariance,
+    ) = compute_abundance_deltasigma_statistic(
+        N_richness, N_z, cosmo_ccl, cluster_z, cluster_richness, cluster_logM
     )
     # Prepare the SACC file
     s_count = sacc.Sacc()
@@ -287,6 +361,5 @@ def generate_sacc_file() -> Any:  # noqa: C901
     )
 
 
-if __name__ == "__main__":
-    Ncm.cfg_init()
-    generate_sacc_file()
+Ncm.cfg_init()
+generate_sacc_file()
