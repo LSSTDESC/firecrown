@@ -210,7 +210,7 @@ def compute_abundance_deltasigma_statistic(
     cluster_DeltaSigma = np.array(cluster_DeltaSigma_list)
     mean_DeltaSigma = np.zeros((N_z, N_richness, len(radius_edges) - 1))
     std_DeltaSigma = np.zeros((N_z, N_richness, len(radius_edges) - 1))
-    for i, radius_bin in enumerate(radius_edges[:-1]):
+    for i in range(len(radius_edges) - 1):
         cluster_DeltaSigma_at_radius = cluster_DeltaSigma[:, i]
 
         mean_statistic = stats.binned_statistic_2d(
