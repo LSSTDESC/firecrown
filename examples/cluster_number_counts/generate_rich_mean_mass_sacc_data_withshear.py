@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 """Function to generate a SACC file for cluster number counts and cluster DeltaSigma."""
+import os
+from typing import Tuple
 
 import math
 import itertools
@@ -9,12 +11,11 @@ from numcosmo_py import Nc, Ncm
 from astropy.table import Table
 from astropy.io import fits
 from scipy import stats
-from typing import Tuple
 import sacc
 import pyccl as ccl
-import os
 
 os.environ["CLMM_MODELING_BACKEND"] = "ccl"
+# pylint: disable=C0413
 import clmm  # noqa: E402
 from clmm import Cosmology  # noqa: E402
 
@@ -134,6 +135,7 @@ def generate_cluster_data(
     # Extract data
     ncount.catalog_save("ncount_rich.fits", True)
     ncdata_fits = fits.open("ncount_rich.fits")
+    #  pylint: disable-next=no-member
     ncdata_data = ncdata_fits[1].data
     ncdata_Table = Table(ncdata_data)
 
@@ -181,6 +183,7 @@ def compute_abundance_deltasigma_statistic(
     var_mean_logM = std_logM**2 / cluster_counts
     # Use CLMM to create a mock DeltaSigma profile to add to the SACC file later
     cosmo_clmm = Cosmology()
+    #  pylint: disable-next=no-member
     cosmo_clmm._init_from_cosmo(cosmo_ccl)
     moo = clmm.Modeling(massdef="critical", delta_mdef=200, halo_profile_model="nfw")
     moo.set_cosmo(cosmo_clmm)
@@ -194,7 +197,6 @@ def compute_abundance_deltasigma_statistic(
 
     radius_centers = []
     for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
-        radius_lower, radius_upper = radius_bin
         j = i + 2
         radius_center = np.mean(radius_edges[i:j])
         radius_centers.append(radius_center)
