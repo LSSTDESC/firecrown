@@ -48,7 +48,7 @@ class MappingNumCosmo(GObject.Object):
         :param p_mnl: optional PowspecMNL object
         :param dist: optional Distance object
         """
-        super().__init__(p_ml=p_ml, p_mnl=p_mnl, dist=dist)  # type: ignore
+        super().__init__(p_ml=p_ml, p_mnl=p_mnl, dist=dist)
         if p_mnl is not None:
             assert (
                 p_ml is not None
