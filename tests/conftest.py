@@ -3,6 +3,7 @@ Pytest configuration additions.
 
 Fixtures defined here are available to any test in Firecrown.
 """
+
 # pylint: disable=too-many-lines
 from itertools import product
 import pytest
