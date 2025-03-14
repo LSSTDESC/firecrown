@@ -183,8 +183,7 @@ def compute_abundance_deltasigma_statistic(
     var_mean_logM = std_logM**2 / cluster_counts
     # Use CLMM to create a mock DeltaSigma profile to add to the SACC file later
     cosmo_clmm = Cosmology()
-    #  pylint: disable-next=no-member
-    cosmo_clmm._init_from_cosmo(cosmo_ccl)
+    cosmo_clmm._init_from_cosmo(cosmo_ccl)  # pylint: disable=protected-access
     moo = clmm.Modeling(massdef="critical", delta_mdef=200, halo_profile_model="nfw")
     moo.set_cosmo(cosmo_clmm)
     # assuming the same concentration for all masses. Not realistic,
@@ -196,7 +195,7 @@ def compute_abundance_deltasigma_statistic(
     )  # 6 radial bins log-spaced between 0.3 and 6 Mpc
 
     radius_centers = []
-    for i, radius_bin in enumerate(zip(radius_edges[:-1], radius_edges[1:])):
+    for i in range(len(radius_edges) - 1):
         j = i + 2
         radius_center = np.mean(radius_edges[i:j])
         radius_centers.append(radius_center)
