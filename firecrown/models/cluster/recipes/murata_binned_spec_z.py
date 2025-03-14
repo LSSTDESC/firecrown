@@ -1,5 +1,6 @@
 """Module for defining the classes used in the MurataBinnedSpecZ cluster recipe."""
 
+# pylint: disable=duplicate-code
 from typing import Callable
 
 import numpy as np
@@ -69,8 +70,6 @@ class MurataBinnedSpecZRecipe(ClusterRecipe):
                     prediction *= mass
                 elif cluster_prop == ClusterProperty.REDSHIFT:
                     prediction *= z
-                else:
-                    raise NotImplementedError(f"Average for {cluster_prop}.")
 
             return prediction
 

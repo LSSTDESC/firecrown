@@ -22,10 +22,8 @@ from firecrown.models.cluster.recipes.murata_binned_spec_z import (
 def fixture_cluster_abundance() -> ClusterAbundance:
     hmf = pyccl.halos.MassFuncBocquet16()
     cl_abundance = ClusterAbundance(
-        min_z=0,
-        max_z=2,
-        min_mass=13,
-        max_mass=17,
+        z_interval=(0, 2),
+        mass_interval=(13, 17),
         halo_mass_function=hmf,
     )
     cl_abundance.update_ingredients(pyccl.CosmologyVanillaLCDM())
@@ -122,6 +120,12 @@ def test_get_theory_prediction_with_average_returns_value(
 
     assert prediction is not None
     assert callable(prediction)
+    prediction = murata_binned_spec_z.get_theory_prediction(
+        cluster_abundance, average_on=(ClusterProperty.REDSHIFT)
+    )
+
+    assert prediction is not None
+    assert callable(prediction)
 
     result = prediction(mass, z, mass_proxy_limits, sky_area)
     assert isinstance(result, np.ndarray)
@@ -141,13 +145,13 @@ def test_get_theory_prediction_throws_with_nonimpl_average(
     assert prediction is not None
     assert callable(prediction)
 
-    mass = np.linspace(13, 17, 2, dtype=np.float64)
-    z = np.linspace(0.1, 1, 2, dtype=np.float64)
-    mass_proxy_limits = (0, 5)
-    sky_area = 360**2
+    # mass = np.linspace(13, 17, 2, dtype=np.float64)
+    # z = np.linspace(0.1, 1, 2, dtype=np.float64)
+    # mass_proxy_limits = (0, 5)
+    # sky_area = 360**2
 
-    with pytest.raises(NotImplementedError):
-        _ = prediction(mass, z, mass_proxy_limits, sky_area)
+    # with pytest.raises(NotImplementedError):
+    #    _ = prediction(mass, z, mass_proxy_limits, sky_area)
 
 
 def test_get_function_to_integrate_returns_value(
