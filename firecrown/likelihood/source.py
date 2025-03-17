@@ -352,7 +352,7 @@ def dndz_shift_and_stretch_active(
     dndz_interp = Akima1DInterpolator(z, dndz, method="makima")
     dndz_mean = np.average(z, weights=dndz)
 
-    z_new = (z - dndz_mean - delta_z) / sigma_z + dndz_mean
+    z_new = (z - dndz_mean + delta_z) / sigma_z + dndz_mean
     # Apply the shift and stretch
     dndz = np.nan_to_num(dndz_interp(z_new, extrapolate=False) / sigma_z)
 
@@ -376,7 +376,7 @@ def dndz_shift_and_stretch_passive(
     if sigma_z <= 0.0:
         raise ValueError("Stretch Parameter must be positive")
     dndz_mean = np.average(z, weights=dndz)
-    z_passive = sigma_z * (z - dndz_mean) + delta_z + dndz_mean
+    z_passive = sigma_z * (z - dndz_mean) - delta_z + dndz_mean
     z_passive_positive = z_passive >= 0.0
     z_new = np.atleast_1d(z_passive[z_passive_positive])
     dndz_new = np.atleast_1d(dndz[z_passive_positive] / sigma_z)
