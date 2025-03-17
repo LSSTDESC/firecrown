@@ -263,17 +263,22 @@ class SourceGalaxyPhotoZShift(
     :ivar delta_z: the photo-z shift.
     """
 
-    def __init__(self, sacc_tracer: str) -> None:
+    def __init__(self, sacc_tracer: str, active: bool = True) -> None:
         """Create a PhotoZShift object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
+        :param active: whether to use and active or passive transformation
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
         self.delta_z = parameters.register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
         )
+        if active:
+            self._transform = dndz_shift_and_stretch_active
+        else:
+            self._transform = dndz_shift_and_stretch_passive
 
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
@@ -285,16 +290,10 @@ class SourceGalaxyPhotoZShift(
             apply the systematic.
         :return: a new source galaxy tracer arg with the systematic applied
         """
-        dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
-        # Apply the shift
-        dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
-        # Normalize the dndz
-        norm = np.sum(dndz)
-        dndz /= norm
-        return replace(
-            tracer_arg,
-            dndz=dndz,
+        new_z, new_dndz = self._transform(
+            tracer_arg.z, tracer_arg.dndz, self.delta_z, 1.0
         )
+        return replace(tracer_arg, z=new_z, dndz=new_dndz)
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift):
@@ -320,6 +319,71 @@ class PhotoZShiftFactory(BaseModel):
         raise ValueError("PhotoZShift cannot be global.")
 
 
+def dndz_shift_and_stretch_active(
+    z: npt.NDArray[np.float64],
+    dndz: npt.NDArray[np.float64],
+    delta_z: float,
+    sigma_z: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Shift and stretch the photo-z distribution using an active transformation.
+
+    We use "makima" interpolation, a cubic spline method based on the modified Akima
+    algorithm. This approach prevents overshooting when the data remains constant for
+    more than two consecutive nodes.
+
+    Additionally, we set `extrapolate=True` to allow extrapolation at the edges of
+    `dndz`. In practice, this extends the first and last values instead of setting
+    extrapolated values to zero, which was the previous behavior. While both methods
+    yield equivalent results when `dndz` is concentrated within a specific redshift
+    range, the new approach avoids discontinuities when `dndz` is nonzero at the edges.
+
+    The active transformation preserves the redshift array and modifies the dndz array.
+    This transformation introduces an interpolation error on dndz.
+
+    :param z: the redshifts
+    :param dndz: the dndz
+    :param delta_z: the photo-z shift
+    :param sigma_z: the photo-z stretch
+    :return: the shifted and stretched dndz
+    """
+    if sigma_z <= 0.0:
+        raise ValueError("Stretch Parameter must be positive")
+
+    dndz_interp = Akima1DInterpolator(z, dndz, method="makima", extrapolate=False)
+    dndz_mean = np.average(z, weights=dndz)
+
+    z_new = (z - dndz_mean - delta_z) / sigma_z + dndz_mean
+    # Apply the shift and stretch
+    dndz = np.nan_to_num(dndz_interp(z_new) / sigma_z)
+
+    return z, dndz
+
+
+def dndz_shift_and_stretch_passive(
+    z: npt.NDArray[np.float64],
+    dndz: npt.NDArray[np.float64],
+    delta_z: float,
+    sigma_z: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Shift and stretch the photo-z distribution using a passive transformation.
+
+    :param z: the redshifts
+    :param dndz: the dndz
+    :param delta_z: the photo-z shift
+    :param sigma_z: the photo-z stretch
+    :return: the shifted and stretched dndz
+    """
+    if sigma_z <= 0.0:
+        raise ValueError("Stretch Parameter must be positive")
+    dndz_mean = np.average(z, weights=dndz)
+    z_passive = sigma_z * (z - dndz_mean) + delta_z + dndz_mean
+    z_passive_positive = z_passive >= 0.0
+    z_new = np.atleast_1d(z_passive[z_passive_positive])
+    dndz_new = np.atleast_1d(dndz[z_passive_positive] / sigma_z)
+
+    return z_new, dndz_new
+
+
 class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArgsT]):
     """A photo-z shift & stretch bias.
 
@@ -333,42 +397,32 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
     :ivar sigma_z: the photo-z stretch.
     """
 
-    def __init__(self, sacc_tracer: str) -> None:
+    def __init__(self, sacc_tracer: str, active: bool = True) -> None:
         """Create a PhotoZShift object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
+        :param active: whether to use and active or passive transformation
         """
         super().__init__(sacc_tracer)
 
-        self.delta_z = parameters.register_new_updatable_parameter(
-            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
-        )
         self.sigma_z = parameters.register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
         )
 
+        if active:
+            self._transform = dndz_shift_and_stretch_active
+        else:
+            self._transform = dndz_shift_and_stretch_passive
+
     def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift & stretch to the photo-z distribution of a source."""
         tracer_arg = super().apply(tools, tracer_arg)
-        z = tracer_arg.z
-        dndz = tracer_arg.dndz
-        dndz_interp = Akima1DInterpolator(z, dndz)
-        dndz_mean = np.average(tracer_arg.z, weights=tracer_arg.dndz)
-        if self.sigma_z <= 0.0:
-            raise ValueError("Stretch Parameter must be positive")
-        # Apply the shift and stretch
-        dndz = dndz_interp(
-            (z - dndz_mean) / self.sigma_z + self.delta_z / self.sigma_z + dndz_mean,
-            extrapolate=False,
+
+        new_z, new_dndz = self._transform(
+            tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
         )
-        # Normalize the dndz
-        norm = np.sum(dndz)
-        dndz /= norm
-        return replace(
-            tracer_arg,
-            dndz=dndz,
-        )
+        return replace(tracer_arg, z=new_z, dndz=new_dndz)
 
 
 class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):

@@ -4,13 +4,16 @@ Tests for the module firecrown.likelihood.statistic.source.
 
 # pylint: disable=too-many-locals
 
-from typing import List
+from typing import List, Callable
+import itertools as it
 
 import numpy as np
 import pyccl
 import pytest
 import sacc
+import numpy.typing as npt
 from numpy.testing import assert_allclose
+from scipy.interpolate import Akima1DInterpolator
 
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.weak_lensing as wl
@@ -21,6 +24,8 @@ from firecrown.likelihood.source import (
     SourceGalaxyArgs,
     SourceGalaxySelectField,
     Tracer,
+    dndz_shift_and_stretch_active,
+    dndz_shift_and_stretch_passive,
 )
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.modeling_tools import ModelingTools
@@ -506,3 +511,44 @@ def test_nc_photozshiftandstretch_systematic(
     assert new_tracer_args.dndz is not None
     assert_allclose(new_tracer_args.z, tracer_args.z)
     assert_allclose(new_tracer_args.dndz, tracer_args.dndz)
+
+
+@pytest.mark.parametrize(
+    "shift,stretch,transform",
+    it.product(
+        [0.0, 0.1, -0.1],
+        [1.0, 0.9, 1.1],
+        [dndz_shift_and_stretch_active, dndz_shift_and_stretch_passive],
+    ),
+)
+def test_dndz_shift_active(
+    shift: float,
+    stretch: float,
+    transform: Callable[
+        [npt.NDArray[np.float64], npt.NDArray[np.float64], float, float],
+        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+    ],
+):
+    sigma = 0.05
+    mu = 0.5
+    shift = 0.1
+    stretch = 1.0
+
+    z_array = np.linspace(0.2, 1.2, 20_000, dtype=np.float64)
+    dndz_array = (
+        np.exp(-0.5 * (z_array - mu) ** 2 / sigma**2) / sigma / np.sqrt(2.0 * np.pi)
+    )
+
+    dndz_shifted_stretched = (
+        np.exp(-0.5 * (z_array - mu - shift) ** 2 / (stretch * sigma) ** 2)
+        / sigma
+        / stretch
+        / np.sqrt(2.0 * np.pi)
+    )
+
+    z_new, dndz_new = transform(z_array, dndz_array, shift, stretch)
+
+    dndz_interp = Akima1DInterpolator(z_new, dndz_new, method="makima")
+    dndz_interp_vals = np.nan_to_num(dndz_interp(z_array))
+
+    assert_allclose(dndz_interp_vals, dndz_shifted_stretched, rtol=1.0e-6, atol=1.0e-6)
