@@ -358,9 +358,9 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         if self.sigma_z <= 0.0:
             raise ValueError("Stretch Parameter must be positive")
         # Apply the shift and stretch
-        dndz = (
-            dndz_interp((z - dndz_mean) / self.sigma_z + self.delta_z / self.sigma_z + dndz_mean,
-                        extrapolate=False)
+        dndz = dndz_interp(
+            (z - dndz_mean) / self.sigma_z + self.delta_z / self.sigma_z + dndz_mean,
+            extrapolate=False,
         )
         # Normalize the dndz
         norm = np.sum(dndz)
