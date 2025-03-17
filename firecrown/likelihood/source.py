@@ -351,7 +351,7 @@ def dndz_shift_and_stretch_active(
 
     # We need a small padding to avoid extrapolation at the edges
     padding = 1.0e-8
-    z_padded = np.concatenate([[z[0] * (1.0 - padding)], z, [z[-1] * (1.0 + padding)]])
+    z_padded = np.concatenate([[z[0] - padding], z, [z[-1] + padding]])
     dndz_padded = np.concatenate([[dndz[0]], dndz, [dndz[-1]]])
     dndz_interp = Akima1DInterpolator(z_padded, dndz_padded, method="makima")
     dndz_mean = np.average(z, weights=dndz)
