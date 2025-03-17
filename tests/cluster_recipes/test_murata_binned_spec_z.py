@@ -120,12 +120,6 @@ def test_get_theory_prediction_with_average_returns_value(
 
     assert prediction is not None
     assert callable(prediction)
-    prediction = murata_binned_spec_z.get_theory_prediction(
-        cluster_abundance, average_on=(ClusterProperty.REDSHIFT)
-    )
-
-    assert prediction is not None
-    assert callable(prediction)
 
     result = prediction(mass, z, mass_proxy_limits, sky_area)
     assert isinstance(result, np.ndarray)
@@ -184,6 +178,11 @@ def test_evaluates_theory_prediction_returns_value(
 
     prediction = murata_binned_spec_z.evaluate_theory_prediction(
         cluster_abundance, mock_bin, 360**2
+    )
+
+    assert prediction > 0
+    prediction = murata_binned_spec_z.evaluate_theory_prediction(
+        cluster_abundance, mock_bin, 360**2, ClusterProperty.REDSHIFT
     )
 
     assert prediction > 0
