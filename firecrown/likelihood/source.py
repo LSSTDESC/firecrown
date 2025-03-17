@@ -286,10 +286,11 @@ class SourceGalaxyPhotoZShift(
         :return: a new source galaxy tracer arg with the systematic applied
         """
         dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
-
+        # Apply the shift
         dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
-        dndz[np.isnan(dndz)] = 0.0
-
+        # Normalize the dndz
+        norm = np.sum(dndz)
+        dndz /= norm
         return replace(
             tracer_arg,
             dndz=dndz,
@@ -340,6 +341,9 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         """
         super().__init__(sacc_tracer)
 
+        self.delta_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+        )
         self.sigma_z = parameters.register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
         )
@@ -353,13 +357,14 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         dndz_mean = np.average(tracer_arg.z, weights=tracer_arg.dndz)
         if self.sigma_z <= 0.0:
             raise ValueError("Stretch Parameter must be positive")
+        # Apply the shift and stretch
         dndz = (
-            dndz_interp((z - dndz_mean) / self.sigma_z + dndz_mean, extrapolate=False)
-            / self.sigma_z
+            dndz_interp((z - dndz_mean) / self.sigma_z + self.delta_z / self.sigma_z + dndz_mean,
+                        extrapolate=False)
         )
-        # This is dangerous
-        dndz[np.isnan(dndz)] = 0.0
-
+        # Normalize the dndz
+        norm = np.sum(dndz)
+        dndz /= norm
         return replace(
             tracer_arg,
             dndz=dndz,
