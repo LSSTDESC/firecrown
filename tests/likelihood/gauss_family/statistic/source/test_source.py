@@ -540,7 +540,7 @@ def test_dndz_shift_active(
     )
 
     dndz_shifted_stretched = (
-        np.exp(-0.5 * (z_array - mu - shift) ** 2 / (stretch * sigma) ** 2)
+        np.exp(-0.5 * (z_array - mu + shift) ** 2 / (stretch * sigma) ** 2)
         / sigma
         / stretch
         / np.sqrt(2.0 * np.pi)
