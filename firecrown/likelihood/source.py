@@ -329,13 +329,8 @@ def dndz_shift_and_stretch_active(
 
     We use "makima" interpolation, a cubic spline method based on the modified Akima
     algorithm. This approach prevents overshooting when the data remains constant for
-    more than two consecutive nodes.
-
-    Additionally, we set `extrapolate=True` to allow extrapolation at the edges of
-    `dndz`. In practice, this extends the first and last values instead of setting
-    extrapolated values to zero, which was the previous behavior. While both methods
-    yield equivalent results when `dndz` is concentrated within a specific redshift
-    range, the new approach avoids discontinuities when `dndz` is nonzero at the edges.
+    more than two consecutive nodes. Additionally, we set `extrapolate=False` and we set
+    extrapolated values to zero.
 
     The active transformation preserves the redshift array and modifies the dndz array.
     This transformation introduces an interpolation error on dndz.
@@ -348,7 +343,6 @@ def dndz_shift_and_stretch_active(
     """
     if sigma_z <= 0.0:
         raise ValueError("Stretch Parameter must be positive")
-
     # We need a small padding to avoid extrapolation at the edges
     padding = 1.0e-8
     z_padded = np.concatenate([[z[0] - padding], z, [z[-1] + padding]])
@@ -419,10 +413,8 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
         """Apply a shift & stretch to the photo-z distribution of a source."""
-        tracer_arg = super().apply(tools, tracer_arg)
-
         new_z, new_dndz = self._transform(
             tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
         )
