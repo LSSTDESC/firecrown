@@ -466,6 +466,7 @@ class MappingCAMB(Mapping):
             "tau",
             "YHe",
             "As",
+            "sigma8",
             "ns",
             "w",
             "wa",
@@ -479,7 +480,6 @@ class MappingCAMB(Mapping):
         # possibility here.
 
         H0 = params_values["H0"]
-        As = params_values["As"]
         ns = params_values["ns"]
         ombh2 = params_values["ombh2"]
         omch2 = params_values["omch2"]
@@ -495,6 +495,15 @@ class MappingCAMB(Mapping):
         w = params_values.get("w", -1.0)
         wa = params_values.get("wa", 0.0)
 
+        if "As" in params_values:
+            As = params_values["As"]
+            sigma8 = None
+        elif "sigma8" in params_values:
+            As = None
+            sigma8 = params_values["sigma8"]
+        else:
+            raise ValueError("No value for As or sigma8 provided")
+
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default
         # ones are used. Thus, for instance, here we do not know which type of
@@ -509,7 +518,7 @@ class MappingCAMB(Mapping):
             h=h0,
             n_s=ns,
             Omega_k=Omega_k0,
-            sigma8=None,
+            sigma8=sigma8,
             A_s=As,
             m_nu=m_nu,
             w0=w,
