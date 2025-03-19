@@ -14,6 +14,8 @@ from typing import Collection
 import pyccl.nl_pt
 
 from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
+
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown.ccl_factory import CCLFactory, CCLCalculatorArgs
 
@@ -33,6 +35,7 @@ class ModelingTools(Updatable):
         cM_relation: None | str = None,
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
+        cluster_deltasigma: None | ClusterDeltaSigma = None,
         ccl_factory: None | CCLFactory = None,
     ):
         super().__init__()
@@ -45,6 +48,7 @@ class ModelingTools(Updatable):
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
+        self.cluster_deltasigma = cluster_deltasigma
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
@@ -112,6 +116,8 @@ class ModelingTools(Updatable):
         if self.cluster_abundance is not None:
             self.cluster_abundance.update_ingredients(self.ccl_cosmo)
 
+        if self.cluster_deltasigma is not None:
+            self.cluster_deltasigma.update_ingredients(self.ccl_cosmo)
         self._prepared = True
 
     def _reset(self) -> None:
