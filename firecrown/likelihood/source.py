@@ -353,6 +353,7 @@ def dndz_shift_and_stretch_active(
     z_new = (z - dndz_mean + delta_z) / sigma_z + dndz_mean
     # Apply the shift and stretch
     dndz = np.nan_to_num(dndz_interp(z_new, extrapolate=False) / sigma_z)
+    dndz = np.clip(dndz, 0.0, None)
 
     return z, dndz
 
