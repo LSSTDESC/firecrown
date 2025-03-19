@@ -8,17 +8,58 @@ of a Cobaya likelihood.
 
 import numpy as np
 import numpy.typing as npt
-from cobaya.likelihood import Likelihood
 
+from scipy.interpolate import RectBivariateSpline
+from cobaya.likelihood import Likelihood
+import pyccl
+from pyccl.cosmology import Pk2D
+from pyccl.pyutils import loglin_spacing
+
+from firecrown.connector.mapping import mapping_builder, MappingCAMB
+from firecrown.ccl_factory import CCLCalculatorArgs
 from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
 from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
 from firecrown.parameters import ParamsMap
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter, CCLCreationMode
+from firecrown.updatable import get_default_params_map
+
+
+def compute_pyccl_args_options(
+    ccl_cosmo: pyccl.Cosmology,
+) -> tuple[
+    npt.NDArray[np.float64], npt.NDArray[np.float64], npt.NDArray[np.float64], float
+]:
+    """Creates a dictionary of pyccl arguments.
+
+    This method uses the CCLFactory to create a pyccl object and returns the
+    dictionary of precision options for the pyccl object.
+    """
+    # Here we follow the pyccl convention.
+    spl = ccl_cosmo.cosmo.spline_params
+    a_bg = loglin_spacing(
+        spl.A_SPLINE_MINLOG,
+        spl.A_SPLINE_MIN,
+        spl.A_SPLINE_MAX,
+        spl.A_SPLINE_NLOG,
+        spl.A_SPLINE_NA,
+    )
+
+    z_bg = (1.0 / a_bg - 1.0).astype(np.float64)
+
+    # We inspect the linear power spectrum from pyccl to get the maximum k and the
+    # redshift grid.
+    psp: Pk2D = ccl_cosmo.get_linear_power()
+    a_arr, lk_arr, _ = psp.get_spline_arrays()
+    Pk_kmax = np.exp(np.max(lk_arr))
+    z_array = np.flip(1.0 / a_arr - 1.0)
+
+    return a_bg, z_bg, z_array, Pk_kmax
 
 
 class LikelihoodConnector(Likelihood):
     """A class implementing cobaya.likelihood.Likelihood."""
 
+    input_style: str | None = None
     likelihood: FirecrownLikelihood
     firecrownIni: str
     derived_parameters: list[str] = []
@@ -26,6 +67,13 @@ class LikelihoodConnector(Likelihood):
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown configuration."""
+        assert self.input_style
+        # We have to do some extra type-fiddling here because mapping_builder
+        # has a declared return type of the base class.
+        new_mapping = mapping_builder(input_style=self.input_style)
+        assert isinstance(new_mapping, MappingCAMB)
+        self.map = new_mapping
+
         if not hasattr(self, "build_parameters"):
             build_parameters = NamedParameters()
         else:
@@ -41,6 +89,30 @@ class LikelihoodConnector(Likelihood):
         self.likelihood, self.tools = load_likelihood(
             self.firecrownIni, build_parameters
         )
+
+        self.external_obs: (
+            dict[str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]]
+            | None
+        ) = None
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            # External observables are necessary in the default mode, so we need to
+            # extract from CCL its precison parameters.
+            params = get_default_params_map(self.tools)
+            self.tools.update(params)
+            self.tools.prepare()
+            ccl_cosmo = self.tools.ccl_factory.get()
+            self.a_bg, self.z_bg, z_array, Pk_kmax = compute_pyccl_args_options(
+                ccl_cosmo
+            )
+
+            self.external_obs = {
+                "omk": None,
+                "Pk_interpolator": {"k_max": Pk_kmax, "z": z_array},
+                "Pk_grid": {"k_max": Pk_kmax, "z": z_array},
+                "comoving_radial_distance": {"z": self.z_bg},
+                "Hubble": {"z": self.z_bg},
+            }
+            self.tools.reset()
 
     def initialize_with_params(self) -> None:
         """Complete the initialization of a LikelihoodConnector object.
@@ -68,6 +140,14 @@ class LikelihoodConnector(Likelihood):
         """
         return self.derived_parameters
 
+    def get_can_support_params(self) -> list[str]:
+        """Return a list containing the names of the mapping's parameter names.
+
+        Required by Cobaya.
+        :return: The list of parameter names.
+        """
+        return self.map.get_params_names()
+
     def get_allow_agnostic(self) -> bool:
         """Is it allowed to pass all unassigned input parameters to this component.
 
@@ -83,7 +163,7 @@ class LikelihoodConnector(Likelihood):
         """Returns a dictionary.
 
         Returns a dictionary with keys corresponding the contained likelihood's
-        required parameter, plus "pyccl_args" and "pyccl_params". All values are None.
+        required parameter the values give the required options.
 
         Required by Cobaya.
         :return: a dictionary
@@ -96,7 +176,10 @@ class LikelihoodConnector(Likelihood):
             str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]
         ] = {}
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
-            likelihood_requires.update(pyccl_args=None, pyccl_params=None)
+            # We need to request external Boltzmann code for observables
+            # and cosmological parameters.
+            assert self.external_obs is not None
+            likelihood_requires.update(self.external_obs)
             # Cosmological parameters differ from Cobaya's boltzmann interface, so we
             # need to remove them when using Calculator mode.
             required_params -= self.tools.ccl_factory.required_parameters()
@@ -120,6 +203,54 @@ class LikelihoodConnector(Likelihood):
         This version does nothing.
         """
 
+    def calculate_args(
+        self, params_values
+    ) -> tuple[CCLCalculatorArgs, dict[str, float | list[float]]]:
+        """Calculate the curr   ent cosmology, and set state["pyccl"] to the result.
+
+        :param state: The state dictionary to update.
+        :param params_values: The values of the parameters to use.
+        """
+        self.map.set_params_from_camb(**params_values)
+        pyccl_params_values = self.map.asdict()
+
+        # This is the dictionary appropriate for CCL creation
+        chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
+        hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
+        k, z, pk = self.provider.get_Pk_grid()
+        # Note: we havae to define self.a_Pk here because Cobaya does not allow
+        # us to override the __init__ method.
+        #
+        # pylint: disable-next=attribute-defined-outside-init
+        self.a_Pk = self.map.redshift_to_scale_factor(z)
+        lna_Pk = np.log(self.a_Pk)
+        pk_a = self.map.redshift_to_scale_factor_p_k(pk)
+        Pk_spline = RectBivariateSpline(lna_Pk, k, np.log(pk), kx=3, ky=3)
+
+        # Define the k-mode (must be very small, e.g., 0.001 h/Mpc)
+        k_ref = 0.001
+
+        # Compute growth function D(a)
+        z_D = self.z_bg[self.z_bg <= np.max(z)]
+        a_D = 1.0 / (1.0 + z_D)
+        lna_D = np.log(a_D)
+
+        P0 = Pk_spline(1.0, k_ref, grid=False)
+        Pz = Pk_spline(lna_D, k_ref, grid=False)
+        D_growth = np.sqrt(Pz / P0)
+
+        # Compute growth rate f(a) using spline differentiation
+        dlnPk_dlna_spline = Pk_spline.partial_derivative(1, 0)
+        dlnP_dln_a = dlnPk_dlna_spline(lna_D, k_ref, grid=False)
+        f_growth = 0.5 * dlnP_dln_a  # f(a) = 1/2 * dlnP/dln a
+
+        pyccl_args: CCLCalculatorArgs = {
+            "background": {"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
+            "growth": {"a": a_D, "growth_factor": D_growth, "growth_rate": f_growth},
+            "pk_linear": {"a": self.a_Pk, "k": k, "delta_matter:delta_matter": pk_a},
+        }
+        return pyccl_args, pyccl_params_values
+
     def logp(self, **params_values) -> float:
         """Return the log of the calculated likelihood.
 
@@ -127,8 +258,7 @@ class LikelihoodConnector(Likelihood):
         :params values: The values of the parameters to use.
         """
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
-            pyccl_args = self.provider.get_pyccl_args()
-            pyccl_params = self.provider.get_pyccl_params()
+            pyccl_args, pyccl_params = self.calculate_args(params_values)
             derived = params_values.pop("_derived", {})
             params = ParamsMap(params_values | pyccl_params)
             self.likelihood.update(params)
