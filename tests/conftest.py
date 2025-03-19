@@ -4,6 +4,7 @@ Pytest configuration additions.
 Fixtures defined here are available to any test in Firecrown.
 """
 
+# pylint: disable=too-many-lines
 from itertools import product
 import pytest
 
@@ -363,6 +364,8 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     cc = sacc.standard_types.cluster_counts
     # pylint: disable=no-member
     mlm = sacc.standard_types.cluster_mean_log_mass
+    # pylint: disable=no-member
+    cs = sacc.standard_types.cluster_shear
 
     s = sacc.Sacc()
     s.add_tracer("survey", "my_survey", 4000)
@@ -371,6 +374,8 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     s.add_tracer("bin_z", "z_bin_tracer_2", 2, 4)
     s.add_tracer("bin_richness", "mass_bin_tracer_1", 0, 2)
     s.add_tracer("bin_richness", "mass_bin_tracer_2", 2, 4)
+    s.add_tracer("bin_radius", "radius_bin_tracer_1", 0, 2, 1)
+    s.add_tracer("bin_radius", "radius_bin_tracer_2", 2, 4, 3)
 
     s.add_data_point(cc, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1"), 1)
     s.add_data_point(cc, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"), 1)
@@ -381,6 +386,26 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
     s.add_data_point(mlm, ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_2"), 1)
     s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1"), 1)
     s.add_data_point(mlm, ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_2"), 1)
+    s.add_data_point(
+        cs,
+        ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1", "radius_bin_tracer_1"),
+        1,
+    )
+    s.add_data_point(
+        cs,
+        ("my_survey", "z_bin_tracer_1", "mass_bin_tracer_1", "radius_bin_tracer_2"),
+        1,
+    )
+    s.add_data_point(
+        cs,
+        ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1", "radius_bin_tracer_1"),
+        1,
+    )
+    s.add_data_point(
+        cs,
+        ("not_my_survey", "z_bin_tracer_2", "mass_bin_tracer_1", "radius_bin_tracer_2"),
+        1,
+    )
 
     return s
 
