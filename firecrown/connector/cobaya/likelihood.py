@@ -105,10 +105,16 @@ class LikelihoodConnector(Likelihood):
                 ccl_cosmo
             )
 
+            # We need to request external Boltzmann code for power spectra, if we want
+            # both linear and nonlinear we need to pass (False, True) to the "nonlinear"
+            # option.
             self.external_obs = {
                 "omk": None,
-                "Pk_interpolator": {"k_max": Pk_kmax, "z": z_array},
-                "Pk_grid": {"k_max": Pk_kmax, "z": z_array},
+                "Pk_grid": {
+                    "k_max": Pk_kmax,
+                    "z": z_array,
+                    "nonlinear": (False, True),
+                },
                 "comoving_radial_distance": {"z": self.z_bg},
                 "Hubble": {"z": self.z_bg},
             }
@@ -217,7 +223,7 @@ class LikelihoodConnector(Likelihood):
         # This is the dictionary appropriate for CCL creation
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
-        k, z, pk = self.provider.get_Pk_grid()
+        k, z, pk = self.provider.get_Pk_grid(nonlinear=False)
         # Note: we havae to define self.a_Pk here because Cobaya does not allow
         # us to override the __init__ method.
         #

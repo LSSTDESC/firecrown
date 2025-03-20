@@ -62,7 +62,7 @@ CCLCalculatorArgs = TypedDict(
     "CCLCalculatorArgs",
     {
         "background": Background,
-        "growth": GrowthFunction,
+        "growth": NotRequired[GrowthFunction],
         "pk_linear": NotRequired[PowerSpec],
         "pk_nonlin": NotRequired[PowerSpec],
     },
