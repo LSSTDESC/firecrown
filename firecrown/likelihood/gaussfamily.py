@@ -12,10 +12,8 @@ from typing_extensions import ParamSpec
 import numpy as np
 import numpy.typing as npt
 import scipy.linalg
-import pyccl
 
 import sacc
-
 
 from firecrown.parameters import ParamsMap
 from firecrown.likelihood.likelihood import Likelihood
@@ -411,20 +409,6 @@ class GaussFamily(Likelihood):
         theory_vector: npt.NDArray[np.float64]
         data_vector: npt.NDArray[np.float64]
         residuals: npt.NDArray[np.float64]
-        print(tools.ccl_cosmo)
-        assert tools.ccl_cosmo is not None
-        psp_lin: pyccl.Pk2D = tools.ccl_cosmo.get_linear_power()
-        a1, lk1, pk1 = psp_lin.get_spline_arrays()
-        print(a1.shape)
-        print(lk1.shape)
-        print(pk1.shape)
-        print(psp_lin(1.0e-1, 1.0))
-        print(psp_lin(1.0, 1.0))
-        print(psp_lin(10.0, 1.0))
-        print(psp_lin(1.0e-1, 0.5))
-        print(psp_lin(1.0, 0.5))
-        print(psp_lin(10.0, 0.5))
-
         try:
             theory_vector = self.compute_theory_vector(tools)
             data_vector = self.get_data_vector()
