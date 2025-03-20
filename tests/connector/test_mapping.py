@@ -13,6 +13,7 @@ from firecrown.connector.mapping import (
     MappingCAMB,
 )
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 
 
 # TODO: Refactor these test functions to use a sensible fixture.
@@ -96,14 +97,6 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
     assert isinstance(p, MappingCosmoSIS)
     p.set_params_from_cosmosis(named_params)
     assert p.Neff == pytest.approx(3.171)
-
-
-def test_get_params_names():
-    fc_map = Mapping()
-
-    with pytest.deprecated_call():
-        params_names = fc_map.get_params_names()
-        assert not params_names
 
 
 def test_transform_k_h_to_k():
@@ -215,9 +208,9 @@ def test_mapping_cosmosis_p_k_h3_to_p_k(mapping_cosmosis):
 
 def test_mapping_camb():
     mapping_camb = mapping_builder(input_style="CAMB")
-    assert isinstance(mapping_camb, Mapping)
+    assert isinstance(mapping_camb, MappingCAMB)
 
-    assert mapping_camb.get_params_names() == [
+    assert mapping_camb.get_params_names(amplitude=PoweSpecAmplitudeParameter.AS) == [
         "H0",
         "ombh2",
         "omch2",
@@ -226,6 +219,21 @@ def test_mapping_camb():
         "tau",
         "YHe",
         "As",
+        "ns",
+        "w",
+        "wa",
+    ]
+    assert mapping_camb.get_params_names(
+        amplitude=PoweSpecAmplitudeParameter.SIGMA8
+    ) == [
+        "H0",
+        "ombh2",
+        "omch2",
+        "mnu",
+        "nnu",
+        "tau",
+        "YHe",
+        "sigma8",
         "ns",
         "w",
         "wa",
