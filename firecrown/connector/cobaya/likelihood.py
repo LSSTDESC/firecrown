@@ -16,7 +16,7 @@ from pyccl.cosmology import Pk2D
 # See comment in compute_pyccl_args_options
 # from pyccl.pyutils import loglin_spacing
 
-from firecrown.connector.mapping import mapping_builder, MappingCAMB
+from firecrown.connector.mapping import mapping_builder, MappingCAMB, Mapping
 from firecrown.ccl_factory import CCLCalculatorArgs
 from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
 from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
@@ -84,13 +84,6 @@ class LikelihoodConnector(Likelihood):
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown configuration."""
-        assert self.input_style
-        # We have to do some extra type-fiddling here because mapping_builder
-        # has a declared return type of the base class.
-        new_mapping = mapping_builder(input_style=self.input_style)
-        assert isinstance(new_mapping, MappingCAMB)
-        self.map = new_mapping
-
         if not hasattr(self, "build_parameters"):
             build_parameters = NamedParameters()
         else:
@@ -111,7 +104,17 @@ class LikelihoodConnector(Likelihood):
             dict[str, None | dict[str, npt.NDArray[np.float64]] | dict[str, object]]
             | None
         ) = None
+        self.map: Mapping | None = None
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            # We need to request external Boltzmann code for observables and
+            # cosmological parameters.
+            assert self.input_style
+            # We have to do some extra type-fiddling here because mapping_builder has a
+            # declared return type of the base class.
+            new_mapping = mapping_builder(input_style=self.input_style)
+            assert isinstance(new_mapping, MappingCAMB)
+            self.map = new_mapping
+
             # External observables are necessary in the default mode, so we need to
             # extract from CCL its precison parameters.
             params = get_default_params_map(self.tools)
@@ -169,6 +172,8 @@ class LikelihoodConnector(Likelihood):
         Required by Cobaya.
         :return: The list of parameter names.
         """
+        if self.map is None:
+            return []
         return self.map.get_params_names()
 
     def get_allow_agnostic(self) -> bool:
@@ -234,6 +239,8 @@ class LikelihoodConnector(Likelihood):
         :param state: The state dictionary to update.
         :param params_values: The values of the parameters to use.
         """
+        assert self.map is not None
+        assert isinstance(self.map, MappingCAMB)
         self.map.set_params_from_camb(**params_values)
         pyccl_params_values = self.map.asdict()
 
