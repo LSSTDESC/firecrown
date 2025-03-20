@@ -7,6 +7,7 @@ Each supported body of code has its own dedicated class.
 """
 
 import typing
+from typing_extensions import assert_never
 import warnings
 from abc import ABC
 from typing import Type, final
@@ -18,7 +19,12 @@ from pyccl import physical_constants as physics
 
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import CCLCalculatorArgs, PowerSpec, Background
+from firecrown.ccl_factory import (
+    CCLCalculatorArgs,
+    PowerSpec,
+    Background,
+    PoweSpecAmplitudeParameter,
+)
 
 
 def build_ccl_background_dict(
@@ -74,7 +80,9 @@ class Mapping(ABC):
         #    None, indicating that all neutrinos are massless
         self.m_nu: float | list[float] | None = None
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, _: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping."""
         warnings.warn(
             "This method is implementation specific and should only be "
@@ -276,16 +284,25 @@ class MappingCLASS(Mapping):
 class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
         :return: a list of the cosmological parameter names
         """
+        match amplitude:
+            case PoweSpecAmplitudeParameter.AS:
+                amplitude_name = "A_s"
+            case PoweSpecAmplitudeParameter.SIGMA8:
+                amplitude_name = "sigma8"
+            case _ as unreachable:
+                assert_never(unreachable)
         return [
             "h0",
             "omega_b",
             "omega_c",
-            "sigma_8",
+            amplitude_name,
             "n_s",
             "omega_k",
             "delta_neff",
@@ -451,12 +468,21 @@ class MappingCAMB(Mapping):
     the Fortran version of CAMB. The two are not interchangeable.
     """
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
         :return: a list of the cosmological parameter names
 
         """
+        match amplitude:
+            case PoweSpecAmplitudeParameter.AS:
+                amplitude_name = "As"
+            case PoweSpecAmplitudeParameter.SIGMA8:
+                amplitude_name = "sigma8"
+            case _ as unreachable:
+                assert_never(unreachable)
         return [
             "H0",
             "ombh2",
@@ -465,8 +491,7 @@ class MappingCAMB(Mapping):
             "nnu",
             "tau",
             "YHe",
-            "As",
-            "sigma8",
+            amplitude_name,
             "ns",
             "w",
             "wa",

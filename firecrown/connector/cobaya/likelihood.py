@@ -174,7 +174,7 @@ class LikelihoodConnector(Likelihood):
         """
         if self.map is None:
             return []
-        return self.map.get_params_names()
+        return self.map.get_params_names(self.tools.ccl_factory.amplitude_parameter)
 
     def get_allow_agnostic(self) -> bool:
         """Is it allowed to pass all unassigned input parameters to this component.
