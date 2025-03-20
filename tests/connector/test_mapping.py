@@ -173,7 +173,7 @@ def test_mapping_cosmosis():
         "h0",
         "omega_b",
         "omega_c",
-        "sigma_8",
+        "A_s",
         "n_s",
         "omega_k",
         "delta_neff",
@@ -226,17 +226,16 @@ def test_mapping_camb():
         "tau",
         "YHe",
         "As",
-        "sigma8",
         "ns",
         "w",
         "wa",
     ]
 
     mapping_camb.set_params(
-        A_s=2.1e-9,
         Omega_c=0.26,
         Omega_b=0.04,
         h=0.72,
+        A_s=0.8,
         n_s=0.96,
         Omega_k=0.0,
         Neff=3.046,
