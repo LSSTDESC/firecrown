@@ -495,14 +495,15 @@ class MappingCAMB(Mapping):
         w = params_values.get("w", -1.0)
         wa = params_values.get("wa", 0.0)
 
+        if ("As" in params_values) == ("sigma8" in params_values):
+            raise ValueError("Exactly one of A_s and sigma8 must be supplied.")
+
         if "As" in params_values:
             As = params_values["As"]
             sigma8 = None
         elif "sigma8" in params_values:
             As = None
             sigma8 = params_values["sigma8"]
-        else:
-            raise ValueError("No value for As or sigma8 provided")
 
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default
