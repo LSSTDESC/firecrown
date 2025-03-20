@@ -170,11 +170,28 @@ def test_mapping_cosmosis():
     mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
     assert isinstance(mapping_cosmosis, Mapping)
 
-    assert mapping_cosmosis.get_params_names() == [
+    assert mapping_cosmosis.get_params_names(
+        amplitude=PoweSpecAmplitudeParameter.AS
+    ) == [
         "h0",
         "omega_b",
         "omega_c",
         "A_s",
+        "n_s",
+        "omega_k",
+        "delta_neff",
+        "omega_nu",
+        "w",
+        "wa",
+    ]
+
+    assert mapping_cosmosis.get_params_names(
+        amplitude=PoweSpecAmplitudeParameter.SIGMA8
+    ) == [
+        "h0",
+        "omega_b",
+        "omega_c",
+        "sigma_8",
         "n_s",
         "omega_k",
         "delta_neff",

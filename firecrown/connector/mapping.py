@@ -295,7 +295,7 @@ class MappingCosmoSIS(Mapping):
             case PoweSpecAmplitudeParameter.AS:
                 amplitude_name = "A_s"
             case PoweSpecAmplitudeParameter.SIGMA8:
-                amplitude_name = "sigma8"
+                amplitude_name = "sigma_8"
             case _ as unreachable:
                 assert_never(unreachable)
         return [
