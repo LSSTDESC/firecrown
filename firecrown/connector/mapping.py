@@ -7,10 +7,10 @@ Each supported body of code has its own dedicated class.
 """
 
 import typing
-from typing_extensions import assert_never
 import warnings
 from abc import ABC
 from typing import Type, final
+from typing_extensions import assert_never
 
 import cosmosis.datablock
 import numpy as np
