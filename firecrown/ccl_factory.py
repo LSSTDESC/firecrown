@@ -49,20 +49,10 @@ Background = TypedDict(
     },
 )
 
-GrowthFunction = TypedDict(
-    "GrowthFunction",
-    {
-        "a": npt.NDArray[np.float64],
-        "growth_factor": npt.NDArray[np.float64],
-        "growth_rate": npt.NDArray[np.float64],
-    },
-)
-
 CCLCalculatorArgs = TypedDict(
     "CCLCalculatorArgs",
     {
         "background": Background,
-        "growth": NotRequired[GrowthFunction],
         "pk_linear": NotRequired[PowerSpec],
         "pk_nonlin": NotRequired[PowerSpec],
     },

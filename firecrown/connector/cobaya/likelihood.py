@@ -9,11 +9,12 @@ of a Cobaya likelihood.
 import numpy as np
 import numpy.typing as npt
 
-from scipy.interpolate import RectBivariateSpline
 from cobaya.likelihood import Likelihood
 import pyccl
 from pyccl.cosmology import Pk2D
-from pyccl.pyutils import loglin_spacing
+
+# See comment in compute_pyccl_args_options
+# from pyccl.pyutils import loglin_spacing
 
 from firecrown.connector.mapping import mapping_builder, MappingCAMB
 from firecrown.ccl_factory import CCLCalculatorArgs
@@ -36,13 +37,29 @@ def compute_pyccl_args_options(
     """
     # Here we follow the pyccl convention.
     spl = ccl_cosmo.cosmo.spline_params
-    a_bg = loglin_spacing(
-        spl.A_SPLINE_MINLOG,
-        spl.A_SPLINE_MIN,
-        spl.A_SPLINE_MAX,
-        spl.A_SPLINE_NLOG,
-        spl.A_SPLINE_NA,
-    )
+    # Ideally, we would construct the background scale factor array in the same way as
+    # CCL. This would ensure consistency with how pyccl operates in pure mode. However,
+    # the C function ccl_cosmology_distances_from_input() updates spl.A_SPLINE_MIN based
+    # on the minimum scale factor provided.
+    #
+    # If we build the array using the approach below (following CCL):
+    #
+    # a_bg = loglin_spacing(
+    #    spl.A_SPLINE_MINLOG,
+    #    spl.A_SPLINE_MIN,
+    #    spl.A_SPLINE_MAX,
+    #    spl.A_SPLINE_NLOG,
+    #    spl.A_SPLINE_NA,
+    # )
+    #
+    # then a[0] will be equal to spl.A_SPLINE_MINLOG. When
+    # ccl_cosmology_distances_from_input() updates spl.A_SPLINE_MIN, it will set
+    # spl.A_SPLINE_MIN = spl.A_SPLINE_MINLOG. This causes issues in later computations
+    # (it creates an array with equal elements), particularly in the construction of the
+    # growth function.
+    #
+    # To avoid this, we construct the array starting from spl.A_SPLINE_MIN instead:
+    a_bg = np.linspace(spl.A_SPLINE_MIN, spl.A_SPLINE_MAX, spl.A_SPLINE_NA)
 
     z_bg = (1.0 / a_bg - 1.0).astype(np.float64)
 
@@ -229,30 +246,10 @@ class LikelihoodConnector(Likelihood):
         #
         # pylint: disable-next=attribute-defined-outside-init
         self.a_Pk = self.map.redshift_to_scale_factor(z)
-        lna_Pk = np.log(self.a_Pk)
         pk_a = self.map.redshift_to_scale_factor_p_k(pk)
-        Pk_spline = RectBivariateSpline(lna_Pk, k, np.log(pk), kx=3, ky=3)
-
-        # Define the k-mode (must be very small, e.g., 0.001 h/Mpc)
-        k_ref = 0.001
-
-        # Compute growth function D(a)
-        z_D = self.z_bg[self.z_bg <= np.max(z)]
-        a_D = 1.0 / (1.0 + z_D)
-        lna_D = np.log(a_D)
-
-        P0 = Pk_spline(1.0, k_ref, grid=False)
-        Pz = Pk_spline(lna_D, k_ref, grid=False)
-        D_growth = np.sqrt(Pz / P0)
-
-        # Compute growth rate f(a) using spline differentiation
-        dlnPk_dlna_spline = Pk_spline.partial_derivative(1, 0)
-        dlnP_dln_a = dlnPk_dlna_spline(lna_D, k_ref, grid=False)
-        f_growth = 0.5 * dlnP_dln_a  # f(a) = 1/2 * dlnP/dln a
 
         pyccl_args: CCLCalculatorArgs = {
             "background": {"a": self.a_bg, "chi": chi_arr, "h_over_h0": hoh0_arr},
-            "growth": {"a": a_D, "growth_factor": D_growth, "growth_rate": f_growth},
             "pk_linear": {"a": self.a_Pk, "k": k, "delta_matter:delta_matter": pk_a},
         }
         return pyccl_args, pyccl_params_values
