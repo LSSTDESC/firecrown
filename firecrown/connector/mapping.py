@@ -501,7 +501,7 @@ class MappingCAMB(Mapping):
         if "As" in params_values:
             As = params_values["As"]
             sigma8 = None
-        elif "sigma8" in params_values:
+        else:
             As = None
             sigma8 = params_values["sigma8"]
 
