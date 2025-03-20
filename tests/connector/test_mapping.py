@@ -311,7 +311,6 @@ def test_mapping_camb_setting_A_s():
         w=-1.0,
         wa=0.0,
     )
-    d = mapping_camb.asdict()
     assert mapping_camb.A_s == 2.1e-9
 
 
@@ -332,5 +331,4 @@ def test_mapping_camb_setting_sigma8():
         w=-1.0,
         wa=0.0,
     )
-    d = mapping_camb.asdict()
     assert mapping_camb.sigma8 == 0.8
