@@ -99,6 +99,14 @@ def test_conversion_from_cosmosis_camb_using_delta_neff():
     assert p.Neff == pytest.approx(3.171)
 
 
+def test_get_params_names():
+    fc_map = Mapping()
+
+    with pytest.deprecated_call():
+        params_names = fc_map.get_params_names()
+        assert not params_names
+
+
 def test_transform_k_h_to_k():
     fc_map = Mapping()
 

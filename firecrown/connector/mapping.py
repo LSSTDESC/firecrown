@@ -80,6 +80,18 @@ class Mapping(ABC):
         #    None, indicating that all neutrinos are massless
         self.m_nu: float | list[float] | None = None
 
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
+        """Return the names of the expected cosmological parameters for this mapping."""
+        warnings.warn(
+            f"This method is implementation specific and should only be "
+            f"implemented on the appropriated subclasses. This method"
+            f"is going to be removed in the next major release. {amplitude}",
+            category=DeprecationWarning,
+        )
+        return []
+
     def transform_k_h_to_k(self, k_h):
         """Transform the given k_h (k over h) to k.
 
