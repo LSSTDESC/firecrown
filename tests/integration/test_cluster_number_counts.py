@@ -68,7 +68,8 @@ def test_cluster_number_counts_numcosmo():
                 numcosmo from-cosmosis cluster_counts_mean_mass_redshift_richness.ini\\
                     --matter-ps eisenstein_hu
                 numcosmo run test cluster_counts_mean_mass_redshift_richness.yaml
-                numcosmo from-cosmosis cluster_SDSS_counts_mean_mass_redshift_richness.ini\\
+                numcosmo from-cosmosis \\
+                    cluster_SDSS_counts_mean_mass_redshift_richness.ini \\
                     --matter-ps eisenstein_hu
                 numcosmo run test cluster_SDSS_counts_mean_mass_redshift_richness.yaml
             """,
