@@ -266,10 +266,6 @@ def test_empty_gauss_cov_data():
 
 def test_default_factory_const_gauss():
     """Test the NumCosmo connector."""
-    map_cosmo = MappingNumCosmo(
-        dist=Nc.Distance.new(6.0),
-        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
-    )
     build_parameters = NamedParameters(
         {"likelihood_config": "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"}
     )
@@ -282,7 +278,7 @@ def test_default_factory_const_gauss():
         likelihood,
         [model_name],
         tools,
-        map_cosmo,
+        None,
         likelihood_source,
         build_parameters,
     )
@@ -292,10 +288,6 @@ def test_default_factory_const_gauss():
 
 def test_default_factory_plain():
     """Test the NumCosmo connector."""
-    map_cosmo = MappingNumCosmo(
-        dist=Nc.Distance.new(6.0),
-        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
-    )
     build_parameters = NamedParameters(
         {"likelihood_config": "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"}
     )
@@ -308,7 +300,7 @@ def test_default_factory_plain():
         likelihood,
         [model_name],
         tools,
-        map_cosmo,
+        None,
         likelihood_source,
         build_parameters,
     )
