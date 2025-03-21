@@ -8,11 +8,10 @@
 import itertools
 import numpy as np
 from numcosmo_py import Ncm
-from typing import Any
 import sacc
 
 
-def generate_SDSSCL_sacc_file() -> Any:
+def generate_SDSSCL_sacc_file() -> None:
     """
     Generate a SACC file with SDSS cluster number counts and Mean(logM).
 
