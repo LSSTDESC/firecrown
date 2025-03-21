@@ -7,7 +7,7 @@ firecrown_two_point:
     - NcmSParam:
         name: 'Omega_c'
         symbol: '\\Omega_\\mathrm{c}'
-        lower-bound: 0.1
+        lower-bound: 0.01
         upper-bound: 1.0
         scale: 0.1
         absolute-tolerance: 0.0
@@ -16,7 +16,7 @@ firecrown_two_point:
     - NcmSParam:
         name: 'Omega_b'
         symbol: '\\Omega_\\mathrm{b}'
-        lower-bound: 0.1
+        lower-bound: 0.01
         upper-bound: 1.0
         scale: 0.1
         absolute-tolerance: 0.0

@@ -35,6 +35,8 @@ model-set:
         src1-mult-bias: 0.012
         src2-mult-bias: 0.012
         src3-mult-bias: 0.012
+        Omega-c-fit: true
+        Omega-b-fit: true
         ia-bias-fit: true
         alphaz-fit: true
         z-piv-fit: false

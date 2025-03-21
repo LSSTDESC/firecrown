@@ -39,6 +39,8 @@ model-set:
         src1-mult-bias: 0.012
         src2-mult-bias: 0.012
         src3-mult-bias: 0.012
+        Omega-c-fit: true
+        Omega-b-fit: true
         mg-musigma-mu-fit: true
         mg-musigma-sigma-fit: true
         mg-musigma-c1-fit: false
