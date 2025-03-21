@@ -60,13 +60,7 @@ def test_des_y1_3x2pt_numcosmo(ini_file: str):
             "-c",
             f"""
                 set -e
-                cd examples/des_y1_3x2pt
-                mkdir -p numcosmo
-                cd numcosmo
-
-                numcosmo from-cosmosis ../cosmosis/{ini_file} \\
-                    --matter-ps eisenstein_hu \\
-                    --nonlin-matter-ps halofit
+                cd examples/des_y1_3x2pt/numcosmo
                 numcosmo run test {ini_file.replace('.ini', '.yaml')}
             """,
         ],

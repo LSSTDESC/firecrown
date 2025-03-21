@@ -724,8 +724,9 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
 
         :param value: the filename of the likelihood factory function
         """
-        assert value is not None
         self._likelihood_source = value
+        if value is None:
+            return
         if self._starting_deserialization:
             self._set_likelihood_from_factory()
             self._starting_deserialization = False
