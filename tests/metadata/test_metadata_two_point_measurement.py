@@ -18,7 +18,7 @@ from firecrown.data_types import TwoPointMeasurement
 
 def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = np.ones_like(ells) * 1.1
+    data = np.array(np.ones_like(ells) * 1.1, dtype=np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(
@@ -40,10 +40,19 @@ def test_two_point_cells_with_data(harmonic_two_point_xy: TwoPointXY):
 
 def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    weights = np.ones(400).reshape(-1, 4)
+    weights = np.zeros((100, 4), dtype=np.float64)
+    # Create a window with 4 bins, each containing 25 elements with a weight of 1.0.
+    # The bins are defined as follows:
+    # - Bin 1: Elements 0 to 24
+    # - Bin 2: Elements 25 to 49
+    # - Bin 3: Elements 50 to 74
+    # - Bin 4: Elements 75 to 99
+    rows = np.arange(100)
+    cols = rows // 25
+    weights[rows, cols] = 1.0
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = np.zeros(4) + 1.1
+    data = np.array(np.zeros(4) + 1.1, dtype=np.float64)
     indices = np.arange(4)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(
@@ -68,8 +77,8 @@ def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY
 
 
 def test_two_point_xi_theta_with_data(real_two_point_xy: TwoPointXY):
-    thetas = np.linspace(0.0, 1.0, 100)
-    data = np.zeros(100) + 1.1
+    thetas = np.linspace(0.0, 1.0, 100, dtype=np.float64)
+    data = np.array(np.zeros(100) + 1.1, dtype=np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(
@@ -92,7 +101,7 @@ def test_two_point_xi_theta_with_data(real_two_point_xy: TwoPointXY):
 
 def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = np.zeros(101) + 1.1
+    data = np.array(np.zeros(101) + 1.1, dtype=np.float64)
     indices = np.arange(101)
     covariance_name = "cov"
 
@@ -113,7 +122,7 @@ def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPoin
     weights = np.ones(400).reshape(-1, 4)
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = np.zeros(5) + 1.1
+    data = np.array(np.zeros(5) + 1.1, dtype=np.float64)
     indices = np.arange(5)
     covariance_name = "cov"
 
@@ -132,8 +141,8 @@ def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPoin
 
 
 def test_two_point_xi_theta_with_invalid_data_size(real_two_point_xy: TwoPointXY):
-    thetas = np.linspace(0.0, 1.0, 100)
-    data = np.zeros(101) + 1.1
+    thetas = np.linspace(0.0, 1.0, 100, dtype=np.float64)
+    data = np.array(np.zeros(101) + 1.1, dtype=np.float64)
     indices = np.arange(101)
     covariance_name = "cov"
 
@@ -150,8 +159,8 @@ def test_two_point_xi_theta_with_invalid_data_size(real_two_point_xy: TwoPointXY
 
 
 def test_two_point_measurement_invalid_data(real_two_point_xy: TwoPointXY):
-    thetas = np.linspace(0.0, 1.0, 5)
-    data = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
+    thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
+    data = np.array([1, 2, 3, 4, 5], dtype=np.float64).reshape(-1, 1)
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
     with pytest.raises(
@@ -167,7 +176,7 @@ def test_two_point_measurement_invalid_data(real_two_point_xy: TwoPointXY):
 
 
 def test_two_point_measurement_invalid_indices(real_two_point_xy: TwoPointXY):
-    thetas = np.linspace(0.0, 1.0, 5)
+    thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     data = np.array([1, 2, 3, 4, 5])
     indices = np.array([1, 2, 3, 4, 5]).reshape(-1, 1)
     covariance_name = "cov"
@@ -184,7 +193,7 @@ def test_two_point_measurement_invalid_indices(real_two_point_xy: TwoPointXY):
 
 
 def test_two_point_measurement_eq(real_two_point_xy: TwoPointXY):
-    thetas = np.linspace(0.0, 1.0, 5)
+    thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
     data = np.array([1, 2, 3, 4, 5])
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
@@ -204,8 +213,8 @@ def test_two_point_measurement_eq(real_two_point_xy: TwoPointXY):
 
 
 def test_two_point_measurement_neq(real_two_point_xy: TwoPointXY):
-    thetas = np.linspace(0.0, 1.0, 5)
-    data = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+    thetas = np.linspace(0.0, 1.0, 5, dtype=np.float64)
+    data = np.array([1.0, 2.0, 3.0, 4.0, 5.0], dtype=np.float64)
     indices = np.array([1, 2, 3, 4, 5])
     covariance_name = "cov"
     measure_1 = TwoPointMeasurement(
@@ -241,7 +250,7 @@ def test_two_point_measurement_neq(real_two_point_xy: TwoPointXY):
         metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),
     )
     measure_6 = TwoPointMeasurement(
-        data=data + 1.0,
+        data=np.array(data + 1.0, dtype=np.float64),
         indices=indices,
         covariance_name=covariance_name,
         metadata=TwoPointReal(XY=real_two_point_xy, thetas=thetas),

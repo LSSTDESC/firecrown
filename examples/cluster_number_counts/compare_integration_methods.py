@@ -49,7 +49,7 @@ def get_cosmology() -> pyccl.Cosmology:
 def compare_integration() -> None:
     """Compare integration methods."""
     hmf = pyccl.halos.MassFuncTinker08()
-    abundance = ClusterAbundance(13, 15, 0, 4, hmf)
+    abundance = ClusterAbundance((13, 15), (0, 4), hmf)
     cluster_recipe = MurataBinnedSpecZRecipe()
 
     cluster_recipe.mass_distribution.mu_p0 = 3.0
@@ -82,9 +82,11 @@ def compare_integration() -> None:
             )
             z_limits = (z_bins[z_idx], z_bins[z_idx + 1])
 
-            bin = TupleBin([mass_limits, z_limits])
+            tuple_bin = TupleBin([mass_limits, z_limits])
 
-            counts = cluster_recipe.evaluate_theory_prediction(abundance, bin, sky_area)
+            counts = cluster_recipe.evaluate_theory_prediction(
+                abundance, tuple_bin, sky_area
+            )
             counts_list.append(counts)
 
         t_stop = time.time()

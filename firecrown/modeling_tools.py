@@ -14,6 +14,8 @@ from typing import Collection
 import pyccl.nl_pt
 
 from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
+
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown.ccl_factory import CCLFactory, CCLCalculatorArgs
 
@@ -29,22 +31,32 @@ class ModelingTools(Updatable):
         self,
         *,
         pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = None,
+        hm_calculator: None | pyccl.halos.HMCalculator = None,
+        cM_relation: None | str = None,
         pk_modifiers: None | Collection[PowerspectrumModifier] = None,
         cluster_abundance: None | ClusterAbundance = None,
+        cluster_deltasigma: None | ClusterDeltaSigma = None,
         ccl_factory: None | CCLFactory = None,
     ):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
         self.pt_calculator: None | pyccl.nl_pt.EulerianPTCalculator = pt_calculator
+        self.hm_calculator: None | pyccl.halos.HMCalculator = hm_calculator
+        self.cM_relation: None | str = cM_relation
         pk_modifiers = pk_modifiers if pk_modifiers is not None else []
         self.pk_modifiers: UpdatableCollection = UpdatableCollection(pk_modifiers)
         self.powerspectra: dict[str, pyccl.Pk2D] = {}
         self._prepared: bool = False
         self.cluster_abundance = cluster_abundance
+        self.cluster_deltasigma = cluster_deltasigma
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
-        """Add a :python:`pyccl.Pk2D` to the table of power spectra."""
+        """Add a :python:`pyccl.Pk2D` to the table of power spectra.
+
+        :param name: the name of the power spectrum
+        :param powerspectrum: the power spectrum
+        """
         if name in self.powerspectra:
             raise KeyError(f"Power spectrum {name} already exists")
 
@@ -53,8 +65,9 @@ class ModelingTools(Updatable):
     def get_pk(self, name: str) -> pyccl.Pk2D:
         """Access a power spectrum from the table of power spectra.
 
-        Either retrive a pyccl.Pk2D from the table of power spectra, or fall back
+        Either retrieve a pyccl.Pk2D from the table of power spectra, or fall back
         to what the pyccl.Cosmology object can provide.
+        :param name: the name of the desired power spectrum
         """
         if self.ccl_cosmo is None:
             raise RuntimeError("Cosmology has not been set")
@@ -103,6 +116,8 @@ class ModelingTools(Updatable):
         if self.cluster_abundance is not None:
             self.cluster_abundance.update_ingredients(self.ccl_cosmo)
 
+        if self.cluster_deltasigma is not None:
+            self.cluster_deltasigma.update_ingredients(self.ccl_cosmo)
         self._prepared = True
 
     def _reset(self) -> None:
@@ -129,6 +144,18 @@ class ModelingTools(Updatable):
         if self.pt_calculator is None:
             raise RuntimeError("A PT calculator has not been set")
         return self.pt_calculator
+
+    def get_hm_calculator(self) -> pyccl.halos.HMCalculator:
+        """Return the halo model calculator object."""
+        if self.hm_calculator is None:
+            raise RuntimeError("A Halo Model calculator has not been set")
+        return self.hm_calculator
+
+    def get_cM_relation(self) -> str:
+        """Return the concentration-mass relation."""
+        if self.cM_relation is None:
+            raise RuntimeError("A concentration-mass relation has not been set")
+        return self.cM_relation
 
 
 class PowerspectrumModifier(Updatable, ABC):

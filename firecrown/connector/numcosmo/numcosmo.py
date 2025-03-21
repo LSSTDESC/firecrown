@@ -19,27 +19,10 @@ from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
     CCLCalculatorArgs,
-    PowerSpec,
-    CCLFactory,
+    CCLCreationMode,
     PoweSpecAmplitudeParameter,
 )
-
-
-def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
-    """Return the HIPrim object from a NumCosmo HICosmo object.
-
-    If hi_cosmo does not have a HIPrim object, a ValueError is raised.
-    If the HIPrim object is not of type HIPrimPowerLaw, a ValueError is raised.
-
-    :param hi_cosmo: NumCosmo HICosmo object
-    :return: the HIPrim object contained in hi_cosmo
-    """
-    hiprim = hi_cosmo.peek_submodel_by_mid(Nc.HIPrim.id())
-    if not hiprim:
-        raise ValueError("NumCosmo object must include a HIPrim object.")
-    if not isinstance(hiprim, Nc.HIPrimPowerLaw):
-        raise ValueError(f"NumCosmo HIPrim object type {type(hiprim)} not supported.")
-    return hiprim
+from firecrown.connector.numcosmo import helpers
 
 
 class MappingNumCosmo(GObject.Object):
@@ -65,11 +48,14 @@ class MappingNumCosmo(GObject.Object):
         :param p_mnl: optional PowspecMNL object
         :param dist: optional Distance object
         """
-        super().__init__(p_ml=p_ml, p_mnl=p_mnl, dist=dist)  # type: ignore
+        super().__init__(p_ml=p_ml, p_mnl=p_mnl, dist=dist)
+        if p_mnl is not None:
+            assert (
+                p_ml is not None
+            ), "PowspecML object must be provided when using PowspecMNL."
         self.mapping: Mapping
         self._mapping_name: str
-        self._p_ml: None | Nc.PowspecML
-        self._p_mnl: None | Nc.PowspecMNL
+        self._p: None | helpers.PowerSpec
         self._dist: Nc.Distance
 
         if require_nonlinear_pk is not None:
@@ -81,11 +67,13 @@ class MappingNumCosmo(GObject.Object):
                 stacklevel=2,
             )
 
-        if not hasattr(self, "_p_ml"):
-            self._p_ml = None
-
-        if not hasattr(self, "_p_mnl"):
-            self._p_mnl = None
+        if p_ml:
+            if p_mnl:
+                self._p = helpers.PowerSpec(p_ml, p_mnl)
+            else:
+                self._p = helpers.PowerSpec(p_ml, None)
+        else:
+            self._p = None
 
     def _get_mapping_name(self) -> str:
         """Return the mapping name.
@@ -118,14 +106,19 @@ class MappingNumCosmo(GObject.Object):
 
         :param value: the NumCosmo PowspecML object, or None
         """
-        return self._p_ml
+        if self._p is None:
+            return None
+        return self._p.linear
 
     def _set_p_ml(self, value: None | Nc.PowspecML) -> None:
         """Set the NumCosmo PowspecML object.
 
         :param value: the new value to be set
         """
-        self._p_ml = value
+        if value is None:
+            self._p = None
+        else:
+            self._p = helpers.PowerSpec(value, None)
 
     p_ml = GObject.Property(
         type=Nc.PowspecML,
@@ -139,14 +132,22 @@ class MappingNumCosmo(GObject.Object):
 
         :return: the NumCosmo PowspecMNL object, or None
         """
-        return self._p_mnl
+        if self._p is None:
+            return None
+        return self._p.nonlinear
 
     def _set_p_mnl(self, value: None | Nc.PowspecMNL) -> None:
         """Set the NumCosmo PowspecMNL object.
 
+        It is illegal to set a PowspecMNL object when there is no PowspecML
+        object. Currently, we can not raise an exception because it does
+        not propagate through the C interface between this code and the
+        Python code that calls it.
+
         :param value: the new value to be set
         """
-        self._p_mnl = value
+        if self._p is not None:
+            self._p.nonlinear = value
 
     p_mnl = GObject.Property(
         type=Nc.PowspecMNL,
@@ -174,7 +175,7 @@ class MappingNumCosmo(GObject.Object):
     )
 
     def set_params_from_numcosmo(
-        self, mset: Ncm.MSet, ccl_factory: CCLFactory
+        self, mset: Ncm.MSet, amplitude_parameter: PoweSpecAmplitudeParameter
     ) -> None:  # pylint: disable-msg=too-many-locals
         """Set the parameters of the contained Mapping object.
 
@@ -183,13 +184,10 @@ class MappingNumCosmo(GObject.Object):
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
-        if self._p_ml is not None:
-            self._p_ml.prepare_if_needed(hi_cosmo)
-        if self._p_mnl is not None:
-            self._p_mnl.prepare_if_needed(hi_cosmo)
+        if self._p is not None:
+            self._p.prepare_if_needed(hi_cosmo)
         self._dist.prepare_if_needed(hi_cosmo)
 
-        h = hi_cosmo.h()
         Omega_b = hi_cosmo.Omega_b0()
         Omega_c = hi_cosmo.Omega_c0()
         Omega_k = hi_cosmo.Omega_k0()
@@ -211,28 +209,18 @@ class MappingNumCosmo(GObject.Object):
             case _:
                 raise ValueError(f"NumCosmo object {type(hi_cosmo)} not supported.")
 
-        A_s = None
-        sigma8 = None
-        match ccl_factory.amplitude_parameter:
-            case PoweSpecAmplitudeParameter.SIGMA8:
-                if self._p_ml is None:
-                    raise ValueError(
-                        "PowspecML object must be provided when using sigma8."
-                    )
-                sigma8 = self._p_ml.sigma_tophat_R(hi_cosmo, 1.0e-7, 0.0, 8.0 / h)
-            case PoweSpecAmplitudeParameter.AS:
-                A_s = get_hiprim(hi_cosmo).SA_Ampl()
-
-        assert (A_s is not None) or (sigma8 is not None)
+        A_s, sigma8 = helpers.get_amplitude_parameters(
+            amplitude_parameter, self.p_ml, hi_cosmo
+        )
 
         # pylint: disable=duplicate-code
         self.mapping.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
-            h=h,
+            h=hi_cosmo.h(),
             A_s=A_s,
             sigma8=sigma8,
-            n_s=get_hiprim(hi_cosmo).props.n_SA,
+            n_s=helpers.get_hiprim(hi_cosmo).props.n_SA,
             Omega_k=Omega_k,
             Neff=Neff,
             m_nu=m_nu,
@@ -250,50 +238,18 @@ class MappingNumCosmo(GObject.Object):
         :param mset: the NumCosmo MSet object from which to get the parameters
         :return: a dictionary of the arguments required by CCL
         """
-        pk_linear: None | PowerSpec = None
-        pk_nonlin: None | PowerSpec = None
         hi_cosmo = mset.peek(Nc.HICosmo.id())
         assert isinstance(hi_cosmo, Nc.HICosmo)
-
-        if self._p_ml:
-            p_m_spline = self._p_ml.get_spline_2d(hi_cosmo)
-            z = np.array(p_m_spline.peek_xv().dup_array())
-            k = np.array(p_m_spline.peek_yv().dup_array())
-
-            scale = self.mapping.redshift_to_scale_factor(z)
-            p_k = np.transpose(
-                np.array(p_m_spline.peek_zm().dup_array()).reshape(len(k), len(z))
-            )
-            p_k = self.mapping.redshift_to_scale_factor_p_k(p_k)
-            pk_linear = {
-                "a": scale,
-                "k": k,
-                "delta_matter:delta_matter": p_k,
-            }
-
-        if self._p_mnl:
-            p_mnl_spline = self._p_mnl.get_spline_2d(hi_cosmo)
-            z = np.array(p_mnl_spline.peek_xv().dup_array())
-            k = np.array(p_mnl_spline.peek_yv().dup_array())
-
-            scale_mpnl = self.mapping.redshift_to_scale_factor(z)
-            p_mnl = np.transpose(
-                np.array(p_mnl_spline.peek_zm().dup_array()).reshape(len(k), len(z))
-            )
-            p_mnl = self.mapping.redshift_to_scale_factor_p_k(p_mnl)
-            pk_nonlin = {
-                "a": scale_mpnl,
-                "k": k,
-                "delta_matter:delta_matter": p_mnl,
-            }
 
         d_spline = self._dist.comoving_distance_spline.peek_spline()
         z_dist = np.array(d_spline.get_xv().dup_array())
         c_dist = np.array(d_spline.get_yv().dup_array())
 
-        chi = np.flip(c_dist) * hi_cosmo.RH_Mpc()
+        chi = (np.flip(c_dist) * hi_cosmo.RH_Mpc()).astype(np.float64)
         scale_distances = self.mapping.redshift_to_scale_factor(z_dist)
-        h_over_h0 = np.array([hi_cosmo.E(z) for z in reversed(z_dist)])
+        h_over_h0 = np.array(
+            [hi_cosmo.E(z) for z in reversed(z_dist)], dtype=np.float64
+        )
 
         # Too many points in the redshift spline can result in scale factors
         # that are too close together for CCL to handle. This checks for
@@ -308,51 +264,98 @@ class MappingNumCosmo(GObject.Object):
                 a=scale_distances, chi=chi, h_over_h0=h_over_h0
             )
         }
-        if pk_linear:
-            ccl_args["pk_linear"] = pk_linear
-        if pk_nonlin:
-            ccl_args["pk_nonlin"] = pk_nonlin
 
+        if self._p:
+            ccl_args["pk_linear"] = self.extract_pk_linear(self.mapping, hi_cosmo)
+            if self._p.nonlinear:
+                ccl_args["pk_nonlin"] = self.extract_pk_nonlinear(
+                    self.mapping, hi_cosmo
+                )
         return ccl_args
 
-    def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
-        """Create a ParamsMap from a NumCosmo MSet.
+    def extract_pk_nonlinear(self, mapping, hi_cosmo):
+        """Extract the nonlinear power spectrum from the NumCosmo PowspecMNL object.
 
-        :param model_list: list of model names
-        :param mset: the NumCosmo MSet object from which to get the parameters
-        :return: a ParamsMap containing the parameters of the models in model_list
+        :param mapping: The mapping object used to convert redshift to scale factor.
+        :param hi_cosmo: The NumCosmo HICosmo object containing cosmological parameters.
+        :return: A dictionary containing the nonlinear power spectrum with scale
+                 factors, wave numbers, and power spectrum values.
         """
-        params_map = ParamsMap()
-        for model_ns in model_list:
-            mid = mset.get_id_by_ns(model_ns)
-            if mid < 0:
-                raise RuntimeError(
-                    f"Model name {model_ns} was not found in the model set."
-                )
-            model = mset.peek(mid)
-            if model is None:
-                raise RuntimeError(f"Model {model_ns} was not found in the model set.")
-            param_names = model.param_names()
-            model_dict = {
-                param: model.param_get_by_name(param) for param in param_names
-            }
-            params_map = self._update_params_map(model_list, params_map, model_dict)
-
-        params_map = self._update_params_map(
-            model_list, params_map, self.mapping.asdict()
+        assert self._p is not None
+        assert self._p.nonlinear is not None
+        spline = self._p.nonlinear.get_spline_2d(hi_cosmo)
+        z = np.array(spline.peek_xv().dup_array())
+        k = np.array(spline.peek_yv().dup_array())
+        scale_mpnl = mapping.redshift_to_scale_factor(z)
+        p_mnl = np.transpose(
+            np.array(spline.peek_zm().dup_array()).reshape(len(k), len(z))
         )
+        p_mnl = mapping.redshift_to_scale_factor_p_k(p_mnl)
+        return {"a": scale_mpnl, "k": k, "delta_matter:delta_matter": p_mnl}
 
-        return params_map
+    def extract_pk_linear(self, mapping, hi_cosmo):
+        """Extract the linear power spectrum from the NumCosmo PowspecMNL object.
 
-    def _update_params_map(self, model_list, params_map, model_dict):
-        shared_keys = set(model_dict).intersection(params_map)
-        if len(shared_keys) > 0:
-            raise RuntimeError(
-                f"The following keys `{shared_keys}` appear in more than one model "
-                f"used by the module {model_list} or cosmological parameters."
-            )
-        params_map = ParamsMap({**params_map, **model_dict})
-        return params_map
+        :param mapping: The mapping object used to convert redshift to scale factor.
+        :param hi_cosmo: The NumCosmo HICosmo object containing cosmological parameters.
+        :return: A dictionary containing the linear power spectrum with scale factors,
+                 wave numbers, and power spectrum values.
+        """
+        assert self._p is not None
+        spline = self._p.linear.get_spline_2d(hi_cosmo)
+        z = np.array(spline.peek_xv().dup_array())
+        k = np.array(spline.peek_yv().dup_array())
+        scale = mapping.redshift_to_scale_factor(z)
+        p_k = np.transpose(
+            np.array(spline.peek_zm().dup_array()).reshape(len(k), len(z))
+        )
+        p_k = mapping.redshift_to_scale_factor_p_k(p_k)
+        return {"a": scale, "k": k, "delta_matter:delta_matter": p_k}
+
+
+def _update_params_map(model_list, params_map, model_dict):
+    """Update a ParamsMap with the parameters of a model."""
+    shared_keys = set(model_dict).intersection(params_map)
+    if len(shared_keys) > 0:
+        raise RuntimeError(
+            f"The following keys `{shared_keys}` appear in more than one model "
+            f"used by the module {model_list} or cosmological parameters."
+        )
+    params_map = ParamsMap({**params_map, **model_dict})
+    return params_map
+
+
+def create_params_map(
+    model_list: list[str], mset: Ncm.MSet, mapping: Mapping | None
+) -> ParamsMap:
+    """Create a ParamsMap from a NumCosmo MSet.
+
+    All the models named in model_list must be in the model set `mset`, or a
+    RuntimeError will be raised.
+
+    :param model_list: list of model names
+    :param mset: the NumCosmo MSet object from which to get the parameters
+    :return: a ParamsMap containing the parameters of the models in model_list
+    """
+    params_map = ParamsMap()
+    for model_ns in model_list:
+        mid = mset.get_id_by_ns(model_ns)
+        if mid < 0:
+            raise RuntimeError(f"Model name {model_ns} was not found in the model set.")
+        model = mset.peek(mid)
+        # Since we have already verified that the model name exists in the
+        # model set, if the model is not found we have encountered an
+        # unrecoverable error.
+        assert model is not None
+
+        param_names = model.param_names()
+        model_dict = {param: model.param_get_by_name(param) for param in param_names}
+        params_map = _update_params_map(model_list, params_map, model_dict)
+
+    if mapping is not None:
+        params_map = _update_params_map(model_list, params_map, mapping.asdict())
+
+    return params_map
 
 
 class NumCosmoData(Ncm.Data):
@@ -373,7 +376,7 @@ class NumCosmoData(Ncm.Data):
         self.likelihood: Likelihood
         self.tools: ModelingTools
         self._model_list: list[str]
-        self._nc_mapping: MappingNumCosmo
+        self._nc_mapping: MappingNumCosmo | None
         self._likelihood_source: None | str = None
         self._likelihood_build_parameters: None | NamedParameters = None
         self._starting_deserialization: bool = False
@@ -402,14 +405,14 @@ class NumCosmoData(Ncm.Data):
         setter=_set_model_list,
     )
 
-    def _get_nc_mapping(self) -> MappingNumCosmo:
+    def _get_nc_mapping(self) -> MappingNumCosmo | None:
         """Return the MappingNumCosmo object.
 
         :return: the MappingNumCosmo object
         """
         return self._nc_mapping
 
-    def _set_nc_mapping(self, value: MappingNumCosmo) -> None:
+    def _set_nc_mapping(self, value: MappingNumCosmo | None) -> None:
         """Set the MappingNumCosmo object.
 
         :param: the new value for the MappingNumCosmo object
@@ -447,13 +450,13 @@ class NumCosmoData(Ncm.Data):
 
         :param value: the filename of the likelihood factory function
         """
-        if value is not None:
-            self._likelihood_source = value
-            if self._starting_deserialization:
-                self._set_likelihood_from_factory()
-                self._starting_deserialization = False
-            else:
-                self._starting_deserialization = True
+        assert value is not None
+        self._likelihood_source = value
+        if self._starting_deserialization:
+            self._set_likelihood_from_factory()
+            self._starting_deserialization = False
+        else:
+            self._starting_deserialization = True
 
     likelihood_source = GObject.Property(
         type=str,
@@ -500,7 +503,7 @@ class NumCosmoData(Ncm.Data):
         likelihood: Likelihood,
         model_list: list[str],
         tools: ModelingTools,
-        nc_mapping: MappingNumCosmo,
+        nc_mapping: MappingNumCosmo | None,
         likelihood_source: None | str = None,
         likelihood_build_parameters: None | NamedParameters = None,
     ) -> "NumCosmoData":
@@ -567,13 +570,24 @@ class NumCosmoData(Ncm.Data):
         self.likelihood.reset()
         self.tools.reset()
 
-        self._nc_mapping.set_params_from_numcosmo(mset, self.tools.ccl_factory)
-        ccl_args = self._nc_mapping.calculate_ccl_args(mset)
-        params_map = self._nc_mapping.create_params_map(self.model_list, mset)
-
-        self.likelihood.update(params_map)
-        self.tools.update(params_map)
-        self.tools.prepare(calculator_args=ccl_args)
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            assert self._nc_mapping is not None
+            self._nc_mapping.set_params_from_numcosmo(
+                mset, self.tools.ccl_factory.amplitude_parameter
+            )
+            params_map = create_params_map(
+                self.model_list, mset, self._nc_mapping.mapping
+            )
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
+            self.tools.prepare(
+                calculator_args=self._nc_mapping.calculate_ccl_args(mset)
+            )
+        else:
+            params_map = create_params_map(self.model_list, mset, None)
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
+            self.tools.prepare()
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method `m2lnL`.
@@ -616,7 +630,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.dof: int
         self.len: int
         self._model_list: list[str]
-        self._nc_mapping: MappingNumCosmo
+        self._nc_mapping: MappingNumCosmo | None
         self._likelihood_source: None | str = None
         self._likelihood_build_parameters: None | NamedParameters = None
         self._starting_deserialization: bool = False
@@ -642,14 +656,14 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         setter=_set_model_list,
     )
 
-    def _get_nc_mapping(self) -> MappingNumCosmo:
+    def _get_nc_mapping(self) -> MappingNumCosmo | None:
         """Return the :class:`MappingNumCosmo` object.
 
         :return: the current value of the mapping
         """
         return self._nc_mapping
 
-    def _set_nc_mapping(self, value: MappingNumCosmo):
+    def _set_nc_mapping(self, value: MappingNumCosmo | None):
         """Set the MappingNumCosmo object.
 
         :param: the new value for the MappingNumCosmo object
@@ -681,7 +695,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         data_vector = self.likelihood.get_data_vector()
         assert len(data_vector) == ncols
         self.peek_mean().set_array(  # pylint: disable-msg=no-member
-            data_vector.tolist()
+            data_vector.ravel().tolist()
         )
 
         self.set_init(True)
@@ -709,15 +723,20 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
     def _set_likelihood_source(self, value: None | str) -> None:
         """Set the likelihood string defining the factory function.
 
+        The value should not be None. The type declaration is required
+        because of the nature of the C interface being wrapped, but it
+        is a programming error to pass a null pointer.
+
         :param value: the filename of the likelihood factory function
         """
-        if value is not None:
-            self._likelihood_source = value
-            if self._starting_deserialization:
-                self._set_likelihood_from_factory()
-                self._starting_deserialization = False
-            else:
-                self._starting_deserialization = True
+        self._likelihood_source = value
+        if value is None:
+            return
+        if self._starting_deserialization:
+            self._set_likelihood_from_factory()
+            self._starting_deserialization = False
+        else:
+            self._starting_deserialization = True
 
     likelihood_source = GObject.Property(
         type=str,
@@ -766,7 +785,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         likelihood: ConstGaussian,
         model_list: list[str],
         tools: ModelingTools,
-        nc_mapping: MappingNumCosmo,
+        nc_mapping: MappingNumCosmo | None,
         likelihood_source: None | str = None,
         likelihood_build_parameters: None | NamedParameters = None,
     ):
@@ -839,13 +858,24 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.likelihood.reset()
         self.tools.reset()
 
-        self._nc_mapping.set_params_from_numcosmo(mset, self.tools.ccl_factory)
-        ccl_args = self._nc_mapping.calculate_ccl_args(mset)
-        params_map = self._nc_mapping.create_params_map(self._model_list, mset)
-
-        self.likelihood.update(params_map)
-        self.tools.update(params_map)
-        self.tools.prepare(calculator_args=ccl_args)
+        if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            assert self._nc_mapping is not None
+            self._nc_mapping.set_params_from_numcosmo(
+                mset, self.tools.ccl_factory.amplitude_parameter
+            )
+            params_map = create_params_map(
+                self._model_list, mset, self._nc_mapping.mapping
+            )
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
+            self.tools.prepare(
+                calculator_args=self._nc_mapping.calculate_ccl_args(mset)
+            )
+        else:
+            params_map = create_params_map(self._model_list, mset, None)
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
+            self.tools.prepare()
 
     # pylint: disable-next=arguments-differ
     def do_mean_func(self, _, vp) -> None:
@@ -881,7 +911,7 @@ class NumCosmoFactory:
         self,
         likelihood_source: str,
         build_parameters: NamedParameters,
-        mapping: MappingNumCosmo,
+        mapping: MappingNumCosmo | None,
         model_list: list[str],
     ) -> None:
         """Initialize a NumCosmoFactory.
@@ -894,7 +924,7 @@ class NumCosmoFactory:
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
         self.data: NumCosmoGaussCov | NumCosmoData
-        self.mapping: MappingNumCosmo = mapping
+        self.mapping: MappingNumCosmo | None = mapping
         if isinstance(likelihood, ConstGaussian):
             self.data = NumCosmoGaussCov.new_from_likelihood(
                 likelihood,
@@ -914,14 +944,14 @@ class NumCosmoFactory:
                 build_parameters,
             )
 
-    def get_data(self) -> Ncm.Data:
+    def get_data(self) -> NumCosmoGaussCov | NumCosmoData:
         """This method return the appropriate Ncm.Data class to be used by NumCosmo.
 
         :return: the data used by NumCosmo
         """
         return self.data
 
-    def get_mapping(self) -> MappingNumCosmo:
+    def get_mapping(self) -> MappingNumCosmo | None:
         """This method return the current MappingNumCosmo.
 
         :return: the current mapping.

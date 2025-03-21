@@ -11,7 +11,7 @@ from firecrown.models.cluster.abundance import ClusterAbundance
 def fixture_cluster_abundance():
     """Test fixture that represents an assembled cluster abundance class."""
     hmf = pyccl.halos.MassFuncBocquet16()
-    ca = ClusterAbundance(13, 17, 0, 2, hmf)
+    ca = ClusterAbundance((13, 17), (0, 2), hmf)
     return ca
 
 
@@ -43,7 +43,9 @@ def test_abundance_comoving_returns_value(cluster_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cluster_abundance.update_ingredients(cosmo)
 
-    result = cluster_abundance.comoving_volume(np.linspace(0.1, 1, 10), 360**2)
+    result = cluster_abundance.comoving_volume(
+        np.linspace(0.1, 1, 10, dtype=np.float64), 360**2
+    )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)
     assert len(result) == 10
@@ -56,7 +58,8 @@ def test_abundance_massfunc_returns_value(cluster_abundance: ClusterAbundance):
     cluster_abundance.update_ingredients(cosmo)
 
     result = cluster_abundance.mass_function(
-        np.linspace(13, 17, 5), np.linspace(0.1, 1, 5)
+        np.linspace(13, 17, 5, dtype=np.float64),
+        np.linspace(0.1, 1, 5, dtype=np.float64),
     )
     assert isinstance(result, np.ndarray)
     assert np.issubdtype(result.dtype, np.float64)

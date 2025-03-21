@@ -5,115 +5,17 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 """
 
 from __future__ import annotations
-from typing import final, Iterator
-from dataclasses import dataclass
+from typing import final
 from abc import abstractmethod
-import warnings
 import numpy as np
 import numpy.typing as npt
 import sacc
 
 import firecrown.parameters
+from firecrown.data_types import DataVector, TheoryVector
 from firecrown.parameters import DerivedParameterCollection, RequiredParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import Updatable
-
-
-class DataVector(npt.NDArray[np.float64]):
-    """Wrapper for a np.ndarray that represents some observed data values."""
-
-    @classmethod
-    def create(cls, vals: npt.NDArray[np.float64]) -> DataVector:
-        """Create a DataVector that wraps a copy of the given array vals.
-
-        :param vals: the array to be copied and wrapped
-        :return: a new DataVector
-        """
-        return vals.view(cls)
-
-    @classmethod
-    def from_list(cls, vals: list[float]) -> DataVector:
-        """Create a DataVector from the given list of floats.
-
-        :param vals: the list of floats
-        :return: a new DataVector
-        """
-        array = np.array(vals)
-        return cls.create(array)
-
-
-class TheoryVector(npt.NDArray[np.float64]):
-    """Wrapper for an np.ndarray that represents a prediction by some theory."""
-
-    @classmethod
-    def create(cls, vals: npt.NDArray[np.float64]) -> TheoryVector:
-        """Create a TheoryVector that wraps a copy of the given array vals.
-
-        :param vals: the array to be copied and wrapped
-        :return: a new TheoryVector
-        """
-        return vals.view(cls)
-
-    @classmethod
-    def from_list(cls, vals: list[float]) -> TheoryVector:
-        """Create a TheoryVector from the given list of floats.
-
-        :param vals: the list of floats
-        :return: a new TheoryVector
-        """
-        array = np.array(vals)
-        return cls.create(array)
-
-
-def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]:
-    """Return a bare np.ndarray with the difference between `data` and `theory`.
-
-    This is to be preferred to using arithmetic on the vectors directly.
-    """
-    assert isinstance(data, DataVector)
-    assert isinstance(theory, TheoryVector)
-    return (data - theory).view(np.ndarray)
-
-
-@dataclass
-class StatisticsResult:
-    """An pair of a :python:`DataVector` and a :python:`TheoryVector`.
-
-    This is the type returned by the :meth:`compute` method of any :python:`Statistic`.
-    """
-
-    data: DataVector
-    theory: TheoryVector
-
-    def __post_init__(self) -> None:
-        """Make sure the data and theory vectors are of the same shape."""
-        assert self.data.shape == self.theory.shape
-
-    def residuals(self) -> npt.NDArray[np.float64]:
-        """Return the residuals -- the difference between data and theory.
-
-        :return: the residuals
-        """
-        return self.data - self.theory
-
-    def __iter__(self) -> Iterator[DataVector | TheoryVector]:
-        """Iterate through the data members.
-
-        This is to allow automatic unpacking, as if the StatisticsResult were a tuple
-        of (data, theory).
-
-        This method is a temporary measure to help code migrate to the newer,
-        safer interface for Statistic.compute().
-
-        :return: an iterator object that yields first the data and then the theory
-        """
-        warnings.warn(
-            "Iteration and tuple unpacking for StatisticsResult is "
-            "deprecated.\nPlease use the StatisticsResult class accessors"
-            ".data and .theory by name."
-        )
-        yield self.data
-        yield self.theory
 
 
 class StatisticUnreadError(RuntimeError):
@@ -156,7 +58,7 @@ class Statistic(Updatable):
 
             super().__init__(parameter_prefix=parameter_prefix)
 
-        as the last thing they do in `__init__`.
+        as the first thing they do in `__init__`.
 
         :param parameter_prefix: The prefix to prepend to all parameter names
         """
@@ -180,12 +82,8 @@ class Statistic(Updatable):
 
         :param _: currently unused, but required by the interface.
         """
+        assert len(self.get_data_vector()) > 0
         self.ready = True
-        if len(self.get_data_vector()) == 0:
-            raise RuntimeError(
-                f"the statistic {self} has read a data vector "
-                f"of length 0; the length must be positive"
-            )
 
     def _reset(self):
         """Reset this statistic.
@@ -274,15 +172,7 @@ class GuardedStatistic(Updatable):
         """
         if self.statistic.ready:
             raise RuntimeError("Firecrown has called read twice on a GuardedStatistic")
-        try:
-            self.statistic.read(sacc_data)
-        except TypeError as exc:
-            msg = (
-                f"A statistic of type {type(self.statistic).__name__} has raised "
-                f"an exception during `read`.\nThe problem may be a malformed "
-                f"SACC data object."
-            )
-            raise RuntimeError(msg) from exc
+        self.statistic.read(sacc_data)
 
     def get_data_vector(self) -> DataVector:
         """Return the contained :class:`Statistic`'s data vector.

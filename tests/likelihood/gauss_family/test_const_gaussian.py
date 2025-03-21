@@ -1,5 +1,4 @@
-"""Unit testsing for ConstGaussian
-"""
+"""Unit testsing for ConstGaussian"""
 
 import re
 

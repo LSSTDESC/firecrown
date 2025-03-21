@@ -16,9 +16,7 @@ from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
 
 SACCFILE = os.path.expanduser(
-    os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/des_y1_3x2pt_sacc_data.fits"
-    )
+    os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits")
 )
 
 
@@ -173,7 +171,6 @@ def run_likelihood() -> None:
     # y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     # y_theory = two_point_0.predicted_statistic_
 
-    # pylint: disable=no-member
     print(list(two_point_0.cells.keys()))
 
     make_plot(ccl_cosmo, nz, pk_ii, pk_im, two_point_0, z)

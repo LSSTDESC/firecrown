@@ -1,0 +1,89 @@
+firecrown_two_point:
+  NcmModelBuilder:
+    parent-type-string: 'NcmModel'
+    name: 'FirecrownTwoPoint'
+    description: 'Firecrown Model'
+    sparams:
+    - NcmSParam:
+        name: 'ia_a_1'
+        symbol: 'ia_{a_1}'
+        lower-bound: 0.9
+        upper-bound: 1.2
+        scale: 0.003
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+    - &S2 NcmSParam:
+        name: 'ia_a_2'
+        symbol: 'ia_{a_2}'
+        lower-bound: 0.4
+        upper-bound: 0.6
+        scale: 0.002
+        absolute-tolerance: 0.0
+        default-value: 0.5
+        fit-type: 0
+    - &S3 NcmSParam:
+        name: 'ia_a_d'
+        symbol: 'ia_{a_d}'
+        lower-bound: 0.4
+        upper-bound: 0.6
+        scale: 0.002
+        absolute-tolerance: 0.0
+        default-value: 0.5
+        fit-type: 0
+    - &S4 NcmSParam:
+        name: 'lens0_b_2'
+        symbol: 'lens0_{b_2}'
+        lower-bound: 0.8
+        upper-bound: 1.2
+        scale: 0.004
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+    - &S5 NcmSParam:
+        name: 'lens0_b_s'
+        symbol: 'lens0_{b_s}'
+        lower-bound: 0.8
+        upper-bound: 1.2
+        scale: 0.004
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+    - &S6 NcmSParam:
+        name: 'lens0_mag_bias'
+        symbol: 'lens0_\\mathrm{mag-bias}'
+        lower-bound: 0.8
+        upper-bound: 1.2
+        scale: 0.004
+        absolute-tolerance: 0.0
+        default-value: 1.0
+        fit-type: 0
+    - &S7 NcmSParam:
+        name: 'lens0_bias'
+        symbol: 'lens0_\\mathrm{bias}'
+        lower-bound: 0.8
+        upper-bound: 3.0
+        scale: 0.022
+        absolute-tolerance: 0.0
+        default-value: 2.0
+        fit-type: 0
+    - &S8 NcmSParam:
+        name: 'src0_delta_z'
+        symbol: 'src0_\\mathrm{delta z}'
+        lower-bound: -0.05
+        upper-bound: 0.05
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: -0.001
+        fit-type: 0
+    - &S9 NcmSParam:
+        name: 'lens0_delta_z'
+        symbol: 'lens0_\\mathrm{delta z}'
+        lower-bound: -0.05
+        upper-bound: 0.05
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.001
+        fit-type: 0
+    vparams: []
+    stackable: false

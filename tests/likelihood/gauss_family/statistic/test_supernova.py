@@ -1,5 +1,4 @@
-"""Tests for the Supernova statistic.
-"""
+"""Tests for the Supernova statistic."""
 
 import pytest
 

@@ -18,17 +18,22 @@ from firecrown.likelihood.number_counts import (
 from firecrown.likelihood.weak_lensing import (
     WeakLensing,
 )
-from firecrown.likelihood.statistic import TheoryVector
+import firecrown.metadata_types as mdt
 from firecrown.likelihood.two_point import (
-    _ell_for_xi,
     TwoPoint,
     TracerNames,
-    TRACER_NAMES_TOTAL,
-    EllOrThetaConfig,
-    use_source_factory,
-    use_source_factory_metadata_index,
     WeakLensingFactory,
     NumberCountsFactory,
+)
+from firecrown.models.two_point import TwoPointTheory
+from firecrown.likelihood.source_factories import (
+    use_source_factory,
+    use_source_factory_metadata_index,
+)
+from firecrown.generators.two_point import (
+    log_linear_ells,
+    generate_bin_centers,
+    EllOrThetaConfig,
 )
 from firecrown.metadata_types import (
     Galaxies,
@@ -41,7 +46,7 @@ from firecrown.metadata_functions import (
     TwoPointHarmonicIndex,
     TwoPointRealIndex,
 )
-from firecrown.data_types import TwoPointMeasurement
+from firecrown.data_types import TwoPointMeasurement, TheoryVector
 
 
 @pytest.fixture(name="include_rsd", params=[True, False], ids=["rsd", "no_rsd"])
@@ -73,7 +78,7 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
     weights[50:75, 2] = 3.0 / 25.0
     weights[75:100, 3] = 4.0 / 25.0
 
-    data = np.zeros(4) + 1.1
+    data = (np.zeros(4) + 1.1).astype(np.float64)
     indices = np.arange(4)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(
@@ -90,7 +95,7 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
 def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
     """Return some fake harmonic data."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = np.zeros(100) - 1.1
+    data = (np.zeros(100) - 1.1).astype(np.float64)
     indices = np.arange(100)
     covariance_name = "cov"
     tpm = TwoPointMeasurement(
@@ -143,15 +148,15 @@ def fixture_two_point_without_window(
     return two_points.pop()
 
 
-def test_ell_for_xi_no_rounding() -> None:
-    res = _ell_for_xi(minimum=0, midpoint=5, maximum=80, n_log=5)
+def test_log_linear_ells_no_rounding() -> None:
+    res = log_linear_ells(minimum=0, midpoint=5, maximum=80, n_log=5)
     expected = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0, 80.0])
     assert res.shape == expected.shape
     assert np.allclose(expected, res)
 
 
-def test_ell_for_xi_doing_rounding() -> None:
-    res = _ell_for_xi(minimum=1, midpoint=3, maximum=100, n_log=5)
+def test_log_linear_ells_doing_rounding() -> None:
+    res = log_linear_ells(minimum=1, midpoint=3, maximum=100, n_log=5)
     expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.allclose(expected, res)
 
@@ -168,7 +173,7 @@ def test_compute_theory_vector(source_0: NumberCounts) -> None:
 
 
 def test_tracer_names() -> None:
-    assert TracerNames("", "") == TRACER_NAMES_TOTAL
+    assert TracerNames("", "") == mdt.TRACER_NAMES_TOTAL
 
     tn1 = TracerNames("cow", "pig")
     assert tn1[0] == "cow"
@@ -240,6 +245,24 @@ def test_two_point_src0_src0_no_window(sacc_galaxy_cells_src0_src0_no_window) ->
     tools.update(params)
     result2 = statistic.compute_theory_vector(tools)
     assert np.array_equal(result1, result2)
+
+
+def test_two_point_generate_ell_or_theta() -> None:
+    # Logarithmic binning.
+    assert np.allclose(
+        generate_bin_centers(minimum=1.0, maximum=1000.0, n=3, binning="log"),
+        np.array(np.sqrt([10.0, 1000.0, 100000.0])),
+    )
+
+    # Linear binning.
+    assert np.array_equal(
+        generate_bin_centers(minimum=0.0, maximum=12.0, n=6, binning="lin"),
+        np.array([1.0, 3.0, 5.0, 7.0, 9.0, 11.0]),
+    )
+
+    # Invalid binning.
+    with pytest.raises(ValueError, match="Unrecognized binning: cow"):
+        generate_bin_centers(minimum=1, maximum=100, n=5, binning="cow")
 
 
 def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data) -> None:
@@ -329,9 +352,23 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
     assert all(statistic.thetas <= 1.0)
 
 
+def test_two_point_theory_construction() -> None:
+    src0 = WeakLensing(sacc_tracer="src0")
+    theory = TwoPointTheory(
+        sacc_data_type="galaxy_shear_cl_ee",
+        sources=(src0, src0),
+        ell_or_theta_min=50,
+        ell_or_theta_max=200,
+    )
+    assert theory.sacc_data_type == "galaxy_shear_cl_ee"
+    assert theory.source0 is src0
+    assert theory.source1 is src0
+    assert theory.ell_or_theta_min == 50
+    assert theory.ell_or_theta_max == 200
+
+
 def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
-
     src0 = WeakLensing(sacc_tracer="src0")
 
     statistic = TwoPoint(
@@ -341,6 +378,8 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
         UserWarning, match="No bandpower windows associated to these data"
     ):
         statistic.read(sacc_data)
+    assert statistic.theory.ell_or_theta_min == 50
+    assert statistic.theory.ell_or_theta_max == 200
 
     tools = ModelingTools()
     params = get_default_params_map(tools)

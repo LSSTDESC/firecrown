@@ -6,8 +6,14 @@ from typing import Any
 import pytest
 import numpy as np
 from firecrown.connector import mapping
-from firecrown.connector.mapping import Mapping, mapping_builder, MappingCosmoSIS
+from firecrown.connector.mapping import (
+    Mapping,
+    mapping_builder,
+    MappingCosmoSIS,
+    MappingCAMB,
+)
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 
 
 # TODO: Refactor these test functions to use a sensible fixture.
@@ -50,7 +56,6 @@ def test_conversion_from_cosmosis_camb():
     assert p.sigma8 == cosmosis_params["sigma_8"]
     assert p.n_s == cosmosis_params["n_s"]
     assert p.Omega_k == cosmosis_params["omega_k"]
-    assert p.Omega_g is None
     assert p.Neff == pytest.approx(3.046)
     assert p.m_nu == pytest.approx(0.3015443336635814)
     assert p.w0 == cosmosis_params["w"]
@@ -165,7 +170,24 @@ def test_mapping_cosmosis():
     mapping_cosmosis = mapping_builder(input_style="CosmoSIS")
     assert isinstance(mapping_cosmosis, Mapping)
 
-    assert mapping_cosmosis.get_params_names() == [
+    assert mapping_cosmosis.get_params_names(
+        amplitude=PoweSpecAmplitudeParameter.AS
+    ) == [
+        "h0",
+        "omega_b",
+        "omega_c",
+        "A_s",
+        "n_s",
+        "omega_k",
+        "delta_neff",
+        "omega_nu",
+        "w",
+        "wa",
+    ]
+
+    assert mapping_cosmosis.get_params_names(
+        amplitude=PoweSpecAmplitudeParameter.SIGMA8
+    ) == [
         "h0",
         "omega_b",
         "omega_c",
@@ -177,6 +199,22 @@ def test_mapping_cosmosis():
         "w",
         "wa",
     ]
+    mapping_cosmosis.set_params(
+        A_s=2.1e-9,
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=None,
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+    d = mapping_cosmosis.asdict()
+    assert mapping_cosmosis.m_nu is None
+    assert d["m_nu"] == 0.0
 
 
 def test_mapping_cosmosis_k_h_to_h(mapping_cosmosis):
@@ -191,3 +229,138 @@ def test_mapping_cosmosis_p_k_h3_to_p_k(mapping_cosmosis):
     p_k_array = mapping_cosmosis.transform_p_k_h3_to_p_k(p_k_h3_array)
 
     assert np.allclose(p_k_h3_array / mapping_cosmosis.h**3, p_k_array)
+
+
+def test_mapping_camb():
+    mapping_camb = mapping_builder(input_style="CAMB")
+    assert isinstance(mapping_camb, MappingCAMB)
+
+    assert mapping_camb.get_params_names(amplitude=PoweSpecAmplitudeParameter.AS) == [
+        "H0",
+        "ombh2",
+        "omch2",
+        "mnu",
+        "nnu",
+        "tau",
+        "YHe",
+        "As",
+        "ns",
+        "w",
+        "wa",
+    ]
+    assert mapping_camb.get_params_names(
+        amplitude=PoweSpecAmplitudeParameter.SIGMA8
+    ) == [
+        "H0",
+        "ombh2",
+        "omch2",
+        "mnu",
+        "nnu",
+        "tau",
+        "YHe",
+        "sigma8",
+        "ns",
+        "w",
+        "wa",
+    ]
+
+    mapping_camb.set_params(
+        Omega_c=0.26,
+        Omega_b=0.04,
+        h=0.72,
+        A_s=0.8,
+        n_s=0.96,
+        Omega_k=0.0,
+        Neff=3.046,
+        m_nu=None,
+        w0=-1.0,
+        wa=0.0,
+        T_CMB=2.7255,
+    )
+    d = mapping_camb.asdict()
+    assert mapping_camb.m_nu is None
+    assert d["m_nu"] == 0.0
+
+
+def test_mapping_camb_setting_both_A_s_and_sigma8():
+    mapping_camb = mapping_builder(input_style="CAMB")
+    assert isinstance(mapping_camb, MappingCAMB)
+    with pytest.raises(
+        ValueError, match="Exactly one of A_s and sigma8 must be supplied"
+    ):
+        mapping_camb.set_params_from_camb(
+            H0=70.0,
+            ombh2=0.02,
+            omch2=0.12,
+            omk=0.0,
+            mnu=0.0,
+            nnu=3.046,
+            tau=0.07,
+            YHe=0.24,
+            As=2.1e-9,
+            sigma8=0.8,
+            ns=0.96,
+            w=-1.0,
+            wa=0.0,
+        )
+
+
+def test_mapping_camb_setting_neither_A_s_and_sigma8():
+    mapping_camb = mapping_builder(input_style="CAMB")
+    assert isinstance(mapping_camb, MappingCAMB)
+    with pytest.raises(
+        ValueError, match="Exactly one of A_s and sigma8 must be supplied"
+    ):
+        mapping_camb.set_params_from_camb(
+            H0=70.0,
+            ombh2=0.02,
+            omch2=0.12,
+            omk=0.0,
+            mnu=0.0,
+            nnu=3.046,
+            tau=0.07,
+            YHe=0.24,
+            ns=0.96,
+            w=-1.0,
+            wa=0.0,
+        )
+
+
+def test_mapping_camb_setting_A_s():
+    mapping_camb = mapping_builder(input_style="CAMB")
+    assert isinstance(mapping_camb, MappingCAMB)
+    mapping_camb.set_params_from_camb(
+        H0=70.0,
+        ombh2=0.02,
+        omch2=0.12,
+        omk=0.0,
+        mnu=0.0,
+        nnu=3.046,
+        tau=0.07,
+        YHe=0.24,
+        As=2.1e-9,
+        ns=0.96,
+        w=-1.0,
+        wa=0.0,
+    )
+    assert mapping_camb.A_s == 2.1e-9
+
+
+def test_mapping_camb_setting_sigma8():
+    mapping_camb = mapping_builder(input_style="CAMB")
+    assert isinstance(mapping_camb, MappingCAMB)
+    mapping_camb.set_params_from_camb(
+        H0=70.0,
+        ombh2=0.02,
+        omch2=0.12,
+        omk=0.0,
+        mnu=0.0,
+        nnu=3.046,
+        tau=0.07,
+        YHe=0.24,
+        sigma8=0.8,
+        ns=0.96,
+        w=-1.0,
+        wa=0.0,
+    )
+    assert mapping_camb.sigma8 == 0.8

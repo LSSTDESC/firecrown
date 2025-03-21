@@ -23,9 +23,7 @@ class MinimalUpdatable(Updatable):
     def __init__(self):
         """Initialize object with defaulted value."""
         super().__init__()
-
-        with pytest.deprecated_call():
-            self.a = parameters.register_new_updatable_parameter()
+        self.a = parameters.register_new_updatable_parameter(default_value=1.0)
 
 
 class SimpleUpdatable(Updatable):
@@ -35,9 +33,8 @@ class SimpleUpdatable(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        with pytest.deprecated_call():
-            self.x = parameters.register_new_updatable_parameter()
-            self.y = parameters.register_new_updatable_parameter()
+        self.x = parameters.register_new_updatable_parameter(default_value=2.0)
+        self.y = parameters.register_new_updatable_parameter(default_value=3.0)
 
 
 class UpdatableWithDerived(Updatable):
@@ -47,9 +44,8 @@ class UpdatableWithDerived(Updatable):
         """Initialize object with defaulted values."""
         super().__init__()
 
-        with pytest.deprecated_call():
-            self.A = parameters.register_new_updatable_parameter()
-            self.B = parameters.register_new_updatable_parameter()
+        self.A = parameters.register_new_updatable_parameter(default_value=2.0)
+        self.B = parameters.register_new_updatable_parameter(default_value=1.0)
 
     def _get_derived_parameters(self) -> DerivedParameterCollection:
         derived_scale = DerivedParameter("Section", "Name", self.A + self.B)
@@ -58,13 +54,24 @@ class UpdatableWithDerived(Updatable):
         return derived_parameters
 
 
+def test_get_params_names():
+    obj = SimpleUpdatable()
+    found_names = obj.get_params_names()
+    assert set(found_names) == set(["x", "y"])
+
+
 def test_simple_updatable():
     obj = SimpleUpdatable()
-    with pytest.deprecated_call():
-        expected_params = RequiredParameters(
-            [SamplerParameter(name="x"), SamplerParameter(name="y")]
-        )
+    expected_params = RequiredParameters(
+        [
+            SamplerParameter(name="y", default_value=3.0),
+            SamplerParameter(name="x", default_value=2.0),
+        ]
+    )
     assert obj.required_parameters() == expected_params
+    found_names = obj.get_params_names()
+    assert "x" in found_names
+    assert "y" in found_names
     assert obj.x is None
     assert obj.y is None
     assert not obj.is_updated()
@@ -84,22 +91,23 @@ def test_updatable_collection_appends():
     assert len(coll) == 1
     assert coll[0].x is None
     assert coll[0].y is None
-    with pytest.deprecated_call():
-        assert coll.required_parameters() == RequiredParameters(
-            [SamplerParameter(name="x"), SamplerParameter(name="y")]
-        )
+    assert coll.required_parameters() == RequiredParameters(
+        [
+            SamplerParameter(name="x", default_value=2.0),
+            SamplerParameter(name="y", default_value=3.0),
+        ]
+    )
 
     coll.append(MinimalUpdatable())
     assert len(coll) == 2
     assert coll[1].a is None
-    with pytest.deprecated_call():
-        assert coll.required_parameters() == RequiredParameters(
-            [
-                SamplerParameter(name="x"),
-                SamplerParameter(name="y"),
-                SamplerParameter(name="a"),
-            ]
-        )
+    assert coll.required_parameters() == RequiredParameters(
+        [
+            SamplerParameter(name="x", default_value=2.0),
+            SamplerParameter(name="y", default_value=3.0),
+            SamplerParameter(name="a", default_value=1.0),
+        ]
+    )
 
 
 def test_updatable_collection_updates():
@@ -152,8 +160,7 @@ def test_updatable_collection_insertion():
 
 def test_set_sampler_parameter():
     my_updatable = MinimalUpdatable()
-    with pytest.deprecated_call():
-        my_param = parameters.register_new_updatable_parameter()
+    my_param = parameters.register_new_updatable_parameter(default_value=42.0)
     my_param.set_fullname(prefix=None, name="the_meaning_of_life")
     my_updatable.set_sampler_parameter(my_param)
 
@@ -163,7 +170,9 @@ def test_set_sampler_parameter():
 
 def test_set_sampler_parameter_rejects_internal_parameter():
     my_updatable = MinimalUpdatable()
-    my_param = parameters.register_new_updatable_parameter(42.0)
+    my_param = parameters.register_new_updatable_parameter(
+        value=42.0, default_value=41.0
+    )
 
     with pytest.raises(TypeError):
         my_updatable.set_sampler_parameter(my_param)
@@ -171,11 +180,9 @@ def test_set_sampler_parameter_rejects_internal_parameter():
 
 def test_set_sampler_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
-    with pytest.deprecated_call():
-        my_param = parameters.register_new_updatable_parameter()
+    my_param = parameters.register_new_updatable_parameter(default_value=42.0)
     my_param.set_fullname(prefix=None, name="the_meaning_of_life")
-    with pytest.deprecated_call():
-        my_param_same = parameters.register_new_updatable_parameter()
+    my_param_same = parameters.register_new_updatable_parameter(default_value=42.0)
     my_param_same.set_fullname(prefix=None, name="the_meaning_of_life")
 
     my_updatable.set_sampler_parameter(my_param)
@@ -187,51 +194,59 @@ def test_set_sampler_parameter_rejects_duplicates():
 def test_set_internal_parameter():
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
-        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+        "the_meaning_of_life",
+        parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
     )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
-    assert my_updatable.the_meaning_of_life == 42.0
+    assert my_updatable.the_meaning_of_life == 1.0
+
+
+def test_set_parameter_using_internal_parameter():
+    my_updatable = MinimalUpdatable()
+    ip = parameters.InternalParameter(2112)
+    my_updatable.set_parameter("epic_Rush_album", ip)
+
+    assert hasattr(my_updatable, "epic_Rush_album")
+    assert my_updatable.epic_Rush_album == 2112
 
 
 def test_set_internal_parameter_rejects_sampler_parameter():
     my_updatable = MinimalUpdatable()
     with pytest.raises(TypeError):
-        with pytest.deprecated_call():
-            my_updatable.set_internal_parameter(
-                "sampler_param", parameters.register_new_updatable_parameter()
-            )
+        my_updatable.set_internal_parameter(
+            "sampler_param",
+            parameters.register_new_updatable_parameter(default_value=1.0),
+        )
 
 
 def test_set_internal_parameter_rejects_duplicates():
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
-        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+        "the_meaning_of_life",
+        parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
     )
 
     with pytest.raises(ValueError):
         my_updatable.set_internal_parameter(
-            "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
-        )
-
-    with pytest.raises(ValueError):
-        my_updatable.set_internal_parameter(
-            "the_meaning_of_life", parameters.register_new_updatable_parameter(41.0)
+            "the_meaning_of_life",
+            parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
         )
 
 
 def test_set_parameter():
     my_updatable = MinimalUpdatable()
     my_updatable.set_parameter(
-        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+        "the_meaning_of_life",
+        parameters.register_new_updatable_parameter(value=1.0, default_value=42.0),
     )
-    with pytest.deprecated_call():
-        my_updatable.set_parameter(
-            "no_meaning_of_life", parameters.register_new_updatable_parameter()
-        )
+    my_updatable.set_parameter(
+        "no_meaning_of_life",
+        parameters.register_new_updatable_parameter(default_value=42.0),
+    )
 
     assert hasattr(my_updatable, "the_meaning_of_life")
-    assert my_updatable.the_meaning_of_life == 42.0
+    assert my_updatable.the_meaning_of_life == 1.0
 
     assert hasattr(my_updatable, "no_meaning_of_life")
     assert my_updatable.no_meaning_of_life is None
@@ -240,7 +255,8 @@ def test_set_parameter():
 def test_update_rejects_internal_parameters():
     my_updatable = MinimalUpdatable()
     my_updatable.set_internal_parameter(
-        "the_meaning_of_life", parameters.register_new_updatable_parameter(42.0)
+        "the_meaning_of_life",
+        parameters.register_new_updatable_parameter(value=2.0, default_value=42.0),
     )
     assert hasattr(my_updatable, "the_meaning_of_life")
 
@@ -252,7 +268,7 @@ def test_update_rejects_internal_parameters():
         my_updatable.update(params)
 
     assert my_updatable.a is None
-    assert my_updatable.the_meaning_of_life == 42.0
+    assert my_updatable.the_meaning_of_life == 2.0
 
 
 def test_updatable_collection_is_updated():
@@ -321,16 +337,15 @@ def test_nesting_updatables_required_parameters(nested_updatables):
     base = nested_updatables[0]
     assert isinstance(base, Updatable)
 
-    with pytest.deprecated_call():
-        assert base.required_parameters() == RequiredParameters(
-            [
-                SamplerParameter(name="a"),
-                SamplerParameter(name="x"),
-                SamplerParameter(name="y"),
-                SamplerParameter(name="A"),
-                SamplerParameter(name="B"),
-            ]
-        )
+    assert base.required_parameters() == RequiredParameters(
+        [
+            SamplerParameter(name="a", default_value=1.0),
+            SamplerParameter(name="x", default_value=2.0),
+            SamplerParameter(name="y", default_value=3.0),
+            SamplerParameter(name="A", default_value=2.0),
+            SamplerParameter(name="B", default_value=1.0),
+        ]
+    )
 
 
 def test_nesting_updatables_derived_parameters(nested_updatables):

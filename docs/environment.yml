@@ -4,6 +4,7 @@ channels:
   - nodefaults
 dependencies:
   - python>=3.10
+  - clmm
   - cosmosis >= 2.2.0
   - cosmosis-build-standard-library
   - cython
@@ -18,6 +19,7 @@ dependencies:
     - autoclasstoc
     - cobaya
     - pygobject-stubs
+    - isitgr
   - pyccl>=2.8.0
   - pydantic
   - pytest

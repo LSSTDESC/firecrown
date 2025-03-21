@@ -18,6 +18,7 @@ from __future__ import annotations
 from abc import ABC
 from collections import UserList
 from typing import Any, Generic, Iterable, TypeAlias, TypeVar, Union, cast, final
+from typing_extensions import assert_never
 
 from firecrown.parameters import (
     InternalParameter,
@@ -95,6 +96,13 @@ class Updatable(ABC):
         """
         if isinstance(value, (Updatable, UpdatableCollection)):
             self._updatables.append(value)
+        elif isinstance(value, Iterable):
+            # Consider making this a recursive call that handles nested
+            # iterables.
+            for v in value:
+                if isinstance(v, (Updatable, UpdatableCollection)):
+                    self._updatables.append(v)
+
         if isinstance(value, (InternalParameter, SamplerParameter)):
             self.set_parameter(key, value)
         else:
@@ -111,11 +119,14 @@ class Updatable(ABC):
         :param key: name of the attribute
         :param value: value for the attribute
         """
-        if isinstance(value, SamplerParameter):
-            value.set_fullname(self.parameter_prefix, key)
-            self.set_sampler_parameter(value)
-        elif isinstance(value, InternalParameter):
-            self.set_internal_parameter(key, value)
+        match value:
+            case SamplerParameter():
+                value.set_fullname(self.parameter_prefix, key)
+                self.set_sampler_parameter(value)
+            case InternalParameter():
+                self.set_internal_parameter(key, value)
+            case _ as unreachable:
+                assert_never(unreachable)
 
     def set_internal_parameter(self, key: str, value: InternalParameter) -> None:
         """Assure this InternalParameter has not already been set, and then set it.
@@ -127,7 +138,6 @@ class Updatable(ABC):
             raise TypeError(
                 "Can only add InternalParameter objects to internal_parameters"
             )
-
         if key in self._internal_parameters or hasattr(self, key):
             raise ValueError(
                 f"attribute {key} already set in {self} "
@@ -174,6 +184,7 @@ class Updatable(ABC):
             return
 
         internal_params = self._internal_parameters.keys() & params.keys()
+
         if internal_params:
             raise TypeError(
                 f"Items of type InternalParameter cannot be modified through "
@@ -247,7 +258,7 @@ class Updatable(ABC):
         :param params: a new set of parameter values
         """
 
-    def _reset(self) -> None:  # pragma: no cover
+    def _reset(self) -> None:
         """Abstract method implemented by all concrete classes to update self.
 
         Concrete classes must override this, resetting themselves.
@@ -256,7 +267,7 @@ class Updatable(ABC):
         """
 
     @final
-    def required_parameters(self) -> RequiredParameters:  # pragma: no cover
+    def required_parameters(self) -> RequiredParameters:
         """Returns all information about parameters required by this object.
 
         This object returned contains the information for all parameters
@@ -272,7 +283,17 @@ class Updatable(ABC):
 
         return sampler_parameters + additional_parameters
 
-    def _required_parameters(self) -> RequiredParameters:  # pragma: no cover
+    @final
+    def get_params_names(self) -> list[str]:
+        """Return the names of the parameters required by this object.
+
+        The order of the returned names is arbitrary.
+
+        :return: a list of parameter names
+        """
+        return list(self.required_parameters().get_params_names())
+
+    def _required_parameters(self) -> RequiredParameters:
         """Return a RequiredParameters object containing the information for this class.
 
         This method can be overridden by subclasses to add
@@ -350,6 +371,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
         """
         super().__init__(iterable)
         self._updated: bool = False
+
         for item in self:
             if not isinstance(item, (Updatable | UpdatableCollection)):
                 raise TypeError(

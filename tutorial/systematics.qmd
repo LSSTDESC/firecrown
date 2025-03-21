@@ -1,0 +1,258 @@
+---
+title: "Handling Systematic Uncertainties"
+format: html
+---
+
+{{< include _functions.qmd >}}
+{{< include _definitions.qmd >}}
+
+::: {.callout-warning}
+## Warning: this tutorial is still under construction.
+
+This tutorial is currently far from complete.
+It lacks required information, and contains some incorrect and out-of-date information.
+:::
+
+
+## Introduction
+
+In this tutorial we describe the handling of systematic uncertainties in Firecrown.
+
+In Firecrown, *systematics* are used to modify the way a theory object works, so that the prediction made by the modified theory object reflects an effect not present in the original theory.
+Often they are characterized by some unknown parameter which can be marginalized over in analysis.
+
+Systematics do not act on the output of the theory predictions.
+Instead, they act on *tracer arguments* objects, which are *data classes*[^dataclass] that contain the configuration data needed by the theory.
+
+A tracer argument object encapsulates all the information needed to create a `pyccl.Tracer` object.
+A `SourceSystematic` object modifies a tracer argument in some way.
+Source tracer objects, such as `NumberCounts` and `WeakLensing`, require configuration details, calibration inputs, and model parameters.
+
+In Firecrown, a source represents an observable that contributes to the construction of two-point statistics (like auto-correlations or cross-correlations).
+Examples of observables represented by sources include galaxy number density, weak lensing shear, or CMB lensing convergence.
+Sources connect these observables to their theoretical predictions using tools like the Core Cosmology Library (CCL).
+By representing specific observational data, sources enable the computation of likelihoods in cosmological analyses.
+For more, visit the [introductory article](intro_article.qmd).
+
+All source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
+To address this, we use a shared `SourceGalaxyArgs` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
+
+This shared structure allows us to define a common set of systematics that can be applied across all source tracers.
+For instance, the `PhotoZShift` object modifies the redshift distribution in a `SourceGalaxyArgs` object.
+
+The subclasses `WeakLensingArgs` and `NumberCountsArgs` inherit from `SourceGalaxyArgs` and add additional fields specific to weak lensing and number counts, respectively.
+The `WeakLensingSystematic` and `NumberCountsSystematic` classes inherit from `SourceGalaxySystematic` using Python's *generics* to enforce that they can only be applied to `WeakLensingArgs` and `NumberCountsArgs` objects, respectively.
+
+We will use the number counts systematic `PTNonLinearBiasSystematic`[^ptnlbs] to illustrate the use of systematics in Firecrown.
+A class diagram for this systematic is shown below.
+
+[^ptnlbs]: `firecrown.likelihood.number_counts.PTNonLenearBiasSystematic` is the full name of this class.
+
+```{mermaid}
+classDiagram
+direction TB
+class NumberCountsSystematic {
+   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
+}
+class PTNonLinearBiasSystematic {
+   b_2: float
+   b_s: float
+   __init__(self, sacc_tracer: None | str = None) 
+   apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
+}
+class SourceGalaxySystematic {
+   apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT) 
+}
+class SourceSystematic {
+   read(self, sacc_data: sacc.Sacc) 
+}
+class Updatable {
+    _internal_parameters
+    _returned_derived
+    _sampler_parameters
+    _updatables
+    _updated
+    parameter_prefix
+   __init__(self, parameter_prefix: None | str = None) 
+   __setattr__(self, key: str, value: Any) 
+   _get_derived_parameters(self) 
+   _required_parameters(self) 
+   _reset(self) 
+   _update(self, params: ParamsMap) 
+   get_derived_parameters(self) 
+   get_params_names(self) 
+   is_updated(self) 
+   required_parameters(self) 
+   reset(self) 
+   set_internal_parameter(self, key: str, value: InternalParameter) 
+   set_parameter(self, key: str, value: InternalParameter | SamplerParameter) 
+   set_sampler_parameter(self, value: SamplerParameter) 
+   update(self, params: ParamsMap) 
+}
+
+SourceGalaxySystematic  -->  NumberCountsSystematic 
+NumberCountsSystematic  -->  PTNonLinearBiasSystematic 
+SourceSystematic  -->  SourceGalaxySystematic 
+Updatable  -->  SourceSystematic 
+```
+
+:::{.callout-important}
+## Example
+Give a simple-to-understand and non-contentious example here, one that we can use throughout the discussion of the rest of this tutorial.
+:::
+
+::: {.callout-important}
+## Other things to write about in this section.
+
+* per-bin systematics
+* global systematics
+
+Recall we are considering modifying the design so that systematics are recognized as being per-bin or "global", which means specific to a particular survey, but not a particular bin, based on either state information in the systematic or perhaps based on the type of the systematic.
+:::
+
+A specific systematic may apply only to certain varieties of measurement, e.g. photometric redshifts an not spectroscopic redshifts.
+
+The class `SourceSystematic`[^1] is the base class for all source systematics.
+A systematic represents a source of uncertainty in some measurement associated with a source.
+One concrete example is `PhotoZShift`[^2], which encapsulate a shift in the center of redshift bins for measurements based on photometric measurement of the redshift.
+
+[^1]: `firecrown.likelihood.source.SourceSystematic` is the full name of this class.
+
+[^2]: There are actually two classes named `PhotoZShift`: one is `firecrown.likelihood.weak_lensing.PhotoZShift`; the other is `firecrown.likelihood.number_counts.PhotoZShift`.
+      They are both derived from the `firecrown.likelihood.source.SourceSystematic` base class.
+
+Derived from `SourceSystematic`, and defined in the same module, is the class `SourceGalaxySystematic`.
+This class includes the `apply` method which is used to apply the systematic to a source galaxy tracer argument.
+It also introduces a restriction that subclasses of `SourceGalaxySystematic` can only be applied to source galaxy tracers.[^other]
+This restriction will be enforced by the `mypy` type checker.
+This is done using the Python type systems support of *generics*.[^generics]
+The goal of this restriction is to avoid having systematics intended for one variety of observation (e.g. a weak lensing source) being applied to an inappropriate other variety of observation.
+
+[^generics]: You can read about generics in the [online Python documentation](https://docs.python.org/3/library/typing.html#generics).
+[^other]: We expect a future version of Firecrown to introduce non-galaxy based measurements (e.g. CMB), and thus non-galaxy based systematics.
+
+The final abstract parts of the class hierarchy are two subclasses of `SourceGalaxySystematic`: `WeakLensingSystematic` and `NumberCountsSystematic`.
+These classes are used to apply systematics to weak lensing and number counts predictions, respectively.
+The various concrete systematics classes (such as the two `PhotoZShift` classes noted above) directly inherit from one of these two classes.
+
+## The lifecycle of systematics objects
+
+Systematics objects follow a simple lifecycle:
+
+1. They are created (either directly, or more often through a factory).
+2. They are `update`d, so that their parameter take on the correct values for their next application.
+3. They are `apply`ed to a given tracer arguments object, creating a new tracer arguments object in the modified state.
+
+## Creating Systematics Objects
+
+### Direct Creation
+
+Systematics objects of all types can be created directly by using the constructor function that takes a single argument, the name of the tracer associated with the data that the systematic is applied to.
+This tracer name is used as a prefix for the parameters of the systematic.
+The systematic will have *attributes* with names corresponding to the parameter names *without* the tracer name prefix; initially, these attribute values will all be `None`.
+The systematic can be queried for the names of its parameters:
+
+```{python}
+import firecrown.likelihood.number_counts as nc
+systematic = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+print("The parameter names of this systematic are:")
+for name in systematic.get_params_names():
+    print(f"\t{name}")
+```
+
+We can also inspect the attributes of the systematic using built-in Python functions.
+Because all systematic classes also inherit from `Updatable`, they also have several additional attributes we can view:
+
+```{python}
+# Continuing from above...
+for name, value in vars(systematic).items():
+    print(f"\t{name}: {value}")
+```
+
+In this case, we see that all of the parameters of this systematic are *sampler parameters*.
+This means that when using them in a MCMC analysis, the MCMC framework will sample over them.
+
+```{python}
+# Continuing from above...
+for p in systematic._sampler_parameters:
+  print(f"\tname: {p.name}")
+```
+
+Before it can be `apply`ed, the systematic object needs to be updated using the `update` method, which takes a `ParamsMap` object that must provide values for all the parameters in that systematic.
+After having been updated, the systematic object will have its attribute values set to the supplied values.
+
+::: {.callout-important}
+## Why does a systematic have redundant data?
+
+It appears that this systematic has the names and values of each of its "parameters" two different ways:
+
+1. as an attribute of the object, and
+2. as a `SamplerParameter` object that has the same name and value as the related attribute.
+
+Can we remove the redundancy?
+:::
+
+Before it can be `apply`ed, the systematic object needs to be updated using the `update` method, which takes a `ParamsMap` object that must provide values for all the parameters in that systematic.
+After having been updated, the systematic object will have its attribute values set to the supplied valies.
+
+```{python}
+# Continuing from above...
+import firecrown.parameters as params
+systematic.update(params.ParamsMap({
+    "lens0_eta": 19.0,
+    "lens0_r_lim": 24.0,
+    "lens0_sig_c" :9.83,
+    "lens0_z_c": 0.39,
+    "lens0_z_m": 0.055,
+    }))
+for name, value in vars(systematic).items():
+  print(f"\t{name}: {value}")
+```
+It is also possible to query a newly-created systematic for the names and default values of its parameters:
+
+```{python}
+# Continuing from above...
+import firecrown.updatable as up
+# make a new systematic object (reusing the name from above)
+systematic = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+# get the default parameter values
+default_parameters = up.get_default_params_map(systematic)
+
+for name, value in default_parameters.items():
+  print(f"\t{name}: {value}")
+```
+
+We can use this `ParamsMap` to update the systematic:
+
+```{python}
+# Continuing from above...
+systematic.update(default_parameters)
+for name, value in vars(systematic).items():
+  print(f"\t{name}: {value}")
+```
+
+### Systematic Factories
+
+Systematics objects are usually created by *factories*, with each systematic class having an associated factory class.
+The purpose of having the factory is so that the creation of the systematics objects can be characterized in a uniform way, through a YAML document or a fragment of a YAML document.
+
+## Applying Systematics
+
+::: {.callout-important}
+## Provide an example of applying systematics here.
+
+This should continue the example from above, showing how systematics are applied to a prediction by the framework.
+:::
+
+## Writing a New Systematic
+
+::: {.callout-important}
+## Provide an example of writing a new systematic here.
+
+It would be reproduce, with a different name, an already-existing example that exercises all the features of the systematics framework.
+The example should show:
+
+1. How to define the systematic class, including documentation.
+2. How to define the factory class, including documentation.
+3. How to test the factory and the systematic.
+:::

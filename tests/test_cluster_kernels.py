@@ -89,10 +89,11 @@ def test_purity_distribution_uses_mean():
             0.9998227843987537,
             0.9998854531462606,
             0.9999279749997235,
-        ]
+        ],
+        dtype=np.float64,
     )
 
-    purity = pk.distribution(z, mass_proxy, mass_proxy_limits)
+    purity = pk.distribution(z, mass_proxy.astype(np.float64), mass_proxy_limits)
     assert isinstance(purity, np.ndarray)
     for ref, true in zip(purity, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
