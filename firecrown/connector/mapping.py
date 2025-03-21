@@ -10,6 +10,7 @@ import typing
 import warnings
 from abc import ABC
 from typing import Type, final
+from typing_extensions import assert_never
 
 import cosmosis.datablock
 import numpy as np
@@ -18,7 +19,12 @@ from pyccl import physical_constants as physics
 
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import CCLCalculatorArgs, PowerSpec, Background
+from firecrown.ccl_factory import (
+    CCLCalculatorArgs,
+    PowerSpec,
+    Background,
+    PoweSpecAmplitudeParameter,
+)
 
 
 def build_ccl_background_dict(
@@ -74,12 +80,14 @@ class Mapping(ABC):
         #    None, indicating that all neutrinos are massless
         self.m_nu: float | list[float] | None = None
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping."""
         warnings.warn(
-            "This method is implementation specific and should only be "
-            "implemented on the appropriated subclasses. This method"
-            "is going to be removed in the next major release.",
+            f"This method is implementation specific and should only be "
+            f"implemented on the appropriated subclasses. This method"
+            f"is going to be removed in the next major release. {amplitude}",
             category=DeprecationWarning,
         )
         return []
@@ -276,16 +284,25 @@ class MappingCLASS(Mapping):
 class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
         :return: a list of the cosmological parameter names
         """
+        match amplitude:
+            case PoweSpecAmplitudeParameter.AS:
+                amplitude_name = "A_s"
+            case PoweSpecAmplitudeParameter.SIGMA8:
+                amplitude_name = "sigma_8"
+            case _ as unreachable:
+                assert_never(unreachable)
         return [
             "h0",
             "omega_b",
             "omega_c",
-            "sigma_8",
+            amplitude_name,
             "n_s",
             "omega_k",
             "delta_neff",
@@ -451,12 +468,21 @@ class MappingCAMB(Mapping):
     the Fortran version of CAMB. The two are not interchangeable.
     """
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
         :return: a list of the cosmological parameter names
 
         """
+        match amplitude:
+            case PoweSpecAmplitudeParameter.AS:
+                amplitude_name = "As"
+            case PoweSpecAmplitudeParameter.SIGMA8:
+                amplitude_name = "sigma8"
+            case _ as unreachable:
+                assert_never(unreachable)
         return [
             "H0",
             "ombh2",
@@ -465,7 +491,7 @@ class MappingCAMB(Mapping):
             "nnu",
             "tau",
             "YHe",
-            "As",
+            amplitude_name,
             "ns",
             "w",
             "wa",
@@ -479,7 +505,6 @@ class MappingCAMB(Mapping):
         # possibility here.
 
         H0 = params_values["H0"]
-        As = params_values["As"]
         ns = params_values["ns"]
         ombh2 = params_values["ombh2"]
         omch2 = params_values["omch2"]
@@ -495,6 +520,16 @@ class MappingCAMB(Mapping):
         w = params_values.get("w", -1.0)
         wa = params_values.get("wa", 0.0)
 
+        if ("As" in params_values) == ("sigma8" in params_values):
+            raise ValueError("Exactly one of A_s and sigma8 must be supplied.")
+
+        if "As" in params_values:
+            As = params_values["As"]
+            sigma8 = None
+        else:
+            As = None
+            sigma8 = params_values["sigma8"]
+
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default
         # ones are used. Thus, for instance, here we do not know which type of
@@ -509,7 +544,7 @@ class MappingCAMB(Mapping):
             h=h0,
             n_s=ns,
             Omega_k=Omega_k0,
-            sigma8=None,
+            sigma8=sigma8,
             A_s=As,
             m_nu=m_nu,
             w0=w,

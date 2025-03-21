@@ -4,11 +4,9 @@ theory:
     extra_args:
       num_massive_neutrinos: 1
       halofit_version: mead
-  fcc_ccl:
-    external: !!python/name:firecrown.connector.cobaya.ccl.CCLConnector ''
-    input_style: CAMB
 likelihood:
   des_y1_3x2pt:
+    input_style: CAMB
     external: !!python/name:firecrown.connector.cobaya.likelihood.LikelihoodConnector ''
     firecrownIni: ${FIRECROWN_DIR}/examples/des_y1_3x2pt/factory.py
     derived_parameters: 
@@ -18,21 +16,23 @@ likelihood:
     - TwoPoint__NumberCountsScale_lens3
     - TwoPoint__NumberCountsScale_lens4
 params:
-  As:
+  sigma8:
     prior:
-      min: 5.0e-10
-      max: 8.0e-09
-    ref: 2.0e-09
-    proposal: 1.0e-10
-  ombh2: 0.022558514
+      min: 0.7
+      max: 1.2
+    ref: 0.801
+    proposal: 0.801
+  ombh2: 0.01860496
   omch2:
     prior:
       min: 0.05
       max: 0.2
-    ref: 0.118374058
+    ref: 0.120932240
     proposal: 0.01
+  omk: 0.0
+  TCMB: 2.7255
   H0: 68.2
-  tau: 0.0561
+  tau: 0.08
   mnu: 0.06
   nnu: 3.046
   ns: 0.971
@@ -143,25 +143,25 @@ params:
 
 #   - shear errors
   src0_mult_bias: 
-     ref: 0.0
+     ref: 0.001
      prior:
         dist: norm
         loc: 0.012
         scale: 0.023
   src1_mult_bias: 
-     ref: 0.0
+     ref: 0.001
      prior:
         dist: norm
         loc: 0.012
         scale: 0.023
   src2_mult_bias: 
-     ref: 0.0
+     ref: 0.001
      prior:
         dist: norm
         loc: 0.012
         scale: 0.023
   src3_mult_bias: 
-     ref: 0.0
+     ref: 0.001
      prior:
         dist: norm
         loc: 0.012

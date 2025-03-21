@@ -21,9 +21,19 @@ class NDimensionalBin(ABC):
     def mass_proxy_edges(self) -> tuple[float, float]:
         """Mass proxy bin edges."""
 
+    @property
+    @abstractmethod
+    def radius_edges(self) -> tuple[float, float]:
+        """Radius bin edges."""
+
+    @property
+    @abstractmethod
+    def radius_center(self) -> float:
+        """Radius bin edges."""
+
     def __str__(self) -> str:
         """Returns a string representation of the bin edges."""
-        return f"[{self.z_edges}, {self.mass_proxy_edges}]\n"
+        return f"[{self.z_edges}, {self.mass_proxy_edges}, {self.radius_edges}]\n"
 
 
 class SaccBin(NDimensionalBin):
@@ -43,11 +53,27 @@ class SaccBin(NDimensionalBin):
 
     @property
     def mass_proxy_edges(self) -> tuple[float, float]:
-        """Redshift bin edges."""
+        """Mass proxy bin edges."""
         mass_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_richness"]
         if len(mass_bin) != 1:
             raise ValueError("SaccBin must have exactly one richness bin")
         return mass_bin[0].lower, mass_bin[0].upper
+
+    @property
+    def radius_edges(self) -> tuple[float, float]:
+        """Radius bin edges."""
+        radius_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_radius"]
+        if len(radius_bin) != 1:
+            raise ValueError("SaccBin must have exactly one radius bin")
+        return radius_bin[0].lower, radius_bin[0].upper
+
+    @property
+    def radius_center(self) -> float:
+        """Radius bin center."""
+        radius_bin = [x for x in self.coordinate_bins if x.tracer_type == "bin_radius"]
+        if len(radius_bin) != 1:
+            raise ValueError("SaccBin must have exactly one radius bin")
+        return radius_bin[0].center
 
     def __eq__(self, other: object) -> bool:
         """Two bins are equal if they have the same lower/upper bound."""
@@ -88,7 +114,7 @@ class TupleBin(NDimensionalBin):
 
     @property
     def mass_proxy_edges(self) -> tuple[float, float]:
-        """Redshift bin edges."""
+        """Mass proxy bin edges."""
         mass_bin = self.coordinate_bins[0]
         return mass_bin[0], mass_bin[1]
 
@@ -97,6 +123,18 @@ class TupleBin(NDimensionalBin):
         """Redshift bin edges."""
         z_bin = self.coordinate_bins[1]
         return z_bin[0], z_bin[1]
+
+    @property
+    def radius_edges(self) -> tuple[float, float]:
+        """Radius bin edges."""
+        radius_bin = self.coordinate_bins[2]
+        return radius_bin[0], radius_bin[1]
+
+    @property
+    def radius_center(self) -> float:
+        """Radius bin center."""
+        radius_bin = self.coordinate_bins[2]
+        return radius_bin[2]
 
     def __eq__(self, other: object) -> bool:
         """Two bins are equal if they have the same lower/upper bound."""
