@@ -24,7 +24,6 @@ model-set:
         - NcHIReionCamb:
             prec: 1.0e-9
             z-re: 11.548267396547631
-        CCL-comp: false
         massnu-length: 1
         H0: 68.2
         Omegac: 0.26
