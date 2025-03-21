@@ -339,7 +339,6 @@ def create_params_map(
     """
     params_map = ParamsMap()
     for model_ns in model_list:
-        print(f"Model: {model_ns}")
         mid = mset.get_id_by_ns(model_ns)
         if mid < 0:
             raise RuntimeError(f"Model name {model_ns} was not found in the model set.")
