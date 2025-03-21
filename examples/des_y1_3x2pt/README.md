@@ -47,6 +47,39 @@ To run the CosmoSIS pipeline, use the following command:
 cosmosis cosmosis/factory.ini
 ```
 
+Here’s the improved version of your text with better clarity and conciseness:  
+
+---
+
+## Running NumCosmo  
+
+Each likelihood factory has a corresponding **NumCosmo** pipeline configuration file:  
+
+- `numcosmo/factory.yaml`: Standard DES Y1 3x2pt analysis.  
+- `numcosmo/factory_PT.yaml`: Analysis with perturbation theory.  
+- `numcosmo/pure_ccl.yaml`: Analysis in **pure CCL** mode.  
+- `numcosmo/mu_sigma.yaml`: Analysis in **mu_sigma_isitgr** mode.  
+
+### Example Command  
+
+Run the NumCosmo pipeline from the `numcosmo` directory with:  
+
+```bash
+numcosmo run test factory.yaml
+```  
+
+This runs the pipeline using `factory.yaml` and computes a single-point likelihood
+estimate.  
+
+To compute the best-fit point, use:  
+
+```bash
+numcosmo run fit pure_ccl.yaml -p
+```  
+
+This runs the pipeline with `pure_ccl.yaml`, computing the best-fit point of the
+likelihood. Results are saved in `pure_ccl.product.yaml`.
+
 ## Running Cobaya
 
 For Cobaya, the pipeline configuration files are:

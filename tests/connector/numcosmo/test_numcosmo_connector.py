@@ -266,10 +266,6 @@ def test_empty_gauss_cov_data():
 
 def test_default_factory_const_gauss():
     """Test the NumCosmo connector."""
-    map_cosmo = MappingNumCosmo(
-        dist=Nc.Distance.new(6.0),
-        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
-    )
     build_parameters = NamedParameters(
         {"likelihood_config": "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"}
     )
@@ -282,7 +278,7 @@ def test_default_factory_const_gauss():
         likelihood,
         [model_name],
         tools,
-        map_cosmo,
+        None,
         likelihood_source,
         build_parameters,
     )
@@ -292,10 +288,6 @@ def test_default_factory_const_gauss():
 
 def test_default_factory_plain():
     """Test the NumCosmo connector."""
-    map_cosmo = MappingNumCosmo(
-        dist=Nc.Distance.new(6.0),
-        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
-    )
     build_parameters = NamedParameters(
         {"likelihood_config": "examples/des_y1_3x2pt/pure_ccl_experiment.yaml"}
     )
@@ -308,7 +300,7 @@ def test_default_factory_plain():
         likelihood,
         [model_name],
         tools,
-        map_cosmo,
+        None,
         likelihood_source,
         build_parameters,
     )
@@ -324,21 +316,8 @@ def run_likelihood(model_name, data):
         model_name,
         f"Test model {model_name}",
     )
-    mapping_dict = [
-        "h",
-        "m_nu",
-        "n_s",
-        "Neff",
-        "Omega_b",
-        "Omega_c",
-        "Omega_k",
-        "sigma8",
-        "T_CMB",
-        "w0",
-        "wa",
-    ]
     for param, value in default_parameters.items():
-        if param not in mapping_dict:
+        if isinstance(value, float):
             model_builder.add_sparam(
                 param,
                 param,
@@ -347,6 +326,19 @@ def run_likelihood(model_name, data):
                 1.0e-2,
                 0.0,
                 value,
+                Ncm.ParamType.FIXED,
+            )
+        else:
+            assert isinstance(value, list)
+            assert len(value) <= 1
+            model_builder.add_sparam(
+                param,
+                param,
+                -1.0e10,
+                1.0e10,
+                1.0e-2,
+                0.0,
+                value[0] if len(value) == 1 else 0.0,
                 Ncm.ParamType.FIXED,
             )
 

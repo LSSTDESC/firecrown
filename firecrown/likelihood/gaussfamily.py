@@ -15,7 +15,6 @@ import scipy.linalg
 
 import sacc
 
-
 from firecrown.parameters import ParamsMap
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.modeling_tools import ModelingTools

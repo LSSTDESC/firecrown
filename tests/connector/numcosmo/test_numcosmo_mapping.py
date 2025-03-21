@@ -15,6 +15,7 @@ from firecrown.connector.numcosmo.numcosmo import (
     MappingNumCosmo,
     NumCosmoFactory,
     helpers,
+    create_params_map,
 )
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 
@@ -37,7 +38,7 @@ def fixture_map_cosmo_spec_nl(numcosmo_cosmo) -> MappingNumCosmo:
     )
 
 
-def test_numcosmo_mapping_create_params_map_non_existing_model(
+def test_create_params_map_non_existing_model(
     map_cosmo_dist: MappingNumCosmo,
 ):
     """Test the NumCosmo mapping connector create_params_map
@@ -52,7 +53,7 @@ def test_numcosmo_mapping_create_params_map_non_existing_model(
         RuntimeError,
         match="Model name non_existing_model was not found in the model set.",
     ):
-        map_cosmo_dist.create_params_map(["non_existing_model"], mset)
+        create_params_map(["non_existing_model"], mset, map_cosmo_dist.mapping)
 
 
 def test_numcosmo_mapping_create_params_map_absent_model(
@@ -70,7 +71,7 @@ def test_numcosmo_mapping_create_params_map_absent_model(
         RuntimeError,
         match="Model name MyModel was not found in the model set.",
     ):
-        map_cosmo_dist.create_params_map(["MyModel"], mset)
+        create_params_map(["MyModel"], mset, map_cosmo_dist.mapping)
 
 
 def test_numcosmo_mapping_create_params_map_two_models_sharing_parameters(
@@ -155,7 +156,7 @@ NcmModelBuilder:
         RuntimeError,
         match="The following keys .* appear in more than one model used by the module",
     ):
-        map_cosmo_dist.create_params_map(["MyModel1", "MyModel2"], mset)
+        create_params_map(["MyModel1", "MyModel2"], mset, map_cosmo_dist.mapping)
 
 
 def test_numcosmo_mapping_unsupported(map_cosmo_dist: MappingNumCosmo):

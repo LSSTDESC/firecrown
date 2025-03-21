@@ -6,7 +6,6 @@ import pytest
 import numpy as np
 from cobaya.model import get_model, Model
 from cobaya.log import LoggedError
-from firecrown.connector.cobaya.ccl import CCLConnector
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.likelihood.gaussian import ConstGaussian
@@ -16,24 +15,37 @@ import firecrown.ccl_factory as ccl_factory
 
 
 def test_cobaya_ccl_initialize():
-    ccl_connector = CCLConnector(info={"input_style": "CAMB"})
+    ccl_connector = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+        }
+    )
 
-    assert isinstance(ccl_connector, CCLConnector)
+    assert isinstance(ccl_connector, LikelihoodConnector)
     assert ccl_connector.input_style == "CAMB"
 
 
 def test_cobaya_ccl_initialize_with_params():
-    ccl_connector = CCLConnector(info={"input_style": "CAMB"})
+    ccl_connector = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+        }
+    )
 
     ccl_connector.initialize_with_params()
 
-    assert isinstance(ccl_connector, CCLConnector)
+    assert isinstance(ccl_connector, LikelihoodConnector)
     assert ccl_connector.input_style == "CAMB"
 
 
 def test_cobaya_likelihood_initialize():
     lk_connector = LikelihoodConnector(
-        info={"firecrownIni": "tests/likelihood/lkdir/lkscript.py"}
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+        }
     )
 
     assert isinstance(lk_connector, LikelihoodConnector)
@@ -42,7 +54,10 @@ def test_cobaya_likelihood_initialize():
 
 def test_cobaya_likelihood_initialize_with_params():
     lk_connector = LikelihoodConnector(
-        info={"firecrownIni": "tests/likelihood/lkdir/lkscript.py"}
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+        }
     )
 
     lk_connector.initialize_with_params()
@@ -68,47 +83,6 @@ def fixture_fiducial_params():
     return fiducial_params
 
 
-def test_cobaya_ccl_model(fiducial_params):
-    # Fiducial parameters for CAMB
-    info_fiducial = {
-        "params": fiducial_params,
-        "likelihood": {
-            "test_lk": {
-                "external": lambda _self=None: 0.0,
-                "requires": {"pyccl_args": None, "pyccl_params": None},
-            }
-        },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
-    }
-
-    model_fiducial = get_model(info_fiducial)
-    assert isinstance(model_fiducial, Model)
-    model_fiducial.logposterior({})
-
-    cosmo_args = model_fiducial.provider.get_pyccl_args()
-    cosmo_params = model_fiducial.provider.get_pyccl_params()
-    assert isinstance(cosmo_args, dict)
-
-    h = fiducial_params["H0"] / 100.0
-    assert cosmo_params["h"] * 100.0 == pytest.approx(fiducial_params["H0"], rel=1.0e-5)
-    assert cosmo_params["Omega_c"] == pytest.approx(
-        fiducial_params["omch2"] / h**2, rel=1.0e-5
-    )
-    assert cosmo_params["Omega_b"] == pytest.approx(
-        fiducial_params["ombh2"] / h**2, rel=1.0e-5
-    )
-    assert cosmo_params["Omega_k"] == pytest.approx(0.0, rel=1.0e-5)
-    assert cosmo_params["A_s"] == pytest.approx(fiducial_params["As"], rel=1.0e-5)
-    assert cosmo_params["n_s"] == pytest.approx(fiducial_params["ns"], rel=1.0e-5)
-    # The following test fails because of we are using the default
-    # neutrino hierarchy, which is normal, while CAMB depends on the
-    # parameter which we do not have access to.
-    # assert cosmo["m_nu"] == pytest.approx(0.06, rel=1.0e-5)
-
-
 def test_cobaya_ccl_likelihood(fiducial_params):
     info_fiducial = {
         "params": fiducial_params,
@@ -116,12 +90,10 @@ def test_cobaya_ccl_likelihood(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+                "input_style": "CAMB",
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     model_fiducial = get_model(info_fiducial)
@@ -136,12 +108,10 @@ def test_parameterized_likelihood_missing(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "input_style": "CAMB",
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     with pytest.raises(KeyError):
@@ -155,13 +125,11 @@ def test_parameterized_likelihood_wrong_type(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "input_style": "CAMB",
                 "build_parameters": 1.0,
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     with pytest.raises(
@@ -177,13 +145,11 @@ def test_parameterized_likelihood_dict(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "input_style": "CAMB",
                 "build_parameters": {"sacc_filename": "this_sacc_does_not_exist.fits"},
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     model_fiducial = get_model(info_fiducial)
@@ -198,15 +164,13 @@ def test_parameterized_likelihood_namedparameters(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_needing_param.py",
+                "input_style": "CAMB",
                 "build_parameters": NamedParameters(
                     {"sacc_filename": "this_sacc_does_not_exist.fits"}
                 ),
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     model_fiducial = get_model(info_fiducial)
@@ -221,13 +185,11 @@ def test_sampler_parameter_likelihood_missing(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_sampler_parameter.py",
+                "input_style": "CAMB",
                 "build_parameters": NamedParameters({"parameter_prefix": "my_prefix"}),
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     with pytest.raises(LoggedError, match="my_prefix_sampler_param0"):
@@ -242,13 +204,11 @@ def test_sampler_parameter_likelihood(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_sampler_parameter.py",
+                "input_style": "CAMB",
                 "build_parameters": NamedParameters({"parameter_prefix": "my_prefix"}),
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     model_fiducial = get_model(info_fiducial)
@@ -264,13 +224,11 @@ def test_derived_parameter_likelihood(fiducial_params):
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": "tests/likelihood/lkdir/lk_derived_parameter.py",
+                "input_style": "CAMB",
                 "derived_parameters": ["derived_section__derived_param0"],
             }
         },
-        "theory": {
-            "camb": {"extra_args": {"num_massive_neutrinos": 1}},
-            "fcc_ccl": {"external": CCLConnector, "input_style": "CAMB"},
-        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
     }
 
     model_fiducial = get_model(info_fiducial)
@@ -323,6 +281,7 @@ def test_default_factory():
             "lk_connector": {
                 "external": LikelihoodConnector,
                 "firecrownIni": default_factory,
+                "input_style": "CAMB",
                 "build_parameters": {"likelihood_config": likelihood_config},
             },
         },
@@ -356,11 +315,15 @@ def test_likelihood_connector_from_module():
     mod.factory = _factory_as  # type: ignore
     sys.modules[name] = mod
 
-    lk_connector = LikelihoodConnector(info={"firecrownIni": factory_full})
+    lk_connector = LikelihoodConnector(
+        info={"firecrownIni": factory_full, "input_style": "CAMB"}
+    )
     assert isinstance(lk_connector, LikelihoodConnector)
     assert "sigma8" not in lk_connector.get_requirements()
 
     mod.factory = _factory_sigma8  # type: ignore
-    lk_connector = LikelihoodConnector(info={"firecrownIni": factory_full})
+    lk_connector = LikelihoodConnector(
+        info={"firecrownIni": factory_full, "input_style": "CAMB"}
+    )
     assert isinstance(lk_connector, LikelihoodConnector)
     assert "sigma8" in lk_connector.get_requirements()
