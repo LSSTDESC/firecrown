@@ -411,6 +411,8 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
                 tracer_name="intrinsic_alignment_hm",
                 halo_profile=halo_profile,
             )
+            # TODO: redesign this so that we are not adding a new
+            # attribute to a pyccl class.
             halo_profile.ia_a_2h = (
                 tracer_args.ia_a_2h
             )  # Attach the 2-halo amplitude here.

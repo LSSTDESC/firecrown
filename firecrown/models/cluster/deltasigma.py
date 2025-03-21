@@ -64,8 +64,9 @@ class ClusterDeltaSigma(ClusterAbundance):
             )
             for log_m, redshift in zip(log_mass, z):
                 a = 1.0 / (1.0 + redshift)
-                # pylint: disable=protected-access
-                conc_val = conc._concentration(self._cosmo, 10**log_m, a)
+                # mypy complains about the following line even though the type in question
+                # does have a method named _concentration.
+                conc_val = conc._concentration(self._cosmo, 10**log_m, a)  # type: ignore
                 moo.set_concentration(conc_val)
                 moo.set_mass(10**log_m)
                 val = moo.eval_excess_surface_density(radius_center, redshift)

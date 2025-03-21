@@ -95,20 +95,26 @@ def at_least_one_tracer_has_hm(
         IA_bias_exponent = (
             1  # IA bias if not both tracers are HM (doing GI correlation).
         )
+        # mypy complains about the following line even though
+        # the HMCalculator type does have a mass_def attribute.
         other_profile = pyccl.halos.HaloProfileNFW(
-            mass_def=hm_calculator.mass_def,
+            mass_def=hm_calculator.mass_def,  # type: ignore
             concentration=cM_relation,
             truncated=True,
             fourier_analytic=True,
         )
         other_profile.ia_a_2h = -1.0  # used in GI contribution, which is negative.
         if not tracer0.has_hm:
-            profile0 = other_profile
-            profile1 = tracer1.halo_profile
+            assert tracer1.halo_profile is not None
+            profile0: pyccl.halos.HaloProfile = other_profile
+            profile1: pyccl.halos.HaloProfile = tracer1.halo_profile
         else:
+            assert tracer0.halo_profile is not None
             profile0 = tracer0.halo_profile
             profile1 = other_profile
     else:
+        assert tracer0.halo_profile is not None
+        assert tracer1.halo_profile is not None
         profile0 = tracer0.halo_profile
         profile1 = tracer1.halo_profile
     # Ensure that profile0 and profile1 are not None.
@@ -127,6 +133,12 @@ def at_least_one_tracer_has_hm(
     C1rhocrit = (
         5e-14 * pyccl.physical_constants.RHO_CRITICAL
     )  # standard IA normalisation
+    # These assertions are required because the pyccl profiles do not have ia_a_2h.
+    # That is something added locally.
+    assert hasattr(profile0, "ia_a_2h")
+    assert hasattr(profile1, "ia_a_2h")
+    assert hasattr(ccl_cosmo, "growth_factor")
+    assert hasattr(ccl_cosmo, "nonlin_matter_power")
     pk_2h = pyccl.Pk2D.from_function(
         pkfunc=lambda k, a: profile0.ia_a_2h
         * profile1.ia_a_2h
