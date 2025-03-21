@@ -310,9 +310,9 @@ class NamedParameters:
                 basic_dict[key] = value
             elif isinstance(value, np.ndarray):
                 if value.dtype == np.int64:
-                    basic_dict[key] = value.tolist()
+                    basic_dict[key] = value.ravel().tolist()
                 elif value.dtype == np.float64:
-                    basic_dict[key] = value.tolist()
+                    basic_dict[key] = value.ravel().tolist()
                 else:
                     raise ValueError(f"Invalid type for sequence value: {value}")
             else:

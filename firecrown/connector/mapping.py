@@ -10,6 +10,7 @@ import typing
 import warnings
 from abc import ABC
 from typing import Type, final
+from typing_extensions import assert_never
 
 import cosmosis.datablock
 import numpy as np
@@ -18,7 +19,12 @@ from pyccl import physical_constants as physics
 
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import CCLCalculatorArgs, PowerSpec, Background
+from firecrown.ccl_factory import (
+    CCLCalculatorArgs,
+    PowerSpec,
+    Background,
+    PoweSpecAmplitudeParameter,
+)
 
 
 def build_ccl_background_dict(
@@ -54,7 +60,6 @@ class Mapping(ABC):
     # pylint: disable-msg=too-many-instance-attributes
     Omega_c = TypeFloat(minvalue=0.0, maxvalue=1.0)
     Omega_b = TypeFloat(minvalue=0.0, maxvalue=1.0)
-    Omega_g = TypeFloat(allow_none=True)
     h = TypeFloat(minvalue=0.3, maxvalue=1.2)
     A_s = TypeFloat(allow_none=True)
     sigma8 = TypeFloat(allow_none=True)
@@ -62,21 +67,27 @@ class Mapping(ABC):
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
     # m_nu = TypeFloat(minvalue=0.0)
-    m_nu_type = TypeString()
+    m_nu_type = TypeString()  # "inverted", "normal" or "list"
     w0 = TypeFloat()
     wa = TypeFloat()
     T_CMB = TypeFloat()
 
     def __init__(self) -> None:
         """Initialize the Mapping object."""
+        # We can have:
+        #    a single neutrino mass (must be non-negative)
+        #    a list of 3 neutrino masses (all must be non-negative)
+        #    None, indicating that all neutrinos are massless
         self.m_nu: float | list[float] | None = None
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping."""
         warnings.warn(
-            "This method is implementation specific and should only be "
-            "implemented on the appropriated subclasses. This method"
-            "is going to be removed in the next major release.",
+            f"This method is implementation specific and should only be "
+            f"implemented on the appropriated subclasses. This method"
+            f"is going to be removed in the next major release. {amplitude}",
             category=DeprecationWarning,
         )
         return []
@@ -134,7 +145,7 @@ class Mapping(ABC):
         n_s: float,
         Omega_k: float,
         Neff: float,
-        m_nu: float | list[float],
+        m_nu: float | list[float] | None,
         w0: float,
         wa: float,
         T_CMB: float,
@@ -152,7 +163,7 @@ class Mapping(ABC):
         :param n_s: scalar spectral index of primordial power spectrum
         :param Omega_k: curvature of the universe
         :param Neff: effective number of relativistic neutrino species
-        :param m_nu: effective mass of neutrinos
+        :param m_nu: effective mass of neutrinos; None for massless neutrinos
         :param w0: constant of the CPL parameterization of the dark energy
             equation of state
         :param wa: linear coefficient of the CPL parameterization of the
@@ -177,7 +188,6 @@ class Mapping(ABC):
 
         self.n_s = n_s
         self.Omega_k = Omega_k
-        self.Omega_g = None
         self.Neff = Neff
         self.m_nu = m_nu
         self.w0 = w0
@@ -248,10 +258,9 @@ class Mapping(ABC):
             cosmo_dict["A_s"] = self.A_s
         if self.sigma8 is not None:
             cosmo_dict["sigma8"] = self.sigma8
-        # Currently we do not support Omega_g
-        # if self.Omega_g is not None:
-        #    cosmo_dict["Omega_g"] = self.Omega_g
-        if self.m_nu is not None:
+        if self.m_nu is None:
+            cosmo_dict["m_nu"] = 0.0
+        else:
             cosmo_dict["m_nu"] = self.m_nu
 
         return cosmo_dict
@@ -275,16 +284,25 @@ class MappingCLASS(Mapping):
 class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
         :return: a list of the cosmological parameter names
         """
+        match amplitude:
+            case PoweSpecAmplitudeParameter.AS:
+                amplitude_name = "A_s"
+            case PoweSpecAmplitudeParameter.SIGMA8:
+                amplitude_name = "sigma_8"
+            case _ as unreachable:
+                assert_never(unreachable)
         return [
             "h0",
             "omega_b",
             "omega_c",
-            "sigma_8",
+            amplitude_name,
             "n_s",
             "omega_k",
             "delta_neff",
@@ -301,7 +319,7 @@ class MappingCosmoSIS(Mapping):
         :param k_h: the array of wavenumber/h to be transformeed
         :return: the transformed array
         """
-        return k_h * self.h
+        return np.array(k_h * self.h, dtype=np.float64)
 
     def transform_p_k_h3_to_p_k(
         self, p_k_h3: npt.NDArray[np.float64]
@@ -311,7 +329,7 @@ class MappingCosmoSIS(Mapping):
         :param p_k_h3: the array of :math:`p_k h^3` to be transformed
         :return: the transformed array
         """
-        return p_k_h3 / (self.h**3)
+        return np.array(p_k_h3 / (self.h**3), dtype=np.float64)
 
     def transform_h_to_h_over_h0(
         self, h: npt.NDArray[np.float64]
@@ -329,8 +347,8 @@ class MappingCosmoSIS(Mapping):
 
         :param cosmosis_params: the cosmological parameters read from CosmoSIS
         """
-        # TODO: Verify that CosmoSIS/CAMB does not use Omega_g
         # TODO: Verify that CosmoSIS/CAMB uses delta_neff, not N_eff
+        # Both delta_neff and n_eff appear in CosmoSIS and the CSL
 
         h = cosmosis_params.get_float("h0")
         Omega_b = cosmosis_params.get_float("omega_b")
@@ -450,12 +468,21 @@ class MappingCAMB(Mapping):
     the Fortran version of CAMB. The two are not interchangeable.
     """
 
-    def get_params_names(self) -> list[str]:
+    def get_params_names(
+        self, amplitude: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.AS
+    ) -> list[str]:
         """Return the names of the expected cosmological parameters for this mapping.
 
         :return: a list of the cosmological parameter names
 
         """
+        match amplitude:
+            case PoweSpecAmplitudeParameter.AS:
+                amplitude_name = "As"
+            case PoweSpecAmplitudeParameter.SIGMA8:
+                amplitude_name = "sigma8"
+            case _ as unreachable:
+                assert_never(unreachable)
         return [
             "H0",
             "ombh2",
@@ -464,7 +491,7 @@ class MappingCAMB(Mapping):
             "nnu",
             "tau",
             "YHe",
-            "As",
+            amplitude_name,
             "ns",
             "w",
             "wa",
@@ -478,7 +505,6 @@ class MappingCAMB(Mapping):
         # possibility here.
 
         H0 = params_values["H0"]
-        As = params_values["As"]
         ns = params_values["ns"]
         ombh2 = params_values["ombh2"]
         omch2 = params_values["omch2"]
@@ -494,6 +520,16 @@ class MappingCAMB(Mapping):
         w = params_values.get("w", -1.0)
         wa = params_values.get("wa", 0.0)
 
+        if ("As" in params_values) == ("sigma8" in params_values):
+            raise ValueError("Exactly one of A_s and sigma8 must be supplied.")
+
+        if "As" in params_values:
+            As = params_values["As"]
+            sigma8 = None
+        else:
+            As = None
+            sigma8 = params_values["sigma8"]
+
         # Here we have the following problem, some parameters used by CAMB
         # are implicit, i.e., since they are not explicitly set the default
         # ones are used. Thus, for instance, here we do not know which type of
@@ -508,7 +544,7 @@ class MappingCAMB(Mapping):
             h=h0,
             n_s=ns,
             Omega_k=Omega_k0,
-            sigma8=None,
+            sigma8=sigma8,
             A_s=As,
             m_nu=m_nu,
             w0=w,

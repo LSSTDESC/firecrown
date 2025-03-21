@@ -4,14 +4,15 @@ project:
     - index.qmd
     - about.qmd
     - intro_article.qmd
-    - development_example.qmd
     - theoretical_predictions_tutorial.qmd
     - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
     - inferred_zdist_serialization.qmd
     - two_point_generators.qmd
     - two_point_factories.qmd
-
+    - systematics.qmd
+execute:
+  freeze: auto  # re-render only when source changes
 website:
   title: "Firecrown Tutorial Documents"
   favicon: green-backed-firecrown.jpg
@@ -26,8 +27,6 @@ website:
           contents:
             - href: intro_article.qmd
               text: "Introduction"
-            - href: development_example.qmd
-              text: "Development Example"
         - section: "Tutorials"
           contents:
             - href: inferred_zdist.qmd
@@ -59,7 +58,7 @@ format:
 
 reference-location: margin
 citation-location: margin
-subtitle: "version 1.8.0.a0"
+subtitle: "version 1.9.0a0"
 authors:
   - Marc Paterno
   - Sandro Vitenti

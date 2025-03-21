@@ -170,7 +170,7 @@ def test_measurement_is_compatible():
 
 
 def test_extract_all_tracers_types_cells(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -186,7 +186,7 @@ def test_extract_all_tracers_types_cells(
 
 
 def test_extract_all_tracers_types_cwindows(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -219,7 +219,7 @@ def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict,
 
 
 def test_extract_all_tracers_types_reals_inverted(
-    sacc_galaxy_xis_inverted: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_xis_inverted: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_xis_inverted
 
@@ -238,7 +238,7 @@ def test_extract_all_tracers_types_reals_inverted(
 
 
 def test_extract_all_tracers_types_cells_include_maybe(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -248,7 +248,7 @@ def test_extract_all_tracers_types_cells_include_maybe(
 
 
 def test_extract_all_tracers_types_cwindows_include_maybe(
-    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
@@ -258,7 +258,7 @@ def test_extract_all_tracers_types_cwindows_include_maybe(
 
 
 def test_extract_all_tracers_types_xi_thetas_include_maybe(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -469,7 +469,7 @@ def test_check_two_point_consistence_real_harmonic(two_point_cell: TwoPointReal)
 
 
 def test_check_two_point_consistence_harmonic_mixing_cov(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -488,7 +488,7 @@ def test_check_two_point_consistence_harmonic_mixing_cov(
 
 
 def test_check_two_point_consistence_real_mixing_cov(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -506,7 +506,7 @@ def test_check_two_point_consistence_real_mixing_cov(
 
 
 def test_check_two_point_consistence_harmonic_non_unique_indices(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -524,7 +524,7 @@ def test_check_two_point_consistence_harmonic_non_unique_indices(
 
 
 def test_check_two_point_consistence_real_non_unique_indices(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
@@ -541,7 +541,7 @@ def test_check_two_point_consistence_real_non_unique_indices(
 
 
 def test_check_two_point_consistence_harmonic_indices_overlap(
-    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
@@ -559,7 +559,7 @@ def test_check_two_point_consistence_harmonic_indices_overlap(
 
 
 def test_check_two_point_consistence_real_indices_overlap(
-    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 

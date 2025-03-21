@@ -20,18 +20,19 @@ jobs:
     strategy:
       matrix:
         os: ["ubuntu", "macos"]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
-      - name: Setup miniforge
-        uses: conda-incubator/setup-miniconda@v2
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v3
         with:
+          mamba-version: "*"
+          miniforge-version: latest
           auto-update-conda: true
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
-          miniforge-variant: Mambaforge
           show-channel-urls: true
-          use-mamba: true
+          conda-remove-defaults: true
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -93,11 +94,12 @@ jobs:
         shell: bash -l {0}
         run: |
           pylint firecrown
+          pylint pylint_plugins
           pylint --rcfile tests/pylintrc  tests
-          pylint --rcfile firecrown/models/pylintrc firecrown/models
+          pylint --rcfile examples/pylintrc  examples
       - name: Running unit tests
         shell: bash -l {0}
-        run: python -m pytest -vv --runslow --cov firecrown --cov-report xml
+        run: python -m pytest -vv --runslow --cov firecrown --cov-report xml --cov-branch
       - name: Running integration tests
         shell: bash -l {0}
         run: python -m pytest -vv -s --integration tests/integration 

@@ -55,7 +55,7 @@ class Purity:
         a_rc = 2.2183
         b_rc = -0.6592
         ln_rc = a_rc + b_rc * (1.0 + z)
-        return ln_rc
+        return ln_rc.astype(np.float64)
 
     def _nc(self, z: npt.NDArray[np.float64]) -> npt.NDArray[np.float64]:
         b_nc = np.log(10) * 0.3527

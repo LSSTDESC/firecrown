@@ -22,17 +22,25 @@ else
   exit 1
 fi
 
-if pylint --rcfile firecrown/models/pylintrc firecrown/models; then
-  echo "pylint ok for firecrown.models"
+if pylint pylint_plugins; then
+  echo "pylint ok for pylint_plugins"
 else
-  echo "pylint failed for firecrown.models"
+  echo "pylint failed for pylint_plugins"
   exit 1
 fi
+
 
 if pylint --rcfile tests/pylintrc tests; then
   echo "pylint ok for tests"
 else
   echo "pylint failed for tests"
+  exit 1
+fi
+
+if pylint --rcfile examples/pylintrc examples; then
+  echo "pylint ok for examples"
+else
+  echo "pylint failed for examples"
   exit 1
 fi
 
