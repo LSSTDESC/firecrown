@@ -312,50 +312,51 @@ class MappingNumCosmo(GObject.Object):
         p_k = mapping.redshift_to_scale_factor_p_k(p_k)
         return {"a": scale, "k": k, "delta_matter:delta_matter": p_k}
 
-    def create_params_map(self, model_list: list[str], mset: Ncm.MSet) -> ParamsMap:
-        """Create a ParamsMap from a NumCosmo MSet.
 
-        All the models named in model_list must be in the model set `mset`, or a
-        RuntimeError will be raised.
-
-        :param model_list: list of model names
-        :param mset: the NumCosmo MSet object from which to get the parameters
-        :return: a ParamsMap containing the parameters of the models in model_list
-        """
-        params_map = ParamsMap()
-        for model_ns in model_list:
-            mid = mset.get_id_by_ns(model_ns)
-            if mid < 0:
-                raise RuntimeError(
-                    f"Model name {model_ns} was not found in the model set."
-                )
-            model = mset.peek(mid)
-            # Since we have already verified that the model name exists in the
-            # model set, if the model is not found we have encountered an
-            # unrecoverable error.
-            assert model is not None
-
-            param_names = model.param_names()
-            model_dict = {
-                param: model.param_get_by_name(param) for param in param_names
-            }
-            params_map = self._update_params_map(model_list, params_map, model_dict)
-
-        params_map = self._update_params_map(
-            model_list, params_map, self.mapping.asdict()
+def _update_params_map(model_list, params_map, model_dict):
+    """Update a ParamsMap with the parameters of a model."""
+    shared_keys = set(model_dict).intersection(params_map)
+    if len(shared_keys) > 0:
+        raise RuntimeError(
+            f"The following keys `{shared_keys}` appear in more than one model "
+            f"used by the module {model_list} or cosmological parameters."
         )
+    params_map = ParamsMap({**params_map, **model_dict})
+    return params_map
 
-        return params_map
 
-    def _update_params_map(self, model_list, params_map, model_dict):
-        shared_keys = set(model_dict).intersection(params_map)
-        if len(shared_keys) > 0:
-            raise RuntimeError(
-                f"The following keys `{shared_keys}` appear in more than one model "
-                f"used by the module {model_list} or cosmological parameters."
-            )
-        params_map = ParamsMap({**params_map, **model_dict})
-        return params_map
+def create_params_map(
+    model_list: list[str], mset: Ncm.MSet, mapping: Mapping | None
+) -> ParamsMap:
+    """Create a ParamsMap from a NumCosmo MSet.
+
+    All the models named in model_list must be in the model set `mset`, or a
+    RuntimeError will be raised.
+
+    :param model_list: list of model names
+    :param mset: the NumCosmo MSet object from which to get the parameters
+    :return: a ParamsMap containing the parameters of the models in model_list
+    """
+    params_map = ParamsMap()
+    for model_ns in model_list:
+        print(f"Model: {model_ns}")
+        mid = mset.get_id_by_ns(model_ns)
+        if mid < 0:
+            raise RuntimeError(f"Model name {model_ns} was not found in the model set.")
+        model = mset.peek(mid)
+        # Since we have already verified that the model name exists in the
+        # model set, if the model is not found we have encountered an
+        # unrecoverable error.
+        assert model is not None
+
+        param_names = model.param_names()
+        model_dict = {param: model.param_get_by_name(param) for param in param_names}
+        params_map = _update_params_map(model_list, params_map, model_dict)
+
+    if mapping is not None:
+        params_map = _update_params_map(model_list, params_map, mapping.asdict())
+
+    return params_map
 
 
 class NumCosmoData(Ncm.Data):
@@ -376,7 +377,7 @@ class NumCosmoData(Ncm.Data):
         self.likelihood: Likelihood
         self.tools: ModelingTools
         self._model_list: list[str]
-        self._nc_mapping: MappingNumCosmo
+        self._nc_mapping: MappingNumCosmo | None
         self._likelihood_source: None | str = None
         self._likelihood_build_parameters: None | NamedParameters = None
         self._starting_deserialization: bool = False
@@ -405,14 +406,14 @@ class NumCosmoData(Ncm.Data):
         setter=_set_model_list,
     )
 
-    def _get_nc_mapping(self) -> MappingNumCosmo:
+    def _get_nc_mapping(self) -> MappingNumCosmo | None:
         """Return the MappingNumCosmo object.
 
         :return: the MappingNumCosmo object
         """
         return self._nc_mapping
 
-    def _set_nc_mapping(self, value: MappingNumCosmo) -> None:
+    def _set_nc_mapping(self, value: MappingNumCosmo | None) -> None:
         """Set the MappingNumCosmo object.
 
         :param: the new value for the MappingNumCosmo object
@@ -503,7 +504,7 @@ class NumCosmoData(Ncm.Data):
         likelihood: Likelihood,
         model_list: list[str],
         tools: ModelingTools,
-        nc_mapping: MappingNumCosmo,
+        nc_mapping: MappingNumCosmo | None,
         likelihood_source: None | str = None,
         likelihood_build_parameters: None | NamedParameters = None,
     ) -> "NumCosmoData":
@@ -570,18 +571,23 @@ class NumCosmoData(Ncm.Data):
         self.likelihood.reset()
         self.tools.reset()
 
-        self._nc_mapping.set_params_from_numcosmo(
-            mset, self.tools.ccl_factory.amplitude_parameter
-        )
-        params_map = self._nc_mapping.create_params_map(self.model_list, mset)
-
-        self.likelihood.update(params_map)
-        self.tools.update(params_map)
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            assert self._nc_mapping is not None
+            self._nc_mapping.set_params_from_numcosmo(
+                mset, self.tools.ccl_factory.amplitude_parameter
+            )
+            params_map = create_params_map(
+                self.model_list, mset, self._nc_mapping.mapping
+            )
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
             self.tools.prepare(
                 calculator_args=self._nc_mapping.calculate_ccl_args(mset)
             )
         else:
+            params_map = create_params_map(self.model_list, mset, None)
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
             self.tools.prepare()
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
@@ -625,7 +631,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.dof: int
         self.len: int
         self._model_list: list[str]
-        self._nc_mapping: MappingNumCosmo
+        self._nc_mapping: MappingNumCosmo | None
         self._likelihood_source: None | str = None
         self._likelihood_build_parameters: None | NamedParameters = None
         self._starting_deserialization: bool = False
@@ -651,14 +657,14 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         setter=_set_model_list,
     )
 
-    def _get_nc_mapping(self) -> MappingNumCosmo:
+    def _get_nc_mapping(self) -> MappingNumCosmo | None:
         """Return the :class:`MappingNumCosmo` object.
 
         :return: the current value of the mapping
         """
         return self._nc_mapping
 
-    def _set_nc_mapping(self, value: MappingNumCosmo):
+    def _set_nc_mapping(self, value: MappingNumCosmo | None):
         """Set the MappingNumCosmo object.
 
         :param: the new value for the MappingNumCosmo object
@@ -780,7 +786,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         likelihood: ConstGaussian,
         model_list: list[str],
         tools: ModelingTools,
-        nc_mapping: MappingNumCosmo,
+        nc_mapping: MappingNumCosmo | None,
         likelihood_source: None | str = None,
         likelihood_build_parameters: None | NamedParameters = None,
     ):
@@ -853,18 +859,23 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.likelihood.reset()
         self.tools.reset()
 
-        self._nc_mapping.set_params_from_numcosmo(
-            mset, self.tools.ccl_factory.amplitude_parameter
-        )
-        params_map = self._nc_mapping.create_params_map(self._model_list, mset)
-
-        self.likelihood.update(params_map)
-        self.tools.update(params_map)
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
+            assert self._nc_mapping is not None
+            self._nc_mapping.set_params_from_numcosmo(
+                mset, self.tools.ccl_factory.amplitude_parameter
+            )
+            params_map = create_params_map(
+                self._model_list, mset, self._nc_mapping.mapping
+            )
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
             self.tools.prepare(
                 calculator_args=self._nc_mapping.calculate_ccl_args(mset)
             )
         else:
+            params_map = create_params_map(self._model_list, mset, None)
+            self.likelihood.update(params_map)
+            self.tools.update(params_map)
             self.tools.prepare()
 
     # pylint: disable-next=arguments-differ
@@ -901,7 +912,7 @@ class NumCosmoFactory:
         self,
         likelihood_source: str,
         build_parameters: NamedParameters,
-        mapping: MappingNumCosmo,
+        mapping: MappingNumCosmo | None,
         model_list: list[str],
     ) -> None:
         """Initialize a NumCosmoFactory.
@@ -914,7 +925,7 @@ class NumCosmoFactory:
         likelihood, tools = load_likelihood(likelihood_source, build_parameters)
 
         self.data: NumCosmoGaussCov | NumCosmoData
-        self.mapping: MappingNumCosmo = mapping
+        self.mapping: MappingNumCosmo | None = mapping
         if isinstance(likelihood, ConstGaussian):
             self.data = NumCosmoGaussCov.new_from_likelihood(
                 likelihood,
@@ -941,7 +952,7 @@ class NumCosmoFactory:
         """
         return self.data
 
-    def get_mapping(self) -> MappingNumCosmo:
+    def get_mapping(self) -> MappingNumCosmo | None:
         """This method return the current MappingNumCosmo.
 
         :return: the current mapping.
