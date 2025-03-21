@@ -13,16 +13,17 @@ import pyccl
 import pyccl.nl_pt
 import sacc
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
+
 from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,
+    SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
+    PhotoZShiftFactory,
+    PhotoZShiftandStretchFactory,
     Tracer,
 )
 from firecrown.metadata_types import InferredGalaxyZDist
@@ -43,6 +44,9 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_pt_c_d: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
     ia_pt_c_2: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
+    ia_a_1h: None | npt.NDArray[np.float64] = None
+    ia_a_2h: None | npt.NDArray[np.float64] = None
+
 
 class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
     """Abstract base class for all weak lensing systematics."""
@@ -52,6 +56,10 @@ class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
         self, tools: ModelingTools, tracer_arg: WeakLensingArgs
     ) -> WeakLensingArgs:
         """Apply method to include systematics in the tracer_arg."""
+
+
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[WeakLensingArgs]):
+    """Photo-z shift systematic."""
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
@@ -238,6 +246,53 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         )
 
 
+HM_ALIGNMENT_DEFAULT_IA_A_1H = 1e-4
+HM_ALIGNMENT_DEFAULT_IA_A_2H = 1.0
+
+
+class HMAlignmentSystematic(WeakLensingSystematic):
+    """Halo model intrinsic alignment systematic.
+
+    This systematic adds a halo model based intrinsic alignment systematic
+    which, at the moment, is fixed within the redshift bin.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar ia_a_1h: the 1-halo intrinsic alignment bias parameter (satellite galaxies).
+    :ivar ia_a_2h: the 2-halo intrinsic alignment bias parameter (central galaxies).
+    """
+
+    def __init__(self, _: None | str = None):
+        """Create a HMAlignmentSystematic object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        """
+        super().__init__()
+
+        self.ia_a_1h = parameters.register_new_updatable_parameter(
+            default_value=HM_ALIGNMENT_DEFAULT_IA_A_1H
+        )
+        self.ia_a_2h = parameters.register_new_updatable_parameter(
+            default_value=HM_ALIGNMENT_DEFAULT_IA_A_2H
+        )
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
+    ) -> WeakLensingArgs:
+        """Return a new halo-model alignment systematic.
+
+        :param tools: A ModelingTools object.
+        :param tracer_arg: The WeakLensingArgs to which apply the systematic.
+        :returns: A new WeakLensingArgs object with the systematic applied.
+        """
+        return replace(
+            tracer_arg, has_hm=True, ia_a_1h=self.ia_a_1h, ia_a_2h=self.ia_a_2h
+        )
+
+
 class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     """Source class for weak lensing."""
 
@@ -338,6 +393,29 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
             )
             tracers.append(ia_tracer)
 
+        if tracer_args.has_hm:
+            hmc = tools.get_hm_calculator()
+            cM = tools.get_cM_relation()
+            halo_profile = pyccl.halos.SatelliteShearHOD(
+                mass_def=hmc.mass_def, concentration=cM, a1h=tracer_args.ia_a_1h
+            )
+            ccl_wl_dummy_tracer = pyccl.WeakLensingTracer(
+                ccl_cosmo,
+                has_shear=False,
+                use_A_ia=False,
+                dndz=(tracer_args.z, tracer_args.dndz),
+                ia_bias=(tracer_args.z, np.ones_like(tracer_args.z)),
+            )
+            ia_tracer = Tracer(
+                ccl_wl_dummy_tracer,
+                tracer_name="intrinsic_alignment_hm",
+                halo_profile=halo_profile,
+            )
+            halo_profile.ia_a_2h = (
+                tracer_args.ia_a_2h
+            )  # Attach the 2-halo amplitude here.
+            tracers.append(ia_tracer)
+
         self.current_tracer_args = tracer_args
 
         return tracers, tracer_args
@@ -431,37 +509,12 @@ class TattAlignmentSystematicFactory(BaseModel):
         return TattAlignmentSystematic(None)
 
 
-class PhotoZShiftFactory(BaseModel):
-    """Factory class for PhotoZShift objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    type: Annotated[
-        Literal["PhotoZShiftFactory"], Field(description="The type of the systematic.")
-    ] = "PhotoZShiftFactory"
-
-    def create(self, bin_name: str) -> PhotoZShift:
-        """Create a PhotoZShift object.
-
-        :param inferred_zdist: The inferred galaxy redshift distribution for
-            the created PhotoZShift object.
-        :return: The created PhotoZShift object.
-        """
-        return PhotoZShift(bin_name)
-
-    def create_global(self) -> PhotoZShift:
-        """Create a PhotoZShift object.
-
-        :return: The created PhotoZShift object.
-        """
-        raise ValueError("PhotoZShift cannot be global")
-
-
 WeakLensingSystematicFactory = Annotated[
-    MultiplicativeShearBiasFactory
+    PhotoZShiftFactory
+    | PhotoZShiftandStretchFactory
+    | MultiplicativeShearBiasFactory
     | LinearAlignmentSystematicFactory
-    | TattAlignmentSystematicFactory
-    | PhotoZShiftFactory,
+    | TattAlignmentSystematicFactory,
     Field(discriminator="type", union_mode="left_to_right"),
 ]
 

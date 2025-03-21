@@ -6,7 +6,6 @@ provide better type safety.
 
 from __future__ import annotations
 from typing import Iterable, Iterator, Sequence
-import warnings
 
 
 def parameter_get_full_name(prefix: None | str, param: str) -> str:
@@ -35,7 +34,7 @@ def parameter_get_full_name(prefix: None | str, param: str) -> str:
     return param
 
 
-def _validade_params_map_value(name: str, value: float | list[float]) -> None:
+def _validate_params_map_value(name: str, value: float | list[float]) -> None:
     """Check if the value is a float or a list of floats.
 
     Raises a TypeError if the value is not a float or a list of floats.
@@ -67,7 +66,7 @@ class ParamsMap(dict[str, float]):
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
         for name, value in self.items():
-            _validade_params_map_value(name, value)
+            _validate_params_map_value(name, value)
 
         self.lower_case: bool = False
 
@@ -104,7 +103,6 @@ class ParamsMap(dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         fullname = parameter_get_full_name(prefix, param)
-
         return self.get_from_full_name(fullname)
 
 
@@ -170,10 +168,7 @@ class RequiredParameters:
         """Return a dictionary with the default values of the parameters."""
         default_values = {}
         for parameter in self.params_set:
-            default_value = parameter.get_default_value()
-            if default_value is None:
-                raise ValueError(f"Parameter {parameter.fullname} has no default value")
-            default_values[parameter.fullname] = default_value
+            default_values[parameter.fullname] = parameter.get_default_value()
 
         return default_values
 
@@ -239,6 +234,10 @@ class DerivedParameterCollection:
 
         for derived_parameter in derived_parameters:
             self.add_required_parameter(derived_parameter)
+
+    def __len__(self) -> int:
+        """Return the number of parameters contained."""
+        return len(self.derived_parameters)
 
     def __add__(self, other: None | DerivedParameterCollection):
         """Add two DerivedParameterCollection objects.
@@ -310,7 +309,7 @@ class SamplerParameter:
     def __init__(
         self,
         *,
-        default_value: None | float = None,
+        default_value: float,
         name: None | str = None,
         prefix: None | str = None,
     ):
@@ -318,32 +317,11 @@ class SamplerParameter:
 
         This represents a parameter having its value defined by the sampler.
         """
-        self.value: None | float = None
-        self._prefix: None | str = prefix
-        self._name: None | str = name
-        if default_value is not None:
-            self.default_value: None | float = default_value
-        else:
-            warnings.warn(
-                "The default_value argument as optional argument is deprecated. "
-                "All parameters should be created with a default value.",
-                category=DeprecationWarning,
-            )
-            self.default_value = None
+        self._prefix = prefix
+        self._name = name
+        self.default_value = default_value
 
-    def set_value(self, value: float):
-        """Set the value of this parameter.
-
-        :param value: new value
-        """
-        self.value = value
-
-    def get_value(self) -> float:
-        """Get the current value of this parameter."""
-        assert self.value is not None
-        return self.value
-
-    def get_default_value(self) -> None | float:
+    def get_default_value(self) -> float:
         """Get the default value of this parameter."""
         return self.default_value
 
@@ -389,7 +367,6 @@ class SamplerParameter:
         return (
             self.fullname == other.fullname
             and self.default_value == other.default_value
-            and self.value == other.value
             and self._prefix == other._prefix
             and self._name == other._name
         )
@@ -417,40 +394,35 @@ class InternalParameter:
         return self.value
 
 
-# The function create() is intentionally not type-annotated because its use is subtle.
-# See Updatable.__setatrr__ for details.
-def create(value: None | float = None):
-    """Create a new parameter, either a SamplerParameter or an InternalParameter.
-
-    See register_new_updatable_parameter for details.
-    """
-    warnings.warn(
-        "This function is named `create` and will be removed in a future version "
-        "due to its name being too generic."
-        "Use `register_new_updatable_parameter` instead.",
-        category=DeprecationWarning,
-    )
-    return register_new_updatable_parameter(value)
-
-
 def register_new_updatable_parameter(
-    value: None | float = None, *, default_value: None | float = None
+    value: None | float = None, *, default_value: float
 ):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
     If `value` is `None`, the result will be a `SamplerParameter`; Firecrown
-    will expect this value to be supplied by the sampling framwork. If `value`
+    will expect this value to be supplied by the sampling framework. If `value`
     is a `float` quantity, then Firecrown will expect this parameter to *not*
     be supplied by the sampling framework, and instead the provided value will
     be used for every sample.
 
     Only `None` or a `float` value is allowed.
+
+    :param value: the value of the parameter
+    :param default_value: the default value of the parameter to be used
+        if `value` is `None`
+    :return: a `SamplerParameter` if `value` is `None`, otherwise an `InternalParameter`
+    :raises TypeError: if `value` is not `None` and not a `float`
     """
+    result: SamplerParameter | InternalParameter
     if value is None:
-        return SamplerParameter(default_value=default_value)
-    if not isinstance(value, float):
+        result = SamplerParameter(default_value=default_value)
+
+    elif not isinstance(value, float):
         raise TypeError(
             f"parameter.create() requires a float parameter or none, "
             f"not {type(value)}"
         )
-    return InternalParameter(value)
+    else:
+        result = InternalParameter(value)
+    assert result is not None
+    return result

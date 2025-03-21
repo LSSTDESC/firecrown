@@ -12,9 +12,6 @@ py-version=3.10
 # Discover python modules and packages in the file system subtree.
 recursive=yes
 
-# Add custom pylint plugins
-load-plugins=pylint_plugins.duplicate_code
-
 [MESSAGES CONTROL]
 
 # Enable the message, report, category or checker with the given id(s). You can
@@ -49,6 +46,17 @@ method-naming-style=any
 # Naming style matching correct function names.
 function-naming-style=any
 
+[DESIGN]
+
+# Maximum number of positional arguments for function / method.
+max-positional-arguments=8
+
+# Maximum number of arguments for function / method.
+max-args=13
+
+# Maximum number of attributes for a class (see R0902).
+max-attributes=14
+
 [STRING]
 
 # This flag controls whether inconsistent-quotes generates a warning when the
@@ -65,8 +73,3 @@ ignore-none=false
 
 # Expected format of line ending, e.g. empty (any line ending), LF or CRLF.
 expected-line-ending-format=LF
-
-[DESIGN]
-max-positional-arguments=8
-max-args=20
-max-attributes=20

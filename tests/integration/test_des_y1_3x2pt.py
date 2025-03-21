@@ -3,19 +3,44 @@
 import subprocess
 import pytest
 
+INI_FILES = [
+    "factory.ini",
+    "factory_PT.ini",
+    "default_factory.ini",
+    "pure_ccl.ini",
+    "mu_sigma.ini",
+]
+
+COBAYA_YAML_FILES = [
+    "evaluate.yaml",
+    "evaluate_PT.yaml",
+    "evaluate_pure_ccl.yaml",
+    "evaluate_mu_sigma.yaml",
+]
+
+
+@pytest.fixture(name="ini_file", params=INI_FILES)
+def fixture_ini_file(request) -> str:
+    """Fixture to provide the ini files for the DES Y1 3x2pt analysis."""
+    return request.param
+
+
+@pytest.fixture(name="cobaya_yaml_file", params=COBAYA_YAML_FILES)
+def fixture_cobaya_yaml_file(request) -> str:
+    """Fixture to provide the cobaya yaml files for the DES Y1 3x2pt analysis."""
+    return request.param
+
 
 @pytest.mark.integration
-def test_des_y1_3x2pt_cosmosis():
+def test_des_y1_3x2pt_cosmosis(ini_file: str):
     result = subprocess.run(
         [
             "bash",
             "-c",
-            """
+            f"""
                 set -e
                 cd examples/des_y1_3x2pt
-                cosmosis des_y1_3x2pt.ini
-                cosmosis des_y1_3x2pt_PT.ini
-                cosmosis des_y1_3x2pt_default_factory.ini
+                cosmosis cosmosis/{ini_file}
             """,
         ],
         capture_output=True,
@@ -28,20 +53,15 @@ def test_des_y1_3x2pt_cosmosis():
 
 
 @pytest.mark.integration
-def test_des_y1_3x2pt_numcosmo():
+def test_des_y1_3x2pt_numcosmo(ini_file: str):
     result = subprocess.run(
         [
             "bash",
             "-c",
-            """
+            f"""
                 set -e
-                cd examples/des_y1_3x2pt
-                numcosmo from-cosmosis des_y1_3x2pt.ini --matter-ps eisenstein_hu\\
-                    --nonlin-matter-ps halofit
-                numcosmo run test des_y1_3x2pt.yaml
-                numcosmo from-cosmosis des_y1_3x2pt_PT.ini --matter-ps eisenstein_hu\\
-                    --nonlin-matter-ps halofit
-                numcosmo run test des_y1_3x2pt_PT.yaml
+                cd examples/des_y1_3x2pt/numcosmo
+                numcosmo run test {ini_file.replace('.ini', '.yaml')}
             """,
         ],
         capture_output=True,
@@ -54,16 +74,15 @@ def test_des_y1_3x2pt_numcosmo():
 
 
 @pytest.mark.integration
-def test_des_y1_3x2pt_cobaya():
+def test_des_y1_3x2pt_cobaya(cobaya_yaml_file: str):
     result = subprocess.run(
         [
             "bash",
             "-c",
-            """
+            f"""
                 set -e
                 cd examples/des_y1_3x2pt
-                cobaya-run cobaya_evaluate.yaml
-                cobaya-run cobaya_evaluate_PT.yaml
+                cobaya-run cobaya/{cobaya_yaml_file}
             """,
         ],
         capture_output=True,

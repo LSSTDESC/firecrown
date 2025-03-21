@@ -1,0 +1,77 @@
+model-set:
+  &S22 NcmMSet:
+    valid-map: false
+    model-array:
+    - FirecrownTwoPoint:
+        Omega-c: 0.26
+        Omega-b: 0.04
+        h: 0.682
+        sigma8: 0.801
+        n-s: 0.971
+        Omega-k: 0.0
+        Neff: 3.046
+        m-nu: 0.06
+        w0: -1.0
+        wa: 0.0
+        T-CMB: 2.7255
+        ia-bias: 0.5
+        alphaz: 0.0
+        z-piv: 0.62
+        lens0-bias: 1.4
+        lens1-bias: 1.6
+        lens2-bias: 1.6
+        lens3-bias: 1.9
+        lens4-bias: 2.0
+        src0-delta-z: -0.001
+        src1-delta-z: -0.019
+        src2-delta-z: 0.009
+        src3-delta-z: -0.018
+        lens0-delta-z: 0.001
+        lens1-delta-z: 0.002
+        lens2-delta-z: 0.001
+        lens3-delta-z: 0.003
+        lens4-delta-z: 0.0
+        src0-mult-bias: 0.012
+        src1-mult-bias: 0.012
+        src2-mult-bias: 0.012
+        src3-mult-bias: 0.012
+        Omega-c-fit: true
+        Omega-b-fit: true
+        ia-bias-fit: true
+        alphaz-fit: true
+        z-piv-fit: false
+        lens0-bias-fit: true
+        lens1-bias-fit: true
+        lens2-bias-fit: true
+        lens3-bias-fit: true
+        lens4-bias-fit: true
+        src0-delta-z-fit: true
+        src1-delta-z-fit: true
+        src2-delta-z-fit: true
+        src3-delta-z-fit: true
+        lens0-delta-z-fit: true
+        lens1-delta-z-fit: true
+        lens2-delta-z-fit: true
+        lens3-delta-z-fit: true
+        lens4-delta-z-fit: true
+        src0-mult-bias-fit: true
+        src1-mult-bias-fit: true
+        src2-mult-bias-fit: true
+        src3-mult-bias-fit: true
+likelihood:
+  &S33 NcmLikelihood:
+    dataset:
+      &S34 NcmDataset:
+        bootstrap-type: 0
+        data-array:
+        - &S35 FirecrownNumCosmoGaussCov:
+            desc: 'FirecrownNumCosmoGaussCov'
+            use-norma: false
+            likelihood-build-parameters:
+              sampling_parameters_sections: 'firecrown_two_point'
+              likelihood_config: '../pure_ccl_experiment.yaml'
+              require_nonlinear_pk: true
+            likelihood-source: 'firecrown.likelihood.factories.build_two_point_likelihood'
+            model-list: ['FirecrownTwoPoint']
+    priors-m2lnL: []
+    priors-f: []

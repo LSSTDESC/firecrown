@@ -4,8 +4,9 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Generic, Sequence, TypeVar, final
+from typing import Generic, Sequence, TypeVar, final, Annotated, Literal
 
+from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -13,9 +14,6 @@ import pyccl.nl_pt
 import sacc
 from scipy.interpolate import Akima1DInterpolator
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
 from firecrown import parameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
@@ -39,7 +37,6 @@ class SourceSystematic(Updatable):
 class Source(Updatable):
     """The abstract base class for all sources."""
 
-    systematics: Sequence[SourceSystematic]
     cosmo_hash: None | int
     tracers: Sequence[Tracer]
 
@@ -52,15 +49,20 @@ class Source(Updatable):
         super().__init__(parameter_prefix=sacc_tracer)
         self.sacc_tracer = sacc_tracer
 
+    @abstractmethod
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        """Abstract method to read the systematics for this source from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
+
     @final
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this source from the SACC file.
 
         :param sacc_data: The SACC data object to be read
         """
-        if hasattr(self, "systematics"):
-            for systematic in self.systematics:
-                systematic.read(sacc_data)
+        self.read_systematics(sacc_data)
         self._read(sacc_data)
 
     @abstractmethod
@@ -131,7 +133,7 @@ class Tracer:
     """Extending the pyccl.Tracer object with additional information.
 
     Bundles together a pyccl.Tracer object with optional information about the
-    underlying 3D field, a pyccl.nl_pt.PTTracer, and halo profiles.
+    underlying 3D field, or a pyccl.nl_pt.PTTracer and halo profiles.
     """
 
     @staticmethod
@@ -178,8 +180,6 @@ class Tracer:
         :param tracer_name: optional name of the tracer.
         :param field: optional name of the field associated with the tracer.
         :param pt_tracer: optional non-linear perturbation theory tracer.
-        :param halo_profile: optional halo profile.
-        :param halo_2pt: optional halo profile 2-point object.
         """
         assert tracer is not None
         self.ccl_tracer = tracer
@@ -199,9 +199,9 @@ class Tracer:
 
     @property
     def has_hm(self) -> bool:
-        """Answer whether we have a halo profile.
+        """Answer whether we have a halo model profile.
 
-        :return: True if we have a halo_profile, and False if not.
+        Return True if we have a halo_profile, and False if not.
         """
         return self.halo_profile is not None
 
@@ -246,6 +246,7 @@ _SourceGalaxySystematicT = TypeVar(
 
 
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
+SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
 
 
 class SourceGalaxyPhotoZShift(
@@ -262,17 +263,22 @@ class SourceGalaxyPhotoZShift(
     :ivar delta_z: the photo-z shift.
     """
 
-    def __init__(self, sacc_tracer: str) -> None:
+    def __init__(self, sacc_tracer: str, active: bool = True) -> None:
         """Create a PhotoZShift object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
+        :param active: whether to use and active or passive transformation
         """
         super().__init__(parameter_prefix=sacc_tracer)
 
         self.delta_z = parameters.register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
         )
+        if active:
+            self._transform = dndz_shift_and_stretch_active
+        else:
+            self._transform = dndz_shift_and_stretch_passive
 
     def apply(
         self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
@@ -284,15 +290,159 @@ class SourceGalaxyPhotoZShift(
             apply the systematic.
         :return: a new source galaxy tracer arg with the systematic applied
         """
-        dndz_interp = Akima1DInterpolator(tracer_arg.z, tracer_arg.dndz)
-
-        dndz = dndz_interp(tracer_arg.z - self.delta_z, extrapolate=False)
-        dndz[np.isnan(dndz)] = 0.0
-
-        return replace(
-            tracer_arg,
-            dndz=dndz,
+        new_z, new_dndz = self._transform(
+            tracer_arg.z, tracer_arg.dndz, self.delta_z, 1.0
         )
+        return replace(tracer_arg, z=new_z, dndz=new_dndz)
+
+
+class PhotoZShift(SourceGalaxyPhotoZShift):
+    """Photo-z shift systematic."""
+
+
+class PhotoZShiftFactory(BaseModel):
+    """Factory class for PhotoZShift objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftFactory"
+
+    def create(self, bin_name: str) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        return PhotoZShift(bin_name)
+
+    def create_global(self) -> PhotoZShift:
+        """Create a PhotoZShift object with the given tracer name."""
+        raise ValueError("PhotoZShift cannot be global.")
+
+
+def dndz_shift_and_stretch_active(
+    z: npt.NDArray[np.float64],
+    dndz: npt.NDArray[np.float64],
+    delta_z: float,
+    sigma_z: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Shift and stretch the photo-z distribution using an active transformation.
+
+    We use "makima" interpolation, a cubic spline method based on the modified Akima
+    algorithm. This approach prevents overshooting when the data remains constant for
+    more than two consecutive nodes. Additionally, we set `extrapolate=False` and we set
+    extrapolated values to zero.
+
+    The active transformation preserves the redshift array and modifies the dndz array.
+    This transformation introduces an interpolation error on dndz.
+
+    :param z: the redshifts
+    :param dndz: the dndz
+    :param delta_z: the photo-z shift
+    :param sigma_z: the photo-z stretch
+    :return: the shifted and stretched dndz
+    """
+    if sigma_z <= 0.0:
+        raise ValueError("Stretch Parameter must be positive")
+    # We need a small padding to avoid extrapolation at the edges
+    padding = 1.0e-8
+    z_padded = np.concatenate([[z[0] - padding], z, [z[-1] + padding]])
+    dndz_padded = np.concatenate([[dndz[0]], dndz, [dndz[-1]]])
+    dndz_interp = Akima1DInterpolator(z_padded, dndz_padded, method="makima")
+    dndz_mean = np.average(z, weights=dndz)
+
+    z_new = (z - dndz_mean + delta_z) / sigma_z + dndz_mean
+    # Apply the shift and stretch
+    dndz = np.nan_to_num(dndz_interp(z_new, extrapolate=False) / sigma_z)
+    dndz = np.clip(dndz, 0.0, None)
+
+    return z, dndz
+
+
+def dndz_shift_and_stretch_passive(
+    z: npt.NDArray[np.float64],
+    dndz: npt.NDArray[np.float64],
+    delta_z: float,
+    sigma_z: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+    """Shift and stretch the photo-z distribution using a passive transformation.
+
+    :param z: the redshifts
+    :param dndz: the dndz
+    :param delta_z: the photo-z shift
+    :param sigma_z: the photo-z stretch
+    :return: the shifted and stretched dndz
+    """
+    if sigma_z <= 0.0:
+        raise ValueError("Stretch Parameter must be positive")
+    dndz_mean = np.average(z, weights=dndz)
+    z_passive = sigma_z * (z - dndz_mean) - delta_z + dndz_mean
+    z_passive_positive = z_passive >= 0.0
+    z_new = np.atleast_1d(z_passive[z_passive_positive])
+    dndz_new = np.atleast_1d(dndz[z_passive_positive] / sigma_z)
+
+    return z_new, dndz_new
+
+
+class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArgsT]):
+    """A photo-z shift & stretch bias.
+
+    This systematic shifts and widens the photo-z distribution by some amount `delta_z`.
+
+    The following parameters are special Updatable parameters, which means that
+    they can be updated by the sampler, sacc_tracer is going to be used as a
+    prefix for the parameters:
+
+    :ivar delta_z: the photo-z shift.
+    :ivar sigma_z: the photo-z stretch.
+    """
+
+    def __init__(self, sacc_tracer: str, active: bool = True) -> None:
+        """Create a PhotoZShift object, using the specified tracer name.
+
+        :param sacc_tracer: the name of the tracer in the SACC file. This is used
+            as a prefix for its parameters.
+        :param active: whether to use and active or passive transformation
+        """
+        super().__init__(sacc_tracer)
+
+        self.sigma_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
+        )
+
+        if active:
+            self._transform = dndz_shift_and_stretch_active
+        else:
+            self._transform = dndz_shift_and_stretch_passive
+
+    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+        """Apply a shift & stretch to the photo-z distribution of a source."""
+        new_z, new_dndz = self._transform(
+            tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
+        )
+        return replace(tracer_arg, z=new_z, dndz=new_dndz)
+
+
+class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
+    """Photo-z shift and stretch systematic."""
+
+
+class PhotoZShiftandStretchFactory(BaseModel):
+    """Factory class for PhotoZShiftandStretch objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    type: Annotated[
+        Literal["PhotoZShiftandStretchFactory"],
+        Field(description="The type of the systematic."),
+    ] = "PhotoZShiftandStretchFactory"
+
+    def create(self, bin_name: str) -> PhotoZShiftandStretch:
+        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        return PhotoZShiftandStretch(bin_name)
+
+    def create_global(self) -> PhotoZShiftandStretch:
+        """Create a PhotoZShiftandStretch object with the given tracer name."""
+        raise ValueError("PhotoZShiftandStretch cannot be global.")
 
 
 class SourceGalaxySelectField(
@@ -349,6 +499,14 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
             UpdatableCollection(systematics)
         )
         self.tracer_args: _SourceGalaxyArgsT
+
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        """Read the systematics for this source from the SACC file.
+
+        :param sacc_data: The SACC data object to be read
+        """
+        for systematic in self.systematics:
+            systematic.read(sacc_data)
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the galaxy redshift distribution model from a sacc file.

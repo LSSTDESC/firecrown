@@ -225,4 +225,4 @@ with fitsio.FITS("2pt_NG_mcal_1110.fits") as data:
 
     sacc_data.add_covariance(new_cov)
 
-sacc_data.save_fits("des_y1_3x2pt_sacc_data.fits", overwrite=True)
+sacc_data.save_fits("sacc_data.fits", overwrite=True)

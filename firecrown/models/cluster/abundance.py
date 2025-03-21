@@ -29,19 +29,17 @@ class ClusterAbundance(Updatable):
 
     def __init__(
         self,
-        min_mass: float,
-        max_mass: float,
-        min_z: float,
-        max_z: float,
+        mass_interval: tuple[float, float],
+        z_interval: tuple[float, float],
         halo_mass_function: pyccl.halos.MassFunc,
     ) -> None:
         super().__init__()
         self.kernels: UpdatableCollection = UpdatableCollection()
         self.halo_mass_function = halo_mass_function
-        self.min_mass = min_mass
-        self.max_mass = max_mass
-        self.min_z = min_z
-        self.max_z = max_z
+        self.min_mass = mass_interval[0]
+        self.max_mass = mass_interval[1]
+        self.min_z = z_interval[0]
+        self.max_z = z_interval[1]
         self._hmf_cache: dict[tuple[float, float], float] = {}
         self._cosmo: Cosmology = None
 
@@ -71,7 +69,7 @@ class ClusterAbundance(Updatable):
 
         sky_area_rad = sky_area * (np.pi / 180.0) ** 2
 
-        return dV * sky_area_rad
+        return np.array(dV * sky_area_rad, dtype=np.float64)
 
     def mass_function(
         self,
@@ -82,7 +80,7 @@ class ClusterAbundance(Updatable):
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
 
-        for m, a in zip(mass, scale_factor):
+        for m, a in zip(mass.astype(float), scale_factor.astype(float)):
             val = self._hmf_cache.get((m, a))
             if val is None:
                 val = self.halo_mass_function(self.cosmo, 10**m, a)

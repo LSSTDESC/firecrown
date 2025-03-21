@@ -10,6 +10,7 @@ from firecrown.likelihood.number_counts import (
     PTNonLinearBiasSystematic,
 )
 from firecrown.likelihood.two_point import TwoPoint
+from firecrown.models.two_point import calculate_pk
 from firecrown.modeling_tools import ModelingTools
 
 
@@ -79,20 +80,16 @@ def test_calculate_pk(sacc_galaxy_xis_lens0_lens1):
 
     sacc_data, _, _, _ = sacc_galaxy_xis_lens0_lens1
 
-    a, b, statistic, tools = make_twopoint_with_optional_systematics(
-        sacc_data, True, False
-    )
+    a, b, _, tools = make_twopoint_with_optional_systematics(sacc_data, True, False)
 
     # Now we can actually test the thing.
-    spectrum_true_false = statistic.calculate_pk(
+    spectrum_true_false = calculate_pk(
         "this has not been done before", tools, a.tracers[0], b.tracers[0]
     )
     assert isinstance(spectrum_true_false, pyccl.Pk2D)
 
-    a, b, statistic, tools = make_twopoint_with_optional_systematics(
-        sacc_data, False, True
-    )
-    spectrum_false_true = statistic.calculate_pk(
+    a, b, _, tools = make_twopoint_with_optional_systematics(sacc_data, False, True)
+    spectrum_false_true = calculate_pk(
         "neither has this", tools, a.tracers[0], b.tracers[0]
     )
     assert isinstance(spectrum_false_true, pyccl.Pk2D)
