@@ -14,6 +14,7 @@ from firecrown.ccl_factory import (
     CCLFactory,
     MuSigmaModel,
     PoweSpecAmplitudeParameter,
+    CCLSplineParams,
 )
 from firecrown.updatable import get_default_params_map
 from firecrown.parameters import ParamsMap
@@ -110,6 +111,31 @@ PK_NONLIN = {
 )
 def fixture_calculator_args(request) -> CCLCalculatorArgs:
     return request.param
+
+
+def test_setting_spline_params(
+    ccl_creation_mode: CCLCreationMode,
+    camb_extra_params: CAMBExtraParams | None,
+) -> None:
+
+    original_a_spline_na = pyccl.spline_params.A_SPLINE_NA
+    spline_params = CCLSplineParams(a_spline_na=73)
+    assert original_a_spline_na != 73
+    ccl_factory = CCLFactory(
+        amplitude_parameter=PoweSpecAmplitudeParameter.AS,
+        mass_split=NeutrinoMassSplits.NORMAL,
+        require_nonlinear_pk=False,
+        creation_mode=ccl_creation_mode,
+        camb_extra_params=camb_extra_params,
+        ccl_spline_params=spline_params,
+    )
+    default_params = get_default_params_map(ccl_factory)
+    ccl_factory.update(default_params)
+    cosmo = ccl_factory.create()
+
+    assert cosmo is not None
+    assert cosmo.cosmo.spline_params.A_SPLINE_NA == 73
+    assert pyccl.spline_params.A_SPLINE_NA == original_a_spline_na
 
 
 def test_ccl_factory_simple(

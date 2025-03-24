@@ -22,6 +22,7 @@ from pydantic import (
     field_serializer,
     model_serializer,
     model_validator,
+    PrivateAttr,
 )
 
 import pyccl
@@ -217,6 +218,10 @@ class CCLSplineParams(BaseModel):
     ell_max_corr: Annotated[float | None, Field(frozen=True)] = None
     n_ell_corr: Annotated[int | None, Field(frozen=True)] = None
 
+    # Attributes that are used for the context manager functionality.
+    # These are *not* part of the model.
+    _spline_params: dict[str, float | int] = PrivateAttr()
+
     @model_validator(mode="after")
     def check_spline_params(self) -> "CCLSplineParams":
         """Check that the spline parameters are valid."""
@@ -242,6 +247,39 @@ class CCLSplineParams(BaseModel):
 
         return self
 
+    def __enter__(self) -> "CCLSplineParams":
+        """Enter the context manager.
+
+        This method saves the current CCL global spline parameters,
+        updates them with the values from this `CCLSplineParams` instance,
+        and returns the instance itself. This allows for temporary modification
+        of CCL spline parameters using a `with` statement.
+
+        :return:  The current instance with updated spline parameters.
+        """
+        self._spline_params = pyccl.CCLParameters.get_params_dict(pyccl.spline_params)
+        for key, value in self.model_dump().items():
+            if value is not None:
+                pyccl.spline_params[key.upper()] = value
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the context manager.
+
+        This method resets the CCL global spline parameters to their original
+        values, as saved when entering the context manager. It ensures that
+        any temporary modifications made to the CCL spline parameters within
+        a `with` statement are reverted upon exit.
+
+        :param exc_type: The exception type, if an exception occurred.
+        :param exc_value: The exception value, if an exception occurred.
+        :param traceback: The traceback object, if an exception occurred.
+        """
+        for key, value in self._spline_params.items():
+            pyccl.spline_params[key] = value
+        if exc_type is not None:
+            raise exc_type(exc_value).with_traceback(traceback)
+
 
 class CCLFactory(Updatable, BaseModel):
     """Factory class for creating instances of the `pyccl.Cosmology` class."""
@@ -264,6 +302,7 @@ class CCLFactory(Updatable, BaseModel):
         Field(frozen=True),
     ] = CCLCreationMode.DEFAULT
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
+    ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
     def __init__(self, **data):
         """Initialize the CCLFactory object."""
@@ -395,7 +434,11 @@ class CCLFactory(Updatable, BaseModel):
                     "mode and no CAMB extra parameters."
                 )
 
-            self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
+            if self.ccl_spline_params is not None:
+                with self.ccl_spline_params:
+                    self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
+            else:
+                self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
             return self._ccl_cosmo
 
         if self.require_nonlinear_pk:
@@ -414,7 +457,11 @@ class CCLFactory(Updatable, BaseModel):
                     matter_power_spectrum="linear",
                     transfer_function="boltzmann_isitgr",
                 )
-        self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        if self.ccl_spline_params is not None:
+            with self.ccl_spline_params:
+                self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        else:
+            self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
         return self._ccl_cosmo
 
     def _reset(self) -> None:
