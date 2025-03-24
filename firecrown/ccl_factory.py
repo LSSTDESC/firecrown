@@ -317,33 +317,39 @@ class CCLFactory(Updatable, BaseModel):
 
         self._ccl_cosmo: None | pyccl.Cosmology = None
 
-        ccl_cosmo = pyccl.CosmologyVanillaLCDM()
+        temp_cosmology = pyccl.CosmologyVanillaLCDM()
 
         self.Omega_c = register_new_updatable_parameter(
-            default_value=ccl_cosmo["Omega_c"]
+            default_value=temp_cosmology["Omega_c"]
         )
         self.Omega_b = register_new_updatable_parameter(
-            default_value=ccl_cosmo["Omega_b"]
+            default_value=temp_cosmology["Omega_b"]
         )
-        self.h = register_new_updatable_parameter(default_value=ccl_cosmo["h"])
-        self.n_s = register_new_updatable_parameter(default_value=ccl_cosmo["n_s"])
+        self.h = register_new_updatable_parameter(default_value=temp_cosmology["h"])
+        self.n_s = register_new_updatable_parameter(default_value=temp_cosmology["n_s"])
         self.Omega_k = register_new_updatable_parameter(
-            default_value=ccl_cosmo["Omega_k"]
+            default_value=temp_cosmology["Omega_k"]
         )
-        self.Neff = register_new_updatable_parameter(default_value=ccl_cosmo["Neff"])
-        self.m_nu = register_new_updatable_parameter(default_value=ccl_cosmo["m_nu"])
-        self.w0 = register_new_updatable_parameter(default_value=ccl_cosmo["w0"])
-        self.wa = register_new_updatable_parameter(default_value=ccl_cosmo["wa"])
-        self.T_CMB = register_new_updatable_parameter(default_value=ccl_cosmo["T_CMB"])
+        self.Neff = register_new_updatable_parameter(
+            default_value=temp_cosmology["Neff"]
+        )
+        self.m_nu = register_new_updatable_parameter(
+            default_value=temp_cosmology["m_nu"]
+        )
+        self.w0 = register_new_updatable_parameter(default_value=temp_cosmology["w0"])
+        self.wa = register_new_updatable_parameter(default_value=temp_cosmology["wa"])
+        self.T_CMB = register_new_updatable_parameter(
+            default_value=temp_cosmology["T_CMB"]
+        )
 
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
                 # VanillaLCDM has does not have A_s, so we need to add it
                 self.A_s = register_new_updatable_parameter(default_value=2.1e-9)
             case PoweSpecAmplitudeParameter.SIGMA8:
-                assert ccl_cosmo["sigma8"] is not None
+                assert temp_cosmology["sigma8"] is not None
                 self.sigma8 = register_new_updatable_parameter(
-                    default_value=ccl_cosmo["sigma8"]
+                    default_value=temp_cosmology["sigma8"]
                 )
             case _ as unreachable:
                 assert_never(unreachable)
