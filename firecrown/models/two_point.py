@@ -98,7 +98,7 @@ def at_least_one_tracer_has_hm(
         # mypy complains about the following line even though
         # the HMCalculator type does have a mass_def attribute.
         other_profile = pyccl.halos.HaloProfileNFW(
-            mass_def=hm_calculator.mass_def,  # type: ignore
+            mass_def=hm_calculator.mass_def,
             concentration=cM_relation,
             truncated=True,
             fourier_analytic=True,
