@@ -188,7 +188,8 @@ class CCLSplineParams(BaseModel):
     a_spline_min_pk: Annotated[float | None, Field(frozen=True)] = None
     a_spline_minlog_sm: Annotated[float | None, Field(frozen=True)] = None
     a_spline_min_sm: Annotated[float | None, Field(frozen=True)] = None
-    a_spline_max: Annotated[float | None, Field(frozen=True)] = None
+    # a_spline_max is not defined because the CCL parameter A_SPLINE_MAX is
+    # required to be 1.0.
     a_spline_minlog: Annotated[float | None, Field(frozen=True)] = None
     a_spline_nlog: Annotated[int | None, Field(frozen=True)] = None
 
@@ -226,7 +227,7 @@ class CCLSplineParams(BaseModel):
     def check_spline_params(self) -> "CCLSplineParams":
         """Check that the spline parameters are valid."""
         # Ensure the spline boundaries and breakpoint are valid.
-        spline_breaks = [self.a_spline_minlog, self.a_spline_min, self.a_spline_max]
+        spline_breaks = [self.a_spline_minlog, self.a_spline_min, 1.0]
         spline_breaks = list(filter(lambda x: x is not None, spline_breaks))
         assert all(
             a is not None and b is not None and a < b
