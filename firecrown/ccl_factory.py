@@ -1,4 +1,4 @@
-"""This module contains the CCLFactory class.
+"""This module contains the CCLFactory class and it supporting classes.
 
 The CCLFactory class is a factory class that creates instances of the
 `pyccl.Cosmology` class.
@@ -21,6 +21,8 @@ from pydantic import (
     Field,
     field_serializer,
     model_serializer,
+    model_validator,
+    PrivateAttr,
 )
 
 import pyccl
@@ -31,6 +33,7 @@ from firecrown.updatable import Updatable
 from firecrown.parameters import register_new_updatable_parameter
 from firecrown.utils import YAMLSerializable
 
+# PowerSpec is a type that represents a power spectrum.
 PowerSpec = TypedDict(
     "PowerSpec",
     {
@@ -40,6 +43,7 @@ PowerSpec = TypedDict(
     },
 )
 
+# Background is a type that represents the cosmological background quantities.
 Background = TypedDict(
     "Background",
     {
@@ -49,6 +53,8 @@ Background = TypedDict(
     },
 )
 
+# CCLCalculatorArgs is a type that represents the arguments for the
+# CCLCalculator.
 CCLCalculatorArgs = TypedDict(
     "CCLCalculatorArgs",
     {
@@ -170,6 +176,112 @@ class CAMBExtraParams(BaseModel):
         }
 
 
+class CCLSplineParams(BaseModel):
+    """Params to control CCL spline interpolation."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    # Scale factor splines
+    a_spline_na: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_min: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_minlog_pk: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_min_pk: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_minlog_sm: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_min_sm: Annotated[float | None, Field(frozen=True)] = None
+    # a_spline_max is not defined because the CCL parameter A_SPLINE_MAX is
+    # required to be 1.0.
+    a_spline_minlog: Annotated[float | None, Field(frozen=True)] = None
+    a_spline_nlog: Annotated[int | None, Field(frozen=True)] = None
+
+    # mass splines
+    logm_spline_delta: Annotated[float | None, Field(frozen=True)] = None
+    logm_spline_nm: Annotated[int | None, Field(frozen=True)] = None
+    logm_spline_min: Annotated[float | None, Field(frozen=True)] = None
+    logm_spline_max: Annotated[float | None, Field(frozen=True)] = None
+
+    # PS a and k spline
+    a_spline_na_sm: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_nlog_sm: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_na_pk: Annotated[int | None, Field(frozen=True)] = None
+    a_spline_nlog_pk: Annotated[int | None, Field(frozen=True)] = None
+
+    # k-splines and integrals
+    k_max_spline: Annotated[float | None, Field(frozen=True)] = None
+    k_max: Annotated[float | None, Field(frozen=True)] = None
+    k_min: Annotated[float | None, Field(frozen=True)] = None
+    dlogk_integration: Annotated[float | None, Field(frozen=True)] = None
+    dchi_integration: Annotated[float | None, Field(frozen=True)] = None
+    n_k: Annotated[int | None, Field(frozen=True)] = None
+    n_k_3dcor: Annotated[int | None, Field(frozen=True)] = None
+
+    # Correlation function parameters
+    ell_min_corr: Annotated[float | None, Field(frozen=True)] = None
+    ell_max_corr: Annotated[float | None, Field(frozen=True)] = None
+    n_ell_corr: Annotated[int | None, Field(frozen=True)] = None
+
+    # Attributes that are used for the context manager functionality.
+    # These are *not* part of the model.
+    _spline_params: dict[str, float | int] = PrivateAttr()
+
+    @model_validator(mode="after")
+    def check_spline_params(self) -> "CCLSplineParams":
+        """Check that the spline parameters are valid."""
+        # Ensure the spline boundaries and breakpoint are valid.
+        spline_breaks = [self.a_spline_minlog, self.a_spline_min, 1.0]
+        spline_breaks = list(filter(lambda x: x is not None, spline_breaks))
+        assert all(
+            a is not None and b is not None and a < b
+            for a, b in zip(spline_breaks, spline_breaks[1:])
+        )
+
+        # Ensure the mass spline boundaries are valid
+        if self.logm_spline_min is not None and self.logm_spline_max is not None:
+            assert self.logm_spline_min < self.logm_spline_max
+
+        # Ensure the k-spline boundaries are valid
+        if self.k_min is not None and self.k_max is not None:
+            assert self.k_min < self.k_max
+
+        # Ensure the ell-spline boundaries are valid
+        if self.ell_min_corr is not None and self.ell_max_corr is not None:
+            assert self.ell_min_corr < self.ell_max_corr
+
+        return self
+
+    def __enter__(self) -> "CCLSplineParams":
+        """Enter the context manager.
+
+        This method saves the current CCL global spline parameters,
+        updates them with the values from this `CCLSplineParams` instance,
+        and returns the instance itself. This allows for temporary modification
+        of CCL spline parameters using a `with` statement.
+
+        :return:  The current instance with updated spline parameters.
+        """
+        self._spline_params = pyccl.CCLParameters.get_params_dict(pyccl.spline_params)
+        for key, value in self.model_dump().items():
+            if value is not None:
+                pyccl.spline_params[key.upper()] = value
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        """Exit the context manager.
+
+        This method resets the CCL global spline parameters to their original
+        values, as saved when entering the context manager. It ensures that
+        any temporary modifications made to the CCL spline parameters within
+        a `with` statement are reverted upon exit.
+
+        :param exc_type: The exception type, if an exception occurred.
+        :param exc_value: The exception value, if an exception occurred.
+        :param traceback: The traceback object, if an exception occurred.
+        """
+        for key, value in self._spline_params.items():
+            pyccl.spline_params[key] = value
+        if exc_type is not None:
+            raise exc_type(exc_value).with_traceback(traceback)
+
+
 class CCLFactory(Updatable, BaseModel):
     """Factory class for creating instances of the `pyccl.Cosmology` class."""
 
@@ -191,6 +303,7 @@ class CCLFactory(Updatable, BaseModel):
         Field(frozen=True),
     ] = CCLCreationMode.DEFAULT
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
+    ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
     def __init__(self, **data):
         """Initialize the CCLFactory object."""
@@ -205,33 +318,39 @@ class CCLFactory(Updatable, BaseModel):
 
         self._ccl_cosmo: None | pyccl.Cosmology = None
 
-        ccl_cosmo = pyccl.CosmologyVanillaLCDM()
+        temp_cosmology = pyccl.CosmologyVanillaLCDM()
 
         self.Omega_c = register_new_updatable_parameter(
-            default_value=ccl_cosmo["Omega_c"]
+            default_value=temp_cosmology["Omega_c"]
         )
         self.Omega_b = register_new_updatable_parameter(
-            default_value=ccl_cosmo["Omega_b"]
+            default_value=temp_cosmology["Omega_b"]
         )
-        self.h = register_new_updatable_parameter(default_value=ccl_cosmo["h"])
-        self.n_s = register_new_updatable_parameter(default_value=ccl_cosmo["n_s"])
+        self.h = register_new_updatable_parameter(default_value=temp_cosmology["h"])
+        self.n_s = register_new_updatable_parameter(default_value=temp_cosmology["n_s"])
         self.Omega_k = register_new_updatable_parameter(
-            default_value=ccl_cosmo["Omega_k"]
+            default_value=temp_cosmology["Omega_k"]
         )
-        self.Neff = register_new_updatable_parameter(default_value=ccl_cosmo["Neff"])
-        self.m_nu = register_new_updatable_parameter(default_value=ccl_cosmo["m_nu"])
-        self.w0 = register_new_updatable_parameter(default_value=ccl_cosmo["w0"])
-        self.wa = register_new_updatable_parameter(default_value=ccl_cosmo["wa"])
-        self.T_CMB = register_new_updatable_parameter(default_value=ccl_cosmo["T_CMB"])
+        self.Neff = register_new_updatable_parameter(
+            default_value=temp_cosmology["Neff"]
+        )
+        self.m_nu = register_new_updatable_parameter(
+            default_value=temp_cosmology["m_nu"]
+        )
+        self.w0 = register_new_updatable_parameter(default_value=temp_cosmology["w0"])
+        self.wa = register_new_updatable_parameter(default_value=temp_cosmology["wa"])
+        self.T_CMB = register_new_updatable_parameter(
+            default_value=temp_cosmology["T_CMB"]
+        )
 
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
                 # VanillaLCDM has does not have A_s, so we need to add it
                 self.A_s = register_new_updatable_parameter(default_value=2.1e-9)
             case PoweSpecAmplitudeParameter.SIGMA8:
-                assert ccl_cosmo["sigma8"] is not None
+                assert temp_cosmology["sigma8"] is not None
                 self.sigma8 = register_new_updatable_parameter(
-                    default_value=ccl_cosmo["sigma8"]
+                    default_value=temp_cosmology["sigma8"]
                 )
             case _ as unreachable:
                 assert_never(unreachable)
@@ -322,7 +441,11 @@ class CCLFactory(Updatable, BaseModel):
                     "mode and no CAMB extra parameters."
                 )
 
-            self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
+            if self.ccl_spline_params is not None:
+                with self.ccl_spline_params:
+                    self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
+            else:
+                self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
             return self._ccl_cosmo
 
         if self.require_nonlinear_pk:
@@ -341,7 +464,11 @@ class CCLFactory(Updatable, BaseModel):
                     matter_power_spectrum="linear",
                     transfer_function="boltzmann_isitgr",
                 )
-        self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        if self.ccl_spline_params is not None:
+            with self.ccl_spline_params:
+                self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        else:
+            self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
         return self._ccl_cosmo
 
     def _reset(self) -> None:
