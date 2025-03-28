@@ -6,6 +6,7 @@ import pytest
 import pyccl
 import pyccl.modified_gravity
 from pyccl.neutrinos import NeutrinoMassSplits
+import pydantic
 
 from firecrown.ccl_factory import (
     CAMBExtraParams,
@@ -14,6 +15,7 @@ from firecrown.ccl_factory import (
     CCLFactory,
     MuSigmaModel,
     PoweSpecAmplitudeParameter,
+    CCLSplineParams,
 )
 from firecrown.updatable import get_default_params_map
 from firecrown.parameters import ParamsMap
@@ -71,6 +73,15 @@ def fixture_camb_extra_params(request) -> CAMBExtraParams | None:
     )
 
 
+@pytest.fixture(
+    name="ccl_spline_params",
+    params=[None, {"a_spline_na": 451}],
+    ids=["default", "set_a_spline_na"],
+)
+def fixture_ccl_spline_params(request) -> CCLSplineParams | None:
+    return CCLSplineParams(**request.param) if request.param is not None else None
+
+
 Z_ARRAY = np.linspace(0.0, 5.0, 100, dtype=np.float64)
 A_ARRAY = np.array(1.0 / (1.0 + np.flip(Z_ARRAY)), dtype=np.float64)
 K_ARRAY = np.geomspace(1.0e-5, 10.0, 100, dtype=np.float64)
@@ -112,12 +123,91 @@ def fixture_calculator_args(request) -> CCLCalculatorArgs:
     return request.param
 
 
+def test_setting_each_spline_param(
+    ccl_creation_mode: CCLCreationMode,
+    camb_extra_params: CAMBExtraParams | None,
+) -> None:
+    # test_helper is a closure that captures the values of ccl_creation mode
+    # and camb_extra_params, and is callable with just the param_name and
+    # param_value to be tested.
+    def test_helper(param_name: str, param_value: float | int):
+        original_param_value = getattr(pyccl.spline_params, param_name.upper())
+        args = {param_name: param_value}
+        spline_params = CCLSplineParams(**args)  # type: ignore
+        assert original_param_value != param_value
+        ccl_factory = CCLFactory(
+            amplitude_parameter=PoweSpecAmplitudeParameter.AS,
+            mass_split=NeutrinoMassSplits.NORMAL,
+            require_nonlinear_pk=False,
+            creation_mode=ccl_creation_mode,
+            camb_extra_params=camb_extra_params,
+            ccl_spline_params=spline_params,
+        )
+        default_params = get_default_params_map(ccl_factory)
+        ccl_factory.update(default_params)
+        cosmo = ccl_factory.create()
+        assert cosmo is not None
+        assert getattr(cosmo.cosmo.spline_params, param_name.upper()) == param_value
+        assert getattr(pyccl.spline_params, param_name.upper()) == original_param_value
+
+    test_helper("a_spline_na", 73)
+    test_helper("a_spline_min", 0.003)
+    test_helper("a_spline_minlog_pk", 0.2)
+    test_helper("a_spline_min_pk", 0.5)
+    test_helper("a_spline_minlog_sm", 0.02)
+    test_helper("a_spline_min_sm", 0.05)
+    test_helper("a_spline_minlog", 0.02)
+    test_helper("a_spline_nlog", 2112)
+
+    test_helper("logm_spline_delta", 0.02)
+    test_helper("logm_spline_nm", 42)
+    test_helper("logm_spline_min", 4)
+    test_helper("logm_spline_max", 21)
+
+    test_helper("a_spline_na_sm", 11)
+    test_helper("a_spline_nlog_sm", 8)
+    test_helper("a_spline_na_pk", 44)
+    test_helper("a_spline_nlog_sm", 9)
+
+    test_helper("k_max_spline", 52)
+    test_helper("k_max", 999)
+    test_helper("k_min", 0.01)
+    test_helper("dlogk_integration", 0.2)
+    test_helper("dchi_integration", 5.5)
+    test_helper("n_k", 180)
+    test_helper("n_k_3dcor", 9999)
+
+    test_helper("ell_min_corr", 0.1)
+    test_helper("ell_max_corr", 5000)
+    test_helper("n_ell_corr", 4444)
+
+
+def test_ccl_spline_params_validation():
+    with pytest.raises(pydantic.ValidationError):
+        _ = CCLSplineParams(logm_spline_min=20, logm_spline_max=10)
+    with pytest.raises(pydantic.ValidationError):
+        _ = CCLSplineParams(k_min=0.5, k_max=0.1)
+    with pytest.raises(pydantic.ValidationError):
+        _ = CCLSplineParams(ell_min_corr=100, ell_max_corr=10)
+
+
+def test_ccl_spline_params_context_manager_exception():
+    with CCLSplineParams(k_max=900) as params:
+        assert params.k_max == 900
+    with pytest.raises(AssertionError):
+        with CCLSplineParams(n_ell_corr=1000):
+            assert False
+
+
+# pylint: disable=too-many-arguments
+# pylint: disable=too-many-positional-arguments
 def test_ccl_factory_simple(
     amplitude_parameter: PoweSpecAmplitudeParameter,
     neutrino_mass_splits: NeutrinoMassSplits,
     require_nonlinear_pk: bool,
     ccl_creation_mode: CCLCreationMode,
     camb_extra_params: CAMBExtraParams | None,
+    ccl_spline_params: CCLSplineParams | None,
 ) -> None:
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
@@ -125,6 +215,7 @@ def test_ccl_factory_simple(
         require_nonlinear_pk=require_nonlinear_pk,
         creation_mode=ccl_creation_mode,
         camb_extra_params=camb_extra_params,
+        ccl_spline_params=ccl_spline_params,
     )
 
     assert ccl_factory is not None
@@ -140,6 +231,14 @@ def test_ccl_factory_simple(
 
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
+    if ccl_spline_params is not None:
+        for key, value in ccl_spline_params.model_dump().items():
+            if value is not None:
+                assert (
+                    # pylint: disable-next=protected-access
+                    cosmo._spline_params[key.upper()]
+                    == value
+                )
 
 
 def test_ccl_factory_ccl_args(
@@ -147,11 +246,13 @@ def test_ccl_factory_ccl_args(
     neutrino_mass_splits: NeutrinoMassSplits,
     require_nonlinear_pk: bool,
     calculator_args: CCLCalculatorArgs,
+    ccl_spline_params: CCLSplineParams,
 ) -> None:
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
         mass_split=neutrino_mass_splits,
         require_nonlinear_pk=require_nonlinear_pk,
+        ccl_spline_params=ccl_spline_params,
     )
 
     if require_nonlinear_pk and "pk_linear" not in calculator_args:
@@ -173,6 +274,11 @@ def test_ccl_factory_ccl_args(
 
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
+    if ccl_spline_params is not None:
+        for key, value in ccl_spline_params.model_dump().items():
+            if value is not None:
+                # pylint: disable-next=protected-access
+                assert cosmo._spline_params[key.upper()] == value
 
 
 def test_ccl_factory_update() -> None:

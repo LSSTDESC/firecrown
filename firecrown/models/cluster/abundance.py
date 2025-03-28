@@ -23,7 +23,7 @@ class ClusterAbundance(Updatable):
     """
 
     @property
-    def cosmo(self) -> Cosmology:
+    def cosmo(self) -> Cosmology | None:
         """The cosmology used to predict the cluster number count."""
         return self._cosmo
 
@@ -41,7 +41,7 @@ class ClusterAbundance(Updatable):
         self.min_z = z_interval[0]
         self.max_z = z_interval[1]
         self._hmf_cache: dict[tuple[float, float], float] = {}
-        self._cosmo: Cosmology = None
+        self._cosmo: Cosmology | None = None
 
     def update_ingredients(self, cosmo: Cosmology) -> None:
         """Update the cluster abundance calculation with a new cosmology."""
@@ -55,6 +55,7 @@ class ClusterAbundance(Updatable):
 
         :param sky_area: The area of the survey on the sky in square degrees.
         """
+        assert self.cosmo is not None
         scale_factor = 1.0 / (1.0 + z)
         angular_diam_dist = bkg.angular_diameter_distance(self.cosmo, scale_factor)
         h_over_h0 = bkg.h_over_h0(self.cosmo, scale_factor)
