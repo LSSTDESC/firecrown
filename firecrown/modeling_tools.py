@@ -52,7 +52,7 @@ class ModelingTools(Updatable):
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
-        """Add a :python:`pyccl.Pk2D` to the table of power spectra.
+        """Add a :class:`pyccl.Pk2D` to the table of power spectra.
 
         :param name: the name of the power spectrum
         :param powerspectrum: the power spectrum
@@ -94,7 +94,7 @@ class ModelingTools(Updatable):
         includes building the perturbation theory and halo model calculators
         if they are needed.
 
-        :param ccl_cosmo: the current CCL cosmology object
+        :param calculator_args: the CCL calculator arguments
         """
         if not self.is_updated():
             raise RuntimeError("ModelingTools has not been updated.")

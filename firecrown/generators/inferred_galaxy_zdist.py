@@ -54,9 +54,9 @@ class ZDistLSSTSRD:
 
     Inferred galaxy redshift distribution is based on the LSST Science
     Requirements Document (SRD), equation 5. Note that the SRD fixes
-    $\beta = 2$.
+    :math:`\beta = 2`.
 
-    The values of $\alpha$ and $z_0$ are different for Year 1 and Year 10.
+    The values of :math:`\alpha` and :math:`z_0` are different for Year 1 and Year 10.
     `ZDistLLSTSRD` provides these values as defaults and allows for greater
     flexibility when desired.
     """

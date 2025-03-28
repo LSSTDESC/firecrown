@@ -47,13 +47,6 @@ It can also be used as a library in other contexts, and so the installation of F
  
 .. toctree::
    :maxdepth: 1
-   :caption: Reference
-   :name: apiref
-
-   API Documentation<api.rst>
-
-.. toctree::
-   :maxdepth: 1
    :caption: License
    :name: license
 

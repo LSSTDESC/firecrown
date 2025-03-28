@@ -8,7 +8,7 @@ sphinx:
 formats: all
 
 conda:
-  environment: docs/environment.yml
+  environment: environment.yml
 
 build:
   os: ubuntu-22.04
@@ -22,5 +22,4 @@ build:
       # Install firecrown so that we can use it when building the docs.
       - pip install --no-deps --editable .
       - mkdir -p docs/_static
-      - wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.4.553/quarto-1.4.553-linux-amd64.tar.gz && mkdir ~/opt && tar -C ~/opt -xvzf quarto-1.4.553-linux-amd64.tar.gz
-      - cd tutorial && PATH="$HOME/opt/quarto-1.4.553/bin:$PATH" quarto render --output-dir=../docs/_static
+      - cd tutorial && quarto render --output-dir=../docs/_static

@@ -164,9 +164,6 @@ class TwoPoint(Statistic):
     sacc_tracers : 2-tuple of str
         A tuple of the SACC tracer names for this 2pt statistic. Set after a
         call to read.
-    ell_or_theta_ : npt.NDArray[np.float64]
-        The final array of ell/theta values for the statistic. Set after
-        `compute` is called.
 
     """
 
