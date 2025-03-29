@@ -19,6 +19,9 @@ build:
   jobs:
     pre_build:
       - echo $PATH
+      - conda info
+      - which quarto
+      - which deno
       # Install firecrown so that we can use it when building the docs.
       - pip install --no-deps --editable .
       - mkdir -p docs/_static
