@@ -21,12 +21,7 @@ build:
       - echo $PATH
       - mamba info
       - mamba env list
-      - mamba activate 499
-      - mamba info
-      - mamba list
-      - which quarto
-      - which deno
-      # Install firecrown so that we can use it when building the docs.
+     # Install firecrown so that we can use it when building the docs.
       - pip install --no-deps --editable .
       - mkdir -p docs/_static
       - wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.6.42/quarto-1.6.42-linux-amd64.tar.gz && mkdir ~/opt && tar -C ~/opt -xvzf quarto-1.6.42-linux-amd64.tar.gz
