@@ -20,6 +20,9 @@ build:
     pre_build:
       - echo $PATH
       - conda info
+      - conda env list
+      - conda activate firecrown_developer
+      - conda info
       - which quarto
       - which deno
       # Install firecrown so that we can use it when building the docs.
