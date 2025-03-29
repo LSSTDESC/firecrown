@@ -19,10 +19,11 @@ build:
   jobs:
     pre_build:
       - echo $PATH
-      - conda info
-      - conda env list
-      - conda activate firecrown_developer
-      - conda info
+      - mamba info
+      - mamba env list
+      - mamba activate firecrown_developer
+      - mamba info
+      - mamba list
       - which quarto
       - which deno
       # Install firecrown so that we can use it when building the docs.
