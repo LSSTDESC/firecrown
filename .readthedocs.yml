@@ -21,7 +21,7 @@ build:
       - echo $PATH
       - mamba info
       - mamba env list
-      - mamba activate firecrown_developer
+      - mamba activate 499
       - mamba info
       - mamba list
       - which quarto
