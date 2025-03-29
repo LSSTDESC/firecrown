@@ -29,4 +29,5 @@ build:
       # Install firecrown so that we can use it when building the docs.
       - pip install --no-deps --editable .
       - mkdir -p docs/_static
-      - cd tutorial && quarto render --output-dir=../docs/_static
+      - wget https://github.com/quarto-dev/quarto-cli/releases/download/v1.6.42/quarto-1.6.42-linux-amd64.tar.gz && mkdir ~/opt && tar -C ~/opt -xvzf quarto-1.6.42-linux-amd64.tar.gz
+      - cd tutorial && PATH="$HOME/opt/quarto-1.6.42/bin:$PATH" quarto render --output-dir=../docs/_static
