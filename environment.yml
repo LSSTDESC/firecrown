@@ -19,6 +19,7 @@ dependencies:
   - fuzzywuzzy
   - getdist
   - glib
+  - graphviz
   - idna
   - jupyter
   - matplotlib-base
