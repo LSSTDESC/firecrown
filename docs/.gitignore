@@ -1,7 +1,9 @@
 *.png
 *.pdf
+warnings.txt
 api/
 _autosummary/
 _build/
 _static/
 /.quarto/
+autoapi/
