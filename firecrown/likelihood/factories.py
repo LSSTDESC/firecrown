@@ -83,7 +83,7 @@ class TwoPointFactory(BaseModel):
     weak_lensing_factory: WeakLensingFactory
     number_counts_factory: NumberCountsFactory
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
 
     @field_serializer("correlation_space")
@@ -149,7 +149,7 @@ class TwoPointExperiment(BaseModel):
     data_source: DataSourceSacc
     ccl_factory: CCLFactory | None = None
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, _, /) -> None:
         """Initialize the TwoPointExperiment object."""
         if self.ccl_factory is None:
             self.ccl_factory = CCLFactory()

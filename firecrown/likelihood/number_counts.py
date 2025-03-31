@@ -630,11 +630,8 @@ class NumberCountsFactory(BaseModel):
     global_systematics: Sequence[NumberCountsSystematicFactory]
     include_rsd: bool = False
 
-    def model_post_init(self, _) -> None:
-        """Initialize the NumberCountsFactory.
-
-        :param _: required by the interface but not used
-        """
+    def model_post_init(self, _, /) -> None:
+        """Initialize the NumberCountsFactory."""
         self._cache: dict[int, NumberCounts] = {}
         self._global_systematics_instances = [
             nc_systematic_factory.create_global()

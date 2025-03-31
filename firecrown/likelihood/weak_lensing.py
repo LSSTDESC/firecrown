@@ -534,7 +534,7 @@ class WeakLensingFactory(BaseModel):
     per_bin_systematics: Sequence[WeakLensingSystematicFactory]
     global_systematics: Sequence[WeakLensingSystematicFactory]
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
         self._cache: dict[int, WeakLensing] = {}
         self._global_systematics_instances = [
