@@ -388,7 +388,7 @@ class CCLFactory(Updatable, BaseModel):
         """Serialize the creation mode parameter."""
         return value.name
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
 
     def create(
