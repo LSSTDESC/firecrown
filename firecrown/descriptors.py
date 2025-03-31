@@ -100,7 +100,7 @@ class TypeFloat:
 class TypeString:
     """String attribute descriptor.
 
-    :classs:`TypeString` provides several different means of validation of the
+    :class:`TypeString` provides several different means of validation of the
     controlled string attribute, all of which are optional.
     """
 
