@@ -77,6 +77,8 @@ def calculate_angular_cl(
             (tracer0.ccl_tracer, tracer1.ccl_tracer),
             tuple(ells.ravel().tolist()),
             p_of_k_a=pk,
+            l_limber=tools.non_limber_max_ell,
+            p_of_k_a_lin=tools.ccl_cosmo.get_linear_power()
         )
         * scale0
         * scale1
@@ -685,7 +687,7 @@ class TwoPoint(Statistic):
             pk_name = f"{tracer0.field}:{tracer1.field}"
             tn = TracerNames(tracer0.tracer_name, tracer1.tracer_name)
             result = calculate_angular_cl(
-                ells, pk_name, scale0, scale1, tools, tracer0, tracer1
+                ells, pk_name, scale0, scale1, tools, tracer0, tracer1,
             )
             self.theory.cells[tn] = result
         self.theory.cells[mdt.TRACER_NAMES_TOTAL] = np.array(

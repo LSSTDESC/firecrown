@@ -149,6 +149,8 @@ def cached_angular_cl(
     tracers: tuple[pyccl.Tracer, pyccl.Tracer],
     ells: npt.NDArray[np.int64],
     p_of_k_a=None | Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]],
+    l_limber=-1,
+    p_of_k_a_lin=None,
 ):
     """Wrapper for pyccl.angular_cl, with automatic caching.
 
@@ -158,7 +160,8 @@ def cached_angular_cl(
     :param p_of_k_a: function that computes the power spectrum
     """
     return pyccl.angular_cl(
-        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a
+        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a,
+        l_limber=l_limber, p_of_k_a_lin=p_of_k_a_lin,
     )
 
 
