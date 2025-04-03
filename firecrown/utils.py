@@ -150,7 +150,7 @@ def cached_angular_cl(
     ells: npt.NDArray[np.int64],
     p_of_k_a=None | Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]],
     l_limber=-1,
-    p_of_k_a_lin=None,
+    p_of_k_a_lin=None | pyccl.Pk2D | str,
 ):
     """Wrapper for pyccl.angular_cl, with automatic caching.
 
@@ -158,10 +158,17 @@ def cached_angular_cl(
     :param tracers: tracers indicating the measurements to be correlated
     :param ells: ell values at which to calculate the power spectrum
     :param p_of_k_a: function that computes the power spectrum
+    :param l_limber: the maximum ell for the non-limber integration
+    :param p_of_k_a_lin: function that returns the linear power spectrum
     """
     return pyccl.angular_cl(
-        cosmo, tracers[0], tracers[1], np.array(ells), p_of_k_a=p_of_k_a,
-        l_limber=l_limber, p_of_k_a_lin=p_of_k_a_lin,
+        cosmo,
+        tracers[0],
+        tracers[1],
+        np.array(ells),
+        p_of_k_a=p_of_k_a,
+        l_limber=l_limber,
+        p_of_k_a_lin=p_of_k_a_lin,
     )
 
 
