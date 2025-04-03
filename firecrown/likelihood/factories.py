@@ -80,8 +80,7 @@ class TwoPointFactory(BaseModel):
         BeforeValidator(_validate_correlation_space),
         Field(description="The two-point correlation space."),
     ]
-    weak_lensing_factory: WeakLensingFactory
-    number_counts_factory: NumberCountsFactory
+    factories: list[WeakLensingFactory | NumberCountsFactory]
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
@@ -177,15 +176,13 @@ class TwoPointExperiment(BaseModel):
             case TwoPointCorrelationSpace.REAL:
                 likelihood = _build_two_point_likelihood_real(
                     sacc_data,
-                    self.two_point_factory.weak_lensing_factory,
-                    self.two_point_factory.number_counts_factory,
+                    self.two_point_factory.factories,
                     filters=self.data_source.filters,
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
                     sacc_data,
-                    self.two_point_factory.weak_lensing_factory,
-                    self.two_point_factory.number_counts_factory,
+                    self.two_point_factory.factories,
                     filters=self.data_source.filters,
                 )
             case _ as unreachable:
@@ -221,8 +218,7 @@ def build_two_point_likelihood(
 
 def _build_two_point_likelihood_harmonic(
     sacc_data: sacc.Sacc,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    factories: list[WeakLensingFactory | NumberCountsFactory],
     filters: TwoPointBinFilterCollection | None = None,
 ):
     """
@@ -234,8 +230,8 @@ def _build_two_point_likelihood_harmonic(
     by combining the SACC file with the specified statistic factories.
 
     :param sacc_data: The SACC file containing the data.
-    :param wl_factory: The weak lensing statistic factory.
-    :param nc_factory: The number counts statistic factory.
+    :param factories: The list of factories to use.
+    :param filters: The filters to apply to the data.
 
     :return: A likelihood object for two-point statistics in harmonic space.
     """
@@ -249,7 +245,7 @@ def _build_two_point_likelihood_harmonic(
         tpms = filters(tpms)
 
     two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory
+        tpms, factories=factories
     )
 
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
@@ -259,8 +255,7 @@ def _build_two_point_likelihood_harmonic(
 
 def _build_two_point_likelihood_real(
     sacc_data: sacc.Sacc,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    factories: list[WeakLensingFactory | NumberCountsFactory],
     filters: TwoPointBinFilterCollection | None = None,
 ):
     """
@@ -272,8 +267,8 @@ def _build_two_point_likelihood_real(
     by combining the SACC file with the specified statistic factories.
 
     :param sacc_data: The SACC file containing the data.
-    :param wl_factory: The weak lensing statistic factory.
-    :param nc_factory: The number counts statistic factory.
+    :param factories: The list of factories to use.
+    :param filters: The filters to apply to the data.
 
     :return: A likelihood object for two-point statistics in real space.
     """
@@ -287,7 +282,7 @@ def _build_two_point_likelihood_real(
         tpms = filters(tpms)
 
     two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory
+        tpms,factories=factories
     )
 
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)

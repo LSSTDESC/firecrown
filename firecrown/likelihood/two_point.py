@@ -240,8 +240,7 @@ class TwoPoint(Statistic):
     def from_metadata_index(
         cls,
         metadata_indices: Sequence[TwoPointHarmonicIndex | TwoPointRealIndex],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
+        factories: list[WeakLensingFactory | NumberCountsFactory] | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics.
 
@@ -253,8 +252,8 @@ class TwoPoint(Statistic):
 
         :param metadata_index: The metadata index objects to initialize the TwoPoint
             statistics.
-        :param wl_factory: The weak lensing factory to use.
-        :param nc_factory: The number counts factory to use.
+        :param factories: The factories to use for the sources. If None, the default
+            factories are used.
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
@@ -262,10 +261,10 @@ class TwoPoint(Statistic):
             cls(
                 sacc_data_type=metadata_index["data_type"],
                 source0=use_source_factory_metadata_index(
-                    n1, a, wl_factory=wl_factory, nc_factory=nc_factory
+                    n1, a, factories=factories
                 ),
                 source1=use_source_factory_metadata_index(
-                    n2, b, wl_factory=wl_factory, nc_factory=nc_factory
+                    n2, b, factories=factories
                 ),
             )
             for metadata_index in metadata_indices
@@ -278,8 +277,7 @@ class TwoPoint(Statistic):
         cls,
         *,
         metadata: TwoPointHarmonic | TwoPointReal,
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
+        factories: list[WeakLensingFactory | NumberCountsFactory] | None = None,
     ) -> TwoPoint:
         """Create a single TwoPoint statistic from metadata.
 
@@ -291,13 +289,13 @@ class TwoPoint(Statistic):
         match metadata:
             case TwoPointHarmonic():
                 two_point = cls._from_metadata_single_base(
-                    metadata, wl_factory, nc_factory
+                    metadata, factories
                 )
                 two_point.theory.ells = metadata.ells
                 two_point.theory.window = metadata.window
             case TwoPointReal():
                 two_point = cls._from_metadata_single_base(
-                    metadata, wl_factory, nc_factory
+                    metadata, factories
                 )
                 two_point.theory.thetas = metadata.thetas
                 two_point.theory.window = None
@@ -310,28 +308,26 @@ class TwoPoint(Statistic):
         return two_point
 
     @classmethod
-    def _from_metadata_single_base(cls, metadata, wl_factory, nc_factory):
+    def _from_metadata_single_base(cls, metadata, factories):
         """Create a single TwoPoint statistic from metadata.
 
         Base method for creating a single TwoPoint statistic from metadata.
 
         :param metadata: The metadata object to initialize the TwoPoint statistic.
-        :param wl_factory: The weak lensing factory to use.
-        :param nc_factory: The number counts factory to use.
+        :param factories: The list factories to use for the sources. If None, the default
+            factories are used.
 
         :return: A TwoPoint statistic.
         """
         source0 = use_source_factory(
             metadata.XY.x,
             metadata.XY.x_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            factories=factories,
         )
         source1 = use_source_factory(
             metadata.XY.y,
             metadata.XY.y_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            factories=factories,
         )
         two_point = cls(
             metadata.get_sacc_name(),
@@ -345,8 +341,7 @@ class TwoPoint(Statistic):
     def from_metadata(
         cls,
         metadata_seq: Sequence[TwoPointHarmonic | TwoPointReal],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
+        factories: list[WeakLensingFactory | NumberCountsFactory] | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics from metadata.
 
@@ -359,14 +354,13 @@ class TwoPoint(Statistic):
         contain no data.
 
         :param metadata_seq: The metadata objects to initialize the TwoPoint statistics.
-        :param wl_factory: The weak lensing factory to use.
-        :param nc_factory: The number counts factory to use.
+        :param factories: The factories to use for the sources.
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list = [
             cls._from_metadata_single(
-                metadata=metadata, wl_factory=wl_factory, nc_factory=nc_factory
+                metadata=metadata, factories=factories
             )
             for metadata in metadata_seq
         ]
@@ -377,17 +371,17 @@ class TwoPoint(Statistic):
     def create_two_point(
         cls,
         measurement: TwoPointMeasurement,
-        wl_factory: None | WeakLensingFactory,
-        nc_factory: None | NumberCountsFactory,
+        factories: list[WeakLensingFactory | NumberCountsFactory] | None = None,
     ) -> TwoPoint:
         """Create a single TwoPoint statistic from a measurement.
 
         :param measurement: The measurement object to initialize the TwoPoint statistic.
+        :param factories: The list factories to use for the sources. If None, the default
+            factories are used.
         """
         two_point = cls._from_metadata_single(
             metadata=measurement.metadata,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            factories=factories,
         )
         two_point.sacc_indices = measurement.indices
         two_point.set_data_vector(DataVector.create(measurement.data))
@@ -398,8 +392,7 @@ class TwoPoint(Statistic):
     def from_measurement(
         cls,
         measurements: Sequence[TwoPointMeasurement],
-        wl_factory: WeakLensingFactory | None = None,
-        nc_factory: NumberCountsFactory | None = None,
+        factories: list[WeakLensingFactory | NumberCountsFactory] | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics from measurements.
 
@@ -412,13 +405,12 @@ class TwoPoint(Statistic):
 
         :param measurements: The measurements objects to initialize the TwoPoint
             statistics.
-        :param wl_factory: The weak lensing factory to use.
-        :param nc_factory: The number counts factory to use.
+        :param factories: The factories to use for the sources.
 
         :return: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list: list[TwoPoint] = [
-            cls.create_two_point(m, wl_factory, nc_factory) for m in measurements
+            cls.create_two_point(m, factories) for m in measurements
         ]
         return UpdatableCollection(two_point_list)
 
