@@ -11,6 +11,7 @@ from firecrown.utils import (
     compare_optional_arrays,
     compare_optionals,
     base_model_from_yaml,
+    base_model_to_yaml,
     ClIntegrationMethod,
     ClLimberMethod,
     ClIntegrationOptions,
@@ -161,6 +162,20 @@ def test_cl_integration_options_limber(limber_method: ClLimberMethod):
     assert args["l_limber"] == -1
     assert len(args) == 2
 
+    int_options_yaml = base_model_to_yaml(int_options)
+    int_options2 = base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+    assert int_options == int_options2
+
+
+def test_cl_integration_options_limber_yaml(limber_method: ClLimberMethod):
+    int_options_yaml = f"""
+    method: LIMBER
+    limber_method: {limber_method.lower()}
+    """
+    int_options = base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+    assert int_options.limber_method == limber_method
+    assert int_options.method == ClIntegrationMethod.LIMBER
+
 
 def test_cl_integration_options_fkem_auto(
     limber_method: ClLimberMethod,
@@ -199,6 +214,31 @@ def test_cl_integration_options_fkem_auto(
 
     assert len(args) == expected_len
 
+    int_options_yaml = base_model_to_yaml(int_options)
+    int_options2 = base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+    assert int_options == int_options2
+
+
+def test_cl_integration_options_fkem_auto_yaml(
+    limber_method: ClLimberMethod,
+    limber_max_error: float | None,
+    fkem_chi_min: float | None,
+    fkem_Nchi: int | None,
+):
+    int_options_yaml = f"""
+    method: FKEM_AUTO
+    limber_method: {limber_method.lower()}
+    limber_max_error: {limber_max_error if limber_max_error is not None else "null"}
+    fkem_chi_min: {fkem_chi_min if fkem_chi_min is not None else "null"}
+    fkem_Nchi: {fkem_Nchi if fkem_Nchi is not None else "null"}
+    """
+    int_options = base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+    assert int_options.limber_method == limber_method
+    assert int_options.method == ClIntegrationMethod.FKEM_AUTO
+    assert int_options.limber_max_error == limber_max_error
+    assert int_options.fkem_chi_min == fkem_chi_min
+    assert int_options.fkem_Nchi == fkem_Nchi
+
 
 def test_cl_integration_options_fkem_l_limber(
     limber_method: ClLimberMethod,
@@ -232,6 +272,31 @@ def test_cl_integration_options_fkem_l_limber(
         expected_len += 1
 
     assert len(args) == expected_len
+
+    int_options_yaml = base_model_to_yaml(int_options)
+    int_options2 = base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+    assert int_options == int_options2
+
+
+def test_cl_integration_options_fkem_l_limber_yaml(
+    limber_method: ClLimberMethod,
+    fkem_chi_min: float | None,
+    fkem_Nchi: int | None,
+    l_limber: int,
+):
+    int_options_yaml = f"""
+    method: FKEM_L_LIMBER
+    limber_method: {limber_method.lower()}
+    l_limber: {l_limber}
+    fkem_chi_min: {fkem_chi_min if fkem_chi_min is not None else "null"}
+    fkem_Nchi: {fkem_Nchi if fkem_Nchi is not None else "null"}
+    """
+    int_options = base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+    assert int_options.limber_method == limber_method
+    assert int_options.method == ClIntegrationMethod.FKEM_L_LIMBER
+    assert int_options.l_limber == l_limber
+    assert int_options.fkem_chi_min == fkem_chi_min
+    assert int_options.fkem_Nchi == fkem_Nchi
 
 
 def test_cl_integration_options_limber_invalid():
@@ -305,3 +370,15 @@ def test_cl_integration_options_fkem_l_limber_invalid():
             method=ClIntegrationMethod.FKEM_L_LIMBER,
             limber_method=ClLimberMethod.GSL_QAG_QUAD,
         )
+
+
+def test_cl_integration_test_cmparison():
+    int_options = ClIntegrationOptions(
+        method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_SPLINE
+    )
+    assert int_options == ClIntegrationOptions(
+        method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_SPLINE
+    )
+    assert int_options != ClIntegrationOptions(
+        method=ClIntegrationMethod.FKEM_AUTO, limber_method=ClLimberMethod.GSL_SPLINE
+    )

@@ -1,6 +1,6 @@
 """Some utility functions for patterns common in Firecrown."""
 
-from typing import Generator, TypeVar, Type, Callable
+from typing import Generator, TypeVar, Type, Callable, Annotated
 from enum import Enum, auto
 
 import functools
@@ -9,7 +9,7 @@ import numpy as np
 import pyccl
 import scipy.interpolate
 from numpy import typing as npt
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, BeforeValidator, field_serializer
 
 import sacc
 
@@ -156,6 +156,15 @@ class ClLimberMethod(YAMLSerializable, str, Enum):
     GSL_SPLINE = auto()
 
 
+def _validate_cl_limber_method(value: ClLimberMethod | str):
+    if isinstance(value, str):
+        try:
+            return ClLimberMethod(value.lower())  # Convert from string to Enum
+        except ValueError as exc:
+            raise ValueError(f"Invalid value for ClLimberMethod: {value}") from exc
+    return value
+
+
 class ClIntegrationMethod(YAMLSerializable, str, Enum):
     """This class defines Cl integration methods."""
 
@@ -168,17 +177,42 @@ class ClIntegrationMethod(YAMLSerializable, str, Enum):
     FKEM_L_LIMBER = auto()
 
 
+def _validate_cl_integration_method(value: ClIntegrationMethod | str):
+    if isinstance(value, str):
+        try:
+            return ClIntegrationMethod(value.lower())  # Convert from string to Enum
+        except ValueError as exc:
+            raise ValueError(f"Invalid value for ClIntegrationMethod: {value}") from exc
+    return value
+
+
 class ClIntegrationOptions(BaseModel):
     """Options for angular power spectrum integration."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
-    method: ClIntegrationMethod
-    limber_method: ClLimberMethod
+    method: Annotated[
+        ClIntegrationMethod, BeforeValidator(_validate_cl_integration_method)
+    ]
+    limber_method: Annotated[
+        ClLimberMethod, BeforeValidator(_validate_cl_limber_method)
+    ]
     l_limber: int | None = None
     limber_max_error: float | None = None
     fkem_chi_min: float | None = None
     fkem_Nchi: int | None = None
+
+    @field_serializer("method")
+    @classmethod
+    def serialize_method(cls, value: ClIntegrationMethod) -> str:
+        """Serialize the method parameter."""
+        return value.name
+
+    @field_serializer("limber_method")
+    @classmethod
+    def serialize_limber_method(cls, value: ClLimberMethod) -> str:
+        """Serialize the limber_method parameter."""
+        return value.name
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""

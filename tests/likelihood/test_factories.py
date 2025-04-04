@@ -19,7 +19,13 @@ from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import Galaxies
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
-from firecrown.utils import base_model_from_yaml, base_model_to_yaml
+from firecrown.utils import (
+    base_model_from_yaml,
+    base_model_to_yaml,
+    ClIntegrationOptions,
+    ClIntegrationMethod,
+    ClLimberMethod,
+)
 
 
 @pytest.fixture(name="empty_factory_harmonic")
@@ -80,6 +86,9 @@ def test_two_point_factory_to_from_dict(correlation_space) -> None:
         number_counts_factory=NumberCountsFactory(
             per_bin_systematics=[], global_systematics=[]
         ),
+        int_options=ClIntegrationOptions(
+            method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_QAG_QUAD
+        ),
     )
 
     yaml_str = base_model_to_yaml(two_point_factory)
@@ -96,6 +105,8 @@ def test_two_point_factory_to_from_dict(correlation_space) -> None:
     assert two_point_factory_from_dict.weak_lensing_factory.global_systematics == []
     assert two_point_factory_from_dict.number_counts_factory.per_bin_systematics == []
     assert two_point_factory_from_dict.number_counts_factory.global_systematics == []
+
+    assert two_point_factory_from_dict.int_options == two_point_factory.int_options
 
 
 def test_two_point_factor_direct() -> None:

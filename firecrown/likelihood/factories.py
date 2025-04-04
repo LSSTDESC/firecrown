@@ -82,6 +82,7 @@ class TwoPointFactory(BaseModel):
     ]
     weak_lensing_factory: WeakLensingFactory
     number_counts_factory: NumberCountsFactory
+    int_options: ClIntegrationOptions | None = None
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
@@ -148,7 +149,6 @@ class TwoPointExperiment(BaseModel):
     two_point_factory: TwoPointFactory
     data_source: DataSourceSacc
     ccl_factory: CCLFactory | None = None
-    int_options: ClIntegrationOptions | None = None
 
     def model_post_init(self, _, /) -> None:
         """Initialize the TwoPointExperiment object."""
@@ -181,7 +181,7 @@ class TwoPointExperiment(BaseModel):
                     self.two_point_factory.weak_lensing_factory,
                     self.two_point_factory.number_counts_factory,
                     filters=self.data_source.filters,
-                    int_options=self.int_options,
+                    int_options=self.two_point_factory.int_options,
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
@@ -189,7 +189,7 @@ class TwoPointExperiment(BaseModel):
                     self.two_point_factory.weak_lensing_factory,
                     self.two_point_factory.number_counts_factory,
                     filters=self.data_source.filters,
-                    int_options=self.int_options,
+                    int_options=self.two_point_factory.int_options,
                 )
             case _ as unreachable:
                 assert_never(unreachable)
