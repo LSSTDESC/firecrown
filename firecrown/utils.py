@@ -4,6 +4,7 @@ from typing import Generator, TypeVar, Type, Callable
 from enum import Enum, auto
 
 import functools
+from typing_extensions import assert_never
 import numpy as np
 import pyccl
 import scipy.interpolate
@@ -191,9 +192,8 @@ class ClIntegrationOptions(BaseModel):
                 ]
             case ClIntegrationMethod.FKEM_AUTO:
                 incompatible_options = ["l_limber"]
-                if self.limber_max_error is None:
-                    raise ValueError("limber_max_error must be set for FKEM_AUTO.")
             case ClIntegrationMethod.FKEM_L_LIMBER:
+                incompatible_options = ["limber_max_error"]
                 if self.l_limber is None or self.l_limber < 0:
                     raise ValueError("l_limber must be set for FKEM_L_LIMBER.")
 
@@ -209,24 +209,38 @@ class ClIntegrationOptions(BaseModel):
             case ClLimberMethod.GSL_SPLINE:
                 arg = {"limber_integration_method": "spline"}
 
+        out: dict[str, str | int | float]
         match self.method:
             case ClIntegrationMethod.LIMBER:
                 return arg | {"l_limber": -1}
             case ClIntegrationMethod.FKEM_AUTO:
-                return arg | {
+                out = {
                     "l_limber": "auto",
-                    "limber_max_error": self.limber_max_error,
                     "non_limber_integration_method": "FKEM",
-                    "fkem_chi_min": self.fkem_chi_min,
-                    "fkem_Nchi": self.fkem_Nchi,
                 }
+                if self.limber_max_error is not None:
+                    out["limber_max_error"] = self.limber_max_error
+                if self.fkem_chi_min is not None:
+                    out["fkem_chi_min"] = self.fkem_chi_min
+                if self.fkem_Nchi is not None:
+                    out["fkem_Nchi"] = self.fkem_Nchi
+
+                return arg | out
+
             case ClIntegrationMethod.FKEM_L_LIMBER:
-                return arg | {
+                assert self.l_limber is not None
+                out = {
                     "l_limber": self.l_limber,
                     "non_limber_integration_method": "FKEM",
-                    "fkem_chi_min": self.fkem_chi_min,
-                    "fkem_Nchi": self.fkem_Nchi,
                 }
+                if self.fkem_chi_min is not None:
+                    out["fkem_chi_min"] = self.fkem_chi_min
+                if self.fkem_Nchi is not None:
+                    out["fkem_Nchi"] = self.fkem_Nchi
+
+                return arg | out
+            case _ as unreachable:
+                assert_never(unreachable)
 
 
 @functools.lru_cache(maxsize=128)

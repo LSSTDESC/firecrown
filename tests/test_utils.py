@@ -11,6 +11,9 @@ from firecrown.utils import (
     compare_optional_arrays,
     compare_optionals,
     base_model_from_yaml,
+    ClIntegrationMethod,
+    ClLimberMethod,
+    ClIntegrationOptions,
 )
 
 
@@ -108,3 +111,197 @@ def test_compare_optionals():
     assert not compare_optionals(q, a)
 
     assert not compare_optionals(a, q)
+
+
+@pytest.fixture(
+    name="limber_method",
+    params=[ClLimberMethod.GSL_SPLINE, ClLimberMethod.GSL_QAG_QUAD],
+)
+def fixture_limber_method(request):
+    return request.param
+
+
+@pytest.fixture(
+    name="limber_max_error",
+    params=[None, 0.1, 0.2],
+)
+def fixture_limber_max_error(request):
+    return request.param
+
+
+@pytest.fixture(name="fkem_chi_min", params=[None, 0.05, 0.082])
+def fixture_fkem_chi_min(request):
+    return request.param
+
+
+@pytest.fixture(name="fkem_Nchi", params=[None, 10, 20])
+def fixture_fkem_Nchi(request):
+    return request.param
+
+
+@pytest.fixture(
+    name="l_limber",
+    params=[40, 60],
+)
+def fixture_l_limber(request):
+    return request.param
+
+
+def test_cl_integration_options_limber(limber_method: ClLimberMethod):
+    int_options = ClIntegrationOptions(
+        method=ClIntegrationMethod.LIMBER, limber_method=limber_method
+    )
+    assert int_options.limber_method == limber_method
+    assert int_options.method == ClIntegrationMethod.LIMBER
+
+    args = int_options.get_angular_cl_args()
+    assert args["limber_integration_method"] == limber_method.lower().removeprefix(
+        "gsl_"
+    )
+    assert args["l_limber"] == -1
+    assert len(args) == 2
+
+
+def test_cl_integration_options_fkem_auto(
+    limber_method: ClLimberMethod,
+    limber_max_error: float | None,
+    fkem_chi_min: float | None,
+    fkem_Nchi: int | None,
+):
+    int_options = ClIntegrationOptions(
+        method=ClIntegrationMethod.FKEM_AUTO,
+        limber_method=limber_method,
+        limber_max_error=limber_max_error,
+        fkem_chi_min=fkem_chi_min,
+        fkem_Nchi=fkem_Nchi,
+    )
+    assert int_options.limber_method == limber_method
+    assert int_options.method == ClIntegrationMethod.FKEM_AUTO
+
+    args = int_options.get_angular_cl_args()
+    assert args["limber_integration_method"] == limber_method.lower().removeprefix(
+        "gsl_"
+    )
+    assert args["l_limber"] == "auto"
+    assert args["non_limber_integration_method"] == "FKEM"
+    expected_len = 3
+    if limber_max_error is not None:
+        assert args["limber_max_error"] == limber_max_error
+        expected_len += 1
+
+    if fkem_chi_min is not None:
+        assert args["fkem_chi_min"] == fkem_chi_min
+        expected_len += 1
+
+    if fkem_Nchi is not None:
+        assert args["fkem_Nchi"] == fkem_Nchi
+        expected_len += 1
+
+    assert len(args) == expected_len
+
+
+def test_cl_integration_options_fkem_l_limber(
+    limber_method: ClLimberMethod,
+    fkem_chi_min: float | None,
+    fkem_Nchi: int | None,
+    l_limber: int,
+):
+    int_options = ClIntegrationOptions(
+        method=ClIntegrationMethod.FKEM_L_LIMBER,
+        limber_method=limber_method,
+        l_limber=l_limber,
+        fkem_chi_min=fkem_chi_min,
+        fkem_Nchi=fkem_Nchi,
+    )
+    assert int_options.limber_method == limber_method
+    assert int_options.method == ClIntegrationMethod.FKEM_L_LIMBER
+
+    args = int_options.get_angular_cl_args()
+    assert args["limber_integration_method"] == limber_method.lower().removeprefix(
+        "gsl_"
+    )
+    assert args["l_limber"] == int_options.l_limber
+    assert args["non_limber_integration_method"] == "FKEM"
+    expected_len = 3
+    if fkem_chi_min is not None:
+        assert args["fkem_chi_min"] == fkem_chi_min
+        expected_len += 1
+
+    if fkem_Nchi is not None:
+        assert args["fkem_Nchi"] == fkem_Nchi
+        expected_len += 1
+
+    assert len(args) == expected_len
+
+
+def test_cl_integration_options_limber_invalid():
+    with pytest.raises(
+        ValueError, match="l_limber is incompatible with ClIntegrationMethod.LIMBER"
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.LIMBER,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+            l_limber=3,
+        )
+    with pytest.raises(
+        ValueError,
+        match="limber_max_error is incompatible with ClIntegrationMethod.LIMBER",
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.LIMBER,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+            limber_max_error=0.1,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="fkem_chi_min is incompatible with ClIntegrationMethod.LIMBER",
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.LIMBER,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+            fkem_chi_min=0.1,
+        )
+    with pytest.raises(
+        ValueError,
+        match="fkem_Nchi is incompatible with ClIntegrationMethod.LIMBER",
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.LIMBER,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+            fkem_Nchi=3,
+        )
+
+
+def test_cl_integration_options_fkem_auto_invalid():
+    with pytest.raises(
+        ValueError,
+        match="l_limber is incompatible with ClIntegrationMethod.FKEM_AUTO",
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.FKEM_AUTO,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+            l_limber=3,
+        )
+
+
+def test_cl_integration_options_fkem_l_limber_invalid():
+    with pytest.raises(
+        ValueError,
+        match="limber_max_error is incompatible with ClIntegrationMethod.FKEM_L_LIMBER",
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.FKEM_L_LIMBER,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+            limber_max_error=0.1,
+            l_limber=3,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match="l_limber must be set for FKEM_L_LIMBER",
+    ):
+        ClIntegrationOptions(
+            method=ClIntegrationMethod.FKEM_L_LIMBER,
+            limber_method=ClLimberMethod.GSL_QAG_QUAD,
+        )
