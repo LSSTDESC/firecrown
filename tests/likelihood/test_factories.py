@@ -331,6 +331,9 @@ two_point_factory:
   number_counts_factory:
     per_bin_systematics: []
     global_systematics: []
+  int_options:
+    method: limber
+    limber_method: gsl_spline
 data_source:
     sacc_data_file: {fits_path_relative_to_tmp_path}
 """
@@ -362,6 +365,9 @@ two_point_factory:
   number_counts_factory:
     per_bin_systematics: []
     global_systematics: []
+  int_options:
+    method: limber
+    limber_method: gsl_spline
 data_source:
     sacc_data_file: {fits_path_relative_to_tmp_path}
 """
@@ -393,6 +399,9 @@ two_point_factory:
   number_counts_factory:
     per_bin_systematics: []
     global_systematics: []
+  int_options:
+    method: limber
+    limber_method: gsl_spline
 data_source:
     sacc_data_file: {fits_path_relative_to_tmp_path}
 """
@@ -428,6 +437,9 @@ two_point_factory:
     number_counts_factory:
         per_bin_systematics: []
         global_systematics: []
+    int_options:
+        method: limber
+        limber_method: gsl_spline
 data_source:
     sacc_data_file: {fits_path_relative_to_tmp_path}
 """
