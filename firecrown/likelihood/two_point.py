@@ -11,7 +11,6 @@ import pyccl
 import pyccl.nl_pt
 import sacc.windows
 
-
 import firecrown.generators.two_point as gen
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.source_factories import (
@@ -43,7 +42,11 @@ from firecrown.data_types import TwoPointMeasurement, DataVector, TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import TwoPointTheory, calculate_pk
 from firecrown.updatable import UpdatableCollection
-from firecrown.utils import cached_angular_cl, make_log_interpolator
+from firecrown.utils import (
+    cached_angular_cl,
+    make_log_interpolator,
+    ClIntegrationOptions,
+)
 import firecrown.metadata_types as mdt
 
 # only supported types are here, anything else will throw
@@ -58,6 +61,7 @@ def calculate_angular_cl(
     tools: ModelingTools,
     tracer0: Tracer,
     tracer1: Tracer,
+    int_options: ClIntegrationOptions | None = None,
 ):
     """Calculate the angular mulitpole moments.
 
@@ -78,8 +82,8 @@ def calculate_angular_cl(
             (tracer0.ccl_tracer, tracer1.ccl_tracer),
             tuple(ells.ravel().tolist()),
             p_of_k_a=pk,
-            l_limber=tools.non_limber_max_ell,
             p_of_k_a_lin=cosmo_in.get_linear_power(),
+            int_options=int_options,
         )
         * scale0
         * scale1
@@ -226,6 +230,7 @@ class TwoPoint(Statistic):
         ell_or_theta_min: None | float | int = None,
         ell_or_theta_max: None | float | int = None,
         tracers: None | TracerNames = None,
+        int_options: ClIntegrationOptions | None = None,
     ) -> None:
         super().__init__()
         self.theory = TwoPointTheory(
@@ -236,6 +241,7 @@ class TwoPoint(Statistic):
             ell_for_xi=ell_for_xi,
             ell_or_theta=ell_or_theta,
             tracers=tracers,
+            int_options=int_options,
         )
         self._data: None | DataVector = None
 
@@ -245,6 +251,7 @@ class TwoPoint(Statistic):
         metadata_indices: Sequence[TwoPointHarmonicIndex | TwoPointRealIndex],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
+        int_options: ClIntegrationOptions | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics.
 
@@ -270,6 +277,7 @@ class TwoPoint(Statistic):
                 source1=use_source_factory_metadata_index(
                     n2, b, wl_factory=wl_factory, nc_factory=nc_factory
                 ),
+                int_options=int_options,
             )
             for metadata_index in metadata_indices
             for n1, a, n2, b in [measurements_from_index(metadata_index)]
@@ -283,6 +291,7 @@ class TwoPoint(Statistic):
         metadata: TwoPointHarmonic | TwoPointReal,
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
+        int_options: ClIntegrationOptions | None = None,
     ) -> TwoPoint:
         """Create a single TwoPoint statistic from metadata.
 
@@ -294,26 +303,29 @@ class TwoPoint(Statistic):
         match metadata:
             case TwoPointHarmonic():
                 two_point = cls._from_metadata_single_base(
-                    metadata, wl_factory, nc_factory
+                    metadata, wl_factory, nc_factory, int_options
                 )
                 two_point.theory.ells = metadata.ells
                 two_point.theory.window = metadata.window
             case TwoPointReal():
                 two_point = cls._from_metadata_single_base(
-                    metadata, wl_factory, nc_factory
+                    metadata, wl_factory, nc_factory, int_options
                 )
                 two_point.theory.thetas = metadata.thetas
                 two_point.theory.window = None
-                two_point.theory.ells_for_xi = gen.log_linear_ells(
-                    **two_point.theory.ell_for_xi_config
-                )
             case _:
                 raise ValueError(f"Metadata of type {type(metadata)} is not supported!")
         two_point.ready = True
         return two_point
 
     @classmethod
-    def _from_metadata_single_base(cls, metadata, wl_factory, nc_factory):
+    def _from_metadata_single_base(
+        cls,
+        metadata: TwoPointHarmonic | TwoPointReal,
+        wl_factory: WeakLensingFactory | None,
+        nc_factory: NumberCountsFactory | None,
+        int_options: ClIntegrationOptions | None = None,
+    ):
         """Create a single TwoPoint statistic from metadata.
 
         Base method for creating a single TwoPoint statistic from metadata.
@@ -341,6 +353,7 @@ class TwoPoint(Statistic):
             source0,
             source1,
             tracers=metadata.XY.get_tracer_names(),
+            int_options=int_options,
         )
         return two_point
 
@@ -350,6 +363,7 @@ class TwoPoint(Statistic):
         metadata_seq: Sequence[TwoPointHarmonic | TwoPointReal],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
+        int_options: ClIntegrationOptions | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics from metadata.
 
@@ -369,7 +383,10 @@ class TwoPoint(Statistic):
         """
         two_point_list = [
             cls._from_metadata_single(
-                metadata=metadata, wl_factory=wl_factory, nc_factory=nc_factory
+                metadata=metadata,
+                wl_factory=wl_factory,
+                nc_factory=nc_factory,
+                int_options=int_options,
             )
             for metadata in metadata_seq
         ]
@@ -382,6 +399,7 @@ class TwoPoint(Statistic):
         measurement: TwoPointMeasurement,
         wl_factory: None | WeakLensingFactory,
         nc_factory: None | NumberCountsFactory,
+        int_options: ClIntegrationOptions | None = None,
     ) -> TwoPoint:
         """Create a single TwoPoint statistic from a measurement.
 
@@ -391,6 +409,7 @@ class TwoPoint(Statistic):
             metadata=measurement.metadata,
             wl_factory=wl_factory,
             nc_factory=nc_factory,
+            int_options=int_options,
         )
         two_point.sacc_indices = measurement.indices
         two_point.set_data_vector(DataVector.create(measurement.data))
@@ -403,6 +422,7 @@ class TwoPoint(Statistic):
         measurements: Sequence[TwoPointMeasurement],
         wl_factory: WeakLensingFactory | None = None,
         nc_factory: NumberCountsFactory | None = None,
+        int_options: ClIntegrationOptions | None = None,
     ) -> UpdatableCollection[TwoPoint]:
         """Create an UpdatableCollection of TwoPoint statistics from measurements.
 
@@ -421,7 +441,8 @@ class TwoPoint(Statistic):
         :return: An UpdatableCollection of TwoPoint statistics.
         """
         two_point_list: list[TwoPoint] = [
-            cls.create_two_point(m, wl_factory, nc_factory) for m in measurements
+            cls.create_two_point(m, wl_factory, nc_factory, int_options)
+            for m in measurements
         ]
         return UpdatableCollection(two_point_list)
 
@@ -479,7 +500,6 @@ class TwoPoint(Statistic):
             self.theory.ell_or_theta_min,
             self.theory.ell_or_theta_max,
         )
-        self.theory.ells_for_xi = gen.log_linear_ells(**self.theory.ell_for_xi_config)
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(xis)
@@ -695,6 +715,7 @@ class TwoPoint(Statistic):
                 tools,
                 tracer0,
                 tracer1,
+                self.theory.int_options,
             )
             self.theory.cells[tn] = result
         self.theory.cells[mdt.TRACER_NAMES_TOTAL] = np.array(

@@ -37,7 +37,6 @@ class ModelingTools(Updatable):
         cluster_abundance: None | ClusterAbundance = None,
         cluster_deltasigma: None | ClusterDeltaSigma = None,
         ccl_factory: None | CCLFactory = None,
-        non_limber_max_ell: float = -1,
     ):
         super().__init__()
         self.ccl_cosmo: None | pyccl.Cosmology = None
@@ -51,7 +50,6 @@ class ModelingTools(Updatable):
         self.cluster_abundance = cluster_abundance
         self.cluster_deltasigma = cluster_deltasigma
         self.ccl_factory = CCLFactory() if ccl_factory is None else ccl_factory
-        self.non_limber_max_ell = non_limber_max_ell
 
     def add_pk(self, name: str, powerspectrum: pyccl.Pk2D) -> None:
         """Add a :class:`pyccl.Pk2D` to the table of power spectra.

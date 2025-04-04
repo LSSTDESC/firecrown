@@ -38,7 +38,7 @@ from firecrown.data_functions import (
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
-from firecrown.utils import YAMLSerializable
+from firecrown.utils import YAMLSerializable, ClIntegrationOptions
 
 
 class TwoPointCorrelationSpace(YAMLSerializable, str, Enum):
@@ -148,6 +148,7 @@ class TwoPointExperiment(BaseModel):
     two_point_factory: TwoPointFactory
     data_source: DataSourceSacc
     ccl_factory: CCLFactory | None = None
+    int_options: ClIntegrationOptions | None = None
 
     def model_post_init(self, _, /) -> None:
         """Initialize the TwoPointExperiment object."""
@@ -180,6 +181,7 @@ class TwoPointExperiment(BaseModel):
                     self.two_point_factory.weak_lensing_factory,
                     self.two_point_factory.number_counts_factory,
                     filters=self.data_source.filters,
+                    int_options=self.int_options,
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
@@ -187,6 +189,7 @@ class TwoPointExperiment(BaseModel):
                     self.two_point_factory.weak_lensing_factory,
                     self.two_point_factory.number_counts_factory,
                     filters=self.data_source.filters,
+                    int_options=self.int_options,
                 )
             case _ as unreachable:
                 assert_never(unreachable)
@@ -224,6 +227,7 @@ def _build_two_point_likelihood_harmonic(
     wl_factory: WeakLensingFactory,
     nc_factory: NumberCountsFactory,
     filters: TwoPointBinFilterCollection | None = None,
+    int_options: ClIntegrationOptions | None = None,
 ):
     """
     Build a likelihood object for two-point statistics in harmonic space.
@@ -249,7 +253,7 @@ def _build_two_point_likelihood_harmonic(
         tpms = filters(tpms)
 
     two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory
+        tpms, wl_factory=wl_factory, nc_factory=nc_factory, int_options=int_options
     )
 
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
@@ -262,6 +266,7 @@ def _build_two_point_likelihood_real(
     wl_factory: WeakLensingFactory,
     nc_factory: NumberCountsFactory,
     filters: TwoPointBinFilterCollection | None = None,
+    int_options: ClIntegrationOptions | None = None,
 ):
     """
     Build a likelihood object for two-point statistics in real space.
@@ -287,7 +292,7 @@ def _build_two_point_likelihood_real(
         tpms = filters(tpms)
 
     two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory
+        tpms, wl_factory=wl_factory, nc_factory=nc_factory, int_options=int_options
     )
 
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)

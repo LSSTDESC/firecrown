@@ -1,13 +1,14 @@
 """Some utility functions for patterns common in Firecrown."""
 
 from typing import Generator, TypeVar, Type, Callable
+from enum import Enum, auto
 
 import functools
 import numpy as np
 import pyccl
 import scipy.interpolate
 from numpy import typing as npt
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 import sacc
 
@@ -143,14 +144,99 @@ def compare_optionals(x: None | object, y: None | object) -> bool:
     return False
 
 
+class ClLimberMethod(YAMLSerializable, str, Enum):
+    """This class defines Cl limber methods."""
+
+    @staticmethod
+    def _generate_next_value_(name, _start, _count, _last_values):
+        return name.lower()
+
+    GSL_QAG_QUAD = auto()
+    GSL_SPLINE = auto()
+
+
+class ClIntegrationMethod(YAMLSerializable, str, Enum):
+    """This class defines Cl integration methods."""
+
+    @staticmethod
+    def _generate_next_value_(name, _start, _count, _last_values):
+        return name.lower()
+
+    LIMBER = auto()
+    FKEM_AUTO = auto()
+    FKEM_L_LIMBER = auto()
+
+
+class ClIntegrationOptions(BaseModel):
+    """Options for angular power spectrum integration."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    method: ClIntegrationMethod
+    limber_method: ClLimberMethod
+    l_limber: int | None = None
+    limber_max_error: float | None = None
+    fkem_chi_min: float | None = None
+    fkem_Nchi: int | None = None
+
+    def model_post_init(self, _, /) -> None:
+        """Initialize the WeakLensingFactory object."""
+        match self.method:
+            case ClIntegrationMethod.LIMBER:
+                incompatible_options = [
+                    "limber_max_error",
+                    "l_limber",
+                    "fkem_chi_min",
+                    "fkem_Nchi",
+                ]
+            case ClIntegrationMethod.FKEM_AUTO:
+                incompatible_options = ["l_limber"]
+                if self.limber_max_error is None:
+                    raise ValueError("limber_max_error must be set for FKEM_AUTO.")
+            case ClIntegrationMethod.FKEM_L_LIMBER:
+                if self.l_limber is None or self.l_limber < 0:
+                    raise ValueError("l_limber must be set for FKEM_L_LIMBER.")
+
+        for option in incompatible_options:
+            if getattr(self, option) is not None:
+                raise ValueError(f"{option} is incompatible with {str(self.method)}.")
+
+    def get_angular_cl_args(self):
+        """Get the arguments to pass to pyccl.angular_cl."""
+        match self.limber_method:
+            case ClLimberMethod.GSL_QAG_QUAD:
+                arg = {"limber_integration_method": "qag_quad"}
+            case ClLimberMethod.GSL_SPLINE:
+                arg = {"limber_integration_method": "spline"}
+
+        match self.method:
+            case ClIntegrationMethod.LIMBER:
+                return arg | {"l_limber": -1}
+            case ClIntegrationMethod.FKEM_AUTO:
+                return arg | {
+                    "l_limber": "auto",
+                    "limber_max_error": self.limber_max_error,
+                    "non_limber_integration_method": "FKEM",
+                    "fkem_chi_min": self.fkem_chi_min,
+                    "fkem_Nchi": self.fkem_Nchi,
+                }
+            case ClIntegrationMethod.FKEM_L_LIMBER:
+                return arg | {
+                    "l_limber": self.l_limber,
+                    "non_limber_integration_method": "FKEM",
+                    "fkem_chi_min": self.fkem_chi_min,
+                    "fkem_Nchi": self.fkem_Nchi,
+                }
+
+
 @functools.lru_cache(maxsize=128)
 def cached_angular_cl(
     cosmo: pyccl.Cosmology,
     tracers: tuple[pyccl.Tracer, pyccl.Tracer],
     ells: npt.NDArray[np.int64],
     p_of_k_a=None | Callable[[npt.NDArray[np.int64]], npt.NDArray[np.float64]],
-    l_limber=-1,
     p_of_k_a_lin=None | pyccl.Pk2D | str,
+    int_options: ClIntegrationOptions | None = None,
 ):
     """Wrapper for pyccl.angular_cl, with automatic caching.
 
@@ -167,8 +253,8 @@ def cached_angular_cl(
         tracers[1],
         np.array(ells),
         p_of_k_a=p_of_k_a,
-        l_limber=l_limber,
         p_of_k_a_lin=p_of_k_a_lin,
+        **(int_options.get_angular_cl_args() if int_options else {}),
     )
 
 
