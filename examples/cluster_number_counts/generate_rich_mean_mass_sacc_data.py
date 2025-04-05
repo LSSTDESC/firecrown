@@ -35,13 +35,13 @@ def setup_cosmology(
     :return: Configured cosmology object.
     """
     cosmo = Nc.HICosmoDEXcdm()
-    reion = Nc.HIReionCamb.new()
-    prim = Nc.HIPrimPowerLaw.new()
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
 
     cosmo.add_submodel(reion)
     cosmo.add_submodel(prim)
 
-    tf = Nc.TransferFuncEH.new()
+    tf = Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
     psml = Nc.PowspecMLTransfer.new(tf)
     psml.require_kmin(1.0e-6)
     psml.require_kmax(1.0e3)
@@ -110,7 +110,7 @@ def generate_cluster_data(
     :param area: Survey area in square degrees.
     :return: Astropy Table with cluster data.
     """
-    mulf = Nc.MultiplicityFuncTinker.new()
+    mulf = Nc.MultiplicityFuncTinker.new()  # pylint: disable=no-value-for-parameter
     mulf.set_linear_interp(True)
     mulf.set_mdef(Nc.MultiplicityFuncMassDef.MEAN)
     mulf.set_Delta(200)
@@ -118,7 +118,9 @@ def generate_cluster_data(
     hmf = Nc.HaloMassFunction.new(
         Nc.Distance.new(2.0),
         Ncm.PowspecFilter.new(
-            Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+            Nc.PowspecMLTransfer.new(
+                Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+            ),
             Ncm.PowspecFilterType.TOPHAT,
         ),
         mulf,
@@ -234,5 +236,5 @@ def generate_sacc_file() -> None:
 
 
 if __name__ == "__main__":
-    Ncm.cfg_init()
+    Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
     generate_sacc_file()

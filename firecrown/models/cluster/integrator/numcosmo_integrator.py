@@ -43,7 +43,7 @@ class NumCosmoIntegrator(Integrator):
         ],
     ) -> float:
         """Integrate the provided integrand argument with NumCosmo."""
-        Ncm.cfg_init()
+        Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 
         int_nd = CountsIntegralND(
             len(self.integral_bounds), func_to_integrate, self.extra_args

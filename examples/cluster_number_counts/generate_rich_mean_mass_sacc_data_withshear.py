@@ -40,12 +40,12 @@ def generate_cosmo(
         Omega_b=Ob0, Omega_c=Odm0, sigma8=sigma8, w0=-1, wa=0, h=H0 / 100.0, n_s=n_s
     )
 
-    reion = Nc.HIReionCamb.new()
-    prim = Nc.HIPrimPowerLaw.new()
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
     cosmo.add_submodel(reion)
     cosmo.add_submodel(prim)
 
-    tf = Nc.TransferFuncEH.new()
+    tf = Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
     psml = Nc.PowspecMLTransfer.new(tf)
     psml.require_kmin(1.0e-6)
     psml.require_kmax(1.0e3)
@@ -105,7 +105,7 @@ def generate_cluster_data(
     cluster_m.param_set_by_name("sigmap2", 0 / np.log(10))
 
     # Halo Mass Function
-    mulf = Nc.MultiplicityFuncTinker.new()
+    mulf = Nc.MultiplicityFuncTinker.new()  # pylint: disable=no-value-for-parameter
     mulf.set_linear_interp(True)
     mulf.set_mdef(Nc.MultiplicityFuncMassDef.CRITICAL)
     mulf.set_Delta(200)
@@ -113,7 +113,9 @@ def generate_cluster_data(
     hmf = Nc.HaloMassFunction.new(
         Nc.Distance.new(2.0),
         Ncm.PowspecFilter.new(
-            Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+            Nc.PowspecMLTransfer.new(
+                Nc.TransferFuncEH.new()  # pylint: disable=no-value-for-parameter
+            ),
             Ncm.PowspecFilterType.TOPHAT,
         ),
         mulf,
@@ -362,5 +364,5 @@ def generate_sacc_file() -> None:
     )
 
 
-Ncm.cfg_init()
+Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 generate_sacc_file()
