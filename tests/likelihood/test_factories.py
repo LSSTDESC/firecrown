@@ -13,11 +13,13 @@ from firecrown.likelihood.factories import (
     TwoPointExperiment,
     TwoPointFactory,
 )
+from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata_types import Galaxies
+from firecrown.metadata_types import Galaxies, TwoPointHarmonic, TwoPointReal
+from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
 from firecrown.utils import (
     base_model_from_yaml,
@@ -553,7 +555,7 @@ def test_build_two_point_harmonic_with_filter_empty(empty_factory_harmonic) -> N
         _ = two_point_experiment.make_likelihood()
 
 
-def test_build_two_point_real_with_filter(empty_factory_real) -> None:
+def test_build_two_point_real_with_filter(empty_factory_real: TwoPointFactory) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
@@ -576,7 +578,9 @@ def test_build_two_point_real_with_filter(empty_factory_real) -> None:
     assert two_point_experiment.make_likelihood() is not None
 
 
-def test_build_two_point_real_with_filter_require_filter(empty_factory_real) -> None:
+def test_build_two_point_real_with_filter_require_filter(
+    empty_factory_real: TwoPointFactory,
+) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
@@ -600,7 +604,9 @@ def test_build_two_point_real_with_filter_require_filter(empty_factory_real) -> 
         _ = two_point_experiment.make_likelihood()
 
 
-def test_build_two_point_real_with_filter_empty(empty_factory_real) -> None:
+def test_build_two_point_real_with_filter_empty(
+    empty_factory_real: TwoPointFactory,
+) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
@@ -630,7 +636,9 @@ def test_build_two_point_real_with_filter_empty(empty_factory_real) -> None:
         _ = two_point_experiment.make_likelihood()
 
 
-def test_build_two_point_real_with_filter_allow_empty(empty_factory_real) -> None:
+def test_build_two_point_real_with_filter_allow_empty(
+    empty_factory_real: TwoPointFactory,
+) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
@@ -651,6 +659,53 @@ def test_build_two_point_real_with_filter_allow_empty(empty_factory_real) -> Non
         ),
     )
     assert two_point_experiment.make_likelihood() is not None
+
+
+def test_build_from_metadata_harmonic(
+    empty_factory_harmonic: TwoPointFactory, two_point_cell: TwoPointHarmonic
+) -> None:
+    two_points = empty_factory_harmonic.from_metadata([two_point_cell])
+    assert len(two_points) == 1
+    two_point0 = two_points[0]
+    assert isinstance(two_point0, TwoPoint)
+
+
+def test_build_from_metadata_harmonic_cwindow(
+    empty_factory_harmonic: TwoPointFactory, two_point_cwindow: TwoPointHarmonic
+) -> None:
+    two_points = empty_factory_harmonic.from_metadata([two_point_cwindow])
+    assert len(two_points) == 1
+    two_point0 = two_points[0]
+    assert isinstance(two_point0, TwoPoint)
+
+
+def test_build_from_metadata_real(
+    empty_factory_real: TwoPointFactory, two_point_real: TwoPointReal
+) -> None:
+    two_points = empty_factory_real.from_metadata([two_point_real])
+    assert len(two_points) == 1
+    two_point0 = two_points[0]
+    assert isinstance(two_point0, TwoPoint)
+
+
+def test_build_from_measurement_harmonic(
+    empty_factory_harmonic: TwoPointFactory,
+    harmonic_data_with_window: TwoPointMeasurement,
+) -> None:
+    two_points = empty_factory_harmonic.from_measurement([harmonic_data_with_window])
+    assert len(two_points) == 1
+    two_point0 = two_points[0]
+    assert isinstance(two_point0, TwoPoint)
+
+
+def test_build_from_measurement_harmonic_cwindow(
+    empty_factory_harmonic: TwoPointFactory,
+    harmonic_data_with_window: TwoPointMeasurement,
+) -> None:
+    two_points = empty_factory_harmonic.from_measurement([harmonic_data_with_window])
+    assert len(two_points) == 1
+    two_point0 = two_points[0]
+    assert isinstance(two_point0, TwoPoint)
 
 
 @pytest.mark.parametrize(

@@ -230,6 +230,8 @@ class ClIntegrationOptions(BaseModel):
                 incompatible_options = ["limber_max_error"]
                 if self.l_limber is None or self.l_limber < 0:
                     raise ValueError("l_limber must be set for FKEM_L_LIMBER.")
+            case _ as unreachable:
+                assert_never(unreachable)
 
         for option in incompatible_options:
             if getattr(self, option) is not None:
@@ -242,6 +244,8 @@ class ClIntegrationOptions(BaseModel):
                 arg = {"limber_integration_method": "qag_quad"}
             case ClLimberMethod.GSL_SPLINE:
                 arg = {"limber_integration_method": "spline"}
+            case _ as unreachable:
+                assert_never(unreachable)
 
         out: dict[str, str | int | float]
         match self.method:

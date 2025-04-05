@@ -299,6 +299,34 @@ def test_cl_integration_options_fkem_l_limber_yaml(
     assert int_options.fkem_Nchi == fkem_Nchi
 
 
+def test_cl_integration_options_yaml_invalid():
+    int_options_yaml = """
+    method: Im_not_a_valid_method
+    limber_method: qag_quad
+    limber_max_error: 0.1
+    fkem_chi_min: 0.1
+    fkem_Nchi: 10
+    """
+    with pytest.raises(
+        ValueError,
+        match=("Invalid value for ClIntegrationMethod: Im_not_a_valid_method"),
+    ):
+        base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+
+    int_options_yaml = """
+    method: limber
+    limber_method: Im_not_a_valid_limber_method
+    limber_max_error: 0.1
+    fkem_chi_min: 0.1
+    fkem_Nchi: 10
+    """
+    with pytest.raises(
+        ValueError,
+        match=("Invalid value for ClLimberMethod: Im_not_a_valid_limber_method"),
+    ):
+        base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+
+
 def test_cl_integration_options_limber_invalid():
     with pytest.raises(
         ValueError, match="l_limber is incompatible with ClIntegrationMethod.LIMBER"
