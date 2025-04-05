@@ -48,6 +48,7 @@ jobs:
       - name: Update environment
         run: |
           conda env update -q -v -n firecrown_developer -f environment.yml
+          conda list
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
