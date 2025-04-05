@@ -61,7 +61,8 @@ jobs:
         run: |
           source ${CONDA_PREFIX}/bin/cosmosis-configure
           pushd ${CONDA_PREFIX}
-          cosmosis-build-standard-library
+          cosmosis-build-standard-library || file ${CONDA_PREFIX}/cosmosis-standard-library/boltzmann/isitgr/camb.so
+          cat ${CONDA_PREFIX}/cosmosis-standard-library/boltzmann/isitgr/camb.so
           export CSL_DIR=${PWD}/cosmosis-standard-library
           conda env config vars set CSL_DIR=${CSL_DIR}
           conda activate firecrown_developer
