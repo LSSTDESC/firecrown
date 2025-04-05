@@ -277,8 +277,8 @@ class ClIntegrationOptions(BaseModel):
                     out["fkem_Nchi"] = self.fkem_Nchi
 
                 return arg | out
-            case _ as unreachable:
-                assert_never(unreachable)
+            case _ as unreachable_method:
+                assert_never(unreachable_method)
 
 
 @functools.lru_cache(maxsize=128)
