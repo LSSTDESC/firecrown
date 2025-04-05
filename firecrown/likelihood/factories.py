@@ -29,6 +29,7 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.two_point import TwoPoint
+from firecrown.data_types import TwoPointMeasurement, TwoPointHarmonic, TwoPointReal
 from firecrown.data_functions import (
     extract_all_real_data,
     extract_all_harmonic_data,
@@ -92,6 +93,26 @@ class TwoPointFactory(BaseModel):
     def serialize_correlation_space(cls, value: TwoPointCorrelationSpace) -> str:
         """Serialize the amplitude parameter."""
         return value.name
+
+    def from_measurement(self, tpms: list[TwoPointMeasurement]) -> TwoPoint:
+        """Create a TwoPoint object from a list of TwoPointMeasurement."""
+        return TwoPoint.from_measurement(
+            measurements=tpms,
+            wl_factory=self.weak_lensing_factory,
+            nc_factory=self.number_counts_factory,
+            int_options=self.int_options,
+        )
+
+    def from_metadata(
+        self, metadata_seq: list[TwoPointHarmonic | TwoPointReal]
+    ) -> TwoPoint:
+        """Create a TwoPoint object from a list of TwoPointHarmonic or TwoPointReal."""
+        return TwoPoint.from_metadata(
+            metadata_seq=metadata_seq,
+            wl_factory=self.weak_lensing_factory,
+            nc_factory=self.number_counts_factory,
+            int_options=self.int_options,
+        )
 
 
 class DataSourceSacc(BaseModel):
@@ -177,19 +198,11 @@ class TwoPointExperiment(BaseModel):
         match self.two_point_factory.correlation_space:
             case TwoPointCorrelationSpace.REAL:
                 likelihood = _build_two_point_likelihood_real(
-                    sacc_data,
-                    self.two_point_factory.weak_lensing_factory,
-                    self.two_point_factory.number_counts_factory,
-                    filters=self.data_source.filters,
-                    int_options=self.two_point_factory.int_options,
+                    sacc_data, self.two_point_factory, filters=self.data_source.filters
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
-                    sacc_data,
-                    self.two_point_factory.weak_lensing_factory,
-                    self.two_point_factory.number_counts_factory,
-                    filters=self.data_source.filters,
-                    int_options=self.two_point_factory.int_options,
+                    sacc_data, self.two_point_factory, filters=self.data_source.filters
                 )
             case _ as unreachable:
                 assert_never(unreachable)
@@ -224,10 +237,8 @@ def build_two_point_likelihood(
 
 def _build_two_point_likelihood_harmonic(
     sacc_data: sacc.Sacc,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
-    int_options: ClIntegrationOptions | None = None,
 ):
     """
     Build a likelihood object for two-point statistics in harmonic space.
@@ -252,10 +263,7 @@ def _build_two_point_likelihood_harmonic(
     if filters is not None:
         tpms = filters(tpms)
 
-    two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory, int_options=int_options
-    )
-
+    two_points = two_point_factory.from_measurement(tpms)
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
 
     return likelihood
@@ -263,10 +271,8 @@ def _build_two_point_likelihood_harmonic(
 
 def _build_two_point_likelihood_real(
     sacc_data: sacc.Sacc,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
-    int_options: ClIntegrationOptions | None = None,
 ):
     """
     Build a likelihood object for two-point statistics in real space.
@@ -291,10 +297,7 @@ def _build_two_point_likelihood_real(
     if filters is not None:
         tpms = filters(tpms)
 
-    two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory, int_options=int_options
-    )
-
+    two_points = two_point_factory.from_measurement(tpms)
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
 
     return likelihood
