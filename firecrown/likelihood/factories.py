@@ -40,6 +40,7 @@ from firecrown.data_functions import (
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 from firecrown.utils import YAMLSerializable, ClIntegrationOptions
+from firecrown.updatable import UpdatableCollection
 
 
 class TwoPointCorrelationSpace(YAMLSerializable, str, Enum):
@@ -94,7 +95,9 @@ class TwoPointFactory(BaseModel):
         """Serialize the amplitude parameter."""
         return value.name
 
-    def from_measurement(self, tpms: list[TwoPointMeasurement]) -> TwoPoint:
+    def from_measurement(
+        self, tpms: list[TwoPointMeasurement]
+    ) -> UpdatableCollection[TwoPoint]:
         """Create a TwoPoint object from a list of TwoPointMeasurement."""
         return TwoPoint.from_measurement(
             measurements=tpms,
@@ -105,7 +108,7 @@ class TwoPointFactory(BaseModel):
 
     def from_metadata(
         self, metadata_seq: list[TwoPointHarmonic | TwoPointReal]
-    ) -> TwoPoint:
+    ) -> UpdatableCollection[TwoPoint]:
         """Create a TwoPoint object from a list of TwoPointHarmonic or TwoPointReal."""
         return TwoPoint.from_metadata(
             metadata_seq=metadata_seq,
