@@ -314,6 +314,19 @@ def test_cl_integration_options_yaml_invalid():
         base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
 
     int_options_yaml = """
+    method: 0.34
+    limber_method: qag_quad
+    limber_max_error: 0.1
+    fkem_chi_min: 0.1
+    fkem_Nchi: 10
+    """
+    with pytest.raises(
+        ValueError,
+        match=("Input should be an instance of ClIntegrationMethod"),
+    ):
+        base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+
+    int_options_yaml = """
     method: limber
     limber_method: Im_not_a_valid_limber_method
     limber_max_error: 0.1
@@ -323,6 +336,19 @@ def test_cl_integration_options_yaml_invalid():
     with pytest.raises(
         ValueError,
         match=("Invalid value for ClLimberMethod: Im_not_a_valid_limber_method"),
+    ):
+        base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
+
+    int_options_yaml = """
+    method: limber
+    limber_method: 123
+    limber_max_error: 0.1
+    fkem_chi_min: 0.1
+    fkem_Nchi: 10
+    """
+    with pytest.raises(
+        ValueError,
+        match=("Input should be an instance of ClLimberMethod"),
     ):
         base_model_from_yaml(ClIntegrationOptions, int_options_yaml)
 
