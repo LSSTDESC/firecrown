@@ -251,6 +251,7 @@ ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
 HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
 REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T, Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
 EXACT_MATCH_MEASUREMENTS = (Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
+INCOMPATIBLE_MEASUREMENTS = (Galaxies.SHEAR_T,)
 LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 GALAXY_SOURCE_TYPES = (
@@ -336,6 +337,8 @@ def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     if a in REAL_ONLY_MEASUREMENTS and b in HARMONIC_ONLY_MEASUREMENTS:
         return False
     if (a in EXACT_MATCH_MEASUREMENTS or b in EXACT_MATCH_MEASUREMENTS) and a != b:
+        return False
+    if a in INCOMPATIBLE_MEASUREMENTS and b in INCOMPATIBLE_MEASUREMENTS:
         return False
     return True
 
