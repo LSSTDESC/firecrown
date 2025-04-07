@@ -41,6 +41,19 @@ class TracerNames(YAMLSerializable):
 TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 
 
+class TypeSource(str):
+    """String to specify the subtype or origin of a measurement source.
+
+    This helps distinguish between different categories of sources within the same
+    measurement type. For example:
+
+    - In galaxy counts, this could differentiate between red and blue galaxies.
+    - In CMB lensing, it could identify data from different instruments like Planck or SPT.
+    """
+
+    DEFAULT = "default"
+
+
 class Galaxies(YAMLSerializable, str, Enum):
     """This enumeration type for galaxy measurements.
 
@@ -279,6 +292,7 @@ class InferredGalaxyZDist(YAMLSerializable):
     z: np.ndarray
     dndz: np.ndarray
     measurements: set[Measurement]
+    type_source: TypeSource = "default"
 
     def __post_init__(self) -> None:
         """Validate the redshift resolution data.

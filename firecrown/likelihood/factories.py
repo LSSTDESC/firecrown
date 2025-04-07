@@ -29,6 +29,12 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.two_point import TwoPoint
+from firecrown.metadata_types import (
+    Measurement,
+    TypeSource,
+    GALAXY_SOURCE_TYPES,
+    GALAXY_LENS_TYPES,
+)
 from firecrown.data_functions import (
     extract_all_real_data,
     extract_all_harmonic_data,
@@ -80,8 +86,8 @@ class TwoPointFactory(BaseModel):
         BeforeValidator(_validate_correlation_space),
         Field(description="The two-point correlation space."),
     ]
-    weak_lensing_factory: WeakLensingFactory
-    number_counts_factory: NumberCountsFactory
+    weak_lensing_factories: dict[TypeSource, WeakLensingFactory]
+    number_counts_factories: dict[TypeSource, NumberCountsFactory]
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
@@ -91,6 +97,31 @@ class TwoPointFactory(BaseModel):
     def serialize_correlation_space(cls, value: TwoPointCorrelationSpace) -> str:
         """Serialize the amplitude parameter."""
         return value.name
+
+    def get_factory(
+        self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
+    ) -> WeakLensingFactory:
+        """Get the Factory for the given Measurement and TypeSource."""
+        match measurement:
+            case measurement if measurement in GALAXY_SOURCE_TYPES:
+                if type_source not in self.weak_lensing_factories:
+                    raise ValueError(
+                        f"No WeakLensingFactory found for type_source {type_source}."
+                    )
+                return self.weak_lensing_factories[type_source]
+            case measurement if measurement in GALAXY_LENS_TYPES:
+                if type_source not in self.number_counts_factories:
+                    raise ValueError(
+                        f"No NumberCountsFactory found for type_source {type_source}."
+                    )
+                return self.number_counts_factories[type_source]
+            case _:
+                raise (
+                    ValueError(
+                        f"Factory not found for measurement {measurement} "
+                        f"is not supported."
+                    )
+                )
 
 
 class DataSourceSacc(BaseModel):
