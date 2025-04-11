@@ -313,14 +313,48 @@ def test_two_point_experiment_direct() -> None:
     assert two_point_experiment.data_source.sacc_data_file == "tests/bug_398.sacc.gz"
 
 
+def relative_to_with_walk_up(source: Path, target: Path) -> Path:
+    """
+    Compute the relative path from source to target, allowing walk-up (parent directory) traversal.
+    Equivalent to Path.relative_to with walk_up=True in Python 3.12.
+    Args:
+        source: The reference path (starting point).
+        target: The target path to compute the relative path to.
+    Returns:
+        A Path object representing the relative path from source to target.
+    Raises:
+        ValueError: If the relative path cannot be computed (e.g., different drives on Windows).
+    """
+    source = source.resolve()
+    target = target.resolve()
+    # Check if paths are on different drives (Windows)
+    if source.drive != target.drive:
+        raise ValueError("Paths are on different drives")
+    source_parts = source.parts
+    target_parts = target.parts
+    # Find common prefix length
+    common_len = 0
+    for s, t in zip(source_parts, target_parts):
+        if s != t:
+            break
+        common_len += 1
+    # Number of parent directories to walk up
+    walk_up_count = len(source_parts) - common_len
+    # Relative path components
+    relative_parts = [".."] * walk_up_count + list(target_parts[common_len:])
+    if not relative_parts:
+        return Path(".")
+    return Path(*relative_parts)
+
+
 def test_build_two_point_likelihood_real(
     tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
     absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
-    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
-        tmp_path, walk_up=True
+    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_fits_path
     )
 
     tmp_experiment_file.write_text(
@@ -353,8 +387,8 @@ def test_build_two_point_likelihood_harmonic(
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
     absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
-    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
-        tmp_path, walk_up=True
+    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_fits_path
     )
 
     tmp_experiment_file.write_text(
@@ -387,8 +421,8 @@ def test_build_two_point_likelihood_real_no_real_data(
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
     absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
-    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
-        tmp_path, walk_up=True
+    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_fits_path
     )
 
     tmp_experiment_file.write_text(
@@ -425,8 +459,8 @@ def test_build_two_point_likelihood_harmonic_no_harmonic_data(
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
     absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
-    fits_path_relative_to_tmp_path = absolute_fits_path.relative_to(
-        tmp_path, walk_up=True
+    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_fits_path
     )
 
     tmp_experiment_file.write_text(
