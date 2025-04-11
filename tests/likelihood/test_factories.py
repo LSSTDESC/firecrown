@@ -314,16 +314,15 @@ def test_two_point_experiment_direct() -> None:
 
 
 def relative_to_with_walk_up(source: Path, target: Path) -> Path:
-    """
-    Compute the relative path from source to target, allowing walk-up (parent directory) traversal.
-    Equivalent to Path.relative_to with walk_up=True in Python 3.12.
-    Args:
-        source: The reference path (starting point).
-        target: The target path to compute the relative path to.
-    Returns:
-        A Path object representing the relative path from source to target.
-    Raises:
-        ValueError: If the relative path cannot be computed (e.g., different drives on Windows).
+    """Compute the relative path from source to target.
+
+    This allows walk-up (parent directory) traversal. Equivalent to Path.relative_to
+    with walk_up=True in Python 3.12.
+
+    :param source: The reference path (starting point).
+    :param target: The target path to compute the relative path to.
+
+    :return: A Path object representing the relative path from source to target.
     """
     source = source.resolve()
     target = target.resolve()
