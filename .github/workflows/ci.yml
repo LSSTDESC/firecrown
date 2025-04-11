@@ -18,6 +18,7 @@ jobs:
     name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
     runs-on: ${{ matrix.os }}-latest
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu", "macos"]
         python-version: ["3.11", "3.12", "3.13"]
