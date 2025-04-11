@@ -47,11 +47,6 @@ jobs:
         env:
           CACHE_NUMBER: 1
         id: cache
-      - name: Update environment
-        run: |
-          # conda env update -q -v -n firecrown_developer -f environment.yml
-          ls
-        if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
