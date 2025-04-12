@@ -213,8 +213,8 @@ def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict,
         if SOURCE_REGEX.match(tracer):
             assert measurements == {
                 Galaxies.SHEAR_T,
-                Galaxies.SHEAR_MINUS,
-                Galaxies.SHEAR_PLUS,
+                Galaxies.PART_OF_XI_MINUS,
+                Galaxies.PART_OF_XI_PLUS,
             }
 
 
@@ -232,8 +232,8 @@ def test_extract_all_tracers_types_reals_inverted(
         if SOURCE_REGEX.match(tracer):
             assert measurements == {
                 Galaxies.SHEAR_T,
-                Galaxies.SHEAR_MINUS,
-                Galaxies.SHEAR_PLUS,
+                Galaxies.PART_OF_XI_MINUS,
+                Galaxies.PART_OF_XI_PLUS,
             }
 
 
