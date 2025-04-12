@@ -409,15 +409,15 @@ def test_match_name_type_require_convention_source():
     match, n1, a, n2, b = match_name_type(
         "src0",
         "src0",
-        Galaxies.SHEAR_MINUS,
-        Galaxies.SHEAR_MINUS,
+        Galaxies.PART_OF_XI_MINUS,
+        Galaxies.PART_OF_XI_MINUS,
         require_convetion=True,
     )
     assert not match
     assert n1 == "src0"
-    assert a == Galaxies.SHEAR_MINUS
+    assert a == Galaxies.PART_OF_XI_MINUS
     assert n2 == "src0"
-    assert b == Galaxies.SHEAR_MINUS
+    assert b == Galaxies.PART_OF_XI_MINUS
 
 
 def test_check_two_point_consistence_harmonic(two_point_cell: TwoPointHarmonic):
