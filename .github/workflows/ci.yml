@@ -18,6 +18,7 @@ jobs:
     name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
     runs-on: ${{ matrix.os }}-latest
     strategy:
+      fail-fast: false
       matrix:
         os: ["ubuntu", "macos"]
         python-version: ["3.11", "3.12", "3.13"]
@@ -33,6 +34,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           show-channel-urls: true
           conda-remove-defaults: true
+          environment-file: environment.yml
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -43,13 +45,8 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
         env:
-          CACHE_NUMBER: 0
+          CACHE_NUMBER: 1
         id: cache
-      - name: Update environment
-        run: |
-          conda env update -q -v -n firecrown_developer -f environment.yml
-          conda list
-        if: steps.cache.outputs.cache-hit != 'true'
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
@@ -57,6 +54,7 @@ jobs:
           conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           conda activate firecrown_developer
           pip install --no-deps -e .
+          conda list
       - name: Setting up CosmoSIS    
         shell: bash -l {0}
         run: |

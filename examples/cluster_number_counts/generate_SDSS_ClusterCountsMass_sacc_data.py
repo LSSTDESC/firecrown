@@ -90,5 +90,5 @@ def generate_SDSSCL_sacc_file() -> None:
 
 
 if __name__ == "__main__":
-    Ncm.cfg_init()
+    Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
     generate_SDSSCL_sacc_file()
