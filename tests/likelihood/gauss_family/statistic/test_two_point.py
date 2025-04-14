@@ -520,7 +520,7 @@ def test_use_source_factory_invalid_measurement(
         ValueError,
         match="Measurement .* not found in inferred galaxy redshift distribution .*",
     ):
-        use_source_factory(harmonic_bin_1, Galaxies.SHEAR_MINUS, None, None)
+        use_source_factory(harmonic_bin_1, Galaxies.PART_OF_XI_MINUS, None, None)
 
 
 def test_use_source_factory_metadata_only_counts(

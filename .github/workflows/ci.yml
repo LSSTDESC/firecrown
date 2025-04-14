@@ -103,10 +103,12 @@ jobs:
         shell: bash -l {0}
         run: python -m pytest -vv -s --integration tests/integration 
       - name: Upload coverage reports to Codecov
-        if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
+        if: ${{ (matrix.os == 'macos') && (matrix.python-version == '3.13') }}
         uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
+          verbose: true
+          use_oidc: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
