@@ -65,6 +65,16 @@ def test_order_enums():
         assert compare_enums(enumerand, enumerand) == 0
 
 
+def test_galaxies_is_shear():
+    assert Galaxies.PART_OF_XI_MINUS is Galaxies.SHEAR_MINUS
+    assert Galaxies.PART_OF_XI_PLUS is Galaxies.SHEAR_PLUS
+    assert Galaxies.SHEAR_E.is_shear()
+    assert Galaxies.SHEAR_T.is_shear()
+    assert Galaxies.PART_OF_XI_MINUS.is_shear()
+    assert Galaxies.PART_OF_XI_PLUS.is_shear()
+    assert not Galaxies.COUNTS.is_shear()
+
+
 def test_compare_enums_wrong_type():
     with pytest.raises(
         ValueError,

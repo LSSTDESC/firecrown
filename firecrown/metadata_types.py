@@ -59,6 +59,18 @@ class Galaxies(YAMLSerializable, str, Enum):
     SHEAR_PLUS = 4  # For backward compatibility in user code
     COUNTS = 5
 
+    def is_shear(self) -> bool:
+        """Return True if the measurement is a shear measurement, False otherwise.
+
+        :return: True if the measurement is a shear measurement, False otherwise
+        """
+        return self in (
+            Galaxies.SHEAR_E,
+            Galaxies.SHEAR_T,
+            Galaxies.PART_OF_XI_MINUS,
+            Galaxies.PART_OF_XI_PLUS,
+        )
+
     def sacc_type_name(self) -> str:
         """Return the lower-case form of the main measurement type.
 
