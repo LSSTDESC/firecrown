@@ -40,7 +40,7 @@ jobs:
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ${{ env.CONDA }}/envs
           key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
@@ -104,7 +104,7 @@ jobs:
         run: python -m pytest -vv -s --integration tests/integration 
       - name: Upload coverage reports to Codecov
         if: ${{ (matrix.os == 'ubuntu') && (matrix.python-version == '3.11') }}
-        uses: codecov/codecov-action@v4
+        uses: codecov/codecov-action@v5
         with:
           fail_ci_if_error: true
         env:
