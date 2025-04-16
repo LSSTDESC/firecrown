@@ -29,6 +29,7 @@ from firecrown.metadata_types import (
     Galaxies,
     CMB,
     Clusters,
+    TwoPointCorrelationSpace,
 )
 
 # TwoPointRealIndex is a type used to create intermediate objects when reading SACC
@@ -107,6 +108,20 @@ def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
     :param value: the measurement to turn into a dictionary
     """
     return [make_measurement_dict(measurement) for measurement in value]
+
+
+def make_correlation_space(value: TwoPointCorrelationSpace | str):
+    """Create a CorrelationSpace object from a string."""
+    if not isinstance(value, TwoPointCorrelationSpace) and isinstance(value, str):
+        try:
+            return TwoPointCorrelationSpace(
+                value.lower()
+            )  # Convert from string to Enum
+        except ValueError as exc:
+            raise ValueError(
+                f"Invalid value for TwoPointCorrelationSpace: {value}"
+            ) from exc
+    return value
 
 
 def _extract_all_candidate_measurement_types(

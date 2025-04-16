@@ -35,12 +35,12 @@ def fixture_empty_factory_harmonic() -> TwoPointFactory:
     """Return an empty TwoPointFactory object."""
     return TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
-        weak_lensing_factory=WeakLensingFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
-        number_counts_factory=NumberCountsFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
+        weak_lensing_factories=[
+            WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+        ],
+        number_counts_factories=[
+            NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+        ],
     )
 
 
@@ -49,30 +49,34 @@ def fixture_empty_factory_real() -> TwoPointFactory:
     """Return an empty TwoPointFactory object."""
     return TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.REAL,
-        weak_lensing_factory=WeakLensingFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
-        number_counts_factory=NumberCountsFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
+        weak_lensing_factories=[
+            WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+        ],
+        number_counts_factories=[
+            NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+        ],
     )
 
 
 def test_two_point_factory_dict() -> None:
     two_point_factory_dict = {
         "correlation_space": TwoPointCorrelationSpace.HARMONIC,
-        "weak_lensing_factory": {"per_bin_systematics": [], "global_systematics": []},
-        "number_counts_factory": {"per_bin_systematics": [], "global_systematics": []},
+        "weak_lensing_factories": [
+            {"per_bin_systematics": [], "global_systematics": []}
+        ],
+        "number_counts_factories": [
+            {"per_bin_systematics": [], "global_systematics": []}
+        ],
     }
     two_point_factory = TwoPointFactory.model_validate(two_point_factory_dict)
     assert isinstance(two_point_factory, TwoPointFactory)
-    assert isinstance(two_point_factory.weak_lensing_factory, WeakLensingFactory)
-    assert isinstance(two_point_factory.number_counts_factory, NumberCountsFactory)
+    assert isinstance(two_point_factory.weak_lensing_factories[0], WeakLensingFactory)
+    assert isinstance(two_point_factory.number_counts_factories[0], NumberCountsFactory)
     assert two_point_factory.correlation_space == TwoPointCorrelationSpace.HARMONIC
-    assert two_point_factory.weak_lensing_factory.per_bin_systematics == []
-    assert two_point_factory.weak_lensing_factory.global_systematics == []
-    assert two_point_factory.number_counts_factory.per_bin_systematics == []
-    assert two_point_factory.number_counts_factory.global_systematics == []
+    assert two_point_factory.weak_lensing_factories[0].per_bin_systematics == []
+    assert two_point_factory.weak_lensing_factories[0].global_systematics == []
+    assert two_point_factory.number_counts_factories[0].per_bin_systematics == []
+    assert two_point_factory.number_counts_factories[0].global_systematics == []
 
 
 @pytest.mark.parametrize(
@@ -82,12 +86,12 @@ def test_two_point_factory_dict() -> None:
 def test_two_point_factory_to_from_dict(correlation_space) -> None:
     two_point_factory = TwoPointFactory(
         correlation_space=correlation_space,
-        weak_lensing_factory=WeakLensingFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
-        number_counts_factory=NumberCountsFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
+        weak_lensing_factories=[
+            WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+        ],
+        number_counts_factories=[
+            NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+        ],
         int_options=ClIntegrationOptions(
             method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_QAG_QUAD
         ),
@@ -97,16 +101,24 @@ def test_two_point_factory_to_from_dict(correlation_space) -> None:
     two_point_factory_from_dict = base_model_from_yaml(TwoPointFactory, yaml_str)
     assert isinstance(two_point_factory_from_dict, TwoPointFactory)
     assert isinstance(
-        two_point_factory_from_dict.weak_lensing_factory, WeakLensingFactory
+        two_point_factory_from_dict.weak_lensing_factories[0], WeakLensingFactory
     )
     assert isinstance(
-        two_point_factory_from_dict.number_counts_factory, NumberCountsFactory
+        two_point_factory_from_dict.number_counts_factories[0], NumberCountsFactory
     )
     assert two_point_factory_from_dict.correlation_space == correlation_space
-    assert two_point_factory_from_dict.weak_lensing_factory.per_bin_systematics == []
-    assert two_point_factory_from_dict.weak_lensing_factory.global_systematics == []
-    assert two_point_factory_from_dict.number_counts_factory.per_bin_systematics == []
-    assert two_point_factory_from_dict.number_counts_factory.global_systematics == []
+    assert (
+        two_point_factory_from_dict.weak_lensing_factories[0].per_bin_systematics == []
+    )
+    assert (
+        two_point_factory_from_dict.weak_lensing_factories[0].global_systematics == []
+    )
+    assert (
+        two_point_factory_from_dict.number_counts_factories[0].per_bin_systematics == []
+    )
+    assert (
+        two_point_factory_from_dict.number_counts_factories[0].global_systematics == []
+    )
 
     assert two_point_factory_from_dict.int_options == two_point_factory.int_options
 
@@ -114,26 +126,30 @@ def test_two_point_factory_to_from_dict(correlation_space) -> None:
 def test_two_point_factor_direct() -> None:
     two_point_factory = TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
-        weak_lensing_factory=WeakLensingFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
-        number_counts_factory=NumberCountsFactory(
-            per_bin_systematics=[], global_systematics=[]
-        ),
+        weak_lensing_factories=[
+            WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+        ],
+        number_counts_factories=[
+            NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+        ],
     )
 
     assert two_point_factory.correlation_space == TwoPointCorrelationSpace.HARMONIC
-    assert two_point_factory.weak_lensing_factory.per_bin_systematics == []
-    assert two_point_factory.weak_lensing_factory.global_systematics == []
-    assert two_point_factory.number_counts_factory.per_bin_systematics == []
-    assert two_point_factory.number_counts_factory.global_systematics == []
+    assert two_point_factory.weak_lensing_factories[0].per_bin_systematics == []
+    assert two_point_factory.weak_lensing_factories[0].global_systematics == []
+    assert two_point_factory.number_counts_factories[0].per_bin_systematics == []
+    assert two_point_factory.number_counts_factories[0].global_systematics == []
 
 
 def test_two_point_factor_invalid_correlation_space_type() -> None:
     two_point_factory_dict = {
         "correlation_space": 1.2,
-        "weak_lensing_factory": {"per_bin_systematics": [], "global_systematics": []},
-        "number_counts_factory": {"per_bin_systematics": [], "global_systematics": []},
+        "weak_lensing_factories": [
+            {"per_bin_systematics": [], "global_systematics": []}
+        ],
+        "number_counts_factories": [
+            {"per_bin_systematics": [], "global_systematics": []}
+        ],
     }
     with pytest.raises(
         ValueError,
@@ -147,8 +163,12 @@ def test_two_point_factor_invalid_correlation_space_type() -> None:
 def test_two_point_factor_invalid_correlation_space_option() -> None:
     two_point_factory_dict = {
         "correlation_space": "invalid",
-        "weak_lensing_factory": {"per_bin_systematics": [], "global_systematics": []},
-        "number_counts_factory": {"per_bin_systematics": [], "global_systematics": []},
+        "weak_lensing_factories": [
+            {"per_bin_systematics": [], "global_systematics": []}
+        ],
+        "number_counts_factories": [
+            {"per_bin_systematics": [], "global_systematics": []}
+        ],
     }
     with pytest.raises(
         ValueError,
@@ -236,14 +256,18 @@ def test_two_point_experiment_dict() -> None:
     two_point_experiment_dict = {
         "two_point_factory": {
             "correlation_space": TwoPointCorrelationSpace.HARMONIC,
-            "weak_lensing_factory": {
-                "per_bin_systematics": [],
-                "global_systematics": [],
-            },
-            "number_counts_factory": {
-                "per_bin_systematics": [],
-                "global_systematics": [],
-            },
+            "weak_lensing_factories": [
+                {
+                    "per_bin_systematics": [],
+                    "global_systematics": [],
+                }
+            ],
+            "number_counts_factories": [
+                {
+                    "per_bin_systematics": [],
+                    "global_systematics": [],
+                }
+            ],
         },
         "data_source": {"sacc_data_file": "tests/bug_398.sacc.gz"},
     }
@@ -256,19 +280,27 @@ def test_two_point_experiment_dict() -> None:
         == TwoPointCorrelationSpace.HARMONIC
     )
     assert (
-        two_point_experiment.two_point_factory.weak_lensing_factory.per_bin_systematics
+        two_point_experiment.two_point_factory.weak_lensing_factories[
+            0
+        ].per_bin_systematics
         == []
     )
     assert (
-        two_point_experiment.two_point_factory.weak_lensing_factory.global_systematics
+        two_point_experiment.two_point_factory.weak_lensing_factories[
+            0
+        ].global_systematics
         == []
     )
     assert (
-        two_point_experiment.two_point_factory.number_counts_factory.per_bin_systematics
+        two_point_experiment.two_point_factory.number_counts_factories[
+            0
+        ].per_bin_systematics
         == []
     )
     assert (
-        two_point_experiment.two_point_factory.number_counts_factory.global_systematics
+        two_point_experiment.two_point_factory.number_counts_factories[
+            0
+        ].global_systematics
         == []
     )
     assert two_point_experiment.data_source.sacc_data_file == "tests/bug_398.sacc.gz"
@@ -278,12 +310,12 @@ def test_two_point_experiment_direct() -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=TwoPointFactory(
             correlation_space=TwoPointCorrelationSpace.HARMONIC,
-            weak_lensing_factory=WeakLensingFactory(
-                per_bin_systematics=[], global_systematics=[]
-            ),
-            number_counts_factory=NumberCountsFactory(
-                per_bin_systematics=[], global_systematics=[]
-            ),
+            weak_lensing_factories=[
+                WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+            ],
+            number_counts_factories=[
+                NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+            ],
         ),
         data_source=DataSourceSacc(sacc_data_file="tests/bug_398.sacc.gz"),
     )
@@ -295,19 +327,27 @@ def test_two_point_experiment_direct() -> None:
         == TwoPointCorrelationSpace.HARMONIC
     )
     assert (
-        two_point_experiment.two_point_factory.weak_lensing_factory.per_bin_systematics
+        two_point_experiment.two_point_factory.weak_lensing_factories[
+            0
+        ].per_bin_systematics
         == []
     )
     assert (
-        two_point_experiment.two_point_factory.weak_lensing_factory.global_systematics
+        two_point_experiment.two_point_factory.weak_lensing_factories[
+            0
+        ].global_systematics
         == []
     )
     assert (
-        two_point_experiment.two_point_factory.number_counts_factory.per_bin_systematics
+        two_point_experiment.two_point_factory.number_counts_factories[
+            0
+        ].per_bin_systematics
         == []
     )
     assert (
-        two_point_experiment.two_point_factory.number_counts_factory.global_systematics
+        two_point_experiment.two_point_factory.number_counts_factories[
+            0
+        ].global_systematics
         == []
     )
     assert two_point_experiment.data_source.sacc_data_file == "tests/bug_398.sacc.gz"
@@ -360,12 +400,14 @@ def test_build_two_point_likelihood_real(
         f"""
 two_point_factory:
   correlation_space: real
-  weak_lensing_factory:
-    per_bin_systematics: []
-    global_systematics: []
-  number_counts_factory:
-    per_bin_systematics: []
-    global_systematics: []
+  weak_lensing_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+  number_counts_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
   int_options:
     method: limber
     limber_method: gsl_spline
@@ -394,12 +436,14 @@ def test_build_two_point_likelihood_harmonic(
         f"""
 two_point_factory:
   correlation_space: harmonic
-  weak_lensing_factory:
-    per_bin_systematics: []
-    global_systematics: []
-  number_counts_factory:
-    per_bin_systematics: []
-    global_systematics: []
+  weak_lensing_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+  number_counts_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
   int_options:
     method: limber
     limber_method: gsl_spline
@@ -428,12 +472,14 @@ def test_build_two_point_likelihood_real_no_real_data(
         f"""
 two_point_factory:
   correlation_space: real
-  weak_lensing_factory:
-    per_bin_systematics: []
-    global_systematics: []
-  number_counts_factory:
-    per_bin_systematics: []
-    global_systematics: []
+  weak_lensing_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+  number_counts_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
   int_options:
     method: limber
     limber_method: gsl_spline
@@ -465,18 +511,20 @@ def test_build_two_point_likelihood_harmonic_no_harmonic_data(
     tmp_experiment_file.write_text(
         f"""
 two_point_factory:
-    correlation_space: harmonic
-    weak_lensing_factory:
-        per_bin_systematics: []
-        global_systematics: []
-    number_counts_factory:
-        per_bin_systematics: []
-        global_systematics: []
-    int_options:
-        method: limber
-        limber_method: gsl_spline
+  correlation_space: harmonic
+  weak_lensing_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+  number_counts_factories:
+    - type_source: default
+      per_bin_systematics: []
+      global_systematics: []
+  int_options:
+    method: limber
+    limber_method: gsl_spline
 data_source:
-    sacc_data_file: {fits_path_relative_to_tmp_path}
+  sacc_data_file: {fits_path_relative_to_tmp_path}
 """
     )
 

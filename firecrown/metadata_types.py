@@ -3,11 +3,13 @@
 This module contains metadata types definitions.
 """
 
+from typing import Any
 from itertools import chain, combinations_with_replacement
 from dataclasses import dataclass
 import re
-from enum import Enum, auto
+from enum import StrEnum, Enum, auto
 
+from pydantic_core import core_schema
 import numpy as np
 import numpy.typing as npt
 
@@ -48,10 +50,29 @@ class TypeSource(str):
     measurement type. For example:
 
     - In galaxy counts, this could differentiate between red and blue galaxies.
-    - In CMB lensing, it could identify data from different instruments like Planck or SPT.
+    - In CMB lensing, it could identify data from different instruments like Planck or
+      SPT.
     """
 
-    DEFAULT = "default"
+    DEFAULT: "TypeSource"
+
+    def __new__(cls, value):
+        """Create a new TypeSource."""
+        return super().__new__(cls, value)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the TypeSource class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: TypeSource(v) if isinstance(v, str) else v,
+            core_schema.str_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+
+TypeSource.DEFAULT = TypeSource("default")
 
 
 class Galaxies(YAMLSerializable, str, Enum):
@@ -311,7 +332,7 @@ class InferredGalaxyZDist(YAMLSerializable):
     z: np.ndarray
     dndz: np.ndarray
     measurements: set[Measurement]
-    type_source: TypeSource = "default"
+    type_source: TypeSource = TypeSource.DEFAULT
 
     def __post_init__(self) -> None:
         """Validate the redshift resolution data.
@@ -642,3 +663,15 @@ class TwoPointReal(YAMLSerializable):
         :return: The number of observations.
         """
         return self.thetas.shape[0]
+
+
+class TwoPointCorrelationSpace(YAMLSerializable, StrEnum):
+    """This class defines the two-point correlation space.
+
+    The two-point correlation space can be either real or harmonic. The real space
+    corresponds measurements in terms of angular separation, while the harmonic space
+    corresponds to measurements in terms of spherical harmonics decomposition.
+    """
+
+    REAL = auto()
+    HARMONIC = auto()
