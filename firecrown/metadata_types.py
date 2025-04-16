@@ -64,11 +64,25 @@ class Galaxies(YAMLSerializable, str, Enum):
     support for more types is added to SACC this enumeration needs to be updated.
     """
 
-    SHEAR_E = auto()
-    SHEAR_T = auto()
-    SHEAR_MINUS = auto()
-    SHEAR_PLUS = auto()
-    COUNTS = auto()
+    SHEAR_E = 1
+    SHEAR_T = 2
+    PART_OF_XI_MINUS = 3
+    SHEAR_MINUS = 3  # For backward compatibility in user code
+    PART_OF_XI_PLUS = 4
+    SHEAR_PLUS = 4  # For backward compatibility in user code
+    COUNTS = 5
+
+    def is_shear(self) -> bool:
+        """Return True if the measurement is a shear measurement, False otherwise.
+
+        :return: True if the measurement is a shear measurement, False otherwise
+        """
+        return self in (
+            Galaxies.SHEAR_E,
+            Galaxies.SHEAR_T,
+            Galaxies.PART_OF_XI_MINUS,
+            Galaxies.PART_OF_XI_PLUS,
+        )
 
     def sacc_type_name(self) -> str:
         """Return the lower-case form of the main measurement type.
@@ -88,9 +102,9 @@ class Galaxies(YAMLSerializable, str, Enum):
             return "shear"
         if self == Galaxies.SHEAR_T:
             return "shear"
-        if self == Galaxies.SHEAR_MINUS:
+        if self == Galaxies.PART_OF_XI_MINUS:
             return "shear"
-        if self == Galaxies.SHEAR_PLUS:
+        if self == Galaxies.PART_OF_XI_PLUS:
             return "shear"
         if self == Galaxies.COUNTS:
             return "density"
@@ -106,9 +120,9 @@ class Galaxies(YAMLSerializable, str, Enum):
             return "e"
         if self == Galaxies.SHEAR_T:
             return "t"
-        if self == Galaxies.SHEAR_MINUS:
+        if self == Galaxies.PART_OF_XI_MINUS:
             return "minus"
-        if self == Galaxies.SHEAR_PLUS:
+        if self == Galaxies.PART_OF_XI_PLUS:
             return "plus"
         if self == Galaxies.COUNTS:
             return ""
@@ -249,16 +263,20 @@ Measurement = Galaxies | CMB | Clusters
 ALL_MEASUREMENTS: list[Measurement] = list(chain(Galaxies, CMB, Clusters))
 ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
 HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
-REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T, Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
-EXACT_MATCH_MEASUREMENTS = (Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
+REAL_ONLY_MEASUREMENTS = (
+    Galaxies.SHEAR_T,
+    Galaxies.PART_OF_XI_MINUS,
+    Galaxies.PART_OF_XI_PLUS,
+)
+EXACT_MATCH_MEASUREMENTS = (Galaxies.PART_OF_XI_MINUS, Galaxies.PART_OF_XI_PLUS)
 INCOMPATIBLE_MEASUREMENTS = (Galaxies.SHEAR_T,)
 LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 GALAXY_SOURCE_TYPES = (
     Galaxies.SHEAR_E,
     Galaxies.SHEAR_T,
-    Galaxies.SHEAR_MINUS,
-    Galaxies.SHEAR_PLUS,
+    Galaxies.PART_OF_XI_MINUS,
+    Galaxies.PART_OF_XI_PLUS,
 )
 GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 

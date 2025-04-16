@@ -232,8 +232,8 @@ def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
     params=[
         Galaxies.COUNTS,
         Galaxies.SHEAR_T,
-        Galaxies.SHEAR_MINUS,
-        Galaxies.SHEAR_PLUS,
+        Galaxies.PART_OF_XI_MINUS,
+        Galaxies.PART_OF_XI_PLUS,
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
@@ -253,8 +253,8 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
     params=[
         Galaxies.COUNTS,
         Galaxies.SHEAR_T,
-        Galaxies.SHEAR_MINUS,
-        Galaxies.SHEAR_PLUS,
+        Galaxies.PART_OF_XI_MINUS,
+        Galaxies.PART_OF_XI_PLUS,
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
@@ -285,8 +285,8 @@ def make_all_real_bins() -> list[InferredGalaxyZDist]:
         for m in [
             Galaxies.COUNTS,
             Galaxies.SHEAR_T,
-            Galaxies.SHEAR_MINUS,
-            Galaxies.SHEAR_PLUS,
+            Galaxies.PART_OF_XI_MINUS,
+            Galaxies.PART_OF_XI_PLUS,
         ]
     ]
 

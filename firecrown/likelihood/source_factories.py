@@ -26,8 +26,8 @@ def use_source_factory(
         case (
             Galaxies.SHEAR_E
             | Galaxies.SHEAR_T
-            | Galaxies.SHEAR_MINUS
-            | Galaxies.SHEAR_PLUS
+            | Galaxies.PART_OF_XI_MINUS
+            | Galaxies.PART_OF_XI_PLUS
         ):
             assert wl_factory is not None
             source = wl_factory.create(inferred_galaxy_zdist)
@@ -51,8 +51,8 @@ def use_source_factory_metadata_index(
         case (
             Galaxies.SHEAR_E
             | Galaxies.SHEAR_T
-            | Galaxies.SHEAR_MINUS
-            | Galaxies.SHEAR_PLUS
+            | Galaxies.PART_OF_XI_MINUS
+            | Galaxies.PART_OF_XI_PLUS
         ):
             assert wl_factory is not None
             source = wl_factory.create_from_metadata_only(sacc_tracer)
