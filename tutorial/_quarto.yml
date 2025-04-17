@@ -5,6 +5,7 @@ project:
     - about.qmd
     - intro_article.qmd
     - theoretical_predictions_tutorial.qmd
+    - two_point_framework.qmd
     - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
     - inferred_zdist_serialization.qmd
@@ -29,6 +30,8 @@ website:
               text: "Introduction"
         - section: "Tutorials"
           contents:
+            - href: two_point_framework.qmd
+              text: "Two-Point Framework"
             - href: inferred_zdist.qmd
               text: "Inferred Redshift Distributions"
             - href: inferred_zdist_generators.qmd
