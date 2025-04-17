@@ -10,14 +10,7 @@ import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc.windows
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    BeforeValidator,
-    PrivateAttr,
-    Field,
-    field_serializer,
-)
+from pydantic import BaseModel, ConfigDict, BeforeValidator, PrivateAttr, Field
 
 
 import firecrown.generators.two_point as gen
