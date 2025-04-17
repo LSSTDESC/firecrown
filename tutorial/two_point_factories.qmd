@@ -70,9 +70,7 @@ This gives us the advantage of having a schema for the data, and the user can us
 For example, we can organize the factories in a YAML file:
 ```{python}
 
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.weak_lensing import WeakLensingFactory
-from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
 from firecrown.utils import (
     base_model_from_yaml,
     ClIntegrationOptions,
@@ -80,28 +78,25 @@ from firecrown.utils import (
     ClLimberMethod,
 )
 
-weak_lensing_yaml = """
-per_bin_systematics:
-- type: MultiplicativeShearBiasFactory
-- type: PhotoZShiftFactory
-global_systematics:
-- type: LinearAlignmentSystematicFactory
-  alphag: 1.0
-"""
-number_counts_yaml = """
-per_bin_systematics:
-- type: PhotoZShiftFactory
-global_systematics: []
+two_point_yaml = """
+correlation_space: real
+weak_lensing_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: MultiplicativeShearBiasFactory
+    - type: PhotoZShiftFactory
+    global_systematics:
+    - type: LinearAlignmentSystematicFactory
+      alphag: 1.0
+number_counts_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: PhotoZShiftFactory
+    global_systematics: []
 """
 
-weak_lensing_factory = base_model_from_yaml(WeakLensingFactory, weak_lensing_yaml)
-number_counts_factory = base_model_from_yaml(NumberCountsFactory, number_counts_yaml)
-
-two_point_list = TwoPoint.from_metadata_index(
-    metadata_indices=all_meta,
-    wl_factory=weak_lensing_factory,
-    nc_factory=number_counts_factory,
-)
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_point_list = TwoPoint.from_metadata_index(all_meta, tp_factory)
 ```
 
 ### Creating a `Likelihood` object
@@ -139,18 +134,9 @@ check_two_point_consistence_real(two_point_reals)
 The list `two_point_reals` contains all information about real-space two point functions contained in the `SACC` object.
 Therefore, we need to use a different constructor to obtain the two-point objects already in the `ready` state.
 ```{python}
-from firecrown.likelihood.two_point import TwoPoint
 
-weak_lensing_factory = base_model_from_yaml(WeakLensingFactory, weak_lensing_yaml)
-number_counts_factory = base_model_from_yaml(NumberCountsFactory, number_counts_yaml)
-
-
-two_points_ready = TwoPoint.from_measurement(
-    two_point_reals,
-    wl_factory=weak_lensing_factory,
-    nc_factory=number_counts_factory,
-)
-
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_points_ready = TwoPoint.from_measurement(two_point_reals, tp_factory)
 ```
 Note that we used the same factories to instantiate our `TwoPoint` objects. 
 
@@ -281,11 +267,7 @@ from firecrown.likelihood.factories import (
     TwoPointFactory,
 )
 
-tpf = TwoPointFactory(
-    correlation_space=TwoPointCorrelationSpace.REAL,
-    weak_lensing_factory=weak_lensing_factory,
-    number_counts_factory=number_counts_factory,
-)
+tpf = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
 two_point_experiment = TwoPointExperiment(
     two_point_factory=tpf,
@@ -406,8 +388,8 @@ all_two_point_cells = [TwoPointHarmonic(XY=xy, ells=ells) for xy in all_two_poin
 
 tpf_gsl_quad = TwoPointFactory(
     correlation_space=TwoPointCorrelationSpace.HARMONIC,
-    weak_lensing_factory=weak_lensing_factory,
-    number_counts_factory=number_counts_factory,
+    weak_lensing_factories=tpf.weak_lensing_factories,
+    number_counts_factories=tpf.number_counts_factories,
     int_options=ClIntegrationOptions(
         method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_QAG_QUAD
     ),
@@ -415,8 +397,8 @@ tpf_gsl_quad = TwoPointFactory(
 
 tpf_gsl_spline = TwoPointFactory(
     correlation_space=TwoPointCorrelationSpace.HARMONIC,
-    weak_lensing_factory=weak_lensing_factory,
-    number_counts_factory=number_counts_factory,
+    weak_lensing_factories=tpf.weak_lensing_factories,
+    number_counts_factories=tpf.number_counts_factories,
     int_options=ClIntegrationOptions(
         method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_SPLINE
     ),
@@ -424,8 +406,8 @@ tpf_gsl_spline = TwoPointFactory(
 
 tpf_fkem_auto = TwoPointFactory(
     correlation_space=TwoPointCorrelationSpace.HARMONIC,
-    weak_lensing_factory=weak_lensing_factory,
-    number_counts_factory=number_counts_factory,
+    weak_lensing_factories=tpf.weak_lensing_factories,
+    number_counts_factories=tpf.number_counts_factories,
     int_options=ClIntegrationOptions(
         method=ClIntegrationMethod.FKEM_AUTO, limber_method=ClLimberMethod.GSL_QAG_QUAD
     ),
@@ -433,8 +415,8 @@ tpf_fkem_auto = TwoPointFactory(
 
 tpf_fkem_l_limber = TwoPointFactory(
     correlation_space=TwoPointCorrelationSpace.HARMONIC,
-    weak_lensing_factory=weak_lensing_factory,
-    number_counts_factory=number_counts_factory,
+    weak_lensing_factories=tpf.weak_lensing_factories,
+    number_counts_factories=tpf.number_counts_factories,
     int_options=ClIntegrationOptions(
         method=ClIntegrationMethod.FKEM_L_LIMBER,
         limber_method=ClLimberMethod.GSL_QAG_QUAD,
@@ -444,8 +426,8 @@ tpf_fkem_l_limber = TwoPointFactory(
 
 tpf_fkem_l_limber_max = TwoPointFactory(
     correlation_space=TwoPointCorrelationSpace.HARMONIC,
-    weak_lensing_factory=weak_lensing_factory,
-    number_counts_factory=number_counts_factory,
+    weak_lensing_factories=tpf.weak_lensing_factories,
+    number_counts_factories=tpf.number_counts_factories,
     int_options=ClIntegrationOptions(
         method=ClIntegrationMethod.FKEM_L_LIMBER,
         limber_method=ClLimberMethod.GSL_QAG_QUAD,
