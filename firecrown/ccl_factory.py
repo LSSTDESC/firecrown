@@ -93,12 +93,12 @@ class PoweSpecAmplitudeParameter(YAMLSerializable, StrEnum):
         """Get the Pydantic core schema for the PoweSpecAmplitudeParameter class."""
         return core_schema.no_info_before_validator_function(
             lambda v: cls(v) if isinstance(v, str) else v,
-            core_schema.str_schema(),
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
 
 
-class CCLCreationMode(YAMLSerializable, StrEnum):
+class CCLCreationMode(StrEnum):
     """This class defines the CCL instance creation mode.
 
     The DEFAULT mode represents the current CCL behavior. It will use CCL's calculator
@@ -123,7 +123,7 @@ class CCLCreationMode(YAMLSerializable, StrEnum):
         """Get the Pydantic core schema for the CCLCreationMode class."""
         return core_schema.no_info_before_validator_function(
             lambda v: cls(v) if isinstance(v, str) else v,
-            core_schema.str_schema(),
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
 

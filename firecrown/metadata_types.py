@@ -683,6 +683,6 @@ class TwoPointCorrelationSpace(YAMLSerializable, StrEnum):
         """Get the Pydantic core schema for the TypeSource class."""
         return core_schema.no_info_before_validator_function(
             lambda v: cls(v) if isinstance(v, str) else v,
-            core_schema.str_schema(),
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
