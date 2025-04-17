@@ -824,12 +824,6 @@ class TwoPointFactory(BaseModel):
                 )
             self._nc_factory_map[nc_factory.type_source] = nc_factory
 
-    @field_serializer("correlation_space")
-    @classmethod
-    def serialize_correlation_space(cls, value: TwoPointCorrelationSpace) -> str:
-        """Serialize the amplitude parameter."""
-        return value.name
-
     def get_factory(
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
     ) -> WeakLensingFactory | NumberCountsFactory:

@@ -66,7 +66,7 @@ class TypeSource(str):
     ) -> core_schema.CoreSchema:
         """Get the Pydantic core schema for the TypeSource class."""
         return core_schema.no_info_before_validator_function(
-            lambda v: TypeSource(v) if isinstance(v, str) else v,
+            lambda v: cls(v) if isinstance(v, str) else v,
             core_schema.str_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
         )
@@ -85,13 +85,13 @@ class Galaxies(YAMLSerializable, str, Enum):
     support for more types is added to SACC this enumeration needs to be updated.
     """
 
-    SHEAR_E = 1
-    SHEAR_T = 2
-    PART_OF_XI_MINUS = 3
-    SHEAR_MINUS = 3  # For backward compatibility in user code
-    PART_OF_XI_PLUS = 4
-    SHEAR_PLUS = 4  # For backward compatibility in user code
-    COUNTS = 5
+    SHEAR_E = auto()
+    SHEAR_T = auto()
+    PART_OF_XI_MINUS = auto()
+    SHEAR_MINUS = PART_OF_XI_MINUS  # Alias for backward compatibility in user code
+    PART_OF_XI_PLUS = auto()
+    SHEAR_PLUS = PART_OF_XI_PLUS  # Alias for backward compatibility in user code
+    COUNTS = auto()
 
     def is_shear(self) -> bool:
         """Return True if the measurement is a shear measurement, False otherwise.
@@ -675,3 +675,14 @@ class TwoPointCorrelationSpace(YAMLSerializable, StrEnum):
 
     REAL = auto()
     HARMONIC = auto()
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the TypeSource class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.str_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
