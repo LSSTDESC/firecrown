@@ -789,8 +789,8 @@ class TwoPointFactory(BaseModel):
         BeforeValidator(make_correlation_space),
         Field(description="The two-point correlation space."),
     ]
-    weak_lensing_factories: list[WeakLensingFactory]
-    number_counts_factories: list[NumberCountsFactory]
+    weak_lensing_factories: list[WeakLensingFactory] = Field(default_factory=list)
+    number_counts_factories: list[NumberCountsFactory] = Field(default_factory=list)
     int_options: ClIntegrationOptions | None = None
 
     _wl_factory_map: dict[TypeSource, WeakLensingFactory] = PrivateAttr()
