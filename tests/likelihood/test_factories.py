@@ -18,7 +18,14 @@ from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata_types import Galaxies, TwoPointHarmonic, TwoPointReal
+from firecrown.metadata_types import (
+    Galaxies,
+    TwoPointHarmonic,
+    TwoPointReal,
+    TypeSource,
+    GALAXY_SOURCE_TYPES,
+    GALAXY_LENS_TYPES,
+)
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
 from firecrown.utils import (
@@ -787,6 +794,96 @@ def test_build_from_measurement_harmonic_cwindow(
     assert len(two_points) == 1
     two_point0 = two_points[0]
     assert isinstance(two_point0, TwoPoint)
+
+
+def test_two_point_factory_get_wl_factory():
+    wl_factory1 = WeakLensingFactory(type_source=TypeSource("ts1"))
+    wl_factory2 = WeakLensingFactory(type_source=TypeSource("ts2"))
+    wl_factory_default = WeakLensingFactory()
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[wl_factory1, wl_factory2, wl_factory_default],
+    )
+    for type_source, wl_factory in zip(
+        [TypeSource("ts1"), TypeSource("ts2"), TypeSource.DEFAULT],
+        [wl_factory1, wl_factory2, wl_factory_default],
+    ):
+        for measurement in GALAXY_SOURCE_TYPES:
+            wl_factory0 = factory.get_factory(measurement, type_source=type_source)
+            assert isinstance(wl_factory0, WeakLensingFactory)
+            assert wl_factory0.type_source == type_source
+            assert wl_factory0 is wl_factory
+
+
+def test_two_point_factory_get_nc_factory():
+    nc_factory1 = NumberCountsFactory(type_source=TypeSource("ts1"))
+    nc_factory2 = NumberCountsFactory(type_source=TypeSource("ts2"))
+    nc_factory_default = NumberCountsFactory()
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        number_counts_factories=[nc_factory1, nc_factory2, nc_factory_default],
+    )
+    for type_source, nc_factory in zip(
+        [TypeSource("ts1"), TypeSource("ts2"), TypeSource.DEFAULT],
+        [nc_factory1, nc_factory2, nc_factory_default],
+    ):
+        for measurement in GALAXY_LENS_TYPES:
+            nc_factory0 = factory.get_factory(measurement, type_source=type_source)
+            assert isinstance(nc_factory0, NumberCountsFactory)
+            assert nc_factory0.type_source == type_source
+            assert nc_factory0 is nc_factory
+
+
+def test_two_point_factory_two_equal_wls():
+    with pytest.raises(
+        ValueError, match="Duplicate WeakLensingFactory found for type_source ts1"
+    ):
+        _ = TwoPointFactory(
+            correlation_space=TwoPointCorrelationSpace.HARMONIC,
+            weak_lensing_factories=[
+                WeakLensingFactory(type_source=TypeSource("ts1")),
+                WeakLensingFactory(type_source=TypeSource("ts1")),
+            ],
+        )
+
+
+def test_two_point_factory_two_equal_ncs():
+    with pytest.raises(
+        ValueError, match="Duplicate NumberCountsFactory found for type_source ts1"
+    ):
+        _ = TwoPointFactory(
+            correlation_space=TwoPointCorrelationSpace.HARMONIC,
+            number_counts_factories=[
+                NumberCountsFactory(type_source=TypeSource("ts1")),
+                NumberCountsFactory(type_source=TypeSource("ts1")),
+            ],
+        )
+
+
+def test_two_point_factory_get_unavailable_wl_factory():
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[
+            WeakLensingFactory(type_source=TypeSource("ts1")),
+        ],
+    )
+    with pytest.raises(
+        ValueError, match="No WeakLensingFactory found for type_source ts2."
+    ):
+        _ = factory.get_factory(Galaxies.SHEAR_E, type_source=TypeSource("ts2"))
+
+
+def test_two_point_factory_get_unavailable_nc_factory():
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        number_counts_factories=[
+            NumberCountsFactory(type_source=TypeSource("ts1")),
+        ],
+    )
+    with pytest.raises(
+        ValueError, match="No NumberCountsFactory found for type_source ts2."
+    ):
+        _ = factory.get_factory(Galaxies.COUNTS, type_source=TypeSource("ts2"))
 
 
 @pytest.mark.parametrize(

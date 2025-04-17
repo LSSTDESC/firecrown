@@ -532,8 +532,12 @@ class WeakLensingFactory(BaseModel):
     )
 
     type_source: TypeSource = TypeSource.DEFAULT
-    per_bin_systematics: Sequence[WeakLensingSystematicFactory]
-    global_systematics: Sequence[WeakLensingSystematicFactory]
+    per_bin_systematics: Sequence[WeakLensingSystematicFactory] = Field(
+        default_factory=list
+    )
+    global_systematics: Sequence[WeakLensingSystematicFactory] = Field(
+        default_factory=list
+    )
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""

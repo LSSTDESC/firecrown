@@ -629,8 +629,12 @@ class NumberCountsFactory(BaseModel):
     ] = PrivateAttr()
 
     type_source: TypeSource = TypeSource.DEFAULT
-    per_bin_systematics: Sequence[NumberCountsSystematicFactory]
-    global_systematics: Sequence[NumberCountsSystematicFactory]
+    per_bin_systematics: Sequence[NumberCountsSystematicFactory] = Field(
+        default_factory=list
+    )
+    global_systematics: Sequence[NumberCountsSystematicFactory] = Field(
+        default_factory=list
+    )
     include_rsd: bool = False
 
     def model_post_init(self, _, /) -> None:
