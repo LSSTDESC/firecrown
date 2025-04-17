@@ -190,8 +190,6 @@ Where:
 
 This final level completes the description by connecting the theoretical and structural metadata with real or simulated observations, enabling their use in likelihood evaluations, consistency checks, or other statistical analyses.
 
-Here’s a concise summary explaining the key points of the framework based on the structure and components described:
-
 ### Summary
 
 This framework provides a structured approach for managing two-point correlation measurements in cosmology. 
