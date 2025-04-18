@@ -31,7 +31,7 @@ This layered structure allows for flexible modeling and reuse of components, avo
 The framework described so far defines dataclasses for representing metadata and measured values. 
 To compute theoretical predictions or build likelihoods, a `TwoPoint` object must be instantiated. 
 This object requires a measurement layout (`TwoPointHarmonic` or `TwoPointReal`) or a full `TwoPointMeasurement`, and includes all modeling assumptions—such as galaxy bias, shot noise, intrinsic alignment, and systematics. 
-Multiple `TwoPoint` instances can be constructed from the same layout with different model choices. While this can be done manually, the `TwoPointFactory` automates the creation of `TwoPoint` objects from either layout or measurement objects. See [Two-Point Factories](two_point_factories.qmd) for details.
+Multiple `TwoPoint` instances can be constructed from the same layout with different model choices. While this can be done manually, the `TwoPointFactory` automates the creation of `TwoPoint` objects from either layout or measurement objects. See [Two-Point Factories](#sec-two-point-factories) for details.
 
 The complete hierarchy is visualized below:
 
@@ -161,11 +161,6 @@ meta2 = TwoPointReal(
 This separation allows the same bin and observable combination (`TwoPointXY`) to be used in different contexts, e.g., one for computing angular power spectra and another for correlation functions, without duplicating bin-pair metadata. 
 It also enables use cases such as theoretical predictions or forecasts where data are not yet available, but the layout must be fully defined.
 
-## Two-Point Factories
-
-The `TwoPointHarmonic` and `TwoPointReal` classes are used to represent the layout of two-point measurements in harmonic and real space, respectively.
-
-
 # Two-Point Data Container: `TwoPointMeasurement`
 
 The previous objects (`InferredGalaxyZDist`, `TwoPointXY`, `TwoPointHarmonic`, `TwoPointReal`) define the structure and layout of a two-point measurement, what is being measured and how, but do not include actual data. 
@@ -189,6 +184,26 @@ Where:
 - `metadata` is an instance of `TwoPointHarmonic` or `TwoPointReal`, fully specifying the measurement layout.
 
 This final level completes the description by connecting the theoretical and structural metadata with real or simulated observations, enabling their use in likelihood evaluations, consistency checks, or other statistical analyses.
+
+# Two-Point Factories {#sec-two-point-factories}
+
+The `TwoPointHarmonic` and `TwoPointReal` classes describe the layout of two-point measurements in harmonic and real space, respectively. They specify **what** is being measured and **how**, but do not include actual data. These layout objects can be used in two distinct contexts:
+
+- To build a `TwoPointMeasurement`, which includes data and indices into a covariance matrix.
+- To initialize a `TwoPoint` object, which encapsulates all modeling choices and can be used to compute theoretical predictions and/or contribute to a likelihood.
+
+A `TwoPoint` object can be constructed from either a layout (`TwoPointHarmonic` or `TwoPointReal`) or a measurement (`TwoPointMeasurement`). In both cases, it computes a `TheoryVector`. If the object includes data (i.e., initialized from a `TwoPointMeasurement`), it also contains a `DataVector`. As a subclass of Firecrown's `Statistic`, a `TwoPoint` can be included in a `Likelihood`; see [Introduction](intro_article.qmd) for further details.
+
+To simplify the construction of `TwoPoint` objects from layouts, Firecrown provides the `TwoPointFactory`. This factory automates source creation based on metadata found in the layout description. Specifically, it inspects the measurement types in each `TwoPointXY` (i.e., the `x_measurement` and `y_measurement` fields) and delegates to appropriate source factories—such as `WeakLensingFactory` or `NumberCountsFactory`.
+
+A subset of `Measurement` types is associated with each source factory. For example:
+
+- `Galaxy.COUNTS` → `NumberCountsFactory`
+- `Galaxy.SHEAR_E | Galaxy.SHEAR_T | ...` → `WeakLensingFactory`
+
+The `TwoPointFactory` can hold multiple instances of the same source factory, each tied to a different `type_source`. This allows distinct modeling choices for different subpopulations (e.g., red vs. blue galaxies), even when the measurement type is the same. By default, both basic bins and factories use `TypeSource.DEFAULT`, so in simpler analyses the `type_source` distinction can be ignored.
+
+See [Two-Point Factories](two_point_factories.qmd) for implementation and usage details.
 
 ### Summary
 
