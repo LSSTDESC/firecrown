@@ -3,8 +3,9 @@ project:
   render:
     - index.qmd
     - about.qmd
+    - introduction_to_firecrown.qmd
+    - development_example.qmd
     - intro_article.qmd
-    - theoretical_predictions_tutorial.qmd
     - two_point_framework.qmd
     - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
@@ -14,6 +15,7 @@ project:
     - systematics.qmd
 execute:
   freeze: auto  # re-render only when source changes
+
 website:
   title: "Firecrown Tutorial Documents"
   favicon: green-backed-firecrown.jpg
