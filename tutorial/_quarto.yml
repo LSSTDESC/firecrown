@@ -55,6 +55,8 @@ website:
 
 format:
   html:
+    filters:
+    - linkgen.lua
     theme: [serif, custom.scss]
     toc: true
     code-overflow: wrap
