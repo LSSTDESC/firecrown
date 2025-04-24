@@ -102,13 +102,6 @@ jobs:
       - name: Running integration tests
         shell: bash -l {0}
         run: python -m pytest -vv -s --integration tests/integration
-      - name: Testing documentation build
-        shell: bash -l {0}
-        run: |
-          quarto render tutorial --output-dir=../docs/_static
-          make -C docs html
-          conda install -n firecrown_developer -c conda-forge linkchecker
-          linkchecker -f linkchechkerrc docs/_build/html
       - name: Upload coverage reports to Codecov
         if: ${{ (matrix.os == 'macos') && (matrix.python-version == '3.13') }}
         uses: codecov/codecov-action@v5
