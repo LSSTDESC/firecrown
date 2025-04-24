@@ -116,11 +116,11 @@ In practice, the same pair of bins may appear in multiple combinations, each cor
 ```python
 bin1 = InferredGalaxyZDist(
     z=..., dndz=..., 
-    measurements={Galaxy.COUNTS, Galaxy.SHEAR_E}
+    measurements={Galaxies.COUNTS, Galaxies.SHEAR_E}
 )
 bin2 = InferredGalaxyZDist(
     z=..., dndz=..., 
-    measurements={Galaxy.COUNTS, Galaxy.SHEAR_E}
+    measurements={Galaxies.COUNTS, Galaxies.SHEAR_E}
 )
 ```
 
@@ -132,16 +132,16 @@ These bins can be used to construct different [[metadata_types|TwoPointXY]] comb
 comb1 = TwoPointXY(
     x=bin1, 
     y=bin2, 
-    x_measurement=Galaxy.COUNTS, 
-    y_measurement=Galaxy.COUNTS
+    x_measurement=Galaxies.COUNTS, 
+    y_measurement=Galaxies.COUNTS
 )
 
 # Shear x Counts
 comb2 = TwoPointXY(
     x=bin1, 
     y=bin2, 
-    x_measurement=Galaxy.SHEAR_E, 
-    y_measurement=Galaxy.COUNTS
+    x_measurement=Galaxies.SHEAR_E, 
+    y_measurement=Galaxies.COUNTS
 )
 ```
 
@@ -216,8 +216,8 @@ To simplify the construction of [[likelihood.two_point|TwoPoint]] objects from l
 
 A subset of [[metadata_types|Measurement]] types is associated with each source factory. For example:
 
-- [[metadata_types|Galaxy.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
-- [[metadata_types|Galaxy.Galaxy.SHEAR_E]] `|` [[metadata_types|Galaxy.Galaxy.SHEAR_T]] `| ...` → [[likelihood.weak_lensing|WeakLensingFactory]]
+- [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
+- [[metadata_types|Galaxies.SHEAR_E]] `|` [[metadata_types|Galaxies.SHEAR_T]] `| ...` → [[likelihood.weak_lensing|WeakLensingFactory]]
 
 The [[likelihood.two_point|TwoPointFactory]] can hold multiple instances of the same source factory, each tied to a different [[metadata_types|TypeSource]]. This allows distinct modeling choices for different subpopulations (e.g., red vs. blue galaxies), even when the measurement type is the same. By default, both basic bins and factories use [[metadata_types|TypeSource.DEFAULT]], so in simpler analyses the [[metadata_types|TypeSource]] distinction can be ignored.
 
