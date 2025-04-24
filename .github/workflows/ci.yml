@@ -171,6 +171,5 @@ jobs:
         run: |
           quarto render tutorial --output-dir=../docs/_static
           make -C docs html
-          conda install -n firecrown_developer -c conda-forge linkchecker
-          linkchecker -f linkchechkerrc docs/_build/html
+          linkchecker -f linkcheckerrc docs/_build/html
       
