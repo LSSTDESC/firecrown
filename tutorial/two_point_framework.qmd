@@ -82,14 +82,12 @@ This tag allows the modeling framework to apply different theoretical treatments
 
 The implementation is as follows:
 
-```python
-@dataclass(frozen=True, kw_only=True)
-class InferredGalaxyZDist(YAMLSerializable):
-    bin_name: str
-    z: np.ndarray
-    dndz: np.ndarray
-    measurements: set[Measurement]
-    type_source: TypeSource = TypeSource.DEFAULT
+```{python}
+#| echo: false
+#| output: asis
+from fctools.print_code import display_class_attributes
+from firecrown.metadata_types import InferredGalaxyZDist
+display_class_attributes(InferredGalaxyZDist)
 ```
 
 Subclassing [[utils|YAMLSerializable]] enables these objects to be saved to and loaded from YAML files, facilitating configuration and reproducibility.
@@ -99,7 +97,8 @@ It is also marked with *kw_only*, ensuring that only keyword arguments are accep
 
 In other tutorials, we explore the following topics:
 
-1. **[Inferred Redshift Distributions](inferred_zdist.qmd)**: A guide on utilizing Firecrown's capabilities to describe galaxy redshift distributions for cosmological analyses.
+1. **[Inferred Redshift Distributions](inferred_zdist.qmd)**: A guide to utilizing Firecrown's capabilities to describe galaxy redshift distributions for cosmological analyses.
+   
 2. **[Redshift Distribution Generators](inferred_zdist_generators.qmd)**: Demonstrates how to generate [[metadata_types|InferredGalaxyZDist]] objects from LSST SRD redshift distributions.
 3. **[Redshift Distribution Serialization](inferred_zdist_serialization.qmd)**: Explains how to serialize and deserialize [[metadata_types|InferredGalaxyZDist]] objects and use the [[generators.inferred_galaxy_zdist|ZDistLSSTSRDBin]] and [[generators.inferred_galaxy_zdist|ZDistLSSTSRDBinCollection]] generators dataclasses.
 
@@ -109,7 +108,8 @@ Once individual bins have been defined, they are combined to specify a particula
 This is handled by the [[metadata_types|TwoPointXY]] class, which represents a pairing of two bins ([[metadata_types|TwoPointXY.x]] and [[metadata_types|TwoPointXY.y]]) along with the specific observables measured in each. 
 
 This abstraction plays a critical role in separating the shared metadata of the bins from the specific measurement being constructed. 
-A given bin (e.g., a sample of galaxies) may be involved in multiple different observables, such as number counts and shear, and [[metadata_types|TwoPointXY]] allows each measurement pairing to be represented without duplicating bin information.
+A given bin (e.g., a sample of galaxies) may be involved in multiple different observables, such as number counts and shear.
+[[metadata_types|TwoPointXY]] allows each measurement pairing to be represented without duplicating bin information.
 
 In practice, the same pair of bins may appear in multiple combinations, each corresponding to a different observable pair. For example:
 
