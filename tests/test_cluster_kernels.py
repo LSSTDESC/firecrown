@@ -98,8 +98,8 @@ def test_purity_distribution_uses_mean():
     pk.bp_nc = -0.3323
     pk.ap_rc = 1.1839
     pk.bp_rc = -0.4077
-    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
-    mass_proxy = np.array([-1.0])
+    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float64)
+    mass_proxy = np.array([-1.0], dtype=np.float64)
     mass_proxy_limits = (0.0, 2.0)
 
     truth = np.array(
@@ -131,7 +131,7 @@ def test_completeness_distribution():
     ck.ac_nc = 0.38
     ck.bc_nc = 1.2634
     mass = np.linspace(13.0, 15.0, 10)
-    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+    z = np.array([0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], dtype=np.float64)
 
     truth = np.array(
         [
