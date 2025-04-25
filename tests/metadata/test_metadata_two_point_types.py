@@ -65,6 +65,16 @@ def test_order_enums():
         assert compare_enums(enumerand, enumerand) == 0
 
 
+def test_galaxies_is_shear():
+    assert Galaxies.PART_OF_XI_MINUS is Galaxies.SHEAR_MINUS
+    assert Galaxies.PART_OF_XI_PLUS is Galaxies.SHEAR_PLUS
+    assert Galaxies.SHEAR_E.is_shear()
+    assert Galaxies.SHEAR_T.is_shear()
+    assert Galaxies.PART_OF_XI_MINUS.is_shear()
+    assert Galaxies.PART_OF_XI_PLUS.is_shear()
+    assert not Galaxies.COUNTS.is_shear()
+
+
 def test_compare_enums_wrong_type():
     with pytest.raises(
         ValueError,
@@ -213,8 +223,8 @@ def test_extract_all_tracers_types_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict,
         if SOURCE_REGEX.match(tracer):
             assert measurements == {
                 Galaxies.SHEAR_T,
-                Galaxies.SHEAR_MINUS,
-                Galaxies.SHEAR_PLUS,
+                Galaxies.PART_OF_XI_MINUS,
+                Galaxies.PART_OF_XI_PLUS,
             }
 
 
@@ -232,8 +242,8 @@ def test_extract_all_tracers_types_reals_inverted(
         if SOURCE_REGEX.match(tracer):
             assert measurements == {
                 Galaxies.SHEAR_T,
-                Galaxies.SHEAR_MINUS,
-                Galaxies.SHEAR_PLUS,
+                Galaxies.PART_OF_XI_MINUS,
+                Galaxies.PART_OF_XI_PLUS,
             }
 
 
@@ -409,15 +419,15 @@ def test_match_name_type_require_convention_source():
     match, n1, a, n2, b = match_name_type(
         "src0",
         "src0",
-        Galaxies.SHEAR_MINUS,
-        Galaxies.SHEAR_MINUS,
+        Galaxies.PART_OF_XI_MINUS,
+        Galaxies.PART_OF_XI_MINUS,
         require_convetion=True,
     )
     assert not match
     assert n1 == "src0"
-    assert a == Galaxies.SHEAR_MINUS
+    assert a == Galaxies.PART_OF_XI_MINUS
     assert n2 == "src0"
-    assert b == Galaxies.SHEAR_MINUS
+    assert b == Galaxies.PART_OF_XI_MINUS
 
 
 def test_check_two_point_consistence_harmonic(two_point_cell: TwoPointHarmonic):

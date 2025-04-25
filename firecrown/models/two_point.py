@@ -7,12 +7,14 @@ from numpy import typing as npt
 import pyccl
 import sacc
 
+import firecrown.generators.two_point as gen
 from firecrown.generators.two_point import EllOrThetaConfig, ELL_FOR_XI_DEFAULTS
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.metadata_types import TracerNames
 from firecrown.updatable import Updatable
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
+from firecrown.utils import ClIntegrationOptions
 
 
 def determine_ccl_kind(sacc_data_type: str) -> str:
@@ -196,6 +198,7 @@ class TwoPointTheory(Updatable):
         ell_for_xi: None | dict[str, int] = None,
         ell_or_theta: None | EllOrThetaConfig = None,
         tracers: None | TracerNames = None,
+        int_options: ClIntegrationOptions | None = None,
     ) -> None:
         """Initialize a new TwoPointTheory object.
 
@@ -210,7 +213,6 @@ class TwoPointTheory(Updatable):
         self.sacc_data_type = sacc_data_type
         self.ccl_kind = determine_ccl_kind(sacc_data_type)
         self.sources = sources
-        self.ell_for_xi_config: dict[str, int] = {}
         self.ell_or_theta_config: None | EllOrThetaConfig = None
         self.ell_or_theta_min = ell_or_theta_min
         self.ell_or_theta_max = ell_or_theta_max
@@ -219,13 +221,18 @@ class TwoPointTheory(Updatable):
         self.ells: None | npt.NDArray[np.int64] = None
         self.thetas: None | npt.NDArray[np.float64] = None
         self.mean_ells: None | npt.NDArray[np.float64] = None
-        self.ells_for_xi: None | npt.NDArray[np.int64] = None
-        self.ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
+
+        ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
         if ell_for_xi is not None:
-            self.ell_for_xi_config.update(ell_for_xi)
+            ell_for_xi_config.update(ell_for_xi)
+
+        self.ells_for_xi: npt.NDArray[np.int64] = gen.log_linear_ells(
+            **ell_for_xi_config
+        )
 
         self.ell_or_theta_config = ell_or_theta
+        self.int_options = int_options
 
     @property
     def source0(self) -> Source:

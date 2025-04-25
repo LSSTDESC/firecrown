@@ -38,7 +38,6 @@ from firecrown.generators.two_point import (
 from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
-    TwoPointHarmonic,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
 )
@@ -65,47 +64,6 @@ def fixture_source_0() -> NumberCounts:
 def fixture_tools() -> ModelingTools:
     """Return a trivial ModelingTools object."""
     return ModelingTools()
-
-
-@pytest.fixture(name="harmonic_data_with_window")
-def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurement:
-    """Return some fake harmonic data."""
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    # The window is given by the mean of the ells in each bin times the bin number.
-    weights = np.zeros((100, 4))
-    weights[0:25, 0] = 1.0 / 25.0
-    weights[25:50, 1] = 2.0 / 25.0
-    weights[50:75, 2] = 3.0 / 25.0
-    weights[75:100, 3] = 4.0 / 25.0
-
-    data = (np.zeros(4) + 1.1).astype(np.float64)
-    indices = np.arange(4)
-    covariance_name = "cov"
-    tpm = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
-    )
-
-    return tpm
-
-
-@pytest.fixture(name="harmonic_data_no_window")
-def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
-    """Return some fake harmonic data."""
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = (np.zeros(100) - 1.1).astype(np.float64)
-    indices = np.arange(100)
-    covariance_name = "cov"
-    tpm = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy),
-    )
-
-    return tpm
 
 
 @pytest.fixture(name="wl_factory")
@@ -562,7 +520,7 @@ def test_use_source_factory_invalid_measurement(
         ValueError,
         match="Measurement .* not found in inferred galaxy redshift distribution .*",
     ):
-        use_source_factory(harmonic_bin_1, Galaxies.SHEAR_MINUS, None, None)
+        use_source_factory(harmonic_bin_1, Galaxies.PART_OF_XI_MINUS, None, None)
 
 
 def test_use_source_factory_metadata_only_counts(

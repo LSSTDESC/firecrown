@@ -14,7 +14,9 @@ def get_hiprim(hi_cosmo: Nc.HICosmo) -> Nc.HIPrimPowerLaw:
     :param hi_cosmo: NumCosmo HICosmo object
     :return: the HIPrim object contained in hi_cosmo
     """
-    hiprim = hi_cosmo.peek_submodel_by_mid(Nc.HIPrim.id())
+    hiprim = hi_cosmo.peek_submodel_by_mid(
+        Nc.HIPrim.id()  # pylint: disable=no-value-for-parameter
+    )
     if not hiprim:
         raise ValueError("NumCosmo object must include a HIPrim object.")
     if not isinstance(hiprim, Nc.HIPrimPowerLaw):

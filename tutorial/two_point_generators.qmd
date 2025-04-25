@@ -93,7 +93,7 @@ wl_photoz = wl.PhotoZShiftFactory()
 wl_mult_bias = wl.MultiplicativeShearBiasFactory()
 
 # NumberCounts systematics -- global
-# As for Firecrown 1.9.0, we do not have any global systematics for number counts
+# As for Firecrown 1.11.0a0, we do not have any global systematics for number counts
 # NumberCounts systematics -- per-bin
 nc_photoz = nc.PhotoZShiftFactory()
 
