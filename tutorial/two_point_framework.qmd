@@ -7,14 +7,14 @@ format: html
 
 ## Purpose of this Document
 
-This document describes the conceptual structure behind, and design principals of, Firecrown’s framework for constructing cosmological two-point likelihoods. 
-It is intended to provide a high-level overview of how measurements, binning schemes, and data layouts are represented and organized in the codebase. 
+This document describes the conceptual structure behind, and design principals of, Firecrown’s framework for constructing cosmological two-point likelihoods.
+It is intended to provide a high-level overview of how measurements, binning schemes, and data layouts are represented and organized in the codebase.
 The focus is on the rationale behind each abstraction and the motivation for the chosen hierarchy. 
 Detailed descriptions of each component are provided in the following sections.
 
 ## Introduction
 
-Firecrown’s two-point likelihood framework is built around a structured hierarchy of metadata objects that describe the configuration and organization of cosmological measurements. 
+Firecrown’s two-point likelihood framework is built around a structured hierarchy of metadata types that describe the configuration and organization of cosmological measurements. 
 At the foundation are basic bin descriptors, such as [[metadata_types|InferredGalaxyZDist]], which define properties of individual observables or selections. 
 These descriptors are not directly tied to specific measurements but are shared across multiple components in a complex analysis.
 This allows Firecrown to ensure that components that should have identical descriptors have exactly identical descriptors, by construction.
@@ -30,9 +30,11 @@ At the top of the hierarchy is the [[data_types|TwoPointMeasurement]], which inc
 This layered structure allows for flexible modeling and reuse of components, avoiding duplication and enabling a clear separation between metadata, data layout, and measured values.
 
 The framework described so far defines dataclasses for representing metadata and measured values. 
-To compute theoretical predictions or build likelihoods, a [[likelihood.two_point|TwoPoint]] object must be instantiated. 
+To compute theoretical predictions or build likelihoods, a [[likelihood.two_point|TwoPoint]] object must be created. 
 This object requires a measurement layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) or a full [[data_types|TwoPointMeasurement]], and includes all modeling assumptions—such as galaxy bias, shot noise, intrinsic alignment, and systematics. 
-Multiple [[likelihood.two_point|TwoPoint]] instances can be constructed from the same layout with different model choices. While this can be done manually, the [[likelihood.two_point|TwoPointFactory]] automates the creation of [[likelihood.two_point|TwoPoint]] objects from either layout or measurement objects. See [Two-Point Factories](#sec-two-point-factories) for details.
+Multiple [[likelihood.two_point|TwoPoint]] instances can be constructed from the same layout with different model choices.
+While this can be done manually, the [[likelihood.two_point|TwoPointFactory]] automates the creation of [[likelihood.two_point|TwoPoint]] objects from either layout or measurement objects.
+See [Two-Point Factories](#sec-two-point-factories) for details.
 
 The complete hierarchy is visualized in @fig-framework-hierarchy.
 
@@ -113,7 +115,8 @@ A given bin (e.g., a sample of galaxies) may be involved in multiple different o
 
 In practice, the same pair of bins may appear in multiple combinations, each corresponding to a different observable pair. For example:
 
-```python
+```{python}
+#| eval: false
 bin1 = InferredGalaxyZDist(
     z=..., dndz=..., 
     measurements={Galaxies.COUNTS, Galaxies.SHEAR_E}
@@ -127,7 +130,8 @@ bin2 = InferredGalaxyZDist(
 Here, both bins support galaxy number counts and shear measurements. 
 These bins can be used to construct different [[metadata_types|TwoPointXY]] combinations, depending on which observables are being cross-correlated:
 
-```python
+```{python}
+#| eval: false
 # Counts x Counts
 comb1 = TwoPointXY(
     x=bin1, 
@@ -158,9 +162,11 @@ This distinction is captured by the [[metadata_types|TwoPointHarmonic]] and [[me
 Each of these classes includes a reference to the corresponding [[metadata_types|TwoPointXY]] object, preserving the bin and observable metadata while adding the angular or harmonic domain configuration. 
 This avoids redundancy and keeps the measurement layout modular.
 
-In harmonic space, the measurement is characterized by a set of multipole moments ($\ell$) and optionally a window function. 
+In harmonic space, the measurement is characterized by a set of multipole orders ($\ells$) at which the multipole moments ($C_\ell$) of the measured quantity are calculated.
+Optionally, the layout can include a window function to select the orders of interest.
 For example:
-```python
+```{python}
+#| eval: false
 meta1 = TwoPointHarmonic(
     XY=comb1, 
     ells=..., 
@@ -169,7 +175,8 @@ meta1 = TwoPointHarmonic(
 ```
 
 For real-space measurements, the layout is specified by a set of angular separation values ($\theta$):
-```python
+```{python}
+#| eval: false
 meta2 = TwoPointReal(
     XY=comb1, 
     thetas=...
@@ -181,12 +188,13 @@ It also enables use cases such as theoretical predictions or forecasts where dat
 
 # Two-Point Data Container: [[data_types|TwoPointMeasurement]]
 
-The previous objects ([[metadata_types|InferredGalaxyZDist]], [[metadata_types|TwoPointXY]], [[metadata_types|TwoPointHarmonic]], [[metadata_types|TwoPointReal]]) define the structure and layout of a two-point measurement, what is being measured and how, but do not include actual data. 
-These layout descriptions can be used independently, for example, in computing theoretical predictions, plotting expectations, or running forecasts.
+The previous types ([[metadata_types|InferredGalaxyZDist]], [[metadata_types|TwoPointXY]], [[metadata_types|TwoPointHarmonic]], [[metadata_types|TwoPointReal]]) define the structure and layout of a two-point measurement, what is being measured and how, but do not include actual data. 
+These layout descriptions can be used independently of any measurement data, for example, in computing theoretical predictions, plotting expectations, or running forecasts.
 
 To represent an actual measurement, either from observational data or a simulated dataset, the framework introduces the [[data_types|TwoPointMeasurement]] class. 
-This object links the layout with the measured data values and the corresponding covariance structure:
-```python
+This type links the layout with the measured data values and the corresponding covariance structure:
+```{python}
+#| eval: false
 measurement = TwoPointMeasurement(
     data=..., 
     indices=..., 
