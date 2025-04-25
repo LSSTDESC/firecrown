@@ -152,3 +152,14 @@ def test_completeness_distribution():
     assert isinstance(comp, np.ndarray)
     for ref, true in zip(comp, truth):
         assert ref == pytest.approx(true, rel=1e-7, abs=0.0)
+
+
+def test_purity_distribution_raises_without_limits():
+    pk = Purity()
+    z = np.array([0.5], dtype=np.float64)
+    mass_proxy = np.array([-1.0], dtype=np.float64)
+
+    with pytest.raises(
+        ValueError, match="mass_proxy_limits must be provided when mass_proxy == -1"
+    ):
+        pk.distribution(z=z, mass_proxy=mass_proxy, mass_proxy_limits=None)
