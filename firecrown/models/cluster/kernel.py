@@ -133,7 +133,9 @@ class Purity(Updatable):
         """Evaluates and returns the purity contribution to the integrand."""
         if all(mass_proxy == -1.0):
             if mass_proxy_limits is None:
-                raise ValueError("mass_proxy_limits must be provided when mass_proxy == -1")
+                raise ValueError(
+                    "mass_proxy_limits must be provided when mass_proxy == -1"
+                )
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
             r = np.array([np.power(10.0, mean_mass)], dtype=np.float64)
         else:
