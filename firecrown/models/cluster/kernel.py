@@ -10,7 +10,7 @@ import numpy as np
 
 from firecrown import parameters
 from firecrown.updatable import Updatable
-
+from typing import Optional
 
 REDMAPPER_DEFAULT_AC_NC = 0.38
 REDMAPPER_DEFAULT_BC_NC = 1.2634
@@ -128,14 +128,14 @@ class Purity(Updatable):
         self,
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: tuple[float, float] = None,
+        mass_proxy_limits: Optional[tuple[float, float]] = None,
     ) -> npt.NDArray[np.float64]:
         """Evaluates and returns the purity contribution to the integrand."""
         if all(mass_proxy == -1.0):
             mean_mass = (mass_proxy_limits[0] + mass_proxy_limits[1]) / 2
-            r = 10**mean_mass
+            r = np.array([np.power(10.0, mean_mass)], dtype=np.float64)
         else:
-            r = np.power(10.0, mass_proxy)
+            r = np.array([np.power(10.0, mass_proxy)], dtype=np.float64)
 
         r_over_rc = r / self._rc(z)
 
