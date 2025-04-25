@@ -4,13 +4,13 @@ This module holds the classes that define the kernels that can be included
 in the cluster abundance integrand.
 """
 
+from typing import Optional
 from enum import Enum
 import numpy.typing as npt
 import numpy as np
 
 from firecrown import parameters
 from firecrown.updatable import Updatable
-from typing import Optional
 
 REDMAPPER_DEFAULT_AC_NC = 0.38
 REDMAPPER_DEFAULT_BC_NC = 1.2634
