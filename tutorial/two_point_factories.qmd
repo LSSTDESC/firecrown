@@ -7,74 +7,88 @@ format: html
 
 ## Purpose of this Document
 
-In the tutorial [Two Point Generators](two_point_generators.qmd) we show how to use generators to create the necessary metadata to instantiate `TwoPoint` objects.
-In addition to generators, the user has also the option to use data already saved in a `SACC` object (or file) to initialize the `TwoPoint` objects.
-In this tutorial we show how to extract the metadata and data from `SACC` object and use the metadata and a factory to initialize the objects.
+This tutorial explains how the **[[likelihood.two_point|TwoPointFactory]]** automates the construction of **[[likelihood.two_point|TwoPoint]]** likelihood objects in Firecrown. It leverages Firecrown’s hierarchical metadata framework, described in [Two-Point Framework](two_point_framework.qmd), to translate abstract metadata and input data into fully configured measurement pipelines—ensuring consistency and minimizing redundancy across analyses.
 
-## `SACC` objects
+### Framework Hierarchy Overview
 
-The `SACC` objects are used to store all necessary information for a statistical analysis. 
-In practice, it stores metadata (data layout, data type, bins, dependent variables, etc), calibration data (redshift distribution per bin $\mathrm{d}n/\mathrm{d}z$) and the covariance between all measurements. 
-In the tutorials [`InferredGalaxyZDist`](inferred_zdist.qmd), [`InferredGalaxyZDist` Generators](inferred_zdist_generators.qmd) and [`InferredGalaxyZDist` Serialization](inferred_zdist_serialization.qmd) we show how to use, generate and serialize the `InferredGalaxyZDist` objects describing the redshift distributions. In this document we extract these components from a `SACC` object.
+Firecrown’s two-point framework organizes metadata into four layers:
 
-## Metadata only `SACC`
+1. **Bin Descriptors** (e.g., [[metadata_types|InferredGalaxyZDist]])  
+   - Define properties of individual observables (e.g., redshift distributions, tracer types).  
+   - Shared across components to enforce *configuration consistency by construction*.  
 
-Up to the version 1.7 Firecrown relied on a two phase construction for its likelihoods.
-During the first phase, the `Likelihood`, `Statistics` and `Systematics` objects are created with metadata only.
-Then, the user must call the `read` method passing a `SACC` object to finish the object construction.
+2. **Bin Pairs** ([[metadata_types|TwoPointXY]])  
+   - Represent cross-correlations between two bins (e.g., galaxy lensing × galaxy clustering).  
+   - Ensure consistency of paired bin definitions (e.g., redshift ranges, tracer compatibility).  
 
-One shortcoming of this methodology is that the user must know the `SACC` object struct beforehand, so they can create the necessary objects.
-Then, a matching `SACC` object must be passed in the `read` phase.
-To simplify this, we introduced functions to extract the metadata from the `SACC` file, such that it can be used together with the factories to create the objects.
+3. **Data Layouts**  
+   - Describe the measurement structure:
+     - **[[metadata_types|TwoPointHarmonic]]**: for harmonic-space statistics (e.g., $C(\ell)$).  
+     - **[[metadata_types|TwoPointReal]]**: for real-space statistics (e.g., $\xi(\theta)$).  
+   - Contain only metadata (no observational data), making them reusable for theory comparisons or forecasting.  
 
-In the code below we extract the metadata indices from the `examples/des_y1_3x2pt` `SACC` file.
+4. **Measurement Containers** ([[data_types|TwoPointMeasurement]])  
+   - Combine a data layout with observed or simulated data.  
+
+### Role of the TwoPointFactory
+
+The **[[likelihood.two_point|TwoPointFactory]]** serves as the interface between data layout definitions and the construction of [[likelihood.two_point|TwoPoint]] objects. It handles:
+
+1. Parsing layout metadata from:
+   - Manually defined configurations (e.g., YAML descriptors).  
+   - Automated pipelines ([Two-Point Generators](two_point_generators.qmd)).  
+   - `SACC` files, with or without embedded data.
+
+2. Building [[likelihood.two_point|TwoPoint]] objects that:
+   - Map tracer definitions (e.g., galaxy samples, lens bins) to measurement configurations.  
+   - Establish the link between theory predictions and data layout.  
+   - Optionally incorporate observational data, producing the associated **[[data_types|DataVector]]**.
+
+The tutorials [InferredGalaxyZDist](inferred_zdist.qmd), [InferredGalaxyZDist Generators](inferred_zdist_generators.qmd), and [InferredGalaxyZDist Serialization](inferred_zdist_serialization.qmd) describe how to construct and serialize redshift distribution objects. Here, we focus specifically on extracting layout and redshift information from a `SACC` object to support the use of [[likelihood.two_point|TwoPointFactory]].
+
+### SACC Workflows
+
+- **Full SACC extraction**: Loads both metadata and data, yielding a fully configured **[[likelihood.two_point|TwoPoint]]** object.  
+- **Partial SACC extraction** (deprecated):  
+   - Loads only data indices, requiring manual invocation of **[[likelihood.two_point|TwoPoint.read]]** to attach data.  
+   - Lacks **[[metadata_types|TypeSource]]** information, preventing automated source configuration.
+
+## Working with `SACC` Objects
+
+A `SACC` object provides all components needed for a statistical analysis in Firecrown:
+
+- **Metadata**: Layout, data types, binning, tracer names.
+- **Calibration data**: Redshift distributions $\mathrm{d}n/\mathrm{d}z$ for each bin.
+- **Data**: Measurements (e.g., power spectra).
+- **Covariance**: Uncertainties and correlations.
+
+Firecrown supports two workflows: the **recommended full extraction approach**, and a **legacy indices-only approach**, now deprecated.
+
+### Recommended: Full Metadata + Data Extraction
+
+In the current interface, Firecrown extracts everything from a `SACC` object — layout, calibration, and measurements. These are passed directly to constructors that build ready-to-use likelihoods.
+
 ```{python}
-from firecrown.metadata_functions import extract_all_real_metadata_indices
+from firecrown.data_functions import (
+    extract_all_real_data,
+    check_two_point_consistence_real,
+)
 import sacc
 
 sacc_data = sacc.Sacc.load_fits("../examples/des_y1_3x2pt/sacc_data.fits")
 
-all_meta = extract_all_real_metadata_indices(sacc_data)
+two_point_reals = extract_all_real_data(sacc_data)
+check_two_point_consistence_real(two_point_reals)
 ```
 
-The metadata can be seen below:
+Use a factory to build the `TwoPoint` objects in the **ready** state:
+
 ```{python}
-# | code-fold: true
-import yaml
-from IPython.display import Markdown
-
-all_meta_prune = [
-    {
-        "data_type": meta["data_type"],
-        "tracer1": str(meta["tracer_names"].name1),
-        "tracer2": str(meta["tracer_names"].name2),
-    }
-    for meta in all_meta
-]
-
-all_meta_yaml = yaml.safe_dump(all_meta_prune, default_flow_style=False)
-
-Markdown(f"```yaml\n{all_meta_yaml}\n```")
-```
-
-The tracer names above are ones from the `SACC` object. 
-The user needs to know the tracer names to create the `TwoPoint` objects.
-However, now the user can use the metadata to create the objects.
-
-### Factories
-
-The factories are used to create the `TwoPoint` objects.
-In Firecrown, we write factories using Pydantic, a library to validate and parse data.
-This gives us the advantage of having a schema for the data, and the user can use the factories to validate the data before creating the objects.
-
-For example, we can organize the factories in a YAML file:
-```{python}
-
 from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
 from firecrown.utils import (
     base_model_from_yaml,
-    ClIntegrationOptions,
     ClIntegrationMethod,
+    ClIntegrationOptions,
     ClLimberMethod,
 )
 
@@ -96,51 +110,11 @@ number_counts_factories:
 """
 
 tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
-two_point_list = TwoPoint.from_metadata_index(all_meta, tp_factory)
-```
-
-### Creating a `Likelihood` object
-
-Now we can create a `Likelihood` object using the `TwoPoint` objects.
-Since we are using the metadata only, we need to pass the `SACC` object to the `read` method.
-```{python}
-from firecrown.likelihood.gaussian import ConstGaussian
-
-likelihood = ConstGaussian(two_point_list)
-
-likelihood.read(sacc_data)
-
-```
-
-## Extracting the Metadata and Data
-
-In the previous section, we demonstrated how to extract metadata from a `SACC object`. 
-Now, we will show how to extract all components from the `SACC` object, including the metadata, data, and calibration data.
-
-In the upcoming interface for Firecrown, likelihood objects will be created using the complete data. 
-This data may be extracted from a `SACC` object, generated by a custom generator, or provided in any other manner by the user.
-
-In the code below we extract all components from the `examples/des_y1_3x2pt` `SACC` file.
-```{python}
-from firecrown.data_functions import (
-    extract_all_real_data,
-    check_two_point_consistence_real,
-)
-
-two_point_reals = extract_all_real_data(sacc_data)
-check_two_point_consistence_real(two_point_reals)
-```
-
-The list `two_point_reals` contains all information about real-space two point functions contained in the `SACC` object.
-Therefore, we need to use a different constructor to obtain the two-point objects already in the `ready` state.
-```{python}
-
-tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 two_points_ready = TwoPoint.from_measurement(two_point_reals, tp_factory)
 ```
-Note that we used the same factories to instantiate our `TwoPoint` objects. 
 
-Now, to create the likelihood we need to use a different constructor that support creating likelihoods in `ready` state.
+Create a `Likelihood` object in the ready state using the covariance matrix:
+
 ```{python}
 from firecrown.likelihood.gaussian import ConstGaussian
 
@@ -148,12 +122,66 @@ likelihood_ready = ConstGaussian.create_ready(
     two_points_ready, sacc_data.covariance.dense
 )
 ```
-Note that, since we are creating a `Likelihood` in ready state, the constructor requires the statistics covariance.
 
-## Comparing results
+### Deprecated: Indices-Only Extraction
 
-We can now compare whether the two methods yield the same results.
-Before we do that, we need to obtain our required parameters.
+This approach was used in Firecrown $\leq 1.7$. Users needed to know the structure of the `SACC` file a priori and create [[likelihood.two_point|TwoPoint]] objects manually.
+
+To reduce this burden, Firecrown introduced a helper to extract tracer pairs and data types from a `SACC` file:
+
+```{python}
+from firecrown.metadata_functions import extract_all_real_metadata_indices
+import sacc
+
+# Load the SACC file
+sacc_data = sacc.Sacc.load_fits("../examples/des_y1_3x2pt/sacc_data.fits")
+# Extract all metadata indices
+all_meta = extract_all_real_metadata_indices(sacc_data)
+```
+
+You can inspect the extracted metadata layout:
+
+```{python}
+# | code-fold: true
+import yaml
+from IPython.display import Markdown
+
+all_meta_prune = [
+    {
+        "data_type": meta["data_type"],
+        "tracer1": str(meta["tracer_names"].name1),
+        "tracer2": str(meta["tracer_names"].name2),
+    }
+    for meta in all_meta
+]
+
+all_meta_yaml = yaml.safe_dump(all_meta_prune[::4], default_flow_style=False)
+Markdown(f"```yaml\n{all_meta_yaml}\n```")
+```
+
+Construct the [[likelihood.two_point|TwoPoint]] objects using the extracted layout and the factory:
+
+```{python}
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_point_list = TwoPoint.from_metadata_index(all_meta, tp_factory)
+```
+
+At this stage, the [[likelihood.two_point|TwoPoint]] objects contain only structural metadata (e.g., tracer combinations, data types). They are not yet in the **ready** state, as no metadata or measurement data has been attached. To complete the construction, you must call the [[likelihood.statistic|Statistic.read]] method on each object. Alternatively, if the [[likelihood.two_point|TwoPoint]] objects are part of a [[likelihood.likelihood|Likelihood]] instance, calling its [[likelihood.likelihood|Likelihood.read]] method will internally propagate to each contained statistic:
+
+```{python}
+likelihood = ConstGaussian(two_point_list)
+likelihood.read(sacc_data)
+```
+
+> Each [[likelihood.two_point|TwoPoint]] object is a subclass of [[likelihood.statistic|Statistic]], and the `Likelihood.read` method delegates to `Statistic.read` for each of its components.
+
+> **Note:** This indices-only method is deprecated and kept for compatibility with older code. For new projects, prefer the full extraction interface above.
+
+## Comparing Results
+
+We now verify that both approaches—constructing the likelihood in two phases (metadata-only) and directly in the ready state—produce identical results.
+
+First, we extract the required parameter sets for both likelihoods:
 ```{python}
 from firecrown.parameters import ParamsMap
 
@@ -164,56 +192,53 @@ assert req_params_ready == req_params
 
 default_values = req_params.get_default_values()
 params = ParamsMap(default_values)
-
 ```
-Note that the required parameters are the same for both likelihoods.
-Before generating the two-point statistics, we use the following default values:
+
+Both likelihoods depend on the same parameter set. The default values used are:
 ```{python}
 # | code-fold: true
 import yaml
+from IPython.display import Markdown
 
 default_values_yaml = yaml.dump(default_values, default_flow_style=False)
-
 Markdown(f"```yaml\n{default_values_yaml}\n```")
 ```
 
-
-Finally, we can prepare both likelihoods and compare the loglike values.
+Next, we prepare both likelihoods with the same model setup and parameters:
 ```{python}
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
-from firecrown.parameters import ParamsMap
-from firecrown.utils import base_model_to_yaml
-from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
-from firecrown.metadata_types import Galaxies
-
 
 tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
 params = get_default_params_map(tools, likelihood)
 
-tools = ModelingTools()
 tools.update(params)
 tools.prepare()
 
 likelihood.update(params)
 likelihood_ready.update(params)
 ```
+
+Finally, we compute and compare the log-likelihood values from both construction methods:
 ```{python}
 # | code-fold: true
-print(f"Loglike from metadata only: {likelihood.compute_loglike(tools)}")
-print(f"Loglike from ready state: {likelihood_ready.compute_loglike(tools)}")
+print(f"Loglike (metadata-only): {likelihood.compute_loglike(tools)}")
+print(f"Loglike (ready state):   {likelihood_ready.compute_loglike(tools)}")
 ```
+
+Both values should match exactly, confirming that the two construction methods are consistent.
 
 ## Filtering Data: Scale-cuts
 
-Real analyses use only a subset of the measured two-points statistics, where the utilized data is typically limited my the accuracy of the models used to fit the data. 
-It is then useful to define the physical scales (corresponding to the data) that should be analyzed in a given likelihood evaluation of two-point statistics. 
-Firecrown can implement this feature though its factories, notably by defining a `TwoPointBinFilterCollection` object. 
-This object is a collection of `TwoPointBinFilter` objects, which define the valid data analysis range for a given combination of two-point tracers. 
-For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
+Real analyses use only a subset of the measured two-points statistics, where the utilized data is typically limited my the accuracy of the models used to fit the data. It is then useful to define the physical scales (corresponding to the data) that should be analyzed in a given likelihood evaluation of two-point statistics. Firecrown can implement this feature though its factories, notably by defining a [[data_functions|TwoPointBinFilterCollection]] object. 
+This object is a collection of [[data_functions|TwoPointBinFilter]] objects, which define the valid data analysis range for a given combination of two-point tracers. For instance, we can define the filtered range of galaxy clustering auto-correlations as follows:
 
 ```{python}
+from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
+from firecrown.metadata_types import Galaxies
+from firecrown.utils import base_model_to_yaml
+
 tp_collection = TwoPointBinFilterCollection(
     filters=[
         TwoPointBinFilter.from_args(
@@ -251,10 +276,9 @@ tp_collection = TwoPointBinFilterCollection(
 Markdown(f"```yaml\n{base_model_to_yaml(tp_collection)}\n```")
 ```
 
-One may alternatively define the tracers directly (instead of from arguments) as `TwoPointTracerSpec` objects. 
+One may alternatively define the tracers directly (instead of from arguments) as [[data_functions|TwoPointTracerSpec]] objects. 
 
-A `TwoPointExperiment` object is able to keep track of the relevant `Factory` instances to generate the two-point configurations of the analysis (either in configuration or harmonic space) and the scale-cut/data filtering choices to evaluate a defined likelihood. 
-The interpretation of the filtered lower and upper limits of the data depend on the definition of the `TwoPointExperiment` factories in either configuration or harmonic space.
+A [[likelihood.factories|TwoPointExperiment]] object is able to keep track of the relevant `Factory` instances to generate the two-point configurations of the analysis (either in configuration or harmonic space) and the scale-cut/data filtering choices to evaluate a defined likelihood. The interpretation of the filtered lower and upper limits of the data depend on the definition of the [[likelihood.factories|TwoPointExperiment]] factories in either configuration or harmonic space.
 
 With this formalism, we are able to evaluate the likelihood exactly as the previous section by defining filters to be very wide. 
 Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis and do so in the example below by filtering-out all galaxy clustering data. 
@@ -310,7 +334,7 @@ two_point_experiment_filtered = TwoPointExperiment(
 )
 ```
 
-The `TwoPointExperiment` objects can also be used to create likelihoods in the ready state. 
+The [[likelihood.factories|TwoPointExperiment]] objects can also be used to create likelihoods in the ready state. 
 Additionally, they can be serialized into a yaml file, making it easier to share specific analysis choices with other users and collaborators.
 
 The `yaml` below shows the first experiment.
@@ -325,7 +349,7 @@ The `yaml` below shows the second experiment.
 Markdown(f"```yaml\n{base_model_to_yaml(two_point_experiment_filtered)}\n```")
 ```
 
-Next, we can create likelihoods from the `TwoPointExperiment` objects and compare the loglike values.
+Next, we can create likelihoods from the [[likelihood.factories|TwoPointExperiment]] objects and compare the loglike values.
 
 ```{python}
 likelihood_tpe = two_point_experiment.make_likelihood()
@@ -358,12 +382,12 @@ print(f"Loglike from filtered TwoPointExperiment: {likelihood_tpe_filtered.compu
 
 ## Controlling Integration
 
-`TwoPointFactory` objects can include integration options, allowing control over how two-point functions are computed.  
-The example below shows how to create a `TwoPointFactory` with integration options that reproduce the default behavior.  
-We also create additional `TwoPointFactory` objects with alternative integration configurations: `LIMBER` with `GSL_SPLINE`, `FKEM_AUTO`, and `FKEM_L_LIMBER`.  
+[[likelihood.two_point|TwoPointFactory]] objects can include integration options, allowing control over how two-point functions are computed.  
+The example below shows how to create a [[likelihood.two_point|TwoPointFactory]] with integration options that reproduce the default behavior.  
+We also create additional [[likelihood.two_point|TwoPointFactory]] objects with alternative integration configurations: [[utils|ClIntegrationMethod.LIMBER]] with [[utils|ClLimberMethod.GSL_SPLINE]], [[utils|ClIntegrationMethod.FKEM_AUTO]], and [[utils|ClIntegrationMethod.FKEM_L_LIMBER]].  
 
 The lens and source redshift bin collections used for the computations are imported from the `firecrown.generators.inferred_galaxy_zdist` module:  
-`LSST_Y1_LENS_BIN_COLLECTION` and `LSST_Y1_SOURCE_BIN_COLLECTION`.
+[[generators.inferred_galaxy_zdist|LSST_Y1_LENS_BIN_COLLECTION]] and [[generators.inferred_galaxy_zdist|LSST_Y1_SOURCE_BIN_COLLECTION]].
 
 ```{python}
 import numpy as np
