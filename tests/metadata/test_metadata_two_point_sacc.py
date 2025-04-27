@@ -50,8 +50,7 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type():
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
     Cells = np.random.normal(size=ells.shape[0])
-    with pytest.warns(UserWarning):
-        sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
