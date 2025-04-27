@@ -45,7 +45,7 @@ dependencies:
   - pyyaml
   - quarto
   - requests
-  - sacc >= 1.0
+  - sacc >= 0.11
   - scipy
   - sphinx
   - sphinx-autoapi
