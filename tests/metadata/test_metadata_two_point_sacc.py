@@ -39,7 +39,7 @@ from firecrown.likelihood.source_factories import use_source_factory
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
-def fixture_sacc_galaxy_src0_src0_invalid_data_type():
+def fixture_sacc_galaxy_src0_src0_invalid_data_type(recwarn):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -50,8 +50,13 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type():
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
     Cells = np.random.normal(size=ells.shape[0])
-    with pytest.warns(UserWarning):
-        sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    warning = next(iter(recwarn), None)
+    if warning is not None:
+        assert isinstance(warning.message, UserWarning)
+        assert re.match(
+            r"Unknown data_type value this_type_is_invalid\.", str(warning.message)
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)

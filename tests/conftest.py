@@ -30,6 +30,7 @@ from firecrown.metadata_types import (
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
 )
+from firecrown.data_types import TwoPointMeasurement
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 
@@ -231,8 +232,8 @@ def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
     params=[
         Galaxies.COUNTS,
         Galaxies.SHEAR_T,
-        Galaxies.SHEAR_MINUS,
-        Galaxies.SHEAR_PLUS,
+        Galaxies.PART_OF_XI_MINUS,
+        Galaxies.PART_OF_XI_PLUS,
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
@@ -252,8 +253,8 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
     params=[
         Galaxies.COUNTS,
         Galaxies.SHEAR_T,
-        Galaxies.SHEAR_MINUS,
-        Galaxies.SHEAR_PLUS,
+        Galaxies.PART_OF_XI_MINUS,
+        Galaxies.PART_OF_XI_PLUS,
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
@@ -284,8 +285,8 @@ def make_all_real_bins() -> list[InferredGalaxyZDist]:
         for m in [
             Galaxies.COUNTS,
             Galaxies.SHEAR_T,
-            Galaxies.SHEAR_MINUS,
-            Galaxies.SHEAR_PLUS,
+            Galaxies.PART_OF_XI_MINUS,
+            Galaxies.PART_OF_XI_PLUS,
         ]
     ]
 
@@ -355,6 +356,47 @@ def make_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
     """Generate a TwoPointCWindow object with 100 ells."""
     thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
     return TwoPointReal(thetas=thetas, XY=real_two_point_xy)
+
+
+@pytest.fixture(name="harmonic_data_with_window")
+def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+    """Return some fake harmonic data."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    # The window is given by the mean of the ells in each bin times the bin number.
+    weights = np.zeros((100, 4))
+    weights[0:25, 0] = 1.0 / 25.0
+    weights[25:50, 1] = 2.0 / 25.0
+    weights[50:75, 2] = 3.0 / 25.0
+    weights[75:100, 3] = 4.0 / 25.0
+
+    data = (np.zeros(4) + 1.1).astype(np.float64)
+    indices = np.arange(4)
+    covariance_name = "cov"
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
+    )
+
+    return tpm
+
+
+@pytest.fixture(name="harmonic_data_no_window")
+def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+    """Return some fake harmonic data."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    data = (np.zeros(100) - 1.1).astype(np.float64)
+    indices = np.arange(100)
+    covariance_name = "cov"
+    tpm = TwoPointMeasurement(
+        data=data,
+        indices=indices,
+        covariance_name=covariance_name,
+        metadata=TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy),
+    )
+
+    return tpm
 
 
 @pytest.fixture(name="cluster_sacc_data")

@@ -311,7 +311,7 @@ class CCLFactory(Updatable, BaseModel):
         BaseModel.__init__(self, **data)
         Updatable.__init__(self, parameter_prefix=parameter_prefix)
 
-        if set(data) - set(self.model_fields.keys()):
+        if set(data) - set(CCLFactory.model_fields.keys()):
             raise ValueError(
                 f"Invalid parameters: {set(data) - set(self.model_fields.keys())}"
             )

@@ -181,7 +181,7 @@ class MappingNumCosmo(GObject.Object):
 
         :param mset: the NumCosmo MSet object from which to get the parameters
         """
-        hi_cosmo = mset.peek(Nc.HICosmo.id())
+        hi_cosmo = mset.peek(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
         if self._p is not None:
@@ -238,7 +238,7 @@ class MappingNumCosmo(GObject.Object):
         :param mset: the NumCosmo MSet object from which to get the parameters
         :return: a dictionary of the arguments required by CCL
         """
-        hi_cosmo = mset.peek(Nc.HICosmo.id())
+        hi_cosmo = mset.peek(Nc.HICosmo.id())  # pylint: disable=no-value-for-parameter
         assert isinstance(hi_cosmo, Nc.HICosmo)
 
         d_spline = self._dist.comoving_distance_spline.peek_spline()
