@@ -314,7 +314,7 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
         "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
     )
     with pytest.warns(
-        UserWarning, match="No bandpower windows associated to these data"
+        UserWarning, match="No bandpower windows associated (with|to) these data"
     ):
         statistic.read(sacc_data)
     assert statistic.theory.ell_or_theta_min == 50

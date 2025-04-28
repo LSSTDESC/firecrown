@@ -38,7 +38,7 @@ from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory, use_source
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
-def fixture_sacc_galaxy_src0_src0_invalid_data_type() -> (
+def fixture_sacc_galaxy_src0_src0_invalid_data_type(recwarn) -> (
     tuple[sacc.Sacc, np.ndarray, np.ndarray]
 ):
     """Fixture for a SACC data without window functions."""
@@ -51,8 +51,13 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type() -> (
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
     Cells = np.random.normal(size=ells.shape[0])
-    with pytest.warns(UserWarning):
-        sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    sacc_data.add_ell_cl("this_type_is_invalid", "src0", "src0", ells, Cells)
+    warning = next(iter(recwarn), None)
+    if warning is not None:
+        assert isinstance(warning.message, UserWarning)
+        assert re.match(
+            r"Unknown data_type value this_type_is_invalid\.", str(warning.message)
+        )
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
