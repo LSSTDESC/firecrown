@@ -38,9 +38,9 @@ from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory, use_source
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
-def fixture_sacc_galaxy_src0_src0_invalid_data_type(recwarn) -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray]
-):
+def fixture_sacc_galaxy_src0_src0_invalid_data_type(
+    recwarn,
+) -> tuple[sacc.Sacc, np.ndarray, np.ndarray]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
