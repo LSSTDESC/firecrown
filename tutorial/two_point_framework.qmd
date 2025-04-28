@@ -23,7 +23,7 @@ These bin descriptors are combined into [[metadata_types|TwoPointXY]] objects, w
 This level abstracts the bin pairing process and ensures consistency between the inputs. 
 It acts as a validation and grouping layer before specifying how the measurements are structured.
 
-The framework then separates measurement types by data layout: [[metadata_types|TwoPointHarmonic]] for harmonic-space measurements (e.g., as a function of multipole moments $\ell$) and [[metadata_types|TwoPointReal]] for real-space measurements (e.g., as a function of angular separation $\theta$). 
+The framework then separates measurement types by data layout: [[metadata_types|TwoPointHarmonic]] for harmonic-space measurements (e.g., as a function of multipole moments $\ell$s) and [[metadata_types|TwoPointReal]] for real-space measurements (e.g., as a function of angular separation $\theta$).
 These objects describe the arrangement of data without requiring the data itself, making them suitable for forecasting or model comparison tasks.
 
 At the top of the hierarchy is the [[data_types|TwoPointMeasurement]], which includes the data layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) and the associated measured values, either observed data or mock realizations. 
@@ -162,7 +162,7 @@ This distinction is captured by the [[metadata_types|TwoPointHarmonic]] and [[me
 Each of these classes includes a reference to the corresponding [[metadata_types|TwoPointXY]] object, preserving the bin and observable metadata while adding the angular or harmonic domain configuration. 
 This avoids redundancy and keeps the measurement layout modular.
 
-In harmonic space, the measurement is characterized by a set of multipole orders ($\ells$) at which the multipole moments ($C_\ell$) of the measured quantity are calculated.
+In harmonic space, the measurement is characterized by a set of multipole orders ($\ell$s) at which the multipole moments ($C_\ell$s) of the measured quantity are calculated.
 Optionally, the layout can include a window function to select the orders of interest.
 For example:
 ```{python}
@@ -204,6 +204,7 @@ measurement = TwoPointMeasurement(
 ```
 
 Where:
+
 - [[data_types|TwoPointMeasurement.data]] contains the array of measured values (e.g., $C_\ell$ or $\xi(\theta)$).
 - [[data_types|TwoPointMeasurement.indices]] specify which entries in the global covariance matrix correspond to this measurement vector.
 - [[data_types|TwoPointMeasurement.covariance_name]] is a reference to a named covariance block in the full data vector structure.
