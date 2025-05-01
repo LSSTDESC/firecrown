@@ -1,8 +1,8 @@
 """The DES Y1 3x2pt likelihood factory module."""
 
-import os
 import sacc
 
+from firecrown.likelihood.likelihood import NamedParameters
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood.two_point import TwoPoint
@@ -18,7 +18,7 @@ from firecrown.ccl_factory import CCLFactory
 #  segment of the data. These sources are created using the build_likelihood function
 # and also contain a list of systematics. The systematics are classes that modify the
 # theoretical prediction and are also constructed in the build_likelihood function.
-def build_likelihood(_):
+def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Build the DES Y1 3x2pt likelihood."""
     # Creates a LAI systematic. This is a systematic that is applied to
     # all weak-lensing probes. The `sacc_tracer` argument is used to identify the
@@ -101,10 +101,8 @@ def build_likelihood(_):
     likelihood = ConstGaussian(statistics=list(stats.values()))
 
     # We load the correct SACC file.
-    saccfile = os.path.expanduser(
-        os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits")
-    )
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    sacc_file = params.get_string("sacc_file")
+    sacc_data = sacc.Sacc.load_fits(sacc_file)
 
     # The read likelihood method is called passing the loaded SACC file, the
     # two-point functions will receive the appropriated sections of the SACC
