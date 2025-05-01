@@ -183,8 +183,14 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
 
 
 TATT_ALIGNMENT_DEFAULT_IA_A_1 = 1.0
+TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1 = 0.62
+TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1 = 0.0
 TATT_ALIGNMENT_DEFAULT_IA_A_2 = 0.5
+TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2 = 0.62
+TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2 = 0.0
 TATT_ALIGNMENT_DEFAULT_IA_A_D = 0.5
+TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D = 0.62
+TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D = 0.0
 
 
 class TattAlignmentSystematic(WeakLensingSystematic):
@@ -197,8 +203,14 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     prefix for the parameters:
 
     :ivar ia_a_1: the amplitude of the linear alignment model.
+    :ivar ia_zpiv_1: the pivot redshift of the linear alignment model.
+    :ivar ia_alphaz_1: the redshift dependence of the linear alignment model.
     :ivar ia_a_2: the amplitude of the quadratic alignment model.
+    :ivar ia_zpiv_2: the pivot redshift of the quadratic alignment model.
+    :ivar ia_alphaz_2: the redshift dependence of the quadratic alignment model.
     :ivar ia_a_d: the amplitude of the density-dependent alignment model.
+    :ivar ia_zpiv_d: the pivot redshift of the density-dependent alignment model.
+    :ivar ia_alphaz_d: the redshift dependence of the density-dependent alignment model.
     """
 
     def __init__(self, sacc_tracer: None | str = None):
@@ -211,11 +223,29 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         self.ia_a_1 = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
+        self.ia_zpiv_1 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1
+        )
+        self.ia_alphaz_1 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
+        )
         self.ia_a_2 = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
         )
+        self.ia_zpiv_2 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2
+        )
+        self.ia_alphaz_2 = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
+        )
         self.ia_a_d = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
+        )
+        self.ia_zpiv_d = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
+        )
+        self.ia_alphaz_d = parameters.register_new_updatable_parameter(
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
         )
 
     def apply(
@@ -236,6 +266,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             a2=self.ia_a_2,
             Om_m2_for_c2=False,
         )
+
+        c_1 *= ((1.0 + z) / (1.0 + self.ia_zpiv_1)) ** self.ia_alphaz_1
+        c_d *= ((1.0 + z) / (1.0 + self.ia_zpiv_d)) ** self.ia_alphaz_d
+        c_2 *= ((1.0 + z) / (1.0 + self.ia_zpiv_2)) ** self.ia_alphaz_2
+
+
 
         return replace(
             tracer_arg,
