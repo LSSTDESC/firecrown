@@ -1,0 +1,386 @@
+model-set:
+  &S34 NcmMSet:
+    valid-map: false
+    model-array:
+    - &S35 NcHICosmoDECpl:
+        sparam-array: {}
+        reparam:
+          &S36 NcHICosmoDEReparamOk:
+            length: 13
+            params-desc:
+              2:
+                &S37 NcmSParam:
+                  name: 'Omegak'
+                  symbol: '\\Omega_{k0}'
+                  lower-bound: -0.29999999999999999
+                  upper-bound: 0.29999999999999999
+                  scale: 0.01
+                  absolute-tolerance: 0.0
+                  default-value: 0.0
+                  fit-type: 1
+            compat-type: 'NcHICosmoDE'
+        submodel-array:
+        - &S38 NcHIPrimPowerLaw:
+            sparam-array: {}
+            submodel-array: []
+            k-pivot: 0.050000000000000003
+            ln10e10ASA: 3.1962672409225847
+            T-SA-ratio: 0.20000000000000001
+            n-SA: 0.97419999999999995
+            n-T: 0.0
+            ln10e10ASA-fit: true
+            T-SA-ratio-fit: false
+            n-SA-fit: true
+            n-T-fit: false
+        - &S39 NcHIReionCamb:
+            sparam-array: {}
+            submodel-array: []
+            prec: 9.9999999999999995e-08
+            HII-HeII-reion-delta: 0.5
+            HeIII-reion-delta: 0.5
+            HII-HeII-reion-exponent: 1.5
+            HeII-reionized: true
+            z-re: 10.243870077213849
+            z-He-re: 3.5
+            z-re-fit: false
+            z-He-re-fit: false
+        H0: 67.269999999999996
+        Omegac: 0.26643149999999999
+        Omegax: 0.68429499758793777
+        Tgamma0: 2.7254999999999998
+        Yp: 0.25798911827137266
+        ENnu: 3.044
+        Omegab: 0.049168499999999997
+        massnu:
+          &S40 NcmVector:
+            values: [
+              0.0
+              ]
+        Tnu:
+          &S41 NcmVector:
+            values: [
+              0.71611000000000002
+              ]
+        munu:
+          &S42 NcmVector:
+            values: [
+              0.0
+              ]
+        gnu:
+          &S43 NcmVector:
+            values: [
+              1.0
+              ]
+        massnu-length: 1
+        Tnu-length: 1
+        munu-length: 1
+        gnu-length: 1
+        H0-fit: true
+        Omegac-fit: true
+        Omegax-fit: false
+        Tgamma0-fit: false
+        Yp-fit: false
+        ENnu-fit: false
+        Omegab-fit: true
+        massnu-fit: [
+          false
+          ]
+        Tnu-fit: [
+          false
+          ]
+        munu-fit: [
+          false
+          ]
+        gnu-fit: [
+          false
+          ]
+        w0: -1.0
+        w1: 0.0
+        w0-fit: true
+        w1-fit: true
+    - &S44 FirecrownTwoPoint:
+        sparam-array: {}
+        submodel-array: []
+        ia-a-1: 1.0
+        ia-a-2: 0.0
+        ia-a-d: 0.0
+        lens0-b-2: 0.0
+        lens0-b-s: 0.0
+        lens1-b-2: 0.0
+        lens1-b-s: 0.0
+        lens2-b-2: 0.0
+        lens2-b-s: 0.0
+        lens3-b-2: 0.0
+        lens3-b-s: 0.0
+        lens4-b-2: 0.0
+        lens4-b-s: 0.0
+        lens0-mag-bias: 0.0
+        lens1-mag-bias: 0.0
+        lens2-mag-bias: 0.0
+        lens3-mag-bias: 0.0
+        lens4-mag-bias: 0.0
+        lens0-bias: 1.23885511
+        lens1-bias: 1.3781005
+        lens2-bias: 1.52472019
+        lens3-bias: 1.67665752
+        lens4-bias: 1.83243479
+        src0-delta-z: 0.0
+        src1-delta-z: 0.0
+        src2-delta-z: 0.0
+        src3-delta-z: 0.0
+        src4-delta-z: 0.0
+        lens0-delta-z: 0.0
+        lens1-delta-z: 0.0
+        lens2-delta-z: 0.0
+        lens3-delta-z: 0.0
+        lens4-delta-z: 0.0
+        ia-a-1-fit: false
+        ia-a-2-fit: false
+        ia-a-d-fit: false
+        lens0-b-2-fit: false
+        lens0-b-s-fit: false
+        lens1-b-2-fit: false
+        lens1-b-s-fit: false
+        lens2-b-2-fit: false
+        lens2-b-s-fit: false
+        lens3-b-2-fit: false
+        lens3-b-s-fit: false
+        lens4-b-2-fit: false
+        lens4-b-s-fit: false
+        lens0-mag-bias-fit: false
+        lens1-mag-bias-fit: false
+        lens2-mag-bias-fit: false
+        lens3-mag-bias-fit: false
+        lens4-mag-bias-fit: false
+        lens0-bias-fit: false
+        lens1-bias-fit: false
+        lens2-bias-fit: false
+        lens3-bias-fit: false
+        lens4-bias-fit: false
+        src0-delta-z-fit: false
+        src1-delta-z-fit: false
+        src2-delta-z-fit: false
+        src3-delta-z-fit: false
+        src4-delta-z-fit: false
+        lens0-delta-z-fit: false
+        lens1-delta-z-fit: false
+        lens2-delta-z-fit: false
+        lens3-delta-z-fit: false
+        lens4-delta-z-fit: false
+likelihood:
+  &S45 NcmLikelihood:
+    dataset:
+      &S46 NcmDataset:
+        bootstrap-type: 0
+        data-array:
+        - &S47 FirecrownNumCosmoGaussCov:
+            desc: 'FirecrownNumCosmoGaussCov'
+            init: false
+            n-points: 0
+            use-norma: false
+            likelihood-build-parameters:
+              likelihood_source: '/home/paul/firecrown/examples/des_y1_3x2pt/forecast_3x2pt_PT.py'
+              sampling_parameters_sections: 'firecrown_two_point'
+              file: '/home/paul/firecrown/firecrown/connector/cosmosis/likelihood.py'
+              fatal_errors: true
+              require_nonlinear_pk: true
+            likelihood-source: '/home/paul/firecrown/examples/des_y1_3x2pt/forecast_3x2pt_PT.py'
+            model-list: [
+              'FirecrownTwoPoint'
+              ]
+            nc-mapping:
+              &S48 FirecrownMappingNumCosmo:
+                dist:
+                  &S49 NcDistance:
+                    zf: 10.0
+                    compute-inv-comoving: false
+                mapping-name: 'default'
+                p-ml:
+                  &S50 NcPowspecMLCBE:
+                    reltol: 0.0001
+                    zi: 0.0
+                    zf: 5.0
+                    kmin: 9.9999999999999995e-07
+                    kmax: 1000.0
+                    cbe:
+                      &S51 NcCBE:
+                        precision:
+                          &S52 NcCBEPrecision:
+                            a-ini-over-a-today-default: 1e-14
+                            back-integration-stepsize: 0.0070000000000000001
+                            tol-background-integration: 0.01
+                            tol-initial-Omega-r: 0.0001
+                            tol-M-ncdm: 9.9999999999999995e-08
+                            tol-ncdm: 0.001
+                            tol-ncdm-synchronous: 0.001
+                            tol-ncdm-newtonian: 1.0000000000000001e-05
+                            tol-ncdm-bg: 1.0000000000000001e-05
+                            tol-ncdm-initial-w: 0.001
+                            safe-phi-scf: 0.0
+                            tol-tau-eq: 9.9999999999999995e-07
+                            sBBN-file: '/home/paul/miniconda3/envs/forecasting/share/numcosmo-0.22.0/data/class_data/bbn/sBBN_2017.dat'
+                            recfast-z-initial: 10000.0
+                            recfast-Nz0: 20000
+                            tol-thermo-integration: 0.01
+                            recfast-Heswitch: 6
+                            recfast-fudge-He: 0.85999999999999999
+                            recfast-Hswitch: 1
+                            recfast-fudge-H: 1.1399999999999999
+                            recfast-delta-fudge-H: -0.014999999999999999
+                            recfast-AGauss1: -0.14000000000000001
+                            recfast-AGauss2: 0.079000000000000001
+                            recfast-zGauss1: 7.2800000000000002
+                            recfast-zGauss2: 6.7300000000000004
+                            recfast-wGauss1: 0.17999999999999999
+                            recfast-wGauss2: 0.33000000000000002
+                            recfast-z-He-1: 8000.0
+                            recfast-delta-z-He-1: 50.0
+                            recfast-z-He-2: 5000.0
+                            recfast-delta-z-He-2: 100.0
+                            recfast-z-He-3: 3500.0
+                            recfast-delta-z-He-3: 50.0
+                            recfast-x-He0-trigger: 0.995
+                            recfast-x-He0-trigger2: 0.995
+                            recfast-x-He0-trigger-delta: 0.050000000000000003
+                            recfast-x-H0-trigger: 0.995
+                            recfast-x-H0-trigger2: 0.995
+                            recfast-x-H0-trigger-delta: 0.050000000000000003
+                            recfast-H-frac: 0.001
+                            hyrec-Alpha-inf-file: '/home/paul/miniconda3/envs/forecasting/share/numcosmo-0.22.0/data/class_data/hyrec/Alpha_inf.dat'
+                            hyrec-R-inf-file: '/home/paul/miniconda3/envs/forecasting/share/numcosmo-0.22.0/data/class_data/hyrec/R_inf.dat'
+                            hyrec-two-photon-tables-file: '/home/paul/miniconda3/envs/forecasting/share/numcosmo-0.22.0/data/class_data/hyrec/two_photon_tables.dat'
+                            reionization-z-start-max: 50.0
+                            reionization-sampling: 0.050000000000000003
+                            reionization-optical-depth-tol: 0.0001
+                            reionization-start-factor: 8.0
+                            thermo-rate-smoothing-radius: 50
+                            evolver: 1
+                            k-min-tau0: 0.10000000000000001
+                            k-max-tau0-over-l-max: 2.3999999999999999
+                            k-step-sub: 0.050000000000000003
+                            k-step-super: 0.002
+                            k-step-transition: 0.20000000000000001
+                            k-step-super-reduction: 0.10000000000000001
+                            k-per-decade-for-pk: 10.0
+                            k-per-decade-for-bao: 70.0
+                            k-bao-center: 3.0
+                            k-bao-width: 4.0
+                            start-small-k-at-tau-c-over-tau-h: 0.0015
+                            start-large-k-at-tau-h-over-tau-k: 0.070000000000000007
+                            tight-coupling-trigger-tau-c-over-tau-h: 0.014999999999999999
+                            tight-coupling-trigger-tau-c-over-tau-k: 0.01
+                            start-sources-at-tau-c-over-tau-h: 0.0080000000000000002
+                            tight-coupling-approximation: 5
+                            l-max-g: 12
+                            l-max-pol-g: 10
+                            l-max-dr: 17
+                            l-max-ur: 17
+                            l-max-ncdm: 17
+                            l-max-g-ten: 5
+                            l-max-pol-g-ten: 5
+                            curvature-ini: 1.0
+                            entropy-ini: 1.0
+                            gw-ini: 1.0
+                            perturb-integration-stepsize: 0.5
+                            tol-tau-approx: 1e-10
+                            tol-perturb-integration: 1.0000000000000001e-05
+                            perturb-sampling-stepsize: 0.10000000000000001
+                            radiation-streaming-approximation: 2
+                            radiation-streaming-trigger-tau-over-tau-k: 45.0
+                            radiation-streaming-trigger-tau-c-over-tau: 5.0
+                            ur-fluid-approximation: 2
+                            ur-fluid-trigger-tau-over-tau-k: 30.0
+                            ncdm-fluid-approximation: 2
+                            ncdm-fluid-trigger-tau-over-tau-k: 31.0
+                            neglect-CMB-sources-below-visibility: 0.001
+                            k-per-decade-primordial: 10.0
+                            primordial-inflation-ratio-min: 100.0
+                            primordial-inflation-ratio-max: 0.02
+                            primordial-inflation-phi-ini-maxit: 10000
+                            primordial-inflation-pt-stepsize: 0.01
+                            primordial-inflation-bg-stepsize: 0.0050000000000000001
+                            primordial-inflation-tol-integration: 0.001
+                            primordial-inflation-attractor-precision-pivot: 0.001
+                            primordial-inflation-attractor-precision-initial: 0.10000000000000001
+                            primordial-inflation-attractor-maxit: 10
+                            primordial-inflation-tol-curvature: 0.001
+                            primordial-inflation-aH-ini-target: 0.90000000000000002
+                            primordial-inflation-end-dphi: 1e-10
+                            primordial-inflation-end-logstep: 10.0
+                            primordial-inflation-small-epsilon: 0.10000000000000001
+                            primordial-inflation-small-epsilon-tol: 0.01
+                            primordial-inflation-extra-efolds: 2.0
+                            l-logstep: 1.1200000000000001
+                            l-linstep: 40
+                            hyper-x-min: 1.0000000000000001e-05
+                            hyper-sampling-flat: 8.0
+                            hyper-sampling-curved-low-nu: 7.0
+                            hyper-sampling-curved-high-nu: 3.0
+                            hyper-nu-sampling-step: 1000.0
+                            hyper-phi-min-abs: 1e-10
+                            hyper-x-tol: 0.0001
+                            hyper-flat-approximation-nu: 4000.0
+                            q-linstep: 0.45000000000000001
+                            q-logstep-spline: 170.0
+                            q-logstep-open: 6.0
+                            q-logstep-trapzd: 20.0
+                            q-numstep-transition: 250.0
+                            transfer-neglect-delta-k-S-t0: 0.14999999999999999
+                            transfer-neglect-delta-k-S-t1: 0.040000000000000001
+                            transfer-neglect-delta-k-S-t2: 0.14999999999999999
+                            transfer-neglect-delta-k-S-e: 0.11
+                            transfer-neglect-delta-k-V-t1: 1.0
+                            transfer-neglect-delta-k-V-t2: 1.0
+                            transfer-neglect-delta-k-V-e: 1.0
+                            transfer-neglect-delta-k-V-b: 1.0
+                            transfer-neglect-delta-k-T-t2: 0.20000000000000001
+                            transfer-neglect-delta-k-T-e: 0.25
+                            transfer-neglect-delta-k-T-b: 0.10000000000000001
+                            transfer-neglect-late-source: 400.0
+                            l-switch-limber: 10.0
+                            l-switch-limber-for-nc-local-over-z: 100.0
+                            l-switch-limber-for-nc-los-over-z: 30.0
+                            selection-cut-at-sigma: 5.0
+                            selection-sampling: 50.0
+                            selection-sampling-bessel: 20.0
+                            selection-sampling-bessel-los: 20.0
+                            selection-tophat-edge: 0.10000000000000001
+                            halofit-min-k-nonlinear: 0.0001
+                            halofit-min-k-max: 5.0
+                            halofit-k-per-decade: 80.0
+                            halofit-sigma-precision: 0.050000000000000003
+                            halofit-tol-sigma: 9.9999999999999995e-07
+                            pk-eq-z-max: 5.0
+                            pk-eq-tol: 9.9999999999999995e-08
+                            accurate-lensing: 0
+                            num-mu-minus-lmax: 70
+                            delta-l-max: 500
+                            tol-gauss-legendre: 2.2204460492503131e-16
+                            smallest-allowed-variation: 2.2204460492503131e-16
+                        target-Cls: 0
+                        calc-transfer: false
+                        use-lensed-Cls: false
+                        use-tensor: false
+                        use-thermodyn: false
+                        scalar-lmax: 500
+                        vector-lmax: 500
+                        tensor-lmax: 500
+                        matter-pk-maxz: 0.0
+                        matter-pk-maxk: 1.0
+                        use-ppf: true
+                        verbosity: 0
+                    intern-k-min: 1.0000000000000001e-05
+                    intern-k-max: 10.0
+                p-mnl:
+                  &S53 NcPowspecMNLHaloFit:
+                    zi: 0.0
+                    zf: 3.0
+                    kmin: 1.0000000000000001e-05
+                    kmax: 1.0
+                    power-spec:
+                      NcPowspecMLCBE: *S50
+                    zmaxnl: 3.0
+                    reltol: 0.0001
+                    use-pkequal: false
+    priors-m2lnL: []
+    priors-f: []
