@@ -10,9 +10,6 @@ There are examples that show use of each of the supported samplers.
 
 Next, we recommend reading the `introductory article <_static/intro_article.html>`_.
 
-There is a tutorial on the use of *statistics* objects for `calculating the predictions of theories <_static/theoretical_predictions_tutorial.html>`_.
-
-
 CCL Usage Details
 -----------------
 

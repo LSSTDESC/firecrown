@@ -26,7 +26,7 @@ from firecrown.likelihood.source import (
     PhotoZShiftandStretchFactory,
     Tracer,
 )
-from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
@@ -531,8 +531,13 @@ class WeakLensingFactory(BaseModel):
         PrivateAttr()
     )
 
-    per_bin_systematics: Sequence[WeakLensingSystematicFactory]
-    global_systematics: Sequence[WeakLensingSystematicFactory]
+    type_source: TypeSource = TypeSource.DEFAULT
+    per_bin_systematics: Sequence[WeakLensingSystematicFactory] = Field(
+        default_factory=list
+    )
+    global_systematics: Sequence[WeakLensingSystematicFactory] = Field(
+        default_factory=list
+    )
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""

@@ -491,7 +491,10 @@ def test_ccl_factory_tofrom_yaml_all_options(
 def test_ccl_factory_invalid_amplitude_parameter() -> None:
     with pytest.raises(
         ValueError,
-        match=".*Invalid value for PoweSpecAmplitudeParameter: Im not a valid value.*",
+        match=(
+            "Value error, 'Im not a valid value' is not a valid "
+            "PoweSpecAmplitudeParameter"
+        ),
     ):
         CCLFactory(amplitude_parameter="Im not a valid value")
 
@@ -507,7 +510,7 @@ def test_ccl_factory_invalid_mass_splits() -> None:
 def test_ccl_factory_invalid_creation_mode() -> None:
     with pytest.raises(
         ValueError,
-        match=".*Invalid value for CCLCreationMode: Im not a valid value.*",
+        match="Value error, 'Im not a valid value' is not a valid CCLCreationMode",
     ):
         CCLFactory(creation_mode="Im not a valid value")
 

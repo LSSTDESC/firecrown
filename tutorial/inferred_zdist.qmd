@@ -74,12 +74,22 @@ The `TwoPoint` object is used to encapsulate the theoretical model for the two-p
 Using the `lens0_lens0_cell` object created above, we can create a `TwoPoint` object as follows:
 
 ```{python}
-from firecrown.likelihood.two_point import TwoPoint, NumberCountsFactory
+from firecrown.likelihood.two_point import (
+    TwoPoint,
+    TwoPointFactory,
+    NumberCountsFactory,
+)
+from firecrown.metadata_types import TwoPointCorrelationSpace
 
 # Generate a list of TwoPoint objects, one for each bin provided
 all_two_points = TwoPoint.from_metadata(
     [lens0_lens0_cell],  # Note we are passing a list with 1 bin; you could pass several
-    nc_factory=NumberCountsFactory(global_systematics=[], per_bin_systematics=[]),
+    tp_factory=TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        number_counts_factories=[
+            NumberCountsFactory(global_systematics=[], per_bin_systematics=[])
+        ],
+    ),
 )
 two_point_lens0_lens0 = all_two_points[0]
 ```

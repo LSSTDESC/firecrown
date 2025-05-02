@@ -4,6 +4,7 @@ Tests for the firecrown.utils modle.
 
 import pytest
 import numpy as np
+from numpy.testing import assert_allclose
 
 from firecrown.utils import (
     upper_triangle_indices,
@@ -15,6 +16,7 @@ from firecrown.utils import (
     ClIntegrationMethod,
     ClLimberMethod,
     ClIntegrationOptions,
+    make_log_interpolator,
 )
 
 
@@ -436,3 +438,21 @@ def test_cl_integration_test_cmparison():
     assert int_options != ClIntegrationOptions(
         method=ClIntegrationMethod.FKEM_AUTO, limber_method=ClLimberMethod.GSL_SPLINE
     )
+
+
+def test_make_log_interpolator_positive():
+    x = np.arange(1, 3000)
+    y = np.exp(x / 1.0e3) * x**1.43
+
+    f = make_log_interpolator(x, y)
+
+    assert_allclose(f(x), y, atol=0.0, rtol=1e-12)
+
+
+def test_make_log_interpolator_negative():
+    x = np.arange(1, 3000)
+    y = np.exp(x / 1.0e3) * (x - 1000.5)
+
+    f = make_log_interpolator(x, y)
+
+    assert_allclose(f(x), y, atol=0.0, rtol=1e-12)

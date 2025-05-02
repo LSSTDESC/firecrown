@@ -24,7 +24,7 @@ from firecrown.likelihood.source import (
     PhotoZShiftandStretchFactory,
     Tracer,
 )
-from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     DerivedParameter,
@@ -621,13 +621,20 @@ NumberCountsSystematicFactory = Annotated[
 class NumberCountsFactory(BaseModel):
     """Factory class for NumberCounts objects."""
 
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
     _cache: dict[int, NumberCounts] = PrivateAttr()
     _global_systematics_instances: Sequence[
         SourceGalaxySystematic[NumberCountsArgs]
     ] = PrivateAttr()
 
-    per_bin_systematics: Sequence[NumberCountsSystematicFactory]
-    global_systematics: Sequence[NumberCountsSystematicFactory]
+    type_source: TypeSource = TypeSource.DEFAULT
+    per_bin_systematics: Sequence[NumberCountsSystematicFactory] = Field(
+        default_factory=list
+    )
+    global_systematics: Sequence[NumberCountsSystematicFactory] = Field(
+        default_factory=list
+    )
     include_rsd: bool = False
 
     def model_post_init(self, _, /) -> None:
