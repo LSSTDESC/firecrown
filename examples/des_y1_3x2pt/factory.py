@@ -1,5 +1,6 @@
 """The DES Y1 3x2pt likelihood factory module."""
 
+import os
 import sacc
 
 from firecrown.likelihood.likelihood import NamedParameters
@@ -102,6 +103,8 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
 
     # We load the correct SACC file.
     sacc_file = params.get_string("sacc_file")
+    # Translate envriornment variables, if needed.
+    sacc_file = os.path.expandvars(sacc_file)
     sacc_data = sacc.Sacc.load_fits(sacc_file)
 
     # The read likelihood method is called passing the loaded SACC file, the
