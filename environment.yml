@@ -23,6 +23,7 @@ dependencies:
   - graphviz
   - idna
   - jupyter
+  - linkchecker
   - matplotlib-base
   - more-itertools
   - mypy

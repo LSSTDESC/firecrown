@@ -163,3 +163,5 @@ tutorial/theoretical_predictions_tutorial.html
 
 /.quarto/
 *.tsv
+
+/.luarc.json
