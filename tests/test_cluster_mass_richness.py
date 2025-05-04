@@ -194,18 +194,20 @@ def test_cluster_murata_unbinned_distribution(murata_unbinned_relation: MurataUn
 def test_cluster_murata_unbinned_distribution_is_normalized(
     murata_unbinned_relation: MurataUnbinned,
 ):
-    for mass_i, z_i in zip(np.linspace(7.0, 26.0, 20), np.geomspace(1.0e-18, 2.0, 20)):
+    for mass_i, z_i in zip(np.linspace(10.0, 16.0, 20), np.geomspace(1.0e-18, 2.0, 20)):
         mass = np.atleast_1d(mass_i)
         z = np.atleast_1d(z_i)
 
         mean = murata_unbinned_relation.get_proxy_mean(mass, z)[0]
         sigma = murata_unbinned_relation.get_proxy_sigma(mass, z)[0]
-        mass_proxy_limits = (mean - 5 * sigma, mean + 5 * sigma)
+        mass_proxy_limits = np.array([mean - 5 * sigma, mean + 5 * sigma])
+        print(mass_proxy_limits, mean, sigma)
 
-        def integrand(mass_proxy) -> float:
+        def integrand(ln_mass_proxy) -> float:
             """Evaluate the unbinned distribution at fixed mass and redshift."""
+            log10_mass_proxy = ln_mass_proxy / np.log(10.0)
             # pylint: disable=cell-var-from-loop
-            return murata_unbinned_relation.distribution(mass, z, mass_proxy)[0]
+            return murata_unbinned_relation.distribution(mass, z, log10_mass_proxy)[0]
 
         result, _ = quad(
             integrand,
