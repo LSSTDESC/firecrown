@@ -33,6 +33,7 @@ from firecrown.metadata_types import (
 from firecrown.data_types import TwoPointMeasurement
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.two_point as tp
 
 
 def pytest_addoption(parser):
@@ -978,7 +979,9 @@ def fixture_sacc_galaxy_cells_ambiguous() -> sacc.Sacc:
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_data")
-def fixture_sacc_galaxy_cells_src0_src0_no_data():
+def fixture_sacc_galaxy_cells_src0_src0_no_data() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -991,7 +994,9 @@ def fixture_sacc_galaxy_cells_src0_src0_no_data():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_no_data")
-def fixture_sacc_galaxy_xis_lens0_lens0_no_data():
+def fixture_sacc_galaxy_xis_lens0_lens0_no_data() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -1008,7 +1013,9 @@ def fixture_sacc_galaxy_xis_lens0_lens0_no_data():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_window")
-def fixture_sacc_galaxy_cells_src0_src0_window():
+def fixture_sacc_galaxy_cells_src0_src0_window() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data with a window function."""
     sacc_data = sacc.Sacc()
 
@@ -1033,7 +1040,9 @@ def fixture_sacc_galaxy_cells_src0_src0_window():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_src0_no_window")
-def fixture_sacc_galaxy_cells_src0_src0_no_window():
+def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without a window function."""
     sacc_data = sacc.Sacc()
 
@@ -1053,12 +1062,24 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window():
 
 
 @pytest.fixture(name="wl_factory")
-def make_wl_factory():
+def make_wl_factory() -> wl.WeakLensingFactory:
     """Generate a WeakLensingFactory object."""
     return wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
 
 
 @pytest.fixture(name="nc_factory")
-def make_nc_factory():
+def make_nc_factory() -> nc.NumberCountsFactory:
     """Generate a NumberCountsFactory object."""
     return nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+
+
+@pytest.fixture(name="tp_factory")
+def make_tp_factory(
+    wl_factory: wl.WeakLensingFactory, nc_factory: nc.NumberCountsFactory
+) -> tp.TwoPointFactory:
+    """Generate a TwoPointFactory object."""
+    return tp.TwoPointFactory(
+        correlation_space=tp.TwoPointCorrelationSpace.REAL,
+        weak_lensing_factories=[wl_factory],
+        number_counts_factories=[nc_factory],
+    )

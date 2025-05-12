@@ -34,12 +34,13 @@ from firecrown.data_functions import (
     extract_all_harmonic_data,
     extract_all_real_data,
 )
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.source_factories import use_source_factory
+from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory, use_source_factory
 
 
 @pytest.fixture(name="sacc_galaxy_src0_src0_invalid_data_type")
-def fixture_sacc_galaxy_src0_src0_invalid_data_type(recwarn):
+def fixture_sacc_galaxy_src0_src0_invalid_data_type(
+    recwarn,
+) -> tuple[sacc.Sacc, np.ndarray, np.ndarray]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -65,7 +66,9 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(recwarn):
 
 
 @pytest.fixture(name="sacc_galaxy_xis_src0_lens0_bad_lens_label")
-def fixture_sacc_galaxy_xis_src0_lens0_bad_lens_label():
+def fixture_sacc_galaxy_xis_src0_lens0_bad_lens_label() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -90,7 +93,9 @@ def fixture_sacc_galaxy_xis_src0_lens0_bad_lens_label():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_src0_lens0_bad_source_label")
-def fixture_sacc_galaxy_xis_src0_lens0_bad_source_label():
+def fixture_sacc_galaxy_xis_src0_lens0_bad_source_label() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -115,7 +120,9 @@ def fixture_sacc_galaxy_xis_src0_lens0_bad_source_label():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_inconsistent_lens_label")
-def fixture_sacc_galaxy_xis_inconsistent_lens_label():
+def fixture_sacc_galaxy_xis_inconsistent_lens_label() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -140,7 +147,9 @@ def fixture_sacc_galaxy_xis_inconsistent_lens_label():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_inconsistent_source_label")
-def fixture_sacc_galaxy_xis_inconsistent_source_label():
+def fixture_sacc_galaxy_xis_inconsistent_source_label() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -163,7 +172,9 @@ def fixture_sacc_galaxy_xis_inconsistent_source_label():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_three_tracers")
-def fixture_sacc_galaxy_xis_three_tracers():
+def fixture_sacc_galaxy_xis_three_tracers() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -192,7 +203,9 @@ def fixture_sacc_galaxy_xis_three_tracers():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_three_tracers")
-def fixture_sacc_galaxy_cells_three_tracers():
+def fixture_sacc_galaxy_cells_three_tracers() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -220,7 +233,7 @@ def fixture_sacc_galaxy_cells_three_tracers():
     return sacc_data, z, dndz0, dndz1, dndz2
 
 
-def test_extract_all_tracers_cells(sacc_galaxy_cells):
+def test_extract_all_tracers_cells(sacc_galaxy_cells) -> None:
     sacc_data, tracers, _ = sacc_galaxy_cells
     assert sacc_data is not None
     all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
@@ -464,7 +477,9 @@ def test_extract_all_metadata_index_reals(sacc_galaxy_xis):
         assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
 
-def test_extract_all_metadata_index_reals_by_type(sacc_galaxy_xis):
+def test_extract_all_metadata_index_reals_by_type(
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     all_data = extract_all_real_metadata_indices(
@@ -477,7 +492,9 @@ def test_extract_all_metadata_index_reals_by_type(sacc_galaxy_xis):
         assert (tracer_names, two_point["data_type"]) in tracer_pairs
 
 
-def test_extract_no_window(sacc_galaxy_cells_src0_src0):
+def test_extract_no_window(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, dict, dict],
+) -> None:
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
     indices = np.array([0, 1, 2], dtype=np.int64)
 
@@ -487,7 +504,9 @@ def test_extract_no_window(sacc_galaxy_cells_src0_src0):
         assert window[1] is None
 
 
-def test_extract_all_data_types_three_tracers_reals(sacc_galaxy_xis_three_tracers):
+def test_extract_all_data_types_three_tracers_reals(
+    sacc_galaxy_xis_three_tracers: tuple[sacc.Sacc, dict, dict, dict, dict],
+) -> None:
     sacc_data, _, _, _, _ = sacc_galaxy_xis_three_tracers
 
     with pytest.raises(
@@ -501,8 +520,8 @@ def test_extract_all_data_types_three_tracers_reals(sacc_galaxy_xis_three_tracer
 
 
 def test_extract_all_data_types_three_tracers_harmonics(
-    sacc_galaxy_cells_three_tracers,
-):
+    sacc_galaxy_cells_three_tracers: tuple[sacc.Sacc, dict, dict, dict, dict],
+) -> None:
     sacc_data, _, _, _, _ = sacc_galaxy_cells_three_tracers
 
     with pytest.raises(
@@ -515,7 +534,9 @@ def test_extract_all_data_types_three_tracers_harmonics(
         _ = extract_all_harmonic_metadata_indices(sacc_data)
 
 
-def test_extract_all_photoz_bin_combinations_reals(sacc_galaxy_xis):
+def test_extract_all_photoz_bin_combinations_reals(
+    sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
     # We build all possible combinations of tracers
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
@@ -540,7 +561,9 @@ def test_extract_all_photoz_bin_combinations_reals(sacc_galaxy_xis):
         assert two_point_xis.get_sacc_name() == tracer_names_type[1]
 
 
-def test_extract_all_photoz_bin_combinations_harmonics(sacc_galaxy_cells):
+def test_extract_all_photoz_bin_combinations_harmonics(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
     # We build all possible combinations of tracers
     all_bin_combs = extract_all_photoz_bin_combinations(sacc_data)
@@ -567,7 +590,7 @@ def test_extract_all_photoz_bin_combinations_harmonics(sacc_galaxy_cells):
         assert two_point_cells.get_sacc_name() == tracer_names_type[1]
 
 
-def test_make_harmonics(sacc_galaxy_cells):
+def test_make_harmonics(sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict]) -> None:
     sacc_data, _, _ = sacc_galaxy_cells
     ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
 
@@ -582,7 +605,7 @@ def test_make_harmonics(sacc_galaxy_cells):
         assert two_point_cells.XY == bin_comb
 
 
-def test_make_reals(sacc_galaxy_xis):
+def test_make_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]) -> None:
     sacc_data, _, _ = sacc_galaxy_xis
     thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
 
@@ -597,7 +620,9 @@ def test_make_reals(sacc_galaxy_xis):
         assert two_point_xis.XY == bin_comb
 
 
-def test_extract_all_harmonic_data(sacc_galaxy_cells):
+def test_extract_all_harmonic_data(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
@@ -616,7 +641,9 @@ def test_extract_all_harmonic_data(sacc_galaxy_cells):
     check_two_point_consistence_harmonic(two_point_harmonics)
 
 
-def test_extract_all_harmonic_with_window_data(sacc_galaxy_cwindows):
+def test_extract_all_harmonic_with_window_data(
+    sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
+) -> None:
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
@@ -639,7 +666,7 @@ def test_extract_all_harmonic_with_window_data(sacc_galaxy_cwindows):
     check_two_point_consistence_harmonic(two_point_harmonics)
 
 
-def test_extract_all_real_data(sacc_galaxy_xis):
+def test_extract_all_real_data(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_xis = extract_all_real_data(sacc_data)
@@ -658,12 +685,14 @@ def test_extract_all_real_data(sacc_galaxy_xis):
     check_two_point_consistence_real(two_point_xis)
 
 
-def test_constructor_harmonic_metadata(sacc_galaxy_cells, wl_factory, nc_factory):
+def test_constructor_harmonic_metadata(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict], tp_factory: TwoPointFactory
+):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata(two_point_harmonics, wl_factory, nc_factory)
+    two_points_new = TwoPoint.from_metadata(two_point_harmonics, tp_factory)
 
     assert two_points_new is not None
 
@@ -674,15 +703,13 @@ def test_constructor_harmonic_metadata(sacc_galaxy_cells, wl_factory, nc_factory
         assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key][0])
 
 
-def test_constructor_harmonic_data(sacc_galaxy_cells, wl_factory, nc_factory):
+def test_constructor_harmonic_data(sacc_galaxy_cells, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
     check_two_point_consistence_harmonic(two_point_harmonics)
-    two_points_new = TwoPoint.from_measurement(
-        two_point_harmonics, wl_factory, nc_factory
-    )
+    two_points_new = TwoPoint.from_measurement(two_point_harmonics, tp_factory)
 
     assert two_points_new is not None
 
@@ -696,14 +723,12 @@ def test_constructor_harmonic_data(sacc_galaxy_cells, wl_factory, nc_factory):
         )
 
 
-def test_constructor_harmonic_with_window_metadata(
-    sacc_galaxy_cwindows, wl_factory, nc_factory
-):
+def test_constructor_harmonic_with_window_metadata(sacc_galaxy_cwindows, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_metadata(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata(two_point_harmonics, wl_factory, nc_factory)
+    two_points_new = TwoPoint.from_metadata(two_point_harmonics, tp_factory)
 
     assert two_points_new is not None
 
@@ -721,17 +746,13 @@ def test_constructor_harmonic_with_window_metadata(
         assert_array_equal(two_point.ells, window.values)
 
 
-def test_constructor_harmonic_with_window_data(
-    sacc_galaxy_cwindows, wl_factory, nc_factory
-):
+def test_constructor_harmonic_with_window_data(sacc_galaxy_cwindows, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
     check_two_point_consistence_harmonic(two_point_harmonics)
-    two_points_new = TwoPoint.from_measurement(
-        two_point_harmonics, wl_factory, nc_factory
-    )
+    two_points_new = TwoPoint.from_measurement(two_point_harmonics, tp_factory)
 
     assert two_points_new is not None
 
@@ -750,12 +771,12 @@ def test_constructor_harmonic_with_window_data(
         assert_array_equal(two_point.ells, window.values)
 
 
-def test_constructor_reals_metadata(sacc_galaxy_xis, wl_factory, nc_factory):
+def test_constructor_reals_metadata(sacc_galaxy_xis, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_reals = extract_all_real_metadata(sacc_data)
 
-    two_points_new = TwoPoint.from_metadata(two_point_reals, wl_factory, nc_factory)
+    two_points_new = TwoPoint.from_metadata(two_point_reals, tp_factory)
 
     assert two_points_new is not None
 
@@ -766,13 +787,13 @@ def test_constructor_reals_metadata(sacc_galaxy_xis, wl_factory, nc_factory):
         assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key][0])
 
 
-def test_constructor_reals_data(sacc_galaxy_xis, wl_factory, nc_factory):
+def test_constructor_reals_data(sacc_galaxy_xis, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
     two_point_reals = extract_all_real_data(sacc_data)
 
     check_two_point_consistence_real(two_point_reals)
-    two_points_new = TwoPoint.from_measurement(two_point_reals, wl_factory, nc_factory)
+    two_points_new = TwoPoint.from_measurement(two_point_reals, tp_factory)
 
     assert two_points_new is not None
 
@@ -787,15 +808,13 @@ def test_constructor_reals_data(sacc_galaxy_xis, wl_factory, nc_factory):
 
 
 def test_compare_constructors_harmonic(
-    sacc_galaxy_cells, wl_factory, nc_factory, tools_with_vanilla_cosmology
+    sacc_galaxy_cells, tp_factory, tools_with_vanilla_cosmology
 ):
     sacc_data, _, _ = sacc_galaxy_cells
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
-    two_points_harmonic = TwoPoint.from_measurement(
-        two_point_harmonics, wl_factory, nc_factory
-    )
+    two_points_harmonic = TwoPoint.from_measurement(two_point_harmonics, tp_factory)
 
     params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
 
@@ -803,16 +822,10 @@ def test_compare_constructors_harmonic(
     for tpm in two_point_harmonics:
         sacc_data_type = tpm.metadata.get_sacc_name()
         source0 = use_source_factory(
-            tpm.metadata.XY.x,
-            tpm.metadata.XY.x_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            tpm.metadata.XY.x, tpm.metadata.XY.x_measurement, tp_factory=tp_factory
         )
         source1 = use_source_factory(
-            tpm.metadata.XY.y,
-            tpm.metadata.XY.y_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            tpm.metadata.XY.y, tpm.metadata.XY.y_measurement, tp_factory=tp_factory
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)
@@ -841,15 +854,13 @@ def test_compare_constructors_harmonic(
 
 
 def test_compare_constructors_harmonic_with_window(
-    sacc_galaxy_cwindows, wl_factory, nc_factory, tools_with_vanilla_cosmology
+    sacc_galaxy_cwindows, tp_factory, tools_with_vanilla_cosmology
 ):
     sacc_data, _, _ = sacc_galaxy_cwindows
 
     two_point_harmonics = extract_all_harmonic_data(sacc_data)
 
-    two_points_harmonic = TwoPoint.from_measurement(
-        two_point_harmonics, wl_factory, nc_factory
-    )
+    two_points_harmonic = TwoPoint.from_measurement(two_point_harmonics, tp_factory)
 
     params = ParamsMap(two_points_harmonic.required_parameters().get_default_values())
 
@@ -857,16 +868,10 @@ def test_compare_constructors_harmonic_with_window(
     for tpm in two_point_harmonics:
         sacc_data_type = tpm.metadata.get_sacc_name()
         source0 = use_source_factory(
-            tpm.metadata.XY.x,
-            tpm.metadata.XY.x_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            tpm.metadata.XY.x, tpm.metadata.XY.x_measurement, tp_factory=tp_factory
         )
         source1 = use_source_factory(
-            tpm.metadata.XY.y,
-            tpm.metadata.XY.y_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            tpm.metadata.XY.y, tpm.metadata.XY.y_measurement, tp_factory=tp_factory
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)
@@ -901,13 +906,13 @@ def test_compare_constructors_harmonic_with_window(
 
 
 def test_compare_constructors_reals(
-    sacc_galaxy_xis, wl_factory, nc_factory, tools_with_vanilla_cosmology
+    sacc_galaxy_xis, tp_factory, tools_with_vanilla_cosmology
 ):
     sacc_data, _, _ = sacc_galaxy_xis
 
     two_point_xis = extract_all_real_data(sacc_data)
 
-    two_points_real = TwoPoint.from_measurement(two_point_xis, wl_factory, nc_factory)
+    two_points_real = TwoPoint.from_measurement(two_point_xis, tp_factory)
 
     params = ParamsMap(two_points_real.required_parameters().get_default_values())
 
@@ -915,16 +920,10 @@ def test_compare_constructors_reals(
     for tpm in two_point_xis:
         sacc_data_type = tpm.metadata.get_sacc_name()
         source0 = use_source_factory(
-            tpm.metadata.XY.x,
-            tpm.metadata.XY.x_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            tpm.metadata.XY.x, tpm.metadata.XY.x_measurement, tp_factory=tp_factory
         )
         source1 = use_source_factory(
-            tpm.metadata.XY.y,
-            tpm.metadata.XY.y_measurement,
-            wl_factory=wl_factory,
-            nc_factory=nc_factory,
+            tpm.metadata.XY.y, tpm.metadata.XY.y_measurement, tp_factory=tp_factory
         )
         two_point = TwoPoint(sacc_data_type, source0, source1)
         two_point.read(sacc_data)

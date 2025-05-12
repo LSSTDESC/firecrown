@@ -15,21 +15,17 @@ These functions are particularly useful when the full set of statistics present 
 SACC file is being used without the need for complex customization.
 """
 
-from typing import Annotated
-from enum import Enum, auto
 from pathlib import Path
 
 from typing_extensions import assert_never
 import yaml
-from pydantic import BaseModel, ConfigDict, BeforeValidator, Field, field_serializer
+from pydantic import BaseModel
 
 import sacc
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.weak_lensing import WeakLensingFactory
-from firecrown.likelihood.number_counts import NumberCountsFactory
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.data_types import TwoPointMeasurement, TwoPointHarmonic, TwoPointReal
+from firecrown.likelihood.two_point import TwoPointFactory
+from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.data_functions import (
     extract_all_real_data,
     extract_all_harmonic_data,
@@ -39,83 +35,6 @@ from firecrown.data_functions import (
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
-from firecrown.utils import YAMLSerializable, ClIntegrationOptions
-from firecrown.updatable import UpdatableCollection
-
-
-class TwoPointCorrelationSpace(YAMLSerializable, str, Enum):
-    """This class defines the two-point correlation space.
-
-    The two-point correlation space can be either real or harmonic. The real space
-    corresponds measurements in terms of angular separation, while the harmonic space
-    corresponds to measurements in terms of spherical harmonics decomposition.
-    """
-
-    @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
-        return name.lower()
-
-    REAL = auto()
-    HARMONIC = auto()
-
-
-def _validate_correlation_space(value: TwoPointCorrelationSpace | str):
-    if not isinstance(value, TwoPointCorrelationSpace) and isinstance(value, str):
-        try:
-            return TwoPointCorrelationSpace(
-                value.lower()
-            )  # Convert from string to Enum
-        except ValueError as exc:
-            raise ValueError(
-                f"Invalid value for TwoPointCorrelationSpace: {value}"
-            ) from exc
-    return value
-
-
-class TwoPointFactory(BaseModel):
-    """Factory class for WeakLensing objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    correlation_space: Annotated[
-        TwoPointCorrelationSpace,
-        BeforeValidator(_validate_correlation_space),
-        Field(description="The two-point correlation space."),
-    ]
-    weak_lensing_factory: WeakLensingFactory
-    number_counts_factory: NumberCountsFactory
-    int_options: ClIntegrationOptions | None = None
-
-    def model_post_init(self, _, /) -> None:
-        """Initialize the WeakLensingFactory object."""
-
-    @field_serializer("correlation_space")
-    @classmethod
-    def serialize_correlation_space(cls, value: TwoPointCorrelationSpace) -> str:
-        """Serialize the amplitude parameter."""
-        return value.name
-
-    def from_measurement(
-        self, tpms: list[TwoPointMeasurement]
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint object from a list of TwoPointMeasurement."""
-        return TwoPoint.from_measurement(
-            measurements=tpms,
-            wl_factory=self.weak_lensing_factory,
-            nc_factory=self.number_counts_factory,
-            int_options=self.int_options,
-        )
-
-    def from_metadata(
-        self, metadata_seq: list[TwoPointHarmonic | TwoPointReal]
-    ) -> UpdatableCollection[TwoPoint]:
-        """Create a TwoPoint object from a list of TwoPointHarmonic or TwoPointReal."""
-        return TwoPoint.from_metadata(
-            metadata_seq=metadata_seq,
-            wl_factory=self.weak_lensing_factory,
-            nc_factory=self.number_counts_factory,
-            int_options=self.int_options,
-        )
 
 
 class DataSourceSacc(BaseModel):

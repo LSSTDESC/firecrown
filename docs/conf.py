@@ -38,6 +38,7 @@ autoapi_options = [
 mathjax_path = (
     "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 )
+viewcode_follow_imported_members = False
 
 
 # -- Options for HTML output -------------------------------------------------

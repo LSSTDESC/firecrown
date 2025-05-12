@@ -4,8 +4,8 @@ The CCLFactory class is a factory class that creates instances of the
 `pyccl.Cosmology` class.
 """
 
-from typing import Annotated
-from enum import Enum, auto
+from typing import Annotated, Any
+from enum import StrEnum, auto
 
 # To be moved to the import from typing when migrating to Python 3.11
 from typing_extensions import NotRequired, TypedDict, assert_never
@@ -24,6 +24,7 @@ from pydantic import (
     model_validator,
     PrivateAttr,
 )
+from pydantic_core import core_schema
 
 import pyccl
 from pyccl.neutrinos import NeutrinoMassSplits
@@ -65,7 +66,16 @@ CCLCalculatorArgs = TypedDict(
 )
 
 
-class PoweSpecAmplitudeParameter(YAMLSerializable, str, Enum):
+def _validate_neutrino_mass_splits(value):
+    if isinstance(value, str):
+        try:
+            return NeutrinoMassSplits(value)  # Convert from string to StrEnum
+        except ValueError as exc:
+            raise ValueError(f"Invalid value for NeutrinoMassSplits: {value}") from exc
+    return value
+
+
+class PoweSpecAmplitudeParameter(YAMLSerializable, StrEnum):
     """This class defines the two-point correlation space.
 
     The two-point correlation space can be either real or harmonic. The real space
@@ -73,37 +83,22 @@ class PoweSpecAmplitudeParameter(YAMLSerializable, str, Enum):
     corresponds to measurements in terms of spherical harmonics decomposition.
     """
 
-    @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
-        return name.lower()
-
     AS = auto()
     SIGMA8 = auto()
 
-
-def _validate_amplitude_parameter(value):
-    if isinstance(value, str):
-        try:
-            return PoweSpecAmplitudeParameter(
-                value.lower()
-            )  # Convert from string to Enum
-        except ValueError as exc:
-            raise ValueError(
-                f"Invalid value for PoweSpecAmplitudeParameter: {value}"
-            ) from exc
-    return value
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the PoweSpecAmplitudeParameter class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
 
 
-def _validate_neutrino_mass_splits(value):
-    if isinstance(value, str):
-        try:
-            return NeutrinoMassSplits(value.lower())  # Convert from string to Enum
-        except ValueError as exc:
-            raise ValueError(f"Invalid value for NeutrinoMassSplits: {value}") from exc
-    return value
-
-
-class CCLCreationMode(YAMLSerializable, str, Enum):
+class CCLCreationMode(StrEnum):
     """This class defines the CCL instance creation mode.
 
     The DEFAULT mode represents the current CCL behavior. It will use CCL's calculator
@@ -117,21 +112,20 @@ class CCLCreationMode(YAMLSerializable, str, Enum):
     not compatible with the Calculator mode.
     """
 
-    @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
-        return name.lower()
-
     DEFAULT = auto()
     MU_SIGMA_ISITGR = auto()
     PURE_CCL_MODE = auto()
 
-
-def _validate_ccl_creation_mode(value):
-    assert isinstance(value, str)
-    try:
-        return CCLCreationMode(value.lower())  # Convert from string to Enum
-    except ValueError as exc:
-        raise ValueError(f"Invalid value for CCLCreationMode: {value}") from exc
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the CCLCreationMode class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
 
 
 class MuSigmaModel(Updatable):
@@ -287,21 +281,17 @@ class CCLFactory(Updatable, BaseModel):
 
     model_config = ConfigDict(extra="allow")
     require_nonlinear_pk: Annotated[bool, Field(frozen=True)] = False
-    amplitude_parameter: Annotated[
-        PoweSpecAmplitudeParameter,
-        BeforeValidator(_validate_amplitude_parameter),
-        Field(frozen=True),
-    ] = PoweSpecAmplitudeParameter.SIGMA8
+    amplitude_parameter: Annotated[PoweSpecAmplitudeParameter, Field(frozen=True)] = (
+        PoweSpecAmplitudeParameter.SIGMA8
+    )
     mass_split: Annotated[
         NeutrinoMassSplits,
         BeforeValidator(_validate_neutrino_mass_splits),
         Field(frozen=True),
     ] = NeutrinoMassSplits.NORMAL
-    creation_mode: Annotated[
-        CCLCreationMode,
-        BeforeValidator(_validate_ccl_creation_mode),
-        Field(frozen=True),
-    ] = CCLCreationMode.DEFAULT
+    creation_mode: Annotated[CCLCreationMode, Field(frozen=True)] = (
+        CCLCreationMode.DEFAULT
+    )
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
@@ -313,7 +303,7 @@ class CCLFactory(Updatable, BaseModel):
 
         if set(data) - set(CCLFactory.model_fields.keys()):
             raise ValueError(
-                f"Invalid parameters: {set(data) - set(self.model_fields.keys())}"
+                f"Invalid parameters: {set(data) - set(CCLFactory.model_fields.keys())}"
             )
 
         self._ccl_cosmo: None | pyccl.Cosmology = None
@@ -370,23 +360,11 @@ class CCLFactory(Updatable, BaseModel):
 
         return {k: v for k, v in model_dump.items() if k not in exclude_params}
 
-    @field_serializer("amplitude_parameter")
-    @classmethod
-    def serialize_amplitude_parameter(cls, value: PoweSpecAmplitudeParameter) -> str:
-        """Serialize the amplitude parameter."""
-        return value.name
-
     @field_serializer("mass_split")
     @classmethod
     def serialize_mass_split(cls, value: NeutrinoMassSplits) -> str:
         """Serialize the mass split parameter."""
-        return value.name
-
-    @field_serializer("creation_mode")
-    @classmethod
-    def serialize_creation_mode(cls, value: CCLCreationMode) -> str:
-        """Serialize the creation mode parameter."""
-        return value.name
+        return value.value
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""

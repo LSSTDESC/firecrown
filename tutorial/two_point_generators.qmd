@@ -140,8 +140,11 @@ Below is the code defining the factories for weak lensing and number counts syst
 ```{python}
 all_two_point_functions = tp.TwoPoint.from_metadata(
     metadata_seq=all_two_point_cells,
-    wl_factory=wlf,
-    nc_factory=ncf,
+    tp_factory=tp.TwoPointFactory(
+        correlation_space=tp.TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[wlf],
+        number_counts_factories=[ncf],
+    ),
 )
 ```
 
