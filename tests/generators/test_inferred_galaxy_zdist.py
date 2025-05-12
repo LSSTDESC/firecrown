@@ -23,10 +23,10 @@ from firecrown.generators.inferred_galaxy_zdist import (
     LinearGrid1D,
     ZDistLSSTSRDBin,
     ZDistLSSTSRDBinCollection,
-    LSST_Y1_LENS_BIN_COLLECTION,
-    LSST_Y1_SOURCE_BIN_COLLECTION,
-    LSST_Y10_LENS_BIN_COLLECTION,
-    LSST_Y10_SOURCE_BIN_COLLECTION,
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
+    LSST_Y10_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION,
     Measurement,
     make_measurements,
     make_measurements_dict,
@@ -114,27 +114,27 @@ def fixture_zdist_bins(request) -> list[ZDistLSSTSRDBin]:
     """Fixture for the ZDistLSSTSRD class."""
     match request.param[0]:
         case "one_lens_y1":
-            bins = copy.deepcopy(LSST_Y1_LENS_BIN_COLLECTION.bins[0:1])
+            bins = copy.deepcopy(LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.bins[0:1])
         case "all_lens_y1":
-            bins = copy.deepcopy(LSST_Y1_LENS_BIN_COLLECTION.bins)
+            bins = copy.deepcopy(LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.bins)
         case "one_source_y1":
-            bins = copy.deepcopy(LSST_Y1_SOURCE_BIN_COLLECTION.bins[0:1])
+            bins = copy.deepcopy(LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.bins[0:1])
         case "all_source_y1":
-            bins = copy.deepcopy(LSST_Y1_SOURCE_BIN_COLLECTION.bins)
+            bins = copy.deepcopy(LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.bins)
         case "lens_and_source_y1":
-            bins = copy.deepcopy(LSST_Y1_LENS_BIN_COLLECTION.bins)
-            bins.extend(copy.deepcopy(LSST_Y1_SOURCE_BIN_COLLECTION.bins))
+            bins = copy.deepcopy(LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.bins)
+            bins.extend(copy.deepcopy(LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.bins))
         case "one_lens_y10":
-            bins = copy.deepcopy(LSST_Y10_LENS_BIN_COLLECTION.bins[0:1])
+            bins = copy.deepcopy(LSST_Y10_LENS_HARMONIC_BIN_COLLECTION.bins[0:1])
         case "all_lens_y10":
-            bins = copy.deepcopy(LSST_Y10_LENS_BIN_COLLECTION.bins)
+            bins = copy.deepcopy(LSST_Y10_LENS_HARMONIC_BIN_COLLECTION.bins)
         case "one_source_y10":
-            bins = copy.deepcopy(LSST_Y10_SOURCE_BIN_COLLECTION.bins[0:1])
+            bins = copy.deepcopy(LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION.bins[0:1])
         case "all_source_y10":
-            bins = copy.deepcopy(LSST_Y10_SOURCE_BIN_COLLECTION.bins)
+            bins = copy.deepcopy(LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION.bins)
         case "lens_and_source_y10":
-            bins = copy.deepcopy(LSST_Y10_LENS_BIN_COLLECTION.bins)
-            bins.extend(copy.deepcopy(LSST_Y10_SOURCE_BIN_COLLECTION.bins))
+            bins = copy.deepcopy(LSST_Y10_LENS_HARMONIC_BIN_COLLECTION.bins)
+            bins.extend(copy.deepcopy(LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION.bins))
         case _:
             raise ValueError(f"Invalid parameter: {request.param}")
 

@@ -531,7 +531,7 @@ def get_y10_source_bins() -> BinsType:
 
 
 @cache
-def get_lsst_y1_lens_bin_collection() -> ZDistLSSTSRDBinCollection:
+def get_lsst_y1_lens_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
     """Get the LSST Year 1 lens bin collection."""
     y1_lens_bins = get_y1_lens_bins()
     return ZDistLSSTSRDBinCollection(
@@ -553,7 +553,7 @@ def get_lsst_y1_lens_bin_collection() -> ZDistLSSTSRDBinCollection:
 
 
 @cache
-def get_lsst_y1_source_bin_collection() -> ZDistLSSTSRDBinCollection:
+def get_lsst_y1_source_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
     """Get the LSST Year 1 source bin collection."""
     y1_source_bins = get_y1_source_bins()
     return ZDistLSSTSRDBinCollection(
@@ -575,7 +575,7 @@ def get_lsst_y1_source_bin_collection() -> ZDistLSSTSRDBinCollection:
 
 
 @cache
-def get_lsst_y10_lens_bin_collection() -> ZDistLSSTSRDBinCollection:
+def get_lsst_y10_lens_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
     """Get the LSST Year 10 lens bin collection."""
     y10_lens_bins = get_y10_lens_bins()
     return ZDistLSSTSRDBinCollection(
@@ -597,7 +597,7 @@ def get_lsst_y10_lens_bin_collection() -> ZDistLSSTSRDBinCollection:
 
 
 @cache
-def get_lsst_y10_source_bin_collection() -> ZDistLSSTSRDBinCollection:
+def get_lsst_y10_source_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
     """Get the LSST Year 10 source bin collection."""
     y10_source_bins = get_y10_source_bins()
     return ZDistLSSTSRDBinCollection(
@@ -629,14 +629,14 @@ def __getattr__(name: str) -> Any:  # pylint: disable-msg=too-many-return-statem
             return get_y10_lens_bins()
         case "Y10_SOURCE_BINS":
             return get_y10_source_bins()
-        case "LSST_Y1_LENS_BIN_COLLECTION":
-            return get_lsst_y1_lens_bin_collection()
-        case "LSST_Y1_SOURCE_BIN_COLLECTION":
-            return get_lsst_y1_source_bin_collection()
-        case "LSST_Y10_LENS_BIN_COLLECTION":
-            return get_lsst_y10_lens_bin_collection()
-        case "LSST_Y10_SOURCE_BIN_COLLECTION":
-            return get_lsst_y10_source_bin_collection()
+        case "LSST_Y1_LENS_HARMONIC_BIN_COLLECTION":
+            return get_lsst_y1_lens_harmonic_bin_collection()
+        case "LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION":
+            return get_lsst_y1_source_harmonic_bin_collection()
+        case "LSST_Y10_LENS_HARMONIC_BIN_COLLECTION":
+            return get_lsst_y10_lens_harmonic_bin_collection()
+        case "LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION":
+            return get_lsst_y10_source_harmonic_bin_collection()
         case _:
             raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
 
@@ -645,7 +645,7 @@ Y1_LENS_BINS: BinsType
 Y1_SOURCE_BINS: BinsType
 Y10_LENS_BINS: BinsType
 Y10_SOURCE_BINS: BinsType
-LSST_Y1_LENS_BIN_COLLECTION: ZDistLSSTSRDBinCollection
-LSST_Y1_SOURCE_BIN_COLLECTION: ZDistLSSTSRDBinCollection
-LSST_Y10_LENS_BIN_COLLECTION: ZDistLSSTSRDBinCollection
-LSST_Y10_SOURCE_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y1_LENS_HARMONIC_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y10_LENS_HARMONIC_BIN_COLLECTION: ZDistLSSTSRDBinCollection
+LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION: ZDistLSSTSRDBinCollection

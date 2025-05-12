@@ -387,7 +387,7 @@ The example below shows how to create a [[likelihood.two_point|TwoPointFactory]]
 We also create additional [[likelihood.two_point|TwoPointFactory]] objects with alternative integration configurations: [[utils|ClIntegrationMethod.LIMBER]] with [[utils|ClLimberMethod.GSL_SPLINE]], [[utils|ClIntegrationMethod.FKEM_AUTO]], and [[utils|ClIntegrationMethod.FKEM_L_LIMBER]].  
 
 The lens and source redshift bin collections used for the computations are imported from the `firecrown.generators.inferred_galaxy_zdist` module:  
-[[generators.inferred_galaxy_zdist|LSST_Y1_LENS_BIN_COLLECTION]] and [[generators.inferred_galaxy_zdist|LSST_Y1_SOURCE_BIN_COLLECTION]].
+[[generators.inferred_galaxy_zdist|LSST_Y1_LENS_HARMONIC_BIN_COLLECTION]] and [[generators.inferred_galaxy_zdist|LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION]].
 
 ```{python}
 import numpy as np
@@ -396,12 +396,12 @@ from firecrown.metadata_functions import (
     TwoPointHarmonic,
 )
 from firecrown.generators.inferred_galaxy_zdist import (
-    LSST_Y1_LENS_BIN_COLLECTION,
-    LSST_Y1_SOURCE_BIN_COLLECTION,
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )
 
-count_bins = LSST_Y1_LENS_BIN_COLLECTION.generate()
-shear_bins = LSST_Y1_SOURCE_BIN_COLLECTION.generate()
+count_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
 all_y1_bins = count_bins[:1] + shear_bins[:1]
 
 all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
