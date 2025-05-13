@@ -128,18 +128,18 @@ pprint(zdist)
 ## LSST SRD redshift distributions {#sec-lsst-srd}
 
 The LSST SRD provides the parameters used to generate the redshift distributions.
-Firecrown includes dataclass instances `LSST_Y1_LENS_BIN_COLLECTION` and `LSST_Y1_SOURCE_BIN_COLLECTION`, which store the parameters for generating redshift distributions for the Y1 lens and source samples, respectively.
-Similar collections, `LSST_Y10_LENS_BIN_COLLECTION` and `LSST_Y10_SOURCE_BIN_COLLECTION`, exist for the Y10 samples.
+Firecrown includes dataclass instances `LSST_Y1_LENS_HARMONIC_BIN_COLLECTION` and `LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION`, which store the parameters for generating redshift distributions for the Y1 lens and source samples, respectively.
+Similar collections, `LSST_Y10_LENS_HARMONIC_BIN_COLLECTION` and `LSST_Y10_SOURCE_HARMONIC_BIN_COLLECTION`, exist for the Y10 samples.
 
 Below is a code snippet demonstrating how to serialize and read back these dataclasses:
 ```{python}
 from firecrown.generators.inferred_galaxy_zdist import (
-    LSST_Y1_LENS_BIN_COLLECTION,
-    LSST_Y1_SOURCE_BIN_COLLECTION,
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )
 
-lsst_y1_lens_yaml = base_model_to_yaml(LSST_Y1_LENS_BIN_COLLECTION)
-lsst_y1_source_yaml = base_model_to_yaml(LSST_Y1_SOURCE_BIN_COLLECTION)
+lsst_y1_lens_yaml = base_model_to_yaml(LSST_Y1_LENS_HARMONIC_BIN_COLLECTION)
+lsst_y1_source_yaml = base_model_to_yaml(LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION)
 
 ```
 

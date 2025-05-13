@@ -26,12 +26,12 @@ Here we will use the LSST SRD year 1 redshift distribution to generate the two-p
 
 ```{python}
 from firecrown.generators.inferred_galaxy_zdist import (
-    LSST_Y1_LENS_BIN_COLLECTION,
-    LSST_Y1_SOURCE_BIN_COLLECTION,
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )
 
-count_bins = LSST_Y1_LENS_BIN_COLLECTION.generate()
-shear_bins = LSST_Y1_SOURCE_BIN_COLLECTION.generate()
+count_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
 all_y1_bins = count_bins + shear_bins
 ```
 
