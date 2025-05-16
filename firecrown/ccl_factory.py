@@ -31,7 +31,7 @@ from pyccl.neutrinos import NeutrinoMassSplits
 from pyccl.modified_gravity import MuSigmaMG
 
 from firecrown.updatable import Updatable
-from firecrown.parameters import register_new_updatable_parameter
+from firecrown.parameters import register_new_updatable_parameter, ParamsMap
 from firecrown.utils import YAMLSerializable
 
 # PowerSpec is a type that represents a power spectrum.
@@ -155,10 +155,11 @@ class CAMBExtraParams(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
+    HMCode_A_baryon: Annotated[float | None, Field(frozen=False)] = None
+    HMCode_eta_baryon: Annotated[float | None, Field(frozen=False)] = None
+    HMCode_logT_AGN: Annotated[float | None, Field(frozen=False)] = None
+
     halofit_version: Annotated[str | None, Field(frozen=True)] = None
-    HMCode_A_baryon: Annotated[float | None, Field(frozen=True)] = None
-    HMCode_eta_baryon: Annotated[float | None, Field(frozen=True)] = None
-    HMCode_logT_AGN: Annotated[float | None, Field(frozen=True)] = None
     kmax: Annotated[float | None, Field(frozen=True)] = None
     lmax: Annotated[int | None, Field(frozen=True)] = None
     dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
@@ -168,6 +169,19 @@ class CAMBExtraParams(BaseModel):
         return {
             key: value for key, value in self.model_dump().items() if value is not None
         }
+
+    def update(self, params: ParamsMap) -> None:
+        """Update the CAMB sampling parameters.
+
+        :param params: The parameters to update.
+        :return: None
+        """
+        if "HMCode_A_baryon" in params:
+            self.HMCode_A_baryon = params["HMCode_A_baryon"]
+        if "HMCode_eta_baryon" in params:
+            self.HMCode_eta_baryon = params["HMCode_eta_baryon"]
+        if "HMCode_logT_AGN" in params:
+            self.HMCode_logT_AGN = params["HMCode_logT_AGN"]
 
 
 class CCLSplineParams(BaseModel):
@@ -276,6 +290,8 @@ class CCLSplineParams(BaseModel):
             raise exc_type(exc_value).with_traceback(traceback)
 
 
+# pylint: disable=too-many-instance-attributes
+# Inheriting from both Updatable and BaseModel gives this class many attributes.
 class CCLFactory(Updatable, BaseModel):
     """Factory class for creating instances of the `pyccl.Cosmology` class."""
 
@@ -292,6 +308,7 @@ class CCLFactory(Updatable, BaseModel):
     creation_mode: Annotated[CCLCreationMode, Field(frozen=True)] = (
         CCLCreationMode.DEFAULT
     )
+    use_camb_hm_sampling: Annotated[bool, Field(frozen=True)] = False
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
@@ -349,6 +366,28 @@ class CCLFactory(Updatable, BaseModel):
         match self.creation_mode:
             case CCLCreationMode.MU_SIGMA_ISITGR:
                 self._mu_sigma_model = MuSigmaModel()
+
+        if self.use_camb_hm_sampling:
+            if self.camb_extra_params is None:
+                raise ValueError(
+                    "To sample over the halo model, "
+                    "you must include camb_extra_parameters."
+                )
+            # The default values are taken from CAMB v1.6.0
+            self.HMCode_A_baryon = register_new_updatable_parameter(default_value=3.13)
+            self.HMCode_eta_baryon = register_new_updatable_parameter(
+                default_value=0.603
+            )
+            self.HMCode_logT_AGN = register_new_updatable_parameter(default_value=7.8)
+
+    def _update(self, params: ParamsMap) -> None:
+        """Update the CAMB parameters in this CCLFactory object.
+
+        :param params: The parameters to update.
+        :returns: None
+        """
+        if self.camb_extra_params is not None:
+            self.camb_extra_params.update(params)
 
     @model_serializer(mode="wrap")
     def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
