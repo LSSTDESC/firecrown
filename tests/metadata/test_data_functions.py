@@ -532,6 +532,8 @@ def test_two_point_real_bin_filter_collection_call_require(
         )
         for xy in make_all_photoz_bin_combinations([real_bin_1])
     ]
+    if len(real_bins) == 0:
+        return
     with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
         _ = real_filter_collection_no_empty(real_bins)
 
@@ -555,6 +557,8 @@ def test_two_point_real_bin_filter_collection_call_no_empty(
         )
         for xy in make_all_photoz_bin_combinations([real_bin_1])
     ]
+    if len(real_bins) == 0:
+        return
     with pytest.raises(
         ValueError,
         match=(

@@ -15,20 +15,17 @@ These functions are particularly useful when the full set of statistics present 
 SACC file is being used without the need for complex customization.
 """
 
-from typing import Annotated
-from enum import Enum, auto
 from pathlib import Path
 
 from typing_extensions import assert_never
 import yaml
-from pydantic import BaseModel, ConfigDict, BeforeValidator, Field, field_serializer
+from pydantic import BaseModel
 
 import sacc
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.weak_lensing import WeakLensingFactory
-from firecrown.likelihood.number_counts import NumberCountsFactory
-from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.two_point import TwoPointFactory
+from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.data_functions import (
     extract_all_real_data,
     extract_all_harmonic_data,
@@ -38,59 +35,6 @@ from firecrown.data_functions import (
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
-from firecrown.utils import YAMLSerializable
-
-
-class TwoPointCorrelationSpace(YAMLSerializable, str, Enum):
-    """This class defines the two-point correlation space.
-
-    The two-point correlation space can be either real or harmonic. The real space
-    corresponds measurements in terms of angular separation, while the harmonic space
-    corresponds to measurements in terms of spherical harmonics decomposition.
-    """
-
-    @staticmethod
-    def _generate_next_value_(name, _start, _count, _last_values):
-        return name.lower()
-
-    REAL = auto()
-    HARMONIC = auto()
-
-
-def _validate_correlation_space(value: TwoPointCorrelationSpace | str):
-    if not isinstance(value, TwoPointCorrelationSpace) and isinstance(value, str):
-        try:
-            return TwoPointCorrelationSpace(
-                value.lower()
-            )  # Convert from string to Enum
-        except ValueError as exc:
-            raise ValueError(
-                f"Invalid value for TwoPointCorrelationSpace: {value}"
-            ) from exc
-    return value
-
-
-class TwoPointFactory(BaseModel):
-    """Factory class for WeakLensing objects."""
-
-    model_config = ConfigDict(extra="forbid", frozen=True)
-
-    correlation_space: Annotated[
-        TwoPointCorrelationSpace,
-        BeforeValidator(_validate_correlation_space),
-        Field(description="The two-point correlation space."),
-    ]
-    weak_lensing_factory: WeakLensingFactory
-    number_counts_factory: NumberCountsFactory
-
-    def model_post_init(self, __context) -> None:
-        """Initialize the WeakLensingFactory object."""
-
-    @field_serializer("correlation_space")
-    @classmethod
-    def serialize_correlation_space(cls, value: TwoPointCorrelationSpace) -> str:
-        """Serialize the amplitude parameter."""
-        return value.name
 
 
 class DataSourceSacc(BaseModel):
@@ -149,7 +93,7 @@ class TwoPointExperiment(BaseModel):
     data_source: DataSourceSacc
     ccl_factory: CCLFactory | None = None
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, _, /) -> None:
         """Initialize the TwoPointExperiment object."""
         if self.ccl_factory is None:
             self.ccl_factory = CCLFactory()
@@ -176,17 +120,11 @@ class TwoPointExperiment(BaseModel):
         match self.two_point_factory.correlation_space:
             case TwoPointCorrelationSpace.REAL:
                 likelihood = _build_two_point_likelihood_real(
-                    sacc_data,
-                    self.two_point_factory.weak_lensing_factory,
-                    self.two_point_factory.number_counts_factory,
-                    filters=self.data_source.filters,
+                    sacc_data, self.two_point_factory, filters=self.data_source.filters
                 )
             case TwoPointCorrelationSpace.HARMONIC:
                 likelihood = _build_two_point_likelihood_harmonic(
-                    sacc_data,
-                    self.two_point_factory.weak_lensing_factory,
-                    self.two_point_factory.number_counts_factory,
-                    filters=self.data_source.filters,
+                    sacc_data, self.two_point_factory, filters=self.data_source.filters
                 )
             case _ as unreachable:
                 assert_never(unreachable)
@@ -221,8 +159,7 @@ def build_two_point_likelihood(
 
 def _build_two_point_likelihood_harmonic(
     sacc_data: sacc.Sacc,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
 ):
     """
@@ -248,10 +185,7 @@ def _build_two_point_likelihood_harmonic(
     if filters is not None:
         tpms = filters(tpms)
 
-    two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory
-    )
-
+    two_points = two_point_factory.from_measurement(tpms)
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
 
     return likelihood
@@ -259,8 +193,7 @@ def _build_two_point_likelihood_harmonic(
 
 def _build_two_point_likelihood_real(
     sacc_data: sacc.Sacc,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
 ):
     """
@@ -286,10 +219,7 @@ def _build_two_point_likelihood_real(
     if filters is not None:
         tpms = filters(tpms)
 
-    two_points = TwoPoint.from_measurement(
-        tpms, wl_factory=wl_factory, nc_factory=nc_factory
-    )
-
+    two_points = two_point_factory.from_measurement(tpms)
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
 
     return likelihood

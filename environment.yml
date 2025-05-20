@@ -6,11 +6,14 @@ dependencies:
   - babel
   - black
   - charset-normalizer
+  - click < 8.2  # temporarily needed for numcosmo
   - clmm
+  - compilers <= 1.8
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
   - cython
+  - deno
   - dill
   - fitsio
   - flake8
@@ -18,18 +21,21 @@ dependencies:
   - fuzzywuzzy
   - getdist
   - glib
+  - graphviz
   - idna
+  - jupyter
+  - linkchecker
   - matplotlib-base
   - more-itertools
   - mypy
-  - numcosmo >=0.21.1
-  - numpy >= 1.23.0
-  - pip
+  - numcosmo >= 0.21.1
+  - numpy >= 1.25.0
+  - pip >= 20.1  # pip is needed as dependency
   - pip:
-    - autoclasstoc
     - cobaya
     - isitgr
     - pygobject-stubs
+  - plotnine
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
@@ -39,9 +45,15 @@ dependencies:
   - pytest-cov
   - python >= 3.10
   - pyyaml
+  - quarto
   - requests
   - sacc >= 0.11
-  - scipy < 1.14.0
-  - sphinx=7.1.2
+  - scipy
+  - sphinx
+  - sphinx-autoapi
+  - sphinx-autodoc-typehints
+  - sphinx-rtd-theme
+  - sphinxcontrib-apidoc
+  - tabulate
   - types-pyyaml
   - urllib3

@@ -3,11 +3,13 @@
 This module contains metadata types definitions.
 """
 
+from typing import Any
 from itertools import chain, combinations_with_replacement
 from dataclasses import dataclass
 import re
-from enum import Enum, auto
+from enum import StrEnum, Enum, auto
 
+from pydantic_core import core_schema
 import numpy as np
 import numpy.typing as npt
 
@@ -41,6 +43,38 @@ class TracerNames(YAMLSerializable):
 TRACER_NAMES_TOTAL = TracerNames("", "")  # special name to represent total
 
 
+class TypeSource(str):
+    """String to specify the subtype or origin of a measurement source.
+
+    This helps distinguish between different categories of sources within the same
+    measurement type. For example:
+
+    - In galaxy counts, this could differentiate between red and blue galaxies.
+    - In CMB lensing, it could identify data from different instruments like Planck or
+      SPT.
+    """
+
+    DEFAULT: "TypeSource"
+
+    def __new__(cls, value):
+        """Create a new TypeSource."""
+        return super().__new__(cls, value)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the TypeSource class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.str_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+
+TypeSource.DEFAULT = TypeSource("default")
+
+
 class Galaxies(YAMLSerializable, str, Enum):
     """This enumeration type for galaxy measurements.
 
@@ -53,9 +87,23 @@ class Galaxies(YAMLSerializable, str, Enum):
 
     SHEAR_E = auto()
     SHEAR_T = auto()
-    SHEAR_MINUS = auto()
-    SHEAR_PLUS = auto()
+    PART_OF_XI_MINUS = auto()
+    SHEAR_MINUS = PART_OF_XI_MINUS  # Alias for backward compatibility in user code
+    PART_OF_XI_PLUS = auto()
+    SHEAR_PLUS = PART_OF_XI_PLUS  # Alias for backward compatibility in user code
     COUNTS = auto()
+
+    def is_shear(self) -> bool:
+        """Return True if the measurement is a shear measurement, False otherwise.
+
+        :return: True if the measurement is a shear measurement, False otherwise
+        """
+        return self in (
+            Galaxies.SHEAR_E,
+            Galaxies.SHEAR_T,
+            Galaxies.PART_OF_XI_MINUS,
+            Galaxies.PART_OF_XI_PLUS,
+        )
 
     def sacc_type_name(self) -> str:
         """Return the lower-case form of the main measurement type.
@@ -75,9 +123,9 @@ class Galaxies(YAMLSerializable, str, Enum):
             return "shear"
         if self == Galaxies.SHEAR_T:
             return "shear"
-        if self == Galaxies.SHEAR_MINUS:
+        if self == Galaxies.PART_OF_XI_MINUS:
             return "shear"
-        if self == Galaxies.SHEAR_PLUS:
+        if self == Galaxies.PART_OF_XI_PLUS:
             return "shear"
         if self == Galaxies.COUNTS:
             return "density"
@@ -93,9 +141,9 @@ class Galaxies(YAMLSerializable, str, Enum):
             return "e"
         if self == Galaxies.SHEAR_T:
             return "t"
-        if self == Galaxies.SHEAR_MINUS:
+        if self == Galaxies.PART_OF_XI_MINUS:
             return "minus"
-        if self == Galaxies.SHEAR_PLUS:
+        if self == Galaxies.PART_OF_XI_PLUS:
             return "plus"
         if self == Galaxies.COUNTS:
             return ""
@@ -236,15 +284,20 @@ Measurement = Galaxies | CMB | Clusters
 ALL_MEASUREMENTS: list[Measurement] = list(chain(Galaxies, CMB, Clusters))
 ALL_MEASUREMENT_TYPES = (Galaxies, CMB, Clusters)
 HARMONIC_ONLY_MEASUREMENTS = (Galaxies.SHEAR_E,)
-REAL_ONLY_MEASUREMENTS = (Galaxies.SHEAR_T, Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
-EXACT_MATCH_MEASUREMENTS = (Galaxies.SHEAR_MINUS, Galaxies.SHEAR_PLUS)
+REAL_ONLY_MEASUREMENTS = (
+    Galaxies.SHEAR_T,
+    Galaxies.PART_OF_XI_MINUS,
+    Galaxies.PART_OF_XI_PLUS,
+)
+EXACT_MATCH_MEASUREMENTS = (Galaxies.PART_OF_XI_MINUS, Galaxies.PART_OF_XI_PLUS)
+INCOMPATIBLE_MEASUREMENTS = (Galaxies.SHEAR_T,)
 LENS_REGEX = re.compile(r"^lens\d+$")
 SOURCE_REGEX = re.compile(r"^(src\d+|source\d+)$")
 GALAXY_SOURCE_TYPES = (
     Galaxies.SHEAR_E,
     Galaxies.SHEAR_T,
-    Galaxies.SHEAR_MINUS,
-    Galaxies.SHEAR_PLUS,
+    Galaxies.PART_OF_XI_MINUS,
+    Galaxies.PART_OF_XI_PLUS,
 )
 GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 
@@ -279,6 +332,7 @@ class InferredGalaxyZDist(YAMLSerializable):
     z: np.ndarray
     dndz: np.ndarray
     measurements: set[Measurement]
+    type_source: TypeSource = TypeSource.DEFAULT
 
     def __post_init__(self) -> None:
         """Validate the redshift resolution data.
@@ -322,6 +376,8 @@ def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     if a in REAL_ONLY_MEASUREMENTS and b in HARMONIC_ONLY_MEASUREMENTS:
         return False
     if (a in EXACT_MATCH_MEASUREMENTS or b in EXACT_MATCH_MEASUREMENTS) and a != b:
+        return False
+    if a in INCOMPATIBLE_MEASUREMENTS and b in INCOMPATIBLE_MEASUREMENTS:
         return False
     return True
 
@@ -607,3 +663,26 @@ class TwoPointReal(YAMLSerializable):
         :return: The number of observations.
         """
         return self.thetas.shape[0]
+
+
+class TwoPointCorrelationSpace(YAMLSerializable, StrEnum):
+    """This class defines the two-point correlation space.
+
+    The two-point correlation space can be either real or harmonic. The real space
+    corresponds measurements in terms of angular separation, while the harmonic space
+    corresponds to measurements in terms of spherical harmonics decomposition.
+    """
+
+    REAL = auto()
+    HARMONIC = auto()
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the TypeSource class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )

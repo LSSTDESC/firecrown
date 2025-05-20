@@ -26,7 +26,7 @@ from firecrown.likelihood.source import (
     PhotoZShiftandStretchFactory,
     Tracer,
 )
-from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 
@@ -411,6 +411,8 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
                 tracer_name="intrinsic_alignment_hm",
                 halo_profile=halo_profile,
             )
+            # TODO: redesign this so that we are not adding a new
+            # attribute to a pyccl class.
             halo_profile.ia_a_2h = (
                 tracer_args.ia_a_2h
             )  # Attach the 2-halo amplitude here.
@@ -529,10 +531,15 @@ class WeakLensingFactory(BaseModel):
         PrivateAttr()
     )
 
-    per_bin_systematics: Sequence[WeakLensingSystematicFactory]
-    global_systematics: Sequence[WeakLensingSystematicFactory]
+    type_source: TypeSource = TypeSource.DEFAULT
+    per_bin_systematics: Sequence[WeakLensingSystematicFactory] = Field(
+        default_factory=list
+    )
+    global_systematics: Sequence[WeakLensingSystematicFactory] = Field(
+        default_factory=list
+    )
 
-    def model_post_init(self, __context) -> None:
+    def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
         self._cache: dict[int, WeakLensing] = {}
         self._global_systematics_instances = [

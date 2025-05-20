@@ -24,12 +24,11 @@ from firecrown.likelihood.two_point import (
     TracerNames,
     WeakLensingFactory,
     NumberCountsFactory,
-)
-from firecrown.models.two_point import TwoPointTheory
-from firecrown.likelihood.source_factories import (
+    TwoPointFactory,
     use_source_factory,
     use_source_factory_metadata_index,
 )
+from firecrown.models.two_point import TwoPointTheory
 from firecrown.generators.two_point import (
     log_linear_ells,
     generate_bin_centers,
@@ -38,7 +37,6 @@ from firecrown.generators.two_point import (
 from firecrown.metadata_types import (
     Galaxies,
     InferredGalaxyZDist,
-    TwoPointHarmonic,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
 )
@@ -67,83 +65,24 @@ def fixture_tools() -> ModelingTools:
     return ModelingTools()
 
 
-@pytest.fixture(name="harmonic_data_with_window")
-def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurement:
-    """Return some fake harmonic data."""
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    # The window is given by the mean of the ells in each bin times the bin number.
-    weights = np.zeros((100, 4))
-    weights[0:25, 0] = 1.0 / 25.0
-    weights[25:50, 1] = 2.0 / 25.0
-    weights[50:75, 2] = 3.0 / 25.0
-    weights[75:100, 3] = 4.0 / 25.0
-
-    data = (np.zeros(4) + 1.1).astype(np.float64)
-    indices = np.arange(4)
-    covariance_name = "cov"
-    tpm = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
-    )
-
-    return tpm
-
-
-@pytest.fixture(name="harmonic_data_no_window")
-def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
-    """Return some fake harmonic data."""
-    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    data = (np.zeros(100) - 1.1).astype(np.float64)
-    indices = np.arange(100)
-    covariance_name = "cov"
-    tpm = TwoPointMeasurement(
-        data=data,
-        indices=indices,
-        covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy),
-    )
-
-    return tpm
-
-
-@pytest.fixture(name="wl_factory")
-def fixture_wl_factory() -> WeakLensingFactory:
-    """Return a WeakLensingFactory object."""
-    return WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
-
-
-@pytest.fixture(name="nc_factory")
-def fixture_nc_factory(include_rsd: bool) -> NumberCountsFactory:
-    """Return a NumberCountsFactory object."""
-    return NumberCountsFactory(
-        per_bin_systematics=[], global_systematics=[], include_rsd=include_rsd
-    )
-
-
 @pytest.fixture(name="two_point_with_window")
 def fixture_two_point_with_window(
-    harmonic_data_with_window: TwoPointMeasurement,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    harmonic_data_with_window: TwoPointMeasurement, tp_factory: TwoPointFactory
 ) -> TwoPoint:
     """Return a TwoPoint object with a window."""
     two_points = TwoPoint.from_measurement(
-        [harmonic_data_with_window], wl_factory=wl_factory, nc_factory=nc_factory
+        [harmonic_data_with_window], tp_factory=tp_factory
     )
     return two_points.pop()
 
 
 @pytest.fixture(name="two_point_without_window")
 def fixture_two_point_without_window(
-    harmonic_data_no_window: TwoPointMeasurement,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    harmonic_data_no_window: TwoPointMeasurement, tp_factory: TwoPointFactory
 ) -> TwoPoint:
     """Return a TwoPoint object without a window."""
     two_points = TwoPoint.from_measurement(
-        [harmonic_data_no_window], wl_factory=wl_factory, nc_factory=nc_factory
+        [harmonic_data_no_window], tp_factory=tp_factory
     )
     return two_points.pop()
 
@@ -375,7 +314,7 @@ def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
         "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
     )
     with pytest.warns(
-        UserWarning, match="No bandpower windows associated to these data"
+        UserWarning, match="No bandpower windows associated (with|to) these data"
     ):
         statistic.read(sacc_data)
     assert statistic.theory.ell_or_theta_min == 50
@@ -539,16 +478,16 @@ def test_two_point_lens0_lens0_data_and_conf_warn(sacc_galaxy_xis_lens0_lens0) -
 
 
 def test_use_source_factory(
-    harmonic_bin_1: InferredGalaxyZDist,
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    harmonic_bin_1: InferredGalaxyZDist, tp_factory: TwoPointFactory
 ) -> None:
     measurement = list(harmonic_bin_1.measurements)[0]
-    source = use_source_factory(harmonic_bin_1, measurement, wl_factory, nc_factory)
+    source = use_source_factory(harmonic_bin_1, measurement, tp_factory)
 
+    factory = tp_factory.get_factory(measurement, harmonic_bin_1.type_source)
     if measurement in GALAXY_LENS_TYPES:
         assert isinstance(source, NumberCounts)
-        assert source.has_rsd == nc_factory.include_rsd
+        assert isinstance(factory, NumberCountsFactory)
+        assert source.has_rsd == factory.include_rsd
     elif measurement in GALAXY_SOURCE_TYPES:
         assert isinstance(source, WeakLensing)
     else:
@@ -556,44 +495,39 @@ def test_use_source_factory(
 
 
 def test_use_source_factory_invalid_measurement(
-    harmonic_bin_1: InferredGalaxyZDist,
+    harmonic_bin_1: InferredGalaxyZDist, tp_factory: TwoPointFactory
 ) -> None:
     with pytest.raises(
         ValueError,
         match="Measurement .* not found in inferred galaxy redshift distribution .*",
     ):
-        use_source_factory(harmonic_bin_1, Galaxies.SHEAR_MINUS, None, None)
+        use_source_factory(harmonic_bin_1, Galaxies.PART_OF_XI_MINUS, tp_factory)
 
 
-def test_use_source_factory_metadata_only_counts(
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
-) -> None:
+def test_use_source_factory_metadata_only_counts(tp_factory: TwoPointFactory) -> None:
     source = use_source_factory_metadata_index(
-        "bin1", Galaxies.COUNTS, wl_factory=wl_factory, nc_factory=nc_factory
+        "bin1", Galaxies.COUNTS, tp_factory=tp_factory
     )
+    factory = tp_factory.get_factory(Galaxies.COUNTS)
+    assert isinstance(factory, NumberCountsFactory)
     assert isinstance(source, NumberCounts)
-    assert source.has_rsd == nc_factory.include_rsd
+    assert source.has_rsd == factory.include_rsd
 
 
-def test_use_source_factory_metadata_only_shear(
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
-) -> None:
+def test_use_source_factory_metadata_only_shear(tp_factory: TwoPointFactory) -> None:
     source = use_source_factory_metadata_index(
-        "bin1", Galaxies.SHEAR_E, wl_factory=wl_factory, nc_factory=nc_factory
+        "bin1", Galaxies.SHEAR_E, tp_factory=tp_factory
     )
+    factory = tp_factory.get_factory(Galaxies.SHEAR_E)
+    assert isinstance(factory, WeakLensingFactory)
     assert isinstance(source, WeakLensing)
 
 
 def test_use_source_factory_metadata_only_invalid_measurement(
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
+    tp_factory: TwoPointFactory,
 ) -> None:
     with pytest.raises(ValueError, match="Unknown measurement type encountered .*"):
-        use_source_factory_metadata_index(
-            "bin1", 120, wl_factory=wl_factory, nc_factory=nc_factory  # type: ignore
-        )
+        use_source_factory_metadata_index("bin1", 120, tp_factory)  # type: ignore
 
 
 def test_two_point_wrong_type() -> None:
@@ -603,55 +537,41 @@ def test_two_point_wrong_type() -> None:
         )
 
 
-def test_from_metadata_harmonic_wrong_metadata() -> None:
+def test_from_metadata_harmonic_wrong_metadata(tp_factory: TwoPointFactory) -> None:
     with pytest.raises(
         ValueError, match=re.escape("Metadata of type <class 'str'> is not supported")
     ):
         TwoPoint._from_metadata_single(  # pylint: disable=protected-access
-            metadata="NotAMetadata",  # type: ignore
+            metadata="NotAMetadata", tp_factory=tp_factory  # type: ignore
         )
 
 
-def test_use_source_factory_metadata_only_wrong_measurement() -> None:
+def test_use_source_factory_metadata_only_wrong_measurement(
+    tp_factory: TwoPointFactory,
+) -> None:
     unknown_type = MagicMock()
     unknown_type.configure_mock(__eq__=MagicMock(return_value=False))
 
-    with pytest.raises(ValueError, match="Measurement .* not supported!"):
-        use_source_factory_metadata_index(
-            "bin1", unknown_type, wl_factory=None, nc_factory=None
-        )
+    with pytest.raises(ValueError, match="Unknown measurement type encountered"):
+        use_source_factory_metadata_index("bin1", unknown_type, tp_factory)
 
 
-def test_from_metadata_only_harmonic(
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
-) -> None:
+def test_from_metadata_only_harmonic(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
     }
-    two_point = TwoPoint.from_metadata_index(
-        [metadata],
-        wl_factory=wl_factory,
-        nc_factory=nc_factory,
-    ).pop()
+    two_point = TwoPoint.from_metadata_index([metadata], tp_factory).pop()
     assert isinstance(two_point, TwoPoint)
     assert not two_point.ready
 
 
-def test_from_metadata_only_real(
-    wl_factory: WeakLensingFactory,
-    nc_factory: NumberCountsFactory,
-) -> None:
+def test_from_metadata_only_real(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointRealIndex = {
         "data_type": "galaxy_shear_xi_plus",
         "tracer_names": TracerNames("src0", "src0"),
     }
-    two_point = TwoPoint.from_metadata_index(
-        [metadata],
-        wl_factory=wl_factory,
-        nc_factory=nc_factory,
-    ).pop()
+    two_point = TwoPoint.from_metadata_index([metadata], tp_factory).pop()
     assert isinstance(two_point, TwoPoint)
     assert not two_point.ready
 
