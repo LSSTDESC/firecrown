@@ -46,7 +46,6 @@ class ClusterDeltaSigma(ClusterAbundance):
         radius_center: np.float64,
         two_halo_term: bool = False,
         miscentering_frac: np.float64 = None,
-        boost_factor: bool = False,
     ) -> npt.NDArray[np.float64]:
         """Delta sigma for clusters."""
         cosmo_clmm = clmm.Cosmology()
@@ -63,33 +62,15 @@ class ClusterDeltaSigma(ClusterAbundance):
         )
         moo.set_cosmo(cosmo_clmm)
         return_vals = []
-        if not self.conc_parameter:
-            conc = pyccl.halos.concentration.ConcentrationBhattacharya13(
-                mass_def=mass_def
-            )
-            for log_m, redshift in zip(log_mass, z):
-                a = 1.0 / (1.0 + redshift)
-                # pylint: disable=protected-access
-                conc_val = conc._concentration(self._cosmo, 10**log_m, a)
-                moo.set_concentration(conc_val)
-                moo.set_mass(10**log_m)
-                val = self._one_halo_contribution(moo, radius_center, redshift, miscentering_frac)
-                if two_halo_term:
-                    val+= self._two_halo_contribution(moo, radius_center, redshift)
-                return_vals.append(val)
-        else:
-            conc_val = self.cluster_conc
+        for log_m, redshift in zip(log_mass, z):
+            # pylint: disable=protected-access
+            conc_val = self._get_concentration(log_m, redshift)
             moo.set_concentration(conc_val)
-            for log_m, redshift in zip(log_mass, z):
-                moo.set_concentration(conc_val)
-                moo.set_mass(10**log_m)
-                val = self._one_halo_contribution(moo, radius_center, redshift, miscentering_frac)
-                if two_halo_term:
-                    val+= self._two_halo_contribution(moo, radius_center, redshift)
-                return_vals.append(val)
-        if boost_factor:
-            boost_factor_val = clmm.utils.compute_nfw_boost(radius_center, r_scale = 1.0)
-            return_vals = [val / boost_factor_val for val in return_vals]
+            moo.set_mass(10**log_m)
+            val = self._one_halo_contribution(moo, radius_center, redshift, miscentering_frac)
+            if two_halo_term:
+                val+= self._two_halo_contribution(moo, radius_center, redshift)
+            return_vals.append(val)
         return np.asarray(return_vals, dtype=np.float64)
 
 
@@ -108,11 +89,12 @@ class ClusterDeltaSigma(ClusterAbundance):
                 ])
                 gamma_vals = gamma.pdf(r_mis_list, a=2.0, scale=sigma)
                 return esd_vals * gamma_vals
-            integrator.integral_bounds = [(0.0, 2.0)]
+            integrator.integral_bounds = [(0.0, 5.0)]
             integrator.extra_args = np.array([0.12])  ## From https://arxiv.org/pdf/2502.08444
             miscentering_integral = integrator.integrate(integration_func)
+            print(miscentering_integral)
             return (1.0 - miscentering_frac) * first_halo_right_centered + miscentering_frac * miscentering_integral
-        return first_halo_right_centered[0]
+        return first_halo_right_centered
 
     def _two_halo_contribution(self, clmm_model: clmm.Modeling, radius_center, redshift) -> npt.NDArray[np.float64]:
         """Calculate the second halo contribution to the delta sigma."""
@@ -120,3 +102,13 @@ class ClusterDeltaSigma(ClusterAbundance):
         second_halo_right_centered = clmm_model.eval_excess_surface_density_2h(np.array([radius_center]), redshift)
         return second_halo_right_centered[0]
 
+    def _get_concentration(self, log_m: float, redshift: float) -> float:
+        """Determine the concentration for a halo."""
+        if self.conc_parameter and self.cluster_conc is not None:
+            return float(self.cluster_conc)
+
+        conc_model = pyccl.halos.concentration.ConcentrationBhattacharya13(
+            mass_def=self.halo_mass_function.mass_def
+        )
+        a = 1.0 / (1.0 + redshift)
+        return conc_model._concentration(self._cosmo, 10.0**log_m, a)  # pylint: disable=protected-access

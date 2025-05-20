@@ -3,6 +3,7 @@
 import numpy as np
 import pyccl
 import pytest
+import clmm
 
 from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
 
@@ -76,3 +77,91 @@ def test_deltasigma_profile_returns_value(
     assert np.issubdtype(result_conc.dtype, np.float64)
     assert len(result_conc) == 5
     assert np.all(result_conc > 0)
+
+
+def test_two_halo_term(cluster_deltasigma: ClusterDeltaSigma):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma.update_ingredients(cosmo)
+    result = cluster_deltasigma.delta_sigma(
+        np.array([14.0], dtype=np.float64),
+        np.array([0.5], dtype=np.float64),
+        radius_center=3.0,
+        two_halo_term=True,
+    )
+    assert result.shape == (1,)
+    assert result[0] > 0
+
+
+def test_miscentering(cluster_deltasigma: ClusterDeltaSigma):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma.update_ingredients(cosmo)
+    result = cluster_deltasigma.delta_sigma(
+        np.array([14.0], dtype=np.float64),
+        np.array([0.5], dtype=np.float64),
+        radius_center=3.0,
+        miscentering_frac=0.2,
+    )
+    assert result.shape == (1,)
+    assert result[0] > 0
+
+def test_miscentering_plus_two_halo_term(cluster_deltasigma: ClusterDeltaSigma):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma.update_ingredients(cosmo)
+    result = cluster_deltasigma.delta_sigma(
+        np.array([14.0], dtype=np.float64),
+        np.array([0.5], dtype=np.float64),
+        radius_center=3.0,
+        two_halo_term=True,
+        miscentering_frac=0.2,
+    )
+    assert result.shape == (1,)
+    assert result[0] > 0
+
+
+def test_concentration_default_vs_override(cluster_deltasigma_conc: ClusterDeltaSigma):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma_conc.update_ingredients(cosmo)
+    cluster_deltasigma_conc.cluster_conc = 6.0
+    conc = cluster_deltasigma_conc._get_concentration(14.0, 0.5)
+    assert conc == 6.0
+
+    cluster_deltasigma_conc.conc_parameter = False
+    conc = cluster_deltasigma_conc._get_concentration(14.0, 0.5)
+    assert conc > 0
+
+
+def test_internal_helpers(cluster_deltasigma: ClusterDeltaSigma):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma.update_ingredients(cosmo)
+    log_m = 14.0
+    z = 0.5
+    cluster_deltasigma._get_concentration(log_m, z)
+    cosmo_clmm = clmm.Cosmology()
+    # pylint: disable=protected-access
+    cosmo_clmm._init_from_cosmo(cosmo)
+    clmm_model = clmm.Modeling(
+        massdef='critical',
+        delta_mdef=200,
+        halo_profile_model="nfw",
+    )
+    clmm_model.set_cosmo(cosmo_clmm)
+    clmm_model.set_concentration(5.0)
+    clmm_model.set_mass(10**log_m)
+    result_1h = cluster_deltasigma._one_halo_contribution(clmm_model, 5.0, z)
+    result_2h = cluster_deltasigma._two_halo_contribution(clmm_model, 5.0, z)
+    assert isinstance(result_1h, float)
+    assert isinstance(result_2h, float)
+    assert result_1h > 0
+    assert result_2h > 0
+
+
+def test_empty_input(cluster_deltasigma: ClusterDeltaSigma):
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma.update_ingredients(cosmo)
+    result = cluster_deltasigma.delta_sigma(
+        np.array([], dtype=np.float64),
+        np.array([], dtype=np.float64),
+        radius_center=5.0,
+    )
+    assert isinstance(result, np.ndarray)
+    assert result.shape == (0,)
