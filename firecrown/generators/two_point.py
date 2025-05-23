@@ -5,29 +5,36 @@ from __future__ import annotations
 import copy
 from typing import Annotated, TypedDict
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, model_validator, ConfigDict
 import numpy as np
 import numpy.typing as npt
 
 
-ELL_FOR_XI_DEFAULTS = {"minimum": 2, "midpoint": 50, "maximum": 60_000, "n_log": 200}
-
-
 class LogLinearElls(BaseModel):
     """Generator for log-linear integral ell values.
+
+    The initializer for LogLinearElls accepts only named parameters. A default
+    value is provided for each parameter, which default is used if the parameter
+    is not provided to the initializer.
 
     Not all ell values will be generated. The result will contain each integral
     value from min to mid. Starting from mid, and going up to max, there will be
     n_log logarithmically spaced values.
 
     Note that midpoint must be strictly greater than minimum, and strictly less
-    than maximum. n_log must be positive.
+    than maximum. n_log must be positive. All must be integers. All these conditions
+    are verified in the initializer.
+
+    LogLinearElls objects are immutable, so they are safe to share and to use as
+    default values for parameters.
     """
 
-    minimum: Annotated[int, Field(ge=0)]
-    midpoint: Annotated[int, Field(ge=0)]
-    maximum: Annotated[int, Field(ge=0)]
-    n_log: Annotated[int, Field(ge=1)]
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    minimum: Annotated[int, Field(ge=0)] = 2
+    midpoint: Annotated[int, Field(ge=0)] = 50
+    maximum: Annotated[int, Field(ge=0)] = 60_000
+    n_log: Annotated[int, Field(ge=1)] = 200
 
     @model_validator(mode="after")
     def require_increasing(self) -> "LogLinearElls":
@@ -63,7 +70,11 @@ class LogLinearElls(BaseModel):
 
 
 def log_linear_ells(
-    *, minimum: int, midpoint: int, maximum: int, n_log: int
+    *,
+    minimum: int | None = None,
+    midpoint: int | None = None,
+    maximum: int | None = None,
+    n_log: int | None = None,
 ) -> npt.NDArray[np.int64]:
     """Create an array of ells to sample the power spectrum.
 
@@ -71,16 +82,26 @@ def log_linear_ells(
     each integral value from min to mid. Starting from mid, and going up
     to max, there will be n_log logarithmically spaced values.
 
-    All values are rounded to the nearest integer.
+    All arguments to this function are optional. If one is not provided,
+    then the default as specified in the initializer of LogLinearElls is used.
+
+    All calculated ell values are rounded to the nearest integer.
 
     :param minimum: The low edge of the first bin.
     :param midpoint: The high edge of the last in the linear range.
     :param maximum: The high edge of the last bin.
     :param n_log: The number of bins in the log section of the range.
     """
-    return LogLinearElls(
-        minimum=minimum, midpoint=midpoint, maximum=maximum, n_log=n_log
-    ).generate()
+    kwargs = {}
+    if minimum is not None:
+        kwargs["minimum"] = minimum
+    if midpoint is not None:
+        kwargs["midpoint"] = midpoint
+    if maximum is not None:
+        kwargs["maximum"] = maximum
+    if n_log is not None:
+        kwargs["n_log"] = n_log
+    return LogLinearElls(**kwargs).generate()
 
 
 def generate_bin_centers(

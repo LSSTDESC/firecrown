@@ -597,12 +597,21 @@ class TwoPoint(Statistic):
 
         tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
         if self.theory.window is not None:
+            # We are using a window function. This means we will have effective
+            # ells, and effective Cells at those effective ells.
+
+            # ells_for_interpolation are true ells (and thus integral).
+            # These are the values at which we will have CCL calculate the "exact"
+            # C_ells: these form our interpolation table.
             ells_for_interpolation = gen.calculate_ells_for_interpolation(
                 self.theory.ells[0], self.theory.ells[-1]
             )
 
+            # The call below will calculate the "exact" C_ells (using CCL).
+            # Using these "exact" C_ells it will then interpolate to determine C_ells at
+            # the ell values required by the window function (self.theory.ells).
             cells_interpolated = self.compute_cells_interpolated(
-                self.theory.ells,
+                self.theory.ells,  # the true ells required by the window function
                 ells_for_interpolation,
                 scale0,
                 scale1,

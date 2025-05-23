@@ -8,7 +8,11 @@ import pyccl
 import sacc
 
 import firecrown.generators.two_point as gen
-from firecrown.generators.two_point import EllOrThetaConfig, ELL_FOR_XI_DEFAULTS
+from firecrown.generators.two_point import (
+    EllOrThetaConfig,
+    ELL_FOR_XI_DEFAULTS,
+    LogLinearElls,
+)
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.metadata_types import TracerNames
 from firecrown.updatable import Updatable
@@ -195,7 +199,7 @@ class TwoPointTheory(Updatable):
         sources: tuple[Source, Source],
         ell_or_theta_min: float | int | None = None,
         ell_or_theta_max: float | int | None = None,
-        ell_for_xi: None | dict[str, int] = None,
+        ccl_real_interpolation_ell_generator: LogLinearElls = LogLinearElls(),
         ell_or_theta: None | EllOrThetaConfig = None,
         tracers: None | TracerNames = None,
         int_options: ClIntegrationOptions | None = None,
@@ -206,7 +210,9 @@ class TwoPointTheory(Updatable):
         :param sources: the sources for this theory; order matters
         :param ell_or_theta_min: minimum ell for xi
         :param ell_or_theta_max: maximum ell for xi
-        :param ell_for_xi: ell for xi configuration
+        :param ccl_real_interpolation_ell_generator: a callable object that
+          will generate the values of ell at which we will calculate "exact" C_ells,
+          and that CCL will use to calculate xi values for realspace analysis.
         :param ell_or_theta: ell or theta configuration
         """
         super().__init__()
