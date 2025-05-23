@@ -140,13 +140,6 @@ class TwoPoint(Statistic):
            (possibly geometric) midpoint of the bin.
          - binning : str, optional - Pass 'log' to get logarithmic spaced bins and 'lin'
            to get linearly spaced bins. Default is 'log'.
-
-    ell_or_theta_min : float, optional
-        The minimum ell or theta value to keep. This minimum is applied after
-        the ell or theta values are read and/or generated.
-    ell_or_theta_max : float, optional
-        The maximum ell or theta value to keep. This maximum is applied after
-        the ell or theta values are read and/or generated.
     ell_for_xi : dict, optional
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
@@ -226,10 +219,8 @@ class TwoPoint(Statistic):
         source0: Source,
         source1: Source,
         *,
-        ell_for_xi: None | dict[str, int] = None,
+        interp_ells_gen: gen.LogLinearElls = gen.LogLinearElls(),
         ell_or_theta: None | gen.EllOrThetaConfig = None,
-        ell_or_theta_min: None | float | int = None,
-        ell_or_theta_max: None | float | int = None,
         tracers: None | TracerNames = None,
         int_options: ClIntegrationOptions | None = None,
     ) -> None:
@@ -237,9 +228,7 @@ class TwoPoint(Statistic):
         self.theory = TwoPointTheory(
             sacc_data_type=sacc_data_type,
             sources=(source0, source1),
-            ell_or_theta_min=ell_or_theta_min,
-            ell_or_theta_max=ell_or_theta_max,
-            ell_for_xi=ell_for_xi,
+            interp_ells_gen=interp_ells_gen,
             ell_or_theta=ell_or_theta,
             tracers=tracers,
             int_options=int_options,
@@ -446,15 +435,6 @@ class TwoPoint(Statistic):
                 )
             thetas, xis = gen.generate_reals(self.theory.ell_or_theta_config)
             sacc_indices = None
-        assert isinstance(self.theory.ell_or_theta_min, (float, type(None)))
-        assert isinstance(self.theory.ell_or_theta_max, (float, type(None)))
-        thetas, xis, sacc_indices = gen.apply_theta_min_max(
-            thetas,
-            xis,
-            sacc_indices,
-            self.theory.ell_or_theta_min,
-            self.theory.ell_or_theta_max,
-        )
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(xis)
@@ -466,21 +446,8 @@ class TwoPoint(Statistic):
         Cells, ells, sacc_indices, window = self.read_harmonic_spectrum_data(
             ells_cells_indices, sacc_data
         )
-        assert isinstance(self.theory.ell_or_theta_min, (int, type(None)))
-        assert isinstance(self.theory.ell_or_theta_max, (int, type(None)))
 
-        ells, Cells, sacc_indices = gen.apply_ells_min_max(
-            ells,
-            Cells,
-            sacc_indices,
-            self.theory.ell_or_theta_min,
-            self.theory.ell_or_theta_max,
-        )
         self.theory.ells = ells
-        if self.theory.ell_or_theta_min is not None:
-            assert np.min(self.theory.ells) >= self.theory.ell_or_theta_min
-        if self.theory.ell_or_theta_max is not None:
-            assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
         self.theory.window = window
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(Cells)
@@ -603,9 +570,7 @@ class TwoPoint(Statistic):
             # ells_for_interpolation are true ells (and thus integral).
             # These are the values at which we will have CCL calculate the "exact"
             # C_ells: these form our interpolation table.
-            ells_for_interpolation = gen.calculate_ells_for_interpolation(
-                self.theory.ells[0], self.theory.ells[-1]
-            )
+            ells_for_interpolation = self.theory.generate_ells_for_interpolation()
 
             # The call below will calculate the "exact" C_ells (using CCL).
             # Using these "exact" C_ells it will then interpolate to determine C_ells at
