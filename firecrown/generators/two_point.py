@@ -55,7 +55,7 @@ class LogLinearElls(BaseModel):
         :return: The ell values.
         """
         minimum, midpoint, maximum, n_log = (
-            self.minimum if min_ell is None else min_ell,
+            self.minimum if min_ell is None else max(min_ell, self.minimum),
             self.midpoint,
             self.maximum if max_ell is None else max_ell,
             self.n_log,
