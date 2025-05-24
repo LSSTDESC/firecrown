@@ -30,9 +30,9 @@ from firecrown.likelihood.two_point import (
 )
 from firecrown.models.two_point import TwoPointTheory
 from firecrown.generators.two_point import (
-    log_linear_ells,
     generate_bin_centers,
     EllOrThetaConfig,
+    LogLinearElls,
 )
 from firecrown.metadata_types import (
     Galaxies,
@@ -88,14 +88,14 @@ def fixture_two_point_without_window(
 
 
 def test_log_linear_ells_no_rounding() -> None:
-    res = log_linear_ells(minimum=0, midpoint=5, maximum=80, n_log=5)
+    res = LogLinearElls(minimum=0, midpoint=5, maximum=80, n_log=5).generate()
     expected = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0, 80.0])
     assert res.shape == expected.shape
     assert np.allclose(expected, res)
 
 
 def test_log_linear_ells_doing_rounding() -> None:
-    res = log_linear_ells(minimum=1, midpoint=3, maximum=100, n_log=5)
+    res = LogLinearElls(minimum=1, midpoint=3, maximum=100, n_log=5).generate()
     expected = np.array([1.0, 2.0, 3.0, 7.0, 17.0, 42.0, 100.0])
     assert np.allclose(expected, res)
 
@@ -296,69 +296,10 @@ def test_two_point_theory_construction() -> None:
     theory = TwoPointTheory(
         sacc_data_type="galaxy_shear_cl_ee",
         sources=(src0, src0),
-        ell_or_theta_min=50,
-        ell_or_theta_max=200,
     )
     assert theory.sacc_data_type == "galaxy_shear_cl_ee"
     assert theory.source0 is src0
     assert theory.source1 is src0
-    assert theory.ell_or_theta_min == 50
-    assert theory.ell_or_theta_max == 200
-
-
-def test_two_point_src0_src0_cuts(sacc_galaxy_cells_src0_src0) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
-    src0 = WeakLensing(sacc_tracer="src0")
-
-    statistic = TwoPoint(
-        "galaxy_shear_cl_ee", src0, src0, ell_or_theta_min=50, ell_or_theta_max=200
-    )
-    with pytest.warns(
-        UserWarning, match="No bandpower windows associated (with|to) these data"
-    ):
-        statistic.read(sacc_data)
-    assert statistic.theory.ell_or_theta_min == 50
-    assert statistic.theory.ell_or_theta_max == 200
-
-    tools = ModelingTools()
-    params = get_default_params_map(tools)
-    tools.update(params)
-    tools.prepare()
-
-    assert statistic.window is None
-    assert statistic.ells is not None
-    assert all(np.isfinite(statistic.ells))
-    assert all(statistic.ells >= 50)
-    assert all(statistic.ells <= 200)
-
-    statistic.update(params)
-    statistic.compute_theory_vector(tools)
-
-
-def test_two_point_lens0_lens0_cuts(sacc_galaxy_xis_lens0_lens0) -> None:
-    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0
-
-    src0 = NumberCounts(sacc_tracer="lens0")
-
-    statistic = TwoPoint(
-        "galaxy_density_xi", src0, src0, ell_or_theta_min=0.1, ell_or_theta_max=0.5
-    )
-    statistic.read(sacc_data)
-
-    tools = ModelingTools()
-    params = get_default_params_map(tools)
-    params.update({"lens0_bias": 1.0})
-    tools.update(params)
-    tools.prepare()
-
-    assert statistic.window is None
-    assert statistic.thetas is not None
-    assert all(np.isfinite(statistic.thetas))
-    assert all(statistic.thetas >= 0.1)
-    assert all(statistic.thetas <= 0.5)
-
-    statistic.update(params)
-    statistic.compute_theory_vector(tools)
 
 
 def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
@@ -370,7 +311,7 @@ def test_two_point_lens0_lens0_config(sacc_galaxy_xis_lens0_lens0) -> None:
         "galaxy_density_xi",
         src0,
         src0,
-        ell_for_xi={"minimum": 2, "midpoint": 6, "n_log": 180},
+        interp_ells_gen=LogLinearElls(minimum=2, midpoint=6, n_log=180),
     )
     statistic.read(sacc_data)
 
