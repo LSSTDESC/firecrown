@@ -659,7 +659,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     dv = []
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        Cells = np.random.normal(size=ells.shape[0])
+        Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"src{i}", f"src{j}", ells, Cells)
         tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_cl_ee")] = (
             ells,
@@ -668,7 +668,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
         dv.append(Cells)
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        Cells = np.random.normal(size=ells.shape[0])
+        Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl("galaxy_density_cl", f"lens{i}", f"lens{j}", ells, Cells)
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_cl")] = (
             ells,
@@ -677,7 +677,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
         dv.append(Cells)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
-        Cells = np.random.normal(size=ells.shape[0])
+        Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl(
             "galaxy_shearDensity_cl_e", f"src{i}", f"lens{j}", ells, Cells
         )
@@ -828,7 +828,7 @@ def fixture_sacc_galaxy_xis():
     dv = []
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{i}", f"lens{j}", thetas, xis)
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_xi")] = (
             thetas,
@@ -837,7 +837,7 @@ def fixture_sacc_galaxy_xis():
         dv.append(xis)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shearDensity_xi_t", f"src{i}", f"lens{j}", thetas, xis
         )
@@ -850,7 +850,7 @@ def fixture_sacc_galaxy_xis():
         dv.append(xis)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_minus", f"src{i}", f"src{j}", thetas, xis
         )
@@ -860,7 +860,7 @@ def fixture_sacc_galaxy_xis():
         )
         dv.append(xis)
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_plus", f"src{i}", f"src{j}", thetas, xis
         )
@@ -908,7 +908,7 @@ def fixture_sacc_galaxy_xis_inverted():
     dv = []
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{j}", f"lens{i}", thetas, xis)
         tracer_pairs[(TracerNames(f"lens{j}", f"lens{i}"), "galaxy_density_xi")] = (
             thetas,
@@ -917,7 +917,7 @@ def fixture_sacc_galaxy_xis_inverted():
         dv.append(xis)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shearDensity_xi_t", f"lens{i}", f"src{j}", thetas, xis
         )
@@ -930,7 +930,7 @@ def fixture_sacc_galaxy_xis_inverted():
         dv.append(xis)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_minus", f"src{j}", f"src{i}", thetas, xis
         )
@@ -940,7 +940,7 @@ def fixture_sacc_galaxy_xis_inverted():
         )
         dv.append(xis)
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_plus", f"src{j}", f"src{i}", thetas, xis
         )
@@ -969,7 +969,7 @@ def fixture_sacc_galaxy_cells_ambiguous() -> sacc.Sacc:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "bin0", z, dndz)
     sacc_data.add_tracer("NZ", "bin1", z, dndz)
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells = np.array(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", "bin0", "bin1", ells, Cells)
     cov = np.diag(np.zeros(len(ells)) + 0.01)
 
@@ -1052,7 +1052,7 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells = np.array(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
