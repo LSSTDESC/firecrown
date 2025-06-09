@@ -27,14 +27,13 @@ jobs:
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
-          mamba-version: "*"
           miniforge-version: latest
-          auto-update-conda: true
-          activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           show-channel-urls: true
           conda-remove-defaults: true
           environment-file: environment.yml
+          activate-environment: firecrown_developer
+
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -124,14 +123,12 @@ jobs:
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
-          mamba-version: "*"
           miniforge-version: latest
-          auto-update-conda: true
-          activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           show-channel-urls: true
           conda-remove-defaults: true
           environment-file: environment.yml
+          activate-environment: firecrown_developer
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT

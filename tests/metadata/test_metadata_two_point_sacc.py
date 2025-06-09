@@ -190,7 +190,9 @@ def fixture_sacc_galaxy_xis_three_tracers() -> (
     dndz2 = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens1", z, dndz2)
 
-    xis = np.random.normal(size=thetas.shape[0])
+    # We have to coerce the return type of np.random.normal to np.array,
+    # because mypy 1.16 is unable to infer the type of the return value.
+    xis = np.array(np.random.normal(size=thetas.shape[0]))
     for theta, xi in zip(thetas, xis):
         sacc_data.add_data_point(
             "galaxy_density_xi", ("src0", "lens0", "lens1"), xi, theta=theta
@@ -221,7 +223,9 @@ def fixture_sacc_galaxy_cells_three_tracers() -> (
     dndz2 = np.exp(-0.5 * (z - 0.9) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "lens1", z, dndz2)
 
-    Cells = np.random.normal(size=ells.shape[0])
+    # We have to coerce the return type of np.random.normal to np.array,
+    # because mypy 1.16 is unable to infer the type of the return value.
+    Cells = np.array(np.random.normal(size=ells.shape[0]))
     for ell, cell in zip(ells, Cells):
         sacc_data.add_data_point(
             "galaxy_shear_cl_ee", ("src0", "lens0", "lens1"), cell, ell=ell

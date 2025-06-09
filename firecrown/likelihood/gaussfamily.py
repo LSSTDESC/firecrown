@@ -316,7 +316,7 @@ class GaussFamily(Likelihood):
         indices: list[int] = []
         for stat in statistic_list:
             assert stat.sacc_indices is not None
-            temp = [self.cov_index_map[idx] for idx in stat.sacc_indices]
+            temp = [self.cov_index_map[int(idx)] for idx in stat.sacc_indices]
             indices += temp
         ixgrid = np.ix_(indices, indices)
 
