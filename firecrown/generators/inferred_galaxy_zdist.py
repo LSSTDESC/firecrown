@@ -383,7 +383,7 @@ class ZDistLSSTSRD:
                 + self.autoknots_abstol
             )
 
-        norma = quad(_P, z[0], z[-1], args=None)[0]
+        norma = quad(lambda x: _P(x, None), z[0], z[-1], args=())[0]
 
         if not self.use_autoknot:
             z_knots = z

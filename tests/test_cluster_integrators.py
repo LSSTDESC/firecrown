@@ -36,9 +36,11 @@ def test_scipy_integrator_integrate():
 
     # TODO: should we just remove this?
     def integrand(
-        a: npt.NDArray[np.float64], b: npt.NDArray[np.float64]
+        int_args: npt.NDArray[np.float64], _extra_args: npt.NDArray[np.float64]
     ) -> npt.NDArray[np.float64]:
         # xy
+        a = int_args[0]
+        b = int_args[1]
         result = a * b
         return np.atleast_1d(result).astype(np.float64)
 

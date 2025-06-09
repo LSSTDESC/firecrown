@@ -64,7 +64,11 @@ class ApplyInterpolationWhen(Flag):
         def serialize(v: "ApplyInterpolationWhen") -> str:
             if v == cls.NONE:
                 return "NONE"
-            return "|".join(flag.name for flag in cls if flag in v and flag != cls.NONE)
+            return "|".join(
+                flag.name
+                for flag in cls
+                if flag & v and flag != cls.NONE and flag.name is not None
+            )
 
         return core_schema.no_info_before_validator_function(
             validate,

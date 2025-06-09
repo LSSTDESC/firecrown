@@ -594,8 +594,8 @@ class TwoPoint(Statistic):
                 tools,
                 tracers0,
                 tracers1,
-                interpolate=self.theory.apply_interp
-                & ApplyInterpolationWhen.HARMONIC_WINDOW,
+                interpolate=ApplyInterpolationWhen.HARMONIC_WINDOW
+                in self.theory.apply_interp,
             )
 
             # Here we left multiply the computed Cl's by the window function to get the
@@ -618,7 +618,7 @@ class TwoPoint(Statistic):
             tools,
             tracers0,
             tracers1,
-            interpolate=self.theory.apply_interp & ApplyInterpolationWhen.HARMONIC,
+            interpolate=ApplyInterpolationWhen.HARMONIC in self.theory.apply_interp,
         )
 
         return TheoryVector.create(theory_vector)
