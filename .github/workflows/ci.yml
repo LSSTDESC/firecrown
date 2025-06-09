@@ -30,6 +30,7 @@ jobs:
           mamba-version: "*"
           miniforge-version: latest
           auto-update-conda: true
+          auto-activate-base: false
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           show-channel-urls: true
@@ -127,6 +128,7 @@ jobs:
           mamba-version: "*"
           miniforge-version: latest
           auto-update-conda: true
+          auto-activate-base: false
           activate-environment: firecrown_developer
           python-version: ${{ matrix.python-version }}
           show-channel-urls: true
