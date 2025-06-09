@@ -76,7 +76,9 @@ def test_cluster_observed_mass():
     for mass in np.linspace(10.0, 16.0, 20):
         z = np.atleast_1d(0)
         massarray = np.atleast_1d(mass)
-        f_logM = MassRichnessGaussian.observed_value((0.0, 1.0, 0.0), massarray, z, 0, 0)
+        f_logM = MassRichnessGaussian.observed_value(
+            (0.0, 1.0, 0.0), massarray, z, 0, 0
+        )
 
         assert f_logM == pytest.approx(mass * np.log(10.0), 1.0e-7, 0.0)
 
