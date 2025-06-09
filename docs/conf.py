@@ -9,7 +9,7 @@
 project = "Firecrown"
 copyright = "2025, LSST DESC Firecrown Contributors"
 author = "LSST DESC Firecrown Contributors"
-release = "1.11.0a0"
+release = "1.11.0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
