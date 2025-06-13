@@ -627,7 +627,7 @@ class TwoPointReal(YAMLSerializable):
     thetas: npt.NDArray[np.float64]
 
     def __post_init__(self):
-        """Validate the TwoPointCWindow data.
+        """Validate the TwoPointReal data.
 
         Make sure the window is
         """

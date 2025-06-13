@@ -3,7 +3,7 @@
 This module holds the scipy implementation of the integrator classes
 """
 
-from typing import Callable
+from typing import Callable, Any
 
 import numpy as np
 import numpy.typing as npt
@@ -29,8 +29,18 @@ class ScipyIntegrator(Integrator):
         ],
     ) -> float:
         """Integrate the provided integrand argument with SciPy."""
+        arg_len = len(self.integral_bounds)
+
+        def wrapper(*args: Any) -> float:
+            a = np.array(args[:arg_len])
+            b = np.array(args[arg_len:])
+            result = func_to_integrate(a, b)
+            assert isinstance(result, np.ndarray)
+            assert len(result) == 1
+            return result[0]
+
         val = nquad(
-            func_to_integrate,
+            wrapper,
             ranges=self.integral_bounds,
             args=self.extra_args,
             opts={

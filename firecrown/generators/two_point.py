@@ -70,6 +70,10 @@ class LogLinearElls(BaseModel):
         # N.B. the dtype of the result is np.dtype[float64]
         return np.unique(np.around(concatenated)).astype(np.int64)
 
+    def generate_all(self) -> npt.NDArray[np.int64]:
+        """Generate all ell values from minimum to maximum, inclusive."""
+        return np.arange(self.minimum, self.maximum + 1)
+
 
 def generate_bin_centers(
     *, minimum: float, maximum: float, n: int, binning: str = "log"
