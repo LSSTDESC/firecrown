@@ -125,9 +125,7 @@ jobs:
         with:
           repository: 'lsstdesc/smokescreen'
           path: 'smokescreen'
-          branch: 'fix-updated-firecrown'
-          # Instead of 'branch', 
-          # Use fetch-tag once we have a new release tag to use
+          ref: 'fix-updated-firecrown'
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
