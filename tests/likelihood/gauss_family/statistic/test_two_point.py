@@ -670,6 +670,19 @@ def test_apply_interp_when_serialization(apply_interp_when: tp.ApplyInterpolatio
     assert model.apply_interp_when == apply_interp_when
 
 
+def test_apply_interp_when_serialization_error():
+    with pytest.raises(
+        TypeError, match="Cannot parse ApplyInterpolationWhen from value: None"
+    ):
+        ModelWithApplyInterpWhen.model_validate({"apply_interp_when": None})
+
+    with pytest.raises(ValueError, match="Value error, Invalid flag name"):
+        ModelWithApplyInterpWhen.model_validate({"apply_interp_when": ""})
+
+    with pytest.raises(ValueError, match="Value error, Invalid flag name"):
+        ModelWithApplyInterpWhen.model_validate({"apply_interp_when": "foo"})
+
+
 def test_two_point_src0_src0_window_aiw(
     sacc_galaxy_cells_src0_src0_window: tuple,
     apply_interp_when: tp.ApplyInterpolationWhen,
@@ -736,3 +749,32 @@ def test_two_point_src0_src0_no_window_aiw(
         assert len(cells) != len(statistic.theory.ells)
     else:
         assert len(cells) == len(statistic.theory.ells)
+
+
+def test_two_point_src0_src0_real_aiw(
+    sacc_galaxy_xis_lens0_lens0_real: tuple,
+    apply_interp_when: tp.ApplyInterpolationWhen,
+) -> None:
+    sacc_data, _, _ = sacc_galaxy_xis_lens0_lens0_real
+
+    lens0 = WeakLensing(sacc_tracer="lens0")
+    statistic = tp.TwoPoint(
+        "galaxy_density_xi", lens0, lens0, apply_interp=apply_interp_when
+    )
+    statistic.read(sacc_data)
+
+    tools = ModelingTools()
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
+
+    statistic.reset()
+    statistic.update(params)
+    tools.update(params)
+    result1 = statistic.compute_theory_vector(tools)
+    assert all(np.isfinite(result1))
+    cells = statistic.theory.cells[mdt.TRACER_NAMES_TOTAL]
+    if apply_interp_when & tp.ApplyInterpolationWhen.REAL:
+        assert len(cells) == len(statistic.theory.ells_for_xi)
+    else:
+        assert len(cells) != len(statistic.theory.ells_for_xi)
