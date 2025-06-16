@@ -1061,6 +1061,28 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
     return sacc_data, z, dndz
 
 
+@pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_real")
+def fixture_sacc_galaxy_xis_lens0_lens0_real() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray]
+):
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz)
+
+    xis = np.random.normal(size=thetas.shape[0])
+    sacc_data.add_theta_xi("galaxy_density_xi", "lens0", "lens0", thetas, xis)
+
+    cov = np.diag(np.ones_like(xis) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, thetas
+
+
 @pytest.fixture(name="wl_factory")
 def make_wl_factory() -> wl.WeakLensingFactory:
     """Generate a WeakLensingFactory object."""
