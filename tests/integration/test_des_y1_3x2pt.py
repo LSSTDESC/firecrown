@@ -82,7 +82,7 @@ def test_des_y1_3x2pt_cobaya(cobaya_yaml_file: str):
             f"""
                 set -e
                 cd examples/des_y1_3x2pt
-                cobaya-run cobaya/{cobaya_yaml_file}
+                cobaya-run -f cobaya/{cobaya_yaml_file}
             """,
         ],
         capture_output=True,

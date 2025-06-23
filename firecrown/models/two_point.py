@@ -1,20 +1,80 @@
 """TwoPoint theory support."""
 
-import copy
-from typing import Sequence
+from typing import Sequence, Any
+from enum import Flag, auto
+
 import numpy as np
 from numpy import typing as npt
+
 import pyccl
 import sacc
 
-import firecrown.generators.two_point as gen
-from firecrown.generators.two_point import EllOrThetaConfig, ELL_FOR_XI_DEFAULTS
+from pydantic_core import core_schema
+from pydantic import GetCoreSchemaHandler
+
+from firecrown.generators.two_point import EllOrThetaConfig, LogLinearElls
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.metadata_types import TracerNames
 from firecrown.updatable import Updatable
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.utils import ClIntegrationOptions
+
+
+class ApplyInterpolationWhen(Flag):
+    """Flags controlling when to apply interpolation of multipole moments.
+
+    These flags specify the contexts in which interpolation should be used instead of
+    computing all multipoles exactly. When `NONE` is set, all multipoles are computed
+    directly. When any flag is set, only the multipoles defined in `LogLinearElls()` are
+    computed exactly; the others will be interpolated.
+
+    Note: For real-space correlation functions xi(theta), interpolation is handled
+    internally by CCL and does not depend on these flags.
+    """
+
+    NONE = 0
+    REAL = auto()
+    HARMONIC = auto()
+    HARMONIC_WINDOW = auto()
+    DEFAULT = REAL | HARMONIC_WINDOW
+    ALL = REAL | HARMONIC | HARMONIC_WINDOW
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        """Custom schema for Pydantic to support Flag (de)serialization from string."""
+
+        def validate(v: Any) -> "ApplyInterpolationWhen":
+            if isinstance(v, cls):
+                return v
+            if isinstance(v, str):
+                parts = v.strip().split("|")
+                result = cls.NONE
+                for part in parts:
+                    part = part.strip()
+                    try:
+                        result |= cls[part]
+                    except KeyError as exc:
+                        raise ValueError(f"Invalid flag name: '{part}'") from exc
+                return result
+            raise TypeError(f"Cannot parse ApplyInterpolationWhen from value: {v}")
+
+        def serialize(v: "ApplyInterpolationWhen") -> str:
+            if v == cls.NONE:
+                return "NONE"
+            return "|".join(
+                flag.name
+                for flag in cls
+                if flag & v and flag != cls.NONE and flag.name is not None
+            )
+
+        return core_schema.no_info_before_validator_function(
+            validate,
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
+            serialization=core_schema.plain_serializer_function_ser_schema(serialize),
+        )
 
 
 def determine_ccl_kind(sacc_data_type: str) -> str:
@@ -193,29 +253,28 @@ class TwoPointTheory(Updatable):
         *,
         sacc_data_type: str,
         sources: tuple[Source, Source],
-        ell_or_theta_min: float | int | None = None,
-        ell_or_theta_max: float | int | None = None,
-        ell_for_xi: None | dict[str, int] = None,
+        interp_ells_gen: LogLinearElls = LogLinearElls(),
         ell_or_theta: None | EllOrThetaConfig = None,
         tracers: None | TracerNames = None,
         int_options: ClIntegrationOptions | None = None,
+        apply_interp: ApplyInterpolationWhen = ApplyInterpolationWhen.DEFAULT,
     ) -> None:
         """Initialize a new TwoPointTheory object.
 
         :param sacc_data_type: the name of the SACC data type for this theory.
         :param sources: the sources for this theory; order matters
-        :param ell_or_theta_min: minimum ell for xi
-        :param ell_or_theta_max: maximum ell for xi
-        :param ell_for_xi: ell for xi configuration
+        :param interp_ells_gen: an object that will generate the values of
+               the mulitiple order (values of ell) at which we will calculate
+               "exact" C_ells, and which are then used to interpolate the values
+               of C_ells.
         :param ell_or_theta: ell or theta configuration
         """
         super().__init__()
         self.sacc_data_type = sacc_data_type
         self.ccl_kind = determine_ccl_kind(sacc_data_type)
         self.sources = sources
+        self.interp_ells_gen = interp_ells_gen
         self.ell_or_theta_config: None | EllOrThetaConfig = None
-        self.ell_or_theta_min = ell_or_theta_min
-        self.ell_or_theta_max = ell_or_theta_max
         self.window: None | npt.NDArray[np.float64] = None
         self.sacc_tracers = tracers
         self.ells: None | npt.NDArray[np.int64] = None
@@ -223,16 +282,11 @@ class TwoPointTheory(Updatable):
         self.mean_ells: None | npt.NDArray[np.float64] = None
         self.cells: dict[TracerNames, npt.NDArray[np.float64]] = {}
 
-        ell_for_xi_config = copy.deepcopy(ELL_FOR_XI_DEFAULTS)
-        if ell_for_xi is not None:
-            ell_for_xi_config.update(ell_for_xi)
-
-        self.ells_for_xi: npt.NDArray[np.int64] = gen.log_linear_ells(
-            **ell_for_xi_config
-        )
+        self.ells_for_xi: npt.NDArray[np.int64] = interp_ells_gen.generate()
 
         self.ell_or_theta_config = ell_or_theta
         self.int_options = int_options
+        self.apply_interp = apply_interp
 
     @property
     def source0(self) -> Source:
@@ -295,3 +349,10 @@ class TwoPointTheory(Updatable):
             scale1 = self.source1.get_scale()
 
         return tracers0, scale0, tracers1, scale1
+
+    def generate_ells_for_interpolation(self):
+        """Generate ells for interpolation."""
+        assert self.ells is not None
+        min_ell = int(self.ells[0])
+        max_ell = int(self.ells[-1])
+        return self.interp_ells_gen.generate(min_ell, max_ell)

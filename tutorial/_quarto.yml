@@ -3,8 +3,10 @@ project:
   render:
     - index.qmd
     - about.qmd
+    - introduction_to_firecrown.qmd
+    - development_example.qmd
     - intro_article.qmd
-    - theoretical_predictions_tutorial.qmd
+    - two_point_framework.qmd
     - inferred_zdist.qmd
     - inferred_zdist_generators.qmd
     - inferred_zdist_serialization.qmd
@@ -13,6 +15,7 @@ project:
     - systematics.qmd
 execute:
   freeze: auto  # re-render only when source changes
+
 website:
   title: "Firecrown Tutorial Documents"
   favicon: green-backed-firecrown.jpg
@@ -29,6 +32,8 @@ website:
               text: "Introduction"
         - section: "Tutorials"
           contents:
+            - href: two_point_framework.qmd
+              text: "Two-Point Framework"
             - href: inferred_zdist.qmd
               text: "Inferred Redshift Distributions"
             - href: inferred_zdist_generators.qmd
@@ -50,6 +55,8 @@ website:
 
 format:
   html:
+    filters:
+    - linkgen.lua
     theme: [serif, custom.scss]
     toc: true
     code-overflow: wrap
@@ -58,7 +65,7 @@ format:
 
 reference-location: margin
 citation-location: margin
-subtitle: "version 1.10.0"
+subtitle: "version 1.11.0a0"
 authors:
   - Marc Paterno
   - Sandro Vitenti

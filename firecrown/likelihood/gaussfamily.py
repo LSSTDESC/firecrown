@@ -286,7 +286,7 @@ class GaussFamily(Likelihood):
         self.data_vector = data_vector
         self.cov_index_map = {old_i: new_i for new_i, old_i in enumerate(indices)}
         self.cov = cov
-        self.cholesky = scipy.linalg.cholesky(self.cov, lower=True)
+        self.cholesky = scipy.linalg.cholesky(self.cov, lower=True).astype(np.float64)
         self.inv_cov = np.linalg.inv(cov).astype(np.float64)
 
     @final
@@ -316,7 +316,7 @@ class GaussFamily(Likelihood):
         indices: list[int] = []
         for stat in statistic_list:
             assert stat.sacc_indices is not None
-            temp = [self.cov_index_map[idx] for idx in stat.sacc_indices]
+            temp = [self.cov_index_map[int(idx)] for idx in stat.sacc_indices]
             indices += temp
         ixgrid = np.ix_(indices, indices)
 
@@ -418,6 +418,7 @@ class GaussFamily(Likelihood):
         assert len(data_vector) == len(theory_vector)
         residuals = np.array(data_vector - theory_vector, dtype=np.float64)
 
+        assert self.cholesky is not None
         x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
         chisq = np.dot(x, x)
         return chisq

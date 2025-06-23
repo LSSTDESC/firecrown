@@ -9,7 +9,7 @@
 project = "Firecrown"
 copyright = "2025, LSST DESC Firecrown Contributors"
 author = "LSST DESC Firecrown Contributors"
-release = "1.11.0a0"
+release = "1.12.0a0"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -38,6 +38,7 @@ autoapi_options = [
 mathjax_path = (
     "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 )
+viewcode_follow_imported_members = False
 
 
 # -- Options for HTML output -------------------------------------------------

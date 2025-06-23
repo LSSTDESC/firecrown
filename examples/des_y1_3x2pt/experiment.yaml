@@ -16,14 +16,16 @@ data_source:
 # are created using the factories defined in this file.
 two_point_factory:
   correlation_space: real
-  number_counts_factory:
-    global_systematics: []
-    per_bin_systematics:
-      - type: PhotoZShiftFactory
-  weak_lensing_factory:
-    global_systematics:
-      - alphag: 1
-        type: LinearAlignmentSystematicFactory
-    per_bin_systematics:
-      - type: MultiplicativeShearBiasFactory
-      - type: PhotoZShiftFactory
+  number_counts_factories:
+    - type_source: default
+      global_systematics: []
+      per_bin_systematics:
+        - type: PhotoZShiftFactory
+  weak_lensing_factories:
+    - type_source: default
+      global_systematics:
+        - alphag: 1
+          type: LinearAlignmentSystematicFactory
+      per_bin_systematics:
+        - type: MultiplicativeShearBiasFactory
+        - type: PhotoZShiftFactory

@@ -26,12 +26,12 @@ Here we will use the LSST SRD year 1 redshift distribution to generate the two-p
 
 ```{python}
 from firecrown.generators.inferred_galaxy_zdist import (
-    LSST_Y1_LENS_BIN_COLLECTION,
-    LSST_Y1_SOURCE_BIN_COLLECTION,
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )
 
-count_bins = LSST_Y1_LENS_BIN_COLLECTION.generate()
-shear_bins = LSST_Y1_SOURCE_BIN_COLLECTION.generate()
+count_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
 all_y1_bins = count_bins + shear_bins
 ```
 
@@ -93,7 +93,7 @@ wl_photoz = wl.PhotoZShiftFactory()
 wl_mult_bias = wl.MultiplicativeShearBiasFactory()
 
 # NumberCounts systematics -- global
-# As for Firecrown 1.11.0a0, we do not have any global systematics for number counts
+# As for Firecrown 1.12.0a0, we do not have any global systematics for number counts
 # NumberCounts systematics -- per-bin
 nc_photoz = nc.PhotoZShiftFactory()
 
@@ -140,8 +140,11 @@ Below is the code defining the factories for weak lensing and number counts syst
 ```{python}
 all_two_point_functions = tp.TwoPoint.from_metadata(
     metadata_seq=all_two_point_cells,
-    wl_factory=wlf,
-    nc_factory=ncf,
+    tp_factory=tp.TwoPointFactory(
+        correlation_space=tp.TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[wlf],
+        number_counts_factories=[ncf],
+    ),
 )
 ```
 

@@ -599,10 +599,10 @@ def test_two_point_real_wrong_shape(real_two_point_xy: TwoPointXY):
         TwoPointReal(XY=real_two_point_xy, thetas=theta)
 
 
-def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_factory):
+def test_two_point_from_metadata_cells(harmonic_two_point_xy, tp_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     cells = TwoPointHarmonic(ells=ells, XY=harmonic_two_point_xy)
-    two_point = TwoPoint.from_metadata([cells], wl_factory, nc_factory).pop()
+    two_point = TwoPoint.from_metadata([cells], tp_factory).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
@@ -618,10 +618,8 @@ def test_two_point_from_metadata_cells(harmonic_two_point_xy, wl_factory, nc_fac
     assert_array_equal(two_point.source1.tracer_args.dndz, harmonic_two_point_xy.y.dndz)
 
 
-def test_two_point_from_metadata_cwindow(two_point_cwindow, wl_factory, nc_factory):
-    two_point = TwoPoint.from_metadata(
-        [two_point_cwindow], wl_factory, nc_factory
-    ).pop()
+def test_two_point_from_metadata_cwindow(two_point_cwindow, tp_factory):
+    two_point = TwoPoint.from_metadata([two_point_cwindow], tp_factory).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
@@ -637,12 +635,12 @@ def test_two_point_from_metadata_cwindow(two_point_cwindow, wl_factory, nc_facto
     assert_array_equal(two_point.source1.tracer_args.dndz, two_point_cwindow.XY.y.dndz)
 
 
-def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_factory):
+def test_two_point_from_metadata_xi_theta(real_two_point_xy, tp_factory):
     theta = np.array(np.linspace(0, 100, 100))
     xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
         return
-    two_point = TwoPoint.from_metadata([xi_theta], wl_factory, nc_factory).pop()
+    two_point = TwoPoint.from_metadata([xi_theta], tp_factory).pop()
 
     assert two_point is not None
     assert isinstance(two_point, TwoPoint)
@@ -658,7 +656,7 @@ def test_two_point_from_metadata_xi_theta(real_two_point_xy, wl_factory, nc_fact
     assert_array_equal(two_point.source1.tracer_args.dndz, real_two_point_xy.y.dndz)
 
 
-def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
+def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     x = InferredGalaxyZDist(
         bin_name="bname1",
@@ -678,6 +676,6 @@ def test_two_point_from_metadata_cells_unsupported_type(wl_factory, nc_factory):
     cells = TwoPointHarmonic(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
-        match="Measurement .* not supported!",
+        match="Factory not found for measurement CMB.CONVERGENCE is not supported.",
     ):
-        TwoPoint.from_metadata([cells], wl_factory, nc_factory)
+        TwoPoint.from_metadata([cells], tp_factory)

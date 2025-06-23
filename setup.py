@@ -1,5 +1,4 @@
-"""Setup script for firecrown.
-"""
+"""Setup script for firecrown."""
 
 from setuptools import setup
 

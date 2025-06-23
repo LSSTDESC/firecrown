@@ -491,7 +491,10 @@ def test_ccl_factory_tofrom_yaml_all_options(
 def test_ccl_factory_invalid_amplitude_parameter() -> None:
     with pytest.raises(
         ValueError,
-        match=".*Invalid value for PoweSpecAmplitudeParameter: Im not a valid value.*",
+        match=(
+            "Value error, 'Im not a valid value' is not a valid "
+            "PoweSpecAmplitudeParameter"
+        ),
     ):
         CCLFactory(amplitude_parameter="Im not a valid value")
 
@@ -507,7 +510,7 @@ def test_ccl_factory_invalid_mass_splits() -> None:
 def test_ccl_factory_invalid_creation_mode() -> None:
     with pytest.raises(
         ValueError,
-        match=".*Invalid value for CCLCreationMode: Im not a valid value.*",
+        match="Value error, 'Im not a valid value' is not a valid CCLCreationMode",
     ):
         CCLFactory(creation_mode="Im not a valid value")
 
@@ -612,5 +615,40 @@ def test_mu_sigma_create_not_updated() -> None:
 
     assert mu_sigma_model is not None
 
-    with pytest.raises(ValueError, match="Parameters have not been updated yet."):
+    with pytest.raises(ValueError, match=r"Parameters have not been updated yet\."):
         mu_sigma_model.create()
+
+
+def test_bad_configuration() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"To sample over the halo model, you must include camb_extra_parameters\."
+        ),
+    ):
+        CCLFactory(use_camb_hm_sampling=True, camb_extra_params=None)
+
+
+def test_hm_sampling_configuration() -> None:
+    factory = CCLFactory(use_camb_hm_sampling=True, camb_extra_params=CAMBExtraParams())
+    assert factory.camb_extra_params is not None
+    assert (
+        factory.camb_extra_params.HMCode_A_baryon is None  # pylint: disable=no-member
+    )
+
+    assert (
+        factory.camb_extra_params.HMCode_eta_baryon is None  # pylint: disable=no-member
+    )
+    assert factory.HMCode_logT_AGN is None  # pylint: disable=no-member
+
+    # Update the factory to make it have default values
+    params = get_default_params_map(factory)
+    factory.update(params)
+    assert (
+        factory.camb_extra_params.HMCode_A_baryon == 3.13  # pylint: disable=no-member
+    )
+    assert (
+        factory.camb_extra_params.HMCode_eta_baryon  # pylint: disable=no-member
+        == 0.603
+    )
+    assert factory.camb_extra_params.HMCode_logT_AGN == 7.8  # pylint: disable=no-member
