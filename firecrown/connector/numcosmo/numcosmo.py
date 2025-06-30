@@ -891,8 +891,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
                 calculator_args=self._nc_mapping.calculate_ccl_args(mset)
             )
         else:
-            assert self._nc_mapping is not None
-            self._nc_mapping.p_ml.set_params_from_numcosmo(mset)
+            assert self._nc_mapping is None
             params_map = create_params_map(self._model_list, mset, None)
             self.likelihood.update(params_map)
             self.tools.update(params_map)
