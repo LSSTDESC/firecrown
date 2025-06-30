@@ -43,6 +43,24 @@ def fixture_factory_const_gauss():
     )
 
 
+def test_wrong_use_of_power_spectra_with_ccl_not_in_default_mode():
+    map_cosmo = MappingNumCosmo(
+        dist=Nc.Distance.new(6.0),
+        p_ml=Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()),
+        p_mnl=Nc.PowspecMNLHaloFit.new(
+            Nc.PowspecMLTransfer.new(Nc.TransferFuncEH.new()), 3.0, 1.0e-4
+        ),
+    )
+    build_parameters = NamedParameters({"projection": "harmonic"})
+    with pytest.raises(RuntimeError):
+        NumCosmoFactory(
+            "tests/likelihood/gauss_family/lkscript_two_point_pure_ccl.py",
+            build_parameters,
+            map_cosmo,
+            model_list=["non_existing_model"],
+        )
+
+
 def test_numcosmo_connector_plain(factory_plain):
     """Test the NumCosmo connector."""
 

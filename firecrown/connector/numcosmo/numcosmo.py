@@ -677,6 +677,17 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         setter=_set_nc_mapping,
     )
 
+    def _will_calculate_power_spectra(self) -> bool:
+        """Return whether the likelihood will calculate power spectra.
+
+        :return: whether the likelihood will calculate power spectra
+        """
+        if self._nc_mapping is None:
+            return False
+        return (self._nc_mapping.p_ml is not None) or (
+            self._nc_mapping.p_mnl is not None
+        )
+
     def _configure_object(self) -> None:
         """Configure the object."""
         assert self.likelihood is not None
@@ -697,6 +708,16 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         self.peek_mean().set_array(  # pylint: disable-msg=no-member
             data_vector.ravel().tolist()
         )
+
+        if (
+            (self.tools.ccl_factory.creation_mode != CCLCreationMode.DEFAULT)
+            and self._will_calculate_power_spectra()
+            and (not self.tools.ccl_factory.allow_multiple_camb_instances)
+        ):
+            raise RuntimeError(
+                "If Firecrown is using CCL to calculate the cosmology, then "
+                "NumCosmo should not be configured to calculate power spectra."
+            )
 
         self.set_init(True)
 
@@ -872,6 +893,7 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
                 calculator_args=self._nc_mapping.calculate_ccl_args(mset)
             )
         else:
+            assert self._nc_mapping is None
             params_map = create_params_map(self._model_list, mset, None)
             self.likelihood.update(params_map)
             self.tools.update(params_map)
