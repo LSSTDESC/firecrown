@@ -271,8 +271,6 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         c_d *= ((1.0 + z) / (1.0 + self.ia_zpiv_d)) ** self.ia_alphaz_d
         c_2 *= ((1.0 + z) / (1.0 + self.ia_zpiv_2)) ** self.ia_alphaz_2
 
-
-
         return replace(
             tracer_arg,
             has_pt=True,
