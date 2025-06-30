@@ -710,8 +710,10 @@ class NumCosmoGaussCov(Ncm.DataGaussCov):
         )
 
         if (
-            self.tools.ccl_factory.creation_mode != CCLCreationMode.DEFAULT
-        ) and self._will_calculate_power_spectra():
+            (self.tools.ccl_factory.creation_mode != CCLCreationMode.DEFAULT)
+            and self._will_calculate_power_spectra()
+            and (not self.tools.ccl_factory.allow_multiple_camb_instances)
+        ):
             raise RuntimeError(
                 "If Firecrown is using CCL to calculate the cosmology, then "
                 "NumCosmo should not be configured to calculate power spectra."

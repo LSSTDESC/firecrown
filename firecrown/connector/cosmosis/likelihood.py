@@ -104,7 +104,9 @@ class FirecrownLikelihood:
         # The DEFAULT mode is the only one that uses the CAMB module to calculate
         # the cosmology.
         if self.tools.ccl_factory.creation_mode != CCLCreationMode.DEFAULT:
-            if config.has_section("camb"):
+            if config.has_section("camb") and (
+                not self.tools.ccl_factory.allow_multiple_camb_instances
+            ):
                 raise RuntimeError(
                     "If Firecrown is using CCL to calculate the cosmology, then "
                     "CosmoSIS should not be configured to use CAMB to "

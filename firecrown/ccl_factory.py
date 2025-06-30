@@ -309,6 +309,7 @@ class CCLFactory(Updatable, BaseModel):
         CCLCreationMode.DEFAULT
     )
     use_camb_hm_sampling: Annotated[bool, Field(frozen=True)] = False
+    allow_multiple_camb_instances: Annotated[bool, Field(frozen=True)] = False
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
