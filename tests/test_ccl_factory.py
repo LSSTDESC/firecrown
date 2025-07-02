@@ -626,11 +626,31 @@ def test_bad_configuration() -> None:
             r"To sample over the halo model, you must include camb_extra_parameters\."
         ),
     ):
-        CCLFactory(use_camb_hm_sampling=True, camb_extra_params=None)
+        CCLFactory(
+            creation_mode=CCLCreationMode.PURE_CCL_MODE,
+            use_camb_hm_sampling=True,
+            camb_extra_params=None,
+        )
+
+
+def test_hm_sampling_misconfiguration() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Cannot use CCL CAMB halo model sampling when using the "
+            "default CCL creation mode, "
+            "which uses CAMB from the sampling framework."
+        ),
+    ):
+        _ = CCLFactory(use_camb_hm_sampling=True, camb_extra_params=CAMBExtraParams())
 
 
 def test_hm_sampling_configuration() -> None:
-    factory = CCLFactory(use_camb_hm_sampling=True, camb_extra_params=CAMBExtraParams())
+    factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        use_camb_hm_sampling=True,
+        camb_extra_params=CAMBExtraParams(),
+    )
     assert factory.camb_extra_params is not None
     assert (
         factory.camb_extra_params.HMCode_A_baryon is None  # pylint: disable=no-member

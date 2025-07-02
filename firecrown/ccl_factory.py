@@ -309,6 +309,7 @@ class CCLFactory(Updatable, BaseModel):
         CCLCreationMode.DEFAULT
     )
     use_camb_hm_sampling: Annotated[bool, Field(frozen=True)] = False
+    allow_multiple_camb_instances: Annotated[bool, Field(frozen=True)] = False
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
@@ -364,6 +365,13 @@ class CCLFactory(Updatable, BaseModel):
 
         self._mu_sigma_model: None | MuSigmaModel = None
         match self.creation_mode:
+            case CCLCreationMode.DEFAULT:
+                if self.use_camb_hm_sampling:
+                    raise ValueError(
+                        "Cannot use CCL CAMB halo model sampling when using the "
+                        "default CCL creation mode, "
+                        "which uses CAMB from the sampling framework."
+                    )
             case CCLCreationMode.MU_SIGMA_ISITGR:
                 self._mu_sigma_model = MuSigmaModel()
 

@@ -10,8 +10,13 @@ import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc.windows
-from pydantic import BaseModel, ConfigDict, BeforeValidator, PrivateAttr, Field
-
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    BeforeValidator,
+    PrivateAttr,
+    Field,
+)
 
 import firecrown.generators.two_point as gen
 from firecrown.likelihood.source import Source, Tracer
@@ -40,7 +45,11 @@ from firecrown.metadata_functions import (
 from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
 
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.two_point import TwoPointTheory, calculate_pk
+from firecrown.models.two_point import (
+    TwoPointTheory,
+    calculate_pk,
+    ApplyInterpolationWhen,
+)
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import (
     cached_angular_cl,
@@ -140,13 +149,6 @@ class TwoPoint(Statistic):
            (possibly geometric) midpoint of the bin.
          - binning : str, optional - Pass 'log' to get logarithmic spaced bins and 'lin'
            to get linearly spaced bins. Default is 'log'.
-
-    ell_or_theta_min : float, optional
-        The minimum ell or theta value to keep. This minimum is applied after
-        the ell or theta values are read and/or generated.
-    ell_or_theta_max : float, optional
-        The maximum ell or theta value to keep. This maximum is applied after
-        the ell or theta values are read and/or generated.
     ell_for_xi : dict, optional
         A dictionary of options for making the ell values at which to compute
         Cls for use in real-space integrations. The possible keys are:
@@ -226,23 +228,21 @@ class TwoPoint(Statistic):
         source0: Source,
         source1: Source,
         *,
-        ell_for_xi: None | dict[str, int] = None,
+        interp_ells_gen: gen.LogLinearElls = gen.LogLinearElls(),
         ell_or_theta: None | gen.EllOrThetaConfig = None,
-        ell_or_theta_min: None | float | int = None,
-        ell_or_theta_max: None | float | int = None,
         tracers: None | TracerNames = None,
         int_options: ClIntegrationOptions | None = None,
+        apply_interp: ApplyInterpolationWhen = ApplyInterpolationWhen.DEFAULT,
     ) -> None:
         super().__init__()
         self.theory = TwoPointTheory(
             sacc_data_type=sacc_data_type,
             sources=(source0, source1),
-            ell_or_theta_min=ell_or_theta_min,
-            ell_or_theta_max=ell_or_theta_max,
-            ell_for_xi=ell_for_xi,
+            interp_ells_gen=interp_ells_gen,
             ell_or_theta=ell_or_theta,
             tracers=tracers,
             int_options=int_options,
+            apply_interp=apply_interp,
         )
         self._data: None | DataVector = None
 
@@ -446,15 +446,6 @@ class TwoPoint(Statistic):
                 )
             thetas, xis = gen.generate_reals(self.theory.ell_or_theta_config)
             sacc_indices = None
-        assert isinstance(self.theory.ell_or_theta_min, (float, type(None)))
-        assert isinstance(self.theory.ell_or_theta_max, (float, type(None)))
-        thetas, xis, sacc_indices = gen.apply_theta_min_max(
-            thetas,
-            xis,
-            sacc_indices,
-            self.theory.ell_or_theta_min,
-            self.theory.ell_or_theta_max,
-        )
         self.theory.thetas = thetas
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(xis)
@@ -466,21 +457,8 @@ class TwoPoint(Statistic):
         Cells, ells, sacc_indices, window = self.read_harmonic_spectrum_data(
             ells_cells_indices, sacc_data
         )
-        assert isinstance(self.theory.ell_or_theta_min, (int, type(None)))
-        assert isinstance(self.theory.ell_or_theta_max, (int, type(None)))
 
-        ells, Cells, sacc_indices = gen.apply_ells_min_max(
-            ells,
-            Cells,
-            sacc_indices,
-            self.theory.ell_or_theta_min,
-            self.theory.ell_or_theta_max,
-        )
         self.theory.ells = ells
-        if self.theory.ell_or_theta_min is not None:
-            assert np.min(self.theory.ells) >= self.theory.ell_or_theta_min
-        if self.theory.ell_or_theta_max is not None:
-            assert np.max(self.theory.ells) <= self.theory.ell_or_theta_max
         self.theory.window = window
         self.sacc_indices = sacc_indices
         self._data = DataVector.create(Cells)
@@ -570,13 +548,23 @@ class TwoPoint(Statistic):
 
         tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
 
+        # Compute the angular power spectrum (C_ell) at the multipoles specified in
+        # ells_for_xi. CCL will later interpolate between these values as needed.
+        if self.theory.apply_interp & ApplyInterpolationWhen.REAL:
+            ells = self.theory.ells_for_xi
+        else:
+            ells = self.theory.interp_ells_gen.generate_all()
+
         cells_for_xi = self.compute_cells(
-            self.theory.ells_for_xi, scale0, scale1, tools, tracers0, tracers1
+            ells, scale0, scale1, tools, tracers0, tracers1, interpolate=False
         )
 
+        # Compute the real-space correlation function xi(theta). CCL uses the input
+        # ells_for_xi and corresponding cells_for_xi, interpolates as needed, and
+        # performs the Hankel transform to obtain xi at the specified angles.
         theory_vector = pyccl.correlation(
             tools.get_ccl_cosmology(),
-            ell=self.theory.ells_for_xi,
+            ell=ells,
             C_ell=cells_for_xi,
             theta=self.theory.thetas / 60,
             type=self.theory.ccl_kind,
@@ -597,25 +585,22 @@ class TwoPoint(Statistic):
 
         tracers0, scale0, tracers1, scale1 = self.theory.get_tracers_and_scales(tools)
         if self.theory.window is not None:
-            ells_for_interpolation = gen.calculate_ells_for_interpolation(
-                self.theory.ells[0], self.theory.ells[-1]
-            )
-
-            cells_interpolated = self.compute_cells_interpolated(
+            # We are using a window function. This means we will have effective
+            # ells, and effective Cells at those effective ells.
+            cells = self.compute_cells(
                 self.theory.ells,
-                ells_for_interpolation,
                 scale0,
                 scale1,
                 tools,
                 tracers0,
                 tracers1,
+                interpolate=ApplyInterpolationWhen.HARMONIC_WINDOW
+                in self.theory.apply_interp,
             )
 
             # Here we left multiply the computed Cl's by the window function to get the
             # final Cl's.
-            theory_vector = np.einsum(
-                "lb, l -> b", self.theory.window, cells_interpolated
-            )
+            theory_vector = np.einsum("lb, l -> b", self.theory.window, cells)
             # We also compute the mean ell value associated with each bin.
             self.theory.mean_ells = np.einsum(
                 "lb, l -> b", self.theory.window, self.theory.ells
@@ -633,6 +618,7 @@ class TwoPoint(Statistic):
             tools,
             tracers0,
             tracers1,
+            interpolate=ApplyInterpolationWhen.HARMONIC in self.theory.apply_interp,
         )
 
         return TheoryVector.create(theory_vector)
@@ -644,7 +630,7 @@ class TwoPoint(Statistic):
 
         return self.compute_theory_vector_real_space(tools)
 
-    def compute_cells(
+    def _compute_cells_all_orders(
         self,
         ells: npt.NDArray[np.int64],
         scale0: float,
@@ -679,7 +665,7 @@ class TwoPoint(Statistic):
         theory_vector = self.theory.cells[mdt.TRACER_NAMES_TOTAL]
         return theory_vector
 
-    def compute_cells_interpolated(
+    def _compute_cells_interpolated(
         self,
         ells: npt.NDArray[np.int64],
         ells_for_interpolation: npt.NDArray[np.int64],
@@ -718,6 +704,45 @@ class TwoPoint(Statistic):
             ells[ells_larger_than_1]
         )
         return cell_interpolated
+
+    def compute_cells(
+        self,
+        ells: npt.NDArray[np.int64],
+        scale0: float,
+        scale1: float,
+        tools: ModelingTools,
+        tracers0: Sequence[Tracer],
+        tracers1: Sequence[Tracer],
+        interpolate: bool = False,
+    ) -> npt.NDArray[np.float64]:
+        """Compute the power spectrum for the given ells and tracers.
+
+        This method computes the power spectrum for the given ells and tracers. If
+        interpolate is True, it will interpolate the power spectrum to the ells
+        provided.
+        """
+        if interpolate:
+            # ells_for_interpolation are true ells (and thus integral).
+            # These are the values at which we will have CCL calculate the "exact"
+            # C_ells: these form our interpolation table.
+            ells_for_interpolation = self.theory.generate_ells_for_interpolation()
+
+            # The call below will calculate the "exact" C_ells (using CCL). Using these
+            # "exact" C_ells it will then interpolate to determine C_ells at the
+            # required ell values.
+            return self._compute_cells_interpolated(
+                ells,
+                ells_for_interpolation,
+                scale0,
+                scale1,
+                tools,
+                tracers0,
+                tracers1,
+            )
+        # No interpolation, all multipoles are computed exactly
+        return self._compute_cells_all_orders(
+            ells, scale0, scale1, tools, tracers0, tracers1
+        )
 
 
 def read_reals(
