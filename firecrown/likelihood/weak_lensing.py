@@ -24,6 +24,7 @@ from firecrown.likelihood.source import (
     SourceGalaxySystematic,
     PhotoZShiftFactory,
     PhotoZShiftandStretchFactory,
+    SourceGalaxySelectFieldFactory,
     Tracer,
 )
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
@@ -516,7 +517,8 @@ WeakLensingSystematicFactory = Annotated[
     | PhotoZShiftandStretchFactory
     | MultiplicativeShearBiasFactory
     | LinearAlignmentSystematicFactory
-    | TattAlignmentSystematicFactory,
+    | TattAlignmentSystematicFactory
+    | SourceGalaxySelectFieldFactory,
     Field(discriminator="type", union_mode="left_to_right"),
 ]
 

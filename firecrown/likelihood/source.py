@@ -476,6 +476,27 @@ class SourceGalaxySelectField(
         return replace(tracer_arg, field=self.field)
 
 
+class SourceGalaxySelectFieldFactory(BaseModel):
+    """Factory class for SourceGalaxySelectField objects."""
+
+    model_config = ConfigDict(extra="forbid", frozen=True)
+
+    field_name: str
+
+    type: Annotated[
+        Literal["SourceGalaxySelectFieldFactory"],
+        Field(description="The type of the systematic."),
+    ] = "SourceGalaxySelectFieldFactory"
+
+    def create(self, bin_name: str) -> SourceGalaxySelectField:
+        """Create a SourceGalaxySelectField object with the given field name."""
+        raise ValueError("SourceGalaxySelectField cannot be per-bin.")
+
+    def create_global(self) -> SourceGalaxySelectField:
+        """Create a PhotoZShift object with the given field name."""
+        return SourceGalaxySelectField(field=self.field_name)
+
+
 class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
     """Source class for galaxy based sources."""
 

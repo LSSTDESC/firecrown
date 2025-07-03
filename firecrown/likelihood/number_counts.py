@@ -22,6 +22,7 @@ from firecrown.likelihood.source import (
     SourceGalaxySystematic,
     PhotoZShiftFactory,
     PhotoZShiftandStretchFactory,
+    SourceGalaxySelectFieldFactory,
     Tracer,
 )
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
@@ -613,7 +614,8 @@ NumberCountsSystematicFactory = Annotated[
     | LinearBiasSystematicFactory
     | PTNonLinearBiasSystematicFactory
     | MagnificationBiasSystematicFactory
-    | ConstantMagnificationBiasSystematicFactory,
+    | ConstantMagnificationBiasSystematicFactory
+    | SourceGalaxySelectFieldFactory,
     Field(discriminator="type", union_mode="left_to_right"),
 ]
 
