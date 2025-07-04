@@ -1,6 +1,6 @@
 """Test that the scale cuts with bandpower windows work correctly."""
 
-import tempfile
+from pathlib import Path
 import pytest
 import numpy as np
 
@@ -26,13 +26,9 @@ from firecrown.updatable import get_default_params_map
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 
-@pytest.fixture(name="minimal_3x2pt_sacc")
-def fixture_minimal_3x2pt_sacc():
-    """Generate SACC data with window functions.
-    At the moment, this only adds cosmic shear data."""
-    sacc_data = sacc.Sacc()
-
-    z = (np.linspace(0, 4.0, 256) + 0.05).astype(np.float64)
+@pytest.fixture(name="window_function_data")
+def fixture_window_function():
+    """Generate window function data."""
     n_ell_bin = 5
     ell_bin_edges = np.geomspace(10, 500, n_ell_bin + 1)
     ell_bin_centers = np.sqrt(ell_bin_edges[:-1] * ell_bin_edges[1:])
@@ -48,8 +44,18 @@ def fixture_minimal_3x2pt_sacc():
 
     window_function = window_function / window_function.sum(axis=0, keepdims=True)
 
-    n_source = 2
-    src_bins_centers = np.linspace(0.25, 0.75, n_source)
+    return window_function, ell_window, ell_bin_centers
+
+
+@pytest.fixture(name="minimal_3x2pt_sacc")
+def fixture_minimal_3x2pt_sacc(window_function_data):
+    """Generate SACC data with window functions.
+    At the moment, this only adds cosmic shear data."""
+    sacc_data = sacc.Sacc()
+
+    z = (np.linspace(0, 4.0, 256) + 0.05).astype(np.float64)
+
+    src_bins_centers = np.linspace(0.25, 0.75, 2)
 
     ccl_tracers = {}
     ccl_cell = {}
@@ -64,23 +70,23 @@ def fixture_minimal_3x2pt_sacc():
         )
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        window = sacc.BandpowerWindow(ell_window, window_function)
+        window = sacc.BandpowerWindow(window_function_data[1], window_function_data[0])
         Cell = ccl.angular_cl(
             cosmo=cosmo,
             tracer1=ccl_tracers[f"src{i}"],
             tracer2=ccl_tracers[f"src{j}"],
-            ell=ell_window,
+            ell=window_function_data[1],
         )
-        Cell_binned = window_function.T @ Cell
+        Cell_binned = window_function_data[0].T @ Cell
         sacc_data.add_ell_cl(
             data_type="galaxy_shear_cl_ee",
             tracer1=f"src{i}",
             tracer2=f"src{j}",
-            ell=ell_bin_centers,
+            ell=window_function_data[2],
             x=Cell_binned,
             window=window,
         )
-        ccl_cell[f"src{i}-src{j}"] = (Cell_binned, ell_bin_centers)
+        ccl_cell[f"src{i}-src{j}"] = (Cell_binned, window_function_data[2])
 
     sacc_data.add_covariance(np.identity(len(sacc_data)) * 0.01)
 
@@ -96,7 +102,7 @@ weak_lensing_factories:
 """
 
 
-def test_scale_cuts_with_bandpower_window(minimal_3x2pt_sacc):
+def test_scale_cuts_with_bandpower_window(minimal_3x2pt_sacc, tmp_path: Path):
     """Test that the scale cuts with bandpower windows work correctly."""
     sacc_data, ccl_cell, cosmo = minimal_3x2pt_sacc
 
@@ -104,32 +110,30 @@ def test_scale_cuts_with_bandpower_window(minimal_3x2pt_sacc):
 
     tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
-    with tempfile.NamedTemporaryFile(
-        suffix=".sacc", delete=True, delete_on_close=False
-    ) as tmp_file:
-        sacc_data.save_fits(tmp_file.name, overwrite=True)
+    tmp_file_sacc = tmp_path / "sacc_data.fits"
+    sacc_data.save_fits(tmp_file_sacc.as_posix(), overwrite=True)
 
-        two_point_experiment = TwoPointExperiment(
-            two_point_factory=tp_factory,
-            data_source=DataSourceSacc(
-                sacc_data_file=tmp_file.name,
-                filters=TwoPointBinFilterCollection(
-                    require_filter_for_all=False,
-                    allow_empty=True,
-                    filters=[
-                        TwoPointBinFilter.from_args(
-                            name1=cut[0],
-                            name2=cut[1],
-                            measurement1=Galaxies.SHEAR_E,
-                            measurement2=Galaxies.SHEAR_E,
-                            lower=0.0,
-                            upper=cut[2],
-                        )
-                    ],
-                ),
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=tp_factory,
+        data_source=DataSourceSacc(
+            sacc_data_file=tmp_file_sacc.as_posix(),
+            filters=TwoPointBinFilterCollection(
+                require_filter_for_all=False,
+                allow_empty=True,
+                filters=[
+                    TwoPointBinFilter.from_args(
+                        name1=cut[0],
+                        name2=cut[1],
+                        measurement1=Galaxies.SHEAR_E,
+                        measurement2=Galaxies.SHEAR_E,
+                        lower=0.0,
+                        upper=cut[2],
+                    )
+                ],
             ),
-        )
-        likelihood = two_point_experiment.make_likelihood()
+        ),
+    )
+    likelihood = two_point_experiment.make_likelihood()
 
     tools = ModelingTools(
         ccl_factory=two_point_experiment.ccl_factory,
