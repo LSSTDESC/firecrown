@@ -1,17 +1,22 @@
+"""Test that the scale cuts with bandpower windows work correctly."""
+
 import tempfile
+import pytest
 import numpy as np
 
 import pyccl as ccl
 
 import sacc
 
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.factories import (
     DataSourceSacc,
     TwoPointExperiment,
     TwoPointFactory,
 )
 from firecrown.data_functions import (
-    TwoPointBinFilterCollection, TwoPointBinFilter,
+    TwoPointBinFilterCollection,
+    TwoPointBinFilter,
 )
 from firecrown.metadata_types import Galaxies
 from firecrown.parameters import ParamsMap
@@ -21,7 +26,8 @@ from firecrown.updatable import get_default_params_map
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 
-def generate_minimal_3x2pt_sacc():
+@pytest.fixture(name="minimal_3x2pt_sacc")
+def fixture_minimal_3x2pt_sacc():
     """Generate SACC data with window functions.
     At the moment, this only adds cosmic shear data."""
     sacc_data = sacc.Sacc()
@@ -29,15 +35,17 @@ def generate_minimal_3x2pt_sacc():
     z = (np.linspace(0, 4.0, 256) + 0.05).astype(np.float64)
     n_ell_bin = 5
     ell_bin_edges = np.geomspace(10, 500, n_ell_bin + 1)
-    ell_bin_centers = np.sqrt(
-        ell_bin_edges[:-1] * ell_bin_edges[1:]
-    )
+    ell_bin_centers = np.sqrt(ell_bin_edges[:-1] * ell_bin_edges[1:])
     ell_bin_widths = np.diff(ell_bin_edges)
 
     ell_window = np.arange(800)
     window_function = np.zeros((ell_window.shape[0], n_ell_bin))
     for i, (mu_ell, sigma_ell) in enumerate(zip(ell_bin_centers, ell_bin_widths)):
-        window_function[:, i] = np.exp(-0.5 * (ell_window - mu_ell)**2 / (sigma_ell)**2)
+        w_col = np.exp(-0.5 * (ell_window - mu_ell) ** 2 / (sigma_ell) ** 2)
+        threshold = np.max(w_col) * (1 - np.finfo(float).eps)
+        w_col[w_col < threshold] = 0.0
+        window_function[:, i] = w_col
+
     window_function = window_function / window_function.sum(axis=0, keepdims=True)
 
     n_source = 2
@@ -61,7 +69,7 @@ def generate_minimal_3x2pt_sacc():
             cosmo=cosmo,
             tracer1=ccl_tracers[f"src{i}"],
             tracer2=ccl_tracers[f"src{j}"],
-            ell=ell_window
+            ell=ell_window,
         )
         Cell_binned = window_function.T @ Cell
         sacc_data.add_ell_cl(
@@ -88,17 +96,17 @@ weak_lensing_factories:
 """
 
 
-def test_scale_cuts_with_bandpower_window():
+def test_scale_cuts_with_bandpower_window(minimal_3x2pt_sacc):
     """Test that the scale cuts with bandpower windows work correctly."""
+    sacc_data, ccl_cell, cosmo = minimal_3x2pt_sacc
 
     cut = ("src0", "src0", 100)
-
-    sacc_data, ccl_cell, cosmo = generate_minimal_3x2pt_sacc()
 
     tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
     with tempfile.NamedTemporaryFile(
-            suffix=".sacc", delete=True, delete_on_close=False) as tmp_file:
+        suffix=".sacc", delete=True, delete_on_close=False
+    ) as tmp_file:
         sacc_data.save_fits(tmp_file.name, overwrite=True)
 
         two_point_experiment = TwoPointExperiment(
@@ -117,7 +125,7 @@ def test_scale_cuts_with_bandpower_window():
                             lower=0.0,
                             upper=cut[2],
                         )
-                    ]
+                    ],
                 ),
             ),
         )
@@ -128,9 +136,7 @@ def test_scale_cuts_with_bandpower_window():
     )
     params = get_default_params_map(tools, likelihood)
     params.update(
-        ParamsMap(
-            {k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)}
-        )
+        ParamsMap({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
     )
     likelihood.update(params)
     tools.update(params)
@@ -138,12 +144,15 @@ def test_scale_cuts_with_bandpower_window():
 
     log_like = likelihood.compute_loglike(tools)
     assert np.isclose(log_like, 0.0)
+    assert isinstance(likelihood, ConstGaussian)
 
     assert np.allclose(likelihood.get_data_vector(), likelihood.get_theory_vector())
 
     ccl_cell_cut_data_vector = np.concatenate(
-        [cell if name != f"{cut[0]}-{cut[1]}" else cell[ell < cut[2]]
-         for name, (cell, ell) in ccl_cell.items()]
+        [
+            cell if name != f"{cut[0]}-{cut[1]}" else cell[ell < cut[2]]
+            for name, (cell, ell) in ccl_cell.items()
+        ]
     )
     # Check that the shapes match (i.e. that the correct data points are selected)
     assert ccl_cell_cut_data_vector.shape == likelihood.get_theory_vector().shape
