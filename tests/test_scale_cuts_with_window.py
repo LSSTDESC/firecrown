@@ -38,7 +38,7 @@ def fixture_window_function():
     window_function = np.zeros((ell_window.shape[0], n_ell_bin))
     for i, (mu_ell, sigma_ell) in enumerate(zip(ell_bin_centers, ell_bin_widths)):
         w_col = np.exp(-0.5 * (ell_window - mu_ell) ** 2 / (sigma_ell) ** 2)
-        threshold = np.max(w_col) * (1 - np.finfo(float).eps)
+        threshold = np.max(w_col) * np.finfo(float).eps
         w_col[w_col < threshold] = 0.0
         window_function[:, i] = w_col
 
