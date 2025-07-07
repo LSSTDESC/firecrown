@@ -554,6 +554,7 @@ class TwoPointHarmonic(YAMLSerializable):
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
     window: None | npt.NDArray[np.float64] = None
+    window_ells: None | npt.NDArray[np.int64] = None
 
     def __post_init__(self) -> None:
         """Validate the TwoPointHarmonic data.
@@ -564,13 +565,7 @@ class TwoPointHarmonic(YAMLSerializable):
         if len(self.ells.shape) != 1:
             raise ValueError("Ells should be a 1D array.")
 
-        if self.window is not None:
-            if not isinstance(self.window, np.ndarray):
-                raise ValueError("window should be a ndarray.")
-            if len(self.window.shape) != 2:
-                raise ValueError("window should be a 2D array.")
-            if self.window.shape[0] != len(self.ells):
-                raise ValueError("window should have the same number of rows as ells.")
+        self._check_window_consistency()
 
         if not measurement_supports_harmonic(
             self.XY.x_measurement
@@ -579,6 +574,28 @@ class TwoPointHarmonic(YAMLSerializable):
                 f"Measurements {self.XY.x_measurement} and "
                 f"{self.XY.y_measurement} must support harmonic-space calculations."
             )
+
+    def _check_window_consistency(self) -> None:
+        """Make sure the window is consistent with the ells."""
+        if self.window is not None:
+            if not isinstance(self.window, np.ndarray):
+                raise ValueError("window should be a ndarray.")
+            if len(self.window.shape) != 2:
+                raise ValueError("window should be a 2D array.")
+            if self.window.shape[0] != len(self.ells):
+                raise ValueError("window should have the same number of rows as ells.")
+            if self.window_ells is None:
+                raise ValueError("window_ells must be set if window is set.")
+            if len(self.window_ells.shape) != 1:
+                raise ValueError("window_ells should be a 1D array.")
+            if self.window_ells.shape[0] != self.window.shape[1]:
+                raise ValueError(
+                    "window_ells should have the same number of "
+                    "elements as the columns of window."
+                )
+        else:
+            if self.window_ells is not None:
+                raise ValueError("window_ells must be None if window is None.")
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointHarmonic objects."""

@@ -27,7 +27,7 @@ from firecrown.metadata_types import (
 )
 from firecrown.metadata_functions import (
     extract_all_tracers_inferred_galaxy_zdists,
-    extract_window_function,
+    maybe_enforce_window,
     extract_all_harmonic_metadata_indices,
     extract_all_real_metadata_indices,
     make_two_point_xy,
@@ -73,7 +73,7 @@ def extract_all_harmonic_data(
             data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
         )
 
-        ells, weights = maybe_enforce_window(ells, indices, sacc_data)
+        ells, weights, window_ells = maybe_enforce_window(ells, indices, sacc_data)
 
         result.append(
             TwoPointMeasurement(
@@ -85,28 +85,13 @@ def extract_all_harmonic_data(
                         inferred_galaxy_zdists_dict, cell_index["tracer_names"], dt
                     ),
                     window=weights,
+                    window_ells=window_ells,
                     ells=ells,
                 ),
             ),
         )
 
     return result
-
-
-def maybe_enforce_window(
-    ells: npt.NDArray[np.int64], indices: npt.NDArray[np.int64], sacc_data: sacc.Sacc
-) -> tuple[npt.NDArray[np.int64], None | npt.NDArray[np.float64]]:
-    """Possibly enforce a window function on the given ells.
-
-    :param ells: The original ell values.
-    :param indices: The indices of the data points in the SACC object.
-    :param sacc_data: The SACC object containing the data.
-    :return: A tuple containing the possibly replaced ells and the window weights.
-    """
-    replacement_ells, weights = extract_window_function(sacc_data, indices)
-    if replacement_ells is not None:
-        ells = replacement_ells
-    return ells, weights
 
 
 # Extracting the two-point function metadata and data from a sacc file
