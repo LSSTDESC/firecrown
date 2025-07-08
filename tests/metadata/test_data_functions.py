@@ -57,10 +57,13 @@ def fixture_harmonic_window_bins(
     rows = np.arange(100)
     cols = rows // 10
     window[rows, cols] = 1.0
+    window_ells = np.arange(10, dtype=np.float64)
 
     return [
         TwoPointMeasurement(
-            metadata=TwoPointHarmonic(XY=xy, ells=ells, window=window),
+            metadata=TwoPointHarmonic(
+                XY=xy, ells=ells, window=window, window_ells=window_ells
+            ),
             data=data,
             indices=indices,
             covariance_name="cov1",
@@ -212,7 +215,7 @@ def test_two_point_bin_filter_collection_construct():
     )
     bin_filter_collection = TwoPointBinFilterCollection(filters=[bin_filter])
     assert bin_filter_collection.filters == [bin_filter]
-    assert bin_filter_collection.bin_filter_dict == {frozenset(bin_spec): (0.1, 0.5)}
+    assert bin_filter_collection.bin_filter_dict == {frozenset(bin_spec): bin_filter}
 
 
 def test_two_point_bin_filter_collection_construct_same_name() -> None:

@@ -293,12 +293,15 @@ def make_all_real_bins() -> list[InferredGalaxyZDist]:
 
 
 @pytest.fixture(name="window_1")
-def make_window_1() -> tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]:
+def make_window_1() -> (
+    tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Generate a Window object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
-    return ells, weights
+    return ells, weights, window_ells
 
 
 @pytest.fixture(name="harmonic_two_point_xy")
@@ -333,12 +336,17 @@ def make_real_two_point_xy(
 
 @pytest.fixture(name="two_point_cwindow")
 def make_two_point_cwindow(
-    window_1: tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+    window_1: tuple[
+        npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ],
     harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
     two_point = TwoPointHarmonic(
-        XY=harmonic_two_point_xy, ells=window_1[0], window=window_1[1]
+        XY=harmonic_two_point_xy,
+        ells=window_1[0],
+        window=window_1[1],
+        window_ells=window_1[2],
     )
     return two_point
 
@@ -373,11 +381,15 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
     data = (np.zeros(4) + 1.1).astype(np.float64)
     indices = np.arange(4)
     covariance_name = "cov"
+    mean_ells = np.einsum("lb, l -> b", weights, ells) / weights.sum(axis=0)
+
     tpm = TwoPointMeasurement(
         data=data,
         indices=indices,
         covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
+        metadata=TwoPointHarmonic(
+            ells=ells, window=weights, window_ells=mean_ells, XY=harmonic_two_point_xy
+        ),
     )
 
     return tpm

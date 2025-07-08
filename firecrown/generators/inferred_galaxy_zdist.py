@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, BeforeValid
 
 import numpy as np
 import numpy.typing as npt
-from scipy.special import gamma, erf, erfc
+from scipy.special import gamma, erf, erfc  # pylint: disable=no-name-in-module
 from scipy.integrate import quad
 
 from numcosmo_py import Ncm
