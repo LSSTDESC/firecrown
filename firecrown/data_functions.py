@@ -24,6 +24,7 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointReal,
     Measurement,
+    TwoPointFilterMethod,
 )
 from firecrown.metadata_functions import (
     extract_all_tracers_inferred_galaxy_zdists,
@@ -261,7 +262,12 @@ def make_interval_from_list(
 
 
 class TwoPointBinFilter(BaseModel):
-    """Class defining a filter for a bin."""
+    """Class defining a filter for a bin.
+
+    :param spec: The two-point bin specification.
+    :param interval: The range of the bin to filter.
+    :param method: The filter method.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 
@@ -276,6 +282,9 @@ class TwoPointBinFilter(BaseModel):
         BeforeValidator(make_interval_from_list),
         Field(description="The range of the bin to filter."),
     ]
+    method: Annotated[TwoPointFilterMethod, Field(description="The filter method.")] = (
+        TwoPointFilterMethod.SUPPORT
+    )
 
     @model_validator(mode="after")
     def check_bin_filter(self) -> "TwoPointBinFilter":
@@ -301,6 +310,7 @@ class TwoPointBinFilter(BaseModel):
         measurement2: Measurement,
         lower: float,
         upper: float,
+        method: TwoPointFilterMethod = TwoPointFilterMethod.SUPPORT,
     ) -> "TwoPointBinFilter":
         """Create a TwoPointBinFilter from the arguments."""
         return cls(
@@ -309,6 +319,7 @@ class TwoPointBinFilter(BaseModel):
                 TwoPointTracerSpec(name=name2, measurement=measurement2),
             ],
             interval=(lower, upper),
+            method=method,
         )
 
     @classmethod
@@ -363,7 +374,7 @@ class TwoPointBinFilterCollection(BaseModel):
         description="The list of bin filters.",
     )
 
-    _bin_filter_dict: dict[BinSpec, tuple[float, float]] = PrivateAttr()
+    _bin_filter_dict: dict[BinSpec, TwoPointBinFilter] = PrivateAttr()
 
     @model_validator(mode="after")
     def check_bin_filters(self) -> "TwoPointBinFilterCollection":
@@ -379,13 +390,12 @@ class TwoPointBinFilterCollection(BaseModel):
             bin_specs.add(bin_spec)
 
         self._bin_filter_dict = {
-            frozenset(bin_filter.spec): bin_filter.interval
-            for bin_filter in self.filters
+            frozenset(bin_filter.spec): bin_filter for bin_filter in self.filters
         }
         return self
 
     @property
-    def bin_filter_dict(self) -> dict[BinSpec, tuple[float, float]]:
+    def bin_filter_dict(self) -> dict[BinSpec, TwoPointBinFilter]:
         """Return the bin filter dictionary."""
         return self._bin_filter_dict
 
@@ -396,11 +406,49 @@ class TwoPointBinFilterCollection(BaseModel):
 
     def run_bin_filter(
         self,
-        bin_filter: tuple[float, float],
+        bin_filter: TwoPointBinFilter,
         vals: npt.NDArray[np.float64] | npt.NDArray[np.int64],
     ) -> npt.NDArray[np.bool_]:
         """Run the filter merge."""
-        return (vals >= bin_filter[0]) & (vals <= bin_filter[1])
+        return (vals >= bin_filter.interval[0]) & (vals <= bin_filter.interval[1])
+
+    def _apply_filter_single_window(
+        self, bin_filter: TwoPointBinFilter, tpm: TwoPointMeasurement
+    ) -> tuple[npt.NDArray[np.bool_], npt.NDArray[np.bool_]]:
+        """Apply a filter to a TwoPointMeasurement with a window function.
+
+        The window function is a matrix where each column contains weights over ell
+        values for a given observation. The filtering process depends on the method:
+
+        - If filtering by `LABEL`, `window_ells` are filtered directly.
+        - Otherwise, the filter is applied to `ells`, producing a mask
+          (`match_elements`).
+        For each observation, the sum of weights inside this mask is computed.
+        Observations are kept if their support lies within the allowed fraction:
+            - `SUPPORT`: full support (sum < 1.0)
+            - `SUPPORT_95`: >=95% of support must be inside the filtered ell range
+        """
+        assert isinstance(tpm.metadata, TwoPointHarmonic)
+
+        if bin_filter.method == TwoPointFilterMethod.LABEL:
+            assert tpm.metadata.window_ells is not None
+            match_obs = self.run_bin_filter(bin_filter, tpm.metadata.window_ells)
+            match_elements = np.ones_like(tpm.metadata.ells, dtype=bool)
+            return match_elements, match_obs
+
+        assert tpm.metadata.window is not None
+        match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
+        support = tpm.metadata.window[match_elements].sum(axis=0)
+        threshold = {
+            TwoPointFilterMethod.SUPPORT: 0.999,
+            TwoPointFilterMethod.SUPPORT_95: 0.95,
+        }.get(bin_filter.method)
+
+        if threshold is None:
+            raise ValueError(f"Unsupported filter method: {bin_filter.method}")
+
+        match_obs = support >= threshold
+        return match_elements, match_obs
 
     def apply_filter_single(
         self, tpm: TwoPointMeasurement
@@ -415,27 +463,11 @@ class TwoPointBinFilterCollection(BaseModel):
             return match_elements, match_elements
 
         assert isinstance(tpm.metadata, TwoPointHarmonic)
-        match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
-        match_obs = match_elements
-        if tpm.metadata.window is not None:
-            # The window function is represented by a matrix where each column
-            # corresponds to the weights for the ell values of each observation. We
-            # need to ensure that the window function is filtered correctly. To do this,
-            # we will check each column of the matrix and verify that all non-zero
-            # elements are within the filtered set. If any non-zero element falls
-            # outside the filtered set, the match_elements will be set to False for that
-            # observation.
-            non_zero_window = tpm.metadata.window > 0
-            match_obs = (
-                np.all(
-                    (non_zero_window & match_elements[:, None]) == non_zero_window,
-                    axis=0,
-                )
-                .ravel()
-                .astype(np.bool_)
-            )
+        if tpm.metadata.window is None:
+            match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
+            return match_elements, match_elements
 
-        return match_elements, match_obs
+        return self._apply_filter_single_window(bin_filter, tpm)
 
     def __call__(
         self, tpms: Sequence[TwoPointMeasurement]
@@ -477,6 +509,11 @@ class TwoPointBinFilterCollection(BaseModel):
                         window=(
                             tpm.metadata.window[:, match_obs][match_elements, :]
                             if tpm.metadata.window is not None
+                            else None
+                        ),
+                        window_ells=(
+                            tpm.metadata.window_ells[match_obs]
+                            if tpm.metadata.window_ells is not None
                             else None
                         ),
                         ells=tpm.metadata.ells[match_elements],

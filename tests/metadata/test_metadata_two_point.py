@@ -256,9 +256,12 @@ def test_two_point_harmonic_invalid_type():
 def test_two_point_cwindow(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
-    two_point = TwoPointHarmonic(XY=harmonic_two_point_xy, ells=ells, window=weights)
+    two_point = TwoPointHarmonic(
+        XY=harmonic_two_point_xy, ells=ells, window=weights, window_ells=window_ells
+    )
 
     assert two_point.window is not None
     assert_array_equal(two_point.window, weights)
@@ -274,6 +277,7 @@ def test_two_point_cwindow_wrong_data_shape(
 ):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
     data = (np.zeros(100) + 1.1).astype(np.float64)
     indices = np.arange(100)
@@ -291,6 +295,7 @@ def test_two_point_cwindow_wrong_data_shape(
                 XY=harmonic_two_point_xy,
                 ells=ells,
                 window=weights,
+                window_ells=window_ells,
             ),
         )
 
@@ -314,8 +319,11 @@ def test_two_point_measurement_invalid_metadata():
 def test_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
-    two_point = TwoPointHarmonic(XY=harmonic_two_point_xy, ells=ells, window=weights)
+    two_point = TwoPointHarmonic(
+        XY=harmonic_two_point_xy, ells=ells, window=weights, window_ells=window_ells
+    )
 
     assert (
         str(two_point) == f"{str(harmonic_two_point_xy)}[{two_point.get_sacc_name()}]"
@@ -325,6 +333,7 @@ def test_two_point_cwindow_stringify(harmonic_two_point_xy: TwoPointXY):
 def test_two_point_cwindow_invalid():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
     x = InferredGalaxyZDist(
         bin_name="bname1",
@@ -346,7 +355,7 @@ def test_two_point_cwindow_invalid():
         ValueError,
         match="Measurements .* and .* must support harmonic-space calculations.",
     ):
-        TwoPointHarmonic(XY=xy, ells=ells, window=weights)
+        TwoPointHarmonic(XY=xy, ells=ells, window=weights, window_ells=window_ells)
 
 
 def test_two_point_cwindow_invalid_window():

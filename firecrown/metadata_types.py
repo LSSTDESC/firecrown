@@ -554,7 +554,7 @@ class TwoPointHarmonic(YAMLSerializable):
     XY: TwoPointXY
     ells: npt.NDArray[np.int64]
     window: None | npt.NDArray[np.float64] = None
-    window_ells: None | npt.NDArray[np.int64] = None
+    window_ells: None | npt.NDArray[np.float64] = None
 
     def __post_init__(self) -> None:
         """Validate the TwoPointHarmonic data.
@@ -692,6 +692,37 @@ class TwoPointCorrelationSpace(YAMLSerializable, StrEnum):
 
     REAL = auto()
     HARMONIC = auto()
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the TypeSource class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+
+class TwoPointFilterMethod(YAMLSerializable, StrEnum):
+    """Defines methods for filtering two-point measurements.
+
+    When filtering a two-point measurement with an associated window, the filter is
+    applied to the window first. The user must then choose how to proceed:
+
+    - If filtering by `LABEL`, the `window_ells` labels are used to determine whether
+      the observation should be kept.
+    - If filtering by `SUPPORT`, the full ell support must lie within the allowed range.
+    - If filtering by `SUPPORT_95`, only the 95% support region must lie within the
+      range.
+
+    In all cases, filters define an interval of ells to retain.
+    """
+
+    LABEL = auto()
+    SUPPORT = auto()
+    SUPPORT_95 = auto()
 
     @classmethod
     def __get_pydantic_core_schema__(
