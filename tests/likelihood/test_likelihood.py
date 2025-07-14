@@ -6,7 +6,7 @@ import firecrown.likelihood.likelihood as like
 
 
 class LikelihoodThatThrowsIntegrationError(like.Likelihood):
-    """A likelihood that always throws a pyccl integration error exception"."""
+    """A likelihood that always throws a pyccl integration error exception."""
 
     def read(self, data: sacc.Sacc) -> None:
         pass
@@ -17,7 +17,7 @@ class LikelihoodThatThrowsIntegrationError(like.Likelihood):
 
 
 class LikelihoodThatThrowsUnhandledError(like.Likelihood):
-    """A likelihood that always throws a pyccl integration error exception"."""
+    """A likelihood that always throws a pyccl integration error exception."""
 
     def read(self, data: sacc.Sacc) -> None:
         pass
