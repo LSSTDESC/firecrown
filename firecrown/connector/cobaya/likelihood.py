@@ -281,7 +281,7 @@ class LikelihoodConnector(Likelihood):
             self.tools.update(params)
             self.tools.prepare()
 
-        loglike = self.likelihood.compute_loglike(self.tools)
+        loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
