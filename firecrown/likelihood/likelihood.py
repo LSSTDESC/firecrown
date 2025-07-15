@@ -127,7 +127,7 @@ class Likelihood(Updatable):
     def compute_loglike_for_sampling(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood of generic CCL data, swallowing some CCL errors.
 
-         If CCL raiases an error indicating an integration error, this function
+         If CCL raises an error indicating an integration error, this function
          returns -np.inf.
 
         :param tools: the ModelingTools to be used in calculating the likelihood
