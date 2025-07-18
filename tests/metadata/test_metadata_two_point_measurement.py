@@ -50,6 +50,7 @@ def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY
     rows = np.arange(100)
     cols = rows // 25
     weights[rows, cols] = 1.0
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.array(np.zeros(4) + 1.1, dtype=np.float64)
@@ -59,7 +60,9 @@ def test_two_point_two_point_cwindow_with_data(harmonic_two_point_xy: TwoPointXY
         data=data,
         indices=indices,
         covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
+        metadata=TwoPointHarmonic(
+            ells=ells, window=weights, window_ells=window_ells, XY=harmonic_two_point_xy
+        ),
     )
     metadata = tpm.metadata
     assert isinstance(metadata, TwoPointHarmonic)
@@ -120,6 +123,7 @@ def test_two_point_cells_with_invalid_data_size(harmonic_two_point_xy: TwoPointX
 def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPointXY):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = np.array(np.zeros(5) + 1.1, dtype=np.float64)
@@ -135,7 +139,10 @@ def test_two_point_cwindow_with_invalid_data_size(harmonic_two_point_xy: TwoPoin
             indices=indices,
             covariance_name=covariance_name,
             metadata=TwoPointHarmonic(
-                XY=harmonic_two_point_xy, ells=ells, window=weights
+                XY=harmonic_two_point_xy,
+                ells=ells,
+                window=weights,
+                window_ells=window_ells,
             ),
         )
 
