@@ -324,7 +324,12 @@ class TwoPointBinFilter(BaseModel):
 
     @classmethod
     def from_args_auto(
-        cls, name: str, measurement: Measurement, lower: float, upper: float
+        cls,
+        name: str,
+        measurement: Measurement,
+        lower: float,
+        upper: float,
+        method: TwoPointFilterMethod = TwoPointFilterMethod.SUPPORT,
     ) -> "TwoPointBinFilter":
         """Create a TwoPointBinFilter from the arguments."""
         return cls(
@@ -332,6 +337,7 @@ class TwoPointBinFilter(BaseModel):
                 TwoPointTracerSpec(name=name, measurement=measurement),
             ],
             interval=(lower, upper),
+            method=method,
         )
 
 
@@ -430,25 +436,26 @@ class TwoPointBinFilterCollection(BaseModel):
         """
         assert isinstance(tpm.metadata, TwoPointHarmonic)
 
-        if bin_filter.method == TwoPointFilterMethod.LABEL:
-            assert tpm.metadata.window_ells is not None
-            match_obs = self.run_bin_filter(bin_filter, tpm.metadata.window_ells)
-            match_elements = np.ones_like(tpm.metadata.ells, dtype=bool)
-            return match_elements, match_obs
-
-        assert tpm.metadata.window is not None
-        match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
-        support = tpm.metadata.window[match_elements].sum(axis=0)
-        threshold = {
-            TwoPointFilterMethod.SUPPORT: 0.999,
-            TwoPointFilterMethod.SUPPORT_95: 0.95,
-        }.get(bin_filter.method)
-
-        if threshold is None:
-            raise ValueError(f"Unsupported filter method: {bin_filter.method}")
-
-        match_obs = support >= threshold
-        return match_elements, match_obs
+        match bin_filter.method:
+            case TwoPointFilterMethod.LABEL:
+                assert tpm.metadata.window_ells is not None
+                match_obs = self.run_bin_filter(bin_filter, tpm.metadata.window_ells)
+                match_elements = np.ones_like(tpm.metadata.ells, dtype=bool)
+                return match_elements, match_obs
+            case TwoPointFilterMethod.SUPPORT:
+                assert tpm.metadata.window is not None
+                match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
+                support = tpm.metadata.window[match_elements].sum(axis=0)
+                match_obs = support < 0.999
+                return match_elements, match_obs
+            case TwoPointFilterMethod.SUPPORT_95:
+                assert tpm.metadata.window is not None
+                match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
+                support = tpm.metadata.window[match_elements].sum(axis=0)
+                match_obs = support >= 0.95
+                return match_elements, match_obs
+            case _ as unreachable:
+                assert_never(unreachable)
 
     def apply_filter_single(
         self, tpm: TwoPointMeasurement

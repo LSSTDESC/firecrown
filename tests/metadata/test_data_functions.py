@@ -12,6 +12,7 @@ from firecrown.metadata_types import (
     InferredGalaxyZDist,
     Galaxies,
 )
+from firecrown.metadata_types import TwoPointFilterMethod
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import (
@@ -636,3 +637,18 @@ def test_make_interval_from_list_list_wrong_element() -> None:
 def test_make_interval_from_list_wrong_type() -> None:
     with pytest.raises(ValueError, match="The values should be a list or a tuple."):
         _ = make_interval_from_list({0.1, 0.5})  # type: ignore
+
+
+@pytest.mark.parametrize("method", list(TwoPointFilterMethod))
+def test_bin_filter_methods(
+    method: TwoPointFilterMethod, harmonic_window_bins: list[TwoPointMeasurement]
+) -> None:
+    bin_col = TwoPointBinFilterCollection(
+        filters=[
+            TwoPointBinFilter.from_args_auto(
+                "bin_1", Galaxies.COUNTS, 5, 10, method=method
+            )
+        ]
+    )
+    assert bin_col.filters[0].method == method
+    assert bin_col.apply_filter_single(harmonic_window_bins[0])
