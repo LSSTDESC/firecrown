@@ -385,6 +385,7 @@ def test_two_point_cwindow_invalid_window():
 
 def test_two_point_cwindow_invalid_window_shape():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400, dtype=np.float64)
 
     x = InferredGalaxyZDist(
         bin_name="bname1",
@@ -401,7 +402,6 @@ def test_two_point_cwindow_invalid_window_shape():
     xy = TwoPointXY(
         x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
     )
-    weights = np.ones(400, dtype=np.float64)
     with pytest.raises(
         ValueError,
         match="window should be a 2D array.",
@@ -428,12 +428,127 @@ def test_two_point_cwindow_window_ell_not_match():
     xy = TwoPointXY(
         x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
     )
-    weights = np.ones(400).reshape(-1, 4)
     with pytest.raises(
         ValueError,
         match="window should have the same number of rows as ells.",
     ):
         TwoPointHarmonic(XY=xy, ells=ells[:10], window=weights)
+
+
+def test_two_point_cwindow_missing_window_ells():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},
+    )
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
+    with pytest.raises(
+        ValueError,
+        match="window_ells must be set if window is set.",
+    ):
+        TwoPointHarmonic(XY=xy, ells=ells, window=weights)
+
+
+def test_two_point_cwindow_window_ells_wrong_shape():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},
+    )
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="window_ells should be a 1D array.",
+    ):
+        TwoPointHarmonic(
+            XY=xy,
+            ells=ells,
+            window=weights,
+            window_ells=np.linspace(0, 1, 9).reshape(3, 3),
+        )
+
+
+def test_two_point_cwindow_window_ells_wrong_len():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    weights = np.ones(400).reshape(-1, 4)
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},
+    )
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "window_ells should have the same number of "
+            "elements as the columns of window."
+        ),
+    ):
+        TwoPointHarmonic(
+            XY=xy, ells=ells, window=weights, window_ells=np.linspace(0, 1, 9)
+        )
+
+
+def test_two_point_cwindow_no_window_with_window_ells():
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},
+    )
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="window_ells must be None if window is None.",
+    ):
+        TwoPointHarmonic(XY=xy, ells=ells, window_ells=np.linspace(0, 1, 9))
 
 
 def test_two_point_real():
