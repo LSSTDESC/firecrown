@@ -12,6 +12,7 @@ from firecrown.metadata_types import (
     InferredGalaxyZDist,
     Galaxies,
 )
+from firecrown.metadata_types import TwoPointFilterMethod
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import (
@@ -57,10 +58,13 @@ def fixture_harmonic_window_bins(
     rows = np.arange(100)
     cols = rows // 10
     window[rows, cols] = 1.0
+    window_ells = np.arange(10, dtype=np.float64)
 
     return [
         TwoPointMeasurement(
-            metadata=TwoPointHarmonic(XY=xy, ells=ells, window=window),
+            metadata=TwoPointHarmonic(
+                XY=xy, ells=ells, window=window, window_ells=window_ells
+            ),
             data=data,
             indices=indices,
             covariance_name="cov1",
@@ -212,7 +216,7 @@ def test_two_point_bin_filter_collection_construct():
     )
     bin_filter_collection = TwoPointBinFilterCollection(filters=[bin_filter])
     assert bin_filter_collection.filters == [bin_filter]
-    assert bin_filter_collection.bin_filter_dict == {frozenset(bin_spec): (0.1, 0.5)}
+    assert bin_filter_collection.bin_filter_dict == {frozenset(bin_spec): bin_filter}
 
 
 def test_two_point_bin_filter_collection_construct_same_name() -> None:
@@ -633,3 +637,18 @@ def test_make_interval_from_list_list_wrong_element() -> None:
 def test_make_interval_from_list_wrong_type() -> None:
     with pytest.raises(ValueError, match="The values should be a list or a tuple."):
         _ = make_interval_from_list({0.1, 0.5})  # type: ignore
+
+
+@pytest.mark.parametrize("method", list(TwoPointFilterMethod))
+def test_bin_filter_methods(
+    method: TwoPointFilterMethod, harmonic_window_bins: list[TwoPointMeasurement]
+) -> None:
+    bin_col = TwoPointBinFilterCollection(
+        filters=[
+            TwoPointBinFilter.from_args_auto(
+                "bin_1", Galaxies.COUNTS, 5, 10, method=method
+            )
+        ]
+    )
+    assert bin_col.filters[0].method == method
+    assert bin_col.apply_filter_single(harmonic_window_bins[0])
