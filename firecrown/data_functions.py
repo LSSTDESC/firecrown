@@ -446,7 +446,7 @@ class TwoPointBinFilterCollection(BaseModel):
                 assert tpm.metadata.window is not None
                 match_elements = self.run_bin_filter(bin_filter, tpm.metadata.ells)
                 support = tpm.metadata.window[match_elements].sum(axis=0)
-                match_obs = support < 0.999
+                match_obs = support >= 0.999
                 return match_elements, match_obs
             case TwoPointFilterMethod.SUPPORT_95:
                 assert tpm.metadata.window is not None
