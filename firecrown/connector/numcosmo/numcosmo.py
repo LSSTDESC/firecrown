@@ -597,7 +597,7 @@ class NumCosmoData(Ncm.Data):
 
         :param _: unused, but required by interface
         """
-        loglike = self.likelihood.compute_loglike(self.tools)
+        loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
         return -2.0 * loglike
 
 

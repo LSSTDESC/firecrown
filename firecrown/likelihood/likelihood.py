@@ -63,6 +63,7 @@ from typing import Mapping, Sequence
 
 import numpy as np
 import numpy.typing as npt
+import pyccl
 import sacc
 
 from firecrown.modeling_tools import ModelingTools
@@ -122,6 +123,23 @@ class Likelihood(Updatable):
 
         :return: the new SACC object containing the new realization
         """
+
+    def compute_loglike_for_sampling(self, tools: ModelingTools) -> float:
+        """Compute the log-likelihood of generic CCL data, swallowing some CCL errors.
+
+         If CCL raises an error indicating an integration error, this function
+         returns -np.inf.
+
+        :param tools: the ModelingTools to be used in calculating the likelihood
+        :return: the log-likelihood
+        """
+        try:
+            return self.compute_loglike(tools)
+        except pyccl.errors.CCLError as e:
+            if e.args[0].startswith("Error CCL_ERROR_INTEG"):
+                warnings.warn(f"CCL error:\n{e}\nin likelihood, returning -inf")
+                return -np.inf
+            raise
 
     @abstractmethod
     def compute_loglike(self, tools: ModelingTools) -> float:
