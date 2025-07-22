@@ -377,16 +377,18 @@ def extract_all_harmonic_metadata(
 
         XY = make_two_point_xy(inferred_galaxy_zdists_dict, tracer_names, dt)
 
-        t1, t2 = tracer_names
         ells, _, indices = sacc_data.get_ell_cl(
-            data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
+            data_type=dt,
+            tracer1=tracer_names[0],
+            tracer2=tracer_names[1],
+            return_cov=False,
+            return_ind=True,
         )
+        ells, weights, window_ells = maybe_enforce_window(ells, indices, sacc_data)
 
-        replacement_ells, weights = extract_window_function(sacc_data, indices)
-        if replacement_ells is not None:
-            ells = replacement_ells
-
-        result.append(TwoPointHarmonic(XY=XY, window=weights, ells=ells))
+        result.append(
+            TwoPointHarmonic(XY=XY, window=weights, window_ells=window_ells, ells=ells)
+        )
 
     return result
 
@@ -455,6 +457,26 @@ def extract_window_function(
     ells = bandpower_window.values
     weights = bandpower_window.weight / bandpower_window.weight.sum(axis=0)
     return ells, weights
+
+
+def maybe_enforce_window(
+    ells: npt.NDArray, indices: npt.NDArray[np.int64], sacc_data: sacc.Sacc
+) -> tuple[npt.NDArray[np.int64], None | npt.NDArray[np.float64], None | npt.NDArray]:
+    """Possibly enforce a window function on the given ells.
+
+    :param ells: The original ell values.
+    :param indices: The indices of the data points in the SACC object.
+    :param sacc_data: The SACC object containing the data.
+    :return: A tuple containing the possibly replaced ells and the window weights.
+    """
+    replacement_ells, weights = extract_window_function(sacc_data, indices)
+    if replacement_ells is not None:
+        window_ells = ells
+        ells = replacement_ells
+    else:
+        window_ells = None
+
+    return ells, weights, window_ells
 
 
 def make_all_photoz_bin_combinations(
