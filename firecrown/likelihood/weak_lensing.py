@@ -194,7 +194,7 @@ TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D = 0.0
 
 
 class TattAlignmentSystematic(WeakLensingSystematic):
-    """TATT alignment systematic.
+    r"""TATT alignment systematic.
 
     This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
 
