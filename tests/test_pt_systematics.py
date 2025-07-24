@@ -451,9 +451,11 @@ def test_pt_mixed_systematics_zdep(sacc_data):
 
     c_1_z = c_1 * ((1.0 + z) / (1.0 + a_1_zpiv)) ** a_1_alpha
     c_2_z = c_2 * ((1.0 + z) / (1.0 + a_2_zpiv)) ** a_2_alpha
-    c_d_z = c_d*  ((1.0 + z) / (1.0 + a_d_zpiv)) ** a_d_alpha
+    c_d_z = c_d * ((1.0 + z) / (1.0 + a_d_zpiv)) ** a_d_alpha
     # Code that creates Pk2D objects:
-    ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1_z), c2=(z, c_2_z), cdelta=(z, c_d_z))
+    ptt_i = pt.PTIntrinsicAlignmentTracer(
+        c1=(z, c_1_z), c2=(z, c_2_z), cdelta=(z, c_d_z)
+    )
     ptt_m = pt.PTMatterTracer()
     # IA
     pk_mi = pt_calculator.get_biased_pk2d(tracer1=ptt_m, tracer2=ptt_i)
@@ -583,9 +585,11 @@ def test_pt_systematics_zdep(weak_lensing_source, number_counts_source, sacc_dat
 
     c_1_z = c_1 * ((1.0 + z) / (1.0 + a_1_zpiv)) ** a_1_alpha
     c_2_z = c_2 * ((1.0 + z) / (1.0 + a_2_zpiv)) ** a_2_alpha
-    c_d_z = c_d*  ((1.0 + z) / (1.0 + a_d_zpiv)) ** a_d_alpha
+    c_d_z = c_d * ((1.0 + z) / (1.0 + a_d_zpiv)) ** a_d_alpha
     # Code that creates Pk2D objects:
-    ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1_z), c2=(z, c_2_z), cdelta=(z, c_d_z))
+    ptt_i = pt.PTIntrinsicAlignmentTracer(
+        c1=(z, c_1_z), c2=(z, c_2_z), cdelta=(z, c_d_z)
+    )
     ptt_m = pt.PTMatterTracer()
     ptt_g = pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
     # IA
