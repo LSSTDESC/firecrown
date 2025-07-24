@@ -197,6 +197,11 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     """TATT alignment systematic.
 
     This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
+    
+    The amplitude of each contribution to the TATT model 
+    (i.e. linear, density-dependent, or quadratic terms) can be expressed as
+    a function in redshift, parameterized by the relationship:
+    $A_i \times \frac{1 + z}{1 + z_{piv,i}}^{\alpha_i}$
 
     The following parameters are special Updatable parameters, which means that
     they can be updated by the sampler, sacc_tracer is going to be used as a
