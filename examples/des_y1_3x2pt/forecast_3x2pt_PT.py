@@ -21,10 +21,10 @@ from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
 
-#change this!!
+# change this!!
 saccfile = os.path.expanduser(
     os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/paul_auto_forecast_fid_3x2pt_linear_sys_limber_20_log_bins.sacc" #needs to change!
+        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/paul_auto_forecast_fid_3x2pt_linear_sys_limber_20_log_bins.sacc"  # needs to change!
     )
 )
 
@@ -40,13 +40,13 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     num_lens = 5
     num_srcs = 5
-    #lens, src order
+    # lens, src order
     ggl_combos = [(0, 2), (0, 3), (0, 4), (1, 3), (1, 4), (2, 4), (3, 4)]
     lens_tracers = []
     src_tracers = []
 
     for i in range(num_lens):
-        name = "lens"+str(i)
+        name = "lens" + str(i)
         lens_pzshift = nc.PhotoZShift(sacc_tracer=name)
         magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer=name)
         nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=name)
@@ -58,11 +58,13 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
         lens_tracers.append(lens_tracer)
 
     for i in range(num_srcs):
-        name = "src"+str(i)
+        name = "src" + str(i)
         src_pzshift = wl.PhotoZShift(sacc_tracer=name)
         # Create the weak lensing source, specifying the name of the tracer in the
         # sacc file and a list of systematics
-        src_tracer = wl.WeakLensing(sacc_tracer=name, systematics=[src_pzshift, ia_systematic])
+        src_tracer = wl.WeakLensing(
+            sacc_tracer=name, systematics=[src_pzshift, ia_systematic]
+        )
         src_tracers.append(src_tracer)
 
     statistics = []
@@ -75,7 +77,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
             )
         )
 
-    for (lbin, sbin) in ggl_combos:
+    for lbin, sbin in ggl_combos:
         statistics.append(
             TwoPoint(
                 source0=lens_tracers[lbin],
@@ -90,7 +92,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
                 TwoPoint(
                     source0=src_tracers[i],
                     source1=src_tracers[j],
-                    sacc_data_type="galaxy_shear_cl_ee"
+                    sacc_data_type="galaxy_shear_cl_ee",
                 )
             )
 
@@ -116,8 +118,8 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     print(
         "Using parameters:", list(likelihood.required_parameters().get_params_names())
     )
-    
-    '''
+
+    """
     systematics_params = ParamsMap(
         {
             "ia_a_1": cs.a_1,
@@ -131,10 +133,10 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
             "lens0_delta_z": 0.000,
         }
     )
-    '''
-    #for default/initial values?
-    #likelihood.update(systematics_params)
-    #tools.update(systematics_params)
+    """
+    # for default/initial values?
+    # likelihood.update(systematics_params)
+    # tools.update(systematics_params)
 
     # To allow this likelihood to be used in cobaya or cosmosis,
     # return the likelihood object
