@@ -40,6 +40,12 @@ class CclSetup:
     a_1: float = 1.0
     a_2: float = 0.5
     a_d: float = 0.5
+    zpiv_1: float = 0.62
+    zpiv_2: float = 0.62
+    zpiv_d: float = 0.62
+    alphaz_1: float = 0.0
+    alphaz_2: float = 0.0
+    alphaz_d: float = 0.0
     b_1: float = 2.0
     b_2: float = 1.0
     b_s: float = 1.0
@@ -213,6 +219,12 @@ def run_likelihood() -> None:
             "ia_a_1": cs.a_1,
             "ia_a_2": cs.a_2,
             "ia_a_d": cs.a_d,
+            "ia_alphaz_1": ca.alphaz_1,
+            "ia_alphaz_2": ca.alphaz_2,
+            "ia_alphaz_d": ca.alphaz_d,
+            "ia_zpiv_1": ca.zpiv_1,
+            "ia_zpiv_2": ca.zpiv_2,
+            "ia_zpiv_d": ca.zpiv_d,
             "lens0_bias": cs.b_1,
             "lens0_b_2": cs.b_2,
             "lens0_b_s": cs.b_s,
