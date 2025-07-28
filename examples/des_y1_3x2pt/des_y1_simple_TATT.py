@@ -1,20 +1,17 @@
-#!/usr/bin/env python
+"""Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
+
 import os
-import sys
-
-if sys.version_info[0] >= 3:
-    unicode = str
-import firecrown.likelihood.gauss_family.statistic.source.weak_lensing as wl
-import firecrown.likelihood.gauss_family.statistic.source.number_counts as nc
-from firecrown.likelihood.gauss_family.statistic.two_point import TwoPoint
-from firecrown.likelihood.gauss_family.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap
-
 import sacc
 import numpy as np
 import pyccl as ccl
-import matplotlib.pyplot as plt
 import pyccl.nl_pt as pt
+import matplotlib.pyplot as plt
+
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.parameters import ParamsMap
 
 # Load sacc file
 saccfile = os.path.expanduser(
@@ -24,12 +21,11 @@ saccfile = os.path.expanduser(
 )
 sacc_data = sacc.Sacc.load_fits(saccfile)
 
-
 # Define sources
 n_source = 1
 n_lens = 1
 sources = {}
-PTC = pt.PTCalculator(
+PTC = pt.EulerianPTCalculator(
     with_NC=True,
     with_IA=True,
     with_dd=False,
@@ -39,7 +35,7 @@ PTC = pt.PTCalculator(
 )
 # Define the intrinsic alignment systematic. This will be added to the
 # lensing sources later
-ia_systematic = wl.TATTSystematic()
+ia_systematic = wl.TattAlignmentSystematic()
 
 for i in range(n_source):
     # Define the photo-z shift systematic.
@@ -48,17 +44,16 @@ for i in range(n_source):
 
     # Create the weak lensing source, specifying the name of the tracer in the
     # sacc file and a list of systematics
-    sources[f"src{i}"] = wl.WeakLensingPT(
+    sources[f"src{i}"] = wl.WeakLensing(
         sacc_tracer=f"src{i}", systematics=[ia_systematic, pzshift], scale=2.0
     )
 
 for i in range(n_lens):
     pzshift = nc.PhotoZShift(sacc_tracer=f"lens{i}")
-    nl_bias = nc.NLBiasSystematic(sacc_tracer=f"lens{i}")
-    sources[f"lens{i}"] = nc.NumberCountsPT(
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer=f"lens{i}")
+    sources[f"lens{i}"] = nc.NumberCounts(
         sacc_tracer=f"lens{i}",
         systematics=[pzshift, nl_bias],
-        has_mag_bias=True,
         scale=3.0,
     )
 
@@ -76,7 +71,6 @@ for stat, sacc_stat in [
                 source0=sources[f"src{i}"],
                 source1=sources[f"src{j}"],
                 sacc_data_type=sacc_stat,
-                pt_calc=PTC,
             )
 for j in range(n_source):
     for i in range(n_lens):
@@ -84,7 +78,6 @@ for j in range(n_source):
             source0=sources[f"lens{j}"],
             source1=sources[f"src{i}"],
             sacc_data_type="galaxy_shearDensity_xi_t",
-            pt_calc=PTC,
         )
 
 for i in range(n_lens):
@@ -92,7 +85,6 @@ for i in range(n_lens):
         source0=sources[f"lens{i}"],
         source1=sources[f"lens{i}"],
         sacc_data_type="galaxy_density_xi",
-        pt_calc=PTC,
     )
 
 # Create the likelihood from the statistics
@@ -108,25 +100,33 @@ likelihood = lk
 
 # We can also run the likelihood directly
 if __name__ == "__main__":
-    """
-    runs comparison between firecrown and CCL direct implementation
-    of PT calculations.
-    """
 
     # Define a ccl.Cosmology object using default parameters
     ccl_cosmo = ccl.CosmologyVanillaLCDM()
 
+    # Bare CCL setup
+    a_1 = 1.0
+    a_2 = 0.5
+    a_d = 0.5
+
+    b_1 = 2.0
+    b_2 = 1.0
+    b_s = 1.0
+
+    mag_bias = 1.0
+
     # Set the parameters for our systematics
     systematics_params = ParamsMap(
         {
-            "ia_bias": 1.0,
-            "alphaz": 0.0,
-            "alphag": 0,
-            "z_piv": 0.62,
-            "ia_bias_ta": 0.5,
-            "ia_bias_2": 0.5,
-            "alphaz_2": 0.0,
-            "alphag_2": 0.0,
+            "ia_a_1": a_1,
+            "ia_a_2": a_2,
+            "ia_a_d": a_d,
+            "ia_zpiv_1": 0.62,
+            "ia_zpiv_2": 0.62,
+            "ia_zpiv_d": 0.62,
+            "ia_alphaz_1": 0.0,
+            "ia_alphaz_2": 0.0,
+            "ia_alphaz_d": 0.0,
             "src0_mult_bias": 0.0,
             "lens0_mag_bias": 1.0,
             "lens0_bias": 2.0,
@@ -136,7 +136,6 @@ if __name__ == "__main__":
             "lens0_alphaz": 0.0,
             "lens0_alphag": 0.0,
             "lens0_z_piv": 0.62,
-            "lens0_delta_z": 0.000,
             "src0_delta_z": 0.000,
         }
     )
@@ -160,20 +159,9 @@ if __name__ == "__main__":
 
     # Define a ccl.Cosmology object using default parameters
 
-    # Bare CCL setup
-    a_1 = 1.0
-    a_2 = 0.5
-    a_d = 0.5
-
-    b_1 = 2.0
-    b_2 = 1.0
-    b_s = 1.0
-
-    mag_bias = 1.0
-
     c_1, c_d, c_2 = pt.translate_IA_norm(
         ccl_cosmo,
-        z,
+        z=z,
         a1=a_1,
         a1delta=a_d,
         a2=a_2,
@@ -181,27 +169,32 @@ if __name__ == "__main__":
     )
 
     # Code that creates a Pk2D object:
-    ptc = pt.PTCalculator(
-        with_NC=True, with_IA=True, log10k_min=-4, log10k_max=2, nk_per_decade=20
+    ptc = pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=True,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
+        cosmo=ccl_cosmo,
     )
     ptt_i = pt.PTIntrinsicAlignmentTracer(c1=(z, c_1), c2=(z, c_2), cdelta=(z, c_d))
     ptt_m = pt.PTMatterTracer()
     ptt_g = pt.PTNumberCountsTracer(b1=b_1, b2=b_2, bs=b_s)
     # IA
 
-    pk_im = pt.get_pt_pk2d(ccl_cosmo, ptt_i, tracer2=ptt_m, ptc=ptc)
-    pk_ii = pt.get_pt_pk2d(ccl_cosmo, ptt_i, ptc=ptc)
-    pk_gi = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_i, ptc=ptc)
+    pk_im = ptc.get_biased_pk2d(tracer1=ptt_i, tracer2=ptt_m)
+    pk_ii = ptc.get_biased_pk2d(tracer1=ptt_i)
+    pk_gi = ptc.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_i)
     # Galaxies
-    pk_gm = pt.get_pt_pk2d(ccl_cosmo, ptt_g, tracer2=ptt_m, ptc=ptc)
-    pk_gg = pt.get_pt_pk2d(ccl_cosmo, ptt_g, ptc=ptc)
+    pk_gm = ptc.get_biased_pk2d(tracer1=ptt_g, tracer2=ptt_m)
+    pk_gg = ptc.get_biased_pk2d(tracer1=ptt_g)
     # Magnification
 
     # Plot the predicted and measured statistic
-    x = likelihood.statistics[0].ell_or_theta_
-    x_minus = likelihood.statistics[1].ell_or_theta_
-    x_ggl = likelihood.statistics[2].ell_or_theta_
-    x_nc = likelihood.statistics[3].ell_or_theta_
+    x = likelihood.statistics[0].ell_or_theta
+    x_minus = likelihood.statistics[1].ell_or_theta
+    x_ggl = likelihood.statistics[2].ell_or_theta
+    x_nc = likelihood.statistics[3].ell_or_theta
     y_data = likelihood.statistics[0].measured_statistic_
     y_err = np.sqrt(np.diag(likelihood.cov))[: len(x)]
     y_theory = likelihood.statistics[0].predicted_statistic_
@@ -256,30 +249,30 @@ if __name__ == "__main__":
 
     ang = ccl.correlation(
         ccl_cosmo,
-        ells,
-        cl_cs_theory,
-        likelihood.statistics[0].ell_or_theta_ / 60,
+        ell=ells,
+        C_ell=cl_cs_theory,
+        theta=likelihood.statistics[0].ell_or_theta_ / 60,
         type="GG+",
     )
     ang_minus = ccl.correlation(
         ccl_cosmo,
-        ells_minus,
-        cl_cs_theory,
-        likelihood.statistics[1].ell_or_theta_ / 60,
+        ell=ells_minus,
+        C_ell=cl_cs_theory,
+        theta=likelihood.statistics[1].ell_or_theta_ / 60,
         type="GG-",
     )
     ang_ggl = ccl.correlation(
         ccl_cosmo,
-        ells_ggl,
-        cl_gI + cl_gG + cl_mI + cl_mG,
-        likelihood.statistics[2].ell_or_theta_ / 60,
+        ell=ells_ggl,
+        C_ell=cl_gI + cl_gG + cl_mI + cl_mG,
+        theta=likelihood.statistics[2].ell_or_theta_ / 60,
         type="NG",
     )
     ang_nc = ccl.correlation(
         ccl_cosmo,
-        ells_nc,
-        cl_gg + 2 * cl_gm + cl_mm,
-        likelihood.statistics[3].ell_or_theta_ / 60,
+        ell=ells_nc,
+        C_ell=cl_gg + 2 * cl_gm + cl_mm,
+        theta=likelihood.statistics[3].ell_or_theta_ / 60,
         type="NN",
     )
 
@@ -310,8 +303,6 @@ if __name__ == "__main__":
     ax[1].set_yscale("linear")
     ax[1].set_xscale("log")
     ax[1].legend()
-
-    [a.legend(fontsize="small") for a in ax]
 
     fig.suptitle("PT Cls, including IA, galaxy bias, magnification")
     fig.savefig("plots/pt_cls.png", facecolor="white", dpi=300)

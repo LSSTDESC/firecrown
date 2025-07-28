@@ -1,36 +1,33 @@
 #!/usr/bin/env python
 
 """Example factory function for DES Y1 3x2pt likelihood."""
-from dataclasses import dataclass
 import os
 
-import numpy as np
 import sacc
-import pyccl as ccl
 import pyccl.nl_pt
 
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood.two_point import (
     TwoPoint,
-    TracerNames,
-    TRACER_NAMES_TOTAL,
 )
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
 
 # change this!!
 saccfile = os.path.expanduser(
     os.path.expandvars(
-        "${FIRECROWN_DIR}/examples/des_y1_3x2pt/paul_auto_forecast_fid_3x2pt_linear_sys_limber_20_log_bins.sacc"  # needs to change!
+        """${FIRECROWN_DIR}/
+            examples/des_y1_3x2pt/
+            paul_auto_forecast_fid_3x2pt_linear_sys_limber_20_log_bins.sacc"""
     )
 )
 
 
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
+
     # Load sacc file
     sacc_data = sacc.Sacc.load_fits(saccfile)
 
@@ -119,25 +116,4 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
         "Using parameters:", list(likelihood.required_parameters().get_params_names())
     )
 
-    """
-    systematics_params = ParamsMap(
-        {
-            "ia_a_1": cs.a_1,
-            "ia_a_2": cs.a_2,
-            "ia_a_d": cs.a_d,
-            "lens0_bias": cs.b_1,
-            "lens0_b_2": cs.b_2,
-            "lens0_b_s": cs.b_s,
-            "lens0_mag_bias": cs.mag_bias,
-            "src0_delta_z": 0.000,
-            "lens0_delta_z": 0.000,
-        }
-    )
-    """
-    # for default/initial values?
-    # likelihood.update(systematics_params)
-    # tools.update(systematics_params)
-
-    # To allow this likelihood to be used in cobaya or cosmosis,
-    # return the likelihood object
     return likelihood, modeling_tools
