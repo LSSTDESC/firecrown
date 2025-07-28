@@ -86,7 +86,7 @@ firecrown_two_point:
         default-value: 0.001
         fit-type: 0
     - &S10 NcmSParam:
-        name: 'ia_alpha_1'
+        name: 'ia_alphaz_1'
         symbol: 'ia_\\mathrm{alpha 1}'
         lower-bound: -0.05
         upper-bound: 0.05
@@ -95,7 +95,7 @@ firecrown_two_point:
         default-value: 0.001
         fit-type: 1
     - &S11 NcmSParam:
-        name: 'ia_alpha_2'
+        name: 'ia_alphaz_2'
         symbol: 'ia_\\mathrm{alpha 2}'
         lower-bound: -0.05
         upper-bound: 0.05
@@ -104,7 +104,7 @@ firecrown_two_point:
         default-value: 0.001
         fit-type: 1
     - &S12 NcmSParam:
-        name: 'ia_alpha_d'
+        name: 'ia_alphaz_d'
         symbol: 'ia_\\mathrm{alpha d}'
         lower-bound: -0.05
         upper-bound: 0.05
