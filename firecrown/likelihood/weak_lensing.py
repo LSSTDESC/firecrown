@@ -218,16 +218,7 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_alphaz_d: the redshift dependence of the density-dependent alignment model.
     """
 
-    def __init__(
-        self,
-        sacc_tracer: None | str = None,
-        ia_zpiv_1: None | float = 0.62,
-        ia_zpiv_2: None | float = 0.62,
-        ia_zpiv_d: None | float = 0.62,
-        ia_alphaz_1: None | float = 0.0,
-        ia_alphaz_2: None | float = 0.0,
-        ia_alphaz_d: None | float = 0.0,
-    ):
+    def __init__(self, sacc_tracer: None | str = None):
         """Create a TattAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -238,28 +229,28 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
         self.ia_zpiv_1 = parameters.register_new_updatable_parameter(
-            ia_zpiv_1, default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1
         )
         self.ia_alphaz_1 = parameters.register_new_updatable_parameter(
-            ia_alphaz_1, default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
         )
         self.ia_a_2 = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
         )
         self.ia_zpiv_2 = parameters.register_new_updatable_parameter(
-            ia_zpiv_2, default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2
         )
         self.ia_alphaz_2 = parameters.register_new_updatable_parameter(
-            ia_alphaz_2, default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
         )
         self.ia_a_d = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
         )
         self.ia_zpiv_d = parameters.register_new_updatable_parameter(
-            ia_zpiv_d, default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
         )
         self.ia_alphaz_d = parameters.register_new_updatable_parameter(
-            ia_alphaz_d, default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
         )
 
     def apply(
