@@ -231,14 +231,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
         self.ia_zpiv_1 = parameters.register_new_updatable_parameter(
-            value=(
-                TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1 if not include_z_dependence else None
-            ),
+            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1,
         )
         self.ia_alphaz_1 = parameters.register_new_updatable_parameter(
             value=(
-                TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1 if not include_z_dependence else None
+                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
             ),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1,
         )
@@ -246,14 +244,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
         )
         self.ia_zpiv_2 = parameters.register_new_updatable_parameter(
-            value=(
-                TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2 if not include_z_dependence else None
-            ),
+            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2,
         )
         self.ia_alphaz_2 = parameters.register_new_updatable_parameter(
             value=(
-                TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2 if not include_z_dependence else None
+                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
             ),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2,
         )
@@ -261,14 +257,12 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
         )
         self.ia_zpiv_d = parameters.register_new_updatable_parameter(
-            value=(
-                TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D if not include_z_dependence else None
-            ),
+            value=(None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
         )
         self.ia_alphaz_d = parameters.register_new_updatable_parameter(
             value=(
-                TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D if not include_z_dependence else None
+                None if include_z_dependence else TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
             ),
             default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
         )
