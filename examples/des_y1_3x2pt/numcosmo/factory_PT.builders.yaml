@@ -85,5 +85,59 @@ firecrown_two_point:
         absolute-tolerance: 0.0
         default-value: 0.001
         fit-type: 0
+    - &S10 NcmSParam:
+        name: 'ia_alphaz_1'
+        symbol: 'ia_\\mathrm{alpha 1}'
+        lower-bound: -0.05
+        upper-bound: 0.05
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.001
+        fit-type: 1
+    - &S11 NcmSParam:
+        name: 'ia_alphaz_2'
+        symbol: 'ia_\\mathrm{alpha 2}'
+        lower-bound: -0.05
+        upper-bound: 0.05
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.001
+        fit-type: 1
+    - &S12 NcmSParam:
+        name: 'ia_alphaz_d'
+        symbol: 'ia_\\mathrm{alpha d}'
+        lower-bound: -0.05
+        upper-bound: 0.05
+        scale: 0.001
+        absolute-tolerance: 0.0
+        default-value: 0.001
+        fit-type: 1
+    - &S13 NcmSParam:
+        name: 'ia_zpiv_1'
+        symbol: 'z_\\mathrm{piv 1}'
+        lower-bound: 0.496
+        upper-bound: 0.744
+        scale: 0.0062
+        absolute-tolerance: 0.0
+        default-value: 0.62
+        fit-type: 1
+    - &S14 NcmSParam:
+        name: 'ia_zpiv_2'
+        symbol: 'z_\\mathrm{piv 2}'
+        lower-bound: 0.496
+        upper-bound: 0.744
+        scale: 0.0062
+        absolute-tolerance: 0.0
+        default-value: 0.62
+        fit-type: 1
+    - &S15 NcmSParam:
+        name: 'ia_zpiv_d'
+        symbol: 'z_\\mathrm{piv d}'
+        lower-bound: 0.496
+        upper-bound: 0.744
+        scale: 0.0062
+        absolute-tolerance: 0.0
+        default-value: 0.62
+        fit-type: 1
     vparams: []
     stackable: false

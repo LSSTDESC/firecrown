@@ -49,7 +49,12 @@ params:
      prior:
         min: 0.4
         max: 0.6
-     
+  ia_alphaz_1: 0.0
+  ia_alphaz_2: 0.0
+  ia_alphaz_d: 0.0
+  ia_zpiv_1: 0.62
+  ia_zpiv_2: 0.62
+  ia_zpiv_d: 0.62    
   lens0_b_2:
      ref: 1.0
      prior:
