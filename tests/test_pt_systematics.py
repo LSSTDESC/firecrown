@@ -29,7 +29,7 @@ import firecrown.parameters as fcp
 
 @pytest.fixture(name="weak_lensing_source")
 def fixture_weak_lensing_source() -> wl.WeakLensing:
-    ia_systematic = wl.TattAlignmentSystematic()
+    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     pzshift = wl.PhotoZShift(sacc_tracer="src0")
     return wl.WeakLensing(sacc_tracer="src0", systematics=[pzshift, ia_systematic])
 
@@ -259,7 +259,7 @@ def test_pt_mixed_systematics(sacc_data):
     #
     # pylint: disable-msg=too-many-locals
 
-    ia_systematic = wl.TattAlignmentSystematic()
+    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
@@ -391,7 +391,7 @@ def test_pt_mixed_systematics_zdep(sacc_data):
     #
     # pylint: disable-msg=too-many-locals
 
-    ia_systematic = wl.TattAlignmentSystematic()
+    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     wl_source = wl.WeakLensing(sacc_tracer="src0", systematics=[ia_systematic])
 
     magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")

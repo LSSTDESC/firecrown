@@ -93,7 +93,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later
-    ia_systematic = wl.TattAlignmentSystematic()
+    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
 
     # Define the photo-z shift systematic.
     src_pzshift = wl.PhotoZShift(sacc_tracer="src0")

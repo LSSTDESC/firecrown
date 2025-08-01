@@ -218,7 +218,9 @@ class TattAlignmentSystematic(WeakLensingSystematic):
     :ivar ia_alphaz_d: the redshift dependence of the density-dependent alignment model.
     """
 
-    def __init__(self, sacc_tracer: None | str = None):
+    def __init__(
+        self, sacc_tracer: None | str = None, include_z_dependence: bool = False
+    ):
         """Create a TattAlignmentSystematic object, using the specified tracer name.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
@@ -229,28 +231,46 @@ class TattAlignmentSystematic(WeakLensingSystematic):
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_1
         )
         self.ia_zpiv_1 = parameters.register_new_updatable_parameter(
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1
+            value=(
+                TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1 if not include_z_dependence else None
+            ),
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_1,
         )
         self.ia_alphaz_1 = parameters.register_new_updatable_parameter(
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1
+            value=(
+                TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1 if not include_z_dependence else None
+            ),
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_1,
         )
         self.ia_a_2 = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_2
         )
         self.ia_zpiv_2 = parameters.register_new_updatable_parameter(
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2
+            value=(
+                TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2 if not include_z_dependence else None
+            ),
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_2,
         )
         self.ia_alphaz_2 = parameters.register_new_updatable_parameter(
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2
+            value=(
+                TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2 if not include_z_dependence else None
+            ),
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_2,
         )
         self.ia_a_d = parameters.register_new_updatable_parameter(
             default_value=TATT_ALIGNMENT_DEFAULT_IA_A_D
         )
         self.ia_zpiv_d = parameters.register_new_updatable_parameter(
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D
+            value=(
+                TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D if not include_z_dependence else None
+            ),
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D,
         )
         self.ia_alphaz_d = parameters.register_new_updatable_parameter(
-            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D
+            value=(
+                TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D if not include_z_dependence else None
+            ),
+            default_value=TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D,
         )
 
     def apply(
@@ -532,6 +552,7 @@ class TattAlignmentSystematicFactory(BaseModel):
         Literal["TattAlignmentSystematicFactory"],
         Field(description="The type of the systematic."),
     ] = "TattAlignmentSystematicFactory"
+    include_z_dependence: bool = False
 
     def create(self, bin_name: str) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
@@ -540,14 +561,14 @@ class TattAlignmentSystematicFactory(BaseModel):
             the created TattAlignmentSystematic object.
         :return: The created TattAlignmentSystematic object.
         """
-        return TattAlignmentSystematic(bin_name)
+        return TattAlignmentSystematic(bin_name, self.include_z_dependence)
 
     def create_global(self) -> TattAlignmentSystematic:
         """Create a TattAlignmentSystematic object.
 
         :return: The created TattAlignmentSystematic object.
         """
-        return TattAlignmentSystematic(None)
+        return TattAlignmentSystematic(None, self.include_z_dependence)
 
 
 WeakLensingSystematicFactory = Annotated[

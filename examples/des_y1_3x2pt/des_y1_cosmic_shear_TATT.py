@@ -80,7 +80,7 @@ def define_sources(n_source):
     result = {}
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing restult later
-    ia_systematic = wl.TattAlignmentSystematic()
+    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     for i in range(n_source):
         # Define the photo-z shift systematic.
         pzshift = wl.PhotoZShift(sacc_tracer=f"src{i}")

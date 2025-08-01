@@ -30,6 +30,7 @@ from firecrown.likelihood.source import (
 from firecrown.metadata_functions import extract_all_tracers_inferred_galaxy_zdists
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
+from firecrown.updatable import get_default_params
 
 
 @pytest.fixture(
@@ -61,13 +62,15 @@ def fixture_nc_sys_factory(request) -> nc.NumberCountsSystematicFactory:
     params=[
         wl.LinearAlignmentSystematicFactory(),
         wl.MultiplicativeShearBiasFactory(),
-        wl.TattAlignmentSystematicFactory(),
+        wl.TattAlignmentSystematicFactory(include_z_dependence=True),
+        wl.TattAlignmentSystematicFactory(include_z_dependence=False),
         wl.PhotoZShiftFactory(),
         wl.PhotoZShiftandStretchFactory(),
     ],
     ids=[
         "LinearAlignmentSystematicFactory",
         "MultiplicativeShearBiasFactory",
+        "TattAlignmentSystematicFactory_z",
         "TattAlignmentSystematicFactory",
         "PhotoZShiftFactory",
         "PhotoZShiftandStretchFactory",
@@ -240,7 +243,10 @@ def test_weak_lensing_source_factory_cache(sacc_galaxy_cells_src0_src0):
     assert source_ready is wl_factory.create(inferred_zdist=src0)
 
 
-def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_src0):
+@pytest.mark.parametrize("include_z_dependence", [True, False])
+def test_weak_lensing_source_factory_global_systematics(
+    sacc_galaxy_cells_src0_src0, include_z_dependence
+):
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
 
     all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
@@ -251,7 +257,7 @@ def test_weak_lensing_source_factory_global_systematics(sacc_galaxy_cells_src0_s
         wl.LinearAlignmentSystematicFactory | wl.TattAlignmentSystematicFactory
     ] = [
         wl.LinearAlignmentSystematicFactory(),
-        wl.TattAlignmentSystematicFactory(),
+        wl.TattAlignmentSystematicFactory(include_z_dependence=include_z_dependence),
     ]
     wl_factory = wl.WeakLensingFactory(
         per_bin_systematics=[], global_systematics=global_systematics
@@ -637,3 +643,47 @@ def test_photoz_shift_stretch(
 
     assert_allclose(mod_z, mod_tracer_args.z)
     assert_allclose(mod_dndz, mod_tracer_args.dndz)
+
+
+def _check_tatt_alignment_systematic_zdep(
+    sys: wl.TattAlignmentSystematic, include_z_dependence: bool
+):
+    """Check that the TattAlignmentSystematic has the expected z-dependence
+    parameters.
+    """
+    z_params = [
+        "ia_zpiv_1",
+        "ia_alphaz_1",
+        "ia_zpiv_2",
+        "ia_alphaz_2",
+        "ia_zpiv_d",
+        "ia_alphaz_d",
+    ]
+    default_params = get_default_params(sys)
+    if include_z_dependence:
+        for param in z_params:
+            assert param in default_params
+    else:
+        for param in z_params:
+            assert param not in default_params
+
+
+@pytest.mark.parametrize("include_z_dependence", [True, False])
+def test_tatt_alignment_systematics(include_z_dependence):
+    sys = wl.TattAlignmentSystematic(include_z_dependence=include_z_dependence)
+    assert isinstance(sys, wl.TattAlignmentSystematic)
+    _check_tatt_alignment_systematic_zdep(
+        sys, include_z_dependence=include_z_dependence
+    )
+
+
+@pytest.mark.parametrize("include_z_dependence", [True, False])
+def test_tatt_alignment_systematic_factory(include_z_dependence):
+    factory = wl.TattAlignmentSystematicFactory(
+        include_z_dependence=include_z_dependence
+    )
+    sys = factory.create_global()
+    assert isinstance(sys, wl.TattAlignmentSystematic)
+    _check_tatt_alignment_systematic_zdep(
+        sys, include_z_dependence=include_z_dependence
+    )
