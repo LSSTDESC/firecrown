@@ -6,6 +6,7 @@ provide better type safety.
 
 from __future__ import annotations
 from typing import Iterable, Iterator, Sequence
+import warnings
 
 
 def parameter_get_full_name(prefix: None | str, param: str) -> str:
@@ -69,6 +70,7 @@ class ParamsMap(dict[str, float]):
             _validate_params_map_value(name, value)
 
         self.lower_case: bool = False
+        self.used_keys: set[str] = set()
 
     def use_lower_case_keys(self, enable: bool) -> None:
         """Control whether keys will be translated into lower case.
@@ -87,11 +89,13 @@ class ParamsMap(dict[str, float]):
         Raises a KeyError if the parameter is not found.
         """
         if full_name in self.keys():
+            self.used_keys.add(full_name)
             return self[full_name]
 
         if self.lower_case:
             full_name_lower = full_name.lower()
             if full_name_lower in self.keys():
+                self.used_keys.add(full_name_lower)
                 return self[full_name_lower]
 
         raise KeyError(f"Key {full_name} not found.")
@@ -104,6 +108,27 @@ class ParamsMap(dict[str, float]):
         """
         fullname = parameter_get_full_name(prefix, param)
         return self.get_from_full_name(fullname)
+
+    def get_unused_keys(self) -> set[str]:
+        """Return the set of keys that have not been used.
+
+        This is the set of keys that are not in self.used_keys.
+        """
+        return set(self.keys()) - self.used_keys
+
+
+def handle_unused_params(params: ParamsMap, raise_on_unused: bool = False):
+    """Check for unused keys in the parameters map."""
+    unused_keys = params.get_unused_keys()
+    if unused_keys:
+        message = (
+            f"Unused keys in parameters: {sorted(unused_keys)}. "
+            "This may indicate a problem with the parameter mapping."
+        )
+        if raise_on_unused:
+            raise ValueError(message)
+
+        warnings.warn(message)
 
 
 class RequiredParameters:
