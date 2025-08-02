@@ -14,7 +14,7 @@ from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap
+from firecrown.parameters import ParamsMap, handle_unused_params
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
@@ -588,6 +588,8 @@ class NumCosmoData(Ncm.Data):
             self.likelihood.update(params_map)
             self.tools.update(params_map)
             self.tools.prepare()
+
+        handle_unused_params(params=params_map, raise_on_unused=False)
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method `m2lnL`.

@@ -20,7 +20,7 @@ from firecrown.connector.mapping import mapping_builder, MappingCAMB, Mapping
 from firecrown.ccl_factory import CCLCalculatorArgs
 from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
 from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
-from firecrown.parameters import ParamsMap
+from firecrown.parameters import ParamsMap, handle_unused_params
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter, CCLCreationMode
 from firecrown.updatable import get_default_params_map
 
@@ -280,6 +280,8 @@ class LikelihoodConnector(Likelihood):
             self.likelihood.update(params)
             self.tools.update(params)
             self.tools.prepare()
+
+        handle_unused_params(params=params, raise_on_unused=False)
 
         loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
 
