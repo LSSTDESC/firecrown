@@ -132,7 +132,7 @@ class FirecrownLikelihood:
         firecrown_params = calculate_firecrown_params(
             self.sampling_sections, self.firecrown_module_name, sample
         )
-        firecrown_params = ParamsMap(firecrown_params | self.map.asdict())
+        firecrown_params = ParamsMap(firecrown_params.params | self.map.asdict())
         firecrown_params.use_lower_case_keys(True)
         self.update_likelihood_and_tools(firecrown_params)
 
@@ -144,7 +144,10 @@ class FirecrownLikelihood:
             # has not also been configured to use CAMB.
             self.tools.prepare()
 
-        handle_unused_params(params=firecrown_params, raise_on_unused=False)
+        handle_unused_params(
+            params=firecrown_params,
+            raise_on_unused=self.likelihood.raise_on_unused_parameter,
+        )
         loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()
@@ -271,7 +274,7 @@ def calculate_firecrown_params(
     firecrown_params = ParamsMap()
     for section in sampling_sections:
         section_params = extract_section(sample, section)
-        shared_keys = section_params.to_set().intersection(firecrown_params)
+        shared_keys = section_params.to_set().intersection(firecrown_params.params)
         if len(shared_keys) > 0:
             raise RuntimeError(
                 f"The following keys `{shared_keys}` appear "

@@ -14,6 +14,7 @@ from firecrown.connector.mapping import (
 )
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter
+from firecrown.parameters import ParamsMap
 
 
 # TODO: Refactor these test functions to use a sensible fixture.
@@ -289,19 +290,21 @@ def test_mapping_camb_setting_both_A_s_and_sigma8():
         ValueError, match="Exactly one of A_s and sigma8 must be supplied"
     ):
         mapping_camb.set_params_from_camb(
-            H0=70.0,
-            ombh2=0.02,
-            omch2=0.12,
-            omk=0.0,
-            mnu=0.0,
-            nnu=3.046,
-            tau=0.07,
-            YHe=0.24,
-            As=2.1e-9,
-            sigma8=0.8,
-            ns=0.96,
-            w=-1.0,
-            wa=0.0,
+            ParamsMap(
+                H0=70.0,
+                ombh2=0.02,
+                omch2=0.12,
+                omk=0.0,
+                mnu=0.0,
+                nnu=3.046,
+                tau=0.07,
+                YHe=0.24,
+                As=2.1e-9,
+                sigma8=0.8,
+                ns=0.96,
+                w=-1.0,
+                wa=0.0,
+            )
         )
 
 
@@ -312,6 +315,27 @@ def test_mapping_camb_setting_neither_A_s_and_sigma8():
         ValueError, match="Exactly one of A_s and sigma8 must be supplied"
     ):
         mapping_camb.set_params_from_camb(
+            ParamsMap(
+                H0=70.0,
+                ombh2=0.02,
+                omch2=0.12,
+                omk=0.0,
+                mnu=0.0,
+                nnu=3.046,
+                tau=0.07,
+                YHe=0.24,
+                ns=0.96,
+                w=-1.0,
+                wa=0.0,
+            )
+        )
+
+
+def test_mapping_camb_setting_A_s():
+    mapping_camb = mapping_builder(input_style="CAMB")
+    assert isinstance(mapping_camb, MappingCAMB)
+    mapping_camb.set_params_from_camb(
+        ParamsMap(
             H0=70.0,
             ombh2=0.02,
             omch2=0.12,
@@ -320,28 +344,11 @@ def test_mapping_camb_setting_neither_A_s_and_sigma8():
             nnu=3.046,
             tau=0.07,
             YHe=0.24,
+            As=2.1e-9,
             ns=0.96,
             w=-1.0,
             wa=0.0,
         )
-
-
-def test_mapping_camb_setting_A_s():
-    mapping_camb = mapping_builder(input_style="CAMB")
-    assert isinstance(mapping_camb, MappingCAMB)
-    mapping_camb.set_params_from_camb(
-        H0=70.0,
-        ombh2=0.02,
-        omch2=0.12,
-        omk=0.0,
-        mnu=0.0,
-        nnu=3.046,
-        tau=0.07,
-        YHe=0.24,
-        As=2.1e-9,
-        ns=0.96,
-        w=-1.0,
-        wa=0.0,
     )
     assert mapping_camb.A_s == 2.1e-9
 
@@ -350,17 +357,19 @@ def test_mapping_camb_setting_sigma8():
     mapping_camb = mapping_builder(input_style="CAMB")
     assert isinstance(mapping_camb, MappingCAMB)
     mapping_camb.set_params_from_camb(
-        H0=70.0,
-        ombh2=0.02,
-        omch2=0.12,
-        omk=0.0,
-        mnu=0.0,
-        nnu=3.046,
-        tau=0.07,
-        YHe=0.24,
-        sigma8=0.8,
-        ns=0.96,
-        w=-1.0,
-        wa=0.0,
+        ParamsMap(
+            H0=70.0,
+            ombh2=0.02,
+            omch2=0.12,
+            omk=0.0,
+            mnu=0.0,
+            nnu=3.046,
+            tau=0.07,
+            YHe=0.24,
+            sigma8=0.8,
+            ns=0.96,
+            w=-1.0,
+            wa=0.0,
+        )
     )
     assert mapping_camb.sigma8 == 0.8

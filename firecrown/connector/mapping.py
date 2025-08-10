@@ -17,6 +17,7 @@ import numpy as np
 import numpy.typing as npt
 from pyccl import physical_constants as physics
 
+from firecrown import parameters
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.ccl_factory import (
@@ -497,7 +498,7 @@ class MappingCAMB(Mapping):
             "wa",
         ]
 
-    def set_params_from_camb(self, **params_values) -> None:
+    def set_params_from_camb(self, params_values: parameters.ParamsMap) -> None:
         """Set the parameters in this mapping from the given CAMB-style parameters."""
         # pylint: disable-msg=R0914
 

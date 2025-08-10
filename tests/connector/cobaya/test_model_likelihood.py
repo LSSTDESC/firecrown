@@ -73,7 +73,6 @@ def fixture_fiducial_params():
         "ombh2": 0.022,
         "omch2": 0.12,
         "H0": 68,
-        "tau": 0.07,
         "As": 2.2e-9,
         "ns": 0.96,
         "mnu": 0.06,

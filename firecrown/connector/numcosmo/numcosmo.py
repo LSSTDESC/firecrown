@@ -589,7 +589,9 @@ class NumCosmoData(Ncm.Data):
             self.tools.update(params_map)
             self.tools.prepare()
 
-        handle_unused_params(params=params_map, raise_on_unused=False)
+        handle_unused_params(
+            params=params_map, raise_on_unused=self.likelihood.raise_on_unused_parameter
+        )
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method `m2lnL`.

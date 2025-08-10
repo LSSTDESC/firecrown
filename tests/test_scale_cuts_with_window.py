@@ -19,8 +19,6 @@ from firecrown.data_functions import (
     TwoPointBinFilter,
 )
 from firecrown.metadata_types import Galaxies, TwoPointFilterMethod
-from firecrown.parameters import ParamsMap
-
 from firecrown.modeling_tools import ModelingTools
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
@@ -159,9 +157,7 @@ def test_scale_cuts_with_bandpower_window_label(
         ccl_factory=two_point_experiment.ccl_factory,
     )
     params = get_default_params_map(tools, likelihood)
-    params.update(
-        ParamsMap({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
-    )
+    params.update({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
     likelihood.update(params)
     tools.update(params)
     tools.prepare()
@@ -230,9 +226,7 @@ def test_scale_cuts_with_bandpower_window_support(
         ccl_factory=two_point_experiment.ccl_factory,
     )
     params = get_default_params_map(tools, likelihood)
-    params.update(
-        ParamsMap({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
-    )
+    params.update({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
     likelihood.update(params)
     tools.update(params)
     tools.prepare()

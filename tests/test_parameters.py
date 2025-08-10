@@ -97,6 +97,47 @@ def test_params_map():
         _ = my_params.get_from_prefix_param(None, "no_such_name")
 
 
+def test_params_map_union():
+    a = ParamsMap({"a": 1.0})
+    b = ParamsMap({"b": 2.0})
+    c = a.union(b)
+    assert c.used_keys == set()
+    assert c.get_from_prefix_param(None, "a") == 1.0
+    assert c.used_keys == {"a"}
+    assert c.get_from_prefix_param(None, "b") == 2.0
+    assert c.used_keys == {"a", "b"}
+
+    d = ParamsMap({"d": 3.0})
+    e = c.union(d)
+    assert e.used_keys == {"a", "b"}
+
+    assert d["d"] == 3.0
+    assert d.used_keys == {"d"}
+    f = c.union(d)
+    assert f.used_keys == {"a", "b", "d"}
+
+
+def test_params_map_getitem():
+    a = ParamsMap({"a": 1.0})
+    assert a.get_unused_keys() == {"a"}
+    assert a["a"] == 1
+    assert a.used_keys == {"a"}
+    assert a.get_unused_keys() == set()
+    with pytest.raises(KeyError):
+        _ = a["b"]
+
+
+def test_get_uses_params():
+    a = ParamsMap({"a": 1.0})
+    assert a.used_keys == set()
+    v = a.get("no_such_key", -1)
+    assert v == -1
+    assert a.used_keys == set()
+    v2 = a.get("a", 2.0)
+    assert v2 == 1.0
+    assert a.used_keys == {"a"}
+
+
 def test_params_map_wrong_type():
     with pytest.raises(
         TypeError, match="Value for parameter a is not a float or a list of floats.*"
@@ -456,3 +497,38 @@ def test_handle_unused_params():
         ),
     ):
         handle_unused_params(params=params, raise_on_unused=True)
+
+
+def test_params_map_union():
+    p1 = ParamsMap({"a": 1.0})
+    p2 = ParamsMap({"b": 2.0})
+    p3 = p1.union(p2)
+    assert p3.used_keys == set()
+    assert p3.get_from_prefix_param(None, "a") == 1.0
+    assert p3.used_keys == {"a"}
+    assert p3.get_from_prefix_param(None, "b") == 2.0
+    assert p3.used_keys == {"a", "b"}
+
+    p4 = ParamsMap({"d": 3.0})
+    p5 = p3.union(p4)
+    assert p5.used_keys == {"a", "b"}
+
+    assert p4["d"] == 3.0
+    assert p4.used_keys == {"d"}
+    p6 = p3.union(p4)
+    assert p6.used_keys == {"a", "b", "d"}
+
+    with pytest.raises(
+        ValueError, match="Key a has different values in self and other."
+    ):
+        p1 = ParamsMap({"a": 1.0})
+        p2 = ParamsMap({"a": 2.0})
+        p1.union(p2)
+
+
+def test_params_get():
+    params = ParamsMap({"a": 1.0})
+    assert params.get("a") == 1.0
+    assert params.get("b", 2.0) == 2.0
+    with pytest.raises(KeyError):
+        params.get("b")

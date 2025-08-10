@@ -103,16 +103,14 @@ def run_likelihood() -> None:
     a_2h = 1.0  # 2-halo alignment amplitude.
 
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
-        {
-            "ia_a_1h": a_1h,
-            "ia_a_2h": a_2h,
-            "src0_delta_z": 0.000,
-        }
-    )
+    systematics_params = {
+        "ia_a_1h": a_1h,
+        "ia_a_2h": a_2h,
+        "src0_delta_z": 0.000,
+    }
 
     # Prepare the cosmology object
-    params = ParamsMap(get_default_params_map(tools) | systematics_params)
+    params = ParamsMap(get_default_params_map(tools).params | systematics_params)
 
     # Apply the systematics parameters
     likelihood.update(params)

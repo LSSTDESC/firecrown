@@ -295,6 +295,7 @@ def test_ccl_factory_update() -> None:
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
 
+    # TODO: should the following line use a deep copy?
     new_params = ParamsMap(default_params.copy())
     new_params["Omega_c"] = 0.1
 
