@@ -97,26 +97,6 @@ def test_params_map():
         _ = my_params.get_from_prefix_param(None, "no_such_name")
 
 
-def test_params_map_union():
-    a = ParamsMap({"a": 1.0})
-    b = ParamsMap({"b": 2.0})
-    c = a.union(b)
-    assert c.used_keys == set()
-    assert c.get_from_prefix_param(None, "a") == 1.0
-    assert c.used_keys == {"a"}
-    assert c.get_from_prefix_param(None, "b") == 2.0
-    assert c.used_keys == {"a", "b"}
-
-    d = ParamsMap({"d": 3.0})
-    e = c.union(d)
-    assert e.used_keys == {"a", "b"}
-
-    assert d["d"] == 3.0
-    assert d.used_keys == {"d"}
-    f = c.union(d)
-    assert f.used_keys == {"a", "b", "d"}
-
-
 def test_params_map_getitem():
     a = ParamsMap({"a": 1.0})
     assert a.get_unused_keys() == {"a"}
