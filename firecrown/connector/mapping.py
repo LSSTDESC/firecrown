@@ -274,14 +274,6 @@ class Mapping(ABC):
         return self.h * 100.0
 
 
-class MappingCLASS(Mapping):
-    """This class is not yet implemented.
-
-    This stub is here to satisfy IDEs that complain about using the names of
-    missing classes.
-    """
-
-
 class MappingCosmoSIS(Mapping):
     """Mapping support for CosmoSIS."""
 
@@ -557,7 +549,6 @@ class MappingCAMB(Mapping):
 
 mapping_classes: typing.Mapping[str, Type[Mapping]] = {
     "CAMB": MappingCAMB,
-    "CLASS": MappingCLASS,
     "CosmoSIS": MappingCosmoSIS,
 }
 
