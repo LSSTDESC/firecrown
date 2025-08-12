@@ -409,28 +409,6 @@ class MappingCosmoSIS(Mapping):
                 "delta_matter:delta_matter": p_k,
             }
 
-        # TODO: We should have several configurable modes for this module.
-        # In all cases, an exception will be raised (causing a program
-        # shutdown) if something that is to be read from the DataBlock is not
-        # present in the DataBlock.
-        #
-        # background: read only background information from the DataBlock; it
-        # will generate a runtime error if the configured likelihood attempts
-        # to use anything else.
-        #
-        # linear: read also the linear power spectrum from the DataBlock. Any
-        # non-linear power spectrum present will be ignored. It will generate
-        # a runtime error if the configured likelihood attempts to make use
-        # of a non-linear spectrum.
-        #
-        #  nonlinear: read also the nonlinear power spectrum from the DataBlock.
-        #
-        # halofit, halomodel, emu: use CCL to calculate the nonlinear power
-        # spectrum according to the named technique. In all cases, the linear
-        # power spectrum read from the DataBlock is used as input. In all
-        # cases, it is an error if the DataBlock also contains a nonlinear
-        # power spectrum.
-
         chi = np.flip(sample["distances", "d_m"])
         scale_distances = self.redshift_to_scale_factor(sample["distances", "z"])
         # h0 = sample["cosmological_parameters", "h0"]
