@@ -235,7 +235,7 @@ class LikelihoodConnector(Likelihood):
 
     def calculate_args(
         self, params_values: ParamsMap
-    ) -> tuple[CCLCalculatorArgs, dict[str, float | list[float]]]:
+    ) -> tuple[CCLCalculatorArgs, dict[str, float]]:
         """Calculate the curr   ent cosmology, and set state["pyccl"] to the result.
 
         :param state: The state dictionary to update.

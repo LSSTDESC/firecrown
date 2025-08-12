@@ -67,7 +67,6 @@ class Mapping(ABC):
     n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
-    # m_nu = TypeFloat(minvalue=0.0)
     m_nu_type = TypeString()  # "inverted", "normal" or "list"
     w0 = TypeFloat()
     wa = TypeFloat()
@@ -77,7 +76,7 @@ class Mapping(ABC):
         """Initialize the Mapping object."""
         # We can have:
         #    a single neutrino mass (must be non-negative)
-        #    a list of 3 neutrino masses (all must be non-negative)
+        #    a list of n neutrino masses (all must be non-negative)
         #    None, indicating that all neutrinos are massless
         self.m_nu: float | list[float] | None = None
 
@@ -224,7 +223,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> dict[str, float | list[float]]:
+    def asdict(self) -> dict[str, float]:
         """Return a dictionary containing the cosmological constants.
 
         :return: the dictionary, containing keys:
@@ -237,14 +236,16 @@ class Mapping(ABC):
             - ``n_s``: scalar spectral index of primordial power spectrum
             - ``Omega_k``: curvature of the universe
             - ``Neff``: effective number of relativistic neutrino species
-            - ``m_nu``: effective mass of neutrinos
+            - ``m_nu``: effective mass of neutrinos, or first neutrino
+            - ``m_nu_<n>``: effective mass of the nth neutrino, n >= 2
+                Note: the values of n are guaranteed to be consecutive.
             - ``w0``: constant of the CPL parameterization of the dark energy
                 equation of state
             - ``wa``: linear coefficient of the CPL parameterization of the
                 dark energy equation of state
             - ``T_CMB``: cosmic microwave background temperature today
         """
-        cosmo_dict: dict[str, float | list[float]] = {
+        cosmo_dict: dict[str, float] = {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
             "h": self.h,
@@ -259,10 +260,19 @@ class Mapping(ABC):
             cosmo_dict["A_s"] = self.A_s
         if self.sigma8 is not None:
             cosmo_dict["sigma8"] = self.sigma8
-        if self.m_nu is None:
-            cosmo_dict["m_nu"] = 0.0
-        else:
-            cosmo_dict["m_nu"] = self.m_nu
+        match self.m_nu:
+            case None:
+                cosmo_dict["m_nu"] = 0.0
+            case float():
+                cosmo_dict["m_nu"] = self.m_nu
+            case list():
+                for n, mass in enumerate(self.m_nu):
+                    if n == 0:
+                        cosmo_dict["m_nu"] = mass
+                    else:
+                        cosmo_dict[f"m_nu_{n + 1}"] = mass
+            case _ as unreachable:
+                assert_never(unreachable)
 
         return cosmo_dict
 

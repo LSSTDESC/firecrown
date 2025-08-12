@@ -153,8 +153,8 @@ NcmModelBuilder:
     mset.set(my_model2)
 
     with pytest.raises(
-        RuntimeError,
-        match="The following keys .* appear in more than one model used by the module",
+        ValueError,
+        match="Key param2 is already present in the ParamsMap.",
     ):
         create_params_map(["MyModel1", "MyModel2"], mset, map_cosmo_dist.mapping)
 

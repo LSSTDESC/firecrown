@@ -31,7 +31,11 @@ from pyccl.neutrinos import NeutrinoMassSplits
 from pyccl.modified_gravity import MuSigmaMG
 
 from firecrown.updatable import Updatable
-from firecrown.parameters import register_new_updatable_parameter, ParamsMap
+from firecrown.parameters import (
+    register_new_updatable_parameter,
+    ParamsMap,
+    SamplerParameter,
+)
 from firecrown.utils import YAMLSerializable
 
 # PowerSpec is a type that represents a power spectrum.
@@ -305,6 +309,9 @@ class CCLFactory(Updatable, BaseModel):
         BeforeValidator(_validate_neutrino_mass_splits),
         Field(frozen=True),
     ] = NeutrinoMassSplits.NORMAL
+    # num_neutrino_masses is None except when mass_split is LIST; then it must
+    # be the length of the list.
+    num_neutrino_masses: Annotated[int | None, Field(frozen=True, ge=1)] = None
     creation_mode: Annotated[CCLCreationMode, Field(frozen=True)] = (
         CCLCreationMode.DEFAULT
     )
@@ -342,9 +349,22 @@ class CCLFactory(Updatable, BaseModel):
         self.Neff = register_new_updatable_parameter(
             default_value=temp_cosmology["Neff"]
         )
-        self.m_nu = register_new_updatable_parameter(
-            default_value=temp_cosmology["m_nu"]
-        )
+        self.m_nu: float | None = None
+        match self.mass_split:
+            case NeutrinoMassSplits.LIST:
+                assert self.num_neutrino_masses is not None
+                for i in range(self.num_neutrino_masses):
+                    if i == 0:
+                        self.set_sampler_parameter(
+                            SamplerParameter(name="m_nu", default_value=0.0)
+                        )
+                    else:
+                        self.set_sampler_parameter(
+                            SamplerParameter(name=f"m_nu_{i + 1}", default_value=0.0)
+                        )
+            case _:
+                assert self.num_neutrino_masses is None
+
         self.w0 = register_new_updatable_parameter(default_value=temp_cosmology["w0"])
         self.wa = register_new_updatable_parameter(default_value=temp_cosmology["wa"])
         self.T_CMB = register_new_updatable_parameter(
@@ -427,19 +447,26 @@ class CCLFactory(Updatable, BaseModel):
             raise ValueError("CCLFactory object has already been created.")
 
         # pylint: disable=duplicate-code
-        ccl_args = {
+        ccl_args: dict[str, Any] = {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
             "h": self.h,
             "n_s": self.n_s,
             "Omega_k": self.Omega_k,
             "Neff": self.Neff,
-            "m_nu": self.m_nu,
             "w0": self.w0,
             "wa": self.wa,
             "T_CMB": self.T_CMB,
             "mass_split": self.mass_split.value,
         }
+        match self.mass_split:
+            case NeutrinoMassSplits.LIST:
+                assert self.num_neutrino_masses is not None
+                mass_list = [self.m_nu] + [
+                    getattr(self, f"m_nu_{i + 1}")
+                    for i in range(1, self.num_neutrino_masses)
+                ]
+                ccl_args["m_nu"] = mass_list
         # pylint: enable=duplicate-code
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
