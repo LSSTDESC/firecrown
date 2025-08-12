@@ -53,7 +53,7 @@ class Mapping(ABC):
 
     The class attributes are all :mod:`firecrown.connector.descriptors`. This is
     to control the allowed types for the instance attributes. A descriptor of
-    name 'x' will provide an apparent attribue with name `x` in
+    name 'x' will provide an apparent attribute with name `x` in
     each object, as well as an entry `_x` in the object's `__dict__`.
 
     """

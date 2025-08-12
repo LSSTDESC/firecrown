@@ -118,7 +118,7 @@ class LikelihoodConnector(Likelihood):
             self.map = new_mapping
 
             # External observables are necessary in the default mode, so we need to
-            # extract from CCL its precison parameters.
+            # extract from CCL its precision parameters.
             params = get_default_params_map(self.tools)
             self.tools.update(params)
             self.tools.prepare()
