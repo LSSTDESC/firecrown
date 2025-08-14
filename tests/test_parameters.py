@@ -512,3 +512,9 @@ def test_params_get():
     assert params.get("b", 2.0) == 2.0
     with pytest.raises(KeyError):
         params.get("b")
+
+
+def test_params_map_items():
+    d = {"a": 1.0, "b": 2.0}
+    params = ParamsMap(d)
+    assert params.items() == d.items()

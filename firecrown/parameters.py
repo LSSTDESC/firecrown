@@ -114,6 +114,13 @@ class ParamsMap:
         result.lower_case = self.lower_case
         return result
 
+    def items(self):
+        """Return an iterator over the items in the dictionary.
+
+        :return: an iterator over the items in the dictionary
+        """
+        return self.params.items()
+
     def union(self, other: ParamsMap) -> ParamsMap:
         """Return a new ParamsMap that is the union of self and other.
 
