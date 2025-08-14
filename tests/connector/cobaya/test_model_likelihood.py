@@ -69,6 +69,7 @@ def test_cobaya_likelihood_initialize_with_params():
 @pytest.fixture(name="fiducial_params")
 def fixture_fiducial_params():
     # Fiducial parameters for CAMB
+    # These are the names expected by Cobaya.
     fiducial_params = {
         "ombh2": 0.022,
         "omch2": 0.12,

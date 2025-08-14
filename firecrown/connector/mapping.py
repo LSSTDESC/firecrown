@@ -8,7 +8,6 @@ Each supported body of code has its own dedicated class.
 
 import typing
 import warnings
-from abc import ABC
 from typing import Type, final
 from typing_extensions import assert_never
 
@@ -44,8 +43,8 @@ def build_ccl_background_dict(
     return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
 
-class Mapping(ABC):
-    """Abstract base class defining the interface for each supported code.
+class Mapping:
+    """Base class defining the interface for each supported code.
 
     The interface describes a mapping of cosmological constants from some
     concrete Boltzmann calculator to the form those constants take in CCL. Each

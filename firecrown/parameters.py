@@ -136,17 +136,13 @@ class ParamsMap:
         result.used_keys.update(other.used_keys)
         return result
 
-    def update(self, d: dict[str, float], overwrite: bool = False) -> None:
+    def update(self, d: dict[str, float]) -> None:
         """Update self with the values from d.
 
-        Unless overwrite is True, this will raise an error if any of the keys in d
-        are already in self.
+        This will raise an error if any of the keys in d are already in self.
 
         :param d: dictionary
         """
-        if overwrite:
-            raise NotImplementedError
-
         for key, value in d.items():
             if key in self.params:
                 raise ValueError(f"Key {key} is already present in the ParamsMap.")

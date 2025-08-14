@@ -326,10 +326,9 @@ class CCLFactory(Updatable, BaseModel):
         BaseModel.__init__(self, **data)
         Updatable.__init__(self, parameter_prefix=parameter_prefix)
 
-        if set(data) - set(CCLFactory.model_fields.keys()):
-            raise ValueError(
-                f"Invalid parameters: {set(data) - set(CCLFactory.model_fields.keys())}"
-            )
+        unexpected_keys: set[str] = set(data) - set(CCLFactory.model_fields.keys())
+        if unexpected_keys:
+            raise ValueError(f"Invalid parameters: {unexpected_keys}")
 
         self._ccl_cosmo: None | pyccl.Cosmology = None
 
@@ -349,7 +348,7 @@ class CCLFactory(Updatable, BaseModel):
         self.Neff = register_new_updatable_parameter(
             default_value=temp_cosmology["Neff"]
         )
-        self.m_nu: float | None = None
+        self.m_nu: float | None
         match self.mass_split:
             case NeutrinoMassSplits.LIST:
                 assert self.num_neutrino_masses is not None
@@ -364,6 +363,9 @@ class CCLFactory(Updatable, BaseModel):
                         )
             case _:
                 assert self.num_neutrino_masses is None
+                self.m_nu = register_new_updatable_parameter(
+                    default_value=temp_cosmology["m_nu"]
+                )
 
         self.w0 = register_new_updatable_parameter(default_value=temp_cosmology["w0"])
         self.wa = register_new_updatable_parameter(default_value=temp_cosmology["wa"])

@@ -29,7 +29,11 @@ class LikelihoodThatThrowsUnhandledError(like.Likelihood):
 
 def test_integration_error_generates_0_likelihood():
     likelihood = LikelihoodThatThrowsIntegrationError()
-    assert likelihood.compute_loglike_for_sampling(like.ModelingTools()) == -np.inf
+    with pytest.warns(
+        UserWarning,
+        match="CCL error:\nError CCL_ERROR_INTEG: \nin likelihood, returning -inf",
+    ):
+        assert likelihood.compute_loglike_for_sampling(like.ModelingTools()) == -np.inf
 
 
 def test_other_error_propagates():

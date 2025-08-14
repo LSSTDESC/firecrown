@@ -20,7 +20,7 @@ from firecrown.data_functions import (
 )
 from firecrown.metadata_types import Galaxies, TwoPointFilterMethod
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import get_default_params_map
+from firecrown.updatable import get_default_params, ParamsMap
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 
@@ -156,8 +156,11 @@ def test_scale_cuts_with_bandpower_window_label(
     tools = ModelingTools(
         ccl_factory=two_point_experiment.ccl_factory,
     )
-    params = get_default_params_map(tools, likelihood)
-    params.update({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
+    params_dict = get_default_params(tools, likelihood)
+    params_dict.update(
+        {k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)}
+    )
+    params = ParamsMap(params_dict)
     likelihood.update(params)
     tools.update(params)
     tools.prepare()
@@ -197,7 +200,7 @@ def test_scale_cuts_with_bandpower_window_support(
     tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
     tmp_file_sacc = tmp_path / "sacc_data.fits"
-    sacc_data.save_fits(tmp_file_sacc.as_posix(), overwrite=True)
+    sacc_data.save_fits((tmp_path / "sacc_data.fits").as_posix(), overwrite=True)
 
     two_point_experiment = TwoPointExperiment(
         two_point_factory=tp_factory,
@@ -225,8 +228,11 @@ def test_scale_cuts_with_bandpower_window_support(
     tools = ModelingTools(
         ccl_factory=two_point_experiment.ccl_factory,
     )
-    params = get_default_params_map(tools, likelihood)
-    params.update({k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)})
+    params = ParamsMap(
+        get_default_params(tools, likelihood)
+        | {k: v for k, v in cosmo.to_dict().items() if isinstance(v, float)}
+    )
+
     likelihood.update(params)
     tools.update(params)
     tools.prepare()

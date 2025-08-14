@@ -373,3 +373,24 @@ def test_mapping_camb_setting_sigma8():
         )
     )
     assert mapping_camb.sigma8 == 0.8
+
+
+def test_mapping_m_nu_list_asdict():
+    mapping = Mapping()
+    mapping.Omega_c = 0.26
+    mapping.Omega_b = 0.04
+    mapping.h = 0.72
+    mapping.A_s = 1.0e-9
+    mapping.sigma8 = None
+    mapping.n_s = 0.96
+    mapping.Omega_k = 0.0
+    mapping.Neff = 3.046
+    mapping.m_nu_type = "list"
+    mapping.w0 = -1.0
+    mapping.wa = 0.0
+    mapping.T_CMB = 2.7255
+    mapping.m_nu = [1.0, 2.0, 3.0]
+    d = mapping.asdict()
+    assert d["m_nu"] == 1.0
+    assert d["m_nu_2"] == 2.0
+    assert d["m_nu_3"] == 3.0
