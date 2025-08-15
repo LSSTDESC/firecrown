@@ -24,14 +24,12 @@ params:
     ref: 0.118374058
     proposal: 0.01
   H0: 68.2
-  tau: 0.0561
   mnu: 0.06
   nnu: 3.046
   ns: 0.971
-  YHe: 0.2454
   w: -1.0
   wa: 0.0
-  
+
 #   Likelihood params
 #   - IA model
   ia_a_1:
@@ -54,7 +52,7 @@ params:
   ia_alphaz_d: 0.0
   ia_zpiv_1: 0.62
   ia_zpiv_2: 0.62
-  ia_zpiv_d: 0.62    
+  ia_zpiv_d: 0.62
   lens0_b_2:
      ref: 1.0
      prior:
@@ -74,14 +72,14 @@ params:
         max: 1.2
 
 #   - linear bias for lenses
-  lens0_bias: 
+  lens0_bias:
      ref: 1.4
      prior:
         min: 0.8
         max: 3.0
 
 #   - photoz shifts for the lensing sources
-  src0_delta_z: 
+  src0_delta_z:
      ref: -0.001
      prior:
         dist: norm

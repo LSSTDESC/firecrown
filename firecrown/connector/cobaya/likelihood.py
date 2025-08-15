@@ -20,7 +20,7 @@ from firecrown.connector.mapping import mapping_builder, MappingCAMB, Mapping
 from firecrown.ccl_factory import CCLCalculatorArgs
 from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
 from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
-from firecrown.parameters import ParamsMap
+from firecrown.parameters import ParamsMap, handle_unused_params
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter, CCLCreationMode
 from firecrown.updatable import get_default_params_map
 
@@ -84,6 +84,8 @@ class LikelihoodConnector(Likelihood):
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown configuration."""
+        # force Cobaya to raise an exception on error
+        self.stop_at_error = True
         if not hasattr(self, "build_parameters"):
             build_parameters = NamedParameters()
         else:
@@ -116,7 +118,7 @@ class LikelihoodConnector(Likelihood):
             self.map = new_mapping
 
             # External observables are necessary in the default mode, so we need to
-            # extract from CCL its precison parameters.
+            # extract from CCL its precision parameters.
             params = get_default_params_map(self.tools)
             self.tools.update(params)
             self.tools.prepare()
@@ -232,8 +234,8 @@ class LikelihoodConnector(Likelihood):
         """
 
     def calculate_args(
-        self, params_values
-    ) -> tuple[CCLCalculatorArgs, dict[str, float | list[float]]]:
+        self, params_values: ParamsMap
+    ) -> tuple[CCLCalculatorArgs, dict[str, float]]:
         """Calculate the curr   ent cosmology, and set state["pyccl"] to the result.
 
         :param state: The state dictionary to update.
@@ -241,14 +243,14 @@ class LikelihoodConnector(Likelihood):
         """
         assert self.map is not None
         assert isinstance(self.map, MappingCAMB)
-        self.map.set_params_from_camb(**params_values)
+        self.map.set_params_from_camb(params_values)
         pyccl_params_values = self.map.asdict()
 
         # This is the dictionary appropriate for CCL creation
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
         k, z, pk = self.provider.get_Pk_grid(nonlinear=False)
-        # Note: we havae to define self.a_Pk here because Cobaya does not allow
+        # Note: we have to define self.a_Pk here because Cobaya does not allow
         # us to override the __init__ method.
         #
         # pylint: disable-next=attribute-defined-outside-init
@@ -261,32 +263,35 @@ class LikelihoodConnector(Likelihood):
         }
         return pyccl_args, pyccl_params_values
 
-    def logp(self, **params_values) -> float:
+    def logp(self, *, _derived=None, **params_values) -> float:
         """Return the log of the calculated likelihood.
 
         Required by Cobaya.
         :params values: The values of the parameters to use.
         """
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
-            pyccl_args, pyccl_params = self.calculate_args(params_values)
-            derived = params_values.pop("_derived", {})
-            params = ParamsMap(params_values | pyccl_params)
+            pvs = ParamsMap(**params_values)
+            pyccl_args, pyccl_params = self.calculate_args(pvs)
+            params = pvs.union(ParamsMap(pyccl_params))
             self.likelihood.update(params)
             self.tools.update(params)
             self.tools.prepare(calculator_args=pyccl_args)
         else:
-            derived = params_values.pop("_derived", {})
             params = ParamsMap(params_values)
             self.likelihood.update(params)
             self.tools.update(params)
             self.tools.prepare()
+
+        handle_unused_params(
+            params=params, raise_on_unused=self.likelihood.raise_on_unused_parameter
+        )
 
         loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
         for section, name, val in derived_params_collection:
-            derived[f"{section}__{name}"] = val
+            _derived[f"{section}__{name}"] = val
 
         self.likelihood.reset()
         self.tools.reset()
