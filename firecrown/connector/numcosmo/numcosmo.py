@@ -14,7 +14,7 @@ from firecrown.likelihood.likelihood import load_likelihood
 from firecrown.likelihood.likelihood import Likelihood
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap
+from firecrown.parameters import ParamsMap, handle_unused_params
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
@@ -196,7 +196,6 @@ class MappingNumCosmo(GObject.Object):
 
         m_nu: float | list[float] = 0.0
         if hi_cosmo.NMassNu() > 0:
-            assert hi_cosmo.NMassNu() <= 3
             m_nu = [hi_cosmo.MassNuInfo(i)[0] for i in range(hi_cosmo.NMassNu())]
 
         match hi_cosmo:
@@ -313,18 +312,6 @@ class MappingNumCosmo(GObject.Object):
         return {"a": scale, "k": k, "delta_matter:delta_matter": p_k}
 
 
-def _update_params_map(model_list, params_map, model_dict):
-    """Update a ParamsMap with the parameters of a model."""
-    shared_keys = set(model_dict).intersection(params_map)
-    if len(shared_keys) > 0:
-        raise RuntimeError(
-            f"The following keys `{shared_keys}` appear in more than one model "
-            f"used by the module {model_list} or cosmological parameters."
-        )
-    params_map = ParamsMap({**params_map, **model_dict})
-    return params_map
-
-
 def create_params_map(
     model_list: list[str], mset: Ncm.MSet, mapping: Mapping | None
 ) -> ParamsMap:
@@ -350,10 +337,10 @@ def create_params_map(
 
         param_names = model.param_names()
         model_dict = {param: model.param_get_by_name(param) for param in param_names}
-        params_map = _update_params_map(model_list, params_map, model_dict)
+        params_map.update(model_dict)
 
     if mapping is not None:
-        params_map = _update_params_map(model_list, params_map, mapping.asdict())
+        params_map.update(mapping.asdict())
 
     return params_map
 
@@ -588,6 +575,10 @@ class NumCosmoData(Ncm.Data):
             self.likelihood.update(params_map)
             self.tools.update(params_map)
             self.tools.prepare()
+
+        handle_unused_params(
+            params=params_map, raise_on_unused=self.likelihood.raise_on_unused_parameter
+        )
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ
         """Implements the virtual method `m2lnL`.

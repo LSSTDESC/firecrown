@@ -165,3 +165,4 @@ tutorial/theoretical_predictions_tutorial.html
 *.tsv
 
 /.luarc.json
+*.Rproj

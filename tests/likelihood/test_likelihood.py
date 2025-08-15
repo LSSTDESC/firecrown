@@ -8,7 +8,7 @@ import firecrown.likelihood.likelihood as like
 class LikelihoodThatThrowsIntegrationError(like.Likelihood):
     """A likelihood that always throws a pyccl integration error exception."""
 
-    def read(self, data: sacc.Sacc) -> None:
+    def read(self, sacc_data: sacc.Sacc) -> None:
         pass
 
     def compute_loglike(self, _: like.ModelingTools) -> float:
@@ -19,7 +19,7 @@ class LikelihoodThatThrowsIntegrationError(like.Likelihood):
 class LikelihoodThatThrowsUnhandledError(like.Likelihood):
     """A likelihood that always throws a pyccl integration error exception."""
 
-    def read(self, data: sacc.Sacc) -> None:
+    def read(self, sacc_data: sacc.Sacc) -> None:
         pass
 
     def compute_loglike(self, _: like.ModelingTools) -> float:
@@ -29,7 +29,11 @@ class LikelihoodThatThrowsUnhandledError(like.Likelihood):
 
 def test_integration_error_generates_0_likelihood():
     likelihood = LikelihoodThatThrowsIntegrationError()
-    assert likelihood.compute_loglike_for_sampling(like.ModelingTools()) == -np.inf
+    with pytest.warns(
+        UserWarning,
+        match="CCL error:\nError CCL_ERROR_INTEG: \nin likelihood, returning -inf",
+    ):
+        assert likelihood.compute_loglike_for_sampling(like.ModelingTools()) == -np.inf
 
 
 def test_other_error_propagates():

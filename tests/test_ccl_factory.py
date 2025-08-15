@@ -216,6 +216,9 @@ def test_ccl_factory_simple(
         creation_mode=ccl_creation_mode,
         camb_extra_params=camb_extra_params,
         ccl_spline_params=ccl_spline_params,
+        num_neutrino_masses=(
+            3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
+        ),
     )
 
     assert ccl_factory is not None
@@ -253,6 +256,9 @@ def test_ccl_factory_ccl_args(
         mass_split=neutrino_mass_splits,
         require_nonlinear_pk=require_nonlinear_pk,
         ccl_spline_params=ccl_spline_params,
+        num_neutrino_masses=(
+            3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
+        ),
     )
 
     if require_nonlinear_pk and "pk_linear" not in calculator_args:
@@ -295,6 +301,7 @@ def test_ccl_factory_update() -> None:
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
 
+    # TODO: should the following line use a deep copy?
     new_params = ParamsMap(default_params.copy())
     new_params["Omega_c"] = 0.1
 
@@ -327,7 +334,12 @@ def test_ccl_factory_amplitude_parameter(
 def test_ccl_factory_neutrino_mass_splits(
     neutrino_mass_splits: NeutrinoMassSplits,
 ) -> None:
-    ccl_factory = CCLFactory(mass_split=neutrino_mass_splits)
+    ccl_factory = CCLFactory(
+        mass_split=neutrino_mass_splits,
+        num_neutrino_masses=(
+            3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
+        ),
+    )
 
     assert ccl_factory is not None
     assert ccl_factory.mass_split == neutrino_mass_splits
@@ -450,41 +462,39 @@ def test_ccl_factory_tofrom_yaml_all_options(
     neutrino_mass_splits: NeutrinoMassSplits,
     require_nonlinear_pk: bool,
 ) -> None:
+    num_neutrino_masses = 3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
+
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
         mass_split=neutrino_mass_splits,
         require_nonlinear_pk=require_nonlinear_pk,
+        num_neutrino_masses=num_neutrino_masses,
     )
-
     assert ccl_factory is not None
     assert ccl_factory.amplitude_parameter == amplitude_parameter
     assert ccl_factory.mass_split == neutrino_mass_splits
     assert ccl_factory.require_nonlinear_pk == require_nonlinear_pk
 
     default_params = get_default_params_map(ccl_factory)
-
     ccl_factory.update(default_params)
-
     cosmo = ccl_factory.create()
 
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
 
     yaml_str = base_model_to_yaml(ccl_factory)
-
     ccl_factory2 = base_model_from_yaml(CCLFactory, yaml_str)
 
     assert ccl_factory2 is not None
     assert ccl_factory2.amplitude_parameter == amplitude_parameter
     assert ccl_factory2.mass_split == neutrino_mass_splits
     assert ccl_factory2.require_nonlinear_pk == require_nonlinear_pk
-    ccl_factory2.update(default_params)
 
+    ccl_factory2.update(default_params)
     cosmo2 = ccl_factory2.create()
 
     assert cosmo2 is not None
     assert isinstance(cosmo2, pyccl.Cosmology)
-
     assert cosmo == cosmo2
 
 

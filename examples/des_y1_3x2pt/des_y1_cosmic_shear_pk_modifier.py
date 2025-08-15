@@ -127,17 +127,16 @@ def run_likelihood() -> None:
 
     f_bar = 0.5
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
-        {
-            "f_bar": f_bar,
-            "src0_delta_z": 0.000,
-            "src1_delta_z": 0.003,
-            "src2_delta_z": -0.001,
-            "src3_delta_z": 0.002,
-        }
-    )
+    systematics_params = {
+        "f_bar": f_bar,
+        "src0_delta_z": 0.000,
+        "src1_delta_z": 0.003,
+        "src2_delta_z": -0.001,
+        "src3_delta_z": 0.002,
+    }
+
     # Prepare the cosmology object
-    params = ParamsMap(get_default_params_map(tools) | systematics_params)
+    params = ParamsMap(get_default_params_map(tools).params | systematics_params)
 
     tools.update(params)
     tools.prepare()

@@ -478,4 +478,5 @@ def get_default_params_map(*args: Updatable) -> ParamsMap:
     :param args: updatables to get the default parameters from
     :return: a ParamsMap with the default values of all parameters
     """
-    return ParamsMap(get_default_params(*args))
+    default_parameters: dict[str, float] = get_default_params(*args)
+    return ParamsMap(**default_parameters)

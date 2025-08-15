@@ -109,25 +109,23 @@ def run_likelihood() -> None:
     a_2 = 0.5
     a_d = 0.5
     # Set the parameters for our systematics
-    systematics_params = ParamsMap(
-        {
-            "ia_a_1": a_1,
-            "ia_a_2": a_2,
-            "ia_a_d": a_d,
-            "ia_alphaz_1": 0.0,
-            "ia_alphaz_2": 0.0,
-            "ia_alphaz_d": 0.0,
-            "ia_zpiv_1": 0.62,
-            "ia_zpiv_2": 0.62,
-            "ia_zpiv_d": 0.62,
-            "src0_delta_z": 0.000,
-            "src1_delta_z": 0.003,
-            "src2_delta_z": -0.001,
-            "src3_delta_z": 0.002,
-        }
-    )
+    systematics_params = {
+        "ia_a_1": a_1,
+        "ia_a_2": a_2,
+        "ia_a_d": a_d,
+        "ia_alphaz_1": 0.0,
+        "ia_alphaz_2": 0.0,
+        "ia_alphaz_d": 0.0,
+        "ia_zpiv_1": 0.62,
+        "ia_zpiv_2": 0.62,
+        "ia_zpiv_d": 0.62,
+        "src0_delta_z": 0.000,
+        "src1_delta_z": 0.003,
+        "src2_delta_z": -0.001,
+        "src3_delta_z": 0.002,
+    }
     # Prepare the cosmology object
-    params = ParamsMap(get_default_params_map(tools) | systematics_params)
+    params = ParamsMap(get_default_params_map(tools).params | systematics_params)
 
     # Apply the systematics parameters
     likelihood.update(params)
