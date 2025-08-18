@@ -168,7 +168,7 @@ jobs:
         with:
           repository: 'lsstdesc/augur'
           path: 'augur'
-          ref: '1.1.0'
+          ref: '1.1.1'
       - name: Build tutorials and documentation and check links
         shell: bash -l {0}
         run: |
