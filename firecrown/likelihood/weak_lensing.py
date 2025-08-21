@@ -2,9 +2,8 @@
 
 from __future__ import annotations
 
-from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Sequence, final, Annotated, Literal
+from typing import Sequence, final, Annotated, Literal, Protocol
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 import numpy as np
@@ -15,12 +14,10 @@ import sacc
 
 
 from firecrown import parameters
+from firecrown.updatable import Updatable
 from firecrown.likelihood.source import (
     SourceGalaxy,
-    SourceGalaxyArgs,
-    SourceGalaxyPhotoZShift,
-    SourceGalaxyPhotoZShiftandStretch,
-    SourceGalaxySelectField,
+    GalaxyObservableModelParameters,
     SourceGalaxySystematic,
     PhotoZShiftFactory,
     PhotoZShiftandStretchFactory,
@@ -32,8 +29,10 @@ from firecrown.parameters import ParamsMap
 
 
 @dataclass(frozen=True)
-class WeakLensingArgs(SourceGalaxyArgs):
+class WeakLensingArgs:
     """Class for weak lensing tracer builder argument."""
+
+    galaxy_observable_model: GalaxyObservableModelParameters
 
     ia_bias: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
 
@@ -48,32 +47,18 @@ class WeakLensingArgs(SourceGalaxyArgs):
     ia_a_2h: None | npt.NDArray[np.float64] = None
 
 
-class WeakLensingSystematic(SourceGalaxySystematic[WeakLensingArgs]):
-    """Abstract base class for all weak lensing systematics."""
-
-    @abstractmethod
-    def apply(
-        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
-        """Apply method to include systematics in the tracer_arg."""
-
-
-class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch[WeakLensingArgs]):
-    """Photo-z shift systematic."""
-
-
-class PhotoZShift(SourceGalaxyPhotoZShift[WeakLensingArgs]):
-    """Photo-z shift systematic."""
-
-
-class SelectField(SourceGalaxySelectField[WeakLensingArgs]):
-    """Systematic to select 3D field."""
-
-
 MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS = 1.0
 
 
-class MultiplicativeShearBias(WeakLensingSystematic):
+class SupportsWeakLensingApply(Protocol):
+    def apply(
+        self,
+        tools: ModelingTools,
+        tracer_arg: WeakLensingArgs,
+    ) -> WeakLensingArgs: ...
+
+
+class MultiplicativeShearBias(Updatable):
     """Multiplicative shear bias systematic.
 
     This systematic adjusts the `scale_` of a source by `(1 + m)`.
@@ -109,9 +94,13 @@ class MultiplicativeShearBias(WeakLensingSystematic):
 
         :returns: A new WeakLensingArgs object with the shear bias applied.
         """
+        galaxy_observable_model = replace(
+            tracer_arg.galaxy_observable_model,
+            scale=tracer_arg.galaxy_observable_model.scale * (1.0 + self.mult_bias),
+        )
         return replace(
             tracer_arg,
-            scale=tracer_arg.scale * (1.0 + self.mult_bias),
+            galaxy_observable_model=galaxy_observable_model,
         )
 
 
@@ -121,7 +110,7 @@ LINEAR_ALIGNMENT_DEFAULT_ALPHAG = 1.0
 LINEAR_ALIGNMENT_DEFAULT_Z_PIV = 0.5
 
 
-class LinearAlignmentSystematic(WeakLensingSystematic):
+class LinearAlignmentSystematic(Updatable):
     """Linear alignment systematic.
 
     This systematic adds a linear intrinsic alignment model systematic
@@ -169,17 +158,14 @@ class LinearAlignmentSystematic(WeakLensingSystematic):
         """
         ccl_cosmo = tools.get_ccl_cosmology()
 
-        pref = ((1.0 + tracer_arg.z) / (1.0 + self.z_piv)) ** self.alphaz
-        pref *= pyccl.growth_factor(ccl_cosmo, 1.0 / (1.0 + tracer_arg.z)) ** (
-            self.alphag - 1.0
-        )
+        z = tracer_arg.galaxy_observable_model.z
+
+        pref = ((1.0 + z) / (1.0 + self.z_piv)) ** self.alphaz
+        pref *= pyccl.growth_factor(ccl_cosmo, 1.0 / (1.0 + z)) ** (self.alphag - 1.0)
 
         ia_bias_array = pref * self.ia_bias
 
-        return replace(
-            tracer_arg,
-            ia_bias=(tracer_arg.z, ia_bias_array),
-        )
+        return replace(tracer_arg, ia_bias=(z, ia_bias_array))
 
 
 TATT_ALIGNMENT_DEFAULT_IA_A_1 = 1.0
@@ -193,7 +179,7 @@ TATT_ALIGNMENT_DEFAULT_IA_ZPIV_D = 0.62
 TATT_ALIGNMENT_DEFAULT_IA_ALPHAZ_D = 0.0
 
 
-class TattAlignmentSystematic(WeakLensingSystematic):
+class TattAlignmentSystematic(Updatable):
     r"""TATT alignment systematic.
 
     This systematic adds a TATT (nonlinear) intrinsic alignment model systematic.
@@ -276,26 +262,26 @@ class TattAlignmentSystematic(WeakLensingSystematic):
         cosmology.
         """
         ccl_cosmo = tools.get_ccl_cosmology()
-        z = tracer_arg.z
+        local_z = tracer_arg.galaxy_observable_model.z
         c_1, c_d, c_2 = pyccl.nl_pt.translate_IA_norm(
             ccl_cosmo,
-            z=z,
+            z=local_z,
             a1=self.ia_a_1,
             a1delta=self.ia_a_d,
             a2=self.ia_a_2,
             Om_m2_for_c2=False,
         )
 
-        c_1 *= ((1.0 + z) / (1.0 + self.ia_zpiv_1)) ** self.ia_alphaz_1
-        c_d *= ((1.0 + z) / (1.0 + self.ia_zpiv_d)) ** self.ia_alphaz_d
-        c_2 *= ((1.0 + z) / (1.0 + self.ia_zpiv_2)) ** self.ia_alphaz_2
+        c_1 *= ((1.0 + local_z) / (1.0 + self.ia_zpiv_1)) ** self.ia_alphaz_1
+        c_d *= ((1.0 + local_z) / (1.0 + self.ia_zpiv_d)) ** self.ia_alphaz_d
+        c_2 *= ((1.0 + local_z) / (1.0 + self.ia_zpiv_2)) ** self.ia_alphaz_2
 
         return replace(
             tracer_arg,
             has_pt=True,
-            ia_pt_c_1=(z, c_1),
-            ia_pt_c_d=(z, c_d),
-            ia_pt_c_2=(z, c_2),
+            ia_pt_c_1=(local_z, c_1),
+            ia_pt_c_d=(local_z, c_d),
+            ia_pt_c_2=(local_z, c_2),
         )
 
 
@@ -303,7 +289,7 @@ HM_ALIGNMENT_DEFAULT_IA_A_1H = 1e-4
 HM_ALIGNMENT_DEFAULT_IA_A_2H = 1.0
 
 
-class HMAlignmentSystematic(WeakLensingSystematic):
+class HMAlignmentSystematic(Updatable):
     """Halo model intrinsic alignment systematic.
 
     This systematic adds a halo model based intrinsic alignment systematic
@@ -346,7 +332,7 @@ class HMAlignmentSystematic(WeakLensingSystematic):
         )
 
 
-class WeakLensing(SourceGalaxy[WeakLensingArgs]):
+class WeakLensing(SourceGalaxy):
     """Source class for weak lensing."""
 
     def __init__(
@@ -354,7 +340,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
         *,
         sacc_tracer: str,
         scale: float = 1.0,
-        systematics: None | Sequence[SourceGalaxySystematic[WeakLensingArgs]] = None,
+        systematics: None | Sequence[SupportsWeakLensingApply] = None,
     ):
         """Initialize the WeakLensing object.
 
@@ -377,7 +363,7 @@ class WeakLensing(SourceGalaxy[WeakLensingArgs]):
     def create_ready(
         cls,
         inferred_zdist: InferredGalaxyZDist,
-        systematics: None | list[SourceGalaxySystematic[WeakLensingArgs]] = None,
+        systematics: None | list[SupportsWeakLensingApply] = None,
     ) -> WeakLensing:
         """Create a WeakLensing object with the given tracer name and scale."""
         obj = cls(sacc_tracer=inferred_zdist.bin_name, systematics=systematics)

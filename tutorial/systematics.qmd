@@ -35,12 +35,12 @@ By representing specific observational data, sources enable the computation of l
 For more, visit the [introductory article](intro_article.qmd).
 
 All source tracers share a common requirement: a redshift distribution (e.g., the galaxy redshift distribution).
-To address this, we use a shared `SourceGalaxyArgs` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
+To address this, we use a shared `GalaxyObservableModelParameters` class, which includes the redshift distribution, a generic `scale` parameter, and a `field` parameter specifying the power spectrum field to use.
 
 This shared structure allows us to define a common set of systematics that can be applied across all source tracers.
-For instance, the `PhotoZShift` object modifies the redshift distribution in a `SourceGalaxyArgs` object.
+For instance, the `PhotoZShift` object modifies the redshift distribution in a `GalaxyObservableModelParameters` object.
 
-The subclasses `WeakLensingArgs` and `NumberCountsArgs` inherit from `SourceGalaxyArgs` and add additional fields specific to weak lensing and number counts, respectively.
+The subclasses `WeakLensingArgs` and `NumberCountsArgs` inherit from `GalaxyObservableModelParameters` and add additional fields specific to weak lensing and number counts, respectively.
 The `WeakLensingSystematic` and `NumberCountsSystematic` classes inherit from `SourceGalaxySystematic` using Python's *generics* to enforce that they can only be applied to `WeakLensingArgs` and `NumberCountsArgs` objects, respectively.
 
 We will use the number counts systematic `PTNonLinearBiasSystematic`[^ptnlbs] to illustrate the use of systematics in Firecrown.
@@ -61,7 +61,7 @@ class PTNonLinearBiasSystematic {
    apply(self, tools: ModelingTools, tracer_arg: NumberCountsArgs) 
 }
 class SourceGalaxySystematic {
-   apply(self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT) 
+   apply(self, tools: ModelingTools, tracer_arg: _GalaxyObservableModelParametersT) 
 }
 class SourceSystematic {
    read(self, sacc_data: sacc.Sacc) 
@@ -256,3 +256,32 @@ The example should show:
 2. How to define the factory class, including documentation.
 3. How to test the factory and the systematic.
 :::
+
+## Catalog of Systematics
+
+
+class SourceSystematic
+class SourceGalaxySystematic(SourceSystematic, Generic[_GalaxyObservableModelParametersT]):
+
+class SourceGalaxyPhotoZShift
+class SourceGalaxySelectField
+
+-------------------
+class WeakLensingSystematic
+
+class HMAlignmentSystematic
+class LinearAlignmentSystematic
+class MultiplicativeShearBias
+class TattAlignmentSystematic
+
+
+
+-------------------
+class NumberCountsSystematic
+
+class ConstantMagnificationBiasSystematic
+class LinearBiasSystematic
+class MagnificationBiasSystematic
+class PTNonLinearBiasSystematic
+class SelectField
+

@@ -21,7 +21,7 @@ from firecrown.likelihood.number_counts import NumberCountsArgs
 from firecrown.likelihood.weak_lensing import WeakLensingArgs
 from firecrown.likelihood.source import (
     SourceGalaxy,
-    SourceGalaxyArgs,
+    GalaxyObservableModelParameters,
     SourceGalaxySelectField,
     Tracer,
     dndz_shift_and_stretch_active,
@@ -81,15 +81,15 @@ def fixture_wl_sys_factory(request):
     return request.param
 
 
-class TrivialSourceGalaxyArgs(SourceGalaxyArgs):
-    """This is the most trivial possible subclass of SourceGalaxyArgs."""
+class TrivialGalaxyObservableModelParameters(GalaxyObservableModelParameters):
+    """This is the most trivial possible subclass of GalaxyObservableModelParameters."""
 
 
-class TrivialSourceGalaxy(SourceGalaxy[TrivialSourceGalaxyArgs]):
+class TrivialSourceGalaxy(SourceGalaxy[TrivialGalaxyObservableModelParameters]):
     """This is the most trivial possible subclass of SourceGalaxy."""
 
     def create_tracers(self, tools: ModelingTools):
-        return Tracer(pyccl.Tracer()), TrivialSourceGalaxyArgs(
+        return Tracer(pyccl.Tracer()), TrivialGalaxyObservableModelParameters(
             z=np.array([]), dndz=np.array([])
         )
 
@@ -170,7 +170,7 @@ def test_trivial_source_select_field():
     tools = ModelingTools()
     trivial = TrivialSourceGalaxy(sacc_tracer="no-sacc-tracer")
     select_field: SourceGalaxySelectField = SourceGalaxySelectField("new_field")
-    trivial.tracer_args = TrivialSourceGalaxyArgs(
+    trivial.tracer_args = TrivialGalaxyObservableModelParameters(
         z=np.array([1.0]), dndz=np.array([1.0]), field="old_field"
     )
 

@@ -4,7 +4,18 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Generic, Sequence, TypeVar, final, Annotated, Literal
+from typing import (
+    ClassVar,
+    Generic,
+    Sequence,
+    TypeVar,
+    final,
+    Annotated,
+    Literal,
+    Protocol,
+    TYPE_CHECKING,
+    reveal_type,
+)
 
 from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
@@ -210,27 +221,50 @@ class Tracer:
 
 
 @dataclass(frozen=True)
-class SourceGalaxyArgs:
+class GalaxyObservableModelParameters:
     """Class for galaxy based sources arguments."""
 
     z: npt.NDArray[np.float64]
     dndz: npt.NDArray[np.float64]
-
     scale: float = 1.0
-
     field: str = "delta_matter"
 
 
-_SourceGalaxyArgsT = TypeVar("_SourceGalaxyArgsT", bound=SourceGalaxyArgs)
+SourceGalaxyArgs = GalaxyObservableModelParameters
 
 
-class SourceGalaxySystematic(SourceSystematic, Generic[_SourceGalaxyArgsT]):
+class HasGalaxyObservableModel(Protocol):
+    """Protocol for classes that have a galaxy observable model."""
+
+    galaxy_observable_model: GalaxyObservableModelParameters
+    __dataclass_fields__: ClassVar[dict]
+
+
+# GalaxyModel is a constrained type variable to be used to constrain
+# the type to those that implement the HasGalaxyObservableModel protocol
+# (by having a galaxy_observable_model attribute).
+
+GalaxyModel = TypeVar("GalaxyModel", bound=HasGalaxyObservableModel)
+
+
+class GalaxyObservableModelCalibration:
+    """Represents calibration data for model of some galaxy-based observable."""
+
+
+_GalaxyObservableModelParametersT = TypeVar(
+    "_GalaxyObservableModelParametersT", bound=GalaxyObservableModelParameters
+)
+
+
+class SourceGalaxySystematic(
+    SourceSystematic, Generic[_GalaxyObservableModelParametersT]
+):
     """Abstract base class for all galaxy-based source systematics."""
 
     @abstractmethod
     def apply(
-        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
-    ) -> _SourceGalaxyArgsT:
+        self, tools: ModelingTools, tracer_arg: _GalaxyObservableModelParametersT
+    ) -> _GalaxyObservableModelParametersT:
         """Apply method to include systematics in the tracer_arg.
 
         :param tools: the modeling tools use to update the tracer arg
@@ -249,9 +283,7 @@ SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z = 0.0
 SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z = 1.0
 
 
-class SourceGalaxyPhotoZShift(
-    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
-):
+class SourceGalaxyPhotoZShift(Updatable):
     """A photo-z shift bias.
 
     This systematic shifts the photo-z distribution by some amount `delta_z`.
@@ -280,9 +312,7 @@ class SourceGalaxyPhotoZShift(
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(
-        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
-    ) -> _SourceGalaxyArgsT:
+    def apply(self, tools: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
         """Apply a shift to the photo-z distribution of a source.
 
         :param tools: the modeling tools use to update the tracer arg
@@ -291,13 +321,24 @@ class SourceGalaxyPhotoZShift(
         :return: a new source galaxy tracer arg with the systematic applied
         """
         new_z, new_dndz = self._transform(
-            tracer_arg.z, tracer_arg.dndz, self.delta_z, 1.0
+            tracer_arg.galaxy_observable_model.z,
+            tracer_arg.galaxy_observable_model.dndz,
+            self.delta_z,
+            1.0,
         )
-        return replace(tracer_arg, z=new_z, dndz=new_dndz)
+        galaxy_observable_model = replace(
+            tracer_arg.galaxy_observable_model,
+            z=new_z,
+            dndz=new_dndz,
+        )
+
+        return replace(tracer_arg, galaxy_observable_model=galaxy_observable_model)
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift):
     """Photo-z shift systematic."""
+
+    # TODO: Can this be deleted?
 
 
 class PhotoZShiftFactory(BaseModel):
@@ -383,7 +424,7 @@ def dndz_shift_and_stretch_passive(
     return z_new, dndz_new
 
 
-class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArgsT]):
+class SourceGalaxyPhotoZShiftandStretch(Updatable):
     """A photo-z shift & stretch bias.
 
     This systematic shifts and widens the photo-z distribution by some amount `delta_z`.
@@ -403,8 +444,11 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
             as a prefix for its parameters.
         :param active: whether to use and active or passive transformation
         """
-        super().__init__(sacc_tracer)
+        super().__init__(parameter_prefix=sacc_tracer)
 
+        self.delta_z = parameters.register_new_updatable_parameter(
+            default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_DELTA_Z
+        )
         self.sigma_z = parameters.register_new_updatable_parameter(
             default_value=SOURCE_GALAXY_SYSTEMATIC_DEFAULT_SIGMA_Z
         )
@@ -414,16 +458,26 @@ class SourceGalaxyPhotoZShiftandStretch(SourceGalaxyPhotoZShift[_SourceGalaxyArg
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, _: ModelingTools, tracer_arg: _SourceGalaxyArgsT):
+    def apply(self, _: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
         """Apply a shift & stretch to the photo-z distribution of a source."""
         new_z, new_dndz = self._transform(
-            tracer_arg.z, tracer_arg.dndz, self.delta_z, self.sigma_z
+            tracer_arg.galaxy_observable_model.z,
+            tracer_arg.galaxy_observable_model.dndz,
+            self.delta_z,
+            self.sigma_z,
         )
-        return replace(tracer_arg, z=new_z, dndz=new_dndz)
+        galaxy_observable_model = replace(
+            tracer_arg.galaxy_observable_model,
+            z=new_z,
+            dndz=new_dndz,
+        )
+        return replace(tracer_arg, galaxy_observable_model=galaxy_observable_model)
 
 
 class PhotoZShiftandStretch(SourceGalaxyPhotoZShiftandStretch):
     """Photo-z shift and stretch systematic."""
+
+    # TODO: Can we delete this?
 
 
 class PhotoZShiftandStretchFactory(BaseModel):
@@ -445,9 +499,7 @@ class PhotoZShiftandStretchFactory(BaseModel):
         raise ValueError("PhotoZShiftandStretch cannot be global.")
 
 
-class SourceGalaxySelectField(
-    SourceGalaxySystematic[_SourceGalaxyArgsT], Generic[_SourceGalaxyArgsT]
-):
+class SourceGalaxySelectField(Updatable):
     """The source galaxy select field systematic.
 
     A systematic that allows specifying the 3D field that will be used
@@ -463,9 +515,7 @@ class SourceGalaxySelectField(
         super().__init__()
         self.field = field
 
-    def apply(
-        self, tools: ModelingTools, tracer_arg: _SourceGalaxyArgsT
-    ) -> _SourceGalaxyArgsT:
+    def apply(self, tools: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
         """Apply method to include systematics in the tracer_arg.
 
         :param tools: the modeling tools used to update the tracer_arg
@@ -473,10 +523,14 @@ class SourceGalaxySelectField(
             apply the systematics.
         :return: a new source galaxy tracer arg with the systematic applied
         """
-        return replace(tracer_arg, field=self.field)
+        galaxy_observable_model = replace(
+            tracer_arg.galaxy_observable_model,
+            field=self.field,
+        )
+        return replace(tracer_arg, galaxy_observable_model=galaxy_observable_model)
 
 
-class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
+class SourceGalaxy(Source, Generic[_GalaxyObservableModelParametersT]):
     """Source class for galaxy based sources."""
 
     def __init__(
@@ -494,11 +548,11 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
         super().__init__(sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
-        self.current_tracer_args: None | _SourceGalaxyArgsT = None
+        self.current_tracer_args: None | _GalaxyObservableModelParametersT = None
         self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
             UpdatableCollection(systematics)
         )
-        self.tracer_args: _SourceGalaxyArgsT
+        self.tracer_args: _GalaxyObservableModelParametersT
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:
         """Read the systematics for this source from the SACC file.

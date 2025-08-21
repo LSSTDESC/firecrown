@@ -15,7 +15,8 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from firecrown import parameters
 from firecrown.likelihood.source import (
     SourceGalaxy,
-    SourceGalaxyArgs,
+    GalaxyModel,
+    GalaxyObservableModelParameters,
     SourceGalaxyPhotoZShift,
     SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,
@@ -35,9 +36,10 @@ from firecrown.updatable import UpdatableCollection
 
 
 @dataclass(frozen=True)
-class NumberCountsArgs(SourceGalaxyArgs):
+class NumberCountsArgs:
     """Class for number counts tracer builder argument."""
 
+    galaxy_observable_model: GalaxyObservableModelParameters
     bias: None | npt.NDArray[np.float64] = None
     mag_bias: None | tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]] = None
     has_pt: bool = False
@@ -53,9 +55,7 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
     """
 
     @abstractmethod
-    def apply(
-        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
-    ) -> NumberCountsArgs:
+    def apply(self, tools: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
         """Apply method to include systematics in the tracer_arg.
 
         This does not modify the supplied tracer_arg; it returns a new
