@@ -14,7 +14,7 @@ import sacc
 
 
 from firecrown import parameters
-from firecrown.updatable import Updatable
+from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown.likelihood.source import (
     SourceGalaxy,
     GalaxyObservableModelParameters,
@@ -51,11 +51,14 @@ MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS = 1.0
 
 
 class SupportsWeakLensingApply(Protocol):
+    """Protocol for systematics that can be applied to a WeakLensing source."""
+
     def apply(
         self,
         tools: ModelingTools,
         tracer_arg: WeakLensingArgs,
-    ) -> WeakLensingArgs: ...
+    ) -> WeakLensingArgs:
+        """Apply a systematic to a WeakLensingArgs object."""
 
 
 class MultiplicativeShearBias(Updatable):
@@ -82,14 +85,12 @@ class MultiplicativeShearBias(Updatable):
             default_value=MULTIPLICATIVE_SHEAR_BIAS_DEFAULT_BIAS
         )
 
-    def apply(
-        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
+    def apply(self, _: ModelingTools, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Apply multiplicative shear bias to a source.
 
         The `scale_` of the source is multiplied by `(1 + m)`.
 
-        :param tools: A ModelingTools object.
+        :param _: A ModelingTools object, unused
         :param tracer_arg: The WeakLensingArgs to which apply the shear bias.
 
         :returns: A new WeakLensingArgs object with the shear bias applied.
@@ -318,12 +319,10 @@ class HMAlignmentSystematic(Updatable):
             default_value=HM_ALIGNMENT_DEFAULT_IA_A_2H
         )
 
-    def apply(
-        self, tools: ModelingTools, tracer_arg: WeakLensingArgs
-    ) -> WeakLensingArgs:
+    def apply(self, _: ModelingTools, tracer_arg: WeakLensingArgs) -> WeakLensingArgs:
         """Return a new halo-model alignment systematic.
 
-        :param tools: A ModelingTools object.
+        :param _: A ModelingTools object, unused.
         :param tracer_arg: The WeakLensingArgs to which apply the systematic.
         :returns: A new WeakLensingArgs object with the systematic applied.
         """
@@ -332,7 +331,7 @@ class HMAlignmentSystematic(Updatable):
         )
 
 
-class WeakLensing(SourceGalaxy):
+class WeakLensing(Updatable):
     """Source class for weak lensing."""
 
     def __init__(
@@ -352,10 +351,13 @@ class WeakLensing(SourceGalaxy):
             this source.
 
         """
-        super().__init__(sacc_tracer=sacc_tracer, systematics=systematics)
-
+        super().__init__(parameter_prefix=sacc_tracer)
+        self.systematics: UpdatableCollection[SupportsWeakLensingApply] = (
+            UpdatableCollection(systematics)
+        )
         self.sacc_tracer = sacc_tracer
         self.scale = scale
+
         self.current_tracer_args: None | WeakLensingArgs = None
         self.tracer_args: WeakLensingArgs
 

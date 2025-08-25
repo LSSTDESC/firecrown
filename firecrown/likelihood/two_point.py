@@ -804,7 +804,7 @@ def read_ell_cells(
     return ells, cells, sacc_indices
 
 
-class TwoPointFactory(BaseModel):
+class ggTwoPointFactory(BaseModel):
     """Factory class for WeakLensing objects."""
 
     model_config = ConfigDict(extra="forbid", frozen=True)

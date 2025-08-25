@@ -346,10 +346,10 @@ class Updatable(ABC):
         return DerivedParameterCollection([])
 
 
-T = TypeVar("T", bound=Updatable)
+UpdatableT = TypeVar("UpdatableT", bound=Updatable)
 
 
-class UpdatableCollection(UserList[T], Generic[T]):
+class UpdatableCollection(UserList[UpdatableT], Generic[UpdatableT]):
     """Class that represents a collection of updatable objects.
 
     UpdatableCollection is a list of Updatable objects and is itself
@@ -361,7 +361,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
     updated.
     """
 
-    def __init__(self, iterable: None | Iterable[T] = None) -> None:
+    def __init__(self, iterable: None | Iterable[UpdatableT] = None) -> None:
         """Initialize the UpdatableCollection from the supplied iterable.
 
         If the iterable contains any object that is not Updatable, a TypeError
@@ -436,7 +436,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
             return derived_parameters
         return None
 
-    def append(self, item: T) -> None:
+    def append(self, item: UpdatableT) -> None:
         """Append the given item to self.
 
         If the item is not Updatable a TypeError is raised.
@@ -456,7 +456,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
                 "Only updatable items can be appended to an UpdatableCollection"
             )
 
-        super().__setitem__(key, cast(T, value))
+        super().__setitem__(key, cast(UpdatableT, value))
 
 
 def get_default_params(*args: Updatable) -> dict[str, float]:

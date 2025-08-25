@@ -13,8 +13,6 @@ from typing import (
     Annotated,
     Literal,
     Protocol,
-    TYPE_CHECKING,
-    reveal_type,
 )
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -26,6 +24,7 @@ import sacc
 from scipy.interpolate import Akima1DInterpolator
 
 from firecrown import parameters
+from firecrown.likelihood.weak_lensing import SupportsWeakLensingApply
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 from firecrown.updatable import Updatable, UpdatableCollection
@@ -140,6 +139,21 @@ class Source(Updatable):
         return self.tracers
 
 
+class Source(Protocol[UpdatableT]):
+    def get_tracers(self, tools: ModelingTools) -> list[Tracer]: ...
+    def get_scale(self) -> float: ...
+    def read(self, sacc: Sacc) -> None: ...
+
+
+# class CMBSource(Updatable):
+#     def get_tracers(self):
+#         pass
+#     def get_scale(self):
+#         pass
+#     def read(self):
+#         pass
+
+
 class Tracer:
     """Extending the pyccl.Tracer object with additional information.
 
@@ -240,11 +254,11 @@ class HasGalaxyObservableModel(Protocol):
     __dataclass_fields__: ClassVar[dict]
 
 
-# GalaxyModel is a constrained type variable to be used to constrain
+# HasGalaxyModel is a constrained type variable to be used to constrain
 # the type to those that implement the HasGalaxyObservableModel protocol
 # (by having a galaxy_observable_model attribute).
 
-GalaxyModel = TypeVar("GalaxyModel", bound=HasGalaxyObservableModel)
+HasGalaxyModel = TypeVar("HasGalaxyModel", bound=HasGalaxyObservableModel)
 
 
 class GalaxyObservableModelCalibration:
@@ -312,7 +326,7 @@ class SourceGalaxyPhotoZShift(Updatable):
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, tools: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
+    def apply(self, tools: ModelingTools, tracer_arg: HasGalaxyModel) -> HasGalaxyModel:
         """Apply a shift to the photo-z distribution of a source.
 
         :param tools: the modeling tools use to update the tracer arg
@@ -458,7 +472,7 @@ class SourceGalaxyPhotoZShiftandStretch(Updatable):
         else:
             self._transform = dndz_shift_and_stretch_passive
 
-    def apply(self, _: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
+    def apply(self, _: ModelingTools, tracer_arg: HasGalaxyModel) -> HasGalaxyModel:
         """Apply a shift & stretch to the photo-z distribution of a source."""
         new_z, new_dndz = self._transform(
             tracer_arg.galaxy_observable_model.z,
@@ -515,7 +529,7 @@ class SourceGalaxySelectField(Updatable):
         super().__init__()
         self.field = field
 
-    def apply(self, tools: ModelingTools, tracer_arg: GalaxyModel) -> GalaxyModel:
+    def apply(self, tools: ModelingTools, tracer_arg: HasGalaxyModel) -> HasGalaxyModel:
         """Apply method to include systematics in the tracer_arg.
 
         :param tools: the modeling tools used to update the tracer_arg
@@ -530,29 +544,31 @@ class SourceGalaxySelectField(Updatable):
         return replace(tracer_arg, galaxy_observable_model=galaxy_observable_model)
 
 
-class SourceGalaxy(Source, Generic[_GalaxyObservableModelParametersT]):
-    """Source class for galaxy based sources."""
+class GalaxyModel(Updatable):
+    """A model to be used in all galaxy-based sources."""
 
     def __init__(
         self,
         *,
         sacc_tracer: str,
-        systematics: None | Sequence[SourceGalaxySystematic] = None,
+        systematics: None | Sequence[HasGalaxyObservableModel] = None,
     ):
-        """Initialize the SourceGalaxy object.
+        """Initialize the GalaxyModel object.
 
         :param sacc_tracer: the name of the tracer in the SACC file. This is used
             as a prefix for its parameters.
 
         """
-        super().__init__(sacc_tracer)
+        super().__init__(parameter_prefix=sacc_tracer)
 
         self.sacc_tracer = sacc_tracer
-        self.current_tracer_args: None | _GalaxyObservableModelParametersT = None
-        self.systematics: UpdatableCollection[SourceGalaxySystematic] = (
+        self.current_tracer_args: None | GalaxyObservableModelParameters = None
+        self.systematics: UpdatableCollection[SupportsWeakLensingApply] = (
             UpdatableCollection(systematics)
         )
-        self.tracer_args: _GalaxyObservableModelParametersT
+        # TODO: change self.tracer_args to self.original_tracer_args,
+        # because this is what is originally read from Sacc and never modified.
+        self.tracer_args: None | GalaxyObservableModelParameters = None
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:
         """Read the systematics for this source from the SACC file.
@@ -562,7 +578,7 @@ class SourceGalaxy(Source, Generic[_GalaxyObservableModelParametersT]):
         for systematic in self.systematics:
             systematic.read(sacc_data)
 
-    def _read(self, sacc_data: sacc.Sacc) -> None:
+    def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the galaxy redshift distribution model from a sacc file.
 
         All derived classes must call this method in their own `_read` method
@@ -570,12 +586,6 @@ class SourceGalaxy(Source, Generic[_GalaxyObservableModelParametersT]):
 
         :param sacc_data: The SACC data object to be read
         """
-        try:
-            tracer_args = self.tracer_args
-        except AttributeError as exc:
-            raise RuntimeError(
-                "Must initialize tracer_args before calling _read on SourceGalaxy"
-            ) from exc
 
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
@@ -585,8 +595,10 @@ class SourceGalaxy(Source, Generic[_GalaxyObservableModelParametersT]):
         z = z[indices]
         nz = nz[indices]
 
-        self.tracer_args = replace(
-            tracer_args,
+        self.tracer_args = GalaxyObservableModelParameters(
             z=z,
             dndz=nz,
         )
+
+
+SourceGalaxy = GalaxyModel

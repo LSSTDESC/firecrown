@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from dataclasses import dataclass, replace
-from typing import Sequence, final, Annotated, Literal
+from typing import Sequence, final, Annotated, Literal, Protocol
 
 import numpy as np
 import numpy.typing as npt
@@ -32,7 +32,7 @@ from firecrown.parameters import (
     DerivedParameterCollection,
     ParamsMap,
 )
-from firecrown.updatable import UpdatableCollection
+from firecrown.updatable import Updatable, UpdatableCollection
 
 
 @dataclass(frozen=True)
@@ -66,6 +66,15 @@ class NumberCountsSystematic(SourceGalaxySystematic[NumberCountsArgs]):
              systematic
         :return: the updated NumberCountsArgs
         """
+
+
+class SupportsNumberCountsApply(Protocol):
+    """Protocol for systematics that can be applied to a NumberCounts source."""
+
+    def apply(
+        self, tools: ModelingTools, tracer_arg: NumberCountsArgs
+    ) -> NumberCountsArgs:
+        """Apply a systematic to a NumberCountsArgs object."""
 
 
 class PhotoZShift(SourceGalaxyPhotoZShift[NumberCountsArgs]):
@@ -311,7 +320,7 @@ class ConstantMagnificationBiasSystematic(NumberCountsSystematic):
 NUMBER_COUNTS_DEFAULT_BIAS = 1.5
 
 
-class NumberCounts(SourceGalaxy[NumberCountsArgs]):
+class NumberCounts(Updatable):
     """Source class for number counts."""
 
     def __init__(
@@ -321,7 +330,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: None | Sequence[SourceGalaxySystematic[NumberCountsArgs]] = None,
+        systematics: None | Sequence[SupportsNumberCountsApply] = None,
     ):
         """Initialize the NumberCounts object.
 
@@ -333,21 +342,21 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         :param scale: the initial scale of the tracer.
         :param systematics: a list of systematics to apply to the tracer.
         """
-        super().__init__(sacc_tracer=sacc_tracer, systematics=systematics)
-
+        super().__init__(parameter_prefix=sacc_tracer)
+        self.systematics: UpdatableCollection[SupportsNumberCountsApply] = (
+            UpdatableCollection(systematics)
+        )
         self.sacc_tracer = sacc_tracer
+        self.scale = scale
+
+        self.current_tracer_args: None | NumberCountsArgs = None
+        self.tracer_args: NumberCountsArgs
+
         self.has_rsd = has_rsd
         self.derived_scale = derived_scale
-
         self.bias = parameters.register_new_updatable_parameter(
             default_value=NUMBER_COUNTS_DEFAULT_BIAS
         )
-        self.systematics: UpdatableCollection[
-            SourceGalaxySystematic[NumberCountsArgs]
-        ] = UpdatableCollection(systematics)
-        self.scale = scale
-        self.current_tracer_args: None | NumberCountsArgs = None
-        self.tracer_args: NumberCountsArgs
 
     @classmethod
     def create_ready(
@@ -356,7 +365,7 @@ class NumberCounts(SourceGalaxy[NumberCountsArgs]):
         has_rsd: bool = False,
         derived_scale: bool = False,
         scale: float = 1.0,
-        systematics: None | list[SourceGalaxySystematic[NumberCountsArgs]] = None,
+        systematics: None | list[] = None,
     ) -> NumberCounts:
         """Create a NumberCounts object with the given tracer name and scale.
 
