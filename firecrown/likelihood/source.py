@@ -536,3 +536,58 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
             z=z,
             dndz=nz,
         )
+
+@dataclass(frozen=True)
+class SourceCMBArgs:
+    """Class for CMB based sources arguments."""
+    
+    scale: float = 1.0
+    field: str = "delta_matter"
+    z_source: float = 1100.0  # Add this line
+
+_SourceCMBArgsT = TypeVar("_SourceCMBArgsT", bound=SourceCMBArgs)
+
+class SourceCMB(Source):
+    """Source class for CMB based sources."""
+
+    def __init__(
+        self,
+        *,
+        sacc_tracer: str,
+        scale: float = 1.0,
+    ):
+        """Initialize the SourceCMB object.
+
+        :param sacc_tracer: the name of the tracer in the SACC file.
+        :param scale: the scale of the source.
+        """
+        super().__init__(sacc_tracer)
+
+        self.sacc_tracer = sacc_tracer
+        self.scale = scale
+        self.current_tracer_args: None | SourceCMBArgs = None
+        self.tracer_args: SourceCMBArgs
+
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        """Read the systematics for this source from the SACC file.
+        
+        For CMB sources, there are no systematics to read.
+        """
+        pass
+
+    def _read(self, sacc_data: sacc.Sacc) -> None:
+        """Read the CMB tracer data from a sacc file."""
+        try:
+            tracer_args = self.tracer_args
+        except AttributeError as exc:
+            raise RuntimeError(
+                "Must initialize tracer_args before calling _read on SourceCMB"
+            ) from exc
+
+        # For CMB, we just verify the tracer exists
+        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        
+    def get_scale(self) -> float:
+        """Return the scale for this source."""
+        assert self.current_tracer_args
+        return self.current_tracer_args.scale
