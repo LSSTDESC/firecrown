@@ -510,7 +510,6 @@ def make_all_photoz_bin_combinations_with_cmb(
     :param include_cmb_auto: Whether to include CMB auto-correlation (default: False)
     :return: List of all XY combinations including CMB-galaxy crosses
     """
-
     # Get all galaxy-galaxy combinations first
     galaxy_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
@@ -519,7 +518,7 @@ def make_all_photoz_bin_combinations_with_cmb(
         bin_name=cmb_tracer_name,
         z=np.array([1100.0]),  # CMB redshift
         dndz=np.array([1.0]),  # Unity normalization
-        measurements=frozenset([CMB.CONVERGENCE]),
+        measurements={CMB.CONVERGENCE},
         type_source=TypeSource.DEFAULT,
     )
 
@@ -574,13 +573,12 @@ def make_cmb_galaxy_combinations_only(
     :param cmb_tracer_name: Name of the CMB tracer
     :return: List of CMB-galaxy cross-correlation XY combinations only
     """
-
     # Create a mock CMB "bin"
     cmb_bin = InferredGalaxyZDist(
         bin_name=cmb_tracer_name,
         z=np.array([1100.0]),
         dndz=np.array([1.0]),
-        measurements=frozenset([CMB.CONVERGENCE]),
+        measurements={CMB.CONVERGENCE},
         type_source=TypeSource.DEFAULT,
     )
 

@@ -576,21 +576,20 @@ class SourceCMB(Source):
 
         For CMB sources, there are no systematics to read.
         """
-        pass
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the CMB tracer data from a sacc file."""
-        try:
-            tracer_args = self.tracer_args
-        except AttributeError as exc:
+        if not hasattr(self, "tracer_args"):
             raise RuntimeError(
                 "Must initialize tracer_args before calling _read on SourceCMB"
-            ) from exc
+            )
 
         # For CMB, we just verify the tracer exists
-        tracer = sacc_data.get_tracer(self.sacc_tracer)
+        sacc_data.get_tracer(self.sacc_tracer)
 
     def get_scale(self) -> float:
         """Return the scale for this source."""
-        assert self.current_tracer_args
-        return self.current_tracer_args.scale
+        current_args = self.current_tracer_args
+        if current_args is None:
+            raise RuntimeError("current_tracer_args is not initialized")
+        return current_args.scale  # pylint: disable=no-member
