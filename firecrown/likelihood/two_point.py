@@ -22,7 +22,7 @@ import firecrown.generators.two_point as gen
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import WeakLensingFactory, WeakLensing
 from firecrown.likelihood.number_counts import NumberCountsFactory, NumberCounts
-from firecrown.likelihood.cmb import CMBConvergenceFactory, CMBConvergence 
+from firecrown.likelihood.cmb import CMBConvergenceFactory, CMBConvergence
 from firecrown.likelihood.statistic import Statistic
 from firecrown.metadata_types import (
     GALAXY_LENS_TYPES,
@@ -872,7 +872,9 @@ class TwoPointFactory(BaseModel):
                         f"No NumberCountsFactory found for type_source {type_source}."
                     )
                 return self._nc_factory_map[type_source]
-            case measurement if measurement in CMB_TYPES:  # You'll need to define CMB_TYPES
+            case measurement if (
+                measurement in CMB_TYPES
+            ):  # You'll need to define CMB_TYPES
                 if type_source not in self._cmb_factory_map:
                     raise ValueError(
                         f"No CMBConvergenceFactory found for type_source {type_source}."

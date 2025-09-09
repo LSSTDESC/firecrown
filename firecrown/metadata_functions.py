@@ -497,13 +497,14 @@ def make_all_photoz_bin_combinations(
 
     return bin_combinations
 
+
 def make_all_photoz_bin_combinations_with_cmb(
     inferred_galaxy_zdists: list[InferredGalaxyZDist],
     cmb_tracer_name: str = "cmb_convergence",
     include_cmb_auto: bool = False,
 ) -> list[TwoPointXY]:
     """Create all galaxy combinations plus CMB-galaxy cross-correlations.
-    
+
     :param inferred_galaxy_zdists: List of galaxy redshift bins
     :param cmb_tracer_name: Name of the CMB tracer
     :param include_cmb_auto: Whether to include CMB auto-correlation (default: False)
@@ -519,7 +520,7 @@ def make_all_photoz_bin_combinations_with_cmb(
         z=np.array([1100.0]),  # CMB redshift
         dndz=np.array([1.0]),  # Unity normalization
         measurements=frozenset([CMB.CONVERGENCE]),
-        type_source=TypeSource.DEFAULT
+        type_source=TypeSource.DEFAULT,
     )
 
     # Create CMB-galaxy cross-correlations only
@@ -530,38 +531,45 @@ def make_all_photoz_bin_combinations_with_cmb(
             # Only create cross-correlations that are physically meaningful
             if measurement_is_compatible(CMB.CONVERGENCE, galaxy_measurement):
                 # CMB-galaxy cross-correlation
-                cmb_galaxy_combinations.append(TwoPointXY(
-                    x=cmb_bin,
-                    y=galaxy_bin,
-                    x_measurement=CMB.CONVERGENCE,
-                    y_measurement=galaxy_measurement
-                ))
-                
+                cmb_galaxy_combinations.append(
+                    TwoPointXY(
+                        x=cmb_bin,
+                        y=galaxy_bin,
+                        x_measurement=CMB.CONVERGENCE,
+                        y_measurement=galaxy_measurement,
+                    )
+                )
+
                 # Galaxy-CMB cross-correlation (symmetric)
-                cmb_galaxy_combinations.append(TwoPointXY(
-                    x=galaxy_bin,
-                    y=cmb_bin,
-                    x_measurement=galaxy_measurement,
-                    y_measurement=CMB.CONVERGENCE
-                ))
+                cmb_galaxy_combinations.append(
+                    TwoPointXY(
+                        x=galaxy_bin,
+                        y=cmb_bin,
+                        x_measurement=galaxy_measurement,
+                        y_measurement=CMB.CONVERGENCE,
+                    )
+                )
 
     # Optionally include CMB auto-correlation
     if include_cmb_auto:
-        cmb_galaxy_combinations.append(TwoPointXY(
-            x=cmb_bin,
-            y=cmb_bin,
-            x_measurement=CMB.CONVERGENCE,
-            y_measurement=CMB.CONVERGENCE
-        ))
+        cmb_galaxy_combinations.append(
+            TwoPointXY(
+                x=cmb_bin,
+                y=cmb_bin,
+                x_measurement=CMB.CONVERGENCE,
+                y_measurement=CMB.CONVERGENCE,
+            )
+        )
 
     return galaxy_combinations + cmb_galaxy_combinations
+
 
 def make_cmb_galaxy_combinations_only(
     inferred_galaxy_zdists: list[InferredGalaxyZDist],
     cmb_tracer_name: str = "cmb_convergence",
 ) -> list[TwoPointXY]:
     """Create only CMB-galaxy cross-correlations (no galaxy-galaxy or CMB auto).
-    
+
     :param inferred_galaxy_zdists: List of galaxy redshift bins
     :param cmb_tracer_name: Name of the CMB tracer
     :return: List of CMB-galaxy cross-correlation XY combinations only
@@ -573,7 +581,7 @@ def make_cmb_galaxy_combinations_only(
         z=np.array([1100.0]),
         dndz=np.array([1.0]),
         measurements=frozenset([CMB.CONVERGENCE]),
-        type_source=TypeSource.DEFAULT
+        type_source=TypeSource.DEFAULT,
     )
 
     cmb_galaxy_combinations = []
@@ -582,22 +590,27 @@ def make_cmb_galaxy_combinations_only(
         for galaxy_measurement in galaxy_bin.measurements:
             if measurement_is_compatible(CMB.CONVERGENCE, galaxy_measurement):
                 # CMB-galaxy cross-correlation
-                cmb_galaxy_combinations.append(TwoPointXY(
-                    x=cmb_bin,
-                    y=galaxy_bin,
-                    x_measurement=CMB.CONVERGENCE,
-                    y_measurement=galaxy_measurement
-                ))
+                cmb_galaxy_combinations.append(
+                    TwoPointXY(
+                        x=cmb_bin,
+                        y=galaxy_bin,
+                        x_measurement=CMB.CONVERGENCE,
+                        y_measurement=galaxy_measurement,
+                    )
+                )
 
                 # Galaxy-CMB cross-correlation (symmetric)
-                cmb_galaxy_combinations.append(TwoPointXY(
-                    x=galaxy_bin,
-                    y=cmb_bin,
-                    x_measurement=galaxy_measurement,
-                    y_measurement=CMB.CONVERGENCE
-                ))
-    
+                cmb_galaxy_combinations.append(
+                    TwoPointXY(
+                        x=galaxy_bin,
+                        y=cmb_bin,
+                        x_measurement=galaxy_measurement,
+                        y_measurement=CMB.CONVERGENCE,
+                    )
+                )
+
     return cmb_galaxy_combinations
+
 
 def make_two_point_xy(
     inferred_galaxy_zdists_dict: dict[str, InferredGalaxyZDist],
