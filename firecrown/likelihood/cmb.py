@@ -64,11 +64,9 @@ class CMBConvergenceFactory(BaseModel):
     
     type_source: TypeSource = TypeSource.DEFAULT
     z_source: float = 1100.0
-    scale: float = 1.0
 
-     # Add these fields to match the structure of other factories
-    per_bin_systematics: Sequence[object] = []  # CMB doesn't have per-bin systematics, but keep for consistency
-    global_systematics: Sequence[object] = []   # CMB doesn't have global systematics, but keep for consistency
+    # adding these fields to match the structure of other factories
+    global_systematics: Sequence[object] = []   # CMB doesn't have global systematics, but keep for consistency or future use
 
     def model_post_init(self, _, /) -> None:
         """Initialize the CMBConvergenceFactory."""
