@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from firecrown.likelihood.source import SourceCMB, SourceCMBArgs, Tracer
 from firecrown.modeling_tools import ModelingTools
-from firecrown.metadata_types import TypeSource
+from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 
 @dataclass(frozen=True)
 class CMBConvergenceArgs(SourceCMBArgs):
@@ -64,6 +64,7 @@ class CMBConvergenceFactory(BaseModel):
     
     type_source: TypeSource = TypeSource.DEFAULT
     z_source: float = 1100.0
+    scale: float = 1.0
 
     # adding these fields to match the structure of other factories
     global_systematics: Sequence[object] = []   # CMB doesn't have global systematics, but keep for consistency or future use
@@ -72,13 +73,16 @@ class CMBConvergenceFactory(BaseModel):
         """Initialize the CMBConvergenceFactory."""
         self._cache: dict[int, CMBConvergence] = {}
 
-    def create(self, sacc_tracer: str) -> CMBConvergence:
-        """Create a CMBConvergence object with the given tracer name.
+    def create(self, inferred_galaxy_zdist: InferredGalaxyZDist) -> CMBConvergence:
+        """Create a CMBConvergence object with the given inferred galaxy z distribution.
 
-        :param sacc_tracer: the name of the tracer
+        :param inferred_galaxy_zdist: the inferred galaxy redshift distribution
         :return: a fully initialized CMBConvergence object
         """
+        # Use the bin_name as the tracer identifier
+        sacc_tracer = inferred_galaxy_zdist.bin_name
         tracer_id = hash(sacc_tracer)
+        
         if tracer_id in self._cache:
             return self._cache[tracer_id]
 
@@ -97,4 +101,15 @@ class CMBConvergenceFactory(BaseModel):
         :param sacc_tracer: the name of the tracer
         :return: a fully initialized CMBConvergence object
         """
-        return self.create(sacc_tracer)
+        tracer_id = hash(sacc_tracer)
+        if tracer_id in self._cache:
+            return self._cache[tracer_id]
+
+        cmb_conv = CMBConvergence.create_ready(
+            sacc_tracer=sacc_tracer, 
+            scale=self.scale, 
+            z_source=self.z_source
+        )
+        self._cache[tracer_id] = cmb_conv
+
+        return cmb_conv
