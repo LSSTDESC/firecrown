@@ -847,7 +847,7 @@ class TwoPointFactory(BaseModel):
                 )
             self._nc_factory_map[nc_factory.type_source] = nc_factory
 
-        for cmb_factory in self.cmb_convergence_factories:
+        for cmb_factory in self.cmb_factories:
             if cmb_factory.type_source in self._cmb_factory_map:
                 raise ValueError(
                     f"Duplicate CMBConvergenceFactory found for "
