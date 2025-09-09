@@ -57,7 +57,7 @@ class CMBConvergence(SourceCMB):
         ]
 
         self.current_tracer_args = tracer_args
-        return tracers, None
+        return tracers, tracer_args
 
     @classmethod
     def create_ready(
