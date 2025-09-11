@@ -90,6 +90,7 @@ jobs:
           pylint --rcfile tests/pylintrc  tests
           pylint --rcfile examples/pylintrc  examples
       - name: Testing isitgr presence
+        if: ${{ (matrix.os == 'macos') }}
         shell: bash -l {0}
         run: |
           ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/
