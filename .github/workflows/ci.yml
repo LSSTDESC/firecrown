@@ -96,6 +96,7 @@ jobs:
           ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*
           ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/
           otool -L /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/*.so
+          otool -l /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/*.so
           python -m isitgr
       - name: Run unit tests with code coverage
         shell: bash -l {0}
