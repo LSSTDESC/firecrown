@@ -32,9 +32,7 @@ dependencies:
   - numpy >= 1.25.0
   - pip >= 20.1  # pip is needed as dependency
   - pip:
-    - --no-binary=isitgr
     - cobaya
-    - isitgr
     - pygobject-stubs
   - plotnine
   - portalocker
