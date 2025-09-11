@@ -33,6 +33,7 @@ dependencies:
   - pip >= 20.1  # pip is needed as dependency
   - pip:
     - cobaya
+    - isitgr
     - pygobject-stubs
   - plotnine
   - portalocker

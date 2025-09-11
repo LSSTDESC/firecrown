@@ -64,11 +64,6 @@ jobs:
         if: steps.cache.outputs.cache-hit != 'true'
       - name: Ensure clear Jupyter Notebooks
         uses: ResearchSoftwareActions/EnsureCleanNotebooksAction@1.1
-      - name: Installing ISITGR
-        shell: bash -l {0}
-        run: |
-          wget https://files.pythonhosted.org/packages/9d/9b/c067d467621aca54b39063bbe2bf3c3d5570928ee8f6e9b916a05cbbf839/isitgr-1.0.5.tar.gz
-          python -m pip install isitgr-1.0.5.tar.gz -v
       - name: Running black check
         shell: bash -l {0}
         run: |
@@ -98,6 +93,7 @@ jobs:
         if: ${{ (matrix.os == 'macos') }}
         shell: bash -l {0}
         run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so
           python -c "import isitgr"
       - name: Run unit tests with code coverage
         shell: bash -l {0}
