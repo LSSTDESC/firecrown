@@ -92,7 +92,7 @@ jobs:
       - name: Testing isitgr presence
         shell: bash -l {0}
         run: |
-          ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.11/site-packages/isitgr/
+          ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/
           python -m isitgr
       - name: Run unit tests with code coverage
         shell: bash -l {0}
