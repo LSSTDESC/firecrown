@@ -97,7 +97,7 @@ jobs:
           ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/
           otool -L /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/*.so
           otool -l /Users/runner/miniconda3/envs/firecrown_developer/lib/python3*/site-packages/isitgr/*.so
-          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib/python${matrix.python-version}/site-packages/isitgr /Users/runner/miniconda3/envs/firecrown_developer/lib/python${matrix.python-version}/site-packages/isitgr/isitgrlib.so
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python*/site-packages/isitgr/isitgrlib.so
           DYLD_PRINT_LIBRARIES=1 DYLD_PRINT_RPATHS=1 DYLD_PRINT_APIS=1 python -c "import isitgr"
       - name: Run unit tests with code coverage
         shell: bash -l {0}
