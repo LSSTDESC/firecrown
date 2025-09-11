@@ -159,6 +159,12 @@ jobs:
           conda env config vars set CSL_DIR=${CSL_DIR}
           conda activate firecrown_developer
         if: steps.cache.outputs.cache-hit != 'true'
+      - name: Testing isitgr presence
+        if: ${{ (matrix.os == 'macos') }}
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so
+          DYLD_PRINT_LIBRARIES=1 DYLD_PRINT_RPATHS=1 DYLD_PRINT_APIS=1 python -c "import isitgr"
       - name: Install Cobaya
         shell: bash -l {0}
         run: python -m pip install cobaya
