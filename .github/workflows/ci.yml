@@ -89,6 +89,11 @@ jobs:
           pylint pylint_plugins
           pylint --rcfile tests/pylintrc  tests
           pylint --rcfile examples/pylintrc  examples
+      - name: Testing isitgr presence
+        shell: bash -l {0}
+        run: |
+          ls -lasth /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.11/site-packages/isitgr/
+          python -m isitgr
       - name: Run unit tests with code coverage
         shell: bash -l {0}
         run: python -m pytest -vv --runslow --cov firecrown --cov-report xml --cov-branch
