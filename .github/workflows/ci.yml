@@ -163,7 +163,6 @@ jobs:
         if: ${{ (matrix.os == 'macos') }}
         shell: bash -l {0}
         run: |
-          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so
           DYLD_PRINT_LIBRARIES=1 DYLD_PRINT_RPATHS=1 DYLD_PRINT_APIS=1 python -c "import isitgr"
       - name: Install Cobaya
         shell: bash -l {0}
