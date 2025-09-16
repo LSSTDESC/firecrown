@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_serializer, BeforeValid
 
 import numpy as np
 import numpy.typing as npt
-from scipy.special import gamma, erf, erfc
+from scipy.special import gamma, erf, erfc  # pylint: disable=no-name-in-module
 from scipy.integrate import quad
 
 from numcosmo_py import Ncm
@@ -383,7 +383,7 @@ class ZDistLSSTSRD:
                 + self.autoknots_abstol
             )
 
-        norma = quad(_P, z[0], z[-1], args=None)[0]
+        norma = quad(lambda x: _P(x, None), z[0], z[-1], args=())[0]
 
         if not self.use_autoknot:
             z_knots = z

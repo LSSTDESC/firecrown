@@ -259,6 +259,23 @@ def test_extract_section_raises_on_missing_section(defective_module_config: Data
         _ = extract_section(defective_module_config, "xxx")
 
 
+@pytest.mark.parametrize("config_with_two_point_harmonic", ["pure_ccl"], indirect=True)
+def test_wrong_use_of_camb_module_with_ccl_not_in_default_mode(
+    config_with_two_point_harmonic,
+):
+    config_with_two_point_harmonic.put_string("camb", "cow", "moo")
+
+    with pytest.raises(
+        RuntimeError,
+        match=(
+            "If Firecrown is using CCL to calculate the cosmology, "
+            "then CosmoSIS should not be configured to use CAMB to "
+            "calculate the cosmology."
+        ),
+    ):
+        _ = FirecrownLikelihood(config_with_two_point_harmonic)
+
+
 def test_parameterless_module_construction(minimal_module_config):
     """Make sure we can create a CosmoSIS likelihood modules that does not
     introduce any new parameters."""

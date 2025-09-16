@@ -12,6 +12,7 @@ from firecrown.likelihood.number_counts import (
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.models.two_point import calculate_pk
 from firecrown.modeling_tools import ModelingTools
+import firecrown.generators.two_point as gen
 
 
 def make_twopoint_with_optional_systematics(
@@ -39,7 +40,7 @@ def make_twopoint_with_optional_systematics(
         "galaxy_density_xi",
         a,
         b,
-        ell_for_xi={"minimum": 2, "midpoint": 6, "n_log": 180},
+        interp_ells_gen=gen.LogLinearElls(minimum=2, midpoint=6, n_log=180),
     )
     statistic.read(sacc_data)
     # Note the two sources have identical parameters.

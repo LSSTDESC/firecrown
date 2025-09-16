@@ -55,6 +55,12 @@ model-set:
         ia-a-1: 1.0
         ia-a-2: 0.5
         ia-a-d: 0.5
+        ia-zpiv-d: 0.62
+        ia-alphaz-d: 0.0
+        ia-zpiv-1: 0.62
+        ia-alphaz-1: 0.0
+        ia-zpiv-2: 0.62
+        ia-alphaz-2: 0.0
         lens0-b-2: 1.0
         lens0-b-s: 1.0
         lens0-mag-bias: 1.0
@@ -64,6 +70,12 @@ model-set:
         ia-a-1-fit: true
         ia-a-2-fit: true
         ia-a-d-fit: true
+        ia-alphaz-1-fit: false
+        ia-alphaz-2-fit: false
+        ia-alphaz-d-fit: false
+        ia-zpiv-1-fit: false
+        ia-zpiv-2-fit: false
+        ia-zpiv-d-fit: false
         lens0-b-2-fit: true
         lens0-b-s-fit: true
         lens0-mag-bias-fit: true

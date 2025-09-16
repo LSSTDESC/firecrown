@@ -293,12 +293,15 @@ def make_all_real_bins() -> list[InferredGalaxyZDist]:
 
 
 @pytest.fixture(name="window_1")
-def make_window_1() -> tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]]:
+def make_window_1() -> (
+    tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Generate a Window object with 100 ells."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     weights = np.ones(400).reshape(-1, 4)
+    window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
-    return ells, weights
+    return ells, weights, window_ells
 
 
 @pytest.fixture(name="harmonic_two_point_xy")
@@ -333,12 +336,17 @@ def make_real_two_point_xy(
 
 @pytest.fixture(name="two_point_cwindow")
 def make_two_point_cwindow(
-    window_1: tuple[npt.NDArray[np.int64], npt.NDArray[np.float64]],
+    window_1: tuple[
+        npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ],
     harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
     two_point = TwoPointHarmonic(
-        XY=harmonic_two_point_xy, ells=window_1[0], window=window_1[1]
+        XY=harmonic_two_point_xy,
+        ells=window_1[0],
+        window=window_1[1],
+        window_ells=window_1[2],
     )
     return two_point
 
@@ -373,11 +381,15 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
     data = (np.zeros(4) + 1.1).astype(np.float64)
     indices = np.arange(4)
     covariance_name = "cov"
+    mean_ells = np.einsum("lb, l -> b", weights, ells) / weights.sum(axis=0)
+
     tpm = TwoPointMeasurement(
         data=data,
         indices=indices,
         covariance_name=covariance_name,
-        metadata=TwoPointHarmonic(ells=ells, window=weights, XY=harmonic_two_point_xy),
+        metadata=TwoPointHarmonic(
+            ells=ells, window=weights, window_ells=mean_ells, XY=harmonic_two_point_xy
+        ),
     )
 
     return tpm
@@ -659,7 +671,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     dv = []
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        Cells = np.random.normal(size=ells.shape[0])
+        Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl("galaxy_shear_cl_ee", f"src{i}", f"src{j}", ells, Cells)
         tracer_pairs[(TracerNames(f"src{i}", f"src{j}"), "galaxy_shear_cl_ee")] = (
             ells,
@@ -668,7 +680,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
         dv.append(Cells)
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        Cells = np.random.normal(size=ells.shape[0])
+        Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl("galaxy_density_cl", f"lens{i}", f"lens{j}", ells, Cells)
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_cl")] = (
             ells,
@@ -677,7 +689,7 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
         dv.append(Cells)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
-        Cells = np.random.normal(size=ells.shape[0])
+        Cells = np.array(np.random.normal(size=ells.shape[0]))
         sacc_data.add_ell_cl(
             "galaxy_shearDensity_cl_e", f"src{i}", f"lens{j}", ells, Cells
         )
@@ -828,7 +840,7 @@ def fixture_sacc_galaxy_xis():
     dv = []
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{i}", f"lens{j}", thetas, xis)
         tracer_pairs[(TracerNames(f"lens{i}", f"lens{j}"), "galaxy_density_xi")] = (
             thetas,
@@ -837,7 +849,7 @@ def fixture_sacc_galaxy_xis():
         dv.append(xis)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shearDensity_xi_t", f"src{i}", f"lens{j}", thetas, xis
         )
@@ -850,7 +862,7 @@ def fixture_sacc_galaxy_xis():
         dv.append(xis)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_minus", f"src{i}", f"src{j}", thetas, xis
         )
@@ -860,7 +872,7 @@ def fixture_sacc_galaxy_xis():
         )
         dv.append(xis)
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_plus", f"src{i}", f"src{j}", thetas, xis
         )
@@ -908,7 +920,7 @@ def fixture_sacc_galaxy_xis_inverted():
     dv = []
 
     for i, j in upper_triangle_indices(len(lens_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi("galaxy_density_xi", f"lens{j}", f"lens{i}", thetas, xis)
         tracer_pairs[(TracerNames(f"lens{j}", f"lens{i}"), "galaxy_density_xi")] = (
             thetas,
@@ -917,7 +929,7 @@ def fixture_sacc_galaxy_xis_inverted():
         dv.append(xis)
 
     for i, j in product(range(len(src_bins_centers)), range(len(lens_bins_centers))):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shearDensity_xi_t", f"lens{i}", f"src{j}", thetas, xis
         )
@@ -930,7 +942,7 @@ def fixture_sacc_galaxy_xis_inverted():
         dv.append(xis)
 
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_minus", f"src{j}", f"src{i}", thetas, xis
         )
@@ -940,7 +952,7 @@ def fixture_sacc_galaxy_xis_inverted():
         )
         dv.append(xis)
     for i, j in upper_triangle_indices(len(src_bins_centers)):
-        xis = np.random.normal(size=thetas.shape[0])
+        xis = np.array(np.random.normal(size=thetas.shape[0]))
         sacc_data.add_theta_xi(
             "galaxy_shear_xi_plus", f"src{j}", f"src{i}", thetas, xis
         )
@@ -969,7 +981,7 @@ def fixture_sacc_galaxy_cells_ambiguous() -> sacc.Sacc:
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "bin0", z, dndz)
     sacc_data.add_tracer("NZ", "bin1", z, dndz)
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells = np.array(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", "bin0", "bin1", ells, Cells)
     cov = np.diag(np.zeros(len(ells)) + 0.01)
 
@@ -1052,13 +1064,35 @@ def fixture_sacc_galaxy_cells_src0_src0_no_window() -> (
     dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
     sacc_data.add_tracer("NZ", "src0", z, dndz)
 
-    Cells = np.random.normal(size=ells.shape[0])
+    Cells = np.array(np.random.normal(size=ells.shape[0]))
     sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
 
     cov = np.diag(np.ones_like(Cells) * 0.01)
     sacc_data.add_covariance(cov)
 
     return sacc_data, z, dndz
+
+
+@pytest.fixture(name="sacc_galaxy_xis_lens0_lens0_real")
+def fixture_sacc_galaxy_xis_lens0_lens0_real() -> (
+    tuple[sacc.Sacc, np.ndarray, np.ndarray]
+):
+    """Fixture for a SACC data without window functions."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 256) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
+
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz)
+
+    xis = np.random.normal(size=thetas.shape[0])
+    sacc_data.add_theta_xi("galaxy_density_xi", "lens0", "lens0", thetas, xis)
+
+    cov = np.diag(np.ones_like(xis) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    return sacc_data, z, thetas
 
 
 @pytest.fixture(name="wl_factory")
