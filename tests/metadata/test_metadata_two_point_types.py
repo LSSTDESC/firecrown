@@ -66,8 +66,8 @@ def test_order_enums():
 
 
 def test_galaxies_is_shear():
-    assert Galaxies.PART_OF_XI_MINUS is Galaxies.SHEAR_MINUS
-    assert Galaxies.PART_OF_XI_PLUS is Galaxies.SHEAR_PLUS
+    assert Galaxies.PART_OF_XI_MINUS == Galaxies.SHEAR_MINUS
+    assert Galaxies.PART_OF_XI_PLUS == Galaxies.SHEAR_PLUS
     assert Galaxies.SHEAR_E.is_shear()
     assert Galaxies.SHEAR_T.is_shear()
     assert Galaxies.PART_OF_XI_MINUS.is_shear()
