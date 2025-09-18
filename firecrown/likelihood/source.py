@@ -579,7 +579,7 @@ class SourceCMB(Source):
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
         """Read the CMB tracer data from a sacc file."""
-        if not hasattr(self, "tracer_args"):
+        if not hasattr(self, "tracer_args"):  # pragma: no cover
             raise RuntimeError(
                 "Must initialize tracer_args before calling _read on SourceCMB"
             )
