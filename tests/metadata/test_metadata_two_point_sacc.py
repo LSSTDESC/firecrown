@@ -16,6 +16,9 @@ from firecrown.metadata_types import (
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
+    InferredGalaxyZDist,
+    CMB,
+    TypeSource,
     type_to_sacc_string_harmonic,
     type_to_sacc_string_real,
 )
@@ -27,6 +30,8 @@ from firecrown.metadata_functions import (
     extract_all_real_metadata,
     extract_all_tracers_inferred_galaxy_zdists,
     extract_window_function,
+    make_all_photoz_bin_combinations_with_cmb,
+    make_all_photoz_bin_combinations,
 )
 from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
@@ -973,3 +978,278 @@ def test_extract_all_data_real_no_cov(sacc_galaxy_xis):
         match=("The SACC object does not have a dense covariance matrix."),
     ):
         _ = extract_all_real_data(sacc_data, include_maybe_types=True)
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_basic():
+    """Test basic functionality of make_all_photoz_bin_combinations_with_cmb."""
+    # Create test galaxy bins
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="bin_1",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},
+        ),
+        InferredGalaxyZDist(
+            bin_name="bin_2",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.SHEAR_E},
+        ),
+    ]
+
+    # Test without CMB auto-correlation
+    combinations = make_all_photoz_bin_combinations_with_cmb(
+        galaxy_bins, include_cmb_auto=False
+    )
+
+    # Should have galaxy-galaxy combinations + CMB-galaxy cross-correlations
+    galaxy_only_combinations = make_all_photoz_bin_combinations(galaxy_bins)
+
+    # Expected: 3 galaxy combinations + 4 CMB-galaxy combinations
+    # (2 each direction for compatible measurements)
+    # bin_1 (COUNTS) is compatible with CMB.CONVERGENCE -> 2 combinations
+    # bin_2 (SHEAR_E) is compatible with CMB.CONVERGENCE -> 2 combinations
+    expected_total = len(galaxy_only_combinations) + 4
+
+    assert len(combinations) == expected_total
+
+    # Check that all original galaxy combinations are preserved
+    galaxy_combinations_in_result = [
+        combo
+        for combo in combinations
+        if combo.x_measurement != CMB.CONVERGENCE
+        and combo.y_measurement != CMB.CONVERGENCE
+    ]
+    assert len(galaxy_combinations_in_result) == len(galaxy_only_combinations)
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_with_auto():
+    """Test make_all_photoz_bin_combinations_with_cmb with CMB auto-correlation."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="bin_1",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},
+        ),
+    ]
+
+    # Test with CMB auto-correlation
+    combinations = make_all_photoz_bin_combinations_with_cmb(
+        galaxy_bins, include_cmb_auto=True
+    )
+
+    # Check for CMB auto-correlation
+    cmb_auto_combinations = [
+        combo
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            and combo.y_measurement == CMB.CONVERGENCE
+            and combo.x.bin_name == "cmb_convergence"
+            and combo.y.bin_name == "cmb_convergence"
+        )
+    ]
+
+    assert len(cmb_auto_combinations) == 1
+    cmb_auto = cmb_auto_combinations[0]
+    assert cmb_auto.x.bin_name == "cmb_convergence"
+    assert cmb_auto.y.bin_name == "cmb_convergence"
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_custom_tracer_name():
+    """Test make_all_photoz_bin_combinations_with_cmb with custom CMB tracer name."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="bin_1",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},
+        ),
+    ]
+
+    custom_name = "my_cmb_tracer"
+    combinations = make_all_photoz_bin_combinations_with_cmb(
+        galaxy_bins, cmb_tracer_name=custom_name
+    )
+
+    # Check that CMB tracer has the custom name
+    cmb_combinations = [
+        combo
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            or combo.y_measurement == CMB.CONVERGENCE
+        )
+    ]
+
+    assert len(cmb_combinations) > 0
+    for combo in cmb_combinations:
+        if combo.x_measurement == CMB.CONVERGENCE:
+            assert combo.x.bin_name == custom_name
+        if combo.y_measurement == CMB.CONVERGENCE:
+            assert combo.y.bin_name == custom_name
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility():
+    """Test that only compatible measurements create CMB-galaxy cross-correlations."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="counts_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
+        ),
+        InferredGalaxyZDist(
+            bin_name="shear_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.SHEAR_E},  # Compatible with CMB.CONVERGENCE
+        ),
+    ]
+
+    combinations = make_all_photoz_bin_combinations_with_cmb(galaxy_bins)
+
+    # Check CMB-galaxy combinations
+    cmb_galaxy_combinations = [
+        combo
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            or combo.y_measurement == CMB.CONVERGENCE
+        )
+        and not (
+            combo.x_measurement == CMB.CONVERGENCE
+            and combo.y_measurement == CMB.CONVERGENCE
+        )
+    ]
+
+    # Should have 4 combinations: 2 for each galaxy bin (both directions)
+    assert len(cmb_galaxy_combinations) == 4
+
+    # Verify specific combinations exist
+    expected_combinations = [
+        ("cmb_convergence", CMB.CONVERGENCE, "counts_bin", Galaxies.COUNTS),
+        ("counts_bin", Galaxies.COUNTS, "cmb_convergence", CMB.CONVERGENCE),
+        ("cmb_convergence", CMB.CONVERGENCE, "shear_bin", Galaxies.SHEAR_E),
+        ("shear_bin", Galaxies.SHEAR_E, "cmb_convergence", CMB.CONVERGENCE),
+    ]
+
+    actual_combinations = [
+        (combo.x.bin_name, combo.x_measurement, combo.y.bin_name, combo.y_measurement)
+        for combo in cmb_galaxy_combinations
+    ]
+
+    for expected in expected_combinations:
+        assert expected in actual_combinations
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_empty_input():
+    """Test make_all_photoz_bin_combinations_with_cmb with empty galaxy bins."""
+    combinations = make_all_photoz_bin_combinations_with_cmb([])
+
+    # Should only return empty list since no galaxy bins
+    assert len(combinations) == 0
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_cmb_bin_properties():
+    """Test that the created CMB bin has correct properties."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="bin_1",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},
+        ),
+    ]
+
+    combinations = make_all_photoz_bin_combinations_with_cmb(galaxy_bins)
+
+    # Find a combination with CMB
+    cmb_combo = next(
+        combo for combo in combinations if combo.x_measurement == CMB.CONVERGENCE
+    )
+
+    cmb_bin = cmb_combo.x
+    assert cmb_bin.bin_name == "cmb_convergence"
+    assert np.array_equal(cmb_bin.z, np.array([1100.0]))
+    assert np.array_equal(cmb_bin.dndz, np.array([1.0]))
+    assert cmb_bin.measurements == {CMB.CONVERGENCE}
+    assert cmb_bin.type_source == TypeSource.DEFAULT
+
+
+@pytest.mark.parametrize("include_auto", [True, False])
+def test_make_all_photoz_bin_combinations_with_cmb_parametrized(include_auto: bool):
+    """Parametrized test for CMB auto-correlation inclusion."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="bin_1",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},
+        ),
+    ]
+
+    combinations = make_all_photoz_bin_combinations_with_cmb(
+        galaxy_bins, include_cmb_auto=include_auto
+    )
+
+    # Count CMB auto-correlations
+    cmb_auto_count = sum(
+        1
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            and combo.y_measurement == CMB.CONVERGENCE
+        )
+    )
+
+    if include_auto:
+        assert cmb_auto_count == 1
+    else:
+        assert cmb_auto_count == 0
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements():
+    """Test with galaxy bins that have multiple measurement types."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="multi_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS, Galaxies.SHEAR_E},  # Multiple measurements
+        ),
+    ]
+
+    combinations = make_all_photoz_bin_combinations_with_cmb(galaxy_bins)
+
+    # Should have CMB cross-correlations for both measurement types
+    cmb_galaxy_combinations = [
+        combo
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            or combo.y_measurement == CMB.CONVERGENCE
+        )
+        and not (
+            combo.x_measurement == CMB.CONVERGENCE
+            and combo.y_measurement == CMB.CONVERGENCE
+        )
+    ]
+
+    # Should have 4 combinations: 2 directions × 2 measurement types
+    assert len(cmb_galaxy_combinations) == 4
+
+    # Verify both measurement types are present
+    galaxy_measurements = {
+        (
+            combo.x_measurement
+            if combo.y_measurement == CMB.CONVERGENCE
+            else combo.y_measurement
+        )
+        for combo in cmb_galaxy_combinations
+    }
+
+    assert Galaxies.COUNTS in galaxy_measurements
+    assert Galaxies.SHEAR_E in galaxy_measurements
