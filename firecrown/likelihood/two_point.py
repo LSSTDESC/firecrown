@@ -859,34 +859,22 @@ class TwoPointFactory(BaseModel):
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
     ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
         """Get the Factory for the given Measurement and TypeSource."""
-        match measurement:
-            case measurement if measurement in GALAXY_SOURCE_TYPES:
-                if type_source not in self._wl_factory_map:
+        candidates: Sequence[tuple[tuple[str, ...], dict, str]] = [
+            (GALAXY_SOURCE_TYPES, self._wl_factory_map, "WeakLensingFactory"),
+            (GALAXY_LENS_TYPES, self._nc_factory_map, "NumberCountsFactory"),
+            (CMB_TYPES, self._cmb_factory_map, "CMBConvergenceFactory"),
+        ]
+        for type_set, factory_map, factory_name in candidates:
+            if measurement in type_set:
+                if type_source not in factory_map:
                     raise ValueError(
-                        f"No WeakLensingFactory found for type_source {type_source}."
+                        f"No {factory_name} found for type_source {type_source}."
                     )
-                return self._wl_factory_map[type_source]
-            case measurement if measurement in GALAXY_LENS_TYPES:
-                if type_source not in self._nc_factory_map:
-                    raise ValueError(
-                        f"No NumberCountsFactory found for type_source {type_source}."
-                    )
-                return self._nc_factory_map[type_source]
-            case measurement if (
-                measurement in CMB_TYPES
-            ):  # You'll need to define CMB_TYPES
-                if type_source not in self._cmb_factory_map:
-                    raise ValueError(
-                        f"No CMBConvergenceFactory found for type_source {type_source}."
-                    )
-                return self._cmb_factory_map[type_source]
-            case _:
-                raise (
-                    ValueError(
-                        f"Factory not found for measurement {measurement} "
-                        f"is not supported."
-                    )
-                )
+                return factory_map[type_source]
+
+        raise ValueError(
+            f"Factory not found for measurement {measurement}, it is not supported."
+        )
 
     def from_measurement(
         self, tpms: list[TwoPointMeasurement]
