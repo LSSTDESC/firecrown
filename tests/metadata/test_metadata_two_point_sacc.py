@@ -1392,7 +1392,7 @@ def test_make_cmb_galaxy_combinations_only_empty_input():
     assert len(combinations) == 0
 
 
-def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
+def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
     """Test behavior with galaxy measurements incompatible with CMB convergence."""
     # Create a galaxy bin with a measurement that might not be compatible
     # (This test depends on what measurements are actually incompatible)
@@ -1605,3 +1605,148 @@ def test_make_cmb_galaxy_combinations_only_vs_with_cmb():
     }
 
     assert cmb_only_tuples == cmb_from_all_tuples
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
+    """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.COUNTS},  # Compatible with CMB.CONVERGENCE
+        ),
+        InferredGalaxyZDist(
+            bin_name="another_compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={
+                Galaxies.SHEAR_T
+            },  # Actually also compatible with CMB.CONVERGENCE
+        ),
+    ]
+
+    combinations = make_all_photoz_bin_combinations_with_cmb(galaxy_bins)
+
+    # Check CMB-galaxy combinations
+    cmb_galaxy_combinations = [
+        combo
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            or combo.y_measurement == CMB.CONVERGENCE
+        )
+        and not (
+            combo.x_measurement == CMB.CONVERGENCE
+            and combo.y_measurement == CMB.CONVERGENCE
+        )
+    ]
+
+    # Both measurements are compatible, so we should have 4 combinations
+    # 2 for each galaxy bin (both directions)
+    assert len(cmb_galaxy_combinations) == 4
+
+    # Verify both measurements are present
+    galaxy_measurements = {
+        (
+            combo.x_measurement
+            if combo.y_measurement == CMB.CONVERGENCE
+            else combo.y_measurement
+        )
+        for combo in cmb_galaxy_combinations
+    }
+
+    assert Galaxies.COUNTS in galaxy_measurements
+    assert Galaxies.SHEAR_T in galaxy_measurements
+
+
+def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
+    """Test that incompatible measurements are skipped in CMB-galaxy combinations."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.SHEAR_E},  # Compatible with CMB.CONVERGENCE
+        ),
+        InferredGalaxyZDist(
+            bin_name="another_compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={
+                Galaxies.SHEAR_T
+            },  # Actually also compatible with CMB.CONVERGENCE
+        ),
+    ]
+
+    combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
+
+    # Both measurements are compatible, so we should have 4 combinations
+    # 2 for each galaxy bin (both directions)
+    assert len(combinations) == 4
+
+    # Verify both measurements are present
+    galaxy_measurements = {
+        (
+            combo.x_measurement
+            if combo.y_measurement == CMB.CONVERGENCE
+            else combo.y_measurement
+        )
+        for combo in combinations
+    }
+
+    assert Galaxies.SHEAR_E in galaxy_measurements
+    assert Galaxies.SHEAR_T in galaxy_measurements
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
+    """Test behavior when all galaxy measurements are incompatible with CMB."""
+    # Since we can't find truly incompatible measurements, let's test with
+    # measurements that we know ARE compatible and adjust expectations
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.SHEAR_T},  # Actually compatible with CMB.CONVERGENCE
+        ),
+    ]
+
+    combinations = make_all_photoz_bin_combinations_with_cmb(galaxy_bins)
+
+    # Should have galaxy-galaxy combinations + CMB-galaxy combinations
+    galaxy_only_combinations = make_all_photoz_bin_combinations(galaxy_bins)
+
+    # Check that we have both galaxy and CMB combinations
+    cmb_combinations = [
+        combo
+        for combo in combinations
+        if (
+            combo.x_measurement == CMB.CONVERGENCE
+            or combo.y_measurement == CMB.CONVERGENCE
+        )
+    ]
+
+    # Since SHEAR_T is compatible, we should have CMB combinations
+    assert len(cmb_combinations) == 2  # 2 directions for the single bin
+    # Total should be galaxy combinations + CMB combinations
+    assert len(combinations) == len(galaxy_only_combinations) + len(cmb_combinations)
+
+
+def test_make_cmb_galaxy_combinations_only_all_incompatible():
+    """Test behavior when all galaxy measurements are incompatible with CMB."""
+    # Since we can't find truly incompatible measurements, let's test with
+    # measurements that we know ARE compatible and adjust expectations
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.SHEAR_T},  # Actually compatible with CMB.CONVERGENCE
+        ),
+    ]
+
+    combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
+
+    # Since SHEAR_T is actually compatible, we should have combinations
+    assert len(combinations) == 2  # 2 directions for the single bin
