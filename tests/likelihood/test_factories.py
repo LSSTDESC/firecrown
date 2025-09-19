@@ -968,3 +968,42 @@ def test_two_point_factory_cmb_measurement_handling():
     result_factory = factory.get_factory(CMB.CONVERGENCE)
     assert isinstance(result_factory, CMBConvergenceFactory)
     assert result_factory is cmb_factory
+
+
+def test_two_point_factory_cmb_measurement_with_type_source():
+    """Test CMB measurement handling with specific type_source."""
+    cmb_factory1 = CMBConvergenceFactory(type_source=TypeSource("ts1"))
+    cmb_factory2 = CMBConvergenceFactory(type_source=TypeSource("ts2"))
+
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[cmb_factory1, cmb_factory2],
+    )
+
+    # Test that specific type_source returns correct factory
+    result_factory1 = factory.get_factory(
+        CMB.CONVERGENCE, type_source=TypeSource("ts1")
+    )
+    assert isinstance(result_factory1, CMBConvergenceFactory)
+    assert result_factory1 is cmb_factory1
+
+    result_factory2 = factory.get_factory(
+        CMB.CONVERGENCE, type_source=TypeSource("ts2")
+    )
+    assert isinstance(result_factory2, CMBConvergenceFactory)
+    assert result_factory2 is cmb_factory2
+
+
+def test_two_point_factory_all_cmb_types():
+    """Test that all CMB measurement types are handled correctly."""
+    cmb_factory = CMBConvergenceFactory()
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[cmb_factory],
+    )
+
+    # Test all CMB measurement types
+    for measurement in CMB_TYPES:
+        result_factory = factory.get_factory(measurement)
+        assert isinstance(result_factory, CMBConvergenceFactory)
+        assert result_factory is cmb_factory
