@@ -300,6 +300,7 @@ GALAXY_SOURCE_TYPES = (
     Galaxies.PART_OF_XI_PLUS,
 )
 GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
+CMB_TYPES = (CMB.CONVERGENCE,)
 
 
 def compare_enums(a: Measurement, b: Measurement) -> int:

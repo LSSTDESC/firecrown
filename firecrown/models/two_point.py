@@ -98,6 +98,12 @@ def determine_ccl_kind(sacc_data_type: str) -> str:
             result = "NN"
         case "cmbGalaxy_convergenceShear_xi_t":
             result = "NG"
+        case "cmbGalaxy_convergenceDensity_cl":
+            result = "cl"
+        case "cmbGalaxy_convergenceShear_cl_e":
+            result = "cl"
+        case "cmb_convergence_cl":
+            result = "cl"
         case _:
             raise ValueError(f"The SACC data type {sacc_data_type} is not supported!")
     return result
