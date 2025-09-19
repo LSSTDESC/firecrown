@@ -25,6 +25,7 @@ from firecrown.metadata_types import (
     TwoPointReal,
     TypeSource,
     CMB,
+    Clusters,
     GALAXY_SOURCE_TYPES,
     GALAXY_LENS_TYPES,
     CMB_TYPES,
@@ -1007,3 +1008,41 @@ def test_two_point_factory_all_cmb_types():
         result_factory = factory.get_factory(measurement)
         assert isinstance(result_factory, CMBConvergenceFactory)
         assert result_factory is cmb_factory
+
+
+def test_two_point_factory_measurement_not_supported():
+    """Test that measurements not supported by the factory raise an error."""
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[CMBConvergenceFactory()],
+    )
+    with pytest.raises(
+        ValueError,
+        match=("Factory not found for measurement .*, it is not supported."),
+    ):
+        _ = factory.get_factory(Clusters.COUNTS)
+
+
+def test_two_point_factory_all_factories():
+    """Test that all factory types are handled correctly."""
+    wl_factory = WeakLensingFactory(type_source=TypeSource("ts_wl"))
+    nc_factory = NumberCountsFactory(type_source=TypeSource("ts_nc"))
+    cmb_factory = CMBConvergenceFactory(type_source=TypeSource("ts_cmb"))
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[wl_factory],
+        number_counts_factories=[nc_factory],
+        cmb_factories=[cmb_factory],
+    )
+    # Test Weak Lensing
+    wl_result = factory.get_factory(Galaxies.SHEAR_E, type_source=TypeSource("ts_wl"))
+    assert isinstance(wl_result, WeakLensingFactory)
+    assert wl_result is wl_factory
+    # Test Number Counts
+    nc_result = factory.get_factory(Galaxies.COUNTS, type_source=TypeSource("ts_nc"))
+    assert isinstance(nc_result, NumberCountsFactory)
+    assert nc_result is nc_factory
+    # Test CMB
+    cmb_result = factory.get_factory(CMB.CONVERGENCE, type_source=TypeSource("ts_cmb"))
+    assert isinstance(cmb_result, CMBConvergenceFactory)
+    assert cmb_result is cmb_factory
