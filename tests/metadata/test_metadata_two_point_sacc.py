@@ -1710,6 +1710,12 @@ def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
             dndz=np.ones(100),
             measurements={Galaxies.SHEAR_T},  # Actually compatible with CMB.CONVERGENCE
         ),
+        InferredGalaxyZDist(
+            bin_name="compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.PART_OF_XI_MINUS},
+        ),
     ]
 
     combinations = make_all_photoz_bin_combinations_with_cmb(galaxy_bins)
@@ -1750,3 +1756,19 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
 
     # Since SHEAR_T is actually compatible, we should have combinations
     assert len(combinations) == 2  # 2 directions for the single bin
+
+
+def test_make_all_photoz_bin_combinations_with_cmb_empty():
+    """Test behavior when given an empty list of galaxy bins."""
+    galaxy_bins = [
+        InferredGalaxyZDist(
+            bin_name="compatible_bin",
+            z=np.linspace(0, 1, 100),
+            dndz=np.ones(100),
+            measurements={Galaxies.PART_OF_XI_MINUS},
+        ),
+    ]
+
+    combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
+
+    assert len(combinations) == 0
