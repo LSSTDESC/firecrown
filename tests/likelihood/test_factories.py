@@ -643,6 +643,7 @@ def test_build_two_point_harmonic_with_filter_empty(empty_factory_harmonic) -> N
         _ = two_point_experiment.make_likelihood()
 
 
+@pytest.mark.slow
 def test_build_two_point_real_with_filter(empty_factory_real: TwoPointFactory) -> None:
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
@@ -666,6 +667,7 @@ def test_build_two_point_real_with_filter(empty_factory_real: TwoPointFactory) -
     assert two_point_experiment.make_likelihood() is not None
 
 
+@pytest.mark.slow
 def test_build_two_point_real_with_filter_require_filter(
     empty_factory_real: TwoPointFactory,
 ) -> None:
@@ -692,6 +694,7 @@ def test_build_two_point_real_with_filter_require_filter(
         _ = two_point_experiment.make_likelihood()
 
 
+@pytest.mark.slow
 def test_build_two_point_real_with_filter_empty(
     empty_factory_real: TwoPointFactory,
 ) -> None:
@@ -724,6 +727,7 @@ def test_build_two_point_real_with_filter_empty(
         _ = two_point_experiment.make_likelihood()
 
 
+@pytest.mark.slow
 def test_build_two_point_real_with_filter_allow_empty(
     empty_factory_real: TwoPointFactory,
 ) -> None:

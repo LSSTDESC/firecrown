@@ -238,6 +238,7 @@ def test_derived_parameter_likelihood(fiducial_params):
     assert logpost.derived[0] == 1.0
 
 
+@pytest.mark.slow
 def test_default_factory():
     fiducial_params = {
         "ia_bias": 1.0,

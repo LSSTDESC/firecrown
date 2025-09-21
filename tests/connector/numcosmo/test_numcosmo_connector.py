@@ -282,6 +282,7 @@ def test_empty_gauss_cov_data():
     assert nc_data.likelihood_build_parameters is None
 
 
+@pytest.mark.slow
 def test_default_factory_const_gauss():
     """Test the NumCosmo connector."""
     build_parameters = NamedParameters(
@@ -304,6 +305,7 @@ def test_default_factory_const_gauss():
     run_likelihood(model_name, data)
 
 
+@pytest.mark.slow
 def test_default_factory_plain():
     """Test the NumCosmo connector."""
     build_parameters = NamedParameters(
