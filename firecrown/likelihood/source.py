@@ -547,9 +547,6 @@ class SourceCMBArgs:
     z_source: float = 1100.0  # Add this line
 
 
-_SourceCMBArgsT = TypeVar("_SourceCMBArgsT", bound=SourceCMBArgs)
-
-
 class SourceCMB(Source):
     """Source class for CMB based sources."""
 
