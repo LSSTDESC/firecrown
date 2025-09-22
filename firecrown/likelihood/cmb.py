@@ -15,7 +15,7 @@ from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 class CMBConvergenceArgs(SourceCMBArgs):
     """Class for CMB convergence tracer arguments."""
 
-    z_source: float = 1100.0  # Add z_source as a field
+    z_source: float  # Add z_source as a field
 
 
 class CMBConvergence(SourceCMB):
