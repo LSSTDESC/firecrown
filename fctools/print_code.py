@@ -1,12 +1,19 @@
+"""
+Module for displaying class definitions with attributes and decorators.
+
+This module provides utilities to inspect and display Python class
+definitions in a formatted way suitable for syntax highlighting.
+"""
+
 import ast
 import inspect
 from typing import Type, Any
 
 
 def display_class_attributes(cls: Type[Any]) -> None:
-    """
-    Display class definition with attributes and decorators,
-    formatted for syntax highlighting in Quarto/Jupyter.
+    """Display class definition with attributes and decorators.
+
+    Formatted for syntax highlighting in Quarto/Jupyter.
 
     Args:
         cls: The class to display

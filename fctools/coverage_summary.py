@@ -12,7 +12,7 @@ This tool provides a detailed analysis of test coverage including:
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any, Optional
+from typing import List
 from dataclasses import dataclass
 
 
@@ -185,6 +185,58 @@ def print_coverage_summary(summary: CoverageSummary) -> None:
     print()
 
 
+def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
+    """Print source code for missing lines if file exists."""
+    try:
+        source_file = Path(issue.file_path)
+        if source_file.exists():
+            with open(source_file, "r") as f:
+                lines = f.readlines()
+
+            print("   Source code for missing lines:")
+            for line_num in sorted(issue.missing_lines):
+                if 1 <= line_num <= len(lines):
+                    line_content = lines[line_num - 1].rstrip()
+                    print(f"     {line_num:4d}: {line_content}")
+        else:
+            print("   (Source file not found for line details)")
+    except Exception as e:
+        print(f"   (Error reading source file: {e})")
+
+
+def _print_file_issue_details(issue: FileIssue, show_source: bool) -> None:
+    """Print detailed coverage information for a single file."""
+    # Show coverage percentages
+    covered_statements = issue.total_statements - issue.missing_lines_count
+    print(
+        f"   Line Coverage: {issue.line_coverage:.1f}% "
+        f"({covered_statements}/{issue.total_statements} statements)"
+    )
+
+    if issue.total_branches > 0:
+        covered_branches = issue.total_branches - issue.missing_branches_count
+        print(
+            f"   Branch Coverage: {issue.branch_coverage:.1f}% "
+            f"({covered_branches}/{issue.total_branches} branches)"
+        )
+
+    # Show missing lines
+    if issue.missing_lines:
+        line_groups = group_consecutive_lines(issue.missing_lines)
+        lines_str = ", ".join(line_groups)
+        print(f"   Missing Lines ({issue.missing_lines_count}): {lines_str}")
+
+        if show_source:
+            _print_source_code_for_missing_lines(issue)
+
+    # Show missing branches
+    if issue.missing_branches:
+        branches_count = issue.missing_branches_count
+        print(f"   Missing Branches ({branches_count}):")
+        for branch in issue.missing_branches:
+            print(f"     {branch}")
+
+
 def print_file_issues(file_issues: List[FileIssue], show_source: bool = True) -> None:
     """Print detailed information about files with coverage issues."""
     if not file_issues:
@@ -199,48 +251,7 @@ def print_file_issues(file_issues: List[FileIssue], show_source: bool = True) ->
         print(f"{i}. {issue.file_path}")
         print("-" * len(f"{i}. {issue.file_path}"))
 
-        print(
-            f"   Line Coverage: {issue.line_coverage:.1f}% "
-            f"({issue.total_statements - issue.missing_lines_count}/{issue.total_statements} statements)"
-        )
-
-        if issue.total_branches > 0:
-            print(
-                f"   Branch Coverage: {issue.branch_coverage:.1f}% "
-                f"({issue.total_branches - issue.missing_branches_count}/{issue.total_branches} branches)"
-            )
-
-        # Show missing lines
-        if issue.missing_lines:
-            line_groups = group_consecutive_lines(issue.missing_lines)
-            print(
-                f"   Missing Lines ({issue.missing_lines_count}): {', '.join(line_groups)}"
-            )
-
-            # Show source code for missing lines if requested and file exists
-            if show_source:
-                try:
-                    source_file = Path(issue.file_path)
-                    if source_file.exists():
-                        with open(source_file, "r") as f:
-                            lines = f.readlines()
-
-                        print("   Source code for missing lines:")
-                        for line_num in sorted(issue.missing_lines):
-                            if 1 <= line_num <= len(lines):
-                                line_content = lines[line_num - 1].rstrip()
-                                print(f"     {line_num:4d}: {line_content}")
-                    else:
-                        print("   (Source file not found for line details)")
-                except Exception as e:
-                    print(f"   (Error reading source file: {e})")
-
-        # Show missing branches
-        if issue.missing_branches:
-            print(f"   Missing Branches ({issue.missing_branches_count}):")
-            for branch in issue.missing_branches:
-                print(f"     {branch}")
-
+        _print_file_issue_details(issue, show_source)
         print()
 
 
@@ -262,9 +273,11 @@ def print_perfect_coverage_files(
 def main():
     """Main entry point."""
     if len(sys.argv) < 2:
-        print(
-            "Usage: python coverage_summary.py <coverage.json> [--show-source] [--show-perfect]"
+        usage_msg = (
+            "Usage: python coverage_summary.py <coverage.json> "
+            "[--show-source] [--show-perfect]"
         )
+        print(usage_msg)
         print()
         print("Options:")
         print("  --show-source   Show source code for missing lines")
