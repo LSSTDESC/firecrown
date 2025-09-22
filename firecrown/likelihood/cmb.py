@@ -82,11 +82,6 @@ class CMBConvergenceFactory(BaseModel):
     z_source: float = 1100.0
     scale: float = 1.0
 
-    # adding these fields to match the structure of other factories
-    global_systematics: Sequence[object] = (
-        []
-    )  # CMB doesn't have global systematics, but keep for consistency or future use
-
     def model_post_init(self, _, /) -> None:
         """Initialize the CMBConvergenceFactory."""
         self._cache: dict[int, CMBConvergence] = {}
