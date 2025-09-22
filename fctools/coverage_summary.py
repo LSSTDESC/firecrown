@@ -24,10 +24,12 @@ class CoverageSummary:
     files_with_perfect_coverage: int = 0
     files_with_missing_lines: int = 0
     files_with_missing_branches: int = 0
+    files_with_excluded_lines: int = 0
     overall_line_coverage: float = 0.0
     overall_branch_coverage: float = 0.0
     total_statements: int = 0
     total_missing_lines: int = 0
+    total_excluded_lines: int = 0
     total_branches: int = 0
     total_missing_branches: int = 0
 
@@ -41,8 +43,10 @@ class FileIssue:
     branch_coverage: float
     missing_lines_count: int
     missing_branches_count: int
+    excluded_lines_count: int
     missing_lines: List[int]
     missing_branches: List[List[int]]
+    excluded_lines: List[int]
     total_statements: int
     total_branches: int
 
@@ -109,6 +113,7 @@ def _create_file_issue(
     file_summary: Dict[str, Any],
     missing_lines: List[int],
     missing_branches: List[List[int]],
+    excluded_lines: List[int],
     line_coverage: float,
     branch_coverage: float,
 ) -> FileIssue:
@@ -119,8 +124,10 @@ def _create_file_issue(
         branch_coverage=branch_coverage,
         missing_lines_count=len(missing_lines),
         missing_branches_count=len(missing_branches),
+        excluded_lines_count=len(excluded_lines),
         missing_lines=missing_lines,
         missing_branches=missing_branches,
+        excluded_lines=excluded_lines,
         total_statements=file_summary.get("num_statements", 0),
         total_branches=file_summary.get("num_branches", 0),
     )
@@ -134,6 +141,7 @@ def _analyze_single_file(
     file_summary = file_data.get("summary", {})
     missing_lines = file_data.get("missing_lines", [])
     missing_branches = file_data.get("missing_branches", [])
+    excluded_lines = file_data.get("excluded_lines", [])
 
     # Get file statistics
     total_statements = file_summary.get("num_statements", 0)
@@ -143,25 +151,32 @@ def _analyze_single_file(
     # Check if file has perfect coverage
     has_missing_lines = len(missing_lines) > 0
     has_missing_branches = len(missing_branches) > 0
+    has_excluded_lines = len(excluded_lines) > 0
 
     if has_missing_lines:
         summary.files_with_missing_lines += 1
     if has_missing_branches:
         summary.files_with_missing_branches += 1
+    if has_excluded_lines:
+        summary.files_with_excluded_lines += 1
 
     if not has_missing_lines and not has_missing_branches:
         summary.files_with_perfect_coverage += 1
-        return None
 
-    # Create file issue for imperfect coverage
-    return _create_file_issue(
-        file_path,
-        file_summary,
-        missing_lines,
-        missing_branches,
-        line_coverage,
-        branch_coverage,
-    )
+    # Return FileIssue if there are coverage issues (missing lines/branches)
+    # OR if there are excluded lines to report (for informational purposes)
+    if has_missing_lines or has_missing_branches or has_excluded_lines:
+        return _create_file_issue(
+            file_path,
+            file_summary,
+            missing_lines,
+            missing_branches,
+            excluded_lines,
+            line_coverage,
+            branch_coverage,
+        )
+
+    return None
 
 
 def analyze_coverage_json(
@@ -179,6 +194,7 @@ def analyze_coverage_json(
     # Set basic totals
     summary.total_statements = totals.get("num_statements", 0)
     summary.total_missing_lines = totals.get("missing_lines", 0)
+    summary.total_excluded_lines = totals.get("excluded_lines", 0)
     summary.overall_line_coverage = totals.get("percent_covered", 0.0)
 
     # Calculate branch coverage from totals
@@ -213,6 +229,7 @@ def print_coverage_summary(summary: CoverageSummary) -> None:
     print(f"  Files with perfect coverage: {summary.files_with_perfect_coverage}")
     print(f"  Files with missing lines: {summary.files_with_missing_lines}")
     print(f"  Files with missing branches: {summary.files_with_missing_branches}")
+    print(f"  Files with excluded lines: {summary.files_with_excluded_lines}")
     print()
 
     print("Coverage Percentages:")
@@ -223,6 +240,7 @@ def print_coverage_summary(summary: CoverageSummary) -> None:
     print("Detailed Counts:")
     print(f"  Total statements: {summary.total_statements}")
     print(f"  Missing lines: {summary.total_missing_lines}")
+    print(f"  Excluded lines: {summary.total_excluded_lines}")
     print(f"  Total branches: {summary.total_branches}")
     print(f"  Missing branches: {summary.total_missing_branches}")
     print()
@@ -279,6 +297,12 @@ def _print_file_issue_details(issue: FileIssue, show_source: bool) -> None:
         for branch in issue.missing_branches:
             print(f"     {branch}")
 
+    # Show excluded lines
+    if issue.excluded_lines:
+        line_groups = group_consecutive_lines(issue.excluded_lines)
+        lines_str = ", ".join(line_groups)
+        print(f"   Excluded Lines ({issue.excluded_lines_count}): {lines_str}")
+
 
 def print_file_issues(file_issues: List[FileIssue], show_source: bool = True) -> None:
     """Print detailed information about files with coverage issues."""
@@ -286,7 +310,7 @@ def print_file_issues(file_issues: List[FileIssue], show_source: bool = True) ->
         print("🎉 ALL FILES HAVE PERFECT COVERAGE!")
         return
 
-    print("FILES WITH COVERAGE ISSUES:")
+    print("FILES WITH COVERAGE ISSUES OR EXCLUDED LINES:")
     print("=" * 80)
     print()
 
