@@ -64,7 +64,7 @@ def display_class_attributes(cls: Type[Any]) -> None:
 
     # Add attributes but skip methods
     for item in class_def.body:
-        if isinstance(item, ast.AnnAssign) or isinstance(item, ast.Assign):
+        if isinstance(item, (ast.AnnAssign, ast.Assign)):
             code_lines.append(f"    {ast.unparse(item)}")
 
     # Join all lines into a single string
