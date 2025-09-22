@@ -21,6 +21,7 @@ from firecrown.metadata_types import (
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.likelihood.source import SourceGalaxy
 from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.cmb import CMBConvergenceFactory
 
 
 def test_inferred_galaxy_z_dist():
@@ -800,6 +801,47 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
     cells = TwoPointHarmonic(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
-        match="Factory not found for measurement CMB.CONVERGENCE is not supported.",
+        match="No CMBConvergenceFactory found for type_source default.",
     ):
         TwoPoint.from_metadata([cells], tp_factory)
+
+
+@pytest.fixture
+def tp_factory_with_cmb():
+    from firecrown.likelihood.two_point import TwoPointFactory, TwoPointCorrelationSpace
+    from firecrown.likelihood.weak_lensing import WeakLensingFactory
+    from firecrown.likelihood.number_counts import NumberCountsFactory
+
+    return TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[WeakLensingFactory()],
+        number_counts_factories=[NumberCountsFactory()],
+        cmb_factories=[CMBConvergenceFactory()],
+    )
+
+
+def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
+    """Test that CMB measurements work when CMB factory is provided."""
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    x = InferredGalaxyZDist(
+        bin_name="bname1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={CMB.CONVERGENCE},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="bname2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    xy = TwoPointXY(
+        x=x, y=y, x_measurement=CMB.CONVERGENCE, y_measurement=Galaxies.COUNTS
+    )
+    cells = TwoPointHarmonic(ells=ells, XY=xy)
+
+    # This should now work without raising an exception
+    two_points = TwoPoint.from_metadata([cells], tp_factory_with_cmb)
+    assert len(two_points) == 1
+    two_point = two_points[0]
+    assert two_point.sacc_data_type == cells.get_sacc_name()
