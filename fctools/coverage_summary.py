@@ -12,7 +12,7 @@ This tool provides a detailed analysis of test coverage including:
 import json
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Dict, Any
 from dataclasses import dataclass
 
 
@@ -74,82 +74,125 @@ def group_consecutive_lines(lines: List[int]) -> List[str]:
     return result
 
 
+def _calculate_branch_coverage_summary(
+    totals: Dict[str, Any],
+) -> tuple[int, int, float]:
+    """Calculate overall branch coverage statistics."""
+    total_branches = totals.get("num_branches", 0)
+    missing_branches = totals.get("missing_branches", 0)
+
+    if total_branches > 0:
+        overall_branch_coverage = (
+            (total_branches - missing_branches) / total_branches
+        ) * 100
+    else:
+        overall_branch_coverage = 100.0
+
+    return total_branches, missing_branches, overall_branch_coverage
+
+
+def _calculate_file_branch_coverage(
+    file_summary: Dict[str, Any], total_statements: int
+) -> float:
+    """Calculate branch coverage for a single file."""
+    total_branches = file_summary.get("num_branches", 0)
+
+    if total_branches > 0:
+        covered_branches = file_summary.get("covered_branches", 0)
+        return (covered_branches / total_branches) * 100
+
+    return 100.0 if total_statements > 0 else 0.0
+
+
+def _create_file_issue(
+    file_path: str,
+    file_summary: Dict[str, Any],
+    missing_lines: List[int],
+    missing_branches: List[List[int]],
+    line_coverage: float,
+    branch_coverage: float,
+) -> FileIssue:
+    """Create a FileIssue object for a file with coverage issues."""
+    return FileIssue(
+        file_path=file_path,
+        line_coverage=line_coverage,
+        branch_coverage=branch_coverage,
+        missing_lines_count=len(missing_lines),
+        missing_branches_count=len(missing_branches),
+        missing_lines=missing_lines,
+        missing_branches=missing_branches,
+        total_statements=file_summary.get("num_statements", 0),
+        total_branches=file_summary.get("num_branches", 0),
+    )
+
+
+def _analyze_single_file(
+    file_path: str, file_data: Dict[str, Any], summary: CoverageSummary
+) -> FileIssue | None:
+    """Analyze a single file and update summary, return FileIssue if needed."""
+    summary.total_files += 1
+    file_summary = file_data.get("summary", {})
+    missing_lines = file_data.get("missing_lines", [])
+    missing_branches = file_data.get("missing_branches", [])
+
+    # Get file statistics
+    total_statements = file_summary.get("num_statements", 0)
+    line_coverage = file_summary.get("percent_covered", 0.0)
+    branch_coverage = _calculate_file_branch_coverage(file_summary, total_statements)
+
+    # Check if file has perfect coverage
+    has_missing_lines = len(missing_lines) > 0
+    has_missing_branches = len(missing_branches) > 0
+
+    if has_missing_lines:
+        summary.files_with_missing_lines += 1
+    if has_missing_branches:
+        summary.files_with_missing_branches += 1
+
+    if not has_missing_lines and not has_missing_branches:
+        summary.files_with_perfect_coverage += 1
+        return None
+
+    # Create file issue for imperfect coverage
+    return _create_file_issue(
+        file_path,
+        file_summary,
+        missing_lines,
+        missing_branches,
+        line_coverage,
+        branch_coverage,
+    )
+
+
 def analyze_coverage_json(
     coverage_file: Path,
 ) -> tuple[CoverageSummary, List[FileIssue]]:
     """Analyze coverage data from a JSON file."""
-    with open(coverage_file, "r") as f:
+    with open(coverage_file, "r", encoding="utf-8") as f:
         coverage_data = json.load(f)
 
     files_data = coverage_data.get("files", {})
     totals = coverage_data.get("totals", {})
 
     summary = CoverageSummary()
-    file_issues = []
 
-    # Overall totals
+    # Set basic totals
     summary.total_statements = totals.get("num_statements", 0)
     summary.total_missing_lines = totals.get("missing_lines", 0)
     summary.overall_line_coverage = totals.get("percent_covered", 0.0)
 
     # Calculate branch coverage from totals
-    total_branches = totals.get("num_branches", 0)
-    missing_branches = totals.get("missing_branches", 0)
+    branch_data = _calculate_branch_coverage_summary(totals)
+    total_branches, missing_branches, overall_branch_coverage = branch_data
     summary.total_branches = total_branches
     summary.total_missing_branches = missing_branches
-
-    if total_branches > 0:
-        summary.overall_branch_coverage = (
-            (total_branches - missing_branches) / total_branches
-        ) * 100
-    else:
-        summary.overall_branch_coverage = 100.0
+    summary.overall_branch_coverage = overall_branch_coverage
 
     # Analyze each file
+    file_issues = []
     for file_path, file_data in files_data.items():
-        summary.total_files += 1
-
-        file_summary = file_data.get("summary", {})
-        missing_lines = file_data.get("missing_lines", [])
-        missing_branches = file_data.get("missing_branches", [])
-
-        # Get file statistics
-        total_statements = file_summary.get("num_statements", 0)
-        total_branches = file_summary.get("num_branches", 0)
-        line_coverage = file_summary.get("percent_covered", 0.0)
-
-        # Calculate branch coverage for this file
-        if total_branches > 0:
-            covered_branches = file_summary.get("covered_branches", 0)
-            branch_coverage = (covered_branches / total_branches) * 100
-        else:
-            branch_coverage = 100.0 if total_statements > 0 else 0.0
-
-        # Check if file has perfect coverage
-        has_missing_lines = len(missing_lines) > 0
-        has_missing_branches = len(missing_branches) > 0
-
-        if has_missing_lines:
-            summary.files_with_missing_lines += 1
-        if has_missing_branches:
-            summary.files_with_missing_branches += 1
-
-        if not has_missing_lines and not has_missing_branches:
-            summary.files_with_perfect_coverage += 1
-
-        # Record issues for files with imperfect coverage
-        if has_missing_lines or has_missing_branches:
-            file_issue = FileIssue(
-                file_path=file_path,
-                line_coverage=line_coverage,
-                branch_coverage=branch_coverage,
-                missing_lines_count=len(missing_lines),
-                missing_branches_count=len(missing_branches),
-                missing_lines=missing_lines,
-                missing_branches=missing_branches,
-                total_statements=total_statements,
-                total_branches=total_branches,
-            )
+        file_issue = _analyze_single_file(file_path, file_data, summary)
+        if file_issue:
             file_issues.append(file_issue)
 
     # Sort file issues by line coverage (worst first)
@@ -190,7 +233,7 @@ def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
     try:
         source_file = Path(issue.file_path)
         if source_file.exists():
-            with open(source_file, "r") as f:
+            with open(source_file, "r", encoding="utf-8") as f:
                 lines = f.readlines()
 
             print("   Source code for missing lines:")
@@ -200,7 +243,7 @@ def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
                     print(f"     {line_num:4d}: {line_content}")
         else:
             print("   (Source file not found for line details)")
-    except Exception as e:
+    except (OSError, IOError, UnicodeDecodeError) as e:
         print(f"   (Error reading source file: {e})")
 
 
@@ -302,12 +345,12 @@ def main():
 
         if show_perfect:
             # Get all file paths from the original data
-            with open(coverage_file, "r") as f:
+            with open(coverage_file, "r", encoding="utf-8") as f:
                 coverage_data = json.load(f)
             all_files = list(coverage_data.get("files", {}).keys())
             print_perfect_coverage_files(file_issues, all_files)
 
-    except Exception as e:
+    except (OSError, IOError, json.JSONDecodeError) as e:
         print(f"Error analyzing coverage file: {e}")
         sys.exit(1)
 
