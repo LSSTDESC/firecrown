@@ -906,3 +906,10 @@ def test_two_point_factory_get_unavailable_nc_factory():
 def test_ensure_path(file, expected):
     result = ensure_path(file)
     assert result == expected
+
+
+def test_ensure_path_invalid():
+    with pytest.raises(
+        AssertionError, match="Expected code to be unreachable, but got: 123"
+    ):
+        ensure_path(123)  # type: ignore
