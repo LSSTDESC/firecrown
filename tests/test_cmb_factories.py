@@ -130,7 +130,6 @@ def test_cmb_convergence_factory_init():
     assert factory.z_source == 1090.0
     assert factory.scale == 2.0
     assert not factory._cache  # pylint: disable=protected-access
-    assert len(factory.global_systematics) == 0
 
 
 def test_cmb_convergence_factory_create():

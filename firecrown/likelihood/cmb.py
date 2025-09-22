@@ -5,19 +5,21 @@ import pyccl
 import sacc
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
-from firecrown.likelihood.source import SourceCMB, SourceCMBArgs, Tracer
+from firecrown.likelihood.source import Source, Tracer
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 
 
 @dataclass(frozen=True)
-class CMBConvergenceArgs(SourceCMBArgs):
+class CMBConvergenceArgs:
     """Class for CMB convergence tracer arguments."""
 
-    z_source: float  # Add z_source as a field
+    scale: float = 1.0
+    field: str = "delta_matter"
+    z_source: float = 1100.0
 
 
-class CMBConvergence(SourceCMB):
+class CMBConvergence(Source):
     """Source class for CMB convergence lensing."""
 
     def __init__(
@@ -25,20 +27,45 @@ class CMBConvergence(SourceCMB):
         *,
         sacc_tracer: str,
         scale: float = 1.0,
-        z_source: float = 1100.0,  # Add z_source parameter
+        z_source: float = 1100.0,
     ):
-        """Initialize the CMBConvergence object."""
-        super().__init__(sacc_tracer=sacc_tracer, scale=scale)
-        self.z_source = z_source  # Store z_source
+        """Initialize the CMBConvergence object.
+
+        :param sacc_tracer: the name of the tracer in the SACC file.
+        :param scale: the scale of the source.
+        :param z_source: the source redshift for CMB lensing.
+        """
+        super().__init__(sacc_tracer)
+
+        self.sacc_tracer = sacc_tracer
+        self.scale = scale
+        self.z_source = z_source
+        self.current_tracer_args: None | CMBConvergenceArgs = None
+        self.tracer_args: CMBConvergenceArgs
+
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        """Read the systematics for this source from the SACC file.
+
+        For CMB sources, there are no systematics to read.
+        """
 
     def _read(self, sacc_data: sacc.Sacc) -> None:
-        """Read the data for this source from the SACC file."""
+        """Read the CMB tracer data from a sacc file."""
         self.tracer_args = CMBConvergenceArgs(
             scale=self.scale,
             field="delta_matter",
-            z_source=self.z_source,  # Include z_source in tracer_args
+            z_source=self.z_source,
         )
-        super()._read(sacc_data)
+
+        # For CMB, we just verify the tracer exists
+        sacc_data.get_tracer(self.sacc_tracer)
+
+    def get_scale(self) -> float:
+        """Return the scale for this source."""
+        current_args = self.current_tracer_args
+        if current_args is None:
+            raise RuntimeError("current_tracer_args is not initialized")
+        return current_args.scale
 
     def create_tracers(self, tools: ModelingTools):
         """Create the CMB convergence tracer."""
