@@ -41,13 +41,13 @@ def settrace(filename: str = "trace.tsv") -> TextIO:
     return tracefile
 
 
-def untrace(tracefile: TextIO) -> None:
+def untrace(trace_file: TextIO) -> None:
     """Turn off tracing, and close the specified trace file.
 
-    :param tracefile: an open file, as returned by setttrace.
+    :param trace_file: an open file, as returned by setttrace.
     """
     sys.settrace(None)
-    tracefile.close()
+    trace_file.close()
 
 
 def trace_call(fr, ev, arg):
