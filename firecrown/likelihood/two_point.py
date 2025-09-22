@@ -22,10 +22,12 @@ import firecrown.generators.two_point as gen
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.likelihood.weak_lensing import WeakLensingFactory, WeakLensing
 from firecrown.likelihood.number_counts import NumberCountsFactory, NumberCounts
+from firecrown.likelihood.cmb import CMBConvergenceFactory, CMBConvergence
 from firecrown.likelihood.statistic import Statistic
 from firecrown.metadata_types import (
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
+    CMB_TYPES,
     InferredGalaxyZDist,
     Measurement,
     TracerNames,
@@ -816,15 +818,18 @@ class TwoPointFactory(BaseModel):
     ]
     weak_lensing_factories: list[WeakLensingFactory] = Field(default_factory=list)
     number_counts_factories: list[NumberCountsFactory] = Field(default_factory=list)
+    cmb_factories: list[CMBConvergenceFactory] = Field(default_factory=list)
     int_options: ClIntegrationOptions | None = None
 
     _wl_factory_map: dict[TypeSource, WeakLensingFactory] = PrivateAttr()
     _nc_factory_map: dict[TypeSource, NumberCountsFactory] = PrivateAttr()
+    _cmb_factory_map: dict[TypeSource, CMBConvergenceFactory] = PrivateAttr()
 
     def model_post_init(self, _, /) -> None:
         """Initialize the WeakLensingFactory object."""
         self._wl_factory_map: dict[TypeSource, WeakLensingFactory] = {}
         self._nc_factory_map: dict[TypeSource, NumberCountsFactory] = {}
+        self._cmb_factory_map: dict[TypeSource, CMBConvergenceFactory] = {}
 
         for wl_factory in self.weak_lensing_factories:
             if wl_factory.type_source in self._wl_factory_map:
@@ -842,30 +847,34 @@ class TwoPointFactory(BaseModel):
                 )
             self._nc_factory_map[nc_factory.type_source] = nc_factory
 
+        for cmb_factory in self.cmb_factories:
+            if cmb_factory.type_source in self._cmb_factory_map:
+                raise ValueError(
+                    f"Duplicate CMBConvergenceFactory found for "
+                    f"type_source {cmb_factory.type_source}."
+                )
+            self._cmb_factory_map[cmb_factory.type_source] = cmb_factory
+
     def get_factory(
         self, measurement: Measurement, type_source: TypeSource = TypeSource.DEFAULT
-    ) -> WeakLensingFactory | NumberCountsFactory:
+    ) -> WeakLensingFactory | NumberCountsFactory | CMBConvergenceFactory:
         """Get the Factory for the given Measurement and TypeSource."""
-        match measurement:
-            case measurement if measurement in GALAXY_SOURCE_TYPES:
-                if type_source not in self._wl_factory_map:
+        candidates: Sequence[tuple[tuple[str, ...], dict, str]] = [
+            (GALAXY_SOURCE_TYPES, self._wl_factory_map, "WeakLensingFactory"),
+            (GALAXY_LENS_TYPES, self._nc_factory_map, "NumberCountsFactory"),
+            (CMB_TYPES, self._cmb_factory_map, "CMBConvergenceFactory"),
+        ]
+        for type_set, factory_map, factory_name in candidates:
+            if measurement in type_set:
+                if type_source not in factory_map:
                     raise ValueError(
-                        f"No WeakLensingFactory found for type_source {type_source}."
+                        f"No {factory_name} found for type_source {type_source}."
                     )
-                return self._wl_factory_map[type_source]
-            case measurement if measurement in GALAXY_LENS_TYPES:
-                if type_source not in self._nc_factory_map:
-                    raise ValueError(
-                        f"No NumberCountsFactory found for type_source {type_source}."
-                    )
-                return self._nc_factory_map[type_source]
-            case _:
-                raise (
-                    ValueError(
-                        f"Factory not found for measurement {measurement} "
-                        f"is not supported."
-                    )
-                )
+                return factory_map[type_source]
+
+        raise ValueError(
+            f"Factory not found for measurement {measurement}, it is not supported."
+        )
 
     def from_measurement(
         self, tpms: list[TwoPointMeasurement]
@@ -884,7 +893,7 @@ def use_source_factory(
     inferred_galaxy_zdist: InferredGalaxyZDist,
     measurement: Measurement,
     tp_factory: TwoPointFactory,
-) -> WeakLensing | NumberCounts:
+) -> WeakLensing | NumberCounts | CMBConvergence:
     """Apply the factory to the inferred galaxy redshift distribution."""
     if measurement not in inferred_galaxy_zdist.measurements:
         raise ValueError(
@@ -903,7 +912,7 @@ def use_source_factory_metadata_index(
     sacc_tracer: str,
     measurement: Measurement,
     tp_factory: TwoPointFactory,
-) -> WeakLensing | NumberCounts:
+) -> WeakLensing | NumberCounts | CMBConvergence:
     """Apply the factory to create a source using metadata only.
 
     This method is used when the galaxy redshift distribution is not available. It

@@ -218,7 +218,7 @@ systematic = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
 # get the default parameter values
 default_parameters = up.get_default_params_map(systematic)
 
-for name, value in default_parameters.items():
+for name, value in default_parameters.params.items():
   print(f"\t{name}: {value}")
 ```
 

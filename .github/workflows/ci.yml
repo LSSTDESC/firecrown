@@ -1,21 +1,16 @@
 name: firecrown-ci
-
-
 on:
   push:
     branches:
       - 'master'
-
   pull_request:
     branches:
       - '*'
-
   schedule:
     - cron: '47 1 * * *'
-
 jobs:
   firecrown-miniforge:
-    name: Firecrown (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
+    name: (${{ matrix.os }}, python-${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -33,7 +28,6 @@ jobs:
           conda-remove-defaults: true
           environment-file: environment.yml
           activate-environment: firecrown_developer
-
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
@@ -44,7 +38,7 @@ jobs:
           path: ${{ env.CONDA }}/envs
           key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
         env:
-          CACHE_NUMBER: 1
+          CACHE_NUMBER: 0
         id: cache
       - name: Setting up Firecrown
         shell: bash -l {0}
@@ -95,7 +89,13 @@ jobs:
           pylint pylint_plugins
           pylint --rcfile tests/pylintrc  tests
           pylint --rcfile examples/pylintrc  examples
-      - name: Running unit tests
+      - name: Remove redundant rpath and import isitgr
+        if: ${{ (matrix.os == 'macos') }}
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          python -c "import isitgr"
+      - name: Run unit tests with code coverage
         shell: bash -l {0}
         run: python -m pytest -vv --runslow --cov firecrown --cov-report xml --cov-branch
       - name: Running integration tests
@@ -110,8 +110,8 @@ jobs:
           use_oidc: false
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-  test-smokescreen:
-    name: Firecrown Smokescreen (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
+  other_checks:
+    name: Other checks (${{ matrix.os }}, python-${{ matrix.python-version }})
     runs-on: ${{ matrix.os }}-latest
     strategy:
       fail-fast: false
@@ -120,187 +120,83 @@ jobs:
         python-version: ["3.13"]
     steps:
       - uses: actions/checkout@v4
+      - name: Setting up Miniforge
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-version: latest
+          python-version: ${{ matrix.python-version }}
+          show-channel-urls: true
+          conda-remove-defaults: true
+          environment-file: environment.yml
+          activate-environment: firecrown_developer
+      - name: Cache date
+        id: get-date
+        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
+        shell: bash
+      - name: Cache Conda env
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
+        env:
+          CACHE_NUMBER: 0
+        id: cache
+      - name: Create firecrown_developer environment
+        shell: bash -l {0}
+        run: |
+          export FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
+          conda activate firecrown_developer
+          pip install --no-deps -e .
+          conda list
+      - name: Build and install CosmoSIS Standard Library
+        shell: bash -l {0}
+        run: |
+          source ${CONDA_PREFIX}/bin/cosmosis-configure
+          pushd ${CONDA_PREFIX}
+          cosmosis-build-standard-library
+          export CSL_DIR=${PWD}/cosmosis-standard-library
+          conda env config vars set CSL_DIR=${CSL_DIR}
+          conda activate firecrown_developer
+        if: steps.cache.outputs.cache-hit != 'true'
+      - name: Remove redundant rpath and import isitgr
+        if: ${{ (matrix.os == 'macos') }}
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          python -c "import isitgr"
+      - name: Install Cobaya
+        shell: bash -l {0}
+        run: python -m pip install cobaya
+        if: steps.cache.outputs.cache-hit != 'true'
       - name: Cloning Smokescreen
         uses: actions/checkout@v4
         with:
           repository: 'lsstdesc/smokescreen'
           path: 'smokescreen'
           ref: 'v1.5.0'
-      - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          python-version: ${{ matrix.python-version }}
-          show-channel-urls: true
-          conda-remove-defaults: true
-          environment-file: environment.yml
-          activate-environment: firecrown_developer
-      - name: Cache date
-        id: get-date
-        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Cache Conda env
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CONDA }}/envs
-          key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
-        env:
-          CACHE_NUMBER: 1
-        id: cache
-      - name: Setting up Firecrown
-        shell: bash -l {0}
-        run: |
-          export FIRECROWN_DIR=${PWD}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
-          conda activate firecrown_developer
-          pip install --no-deps -e .
-          conda list
-      - name: Setting up CosmoSIS
-        shell: bash -l {0}
-        run: |
-          source ${CONDA_PREFIX}/bin/cosmosis-configure
-          pushd ${CONDA_PREFIX}
-          cosmosis-build-standard-library
-          export CSL_DIR=${PWD}/cosmosis-standard-library
-          conda env config vars set CSL_DIR=${CSL_DIR}
-          conda activate firecrown_developer
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Setting up Cobaya
-        shell: bash -l {0}
-        run: python -m pip install cobaya
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Install Smokescreen and test it
-        shell: bash -l {0}
-        run: |
-          cd smokescreen
-          pip install -e .
-          python -m pytest tests/
-
-  test-augur:
-    name: Firecrown Augur (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["macos"]
-        python-version: ["3.13"]
-    steps:
-      - uses: actions/checkout@v4
       - name: Cloning Augur
         uses: actions/checkout@v4
         with:
           repository: 'lsstdesc/augur'
           path: 'augur'
-          ref: '1.1.0'
-      - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          python-version: ${{ matrix.python-version }}
-          show-channel-urls: true
-          conda-remove-defaults: true
-          environment-file: environment.yml
-          activate-environment: firecrown_developer
-      - name: Cache date
-        id: get-date
-        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Cache Conda env
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CONDA }}/envs
-          key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
-        env:
-          CACHE_NUMBER: 1
-        id: cache
-      - name: Setting up Firecrown
+          ref: '1.1.1'
+      - name: Build tutorials and documentation and check links
         shell: bash -l {0}
         run: |
-          export FIRECROWN_DIR=${PWD}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
-          conda activate firecrown_developer
-          pip install --no-deps -e .
-          conda list
-      - name: Setting up CosmoSIS
-        shell: bash -l {0}
-        run: |
-          source ${CONDA_PREFIX}/bin/cosmosis-configure
-          pushd ${CONDA_PREFIX}
-          cosmosis-build-standard-library
-          export CSL_DIR=${PWD}/cosmosis-standard-library
-          conda env config vars set CSL_DIR=${CSL_DIR}
-          conda activate firecrown_developer
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Setting up Cobaya
-        shell: bash -l {0}
-        run: python -m pip install cobaya
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Install Augurand test it
+          quarto render tutorial --output-dir=../docs/_static
+          make -C docs html
+          linkchecker -f linkcheckerrc docs/_build/html
+      - name: Pip-install Augur and test it
         shell: bash -l {0}
         run: |
           conda install jinja2 tjpcov
           cd augur
           pip install -e .
           python -m pytest .
-
-
-  firecrown-doccheck:
-    name: Firecrown Doc check (${{ matrix.os }}, python-${{ matrix.python-version }}, Miniforge)
-    runs-on: ${{ matrix.os }}-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        os: ["macos"]
-        python-version: ["3.13"]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Setting up Miniforge
-        uses: conda-incubator/setup-miniconda@v3
-        with:
-          miniforge-version: latest
-          python-version: ${{ matrix.python-version }}
-          show-channel-urls: true
-          conda-remove-defaults: true
-          environment-file: environment.yml
-          activate-environment: firecrown_developer
-      - name: Cache date
-        id: get-date
-        run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
-        shell: bash
-      - name: Cache Conda env
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.CONDA }}/envs
-          key: miniforge-${{ runner.os }}--${{ runner.arch }}--python-${{ matrix.python-version }}--${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-${{ env.CACHE_NUMBER }}
-        env:
-          CACHE_NUMBER: 1
-        id: cache
-      - name: Setting up Firecrown
+      - name: Pip-install Smokescreen and test it
         shell: bash -l {0}
         run: |
-          export FIRECROWN_DIR=${PWD}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
-          conda activate firecrown_developer
-          pip install --no-deps -e .
-          conda list
-      - name: Setting up CosmoSIS
-        shell: bash -l {0}
-        run: |
-          source ${CONDA_PREFIX}/bin/cosmosis-configure
-          pushd ${CONDA_PREFIX}
-          cosmosis-build-standard-library
-          export CSL_DIR=${PWD}/cosmosis-standard-library
-          conda env config vars set CSL_DIR=${CSL_DIR}
-          conda activate firecrown_developer
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Setting up Cobaya
-        shell: bash -l {0}
-        run: python -m pip install cobaya
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Testing documentation build
-        shell: bash -l {0}
-        run: |
-          quarto render tutorial --output-dir=../docs/_static
-          make -C docs html
-          linkchecker -f linkcheckerrc docs/_build/html
-
+          cd smokescreen
+          pip install -e .
+          python -m pytest tests

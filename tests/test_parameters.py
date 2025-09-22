@@ -2,9 +2,15 @@
 Tests for the module firecrown.parameters.
 """
 
+import re
 import pytest
 import numpy as np
-from firecrown.parameters import RequiredParameters, parameter_get_full_name, ParamsMap
+from firecrown.parameters import (
+    RequiredParameters,
+    parameter_get_full_name,
+    ParamsMap,
+    handle_unused_params,
+)
 from firecrown.parameters import (
     DerivedParameter,
     DerivedParameterCollection,
@@ -89,6 +95,27 @@ def test_params_map():
         _ = my_params.get_from_prefix_param("no_such_prefix", "a")
     with pytest.raises(KeyError):
         _ = my_params.get_from_prefix_param(None, "no_such_name")
+
+
+def test_params_map_getitem():
+    a = ParamsMap({"a": 1.0})
+    assert a.get_unused_keys() == {"a"}
+    assert a["a"] == 1
+    assert a.used_keys == {"a"}
+    assert a.get_unused_keys() == set()
+    with pytest.raises(KeyError):
+        _ = a["b"]
+
+
+def test_get_uses_params():
+    a = ParamsMap({"a": 1.0})
+    assert a.used_keys == set()
+    v = a.get("no_such_key", -1)
+    assert v == -1
+    assert a.used_keys == set()
+    v2 = a.get("a", 2.0)
+    assert v2 == 1.0
+    assert a.used_keys == {"a"}
 
 
 def test_params_map_wrong_type():
@@ -374,3 +401,120 @@ def test_setting_internal_parameter():
     assert a_parameter.value == 1.0
     a_parameter.set_value(2.0)
     assert a_parameter.value == 2.0
+
+
+def test_used_and_unused_params():
+    """Test that get_unused_keys works as expected."""
+    params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
+
+    unused = params.get_unused_keys()
+
+    assert unused == {"a", "b", "c"}
+
+    params.get_from_full_name("a")
+    unused = params.get_unused_keys()
+
+    assert unused == {"b", "c"}
+
+    params.get_from_full_name("b")
+    unused = params.get_unused_keys()
+
+    assert unused == {"c"}
+
+    params.get_from_full_name("c")
+    unused = params.get_unused_keys()
+    assert unused == set()
+
+    params.get_from_full_name("a")  # Accessing again should not change unused
+    unused = params.get_unused_keys()
+    assert unused == set()
+
+
+def test_handle_unused_params():
+    """Test that handle_unused_params works as expected."""
+    params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
+
+    # All parameters are unused, should raise a warning
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Unused keys in parameters: ['a', 'b', 'c']. "
+            "This may indicate a problem with the parameter mapping."
+        ),
+    ):
+        handle_unused_params(params=params, raise_on_unused=False)
+
+    # All parameters are unused, should raise an error
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Unused keys in parameters: ['a', 'b', 'c']. "
+            "This may indicate a problem with the parameter mapping."
+        ),
+    ):
+        handle_unused_params(params=params, raise_on_unused=True)
+
+    # Use some parameters
+    params.get_from_full_name("a")
+    params.get_from_full_name("b")
+
+    # Now 'c' is unused, should raise a warning
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Unused keys in parameters: ['c']. "
+            "This may indicate a problem with the parameter mapping."
+        ),
+    ):
+        handle_unused_params(params=params, raise_on_unused=False)
+
+    # Now 'c' is unused, should raise an error
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Unused keys in parameters: ['c']. "
+            "This may indicate a problem with the parameter mapping."
+        ),
+    ):
+        handle_unused_params(params=params, raise_on_unused=True)
+
+
+def test_params_map_union():
+    p1 = ParamsMap({"a": 1.0})
+    p2 = ParamsMap({"b": 2.0})
+    p3 = p1.union(p2)
+    assert p3.used_keys == set()
+    assert p3.get_from_prefix_param(None, "a") == 1.0
+    assert p3.used_keys == {"a"}
+    assert p3.get_from_prefix_param(None, "b") == 2.0
+    assert p3.used_keys == {"a", "b"}
+
+    p4 = ParamsMap({"d": 3.0})
+    p5 = p3.union(p4)
+    assert p5.used_keys == {"a", "b"}
+
+    assert p4["d"] == 3.0
+    assert p4.used_keys == {"d"}
+    p6 = p3.union(p4)
+    assert p6.used_keys == {"a", "b", "d"}
+
+    with pytest.raises(
+        ValueError, match="Key a has different values in self and other."
+    ):
+        p1 = ParamsMap({"a": 1.0})
+        p2 = ParamsMap({"a": 2.0})
+        p1.union(p2)
+
+
+def test_params_get():
+    params = ParamsMap({"a": 1.0})
+    assert params.get("a") == 1.0
+    assert params.get("b", 2.0) == 2.0
+    with pytest.raises(KeyError):
+        params.get("b")
+
+
+def test_params_map_items():
+    d = {"a": 1.0, "b": 2.0}
+    params = ParamsMap(d)
+    assert params.items() == d.items()

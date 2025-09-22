@@ -8,7 +8,6 @@ Each supported body of code has its own dedicated class.
 
 import typing
 import warnings
-from abc import ABC
 from typing import Type, final
 from typing_extensions import assert_never
 
@@ -17,6 +16,7 @@ import numpy as np
 import numpy.typing as npt
 from pyccl import physical_constants as physics
 
+from firecrown import parameters
 from firecrown.descriptors import TypeFloat, TypeString
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.ccl_factory import (
@@ -43,8 +43,8 @@ def build_ccl_background_dict(
     return {"a": a, "chi": chi, "h_over_h0": h_over_h0}
 
 
-class Mapping(ABC):
-    """Abstract base class defining the interface for each supported code.
+class Mapping:
+    """Base class defining the interface for each supported code.
 
     The interface describes a mapping of cosmological constants from some
     concrete Boltzmann calculator to the form those constants take in CCL. Each
@@ -52,7 +52,7 @@ class Mapping(ABC):
 
     The class attributes are all :mod:`firecrown.connector.descriptors`. This is
     to control the allowed types for the instance attributes. A descriptor of
-    name 'x' will provide an apparent attribue with name `x` in
+    name 'x' will provide an apparent attribute with name `x` in
     each object, as well as an entry `_x` in the object's `__dict__`.
 
     """
@@ -66,7 +66,6 @@ class Mapping(ABC):
     n_s = TypeFloat(allow_none=True)
     Omega_k = TypeFloat(minvalue=-1.0, maxvalue=1.0)
     Neff = TypeFloat(minvalue=0.0)
-    # m_nu = TypeFloat(minvalue=0.0)
     m_nu_type = TypeString()  # "inverted", "normal" or "list"
     w0 = TypeFloat()
     wa = TypeFloat()
@@ -76,7 +75,7 @@ class Mapping(ABC):
         """Initialize the Mapping object."""
         # We can have:
         #    a single neutrino mass (must be non-negative)
-        #    a list of 3 neutrino masses (all must be non-negative)
+        #    a list of n neutrino masses (all must be non-negative)
         #    None, indicating that all neutrinos are massless
         self.m_nu: float | list[float] | None = None
 
@@ -223,7 +222,7 @@ class Mapping(ABC):
         p_k_out = np.flipud(p_k)
         return p_k_out
 
-    def asdict(self) -> dict[str, float | list[float]]:
+    def asdict(self) -> dict[str, float]:
         """Return a dictionary containing the cosmological constants.
 
         :return: the dictionary, containing keys:
@@ -236,14 +235,16 @@ class Mapping(ABC):
             - ``n_s``: scalar spectral index of primordial power spectrum
             - ``Omega_k``: curvature of the universe
             - ``Neff``: effective number of relativistic neutrino species
-            - ``m_nu``: effective mass of neutrinos
+            - ``m_nu``: effective mass of neutrinos, or first neutrino
+            - ``m_nu_<n>``: effective mass of the nth neutrino, n >= 2
+                Note: the values of n are guaranteed to be consecutive.
             - ``w0``: constant of the CPL parameterization of the dark energy
                 equation of state
             - ``wa``: linear coefficient of the CPL parameterization of the
                 dark energy equation of state
             - ``T_CMB``: cosmic microwave background temperature today
         """
-        cosmo_dict: dict[str, float | list[float]] = {
+        cosmo_dict: dict[str, float] = {
             "Omega_c": self.Omega_c,
             "Omega_b": self.Omega_b,
             "h": self.h,
@@ -258,10 +259,19 @@ class Mapping(ABC):
             cosmo_dict["A_s"] = self.A_s
         if self.sigma8 is not None:
             cosmo_dict["sigma8"] = self.sigma8
-        if self.m_nu is None:
-            cosmo_dict["m_nu"] = 0.0
-        else:
-            cosmo_dict["m_nu"] = self.m_nu
+        match self.m_nu:
+            case None:
+                cosmo_dict["m_nu"] = 0.0
+            case float():
+                cosmo_dict["m_nu"] = self.m_nu
+            case list():
+                for n, mass in enumerate(self.m_nu):
+                    if n == 0:
+                        cosmo_dict["m_nu"] = mass
+                    else:
+                        cosmo_dict[f"m_nu_{n + 1}"] = mass
+            case _ as unreachable:
+                assert_never(unreachable)
 
         return cosmo_dict
 
@@ -271,14 +281,6 @@ class Mapping(ABC):
         :return: H0 in km/s/Mpc
         """
         return self.h * 100.0
-
-
-class MappingCLASS(Mapping):
-    """This class is not yet implemented.
-
-    This stub is here to satisfy IDEs that complain about using the names of
-    missing classes.
-    """
 
 
 class MappingCosmoSIS(Mapping):
@@ -416,28 +418,6 @@ class MappingCosmoSIS(Mapping):
                 "delta_matter:delta_matter": p_k,
             }
 
-        # TODO: We should have several configurable modes for this module.
-        # In all cases, an exception will be raised (causing a program
-        # shutdown) if something that is to be read from the DataBlock is not
-        # present in the DataBlock.
-        #
-        # background: read only background information from the DataBlock; it
-        # will generate a runtime error if the configured likelihood attempts
-        # to use anything else.
-        #
-        # linear: read also the linear power spectrum from the DataBlock. Any
-        # non-linear power spectrum present will be ignored. It will generate
-        # a runtime error if the configured likelihood attempts to make use
-        # of a non-linear spectrum.
-        #
-        #  nonlinear: read also the nonlinear power spectrum from the DataBlock.
-        #
-        # halofit, halomodel, emu: use CCL to calculate the nonlinear power
-        # spectrum according to the named technique. In all cases, the linear
-        # power spectrum read from the DataBlock is used as input. In all
-        # cases, it is an error if the DataBlock also contains a nonlinear
-        # power spectrum.
-
         chi = np.flip(sample["distances", "d_m"])
         scale_distances = self.redshift_to_scale_factor(sample["distances", "z"])
         # h0 = sample["cosmological_parameters", "h0"]
@@ -497,7 +477,7 @@ class MappingCAMB(Mapping):
             "wa",
         ]
 
-    def set_params_from_camb(self, **params_values) -> None:
+    def set_params_from_camb(self, params_values: parameters.ParamsMap) -> None:
         """Set the parameters in this mapping from the given CAMB-style parameters."""
         # pylint: disable-msg=R0914
 
@@ -556,7 +536,6 @@ class MappingCAMB(Mapping):
 
 mapping_classes: typing.Mapping[str, Type[Mapping]] = {
     "CAMB": MappingCAMB,
-    "CLASS": MappingCLASS,
     "CosmoSIS": MappingCosmoSIS,
 }
 

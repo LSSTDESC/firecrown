@@ -81,12 +81,18 @@ class Likelihood(Updatable):
     these methods, and provide other abstract methods for their subclasses to implement.
     """
 
-    def __init__(self, parameter_prefix: None | str = None) -> None:
+    def __init__(
+        self,
+        *,
+        parameter_prefix: None | str = None,
+        raise_on_unused_parameter: bool = True,
+    ) -> None:
         """Default initialization for a base Likelihood object.
 
         :params parameter_prefix: The prefix to prepend to all parameter names
         """
         super().__init__(parameter_prefix=parameter_prefix)
+        self.raise_on_unused_parameter = raise_on_unused_parameter
 
     @abstractmethod
     def read(self, sacc_data: sacc.Sacc) -> None:
