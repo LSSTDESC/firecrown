@@ -968,7 +968,7 @@ def test_two_point_experiment_with_ccl_factory() -> None:
 
 
 def test_data_source_sacc_with_path_file_exists() -> None:
-    """Test DataSourceSacc.get_filepath when path is set and file exists relative to path."""
+    """Test DataSourceSacc.get_filepath when path is set and file exists."""
     data_source = DataSourceSacc(sacc_data_file="bug_398.sacc.gz")
     data_source.set_path(Path("tests"))
     filepath = data_source.get_filepath()

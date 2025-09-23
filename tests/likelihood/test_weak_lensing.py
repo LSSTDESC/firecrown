@@ -316,8 +316,8 @@ class TestWeakLensing:
             dndz=np.exp(-(((z - 0.5) / 0.2) ** 2)),
             scale=1.0,
             has_hm=True,
-            ia_a_1h=1e-4,
-            ia_a_2h=1.0,
+            ia_a_1h=np.array([1e-4]),
+            ia_a_2h=np.array([1.0]),
         )
 
         tracers, tracer_args = weak_lensing.create_tracers(mock_tools)

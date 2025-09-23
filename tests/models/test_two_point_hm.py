@@ -1,7 +1,12 @@
 """Tests for the at_least_one_tracer_has_hm function in firecrown.models.two_point."""
 
-import pytest
+# pylint: disable=redefined-outer-name
+# Disable redefined-outer-name warnings as pytest fixtures create this
+# pattern by design
+
 from unittest.mock import Mock, patch
+
+import pytest
 import pyccl
 
 from firecrown.models.two_point import at_least_one_tracer_has_hm
