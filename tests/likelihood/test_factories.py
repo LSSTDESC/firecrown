@@ -393,6 +393,7 @@ def relative_to_with_walk_up(source: Path, target: Path) -> Path:
     return Path(*relative_parts)
 
 
+@pytest.mark.slow
 def test_build_two_point_likelihood_real(
     tmp_path: Path, request: pytest.FixtureRequest
 ) -> None:
