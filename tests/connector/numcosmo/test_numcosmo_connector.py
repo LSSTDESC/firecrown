@@ -632,17 +632,18 @@ def test_numcosmo_gauss_cov_pure_ccl_mode():
 
     # Add required parameters for PURE_CCL_MODE
     params = {
-        "Omega_c": 0.26,
-        "Omega_b": 0.048,
-        "h": 0.7,
-        "sigma8": 0.8,
+        "Omega_c": 0.25,
+        "Omega_b": 0.05,
+        "h": 0.67,
+        "sigma8": 0.81,
         "n_s": 0.96,
         "Omega_k": 0.0,
-        "Neff": 3.046,
-        "m_nu": 0.06,
+        "Neff": 3.044,
+        "m_nu": 0.0,  # Use single float instead of list for NumCosmo
         "w0": -1.0,
         "wa": 0.0,
-        "T_CMB": 2.725,
+        "T_CMB": 2.7255,
+        "lens0_bias": 1.5,  # This parameter was missing and causing the error
     }
 
     for param, value in params.items():
