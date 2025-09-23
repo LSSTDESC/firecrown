@@ -328,3 +328,103 @@ def test_likelihood_connector_from_module():
     )
     assert isinstance(lk_connector, LikelihoodConnector)
     assert "sigma8" in lk_connector.get_requirements()
+
+
+def test_get_can_support_params_with_map_none():
+    """Test get_can_support_params when map is None (non-DEFAULT creation mode)."""
+    # Create a connector that uses PURE_CCL_MODE, which keeps map=None
+    lk_connector = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript_pure_ccl.py",
+            "input_style": "CAMB",
+        }
+    )
+
+    # The map should be None for non-DEFAULT modes
+    assert lk_connector.map is None
+
+    # get_can_support_params should return empty list when map is None
+    supported_params = lk_connector.get_can_support_params()
+    assert supported_params == []
+
+
+def test_logp_with_pure_ccl_mode(fiducial_params):
+    """Test logp method with PURE_CCL_MODE (non-DEFAULT creation mode)."""
+    # Pure CCL mode requires different parameters than the CAMB-based DEFAULT mode
+    pure_ccl_params = {
+        "n_s": 0.96,
+        "Omega_b": 0.048,
+        "Omega_k": 0.0,
+        "Omega_c": 0.26,
+        "Neff": 3.046,
+        "T_CMB": 2.7255,
+        "wa": 0.0,
+        "m_nu": 0.06,
+        "h": 0.7,
+        "w0": -1.0,
+        "sigma8": 0.8,
+    }
+
+    info_fiducial = {
+        "params": pure_ccl_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": "tests/likelihood/lkdir/lkscript_pure_ccl.py",
+                "input_style": "CAMB",
+            }
+        },
+    }
+
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+    # This will test the else branch in logp() method (lines 280-283)
+    logpost = model_fiducial.logposterior({})
+    assert logpost.logpost == -3.0
+
+
+def test_missing_input_style_assertion():
+    """Test assertion failure when input_style is None in DEFAULT mode."""
+    # Create a connector with DEFAULT mode but no input_style
+    # This should trigger the assertion at line 113: assert self.input_style
+    with pytest.raises(AssertionError):
+        _ = LikelihoodConnector(
+            info={
+                "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+                # No input_style provided - this should trigger assertion
+            }
+        )
+
+
+def test_get_requirements_different_modes():
+    """Test get_requirements with different CCL creation modes."""
+    # Test with DEFAULT mode (should include external observables)
+    lk_connector_default = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+        }
+    )
+
+    # Test with PURE_CCL_MODE (should not include external observables)
+    lk_connector_pure = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript_pure_ccl.py",
+            "input_style": "CAMB",
+        }
+    )
+
+    requirements_default = lk_connector_default.get_requirements()
+    requirements_pure = lk_connector_pure.get_requirements()
+
+    # DEFAULT mode should have external observables
+    assert "omk" in requirements_default
+    assert "Pk_grid" in requirements_default
+    assert "comoving_radial_distance" in requirements_default
+    assert "Hubble" in requirements_default
+
+    # PURE_CCL_MODE should not have these external observables
+    assert "omk" not in requirements_pure
+    assert "Pk_grid" not in requirements_pure
+    assert "comoving_radial_distance" not in requirements_pure
+    assert "Hubble" not in requirements_pure
