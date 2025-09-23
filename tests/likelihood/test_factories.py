@@ -1078,7 +1078,7 @@ def test_build_two_point_likelihood_real_with_filters_fast() -> None:
     )
     assert likelihood is not None
 
-    
+
 def test_two_point_factory_two_equal_cmbs():
     """Test that duplicate CMBConvergenceFactory with same type_source raises error."""
     with pytest.raises(
