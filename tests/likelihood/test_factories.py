@@ -3,6 +3,7 @@
 import re
 from pathlib import Path
 import pytest
+import numpy as np
 
 import sacc
 from firecrown.likelihood.factories import (
@@ -914,3 +915,161 @@ def test_ensure_path_invalid():
         AssertionError, match="Expected code to be unreachable, but got: 123"
     ):
         ensure_path(123)  # type: ignore
+
+
+def test_build_two_point_likelihood_harmonic_filters_result_empty(
+    empty_factory_harmonic,
+) -> None:
+    """Test case where filters remove all data in harmonic space."""
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=empty_factory_harmonic,
+        data_source=DataSourceSacc(
+            sacc_data_file="tests/bug_398.sacc.gz",
+            filters=TwoPointBinFilterCollection(
+                filters=[
+                    # Filter that won't match any data
+                    TwoPointBinFilter.from_args_auto(
+                        name="nonexistent_lens",
+                        measurement=Galaxies.COUNTS,
+                        lower=2,
+                        upper=3000,
+                    )
+                ],
+                require_filter_for_all=False,
+                allow_empty=True,  # Allow empty after filtering
+            ),
+        ),
+    )
+    # This should succeed because allow_empty=True
+    likelihood = two_point_experiment.make_likelihood()
+    assert likelihood is not None
+
+
+def test_two_point_experiment_with_ccl_factory() -> None:
+    """Test TwoPointExperiment with custom CCLFactory."""
+    from firecrown.ccl_factory import CCLFactory
+
+    custom_ccl_factory = CCLFactory()
+    two_point_experiment = TwoPointExperiment(
+        two_point_factory=TwoPointFactory(
+            correlation_space=TwoPointCorrelationSpace.HARMONIC,
+            weak_lensing_factories=[
+                WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
+            ],
+            number_counts_factories=[
+                NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+            ],
+        ),
+        data_source=DataSourceSacc(sacc_data_file="tests/bug_398.sacc.gz"),
+        ccl_factory=custom_ccl_factory,
+    )
+    # The ccl_factory should remain the one we provided
+    assert two_point_experiment.ccl_factory is custom_ccl_factory
+
+
+def test_data_source_sacc_with_path_file_exists() -> None:
+    """Test DataSourceSacc.get_filepath when path is set and file exists relative to path."""
+    data_source = DataSourceSacc(sacc_data_file="bug_398.sacc.gz")
+    data_source.set_path(Path("tests"))
+    filepath = data_source.get_filepath()
+    assert filepath == Path("tests/bug_398.sacc.gz")
+
+
+def test_data_source_sacc_absolute_path_exists() -> None:
+    """Test DataSourceSacc.get_filepath with absolute path that exists."""
+    absolute_path = Path("tests/bug_398.sacc.gz").absolute()
+    data_source = DataSourceSacc(sacc_data_file=str(absolute_path))
+    filepath = data_source.get_filepath()
+    assert filepath == absolute_path
+
+
+def test_build_two_point_likelihood_real_fast() -> None:
+    """Fast test for real-space likelihood building using direct function call."""
+    from firecrown.likelihood.factories import _build_two_point_likelihood_real
+    import sacc
+
+    # Create a minimal SACC file with real-space data
+    sacc_data = sacc.Sacc()
+
+    # Add minimal tracers
+    sacc_data.add_tracer("NZ", "lens0", z=np.linspace(0.1, 1.0, 10), nz=np.ones(10))
+
+    # Add minimal real-space data points
+    theta = np.array([1.0, 2.0, 3.0])  # angular separation in arcmin
+    xi = np.array([0.01, 0.005, 0.002])  # correlation function values
+    error = np.array([0.001, 0.001, 0.001])  # errors
+
+    for i, (t, x, e) in enumerate(zip(theta, xi, error)):
+        sacc_data.add_data_point(
+            "galaxy_density_xi", ("lens0", "lens0"), x, error=e, theta=t
+        )
+
+    # Set a minimal covariance matrix
+    sacc_data.add_covariance(np.diag(error**2))
+
+    # Create a minimal factory
+    two_point_factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.REAL,
+        weak_lensing_factories=[],
+        number_counts_factories=[
+            NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+        ],
+    )
+
+    # This should exercise lines 218-225 in _build_two_point_likelihood_real
+    likelihood = _build_two_point_likelihood_real(sacc_data, two_point_factory)
+    assert likelihood is not None
+
+
+def test_build_two_point_likelihood_real_with_filters_fast() -> None:
+    """Fast test for real-space likelihood building with filters."""
+    from firecrown.likelihood.factories import _build_two_point_likelihood_real
+    import sacc
+
+    # Create a minimal SACC file with real-space data
+    sacc_data = sacc.Sacc()
+
+    # Add minimal tracers
+    sacc_data.add_tracer("NZ", "lens0", z=np.linspace(0.1, 1.0, 10), nz=np.ones(10))
+
+    # Add minimal real-space data points
+    theta = np.array([1.0, 2.0, 3.0])
+    xi = np.array([0.01, 0.005, 0.002])
+    error = np.array([0.001, 0.001, 0.001])
+
+    for i, (t, x, e) in enumerate(zip(theta, xi, error)):
+        sacc_data.add_data_point(
+            "galaxy_density_xi", ("lens0", "lens0"), x, error=e, theta=t
+        )
+
+    # Set a minimal covariance matrix
+    sacc_data.add_covariance(np.diag(error**2))
+
+    # Create a minimal factory
+    two_point_factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.REAL,
+        weak_lensing_factories=[],
+        number_counts_factories=[
+            NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
+        ],
+    )
+
+    # Create filters that won't remove data (allow_empty=True)
+    filters = TwoPointBinFilterCollection(
+        filters=[
+            TwoPointBinFilter.from_args_auto(
+                name="lens0",
+                measurement=Galaxies.COUNTS,
+                lower=0.5,  # Should include our theta values
+                upper=5.0,
+            )
+        ],
+        require_filter_for_all=False,
+        allow_empty=True,
+    )
+
+    # This should exercise the filter branch in lines 219-220
+    likelihood = _build_two_point_likelihood_real(
+        sacc_data, two_point_factory, filters=filters
+    )
+    assert likelihood is not None
