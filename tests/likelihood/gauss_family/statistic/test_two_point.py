@@ -7,6 +7,7 @@ from unittest.mock import MagicMock
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
+import pyccl
 
 from pydantic import BaseModel
 
@@ -92,6 +93,18 @@ def fixture_apply_interp_when(request) -> tp.ApplyInterpolationWhen:
     return request.param
 
 
+@pytest.fixture(name="window_fixture", params=["with_window", "no_window"])
+def fixture_window_data(request):
+    """Parameterized fixture for window vs no-window test data."""
+    return request.param
+
+
+@pytest.fixture(name="binning_type", params=["lin", "log"])
+def fixture_binning_type(request) -> str:
+    """Parameterized fixture for binning types."""
+    return request.param
+
+
 def test_log_linear_ells_no_rounding() -> None:
     res = LogLinearElls(minimum=0, midpoint=5, maximum=80, n_log=5).generate()
     expected = np.array([0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0, 20.0, 40.0, 80.0])
@@ -137,10 +150,18 @@ def test_tracer_names() -> None:
         _ = tn1[2]
 
 
-def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window) -> None:
-    """This test also makes sure that TwoPoint theory calculations are
-    repeatable."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+def test_two_point_src0_src0_window_parameterized(
+    window_fixture: str,
+    sacc_galaxy_cells_src0_src0_window,
+    sacc_galaxy_cells_src0_src0_no_window,
+) -> None:
+    """Test TwoPoint theory calculations are repeatable for both window scenarios."""
+    if window_fixture == "with_window":
+        sacc_data, _, _ = sacc_galaxy_cells_src0_src0_window
+        expected_window = True
+    else:  # no_window
+        sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
+        expected_window = False
 
     src0 = WeakLensing(sacc_tracer="src0")
 
@@ -152,37 +173,11 @@ def test_two_point_src0_src0_window(sacc_galaxy_cells_src0_src0_window) -> None:
     tools.update(params)
     tools.prepare()
 
-    assert statistic.window is not None
-
-    statistic.reset()
-    statistic.update(params)
-    tools.update(params)
-    result1 = statistic.compute_theory_vector(tools)
-    assert all(np.isfinite(result1))
-
-    statistic.reset()
-    statistic.update(params)
-    tools.update(params)
-    result2 = statistic.compute_theory_vector(tools)
-    assert np.array_equal(result1, result2)
-
-
-def test_two_point_src0_src0_no_window(sacc_galaxy_cells_src0_src0_no_window) -> None:
-    """This test also makes sure that TwoPoint theory calculations are
-    repeatable."""
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_window
-
-    src0 = WeakLensing(sacc_tracer="src0")
-
-    statistic = tp.TwoPoint("galaxy_shear_cl_ee", src0, src0)
-    statistic.read(sacc_data)
-
-    tools = ModelingTools()
-    params = get_default_params_map(tools)
-    tools.update(params)
-    tools.prepare()
-
-    assert statistic.window is None
+    # Check window presence based on parameter
+    if expected_window:
+        assert statistic.window is not None
+    else:
+        assert statistic.window is None
 
     statistic.reset()
     statistic.update(params)
@@ -215,7 +210,10 @@ def test_two_point_generate_ell_or_theta() -> None:
         generate_bin_centers(minimum=1, maximum=100, n=5, binning="cow")
 
 
-def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data) -> None:
+def test_two_point_src0_src0_no_data_binning(
+    sacc_galaxy_cells_src0_src0_no_data, binning_type: str
+) -> None:
+    """Test TwoPoint with different binning types when no data is present."""
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
 
     src0 = WeakLensing(sacc_tracer="src0")
@@ -224,36 +222,7 @@ def test_two_point_src0_src0_no_data_lin(sacc_galaxy_cells_src0_src0_no_data) ->
         "minimum": 1,
         "maximum": 100,
         "n": 5,
-        "binning": "lin",
-    }
-
-    statistic = tp.TwoPoint(
-        "galaxy_shear_cl_ee",
-        src0,
-        src0,
-        ell_or_theta=ell_config,
-    )
-    with pytest.warns(UserWarning, match="Empty index selected"):
-        statistic.read(sacc_data)
-
-    assert statistic.window is None
-    assert statistic.ells is not None
-    assert statistic.thetas is None
-    assert all(np.isfinite(statistic.ells))
-    assert all(statistic.ells >= 1)
-    assert all(statistic.ells <= 100)
-
-
-def test_two_point_src0_src0_no_data_log(sacc_galaxy_cells_src0_src0_no_data) -> None:
-    sacc_data, _, _ = sacc_galaxy_cells_src0_src0_no_data
-
-    src0 = WeakLensing(sacc_tracer="src0")
-
-    ell_config: EllOrThetaConfig = {
-        "minimum": 1,
-        "maximum": 100,
-        "n": 5,
-        "binning": "log",
+        "binning": binning_type,
     }
 
     statistic = tp.TwoPoint(
@@ -778,3 +747,64 @@ def test_two_point_src0_src0_real_aiw(
         assert len(cells) == len(statistic.theory.ells_for_xi)
     else:
         assert len(cells) != len(statistic.theory.ells_for_xi)
+
+
+def test_calculate_pk_with_halo_model():
+    """Test calculate_pk function when tracers have halo model (covers line 126)."""
+    from unittest.mock import Mock, patch
+    from firecrown.models.two_point import calculate_pk
+    from firecrown.likelihood.source import Tracer
+
+    # Create mock tools with halo model capabilities
+    tools = Mock(spec=ModelingTools)
+    tools.has_pk.return_value = False  # Force calculation path
+
+    # Mock CCL cosmology and HM calculator
+    mock_cosmo = Mock(spec=pyccl.Cosmology)
+    tools.get_ccl_cosmology.return_value = mock_cosmo
+
+    mock_hm_calc = Mock()
+    mock_hm_calc.mass_def = "200m"
+    tools.get_hm_calculator.return_value = mock_hm_calc
+
+    tools.get_cM_relation.return_value = "Duffy08"
+
+    # Create mock tracers with halo model
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_hm = True
+    tracer0.has_pt = False
+    tracer0.tracer_name = "shear"
+
+    # Mock halo profile
+    mock_profile0 = Mock(spec=pyccl.halos.HaloProfile)
+    mock_profile0.ia_a_2h = 1.0
+    tracer0.halo_profile = mock_profile0
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_hm = True
+    tracer1.has_pt = False
+    tracer1.tracer_name = "shear"
+
+    mock_profile1 = Mock(spec=pyccl.halos.HaloProfile)
+    mock_profile1.ia_a_2h = 1.0
+    tracer1.halo_profile = mock_profile1
+
+    # Mock the halo model power spectrum computation
+    mock_pk_1h = Mock(spec=pyccl.Pk2D)
+    mock_pk_2h = Mock(spec=pyccl.Pk2D)
+    mock_pk_total = Mock(spec=pyccl.Pk2D)
+    mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
+
+    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
+        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
+    ):
+
+        # This should trigger the elif tracer0.has_hm or tracer1.has_hm: branch
+        # and call at_least_one_tracer_has_hm (line 126)
+        result = calculate_pk("test_pk", tools, tracer0, tracer1)
+
+        # Verify that the halo model power spectrum was computed
+        assert result == mock_pk_total
+
+        # Verify that tools.has_pk was called (ensuring we didn't take the first branch)
+        tools.has_pk.assert_called_once_with("test_pk")
