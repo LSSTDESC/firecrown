@@ -44,6 +44,7 @@ dependencies:
   - pylint
   - pytest
   - pytest-cov
+  - pytest-json-report
   - python >= 3.10
   - pyyaml
   - quarto
