@@ -91,12 +91,37 @@ def test_modeling_tools_get_hm_calculator_without_setting() -> None:
         tools.get_hm_calculator()
 
 
+def test_modeling_tools_get_hm_calculator_with_setting() -> None:
+    """Test get_hm_calculator when hm_calculator is set (covers line 152)."""
+    # Create a mock halo model calculator with required parameters
+    mass_function = pyccl.halos.MassFuncTinker10()
+    halo_bias = pyccl.halos.HaloBiasTinker10()
+    hm_calculator = pyccl.halos.HMCalculator(
+        mass_function=mass_function, halo_bias=halo_bias
+    )
+    tools = ModelingTools(hm_calculator=hm_calculator)
+
+    # This should return the hm_calculator successfully (line 152)
+    result = tools.get_hm_calculator()
+    assert result is hm_calculator
+
+
 def test_modeling_tools_get_cM_relation_without_setting() -> None:
     tools = ModelingTools()
     with pytest.raises(
         RuntimeError, match="A concentration-mass relation has not been set"
     ):
         tools.get_cM_relation()
+
+
+def test_modeling_tools_get_cM_relation_with_setting() -> None:
+    """Test get_cM_relation when cM_relation is set (covers line 158)."""
+    cM_relation = "duffy2008"
+    tools = ModelingTools(cM_relation=cM_relation)
+
+    # This should return the cM_relation successfully (line 158)
+    result = tools.get_cM_relation()
+    assert result == cM_relation
 
 
 class DummyPowerspectrumModifier(PowerspectrumModifier):
