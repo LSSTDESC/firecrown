@@ -8,6 +8,8 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 import pyccl
+from hypothesis import given, assume
+from hypothesis.strategies import floats, integers
 
 from pydantic import BaseModel
 
@@ -269,6 +271,58 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
     assert all(np.isfinite(statistic.thetas))
     assert all(statistic.thetas >= 0.0)
     assert all(statistic.thetas <= 1.0)
+
+
+@given(
+    minimum=floats(min_value=1, max_value=50),
+    maximum=floats(min_value=51, max_value=1000),
+    n=integers(min_value=2, max_value=20),
+)
+def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
+    """Test that generated ells are always within specified bounds using hypothesis."""
+    from firecrown.generators.two_point import generate_bin_centers
+
+    # Skip invalid cases
+    assume(minimum < maximum)
+
+    # Test logarithmic binning
+    ells = generate_bin_centers(minimum=minimum, maximum=maximum, n=n, binning="log")
+    assert all(
+        ells >= minimum
+    ), f"All ells must be >= minimum={minimum}, got min(ells)={min(ells)}"
+    assert all(
+        ells <= maximum
+    ), f"All ells must be <= maximum={maximum}, got max(ells)={max(ells)}"
+    assert all(np.isfinite(ells)), f"All ells must be finite, got {ells}"
+
+    # Test linear binning
+    ells_lin = generate_bin_centers(
+        minimum=minimum, maximum=maximum, n=n, binning="lin"
+    )
+    assert all(ells_lin >= minimum), f"All linear ells must be >= minimum={minimum}"
+    assert all(ells_lin <= maximum), f"All linear ells must be <= maximum={maximum}"
+    assert all(np.isfinite(ells_lin)), f"All linear ells must be finite"
+
+
+@given(
+    minimum=floats(min_value=0.001, max_value=0.5),  # Avoid zero for log binning
+    maximum=floats(min_value=0.6, max_value=2.0),
+    n=integers(min_value=2, max_value=15),
+)
+def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int):
+    """Test that generated thetas are always within specified bounds using hypothesis."""
+    from firecrown.generators.two_point import generate_bin_centers
+
+    # Skip invalid cases
+    assume(minimum < maximum)
+    assume(minimum > 0.0)  # Physical constraint for angles and log binning
+
+    # Test logarithmic binning for theta
+    thetas = generate_bin_centers(minimum=minimum, maximum=maximum, n=n, binning="log")
+    assert all(thetas >= minimum), f"All thetas must be >= minimum={minimum}"
+    assert all(thetas <= maximum), f"All thetas must be <= maximum={maximum}"
+    assert all(thetas >= 0.0), f"All thetas must be non-negative (physical constraint)"
+    assert all(np.isfinite(thetas)), f"All thetas must be finite"
 
 
 def test_two_point_theory_construction() -> None:

@@ -5,6 +5,8 @@ from unittest.mock import Mock
 import numpy as np
 import pyccl
 import pytest
+from hypothesis import given, assume, settings, HealthCheck
+from hypothesis.strategies import floats
 
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.binning import NDimensionalBin
@@ -77,6 +79,33 @@ def test_get_theory_prediction_returns_value(
     assert np.issubdtype(result.dtype, np.float64)
     assert len(result) == 2
     assert np.all(result > 0)
+
+
+@given(
+    mass=floats(min_value=13.0, max_value=17.0),
+    z=floats(min_value=0.1, max_value=1.0),
+    sky_area=floats(min_value=100.0, max_value=50000.0),
+)
+@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+def test_cluster_prediction_positivity_property(
+    cluster_abundance: ClusterAbundance,
+    murata_binned_spec_z: MurataBinnedSpecZRecipe,
+    mass: float,
+    z: float,
+    sky_area: float,
+):
+    """Test that cluster predictions are always positive using hypothesis."""
+    prediction = murata_binned_spec_z.get_theory_prediction(cluster_abundance)
+
+    mass_array = np.array([mass])
+    z_array = np.array([z])
+    mass_proxy_limits = (0, 5)
+
+    result = prediction(mass_array, z_array, mass_proxy_limits, sky_area)
+
+    # Physical constraint: cluster predictions must be positive
+    assert np.all(result > 0), f"All cluster predictions must be positive, got {result}"
+    assert np.all(np.isfinite(result)), f"All predictions must be finite, got {result}"
 
 
 def test_get_theory_prediction_with_average_returns_value(
