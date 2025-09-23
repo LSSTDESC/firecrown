@@ -8,7 +8,7 @@ from firecrown.updatable import get_default_params_map
 from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
 
 
-@pytest.fixture(name="dummy_powerspectrum")
+@pytest.fixture(name="dummy_powerspectrum", scope="session")
 def make_dummy_powerspectrum() -> pyccl.Pk2D:
     """Create an empty power spectrum. This is the only type we can create
     without supplying a cosmology."""
