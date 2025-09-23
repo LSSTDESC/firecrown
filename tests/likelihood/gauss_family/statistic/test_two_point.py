@@ -301,7 +301,7 @@ def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
     )
     assert all(ells_lin >= minimum), f"All linear ells must be >= minimum={minimum}"
     assert all(ells_lin <= maximum), f"All linear ells must be <= maximum={maximum}"
-    assert all(np.isfinite(ells_lin)), f"All linear ells must be finite"
+    assert all(np.isfinite(ells_lin)), "All linear ells must be finite"
 
 
 @given(
@@ -310,7 +310,7 @@ def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
     n=integers(min_value=2, max_value=15),
 )
 def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int):
-    """Test that generated thetas are always within specified bounds using hypothesis."""
+    """Generated thetas are always within specified bounds using hypothesis."""
     from firecrown.generators.two_point import generate_bin_centers
 
     # Skip invalid cases
@@ -321,8 +321,8 @@ def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int
     thetas = generate_bin_centers(minimum=minimum, maximum=maximum, n=n, binning="log")
     assert all(thetas >= minimum), f"All thetas must be >= minimum={minimum}"
     assert all(thetas <= maximum), f"All thetas must be <= maximum={maximum}"
-    assert all(thetas >= 0.0), f"All thetas must be non-negative (physical constraint)"
-    assert all(np.isfinite(thetas)), f"All thetas must be finite"
+    assert all(thetas >= 0.0), "All thetas must be non-negative (physical constraint)"
+    assert all(np.isfinite(thetas)), "All thetas must be finite"
 
 
 def test_two_point_theory_construction() -> None:

@@ -132,7 +132,7 @@ def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned
     z=floats(min_value=1e-15, max_value=2.0), mass=floats(min_value=7.0, max_value=26.0)
 )
 def test_cluster_distribution_properties(z: float, mass: float):
-    """Test mathematical properties of the cluster mass distribution using hypothesis."""
+    """Mathematical properties of the cluster mass distribution using hypothesis."""
     # Create the relation inside the test to avoid fixture issues
     murata_binned_relation = MurataBinned(PIVOT_MASS, PIVOT_Z)
     murata_binned_relation.mu_p0 = 3.00

@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import numpy as np
 import pyccl
 import pytest
-from hypothesis import given, assume, settings, HealthCheck
+from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import floats
 
 from firecrown.models.cluster.abundance import ClusterAbundance
