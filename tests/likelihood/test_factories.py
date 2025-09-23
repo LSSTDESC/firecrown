@@ -17,6 +17,7 @@ from firecrown.likelihood.factories import (
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
+from firecrown.likelihood.cmb import CMBConvergenceFactory
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
@@ -24,8 +25,11 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointReal,
     TypeSource,
+    CMB,
+    Clusters,
     GALAXY_SOURCE_TYPES,
     GALAXY_LENS_TYPES,
+    CMB_TYPES,
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import TwoPointBinFilterCollection, TwoPointBinFilter
@@ -1073,3 +1077,143 @@ def test_build_two_point_likelihood_real_with_filters_fast() -> None:
         sacc_data, two_point_factory, filters=filters
     )
     assert likelihood is not None
+
+    
+def test_two_point_factory_two_equal_cmbs():
+    """Test that duplicate CMBConvergenceFactory with same type_source raises error."""
+    with pytest.raises(
+        ValueError, match="Duplicate CMBConvergenceFactory found for type_source ts1"
+    ):
+        _ = TwoPointFactory(
+            correlation_space=TwoPointCorrelationSpace.HARMONIC,
+            cmb_factories=[
+                CMBConvergenceFactory(type_source=TypeSource("ts1")),
+                CMBConvergenceFactory(type_source=TypeSource("ts1")),
+            ],
+        )
+
+
+def test_two_point_factory_get_cmb_factory():
+    """Test getting CMB factories by type_source."""
+    cmb_factory1 = CMBConvergenceFactory(type_source=TypeSource("ts1"))
+    cmb_factory2 = CMBConvergenceFactory(type_source=TypeSource("ts2"))
+    cmb_factory_default = CMBConvergenceFactory()
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[cmb_factory1, cmb_factory2, cmb_factory_default],
+    )
+
+    for type_source, cmb_factory in zip(
+        [TypeSource("ts1"), TypeSource("ts2"), TypeSource.DEFAULT],
+        [cmb_factory1, cmb_factory2, cmb_factory_default],
+    ):
+        for measurement in CMB_TYPES:  # You'll need to import this
+            cmb_factory0 = factory.get_factory(measurement, type_source=type_source)
+            assert isinstance(cmb_factory0, CMBConvergenceFactory)
+            assert cmb_factory0.type_source == type_source
+            assert cmb_factory0 is cmb_factory
+
+
+def test_two_point_factory_get_unavailable_cmb_factory():
+    """Test error when requesting unavailable CMB factory type_source."""
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[
+            CMBConvergenceFactory(type_source=TypeSource("ts1")),
+        ],
+    )
+    with pytest.raises(
+        ValueError, match="No CMBConvergenceFactory found for type_source ts2."
+    ):
+        _ = factory.get_factory(CMB.CONVERGENCE, type_source=TypeSource("ts2"))
+
+
+def test_two_point_factory_cmb_measurement_handling():
+    """Test that CMB measurements are properly handled by get_factory."""
+    cmb_factory = CMBConvergenceFactory()
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[cmb_factory],
+    )
+
+    # Test that CMB.CONVERGENCE measurement returns CMB factory
+    result_factory = factory.get_factory(CMB.CONVERGENCE)
+    assert isinstance(result_factory, CMBConvergenceFactory)
+    assert result_factory is cmb_factory
+
+
+def test_two_point_factory_cmb_measurement_with_type_source():
+    """Test CMB measurement handling with specific type_source."""
+    cmb_factory1 = CMBConvergenceFactory(type_source=TypeSource("ts1"))
+    cmb_factory2 = CMBConvergenceFactory(type_source=TypeSource("ts2"))
+
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[cmb_factory1, cmb_factory2],
+    )
+
+    # Test that specific type_source returns correct factory
+    result_factory1 = factory.get_factory(
+        CMB.CONVERGENCE, type_source=TypeSource("ts1")
+    )
+    assert isinstance(result_factory1, CMBConvergenceFactory)
+    assert result_factory1 is cmb_factory1
+
+    result_factory2 = factory.get_factory(
+        CMB.CONVERGENCE, type_source=TypeSource("ts2")
+    )
+    assert isinstance(result_factory2, CMBConvergenceFactory)
+    assert result_factory2 is cmb_factory2
+
+
+def test_two_point_factory_all_cmb_types():
+    """Test that all CMB measurement types are handled correctly."""
+    cmb_factory = CMBConvergenceFactory()
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[cmb_factory],
+    )
+
+    # Test all CMB measurement types
+    for measurement in CMB_TYPES:
+        result_factory = factory.get_factory(measurement)
+        assert isinstance(result_factory, CMBConvergenceFactory)
+        assert result_factory is cmb_factory
+
+
+def test_two_point_factory_measurement_not_supported():
+    """Test that measurements not supported by the factory raise an error."""
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        cmb_factories=[CMBConvergenceFactory()],
+    )
+    with pytest.raises(
+        ValueError,
+        match=("Factory not found for measurement .*, it is not supported."),
+    ):
+        _ = factory.get_factory(Clusters.COUNTS)
+
+
+def test_two_point_factory_all_factories():
+    """Test that all factory types are handled correctly."""
+    wl_factory = WeakLensingFactory(type_source=TypeSource("ts_wl"))
+    nc_factory = NumberCountsFactory(type_source=TypeSource("ts_nc"))
+    cmb_factory = CMBConvergenceFactory(type_source=TypeSource("ts_cmb"))
+    factory = TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[wl_factory],
+        number_counts_factories=[nc_factory],
+        cmb_factories=[cmb_factory],
+    )
+    # Test Weak Lensing
+    wl_result = factory.get_factory(Galaxies.SHEAR_E, type_source=TypeSource("ts_wl"))
+    assert isinstance(wl_result, WeakLensingFactory)
+    assert wl_result is wl_factory
+    # Test Number Counts
+    nc_result = factory.get_factory(Galaxies.COUNTS, type_source=TypeSource("ts_nc"))
+    assert isinstance(nc_result, NumberCountsFactory)
+    assert nc_result is nc_factory
+    # Test CMB
+    cmb_result = factory.get_factory(CMB.CONVERGENCE, type_source=TypeSource("ts_cmb"))
+    assert isinstance(cmb_result, CMBConvergenceFactory)
+    assert cmb_result is cmb_factory
