@@ -9,6 +9,7 @@ This tool provides a detailed analysis of test coverage including:
 - Files with less than perfect coverage
 """
 
+import click
 import json
 import sys
 from pathlib import Path
@@ -337,30 +338,19 @@ def print_perfect_coverage_files(
         print()
 
 
-def main():
-    """Main entry point."""
-    if len(sys.argv) < 2:
-        usage_msg = (
-            "Usage: python coverage_summary.py <coverage.json> "
-            "[--show-source] [--show-perfect]"
-        )
-        print(usage_msg)
-        print()
-        print("Options:")
-        print("  --show-source   Show source code for missing lines")
-        print("  --show-perfect  Show files with perfect coverage")
-        print()
-        print("Example: python coverage_summary.py coverage.json --show-source")
-        sys.exit(1)
+@click.command()
+@click.argument("coverage_file", type=click.Path(exists=True, path_type=Path))
+@click.option("--show-source", is_flag=True, help="Show source code for missing lines")
+@click.option("--show-perfect", is_flag=True, help="Show files with perfect coverage")
+def main(coverage_file: Path, show_source: bool, show_perfect: bool) -> None:
+    """Analyze test coverage output in JSON format.
 
-    coverage_file = Path(sys.argv[1])
-    show_source = "--show-source" in sys.argv
-    show_perfect = "--show-perfect" in sys.argv
+    This tool provides a detailed analysis of test coverage including
+    overall coverage summary, per-file breakdown, detailed information
+    about untested lines and branches, and files with imperfect coverage.
 
-    if not coverage_file.exists():
-        print(f"Error: Coverage file '{coverage_file}' not found.")
-        sys.exit(1)
-
+    COVERAGE_FILE  Path to the coverage JSON file to analyze
+    """
     try:
         summary, file_issues = analyze_coverage_json(coverage_file)
 
