@@ -1,8 +1,9 @@
+#!/usr/bin/env python
 """This script provides a way to print the class hierarchy of a given type."""
 
+import click
 import importlib
 import inspect
-import sys
 
 
 def import_type(full_path: str) -> type:
@@ -58,16 +59,28 @@ def print_type_hierarchy(top_type: type) -> None:
         print_one_type(i, t)
 
 
-if __name__ == "__main__":
-    if len(sys.argv) < 2:
-        print("Usage: python print_hierarchy.py <typename> [<typename> ...]")
-        sys.exit(1)
-    typename = sys.argv[1]
-    try:
-        type_ = import_type(typename)
-    except ImportError as e:
-        print(f"Could not import type {typename}")
-        print("Error message was:\n", e)
-        sys.exit(1)
+@click.command()
+@click.argument("typenames", nargs=-1, required=True)
+def main(typenames):
+    """Print the class hierarchy for the given type(s).
 
-    print_type_hierarchy(type_)
+    This tool displays the Method Resolution Order (MRO) for Python classes,
+    showing the inheritance hierarchy and all methods defined in each class.
+
+    TYPENAMES  One or more fully qualified type names (e.g. mymodule.MyClass)
+    """
+    for typename in typenames:
+        try:
+            type_ = import_type(typename)
+            if len(typenames) > 1:
+                print(f"\n{'=' * 60}")
+            print_type_hierarchy(type_)
+        except ImportError as e:
+            print(f"Could not import type {typename}")
+            print(f"Error message: {e}")
+            if len(typenames) > 1:
+                print()  # Add spacing between errors
+
+
+if __name__ == "__main__":
+    main()
