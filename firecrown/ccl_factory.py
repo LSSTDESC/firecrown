@@ -132,6 +132,31 @@ class CCLCreationMode(StrEnum):
         )
 
 
+class CCLPureModeTransferFunction(StrEnum):
+    """This class defines the transfer function to use in PURE_CCL_MODE.
+
+    The options are those available in CCL for the transfer_function argument.
+    See https://ccl.readthedocs.io/en/latest/api/pyccl.cosmology.html
+    """
+
+    BBKS = auto()
+    BOLTZMANN_CAMB = auto()
+    BOLTZMANN_CLASS = auto()
+    EISENSTEIN_HU = auto()
+    EISENSTEIN_HU_NOWIGGLES = auto()
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: Any
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the CCLPureModeTransferFunction class."""
+        return core_schema.no_info_before_validator_function(
+            lambda v: cls(v) if isinstance(v, str) else v,
+            core_schema.enum_schema(cls, list(cls), sub_type="str"),
+            serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+
 class MuSigmaModel(Updatable):
     """Model for the mu-sigma modified gravity model."""
 
@@ -315,6 +340,9 @@ class CCLFactory(Updatable, BaseModel):
     creation_mode: Annotated[CCLCreationMode, Field(frozen=True)] = (
         CCLCreationMode.DEFAULT
     )
+    pure_ccl_transfer_function: Annotated[
+        CCLPureModeTransferFunction, Field(frozen=True)
+    ] = CCLPureModeTransferFunction.BOLTZMANN_CAMB
     use_camb_hm_sampling: Annotated[bool, Field(frozen=True)] = False
     allow_multiple_camb_instances: Annotated[bool, Field(frozen=True)] = False
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
@@ -385,6 +413,17 @@ class CCLFactory(Updatable, BaseModel):
             case _ as unreachable:
                 assert_never(unreachable)
 
+        if (
+            self.use_camb_hm_sampling
+            or (self.camb_extra_params is not None)
+            or self.allow_multiple_camb_instances
+        ) and not self.using_camb():
+            raise ValueError(
+                "CAMB extra parameters, CAMB halo model sampling, and multiple CAMB "
+                "instances are only compatible with the PURE_CCL_MODE creation mode "
+                "when using the BOLTZMANN_CAMB transfer function."
+            )
+
         self._mu_sigma_model: None | MuSigmaModel = None
         match self.creation_mode:
             case CCLCreationMode.DEFAULT:
@@ -418,6 +457,18 @@ class CCLFactory(Updatable, BaseModel):
         """
         if self.camb_extra_params is not None:
             self.camb_extra_params.update(params)
+
+    def using_camb(self) -> bool:
+        """Return True if the CCLFactory is using CAMB for the matter power spectrum.
+
+        :return: True if the CCLFactory is using CAMB for the matter power spectrum.
+        """
+        if self.creation_mode == CCLCreationMode.PURE_CCL_MODE:
+            return (
+                self.pure_ccl_transfer_function
+                == CCLPureModeTransferFunction.BOLTZMANN_CAMB
+            )
+        return False
 
     @model_serializer(mode="wrap")
     def serialize_model(self, nxt: SerializerFunctionWrapHandler, _: SerializationInfo):
@@ -487,12 +538,9 @@ class CCLFactory(Updatable, BaseModel):
             else:
                 ccl_args["nonlinear_model"] = None
 
-            if (self.creation_mode != CCLCreationMode.DEFAULT) or (
-                self.camb_extra_params is not None
-            ):
+            if self.creation_mode != CCLCreationMode.DEFAULT:
                 raise ValueError(
-                    "Calculator Mode can only be used with the DEFAULT creation "
-                    "mode and no CAMB extra parameters."
+                    "Calculator Mode can only be used with the DEFAULT creation."
                 )
 
             if self.ccl_spline_params is not None:
@@ -518,6 +566,12 @@ class CCLFactory(Updatable, BaseModel):
                     matter_power_spectrum="linear",
                     transfer_function="boltzmann_isitgr",
                 )
+            case CCLCreationMode.PURE_CCL_MODE:
+                ccl_args.update(
+                    transfer_function=self.pure_ccl_transfer_function.lower(),
+                    matter_power_spectrum="linear",
+                )
+
         if self.ccl_spline_params is not None:
             with self.ccl_spline_params:
                 self._ccl_cosmo = pyccl.Cosmology(**ccl_args)

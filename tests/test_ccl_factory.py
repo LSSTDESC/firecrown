@@ -12,6 +12,7 @@ from firecrown.ccl_factory import (
     CAMBExtraParams,
     CCLCalculatorArgs,
     CCLCreationMode,
+    CCLPureModeTransferFunction,
     CCLFactory,
     MuSigmaModel,
     PoweSpecAmplitudeParameter,
@@ -123,6 +124,32 @@ def fixture_calculator_args(request) -> CCLCalculatorArgs:
     return request.param
 
 
+@pytest.mark.parametrize(
+    "transfer_function",
+    list(CCLPureModeTransferFunction),
+)
+def test_ccl_factory_pure_mode_transfer_function(transfer_function):
+    ccl_factory = CCLFactory(
+        creation_mode=CCLCreationMode.PURE_CCL_MODE,
+        pure_ccl_transfer_function=transfer_function,
+    )
+    assert ccl_factory.pure_ccl_transfer_function == transfer_function
+    assert ccl_factory.creation_mode == CCLCreationMode.PURE_CCL_MODE
+
+    params = get_default_params_map(ccl_factory)
+    ccl_factory.update(params)
+    cosmo = ccl_factory.create()
+    assert isinstance(cosmo, pyccl.Cosmology)
+
+
+def test_ccl_factory_invalid_pure_mode_transfer_function():
+    with pytest.raises(ValueError, match="is not a valid CCLPureModeTransferFunction"):
+        CCLFactory(
+            creation_mode=CCLCreationMode.PURE_CCL_MODE,
+            pure_ccl_transfer_function="Im not a valid value",
+        )
+
+
 def test_setting_each_spline_param(
     ccl_creation_mode: CCLCreationMode,
     camb_extra_params: CAMBExtraParams | None,
@@ -130,7 +157,14 @@ def test_setting_each_spline_param(
     # test_helper is a closure that captures the values of ccl_creation mode
     # and camb_extra_params, and is callable with just the param_name and
     # param_value to be tested.
+
     def test_helper(param_name: str, param_value: float | int):
+        # Only allow camb_extra_params with PURE_CCL_MODE; skip otherwise
+        if (
+            camb_extra_params is not None
+            and ccl_creation_mode != CCLCreationMode.PURE_CCL_MODE
+        ):
+            pytest.skip("CAMB extra parameters are only compatible with PURE_CCL_MODE.")
         original_param_value = getattr(pyccl.spline_params, param_name.upper())
         args = {param_name: param_value}
         spline_params = CCLSplineParams(**args)  # type: ignore
@@ -209,6 +243,14 @@ def test_ccl_factory_simple(
     camb_extra_params: CAMBExtraParams | None,
     ccl_spline_params: CCLSplineParams | None,
 ) -> None:
+
+    # Only allow camb_extra_params with PURE_CCL_MODE; skip otherwise
+    if (
+        camb_extra_params is not None
+        and ccl_creation_mode != CCLCreationMode.PURE_CCL_MODE
+    ):
+        pytest.skip("CAMB extra parameters are only compatible with PURE_CCL_MODE.")
+
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
         mass_split=neutrino_mass_splits,
@@ -564,17 +606,11 @@ def test_ccl_factory_camb_extra_params_invalid() -> None:
 
 
 def test_ccl_factory_camb_extra_params_invalid_model() -> None:
-    ccl_factory = CCLFactory(
-        camb_extra_params={"dark_energy_model": "Im not a valid value"}
-    )
-    params = get_default_params_map(ccl_factory)
-    ccl_factory.update(params)
-    ccl_cosmo = ccl_factory.create()
     with pytest.raises(
         ValueError,
-        match="The only dark energy models CCL supports with CAMB are fluid and ppf.",
+        match="CAMB extra parameters, CAMB halo model sampling, and multiple CAMB instances are only compatible with the PURE_CCL_MODE creation mode when using the BOLTZMANN_CAMB transfer function.",
     ):
-        ccl_cosmo.compute_linear_power()
+        CCLFactory(camb_extra_params={"dark_energy_model": "Im not a valid value"})
 
 
 def test_ccl_factory_invalid_extra_params() -> None:
@@ -590,9 +626,7 @@ def test_validate_creation_mode_incompatible():
     params = get_default_params_map(ccl_factory)
     ccl_factory.update(params)
     with pytest.raises(
-        ValueError,
-        match="Calculator Mode can only be used with the DEFAULT "
-        "creation mode and no CAMB extra parameters.",
+        ValueError, match="Calculator Mode can only be used with the DEFAULT creation."
     ):
         ccl_factory.create(
             calculator_args=CCLCalculatorArgs(
@@ -646,11 +680,7 @@ def test_bad_configuration() -> None:
 def test_hm_sampling_misconfiguration() -> None:
     with pytest.raises(
         ValueError,
-        match=(
-            "Cannot use CCL CAMB halo model sampling when using the "
-            "default CCL creation mode, "
-            "which uses CAMB from the sampling framework."
-        ),
+        match="CAMB extra parameters, CAMB halo model sampling, and multiple CAMB instances are only compatible with the PURE_CCL_MODE creation mode when using the BOLTZMANN_CAMB transfer function.",
     ):
         _ = CCLFactory(use_camb_hm_sampling=True, camb_extra_params=CAMBExtraParams())
 
@@ -682,3 +712,43 @@ def test_hm_sampling_configuration() -> None:
         == 0.603
     )
     assert factory.camb_extra_params.HMCode_logT_AGN == 7.8  # pylint: disable=no-member
+
+
+@pytest.mark.parametrize(
+    "creation_mode,transfer_function,expected",
+    [
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+        ),
+        (CCLCreationMode.PURE_CCL_MODE, CCLPureModeTransferFunction.BBKS, False),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BOLTZMANN_CLASS,
+            False,
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.EISENSTEIN_HU,
+            False,
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.EISENSTEIN_HU_NOWIGGLES,
+            False,
+        ),
+        (CCLCreationMode.DEFAULT, CCLPureModeTransferFunction.BOLTZMANN_CAMB, False),
+        (
+            CCLCreationMode.MU_SIGMA_ISITGR,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            False,
+        ),
+    ],
+)
+def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
+    factory = CCLFactory(
+        creation_mode=creation_mode,
+        pure_ccl_transfer_function=transfer_function,
+    )
+    assert factory.using_camb() is expected
