@@ -170,7 +170,8 @@ jobs:
       - name: Run unit tests with smart execution
         shell: bash -l {0}
         run: |
-          if [[ "${{ matrix.coverage }}" == "true" ]]; then
+          # matrix.coverage might be an empty string, so we need the or condition
+          if [[ "${{ matrix.coverage || false }}" == "true" ]]; then
             # Coverage job: fast execution without --runslow
             python -m pytest -vv --cov firecrown --cov-report xml --cov-branch -n auto
           else

@@ -43,6 +43,7 @@ dependencies:
   - pylint
   - pytest
   - pytest-cov
+  - pytest-xdist
   - python >= 3.10
   - pyyaml
   - quarto
