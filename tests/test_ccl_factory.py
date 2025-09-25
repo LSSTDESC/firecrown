@@ -608,7 +608,12 @@ def test_ccl_factory_camb_extra_params_invalid() -> None:
 def test_ccl_factory_camb_extra_params_invalid_model() -> None:
     with pytest.raises(
         ValueError,
-        match="CAMB extra parameters, CAMB halo model sampling, and multiple CAMB instances are only compatible with the PURE_CCL_MODE creation mode when using the BOLTZMANN_CAMB transfer function.",
+        match=(
+            "CAMB extra parameters, CAMB halo model sampling, "
+            "and multiple CAMB instances are only compatible "
+            "with the PURE_CCL_MODE creation mode when using "
+            "the BOLTZMANN_CAMB transfer function."
+        ),
     ):
         CCLFactory(camb_extra_params={"dark_energy_model": "Im not a valid value"})
 
@@ -680,7 +685,12 @@ def test_bad_configuration() -> None:
 def test_hm_sampling_misconfiguration() -> None:
     with pytest.raises(
         ValueError,
-        match="CAMB extra parameters, CAMB halo model sampling, and multiple CAMB instances are only compatible with the PURE_CCL_MODE creation mode when using the BOLTZMANN_CAMB transfer function.",
+        match=(
+            "CAMB extra parameters, CAMB halo model sampling, "
+            "and multiple CAMB instances are only compatible "
+            "with the PURE_CCL_MODE creation mode when using "
+            "the BOLTZMANN_CAMB transfer function."
+        ),
     ):
         _ = CCLFactory(use_camb_hm_sampling=True, camb_extra_params=CAMBExtraParams())
 
