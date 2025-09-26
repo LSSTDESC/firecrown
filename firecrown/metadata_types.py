@@ -756,12 +756,15 @@ class BinRule(ABC):
         """Return True if the pair (z1, z2, measurement1, measurement2) should be kept."""
 
     def __and__(self, other: "BinRule") -> "BinRule":
+        """Return the and combinator for two-point measurements."""
         return AndBinRule(self, other)
 
     def __or__(self, other: "BinRule") -> "BinRule":
+        """Return the or combinator for two-point measurements."""
         return OrBinRule(self, other)
 
     def __invert__(self) -> "BinRule":
+        """Return the inverse of the bin rule."""
         return NotBinRule(self)
 
 
@@ -782,6 +785,7 @@ class AndBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return True if all of the bin rules pass."""
         return all(
             bin_rule.keep(z1, z2, measurement1, measurement2)
             for bin_rule in self.bin_rules
@@ -805,6 +809,7 @@ class OrBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return True if any of the bin rules pass."""
         return any(
             bin_rule.keep(z1, z2, measurement1, measurement2)
             for bin_rule in self.bin_rules
@@ -828,6 +833,7 @@ class NotBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return the negation of keep."""
         return not self.combinator.keep(z1, z2, measurement1, measurement2)
 
 
@@ -852,6 +858,7 @@ class NamedBinRule(BinRule):
         _measurement1: Measurement,
         _measurement2: Measurement,
     ) -> bool:
+        """Return True if the pair (z1, z2) is in the list of names."""
         return (z1.bin_name, z2.bin_name) in self.names or (
             z2.bin_name,
             z1.bin_name,
@@ -862,8 +869,7 @@ class AutoBinRule(BinRule):
     """Class defining the auto-source combinator for two-point measurements.
 
     The auto-source combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are from the same source
-    are kept.
+    `TwoPointXY` objects, such that only auto-correlations are kept.
     """
 
     def keep(
@@ -873,6 +879,7 @@ class AutoBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return True if both are the same measurement."""
         return (z1.bin_name == z2.bin_name) and (measurement1 == measurement2)
 
 
@@ -891,6 +898,7 @@ class SourceBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return True if the measurements are both source measurements."""
         return (measurement1 in GALAXY_SOURCE_TYPES) and (
             measurement2 in GALAXY_SOURCE_TYPES
         )
@@ -911,6 +919,7 @@ class LensBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return True if the measurements are both lens measurements."""
         return (measurement1 in GALAXY_LENS_TYPES) and (
             measurement2 in GALAXY_LENS_TYPES
         )
@@ -931,6 +940,7 @@ class FirstNeighborBinRule(BinRule):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
+        """Return True if the bin names are equal or one is one bin above the other."""
         bin_name1, bin_name2 = z1.bin_name, z2.bin_name
         # Extract both suffixes as numbers using a regex to match all final digits
         assert re.match(r"\d+$", bin_name1)
