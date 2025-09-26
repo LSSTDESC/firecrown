@@ -3,6 +3,7 @@
 This module contains metadata types definitions.
 """
 
+from abc import abstractmethod, ABC
 from typing import Any
 from itertools import chain, combinations_with_replacement
 from dataclasses import dataclass
@@ -734,4 +735,208 @@ class TwoPointFilterMethod(YAMLSerializable, StrEnum):
             lambda v: cls(v) if isinstance(v, str) else v,
             core_schema.enum_schema(cls, list(cls), sub_type="str"),
             serialization=core_schema.plain_serializer_function_ser_schema(str),
+        )
+
+
+class BinRule(ABC):
+    """Class defining the bin combinator for two-point measurements.
+
+    The bin combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects.
+    """
+
+    @abstractmethod
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        """Return True if the pair (z1, z2, measurement1, measurement2) should be kept."""
+
+    def __and__(self, other: "BinRule") -> "BinRule":
+        return AndBinRule(self, other)
+
+    def __or__(self, other: "BinRule") -> "BinRule":
+        return OrBinRule(self, other)
+
+    def __invert__(self) -> "BinRule":
+        return NotBinRule(self)
+
+
+class AndBinRule(BinRule):
+    """Class defining the and combinator for two-point measurements.
+
+    The and combinator is used to combine several `BinRule` objects such that
+    only observations that pass all of the `BinRule` objects are kept.
+    """
+
+    def __init__(self, *bin_rules: BinRule):
+        self.bin_rules = bin_rules
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        return all(
+            bin_rule.keep(z1, z2, measurement1, measurement2)
+            for bin_rule in self.bin_rules
+        )
+
+
+class OrBinRule(BinRule):
+    """Class defining the or combinator for two-point measurements.
+
+    The or combinator is used to combine several `BinRule` objects such that
+    only observations that pass at least one of the `BinRule` objects are kept.
+    """
+
+    def __init__(self, *bin_rules: BinRule):
+        self.bin_rules = bin_rules
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        return any(
+            bin_rule.keep(z1, z2, measurement1, measurement2)
+            for bin_rule in self.bin_rules
+        )
+
+
+class NotBinRule(BinRule):
+    """Class defining the not combinator for two-point measurements.
+
+    The not combinator is used to combine several `BinRule` objects such that
+    only observations that do not pass the `BinRule` objects are kept.
+    """
+
+    def __init__(self, combinator: BinRule):
+        self.combinator = combinator
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        return not self.combinator.keep(z1, z2, measurement1, measurement2)
+
+
+# Concrete BinRule classes
+
+
+class NamedBinRule(BinRule):
+    """Class defining the named combinator for two-point measurements.
+
+    The named combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations that are named are kept.
+    """
+
+    def __init__(self, names: list[tuple[str, str]]):
+        """Initialize the NamedBinRule object."""
+        self.names = names
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        _measurement1: Measurement,
+        _measurement2: Measurement,
+    ) -> bool:
+        return (z1.bin_name, z2.bin_name) in self.names or (
+            z2.bin_name,
+            z1.bin_name,
+        ) in self.names
+
+
+class AutoBinRule(BinRule):
+    """Class defining the auto-source combinator for two-point measurements.
+
+    The auto-source combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations that are from the same source
+    are kept.
+    """
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        return (z1.bin_name == z2.bin_name) and (measurement1 == measurement2)
+
+
+class SourceBinRule(BinRule):
+    """Class defining the source combinator for two-point measurements.
+
+    The source combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations that are from the same source
+    are kept.
+    """
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        return (measurement1 in GALAXY_SOURCE_TYPES) and (
+            measurement2 in GALAXY_SOURCE_TYPES
+        )
+
+
+class LensBinRule(BinRule):
+    """Class defining the lens combinator for two-point measurements.
+
+    The lens combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations that are from the same lens
+    are kept.
+    """
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        return (measurement1 in GALAXY_LENS_TYPES) and (
+            measurement2 in GALAXY_LENS_TYPES
+        )
+
+
+class FirstNeighborBinRule(BinRule):
+    """Class defining the first neighbor combinator for two-point measurements.
+
+    The first neighbor combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations that are from the same first neighbor
+    are kept.
+    """
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        bin_name1, bin_name2 = z1.bin_name, z2.bin_name
+        # Extract both suffixes as numbers using a regex to match all final digits
+        assert re.match(r"\d+$", bin_name1)
+        assert re.match(r"\d+$", bin_name2)
+        suffix1 = int(re.findall(r"\d+$", bin_name1)[0])
+        suffix2 = int(re.findall(r"\d+$", bin_name2)[0])
+        return (
+            (suffix1 == suffix2) or (suffix1 == suffix2 + 1) or (suffix1 + 1 == suffix2)
         )

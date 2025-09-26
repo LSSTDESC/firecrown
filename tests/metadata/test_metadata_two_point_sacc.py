@@ -11,6 +11,7 @@ from numpy.testing import assert_array_equal
 import sacc
 
 from firecrown.parameters import ParamsMap
+import firecrown.metadata_types as mt
 from firecrown.metadata_types import (
     Galaxies,
     TracerNames,
@@ -33,6 +34,7 @@ from firecrown.metadata_functions import (
     make_all_photoz_bin_combinations_with_cmb,
     make_all_photoz_bin_combinations,
     make_cmb_galaxy_combinations_only,
+    make_all_bin_rule_combinations,
 )
 from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
@@ -1772,3 +1774,86 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
     assert len(combinations) == 0
+
+
+def test_bin_rules_auto(all_harmonic_bins):
+    auto_bin_rule = mt.AutoBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, auto_bin_rule
+    )
+    # AutoBinRule should create all auto-combinations
+    assert len(two_point_xy_combinations) == len(all_harmonic_bins)
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+
+
+def test_bin_rules_auto_source(all_harmonic_bins):
+    auto_bin_rule = mt.AutoBinRule()
+    source_bin_rule = mt.SourceBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, auto_bin_rule & source_bin_rule
+    )
+    # AutoBinRule should create all auto-combinations for shear measurements
+    assert len(two_point_xy_combinations) == 2
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+        assert two_point_xy.x_measurement in mt.GALAXY_SOURCE_TYPES
+
+
+def test_bin_rules_auto_lens(all_harmonic_bins):
+    auto_bin_rule = mt.AutoBinRule()
+    lens_bin_rule = mt.LensBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, auto_bin_rule & lens_bin_rule
+    )
+    # AutoBinRule should create all auto-combinations for lens measurements
+    assert len(two_point_xy_combinations) == 2
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+        assert two_point_xy.x_measurement in mt.GALAXY_LENS_TYPES
+
+
+def test_bin_rules_auto_source_lens(all_harmonic_bins):
+    auto_bin_rule = mt.AutoBinRule()
+    source_bin_rule = mt.SourceBinRule()
+    lens_bin_rule = mt.LensBinRule()
+
+    bin_rule = (auto_bin_rule & lens_bin_rule) | (auto_bin_rule & source_bin_rule)
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, bin_rule
+    )
+    # AutoBinRule should create all auto-combinations for lens measurements
+    assert len(two_point_xy_combinations) == 4
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+
+
+def test_bin_rules_named(all_harmonic_bins):
+    named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, named_bin_rule
+    )
+    # NamedBinRule should create all named combinations
+    assert len(two_point_xy_combinations) == 4
+    for two_point_xy in two_point_xy_combinations:
+        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_2", "bin_1"}
+
+
+def test_bin_rules_not_named(all_harmonic_bins):
+    named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, ~named_bin_rule
+    )
+    # NamedBinRule should create all named combinations
+    assert len(two_point_xy_combinations) == 6
+    for two_point_xy in two_point_xy_combinations:
+        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} != {"bin_2", "bin_1"}

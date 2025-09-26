@@ -389,14 +389,14 @@ def test_match_name_type_convention3():
 def test_match_name_type_require_convention_fail():
     with pytest.raises(
         ValueError,
-        match="Invalid tracer names (.*) do not respect the naming convetion.",
+        match="Invalid tracer names (.*) do not respect the naming convention.",
     ):
         match_name_type(
             "no_convention",
             "here_too",
             Galaxies.COUNTS,
             Galaxies.SHEAR_T,
-            require_convetion=True,
+            require_convention=True,
         )
 
 
@@ -406,7 +406,7 @@ def test_match_name_type_require_convention_lens():
         "lens0",
         Galaxies.COUNTS,
         Galaxies.COUNTS,
-        require_convetion=True,
+        require_convention=True,
     )
     assert not match
     assert n1 == "lens0"
@@ -421,7 +421,7 @@ def test_match_name_type_require_convention_source():
         "src0",
         Galaxies.PART_OF_XI_MINUS,
         Galaxies.PART_OF_XI_MINUS,
-        require_convetion=True,
+        require_convention=True,
     )
     assert not match
     assert n1 == "src0"

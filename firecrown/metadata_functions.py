@@ -31,6 +31,7 @@ from firecrown.metadata_types import (
     CMB,
     Clusters,
     TwoPointCorrelationSpace,
+    BinRule,
 )
 
 # TwoPointRealIndex is a type used to create intermediate objects when reading SACC
@@ -201,7 +202,7 @@ def match_name_type(
     tracer2: str,
     a: Measurement,
     b: Measurement,
-    require_convetion: bool = False,
+    require_convention: bool = False,
 ) -> tuple[bool, str, Measurement, str, Measurement]:
     """Use the naming convention to assign the right measurement to each tracer."""
     for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
@@ -212,9 +213,9 @@ def match_name_type(
                 return True, n1, a, n2, b
             raise ValueError(
                 "Invalid SACC file, tracer names do not respect "
-                "the naming convetion."
+                "the naming convention."
             )
-    if require_convetion:
+    if require_convention:
         if LENS_REGEX.match(tracer1) and LENS_REGEX.match(tracer2):
             return False, tracer1, a, tracer2, b
         if SOURCE_REGEX.match(tracer1) and SOURCE_REGEX.match(tracer2):
@@ -222,7 +223,7 @@ def match_name_type(
 
         raise ValueError(
             f"Invalid tracer names ({tracer1}, {tracer2}) "
-            f"do not respect the naming convetion."
+            f"do not respect the naming convention."
         )
 
     return False, tracer1, a, tracer2, b
@@ -655,6 +656,26 @@ def measurements_from_index(
         index["tracer_names"].name2,
         a,
         b,
-        require_convetion=True,
+        require_convention=True,
     )
     return n1, a, n2, b
+
+
+def make_all_bin_rule_combinations(
+    inferred_galaxy_zdists: list[InferredGalaxyZDist],
+    bin_rule: BinRule,
+) -> list[TwoPointXY]:
+    """Extract the two-point function metadata from a sacc file."""
+    bin_combinations = [
+        TwoPointXY(
+            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
+        )
+        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
+        for x_measurement, y_measurement in product(
+            igz1.measurements, igz2.measurements
+        )
+        if measurement_is_compatible(x_measurement, y_measurement)
+        and (bin_rule.keep(igz1, igz2, x_measurement, y_measurement))
+    ]
+
+    return bin_combinations
