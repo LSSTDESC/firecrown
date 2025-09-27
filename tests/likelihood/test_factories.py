@@ -53,6 +53,7 @@ def fixture_empty_factory_harmonic() -> TwoPointFactory:
         number_counts_factories=[
             NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
         ],
+        cmb_factories=[CMBConvergenceFactory()],
     )
 
 

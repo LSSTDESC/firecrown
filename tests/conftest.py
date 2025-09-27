@@ -37,6 +37,7 @@ from firecrown.data_types import TwoPointMeasurement
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.two_point as tp
+import firecrown.likelihood.cmb as cmb
 
 
 def pytest_addoption(parser):
@@ -1196,6 +1197,7 @@ def make_tp_factory(
         correlation_space=tp.TwoPointCorrelationSpace.REAL,
         weak_lensing_factories=[wl_factory],
         number_counts_factories=[nc_factory],
+        cmb_factories=[cmb.CMBConvergenceFactory()],
     )
 
 
@@ -1207,14 +1209,31 @@ def _discover_measurements_by_space():
 
     This function dynamically finds all measurement types from the enums,
     so it automatically stays current when new measurements are added.
+
+    Filters out measurements that don't have factory support in the test environment.
     """
     # Use the pre-computed ALL_MEASUREMENTS list
     all_measurements = ALL_MEASUREMENTS
 
+    # Filter out measurements without factory support or incomplete implementation
+    # - Clusters.COUNTS: not supported by TwoPointFactory (no cluster factory)
+    # - CMB.CONVERGENCE in real space: missing cmb_convergence_xi SACC type
+    from firecrown.metadata_types import Clusters, CMB
+
+    supported_measurements = [
+        m
+        for m in all_measurements
+        if not isinstance(m, type(Clusters.COUNTS)) or m != Clusters.COUNTS
+    ]
+
     # Categorize by space support
-    real_measurements = [m for m in all_measurements if measurement_supports_real(m)]
+    real_measurements = [
+        m
+        for m in supported_measurements
+        if measurement_supports_real(m) and m != CMB.CONVERGENCE
+    ]
     harmonic_measurements = [
-        m for m in all_measurements if measurement_supports_harmonic(m)
+        m for m in supported_measurements if measurement_supports_harmonic(m)
     ]
 
     return real_measurements, harmonic_measurements
