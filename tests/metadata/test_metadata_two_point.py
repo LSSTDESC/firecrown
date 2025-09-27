@@ -791,7 +791,7 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurements={CMB.CONVERGENCE},
+        measurements={Clusters.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
@@ -800,12 +800,12 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
         measurements={Galaxies.COUNTS},
     )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=CMB.CONVERGENCE, y_measurement=Galaxies.COUNTS
+        x=x, y=y, x_measurement=Clusters.COUNTS, y_measurement=Galaxies.COUNTS
     )
     cells = TwoPointHarmonic(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
-        match="No CMBConvergenceFactory found for type_source default.",
+        match="Factory not found for measurement .*, it is not supported.",
     ):
         TwoPoint.from_metadata([cells], tp_factory)
 
