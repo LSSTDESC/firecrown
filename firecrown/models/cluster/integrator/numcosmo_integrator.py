@@ -3,8 +3,8 @@
 This module holds the NumCosmo implementation of the integrator classes
 """
 
+from collections.abc import Callable
 from enum import Enum
-from typing import Callable
 
 import numpy as np
 import numpy.typing as npt
@@ -54,7 +54,7 @@ class NumCosmoIntegrator(Integrator):
         res = Ncm.Vector.new(1)
         err = Ncm.Vector.new(1)
 
-        bl, bu = zip(*self.integral_bounds)
+        bl, bu = zip(*self.integral_bounds, strict=False)
         int_nd.eval(Ncm.Vector.new_array(bl), Ncm.Vector.new_array(bu), res, err)
         return res.get(0)  # pylint: disable-msg=no-member
 

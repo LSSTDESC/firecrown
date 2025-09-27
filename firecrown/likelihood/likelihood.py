@@ -59,7 +59,7 @@ import sys
 import types
 import warnings
 from abc import abstractmethod
-from typing import Mapping, Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 import numpy.typing as npt
@@ -301,11 +301,9 @@ class NamedParameters:
             elif isinstance(value, Sequence):
                 if all(isinstance(v, float) for v in value):
                     self.data = dict(self.data, **{key: np.array(value)})
-                elif all(isinstance(v, bool) for v in value):
-                    self.data = dict(
-                        self.data, **{key: np.array(value, dtype=np.int64)}
-                    )
-                elif all(isinstance(v, int) for v in value):
+                elif all(isinstance(v, bool) for v in value) or all(
+                    isinstance(v, int) for v in value
+                ):
                     self.data = dict(
                         self.data, **{key: np.array(value, dtype=np.int64)}
                     )
@@ -333,9 +331,7 @@ class NamedParameters:
             if isinstance(value, (str, float, int, bool)):
                 basic_dict[key] = value
             elif isinstance(value, np.ndarray):
-                if value.dtype == np.int64:
-                    basic_dict[key] = value.ravel().tolist()
-                elif value.dtype == np.float64:
+                if value.dtype == np.int64 or value.dtype == np.float64:
                     basic_dict[key] = value.ravel().tolist()
                 else:
                     raise ValueError(f"Invalid type for sequence value: {value}")

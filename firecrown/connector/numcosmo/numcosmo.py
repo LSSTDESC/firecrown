@@ -7,22 +7,19 @@ be used without an installation of NumCosmo.
 import warnings
 
 import numpy as np
+from numcosmo_py import GObject, Nc, Ncm, dict_to_var_dict, var_dict_to_dict
 
-from numcosmo_py import Nc, Ncm, GObject, var_dict_to_dict, dict_to_var_dict
-
-from firecrown.likelihood.likelihood import load_likelihood
-from firecrown.likelihood.likelihood import Likelihood
-from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.parameters import ParamsMap, handle_unused_params
-from firecrown.connector.mapping import Mapping, build_ccl_background_dict
-from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import (
     CCLCalculatorArgs,
     CCLCreationMode,
     PoweSpecAmplitudeParameter,
 )
+from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.connector.numcosmo import helpers
+from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap, handle_unused_params
 
 
 class MappingNumCosmo(GObject.Object):

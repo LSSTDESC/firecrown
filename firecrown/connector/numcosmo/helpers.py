@@ -1,7 +1,8 @@
 """Helper functions and classes for the NumCosmo connector."""
 
-from typing_extensions import assert_never
 from numcosmo_py import Nc
+from typing_extensions import assert_never
+
 import firecrown.ccl_factory as fac
 
 
@@ -29,8 +30,7 @@ def get_amplitude_parameters(
     p_ml: None | Nc.PowspecML,
     hi_cosmo: Nc.HICosmo,
 ) -> tuple[float | None, float | None]:
-    """
-    Calculate the amplitude parameters for CCL.
+    """Calculate the amplitude parameters for CCL.
 
     :param ccl_factory: the CCL factory object
     :param p_ml: the NumCosmo PowspecML object, or None

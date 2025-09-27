@@ -4,3 +4,154 @@ exclude_also = [
    '^ +assert_never\(.*?\)$',
    '^ +case _ as unreachable.*:$',
 ]
+
+# Ruff configuration - replaces flake8 and pylint (black still used for formatting)
+[tool.ruff]
+line-length = 88
+target-version = "py310"
+
+[tool.ruff.lint]
+# Enable rules equivalent to flake8 + pylint + additional useful rules
+select = [
+    # Pycodestyle (replaces flake8 E/W)
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    
+    # Pyflakes (replaces flake8 F)
+    "F",      # Pyflakes
+    
+    # mccabe (replaces flake8 complexity)
+    "C90",    # mccabe complexity
+    
+    # isort (import sorting)
+    "I",      # isort
+    
+    # pydocstyle (docstring checks, replaces some pylint docstring rules)
+    "D",      # pydocstyle
+    
+    # pyupgrade (modernize Python code)
+    "UP",     # pyupgrade
+    
+    # pylint-like rules
+    "PL",     # Pylint
+    
+    # Additional useful rules
+    "B",      # flake8-bugbear (bug and design problems)
+    "A",      # flake8-builtins (builtin shadowing)
+    "C4",     # flake8-comprehensions
+    "DTZ",    # flake8-datetimez
+    "T10",    # flake8-debugger
+    "DJ",     # flake8-django
+    "EM",     # flake8-errmsg
+    "EXE",    # flake8-executable
+    "FA",     # flake8-future-annotations
+    "ICN",    # flake8-import-conventions
+    "G",      # flake8-logging-format
+    "INP",    # flake8-no-pep420
+    "PIE",    # flake8-pie
+    "T20",    # flake8-print
+    "PYI",    # flake8-pyi
+    "PT",     # flake8-pytest-style
+    "RSE",    # flake8-raise
+    "RET",    # flake8-return
+    "SLF",    # flake8-self
+    "SLOT",   # flake8-slots
+    "SIM",    # flake8-simplify
+    "TID",    # flake8-tidy-imports
+    "TCH",    # flake8-type-checking
+    "INT",    # flake8-gettext
+    "ARG",    # flake8-unused-arguments
+    "PTH",    # flake8-use-pathlib
+    "TD",     # flake8-todos
+    "FIX",    # flake8-fixme
+    "ERA",    # eradicate (commented-out code)
+    "PD",     # pandas-vet
+    "PGH",    # pygrep-hooks
+    "NPY",    # NumPy-specific rules
+    "RUF",    # Ruff-specific rules
+]
+
+# Ignore rules to match existing flake8/pylint configuration
+ignore = [
+    # Docstring rules that flake8 ignores
+    "D107",   # Missing docstring in __init__ (matches flake8 ignore)
+    "D401",   # First line should be imperative (matches flake8 ignore)  
+    "D402",   # First line should not be signature (matches flake8 ignore)
+    
+    # Additional common ignores for scientific code
+    "PLR0913", # Too many arguments (scientific functions often need many params)
+    "PLR0915", # Too many statements (complex scientific calculations)
+    "PLR2004", # Magic value (scientific constants are common)
+    "C901",    # Too complex (use max-complexity setting instead)
+    
+    # Import rules that may be too strict for scientific packages
+    "F403",    # Star imports (common in scientific packages)
+    "F405",    # Name may be undefined from star imports
+    
+    # Rules that may conflict with black formatting or are too strict
+    "COM812",  # Trailing comma missing (conflicts with black)
+    "COM819",  # Trailing comma prohibited (conflicts with black)
+    "ISC001",  # Implicitly concatenated string literals (can conflict with formatter)
+    "Q000",    # Double quotes found but single quotes preferred
+    "Q001",    # Single quotes found but double quotes preferred
+    "Q002",    # Docstring should use double quotes
+    "Q003",    # Docstring should use single quotes
+]
+
+# Set complexity limit to match pylint
+mccabe.max-complexity = 10
+
+[tool.ruff.lint.per-file-ignores]
+# Test files don't need docstrings and can be more flexible
+"tests/**/*.py" = [
+    "D100",    # Missing docstring in public module
+    "D102",    # Missing docstring in public method
+    "D103",    # Missing docstring in public function
+    "D104",    # Missing docstring in public package
+    "D200",    # One-line docstring should fit on one line
+    "D202",    # No blank lines allowed after function docstring
+    "D205",    # 1 blank line required between summary and description
+    "D209",    # Multi-line docstring closing quotes should be on separate line
+    "D212",    # Multi-line docstring summary should start at the first line
+    "D213",    # Multi-line docstring summary should start at the second line
+    "D400",    # First line should end with a period
+    "PLR2004", # Magic values OK in tests
+    "S101",    # Use of assert OK in tests
+    "ARG001",  # Unused function arguments OK in tests/fixtures
+    "PLR0913", # Too many arguments OK in test functions
+]
+
+# Examples can have less strict rules
+"examples/**/*.py" = [
+    "D100", "D102", "D103", "D104",  # Docstring requirements relaxed
+    "PLR0913",  # Too many arguments
+    "PLR0915",  # Too many statements  
+    "E501",     # Line too long (matches existing per-file ignore)
+    "T201",     # Print statements OK in examples
+    "PLR2004",  # Magic values OK in examples
+    "INP001",   # Implicit namespace packages OK
+]
+
+# Allow specific patterns in different directories
+"pylint_plugins/**/*.py" = [
+    "PLR0913",  # Many arguments OK for plugins
+]
+
+# Command-line utilities in fctools legitimately use print() for user output
+"fctools/**/*.py" = [
+    "T201",     # Print statements OK in CLI tools (coverage_summary, print_code, etc.)
+]
+
+[tool.ruff.lint.pydocstyle]
+# Use Google docstring convention (common in scientific Python)
+convention = "google"
+
+[tool.ruff.lint.isort]
+# Group imports properly for scientific packages
+known-first-party = ["firecrown"]
+known-third-party = ["numpy", "scipy", "pandas", "matplotlib", "astropy", "pyccl", "sacc", "cosmosis", "cobaya"]
+
+# Black configuration - keep existing formatting tool
+[tool.black]
+line-length = 88
+target-version = ['py310']

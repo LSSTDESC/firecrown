@@ -74,11 +74,10 @@ def test_both_tracers_have_hm(mock_tools, mock_tracer_with_hm):
     # Configure addition operation
     mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
 
-    with patch(
-        "pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h
-    ) as mock_halomod, patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
-    ) as mock_from_func:
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h) as mock_halomod,
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h) as mock_from_func,
+    ):
 
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
@@ -104,9 +103,11 @@ def test_only_first_tracer_has_hm(
     mock_pk_total = Mock(spec=pyccl.Pk2D)
     mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
 
-    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
-    ), patch("pyccl.halos.HaloProfileNFW") as mock_nfw:
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
+        patch("pyccl.halos.HaloProfileNFW") as mock_nfw,
+    ):
 
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
@@ -128,9 +129,11 @@ def test_only_second_tracer_has_hm(
     mock_pk_total = Mock(spec=pyccl.Pk2D)
     mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
 
-    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
-    ), patch("pyccl.halos.HaloProfileNFW") as mock_nfw:
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
+        patch("pyccl.halos.HaloProfileNFW") as mock_nfw,
+    ):
 
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
@@ -186,9 +189,10 @@ def test_ia_bias_exponent_both_hm(mock_tools, mock_tracer_with_hm):
     mock_pk_total = Mock(spec=pyccl.Pk2D)
     mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
 
-    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
-    ) as mock_from_func:
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h) as mock_from_func,
+    ):
 
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
@@ -231,9 +235,13 @@ def test_halo_profile_nfw_configuration(
     # Mock the HaloProfileNFW creation
     mock_other_profile = Mock(spec=pyccl.halos.HaloProfileNFW)
 
-    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
-    ), patch("pyccl.halos.HaloProfileNFW", return_value=mock_other_profile) as mock_nfw:
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
+        patch(
+            "pyccl.halos.HaloProfileNFW", return_value=mock_other_profile
+        ) as mock_nfw,
+    ):
 
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
@@ -262,8 +270,9 @@ def test_pk2d_addition_result(mock_tools, mock_tracer_with_hm):
     # Configure the addition to return our mock total
     mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
 
-    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
     ):
 
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)

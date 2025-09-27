@@ -19,3 +19,5 @@ two_point_generators_files/
 _site
 systematics_files/
 _freeze/
+
+**/*.quarto_ipynb

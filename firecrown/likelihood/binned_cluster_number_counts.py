@@ -5,10 +5,10 @@ from __future__ import annotations
 import sacc
 
 from firecrown.data_types import TheoryVector
+from firecrown.likelihood.binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster.abundance_data import AbundanceData
 from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.likelihood.binned_cluster import BinnedCluster
 
 
 class BinnedClusterNumberCounts(BinnedCluster):
@@ -73,7 +73,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
         assert tools.cluster_abundance is not None
 
         mean_values = []
-        for this_bin, counts in zip(self.bins, cluster_counts):
+        for this_bin, counts in zip(self.bins, cluster_counts, strict=False):
             total_observable = self.cluster_recipe.evaluate_theory_prediction(
                 tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
             )

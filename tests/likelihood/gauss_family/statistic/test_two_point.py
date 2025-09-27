@@ -849,8 +849,9 @@ def test_calculate_pk_with_halo_model():
     mock_pk_total = Mock(spec=pyccl.Pk2D)
     mock_pk_1h.__add__ = Mock(return_value=mock_pk_total)
 
-    with patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h), patch(
-        "pyccl.Pk2D.from_function", return_value=mock_pk_2h
+    with (
+        patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
+        patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
     ):
 
         # This should trigger the elif tracer0.has_hm or tracer1.has_hm: branch

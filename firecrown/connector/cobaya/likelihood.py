@@ -8,20 +8,22 @@ of a Cobaya likelihood.
 
 import numpy as np
 import numpy.typing as npt
-
-from cobaya.likelihood import Likelihood
 import pyccl
+from cobaya.likelihood import Likelihood
 from pyccl.cosmology import Pk2D
+
+from firecrown.ccl_factory import (
+    CCLCalculatorArgs,
+    CCLCreationMode,
+    PoweSpecAmplitudeParameter,
+)
 
 # See comment in compute_pyccl_args_options
 # from pyccl.pyutils import loglin_spacing
-
-from firecrown.connector.mapping import mapping_builder, MappingCAMB, Mapping
-from firecrown.ccl_factory import CCLCalculatorArgs
-from firecrown.likelihood.likelihood import load_likelihood, NamedParameters
+from firecrown.connector.mapping import Mapping, MappingCAMB, mapping_builder
 from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
+from firecrown.likelihood.likelihood import NamedParameters, load_likelihood
 from firecrown.parameters import ParamsMap, handle_unused_params
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter, CCLCreationMode
 from firecrown.updatable import get_default_params_map
 
 
@@ -88,15 +90,12 @@ class LikelihoodConnector(Likelihood):
         self.stop_at_error = True
         if not hasattr(self, "build_parameters"):
             build_parameters = NamedParameters()
+        elif isinstance(self.build_parameters, dict):
+            build_parameters = NamedParameters(self.build_parameters)
         else:
-            if isinstance(self.build_parameters, dict):
-                build_parameters = NamedParameters(self.build_parameters)
-            else:
-                if not isinstance(self.build_parameters, NamedParameters):
-                    raise TypeError(
-                        "build_parameters must be a NamedParameters or dict"
-                    )
-                build_parameters = self.build_parameters
+            if not isinstance(self.build_parameters, NamedParameters):
+                raise TypeError("build_parameters must be a NamedParameters or dict")
+            build_parameters = self.build_parameters
 
         self.likelihood, self.tools = load_likelihood(
             self.firecrownIni, build_parameters
