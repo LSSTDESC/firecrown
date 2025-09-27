@@ -753,7 +753,9 @@ class BinRule(ABC):
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
-        """Return True if the pair (z1, z2, measurement1, measurement2) should be kept."""
+        """Check if the pair (z1, z2, measurement1, measurement2) should be kept.
+
+        Return True if the pair (z1, z2, measurement1, measurement2) should be kept."""
 
     def __and__(self, other: "BinRule") -> "BinRule":
         """Return the and combinator for two-point measurements."""
@@ -929,8 +931,8 @@ class FirstNeighborBinRule(BinRule):
     """Class defining the first neighbor combinator for two-point measurements.
 
     The first neighbor combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are from the same first neighbor
-    are kept.
+    `TwoPointXY` objects, such that only observations that are from the same first
+    neighbor are kept.
     """
 
     def keep(
