@@ -1777,7 +1777,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
 
 
 def test_bin_rules_auto(all_harmonic_bins):
-    auto_bin_rule = mt.AutoBinRule()
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasureBinRule()
 
     two_point_xy_combinations = make_all_bin_rule_combinations(
         all_harmonic_bins, auto_bin_rule
@@ -1790,7 +1790,7 @@ def test_bin_rules_auto(all_harmonic_bins):
 
 
 def test_bin_rules_auto_source(all_harmonic_bins):
-    auto_bin_rule = mt.AutoBinRule()
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasureBinRule()
     source_bin_rule = mt.SourceBinRule()
 
     two_point_xy_combinations = make_all_bin_rule_combinations(
@@ -1805,7 +1805,7 @@ def test_bin_rules_auto_source(all_harmonic_bins):
 
 
 def test_bin_rules_auto_lens(all_harmonic_bins):
-    auto_bin_rule = mt.AutoBinRule()
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasureBinRule()
     lens_bin_rule = mt.LensBinRule()
 
     two_point_xy_combinations = make_all_bin_rule_combinations(
@@ -1820,7 +1820,7 @@ def test_bin_rules_auto_lens(all_harmonic_bins):
 
 
 def test_bin_rules_auto_source_lens(all_harmonic_bins):
-    auto_bin_rule = mt.AutoBinRule()
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasureBinRule()
     source_bin_rule = mt.SourceBinRule()
     lens_bin_rule = mt.LensBinRule()
 
@@ -1857,3 +1857,37 @@ def test_bin_rules_not_named(all_harmonic_bins):
     assert len(two_point_xy_combinations) == 6
     for two_point_xy in two_point_xy_combinations:
         assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} != {"bin_2", "bin_1"}
+
+
+def test_bin_rules_first_neighbor(many_harmonic_bins):
+    first_neighbor_bin_rule = mt.FirstNeighborBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        many_harmonic_bins, first_neighbor_bin_rule
+    )
+    # FirstNeighborBinRule should create all first neighbor combinations
+    assert len(two_point_xy_combinations) == 31
+    for two_point_xy in two_point_xy_combinations:
+        assert re.match(r".*?\d+$", two_point_xy.x.bin_name)
+        assert re.match(r".*?\d+$", two_point_xy.y.bin_name)
+        index1 = int(re.findall(r"\d+$", two_point_xy.x.bin_name)[0])
+        index2 = int(re.findall(r"\d+$", two_point_xy.y.bin_name)[0])
+        assert abs(index1 - index2) <= 1
+
+
+def test_bin_rules_first_neighbor_no_auto(many_harmonic_bins):
+    first_neighbor_bin_rule = mt.FirstNeighborBinRule()
+    auto_bin_rule = mt.AutoNameBinRule()
+    first_neighbor_no_auto_bin_rule = first_neighbor_bin_rule & ~auto_bin_rule
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        many_harmonic_bins, first_neighbor_no_auto_bin_rule
+    )
+    # FirstNeighborBinRule should create all first neighbor combinations
+    assert len(two_point_xy_combinations) == 16
+    for two_point_xy in two_point_xy_combinations:
+        assert re.match(r".*?\d+$", two_point_xy.x.bin_name)
+        assert re.match(r".*?\d+$", two_point_xy.y.bin_name)
+        index1 = int(re.findall(r"\d+$", two_point_xy.x.bin_name)[0])
+        index2 = int(re.findall(r"\d+$", two_point_xy.y.bin_name)[0])
+        assert abs(index1 - index2) == 1

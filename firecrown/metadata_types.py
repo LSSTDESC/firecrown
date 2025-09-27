@@ -755,7 +755,8 @@ class BinRule(ABC):
     ) -> bool:
         """Check if the pair (z1, z2, measurement1, measurement2) should be kept.
 
-        Return True if the pair (z1, z2, measurement1, measurement2) should be kept."""
+        Return True if the pair (z1, z2, measurement1, measurement2) should be kept.
+        """
 
     def __and__(self, other: "BinRule") -> "BinRule":
         """Return the and combinator for two-point measurements."""
@@ -867,11 +868,11 @@ class NamedBinRule(BinRule):
         ) in self.names
 
 
-class AutoBinRule(BinRule):
+class AutoNameBinRule(BinRule):
     """Class defining the auto-source combinator for two-point measurements.
 
     The auto-source combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only auto-correlations are kept.
+    `TwoPointXY` objects, such that only observations with the same bin_name are kept.
     """
 
     def keep(
@@ -882,7 +883,25 @@ class AutoBinRule(BinRule):
         measurement2: Measurement,
     ) -> bool:
         """Return True if both are the same measurement."""
-        return (z1.bin_name == z2.bin_name) and (measurement1 == measurement2)
+        return z1.bin_name == z2.bin_name
+
+
+class AutoMeasureBinRule(BinRule):
+    """Class defining the auto-measurement combinator for two-point measurements.
+
+    The auto-measurement combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations with the same measurement are kept.
+    """
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        measurement1: Measurement,
+        measurement2: Measurement,
+    ) -> bool:
+        """Return True if both are the same measurement."""
+        return measurement1 == measurement2
 
 
 class SourceBinRule(BinRule):
@@ -895,8 +914,8 @@ class SourceBinRule(BinRule):
 
     def keep(
         self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
+        _z1: InferredGalaxyZDist,
+        _z2: InferredGalaxyZDist,
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
@@ -916,8 +935,8 @@ class LensBinRule(BinRule):
 
     def keep(
         self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
+        _z1: InferredGalaxyZDist,
+        _z2: InferredGalaxyZDist,
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
@@ -939,16 +958,41 @@ class FirstNeighborBinRule(BinRule):
         self,
         z1: InferredGalaxyZDist,
         z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
+        _measurement1: Measurement,
+        _measurement2: Measurement,
     ) -> bool:
         """Return True if the bin names are equal or one is one bin above the other."""
         bin_name1, bin_name2 = z1.bin_name, z2.bin_name
         # Extract both suffixes as numbers using a regex to match all final digits
-        assert re.match(r"\d+$", bin_name1)
-        assert re.match(r"\d+$", bin_name2)
+        if not (re.match(r".*?\d+$", bin_name1) and re.match(r".*?\d+$", bin_name2)):
+            return False
         suffix1 = int(re.findall(r"\d+$", bin_name1)[0])
         suffix2 = int(re.findall(r"\d+$", bin_name2)[0])
         return (
             (suffix1 == suffix2) or (suffix1 == suffix2 + 1) or (suffix1 + 1 == suffix2)
+        )
+
+
+class TypeSourceBinRule(BinRule):
+    """Class defining the type-source combinator for two-point measurements.
+
+    The type-source combinator is used to combine several `InferredGalaxyZDist` into
+    `TwoPointXY` objects, such that only observations that are from the same type-source
+    are kept.
+    """
+
+    def __init__(self, type_source: TypeSource):
+        """Initialize the TypeSourceBinRule object."""
+        self.type_source = type_source
+
+    def keep(
+        self,
+        z1: InferredGalaxyZDist,
+        z2: InferredGalaxyZDist,
+        _measurement1: Measurement,
+        _measurement2: Measurement,
+    ) -> bool:
+        """Return True if the measurements are both type-source measurements."""
+        return (z1.type_source == z2.type_source) and (
+            self.type_source == z1.type_source
         )
