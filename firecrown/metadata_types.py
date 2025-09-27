@@ -889,8 +889,9 @@ class AutoNameBinRule(BinRule):
 class AutoMeasureBinRule(BinRule):
     """Class defining the auto-measurement combinator for two-point measurements.
 
-    The auto-measurement combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations with the same measurement are kept.
+    The auto-measurement combinator is used to combine several `InferredGalaxyZDist`
+    into `TwoPointXY` objects, such that only observations with the same measurement
+    are kept.
     """
 
     def keep(
