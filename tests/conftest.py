@@ -213,7 +213,7 @@ def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
     name="all_harmonic_bins",
 )
 def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
-    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    """Generate a list of InferredGalaxyZDist objects with 2 bins."""
     z = np.linspace(0.0, 1.0, 256)
     dndzs = [
         np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
@@ -224,6 +224,25 @@ def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
             bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
         )
         for i in range(2)
+        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
+    ]
+
+
+@pytest.fixture(
+    name="many_harmonic_bins",
+)
+def make_many_harmonic_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 5 bins."""
+    z = np.linspace(0.0, 1.0, 256)
+    dndzs = [
+        np.exp(-0.5 * (z - mu) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05)
+        for mu in np.linspace(0.5, 0.9, 5)
+    ]
+    return [
+        InferredGalaxyZDist(
+            bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+        )
+        for i in range(5)
         for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
     ]
 
