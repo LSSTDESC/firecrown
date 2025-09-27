@@ -331,7 +331,7 @@ class NamedParameters:
             if isinstance(value, (str, float, int, bool)):
                 basic_dict[key] = value
             elif isinstance(value, np.ndarray):
-                if value.dtype == np.int64 or value.dtype == np.float64:
+                if value.dtype in (np.int64, np.float64):
                     basic_dict[key] = value.ravel().tolist()
                 else:
                     raise ValueError(f"Invalid type for sequence value: {value}")
