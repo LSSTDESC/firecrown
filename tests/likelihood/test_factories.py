@@ -769,9 +769,10 @@ def test_build_from_metadata_harmonic(
 
 
 def test_build_from_metadata_harmonic_cwindow(
-    empty_factory_harmonic: TwoPointFactory, two_point_cwindow: TwoPointHarmonic
+    empty_factory_harmonic: TwoPointFactory,
+    optimized_two_point_cwindow: TwoPointHarmonic,
 ) -> None:
-    two_points = empty_factory_harmonic.from_metadata([two_point_cwindow])
+    two_points = empty_factory_harmonic.from_metadata([optimized_two_point_cwindow])
     assert len(two_points) == 1
     two_point0 = two_points[0]
     assert isinstance(two_point0, TwoPoint)
