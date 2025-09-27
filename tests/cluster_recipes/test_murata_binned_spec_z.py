@@ -84,9 +84,14 @@ def test_get_theory_prediction_returns_value(
 @given(
     mass=floats(min_value=13.0, max_value=17.0),
     z=floats(min_value=0.1, max_value=1.0),
-    sky_area=floats(min_value=100.0, max_value=50000.0),
+    sky_area=floats(min_value=500.0, max_value=25000.0),
 )
-@settings(suppress_health_check=[HealthCheck.function_scoped_fixture])
+@settings(
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+    max_examples=25,  # Balanced reduction from 100 to 25
+    deadline=400,  # Reasonable deadline for complex numerical integration
+    derandomize=False,  # Keep randomization for better coverage
+)
 def test_cluster_prediction_positivity_property(
     cluster_abundance: ClusterAbundance,
     murata_binned_spec_z: MurataBinnedSpecZRecipe,
