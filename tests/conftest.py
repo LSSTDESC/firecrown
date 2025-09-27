@@ -37,7 +37,8 @@ from firecrown.data_types import TwoPointMeasurement
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.two_point as tp
-import firecrown.likelihood.cmb as cmb
+from firecrown.likelihood import cmb
+from firecrown.metadata_types import Clusters, CMB
 
 
 def pytest_addoption(parser):
@@ -1218,7 +1219,6 @@ def _discover_measurements_by_space():
     # Filter out measurements without factory support or incomplete implementation
     # - Clusters.COUNTS: not supported by TwoPointFactory (no cluster factory)
     # - CMB.CONVERGENCE in real space: missing cmb_convergence_xi SACC type
-    from firecrown.metadata_types import Clusters, CMB
 
     supported_measurements = [
         m
