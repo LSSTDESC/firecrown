@@ -437,7 +437,7 @@ def test_extract_all_tracers_inconsistent_lens_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
+        match=("Invalid SACC file, tracer names do not respect the naming convention."),
     ):
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
@@ -449,7 +449,7 @@ def test_extract_all_tracers_inconsistent_source_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
+        match=("Invalid SACC file, tracer names do not respect the naming convention."),
     ):
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
