@@ -3,13 +3,20 @@
 This module contains metadata types definitions.
 """
 
-from abc import abstractmethod, ABC
 from typing import Any
 from itertools import chain, combinations_with_replacement
 from dataclasses import dataclass
 import re
 from enum import StrEnum, Enum, auto
 
+from pydantic import (
+    BaseModel,
+    SerializeAsAny,
+    ValidatorFunctionWrapHandler,
+    GetCoreSchemaHandler,
+    field_validator,
+    field_serializer,
+)
 from pydantic_core import core_schema
 import numpy as np
 import numpy.typing as npt
@@ -738,39 +745,78 @@ class TwoPointFilterMethod(YAMLSerializable, StrEnum):
         )
 
 
-class BinRule(ABC):
+RULE_REGISTRY: dict[str, type["BinRule"]] = {}
+
+
+def register_rule(cls: type["BinRule"]) -> type["BinRule"]:
+    """Register a new bin rule class using its Pydantic `kind` default."""
+    assert issubclass(cls, BaseModel)
+    kind_field = cls.model_fields.get("kind")
+    if kind_field is None or kind_field.default is None:
+        raise ValueError(f"{cls.__name__} has no default for 'kind'")
+    kind_value = kind_field.default
+    RULE_REGISTRY[kind_value] = cls
+    return cls
+
+
+class BinRule(BaseModel):
     """Class defining the bin combinator for two-point measurements.
 
     The bin combinator is used to combine several `InferredGalaxyZDist` into
     `TwoPointXY` objects.
     """
 
-    @abstractmethod
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
-        """Check if the pair (z1, z2, measurement1, measurement2) should be kept.
+    kind: str
 
-        Return True if the pair (z1, z2, measurement1, measurement2) should be kept.
-        """
+    def keep(self, _z1, _z2, _m1, _m2) -> bool:
+        """Return True if the pair (z1, z2, m1, m2) should be kept."""
+        raise NotImplementedError
+
+    # factory
+    @classmethod
+    def parse(cls, data: dict) -> "BinRule":
+        """Parse the bin rule from a dictionary."""
+        kind = data["kind"]
+        return RULE_REGISTRY[kind].model_validate(data)
 
     def __and__(self, other: "BinRule") -> "BinRule":
         """Return the and combinator for two-point measurements."""
-        return AndBinRule(self, other)
+        return AndBinRule(bin_rules=[self, other])
 
     def __or__(self, other: "BinRule") -> "BinRule":
         """Return the or combinator for two-point measurements."""
-        return OrBinRule(self, other)
+        return OrBinRule(bin_rules=[self, other])
 
     def __invert__(self) -> "BinRule":
         """Return the inverse of the bin rule."""
-        return NotBinRule(self)
+        return NotBinRule(bin_rule=self)
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler, /
+    ) -> core_schema.CoreSchema:
+        """Get the Pydantic core schema for the BinRule class."""
+
+        def dispatch_rule(v: Any, dispatch_handler: ValidatorFunctionWrapHandler):
+            if isinstance(v, BinRule):
+                return v
+
+            if cls == BinRule:
+                assert isinstance(v, dict)
+                assert "kind" in v
+                kind = v["kind"]
+                concrete_cls = RULE_REGISTRY.get(kind)
+                if concrete_cls is None:
+                    raise ValueError(f"Unknown kind {kind}")
+                return concrete_cls.model_validate(v)
+            return dispatch_handler(v)
+
+        return core_schema.no_info_wrap_validator_function(
+            dispatch_rule, handler(source_type)
+        )
 
 
+@register_rule
 class AndBinRule(BinRule):
     """Class defining the and combinator for two-point measurements.
 
@@ -778,8 +824,8 @@ class AndBinRule(BinRule):
     only observations that pass all of the `BinRule` objects are kept.
     """
 
-    def __init__(self, *bin_rules: BinRule):
-        self.bin_rules = bin_rules
+    kind: str = "and"
+    bin_rules: list[SerializeAsAny[BinRule]]
 
     def keep(
         self,
@@ -794,7 +840,18 @@ class AndBinRule(BinRule):
             for bin_rule in self.bin_rules
         )
 
+    def model_post_init(self, _, /) -> None:
+        """Flatten nested AndBinRules."""
+        flattened = []
+        for br in self.bin_rules:
+            if isinstance(br, AndBinRule):
+                flattened.extend(br.bin_rules)
+            else:
+                flattened.append(br)
+        object.__setattr__(self, "bin_rules", flattened)
 
+
+@register_rule
 class OrBinRule(BinRule):
     """Class defining the or combinator for two-point measurements.
 
@@ -802,8 +859,8 @@ class OrBinRule(BinRule):
     only observations that pass at least one of the `BinRule` objects are kept.
     """
 
-    def __init__(self, *bin_rules: BinRule):
-        self.bin_rules = bin_rules
+    kind: str = "or"
+    bin_rules: list[SerializeAsAny[BinRule]]
 
     def keep(
         self,
@@ -818,7 +875,18 @@ class OrBinRule(BinRule):
             for bin_rule in self.bin_rules
         )
 
+    def model_post_init(self, _, /) -> None:
+        """Flatten nested OrBinRules."""
+        flattened = []
+        for br in self.bin_rules:
+            if isinstance(br, OrBinRule):
+                flattened.extend(br.bin_rules)
+            else:
+                flattened.append(br)
+        object.__setattr__(self, "bin_rules", flattened)
 
+
+@register_rule
 class NotBinRule(BinRule):
     """Class defining the not combinator for two-point measurements.
 
@@ -826,8 +894,8 @@ class NotBinRule(BinRule):
     only observations that do not pass the `BinRule` objects are kept.
     """
 
-    def __init__(self, combinator: BinRule):
-        self.combinator = combinator
+    kind: str = "not"
+    bin_rule: SerializeAsAny[BinRule]
 
     def keep(
         self,
@@ -837,12 +905,13 @@ class NotBinRule(BinRule):
         measurement2: Measurement,
     ) -> bool:
         """Return the negation of keep."""
-        return not self.combinator.keep(z1, z2, measurement1, measurement2)
+        return not self.bin_rule.keep(z1, z2, measurement1, measurement2)
 
 
 # Concrete BinRule classes
 
 
+@register_rule
 class NamedBinRule(BinRule):
     """Class defining the named combinator for two-point measurements.
 
@@ -850,9 +919,22 @@ class NamedBinRule(BinRule):
     `TwoPointXY` objects, such that only observations that are named are kept.
     """
 
-    def __init__(self, names: list[tuple[str, str]]):
-        """Initialize the NamedBinRule object."""
-        self.names = names
+    kind: str = "named"
+    names: list[tuple[str, str]]
+
+    @field_serializer("names")
+    @classmethod
+    def serialize_names(cls, value: list[tuple[str, str]]) -> list[list[str]]:
+        """Serialize the names parameter."""
+        return [list(name) for name in value]
+
+    @field_validator("names")
+    @classmethod
+    def validate_names(cls, value: list[list[str]]) -> list[tuple[str, str]]:
+        """Validate the names parameter."""
+        for names in value:
+            assert len(names) == 2
+        return [(names[0], names[1]) for names in value]
 
     def keep(
         self,
@@ -868,6 +950,7 @@ class NamedBinRule(BinRule):
         ) in self.names
 
 
+@register_rule
 class AutoNameBinRule(BinRule):
     """Class defining the auto-source combinator for two-point measurements.
 
@@ -875,18 +958,21 @@ class AutoNameBinRule(BinRule):
     `TwoPointXY` objects, such that only observations with the same bin_name are kept.
     """
 
+    kind: str = "auto-name"
+
     def keep(
         self,
         z1: InferredGalaxyZDist,
         z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
+        _measurement1: Measurement,
+        _measurement2: Measurement,
     ) -> bool:
         """Return True if both are the same measurement."""
         return z1.bin_name == z2.bin_name
 
 
-class AutoMeasureBinRule(BinRule):
+@register_rule
+class AutoMeasurementBinRule(BinRule):
     """Class defining the auto-measurement combinator for two-point measurements.
 
     The auto-measurement combinator is used to combine several `InferredGalaxyZDist`
@@ -894,10 +980,12 @@ class AutoMeasureBinRule(BinRule):
     are kept.
     """
 
+    kind: str = "auto-measurement"
+
     def keep(
         self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
+        _z1: InferredGalaxyZDist,
+        _z2: InferredGalaxyZDist,
         measurement1: Measurement,
         measurement2: Measurement,
     ) -> bool:
@@ -905,6 +993,7 @@ class AutoMeasureBinRule(BinRule):
         return measurement1 == measurement2
 
 
+@register_rule
 class SourceBinRule(BinRule):
     """Class defining the source combinator for two-point measurements.
 
@@ -912,6 +1001,8 @@ class SourceBinRule(BinRule):
     `TwoPointXY` objects, such that only observations that are from the same source
     are kept.
     """
+
+    kind: str = "source"
 
     def keep(
         self,
@@ -926,6 +1017,7 @@ class SourceBinRule(BinRule):
         )
 
 
+@register_rule
 class LensBinRule(BinRule):
     """Class defining the lens combinator for two-point measurements.
 
@@ -933,6 +1025,8 @@ class LensBinRule(BinRule):
     `TwoPointXY` objects, such that only observations that are from the same lens
     are kept.
     """
+
+    kind: str = "lens"
 
     def keep(
         self,
@@ -947,6 +1041,7 @@ class LensBinRule(BinRule):
         )
 
 
+@register_rule
 class FirstNeighborBinRule(BinRule):
     """Class defining the first neighbor combinator for two-point measurements.
 
@@ -954,6 +1049,8 @@ class FirstNeighborBinRule(BinRule):
     `TwoPointXY` objects, such that only observations that are from the same first
     neighbor are kept.
     """
+
+    kind: str = "first-neighbor"
 
     def keep(
         self,
@@ -974,6 +1071,7 @@ class FirstNeighborBinRule(BinRule):
         )
 
 
+@register_rule
 class TypeSourceBinRule(BinRule):
     """Class defining the type-source combinator for two-point measurements.
 
@@ -982,9 +1080,9 @@ class TypeSourceBinRule(BinRule):
     are kept.
     """
 
-    def __init__(self, type_source: TypeSource):
-        """Initialize the TypeSourceBinRule object."""
-        self.type_source = type_source
+    kind: str = "type-source"
+
+    type_source: TypeSource
 
     def keep(
         self,
