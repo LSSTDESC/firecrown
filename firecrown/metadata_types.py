@@ -798,6 +798,8 @@ class BinRule(BaseModel):
         """Get the Pydantic core schema for the BinRule class."""
 
         def dispatch_rule(v: Any, dispatch_handler: ValidatorFunctionWrapHandler):
+            if isinstance(v, cls):
+                return v
             if cls == BinRule:
                 assert isinstance(v, dict)
                 assert "kind" in v
