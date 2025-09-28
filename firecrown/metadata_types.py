@@ -3,7 +3,8 @@
 This module contains metadata types definitions.
 """
 
-from typing import Any
+from abc import abstractmethod
+from typing import Any, Annotated
 from itertools import chain, combinations_with_replacement
 from dataclasses import dataclass
 import re
@@ -11,13 +12,14 @@ from enum import StrEnum, Enum, auto
 
 from pydantic import (
     BaseModel,
+    Field,
+    field_serializer,
+    field_validator,
+    GetCoreSchemaHandler,
     SerializeAsAny,
     ValidatorFunctionWrapHandler,
-    GetCoreSchemaHandler,
-    field_validator,
-    field_serializer,
 )
-from pydantic_core import core_schema
+from pydantic_core import core_schema, PydanticUndefined
 import numpy as np
 import numpy.typing as npt
 
@@ -752,7 +754,8 @@ def register_rule(cls: type["BinRule"]) -> type["BinRule"]:
     """Register a new bin rule class using its Pydantic `kind` default."""
     assert issubclass(cls, BaseModel)
     kind_field = cls.model_fields.get("kind")
-    if kind_field is None or kind_field.default is None:
+    assert kind_field is not None
+    if kind_field.default is PydanticUndefined:
         raise ValueError(f"{cls.__name__} has no default for 'kind'")
     kind_value = kind_field.default
     RULE_REGISTRY[kind_value] = cls
@@ -772,9 +775,9 @@ class BinRule(BaseModel):
 
     kind: str
 
+    @abstractmethod
     def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if the pair (z1, z2, m1, m2) should be kept."""
-        raise NotImplementedError
 
     def __and__(self, other: "BinRule") -> "BinRule":
         """Return the and combinator for two-point measurements."""
@@ -945,20 +948,22 @@ class LensBinRule(BinRule):
 
 
 @register_rule
-class FirstNeighborBinRule(BinRule):
+class FirstNeighborsBinRule(BinRule):
     """Class defining the first neighbor combinator for two-point measurements."""
 
-    kind: str = "first-neighbor"
+    kind: str = "first-neighbors"
+    num_neighbors: Annotated[int, Field(ge=0)] = 1
 
     def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
         """Return True if the bin names are equal or one is one bin above the other."""
-        bin_name1, bin_name2 = zdist[0].bin_name, zdist[1].bin_name
-        if not (re.match(r".*?\d+$", bin_name1) and re.match(r".*?\d+$", bin_name2)):
+        pattern = re.compile(r"(?P<text>.*?)(?P<number>\d+)")
+        if not (
+            (match1 := pattern.match(zdist[0].bin_name))
+            and (match2 := pattern.match(zdist[1].bin_name))
+        ):
             return False
-        suffix1 = int(re.findall(r"\d+$", bin_name1)[0])
-        suffix2 = int(re.findall(r"\d+$", bin_name2)[0])
-        return (
-            (suffix1 == suffix2) or (suffix1 == suffix2 + 1) or (suffix1 + 1 == suffix2)
+        return (match1["text"] == match2["text"]) and (
+            abs(int(match1["number"]) - int(match2["number"])) <= self.num_neighbors
         )
 
 

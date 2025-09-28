@@ -1777,6 +1777,19 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
     assert len(combinations) == 0
 
 
+def test_bin_rules_register_missing_kind():
+    with pytest.raises(ValueError, match="MissingBinRule has no default for 'kind'"):
+
+        @mt.register_rule
+        class MissingBinRule(mt.BinRule):
+            """BinRule with missing kind."""
+
+            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+                return True
+
+        _ = MissingBinRule(kind="foo")
+
+
 def test_bin_rules_auto(all_harmonic_bins):
     auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
 
@@ -1861,10 +1874,22 @@ def test_bin_rules_not_named(all_harmonic_bins):
 
 
 def test_bin_rules_first_neighbor(many_harmonic_bins):
-    first_neighbor_bin_rule = mt.FirstNeighborBinRule()
+    first_neighbor_bin_rule = mt.FirstNeighborsBinRule()
 
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_a",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_b",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
     two_point_xy_combinations = make_all_bin_rule_combinations(
-        many_harmonic_bins, first_neighbor_bin_rule
+        many_harmonic_bins + [z1, z2], first_neighbor_bin_rule
     )
     # FirstNeighborBinRule should create all first neighbor combinations
     assert len(two_point_xy_combinations) == 31
@@ -1877,7 +1902,7 @@ def test_bin_rules_first_neighbor(many_harmonic_bins):
 
 
 def test_bin_rules_first_neighbor_no_auto(many_harmonic_bins):
-    first_neighbor_bin_rule = mt.FirstNeighborBinRule()
+    first_neighbor_bin_rule = mt.FirstNeighborsBinRule()
     auto_bin_rule = mt.AutoNameBinRule()
     first_neighbor_no_auto_bin_rule = first_neighbor_bin_rule & ~auto_bin_rule
 
@@ -1983,6 +2008,34 @@ def test_bin_rules_source_keep():
     assert rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
 
+def test_bin_rules_first_neighbor_mixed():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_a",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_b",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z3 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_1",
+        z=np.array([0.3]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    rule = mt.FirstNeighborsBinRule()
+    assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z1, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z2, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z3, z1), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z3, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert rule.keep((z3, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+
+
 def test_bin_rules_serialization_and_or():
     bin_rule = (
         mt.AutoNameBinRule() & mt.AutoMeasurementBinRule() & mt.LensBinRule()
@@ -2018,7 +2071,7 @@ def test_bin_rules_serialization_nested_and_or():
     bin_rule = (
         (mt.AutoNameBinRule() & mt.LensBinRule())
         | (mt.NamedBinRule(names=[("bin_1", "bin_2")]) & mt.SourceBinRule())
-        | mt.FirstNeighborBinRule()
+        | mt.FirstNeighborsBinRule()
     )
     yaml_str = yaml.dump(
         bin_rule.model_dump(), sort_keys=False, default_flow_style=None
@@ -2211,3 +2264,11 @@ def test_bin_rules_deserialization_nested_or_and():
     assert isinstance(rule.bin_rules[0].bin_rules[1], mt.LensBinRule)
     assert isinstance(rule.bin_rules[0].bin_rules[2], mt.SourceBinRule)
     assert isinstance(rule.bin_rules[1], mt.AutoMeasurementBinRule)
+
+
+def test_bin_rules_deserialization_invalid_kind():
+    yaml_str = """
+    kind: not_a_valid_kind
+    """
+    with pytest.raises(ValueError, match="Value error, Unknown kind not_a_valid_kind"):
+        mt.BinRule.model_validate(yaml.safe_load(yaml_str))
