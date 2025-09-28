@@ -1861,6 +1861,34 @@ def test_bin_rules_named(all_harmonic_bins):
         assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_2", "bin_1"}
 
 
+def test_bin_rules_type_source(all_harmonic_bins):
+    type_source_bin_rule = mt.TypeSourceBinRule(type_source=mt.TypeSource.DEFAULT)
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, type_source_bin_rule
+    )
+    # TypeSourceBinRule should create all type-source combinations
+    assert len(two_point_xy_combinations) == 10
+
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="extra_src1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+        type_source=mt.TypeSource("NewTypeSource"),
+    )
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins + [z1], type_source_bin_rule
+    )
+    assert len(two_point_xy_combinations) == 10
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins + [z1],
+        mt.TypeSourceBinRule(type_source=mt.TypeSource("NewTypeSource")),
+    )
+    assert len(two_point_xy_combinations) == 1
+
+
 def test_bin_rules_not_named(all_harmonic_bins):
     named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
 
@@ -2112,7 +2140,18 @@ def test_bin_rules_serialization_or_not():
     yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
     rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
     assert rule == rule_from_yaml
+    assert isinstance(rule_from_yaml, mt.OrBinRule)
     assert rule.model_dump() == rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_type_source():
+    rule = mt.TypeSourceBinRule(type_source=mt.TypeSource("NewTypeSource"))
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert rule == rule_from_yaml
+    assert rule.model_dump() == rule_from_yaml.model_dump()
+    assert isinstance(rule_from_yaml, mt.TypeSourceBinRule)
+    assert rule.type_source == rule_from_yaml.type_source
 
 
 def test_bin_rules_deserialization_lens():
