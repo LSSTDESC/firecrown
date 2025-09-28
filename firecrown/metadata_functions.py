@@ -675,7 +675,7 @@ def make_all_bin_rule_combinations(
             igz1.measurements, igz2.measurements
         )
         if measurement_is_compatible(x_measurement, y_measurement)
-        and (bin_rule.keep(igz1, igz2, x_measurement, y_measurement))
+        and (bin_rule.keep((igz1, igz2), (x_measurement, y_measurement)))
     ]
 
     return bin_combinations

@@ -759,6 +759,10 @@ def register_rule(cls: type["BinRule"]) -> type["BinRule"]:
     return cls
 
 
+ZDistPair = tuple[InferredGalaxyZDist, InferredGalaxyZDist]
+MeasurementPair = tuple[Measurement, Measurement]
+
+
 class BinRule(BaseModel):
     """Class defining the bin combinator for two-point measurements.
 
@@ -768,16 +772,9 @@ class BinRule(BaseModel):
 
     kind: str
 
-    def keep(self, _z1, _z2, _m1, _m2) -> bool:
+    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if the pair (z1, z2, m1, m2) should be kept."""
         raise NotImplementedError
-
-    # factory
-    @classmethod
-    def parse(cls, data: dict) -> "BinRule":
-        """Parse the bin rule from a dictionary."""
-        kind = data["kind"]
-        return RULE_REGISTRY[kind].model_validate(data)
 
     def __and__(self, other: "BinRule") -> "BinRule":
         """Return the and combinator for two-point measurements."""
@@ -793,14 +790,14 @@ class BinRule(BaseModel):
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source_type: Any, handler: GetCoreSchemaHandler, /
+        cls,
+        source_type: Any,
+        handler: GetCoreSchemaHandler,
+        /,
     ) -> core_schema.CoreSchema:
         """Get the Pydantic core schema for the BinRule class."""
 
         def dispatch_rule(v: Any, dispatch_handler: ValidatorFunctionWrapHandler):
-            if isinstance(v, BinRule):
-                return v
-
             if cls == BinRule:
                 assert isinstance(v, dict)
                 assert "kind" in v
@@ -818,27 +815,14 @@ class BinRule(BaseModel):
 
 @register_rule
 class AndBinRule(BinRule):
-    """Class defining the and combinator for two-point measurements.
-
-    The and combinator is used to combine several `BinRule` objects such that
-    only observations that pass all of the `BinRule` objects are kept.
-    """
+    """Class defining the and combinator for two-point measurements."""
 
     kind: str = "and"
     bin_rules: list[SerializeAsAny[BinRule]]
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
+    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if all of the bin rules pass."""
-        return all(
-            bin_rule.keep(z1, z2, measurement1, measurement2)
-            for bin_rule in self.bin_rules
-        )
+        return all(bin_rule.keep(zdist, m) for bin_rule in self.bin_rules)
 
     def model_post_init(self, _, /) -> None:
         """Flatten nested AndBinRules."""
@@ -853,27 +837,14 @@ class AndBinRule(BinRule):
 
 @register_rule
 class OrBinRule(BinRule):
-    """Class defining the or combinator for two-point measurements.
-
-    The or combinator is used to combine several `BinRule` objects such that
-    only observations that pass at least one of the `BinRule` objects are kept.
-    """
+    """Class defining the or combinator for two-point measurements."""
 
     kind: str = "or"
     bin_rules: list[SerializeAsAny[BinRule]]
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
+    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if any of the bin rules pass."""
-        return any(
-            bin_rule.keep(z1, z2, measurement1, measurement2)
-            for bin_rule in self.bin_rules
-        )
+        return any(bin_rule.keep(zdist, m) for bin_rule in self.bin_rules)
 
     def model_post_init(self, _, /) -> None:
         """Flatten nested OrBinRules."""
@@ -888,36 +859,19 @@ class OrBinRule(BinRule):
 
 @register_rule
 class NotBinRule(BinRule):
-    """Class defining the not combinator for two-point measurements.
-
-    The not combinator is used to combine several `BinRule` objects such that
-    only observations that do not pass the `BinRule` objects are kept.
-    """
+    """Class defining the not combinator for two-point measurements."""
 
     kind: str = "not"
     bin_rule: SerializeAsAny[BinRule]
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
+    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return the negation of keep."""
-        return not self.bin_rule.keep(z1, z2, measurement1, measurement2)
-
-
-# Concrete BinRule classes
+        return not self.bin_rule.keep(zdist, m)
 
 
 @register_rule
 class NamedBinRule(BinRule):
-    """Class defining the named combinator for two-point measurements.
-
-    The named combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are named are kept.
-    """
+    """Class defining the named combinator for two-point measurements."""
 
     kind: str = "named"
     names: list[tuple[str, str]]
@@ -936,132 +890,67 @@ class NamedBinRule(BinRule):
             assert len(names) == 2
         return [(names[0], names[1]) for names in value]
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        _measurement1: Measurement,
-        _measurement2: Measurement,
-    ) -> bool:
+    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if the pair (z1, z2) is in the list of names."""
-        return (z1.bin_name, z2.bin_name) in self.names or (
-            z2.bin_name,
-            z1.bin_name,
+        return (zdist[0].bin_name, zdist[1].bin_name) in self.names or (
+            zdist[1].bin_name,
+            zdist[0].bin_name,
         ) in self.names
 
 
 @register_rule
 class AutoNameBinRule(BinRule):
-    """Class defining the auto-source combinator for two-point measurements.
-
-    The auto-source combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations with the same bin_name are kept.
-    """
+    """Class defining the auto-source combinator for two-point measurements."""
 
     kind: str = "auto-name"
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        _measurement1: Measurement,
-        _measurement2: Measurement,
-    ) -> bool:
-        """Return True if both are the same measurement."""
-        return z1.bin_name == z2.bin_name
+    def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
+        """Return True if both have the same bin name."""
+        return zdist[0].bin_name == zdist[1].bin_name
 
 
 @register_rule
 class AutoMeasurementBinRule(BinRule):
-    """Class defining the auto-measurement combinator for two-point measurements.
-
-    The auto-measurement combinator is used to combine several `InferredGalaxyZDist`
-    into `TwoPointXY` objects, such that only observations with the same measurement
-    are kept.
-    """
+    """Class defining the auto-measurement combinator for two-point measurements."""
 
     kind: str = "auto-measurement"
 
-    def keep(
-        self,
-        _z1: InferredGalaxyZDist,
-        _z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
+    def keep(self, _zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if both are the same measurement."""
-        return measurement1 == measurement2
+        return m[0] == m[1]
 
 
 @register_rule
 class SourceBinRule(BinRule):
-    """Class defining the source combinator for two-point measurements.
-
-    The source combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are from the same source
-    are kept.
-    """
+    """Class defining the source combinator for two-point measurements."""
 
     kind: str = "source"
 
-    def keep(
-        self,
-        _z1: InferredGalaxyZDist,
-        _z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
+    def keep(self, _zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if the measurements are both source measurements."""
-        return (measurement1 in GALAXY_SOURCE_TYPES) and (
-            measurement2 in GALAXY_SOURCE_TYPES
-        )
+        return (m[0] in GALAXY_SOURCE_TYPES) and (m[1] in GALAXY_SOURCE_TYPES)
 
 
 @register_rule
 class LensBinRule(BinRule):
-    """Class defining the lens combinator for two-point measurements.
-
-    The lens combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are from the same lens
-    are kept.
-    """
+    """Class defining the lens combinator for two-point measurements."""
 
     kind: str = "lens"
 
-    def keep(
-        self,
-        _z1: InferredGalaxyZDist,
-        _z2: InferredGalaxyZDist,
-        measurement1: Measurement,
-        measurement2: Measurement,
-    ) -> bool:
+    def keep(self, _zdist: ZDistPair, m: MeasurementPair) -> bool:
         """Return True if the measurements are both lens measurements."""
-        return (measurement1 in GALAXY_LENS_TYPES) and (
-            measurement2 in GALAXY_LENS_TYPES
-        )
+        return (m[0] in GALAXY_LENS_TYPES) and (m[1] in GALAXY_LENS_TYPES)
 
 
 @register_rule
 class FirstNeighborBinRule(BinRule):
-    """Class defining the first neighbor combinator for two-point measurements.
-
-    The first neighbor combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are from the same first
-    neighbor are kept.
-    """
+    """Class defining the first neighbor combinator for two-point measurements."""
 
     kind: str = "first-neighbor"
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        _measurement1: Measurement,
-        _measurement2: Measurement,
-    ) -> bool:
+    def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
         """Return True if the bin names are equal or one is one bin above the other."""
-        bin_name1, bin_name2 = z1.bin_name, z2.bin_name
-        # Extract both suffixes as numbers using a regex to match all final digits
+        bin_name1, bin_name2 = zdist[0].bin_name, zdist[1].bin_name
         if not (re.match(r".*?\d+$", bin_name1) and re.match(r".*?\d+$", bin_name2)):
             return False
         suffix1 = int(re.findall(r"\d+$", bin_name1)[0])
@@ -1073,25 +962,13 @@ class FirstNeighborBinRule(BinRule):
 
 @register_rule
 class TypeSourceBinRule(BinRule):
-    """Class defining the type-source combinator for two-point measurements.
-
-    The type-source combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects, such that only observations that are from the same type-source
-    are kept.
-    """
+    """Class defining the type-source combinator for two-point measurements."""
 
     kind: str = "type-source"
-
     type_source: TypeSource
 
-    def keep(
-        self,
-        z1: InferredGalaxyZDist,
-        z2: InferredGalaxyZDist,
-        _measurement1: Measurement,
-        _measurement2: Measurement,
-    ) -> bool:
-        """Return True if the measurements are both type-source measurements."""
-        return (z1.type_source == z2.type_source) and (
-            self.type_source == z1.type_source
+    def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
+        """Return True if the bins have the same type-source."""
+        return (zdist[0].type_source == zdist[1].type_source) and (
+            self.type_source == zdist[0].type_source
         )

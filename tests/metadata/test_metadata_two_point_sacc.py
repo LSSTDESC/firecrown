@@ -1908,8 +1908,8 @@ def test_bin_rules_auto_name_keep():
         measurements={mt.Galaxies.COUNTS},
     )
     rule = mt.AutoNameBinRule()
-    assert rule.keep(z1, z1, mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)
-    assert not rule.keep(z1, z2, mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)
+    assert rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
 
 
 def test_bin_rules_auto_measurement_keep():
@@ -1926,8 +1926,8 @@ def test_bin_rules_auto_measurement_keep():
         measurements={mt.Galaxies.COUNTS},
     )
     rule = mt.AutoMeasurementBinRule()
-    assert rule.keep(z1, z2, mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)
-    assert not rule.keep(z1, z2, mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E)
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
 
 
 def test_bin_rules_named_keep():
@@ -1944,8 +1944,8 @@ def test_bin_rules_named_keep():
         measurements={mt.Galaxies.COUNTS},
     )
     rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
-    assert rule.keep(z1, z2, mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)
-    assert rule.keep(z2, z1, mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert rule.keep((z2, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
 
 
 def test_bin_rules_lens_keep():
@@ -1962,8 +1962,8 @@ def test_bin_rules_lens_keep():
         measurements={mt.Galaxies.COUNTS},
     )
     rule = mt.LensBinRule()
-    assert rule.keep(z1, z2, mt.Galaxies.COUNTS, mt.Galaxies.COUNTS)
-    assert not rule.keep(z1, z2, mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E)
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
 
 def test_bin_rules_source_keep():
@@ -1980,7 +1980,7 @@ def test_bin_rules_source_keep():
         measurements={mt.Galaxies.SHEAR_E},
     )
     rule = mt.SourceBinRule()
-    assert rule.keep(z1, z2, mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E)
+    assert rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
 
 def test_bin_rules_serialization_and_or():
