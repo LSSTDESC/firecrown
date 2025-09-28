@@ -155,3 +155,54 @@ known-third-party = ["numpy", "scipy", "pandas", "matplotlib", "astropy", "pyccl
 [tool.black]
 line-length = 88
 target-version = ['py310']
+
+# Pyright configuration - runs alongside mypy without conflicts
+[tool.pyright]
+# Include all main source directories
+include = ["firecrown", "tests", "examples", "fctools"]
+
+# Exclude common non-source directories
+exclude = [
+    "**/node_modules",
+    "**/__pycache__",
+    "**/.pytest_cache",
+    "**/build",
+    "**/dist",
+    "docs/_build",
+    ".git"
+]
+
+# Python version (should match your target)
+pythonVersion = "3.10"
+
+# Type checking configuration
+typeCheckingMode = "basic"  # Can be "off", "basic", or "strict"
+
+# Enable useful warnings
+reportMissingImports = true
+reportMissingTypeStubs = false  # Don't warn about missing stubs for third-party packages
+reportUnusedImport = true
+reportUnusedClass = true
+reportUnusedFunction = true
+reportUnusedVariable = true
+reportDuplicateImport = true
+
+# Scientific computing specific settings
+reportMissingParameterType = false  # NumPy/SciPy often have complex signatures
+reportUnknownParameterType = false  # Allow flexibility with scientific libraries
+reportUnknownMemberType = false     # NumPy arrays have dynamic typing
+
+# Allow flexibility for scientific computing patterns
+reportGeneralTypeIssues = true
+reportOptionalMemberAccess = true
+reportOptionalSubscript = true
+reportPrivateImportUsage = false    # Scientific packages often use private imports
+
+# Disable false positives common in scientific computing
+reportOperatorIssue = false         # PyCC/CCL Pk2D objects support operators despite type annotations
+reportUnknownArgumentType = false   # Scientific libraries often have dynamic argument types
+reportUnknownVariableType = false   # NumPy/SciPy operations create dynamic types
+
+# Performance - don't analyze every possible path
+reportUnnecessaryIsInstance = false
+reportUnnecessaryCast = false
