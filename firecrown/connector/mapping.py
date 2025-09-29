@@ -8,23 +8,23 @@ Each supported body of code has its own dedicated class.
 
 import typing
 import warnings
-from typing import Type, final
-from typing_extensions import assert_never
+from typing import final
 
 import cosmosis.datablock
 import numpy as np
 import numpy.typing as npt
 from pyccl import physical_constants as physics
+from typing_extensions import assert_never
 
 from firecrown import parameters
-from firecrown.descriptors import TypeFloat, TypeString
-from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.ccl_factory import (
+    Background,
     CCLCalculatorArgs,
     PowerSpec,
-    Background,
     PoweSpecAmplitudeParameter,
 )
+from firecrown.descriptors import TypeFloat, TypeString
+from firecrown.likelihood.likelihood import NamedParameters
 
 
 def build_ccl_background_dict(
@@ -534,7 +534,7 @@ class MappingCAMB(Mapping):
         )
 
 
-mapping_classes: typing.Mapping[str, Type[Mapping]] = {
+mapping_classes: typing.Mapping[str, type[Mapping]] = {
     "CAMB": MappingCAMB,
     "CosmoSIS": MappingCosmoSIS,
 }

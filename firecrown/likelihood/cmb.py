@@ -1,13 +1,14 @@
 """CMB source class and factory. Currently only supports CMB lensing convergence."""
 
 from dataclasses import dataclass
+
 import pyccl
 import sacc
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
 from firecrown.likelihood.source import Source, Tracer
-from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
+from firecrown.modeling_tools import ModelingTools
 
 
 @dataclass(frozen=True)

@@ -5,7 +5,7 @@ metadata from a sacc file and creating new metadata objects.
 """
 
 from itertools import combinations_with_replacement, product
-from typing import TypedDict, Any
+from typing import Any, TypedDict
 
 import numpy as np
 import numpy.typing as npt
@@ -13,46 +13,50 @@ import sacc
 from sacc.data_types import required_tags
 
 from firecrown.metadata_types import (
-    TracerNames,
-    Measurement,
-    TypeSource,
-    InferredGalaxyZDist,
-    TwoPointXY,
-    TwoPointHarmonic,
-    TwoPointReal,
-    LENS_REGEX,
-    SOURCE_REGEX,
-    MEASURED_TYPE_STRING_MAP,
-    measurement_is_compatible,
+    ALL_MEASUREMENT_TYPES,
+    BinRule,
+    Clusters,
+    CMB,
+    Galaxies,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
-    ALL_MEASUREMENT_TYPES,
-    Galaxies,
-    CMB,
-    Clusters,
+    InferredGalaxyZDist,
+    LENS_REGEX,
+    MEASURED_TYPE_STRING_MAP,
+    measurement_is_compatible,
+    Measurement,
+    SOURCE_REGEX,
+    TracerNames,
     TwoPointCorrelationSpace,
-    BinRule,
+    TwoPointHarmonic,
+    TwoPointReal,
+    TwoPointXY,
+    TypeSource,
 )
+
 
 # TwoPointRealIndex is a type used to create intermediate objects when reading SACC
 # objects. They should not be seen directly by users of Firecrown.
-TwoPointRealIndex = TypedDict(
-    "TwoPointRealIndex",
-    {
-        "data_type": str,
-        "tracer_names": TracerNames,
-    },
-)
+class TwoPointRealIndex(TypedDict):
+    """Intermediate object for reading SACC real-space two-point data.
+
+    Internal use only - not intended for direct user interaction.
+    """
+
+    data_type: str
+    tracer_names: TracerNames
+
 
 # TwoPointHarmonicIndex is a type used to create intermediate objects when reading SACC
 # objects. They should not be seen directly by users of Firecrown.
-TwoPointHarmonicIndex = TypedDict(
-    "TwoPointHarmonicIndex",
-    {
-        "data_type": str,
-        "tracer_names": TracerNames,
-    },
-)
+class TwoPointHarmonicIndex(TypedDict):
+    """Intermediate object for reading SACC harmonic-space two-point data.
+
+    Internal use only - not intended for direct user interaction.
+    """
+
+    data_type: str
+    tracer_names: TracerNames
 
 
 def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:

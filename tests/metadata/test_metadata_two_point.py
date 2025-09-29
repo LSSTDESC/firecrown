@@ -688,26 +688,26 @@ def test_two_point_harmonic_ells_wrong_shape(harmonic_two_point_xy: TwoPointXY):
 
 
 def test_two_point_harmonic_with_window_serialization(
-    two_point_cwindow: TwoPointHarmonic,
+    optimized_two_point_cwindow: TwoPointHarmonic,
 ):
-    s = two_point_cwindow.to_yaml()
+    s = optimized_two_point_cwindow.to_yaml()
     recovered = TwoPointHarmonic.from_yaml(s)
-    assert two_point_cwindow == recovered
+    assert optimized_two_point_cwindow == recovered
 
 
-def test_two_point_real_serialization(real_two_point_xy: TwoPointXY):
+def test_two_point_real_serialization(optimized_real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10, 10))
-    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
+    xi_theta = TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
     s = xi_theta.to_yaml()
     recovered = TwoPointReal.from_yaml(s)
     assert xi_theta == recovered
-    assert str(real_two_point_xy) == str(recovered.XY)
+    assert str(optimized_real_two_point_xy) == str(recovered.XY)
     assert str(xi_theta) == str(recovered)
 
 
-def test_two_point_real_cmp_invalid(real_two_point_xy: TwoPointXY):
+def test_two_point_real_cmp_invalid(optimized_real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10, 10))
-    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
+    xi_theta = TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
     with pytest.raises(
         ValueError,
         match="Can only compare TwoPointReal objects.",
@@ -715,13 +715,13 @@ def test_two_point_real_cmp_invalid(real_two_point_xy: TwoPointXY):
         _ = xi_theta == "Im not a TwoPointReal"
 
 
-def test_two_point_real_wrong_shape(real_two_point_xy: TwoPointXY):
+def test_two_point_real_wrong_shape(optimized_real_two_point_xy: TwoPointXY):
     theta = np.array(np.linspace(0, 10), dtype=np.float64).reshape(-1, 10)
     with pytest.raises(
         ValueError,
         match="Thetas should be a 1D array.",
     ):
-        TwoPointReal(XY=real_two_point_xy, thetas=theta)
+        TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
 
 
 def test_two_point_from_metadata_cells(harmonic_two_point_xy, tp_factory):
@@ -760,9 +760,9 @@ def test_two_point_from_metadata_cwindow(two_point_cwindow, tp_factory):
     assert_array_equal(two_point.source1.tracer_args.dndz, two_point_cwindow.XY.y.dndz)
 
 
-def test_two_point_from_metadata_xi_theta(real_two_point_xy, tp_factory):
+def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factory):
     theta = np.array(np.linspace(0, 100, 100))
-    xi_theta = TwoPointReal(XY=real_two_point_xy, thetas=theta)
+    xi_theta = TwoPointReal(XY=optimized_real_two_point_xy, thetas=theta)
     if xi_theta.get_sacc_name() == "galaxy_shear_xi_tt":
         return
     two_point = TwoPoint.from_metadata([xi_theta], tp_factory).pop()
@@ -774,11 +774,15 @@ def test_two_point_from_metadata_xi_theta(real_two_point_xy, tp_factory):
     assert isinstance(two_point.source0, SourceGalaxy)
     assert isinstance(two_point.source1, SourceGalaxy)
 
-    assert_array_equal(two_point.source0.tracer_args.z, real_two_point_xy.x.z)
-    assert_array_equal(two_point.source1.tracer_args.z, real_two_point_xy.y.z)
+    assert_array_equal(two_point.source0.tracer_args.z, optimized_real_two_point_xy.x.z)
+    assert_array_equal(two_point.source1.tracer_args.z, optimized_real_two_point_xy.y.z)
 
-    assert_array_equal(two_point.source0.tracer_args.dndz, real_two_point_xy.x.dndz)
-    assert_array_equal(two_point.source1.tracer_args.dndz, real_two_point_xy.y.dndz)
+    assert_array_equal(
+        two_point.source0.tracer_args.dndz, optimized_real_two_point_xy.x.dndz
+    )
+    assert_array_equal(
+        two_point.source1.tracer_args.dndz, optimized_real_two_point_xy.y.dndz
+    )
 
 
 def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
@@ -787,7 +791,7 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
         bin_name="bname1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
-        measurements={CMB.CONVERGENCE},
+        measurements={Clusters.COUNTS},
     )
     y = InferredGalaxyZDist(
         bin_name="bname2",
@@ -796,12 +800,12 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
         measurements={Galaxies.COUNTS},
     )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=CMB.CONVERGENCE, y_measurement=Galaxies.COUNTS
+        x=x, y=y, x_measurement=Clusters.COUNTS, y_measurement=Galaxies.COUNTS
     )
     cells = TwoPointHarmonic(ells=ells, XY=xy)
     with pytest.raises(
         ValueError,
-        match="No CMBConvergenceFactory found for type_source default.",
+        match="Factory not found for measurement .*, it is not supported.",
     ):
         TwoPoint.from_metadata([cells], tp_factory)
 

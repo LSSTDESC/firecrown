@@ -4,11 +4,10 @@ from __future__ import annotations
 
 import numpy as np
 
-
-from firecrown.likelihood.gaussfamily import GaussFamily
-from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.statistic import Statistic
 from firecrown import parameters
+from firecrown.likelihood.gaussfamily import GaussFamily
+from firecrown.likelihood.statistic import Statistic
+from firecrown.modeling_tools import ModelingTools
 
 
 class StudentT(GaussFamily):

@@ -25,7 +25,7 @@ has an attribute `x` that is required to be a float in the range
 # pylint: disable=R0903
 
 import math
-from typing import Callable
+from collections.abc import Callable
 
 
 class TypeFloat:

@@ -17,7 +17,9 @@ from __future__ import annotations
 
 from abc import ABC
 from collections import UserList
-from typing import Any, Generic, Iterable, TypeAlias, TypeVar, Union, cast, final
+from collections.abc import Iterable
+from typing import Any, Generic, TypeAlias, TypeVar, Union, cast, final
+
 from typing_extensions import assert_never
 
 from firecrown.parameters import (
@@ -456,7 +458,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
                 "Only updatable items can be appended to an UpdatableCollection"
             )
 
-        super().__setitem__(key, cast(T, value))
+        super().__setitem__(key, cast("T", value))
 
 
 def get_default_params(*args: Updatable) -> dict[str, float]:

@@ -9,14 +9,14 @@ not a specific likelihood.
 """
 
 import cosmosis.datablock
-from cosmosis.datablock import option_section
 from cosmosis.datablock import names as section_names
+from cosmosis.datablock import option_section
 
-from firecrown.connector.mapping import mapping_builder, MappingCosmoSIS
-from firecrown.likelihood.gaussfamily import GaussFamily
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.likelihood import load_likelihood, Likelihood, NamedParameters
 from firecrown.ccl_factory import CCLCreationMode
+from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
+from firecrown.likelihood.gaussfamily import GaussFamily
+from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
+from firecrown.likelihood.two_point import TwoPoint
 from firecrown.parameters import ParamsMap, handle_unused_params
 from firecrown.updatable import MissingSamplerParameterError
 

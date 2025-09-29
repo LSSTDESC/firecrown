@@ -3,27 +3,27 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
-from typing import Sequence, final, Annotated, Literal
+from typing import Annotated, Literal, final
 
-from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 import numpy as np
 import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc
-
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 
 from firecrown import parameters
 from firecrown.likelihood.source import (
+    PhotoZShiftandStretchFactory,
+    PhotoZShiftFactory,
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxyPhotoZShift,
     SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,
     SourceGalaxySystematic,
-    PhotoZShiftFactory,
-    PhotoZShiftandStretchFactory,
     Tracer,
 )
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
