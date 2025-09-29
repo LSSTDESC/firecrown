@@ -1796,6 +1796,31 @@ def test_bin_rules_register_missing_kind():
         _ = MissingBinRule(kind="foo")
 
 
+def test_bin_rules_register_duplicate_kind():
+    with pytest.raises(ValueError, match="Duplicate rule kind foo"):
+
+        @mt.register_rule
+        class Duplicate1BinRule(mt.BinRule):
+            """BinRule with duplicate kind."""
+
+            kind: str = "foo"
+
+            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+                return True
+
+        @mt.register_rule
+        class Duplicate2BinRule(mt.BinRule):
+            """BinRule with duplicate kind."""
+
+            kind: str = "foo"
+
+            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+                return True
+
+        _ = Duplicate2BinRule()
+        _ = Duplicate1BinRule()
+
+
 def test_bin_rules_auto(all_harmonic_bins):
     auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
 

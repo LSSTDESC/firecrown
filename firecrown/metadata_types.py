@@ -757,6 +757,8 @@ def register_rule(cls: type["BinRule"]) -> type["BinRule"]:
     if kind_field.default is PydanticUndefined:
         raise ValueError(f"{cls.__name__} has no default for 'kind'")
     kind_value = kind_field.default
+    if kind_value in RULE_REGISTRY:
+        raise ValueError(f"Duplicate rule kind {kind_value}")
     RULE_REGISTRY[kind_value] = cls
     return cls
 
