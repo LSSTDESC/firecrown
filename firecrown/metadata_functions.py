@@ -14,24 +14,24 @@ from sacc.data_types import required_tags
 
 from firecrown.metadata_types import (
     ALL_MEASUREMENT_TYPES,
-    BinRule,
-    Clusters,
     CMB,
-    Galaxies,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
-    InferredGalaxyZDist,
     LENS_REGEX,
     MEASURED_TYPE_STRING_MAP,
-    measurement_is_compatible,
-    Measurement,
     SOURCE_REGEX,
+    BinRule,
+    Clusters,
+    Galaxies,
+    InferredGalaxyZDist,
+    Measurement,
     TracerNames,
     TwoPointCorrelationSpace,
     TwoPointHarmonic,
     TwoPointReal,
     TwoPointXY,
     TypeSource,
+    measurement_is_compatible,
 )
 
 

@@ -3,28 +3,25 @@
 This module contains metadata types definitions.
 """
 
-from abc import abstractmethod
-from typing import Any, Annotated
-from itertools import chain, combinations_with_replacement
-from dataclasses import dataclass
 import re
+from abc import abstractmethod
 from dataclasses import dataclass
 from enum import Enum, StrEnum, auto
 from itertools import chain, combinations_with_replacement
-from typing import Any
+from typing import Annotated, Any
 
+import numpy as np
+import numpy.typing as npt
 from pydantic import (
     BaseModel,
     Field,
-    field_serializer,
-    field_validator,
     GetCoreSchemaHandler,
     SerializeAsAny,
     ValidatorFunctionWrapHandler,
+    field_serializer,
+    field_validator,
 )
-from pydantic_core import core_schema, PydanticUndefined
-import numpy as np
-import numpy.typing as npt
+from pydantic_core import PydanticUndefined, core_schema
 
 from firecrown.utils import YAMLSerializable, compare_optional_arrays
 
