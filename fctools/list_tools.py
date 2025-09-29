@@ -79,7 +79,6 @@ def _discover_tools() -> Dict[str, str]:
 
     return tools
 
-
 @click.command()
 @click.option(
     "--verbose",

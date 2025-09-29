@@ -108,7 +108,6 @@ def test_only_first_tracer_has_hm(
         patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
         patch("pyccl.halos.HaloProfileNFW") as mock_nfw,
     ):
-
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
         # Verify HaloProfileNFW was created for non-HM tracer
@@ -134,7 +133,6 @@ def test_only_second_tracer_has_hm(
         patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h),
         patch("pyccl.halos.HaloProfileNFW") as mock_nfw,
     ):
-
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
         # Verify HaloProfileNFW was created for non-HM tracer
@@ -193,7 +191,6 @@ def test_ia_bias_exponent_both_hm(mock_tools, mock_tracer_with_hm):
         patch("pyccl.halos.halomod_Pk2D", return_value=mock_pk_1h),
         patch("pyccl.Pk2D.from_function", return_value=mock_pk_2h) as mock_from_func,
     ):
-
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
         # Check that from_function was called
@@ -242,7 +239,6 @@ def test_halo_profile_nfw_configuration(
             "pyccl.halos.HaloProfileNFW", return_value=mock_other_profile
         ) as mock_nfw,
     ):
-
         result = at_least_one_tracer_has_hm(mock_tools, tracer0, tracer1)
 
         # Verify HaloProfileNFW was called with correct parameters
