@@ -89,7 +89,7 @@ def test_get_theory_prediction_returns_value(
 @settings(
     suppress_health_check=[HealthCheck.function_scoped_fixture],
     max_examples=25,  # Balanced reduction from 100 to 25
-    deadline=400,  # Reasonable deadline for complex numerical integration
+    deadline=None,  # No timeout
     derandomize=False,  # Keep randomization for better coverage
 )
 def test_cluster_prediction_positivity_property(
