@@ -1,9 +1,10 @@
 """The module responsible for extracting cluster data from a sacc file."""
 
 import sacc
-from firecrown.models.cluster.properties import ClusterProperty
+
 from firecrown.models.cluster.binning import SaccBin
 from firecrown.models.cluster.cluster_data import ClusterData
+from firecrown.models.cluster.properties import ClusterProperty
 
 
 class AbundanceData(ClusterData):

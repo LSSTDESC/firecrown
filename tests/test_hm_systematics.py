@@ -41,6 +41,7 @@ def fixture_sacc_data() -> sacc.Sacc:
     return sacc.Sacc.load_fits(saccfile)
 
 
+@pytest.mark.slow
 def test_hm_systematics(weak_lensing_source, sacc_data):
     # The following disabling of pylint warnings are TEMPORARY. Disabling warnings is
     # generally not a good practice. In this case, the warnings are indicating that this

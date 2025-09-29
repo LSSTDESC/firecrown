@@ -5,6 +5,7 @@ used for cluster theoretical predictions within Firecrown.
 """
 
 from abc import ABC, abstractmethod
+
 import sacc
 
 

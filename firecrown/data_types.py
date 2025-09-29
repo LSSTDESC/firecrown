@@ -10,8 +10,8 @@ from dataclasses import dataclass
 import numpy as np
 import numpy.typing as npt
 
+from firecrown.metadata_types import TwoPointHarmonic, TwoPointReal
 from firecrown.utils import YAMLSerializable
-from firecrown.metadata_types import TwoPointReal, TwoPointHarmonic
 
 
 @dataclass(frozen=True, kw_only=True)

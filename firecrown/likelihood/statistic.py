@@ -5,16 +5,18 @@ data and theory vectors for a :class:`GaussFamily` subclass.
 """
 
 from __future__ import annotations
-from typing import final
+
 from abc import abstractmethod
+from typing import final
+
 import numpy as np
 import numpy.typing as npt
 import sacc
 
 import firecrown.parameters
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.parameters import DerivedParameterCollection, RequiredParameters
 from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import DerivedParameterCollection, RequiredParameters
 from firecrown.updatable import Updatable
 
 

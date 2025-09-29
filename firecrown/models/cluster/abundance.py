@@ -10,6 +10,7 @@ import numpy.typing as npt
 import pyccl
 import pyccl.background as bkg
 from pyccl.cosmology import Cosmology
+
 from firecrown.updatable import Updatable, UpdatableCollection
 
 
@@ -81,7 +82,7 @@ class ClusterAbundance(Updatable):
         scale_factor = 1.0 / (1.0 + z)
         return_vals = []
 
-        for m, a in zip(mass.astype(float), scale_factor.astype(float)):
+        for m, a in zip(mass.astype(float), scale_factor.astype(float), strict=False):
             val = self._hmf_cache.get((m, a))
             if val is None:
                 val = self.halo_mass_function(self.cosmo, 10**m, a)

@@ -4,10 +4,10 @@ This module holds the classes that define the kernels that can be included
 in the cluster abundance integrand.
 """
 
-from typing import Optional
 from enum import Enum
-import numpy.typing as npt
+
 import numpy as np
+import numpy.typing as npt
 
 from firecrown import parameters
 from firecrown.updatable import Updatable
@@ -128,7 +128,7 @@ class Purity(Updatable):
         self,
         z: npt.NDArray[np.float64],
         mass_proxy: npt.NDArray[np.float64],
-        mass_proxy_limits: Optional[tuple[float, float]] = None,
+        mass_proxy_limits: tuple[float, float] | None = None,
     ) -> npt.NDArray[np.float64]:
         """Evaluates and returns the purity contribution to the integrand."""
         if all(mass_proxy == -1.0):

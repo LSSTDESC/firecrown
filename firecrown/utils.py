@@ -1,21 +1,20 @@
 """Some utility functions for patterns common in Firecrown."""
 
-from typing import Generator, TypeVar, Type, Callable, Annotated
-from enum import Enum, auto
-
 import functools
-from typing_extensions import assert_never
+from collections.abc import Callable, Generator
+from enum import Enum, auto
+from typing import Annotated, TypeVar
+
 import numpy as np
 import pyccl
-import scipy.interpolate
-from numpy import typing as npt
-from pydantic import BaseModel, ConfigDict, BeforeValidator, field_serializer
-
 import sacc
-
+import scipy.interpolate
 import yaml
-from yaml import CLoader as Loader
+from numpy import typing as npt
+from pydantic import BaseModel, BeforeValidator, ConfigDict, field_serializer
+from typing_extensions import Self, assert_never
 from yaml import CDumper as Dumper
+from yaml import CLoader as Loader
 
 ST = TypeVar("ST")  # This will be used in YAMLSerializable
 
@@ -23,12 +22,12 @@ ST = TypeVar("ST")  # This will be used in YAMLSerializable
 class YAMLSerializable:
     """Protocol for classes that can be serialized to and from YAML."""
 
-    def to_yaml(self: ST) -> str:
+    def to_yaml(self) -> str:
         """Return the YAML representation of the object."""
         return yaml.dump(self, Dumper=Dumper, sort_keys=False)
 
     @classmethod
-    def from_yaml(cls: Type[ST], yaml_str: str) -> ST:
+    def from_yaml(cls, yaml_str: str) -> Self:
         """Load the object from YAML."""
         return yaml.load(yaml_str, Loader=Loader)
 
@@ -235,7 +234,7 @@ class ClIntegrationOptions(BaseModel):
 
         for option in incompatible_options:
             if getattr(self, option) is not None:
-                raise ValueError(f"{option} is incompatible with {str(self.method)}.")
+                raise ValueError(f"{option} is incompatible with {self.method!s}.")
 
     def get_angular_cl_args(self):
         """Get the arguments to pass to pyccl.angular_cl."""

@@ -5,11 +5,11 @@ and phenomenological predictions.  This module contains the classes and
 functions that produce those predictions.
 """
 
+import clmm  # pylint: disable=import-error
 import numpy as np
 import numpy.typing as npt
 import pyccl
 
-import clmm  # pylint: disable=import-error
 from firecrown import parameters
 from firecrown.models.cluster.abundance import ClusterAbundance
 
@@ -62,7 +62,7 @@ class ClusterDeltaSigma(ClusterAbundance):
             conc = pyccl.halos.concentration.ConcentrationBhattacharya13(
                 mass_def=mass_def
             )
-            for log_m, redshift in zip(log_mass, z):
+            for log_m, redshift in zip(log_mass, z, strict=False):
                 a = 1.0 / (1.0 + redshift)
                 conc_val = conc(self._cosmo, 10**log_m, a)
                 moo.set_concentration(conc_val)
@@ -72,7 +72,7 @@ class ClusterDeltaSigma(ClusterAbundance):
         else:
             conc_val = self.cluster_conc
             moo.set_concentration(conc_val)
-            for log_m, redshift in zip(log_mass, z):
+            for log_m, redshift in zip(log_mass, z, strict=False):
                 moo.set_concentration(conc_val)
                 moo.set_mass(10**log_m)
                 val = moo.eval_excess_surface_density(radius_center, redshift)

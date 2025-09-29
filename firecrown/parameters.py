@@ -5,9 +5,10 @@ provide better type safety.
 """
 
 from __future__ import annotations
+
 import copy
-from typing import Iterable, Iterator, Sequence
 import warnings
+from collections.abc import Iterable, Iterator, Sequence
 
 
 def parameter_get_full_name(prefix: None | str, param: str) -> str:

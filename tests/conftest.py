@@ -29,11 +29,16 @@ from firecrown.metadata_types import (
     TwoPointReal,
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
+    measurement_supports_real,
+    measurement_supports_harmonic,
+    ALL_MEASUREMENTS,
 )
 from firecrown.data_types import TwoPointMeasurement
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.two_point as tp
+from firecrown.likelihood import cmb
+from firecrown.metadata_types import Clusters, CMB
 
 
 def pytest_addoption(parser):
@@ -85,25 +90,30 @@ def _skip_tests(items, keyword, reason):
 # Fixtures
 
 
-@pytest.fixture(name="empty_pyccl_tracer")
+@pytest.fixture(name="empty_pyccl_tracer", scope="session")
 def fixture_empty_pyccl_tracer() -> pyccl.Tracer:
+    """Return an empty tracer."""
     return pyccl.Tracer()
 
 
 @pytest.fixture(name="trivial_stats")
-def make_stats():
-    """Return a non-empty list of TrivialStatistics."""
+def make_stats() -> list[TrivialStatistic]:
+    """Return a non-empty list of TrivialStatistics.
+
+    Function-scoped because TrivialStatistic objects have mutable state
+    and cannot be safely shared across tests.
+    """
     return [TrivialStatistic()]
 
 
-@pytest.fixture(name="trivial_params")
-def make_trivial_params() -> ParamsMap:
+@pytest.fixture(name="trivial_params", scope="session")
+def fixture_trivial_params() -> ParamsMap:
     """Return a ParamsMap with one parameter."""
     return ParamsMap({"mean": 1.0})
 
 
 @pytest.fixture(name="sacc_data_for_trivial_stat")
-def make_sacc_data():
+def make_sacc_data() -> sacc.Sacc:
     """Create a sacc.Sacc object suitable for configuring a
     :class:`TrivialStatistic`."""
     result = sacc.Sacc()
@@ -159,10 +169,14 @@ def fixture_sacc_with_covariance(sacc_with_data_points: sacc.Sacc) -> sacc.Sacc:
     return result
 
 
-@pytest.fixture(name="tools_with_vanilla_cosmology")
-def fixture_tools_with_vanilla_cosmology():
+@pytest.fixture(name="tools_with_vanilla_cosmology", scope="session")
+def fixture_tools_with_vanilla_cosmology() -> ModelingTools:
     """Return a ModelingTools object containing the LCDM cosmology from
-    pyccl."""
+    pyccl.
+
+    Session-scoped because this object is expensive to create and is never
+    modified by tests - only read from.
+    """
     result = ModelingTools()
     params = get_default_params_map(result)
     result.update(params)
@@ -368,7 +382,9 @@ def make_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
 
 
 @pytest.fixture(name="harmonic_data_with_window")
-def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+def fixture_harmonic_data_with_window(
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointMeasurement:
     """Return some fake harmonic data."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     # The window is given by the mean of the ells in each bin times the bin number.
@@ -396,7 +412,9 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
 
 
 @pytest.fixture(name="harmonic_data_no_window")
-def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+def fixture_harmonic_data_no_window(
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointMeasurement:
     """Return some fake harmonic data."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = (np.zeros(100) - 1.1).astype(np.float64)
@@ -468,8 +486,10 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
 # Two-point related SACC data fixtures
 
 
-@pytest.fixture(name="sacc_galaxy_cells_src0_src0")
-def fixture_sacc_galaxy_cells_src0_src0():
+@pytest.fixture(name="sacc_galaxy_cells_src0_src0", scope="module")
+def fixture_sacc_galaxy_cells_src0_src0() -> (
+    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -488,8 +508,13 @@ def fixture_sacc_galaxy_cells_src0_src0():
     return sacc_data, z, dndz
 
 
-@pytest.fixture(name="sacc_galaxy_cells_src0_src1")
-def fixture_sacc_galaxy_cells_src0_src1():
+@pytest.fixture(name="sacc_galaxy_cells_src0_src1", scope="module")
+def fixture_sacc_galaxy_cells_src0_src1() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -512,8 +537,10 @@ def fixture_sacc_galaxy_cells_src0_src1():
     return sacc_data, z, dndz0, dndz1
 
 
-@pytest.fixture(name="sacc_galaxy_cells_lens0_lens0")
-def fixture_sacc_galaxy_cells_lens0_lens0():
+@pytest.fixture(name="sacc_galaxy_cells_lens0_lens0", scope="module")
+def fixture_sacc_galaxy_cells_lens0_lens0() -> (
+    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -533,7 +560,12 @@ def fixture_sacc_galaxy_cells_lens0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens1")
-def fixture_sacc_galaxy_cells_lens0_lens1():
+def fixture_sacc_galaxy_cells_lens0_lens1() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -555,7 +587,9 @@ def fixture_sacc_galaxy_cells_lens0_lens1():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0")
-def fixture_sacc_galaxy_xis_lens0_lens0():
+def fixture_sacc_galaxy_xis_lens0_lens0() -> (
+    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -575,7 +609,12 @@ def fixture_sacc_galaxy_xis_lens0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens1")
-def fixture_sacc_galaxy_xis_lens0_lens1():
+def fixture_sacc_galaxy_xis_lens0_lens1() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -597,7 +636,12 @@ def fixture_sacc_galaxy_xis_lens0_lens1():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_lens0")
-def fixture_sacc_galaxy_cells_src0_lens0():
+def fixture_sacc_galaxy_cells_src0_lens0() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -620,7 +664,12 @@ def fixture_sacc_galaxy_cells_src0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_src0_lens0")
-def fixture_sacc_galaxy_xis_src0_lens0():
+def fixture_sacc_galaxy_xis_src0_lens0() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -642,9 +691,13 @@ def fixture_sacc_galaxy_xis_src0_lens0():
     return sacc_data, z, dndz0, dndz1
 
 
-@pytest.fixture(name="sacc_galaxy_cells")
+@pytest.fixture(name="sacc_galaxy_cells", scope="module")
 def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
-    """Fixture for a SACC data without window functions."""
+    """Fixture for a SACC data without window functions.
+
+    Module-scoped because SACC objects are expensive to create and are
+    read-only in tests.
+    """
     sacc_data = sacc.Sacc()
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
@@ -709,9 +762,20 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     return sacc_data, tracers, tracer_pairs
 
 
-@pytest.fixture(name="sacc_galaxy_cwindows")
-def fixture_sacc_galaxy_cwindows():
-    """Fixture for a SACC data with window functions."""
+@pytest.fixture(name="sacc_galaxy_cwindows", scope="module")
+def fixture_sacc_galaxy_cwindows() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
+    ],
+]:
+    """Fixture for a SACC data with window functions.
+
+    Module-scoped because SACC objects are expensive to create and are
+    read-only in tests.
+    """
     sacc_data = sacc.Sacc()
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
@@ -810,9 +874,20 @@ def fixture_sacc_galaxy_cwindows():
     return sacc_data, tracers, tracer_pairs
 
 
-@pytest.fixture(name="sacc_galaxy_xis")
-def fixture_sacc_galaxy_xis():
-    """Fixture for a SACC data without window functions."""
+@pytest.fixture(name="sacc_galaxy_xis", scope="module")
+def fixture_sacc_galaxy_xis() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+    ],
+]:
+    """Fixture for a SACC data without window functions.
+
+    Module-scoped because SACC objects are expensive to create and are
+    read-only in tests.
+    """
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
@@ -891,7 +966,14 @@ def fixture_sacc_galaxy_xis():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_inverted")
-def fixture_sacc_galaxy_xis_inverted():
+def fixture_sacc_galaxy_xis_inverted() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+    ],
+]:
     """Fixture for a SACC data without window functions."""
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
@@ -1116,4 +1198,201 @@ def make_tp_factory(
         correlation_space=tp.TwoPointCorrelationSpace.REAL,
         weak_lensing_factories=[wl_factory],
         number_counts_factories=[nc_factory],
+        cmb_factories=[cmb.CMBConvergenceFactory()],
     )
+
+
+# Optimized fixtures that eliminate "incompatible measurements" skips
+
+
+def _discover_measurements_by_space():
+    """Automatically discover all measurements that support real/harmonic space.
+
+    This function dynamically finds all measurement types from the enums,
+    so it automatically stays current when new measurements are added.
+
+    Filters out measurements that don't have factory support in the test environment.
+    """
+    # Use the pre-computed ALL_MEASUREMENTS list
+    all_measurements = ALL_MEASUREMENTS
+
+    # Filter out measurements without factory support or incomplete implementation
+    # - Clusters.COUNTS: not supported by TwoPointFactory (no cluster factory)
+    # - CMB.CONVERGENCE in real space: missing cmb_convergence_xi SACC type
+
+    supported_measurements = [
+        m
+        for m in all_measurements
+        if not isinstance(m, type(Clusters.COUNTS)) or m != Clusters.COUNTS
+    ]
+
+    # Categorize by space support
+    real_measurements = [
+        m
+        for m in supported_measurements
+        if measurement_supports_real(m) and m != CMB.CONVERGENCE
+    ]
+    harmonic_measurements = [
+        m for m in supported_measurements if measurement_supports_harmonic(m)
+    ]
+
+    return real_measurements, harmonic_measurements
+
+
+def _generate_compatible_pairs(measurements, compatibility_func):
+    """Generate all valid measurement pairs for a given compatibility function."""
+    return [
+        (m1, m2)
+        for m1, m2 in product(measurements, repeat=2)
+        if compatibility_func(m1, m2)
+    ]
+
+
+# Automatically discover valid combinations at import time
+_REAL_MEASUREMENTS, _HARMONIC_MEASUREMENTS = _discover_measurements_by_space()
+
+_VALID_REAL_MEASUREMENT_PAIRS = _generate_compatible_pairs(
+    _REAL_MEASUREMENTS, measurement_is_compatible_real
+)
+
+_VALID_HARMONIC_MEASUREMENT_PAIRS = _generate_compatible_pairs(
+    _HARMONIC_MEASUREMENTS, measurement_is_compatible_harmonic
+)
+
+
+def _create_measurement_pair_ids(pairs):
+    """Create human-readable test IDs for measurement pairs."""
+    return [f"{m1.name.lower()}-{m2.name.lower()}" for m1, m2 in pairs]
+
+
+@pytest.fixture(
+    name="optimized_real_measurement_pair",
+    params=_VALID_REAL_MEASUREMENT_PAIRS,
+    ids=_create_measurement_pair_ids(_VALID_REAL_MEASUREMENT_PAIRS),
+)
+def make_optimized_real_measurement_pair(request):
+    """Generate only valid real-space measurement pairs.
+
+    Eliminates all "incompatible measurements" skips by pre-filtering
+    to only valid combinations. Automatically discovers valid combinations
+    so no maintenance required when new measurements are added.
+    """
+    return request.param
+
+
+@pytest.fixture(
+    name="optimized_harmonic_measurement_pair",
+    params=_VALID_HARMONIC_MEASUREMENT_PAIRS,
+    ids=_create_measurement_pair_ids(_VALID_HARMONIC_MEASUREMENT_PAIRS),
+)
+def make_optimized_harmonic_measurement_pair(request):
+    """Generate only valid harmonic-space measurement pairs.
+
+    Eliminates all "incompatible measurements" skips by pre-filtering
+    to only valid combinations. Automatically discovers valid combinations
+    so no maintenance required when new measurements are added.
+    """
+    return request.param
+
+
+@pytest.fixture(name="optimized_real_two_point_xy")
+def make_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoPointXY:
+    """Generate TwoPointXY for real space with zero skipped tests.
+
+    Uses auto-discovered valid measurement pairs, eliminating all
+    'incompatible measurements' skips while maintaining full test coverage.
+    """
+    m1, m2 = optimized_real_measurement_pair
+
+    bin_1 = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.linspace(0, 1, 5),
+        dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
+        measurements={m1},
+    )
+
+    bin_2 = InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.linspace(0, 1, 3),
+        dndz=np.array([0.1, 0.5, 0.4]),
+        measurements={m2},
+    )
+
+    # No compatibility check needed - we pre-filtered for valid pairs!
+    return TwoPointXY(x=bin_1, y=bin_2, x_measurement=m1, y_measurement=m2)
+
+
+@pytest.fixture(name="optimized_harmonic_two_point_xy")
+def make_optimized_harmonic_two_point_xy(
+    optimized_harmonic_measurement_pair,
+) -> TwoPointXY:
+    """Generate TwoPointXY for harmonic space with zero skipped tests.
+
+    Uses auto-discovered valid measurement pairs, eliminating all
+    'incompatible measurements' skips while maintaining full test coverage.
+    """
+    m1, m2 = optimized_harmonic_measurement_pair
+
+    # Use different z-distribution for harmonic space
+    z = np.linspace(0.0, 1.0, 256)  # Match default lensing kernel size
+
+    bin_1 = InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=z,
+        dndz=np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
+        measurements={m1},
+    )
+
+    bin_2 = InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=z,
+        dndz=np.exp(-0.5 * (z - 0.6) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
+        measurements={m2},
+    )
+
+    return TwoPointXY(x=bin_1, y=bin_2, x_measurement=m1, y_measurement=m2)
+
+
+# Optimized versions of dependent fixtures
+@pytest.fixture(name="optimized_two_point_cwindow")
+def make_optimized_two_point_cwindow(
+    window_1: tuple[
+        npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
+    ],
+    optimized_harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointHarmonic:
+    """Generate a TwoPointCWindow object with zero skipped tests.
+
+    Uses optimized fixtures that pre-filter for valid measurement pairs.
+    """
+    two_point = TwoPointHarmonic(
+        XY=optimized_harmonic_two_point_xy,
+        ells=window_1[0],
+        window=window_1[1],
+        window_ells=window_1[2],
+    )
+    return two_point
+
+
+@pytest.fixture(name="optimized_two_point_cell")
+def make_optimized_two_point_cell(
+    optimized_harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointHarmonic:
+    """Generate a TwoPointCell object with zero skipped tests.
+
+    Uses optimized fixtures that pre-filter for valid measurement pairs.
+    """
+    ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
+    return TwoPointHarmonic(ells=ells, XY=optimized_harmonic_two_point_xy)
+
+
+@pytest.fixture(name="optimized_two_point_real")
+def make_optimized_two_point_real(
+    optimized_real_two_point_xy: TwoPointXY,
+) -> TwoPointReal:
+    """Generate a TwoPointReal object with zero skipped tests.
+
+    Uses optimized fixtures that pre-filter for valid measurement pairs.
+    """
+    thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
+    return TwoPointReal(thetas=thetas, XY=optimized_real_two_point_xy)

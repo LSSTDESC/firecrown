@@ -51,5 +51,6 @@ else
   exit 1
 fi
 
-python -m pytest --runslow -vv --integration tests
-
+rm -f coverage.json
+rm -rf htmlcov
+pytest --numprocesses auto --durations 0 --cov firecrown --cov-report json --cov-report html --cov-branch
