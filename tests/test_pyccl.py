@@ -11,12 +11,12 @@ import pyccl
 # a pyccl.Cosmology object.
 
 
-@pytest.fixture(name="cosmo_params_1")
+@pytest.fixture(name="cosmo_params_1", scope="session")
 def fixture_cosmo_params_1():
     return {"Omega_c": 0.0, "Omega_b": 0.0, "h": 1.0, "A_s": 0.0, "n_s": 0.0}
 
 
-@pytest.fixture(name="cosmo_params_2")
+@pytest.fixture(name="cosmo_params_2", scope="session")
 def fixture_cosmo_params_2():
     return {"Omega_c": 0.0, "Omega_b": 0.0, "h": 1.0, "A_s": 0.0, "n_s": 0.25}
 
