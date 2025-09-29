@@ -1,6 +1,7 @@
 """Provides GaussFamily concrete types."""
 
 from __future__ import annotations
+
 import numpy as np
 
 from firecrown.likelihood.gaussfamily import GaussFamily

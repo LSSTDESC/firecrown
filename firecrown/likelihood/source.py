@@ -3,15 +3,16 @@
 from __future__ import annotations
 
 from abc import abstractmethod
+from collections.abc import Sequence
 from dataclasses import dataclass, replace
-from typing import Generic, Sequence, TypeVar, final, Annotated, Literal
+from typing import Annotated, Generic, Literal, TypeVar, final
 
-from pydantic import BaseModel, ConfigDict, Field
 import numpy as np
 import numpy.typing as npt
 import pyccl
 import pyccl.nl_pt
 import sacc
+from pydantic import BaseModel, ConfigDict, Field
 from scipy.interpolate import Akima1DInterpolator
 
 from firecrown import parameters
@@ -525,8 +526,8 @@ class SourceGalaxy(Source, Generic[_SourceGalaxyArgsT]):
 
         tracer = sacc_data.get_tracer(self.sacc_tracer)
 
-        z = getattr(tracer, "z").copy().flatten()
-        nz = getattr(tracer, "nz").copy().flatten()
+        z = tracer.z.copy().flatten()
+        nz = tracer.nz.copy().flatten()
         indices = np.argsort(z)
         z = z[indices]
         nz = nz[indices]

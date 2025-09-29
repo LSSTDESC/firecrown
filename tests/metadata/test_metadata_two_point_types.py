@@ -440,12 +440,14 @@ def test_check_two_point_consistence_harmonic(two_point_cell: TwoPointHarmonic):
     check_two_point_consistence_harmonic([tpm])
 
 
-def test_check_two_point_consistence_harmonic_real(two_point_real: TwoPointHarmonic):
+def test_check_two_point_consistence_harmonic_real(
+    optimized_two_point_real: TwoPointReal,
+):
     tpm = TwoPointMeasurement(
         data=np.zeros(100),
         indices=np.arange(100),
         covariance_name="cov",
-        metadata=two_point_real,
+        metadata=optimized_two_point_real,
     )
     with pytest.raises(
         ValueError,
@@ -454,22 +456,24 @@ def test_check_two_point_consistence_harmonic_real(two_point_real: TwoPointHarmo
         check_two_point_consistence_harmonic([tpm])
 
 
-def test_check_two_point_consistence_real(two_point_real: TwoPointReal):
+def test_check_two_point_consistence_real(optimized_two_point_real: TwoPointReal):
     tpm = TwoPointMeasurement(
         data=np.zeros(100),
         indices=np.arange(100),
         covariance_name="cov",
-        metadata=two_point_real,
+        metadata=optimized_two_point_real,
     )
     check_two_point_consistence_real([tpm])
 
 
-def test_check_two_point_consistence_real_harmonic(two_point_cell: TwoPointReal):
+def test_check_two_point_consistence_real_harmonic(
+    optimized_two_point_cell: TwoPointReal,
+):
     tpm = TwoPointMeasurement(
         data=np.zeros(100),
         indices=np.arange(100),
         covariance_name="cov",
-        metadata=two_point_cell,
+        metadata=optimized_two_point_cell,
     )
     with pytest.raises(
         ValueError,

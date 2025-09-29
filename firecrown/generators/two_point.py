@@ -4,9 +4,9 @@ from __future__ import annotations
 
 from typing import Annotated, TypedDict
 
-from pydantic import BaseModel, Field, model_validator, ConfigDict
 import numpy as np
 import numpy.typing as npt
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class LogLinearElls(BaseModel):
@@ -36,7 +36,7 @@ class LogLinearElls(BaseModel):
     n_log: Annotated[int, Field(ge=1)] = 200
 
     @model_validator(mode="after")
-    def require_increasing(self) -> "LogLinearElls":
+    def require_increasing(self) -> LogLinearElls:
         """Validate the ell values."""
         assert self.minimum < self.midpoint
         assert self.midpoint < self.maximum

@@ -1,12 +1,14 @@
 """The module responsible for extracting cluster data from a sacc file."""
 
 from abc import abstractmethod
+
 import numpy as np
 import numpy.typing as npt
 import sacc
 from sacc.tracers import SurveyTracer
-from firecrown.models.cluster.properties import ClusterProperty
+
 from firecrown.models.cluster.binning import SaccBin
+from firecrown.models.cluster.properties import ClusterProperty
 
 
 class ClusterData:

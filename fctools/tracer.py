@@ -20,81 +20,95 @@ N.B.: This tracer should be used only for debugging and development purposes.
       It interferes with the pytest test coverage measurement process.
 """
 
-import click
 import runpy
 import sys
 from pathlib import Path
-from typing import TextIO
 
-# some global context to be used in the tracing. We are relying on
-# 'trace_call' to act as a closure that captures these names.
-tracefile: TextIO | None = None  # the file used for logging
-level = 0  # the call nesting level
-entry = 0  # sequential entry number for each record
+import click
 
 
-def settrace(filename: str = "trace.tsv") -> TextIO:
+class TracerState:
+    """Encapsulates tracing state to avoid global variables."""
+
+    def __init__(self, filename: str = "trace.tsv") -> None:
+        """Initialize tracer state with output file."""
+        # File must remain open for the duration of tracing session (many callbacks)
+        # and is properly closed via close() method called from untrace()
+        self.tracefile = Path(filename).open(mode="w", encoding="utf8")  # noqa: SIM115
+        self.level = 0  # the call nesting level
+        self.entry = 0  # sequential entry number for each record
+        print("entry\tevent\tlevel\tfunction\tvalue\textra", file=self.tracefile)
+
+    def trace_call(self, fr, ev, arg):
+        """Callback used by settrace.
+
+        :param fr: the frame object
+        :param ev: the event type
+        :param arg: the argument
+        """
+        code = fr.f_code
+        extra = ""
+        match ev:
+            case "call":
+                self.entry += 1
+                self.level += 1
+                nargs = code.co_argcount
+                # slice the tuple to get only argument names
+                argnames = code.co_varnames[:nargs]
+                if nargs > 0 and code.co_varnames[0] == "self":
+                    val = fr.f_locals["self"]
+                    extra = f"{type(val).__name__}"
+                print(
+                    f"{self.entry}\tcall\t{self.level}\t{code.co_qualname}\t"
+                    f"{argnames}\t{extra}",
+                    file=self.tracefile,
+                )
+            case "return":
+                self.entry += 1
+                extra = f"{type(arg).__name__}"
+                # Handle special cases where arg conversion might cause issues
+                try:
+                    arg_str = str(arg)
+                except (AttributeError, RecursionError, TypeError):
+                    arg_str = f"<{type(arg).__name__} object>"
+                print(
+                    f"{self.entry}\treturn\t{self.level}\t{code.co_qualname}\t"
+                    f"{arg_str}\t{extra}",
+                    file=self.tracefile,
+                )
+                self.level -= 1
+            case "exception":
+                self.entry += 1
+                print(
+                    f"{self.entry}\texception\t{self.level}\t{code.co_qualname}\t"
+                    f"\t{extra}",
+                    file=self.tracefile,
+                )
+        return self.trace_call
+
+    def close(self) -> None:
+        """Close the trace file."""
+        self.tracefile.close()
+
+
+def settrace(filename: str = "trace.tsv") -> TracerState:
     """Start the tracer, with log being written to a new file with the given name.
 
     :param filename: the name of the new file to be created
+    :return: TracerState instance managing the trace
     """
-    global tracefile
-    tracefile = open(filename, mode="w", encoding="utf8")
-    print("entry\tevent\tlevel\tfunction\tvalue\textra", file=tracefile)
-    sys.settrace(trace_call)
-    return tracefile
+    tracer = TracerState(filename)
+    sys.settrace(tracer.trace_call)
+    return tracer
 
 
-def untrace(trace_file: TextIO) -> None:
+def untrace(tracer: TracerState) -> None:
     """Turn off tracing, and close the specified trace file.
 
-    :param trace_file: an open file, as returned by setttrace.
+    :param tracer: TracerState instance, as returned by settrace.
     """
     sys.settrace(None)
-    trace_file.close()
-
-
-def trace_call(fr, ev, arg):
-    """Callback used by settrace.
-
-    :param fr: the frame object
-    :param ev: the event type
-    :param arg: the argument
-    """
-    code = fr.f_code
-    extra = ""
-    global entry
-    global level
-    match ev:
-        case "call":
-            entry += 1
-            level += 1
-            nargs = code.co_argcount
-            # slice the tuple to get only argument names
-            argnames = code.co_varnames[:nargs]
-            if nargs > 0 and code.co_varnames[0] == "self":
-                val = fr.f_locals["self"]
-                extra = f"{type(val).__name__}"
-            print(
-                f"{entry}\tcall\t{level}\t{code.co_qualname}\t{argnames}\t{extra}",
-                file=tracefile,
-            )
-        case "return":
-            entry += 1
-            extra = f"{type(arg).__name__}"
-            print(
-                f"{entry}\treturn\t{level}\t{code.co_qualname}\t{arg}\t{extra}",
-                file=tracefile,
-            )
-            level -= 1
-        case "exception":
-            entry += 1
-            print(
-                f"{entry}\texception\t{level}\t{code.co_qualname}\t\t{extra}",
-                file=tracefile,
-            )
-    return trace_call
-
+    tracer.close()
 
 @click.command()
 @click.argument("target")
@@ -116,7 +130,7 @@ def main(target: str, output: str, module: bool):
     TARGET  Python script file or module name to trace
     """
     # Start tracing
-    trace_file = settrace(output)
+    tracer = settrace(output)
 
     try:
         if module:
@@ -138,11 +152,11 @@ def main(target: str, output: str, module: bool):
     except SystemExit:
         # Allow normal script exit
         pass
-    except Exception as e:
+    except (OSError, ImportError, ValueError, RuntimeError) as e:
         click.echo(f"Error during traced execution: {e}", err=True)
     finally:
         # Stop tracing and close file
-        untrace(trace_file)
+        untrace(tracer)
         click.echo(f"Trace complete. Output saved to: {output}")
 
 

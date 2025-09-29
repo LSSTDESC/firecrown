@@ -4,38 +4,37 @@ The CCLFactory class is a factory class that creates instances of the
 `pyccl.Cosmology` class.
 """
 
-from typing import Annotated, Any
 from enum import StrEnum, auto
+from typing import Annotated, Any
+
+import numpy as np
+import numpy.typing as npt
+import pyccl
+from pyccl.modified_gravity import MuSigmaMG
+from pyccl.neutrinos import NeutrinoMassSplits
+from pydantic import (
+    BaseModel,
+    BeforeValidator,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    field_serializer,
+    model_serializer,
+    model_validator,
+)
+from pydantic_core import core_schema
 
 # To be moved to the import from typing when migrating to Python 3.11
 from typing_extensions import NotRequired, TypedDict, assert_never
 
-import numpy as np
-import numpy.typing as npt
-from pydantic import (
-    BaseModel,
-    ConfigDict,
-    BeforeValidator,
-    SerializerFunctionWrapHandler,
-    SerializationInfo,
-    Field,
-    field_serializer,
-    model_serializer,
-    model_validator,
-    PrivateAttr,
-)
-from pydantic_core import core_schema
-
-import pyccl
-from pyccl.neutrinos import NeutrinoMassSplits
-from pyccl.modified_gravity import MuSigmaMG
-
-from firecrown.updatable import Updatable
 from firecrown.parameters import (
-    register_new_updatable_parameter,
     ParamsMap,
     SamplerParameter,
+    register_new_updatable_parameter,
 )
+from firecrown.updatable import Updatable
 from firecrown.utils import YAMLSerializable
 
 # PowerSpec is a type that represents a power spectrum.
@@ -48,26 +47,30 @@ PowerSpec = TypedDict(
     },
 )
 
+
 # Background is a type that represents the cosmological background quantities.
-Background = TypedDict(
-    "Background",
-    {
-        "a": npt.NDArray[np.float64],
-        "chi": npt.NDArray[np.float64],
-        "h_over_h0": npt.NDArray[np.float64],
-    },
-)
+class Background(TypedDict):
+    """Type representing cosmological background quantities.
+
+    Contains arrays for scale factor, comoving distance, and Hubble parameter ratio.
+    """
+
+    a: npt.NDArray[np.float64]
+    chi: npt.NDArray[np.float64]
+    h_over_h0: npt.NDArray[np.float64]
+
 
 # CCLCalculatorArgs is a type that represents the arguments for the
 # CCLCalculator.
-CCLCalculatorArgs = TypedDict(
-    "CCLCalculatorArgs",
-    {
-        "background": Background,
-        "pk_linear": NotRequired[PowerSpec],
-        "pk_nonlin": NotRequired[PowerSpec],
-    },
-)
+class CCLCalculatorArgs(TypedDict):
+    """Arguments for the CCLCalculator.
+
+    Contains background cosmology and optional linear/nonlinear power spectra.
+    """
+
+    background: Background
+    pk_linear: NotRequired[PowerSpec]
+    pk_nonlin: NotRequired[PowerSpec]
 
 
 def _validate_neutrino_mass_splits(value):
@@ -268,7 +271,7 @@ class CCLSplineParams(BaseModel):
         spline_breaks = list(filter(lambda x: x is not None, spline_breaks))
         assert all(
             a is not None and b is not None and a < b
-            for a, b in zip(spline_breaks, spline_breaks[1:])
+            for a, b in zip(spline_breaks, spline_breaks[1:], strict=False)
         )
 
         # Ensure the mass spline boundaries are valid

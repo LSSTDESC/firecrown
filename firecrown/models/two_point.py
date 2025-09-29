@@ -1,23 +1,22 @@
 """TwoPoint theory support."""
 
-from typing import Sequence, Any
+from collections.abc import Sequence
 from enum import Flag, auto
+from typing import Any
 
 import numpy as np
-from numpy import typing as npt
-
 import pyccl
 import sacc
-
-from pydantic_core import core_schema
+from numpy import typing as npt
 from pydantic import GetCoreSchemaHandler
+from pydantic_core import core_schema
 
 from firecrown.generators.two_point import EllOrThetaConfig, LogLinearElls
 from firecrown.likelihood.source import Source, Tracer
 from firecrown.metadata_types import TracerNames
-from firecrown.updatable import Updatable
-from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
+from firecrown.updatable import Updatable
 from firecrown.utils import ClIntegrationOptions
 
 
@@ -222,8 +221,7 @@ def at_least_one_tracer_has_hm(
 def at_least_one_tracer_has_pt(
     tools: ModelingTools, tracer0: Tracer, tracer1: Tracer
 ) -> pyccl.Pk2D:
-    """
-    Compute the power spectrum with the perturbation theory.
+    """Compute the power spectrum with the perturbation theory.
 
     If one of the tracers does not have a perturbation theory (PT) tracer, a dummy
     matter PT tracer is created for it. This is useful for doing cross-correlations
