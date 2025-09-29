@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 """Method tracing facility.
 
 This module provides a facility to capture and record tracing data, using the
@@ -19,7 +20,10 @@ N.B.: This tracer should be used only for debugging and development purposes.
       It interferes with the pytest test coverage measurement process.
 """
 
+import click
+import runpy
 import sys
+from pathlib import Path
 from typing import TextIO
 
 # some global context to be used in the tracing. We are relying on
@@ -41,13 +45,13 @@ def settrace(filename: str = "trace.tsv") -> TextIO:
     return tracefile
 
 
-def untrace(tracefile: TextIO) -> None:
+def untrace(trace_file: TextIO) -> None:
     """Turn off tracing, and close the specified trace file.
 
-    :param tracefile: an open file, as returned by setttrace.
+    :param trace_file: an open file, as returned by setttrace.
     """
     sys.settrace(None)
-    tracefile.close()
+    trace_file.close()
 
 
 def trace_call(fr, ev, arg):
@@ -90,3 +94,57 @@ def trace_call(fr, ev, arg):
                 file=tracefile,
             )
     return trace_call
+
+
+@click.command()
+@click.argument("target")
+@click.option(
+    "--output", "-o", default="trace.tsv", help="Output trace file (default: trace.tsv)"
+)
+@click.option(
+    "--module",
+    "-m",
+    is_flag=True,
+    help="Run target as a module (like python -m module)",
+)
+def main(target: str, output: str, module: bool):
+    """Trace execution of a Python script or module.
+
+    This tool enables method tracing for Python code, recording function
+    calls, returns, and exceptions to a TSV file for analysis.
+
+    TARGET  Python script file or module name to trace
+    """
+    # Start tracing
+    trace_file = settrace(output)
+
+    try:
+        if module:
+            # Run as module (like python -m)
+            click.echo(f"Tracing module: {target}")
+            click.echo(f"Trace output: {output}")
+            runpy.run_module(target, run_name="__main__", alter_sys=True)
+        else:
+            # Run as script file
+            script_path = Path(target)
+            if not script_path.exists():
+                click.echo(f"Error: Script file '{target}' not found.", err=True)
+                sys.exit(1)
+
+            click.echo(f"Tracing script: {target}")
+            click.echo(f"Trace output: {output}")
+            runpy.run_path(str(script_path), run_name="__main__")
+
+    except SystemExit:
+        # Allow normal script exit
+        pass
+    except Exception as e:
+        click.echo(f"Error during traced execution: {e}", err=True)
+    finally:
+        # Stop tracing and close file
+        untrace(trace_file)
+        click.echo(f"Trace complete. Output saved to: {output}")
+
+
+if __name__ == "__main__":
+    main()

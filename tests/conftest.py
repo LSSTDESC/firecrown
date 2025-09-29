@@ -85,25 +85,30 @@ def _skip_tests(items, keyword, reason):
 # Fixtures
 
 
-@pytest.fixture(name="empty_pyccl_tracer")
+@pytest.fixture(name="empty_pyccl_tracer", scope="session")
 def fixture_empty_pyccl_tracer() -> pyccl.Tracer:
+    """Return an empty tracer."""
     return pyccl.Tracer()
 
 
 @pytest.fixture(name="trivial_stats")
-def make_stats():
-    """Return a non-empty list of TrivialStatistics."""
+def make_stats() -> list[TrivialStatistic]:
+    """Return a non-empty list of TrivialStatistics.
+
+    Function-scoped because TrivialStatistic objects have mutable state
+    and cannot be safely shared across tests.
+    """
     return [TrivialStatistic()]
 
 
-@pytest.fixture(name="trivial_params")
-def make_trivial_params() -> ParamsMap:
+@pytest.fixture(name="trivial_params", scope="session")
+def fixture_trivial_params() -> ParamsMap:
     """Return a ParamsMap with one parameter."""
     return ParamsMap({"mean": 1.0})
 
 
 @pytest.fixture(name="sacc_data_for_trivial_stat")
-def make_sacc_data():
+def make_sacc_data() -> sacc.Sacc:
     """Create a sacc.Sacc object suitable for configuring a
     :class:`TrivialStatistic`."""
     result = sacc.Sacc()
@@ -159,10 +164,14 @@ def fixture_sacc_with_covariance(sacc_with_data_points: sacc.Sacc) -> sacc.Sacc:
     return result
 
 
-@pytest.fixture(name="tools_with_vanilla_cosmology")
-def fixture_tools_with_vanilla_cosmology():
+@pytest.fixture(name="tools_with_vanilla_cosmology", scope="session")
+def fixture_tools_with_vanilla_cosmology() -> ModelingTools:
     """Return a ModelingTools object containing the LCDM cosmology from
-    pyccl."""
+    pyccl.
+
+    Session-scoped because this object is expensive to create and is never
+    modified by tests - only read from.
+    """
     result = ModelingTools()
     params = get_default_params_map(result)
     result.update(params)
@@ -387,7 +396,9 @@ def make_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
 
 
 @pytest.fixture(name="harmonic_data_with_window")
-def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+def fixture_harmonic_data_with_window(
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointMeasurement:
     """Return some fake harmonic data."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     # The window is given by the mean of the ells in each bin times the bin number.
@@ -415,7 +426,9 @@ def fixture_harmonic_data_with_window(harmonic_two_point_xy) -> TwoPointMeasurem
 
 
 @pytest.fixture(name="harmonic_data_no_window")
-def fixture_harmonic_data_no_window(harmonic_two_point_xy) -> TwoPointMeasurement:
+def fixture_harmonic_data_no_window(
+    harmonic_two_point_xy: TwoPointXY,
+) -> TwoPointMeasurement:
     """Return some fake harmonic data."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     data = (np.zeros(100) - 1.1).astype(np.float64)
@@ -487,8 +500,10 @@ def fixture_cluster_sacc_data() -> sacc.Sacc:
 # Two-point related SACC data fixtures
 
 
-@pytest.fixture(name="sacc_galaxy_cells_src0_src0")
-def fixture_sacc_galaxy_cells_src0_src0():
+@pytest.fixture(name="sacc_galaxy_cells_src0_src0", scope="module")
+def fixture_sacc_galaxy_cells_src0_src0() -> (
+    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -507,8 +522,13 @@ def fixture_sacc_galaxy_cells_src0_src0():
     return sacc_data, z, dndz
 
 
-@pytest.fixture(name="sacc_galaxy_cells_src0_src1")
-def fixture_sacc_galaxy_cells_src0_src1():
+@pytest.fixture(name="sacc_galaxy_cells_src0_src1", scope="module")
+def fixture_sacc_galaxy_cells_src0_src1() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
 
     z = np.linspace(0, 1.0, 256) + 0.05
@@ -531,8 +551,10 @@ def fixture_sacc_galaxy_cells_src0_src1():
     return sacc_data, z, dndz0, dndz1
 
 
-@pytest.fixture(name="sacc_galaxy_cells_lens0_lens0")
-def fixture_sacc_galaxy_cells_lens0_lens0():
+@pytest.fixture(name="sacc_galaxy_cells_lens0_lens0", scope="module")
+def fixture_sacc_galaxy_cells_lens0_lens0() -> (
+    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -552,7 +574,12 @@ def fixture_sacc_galaxy_cells_lens0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_lens0_lens1")
-def fixture_sacc_galaxy_cells_lens0_lens1():
+def fixture_sacc_galaxy_cells_lens0_lens1() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -574,7 +601,9 @@ def fixture_sacc_galaxy_cells_lens0_lens1():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens0")
-def fixture_sacc_galaxy_xis_lens0_lens0():
+def fixture_sacc_galaxy_xis_lens0_lens0() -> (
+    tuple[sacc.Sacc, npt.NDArray[np.float64], npt.NDArray[np.float64]]
+):
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -594,7 +623,12 @@ def fixture_sacc_galaxy_xis_lens0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_lens0_lens1")
-def fixture_sacc_galaxy_xis_lens0_lens1():
+def fixture_sacc_galaxy_xis_lens0_lens1() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -616,7 +650,12 @@ def fixture_sacc_galaxy_xis_lens0_lens1():
 
 
 @pytest.fixture(name="sacc_galaxy_cells_src0_lens0")
-def fixture_sacc_galaxy_cells_src0_lens0():
+def fixture_sacc_galaxy_cells_src0_lens0() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -639,7 +678,12 @@ def fixture_sacc_galaxy_cells_src0_lens0():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_src0_lens0")
-def fixture_sacc_galaxy_xis_src0_lens0():
+def fixture_sacc_galaxy_xis_src0_lens0() -> tuple[
+    sacc.Sacc,
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+    npt.NDArray[np.float64],
+]:
     """Fixture for a SACC data without window functions."""
     sacc_data = sacc.Sacc()
 
@@ -661,9 +705,13 @@ def fixture_sacc_galaxy_xis_src0_lens0():
     return sacc_data, z, dndz0, dndz1
 
 
-@pytest.fixture(name="sacc_galaxy_cells")
+@pytest.fixture(name="sacc_galaxy_cells", scope="module")
 def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
-    """Fixture for a SACC data without window functions."""
+    """Fixture for a SACC data without window functions.
+
+    Module-scoped because SACC objects are expensive to create and are
+    read-only in tests.
+    """
     sacc_data = sacc.Sacc()
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
@@ -728,9 +776,20 @@ def fixture_sacc_galaxy_cells() -> tuple[sacc.Sacc, dict, dict]:
     return sacc_data, tracers, tracer_pairs
 
 
-@pytest.fixture(name="sacc_galaxy_cwindows")
-def fixture_sacc_galaxy_cwindows():
-    """Fixture for a SACC data with window functions."""
+@pytest.fixture(name="sacc_galaxy_cwindows", scope="module")
+def fixture_sacc_galaxy_cwindows() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], sacc.BandpowerWindow],
+    ],
+]:
+    """Fixture for a SACC data with window functions.
+
+    Module-scoped because SACC objects are expensive to create and are
+    read-only in tests.
+    """
     sacc_data = sacc.Sacc()
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
@@ -829,9 +888,20 @@ def fixture_sacc_galaxy_cwindows():
     return sacc_data, tracers, tracer_pairs
 
 
-@pytest.fixture(name="sacc_galaxy_xis")
-def fixture_sacc_galaxy_xis():
-    """Fixture for a SACC data without window functions."""
+@pytest.fixture(name="sacc_galaxy_xis", scope="module")
+def fixture_sacc_galaxy_xis() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+    ],
+]:
+    """Fixture for a SACC data without window functions.
+
+    Module-scoped because SACC objects are expensive to create and are
+    read-only in tests.
+    """
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)
     thetas = np.linspace(0.0, 2.0 * np.pi, 20, dtype=np.float64)
@@ -910,7 +980,14 @@ def fixture_sacc_galaxy_xis():
 
 
 @pytest.fixture(name="sacc_galaxy_xis_inverted")
-def fixture_sacc_galaxy_xis_inverted():
+def fixture_sacc_galaxy_xis_inverted() -> tuple[
+    sacc.Sacc,
+    dict[str, tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]],
+    dict[
+        tuple[TracerNames, str],
+        tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]],
+    ],
+]:
     """Fixture for a SACC data without window functions."""
 
     z = (np.linspace(0, 1.0, 256) + 0.05).astype(np.float64)

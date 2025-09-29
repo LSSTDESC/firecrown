@@ -286,6 +286,29 @@ def test_updatablecollection_without_derived_parameters():
     assert obj.get_derived_parameters() is None
 
 
+def test_updatablecollection_with_items_without_derived_parameters():
+    """get_derived_parameters returns None when all items have no derived parameters."""
+    obj: UpdatableCollection = UpdatableCollection()
+
+    # Add updatables that do not implement _get_derived_parameters (return None)
+    obj.append(MinimalUpdatable())
+    obj.append(SimpleUpdatable())
+
+    # Update them so they're in valid state for get_derived_parameters
+    params = ParamsMap({"a": 1.0, "x": 2.0, "y": 3.0})
+    obj.update(params)
+
+    # First call returns empty collections, which get combined
+    first_call = obj.get_derived_parameters()
+    assert first_call is not None
+    assert len(first_call) == 0  # Should be empty
+
+    # Second call should hit the branch where has_any_derived stays False
+    # because all individual updatables now return None
+    # This covers the missing branch [432, 430]
+    assert obj.get_derived_parameters() is None
+
+
 @pytest.fixture(name="nested_updatables", params=permutations(range(3)))
 def fixture_nested_updatables(request):
     updatables = np.array(

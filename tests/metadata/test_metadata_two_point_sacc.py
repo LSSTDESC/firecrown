@@ -633,6 +633,7 @@ def test_make_reals(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]) -> None:
         assert two_point_xis.XY == bin_comb
 
 
+@pytest.mark.slow
 def test_extract_all_harmonic_data(
     sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
 ) -> None:
@@ -654,6 +655,7 @@ def test_extract_all_harmonic_data(
     check_two_point_consistence_harmonic(two_point_harmonics)
 
 
+@pytest.mark.slow
 def test_extract_all_harmonic_with_window_data(
     sacc_galaxy_cwindows: tuple[sacc.Sacc, dict, dict],
 ) -> None:
@@ -679,6 +681,7 @@ def test_extract_all_harmonic_with_window_data(
     check_two_point_consistence_harmonic(two_point_harmonics)
 
 
+@pytest.mark.slow
 def test_extract_all_real_data(sacc_galaxy_xis: tuple[sacc.Sacc, dict, dict]):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
@@ -716,6 +719,7 @@ def test_constructor_harmonic_metadata(
         assert_array_equal(two_point.ells, tracer_pairs[tracer_pairs_key][0])
 
 
+@pytest.mark.slow
 def test_constructor_harmonic_data(sacc_galaxy_cells, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
@@ -759,6 +763,7 @@ def test_constructor_harmonic_with_window_metadata(sacc_galaxy_cwindows, tp_fact
         assert_array_equal(two_point.ells, window.values)
 
 
+@pytest.mark.slow
 def test_constructor_harmonic_with_window_data(sacc_galaxy_cwindows, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_cwindows
 
@@ -800,6 +805,7 @@ def test_constructor_reals_metadata(sacc_galaxy_xis, tp_factory):
         assert_array_equal(two_point.thetas, tracer_pairs[tracer_pairs_key][0])
 
 
+@pytest.mark.slow
 def test_constructor_reals_data(sacc_galaxy_xis, tp_factory):
     sacc_data, _, tracer_pairs = sacc_galaxy_xis
 
