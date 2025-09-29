@@ -1,18 +1,18 @@
-"""
-Module for displaying class definitions with attributes and decorators.
+"""Module for displaying class definitions with attributes and decorators.
 
 This module provides utilities to inspect and display Python class
 definitions in a formatted way suitable for syntax highlighting.
 """
 
 import ast
-import click
 import importlib
 import inspect
-from typing import Type, Any
+from typing import Any
+
+import click
 
 
-def display_class_attributes(cls: Type[Any]) -> None:
+def display_class_attributes(cls: type[Any]) -> None:
     """Display class definition with attributes and decorators.
 
     Formatted for syntax highlighting in Quarto/Jupyter.
@@ -85,7 +85,7 @@ def display_class_attributes(cls: Type[Any]) -> None:
     print("```")
 
 
-def display_class_without_markdown(cls: Type[Any]) -> None:
+def display_class_without_markdown(cls: type[Any]) -> None:
     """Display class definition without markdown code blocks.
 
     Same as display_class_attributes but outputs plain code without
@@ -144,7 +144,7 @@ def display_class_without_markdown(cls: Type[Any]) -> None:
     print(code_str)
 
 
-def import_class(full_path: str) -> Type[Any]:
+def import_class(full_path: str) -> type[Any]:
     """Import a class from a full path, returning the class."""
     module_path, class_name = full_path.rsplit(".", 1)
     module = importlib.import_module(module_path)

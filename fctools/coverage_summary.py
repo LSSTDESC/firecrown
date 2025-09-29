@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Comprehensive tool to analyze test coverage output in JSON format.
+"""Comprehensive tool to analyze test coverage output in JSON format.
 
 This tool provides a detailed analysis of test coverage including:
 - Overall coverage summary
@@ -9,12 +8,13 @@ This tool provides a detailed analysis of test coverage including:
 - Files with less than perfect coverage
 """
 
-import click
 import json
 import sys
-from pathlib import Path
-from typing import List, Dict, Any
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Any
+
+import click
 
 
 @dataclass
@@ -45,14 +45,14 @@ class FileIssue:
     missing_lines_count: int
     missing_branches_count: int
     excluded_lines_count: int
-    missing_lines: List[int]
-    missing_branches: List[List[int]]
-    excluded_lines: List[int]
+    missing_lines: list[int]
+    missing_branches: list[list[int]]
+    excluded_lines: list[int]
     total_statements: int
     total_branches: int
 
 
-def group_consecutive_lines(lines: List[int]) -> List[str]:
+def group_consecutive_lines(lines: list[int]) -> list[str]:
     """Group consecutive line numbers for better readability."""
     if not lines:
         return []
@@ -80,7 +80,7 @@ def group_consecutive_lines(lines: List[int]) -> List[str]:
 
 
 def _calculate_branch_coverage_summary(
-    totals: Dict[str, Any],
+    totals: dict[str, Any],
 ) -> tuple[int, int, float]:
     """Calculate overall branch coverage statistics."""
     total_branches = totals.get("num_branches", 0)
@@ -97,7 +97,7 @@ def _calculate_branch_coverage_summary(
 
 
 def _calculate_file_branch_coverage(
-    file_summary: Dict[str, Any], total_statements: int
+    file_summary: dict[str, Any], total_statements: int
 ) -> float:
     """Calculate branch coverage for a single file."""
     total_branches = file_summary.get("num_branches", 0)
@@ -111,10 +111,10 @@ def _calculate_file_branch_coverage(
 
 def _create_file_issue(
     file_path: str,
-    file_summary: Dict[str, Any],
-    missing_lines: List[int],
-    missing_branches: List[List[int]],
-    excluded_lines: List[int],
+    file_summary: dict[str, Any],
+    missing_lines: list[int],
+    missing_branches: list[list[int]],
+    excluded_lines: list[int],
     line_coverage: float,
     branch_coverage: float,
 ) -> FileIssue:
@@ -135,7 +135,7 @@ def _create_file_issue(
 
 
 def _analyze_single_file(
-    file_path: str, file_data: Dict[str, Any], summary: CoverageSummary
+    file_path: str, file_data: dict[str, Any], summary: CoverageSummary
 ) -> FileIssue | None:
     """Analyze a single file and update summary, return FileIssue if needed."""
     summary.total_files += 1
@@ -182,9 +182,9 @@ def _analyze_single_file(
 
 def analyze_coverage_json(
     coverage_file: Path,
-) -> tuple[CoverageSummary, List[FileIssue]]:
+) -> tuple[CoverageSummary, list[FileIssue]]:
     """Analyze coverage data from a JSON file."""
-    with open(coverage_file, "r", encoding="utf-8") as f:
+    with open(coverage_file, encoding="utf-8") as f:
         coverage_data = json.load(f)
 
     files_data = coverage_data.get("files", {})
@@ -252,7 +252,7 @@ def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
     try:
         source_file = Path(issue.file_path)
         if source_file.exists():
-            with open(source_file, "r", encoding="utf-8") as f:
+            with open(source_file, encoding="utf-8") as f:
                 lines = f.readlines()
 
             print("   Source code for missing lines:")
@@ -262,7 +262,7 @@ def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
                     print(f"     {line_num:4d}: {line_content}")
         else:
             print("   (Source file not found for line details)")
-    except (OSError, IOError, UnicodeDecodeError) as e:
+    except (OSError, UnicodeDecodeError) as e:
         print(f"   (Error reading source file: {e})")
 
 
@@ -305,7 +305,7 @@ def _print_file_issue_details(issue: FileIssue, show_source: bool) -> None:
         print(f"   Excluded Lines ({issue.excluded_lines_count}): {lines_str}")
 
 
-def print_file_issues(file_issues: List[FileIssue], show_source: bool = True) -> None:
+def print_file_issues(file_issues: list[FileIssue], show_source: bool = True) -> None:
     """Print detailed information about files with coverage issues."""
     if not file_issues:
         print("🎉 ALL FILES HAVE PERFECT COVERAGE!")
@@ -324,7 +324,7 @@ def print_file_issues(file_issues: List[FileIssue], show_source: bool = True) ->
 
 
 def print_perfect_coverage_files(
-    file_issues: List[FileIssue], all_files: List[str]
+    file_issues: list[FileIssue], all_files: list[str]
 ) -> None:
     """Print files with perfect coverage."""
     files_with_issues = {issue.file_path for issue in file_issues}
@@ -359,12 +359,12 @@ def main(coverage_file: Path, show_source: bool, show_perfect: bool) -> None:
 
         if show_perfect:
             # Get all file paths from the original data
-            with open(coverage_file, "r", encoding="utf-8") as f:
+            with open(coverage_file, encoding="utf-8") as f:
                 coverage_data = json.load(f)
             all_files = list(coverage_data.get("files", {}).keys())
             print_perfect_coverage_files(file_issues, all_files)
 
-    except (OSError, IOError, json.JSONDecodeError) as e:
+    except (OSError, json.JSONDecodeError) as e:
         print(f"Error analyzing coverage file: {e}")
         sys.exit(1)
 

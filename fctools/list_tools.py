@@ -4,7 +4,6 @@
 import ast
 import importlib.util
 from pathlib import Path
-from typing import Dict
 
 import click
 
@@ -31,7 +30,7 @@ def _extract_description_from_file(file_path: Path) -> str:
     """Extract description from a Python file's module docstring."""
     try:
         # Try to parse the AST to get the module docstring
-        with open(file_path, "r", encoding="utf-8") as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         tree = ast.parse(content)
@@ -55,7 +54,7 @@ def _extract_description_from_file(file_path: Path) -> str:
     return "Tool description not available"
 
 
-def _discover_tools() -> Dict[str, str]:
+def _discover_tools() -> dict[str, str]:
     """Auto-discover all Python tools in the fctools directory."""
     tools = {}
 

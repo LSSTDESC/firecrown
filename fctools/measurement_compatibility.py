@@ -1,6 +1,5 @@
 #!/usr/bin/env python
-"""
-Tool for analyzing measurement compatibility in Firecrown.
+"""Tool for analyzing measurement compatibility in Firecrown.
 
 This tool provides insights into which measurement pairs are compatible
 for real-space and harmonic-space two-point correlation functions.
@@ -14,21 +13,22 @@ Physical Examples:
   Incompatible: E-mode shear in real space (harmonic-space only)
 """
 
-import click
+from collections.abc import Callable
 from itertools import product
-from typing import List, Tuple, Callable
+
+import click
 
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Measurement,
-    measurement_is_compatible_real,
     measurement_is_compatible_harmonic,
-    measurement_supports_real,
+    measurement_is_compatible_real,
     measurement_supports_harmonic,
+    measurement_supports_real,
 )
 
 
-def discover_measurements_by_space() -> Tuple[List[Measurement], List[Measurement]]:
+def discover_measurements_by_space() -> tuple[list[Measurement], list[Measurement]]:
     """Discover all measurements that support real/harmonic space.
 
     Returns:
@@ -46,9 +46,9 @@ def discover_measurements_by_space() -> Tuple[List[Measurement], List[Measuremen
 
 
 def generate_compatible_pairs(
-    measurements: List[Measurement],
+    measurements: list[Measurement],
     compatibility_func: Callable[[Measurement, Measurement], bool],
-) -> List[Tuple[Measurement, Measurement]]:
+) -> list[tuple[Measurement, Measurement]]:
     """Generate all valid measurement pairs for a given compatibility function.
 
     Args:
@@ -66,8 +66,8 @@ def generate_compatible_pairs(
 
 
 def print_measurements_by_space(
-    real_measurements: List[Measurement],
-    harmonic_measurements: List[Measurement],
+    real_measurements: list[Measurement],
+    harmonic_measurements: list[Measurement],
     verbose: bool = False,
 ) -> None:
     """Print measurements categorized by space support."""
@@ -83,7 +83,7 @@ def print_measurements_by_space(
 
 
 def print_compatible_pairs(
-    space_name: str, pairs: List[Tuple[Measurement, Measurement]], verbose: bool = False
+    space_name: str, pairs: list[tuple[Measurement, Measurement]], verbose: bool = False
 ) -> None:
     """Print compatible measurement pairs for a given space."""
     print(f"\n✅ Valid {space_name} pairs: {len(pairs)}")
@@ -93,10 +93,10 @@ def print_compatible_pairs(
 
 
 def print_efficiency_gains(
-    real_measurements: List[Measurement],
-    harmonic_measurements: List[Measurement],
-    real_pairs: List[Tuple[Measurement, Measurement]],
-    harmonic_pairs: List[Tuple[Measurement, Measurement]],
+    real_measurements: list[Measurement],
+    harmonic_measurements: list[Measurement],
+    real_pairs: list[tuple[Measurement, Measurement]],
+    harmonic_pairs: list[tuple[Measurement, Measurement]],
 ) -> None:
     """Print efficiency improvements from using compatible pairs."""
     total_real_combinations = len(real_measurements) ** 2
@@ -113,10 +113,10 @@ def print_efficiency_gains(
 
 
 def print_summary_stats(
-    real_measurements: List[Measurement],
-    harmonic_measurements: List[Measurement],
-    real_pairs: List[Tuple[Measurement, Measurement]],
-    harmonic_pairs: List[Tuple[Measurement, Measurement]],
+    real_measurements: list[Measurement],
+    harmonic_measurements: list[Measurement],
+    real_pairs: list[tuple[Measurement, Measurement]],
+    harmonic_pairs: list[tuple[Measurement, Measurement]],
 ) -> None:
     """Print summary statistics."""
     total_measurements = len(ALL_MEASUREMENTS)

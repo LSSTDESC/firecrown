@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 """This script provides a way to print the class hierarchy of a given type."""
 
-import click
 import importlib
 import inspect
+
+import click
 
 
 def import_type(full_path: str) -> type:
