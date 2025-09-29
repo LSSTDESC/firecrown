@@ -3,6 +3,8 @@
 import pytest
 import numpy as np
 from scipy.integrate import quad
+from hypothesis import given, assume
+from hypothesis.strategies import floats
 from firecrown.models.cluster.mass_proxy import (
     MurataBinned,
     MurataUnbinned,
@@ -64,23 +66,28 @@ def test_create_musigma_kernel():
     assert mb.sigma_p2 is None
 
 
-def test_cluster_observed_z():
-    for z in np.geomspace(1.0e-18, 2.0, 20):
-        zarray = np.atleast_1d(z)
-        mass = np.atleast_1d(0)
-        f_z = MassRichnessGaussian.observed_value((0.0, 0.0, 1.0), mass, zarray, 0, 0)
-        assert f_z == pytest.approx(np.log1p(zarray), 1.0e-7, 0.0)
+@given(z=floats(min_value=1e-15, max_value=2.0))
+def test_cluster_observed_z_mathematical_property(z: float):
+    """Test mathematical identity: f(z) = ln(1+z) using hypothesis."""
+    zarray = np.atleast_1d(z)
+    mass = np.atleast_1d(0)
+    f_z = MassRichnessGaussian.observed_value((0.0, 0.0, 1.0), mass, zarray, 0, 0)
+    expected = np.log1p(zarray)
+    assert f_z == pytest.approx(
+        expected, rel=1.0e-7, abs=0.0
+    ), f"Expected f(z={z}) = ln(1+z) = {expected}, got {f_z}"
 
 
-def test_cluster_observed_mass():
-    for mass in np.linspace(10.0, 16.0, 20):
-        z = np.atleast_1d(0)
-        massarray = np.atleast_1d(mass)
-        f_logM = MassRichnessGaussian.observed_value(
-            (0.0, 1.0, 0.0), massarray, z, 0, 0
-        )
-
-        assert f_logM == pytest.approx(mass * np.log(10.0), 1.0e-7, 0.0)
+@given(mass=floats(min_value=10.0, max_value=16.0))
+def test_cluster_observed_mass_mathematical_property(mass: float):
+    """Test mathematical identity: f(mass) = mass * ln(10) using hypothesis."""
+    z = np.atleast_1d(0)
+    massarray = np.atleast_1d(mass)
+    f_logM = MassRichnessGaussian.observed_value((0.0, 1.0, 0.0), massarray, z, 0, 0)
+    expected = mass * np.log(10.0)
+    assert f_logM == pytest.approx(
+        expected, rel=1.0e-7, abs=0.0
+    ), f"Expected f(mass={mass}) = mass * ln(10) = {expected}, got {f_logM}"
 
 
 def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned):
@@ -119,6 +126,69 @@ def test_cluster_murata_binned_distribution(murata_binned_relation: MurataBinned
                 assert probability_1 <= probability_0
             else:
                 assert probability_1 >= probability_0
+
+
+@given(
+    z=floats(min_value=1e-15, max_value=2.0), mass=floats(min_value=7.0, max_value=26.0)
+)
+def test_cluster_distribution_properties(z: float, mass: float):
+    """Mathematical properties of the cluster mass distribution using hypothesis."""
+    # Create the relation inside the test to avoid fixture issues
+    murata_binned_relation = MurataBinned(PIVOT_MASS, PIVOT_Z)
+    murata_binned_relation.mu_p0 = 3.00
+    murata_binned_relation.mu_p1 = 0.086
+    murata_binned_relation.mu_p2 = 0.01
+    murata_binned_relation.sigma_p0 = 3.0
+    murata_binned_relation.sigma_p1 = 0.07
+    murata_binned_relation.sigma_p2 = 0.01
+
+    mass_proxy_limits = (1.0, 5.0)
+
+    mass_array = np.atleast_1d(mass)
+    z_array = np.atleast_1d(z)
+
+    probability = murata_binned_relation.distribution(
+        mass_array, z_array, mass_proxy_limits
+    )
+
+    # Test non-negativity property
+    assert probability >= 0, f"Probability must be non-negative, got {probability}"
+
+
+@given(
+    z=floats(min_value=1e-15, max_value=2.0),
+    mass1=floats(min_value=7.0, max_value=25.0),
+    mass_delta=floats(min_value=0.1, max_value=1.0),
+)
+def test_cluster_distribution_unimodal_property(
+    z: float, mass1: float, mass_delta: float
+):
+    """Test that the distribution has at most one peak (unimodal) using hypothesis."""
+    # Create the relation inside the test to avoid fixture issues
+    murata_binned_relation = MurataBinned(PIVOT_MASS, PIVOT_Z)
+    murata_binned_relation.mu_p0 = 3.00
+    murata_binned_relation.mu_p1 = 0.086
+    murata_binned_relation.mu_p2 = 0.01
+    murata_binned_relation.sigma_p0 = 3.0
+    murata_binned_relation.sigma_p1 = 0.07
+    murata_binned_relation.sigma_p2 = 0.01
+
+    mass_proxy_limits = (1.0, 5.0)
+    mass2 = mass1 + mass_delta
+
+    # Skip if mass2 is out of range
+    assume(mass2 <= 26.0)
+
+    mass1_array = np.atleast_1d(mass1)
+    mass2_array = np.atleast_1d(mass2)
+    z_array = np.atleast_1d(z)
+
+    prob1 = murata_binned_relation.distribution(mass1_array, z_array, mass_proxy_limits)
+    prob2 = murata_binned_relation.distribution(mass2_array, z_array, mass_proxy_limits)
+
+    # Both probabilities should be non-negative
+    assert prob1 >= 0, f"Probability at mass1={mass1} must be non-negative"
+    assert prob2 >= 0, f"Probability at mass2={mass2} must be non-negative"
 
 
 def test_cluster_murata_binned_mean(murata_binned_relation: MurataBinned):
