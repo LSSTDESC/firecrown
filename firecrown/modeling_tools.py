@@ -9,15 +9,14 @@ calculators.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Collection
+from collections.abc import Collection
 
 import pyccl.nl_pt
 
+from firecrown.ccl_factory import CCLCalculatorArgs, CCLFactory
 from firecrown.models.cluster.abundance import ClusterAbundance
 from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
-
 from firecrown.updatable import Updatable, UpdatableCollection
-from firecrown.ccl_factory import CCLFactory, CCLCalculatorArgs
 
 
 class ModelingTools(Updatable):

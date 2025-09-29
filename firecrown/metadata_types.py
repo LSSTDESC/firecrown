@@ -3,17 +3,17 @@
 This module contains metadata types definitions.
 """
 
-from typing import Any
-from itertools import chain, combinations_with_replacement
-from dataclasses import dataclass
 import re
-from enum import StrEnum, Enum, auto
+from dataclasses import dataclass
+from enum import Enum, StrEnum, auto
+from itertools import chain, combinations_with_replacement
+from typing import Any
 
-from pydantic_core import core_schema
 import numpy as np
 import numpy.typing as npt
+from pydantic_core import core_schema
 
-from firecrown.utils import compare_optional_arrays, YAMLSerializable
+from firecrown.utils import YAMLSerializable, compare_optional_arrays
 
 
 @dataclass(frozen=True)
@@ -594,9 +594,8 @@ class TwoPointHarmonic(YAMLSerializable):
                     "window_ells should have the same number of "
                     "elements as the columns of window."
                 )
-        else:
-            if self.window_ells is not None:
-                raise ValueError("window_ells must be None if window is None.")
+        elif self.window_ells is not None:
+            raise ValueError("window_ells must be None if window is None.")
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointHarmonic objects."""

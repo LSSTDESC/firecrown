@@ -1,18 +1,18 @@
 """Module for defining the classes used in the MurataBinnedSpecZ cluster recipe."""
 
 # pylint: disable=duplicate-code
-from typing import Callable
+from collections.abc import Callable
 
 import numpy as np
 import numpy.typing as npt
 
 from firecrown.models.cluster.binning import NDimensionalBin
+from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
 from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
 from firecrown.models.cluster.kernel import SpectroscopicRedshift
 from firecrown.models.cluster.mass_proxy import MurataBinned
 from firecrown.models.cluster.properties import ClusterProperty
 from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
 
 
 class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):

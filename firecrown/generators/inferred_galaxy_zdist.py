@@ -1,27 +1,33 @@
 """Generation of inferred galaxy redshift distributions."""
 
-from typing import TypedDict, Annotated, Any, Unpack
-from itertools import pairwise
 from functools import cache
-
-from pydantic import BaseModel, ConfigDict, Field, field_serializer, BeforeValidator
+from itertools import pairwise
+from typing import Annotated, Any, TypedDict, Unpack
 
 import numpy as np
 import numpy.typing as npt
-from scipy.special import gamma, erf, erfc  # pylint: disable=no-name-in-module
-from scipy.integrate import quad
-
 from numcosmo_py import Ncm
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_serializer
+from scipy.integrate import quad
+from scipy.special import erf, erfc, gamma  # pylint: disable=no-name-in-module
 
-from firecrown.metadata_types import InferredGalaxyZDist, Galaxies
 from firecrown.metadata_functions import (
     Measurement,
     make_measurements,
     make_measurements_dict,
 )
+from firecrown.metadata_types import Galaxies, InferredGalaxyZDist
 
 
-BinsType = TypedDict("BinsType", {"edges": npt.NDArray, "sigma_z": float})
+class BinsType(TypedDict):
+    """Type defining redshift bin configuration.
+
+    Contains bin edges array and photometric redshift scatter parameter.
+    """
+
+    edges: npt.NDArray
+    sigma_z: float
+
 
 Y1_LENS_ALPHA = 0.94
 Y1_LENS_BETA = 2.0

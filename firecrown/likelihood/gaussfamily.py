@@ -2,27 +2,26 @@
 
 from __future__ import annotations
 
+import warnings
+from collections.abc import Callable, Sequence
 from enum import Enum
 from functools import wraps
-from typing import Sequence, Callable, TypeVar
-from typing import final
-import warnings
+from typing import TypeVar, final
 
-from typing_extensions import ParamSpec
 import numpy as np
 import numpy.typing as npt
-import scipy.linalg
-
 import sacc
+import scipy.linalg
+from typing_extensions import ParamSpec
 
-from firecrown.parameters import ParamsMap
 from firecrown.likelihood.likelihood import Likelihood
-from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import UpdatableCollection
 from firecrown.likelihood.statistic import (
-    Statistic,
     GuardedStatistic,
+    Statistic,
 )
+from firecrown.modeling_tools import ModelingTools
+from firecrown.parameters import ParamsMap
+from firecrown.updatable import UpdatableCollection
 from firecrown.utils import save_to_sacc
 
 

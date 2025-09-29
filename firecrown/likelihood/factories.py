@@ -1,5 +1,4 @@
-"""
-Factory functions for creating likelihoods from SACC files.
+"""Factory functions for creating likelihoods from SACC files.
 
 This module provides factory functions to create likelihood objects by combining a SACC
 file and a set of statistic factories. Users can define their own custom statistic
@@ -17,24 +16,24 @@ SACC file is being used without the need for complex customization.
 
 from pathlib import Path
 
-from typing_extensions import assert_never
+import sacc
 import yaml
 from pydantic import BaseModel
+from typing_extensions import assert_never
 
-import sacc
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
+from firecrown.ccl_factory import CCLFactory
+from firecrown.data_functions import (
+    TwoPointBinFilterCollection,
+    check_two_point_consistence_harmonic,
+    check_two_point_consistence_real,
+    extract_all_harmonic_data,
+    extract_all_real_data,
+)
 from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.likelihood.two_point import TwoPointFactory
 from firecrown.metadata_types import TwoPointCorrelationSpace
-from firecrown.data_functions import (
-    extract_all_real_data,
-    extract_all_harmonic_data,
-    check_two_point_consistence_real,
-    check_two_point_consistence_harmonic,
-    TwoPointBinFilterCollection,
-)
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
 
 
 class DataSourceSacc(BaseModel):
@@ -103,7 +102,7 @@ class TwoPointExperiment(BaseModel):
         """Load a TwoPointExperiment object from a YAML file."""
         filepath = ensure_path(file)
 
-        with open(filepath, "r", encoding="utf-8") as f:
+        with open(filepath, encoding="utf-8") as f:
             config = yaml.safe_load(f)
             tpe = cls.model_validate(config, strict=True)
 
@@ -135,8 +134,7 @@ class TwoPointExperiment(BaseModel):
 def build_two_point_likelihood(
     build_parameters: NamedParameters,
 ) -> tuple[Likelihood, ModelingTools]:
-    """
-    Build a likelihood object for two-point statistics from a SACC file.
+    """Build a likelihood object for two-point statistics from a SACC file.
 
     This function creates a likelihood object for two-point statistics using a SACC file
     and a set of statistic factories. The user must provide the SACC file and specify
@@ -162,8 +160,7 @@ def _build_two_point_likelihood_harmonic(
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
 ):
-    """
-    Build a likelihood object for two-point statistics in harmonic space.
+    """Build a likelihood object for two-point statistics in harmonic space.
 
     This function creates a likelihood object for two-point statistics in harmonic space
     using a SACC file and a set of statistic factories. The user must provide the SACC
@@ -196,8 +193,7 @@ def _build_two_point_likelihood_real(
     two_point_factory: TwoPointFactory,
     filters: TwoPointBinFilterCollection | None = None,
 ):
-    """
-    Build a likelihood object for two-point statistics in real space.
+    """Build a likelihood object for two-point statistics in real space.
 
     This function creates a likelihood object for two-point statistics in real space
     using a SACC file and a set of statistic factories. The user must provide the SACC

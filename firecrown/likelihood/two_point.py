@@ -1,9 +1,11 @@
 """Two point statistic support."""
 
 from __future__ import annotations
+
 import itertools
 import warnings
-from typing import Annotated, Sequence
+from collections.abc import Sequence
+from typing import Annotated
 
 import numpy as np
 import numpy.typing as npt
@@ -12,22 +14,31 @@ import pyccl.nl_pt
 import sacc.windows
 from pydantic import (
     BaseModel,
-    ConfigDict,
     BeforeValidator,
-    PrivateAttr,
+    ConfigDict,
     Field,
+    PrivateAttr,
 )
 
 import firecrown.generators.two_point as gen
+import firecrown.metadata_types as mdt
+from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
+from firecrown.likelihood.cmb import CMBConvergence, CMBConvergenceFactory
+from firecrown.likelihood.number_counts import NumberCounts, NumberCountsFactory
 from firecrown.likelihood.source import Source, Tracer
-from firecrown.likelihood.weak_lensing import WeakLensingFactory, WeakLensing
-from firecrown.likelihood.number_counts import NumberCountsFactory, NumberCounts
-from firecrown.likelihood.cmb import CMBConvergenceFactory, CMBConvergence
 from firecrown.likelihood.statistic import Statistic
+from firecrown.likelihood.weak_lensing import WeakLensing, WeakLensingFactory
+from firecrown.metadata_functions import (
+    TwoPointHarmonicIndex,
+    TwoPointRealIndex,
+    extract_window_function,
+    make_correlation_space,
+    measurements_from_index,
+)
 from firecrown.metadata_types import (
+    CMB_TYPES,
     GALAXY_LENS_TYPES,
     GALAXY_SOURCE_TYPES,
-    CMB_TYPES,
     InferredGalaxyZDist,
     Measurement,
     TracerNames,
@@ -36,30 +47,18 @@ from firecrown.metadata_types import (
     TwoPointReal,
     TypeSource,
 )
-
-from firecrown.metadata_functions import (
-    TwoPointHarmonicIndex,
-    TwoPointRealIndex,
-    extract_window_function,
-    measurements_from_index,
-    make_correlation_space,
-)
-from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
-
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.two_point import (
+    ApplyInterpolationWhen,
     TwoPointTheory,
     calculate_pk,
-    ApplyInterpolationWhen,
 )
 from firecrown.updatable import UpdatableCollection
 from firecrown.utils import (
+    ClIntegrationOptions,
     cached_angular_cl,
     make_log_interpolator,
-    ClIntegrationOptions,
 )
-import firecrown.metadata_types as mdt
-
 
 # only supported types are here, anything else will throw
 # a value error
@@ -168,7 +167,7 @@ class TwoPoint(Statistic):
          - n_log : int, optional - The number of logarithmically spaced angular
            wavenumber samples between `mid` and `max`. Default is 200.
 
-    Attributes
+    Attributes:
     ----------
     ccl_kind : str
         The CCL correlation function kind or 'cl' for power spectra corresponding

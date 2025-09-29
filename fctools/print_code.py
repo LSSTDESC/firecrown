@@ -1,18 +1,18 @@
-"""
-Module for displaying class definitions with attributes and decorators.
+"""Module for displaying class definitions with attributes and decorators.
 
 This module provides utilities to inspect and display Python class
 definitions in a formatted way suitable for syntax highlighting.
 """
 
 import ast
-import click
 import importlib
 import inspect
-from typing import Type, Any
+from typing import Any
+
+import click
 
 
-def display_class_attributes(cls: Type[Any]) -> None:
+def display_class_attributes(cls: type[Any]) -> None:
     """Display class definition with attributes and decorators.
 
     Formatted for syntax highlighting in Quarto/Jupyter.
@@ -85,7 +85,66 @@ def display_class_attributes(cls: Type[Any]) -> None:
     print("```")
 
 
-def import_class(full_path: str) -> Type[Any]:
+def display_class_without_markdown(cls: type[Any]) -> None:
+    """Display class definition without markdown code blocks.
+
+    Same as display_class_attributes but outputs plain code without
+    markdown wrapper for syntax highlighting.
+
+    Args:
+        cls: The class to display
+    """
+    try:
+        source = inspect.getsource(cls)
+    except OSError:
+        print(
+            f"Source code not available for {cls.__name__} "
+            f"(likely a built-in or C extension class)"
+        )
+        return
+
+    parsed = ast.parse(source)
+    class_def = None
+    for node in ast.iter_child_nodes(parsed):
+        if isinstance(node, ast.ClassDef) and node.name == cls.__name__:
+            class_def = node
+            break
+
+    if not class_def:
+        print(f"Could not find class definition for {cls.__name__}")
+        return
+
+    code_lines = []
+    for decorator in class_def.decorator_list:
+        code_lines.append(f"@{ast.unparse(decorator)}")
+
+    bases_str = ", ".join(ast.unparse(base) for base in class_def.bases)
+    code_lines.append(f"class {class_def.name}({bases_str}):")
+
+    if (
+        class_def.body
+        and isinstance(class_def.body[0], ast.Expr)
+        and isinstance(class_def.body[0].value, ast.Constant)
+        and isinstance(class_def.body[0].value.value, str)
+    ):
+        docstring = class_def.body[0].value.value
+        if "\n" in docstring:
+            code_lines.append('    """')
+            for line in docstring.strip().split("\n"):
+                code_lines.append(f"    {line}")
+            code_lines.append('    """')
+        else:
+            code_lines.append(f'    """{docstring}"""')
+
+    for item in class_def.body:
+        if isinstance(item, (ast.AnnAssign, ast.Assign)):
+            code_lines.append(f"    {ast.unparse(item)}")
+
+    code_str = "\n".join(code_lines)
+    print(code_str)
+
+
+def import_class(full_path: str) -> type[Any]:
     """Import a class from a full path, returning the class."""
     module_path, class_name = full_path.rsplit(".", 1)
     module = importlib.import_module(module_path)
@@ -109,63 +168,9 @@ def main(class_names, no_markdown: bool):
 
     CLASS_NAMES  One or more fully qualified class names
     """
-    # Temporarily modify display function if no-markdown requested
+    # Select the appropriate display function based on the no_markdown flag
     if no_markdown:
-        global _original_display_class_attributes
-        _original_display_class_attributes = display_class_attributes
-
-        def display_without_markdown(cls: Type[Any]) -> None:
-            # Same logic but without markdown wrapper
-            try:
-                source = inspect.getsource(cls)
-            except OSError:
-                print(
-                    f"Source code not available for {cls.__name__} "
-                    f"(likely a built-in or C extension class)"
-                )
-                return
-            parsed = ast.parse(source)
-            class_def = None
-            for node in ast.iter_child_nodes(parsed):
-                if isinstance(node, ast.ClassDef) and node.name == cls.__name__:
-                    class_def = node
-                    break
-
-            if not class_def:
-                print(f"Could not find class definition for {cls.__name__}")
-                return
-
-            code_lines = []
-            for decorator in class_def.decorator_list:
-                code_lines.append(f"@{ast.unparse(decorator)}")
-
-            bases_str = ", ".join(ast.unparse(base) for base in class_def.bases)
-            code_lines.append(f"class {class_def.name}({bases_str}):")
-
-            if (
-                class_def.body
-                and isinstance(class_def.body[0], ast.Expr)
-                and isinstance(class_def.body[0].value, ast.Constant)
-                and isinstance(class_def.body[0].value.value, str)
-            ):
-                docstring = class_def.body[0].value.value
-                if "\n" in docstring:
-                    code_lines.append('    """')
-                    for line in docstring.strip().split("\n"):
-                        code_lines.append(f"    {line}")
-                    code_lines.append('    """')
-                else:
-                    code_lines.append(f'    """{docstring}"""')
-
-            for item in class_def.body:
-                if isinstance(item, (ast.AnnAssign, ast.Assign)):
-                    code_lines.append(f"    {ast.unparse(item)}")
-
-            code_str = "\n".join(code_lines)
-            print(code_str)
-
-        # Temporarily replace the function
-        display_class_attributes_func = display_without_markdown
+        display_class_attributes_func = display_class_without_markdown
     else:
         display_class_attributes_func = display_class_attributes
 

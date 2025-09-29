@@ -45,6 +45,25 @@ python fctools/coverage_summary.py coverage.json --show-source
 python fctools/coverage_summary.py coverage.json --show-perfect
 ```
 
+### measurement_compatibility.py
+
+Analyze measurement compatibility for Firecrown two-point functions. Shows which measurement pairs are compatible and provides insights for test optimization.
+
+```bash
+# Basic compatibility analysis
+python fctools/measurement_compatibility.py
+
+# Detailed analysis with measurement lists
+python fctools/measurement_compatibility.py --verbose
+
+# Analyze specific space only
+python fctools/measurement_compatibility.py --space real
+python fctools/measurement_compatibility.py --space harmonic
+
+# Statistics only
+python fctools/measurement_compatibility.py --stats-only
+```
+
 ### print_hierarchy.py
 
 Display class hierarchy (Method Resolution Order) for Python types.
