@@ -957,7 +957,7 @@ class FirstNeighborsBinRule(BinRule):
 
     def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
         """Return True if the bin names are equal or one is one bin above the other."""
-        pattern = re.compile(r"(?P<text>.*?)(?P<number>\d+)")
+        pattern = re.compile(r"^(?P<text>.*?)(?P<number>\d+)$")
         if not (
             (match1 := pattern.match(zdist[0].bin_name))
             and (match2 := pattern.match(zdist[1].bin_name))
