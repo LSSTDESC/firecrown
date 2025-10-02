@@ -6,9 +6,9 @@ dependencies:
   - babel
   - black
   - charset-normalizer
-  - click < 8.2  # temporarily needed for numcosmo
+  - click
   - clmm
-  - compilers <= 1.8
+  - compilers
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
