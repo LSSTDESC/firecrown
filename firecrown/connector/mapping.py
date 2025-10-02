@@ -378,7 +378,7 @@ class MappingCosmoSIS(Mapping):
             Neff=Neff,
             m_nu=m_nu,
             w0=w0,
-            wa=-wa,  # Is this minus sign here correct?
+            wa=wa,  # Is this minus sign here correct?
             T_CMB=2.7255,
             # Modify CosmoSIS to make this available in the datablock
         )
