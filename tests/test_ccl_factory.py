@@ -762,3 +762,66 @@ def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
         pure_ccl_transfer_function=transfer_function,
     )
     assert factory.using_camb() is expected
+
+
+@pytest.mark.parametrize(
+    "creation_mode,transfer_function,nonlinear_pk,matter_pk_str",
+    [
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BBKS,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BOLTZMANN_CLASS,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.EISENSTEIN_HU,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.EISENSTEIN_HU_NOWIGGLES,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.DEFAULT,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.MU_SIGMA_ISITGR,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+            "halofit",
+        ),
+    ],
+)
+def test_ccl_factory_ccl_powerspectra(
+    creation_mode, transfer_function, nonlinear_pk, matter_pk_str
+):
+    factory = CCLFactory(
+        creation_mode=creation_mode,
+        pure_ccl_transfer_function=transfer_function,
+        require_nonlinear_pk=nonlinear_pk,
+    )
+    cosmo_params = get_default_params_map(factory)
+    factory.update(cosmo_params)
+    cosmo = factory.create()
+    assert cosmo is not None
+    assert isinstance(cosmo, pyccl.Cosmology)
+    assert cosmo.to_dict()["matter_power_spectrum"] == matter_pk_str
