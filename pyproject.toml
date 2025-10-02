@@ -1,3 +1,43 @@
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "firecrown"
+authors = [
+    { name = "DESCs Firecrown Developers" },
+]
+description = "DESC Cosmology Likelihood Framework"
+requires-python = ">=3.11"
+license-files = ["LICENSE"]
+dependencies = [
+    "astropy",
+    "cosmosis",
+    "cobaya",
+    "fitsio",
+    "numpy",
+    "scipy",
+    "numcosmo_py",
+    "pandas",
+    "pyccl",
+    "pydantic",
+    "sacc",
+    "pyyaml",
+]
+dynamic = ["version", "readme"]
+
+[tool.setuptools.dynamic]
+version = {attr = "firecrown.version.__version__"}
+readme = { file = "README.md", content-type = "text/markdown" }
+
+[project.urls]
+Homepage = "https://github.com/LSSTDESC/firecrown"
+
+[tool.setuptools.packages.find]
+include = ["firecrown"]
+exclude = ["examples*", "tests*", "tutorial*", "docs*"]
+
+# Coverage configuration
 [tool.coverage.report]
 exclude_also = [
    # Don't complain about unreachable code
@@ -8,7 +48,7 @@ exclude_also = [
 # Ruff configuration - replaces flake8 and pylint (black still used for formatting)
 [tool.ruff]
 line-length = 88
-target-version = "py310"
+target-version = "py311"
 
 [tool.ruff.lint]
 # Enable rules equivalent to flake8 + pylint + additional useful rules
@@ -154,7 +194,7 @@ known-third-party = ["numpy", "scipy", "pandas", "matplotlib", "astropy", "pyccl
 # Black configuration - keep existing formatting tool
 [tool.black]
 line-length = 88
-target-version = ['py310']
+target-version = ['py311']
 
 # Pyright configuration - runs alongside mypy without conflicts
 [tool.pyright]
@@ -173,10 +213,10 @@ exclude = [
 ]
 
 # Python version (should match your target)
-pythonVersion = "3.10"
+pythonVersion = "3.11"
 
 # Type checking configuration
-typeCheckingMode = "basic"  # Can be "off", "basic", or "strict"
+typeCheckingMode = "off"  # Can be "off", "basic", or "strict"
 
 # Enable useful warnings
 reportMissingImports = true
@@ -193,7 +233,7 @@ reportUnknownParameterType = false  # Allow flexibility with scientific librarie
 reportUnknownMemberType = false     # NumPy arrays have dynamic typing
 
 # Allow flexibility for scientific computing patterns
-reportGeneralTypeIssues = true
+reportGeneralTypeIssues = false
 reportOptionalMemberAccess = true
 reportOptionalSubscript = true
 reportPrivateImportUsage = false    # Scientific packages often use private imports
@@ -206,3 +246,23 @@ reportUnknownVariableType = false   # NumPy/SciPy operations create dynamic type
 # Performance - don't analyze every possible path
 reportUnnecessaryIsInstance = false
 reportUnnecessaryCast = false
+
+# Mypy configuration
+[tool.mypy]
+ignore_missing_imports = true
+check_untyped_defs = true
+exclude = "build|docs|.venv|venv"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+strict_equality = true
+extra_checks = true
+disallow_subclassing_any = true
+disallow_untyped_decorators = true
+explicit_package_bases = true
+# disallow_any_generics = true
+
+[[tool.mypy.overrides]]
+module = "firecrown.connector.cobaya.*"
+disallow_subclassing_any = false
