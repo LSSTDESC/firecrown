@@ -572,8 +572,9 @@ class CCLFactory(Updatable, BaseModel):
             self.pure_ccl_transfer_function
             == CCLPureModeTransferFunction.BOLTZMANN_CAMB
         ):
-            nonlin_str = "camb"
             if self.camb_extra_params is not None:
+                ccl_args["matter_power_spectrum"] = nonlin_str
+                nonlin_str = "camb"
                 ccl_args["extra_parameters"] = {
                     "camb": self.camb_extra_params.get_dict()
                 }

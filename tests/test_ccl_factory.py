@@ -771,7 +771,7 @@ def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
             CCLCreationMode.PURE_CCL_MODE,
             CCLPureModeTransferFunction.BOLTZMANN_CAMB,
             True,
-            "camb",
+            "halofit",
         ),
         (
             CCLCreationMode.PURE_CCL_MODE,
@@ -801,7 +801,7 @@ def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
             CCLCreationMode.DEFAULT,
             CCLPureModeTransferFunction.BOLTZMANN_CAMB,
             True,
-            "camb",
+            "halofit",
         ),
         (
             CCLCreationMode.MU_SIGMA_ISITGR,
