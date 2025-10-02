@@ -34,7 +34,7 @@ readme = { file = "README.md", content-type = "text/markdown" }
 Homepage = "https://github.com/LSSTDESC/firecrown"
 
 [tool.setuptools.packages.find]
-include = ["firecrown"]
+include = ["firecrown", "fctools"]
 exclude = ["examples*", "tests*", "tutorial*", "docs*"]
 
 # Coverage configuration
