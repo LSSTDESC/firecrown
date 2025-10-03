@@ -34,7 +34,7 @@ readme = { file = "README.md", content-type = "text/markdown" }
 Homepage = "https://github.com/LSSTDESC/firecrown"
 
 [tool.setuptools.packages.find]
-include = ["firecrown", "fctools"]
+include = ["firecrown"]
 exclude = ["examples*", "tests*", "tutorial*", "docs*"]
 
 # Coverage configuration
@@ -178,7 +178,7 @@ mccabe.max-complexity = 10
 ]
 
 # Command-line utilities in fctools legitimately use print() for user output
-"fctools/**/*.py" = [
+"firecrown/fctools/**/*.py" = [
     "T201",     # Print statements OK in CLI tools (coverage_summary, print_code, etc.)
 ]
 
@@ -199,7 +199,7 @@ target-version = ['py311']
 # Pyright configuration - runs alongside mypy without conflicts
 [tool.pyright]
 # Include all main source directories
-include = ["firecrown", "tests", "examples", "fctools"]
+include = ["firecrown", "tests", "examples"]
 
 # Exclude common non-source directories
 exclude = [

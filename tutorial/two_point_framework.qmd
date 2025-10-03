@@ -87,7 +87,7 @@ The implementation is as follows:
 ```{python}
 #| echo: false
 #| output: asis
-from fctools.print_code import display_class_attributes
+from firecrown.fctools.print_code import display_class_attributes
 from firecrown.metadata_types import InferredGalaxyZDist
 display_class_attributes(InferredGalaxyZDist)
 ```

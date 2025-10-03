@@ -176,9 +176,9 @@ def main(verbose: bool, space: str, stats_only: bool) -> None:
       ❌ E-mode shear in real space (harmonic-space only)
 
     Examples:
-      fctools measurement-compatibility --verbose
-      fctools measurement-compatibility --space real
-      fctools measurement-compatibility --stats-only
+      python -m firecrown.fctools.measurement_compatibility --verbose
+      python -m firecrown.fctools.measurement_compatibility --space real
+      python -m firecrown.fctools.measurement_compatibility --stats-only
     """
     print("🔍 Firecrown Measurement Compatibility Analysis")
     print("=" * 60)

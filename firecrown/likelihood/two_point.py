@@ -167,7 +167,7 @@ class TwoPoint(Statistic):
          - n_log : int, optional - The number of logarithmically spaced angular
            wavenumber samples between `mid` and `max`. Default is 200.
 
-    Attributes:
+    Attributes
     ----------
     ccl_kind : str
         The CCL correlation function kind or 'cl' for power spectra corresponding

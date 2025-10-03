@@ -78,6 +78,7 @@ def _discover_tools() -> dict[str, str]:
 
     return tools
 
+
 @click.command()
 @click.option(
     "--verbose",
@@ -105,14 +106,17 @@ def main(verbose: bool):
         if verbose:
             click.echo(f"  {tool}")
             click.echo(f"    {description}")
-            click.echo(f"    Usage: python fctools/{tool} --help")
+            tool_name = tool.replace(".py", "")
+            click.echo(f"    Usage: python -m firecrown.fctools.{tool_name} --help")
             click.echo()
         else:
             click.echo(f"  {tool:<25} - {description}")
 
     if not verbose:
         click.echo("\nUse --verbose for detailed information about each tool.")
-        click.echo("Use 'python fctools/TOOL.py --help' for tool-specific help.")
+        click.echo(
+            "Use 'python -m firecrown.fctools.TOOL --help' for tool-specific help."
+        )
 
 
 if __name__ == "__main__":
