@@ -22,30 +22,30 @@ This is the procedure we use for create a new release of Firecrown.
    ```
 
 7. Make sure that any new features introduced are described, and any features removed from the code have been removed, in the tutorial.
-8. Update the version in `firecrown/version.py`
-9. Update the test `tests/test_version.py`
-10. Re-run the version test to verify the version update:
+8. Update the version in `firecrown/version.py` (this is the ONLY file you need to edit manually).
+9. Update the tutorial version metadata by running:
+
+    ```bash
+    python tutorial/update_quarto_version.py
+    ```
+
+10. Re-run the version tests to verify everything is correct:
 
     ```bash
     pytest -v tests/test_version.py
     ```
 
-    This should pass, confirming the version number is correctly updated.
+    This should pass. Note: The version in `docs/conf.py`, `tests/test_version.py`, and `tutorial/introduction_to_firecrown.qmd` are now automatically derived from `firecrown/version.py`, so you don't need to update them manually.
 
-11. Update the tutorial files with the new release number.
-    1. _quarto.yml
-    2. introduction_to_firecrown.qmd
-    3. `docs/conf.py`
-    4. You can find all the files to change with: `rg -g '!*.ipynb' -g '!*.ini' -g '!*.yaml' -g '!*.yml' -l -F x.y` (if you have ripgrep installed) or `grep -r --exclude='*.ipynb' --exclude='*.ini' --exclude='*.yaml' --exclude='*.yml' -l 'x.y' .` where "x.y" should be replaced with the old release number.
-12. Commit and push all the changes to the new branch for the PR.
+11. Commit and push all the changes to the new branch for the PR.
     This can be done either through the web interface, or through the `gh` command line utility.
-13. Create a PR for the generation of the new release.
+12. Create a PR for the generation of the new release.
     The CI system will automatically run on the PR.
-14. If the CI system complains, fix things and iterate as needed.
-15. When the CI system passes, merge the PR.
-16. Use the GitHub web interface to tag the commit.
+13. If the CI system complains, fix things and iterate as needed.
+14. When the CI system passes, merge the PR.
+15. Use the GitHub web interface to tag the commit.
     Allow the automated system to generate the release notes.
-17. Create the new `conda` release.
+16. Create the new `conda` release.
     You do this in your local clone of the conda-forge feedstock repository (<https://github.com/conda-forge/firecrown-feedstock>).
 
     1. `git pull` to make sure you have the latest version of everything.
@@ -57,6 +57,6 @@ This is the procedure we use for create a new release of Firecrown.
     3. Commit and push changes.
     4. If you make an error, make sure you update the build number.
 
-18. Immediately change the version (in all the places listed above) to the next development version.
+17. Immediately change the version in `firecrown/version.py` to the next development version, then run `python tutorial/update_quarto_version.py` to update the tutorial.
     If the release just made is x.y.z, the new development version should be x.y.(z+1)a0 (where 'a0' indicates alpha/development status).
     For example: if you just released 1.8.3, change to 1.8.4a0.
