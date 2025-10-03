@@ -9,9 +9,9 @@ This is the procedure we use for create a new release of Firecrown.
 5. Make sure any new directories are being processed by black, flake8, mypy, and pylint.
 6. Make sure all tests pass, all code checking is passed, all examples are working.
 6a. Make sure the documentation builds:
-     make -C clean
-	 quarto render tutorial --output-dir=../docs/_static
-	 make -C docs html
+        make -C docs clean
+        quarto render tutorial --output-dir=../docs/_static
+        make -C docs html
 7. Make sure that any new features introduced are described, and any features removed from the code have been removed, in the tutorial.
 8. Update the version in `firecrown/version.py`
 9. Update the test `tests/test_version.py`
