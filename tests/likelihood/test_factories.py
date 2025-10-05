@@ -10,6 +10,7 @@ from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
     ensure_path,
+    load_sacc_data,
     TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
@@ -1219,3 +1220,46 @@ def test_two_point_factory_all_factories():
     cmb_result = factory.get_factory(CMB.CONVERGENCE, type_source=TypeSource("ts_cmb"))
     assert isinstance(cmb_result, CMBConvergenceFactory)
     assert cmb_result is cmb_factory
+
+
+def test_load_sacc_data_file_not_found():
+    """Test load_sacc_data raises FileNotFoundError for non-existent file."""
+    with pytest.raises(FileNotFoundError, match="SACC file not found"):
+        load_sacc_data("nonexistent_file.fits")
+
+
+def test_load_sacc_data_file_not_found_with_path():
+    """Test load_sacc_data raises FileNotFoundError with Path object."""
+    with pytest.raises(FileNotFoundError, match="SACC file not found"):
+        load_sacc_data(Path("/tmp/nonexistent_file.sacc"))
+
+
+def test_load_sacc_data_both_formats_fail(tmp_path):
+    """Test load_sacc_data raises ValueError when file is neither HDF5 nor FITS."""
+    # Create a file with invalid content (not HDF5, not FITS)
+    bad_file = tmp_path / "corrupted.sacc"
+    bad_file.write_text("This is not a valid SACC file format")
+
+    with pytest.raises(
+        ValueError,
+        match=re.compile(
+            "Failed to load SACC data from file.*"
+            "The file could not be read as either HDF5 or FITS format",
+            re.DOTALL,
+        ),
+    ):
+        load_sacc_data(bad_file)
+
+
+def test_load_sacc_data_with_path_object():
+    """Test load_sacc_data works with Path object input."""
+    sacc_data = load_sacc_data(Path("tests/bug_398.sacc.gz"))
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_load_sacc_data_with_string():
+    """Test load_sacc_data works with string input."""
+    sacc_data = load_sacc_data("tests/bug_398.sacc.gz")
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
