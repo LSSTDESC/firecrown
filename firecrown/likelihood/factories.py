@@ -43,20 +43,10 @@ def load_sacc_data(filepath: str | Path) -> sacc.Sacc:
     This allows the function to work with both modern HDF5-based SACC files
     and legacy FITS-based SACC files.
 
-    Args:
-        filepath: Path to the SACC data file (str or Path object)
-
-    Returns:
-        Loaded SACC data object
-
-    Raises:
-        FileNotFoundError: If the file does not exist
-        ValueError: If the file cannot be read as either HDF5 or FITS SACC data
-
-    Examples:
-        >>> sacc_data = load_sacc_data("data.hdf5")
-        >>> sacc_data = load_sacc_data("data.fits")
-        >>> sacc_data = load_sacc_data(Path("data.sacc"))
+    :param filepath: Path to the SACC data file (str or Path object)
+    :return: Loaded SACC data object
+    :raises FileNotFoundError: If the file does not exist
+    :raises ValueError: If the file cannot be read as either HDF5 or FITS SACC data
     """
     # Convert to Path object for consistent handling
     file_path = Path(filepath) if isinstance(filepath, str) else filepath
