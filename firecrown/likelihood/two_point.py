@@ -168,7 +168,7 @@ class TwoPoint(Statistic):
            wavenumber samples between `mid` and `max`. Default is 200.
 
     Attributes:
-    ----------
+    -----------
     ccl_kind : str
         The CCL correlation function kind or 'cl' for power spectra corresponding
         to the SACC data type.
