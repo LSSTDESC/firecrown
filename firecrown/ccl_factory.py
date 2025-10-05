@@ -449,7 +449,7 @@ class CCLFactory(Updatable, BaseModel):
         """Update the CAMB parameters in this CCLFactory object.
 
         :param params: The parameters to update.
-        :returns: None
+        :return: None
         """
         if self.camb_extra_params is not None:
             self.camb_extra_params.update(params)

@@ -452,7 +452,7 @@ def extract_window_function(
     :params sacc_data: the Sacc object from which we read.
     :params indices: the indices of the data points in the Sacc object which
         are computed by the window function.
-    :returns: the ells and weights of the window function that match the
+    :return: the ells and weights of the window function that match the
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
     """
@@ -628,7 +628,7 @@ def make_two_point_xy(
     :param tracer_names: a tuple of tracer names.
     :param data_type: the data type.
 
-    :returns: a TwoPointXY object.
+    :return: a TwoPointXY object.
     """
     a, b = MEASURED_TYPE_STRING_MAP[data_type]
 
