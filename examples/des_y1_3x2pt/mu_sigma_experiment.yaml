@@ -10,7 +10,7 @@
 # found in the SACC file.
 
 data_source:
-  sacc_data_file: sacc_data.fits
+  sacc_data_file: sacc_data.hdf5
 
 # The two point statistics are defined by the TwoPoint objects. The TwoPoint statistics
 # are created using the factories defined in this file.

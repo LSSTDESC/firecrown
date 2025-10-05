@@ -19,6 +19,7 @@ from firecrown.likelihood.two_point import (
     TracerNames,
 )
 from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 
@@ -36,9 +37,9 @@ def fixture_sacc_data() -> sacc.Sacc:
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
     saccfile = os.path.join(
         os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/sacc_data.fits",
+        "../examples/des_y1_3x2pt/sacc_data.hdf5",
     )
-    return sacc.Sacc.load_fits(saccfile)
+    return load_sacc_data(saccfile)
 
 
 @pytest.mark.slow
