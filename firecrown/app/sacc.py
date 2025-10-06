@@ -1,0 +1,285 @@
+"""SACC data visualization and analysis."""
+
+from typing import Annotated
+import dataclasses
+from pathlib import Path
+import sacc
+import typer
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+from rich.text import Text
+from scipy.interpolate import PchipInterpolator
+from scipy.integrate import quad
+import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib.colors import Normalize
+from matplotlib.patches import Patch
+
+from firecrown import metadata_types as mdt
+from firecrown import metadata_functions as mdf
+from firecrown import data_types as dtype
+from firecrown import data_functions as dfunc
+
+
+console = Console()
+
+
+def mean_std_tracer(tracer: mdt.InferredGalaxyZDist):
+    """Compute the mean and standard deviation of a tracer."""
+    # Create monotonic spline
+    spline = PchipInterpolator(tracer.z, tracer.dndz, extrapolate=0.0)
+    quad_opts = {"limit": 10000, "epsabs": 0.0, "epsrel": 1.0e-3}
+
+    # Normalization
+    norm, _ = quad(spline, tracer.z[0], tracer.z[-1], **quad_opts)
+
+    # Mean
+    mean_z, _ = quad(lambda t: t * spline(t), tracer.z[0], tracer.z[-1], **quad_opts)
+    mean_z /= norm
+
+    # Variance
+    var_z, _ = quad(
+        lambda t: (t - mean_z) ** 2 * spline(t), tracer.z[0], tracer.z[-1], **quad_opts
+    )
+    std_z = np.sqrt(var_z / norm)
+
+    return mean_z, std_z
+
+
+@dataclasses.dataclass(kw_only=True)
+class LoadSACC:
+    """Load and summarize a SACC file."""
+
+    sacc_file: Annotated[
+        Path, typer.Argument(help="Path to the SACC file.", show_default=True)
+    ]
+
+    plot_covariance: Annotated[
+        bool, typer.Option(help="Plot the covariance matrix.", show_default=True)
+    ] = False
+
+    def __post_init__(self) -> None:
+        """Load and display metadata from the SACC file."""
+        self._load_sacc_file()
+        self._show_sacc_summary()
+        self._show_tracers()
+        self._show_harmonic_bins()
+        self._show_real_bins()
+        self._show_final_summary()
+        if self.plot_covariance:
+            self._plot_covariance()
+
+    def _load_sacc_file(self) -> None:
+        """Load the SACC file, with error handling for missing or unreadable files."""
+        console.rule("[bold blue]Loading SACC file[/bold blue]")
+        console.print(f"[cyan]File:[/cyan] {self.sacc_file}")
+        try:
+            if not self.sacc_file.exists():
+                raise typer.BadParameter(f"SACC file not found: {self.sacc_file}")
+            self.sacc_data = sacc.Sacc.load_fits(self.sacc_file.as_posix())
+        except Exception as e:
+            console.print(f"[bold red]Failed to load SACC file:[/bold red] {e}")
+            raise
+
+    def _show_sacc_summary(self) -> None:
+        """Show a summary of the SACC file."""
+        n_tracers = len(self.sacc_data.tracers)
+        n_data_points = len(self.sacc_data.mean)
+        if self.sacc_data.covariance is None:
+            n_cov_elements = 0
+        else:
+            n_cov_elements = self.sacc_data.covariance.dense.shape[0]
+        self.all_tracers = mdf.extract_all_tracers_inferred_galaxy_zdists(
+            self.sacc_data, include_maybe_types=True
+        )
+        self.all_tracers.sort(key=lambda t: t.bin_name)
+        console.rule("[bold blue]SACC Summary[/bold blue]")
+        console.print(
+            Panel.fit(
+                f"[bold]Number of tracers:[/bold] {n_tracers}\n"
+                f"[bold]Data points:[/bold] {n_data_points}\n"
+                f"[bold]Covariance elements:[/bold] {n_cov_elements}",
+                title="SACC Summary",
+                border_style="green",
+            )
+        )
+
+    def _show_tracers(self) -> None:
+        """Show the tracers in the SACC file."""
+        if len(self.all_tracers) > 0:
+            console.rule("[bold magenta]Tracers[/bold magenta]")
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("Name")
+            table.add_column("TypeSource")
+            table.add_column("z min-max (density)")
+            table.add_column("dndz mean, std")
+            table.add_column("Measurements")
+            for tracer in self.all_tracers:
+                measurements_str = ", ".join(
+                    [m.name for m in sorted(tracer.measurements)]
+                )
+                z_str = f"{tracer.z.min():5.3f}-{tracer.z.max():5.3f}"
+                mean, std = mean_std_tracer(tracer)
+                dndz_str = f"{mean:5.3f} +/- {std:5.3f}"
+                table.add_row(
+                    tracer.bin_name,
+                    tracer.type_source,
+                    z_str,
+                    dndz_str,
+                    f"{{{measurements_str}}}",
+                )
+            console.print(table)
+
+    def _show_harmonic_bins(self) -> None:
+        """Show the harmonic bins in the SACC file."""
+        self.bin_comb_harmonic: list[dtype.TwoPointMeasurement] = (
+            dfunc.extract_all_harmonic_data(self.sacc_data)
+        )
+        self.bin_dict_harmonic = {
+            (
+                b.metadata.XY.x.bin_name,
+                b.metadata.XY.x_measurement,
+                b.metadata.XY.y.bin_name,
+                b.metadata.XY.y_measurement,
+            ): b
+            for b in self.bin_comb_harmonic
+        }
+        if len(self.bin_comb_harmonic) > 0:
+            console.rule("[bold magenta]Bin combinations [Harmonic][/bold magenta]")
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("x-bin")
+            table.add_column("y-bin")
+            table.add_column("x-meas")
+            table.add_column("y-meas")
+            table.add_column("ells: min-max (length, mean-delta)")
+            table.add_column("Window?")
+            table.add_column("SACC Datatype")
+            for m in self.bin_comb_harmonic:
+                assert isinstance(m.metadata, mdt.TwoPointHarmonic)
+                bin_harmonic: mdt.TwoPointHarmonic = m.metadata
+                window_str = (
+                    Text("Yes", style="green")
+                    if bin_harmonic.window is not None
+                    else Text("No", style="red")
+                )
+                ells_min = min(bin_harmonic.ells)
+                ells_max = max(bin_harmonic.ells)
+                ells_n = len(bin_harmonic.ells)
+                ells_mean_delta = (ells_max - ells_min) / (ells_n - 1)
+                ells_str = (
+                    f"{ells_min:6} - {ells_max:6} "
+                    f"({ells_n:6}, {ells_mean_delta:.2f})"
+                )
+                table.add_row(
+                    bin_harmonic.XY.x.bin_name,
+                    bin_harmonic.XY.y.bin_name,
+                    bin_harmonic.XY.x_measurement.name,
+                    bin_harmonic.XY.y_measurement.name,
+                    ells_str,
+                    window_str,
+                    bin_harmonic.get_sacc_name(),
+                )
+            console.print(table)
+
+    def _show_real_bins(self) -> None:
+        """Show the real bins in the SACC file."""
+        self.bin_comb_real: list[dtype.TwoPointMeasurement] = (
+            dfunc.extract_all_real_data(self.sacc_data)
+        )
+        self.bin_dict_real = {
+            (
+                b.metadata.XY.x.bin_name,
+                b.metadata.XY.x_measurement,
+                b.metadata.XY.y.bin_name,
+                b.metadata.XY.y_measurement,
+            ): b
+            for b in self.bin_comb_real
+        }
+        if len(self.bin_comb_real) > 0:
+            console.rule("[bold magenta]Bin combinations [Real][/bold magenta]")
+            table = Table(show_header=True, header_style="bold magenta")
+            table.add_column("x-bin")
+            table.add_column("y-bin")
+            table.add_column("x-meas")
+            table.add_column("y-meas")
+            table.add_column("thetas: min-max (length, mean-delta)")
+            table.add_column("SACC Datatype")
+            for m in self.bin_comb_real:
+                assert isinstance(m.metadata, mdt.TwoPointReal)
+                bin_real: mdt.TwoPointReal = m.metadata
+                thetas_min = min(bin_real.thetas)
+                thetas_max = max(bin_real.thetas)
+                thetas_n = len(bin_real.thetas)
+                thetas_mean_delta = (thetas_max - thetas_min) / (thetas_n - 1)
+                thetas_str = (
+                    f"{thetas_min:6.2f} - {thetas_max:6.2f} "
+                    f"({thetas_n:6}, {thetas_mean_delta:.2f})"
+                )
+                table.add_row(
+                    bin_real.XY.x.bin_name,
+                    bin_real.XY.y.bin_name,
+                    bin_real.XY.x_measurement.name,
+                    bin_real.XY.y_measurement.name,
+                    thetas_str,
+                    bin_real.get_sacc_name(),
+                )
+            console.print(table)
+
+    def _show_final_summary(self) -> None:
+        console.rule("[bold green]Summary[/bold green]")
+        console.print(
+            f"[yellow]Total harmonic bins:[/yellow] {len(self.bin_comb_harmonic)}"
+        )
+        console.print(f"[yellow]Total real bins:[/yellow] {len(self.bin_comb_real)}")
+        console.print(f"[yellow]Total tracers:[/yellow] {len(self.all_tracers)}")
+
+    def _plot_covariance(self) -> None:
+        """Plot the covariance matrix with annotations for harmonic and real bins."""
+        if self.sacc_data.covariance is None:
+            raise typer.BadParameter(
+                f"No covariance found in SACC file: {self.sacc_file}"
+            )
+
+        cov = self.sacc_data.covariance.dense
+        cor = np.corrcoef(cov)
+
+        all_bins = self.bin_comb_harmonic + self.bin_comb_real
+
+        fig, ax = plt.subplots(figsize=(10, 8))
+
+        indices_ordered = np.concatenate([b.indices for b in all_bins])
+
+        cor_ordered = cor[np.ix_(indices_ordered, indices_ordered)]
+
+        im = ax.matshow(
+            cor_ordered,
+            cmap="RdBu_r",  # Diverging colormap for positive/negative values
+            norm=Normalize(vmin=-1, vmax=1),
+        )
+        legend_patches = []
+        current_index = 0
+        for i, b in enumerate(all_bins):
+            length = len(b.indices)
+            start = current_index - 0.5
+            end = current_index + length - 0.5
+
+            # visible span (slightly opaque, drawn *below* the image)
+            color = f"C{i % 10}"  # cycle through default Matplotlib colors
+            ax.axvspan(start, end, color=color, alpha=0.08, zorder=2)
+            ax.axhspan(start, end, color=color, alpha=0.08, zorder=2)
+
+            # store for legend
+            legend_patches.append(
+                Patch(facecolor=color, alpha=0.3, label=str(b.metadata))
+            )
+
+            current_index += length
+        # Add colorbar
+        fig.colorbar(im, ax=ax, label="Correlation")
+
+        ax.set_title("Correlation Matrix")
+        # legend outside the plot
+        ax.legend(handles=legend_patches, title="Bins", loc="best", fontsize=8)
+        plt.tight_layout()
+        plt.show()
