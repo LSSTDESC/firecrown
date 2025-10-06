@@ -6,9 +6,9 @@ dependencies:
   - babel
   - black
   - charset-normalizer
-  - click < 8.2  # temporarily needed for numcosmo
+  - click
   - clmm
-  - compilers <= 1.8
+  - compilers
   - cosmosis >= 3.0
   - cosmosis-build-standard-library
   - coverage
@@ -46,7 +46,7 @@ dependencies:
   - pytest-cov
   - pytest-json-report
   - pytest-xdist
-  - python >= 3.10
+  - python >= 3.11
   - pyyaml
   - quarto
   - requests

@@ -49,9 +49,9 @@ def fixture_require_nonlinear_pk(request):
         CCLCreationMode.PURE_CCL_MODE,
         CCLCreationMode.MU_SIGMA_ISITGR,
     ],
-    ids=["default", "pure_ccl_mode", "mu_sigma_isitgr"],
 )
-def fixture_ccl_creation_mode(request):
+def fixture_ccl_creation_mode(request) -> CCLCreationMode:
+    """Fixture providing each CCLCreationMode."""
     return request.param
 
 
@@ -64,14 +64,62 @@ def fixture_ccl_creation_mode(request):
         {"halofit_version": "mead", "kmax": 0.1, "lmax": 100},
         {"dark_energy_model": "ppf"},
     ],
-    ids=["default", "mead", "mead_kmax", "mead_kmax_lmax", "ppf"],
+    ids=["no_camb", "mead", "mead_kmax", "mead_kmax_lmax", "ppf"],
 )
 def fixture_camb_extra_params(request) -> CAMBExtraParams | None:
-    return (
-        CAMBExtraParams.model_validate(request.param)
-        if request.param is not None
+    """Fixture providing each possible CAMBExtraParams configuration."""
+    if request.param is not None:
+        return CAMBExtraParams.model_validate(request.param)
+    return None
+
+
+@pytest.fixture(
+    name="ccl_creation_mode_and_camb_params",
+    params=[
+        # Test all creation modes with no CAMB params
+        (CCLCreationMode.DEFAULT, None, "default-no_camb"),
+        (CCLCreationMode.PURE_CCL_MODE, None, "pure_ccl_mode-no_camb"),
+        (CCLCreationMode.MU_SIGMA_ISITGR, None, "mu_sigma_isitgr-no_camb"),
+        # Test PURE_CCL_MODE with all CAMB param variations
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            {"halofit_version": "mead"},
+            "pure_ccl_mode-mead",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            {"halofit_version": "mead", "kmax": 0.1},
+            "pure_ccl_mode-mead_kmax",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            {"halofit_version": "mead", "kmax": 0.1, "lmax": 100},
+            "pure_ccl_mode-mead_kmax_lmax",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            {"dark_energy_model": "ppf"},
+            "pure_ccl_mode-ppf",
+        ),
+    ],
+    ids=lambda x: x[2],  # Use the third element (id string) as the test id
+)
+def fixture_ccl_creation_mode_and_camb_params(request):
+    """Provides valid combinations of creation mode and CAMB params.
+
+    CAMB extra parameters are only compatible with PURE_CCL_MODE, so this
+    fixture only generates valid combinations, eliminating pytest.skip.
+
+    Returns:
+        tuple: (CCLCreationMode, CAMBExtraParams | None)
+    """
+    creation_mode, camb_params_dict, _ = request.param
+    camb_params = (
+        CAMBExtraParams.model_validate(camb_params_dict)
+        if camb_params_dict is not None
         else None
     )
+    return creation_mode, camb_params
 
 
 @pytest.fixture(
@@ -124,6 +172,44 @@ def fixture_calculator_args(request) -> CCLCalculatorArgs:
     return request.param
 
 
+@pytest.fixture(
+    name="require_nonlinear_pk_and_calculator_args",
+    params=[
+        # When nonlinear PK is NOT required, any calculator_args work
+        (False, BACKGROUND, "no_require_nonlinear_pk-background"),
+        (False, BACKGROUND | PK_LINEAR, "no_require_nonlinear_pk-background_linear_pk"),
+        (
+            False,
+            BACKGROUND | PK_LINEAR | PK_NONLIN,
+            "no_require_nonlinear_pk-background_linear_pk_nonlinear_pk",
+        ),
+        # When nonlinear PK IS required, only calculator_args with pk_linear work
+        (
+            True,
+            BACKGROUND | PK_LINEAR,
+            "require_nonlinear_pk-background_linear_pk",
+        ),
+        (
+            True,
+            BACKGROUND | PK_LINEAR | PK_NONLIN,
+            "require_nonlinear_pk-background_linear_pk_nonlinear_pk",
+        ),
+    ],
+    ids=lambda x: x[2],  # Use the third element (id string) as the test id
+)
+def fixture_require_nonlinear_pk_and_calculator_args(request):
+    """Fixture providing valid combinations of require_nonlinear_pk and calculator_args.
+
+    Nonlinear PK requires linear PK to be present, so this fixture only generates
+    valid combinations, eliminating the need for pytest.skip.
+
+    Returns:
+        tuple: (bool, CCLCalculatorArgs) for require_nonlinear_pk and calculator_args
+    """
+    require_nl_pk, calc_args, _ = request.param
+    return require_nl_pk, calc_args
+
+
 @pytest.mark.parametrize(
     "transfer_function",
     list(CCLPureModeTransferFunction),
@@ -151,20 +237,15 @@ def test_ccl_factory_invalid_pure_mode_transfer_function():
 
 
 def test_setting_each_spline_param(
-    ccl_creation_mode: CCLCreationMode,
-    camb_extra_params: CAMBExtraParams | None,
+    ccl_creation_mode_and_camb_params: tuple[CCLCreationMode, CAMBExtraParams | None],
 ) -> None:
     # test_helper is a closure that captures the values of ccl_creation mode
     # and camb_extra_params, and is callable with just the param_name and
     # param_value to be tested.
+    ccl_creation_mode, camb_extra_params = ccl_creation_mode_and_camb_params
 
     def test_helper(param_name: str, param_value: float | int):
-        # Only allow camb_extra_params with PURE_CCL_MODE; skip otherwise
-        if (
-            camb_extra_params is not None
-            and ccl_creation_mode != CCLCreationMode.PURE_CCL_MODE
-        ):
-            pytest.skip("CAMB extra parameters are only compatible with PURE_CCL_MODE.")
+        # Using combined fixture ensures only valid combinations are tested
         original_param_value = getattr(pyccl.spline_params, param_name.upper())
         args = {param_name: param_value}
         spline_params = CCLSplineParams(**args)  # type: ignore
@@ -239,17 +320,15 @@ def test_ccl_factory_simple(
     amplitude_parameter: PoweSpecAmplitudeParameter,
     neutrino_mass_splits: NeutrinoMassSplits,
     require_nonlinear_pk: bool,
-    ccl_creation_mode: CCLCreationMode,
-    camb_extra_params: CAMBExtraParams | None,
+    ccl_creation_mode_and_camb_params: tuple[CCLCreationMode, CAMBExtraParams | None],
     ccl_spline_params: CCLSplineParams | None,
 ) -> None:
+    """Test CCL factory with various parameter combinations.
 
-    # Only allow camb_extra_params with PURE_CCL_MODE; skip otherwise
-    if (
-        camb_extra_params is not None
-        and ccl_creation_mode != CCLCreationMode.PURE_CCL_MODE
-    ):
-        pytest.skip("CAMB extra parameters are only compatible with PURE_CCL_MODE.")
+    This test uses a combined fixture that only generates valid combinations
+    of creation mode and CAMB parameters, eliminating unnecessary skips.
+    """
+    ccl_creation_mode, camb_extra_params = ccl_creation_mode_and_camb_params
 
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
@@ -289,10 +368,16 @@ def test_ccl_factory_simple(
 def test_ccl_factory_ccl_args(
     amplitude_parameter: PoweSpecAmplitudeParameter,
     neutrino_mass_splits: NeutrinoMassSplits,
-    require_nonlinear_pk: bool,
-    calculator_args: CCLCalculatorArgs,
+    require_nonlinear_pk_and_calculator_args: tuple[bool, CCLCalculatorArgs],
     ccl_spline_params: CCLSplineParams,
 ) -> None:
+    """Test CCL factory with calculator args.
+
+    Uses combined fixture to only test valid combinations where nonlinear PK
+    requirements are compatible with provided calculator args.
+    """
+    require_nonlinear_pk, calculator_args = require_nonlinear_pk_and_calculator_args
+
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
         mass_split=neutrino_mass_splits,
@@ -302,12 +387,6 @@ def test_ccl_factory_ccl_args(
             3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
         ),
     )
-
-    if require_nonlinear_pk and "pk_linear" not in calculator_args:
-        pytest.skip(
-            "Nonlinear power spectrum requested but "
-            "linear power spectrum not provided."
-        )
 
     assert ccl_factory is not None
     assert ccl_factory.amplitude_parameter == amplitude_parameter
@@ -762,3 +841,66 @@ def test_ccl_factory_using_camb(creation_mode, transfer_function, expected):
         pure_ccl_transfer_function=transfer_function,
     )
     assert factory.using_camb() is expected
+
+
+@pytest.mark.parametrize(
+    "creation_mode,transfer_function,nonlinear_pk,matter_pk_str",
+    [
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BBKS,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.BOLTZMANN_CLASS,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.EISENSTEIN_HU,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.PURE_CCL_MODE,
+            CCLPureModeTransferFunction.EISENSTEIN_HU_NOWIGGLES,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.DEFAULT,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+            "halofit",
+        ),
+        (
+            CCLCreationMode.MU_SIGMA_ISITGR,
+            CCLPureModeTransferFunction.BOLTZMANN_CAMB,
+            True,
+            "halofit",
+        ),
+    ],
+)
+def test_ccl_factory_ccl_powerspectra(
+    creation_mode, transfer_function, nonlinear_pk, matter_pk_str
+):
+    factory = CCLFactory(
+        creation_mode=creation_mode,
+        pure_ccl_transfer_function=transfer_function,
+        require_nonlinear_pk=nonlinear_pk,
+    )
+    cosmo_params = get_default_params_map(factory)
+    factory.update(cosmo_params)
+    cosmo = factory.create()
+    assert cosmo is not None
+    assert isinstance(cosmo, pyccl.Cosmology)
+    assert cosmo.to_dict()["matter_power_spectrum"] == matter_pk_str

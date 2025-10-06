@@ -522,11 +522,32 @@ class CCLFactory(Updatable, BaseModel):
                 ccl_args["A_s"] = self.A_s
             case PoweSpecAmplitudeParameter.SIGMA8:
                 ccl_args["sigma8"] = self.sigma8
-            case _ as unreachable:
-                assert_never(unreachable)
+            case _ as unreachable_ap:
+                assert_never(unreachable_ap)
 
         assert ("A_s" in ccl_args) or ("sigma8" in ccl_args)
 
+        if (
+            self.creation_mode != CCLCreationMode.DEFAULT
+        ) and calculator_args is not None:
+            raise ValueError(
+                "Calculator Mode can only be used with the DEFAULT creation."
+            )
+
+        assert self.creation_mode in CCLCreationMode
+        match self.creation_mode:
+            case CCLCreationMode.DEFAULT:
+                return self._create_default(ccl_args, calculator_args)
+            case CCLCreationMode.MU_SIGMA_ISITGR:
+                return self._create_mu_sigma_isitgr(ccl_args)
+            case CCLCreationMode.PURE_CCL_MODE:
+                return self._create_pure_ccl(ccl_args)
+            case _ as unreachable_cm:
+                assert_never(unreachable_cm)
+
+    def _create_default(
+        self, ccl_args: dict[str, Any], calculator_args: CCLCalculatorArgs | None
+    ) -> pyccl.Cosmology:
         if calculator_args is not None:
             ccl_args.update(calculator_args)
             if ("pk_nonlin" not in ccl_args) and self.require_nonlinear_pk:
@@ -534,39 +555,48 @@ class CCLFactory(Updatable, BaseModel):
             else:
                 ccl_args["nonlinear_model"] = None
 
-            if self.creation_mode != CCLCreationMode.DEFAULT:
-                raise ValueError(
-                    "Calculator Mode can only be used with the DEFAULT creation."
-                )
-
             if self.ccl_spline_params is not None:
                 with self.ccl_spline_params:
                     self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
             else:
                 self._ccl_cosmo = pyccl.CosmologyCalculator(**ccl_args)
+
             return self._ccl_cosmo
 
+        return self._create_pure_ccl(ccl_args)
+
+    def _create_pure_ccl(self, ccl_args: dict[str, Any]) -> pyccl.Cosmology:
+        ccl_args.update(transfer_function=self.pure_ccl_transfer_function.lower())
+        nonlin_str: str = "halofit"
+        if (
+            self.pure_ccl_transfer_function
+            == CCLPureModeTransferFunction.BOLTZMANN_CAMB
+        ):
+            if self.camb_extra_params is not None:
+                nonlin_str = "camb"
+                ccl_args["matter_power_spectrum"] = nonlin_str
+                ccl_args["extra_parameters"] = {
+                    "camb": self.camb_extra_params.get_dict()
+                }
+        if self.require_nonlinear_pk:
+            ccl_args["matter_power_spectrum"] = nonlin_str
+
+        if self.ccl_spline_params is not None:
+            with self.ccl_spline_params:
+                self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        else:
+            self._ccl_cosmo = pyccl.Cosmology(**ccl_args)
+        return self._ccl_cosmo
+
+    def _create_mu_sigma_isitgr(self, ccl_args: dict[str, Any]) -> pyccl.Cosmology:
+        assert self._mu_sigma_model is not None
+        ccl_args.update(
+            mg_parametrization=self._mu_sigma_model.create(),
+            matter_power_spectrum="linear",
+            transfer_function="boltzmann_isitgr",
+        )
         if self.require_nonlinear_pk:
             ccl_args["matter_power_spectrum"] = "halofit"
-
-        if self.camb_extra_params is not None:
-            ccl_args["extra_parameters"] = {"camb": self.camb_extra_params.get_dict()}
-            ccl_args["matter_power_spectrum"] = "camb"
-
-        assert self.creation_mode in CCLCreationMode
-        match self.creation_mode:
-            case CCLCreationMode.MU_SIGMA_ISITGR:
-                assert self._mu_sigma_model is not None
-                ccl_args.update(
-                    mg_parametrization=self._mu_sigma_model.create(),
-                    matter_power_spectrum="linear",
-                    transfer_function="boltzmann_isitgr",
-                )
-            case CCLCreationMode.PURE_CCL_MODE:
-                ccl_args.update(
-                    transfer_function=self.pure_ccl_transfer_function.lower(),
-                    matter_power_spectrum="linear",
-                )
 
         if self.ccl_spline_params is not None:
             with self.ccl_spline_params:

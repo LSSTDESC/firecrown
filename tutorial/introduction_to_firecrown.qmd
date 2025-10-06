@@ -157,7 +157,7 @@ These instructions will create a new conda environment containing all the packag
 ```{.bash}
 # conda env update, when run as suggested, is able to create a new environment, as
 # well as updating an existing environment.
-conda env update -f firecrown/environment.yml
+conda env create --file firecrown/environment.yml
 conda activate firecrown_developer
 # We define two environment variables that will be defined whenever you activate
 # the conda environment.
