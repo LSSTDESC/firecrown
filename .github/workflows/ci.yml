@@ -65,7 +65,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 0
+  CACHE_VERSION: 1
 
 jobs:
   quick-validation:
@@ -118,12 +118,11 @@ jobs:
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
+        uses: actions/cache/restore@v4
         id: cache
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run:
@@ -145,7 +144,13 @@ jobs:
         shell: bash -l {0}
         run: |
           install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
-          python -c "import isitgr"
+            python -c "import isitgr"
+      - name: Save conda-forge, CosmoSIS and Cobaya environment
+        id: cache-primes-save
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Setting up Firecrown
         shell: bash -l {0}
         run: |
