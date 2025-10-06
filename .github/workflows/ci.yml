@@ -65,7 +65,7 @@ on:
 
 env:
   CONDA_ENV: firecrown_developer
-  CACHE_VERSION: 2
+  CACHE_VERSION: 0
 
 jobs:
   quick-validation:
@@ -112,9 +112,6 @@ jobs:
         with:
           miniforge-version: latest
           python-version: ${{ matrix.python-version }}
-          show-channel-urls: true
-          conda-remove-defaults: true
-          environment-file: environment.yml
           activate-environment: ${{ env.CONDA_ENV }}
       - name: Cache date
         id: get-date
@@ -125,20 +122,14 @@ jobs:
         with:
           path: |
             ${{ env.CONDA }}/envs
-            ${{ env.CONDA }}/pkgs
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
-          restore-keys: |
-            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-
-            conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-
         id: cache
-      - name: Setting up Firecrown
-        shell: bash -l {0}
-        run: |
-          export FIRECROWN_DIR=${PWD}
-          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
-          pip install --no-deps -e .
-          conda list
+      - name: Update environment
+        if: steps.cache.outputs.cache-hit != 'true'
+        run:
+          mamba env update -n ${{ env.CONDA_ENV }} -f environment.yml
       - name: Setting up CosmoSIS and Cobaya
+        if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
         run: |
           # Parallel setup of dependencies
@@ -147,9 +138,21 @@ jobs:
            cosmosis-build-standard-library && \
            export CSL_DIR=${PWD}/cosmosis-standard-library && \
            conda env config vars set CSL_DIR=${CSL_DIR}) &
-          (python -m pip install cobaya) &
+          (python -m pip install cobaya --no-deps) &
           wait
-        if: steps.cache.outputs.cache-hit != 'true'
+      - name: Remove redundant rpath and import isitgr
+        if: ${{ (matrix.os == 'macos') }} && (steps.cache.outputs.cache-hit != 'true')
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          python -c "import isitgr"
+      - name: Setting up Firecrown
+        shell: bash -l {0}
+        run: |
+          export FIRECROWN_DIR=${PWD}
+          conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
+          pip install --no-deps -e .
+          conda list
       - name: Code quality checks
         shell: bash -l {0}
         run: |
@@ -161,12 +164,6 @@ jobs:
           pylint --rcfile tests/pylintrc tests &
           pylint --rcfile examples/pylintrc examples &
           wait
-      - name: Remove redundant rpath and import isitgr
-        if: ${{ (matrix.os == 'macos') }}
-        shell: bash -l {0}
-        run: |
-          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
-          python -c "import isitgr"
       - name: Run unit tests with smart execution
         shell: bash -l {0}
         run: |
