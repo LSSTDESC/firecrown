@@ -140,7 +140,7 @@ jobs:
           (python -m pip install cobaya --no-deps) &
           wait
       - name: Remove redundant rpath and import isitgr
-        if: ${{ (matrix.os == 'macos') }} && (steps.cache.outputs.cache-hit != 'true')
+        if: ${{ (matrix.os == 'macos') && (steps.cache.outputs.cache-hit != 'true') }}
         shell: bash -l {0}
         run: |
           install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
@@ -204,25 +204,44 @@ jobs:
         with:
           miniforge-version: latest
           python-version: "3.13"
-          show-channel-urls: true
-          conda-remove-defaults: true
-          environment-file: environment.yml
           activate-environment: ${{ env.CONDA_ENV }}
       - name: Cache date
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
       - name: Cache Conda env
-        uses: actions/cache@v4
-        with:
-          path: |
-            ${{ env.CONDA }}/envs
-            ${{ env.CONDA }}/pkgs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
-          restore-keys: |
-            conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-
-            conda-${{ runner.os }}-${{ runner.arch }}-py3.13-
+        uses: actions/cache/restore@v4
         id: cache
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
+      - name: Update environment
+        if: steps.cache.outputs.cache-hit != 'true'
+        run:
+          mamba env update -n ${{ env.CONDA_ENV }} -f environment.yml
+      - name: Remove redundant rpath and import isitgr
+        shell: bash -l {0}
+        run: |
+          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
+          python -c "import isitgr"
+      - name: Setting up CosmoSIS and Cobaya
+        if: steps.cache.outputs.cache-hit != 'true'
+        shell: bash -l {0}
+        run: |
+          # Parallel setup of dependencies
+          (source ${CONDA_PREFIX}/bin/cosmosis-configure && \
+           pushd ${CONDA_PREFIX} && \
+           cosmosis-build-standard-library && \
+           export CSL_DIR=${PWD}/cosmosis-standard-library && \
+           conda env config vars set CSL_DIR=${CSL_DIR}) &
+          (python -m pip install cobaya --no-deps) &
+          wait
+      - name: Save conda-forge, CosmoSIS and Cobaya environment
+        id: cache-primes-save
+        uses: actions/cache/save@v4
+        with:
+          path: ${{ env.CONDA }}/envs
+          key: ${{ steps.cache.outputs.cache-primary-key }}
       - name: Create firecrown_developer environment
         shell: bash -l {0}
         run: |
@@ -230,24 +249,6 @@ jobs:
           conda env config vars set FIRECROWN_DIR=${FIRECROWN_DIR}
           pip install --no-deps -e .
           conda list
-      - name: Build and install CosmoSIS Standard Library
-        shell: bash -l {0}
-        run: |
-          source ${CONDA_PREFIX}/bin/cosmosis-configure
-          pushd ${CONDA_PREFIX}
-          cosmosis-build-standard-library
-          export CSL_DIR=${PWD}/cosmosis-standard-library
-          conda env config vars set CSL_DIR=${CSL_DIR}
-        if: steps.cache.outputs.cache-hit != 'true'
-      - name: Remove redundant rpath and import isitgr
-        shell: bash -l {0}
-        run: |
-          install_name_tool -delete_rpath /Users/runner/miniconda3/envs/firecrown_developer/lib /Users/runner/miniconda3/envs/firecrown_developer/lib/python3.1?/site-packages/isitgr/isitgrlib.so || true
-          python -c "import isitgr"
-      - name: Install Cobaya
-        shell: bash -l {0}
-        run: python -m pip install cobaya
-        if: steps.cache.outputs.cache-hit != 'true'
       - name: Cloning Smokescreen
         uses: actions/checkout@v4
         with:
