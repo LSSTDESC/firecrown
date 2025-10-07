@@ -150,7 +150,7 @@ class LikelihoodConnector(Likelihood):
         """
 
     def initialize_with_provider(self, provider) -> None:
-        """Set the obejct's provider.
+        """Set the object's provider.
 
         Required by Cobaya.
 
