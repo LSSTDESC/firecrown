@@ -150,7 +150,7 @@ class LikelihoodConnector(Likelihood):
         """
 
     def initialize_with_provider(self, provider) -> None:
-        """Set the obejct's provider.
+        """Set the object's provider.
 
         Required by Cobaya.
 
@@ -246,6 +246,7 @@ class LikelihoodConnector(Likelihood):
         pyccl_params_values = self.map.asdict()
 
         # This is the dictionary appropriate for CCL creation
+        assert self.provider is not None
         chi_arr = self.provider.get_comoving_radial_distance(self.z_bg)
         hoh0_arr = self.provider.get_Hubble(self.z_bg) / self.map.get_H0()
         k, z, pk = self.provider.get_Pk_grid(nonlinear=False)
@@ -289,6 +290,7 @@ class LikelihoodConnector(Likelihood):
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
+        assert _derived is not None
         for section, name, val in derived_params_collection:
             _derived[f"{section}__{name}"] = val
 
