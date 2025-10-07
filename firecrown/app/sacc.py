@@ -5,7 +5,6 @@ import dataclasses
 from pathlib import Path
 import sacc
 import typer
-from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.text import Text
@@ -20,9 +19,7 @@ from firecrown import metadata_types as mdt
 from firecrown import metadata_functions as mdf
 from firecrown import data_types as dtype
 from firecrown import data_functions as dfunc
-
-
-console = Console()
+from . import logging
 
 
 def mean_std_tracer(tracer: mdt.InferredGalaxyZDist):
@@ -48,20 +45,42 @@ def mean_std_tracer(tracer: mdt.InferredGalaxyZDist):
 
 
 @dataclasses.dataclass(kw_only=True)
-class LoadSACC:
+class Load(logging.Logging):
     """Load and summarize a SACC file."""
 
     sacc_file: Annotated[
         Path, typer.Argument(help="Path to the SACC file.", show_default=True)
     ]
 
+    def __post_init__(self) -> None:
+        """Load and display metadata from the SACC file."""
+        super().__post_init__()
+        self._load_sacc_file()
+
+    def _load_sacc_file(self) -> None:
+        """Load the SACC file, with error handling for missing or unreadable files."""
+        self.console.rule("[bold blue]Loading SACC file[/bold blue]")
+        self.console.print(f"[cyan]File:[/cyan] {self.sacc_file}")
+        try:
+            if not self.sacc_file.exists():
+                raise typer.BadParameter(f"SACC file not found: {self.sacc_file}")
+            self.sacc_data = sacc.Sacc.load_fits(self.sacc_file.as_posix())
+        except Exception as e:
+            self.console.print(f"[bold red]Failed to load SACC file:[/bold red] {e}")
+            raise
+
+
+@dataclasses.dataclass(kw_only=True)
+class View(Load):
+    """Display a summary of the SACC file."""
+
     plot_covariance: Annotated[
         bool, typer.Option(help="Plot the covariance matrix.", show_default=True)
     ] = False
 
     def __post_init__(self) -> None:
-        """Load and display metadata from the SACC file."""
-        self._load_sacc_file()
+        """Display a summary of the SACC file."""
+        super().__post_init__()
         self._show_sacc_summary()
         self._show_tracers()
         self._show_harmonic_bins()
@@ -69,18 +88,6 @@ class LoadSACC:
         self._show_final_summary()
         if self.plot_covariance:
             self._plot_covariance()
-
-    def _load_sacc_file(self) -> None:
-        """Load the SACC file, with error handling for missing or unreadable files."""
-        console.rule("[bold blue]Loading SACC file[/bold blue]")
-        console.print(f"[cyan]File:[/cyan] {self.sacc_file}")
-        try:
-            if not self.sacc_file.exists():
-                raise typer.BadParameter(f"SACC file not found: {self.sacc_file}")
-            self.sacc_data = sacc.Sacc.load_fits(self.sacc_file.as_posix())
-        except Exception as e:
-            console.print(f"[bold red]Failed to load SACC file:[/bold red] {e}")
-            raise
 
     def _show_sacc_summary(self) -> None:
         """Show a summary of the SACC file."""
@@ -94,8 +101,8 @@ class LoadSACC:
             self.sacc_data, include_maybe_types=True
         )
         self.all_tracers.sort(key=lambda t: t.bin_name)
-        console.rule("[bold blue]SACC Summary[/bold blue]")
-        console.print(
+        self.console.rule("[bold blue]SACC Summary[/bold blue]")
+        self.console.print(
             Panel.fit(
                 f"[bold]Number of tracers:[/bold] {n_tracers}\n"
                 f"[bold]Data points:[/bold] {n_data_points}\n"
@@ -108,7 +115,7 @@ class LoadSACC:
     def _show_tracers(self) -> None:
         """Show the tracers in the SACC file."""
         if len(self.all_tracers) > 0:
-            console.rule("[bold magenta]Tracers[/bold magenta]")
+            self.console.rule("[bold magenta]Tracers[/bold magenta]")
             table = Table(show_header=True, header_style="bold magenta")
             table.add_column("Name")
             table.add_column("TypeSource")
@@ -129,7 +136,7 @@ class LoadSACC:
                     dndz_str,
                     f"{{{measurements_str}}}",
                 )
-            console.print(table)
+            self.console.print(table)
 
     def _show_harmonic_bins(self) -> None:
         """Show the harmonic bins in the SACC file."""
@@ -146,7 +153,9 @@ class LoadSACC:
             for b in self.bin_comb_harmonic
         }
         if len(self.bin_comb_harmonic) > 0:
-            console.rule("[bold magenta]Bin combinations [Harmonic][/bold magenta]")
+            self.console.rule(
+                "[bold magenta]Bin combinations [Harmonic][/bold magenta]"
+            )
             table = Table(show_header=True, header_style="bold magenta")
             table.add_column("x-bin")
             table.add_column("y-bin")
@@ -180,7 +189,7 @@ class LoadSACC:
                     window_str,
                     bin_harmonic.get_sacc_name(),
                 )
-            console.print(table)
+            self.console.print(table)
 
     def _show_real_bins(self) -> None:
         """Show the real bins in the SACC file."""
@@ -197,7 +206,7 @@ class LoadSACC:
             for b in self.bin_comb_real
         }
         if len(self.bin_comb_real) > 0:
-            console.rule("[bold magenta]Bin combinations [Real][/bold magenta]")
+            self.console.rule("[bold magenta]Bin combinations [Real][/bold magenta]")
             table = Table(show_header=True, header_style="bold magenta")
             table.add_column("x-bin")
             table.add_column("y-bin")
@@ -224,15 +233,17 @@ class LoadSACC:
                     thetas_str,
                     bin_real.get_sacc_name(),
                 )
-            console.print(table)
+            self.console.print(table)
 
     def _show_final_summary(self) -> None:
-        console.rule("[bold green]Summary[/bold green]")
-        console.print(
+        self.console.rule("[bold green]Summary[/bold green]")
+        self.console.print(
             f"[yellow]Total harmonic bins:[/yellow] {len(self.bin_comb_harmonic)}"
         )
-        console.print(f"[yellow]Total real bins:[/yellow] {len(self.bin_comb_real)}")
-        console.print(f"[yellow]Total tracers:[/yellow] {len(self.all_tracers)}")
+        self.console.print(
+            f"[yellow]Total real bins:[/yellow] {len(self.bin_comb_real)}"
+        )
+        self.console.print(f"[yellow]Total tracers:[/yellow] {len(self.all_tracers)}")
 
     def _plot_covariance(self) -> None:
         """Plot the covariance matrix with annotations for harmonic and real bins."""
