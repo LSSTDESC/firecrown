@@ -35,6 +35,51 @@ class CoverageRecord(NamedTuple):
     test_duration: float | None = None
 
 
+def _load_json_timing(path: Path) -> dict[str, float]:
+    """Load timing data from JSON file (pytest-json-report format)."""
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
+
+    timings: dict[str, float] = {}
+    if "tests" in data:
+        for test in data["tests"]:
+            test_name = test.get("nodeid", "")
+            duration = test.get("duration", 0.0)
+            try:
+                timings[test_name] = float(duration or 0.0)
+            except (TypeError, ValueError):
+                timings[test_name] = 0.0
+    return timings
+
+
+def _parse_duration_line(line: str) -> tuple[str, float] | None:
+    """Parse a single duration line from pytest --durations output."""
+    duration_pattern = r"(\d+\.?\d*s)\s+(call|setup|teardown)?\s*(.+)"
+    m = re.search(duration_pattern, line.strip())
+    if not m:
+        return None
+    duration_str = m.group(1).rstrip("s")
+    test_name = m.group(3)
+    try:
+        duration = float(duration_str)
+    except ValueError:
+        return None
+    return test_name, duration
+
+
+def _load_text_durations(path: Path) -> dict[str, float]:
+    """Load timing data from text file (pytest --durations output)."""
+    timings: dict[str, float] = {}
+    with open(path, encoding="utf-8") as f:
+        for line in f:
+            parsed = _parse_duration_line(line)
+            if parsed is None:
+                continue
+            test_name, duration = parsed
+            timings[test_name] = timings.get(test_name, 0.0) + duration
+    return timings
+
+
 def parse_timing_data(timing_file: Path | None) -> dict[str, float]:
     """Parse timing data from pytest --durations output or JSON file.
 
@@ -47,46 +92,18 @@ def parse_timing_data(timing_file: Path | None) -> dict[str, float]:
     if timing_file is None or not timing_file.exists():
         return {}
 
-    timing_data = {}
-
     try:
-        # Try to parse as JSON first (from pytest-json-report)
-        with open(timing_file, encoding="utf-8") as f:
-            data = json.load(f)
-
-        # Handle pytest-json-report format
-        if "tests" in data:
-            for test in data["tests"]:
-                test_name = test.get("nodeid", "")
-                duration = test.get("duration", 0.0)
-                timing_data[test_name] = duration
-
+        return _load_json_timing(timing_file)
     except json.JSONDecodeError:
-        # Try to parse as text output from pytest --durations
+        # Try plain-text durations output
         try:
-            with open(timing_file, encoding="utf-8") as f:
-                content = f.read()
-
-            # Look for timing lines like "0.12s call tests/test_module.py::test_func"
-            duration_pattern = r"(\d+\.?\d*s)\s+(call|setup|teardown)?\s*(.+)"
-            for line in content.split("\n"):
-                match = re.search(duration_pattern, line.strip())
-                if match:
-                    duration_str = match.group(1).rstrip("s")
-                    test_name = match.group(3)
-                    try:
-                        duration = float(duration_str)
-                        timing_data[test_name] = (
-                            timing_data.get(test_name, 0.0) + duration
-                        )
-                    except ValueError:
-                        continue
-
-        except (OSError, KeyError):
+            return _load_text_durations(timing_file)
+        except OSError:
             print(f"Warning: Could not parse timing data from {timing_file}")
             return {}
-
-    return timing_data
+    except OSError:
+        print(f"Warning: Could not read timing file {timing_file}")
+        return {}
 
 
 def match_test_to_function(test_name: str, function_name: str, file_path: str) -> float:
@@ -333,4 +350,5 @@ def main(input_file: Path, output_file: str, timing: Path | None) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

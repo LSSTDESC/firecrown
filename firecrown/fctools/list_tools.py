@@ -120,4 +120,5 @@ def main(verbose: bool):
 
 
 if __name__ == "__main__":
-    main()
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

@@ -370,4 +370,5 @@ def main(coverage_file: Path, show_source: bool, show_perfect: bool) -> None:
 
 
 if __name__ == "__main__":
-    main()
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

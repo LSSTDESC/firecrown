@@ -12,6 +12,60 @@ from typing import Any
 import click
 
 
+def _get_class_def_node(source: str, cls_name: str) -> ast.ClassDef | None:
+    parsed = ast.parse(source)
+    for node in ast.iter_child_nodes(parsed):
+        if isinstance(node, ast.ClassDef) and node.name == cls_name:
+            return node
+    return None
+
+
+def _render_docstring(class_def: ast.ClassDef) -> list[str]:
+    if (
+        class_def.body
+        and isinstance(class_def.body[0], ast.Expr)
+        and isinstance(class_def.body[0].value, ast.Constant)
+        and isinstance(class_def.body[0].value.value, str)
+    ):
+        docstring = class_def.body[0].value.value
+        lines: list[str] = []
+        if "\n" in docstring:
+            lines.append('    """')
+            for line in docstring.strip().split("\n"):
+                lines.append(f"    {line}")
+            lines.append('    """')
+        else:
+            lines.append(f'    """{docstring}"""')
+        return lines
+    return []
+
+
+def _render_attributes(class_def: ast.ClassDef) -> list[str]:
+    lines: list[str] = []
+    for item in class_def.body:
+        if isinstance(item, (ast.AnnAssign, ast.Assign)):
+            lines.append(f"    {ast.unparse(item)}")
+    return lines
+
+
+def _build_class_code(cls: type[Any]) -> str:
+    source = inspect.getsource(cls)
+    class_def = _get_class_def_node(source, cls.__name__)
+    if class_def is None:
+        raise ValueError(f"Could not find class definition for {cls.__name__}")
+
+    code_lines: list[str] = []
+    for decorator in class_def.decorator_list:
+        code_lines.append(f"@{ast.unparse(decorator)}")
+
+    bases_str = ", ".join(ast.unparse(base) for base in class_def.bases)
+    code_lines.append(f"class {class_def.name}({bases_str}):")
+    code_lines.extend(_render_docstring(class_def))
+    code_lines.extend(_render_attributes(class_def))
+
+    return "\n".join(code_lines)
+
+
 def display_class_attributes(cls: type[Any]) -> None:
     """Display class definition with attributes and decorators.
 
@@ -21,8 +75,7 @@ def display_class_attributes(cls: type[Any]) -> None:
         cls: The class to display
     """
     try:
-        # Get the source code of the class
-        source = inspect.getsource(cls)
+        code_str = _build_class_code(cls)
     except OSError:
         print(
             f"Source code not available for {cls.__name__} "
@@ -30,56 +83,6 @@ def display_class_attributes(cls: type[Any]) -> None:
         )
         return
 
-    # Parse into an AST
-    parsed = ast.parse(source)
-
-    # Find the class definition node
-    class_def = None
-    for node in ast.iter_child_nodes(parsed):
-        if isinstance(node, ast.ClassDef) and node.name == cls.__name__:
-            class_def = node
-            break
-
-    if not class_def:
-        print(f"Could not find class definition for {cls.__name__}")
-        return
-
-    # Build the output code as a string
-    code_lines = []
-
-    # Add decorators
-    for decorator in class_def.decorator_list:
-        code_lines.append(f"@{ast.unparse(decorator)}")
-
-    # Add class definition line
-    bases_str = ", ".join(ast.unparse(base) for base in class_def.bases)
-    code_lines.append(f"class {class_def.name}({bases_str}):")
-
-    # Add docstring if present
-    if (
-        class_def.body
-        and isinstance(class_def.body[0], ast.Expr)
-        and isinstance(class_def.body[0].value, ast.Constant)
-        and isinstance(class_def.body[0].value.value, str)
-    ):
-        docstring = class_def.body[0].value.value
-        if "\n" in docstring:
-            code_lines.append('    """')
-            for line in docstring.strip().split("\n"):
-                code_lines.append(f"    {line}")
-            code_lines.append('    """')
-        else:
-            code_lines.append(f'    """{docstring}"""')
-
-    # Add attributes but skip methods
-    for item in class_def.body:
-        if isinstance(item, (ast.AnnAssign, ast.Assign)):
-            code_lines.append(f"    {ast.unparse(item)}")
-
-    # Join all lines into a single string
-    code_str = "\n".join(code_lines)
-
-    # Output with markdown code block syntax for syntax highlighting
     print("```python")
     print(code_str)
     print("```")
@@ -95,7 +98,7 @@ def display_class_without_markdown(cls: type[Any]) -> None:
         cls: The class to display
     """
     try:
-        source = inspect.getsource(cls)
+        code_str = _build_class_code(cls)
     except OSError:
         print(
             f"Source code not available for {cls.__name__} "
@@ -103,44 +106,6 @@ def display_class_without_markdown(cls: type[Any]) -> None:
         )
         return
 
-    parsed = ast.parse(source)
-    class_def = None
-    for node in ast.iter_child_nodes(parsed):
-        if isinstance(node, ast.ClassDef) and node.name == cls.__name__:
-            class_def = node
-            break
-
-    if not class_def:
-        print(f"Could not find class definition for {cls.__name__}")
-        return
-
-    code_lines = []
-    for decorator in class_def.decorator_list:
-        code_lines.append(f"@{ast.unparse(decorator)}")
-
-    bases_str = ", ".join(ast.unparse(base) for base in class_def.bases)
-    code_lines.append(f"class {class_def.name}({bases_str}):")
-
-    if (
-        class_def.body
-        and isinstance(class_def.body[0], ast.Expr)
-        and isinstance(class_def.body[0].value, ast.Constant)
-        and isinstance(class_def.body[0].value.value, str)
-    ):
-        docstring = class_def.body[0].value.value
-        if "\n" in docstring:
-            code_lines.append('    """')
-            for line in docstring.strip().split("\n"):
-                code_lines.append(f"    {line}")
-            code_lines.append('    """')
-        else:
-            code_lines.append(f'    """{docstring}"""')
-
-    for item in class_def.body:
-        if isinstance(item, (ast.AnnAssign, ast.Assign)):
-            code_lines.append(f"    {ast.unparse(item)}")
-
-    code_str = "\n".join(code_lines)
     print(code_str)
 
 
@@ -192,4 +157,5 @@ def main(class_names, no_markdown: bool):
 
 
 if __name__ == "__main__":
-    main()
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

@@ -40,6 +40,7 @@ class TracerState:
         """Initialize tracer state with output file."""
         # File must remain open for the duration of tracing session (many callbacks)
         # and is properly closed via close() method called from untrace()
+        # pylint: disable=consider-using-with
         self.tracefile = Path(filename).open(mode="w", encoding="utf8")  # noqa: SIM115
         self.level = 0  # the call nesting level
         self.entry = 0  # sequential entry number for each record
@@ -168,4 +169,5 @@ def main(target: str, output: str, module: bool):
 
 
 if __name__ == "__main__":
-    main()
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter
