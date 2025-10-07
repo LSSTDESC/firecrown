@@ -157,7 +157,7 @@ def at_least_one_tracer_has_hm(
     if not (tracer0.has_hm and tracer1.has_hm):
         assert "shear" in [tracer0.tracer_name, tracer1.tracer_name], (
             "Currently, only cosmic shear is supported "
-            "with the halo model for intrinsic alignemnts."
+            "with the halo model for intrinsic alignments."
         )
         IA_bias_exponent = (
             1  # IA bias if not both tracers are HM (doing GI correlation).
@@ -199,7 +199,7 @@ def at_least_one_tracer_has_hm(
     # Compute here the 2-halo power spectrum
     C1rhocrit = (
         5e-14 * pyccl.physical_constants.RHO_CRITICAL
-    )  # standard IA normalisation
+    )  # standard IA normalization
     # These assertions are required because the pyccl profiles do not have ia_a_2h.
     # That is something added locally.
     assert hasattr(profile0, "ia_a_2h")
@@ -268,7 +268,7 @@ class TwoPointTheory(Updatable):
         :param sacc_data_type: the name of the SACC data type for this theory.
         :param sources: the sources for this theory; order matters
         :param interp_ells_gen: an object that will generate the values of
-               the mulitiple order (values of ell) at which we will calculate
+               the multipole order (values of ell) at which we will calculate
                "exact" C_ells, and which are then used to interpolate the values
                of C_ells.
         :param ell_or_theta: ell or theta configuration

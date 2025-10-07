@@ -10,8 +10,8 @@ from firecrown.updatable import Updatable, UpdatableCollection
 class ClusterRecipe(Updatable, ABC):
     """Abstract class defining a cluster recipe.
 
-    A cluster recipe is a combination of different cluster theoretrical predictions
-    and models that produces a single prediction for an observable.
+    A cluster recipe is a combination of different cluster theoretical predictions and
+    models that produces a single prediction for an observable.
     """
 
     def __init__(self, parameter_prefix: None | str = None) -> None:

@@ -183,6 +183,7 @@ def _build_two_point_likelihood_harmonic(
         tpms = filters(tpms)
 
     two_points = two_point_factory.from_measurement(tpms)
+    assert sacc_data.covariance is not None
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
 
     return likelihood
@@ -216,6 +217,7 @@ def _build_two_point_likelihood_real(
         tpms = filters(tpms)
 
     two_points = two_point_factory.from_measurement(tpms)
+    assert sacc_data.covariance is not None
     likelihood = ConstGaussian.create_ready(two_points, sacc_data.covariance.dense)
 
     return likelihood
