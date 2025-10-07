@@ -10,8 +10,7 @@ from typing import Annotated
 import numpy as np
 import numpy.typing as npt
 import pyccl
-import pyccl.nl_pt
-import sacc.windows
+import sacc
 from pydantic import (
     BaseModel,
     BeforeValidator,
@@ -74,7 +73,7 @@ def calculate_angular_cl(
     tracer1: Tracer,
     int_options: ClIntegrationOptions | None = None,
 ):
-    """Calculate the angular mulitpole moments.
+    """Calculate the angular multipole moments.
 
     :param ells: The angular wavenumbers at which to compute the power spectrum.
     :param pk_name: The name of the power spectrum to return.
@@ -83,7 +82,7 @@ def calculate_angular_cl(
     :param tools: The modeling tools to use.
     :param tracer0: The first tracer to use.
     :param tracer1: The second tracer to use.
-    :return: The angular mulitpole moments.
+    :return: The angular multipole moments.
     """
     pk = calculate_pk(pk_name, tools, tracer0, tracer1)
     cosmo_in = tools.get_ccl_cosmology()
@@ -143,8 +142,8 @@ class TwoPoint(Statistic):
         generate data without the corresponding 2pt data in the input SACC file.
         The options are:
 
-         - minimun : float - The start of the binning.
-         - maximun : float - The end of the binning.
+         - minimum : float - The start of the binning.
+         - maximum : float - The end of the binning.
          - n : int - The number of bins. Note that the edges of the bins start
            at `min` and end at `max`. The actual bin locations will be at the
            (possibly geometric) midpoint of the bin.

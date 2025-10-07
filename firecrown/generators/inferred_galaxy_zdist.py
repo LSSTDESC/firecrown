@@ -63,7 +63,7 @@ class ZDistLSSTSRD:
     :math:`\beta = 2`.
 
     The values of :math:`\alpha` and :math:`z_0` are different for Year 1 and Year 10.
-    `ZDistLLSTSRD` provides these values as defaults and allows for greater
+    `ZDistLSSTSRD` provides these values as defaults and allows for greater
     flexibility when desired.
     """
 

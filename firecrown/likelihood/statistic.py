@@ -38,7 +38,7 @@ class StatisticUnreadError(RuntimeError):
             f"call `read` before returning the likelihood."
         )
         super().__init__(msg)
-        self.statstic = stat
+        self.statistic = stat
 
 
 class Statistic(Updatable):
