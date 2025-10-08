@@ -13,6 +13,8 @@ from typing import Any, NamedTuple
 
 import click
 
+from .common import load_json_file
+
 
 class CoverageRecord(NamedTuple):
     """Structure for holding coverage data for a single function."""
@@ -37,8 +39,7 @@ class CoverageRecord(NamedTuple):
 
 def _load_json_timing(path: Path) -> dict[str, float]:
     """Load timing data from JSON file (pytest-json-report format)."""
-    with open(path, encoding="utf-8") as f:
-        data = json.load(f)
+    data = load_json_file(path, "timing data")
 
     timings: dict[str, float] = {}
     if "tests" in data:
@@ -310,8 +311,7 @@ def main(input_file: Path, output_file: str, timing: Path | None) -> None:
     try:
         # Load JSON data
         print(f"Reading coverage data from {input_file}...")
-        with open(input_file, encoding="utf-8") as f:
-            coverage_data = json.load(f)
+        coverage_data = load_json_file(input_file, "coverage data")
 
         # Load timing data if provided
         timing_data = None
@@ -338,9 +338,6 @@ def main(input_file: Path, output_file: str, timing: Path | None) -> None:
             )
             print(f"Records with timing data: {records_with_timing}")
 
-    except json.JSONDecodeError as e:
-        print(f"Error: Invalid JSON in {input_file}: {e}")
-        sys.exit(1)
     except OSError as e:
         print(f"Error: File operation failed: {e}")
         sys.exit(1)

@@ -1,11 +1,12 @@
 #!/usr/bin/env python
 """List all available fctools and their descriptions."""
 
-import ast
 import importlib.util
 from pathlib import Path
 
 import click
+
+from .ast_utils import format_docstring_summary, get_module_docstring
 
 
 def _extract_description_from_docstring(docstring: str) -> str:
@@ -29,14 +30,10 @@ def _extract_description_from_docstring(docstring: str) -> str:
 def _extract_description_from_file(file_path: Path) -> str:
     """Extract description from a Python file's module docstring."""
     try:
-        # Try to parse the AST to get the module docstring
-        with open(file_path, encoding="utf-8") as f:
-            content = f.read()
-
-        tree = ast.parse(content)
-        docstring = ast.get_docstring(tree)
+        # Try to get the module docstring using ast_utils
+        docstring = get_module_docstring(file_path)
         if docstring:
-            return _extract_description_from_docstring(docstring)
+            return format_docstring_summary(docstring, max_length=80)
 
     except (OSError, SyntaxError, UnicodeDecodeError):
         # Fallback: try to import and get __doc__
