@@ -46,7 +46,7 @@ def detect_format(filepath: Path) -> str:
 
 
 def determine_output_path(
-    input_path: Path, output: str | None, target_format: str
+    input_path: Path, output: Path | None, target_format: str
 ) -> Path:
     """Determine the output file path.
 
@@ -59,7 +59,7 @@ def determine_output_path(
         Output file path
     """
     if output:
-        return Path(output)
+        return output
 
     # Auto-generate output filename by changing extension
     stem = input_path.stem
