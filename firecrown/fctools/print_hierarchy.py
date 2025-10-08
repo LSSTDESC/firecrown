@@ -72,16 +72,11 @@ def main(typenames):
     TYPENAMES  One or more fully qualified type names (e.g. mymodule.MyClass)
     """
     for typename in typenames:
-        try:
-            type_ = import_class_from_path(typename)
-            if len(typenames) > 1:
-                print(f"\n{'=' * 60}")
-            print_type_hierarchy(type_)
-        except ImportError as e:
-            print(f"Could not import type {typename}")
-            print(f"Error message: {e}")
-            if len(typenames) > 1:
-                print()  # Add spacing between errors
+        # import_class_from_path handles errors via cli_error (exits on failure)
+        type_ = import_class_from_path(typename)
+        if len(typenames) > 1:
+            print(f"\n{'=' * 60}")
+        print_type_hierarchy(type_)
 
 
 if __name__ == "__main__":
