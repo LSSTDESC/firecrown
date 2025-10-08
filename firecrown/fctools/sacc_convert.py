@@ -172,7 +172,7 @@ def _read_and_convert_file(
             data = sacc.Sacc.load_fits(str(input_file))
         else:  # hdf5
             data = sacc.Sacc.load_hdf5(str(input_file))
-    except Exception as e:
+    except OSError:
         click.echo("ERROR: Failed to read input file as SACC data.")
         click.echo(
             f"The file may not be a valid SACC {src_format.upper()} file.",
@@ -187,7 +187,7 @@ def _read_and_convert_file(
             data.save_fits(str(output_path), overwrite=overwrite)
         else:  # hdf5
             data.save_hdf5(str(output_path))
-    except Exception as e:
+    except OSError as e:
         click.echo(f"ERROR: Failed to write SACC data to output file: {e}", err=True)
         sys.exit(1)
 
