@@ -6,12 +6,20 @@ definitions in a formatted way suitable for syntax highlighting.
 
 import ast
 import inspect
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
-from .ast_utils import format_class_docstring, get_class_definition
-from .common import import_class_from_path
+if TYPE_CHECKING:
+    from .ast_utils import format_class_docstring, get_class_definition
+    from .common import import_class_from_path
+else:
+    try:
+        from .ast_utils import format_class_docstring, get_class_definition
+        from .common import import_class_from_path
+    except ImportError:
+        from ast_utils import format_class_docstring, get_class_definition
+        from common import import_class_from_path
 
 
 def _render_attributes(class_def: ast.ClassDef) -> list[str]:

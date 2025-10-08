@@ -9,11 +9,17 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import TYPE_CHECKING, Any, NamedTuple
 
 import click
 
-from .common import load_json_file
+if TYPE_CHECKING:
+    from .common import load_json_file
+else:
+    try:
+        from .common import load_json_file
+    except ImportError:
+        from common import load_json_file
 
 
 class CoverageRecord(NamedTuple):

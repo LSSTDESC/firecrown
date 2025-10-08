@@ -11,11 +11,17 @@ This tool provides a detailed analysis of test coverage including:
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
 
-from .common import format_line_ranges, load_json_file
+if TYPE_CHECKING:
+    from .common import format_line_ranges, load_json_file
+else:
+    try:
+        from .common import format_line_ranges, load_json_file
+    except ImportError:
+        from common import format_line_ranges, load_json_file
 
 
 @dataclass

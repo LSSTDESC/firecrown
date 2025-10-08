@@ -2,10 +2,17 @@
 """This script provides a way to print the class hierarchy of a given type."""
 
 import inspect
+from typing import TYPE_CHECKING
 
 import click
 
-from .common import import_class_from_path
+if TYPE_CHECKING:
+    from .common import import_class_from_path
+else:
+    try:
+        from .common import import_class_from_path
+    except ImportError:
+        from common import import_class_from_path
 
 
 def full_type_name(t: type) -> str:

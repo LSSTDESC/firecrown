@@ -3,10 +3,17 @@
 
 import importlib.util
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
-from .ast_utils import format_docstring_summary, get_module_docstring
+if TYPE_CHECKING:
+    from .ast_utils import format_docstring_summary, get_module_docstring
+else:
+    try:
+        from .ast_utils import format_docstring_summary, get_module_docstring
+    except ImportError:
+        from ast_utils import format_docstring_summary, get_module_docstring
 
 
 def _extract_description_from_docstring(docstring: str) -> str:
