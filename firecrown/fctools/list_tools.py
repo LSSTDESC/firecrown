@@ -52,7 +52,7 @@ def _extract_description_from_file(file_path: Path) -> str:
                 doc = getattr(module, "__doc__", "")
                 if doc:
                     return _extract_description_from_docstring(doc)
-        except (ImportError, AttributeError, SyntaxError):
+        except (ImportError, AttributeError, SyntaxError, FileNotFoundError):
             pass
 
     return "Tool description not available"
