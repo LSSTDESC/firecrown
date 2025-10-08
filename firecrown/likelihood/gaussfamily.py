@@ -28,9 +28,9 @@ from firecrown.utils import save_to_sacc
 class State(Enum):
     """The states used in GaussFamily.
 
-    GaussFamily and all subclasses enforce a statemachine behavior based on
-    these states to ensure that the necessary initialization and setup is done
-    in the correct order.
+    GaussFamily and all subclasses enforce a state machine behavior based on these
+    states to ensure that the necessary initialization and setup is done in the correct
+    order.
     """
 
     INITIALIZED = 1
@@ -124,7 +124,7 @@ class GaussFamily(Likelihood):
     following rules regarding the order of calling of methods.
 
       1. after a new object is created, :meth:`read` must be called before any
-         other method in the interfaqce.
+         other method in the interface.
       2. after :meth:`read` has been called it is legal to call
          :meth:`get_data_vector`, or to call :meth:`update`.
       3. after :meth:`update` is called it is then legal to call
@@ -378,7 +378,7 @@ class GaussFamily(Likelihood):
     ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
         """Calculate and return both the data and theory vectors.
 
-        This method is dprecated and will be removed in a future version of Firecrown.
+        This method is deprecated and will be removed in a future version of Firecrown.
 
         :param tools: the ModelingTools to be used in the calculation of the
             theory vector

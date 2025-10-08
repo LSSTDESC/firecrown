@@ -99,7 +99,7 @@ cobaya-run cobaya/factory.yaml
 
 ## Generating the `firecrown` Inputs
 
-There is already a `sacc_data.fits` file in this directory that contains the DES Y1
+There is already a `sacc_data.hdf5` file in this directory that contains the DES Y1
 3x2pt data products. If you want to regenerate the `firecrown` inputs, you can run
 `generate_des_data.py`. To generate the `firecrown` inputs, first download the DES Y1
 3x2pt data products
@@ -108,5 +108,5 @@ There is already a `sacc_data.fits` file in this directory that contains the DES
 Then run the script
 
 ```bash
-$ python generate_des_data.py
+python generate_des_data.py
 ```
