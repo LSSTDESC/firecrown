@@ -272,7 +272,7 @@ class MyClass:
         class_def = get_class_definition(source, "MyClass")
         result = extract_class_attributes(class_def)
 
-        assert result == []
+        assert not result
 
     def test_extract_mixed_attributes(self):
         """Test class with both annotated and simple attributes."""
@@ -347,7 +347,7 @@ class MyClass:
         class_def = get_class_definition(source, "MyClass")
         result = format_class_docstring(class_def)
 
-        assert result == []
+        assert not result
 
     def test_format_preserves_structure(self):
         """Test that docstring formatting preserves basic structure."""
@@ -400,7 +400,7 @@ class MyClass:
         class_def = get_class_definition(source, "MyClass")
         result = get_function_names(class_def)
 
-        assert result == []
+        assert not result
 
     def test_get_special_methods(self):
         """Test extracting special methods like __init__."""

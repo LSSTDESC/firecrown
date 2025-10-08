@@ -101,7 +101,7 @@ class TestImportClassFromPath:
         """Test importing a class from a nested module."""
         result = import_class_from_path("collections.abc.Mapping")
 
-        from collections.abc import Mapping
+        from collections.abc import Mapping  # pylint: disable=import-outside-toplevel
 
         assert result == Mapping
 
@@ -130,6 +130,7 @@ class TestImportClassFromPath:
         """Test importing a class from firecrown."""
         result = import_class_from_path("firecrown.updatable.Updatable")
 
+        # pylint: disable=import-outside-toplevel
         from firecrown.updatable import Updatable
 
         assert result == Updatable
@@ -336,7 +337,7 @@ class TestFormatLineRanges:
         """Test formatting an empty list."""
         result = format_line_ranges([])
 
-        assert result == []
+        assert not result
 
     def test_format_single_line(self):
         """Test formatting a single line number."""
