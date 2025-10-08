@@ -37,13 +37,12 @@ def detect_format(filepath: Path) -> str:
 
     if suffix == ".fits":
         return "fits"
-    elif suffix in (".hdf5", ".h5"):
+    if suffix in (".hdf5", ".h5"):
         return "hdf5"
-    else:
-        raise ValueError(
-            f"Cannot detect format from extension '{suffix}'. "
-            "Use --input-format to specify."
-        )
+    raise ValueError(
+        f"Cannot detect format from extension '{suffix}'. "
+        "Use --input-format to specify."
+    )
 
 
 def determine_output_path(
@@ -66,8 +65,8 @@ def determine_output_path(
     stem = input_path.stem
     if target_format == "fits":
         return input_path.parent / f"{stem}.fits"
-    else:  # hdf5
-        return input_path.parent / f"{stem}.hdf5"
+    # hdf5
+    return input_path.parent / f"{stem}.hdf5"
 
 
 @click.command()
@@ -218,4 +217,5 @@ def _display_conversion_summary(
 
 
 if __name__ == "__main__":
-    main()
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter
