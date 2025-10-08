@@ -39,7 +39,8 @@ class CoverageRecord(NamedTuple):
 
 def _load_json_timing(path: Path) -> dict[str, float]:
     """Load timing data from JSON file (pytest-json-report format)."""
-    data = load_json_file(path, "timing data")
+    with open(path, encoding="utf-8") as f:
+        data = json.load(f)
 
     timings: dict[str, float] = {}
     if "tests" in data:
