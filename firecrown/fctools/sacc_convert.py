@@ -185,6 +185,9 @@ def _read_and_convert_file(
         if target_format == "fits":
             data.save_fits(str(output_path), overwrite=overwrite)
         else:  # hdf5
+            # save_hdf5 doesn't have an overwrite parameter, so manually handle it
+            if overwrite and output_path.exists():
+                output_path.unlink()
             data.save_hdf5(str(output_path))
     except OSError as e:
         click.echo(f"ERROR: Failed to write SACC data to output file: {e}", err=True)
