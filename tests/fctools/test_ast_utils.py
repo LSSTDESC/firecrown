@@ -44,6 +44,7 @@ def func():
 
         result = get_module_docstring(py_file)
 
+        assert result is not None
         assert "This is the first line." in result
         assert "This is the second paragraph." in result
 
@@ -241,6 +242,7 @@ class MyClass:
     attr3 = [1, 2, 3]
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = extract_class_attributes(class_def)
 
         assert "attr1" in result
@@ -256,6 +258,7 @@ class MyClass:
     value: float
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = extract_class_attributes(class_def)
 
         assert "name" in result
@@ -270,6 +273,7 @@ class MyClass:
         pass
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = extract_class_attributes(class_def)
 
         assert not result
@@ -283,6 +287,7 @@ class MyClass:
     no_value: int
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = extract_class_attributes(class_def)
 
         assert "simple" in result
@@ -299,6 +304,7 @@ class MyClass:
         self.instance_attr = 20
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = extract_class_attributes(class_def)
 
         assert "class_attr" in result
@@ -316,6 +322,7 @@ class MyClass:
     pass
 '''
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = format_class_docstring(class_def)
 
         assert len(result) > 0
@@ -332,6 +339,7 @@ class MyClass:
     pass
 '''
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = format_class_docstring(class_def)
 
         assert len(result) > 1
@@ -345,6 +353,7 @@ class MyClass:
     pass
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = format_class_docstring(class_def)
 
         assert not result
@@ -364,6 +373,7 @@ class MyClass:
     pass
 '''
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = format_class_docstring(class_def)
 
         joined = "\n".join(result)
@@ -385,6 +395,7 @@ class MyClass:
         pass
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = get_function_names(class_def)
 
         assert "method1" in result
@@ -398,6 +409,7 @@ class MyClass:
     attr = 10
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = get_function_names(class_def)
 
         assert not result
@@ -416,6 +428,7 @@ class MyClass:
         pass
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = get_function_names(class_def)
 
         assert "__init__" in result
@@ -438,6 +451,7 @@ class MyClass:
         pass
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = get_function_names(class_def)
 
         assert "static_method" in result
@@ -454,6 +468,7 @@ class MyClass:
         return inner_function
 """
         class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
         result = get_function_names(class_def)
 
         assert "outer_method" in result

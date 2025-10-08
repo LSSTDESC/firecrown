@@ -109,7 +109,7 @@ def format_class_docstring(class_def: ast.ClassDef) -> list[str]:
     if not docstring:
         return []
 
-    lines = []
+    lines: list[str] = []
     for line in docstring.split("\n"):
         # Preserve indentation and content
         lines.append(f'    """{line}' if not lines else f"    {line}")
