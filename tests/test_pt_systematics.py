@@ -48,10 +48,7 @@ def fixture_number_counts_source() -> nc.NumberCounts:
 def fixture_sacc_data() -> sacc.Sacc:
     # Load sacc file
     # This shouldn't be necessary, since we only use the n(z) from the sacc file
-    saccfile = os.path.join(
-        os.path.split(__file__)[0],
-        "../examples/des_y1_3x2pt/sacc_data.fits",
-    )
+    saccfile = os.path.join(os.path.split(__file__)[0], "legacy_sacc_data.fits")
     return sacc.Sacc.load_fits(saccfile)
 
 

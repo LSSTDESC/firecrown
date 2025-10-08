@@ -5,13 +5,13 @@ from dataclasses import dataclass
 import os
 
 import numpy as np
-import sacc
 import pyccl as ccl
 import pyccl.nl_pt
 
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.metadata_types as mdt
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood.two_point import (
     TwoPoint,
     TracerNames,
@@ -25,7 +25,7 @@ from firecrown.updatable import get_default_params_map
 
 
 saccfile = os.path.expanduser(
-    os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.fits")
+    os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.hdf5")
 )
 
 
@@ -89,7 +89,7 @@ class CElls:
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Likelihood factory function for DES Y1 3x2pt analysis."""
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    sacc_data = load_sacc_data(saccfile)
 
     # Define the intrinsic alignment systematic. This will be added to the
     # lensing sources later
@@ -174,7 +174,7 @@ def run_likelihood() -> None:
     likelihood, tools = build_likelihood(None)
 
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(saccfile)
+    sacc_data = load_sacc_data(saccfile)
 
     src0_tracer = sacc_data.get_tracer("src0")
     lens0_tracer = sacc_data.get_tracer("lens0")

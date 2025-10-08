@@ -10,6 +10,7 @@ from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
     ensure_path,
+    load_sacc_data,
     TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
@@ -405,9 +406,9 @@ def test_build_two_point_likelihood_real(
 ) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
-    absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
-    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
-        tmp_path, absolute_fits_path
+    absolute_sacc_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.hdf5")
+    sacc_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_sacc_path
     )
 
     tmp_experiment_file.write_text(
@@ -426,7 +427,7 @@ two_point_factory:
     method: limber
     limber_method: gsl_spline
 data_source:
-    sacc_data_file: {fits_path_relative_to_tmp_path}
+    sacc_data_file: {sacc_path_relative_to_tmp_path}
 """
     )
 
@@ -441,9 +442,9 @@ def test_build_two_point_likelihood_harmonic(
 ) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
-    absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
-    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
-        tmp_path, absolute_fits_path
+    absolute_sacc_path = top_dir / Path("tests/bug_398.sacc.gz")
+    sacc_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_sacc_path
     )
 
     tmp_experiment_file.write_text(
@@ -462,7 +463,7 @@ two_point_factory:
     method: limber
     limber_method: gsl_spline
 data_source:
-    sacc_data_file: {fits_path_relative_to_tmp_path}
+    sacc_data_file: {sacc_path_relative_to_tmp_path}
 """
     )
 
@@ -477,9 +478,9 @@ def test_build_two_point_likelihood_real_no_real_data(
 ) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
-    absolute_fits_path = top_dir / Path("tests/bug_398.sacc.gz")
-    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
-        tmp_path, absolute_fits_path
+    absolute_sacc_path = top_dir / Path("tests/bug_398.sacc.gz")
+    sacc_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_sacc_path
     )
 
     tmp_experiment_file.write_text(
@@ -498,7 +499,7 @@ two_point_factory:
     method: limber
     limber_method: gsl_spline
 data_source:
-    sacc_data_file: {fits_path_relative_to_tmp_path}
+    sacc_data_file: {sacc_path_relative_to_tmp_path}
 """
     )
 
@@ -517,9 +518,9 @@ def test_build_two_point_likelihood_harmonic_no_harmonic_data(
 ) -> None:
     tmp_experiment_file = tmp_path / "experiment.yaml"
     top_dir = request.config.rootpath
-    absolute_fits_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.fits")
-    fits_path_relative_to_tmp_path = relative_to_with_walk_up(
-        tmp_path, absolute_fits_path
+    absolute_sacc_path = top_dir / Path("examples/des_y1_3x2pt/sacc_data.hdf5")
+    sacc_path_relative_to_tmp_path = relative_to_with_walk_up(
+        tmp_path, absolute_sacc_path
     )
 
     tmp_experiment_file.write_text(
@@ -538,7 +539,7 @@ two_point_factory:
     method: limber
     limber_method: gsl_spline
 data_source:
-  sacc_data_file: {fits_path_relative_to_tmp_path}
+  sacc_data_file: {sacc_path_relative_to_tmp_path}
 """
     )
 
@@ -655,7 +656,7 @@ def test_build_two_point_real_with_filter(empty_factory_real: TwoPointFactory) -
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
-            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.hdf5",
             filters=TwoPointBinFilterCollection(
                 filters=[
                     TwoPointBinFilter.from_args_auto(
@@ -681,7 +682,7 @@ def test_build_two_point_real_with_filter_require_filter(
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
-            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.sacc",
             filters=TwoPointBinFilterCollection(
                 filters=[
                     TwoPointBinFilter.from_args_auto(
@@ -708,7 +709,7 @@ def test_build_two_point_real_with_filter_empty(
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
-            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.sacc",
             filters=TwoPointBinFilterCollection(
                 filters=[
                     TwoPointBinFilter.from_args_auto(
@@ -741,7 +742,7 @@ def test_build_two_point_real_with_filter_allow_empty(
     two_point_experiment = TwoPointExperiment(
         two_point_factory=empty_factory_real,
         data_source=DataSourceSacc(
-            sacc_data_file="examples/des_y1_3x2pt/sacc_data.fits",
+            sacc_data_file="examples/des_y1_3x2pt/sacc_data.hdf5",
             filters=TwoPointBinFilterCollection(
                 filters=[
                     TwoPointBinFilter.from_args_auto(
@@ -1219,3 +1220,46 @@ def test_two_point_factory_all_factories():
     cmb_result = factory.get_factory(CMB.CONVERGENCE, type_source=TypeSource("ts_cmb"))
     assert isinstance(cmb_result, CMBConvergenceFactory)
     assert cmb_result is cmb_factory
+
+
+def test_load_sacc_data_file_not_found():
+    """Test load_sacc_data raises FileNotFoundError for non-existent file."""
+    with pytest.raises(FileNotFoundError, match="SACC file not found"):
+        load_sacc_data("nonexistent_file.fits")
+
+
+def test_load_sacc_data_file_not_found_with_path():
+    """Test load_sacc_data raises FileNotFoundError with Path object."""
+    with pytest.raises(FileNotFoundError, match="SACC file not found"):
+        load_sacc_data(Path("/tmp/nonexistent_file.sacc"))
+
+
+def test_load_sacc_data_both_formats_fail(tmp_path):
+    """Test load_sacc_data raises ValueError when file is neither HDF5 nor FITS."""
+    # Create a file with invalid content (not HDF5, not FITS)
+    bad_file = tmp_path / "corrupted.sacc"
+    bad_file.write_text("This is not a valid SACC file format")
+
+    with pytest.raises(
+        ValueError,
+        match=re.compile(
+            "Failed to load SACC data from file.*"
+            "The file could not be read as either HDF5 or FITS format",
+            re.DOTALL,
+        ),
+    ):
+        load_sacc_data(bad_file)
+
+
+def test_load_sacc_data_with_path_object():
+    """Test load_sacc_data works with Path object input."""
+    sacc_data = load_sacc_data(Path("tests/bug_398.sacc.gz"))
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
+
+
+def test_load_sacc_data_with_string():
+    """Test load_sacc_data works with string input."""
+    sacc_data = load_sacc_data("tests/bug_398.sacc.gz")
+    assert sacc_data is not None
+    assert isinstance(sacc_data, sacc.Sacc)
