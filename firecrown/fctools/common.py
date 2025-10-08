@@ -81,7 +81,8 @@ def import_module_from_file(file_path: Path, module_name: str = "temp_module") -
         This function executes the module code, so use with caution on untrusted files.
     """
     try:
-        import importlib.util  # pylint: disable=import-outside-toplevel,redefined-outer-name
+        # pylint: disable=import-outside-toplevel,redefined-outer-name
+        import importlib.util
 
         spec = importlib.util.spec_from_file_location(module_name, file_path)
         if spec is None or spec.loader is None:
