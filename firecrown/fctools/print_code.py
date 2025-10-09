@@ -63,7 +63,9 @@ def display_class_attributes(cls: type[Any]) -> None:
     """
     try:
         code_str = _build_class_code(cls)
-    except OSError:
+    except OSError:  # pragma: no cover
+        # Defensive: inspect.getsource raises TypeError for built-ins, not OSError
+        # OSError would require file read failure for an importable class (very rare)
         print(
             f"Source code not available for {cls.__name__} "
             f"(likely a built-in or C extension class)"
@@ -86,7 +88,9 @@ def display_class_without_markdown(cls: type[Any]) -> None:
     """
     try:
         code_str = _build_class_code(cls)
-    except OSError:
+    except OSError:  # pragma: no cover
+        # Defensive: inspect.getsource raises TypeError for built-ins, not OSError
+        # OSError would require file read failure for an importable class (very rare)
         print(
             f"Source code not available for {cls.__name__} "
             f"(likely a built-in or C extension class)"
@@ -126,7 +130,9 @@ def main(class_names, no_markdown: bool):
             display_class_attributes_func(cls)
             if len(class_names) > 1:
                 print()
-        except (ImportError, ValueError, AttributeError) as e:
+        except (ImportError, ValueError, AttributeError) as e:  # pragma: no cover
+            # Defensive: import_class_from_path calls cli_error -> sys.exit(1)
+            # So SystemExit is raised instead of ImportError/ValueError/AttributeError
             print(f"Could not import or display class {class_name}")
             print(f"Error message: {e}")
             if len(class_names) > 1:

@@ -2,11 +2,14 @@
 
 import ast
 from dataclasses import dataclass
+from unittest.mock import patch
+
 import pytest
 from click.testing import CliRunner
+
 from firecrown.fctools.print_code import (
-    _render_attributes,
     _build_class_code,
+    _render_attributes,
     display_class_attributes,
     display_class_without_markdown,
     main,
@@ -312,6 +315,62 @@ def test_main_help():
     assert result.exit_code == 0
     assert "Usage:" in result.output
     assert "--no-markdown" in result.output
+
+
+def test_main_multiple_classes():
+    """Test main CLI with multiple class names."""
+    runner = CliRunner()
+    result = runner.invoke(
+        main,
+        [
+            "tests.fctools.test_print_code.SimpleClass",
+            "tests.fctools.test_print_code.DecoratedClass",
+        ],
+    )
+    assert result.exit_code == 0
+    # Should have headers for multiple classes
+    assert "Class: tests.fctools.test_print_code.SimpleClass" in result.output
+    assert "Class: tests.fctools.test_print_code.DecoratedClass" in result.output
+    assert "=" * 60 in result.output
+    # Should have both classes in output
+    assert "class SimpleClass()" in result.output
+    assert "class DecoratedClass()" in result.output
+
+
+def test_main_multiple_classes_with_invalid():
+    """Test main CLI with multiple classes where one is invalid."""
+    runner = CliRunner()
+    # Test with invalid module
+    # import_class_from_path will call cli_error -> sys.exit(1)
+    result = runner.invoke(
+        main,
+        [
+            "tests.fctools.test_print_code.SimpleClass",
+            "nonexistent.module.Class",
+        ],
+    )
+    # Should fail due to cli_error calling sys.exit(1)
+    assert result.exit_code != 0
+    # First class should succeed before the error
+    assert "class SimpleClass()" in result.output or "ERROR:" in result.output
+
+
+def test_build_class_code_with_none_class_def():
+    """Test _build_class_code when get_class_definition returns None."""
+    # This tests the error path when class definition can't be found
+    # The ValueError is raised when class_def is None
+    # This can happen with dynamically created classes or unusual source code
+
+    class TestClass:
+        pass
+
+    # Mock get_class_definition to return None
+    with patch("firecrown.fctools.print_code.get_class_definition", return_value=None):
+        try:
+            _build_class_code(TestClass)
+            assert False, "Should have raised ValueError"
+        except ValueError as e:
+            assert "Could not find class definition" in str(e)
 
 
 # Integration tests

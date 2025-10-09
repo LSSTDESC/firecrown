@@ -84,7 +84,8 @@ class TracerState:
                     file=self.tracefile,
                 )
                 self.level -= 1
-            case "exception":
+            case "exception":  # pragma: no branch
+                # Coverage.py/sys.settrace() interaction: branch to return not tracked
                 self.entry += 1
                 print(
                     f"{self.entry}\texception\t{self.level}\t{code.co_qualname}\t"
@@ -109,8 +110,15 @@ def settrace(filename: str = "trace.tsv") -> TracerState:
     return tracer
 
 
-def untrace(tracer: TracerState) -> None:
+def untrace(tracer: TracerState) -> None:  # pragma: no cover
     """Turn off tracing, and close the specified trace file.
+
+    :param tracer: TracerState instance, as returned by settrace.
+
+    .. note::
+        Coverage tracking doesn't work for this function due to sys.settrace()
+        interaction between coverage.py and the tracer. Tests verify functionality
+        without coverage enabled.
 
     :param tracer: TracerState instance, as returned by settrace.
     """
@@ -165,9 +173,12 @@ def main(target: str, output: str, module: bool):
     finally:
         # Stop tracing and close file
         untrace(tracer)
-        click.echo(f"Trace complete. Output saved to: {output}")
+        click.echo(  # pragma: no cover
+            f"Trace complete. Output saved to: {output}"
+        )  # Coverage.py/sys.settrace() interaction prevents tracking
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
+    # Standalone execution - tested via subprocess in test suite
     main()  # pylint: disable=no-value-for-parameter

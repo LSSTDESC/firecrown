@@ -251,6 +251,66 @@ def test_trace_return_with_unprintable_object(tmp_path):
         tracer.close()
 
 
+def test_trace_return_with_recursion_error(tmp_path):
+    """Test tracing a return with object that causes RecursionError on str()."""
+    trace_file = tmp_path / "test.tsv"
+    tracer = TracerState(str(trace_file))
+    tracer.level = 1
+
+    class RecursiveObject:
+        def __str__(self):
+            raise RecursionError("Maximum recursion depth exceeded")
+
+    obj = RecursiveObject()
+
+    import types
+
+    frame_obj = types.SimpleNamespace(
+        f_code=types.SimpleNamespace(co_qualname="test_func"),
+        f_locals={},
+    )
+
+    tracer.trace_call(frame_obj, "return", obj)
+
+    try:
+        tracer.tracefile.flush()
+        content = trace_file.read_text()
+        assert "return" in content
+        assert "RecursiveObject" in content
+    finally:
+        tracer.close()
+
+
+def test_trace_return_with_type_error(tmp_path):
+    """Test tracing a return with object that causes TypeError on str()."""
+    trace_file = tmp_path / "test.tsv"
+    tracer = TracerState(str(trace_file))
+    tracer.level = 1
+
+    class TypeErrorObject:
+        def __str__(self):
+            raise TypeError("Cannot convert to string")
+
+    obj = TypeErrorObject()
+
+    import types
+
+    frame_obj = types.SimpleNamespace(
+        f_code=types.SimpleNamespace(co_qualname="test_func"),
+        f_locals={},
+    )
+
+    tracer.trace_call(frame_obj, "return", obj)
+
+    try:
+        tracer.tracefile.flush()
+        content = trace_file.read_text()
+        assert "return" in content
+        assert "TypeErrorObject" in content
+    finally:
+        tracer.close()
+
+
 # Tests for TracerState.trace_call() - exception events
 
 
@@ -423,6 +483,20 @@ def test_main_with_nonexistent_script(tmp_path):
     assert "not found" in result.output
     # Trace complete message should still appear (in finally block)
     assert "Trace complete" in result.output
+
+
+def test_main_module_mode_with_cli_runner(tmp_path):
+    """Test main with --module flag using CliRunner."""
+    trace_file = tmp_path / "output.tsv"
+
+    runner = CliRunner()
+    # Use a simple built-in module that's safe to trace
+    result = runner.invoke(main, ["--module", "json.tool", "--output", str(trace_file)])
+
+    # The module might fail (needs input), but we're testing coverage of the code path
+    assert "Tracing module:" in result.output
+    assert "Trace complete" in result.output
+    assert trace_file.exists()
 
 
 def test_main_module_tracing(tmp_path):
