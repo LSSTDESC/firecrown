@@ -1,6 +1,11 @@
 # fctools - Development Tools
 
-This directory contains command-line tools for code analysis, coverage reporting, and debugging. All tools use [Click](https://click.palletsprojects.com/) for their command-line interface and provide comprehensive help.
+This directory contains command-line tools for code analysis, coverage reporting, and debugging.
+All tools use [Click](https://click.palletsprojects.com/) for their command-line interface and provide comprehensive help.
+These tools are intended for development and debugging purposes only.
+They are *not* part of the Firecrown API and should not be used by any part of Firecrown (or by code that uses Firecrown).
+
+Developers may use them for their own code analysis purposes, but they are not supported.
 
 ## Quick Start
 
