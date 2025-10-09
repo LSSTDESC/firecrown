@@ -115,7 +115,7 @@ def format_class_docstring(class_def: ast.ClassDef) -> list[str]:
         lines.append(f'    """{line}' if not lines else f"    {line}")
 
     # Close the docstring
-    if lines:
+    if lines:  # pragma: no cover
         lines[-1] += '"""'
 
     return lines

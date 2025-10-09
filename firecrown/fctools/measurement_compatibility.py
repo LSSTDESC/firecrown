@@ -225,14 +225,18 @@ def main(verbose: bool, space: str, stats_only: bool) -> None:
             f"\n🚀 Real-space efficiency: {real_skip_reduction} skipped tests "
             "eliminated"
         )
-    elif space == "harmonic":
+        return
+    elif space == "harmonic":  # pragma: no branch
+        # Coverage.py artifact: branch-to-exit tracked but not separately testable
         harmonic_skip_reduction = len(harmonic_measurements) ** 2 - len(harmonic_pairs)
         print(
             f"\n🚀 Harmonic-space efficiency: {harmonic_skip_reduction} skipped "
             "tests eliminated"
         )
+        return
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
+    # Standalone execution - tested via subprocess in test suite
     main()  # pylint: disable=no-value-for-parameter

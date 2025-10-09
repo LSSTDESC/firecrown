@@ -70,7 +70,8 @@ def _parse_duration_line(line: str) -> tuple[str, float] | None:
     test_name = m.group(3)
     try:
         duration = float(duration_str)
-    except ValueError:
+    except ValueError:  # pragma: no cover
+        # Defensive: regex pattern ensures duration_str is always a valid float
         return None
     return test_name, duration
 
@@ -345,10 +346,12 @@ def main(input_file: Path, output_file: str, timing: Path | None) -> None:
             )
             print(f"Records with timing data: {records_with_timing}")
 
-    except OSError as e:
+    except OSError as e:  # pragma: no cover
+        # Defensive: load_json_file and write_tsv_file handle errors via cli_error
         print(f"Error: File operation failed: {e}")
         sys.exit(1)
-    except KeyError as e:
+    except KeyError as e:  # pragma: no cover
+        # Defensive: extract_coverage_data uses .get() to avoid KeyError
         print(f"Error: Missing expected key in JSON data: {e}")
         sys.exit(1)
 

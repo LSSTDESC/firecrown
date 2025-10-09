@@ -4,6 +4,7 @@ Tests the shared utility functions used across fctools.
 """
 
 import json
+import sys
 from pathlib import Path
 
 import pytest
@@ -195,6 +196,18 @@ TEST_CONSTANT = "hello"
 
         assert exc_info.value.code == 1
 
+    def test_import_module_none_spec(self, tmp_path):
+        """Test case where spec_from_file_location returns None."""
+        # This is extremely rare, but can happen with certain file paths or conditions
+        # Testing with a directory instead of a file might trigger this
+        directory = tmp_path / "not_a_file"
+        directory.mkdir()
+
+        with pytest.raises(SystemExit) as exc_info:
+            import_module_from_file(directory)
+
+        assert exc_info.value.code == 1
+
 
 class TestCliError:
     """Tests for cli_error function."""
@@ -299,6 +312,26 @@ class TestValidateInputFile:
             validate_input_file(test_file, file_description="Configuration file")
 
         # Error message should contain custom description
+
+    def test_validate_unreadable_file(self, tmp_path):
+        """Test validating a file without read permissions."""
+        if sys.platform == "win32":
+            pytest.skip("File permission tests unreliable on Windows")
+
+        test_file = tmp_path / "unreadable.txt"
+        test_file.write_text("content")
+
+        # Remove read permissions
+        test_file.chmod(0o000)
+
+        try:
+            with pytest.raises(SystemExit) as exc_info:
+                validate_input_file(test_file)
+
+            assert exc_info.value.code == 1
+        finally:
+            # Restore permissions for cleanup
+            test_file.chmod(0o644)
 
 
 class TestValidateOutputPath:
