@@ -13,7 +13,7 @@ import click
 
 try:
     import sacc
-except ImportError:
+except ImportError:  # pragma: no cover
     click.echo(
         "ERROR: sacc package not found. Install it with: pip install sacc",
         err=True,
@@ -219,6 +219,6 @@ def _display_conversion_summary(
         click.echo("Size unchanged")
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
     main()  # pylint: disable=no-value-for-parameter

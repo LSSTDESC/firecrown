@@ -310,6 +310,24 @@ class MyClass:
         assert "class_attr" in result
         assert "instance_attr" not in result
 
+    def test_extract_non_name_targets(self):
+        """Test handling of assignments to non-Name targets."""
+        source = """
+class MyClass:
+    regular = 10
+    a, b = 1, 2  # Tuple assignment - should be ignored
+    obj.attr = 5  # Attribute assignment - should be ignored
+"""
+        class_def = get_class_definition(source, "MyClass")
+        assert class_def is not None
+        result = extract_class_attributes(class_def)
+
+        # Only regular should be captured
+        assert "regular" in result
+        assert "a" not in result
+        assert "b" not in result
+        # Tuple/attribute assignments are filtered out
+
 
 class TestFormatClassDocstring:
     """Tests for format_class_docstring function."""
@@ -379,6 +397,22 @@ class MyClass:
         joined = "\n".join(result)
         assert "Args:" in joined
         assert "Returns:" in joined
+
+    def test_format_empty_string_docstring(self):
+        """Test formatting when docstring is an empty string."""
+        # Create a ClassDef node with empty docstring manually
+        # This is an edge case that's hard to create via parsing
+        class_def = ast.ClassDef(
+            name="TestClass",
+            bases=[],
+            keywords=[],
+            body=[ast.Expr(value=ast.Constant(value=""))],
+            decorator_list=[],
+        )
+        result = format_class_docstring(class_def)
+
+        # Empty docstring should return empty list
+        assert not result
 
 
 class TestGetFunctionNames:

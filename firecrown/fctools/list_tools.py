@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 else:
     try:
         from .ast_utils import format_docstring_summary, get_module_docstring
-    except ImportError:
+    except ImportError:  # pragma: no cover
         from ast_utils import format_docstring_summary, get_module_docstring
 
 
@@ -123,6 +123,6 @@ def main(verbose: bool):
         )
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
     main()  # pylint: disable=no-value-for-parameter

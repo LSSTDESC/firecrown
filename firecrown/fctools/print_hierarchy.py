@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 else:
     try:
         from .common import import_class_from_path
-    except ImportError:
+    except ImportError:  # pragma: no cover
         from common import import_class_from_path
 
 
@@ -79,6 +79,6 @@ def main(typenames):
         print_type_hierarchy(type_)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
     main()  # pylint: disable=no-value-for-parameter

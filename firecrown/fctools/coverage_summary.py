@@ -20,7 +20,7 @@ if TYPE_CHECKING:
 else:
     try:
         from .common import format_line_ranges, load_json_file
-    except ImportError:
+    except ImportError:  # pragma: no cover
         from common import format_line_ranges, load_json_file
 
 
@@ -345,6 +345,6 @@ def main(coverage_file: Path, show_source: bool, show_perfect: bool) -> None:
         sys.exit(1)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
     main()  # pylint: disable=no-value-for-parameter

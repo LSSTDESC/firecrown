@@ -17,7 +17,7 @@ else:
     try:
         from .ast_utils import format_class_docstring, get_class_definition
         from .common import import_class_from_path
-    except ImportError:
+    except ImportError:  # pragma: no cover
         from ast_utils import format_class_docstring, get_class_definition
         from common import import_class_from_path
 
@@ -133,6 +133,6 @@ def main(class_names, no_markdown: bool):
                 print()
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     # Click decorators inject arguments automatically from sys.argv
     main()  # pylint: disable=no-value-for-parameter
