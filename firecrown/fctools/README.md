@@ -1,19 +1,24 @@
 # fctools - Development Tools
 
-This directory contains command-line tools for code analysis, coverage reporting, and debugging. All tools use [Click](https://click.palletsprojects.com/) for their command-line interface and provide comprehensive help.
+This directory contains command-line tools for code analysis, coverage reporting, and debugging.
+All tools use [Click](https://click.palletsprojects.com/) for their command-line interface and provide comprehensive help.
+These tools are intended for development and debugging purposes only.
+They are *not* part of the Firecrown API and should not be used by any part of Firecrown (or by code that uses Firecrown).
+
+Developers may use them for their own code analysis purposes, but they are not supported.
 
 ## Quick Start
 
 List all available tools:
 
 ```bash
-python fctools/list_tools.py
+python -m firecrown.fctools.list_tools
 ```
 
 Get detailed help for any tool:
 
 ```bash
-python fctools/TOOL.py --help
+python -m firecrown.fctools.TOOL --help
 ```
 
 ## Available Tools
@@ -24,10 +29,10 @@ Convert pytest-cov JSON coverage data to TSV format. Supports merging timing dat
 
 ```bash
 # Basic usage
-python fctools/coverage_to_tsv.py coverage.json
+python -m firecrown.fctools.coverage_to_tsv coverage.json
 
 # With custom output and timing data
-python fctools/coverage_to_tsv.py coverage.json output.tsv --timing timing.json
+python -m firecrown.fctools.coverage_to_tsv coverage.json output.tsv --timing timing.json
 ```
 
 ### coverage_summary.py
@@ -36,13 +41,13 @@ Analyze test coverage output and provide detailed summaries.
 
 ```bash
 # Basic summary
-python fctools/coverage_summary.py coverage.json
+python -m firecrown.fctools.coverage_summary coverage.json
 
 # Show source code for missing lines
-python fctools/coverage_summary.py coverage.json --show-source
+python -m firecrown.fctools.coverage_summary coverage.json --show-source
 
 # Include files with perfect coverage
-python fctools/coverage_summary.py coverage.json --show-perfect
+python -m firecrown.fctools.coverage_summary coverage.json --show-perfect
 ```
 
 ### measurement_compatibility.py
@@ -51,17 +56,17 @@ Analyze measurement compatibility for Firecrown two-point functions. Shows which
 
 ```bash
 # Basic compatibility analysis
-python fctools/measurement_compatibility.py
+python -m firecrown.fctools.measurement_compatibility
 
 # Detailed analysis with measurement lists
-python fctools/measurement_compatibility.py --verbose
+python -m firecrown.fctools.measurement_compatibility --verbose
 
 # Analyze specific space only
-python fctools/measurement_compatibility.py --space real
-python fctools/measurement_compatibility.py --space harmonic
+python -m firecrown.fctools.measurement_compatibility --space real
+python -m firecrown.fctools.measurement_compatibility --space harmonic
 
 # Statistics only
-python fctools/measurement_compatibility.py --stats-only
+python -m firecrown.fctools.measurement_compatibility --stats-only
 ```
 
 ### print_hierarchy.py
@@ -70,10 +75,10 @@ Display class hierarchy (Method Resolution Order) for Python types.
 
 ```bash
 # Single class
-python fctools/print_hierarchy.py collections.OrderedDict
+python -m firecrown.fctools.print_hierarchy collections.OrderedDict
 
 # Multiple classes
-python fctools/print_hierarchy.py pathlib.Path collections.Counter
+python -m firecrown.fctools.print_hierarchy pathlib.Path collections.Counter
 ```
 
 ### print_code.py
@@ -82,13 +87,13 @@ Display class definitions with attributes and decorators (excludes methods).
 
 ```bash
 # With markdown formatting (default)
-python fctools/print_code.py dataclasses.dataclass
+python -m firecrown.fctools.print_code dataclasses.dataclass
 
 # Plain text output
-python fctools/print_code.py mymodule.MyClass --no-markdown
+python -m firecrown.fctools.print_code mymodule.MyClass --no-markdown
 
 # Multiple classes
-python fctools/print_code.py class1 class2 class3
+python -m firecrown.fctools.print_code class1 class2 class3
 ```
 
 ### tracer.py
@@ -97,13 +102,13 @@ Trace execution of Python scripts or modules, recording function calls to TSV.
 
 ```bash
 # Trace a script
-python fctools/tracer.py myscript.py
+python -m firecrown.fctools.tracer myscript.py
 
 # Trace with custom output file
-python fctools/tracer.py myscript.py --output trace_debug.tsv
+python -m firecrown.fctools.tracer myscript.py --output trace_debug.tsv
 
 # Trace a module
-python fctools/tracer.py mypackage.mymodule --module
+python -m firecrown.fctools.tracer mypackage.mymodule --module
 ```
 
 ## Features
@@ -121,5 +126,5 @@ All tools are standalone Python scripts that can be run directly or imported as 
 For tool discovery, use:
 
 ```bash
-python fctools/list_tools.py --verbose
+python -m firecrown.fctools.list_tools --verbose
 ```

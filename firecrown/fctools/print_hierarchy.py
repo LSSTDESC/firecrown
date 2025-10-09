@@ -1,17 +1,18 @@
 #!/usr/bin/env python
 """This script provides a way to print the class hierarchy of a given type."""
 
-import importlib
 import inspect
+from typing import TYPE_CHECKING
 
 import click
 
-
-def import_type(full_path: str) -> type:
-    """Import a type from a full path, returning the type."""
-    module_path, type_name = full_path.rsplit(".", 1)
-    module = importlib.import_module(module_path)
-    return getattr(module, type_name)
+if TYPE_CHECKING:
+    from .common import import_class_from_path
+else:
+    try:
+        from .common import import_class_from_path
+    except ImportError:  # pragma: no cover
+        from common import import_class_from_path
 
 
 def full_type_name(t: type) -> str:
@@ -71,17 +72,13 @@ def main(typenames):
     TYPENAMES  One or more fully qualified type names (e.g. mymodule.MyClass)
     """
     for typename in typenames:
-        try:
-            type_ = import_type(typename)
-            if len(typenames) > 1:
-                print(f"\n{'=' * 60}")
-            print_type_hierarchy(type_)
-        except ImportError as e:
-            print(f"Could not import type {typename}")
-            print(f"Error message: {e}")
-            if len(typenames) > 1:
-                print()  # Add spacing between errors
+        # import_class_from_path handles errors via cli_error (exits on failure)
+        type_ = import_class_from_path(typename)
+        if len(typenames) > 1:
+            print(f"\n{'=' * 60}")
+        print_type_hierarchy(type_)
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__":  # pragma: no cover
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

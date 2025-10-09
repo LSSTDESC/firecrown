@@ -13,7 +13,7 @@ import click
 
 try:
     import sacc
-except ImportError:
+except ImportError:  # pragma: no cover
     click.echo(
         "ERROR: sacc package not found. Install it with: pip install sacc",
         err=True,
@@ -37,17 +37,16 @@ def detect_format(filepath: Path) -> str:
 
     if suffix == ".fits":
         return "fits"
-    elif suffix in (".hdf5", ".h5"):
+    if suffix in (".hdf5", ".h5"):
         return "hdf5"
-    else:
-        raise ValueError(
-            f"Cannot detect format from extension '{suffix}'. "
-            "Use --input-format to specify."
-        )
+    raise ValueError(
+        f"Cannot detect format from extension '{suffix}'. "
+        "Use --input-format to specify."
+    )
 
 
 def determine_output_path(
-    input_path: Path, output: str | None, target_format: str
+    input_path: Path, output: Path | None, target_format: str
 ) -> Path:
     """Determine the output file path.
 
@@ -60,14 +59,14 @@ def determine_output_path(
         Output file path
     """
     if output:
-        return Path(output)
+        return output
 
     # Auto-generate output filename by changing extension
     stem = input_path.stem
     if target_format == "fits":
         return input_path.parent / f"{stem}.fits"
-    else:  # hdf5
-        return input_path.parent / f"{stem}.hdf5"
+    # hdf5
+    return input_path.parent / f"{stem}.hdf5"
 
 
 @click.command()
@@ -172,7 +171,7 @@ def _read_and_convert_file(
             data = sacc.Sacc.load_fits(str(input_file))
         else:  # hdf5
             data = sacc.Sacc.load_hdf5(str(input_file))
-    except Exception as e:
+    except OSError:
         click.echo("ERROR: Failed to read input file as SACC data.")
         click.echo(
             f"The file may not be a valid SACC {src_format.upper()} file.",
@@ -186,8 +185,11 @@ def _read_and_convert_file(
         if target_format == "fits":
             data.save_fits(str(output_path), overwrite=overwrite)
         else:  # hdf5
+            # save_hdf5 doesn't have an overwrite parameter, so manually handle it
+            if overwrite and output_path.exists():
+                output_path.unlink()
             data.save_hdf5(str(output_path))
-    except Exception as e:
+    except OSError as e:
         click.echo(f"ERROR: Failed to write SACC data to output file: {e}", err=True)
         sys.exit(1)
 
@@ -217,5 +219,6 @@ def _display_conversion_summary(
         click.echo("Size unchanged")
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__":  # pragma: no cover
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

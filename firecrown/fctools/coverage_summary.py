@@ -8,13 +8,20 @@ This tool provides a detailed analysis of test coverage including:
 - Files with less than perfect coverage
 """
 
-import json
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 import click
+
+if TYPE_CHECKING:
+    from .common import format_line_ranges, load_json_file
+else:
+    try:
+        from .common import format_line_ranges, load_json_file
+    except ImportError:  # pragma: no cover
+        from common import format_line_ranges, load_json_file
 
 
 @dataclass
@@ -50,33 +57,6 @@ class FileIssue:
     excluded_lines: list[int]
     total_statements: int
     total_branches: int
-
-
-def group_consecutive_lines(lines: list[int]) -> list[str]:
-    """Group consecutive line numbers for better readability."""
-    if not lines:
-        return []
-
-    sorted_lines = sorted(lines)
-    groups = []
-    current_group = [sorted_lines[0]]
-
-    for line in sorted_lines[1:]:
-        if line == current_group[-1] + 1:
-            current_group.append(line)
-        else:
-            groups.append(current_group)
-            current_group = [line]
-    groups.append(current_group)
-
-    result = []
-    for group in groups:
-        if len(group) == 1:
-            result.append(f"{group[0]}")
-        else:
-            result.append(f"{group[0]}-{group[-1]}")
-
-    return result
 
 
 def _calculate_branch_coverage_summary(
@@ -184,8 +164,7 @@ def analyze_coverage_json(
     coverage_file: Path,
 ) -> tuple[CoverageSummary, list[FileIssue]]:
     """Analyze coverage data from a JSON file."""
-    with open(coverage_file, encoding="utf-8") as f:
-        coverage_data = json.load(f)
+    coverage_data = load_json_file(coverage_file, "coverage analysis")
 
     files_data = coverage_data.get("files", {})
     totals = coverage_data.get("totals", {})
@@ -284,8 +263,7 @@ def _print_file_issue_details(issue: FileIssue, show_source: bool) -> None:
 
     # Show missing lines
     if issue.missing_lines:
-        line_groups = group_consecutive_lines(issue.missing_lines)
-        lines_str = ", ".join(line_groups)
+        lines_str = format_line_ranges(issue.missing_lines)
         print(f"   Missing Lines ({issue.missing_lines_count}): {lines_str}")
 
         if show_source:
@@ -300,8 +278,7 @@ def _print_file_issue_details(issue: FileIssue, show_source: bool) -> None:
 
     # Show excluded lines
     if issue.excluded_lines:
-        line_groups = group_consecutive_lines(issue.excluded_lines)
-        lines_str = ", ".join(line_groups)
+        lines_str = format_line_ranges(issue.excluded_lines)
         print(f"   Excluded Lines ({issue.excluded_lines_count}): {lines_str}")
 
 
@@ -359,15 +336,15 @@ def main(coverage_file: Path, show_source: bool, show_perfect: bool) -> None:
 
         if show_perfect:
             # Get all file paths from the original data
-            with open(coverage_file, encoding="utf-8") as f:
-                coverage_data = json.load(f)
+            coverage_data = load_json_file(coverage_file, "coverage analysis")
             all_files = list(coverage_data.get("files", {}).keys())
             print_perfect_coverage_files(file_issues, all_files)
 
-    except (OSError, json.JSONDecodeError) as e:
+    except OSError as e:
         print(f"Error analyzing coverage file: {e}")
         sys.exit(1)
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__":  # pragma: no cover
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

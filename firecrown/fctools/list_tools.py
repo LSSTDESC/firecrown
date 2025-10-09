@@ -1,11 +1,19 @@
 #!/usr/bin/env python
 """List all available fctools and their descriptions."""
 
-import ast
 import importlib.util
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
+
+if TYPE_CHECKING:
+    from .ast_utils import format_docstring_summary, get_module_docstring
+else:
+    try:
+        from .ast_utils import format_docstring_summary, get_module_docstring
+    except ImportError:  # pragma: no cover
+        from ast_utils import format_docstring_summary, get_module_docstring
 
 
 def _extract_description_from_docstring(docstring: str) -> str:
@@ -29,14 +37,10 @@ def _extract_description_from_docstring(docstring: str) -> str:
 def _extract_description_from_file(file_path: Path) -> str:
     """Extract description from a Python file's module docstring."""
     try:
-        # Try to parse the AST to get the module docstring
-        with open(file_path, encoding="utf-8") as f:
-            content = f.read()
-
-        tree = ast.parse(content)
-        docstring = ast.get_docstring(tree)
+        # Try to get the module docstring using ast_utils
+        docstring = get_module_docstring(file_path)
         if docstring:
-            return _extract_description_from_docstring(docstring)
+            return format_docstring_summary(docstring, max_length=80)
 
     except (OSError, SyntaxError, UnicodeDecodeError):
         # Fallback: try to import and get __doc__
@@ -48,7 +52,7 @@ def _extract_description_from_file(file_path: Path) -> str:
                 doc = getattr(module, "__doc__", "")
                 if doc:
                     return _extract_description_from_docstring(doc)
-        except (ImportError, AttributeError, SyntaxError):
+        except (ImportError, AttributeError, SyntaxError, FileNotFoundError):
             pass
 
     return "Tool description not available"
@@ -78,6 +82,7 @@ def _discover_tools() -> dict[str, str]:
 
     return tools
 
+
 @click.command()
 @click.option(
     "--verbose",
@@ -105,15 +110,19 @@ def main(verbose: bool):
         if verbose:
             click.echo(f"  {tool}")
             click.echo(f"    {description}")
-            click.echo(f"    Usage: python fctools/{tool} --help")
+            tool_name = tool.replace(".py", "")
+            click.echo(f"    Usage: python -m firecrown.fctools.{tool_name} --help")
             click.echo()
         else:
             click.echo(f"  {tool:<25} - {description}")
 
     if not verbose:
         click.echo("\nUse --verbose for detailed information about each tool.")
-        click.echo("Use 'python fctools/TOOL.py --help' for tool-specific help.")
+        click.echo(
+            "Use 'python -m firecrown.fctools.TOOL --help' for tool-specific help."
+        )
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__":  # pragma: no cover
+    # Click decorators inject arguments automatically from sys.argv
+    main()  # pylint: disable=no-value-for-parameter

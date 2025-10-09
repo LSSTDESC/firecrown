@@ -1,6 +1,6 @@
 ---
 title: An Introduction to Firecrown
-subtitle: "Version 1.12.0a0"
+subtitle: "Version `{python} import sys; from pathlib import Path; sys.path.insert(0, str(Path.cwd().parent)); from firecrown.version import __version__; print(__version__, end='')`"
 authors:
   - Marc Paterno
   - Sandro Vitenti

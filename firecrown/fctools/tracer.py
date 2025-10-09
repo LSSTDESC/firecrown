@@ -7,14 +7,20 @@ one record (line) for each captured event.
 
 The columns in the file are:
 
-    entry: a sequential entry number, for each event
-    event: the event type (call, return, exception)
-    level: the call nesting level
-    function: the function name
-    value: for a 'call' entry, the names of the arguments.
-           forl a 'return' entry, the return value
-    extra: for a 'call' entry, the type self, if that is the first argument
-           for a 'return' entry, the type of the return value
+    entry:
+        a sequential entry number, for each event
+    event:
+        the event type (call, return, exception)
+    level:
+        the call nesting level
+    function:
+        the function name
+    value:
+        for a 'call' entry, the names of the arguments;
+        for a 'return' entry, the return value
+    extra:
+        for a 'call' entry, the type self, if that is the first argument;
+        for a 'return' entry, the type of the return value
 
 N.B.: This tracer should be used only for debugging and development purposes.
       It interferes with the pytest test coverage measurement process.
@@ -34,6 +40,7 @@ class TracerState:
         """Initialize tracer state with output file."""
         # File must remain open for the duration of tracing session (many callbacks)
         # and is properly closed via close() method called from untrace()
+        # pylint: disable=consider-using-with
         self.tracefile = Path(filename).open(mode="w", encoding="utf8")  # noqa: SIM115
         self.level = 0  # the call nesting level
         self.entry = 0  # sequential entry number for each record
@@ -77,7 +84,8 @@ class TracerState:
                     file=self.tracefile,
                 )
                 self.level -= 1
-            case "exception":
+            case "exception":  # pragma: no branch
+                # Coverage.py/sys.settrace() interaction: branch to return not tracked
                 self.entry += 1
                 print(
                     f"{self.entry}\texception\t{self.level}\t{code.co_qualname}\t"
@@ -102,13 +110,21 @@ def settrace(filename: str = "trace.tsv") -> TracerState:
     return tracer
 
 
-def untrace(tracer: TracerState) -> None:
+def untrace(tracer: TracerState) -> None:  # pragma: no cover
     """Turn off tracing, and close the specified trace file.
+
+    :param tracer: TracerState instance, as returned by settrace.
+
+    .. note::
+        Coverage tracking doesn't work for this function due to sys.settrace()
+        interaction between coverage.py and the tracer. Tests verify functionality
+        without coverage enabled.
 
     :param tracer: TracerState instance, as returned by settrace.
     """
     sys.settrace(None)
     tracer.close()
+
 
 @click.command()
 @click.argument("target")
@@ -157,8 +173,12 @@ def main(target: str, output: str, module: bool):
     finally:
         # Stop tracing and close file
         untrace(tracer)
-        click.echo(f"Trace complete. Output saved to: {output}")
+        click.echo(  # pragma: no cover
+            f"Trace complete. Output saved to: {output}"
+        )  # Coverage.py/sys.settrace() interaction prevents tracking
 
 
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__":  # pragma: no cover
+    # Click decorators inject arguments automatically from sys.argv
+    # Standalone execution - tested via subprocess in test suite
+    main()  # pylint: disable=no-value-for-parameter
