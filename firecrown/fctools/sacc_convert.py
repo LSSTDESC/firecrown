@@ -106,18 +106,23 @@ def main(
     Format detection is automatic based on file extension (.fits, .hdf5, .h5),
     but can be overridden with --input-format.
 
-    Examples:
-        # Convert FITS to HDF5 (auto-detect input, auto-generate output name)
+    Examples
+    --------
+    Convert FITS to HDF5 (auto-detect input, auto-generate output name)::
+
         python fctools/sacc_convert.py data.fits
 
-        # Convert HDF5 to FITS with specific output name
+    Convert HDF5 to FITS with specific output name::
+
         python fctools/sacc_convert.py data.hdf5 --output converted.fits
 
-        # Force input format (useful if extension doesn't match)
-        python fctools/sacc_convert.py mydata.dat --input-format fits \\
+    Force input format when the extension is ambiguous::
+
+        python fctools/sacc_convert.py mydata.dat --input-format fits \
             --output mydata.hdf5
 
-        # Overwrite existing output file
+    Overwrite existing output file::
+
         python fctools/sacc_convert.py data.fits --overwrite
     """
     # Detect or use specified input format
