@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 from numcosmo_py import Ncm
 
-from firecrown.models.cluster.integrator.integrator import Integrator
+from firecrown.models.cluster.integrator._integrator import Integrator
 
 
 class NumCosmoIntegralMethod(Enum):

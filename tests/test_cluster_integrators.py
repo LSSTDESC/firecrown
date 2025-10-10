@@ -3,8 +3,8 @@
 import numpy as np
 import numpy.typing as npt
 import pytest
-from firecrown.models.cluster.integrator.scipy_integrator import ScipyIntegrator
-from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
+from firecrown.models.cluster.integrator import ScipyIntegrator
+from firecrown.models.cluster.integrator import NumCosmoIntegrator
 
 
 # @pytest.fixture(name="integrator", params=[ScipyIntegrator, NumCosmoIntegrator])

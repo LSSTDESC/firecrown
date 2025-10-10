@@ -6,18 +6,18 @@ import numpy as np
 import pyccl
 import pytest
 
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
-from firecrown.models.cluster.binning import NDimensionalBin
-from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
-from firecrown.models.cluster.kernel import SpectroscopicRedshift
-from firecrown.models.cluster.mass_proxy import MurataBinned
-from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
-from firecrown.models.cluster.recipes.murata_binned_spec_z import (
-    MurataBinnedSpecZRecipe,
+from firecrown.models.cluster import (
+    ClusterDeltaSigma,
+    ClusterProperty,
+    MurataBinned,
+    NDimensionalBin,
+    SpectroscopicRedshift,
 )
-from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
+from firecrown.models.cluster.integrator import NumCosmoIntegrator
+from firecrown.models.cluster.recipes import (
+    ClusterRecipe,
     MurataBinnedSpecZDeltaSigmaRecipe,
+    MurataBinnedSpecZRecipe,
 )
 
 

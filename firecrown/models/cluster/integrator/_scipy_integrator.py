@@ -10,7 +10,7 @@ import numpy as np
 import numpy.typing as npt
 from scipy.integrate import nquad
 
-from firecrown.models.cluster.integrator.integrator import Integrator
+from firecrown.models.cluster.integrator._integrator import Integrator
 
 
 class ScipyIntegrator(Integrator):

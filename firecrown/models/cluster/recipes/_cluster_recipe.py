@@ -2,8 +2,8 @@
 
 from abc import ABC, abstractmethod
 
-from firecrown.models.cluster.binning import SaccBin
-from firecrown.models.cluster.properties import ClusterProperty
+from firecrown.models.cluster._binning import SaccBin
+from firecrown.models.cluster._properties import ClusterProperty
 from firecrown.updatable import Updatable, UpdatableCollection
 
 

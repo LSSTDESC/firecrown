@@ -5,18 +5,17 @@ import sacc
 import pytest
 import pyccl
 from firecrown.updatable import get_default_params_map
-from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
-from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
+from firecrown.models.cluster.recipes import (
+    ClusterRecipe,
     MurataBinnedSpecZDeltaSigmaRecipe,
 )
 from firecrown.likelihood.source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster import ClusterProperty, ClusterAbundance
 from firecrown.likelihood.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
+from firecrown.models.cluster import ClusterDeltaSigma
 from firecrown.likelihood.binned_cluster_number_counts_deltasigma import (
     BinnedClusterDeltaSigma,
 )

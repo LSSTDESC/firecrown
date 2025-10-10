@@ -14,8 +14,7 @@ from collections.abc import Collection
 import pyccl.nl_pt
 
 from firecrown.ccl_factory import CCLCalculatorArgs, CCLFactory
-from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
+from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 from firecrown.updatable import Updatable, UpdatableCollection
 
 

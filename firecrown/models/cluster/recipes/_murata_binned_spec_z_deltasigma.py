@@ -6,13 +6,15 @@ from collections.abc import Callable
 import numpy as np
 import numpy.typing as npt
 
-from firecrown.models.cluster.binning import NDimensionalBin
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
-from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
-from firecrown.models.cluster.kernel import SpectroscopicRedshift
-from firecrown.models.cluster.mass_proxy import MurataBinned
-from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
+from firecrown.models.cluster._binning import NDimensionalBin
+from firecrown.models.cluster._deltasigma import ClusterDeltaSigma
+from firecrown.models.cluster.integrator._numcosmo_integrator import (
+    NumCosmoIntegrator,
+)
+from firecrown.models.cluster._kernel import SpectroscopicRedshift
+from firecrown.models.cluster._mass_proxy import MurataBinned
+from firecrown.models.cluster._properties import ClusterProperty
+from firecrown.models.cluster.recipes._cluster_recipe import ClusterRecipe
 
 
 class MurataBinnedSpecZDeltaSigmaRecipe(ClusterRecipe):
