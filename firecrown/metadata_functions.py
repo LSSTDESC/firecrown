@@ -12,26 +12,32 @@ import numpy.typing as npt
 import sacc
 from sacc.data_types import required_tags
 
-from firecrown.metadata_types import (
-    ALL_MEASUREMENT_TYPES,
-    CMB,
-    GALAXY_LENS_TYPES,
-    GALAXY_SOURCE_TYPES,
-    LENS_REGEX,
-    MEASURED_TYPE_STRING_MAP,
-    SOURCE_REGEX,
-    Clusters,
-    Galaxies,
-    InferredGalaxyZDist,
-    Measurement,
-    TracerNames,
-    TwoPointCorrelationSpace,
-    TwoPointHarmonic,
-    TwoPointReal,
-    TwoPointXY,
-    TypeSource,
-    measurement_is_compatible,
-)
+import firecrown.metadata_types as mdt
+
+__all__ = [
+    "TwoPointRealIndex",
+    "TwoPointHarmonicIndex",
+    "make_measurement",
+    "make_measurements",
+    "make_measurement_dict",
+    "make_measurements_dict",
+    "make_correlation_space",
+    "extract_all_tracers_inferred_galaxy_zdists",
+    "extract_all_measured_types",
+    "extract_all_real_metadata_indices",
+    "extract_all_harmonic_metadata_indices",
+    "extract_all_harmonic_metadata",
+    "extract_all_real_metadata",
+    "extract_all_photoz_bin_combinations",
+    "extract_window_function",
+    "maybe_enforce_window",
+    "make_all_photoz_bin_combinations",
+    "make_all_photoz_bin_combinations_with_cmb",
+    "make_cmb_galaxy_combinations_only",
+    "match_name_type",
+    "make_two_point_xy",
+    "measurements_from_index",
+]
 
 
 # TwoPointRealIndex is a type used to create intermediate objects when reading SACC
@@ -43,7 +49,7 @@ class TwoPointRealIndex(TypedDict):
     """
 
     data_type: str
-    tracer_names: TracerNames
+    tracer_names: mdt.TracerNames
 
 
 # TwoPointHarmonicIndex is a type used to create intermediate objects when reading SACC
@@ -55,12 +61,12 @@ class TwoPointHarmonicIndex(TypedDict):
     """
 
     data_type: str
-    tracer_names: TracerNames
+    tracer_names: mdt.TracerNames
 
 
-def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
+def make_measurement(value: mdt.Measurement | dict[str, Any]) -> mdt.Measurement:
     """Create a Measurement object from a dictionary."""
-    if isinstance(value, ALL_MEASUREMENT_TYPES):
+    if isinstance(value, mdt.ALL_MEASUREMENT_TYPES):
         return value
 
     if not isinstance(value, dict):
@@ -73,11 +79,11 @@ def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
 
     match subject:
         case "Galaxies":
-            return Galaxies[value["property"]]
+            return mdt.Galaxies[value["property"]]
         case "CMB":
-            return CMB[value["property"]]
+            return mdt.CMB[value["property"]]
         case "Clusters":
-            return Clusters[value["property"]]
+            return mdt.Clusters[value["property"]]
         case _:
             raise ValueError(
                 f"Invalid Measurement: subject: '{subject}' is not recognized"
@@ -85,21 +91,21 @@ def make_measurement(value: Measurement | dict[str, Any]) -> Measurement:
 
 
 def make_measurements(
-    value: set[Measurement] | list[dict[str, Any]],
-) -> set[Measurement]:
+    value: set[mdt.Measurement] | list[dict[str, Any]],
+) -> set[mdt.Measurement]:
     """Create a Measurement object from a dictionary."""
     if isinstance(value, set) and all(
-        isinstance(v, ALL_MEASUREMENT_TYPES) for v in value
+        isinstance(v, mdt.ALL_MEASUREMENT_TYPES) for v in value
     ):
         return value
 
-    measurements: set[Measurement] = set()
+    measurements: set[mdt.Measurement] = set()
     for measurement_dict in value:
         measurements.update([make_measurement(measurement_dict)])
     return measurements
 
 
-def make_measurement_dict(value: Measurement) -> dict[str, str]:
+def make_measurement_dict(value: mdt.Measurement) -> dict[str, str]:
     """Create a dictionary from a Measurement object.
 
     :param value: the measurement to turn into a dictionary
@@ -107,7 +113,7 @@ def make_measurement_dict(value: Measurement) -> dict[str, str]:
     return {"subject": type(value).__name__, "property": value.name}
 
 
-def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
+def make_measurements_dict(value: set[mdt.Measurement]) -> list[dict[str, str]]:
     """Create a dictionary from a Measurement object.
 
     :param value: the measurement to turn into a dictionary
@@ -115,11 +121,11 @@ def make_measurements_dict(value: set[Measurement]) -> list[dict[str, str]]:
     return [make_measurement_dict(measurement) for measurement in value]
 
 
-def make_correlation_space(value: TwoPointCorrelationSpace | str):
+def make_correlation_space(value: mdt.TwoPointCorrelationSpace | str):
     """Create a CorrelationSpace object from a string."""
-    if not isinstance(value, TwoPointCorrelationSpace) and isinstance(value, str):
+    if not isinstance(value, mdt.TwoPointCorrelationSpace) and isinstance(value, str):
         try:
-            return TwoPointCorrelationSpace(
+            return mdt.TwoPointCorrelationSpace(
                 value.lower()
             )  # Convert from string to Enum
         except ValueError as exc:
@@ -132,7 +138,7 @@ def make_correlation_space(value: TwoPointCorrelationSpace | str):
 def _extract_all_candidate_measurement_types(
     data_points: list[sacc.DataPoint],
     include_maybe_types: bool = False,
-) -> dict[str, set[Measurement]]:
+) -> dict[str, set[mdt.Measurement]]:
     """Extract all candidate Measurement from the data points.
 
     The candidate Measurement are the ones that appear in the data points.
@@ -148,9 +154,9 @@ def _extract_all_candidate_measurement_types(
 
     # Filter maybe types.
     for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in MEASURED_TYPE_STRING_MAP:
+        if data_type not in mdt.MEASURED_TYPE_STRING_MAP:
             continue
-        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+        a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
 
         if a == b:
             continue
@@ -171,20 +177,20 @@ def _extract_all_candidate_measurement_types(
 
 
 def _extract_sure_and_maybe_types(all_data_types):
-    sure_types: dict[str, set[Measurement]] = {}
-    maybe_types: dict[str, set[Measurement]] = {}
+    sure_types: dict[str, set[mdt.Measurement]] = {}
+    maybe_types: dict[str, set[mdt.Measurement]] = {}
 
     for data_type, tracer1, tracer2 in all_data_types:
-        sure_types[tracer1] = set()
-        sure_types[tracer2] = set()
-        maybe_types[tracer1] = set()
-        maybe_types[tracer2] = set()
+        sure_types.setdefault(tracer1, set())
+        sure_types.setdefault(tracer2, set())
+        maybe_types.setdefault(tracer1, set())
+        maybe_types.setdefault(tracer2, set())
 
     # Getting the sure and maybe types for each tracer.
     for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in MEASURED_TYPE_STRING_MAP:
+        if data_type not in mdt.MEASURED_TYPE_STRING_MAP:
             continue
-        a, b = MEASURED_TYPE_STRING_MAP[data_type]
+        a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
 
         if a == b:
             sure_types[tracer1].update({a})
@@ -203,25 +209,25 @@ def _extract_sure_and_maybe_types(all_data_types):
 def match_name_type(
     tracer1: str,
     tracer2: str,
-    a: Measurement,
-    b: Measurement,
+    a: mdt.Measurement,
+    b: mdt.Measurement,
     require_convetion: bool = False,
-) -> tuple[bool, str, Measurement, str, Measurement]:
+) -> tuple[bool, str, mdt.Measurement, str, mdt.Measurement]:
     """Use the naming convention to assign the right measurement to each tracer."""
     for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
-        if LENS_REGEX.match(n1) and SOURCE_REGEX.match(n2):
-            if a in GALAXY_SOURCE_TYPES and b in GALAXY_LENS_TYPES:
+        if mdt.LENS_REGEX.match(n1) and mdt.SOURCE_REGEX.match(n2):
+            if a in mdt.GALAXY_SOURCE_TYPES and b in mdt.GALAXY_LENS_TYPES:
                 return True, n1, b, n2, a
-            if b in GALAXY_SOURCE_TYPES and a in GALAXY_LENS_TYPES:
+            if b in mdt.GALAXY_SOURCE_TYPES and a in mdt.GALAXY_LENS_TYPES:
                 return True, n1, a, n2, b
             raise ValueError(
                 "Invalid SACC file, tracer names do not respect "
                 "the naming convetion."
             )
     if require_convetion:
-        if LENS_REGEX.match(tracer1) and LENS_REGEX.match(tracer2):
+        if mdt.LENS_REGEX.match(tracer1) and mdt.LENS_REGEX.match(tracer2):
             return False, tracer1, a, tracer2, b
-        if SOURCE_REGEX.match(tracer1) and SOURCE_REGEX.match(tracer2):
+        if mdt.SOURCE_REGEX.match(tracer1) and mdt.SOURCE_REGEX.match(tracer2):
             return False, tracer1, a, tracer2, b
 
         raise ValueError(
@@ -234,7 +240,7 @@ def match_name_type(
 
 def extract_all_tracers_inferred_galaxy_zdists(
     sacc_data: sacc.Sacc, include_maybe_types=False
-) -> list[InferredGalaxyZDist]:
+) -> list[mdt.InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -255,7 +261,7 @@ def extract_all_tracers_inferred_galaxy_zdists(
             )
 
     return [
-        InferredGalaxyZDist(
+        mdt.InferredGalaxyZDist(
             bin_name=tracer.name,
             z=tracer.z,
             dndz=tracer.nz,
@@ -268,7 +274,7 @@ def extract_all_tracers_inferred_galaxy_zdists(
 def extract_all_measured_types(
     sacc_data: sacc.Sacc,
     include_maybe_types: bool = False,
-) -> dict[str, set[Measurement]]:
+) -> dict[str, set[mdt.Measurement]]:
     """Extracts the two-point function metadata from a Sacc object.
 
     The Sacc object contains a set of tracers (one-dimensional bins) and data
@@ -316,7 +322,7 @@ def extract_all_real_metadata_indices(
             all_real_indices.append(
                 {
                     "data_type": data_type,
-                    "tracer_names": TracerNames(*combo),
+                    "tracer_names": mdt.TracerNames(*combo),
                 }
             )
 
@@ -353,7 +359,7 @@ def extract_all_harmonic_metadata_indices(
             all_harmonic_indices.append(
                 {
                     "data_type": data_type,
-                    "tracer_names": TracerNames(*combo),
+                    "tracer_names": mdt.TracerNames(*combo),
                 }
             )
 
@@ -364,7 +370,7 @@ def extract_all_harmonic_metadata(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
     include_maybe_types=False,
-) -> list[TwoPointHarmonic]:
+) -> list[mdt.TwoPointHarmonic]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
@@ -373,7 +379,7 @@ def extract_all_harmonic_metadata(
         )
     }
 
-    result: list[TwoPointHarmonic] = []
+    result: list[mdt.TwoPointHarmonic] = []
     for cell_index in extract_all_harmonic_metadata_indices(
         sacc_data, allowed_data_type
     ):
@@ -392,7 +398,12 @@ def extract_all_harmonic_metadata(
         ells, weights, window_ells = maybe_enforce_window(ells, indices, sacc_data)
 
         result.append(
-            TwoPointHarmonic(XY=XY, window=weights, window_ells=window_ells, ells=ells)
+            mdt.TwoPointHarmonic(
+                XY=XY,
+                window=weights,
+                window_ells=window_ells,
+                ells=ells,
+            )
         )
 
     return result
@@ -405,7 +416,7 @@ def extract_all_real_metadata(
     sacc_data: sacc.Sacc,
     allowed_data_type: None | list[str] = None,
     include_maybe_types=False,
-) -> list[TwoPointReal]:
+) -> list[mdt.TwoPointReal]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
@@ -414,7 +425,7 @@ def extract_all_real_metadata(
         )
     }
 
-    tprs: list[TwoPointReal] = []
+    tprs: list[mdt.TwoPointReal] = []
     for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
         tracer_names = real_index["tracer_names"]
         dt = real_index["data_type"]
@@ -426,7 +437,7 @@ def extract_all_real_metadata(
             data_type=dt, tracer1=t1, tracer2=t2, return_cov=False, return_ind=True
         )
 
-        tprs.append(TwoPointReal(XY=XY, thetas=thetas))
+        tprs.append(mdt.TwoPointReal(XY=XY, thetas=thetas))
 
     return tprs
 
@@ -434,7 +445,7 @@ def extract_all_real_metadata(
 def extract_all_photoz_bin_combinations(
     sacc_data: sacc.Sacc,
     include_maybe_types: bool = False,
-) -> list[TwoPointXY]:
+) -> list[mdt.TwoPointXY]:
     """Extracts the two-point function metadata from a sacc file."""
     inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
         sacc_data, include_maybe_types=include_maybe_types
@@ -485,82 +496,83 @@ def maybe_enforce_window(
 
 
 def make_all_photoz_bin_combinations(
-    inferred_galaxy_zdists: list[InferredGalaxyZDist],
-) -> list[TwoPointXY]:
+    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+) -> list[mdt.TwoPointXY]:
     """Extract the two-point function metadata from a sacc file."""
     bin_combinations = [
-        TwoPointXY(
+        mdt.TwoPointXY(
             x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
         )
         for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
         for x_measurement, y_measurement in product(
             igz1.measurements, igz2.measurements
         )
-        if measurement_is_compatible(x_measurement, y_measurement)
+        if mdt.measurement_is_compatible(x_measurement, y_measurement)
     ]
 
     return bin_combinations
 
 
 def make_all_photoz_bin_combinations_with_cmb(
-    inferred_galaxy_zdists: list[InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
     cmb_tracer_name: str = "cmb_convergence",
     include_cmb_auto: bool = False,
-) -> list[TwoPointXY]:
-    """Create all galaxy combinations plus CMB-galaxy cross-correlations.
+) -> list[mdt.TwoPointXY]:
+    """Create all galaxy combinations plus mdt.CMB-galaxy cross-correlations.
 
     :param inferred_galaxy_zdists: List of galaxy redshift bins
-    :param cmb_tracer_name: Name of the CMB tracer
-    :param include_cmb_auto: Whether to include CMB auto-correlation (default: False)
-    :return: List of all XY combinations including CMB-galaxy crosses
+    :param cmb_tracer_name: Name of the mdt.CMB tracer
+    :param include_cmb_auto: Whether to include mdt.CMB auto-correlation
+        (default: False)
+    :return: List of all XY combinations including mdt.CMB-galaxy crosses
     """
     # Get all galaxy-galaxy combinations first
     galaxy_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
-    # Create a mock CMB "bin" for cross-correlations
-    cmb_bin = InferredGalaxyZDist(
+    # Create a mock mdt.CMB "bin" for cross-correlations
+    cmb_bin = mdt.InferredGalaxyZDist(
         bin_name=cmb_tracer_name,
-        z=np.array([1100.0]),  # CMB redshift
+        z=np.array([1100.0]),  # mdt.CMB redshift
         dndz=np.array([1.0]),  # Unity normalization
-        measurements={CMB.CONVERGENCE},
-        type_source=TypeSource.DEFAULT,
+        measurements={mdt.CMB.CONVERGENCE},
+        type_source=mdt.TypeSource.DEFAULT,
     )
 
-    # Create CMB-galaxy cross-correlations only
+    # Create mdt.CMB-galaxy cross-correlations only
     cmb_galaxy_combinations = []
 
     for galaxy_bin in inferred_galaxy_zdists:
         for galaxy_measurement in galaxy_bin.measurements:
             # Only create cross-correlations that are physically meaningful
-            if measurement_is_compatible(CMB.CONVERGENCE, galaxy_measurement):
-                # CMB-galaxy cross-correlation
+            if mdt.measurement_is_compatible(mdt.CMB.CONVERGENCE, galaxy_measurement):
+                # mdt.CMB-galaxy cross-correlation
                 cmb_galaxy_combinations.append(
-                    TwoPointXY(
+                    mdt.TwoPointXY(
                         x=cmb_bin,
                         y=galaxy_bin,
-                        x_measurement=CMB.CONVERGENCE,
+                        x_measurement=mdt.CMB.CONVERGENCE,
                         y_measurement=galaxy_measurement,
                     )
                 )
 
-                # Galaxy-CMB cross-correlation (symmetric)
+                # Galaxy-mdt.CMB cross-correlation (symmetric)
                 cmb_galaxy_combinations.append(
-                    TwoPointXY(
+                    mdt.TwoPointXY(
                         x=galaxy_bin,
                         y=cmb_bin,
                         x_measurement=galaxy_measurement,
-                        y_measurement=CMB.CONVERGENCE,
+                        y_measurement=mdt.CMB.CONVERGENCE,
                     )
                 )
 
-    # Optionally include CMB auto-correlation
+    # Optionally include mdt.CMB auto-correlation
     if include_cmb_auto:
         cmb_galaxy_combinations.append(
-            TwoPointXY(
+            mdt.TwoPointXY(
                 x=cmb_bin,
                 y=cmb_bin,
-                x_measurement=CMB.CONVERGENCE,
-                y_measurement=CMB.CONVERGENCE,
+                x_measurement=mdt.CMB.CONVERGENCE,
+                y_measurement=mdt.CMB.CONVERGENCE,
             )
         )
 
@@ -568,46 +580,46 @@ def make_all_photoz_bin_combinations_with_cmb(
 
 
 def make_cmb_galaxy_combinations_only(
-    inferred_galaxy_zdists: list[InferredGalaxyZDist],
+    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
     cmb_tracer_name: str = "cmb_convergence",
-) -> list[TwoPointXY]:
-    """Create only CMB-galaxy cross-correlations (no galaxy-galaxy or CMB auto).
+) -> list[mdt.TwoPointXY]:
+    """Create only mdt.CMB-galaxy cross-correlations.
 
     :param inferred_galaxy_zdists: List of galaxy redshift bins
-    :param cmb_tracer_name: Name of the CMB tracer
-    :return: List of CMB-galaxy cross-correlation XY combinations only
+    :param cmb_tracer_name: Name of the mdt.CMB tracer
+    :return: List of mdt.CMB-galaxy cross-correlation XY combinations only
     """
-    # Create a mock CMB "bin"
-    cmb_bin = InferredGalaxyZDist(
+    # Create a mock mdt.CMB "bin"
+    cmb_bin = mdt.InferredGalaxyZDist(
         bin_name=cmb_tracer_name,
         z=np.array([1100.0]),
         dndz=np.array([1.0]),
-        measurements={CMB.CONVERGENCE},
-        type_source=TypeSource.DEFAULT,
+        measurements={mdt.CMB.CONVERGENCE},
+        type_source=mdt.TypeSource.DEFAULT,
     )
 
     cmb_galaxy_combinations = []
 
     for galaxy_bin in inferred_galaxy_zdists:
         for galaxy_measurement in galaxy_bin.measurements:
-            if measurement_is_compatible(CMB.CONVERGENCE, galaxy_measurement):
-                # CMB-galaxy cross-correlation
+            if mdt.measurement_is_compatible(mdt.CMB.CONVERGENCE, galaxy_measurement):
+                # mdt.CMB-galaxy cross-correlation
                 cmb_galaxy_combinations.append(
-                    TwoPointXY(
+                    mdt.TwoPointXY(
                         x=cmb_bin,
                         y=galaxy_bin,
-                        x_measurement=CMB.CONVERGENCE,
+                        x_measurement=mdt.CMB.CONVERGENCE,
                         y_measurement=galaxy_measurement,
                     )
                 )
 
-                # Galaxy-CMB cross-correlation (symmetric)
+                # Galaxy-mdt.CMB cross-correlation (symmetric)
                 cmb_galaxy_combinations.append(
-                    TwoPointXY(
+                    mdt.TwoPointXY(
                         x=galaxy_bin,
                         y=cmb_bin,
                         x_measurement=galaxy_measurement,
-                        y_measurement=CMB.CONVERGENCE,
+                        y_measurement=mdt.CMB.CONVERGENCE,
                     )
                 )
 
@@ -615,22 +627,22 @@ def make_cmb_galaxy_combinations_only(
 
 
 def make_two_point_xy(
-    inferred_galaxy_zdists_dict: dict[str, InferredGalaxyZDist],
-    tracer_names: TracerNames,
+    inferred_galaxy_zdists_dict: dict[str, mdt.InferredGalaxyZDist],
+    tracer_names: mdt.TracerNames,
     data_type: str,
-) -> TwoPointXY:
-    """Build a TwoPointXY object from the inferred galaxy z distributions.
+) -> mdt.TwoPointXY:
+    """Build a mdt.TwoPointXY object from the inferred galaxy z distributions.
 
-    The TwoPointXY object is built from the inferred galaxy z distributions, the data
-    type, and the tracer names.
+    The mdt.TwoPointXY object is built from the inferred galaxy z distributions,
+    the data type, and the tracer names.
 
     :param inferred_galaxy_zdists_dict: a dictionary of inferred galaxy z distributions.
     :param tracer_names: a tuple of tracer names.
     :param data_type: the data type.
 
-    :return: a TwoPointXY object.
+    :return: a mdt.TwoPointXY object.
     """
-    a, b = MEASURED_TYPE_STRING_MAP[data_type]
+    a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
 
     igz1 = inferred_galaxy_zdists_dict[tracer_names[0]]
     igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
@@ -642,7 +654,7 @@ def make_two_point_xy(
             f"Ambiguous measurements for tracers {tracer_names}. "
             f"Impossible to determine which measurement is from which tracer."
         )
-    XY = TwoPointXY(
+    XY = mdt.TwoPointXY(
         x=igz1, y=igz2, x_measurement=a if ab else b, y_measurement=b if ab else a
     )
 
@@ -651,9 +663,9 @@ def make_two_point_xy(
 
 def measurements_from_index(
     index: TwoPointRealIndex | TwoPointHarmonicIndex,
-) -> tuple[str, Measurement, str, Measurement]:
+) -> tuple[str, mdt.Measurement, str, mdt.Measurement]:
     """Return the measurements from a TwoPointXiThetaIndex object."""
-    a, b = MEASURED_TYPE_STRING_MAP[index["data_type"]]
+    a, b = mdt.MEASURED_TYPE_STRING_MAP[index["data_type"]]
     _, n1, a, n2, b = match_name_type(
         index["tracer_names"].name1,
         index["tracer_names"].name2,
