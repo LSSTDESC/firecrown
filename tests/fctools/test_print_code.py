@@ -2,10 +2,13 @@
 
 import ast
 from dataclasses import dataclass
+import os
+from pathlib import Path
+import subprocess
+import sys
 from unittest.mock import patch
 
 import pytest
-from click.testing import CliRunner
 
 from firecrown.fctools.print_code import (
     _build_class_code,
@@ -17,6 +20,19 @@ from firecrown.fctools.print_code import (
 
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
+
+
+def _get_subprocess_env():
+    """Get environment with PYTHONPATH set to include the current directory."""
+    env = os.environ.copy()
+    # Add current directory to PYTHONPATH so subprocess can import tests module
+    current_dir = str(Path(__file__).parent.parent.parent)
+    pythonpath = env.get("PYTHONPATH", "")
+    if pythonpath:
+        env["PYTHONPATH"] = f"{current_dir}{os.pathsep}{pythonpath}"
+    else:
+        env["PYTHONPATH"] = current_dir
+    return env
 
 
 # Test helper classes
@@ -248,111 +264,168 @@ def test_display_class_without_markdown_decorated(capsys):
 
 def test_main_simple_class():
     """Test main CLI with a simple class path."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["tests.fctools.test_print_code.SimpleClass"])
-    assert result.exit_code == 0
-    assert "class SimpleClass():" in result.output
-    assert "attr1: int" in result.output
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "tests.fctools.test_print_code.SimpleClass"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
+    )
+    assert result.returncode == 0
+    assert "class SimpleClass():" in result.stdout
+    assert "attr1: int" in result.stdout
 
 
 def test_main_no_markdown():
     """Test main CLI with --no-markdown flag."""
-    runner = CliRunner()
-    result = runner.invoke(
-        main, ["--no-markdown", "tests.fctools.test_print_code.SimpleClass"]
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [
+            sys.executable,
+            script_path,
+            "--no-markdown",
+            "tests.fctools.test_print_code.SimpleClass",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
     )
-    assert result.exit_code == 0
-    assert "class SimpleClass():" in result.output
-    assert "```python" not in result.output
+    assert result.returncode == 0
+    assert "class SimpleClass():" in result.stdout
+    assert "```python" not in result.stdout
 
 
 def test_main_decorated_class():
     """Test main CLI with a decorated class."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["tests.fctools.test_print_code.DecoratedClass"])
-    assert result.exit_code == 0
-    assert "@dataclass" in result.output
-    assert "class DecoratedClass():" in result.output
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "tests.fctools.test_print_code.DecoratedClass"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
+    )
+    assert result.returncode == 0
+    assert "@dataclass" in result.stdout
+    assert "class DecoratedClass():" in result.stdout
 
 
 def test_main_class_with_bases():
     """Test main CLI with a class that has base classes."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["tests.fctools.test_print_code.ClassWithBases"])
-    assert result.exit_code == 0
-    assert "class ClassWithBases" in result.output
-    assert "attr3: float = 1.0" in result.output
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "tests.fctools.test_print_code.ClassWithBases"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
+    )
+    assert result.returncode == 0
+    assert "class ClassWithBases" in result.stdout
+    assert "attr3: float = 1.0" in result.stdout
 
 
 def test_main_invalid_class_path():
     """Test main CLI with invalid class path."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["nonexistent.module.Class"])
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "nonexistent.module.Class"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     # Should fail due to import_class_from_path calling cli_error -> sys.exit(1)
-    assert result.exit_code != 0
+    assert result.returncode != 0
 
 
 def test_main_builtin_class():
     """Test main CLI with built-in class."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["builtins.int"])
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "builtins.int"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     # TypeError is raised for built-in classes, which propagates up
-    assert result.exit_code != 0
+    assert result.returncode != 0
 
 
 def test_main_missing_argument():
     """Test main CLI with missing argument."""
-    runner = CliRunner()
-    result = runner.invoke(main, [])
-    assert result.exit_code != 0
-    assert "Missing argument" in result.output
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+    assert "Missing argument" in result.stderr
 
 
 def test_main_help():
     """Test main CLI with --help flag."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["--help"])
-    assert result.exit_code == 0
-    assert "Usage:" in result.output
-    assert "--no-markdown" in result.output
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "--help"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0
+    assert "Usage:" in result.stdout
+    assert "--no-markdown" in result.stdout
 
 
 def test_main_multiple_classes():
     """Test main CLI with multiple class names."""
-    runner = CliRunner()
-    result = runner.invoke(
-        main,
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
         [
+            sys.executable,
+            script_path,
             "tests.fctools.test_print_code.SimpleClass",
             "tests.fctools.test_print_code.DecoratedClass",
         ],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
     )
-    assert result.exit_code == 0
+    assert result.returncode == 0
     # Should have headers for multiple classes
-    assert "Class: tests.fctools.test_print_code.SimpleClass" in result.output
-    assert "Class: tests.fctools.test_print_code.DecoratedClass" in result.output
-    assert "=" * 60 in result.output
+    assert "Class: tests.fctools.test_print_code.SimpleClass" in result.stdout
+    assert "Class: tests.fctools.test_print_code.DecoratedClass" in result.stdout
+    assert "=" * 60 in result.stdout
     # Should have both classes in output
-    assert "class SimpleClass()" in result.output
-    assert "class DecoratedClass()" in result.output
+    assert "class SimpleClass()" in result.stdout
+    assert "class DecoratedClass()" in result.stdout
 
 
 def test_main_multiple_classes_with_invalid():
     """Test main CLI with multiple classes where one is invalid."""
-    runner = CliRunner()
+    script_path = "firecrown/fctools/print_code.py"
     # Test with invalid module
     # import_class_from_path will call cli_error -> sys.exit(1)
-    result = runner.invoke(
-        main,
+    result = subprocess.run(
         [
+            sys.executable,
+            script_path,
             "tests.fctools.test_print_code.SimpleClass",
             "nonexistent.module.Class",
         ],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
     )
     # Should fail due to cli_error calling sys.exit(1)
-    assert result.exit_code != 0
+    assert result.returncode != 0
     # First class should succeed before the error
-    assert "class SimpleClass()" in result.output or "ERROR:" in result.output
+    assert "class SimpleClass()" in result.stdout or "ERROR:" in result.stderr
 
 
 def test_build_class_code_with_none_class_def():
@@ -378,30 +451,119 @@ def test_build_class_code_with_none_class_def():
 
 def test_integration_full_workflow():
     """Test full workflow from CLI to output."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["tests.fctools.test_print_code.SimpleClass"])
-    assert result.exit_code == 0
+    script_path = "firecrown/fctools/print_code.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "tests.fctools.test_print_code.SimpleClass"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
+    )
+    assert result.returncode == 0
     # Verify the output contains all expected elements
-    assert "class SimpleClass():" in result.output
-    assert "A simple test class." in result.output
-    assert "attr1: int" in result.output
-    assert "attr2: str = 'default'" in result.output
+    assert "class SimpleClass():" in result.stdout
+    assert "A simple test class." in result.stdout
+    assert "attr1: int" in result.stdout
+    assert "attr2: str = 'default'" in result.stdout
 
 
 def test_integration_multiple_runs():
     """Test that multiple runs work correctly."""
-    runner = CliRunner()
+    script_path = "firecrown/fctools/print_code.py"
     # Run twice with same class
-    result1 = runner.invoke(main, ["tests.fctools.test_print_code.SimpleClass"])
-    result2 = runner.invoke(main, ["tests.fctools.test_print_code.SimpleClass"])
-    assert result1.exit_code == 0
-    assert result2.exit_code == 0
-    assert result1.output == result2.output
+    result1 = subprocess.run(
+        [sys.executable, script_path, "tests.fctools.test_print_code.SimpleClass"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
+    )
+    result2 = subprocess.run(
+        [sys.executable, script_path, "tests.fctools.test_print_code.SimpleClass"],
+        capture_output=True,
+        text=True,
+        check=False,
+        env=_get_subprocess_env(),
+    )
+    assert result1.returncode == 0
+    assert result2.returncode == 0
+    assert result1.stdout == result2.stdout
 
 
 def test_integration_error_handling():
     """Test error handling in full workflow."""
-    runner = CliRunner()
+    script_path = "firecrown/fctools/print_code.py"
     # Test with invalid path
-    result = runner.invoke(main, ["invalid.path.Class"])
-    assert result.exit_code != 0
+    result = subprocess.run(
+        [sys.executable, script_path, "invalid.path.Class"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode != 0
+
+
+# Direct main() function tests for coverage
+
+
+def test_main_function_single_class(capsys):
+    """Test main function directly with single class."""
+    # Call main with a single class
+    main(class_names=["tests.fctools.test_print_code.SimpleClass"], no_markdown=False)
+
+    captured = capsys.readouterr()
+    assert "class SimpleClass():" in captured.out
+    assert "```python" in captured.out
+    assert "A simple test class." in captured.out
+
+
+def test_main_function_no_markdown_flag(capsys):
+    """Test main function with no_markdown=True."""
+    # Call main with no_markdown flag
+    main(class_names=["tests.fctools.test_print_code.SimpleClass"], no_markdown=True)
+
+    captured = capsys.readouterr()
+    assert "class SimpleClass():" in captured.out
+    # Should NOT have markdown code blocks
+    assert "```python" not in captured.out
+
+
+def test_main_function_multiple_classes(capsys):
+    """Test main function with multiple classes."""
+    # Call main with multiple classes
+    main(
+        class_names=[
+            "tests.fctools.test_print_code.SimpleClass",
+            "tests.fctools.test_print_code.DecoratedClass",
+        ],
+        no_markdown=False,
+    )
+
+    captured = capsys.readouterr()
+    # Should show both classes
+    assert "class SimpleClass():" in captured.out
+    assert "class DecoratedClass():" in captured.out
+    # Should show separators for multiple classes
+    assert "=" * 60 in captured.out
+    assert "Class: tests.fctools.test_print_code.SimpleClass" in captured.out
+    assert "Class: tests.fctools.test_print_code.DecoratedClass" in captured.out
+
+
+def test_main_function_multiple_classes_no_markdown(capsys):
+    """Test main function with multiple classes and no_markdown=True."""
+    # Call main with multiple classes and no_markdown
+    main(
+        class_names=[
+            "tests.fctools.test_print_code.SimpleClass",
+            "tests.fctools.test_print_code.DecoratedClass",
+        ],
+        no_markdown=True,
+    )
+
+    captured = capsys.readouterr()
+    # Should show both classes without markdown
+    assert "class SimpleClass():" in captured.out
+    assert "class DecoratedClass():" in captured.out
+    assert "```python" not in captured.out
+    # Should still show separators
+    assert "=" * 60 in captured.out

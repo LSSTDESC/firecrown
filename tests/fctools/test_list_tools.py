@@ -7,13 +7,13 @@ import subprocess
 import sys
 from pathlib import Path
 
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
 from firecrown.fctools.list_tools import (
     _discover_tools,
     _extract_description_from_docstring,
     _extract_description_from_file,
-    main,
+    app,
 )
 
 
@@ -338,68 +338,68 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
     def test_main_basic_output(self):
         """Test main function produces output."""
         runner = CliRunner()
-        result = runner.invoke(main, [])
+        result = runner.invoke(app, [])
 
         assert result.exit_code == 0
-        assert "Available fctools:" in result.output
+        assert "Available fctools:" in result.stdout
 
     def test_main_lists_tools(self):
         """Test that main lists actual tools."""
         runner = CliRunner()
-        result = runner.invoke(main, [])
+        result = runner.invoke(app, [])
 
         assert result.exit_code == 0
         # Should list at least some known tools
-        assert "common.py" in result.output
-        assert "ast_utils.py" in result.output
+        assert "common.py" in result.stdout
+        assert "ast_utils.py" in result.stdout
 
     def test_main_verbose_flag(self):
         """Test main with --verbose flag."""
         runner = CliRunner()
-        result = runner.invoke(main, ["--verbose"])
+        result = runner.invoke(app, ["--verbose"])
 
         assert result.exit_code == 0
-        assert "Available fctools:" in result.output
-        assert "Usage: python -m firecrown.fctools." in result.output
+        assert "Available fctools:" in result.stdout
+        assert "Usage: python -m firecrown.fctools." in result.stdout
 
     def test_main_short_verbose_flag(self):
         """Test main with -v flag."""
         runner = CliRunner()
-        result = runner.invoke(main, ["-v"])
+        result = runner.invoke(app, ["-v"])
 
         assert result.exit_code == 0
-        assert "Usage: python -m firecrown.fctools." in result.output
+        assert "Usage: python -m firecrown.fctools." in result.stdout
 
     def test_main_non_verbose_has_help_text(self):
         """Test that non-verbose mode shows help text."""
         runner = CliRunner()
-        result = runner.invoke(main, [])
+        result = runner.invoke(app, [])
 
         assert result.exit_code == 0
-        assert "Use --verbose for detailed information" in result.output
-        assert "Use 'python -m firecrown.fctools.TOOL --help'" in result.output
+        assert "Use --verbose for detailed information" in result.stdout
+        assert "Use 'python -m firecrown.fctools.TOOL --help'" in result.stdout
 
     def test_main_verbose_shows_tool_details(self):
         """Test that verbose mode shows more details."""
         runner = CliRunner()
-        result = runner.invoke(main, ["--verbose"])
+        result = runner.invoke(app, ["--verbose"])
 
         assert result.exit_code == 0
         # In verbose mode, should show module names without .py
         # and usage instructions
-        lines = result.output.split("\n")
+        lines = result.stdout.split("\n")
         has_usage_line = any("Usage: python -m" in line for line in lines)
         assert has_usage_line
 
     def test_main_tools_are_sorted(self):
         """Test that tools are listed in alphabetical order."""
         runner = CliRunner()
-        result = runner.invoke(main, [])
+        result = runner.invoke(app, [])
 
         assert result.exit_code == 0
 
         # Extract tool names from output
-        lines = result.output.split("\n")
+        lines = result.stdout.split("\n")
         tool_lines = [
             line.strip() for line in lines if line.strip() and line.startswith("  ")
         ]
@@ -486,10 +486,10 @@ class TestIntegration:  # pylint: disable=import-outside-toplevel
         tools = _discover_tools()
 
         runner = CliRunner()
-        result = runner.invoke(main, [])
+        result = runner.invoke(app, [])
 
         assert result.exit_code == 0
 
         # Every discovered tool should appear in the output
         for tool_name in tools:
-            assert tool_name in result.output, f"Tool {tool_name} should be in output"
+            assert tool_name in result.stdout, f"Tool {tool_name} should be in output"

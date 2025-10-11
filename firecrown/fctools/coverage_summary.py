@@ -13,7 +13,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-import click
+import typer
+from rich.console import Console
 
 if TYPE_CHECKING:
     from .common import format_line_ranges, load_json_file
@@ -161,10 +162,10 @@ def _analyze_single_file(
 
 
 def analyze_coverage_json(
-    coverage_file: Path,
+    console: Console, coverage_file: Path
 ) -> tuple[CoverageSummary, list[FileIssue]]:
     """Analyze coverage data from a JSON file."""
-    coverage_data = load_json_file(coverage_file, "coverage analysis")
+    coverage_data = load_json_file(console, coverage_file, "coverage analysis")
 
     files_data = coverage_data.get("files", {})
     totals = coverage_data.get("totals", {})
@@ -197,36 +198,40 @@ def analyze_coverage_json(
     return summary, file_issues
 
 
-def print_coverage_summary(summary: CoverageSummary) -> None:
+def print_coverage_summary(console: Console, summary: CoverageSummary) -> None:
     """Print overall coverage summary."""
-    print("=" * 80)
-    print("COVERAGE ANALYSIS SUMMARY")
-    print("=" * 80)
-    print()
+    console.print("[bold]=" * 80 + "[/bold]")
+    console.print("[bold]COVERAGE ANALYSIS SUMMARY[/bold]")
+    console.print("[bold]=" * 80 + "[/bold]")
+    console.print()
 
-    print("Overall Statistics:")
-    print(f"  Total files analyzed: {summary.total_files}")
-    print(f"  Files with perfect coverage: {summary.files_with_perfect_coverage}")
-    print(f"  Files with missing lines: {summary.files_with_missing_lines}")
-    print(f"  Files with missing branches: {summary.files_with_missing_branches}")
-    print(f"  Files with excluded lines: {summary.files_with_excluded_lines}")
-    print()
+    console.print("[bold]Overall Statistics:[/bold]")
+    console.print(f"  Total files analyzed: {summary.total_files}")
+    console.print(
+        f"  Files with perfect coverage: {summary.files_with_perfect_coverage}"
+    )
+    console.print(f"  Files with missing lines: {summary.files_with_missing_lines}")
+    console.print(
+        f"  Files with missing branches: {summary.files_with_missing_branches}"
+    )
+    console.print(f"  Files with excluded lines: {summary.files_with_excluded_lines}")
+    console.print()
 
-    print("Coverage Percentages:")
-    print(f"  Overall line coverage: {summary.overall_line_coverage:.1f}%")
-    print(f"  Overall branch coverage: {summary.overall_branch_coverage:.1f}%")
-    print()
+    console.print("[bold]Coverage Percentages:[/bold]")
+    console.print(f"  Overall line coverage: {summary.overall_line_coverage:.1f}%")
+    console.print(f"  Overall branch coverage: {summary.overall_branch_coverage:.1f}%")
+    console.print()
 
-    print("Detailed Counts:")
-    print(f"  Total statements: {summary.total_statements}")
-    print(f"  Missing lines: {summary.total_missing_lines}")
-    print(f"  Excluded lines: {summary.total_excluded_lines}")
-    print(f"  Total branches: {summary.total_branches}")
-    print(f"  Missing branches: {summary.total_missing_branches}")
-    print()
+    console.print("[bold]Detailed Counts:[/bold]")
+    console.print(f"  Total statements: {summary.total_statements}")
+    console.print(f"  Missing lines: {summary.total_missing_lines}")
+    console.print(f"  Excluded lines: {summary.total_excluded_lines}")
+    console.print(f"  Total branches: {summary.total_branches}")
+    console.print(f"  Missing branches: {summary.total_missing_branches}")
+    console.print()
 
 
-def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
+def _print_source_code_for_missing_lines(console: Console, issue: FileIssue) -> None:
     """Print source code for missing lines if file exists."""
     try:
         source_file = Path(issue.file_path)
@@ -234,117 +239,141 @@ def _print_source_code_for_missing_lines(issue: FileIssue) -> None:
             with open(source_file, encoding="utf-8") as f:
                 lines = f.readlines()
 
-            print("   Source code for missing lines:")
+            console.print("   [cyan]Source code for missing lines:[/cyan]")
             for line_num in sorted(issue.missing_lines):
                 if 1 <= line_num <= len(lines):
                     line_content = lines[line_num - 1].rstrip()
-                    print(f"     {line_num:4d}: {line_content}")
+                    console.print(f"     [red]{line_num:4d}: {line_content}[/red]")
         else:
-            print("   (Source file not found for line details)")
+            console.print(
+                "   [yellow](Source file not found for line details)[/yellow]"
+            )
     except (OSError, UnicodeDecodeError) as e:
-        print(f"   (Error reading source file: {e})")
+        console.print(f"   [red](Error reading source file: {e})[/red]")
 
 
-def _print_file_issue_details(issue: FileIssue, show_source: bool) -> None:
+def _print_file_issue_details(
+    console: Console, issue: FileIssue, show_source: bool
+) -> None:
     """Print detailed coverage information for a single file."""
     # Show coverage percentages
     covered_statements = issue.total_statements - issue.missing_lines_count
-    print(
-        f"   Line Coverage: {issue.line_coverage:.1f}% "
+    console.print(
+        f"   Line Coverage: [bold]{issue.line_coverage:.1f}%[/bold] "
         f"({covered_statements}/{issue.total_statements} statements)"
     )
 
     if issue.total_branches > 0:
         covered_branches = issue.total_branches - issue.missing_branches_count
-        print(
-            f"   Branch Coverage: {issue.branch_coverage:.1f}% "
+        console.print(
+            f"   Branch Coverage: [bold]{issue.branch_coverage:.1f}%[/bold] "
             f"({covered_branches}/{issue.total_branches} branches)"
         )
 
     # Show missing lines
     if issue.missing_lines:
         lines_str = format_line_ranges(issue.missing_lines)
-        print(f"   Missing Lines ({issue.missing_lines_count}): {lines_str}")
+        console.print(
+            f"   Missing Lines ({issue.missing_lines_count}): [red]{lines_str}[/red]"
+        )
 
         if show_source:
-            _print_source_code_for_missing_lines(issue)
+            _print_source_code_for_missing_lines(console, issue)
 
     # Show missing branches
     if issue.missing_branches:
         branches_count = issue.missing_branches_count
-        print(f"   Missing Branches ({branches_count}):")
+        console.print(f"   Missing Branches ({branches_count}):")
         for branch in issue.missing_branches:
-            print(f"     {branch}")
+            console.print(f"     [yellow]{branch}[/yellow]")
 
     # Show excluded lines
     if issue.excluded_lines:
         lines_str = format_line_ranges(issue.excluded_lines)
-        print(f"   Excluded Lines ({issue.excluded_lines_count}): {lines_str}")
+        console.print(
+            f"   Excluded Lines ({issue.excluded_lines_count}): [dim]{lines_str}[/dim]"
+        )
 
 
-def print_file_issues(file_issues: list[FileIssue], show_source: bool = True) -> None:
+def print_file_issues(
+    console: Console, file_issues: list[FileIssue], show_source: bool = True
+) -> None:
     """Print detailed information about files with coverage issues."""
     if not file_issues:
-        print("🎉 ALL FILES HAVE PERFECT COVERAGE!")
+        console.print("🎉 [bold green]ALL FILES HAVE PERFECT COVERAGE![/bold green]")
         return
 
-    print("FILES WITH COVERAGE ISSUES OR EXCLUDED LINES:")
-    print("=" * 80)
-    print()
+    console.print("[bold]FILES WITH COVERAGE ISSUES OR EXCLUDED LINES:[/bold]")
+    console.print("[bold]=" * 80 + "[/bold]")
+    console.print()
 
     for i, issue in enumerate(file_issues, 1):
-        print(f"{i}. {issue.file_path}")
-        print("-" * len(f"{i}. {issue.file_path}"))
+        console.print(f"[bold]{i}. {issue.file_path}[/bold]")
+        console.print("-" * len(f"{i}. {issue.file_path}"))
 
-        _print_file_issue_details(issue, show_source)
-        print()
+        _print_file_issue_details(console, issue, show_source)
+        console.print()
 
 
 def print_perfect_coverage_files(
-    file_issues: list[FileIssue], all_files: list[str]
+    console: Console, file_issues: list[FileIssue], all_files: list[str]
 ) -> None:
     """Print files with perfect coverage."""
     files_with_issues = {issue.file_path for issue in file_issues}
     perfect_files = [f for f in all_files if f not in files_with_issues]
 
     if perfect_files:
-        print("FILES WITH PERFECT COVERAGE:")
-        print("=" * 80)
+        console.print("[bold]FILES WITH PERFECT COVERAGE:[/bold]")
+        console.print("[bold]=" * 80 + "[/bold]")
         for file_path in sorted(perfect_files):
-            print(f"✅ {file_path}")
-        print()
+            console.print(f"✅ [green]{file_path}[/green]")
+        console.print()
 
 
-@click.command()
-@click.argument("coverage_file", type=click.Path(exists=True, path_type=Path))
-@click.option("--show-source", is_flag=True, help="Show source code for missing lines")
-@click.option("--show-perfect", is_flag=True, help="Show files with perfect coverage")
-def main(coverage_file: Path, show_source: bool, show_perfect: bool) -> None:
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    coverage_file: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        help="Path to the coverage JSON file to analyze",
+    ),
+    show_source: bool = typer.Option(
+        False, "--show-source", help="Show source code for missing lines"
+    ),
+    show_perfect: bool = typer.Option(
+        False, "--show-perfect", help="Show files with perfect coverage"
+    ),
+) -> None:
     """Analyze test coverage output in JSON format.
 
     This tool provides a detailed analysis of test coverage including
     overall coverage summary, per-file breakdown, detailed information
     about untested lines and branches, and files with imperfect coverage.
-
-    COVERAGE_FILE  Path to the coverage JSON file to analyze
     """
+    console = Console()
     try:
-        summary, file_issues = analyze_coverage_json(coverage_file)
+        summary, file_issues = analyze_coverage_json(console, coverage_file)
 
-        print_coverage_summary(summary)
-        print_file_issues(file_issues, show_source=show_source)
+        print_coverage_summary(console, summary)
+        print_file_issues(console, file_issues, show_source=show_source)
 
         if show_perfect:
             # Get all file paths from the original data
-            coverage_data = load_json_file(coverage_file, "coverage analysis")
+            coverage_data = load_json_file(console, coverage_file, "coverage analysis")
             all_files = list(coverage_data.get("files", {}).keys())
-            print_perfect_coverage_files(file_issues, all_files)
+            print_perfect_coverage_files(console, file_issues, all_files)
 
     except OSError as e:
-        print(f"Error analyzing coverage file: {e}")
+        console.print(f"[bold red]Error analyzing coverage file: {e}[/bold red]")
         sys.exit(1)
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    main()  # pylint: disable=no-value-for-parameter
+    app()

@@ -19,7 +19,9 @@ recursive=yes
 # multiple time (only on the command line, not in the configuration file where
 # it should appear only once). See also the "--disable" option for examples.
 enable=c-extension-no-member
-disable=duplicate-code
+# Disable redefined-outer-name for test files - pytest fixtures intentionally
+# shadow fixture definitions, which is idiomatic pytest code
+disable=duplicate-code,redefined-outer-name
 
 [MISCELLANEOUS]
 

@@ -9,14 +9,12 @@ Tests the class hierarchy printing tool.
 import subprocess
 import sys
 
-from click.testing import CliRunner
-
 from firecrown.fctools.print_hierarchy import (
     full_type_name,
     get_defined_methods,
-    main,
     print_one_type,
     print_type_hierarchy,
+    main,
 )
 
 
@@ -276,70 +274,140 @@ def test_prints_builtin_type_hierarchy(capsys):
 # Tests for main()
 
 
+def test_main_direct_single_typename(capsys):
+    """Test main function directly with single typename for coverage.
+
+    This test calls the main() function directly (not via subprocess)
+    to ensure coverage tracking for lines 85-88 in print_hierarchy.py.
+    """
+    main(["builtins.dict"])
+    captured = capsys.readouterr()
+
+    assert "Hierarchy for" in captured.out
+    assert "dict" in captured.out
+    assert "object" in captured.out
+    # Should NOT have separator for single typename
+    assert "=" not in captured.out or captured.out.count("=") < 10
+
+
+def test_main_direct_multiple_typenames(capsys):
+    """Test main function directly with multiple typenames for coverage.
+
+    This test calls the main() function directly (not via subprocess)
+    to ensure coverage tracking for lines 82-83 (separator logic)
+    and 85-88 in print_hierarchy.py.
+    """
+    main(["builtins.list", "builtins.dict"])
+    captured = capsys.readouterr()
+
+    # Both types should be shown
+    assert "list" in captured.out
+    assert "dict" in captured.out
+
+    # Should have separator between them (line 82-83: richprint separator)
+    assert "=" in captured.out
+    # Verify it's the separator (60 equals signs)
+    assert "=" * 60 in captured.out
+
+
 def test_main_with_single_typename():
     """Test main with a single type name."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["collections.OrderedDict"])
+    script_path = "firecrown/fctools/print_hierarchy.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "collections.OrderedDict"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
-    assert "Hierarchy for" in result.output
-    assert "OrderedDict" in result.output
+    assert result.returncode == 0
+    assert "Hierarchy for" in result.stdout
+    assert "OrderedDict" in result.stdout
 
 
 def test_main_with_multiple_typenames():
     """Test main with multiple type names."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["pathlib.Path", "collections.Counter"])
+    script_path = "firecrown/fctools/print_hierarchy.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "pathlib.Path", "collections.Counter"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
-    assert "Path" in result.output
-    assert "Counter" in result.output
+    assert result.returncode == 0
+    assert "Path" in result.stdout
+    assert "Counter" in result.stdout
     # Should have separator between them
-    assert "=" in result.output
+    assert "=" in result.stdout
 
 
 def test_main_with_no_arguments():
     """Test main with no arguments (should fail)."""
-    runner = CliRunner()
-    result = runner.invoke(main, [])
+    script_path = "firecrown/fctools/print_hierarchy.py"
+    result = subprocess.run(
+        [sys.executable, script_path],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code != 0
+    assert result.returncode != 0
     # Should show error about missing argument
 
 
 def test_main_with_invalid_typename():
     """Test main with invalid type name."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["nonexistent.module.Type"])
+    script_path = "firecrown/fctools/print_hierarchy.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "nonexistent.module.Type"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
     # Should handle the error gracefully (import_class_from_path calls cli_error)
-    assert result.exit_code != 0
-    assert "Could not import module" in result.output
-    assert "nonexistent" in result.output
+    assert result.returncode != 0
+    assert "Could not import module" in result.stderr
+    assert "nonexistent" in result.stderr
 
 
 def test_main_with_mixed_valid_invalid():
     """Test main with mix of valid and invalid type names."""
-    runner = CliRunner()
-    result = runner.invoke(
-        main, ["collections.OrderedDict", "invalid.Type", "pathlib.Path"]
+    script_path = "firecrown/fctools/print_hierarchy.py"
+    result = subprocess.run(
+        [
+            sys.executable,
+            script_path,
+            "collections.OrderedDict",
+            "invalid.Type",
+            "pathlib.Path",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
     )
 
     # The first valid type should be shown
-    assert "OrderedDict" in result.output
+    assert "OrderedDict" in result.stdout
     # But the tool exits on the first error (import_class_from_path calls cli_error)
     # So Path won't be processed
-    assert result.exit_code != 0
-    assert "Could not import module" in result.output
+    assert result.returncode != 0
+    assert "Could not import module" in result.stderr
 
 
 def test_main_with_builtin_type():
     """Test main with built-in type."""
-    runner = CliRunner()
-    result = runner.invoke(main, ["builtins.int"])
+    script_path = "firecrown/fctools/print_hierarchy.py"
+    result = subprocess.run(
+        [sys.executable, script_path, "builtins.int"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
-    assert "int" in result.output
+    assert result.returncode == 0
+    assert "int" in result.stdout
 
 
 def test_main_with_subprocess():
@@ -448,26 +516,41 @@ def test_full_workflow_with_custom_hierarchy(capsys):
 
 def test_cli_produces_consistent_output():
     """Test that CLI produces consistent output across runs."""
-    runner = CliRunner()
+    script_path = "firecrown/fctools/print_hierarchy.py"
 
     # Run twice
-    result1 = runner.invoke(main, ["pathlib.Path"])
-    result2 = runner.invoke(main, ["pathlib.Path"])
+    result1 = subprocess.run(
+        [sys.executable, script_path, "pathlib.Path"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    result2 = subprocess.run(
+        [sys.executable, script_path, "pathlib.Path"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
     # Should produce identical output
-    assert result1.exit_code == 0
-    assert result2.exit_code == 0
-    assert result1.output == result2.output
+    assert result1.returncode == 0
+    assert result2.returncode == 0
+    assert result1.stdout == result2.stdout
 
 
 def test_handles_complex_inheritance():
     """Test handling complex inheritance patterns."""
-    runner = CliRunner()
+    script_path = "firecrown/fctools/print_hierarchy.py"
     # OrderedDict has complex MRO
-    result = runner.invoke(main, ["collections.OrderedDict"])
+    result = subprocess.run(
+        [sys.executable, script_path, "collections.OrderedDict"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
-    output_lines = result.output.split("\n")
+    assert result.returncode == 0
+    output_lines = result.stdout.split("\n")
 
     # Should show multiple levels of hierarchy
     hierarchy_lines = [line for line in output_lines if line.strip()]

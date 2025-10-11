@@ -6,7 +6,6 @@ dependencies:
   - babel
   - black
   - charset-normalizer
-  - click
   - clmm
   - compilers
   - cosmosis >= 3.0
@@ -50,6 +49,7 @@ dependencies:
   - pyyaml
   - quarto
   - requests
+  - rich
   - sacc >= 0.11
   - scipy
   - sphinx
@@ -58,5 +58,6 @@ dependencies:
   - sphinx-rtd-theme
   - sphinxcontrib-apidoc
   - tabulate
+  - typer
   - types-pyyaml
   - urllib3

@@ -11,7 +11,8 @@ import sys
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-import click
+import typer
+from rich.console import Console
 
 if TYPE_CHECKING:
     from .common import load_json_file
@@ -89,10 +90,11 @@ def _load_text_durations(path: Path) -> dict[str, float]:
     return timings
 
 
-def parse_timing_data(timing_file: Path | None) -> dict[str, float]:
+def parse_timing_data(console: Console, timing_file: Path | None) -> dict[str, float]:
     """Parse timing data from pytest --durations output or JSON file.
 
     Args:
+        console: The rich console object.
         timing_file: Path to timing data file (JSON or text output)
 
     Returns:
@@ -108,11 +110,15 @@ def parse_timing_data(timing_file: Path | None) -> dict[str, float]:
         try:
             return _load_text_durations(timing_file)
         except OSError:
-            print(f"Warning: Could not parse timing data from {timing_file}")
+            msg = f"Warning: Could not parse timing data from {timing_file}"
+            console.print(f"[yellow]{msg}[/yellow]")
             return {}
     except OSError:
-        print(f"Warning: Could not read timing file {timing_file}")
+        console.print(
+            f"[yellow]Warning: Could not read timing file {timing_file}[/yellow]"
+        )
         return {}
+    return {}
 
 
 def match_test_to_function(test_name: str, function_name: str, file_path: str) -> float:
@@ -278,30 +284,46 @@ def write_tsv_file(data: list[CoverageRecord], output_file: Path) -> None:
             f.write("\t".join(row) + "\n")
 
 
-@click.command()
-@click.argument("input_file", type=click.Path(exists=True, path_type=Path))
-@click.argument(
-    "output_file",
-    type=click.Path(path_type=Path),
-    default="coverage_data.tsv",
-    required=False,
-)
-@click.option(
-    "--timing",
-    type=click.Path(exists=True, path_type=Path),
-    help="Optional path to timing data file (JSON from pytest-json-report "
-    "or text from pytest --durations)",
-)
-def main(input_file: Path, output_file: str, timing: Path | None) -> None:
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    input_file: Path = typer.Argument(
+        ...,
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        help="Path to the input JSON coverage file",
+    ),
+    output_file: Path = typer.Argument(
+        "coverage_data.tsv",
+        help="Path to the output TSV file",
+        writable=True,
+        resolve_path=True,
+    ),
+    timing: Path = typer.Option(
+        None,
+        "--timing",
+        exists=True,
+        file_okay=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        help=(
+            "Optional path to timing data file "
+            "(JSON from pytest-json-report or text from pytest --durations)"
+        ),
+    ),
+) -> None:
     r"""Convert pytest-cov JSON coverage data to TSV format.
 
     This tool reads a JSON file containing pytest-cov coverage data and
     converts it to a tab-separated values (TSV) format. The output includes
     details about file coverage, function coverage, and missing line
     information.
-
-    INPUT_FILE   Path to the input JSON coverage file
-    OUTPUT_FILE  Path to the output TSV file (default: coverage_data.tsv)
 
     Examples:
     coverage_to_tsv.py coverage.json
@@ -313,49 +335,51 @@ def main(input_file: Path, output_file: str, timing: Path | None) -> None:
     coverage_to_tsv.py /path/to/coverage.json /path/to/output.tsv \\
     --timing timing.json
     """
-    # Convert output_file to Path
-    output_path: Path = Path(output_file)
-
+    console = Console()
     try:
         # Load JSON data
-        print(f"Reading coverage data from {input_file}...")
-        coverage_data = load_json_file(input_file, "coverage data")
+        console.print(f"Reading coverage data from [cyan]{input_file}[/cyan]...")
+        coverage_data = load_json_file(console, input_file, "coverage data")
 
         # Load timing data if provided
         timing_data = None
         if timing:
-            print(f"Reading timing data from {timing}...")
-            timing_data = parse_timing_data(timing)
-            print(f"Loaded timing data for {len(timing_data)} tests")
+            console.print(f"Reading timing data from [cyan]{timing}[/cyan]...")
+            timing_data = parse_timing_data(console, timing)
+            console.print(f"Loaded timing data for {len(timing_data)} tests")
 
         # Extract coverage data
-        print("Extracting function-level coverage data...")
+        console.print("Extracting function-level coverage data...")
         extracted_data = extract_coverage_data(coverage_data, timing_data)
 
         # Write TSV file
-        print(f"Writing {len(extracted_data)} records to {output_path}...")
-        write_tsv_file(extracted_data, output_path)
+        console.print(
+            f"Writing {len(extracted_data)} records to [cyan]{output_file}[/cyan]..."
+        )
+        write_tsv_file(extracted_data, output_file)
 
-        print("Successfully converted coverage data to TSV format!")
-        print(f"Output file: {output_path}")
-        print(f"Records written: {len(extracted_data)}")
+        msg = "Successfully converted coverage data to TSV format!"
+        console.print(f"[bold green]{msg}[/bold green]")
+        console.print(f"Output file: [cyan]{output_file}[/cyan]")
+        console.print(f"Records written: {len(extracted_data)}")
 
         if timing_data:
             records_with_timing = sum(
                 1 for record in extracted_data if record.test_duration is not None
             )
-            print(f"Records with timing data: {records_with_timing}")
+            console.print(f"Records with timing data: {records_with_timing}")
 
     except OSError as e:  # pragma: no cover
         # Defensive: load_json_file and write_tsv_file handle errors via cli_error
-        print(f"Error: File operation failed: {e}")
+        console.print(f"[bold red]Error: File operation failed: {e}[/bold red]")
         sys.exit(1)
     except KeyError as e:  # pragma: no cover
         # Defensive: extract_coverage_data uses .get() to avoid KeyError
-        print(f"Error: Missing expected key in JSON data: {e}")
+        console.print(
+            f"[bold red]Error: Missing expected key in JSON data: {e}[/bold red]"
+        )
         sys.exit(1)
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    main()  # pylint: disable=no-value-for-parameter
+    app()

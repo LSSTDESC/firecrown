@@ -5,7 +5,8 @@ import importlib.util
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-import click
+import typer
+from rich.console import Console
 
 if TYPE_CHECKING:
     from .ast_utils import format_docstring_summary, get_module_docstring
@@ -83,14 +84,18 @@ def _discover_tools() -> dict[str, str]:
     return tools
 
 
-@click.command()
-@click.option(
-    "--verbose",
-    "-v",
-    is_flag=True,
-    help="Show detailed descriptions and usage examples",
-)
-def main(verbose: bool):
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    verbose: bool = typer.Option(
+        False,
+        "--verbose",
+        "-v",
+        help="Show detailed descriptions and usage examples",
+    )
+):
     """List all available fctools and their descriptions.
 
     This command helps discover what tools are available in the fctools
@@ -99,7 +104,8 @@ def main(verbose: bool):
     Tools are automatically discovered by scanning the fctools directory
     for Python files and extracting their docstrings.
     """
-    click.echo("Available fctools:\n")
+    console = Console()
+    console.print("Available fctools:\n")
 
     tools = _discover_tools()
 
@@ -108,21 +114,20 @@ def main(verbose: bool):
         description = tools[tool]
 
         if verbose:
-            click.echo(f"  {tool}")
-            click.echo(f"    {description}")
+            console.print(f"  [bold]{tool}[/bold]")
+            console.print(f"    {description}")
             tool_name = tool.replace(".py", "")
-            click.echo(f"    Usage: python -m firecrown.fctools.{tool_name} --help")
-            click.echo()
+            console.print(f"    Usage: python -m firecrown.fctools.{tool_name} --help")
+            console.print()
         else:
-            click.echo(f"  {tool:<25} - {description}")
+            console.print(f"  [bold]{tool:<25}[/bold] - {description}")
 
     if not verbose:
-        click.echo("\nUse --verbose for detailed information about each tool.")
-        click.echo(
+        console.print("\nUse --verbose for detailed information about each tool.")
+        console.print(
             "Use 'python -m firecrown.fctools.TOOL --help' for tool-specific help."
         )
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    main()  # pylint: disable=no-value-for-parameter
+    app()
