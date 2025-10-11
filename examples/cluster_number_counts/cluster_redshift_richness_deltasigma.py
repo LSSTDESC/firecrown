@@ -15,13 +15,13 @@ from firecrown.likelihood.binned_cluster_number_counts import (
 
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
-from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.recipes.murata_binned_spec_z_deltasigma import (
-    MurataBinnedSpecZDeltaSigmaRecipe,
+from firecrown.models.cluster import (
+    ClusterAbundance,
+    ClusterDeltaSigma,
+    ClusterProperty,
 )
-from firecrown.models.cluster.recipes.murata_binned_spec_z import (
+from firecrown.models.cluster import (
+    MurataBinnedSpecZDeltaSigmaRecipe,
     MurataBinnedSpecZRecipe,
 )
 

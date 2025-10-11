@@ -5,7 +5,7 @@ from unittest.mock import Mock
 import pytest
 import sacc
 
-from firecrown.models.cluster.binning import NDimensionalBin, SaccBin, TupleBin
+from firecrown.models.cluster import NDimensionalBin, SaccBin, TupleBin
 
 
 def test_bin_str():

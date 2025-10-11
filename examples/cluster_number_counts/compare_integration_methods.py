@@ -5,14 +5,12 @@ import itertools
 
 import pyccl
 import numpy as np
-from firecrown.models.cluster.integrator.numcosmo_integrator import (
-    NumCosmoIntegralMethod,
-)
-from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.recipes.murata_binned_spec_z import (
+from firecrown.models.cluster._integrator import NumCosmoIntegralMethod
+from firecrown.models.cluster import (
+    ClusterAbundance,
     MurataBinnedSpecZRecipe,
+    TupleBin,
 )
-from firecrown.models.cluster.binning import TupleBin
 
 
 def get_cosmology() -> pyccl.Cosmology:

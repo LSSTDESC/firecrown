@@ -4,7 +4,7 @@ import numpy as np
 import pyccl
 import pytest
 
-from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster import ClusterAbundance
 
 
 @pytest.fixture(name="cluster_abundance")

@@ -11,12 +11,8 @@ from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, field_serial
 from scipy.integrate import quad
 from scipy.special import erf, erfc, gamma  # pylint: disable=no-name-in-module
 
-from firecrown.metadata_functions import (
-    Measurement,
-    make_measurements,
-    make_measurements_dict,
-)
-from firecrown.metadata_types import Galaxies, InferredGalaxyZDist
+from firecrown.metadata_functions import make_measurements, make_measurements_dict
+from firecrown.metadata_types import Galaxies, InferredGalaxyZDist, Measurement
 
 
 class BinsType(TypedDict):

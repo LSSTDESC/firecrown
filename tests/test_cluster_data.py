@@ -2,9 +2,11 @@
 
 import pytest
 import sacc
-from firecrown.models.cluster.abundance_data import AbundanceData
-from firecrown.models.cluster.deltasigma_data import DeltaSigmaData
-from firecrown.models.cluster.properties import ClusterProperty
+from firecrown.models.cluster import (
+    AbundanceData,
+    ClusterProperty,
+    DeltaSigmaData,
+)
 
 
 def test_create_abundance_data():
