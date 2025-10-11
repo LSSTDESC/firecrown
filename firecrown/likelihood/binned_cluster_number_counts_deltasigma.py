@@ -15,7 +15,7 @@ from firecrown.likelihood.statistic import (
 )
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ClusterProperty, DeltaSigmaData
-from firecrown.models.cluster.recipes import MurataBinnedSpecZDeltaSigmaRecipe
+from firecrown.models.cluster import MurataBinnedSpecZDeltaSigmaRecipe
 
 
 class BinnedClusterDeltaSigma(BinnedCluster):

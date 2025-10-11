@@ -15,8 +15,8 @@ from firecrown.models.cluster import (
     NDimensionalBin,
     SpectroscopicRedshift,
 )
-from firecrown.models.cluster.integrator import NumCosmoIntegrator
-from firecrown.models.cluster.recipes import (
+from firecrown.models.cluster import NumCosmoIntegrator
+from firecrown.models.cluster import (
     ClusterRecipe,
     MurataBinnedSpecZRecipe,
 )

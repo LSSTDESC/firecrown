@@ -5,11 +5,12 @@ import itertools
 
 import pyccl
 import numpy as np
-from firecrown.models.cluster.integrator._numcosmo_integrator import (
-    NumCosmoIntegralMethod,
+from firecrown.models.cluster._integrator import NumCosmoIntegralMethod
+from firecrown.models.cluster import (
+    ClusterAbundance,
+    MurataBinnedSpecZRecipe,
+    TupleBin,
 )
-from firecrown.models.cluster import ClusterAbundance, TupleBin
-from firecrown.models.cluster.recipes import MurataBinnedSpecZRecipe
 
 
 def get_cosmology() -> pyccl.Cosmology:

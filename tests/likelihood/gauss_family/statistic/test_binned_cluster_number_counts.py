@@ -5,7 +5,7 @@ import sacc
 import pytest
 import pyccl
 from firecrown.updatable import get_default_params_map
-from firecrown.models.cluster.recipes import (
+from firecrown.models.cluster import (
     ClusterRecipe,
     MurataBinnedSpecZDeltaSigmaRecipe,
 )

@@ -6,6 +6,11 @@ from firecrown.models.cluster._binning import NDimensionalBin, SaccBin, TupleBin
 from firecrown.models.cluster._cluster_data import ClusterData
 from firecrown.models.cluster._deltasigma import ClusterDeltaSigma
 from firecrown.models.cluster._deltasigma_data import DeltaSigmaData
+from firecrown.models.cluster._integrator import (
+    Integrator,
+    NumCosmoIntegrator,
+    ScipyIntegrator,
+)
 from firecrown.models.cluster._kernel import (
     Completeness,
     KernelType,
@@ -19,6 +24,11 @@ from firecrown.models.cluster._mass_proxy import (
     MurataUnbinned,
 )
 from firecrown.models.cluster._properties import ClusterProperty
+from firecrown.models.cluster._recipes import (
+    ClusterRecipe,
+    MurataBinnedSpecZDeltaSigmaRecipe,
+    MurataBinnedSpecZRecipe,
+)
 
 __all__ = [
     "ClusterAbundance",
@@ -38,4 +48,10 @@ __all__ = [
     "Purity",
     "TrueMass",
     "SpectroscopicRedshift",
+    "Integrator",
+    "NumCosmoIntegrator",
+    "ScipyIntegrator",
+    "ClusterRecipe",
+    "MurataBinnedSpecZRecipe",
+    "MurataBinnedSpecZDeltaSigmaRecipe",
 ]

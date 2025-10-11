@@ -12,7 +12,7 @@ from firecrown.likelihood.binned_cluster_number_counts import (
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ClusterAbundance, ClusterProperty
-from firecrown.models.cluster.recipes import MurataBinnedSpecZRecipe
+from firecrown.models.cluster import MurataBinnedSpecZRecipe
 
 
 def get_cluster_abundance() -> ClusterAbundance:

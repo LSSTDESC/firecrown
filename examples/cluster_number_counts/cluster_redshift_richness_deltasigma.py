@@ -20,7 +20,7 @@ from firecrown.models.cluster import (
     ClusterDeltaSigma,
     ClusterProperty,
 )
-from firecrown.models.cluster.recipes import (
+from firecrown.models.cluster import (
     MurataBinnedSpecZDeltaSigmaRecipe,
     MurataBinnedSpecZRecipe,
 )
