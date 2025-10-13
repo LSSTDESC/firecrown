@@ -17,6 +17,7 @@ from firecrown.fctools.print_code import (
     display_class_without_markdown,
     main,
 )
+from . import strip_rich_markup
 
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
@@ -377,7 +378,8 @@ def test_main_help():
     )
     assert result.returncode == 0
     assert "Usage:" in result.stdout
-    assert "--no-markdown" in result.stdout
+    assert " Display class definitions" in result.stdout
+    assert "--no-markdown" in strip_rich_markup(result.stdout)
 
 
 def test_main_multiple_classes():

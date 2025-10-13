@@ -10,6 +10,8 @@ from pathlib import Path
 import subprocess
 import sys
 
+from . import strip_rich_markup
+
 
 def test_main_basic(tmp_path):
     coverage_file = tmp_path / "coverage.json"
@@ -198,7 +200,7 @@ def test_main_nonexistent_input(tmp_path):
     )
 
     assert result.returncode != 0
-    assert "does not exist" in result.stderr.lower()
+    assert "does not exist" in strip_rich_markup(result.stderr.lower())
 
 
 def test_main_invalid_json(tmp_path):
