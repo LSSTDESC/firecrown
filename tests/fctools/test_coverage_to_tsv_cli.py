@@ -10,7 +10,7 @@ from pathlib import Path
 import subprocess
 import sys
 
-from . import strip_rich_markup
+from . import match_wrapped
 
 
 def test_main_basic(tmp_path):
@@ -200,7 +200,7 @@ def test_main_nonexistent_input(tmp_path):
     )
 
     assert result.returncode != 0
-    assert "does not exist" in strip_rich_markup(result.stderr.lower())
+    assert match_wrapped(result.stderr.lower(), "does not exist")
 
 
 def test_main_invalid_json(tmp_path):

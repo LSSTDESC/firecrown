@@ -11,6 +11,7 @@ import sys
 from pathlib import Path
 
 from firecrown.fctools.coverage_to_tsv import CoverageRecord, write_tsv_file, main
+from . import match_wrapped
 
 
 # Tests for write_tsv_file()
@@ -328,7 +329,7 @@ def test_main_nonexistent_input(tmp_path):
 
     # Typer should catch this with "exists=True" validation
     assert result.returncode != 0
-    assert "does not exist" in result.stderr.lower()
+    assert match_wrapped(result.stderr.lower(), "does not exist")
 
 
 def test_main_invalid_json(tmp_path):
