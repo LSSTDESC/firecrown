@@ -11,7 +11,7 @@ import numpy.typing as npt
 import pyccl
 
 from firecrown import parameters
-from firecrown.models.cluster.abundance import ClusterAbundance
+from firecrown.models.cluster._abundance import ClusterAbundance
 
 
 class ClusterDeltaSigma(ClusterAbundance):

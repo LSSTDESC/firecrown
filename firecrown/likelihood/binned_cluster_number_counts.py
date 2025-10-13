@@ -7,8 +7,7 @@ import sacc
 from firecrown.data_types import TheoryVector
 from firecrown.likelihood.binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster.abundance_data import AbundanceData
-from firecrown.models.cluster.properties import ClusterProperty
+from firecrown.models.cluster import AbundanceData, ClusterProperty
 
 
 class BinnedClusterNumberCounts(BinnedCluster):

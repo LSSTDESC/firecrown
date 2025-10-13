@@ -103,76 +103,40 @@ def calculate_angular_cl(
 
 # pylint: disable=too-many-public-methods
 class TwoPoint(Statistic):
-    """A statistic that represents the correlation between two measurements.
+    """A two-point statistic.
 
-    If the same source is used twice in the same TwoPoint object, this produces
-    an autocorrelation.
+    A two-point statistic represents the correlation between two measurements.
+    If the same source is used twice, this produces an autocorrelation.
 
-    For example, shear correlation function, galaxy-shear correlation function, etc.
+    This class supports various two-point statistics including shear correlation
+    functions, galaxy-shear correlation functions, and galaxy clustering
+    statistics in both harmonic and real space.
 
-    :param sacc_data_type: The kind of two-point statistic. This must be a valid
-        SACC data type that maps to one of the CCL correlation function kinds or
-        a power spectra. Possible options are:
+    The `sacc_data_type` parameter specifies the type of two-point statistic.
+    Valid SACC data types map to CCL correlation function types or power spectra:
 
-        - galaxy_density_cl : maps to 'cl' (a CCL angular power spectrum)
-        - galaxy_density_xi : maps to 'gg' (a CCL angular position corr. function)
-        - galaxy_shearDensity_cl_e : maps to 'cl' (a CCL angular power spectrum)
-        - galaxy_shearDensity_xi_t : maps to 'gl' (a CCL angular
-          cross-correlation between position and shear)
-        - galaxy_shear_cl_ee : maps to 'cl' (a CCL angular power spectrum)
-        - galaxy_shear_xi_minus : maps to 'l-' (a CCL angular shear corr.
-          function xi-)
-        - galaxy_shear_xi_plus : maps to 'l+' (a CCL angular shear corr.
-          function xi-)
-        - cmbGalaxy_convergenceDensity_xi : maps to 'gg' (a CCL angular
-          position corr. function)
-        - cmbGalaxy_convergenceShear_xi_t : maps to 'gl' (a CCL angular
-          cross-correlation between position and shear)
+    * `galaxy_density_cl`: CCL angular power spectrum (cl)
+    * `galaxy_density_xi`: CCL angular position correlation (gg)
+    * `galaxy_shearDensity_cl_e`: CCL angular power spectrum (cl)
+    * `galaxy_shearDensity_xi_t`: CCL position-shear cross-correlation (gl)
+    * `galaxy_shear_cl_ee`: CCL angular power spectrum (cl)
+    * `galaxy_shear_xi_minus`: CCL angular shear correlation xi-
+    * `galaxy_shear_xi_plus`: CCL angular shear correlation xi+
+    * `cmbGalaxy_convergenceDensity_xi`: CCL position correlation (gg)
+    * `cmbGalaxy_convergenceShear_xi_t`: CCL position-shear cross-correlation (gl)
 
-    :type sacc_data_type: str
-    :param source0: The first sources needed to compute this statistic.
-    :type source0: Source
-    :param source1: The second sources needed to compute this statistic.
-    :type source1: Source
-    :param ell_or_theta: A dictionary of options for generating the ell or theta
-        values at which to compute the statistics. This option can be used to have
-        firecrown generate data without the corresponding 2pt data in the input
-        SACC file. The options are:
+    The `ell_or_theta` parameter allows generating ell or theta values for
+    computing statistics when the corresponding data is not present in the SACC
+    file. It accepts a dictionary with keys: `minimum` (float), `maximum`
+    (float), `n` (int), and `binning` (str, 'log' or 'lin').
 
-        - minimum : float - The start of the binning.
-        - maximum : float - The end of the binning.
-        - n : int - The number of bins. Note that the edges of the bins start
-          at `min` and end at `max`. The actual bin locations will be at the
-          (possibly geometric) midpoint of the bin.
-        - binning : str, optional - Pass 'log' to get logarithmic spaced bins and 'lin'
-          to get linearly spaced bins. Default is 'log'.
+    The `ell_for_xi` parameter configures ell values for computing power spectra
+    used in real-space integrations. It accepts a dictionary with keys: `minimum`
+    (int, default 2), `midpoint` (int, default 50), `maximum` (int, default
+    60000), and `n_log` (int, default 200).
 
-    :type ell_or_theta: dict, optional
-    :param ell_for_xi: A dictionary of options for making the ell values at which
-        to compute Cls for use in real-space integrations. The possible keys are:
-
-        - minimum : int, optional - The minimum angular wavenumber to use for
-          real-space integrations. Default is 2.
-        - midpoint : int, optional - The midpoint angular wavenumber to use
-          for real-space integrations. The angular wavenumber samples are
-          linearly spaced at integers between `minimum` and `midpoint`. Default
-          is 50.
-        - maximum : int, optional - The maximum angular wavenumber to use for
-          real-space integrations. The angular wavenumber samples are
-          logarithmically spaced between `midpoint` and `maximum`. Default is
-          60,000.
-        - n_log : int, optional - The number of logarithmically spaced angular
-          wavenumber samples between `mid` and `max`. Default is 200.
-
-    :type ell_for_xi: dict, optional
-
-    :ivar ccl_kind: The CCL correlation function kind or 'cl' for power spectra
-        corresponding to the SACC data type.
-    :vartype ccl_kind: str
-    :ivar sacc_tracers: A tuple of the SACC tracer names for this 2pt statistic.
-        Set after a call to read.
-    :vartype sacc_tracers: 2-tuple of str
-
+    :ivar ccl_kind: The CCL correlation function kind or 'cl' for power spectra.
+    :ivar sacc_tracers: The SACC tracer names for this statistic, set after read.
     """
 
     @property
