@@ -8,14 +8,16 @@ import pytest
 from hypothesis import given, settings, HealthCheck
 from hypothesis.strategies import floats
 
-from firecrown.models.cluster.abundance import ClusterAbundance
-from firecrown.models.cluster.binning import NDimensionalBin
-from firecrown.models.cluster.integrator.numcosmo_integrator import NumCosmoIntegrator
-from firecrown.models.cluster.kernel import SpectroscopicRedshift
-from firecrown.models.cluster.mass_proxy import MurataBinned
-from firecrown.models.cluster.properties import ClusterProperty
-from firecrown.models.cluster.recipes.cluster_recipe import ClusterRecipe
-from firecrown.models.cluster.recipes.murata_binned_spec_z import (
+from firecrown.models.cluster import (
+    ClusterAbundance,
+    ClusterProperty,
+    MurataBinned,
+    NDimensionalBin,
+    SpectroscopicRedshift,
+)
+from firecrown.models.cluster import NumCosmoIntegrator
+from firecrown.models.cluster import (
+    ClusterRecipe,
     MurataBinnedSpecZRecipe,
 )
 

@@ -4,7 +4,7 @@ import numpy as np
 import pyccl
 import pytest
 
-from firecrown.models.cluster.deltasigma import ClusterDeltaSigma
+from firecrown.models.cluster import ClusterDeltaSigma
 
 
 @pytest.fixture(name="cluster_deltasigma")
