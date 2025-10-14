@@ -587,7 +587,9 @@ def test_main_direct_with_timing(tmp_path, capsys):
     # Verify console output includes timing-related messages (Rich may wrap paths)
     captured = capsys.readouterr()
     assert "Reading timing data from" in captured.out
-    assert "timing.txt" in captured.out
-    assert "Loaded timing data for 1 tests" in captured.out
-    assert "Records with timing data:" in captured.out
-    assert "Successfully converted coverage data to TSV format" in captured.out
+    assert match_wrapped(captured.out, "timing.txt")
+    assert match_wrapped(captured.out, "Loaded timing data for 1 tests")
+    assert match_wrapped(captured.out, "Records with timing data:")
+    assert match_wrapped(
+        captured.out, "Successfully converted coverage data to TSV format"
+    )
