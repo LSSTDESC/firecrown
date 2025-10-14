@@ -25,6 +25,8 @@ from firecrown.metadata_types import (
     measurement_supports_real,
 )
 
+from . import match_wrapped
+
 
 class TestDiscoverMeasurementsBySpace:
     """Tests for discover_measurements_by_space function."""
@@ -168,10 +170,10 @@ class TestPrintMeasurementsBySpace:
         )
 
         captured = capsys.readouterr()
-        assert "Real-space measurements found:" in captured.out
-        assert "Harmonic-space measurements found:" in captured.out
-        assert str(len(real_measurements)) in captured.out
-        assert str(len(harmonic_measurements)) in captured.out
+        assert match_wrapped(captured.out, "Real-space measurements found:")
+        assert match_wrapped(captured.out, "Harmonic-space measurements found:")
+        assert match_wrapped(captured.out, str(len(real_measurements)))
+        assert match_wrapped(captured.out, str(len(harmonic_measurements)))
 
     def test_prints_details_verbose(self, capsys):
         """Test printing measurement details in verbose mode."""
@@ -183,8 +185,8 @@ class TestPrintMeasurementsBySpace:
         )
 
         captured = capsys.readouterr()
-        assert "Real-space measurements found:" in captured.out
-        assert "Harmonic-space measurements found:" in captured.out
+        assert match_wrapped(captured.out, "Real-space measurements found:")
+        assert match_wrapped(captured.out, "Harmonic-space measurements found:")
 
         # In verbose mode, should show individual measurements
         if real_measurements:
@@ -206,8 +208,8 @@ class TestPrintCompatiblePairs:
         print_compatible_pairs(console, "real-space", pairs, False)
 
         captured = capsys.readouterr()
-        assert "Valid real-space pairs:" in captured.out
-        assert str(len(pairs)) in captured.out
+        assert match_wrapped(captured.out, "Valid real-space pairs:")
+        assert match_wrapped(captured.out, str(len(pairs)))
 
     def test_prints_pair_details_verbose(self, capsys):
         """Test printing pair details in verbose mode."""
@@ -220,7 +222,7 @@ class TestPrintCompatiblePairs:
         print_compatible_pairs(console, "real-space", pairs, True)
 
         captured = capsys.readouterr()
-        assert "Valid real-space pairs:" in captured.out
+        assert match_wrapped(captured.out, "Valid real-space pairs:")
 
         # In verbose mode, should show individual pairs
         if pairs:
@@ -234,7 +236,7 @@ class TestPrintCompatiblePairs:
         print_compatible_pairs(console, "test-space", [], False)
 
         captured = capsys.readouterr()
-        assert "Valid test-space pairs: 0" in captured.out
+        assert match_wrapped(captured.out, "Valid test-space pairs: 0")
 
 
 class TestPrintEfficiencyGains:
@@ -254,11 +256,11 @@ class TestPrintEfficiencyGains:
         print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
 
         captured = capsys.readouterr()
-        assert "Efficiency Improvements:" in captured.out
-        assert "Real space:" in captured.out
-        assert "Harmonic space:" in captured.out
-        assert "Total:" in captured.out
-        assert "skipped tests eliminated" in captured.out
+        assert match_wrapped(captured.out, "Efficiency Improvements:")
+        assert match_wrapped(captured.out, "Real space:")
+        assert match_wrapped(captured.out, "Harmonic space:")
+        assert match_wrapped(captured.out, "Total:")
+        assert match_wrapped(captured.out, "skipped tests eliminated")
 
     def test_calculates_correct_reduction(self, capsys):
         """Test that reduction calculations are correct."""
@@ -279,9 +281,9 @@ class TestPrintEfficiencyGains:
         real_reduction = len(real_measurements) ** 2 - len(real_pairs)
         harmonic_reduction = len(harmonic_measurements) ** 2 - len(harmonic_pairs)
 
-        assert str(real_reduction) in captured.out
-        assert str(harmonic_reduction) in captured.out
-        assert str(real_reduction + harmonic_reduction) in captured.out
+        assert match_wrapped(captured.out, str(real_reduction))
+        assert match_wrapped(captured.out, str(harmonic_reduction))
+        assert match_wrapped(captured.out, str(real_reduction + harmonic_reduction))
 
 
 class TestPrintSummaryStats:
@@ -307,12 +309,12 @@ class TestPrintSummaryStats:
         )
 
         captured = capsys.readouterr()
-        assert "Summary Statistics:" in captured.out
-        assert "Total measurements:" in captured.out
-        assert "Real-space coverage:" in captured.out
-        assert "Harmonic-space coverage:" in captured.out
-        assert "Real-space compatibility:" in captured.out
-        assert "Harmonic-space compatibility:" in captured.out
+        assert match_wrapped(captured.out, "Summary Statistics:")
+        assert match_wrapped(captured.out, "Total measurements:")
+        assert match_wrapped(captured.out, "Real-space coverage:")
+        assert match_wrapped(captured.out, "Harmonic-space coverage:")
+        assert match_wrapped(captured.out, "Real-space compatibility:")
+        assert match_wrapped(captured.out, "Harmonic-space compatibility:")
 
     def test_shows_percentages(self, capsys):
         """Test that percentages are shown."""

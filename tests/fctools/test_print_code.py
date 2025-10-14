@@ -1,11 +1,11 @@
 """Tests for the fctools/print_code.py module."""
 
 import ast
-from dataclasses import dataclass
 import os
-from pathlib import Path
 import subprocess
 import sys
+from dataclasses import dataclass
+from pathlib import Path
 from unittest.mock import patch
 
 import pytest
@@ -17,8 +17,8 @@ from firecrown.fctools.print_code import (
     display_class_without_markdown,
     main,
 )
-from . import strip_rich_markup
 
+from . import match_wrapped, strip_rich_markup
 
 # pylint: disable=missing-function-docstring,missing-class-docstring
 
@@ -274,8 +274,8 @@ def test_main_simple_class():
         env=_get_subprocess_env(),
     )
     assert result.returncode == 0
-    assert "class SimpleClass():" in result.stdout
-    assert "attr1: int" in result.stdout
+    assert match_wrapped(result.stdout, "class SimpleClass():")
+    assert match_wrapped(result.stdout, "attr1: int")
 
 
 def test_main_no_markdown():
@@ -294,7 +294,7 @@ def test_main_no_markdown():
         env=_get_subprocess_env(),
     )
     assert result.returncode == 0
-    assert "class SimpleClass():" in result.stdout
+    assert match_wrapped(result.stdout, "class SimpleClass():")
     assert "```python" not in result.stdout
 
 
@@ -309,8 +309,8 @@ def test_main_decorated_class():
         env=_get_subprocess_env(),
     )
     assert result.returncode == 0
-    assert "@dataclass" in result.stdout
-    assert "class DecoratedClass():" in result.stdout
+    assert match_wrapped(result.stdout, "@dataclass")
+    assert match_wrapped(result.stdout, "class DecoratedClass():")
 
 
 def test_main_class_with_bases():
@@ -377,9 +377,9 @@ def test_main_help():
         check=False,
     )
     assert result.returncode == 0
-    assert "Usage:" in result.stdout
-    assert " Display class definitions" in result.stdout
-    assert "--no-markdown" in strip_rich_markup(result.stdout)
+    assert match_wrapped(result.stdout, "Usage:")
+    assert match_wrapped(result.stdout, "Display class definitions")
+    assert match_wrapped(strip_rich_markup(result.stdout), "--no-markdown")
 
 
 def test_main_multiple_classes():
@@ -399,8 +399,12 @@ def test_main_multiple_classes():
     )
     assert result.returncode == 0
     # Should have headers for multiple classes
-    assert "Class: tests.fctools.test_print_code.SimpleClass" in result.stdout
-    assert "Class: tests.fctools.test_print_code.DecoratedClass" in result.stdout
+    assert match_wrapped(
+        result.stdout, "Class: tests.fctools.test_print_code.SimpleClass"
+    )
+    assert match_wrapped(
+        result.stdout, "Class: tests.fctools.test_print_code.DecoratedClass"
+    )
     assert "=" * 60 in result.stdout
     # Should have both classes in output
     assert "class SimpleClass()" in result.stdout
@@ -427,7 +431,9 @@ def test_main_multiple_classes_with_invalid():
     # Should fail due to cli_error calling sys.exit(1)
     assert result.returncode != 0
     # First class should succeed before the error
-    assert "class SimpleClass()" in result.stdout or "ERROR:" in result.stderr
+    assert (
+        match_wrapped(result.stdout, "class SimpleClass()") or "ERROR:" in result.stderr
+    )
 
 
 def test_build_class_code_with_none_class_def():

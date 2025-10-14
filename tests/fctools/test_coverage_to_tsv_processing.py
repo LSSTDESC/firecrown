@@ -12,7 +12,6 @@ from firecrown.fctools.coverage_to_tsv import (
     match_test_to_function,
 )
 
-
 # Tests for match_test_to_function()
 
 

@@ -12,11 +12,12 @@ import sys
 from firecrown.fctools.print_hierarchy import (
     full_type_name,
     get_defined_methods,
+    main,
     print_one_type,
     print_type_hierarchy,
-    main,
 )
 
+from . import match_wrapped
 
 # Tests for full_type_name()
 
@@ -321,8 +322,8 @@ def test_main_with_single_typename():
     )
 
     assert result.returncode == 0
-    assert "Hierarchy for" in result.stdout
-    assert "OrderedDict" in result.stdout
+    assert match_wrapped(result.stdout, "Hierarchy for")
+    assert match_wrapped(result.stdout, "OrderedDict")
 
 
 def test_main_with_multiple_typenames():
@@ -439,9 +440,9 @@ def test_main_subprocess_with_multiple_types():
     )
 
     assert result.returncode == 0
-    assert "Path" in result.stdout
-    assert "Counter" in result.stdout
-    assert "=" in result.stdout
+    assert match_wrapped(result.stdout, "Path")
+    assert match_wrapped(result.stdout, "Counter")
+    assert match_wrapped(result.stdout, "=")
 
 
 def test_main_subprocess_with_invalid_type():

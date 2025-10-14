@@ -15,7 +15,6 @@ from firecrown.fctools.coverage_to_tsv import (
     write_tsv_file,
 )
 
-
 # Tests for match_test_to_function()
 
 

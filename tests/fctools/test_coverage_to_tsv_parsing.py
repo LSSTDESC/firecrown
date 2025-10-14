@@ -17,7 +17,6 @@ from firecrown.fctools.coverage_to_tsv import (
     parse_timing_data,
 )
 
-
 # Tests for _parse_duration_line()
 
 

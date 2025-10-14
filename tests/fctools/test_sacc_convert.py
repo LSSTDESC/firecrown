@@ -10,21 +10,18 @@ import sys
 from pathlib import Path
 
 import pytest
+import sacc
 from rich.console import Console
 
-# Check if sacc is available
-pytest.importorskip("sacc")
-
-import sacc  # noqa: E402  # pylint: disable=wrong-import-position
-
-# pylint: disable=wrong-import-position
-from firecrown.fctools.sacc_convert import (  # noqa: E402
+from firecrown.fctools.sacc_convert import (
     _display_conversion_summary,
     _read_and_convert_file,
     detect_format,
     determine_output_path,
     main,
 )
+
+from . import match_wrapped
 
 
 class TestDetectFormat:  # pylint: disable=import-outside-toplevel
@@ -286,8 +283,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Detected input format: FITS" in result.stdout
-        assert "Conversion successful!" in result.stdout
+        assert match_wrapped(result.stdout, "Detected input format: FITS")
+        assert match_wrapped(result.stdout, "Conversion successful!")
 
         # Check output file was created
         output_file = tmp_path / "test.hdf5"
@@ -311,8 +308,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Detected input format: HDF5" in result.stdout
-        assert "Conversion successful!" in result.stdout
+        assert match_wrapped(result.stdout, "Detected input format: HDF5")
+        assert match_wrapped(result.stdout, "Conversion successful!")
 
         # Check output file was created
         output_file = tmp_path / "test.fits"
@@ -363,7 +360,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Using specified input format: FITS" in result.stdout
+        assert match_wrapped(result.stdout, "Using specified input format: FITS")
 
     def test_main_refuses_overwrite_without_flag(self, tmp_path):
         """Test that existing output file is not overwritten without flag."""
@@ -387,8 +384,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 1
-        assert "already exists" in result.stdout
-        assert "Use --overwrite" in result.stdout
+        assert match_wrapped(result.stdout, "already exists")
+        assert match_wrapped(result.stdout, "Use --overwrite")
 
         # Verify output wasn't changed
         assert output_file.read_text() == "existing content"
@@ -415,7 +412,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Conversion successful!" in result.stdout
+        assert match_wrapped(result.stdout, "Conversion successful!")
 
         # Verify output was overwritten (and is now a valid SACC file)
         s2 = sacc.Sacc.load_hdf5(str(output_file))
@@ -435,7 +432,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 1
-        assert "Cannot detect format" in result.stdout
+        assert match_wrapped(result.stdout, "Cannot detect format")
 
     def test_main_handles_nonexistent_file(self):
         """Test error handling for nonexistent input files."""
@@ -468,7 +465,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Conversion successful!" in result.stdout
+        assert match_wrapped(result.stdout, "Conversion successful!")
 
         # Verify output file was created
         output_file = tmp_path / "test.hdf5"
@@ -548,8 +545,8 @@ class TestIntegration:
         )
 
         assert result.returncode == 0
-        assert "Using specified input format: FITS" in result.stdout
-        assert "Conversion successful!" in result.stdout
+        assert match_wrapped(result.stdout, "Using specified input format: FITS")
+        assert match_wrapped(result.stdout, "Conversion successful!")
         assert output_file.exists()
 
     def test_handles_h5_extension(self, tmp_path):
@@ -570,7 +567,7 @@ class TestIntegration:
         )
 
         assert result.returncode == 0
-        assert "Detected input format: HDF5" in result.stdout
+        assert match_wrapped(result.stdout, "Detected input format: HDF5")
 
         # Check FITS output was created
         output_file = tmp_path / "test.fits"

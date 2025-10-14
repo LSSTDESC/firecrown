@@ -16,6 +16,8 @@ import pytest
 
 from firecrown.fctools.tracer import TracerState, settrace, untrace
 
+from . import match_wrapped
+
 
 @pytest.fixture(autouse=True)
 def cleanup_tracing():
@@ -472,8 +474,8 @@ result = simple_function()
     )
 
     assert result.returncode == 0
-    assert "Tracing script:" in result.stdout
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Tracing script:")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
     # Verify trace file has content
@@ -499,8 +501,8 @@ def test_main_with_nonexistent_script(tmp_path):
     )
 
     # The tracer handles file not found gracefully and prints an error message
-    assert "Error" in result.stdout
-    assert "not found" in result.stdout
+    assert match_wrapped(result.stdout, "Error")
+    assert match_wrapped(result.stdout, "not found")
 
 
 def test_main_module_mode_with_cli_runner(tmp_path):
@@ -667,7 +669,7 @@ def test_main_handles_script_with_system_exit(tmp_path):
     )
 
     # Should complete successfully even though script exits
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -689,8 +691,8 @@ def test_main_with_subprocess(tmp_path):
     )
 
     assert result.returncode == 0
-    assert "Tracing script:" in result.stdout
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Tracing script:")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -713,8 +715,8 @@ def test_main_with_oserror_in_script(tmp_path):
         check=False,
     )
 
-    assert "Error during traced execution" in result.stdout
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Error during traced execution")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -737,8 +739,8 @@ def test_main_with_runtime_error_in_script(tmp_path):
         check=False,
     )
 
-    assert "Error during traced execution" in result.stdout
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Error during traced execution")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -761,8 +763,8 @@ def test_main_with_value_error_in_script(tmp_path):
         check=False,
     )
 
-    assert "Error during traced execution" in result.stdout
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Error during traced execution")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 

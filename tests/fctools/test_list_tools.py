@@ -16,6 +16,8 @@ from firecrown.fctools.list_tools import (
     app,
 )
 
+from . import match_wrapped
+
 
 class TestExtractDescriptionFromDocstring:
     """Tests for _extract_description_from_docstring function."""
@@ -341,7 +343,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, [])
 
         assert result.exit_code == 0
-        assert "Available fctools:" in result.stdout
+        assert match_wrapped(result.stdout, "Available fctools:")
 
     def test_main_lists_tools(self):
         """Test that main lists actual tools."""
@@ -350,8 +352,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
 
         assert result.exit_code == 0
         # Should list at least some known tools
-        assert "common.py" in result.stdout
-        assert "ast_utils.py" in result.stdout
+        assert match_wrapped(result.stdout, "common.py")
+        assert match_wrapped(result.stdout, "ast_utils.py")
 
     def test_main_verbose_flag(self):
         """Test main with --verbose flag."""
@@ -359,8 +361,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, ["--verbose"])
 
         assert result.exit_code == 0
-        assert "Available fctools:" in result.stdout
-        assert "Usage: python -m firecrown.fctools." in result.stdout
+        assert match_wrapped(result.stdout, "Available fctools:")
+        assert match_wrapped(result.stdout, "Usage: python -m firecrown.fctools.")
 
     def test_main_short_verbose_flag(self):
         """Test main with -v flag."""
@@ -368,7 +370,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, ["-v"])
 
         assert result.exit_code == 0
-        assert "Usage: python -m firecrown.fctools." in result.stdout
+        assert match_wrapped(result.stdout, "Usage: python -m firecrown.fctools.")
 
     def test_main_non_verbose_has_help_text(self):
         """Test that non-verbose mode shows help text."""
@@ -376,8 +378,10 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, [])
 
         assert result.exit_code == 0
-        assert "Use --verbose for detailed information" in result.stdout
-        assert "Use 'python -m firecrown.fctools.TOOL --help'" in result.stdout
+        assert match_wrapped(result.stdout, "Use --verbose for detailed information")
+        assert match_wrapped(
+            result.stdout, "Use 'python -m firecrown.fctools.TOOL --help'"
+        )
 
     def test_main_verbose_shows_tool_details(self):
         """Test that verbose mode shows more details."""
@@ -431,7 +435,7 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Available fctools:" in result.stdout
+        assert match_wrapped(result.stdout, "Available fctools:")
         assert "common.py" in result.stdout
 
     def test_main_subprocess_with_verbose(self):
@@ -445,8 +449,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "Available fctools:" in result.stdout
-        assert "Usage: python -m firecrown.fctools." in result.stdout
+        assert match_wrapped(result.stdout, "Available fctools:")
+        assert match_wrapped(result.stdout, "Usage: python -m firecrown.fctools.")
 
 
 class TestIntegration:  # pylint: disable=import-outside-toplevel

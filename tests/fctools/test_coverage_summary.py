@@ -4,9 +4,10 @@ Tests the coverage analysis and reporting functionality.
 """
 
 import json
+
 import pytest
-from typer.testing import CliRunner
 from rich.console import Console
+from typer.testing import CliRunner
 
 from firecrown.fctools.coverage_summary import (
     CoverageSummary,
@@ -18,11 +19,13 @@ from firecrown.fctools.coverage_summary import (
     _print_file_issue_details,
     _print_source_code_for_missing_lines,
     analyze_coverage_json,
+    app,
     print_coverage_summary,
     print_file_issues,
     print_perfect_coverage_files,
-    app,
 )
+
+from . import match_wrapped
 
 
 @pytest.fixture
@@ -822,8 +825,9 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, [str(coverage_file)])
 
         assert result.exit_code == 0
-        assert "COVERAGE ANALYSIS SUMMARY" in result.stdout
-        assert "Total files analyzed: 1" in result.stdout
+
+        assert match_wrapped(result.stdout, "COVERAGE ANALYSIS SUMMARY")
+        assert match_wrapped(result.stdout, "Total files analyzed: 1")
 
     def test_main_with_show_source(self, tmp_path):
         """Test main function with --show-source flag."""
@@ -860,7 +864,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, [str(coverage_file), "--show-source"])
 
         assert result.exit_code == 0
-        assert "Source code for missing lines:" in result.stdout
+
+        assert match_wrapped(result.stdout, "Source code for missing lines:")
 
     def test_main_with_show_perfect(self, tmp_path):
         """Test main function with --show-perfect flag."""
@@ -904,8 +909,9 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, [str(coverage_file), "--show-perfect"])
 
         assert result.exit_code == 0
-        assert "FILES WITH PERFECT COVERAGE:" in result.stdout
-        assert "✅ perfect.py" in result.stdout
+
+        assert match_wrapped(result.stdout, "FILES WITH PERFECT COVERAGE:")
+        assert match_wrapped(result.stdout, "perfect.py")
 
     def test_main_with_nonexistent_file(self, tmp_path):
         """Test main function with nonexistent coverage file."""
@@ -931,7 +937,8 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         result = runner.invoke(app, [str(coverage_file)])
 
         assert result.exit_code == 1
-        assert "Error analyzing coverage file:" in result.stdout
+
+        assert match_wrapped(result.stdout, "Error analyzing coverage file:")
 
     def test_main_block_with_subprocess(self, tmp_path):
         """Test that the script can be executed directly via subprocess.
@@ -970,5 +977,6 @@ class TestMainFunction:  # pylint: disable=import-outside-toplevel
         )
 
         assert result.returncode == 0
-        assert "COVERAGE ANALYSIS SUMMARY" in result.stdout
-        assert "Overall Statistics:" in result.stdout
+
+        assert match_wrapped(result.stdout, "COVERAGE ANALYSIS SUMMARY")
+        assert match_wrapped(result.stdout, "Overall Statistics:")

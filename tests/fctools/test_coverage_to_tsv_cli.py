@@ -6,9 +6,9 @@ Tests the main() function CLI interface using subprocess.
 # pylint: disable=missing-function-docstring
 
 import json
-from pathlib import Path
 import subprocess
 import sys
+from pathlib import Path
 
 from . import match_wrapped
 
@@ -128,8 +128,8 @@ def test_main_with_timing(tmp_path):
 
     assert result.returncode == 0
     assert output_file.exists()
-    assert "Loaded timing data for 1 tests" in result.stdout
-    assert "Records with timing data:" in result.stdout
+    assert match_wrapped(result.stdout, "Loaded timing data for 1 tests")
+    assert match_wrapped(result.stdout, "Records with timing data:")
 
 
 def test_main_default_output_filename(tmp_path):
@@ -307,7 +307,7 @@ def test_main_write_error(tmp_path):
     )
 
     assert result.returncode == 1
-    assert "Error: File operation failed" in result.stdout
+    assert match_wrapped(result.stdout, "Error: File operation failed")
 
 
 def test_main_timing_file_not_found(tmp_path):

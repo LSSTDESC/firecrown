@@ -10,9 +10,9 @@ import subprocess
 import sys
 from pathlib import Path
 
-from firecrown.fctools.coverage_to_tsv import CoverageRecord, write_tsv_file, main
-from . import match_wrapped
+from firecrown.fctools.coverage_to_tsv import CoverageRecord, main, write_tsv_file
 
+from . import match_wrapped
 
 # Tests for write_tsv_file()
 
@@ -198,8 +198,10 @@ def test_main_basic(tmp_path):
 
     assert result.returncode == 0
     assert output_file.exists()
-    assert "Successfully converted coverage data to TSV format" in result.stdout
-    assert "Records written: 1" in result.stdout
+    assert match_wrapped(
+        result.stdout, "Successfully converted coverage data to TSV format"
+    )
+    assert match_wrapped(result.stdout, "Records written: 1")
 
 
 def test_main_with_timing(tmp_path):
@@ -262,8 +264,8 @@ def test_main_with_timing(tmp_path):
 
     assert result.returncode == 0
     assert output_file.exists()
-    assert "Loaded timing data for 1 tests" in result.stdout
-    assert "Records with timing data:" in result.stdout
+    assert match_wrapped(result.stdout, "Loaded timing data for 1 tests")
+    assert match_wrapped(result.stdout, "Records with timing data:")
 
 
 def test_main_default_output_filename(tmp_path, monkeypatch):
@@ -367,7 +369,7 @@ def test_main_missing_expected_key(tmp_path):
 
     # Should handle missing 'files' gracefully (empty dict)
     assert result.returncode == 0
-    assert "Records written: 0" in result.stdout
+    assert match_wrapped(result.stdout, "Records written: 0")
 
 
 def test_main_write_error(tmp_path):
@@ -415,7 +417,7 @@ def test_main_write_error(tmp_path):
 
     assert result.returncode == 1
     # Error message appears in stdout, not stderr
-    assert "Error: File operation failed" in result.stdout
+    assert match_wrapped(result.stdout, "Error: File operation failed")
 
 
 def test_main_timing_file_not_found(tmp_path):
