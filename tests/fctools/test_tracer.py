@@ -13,9 +13,10 @@ import sys
 from pathlib import Path
 
 import pytest
-from click.testing import CliRunner
 
-from firecrown.fctools.tracer import TracerState, main, settrace, untrace
+from firecrown.fctools.tracer import TracerState, settrace, untrace
+
+from . import match_wrapped
 
 
 @pytest.fixture(autouse=True)
@@ -459,12 +460,22 @@ result = simple_function()
 
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
-    assert "Tracing script:" in result.output
-    assert "Trace complete" in result.output
+    assert result.returncode == 0
+    assert match_wrapped(result.stdout, "Tracing script:")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
     # Verify trace file has content
@@ -473,30 +484,48 @@ result = simple_function()
 
 
 def test_main_with_nonexistent_script(tmp_path):
-    """Test main with nonexistent script file."""
-    trace_file = tmp_path / "output.tsv"
+    """Test the main CLI with a nonexistent script."""
+    trace_file = tmp_path / "trace_output.txt"
 
-    runner = CliRunner()
-    result = runner.invoke(main, ["nonexistent.py", "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            "nonexistent.py",
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    # CliRunner catches SystemExit, but error message should be present
-    assert "not found" in result.output
-    # Trace complete message should still appear (in finally block)
-    assert "Trace complete" in result.output
+    # The tracer handles file not found gracefully and prints an error message
+    assert match_wrapped(result.stdout, "Error")
+    assert match_wrapped(result.stdout, "not found")
 
 
 def test_main_module_mode_with_cli_runner(tmp_path):
-    """Test main with --module flag using CliRunner."""
-    trace_file = tmp_path / "output.tsv"
+    """Test the main CLI in module mode with subprocess."""
+    trace_file = tmp_path / "trace_output.txt"
 
-    runner = CliRunner()
-    # Use a simple built-in module that's safe to trace
-    result = runner.invoke(main, ["--module", "json.tool", "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            "--module",
+            "json.tool",
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    # The module might fail (needs input), but we're testing coverage of the code path
-    assert "Tracing module:" in result.output
-    assert "Trace complete" in result.output
+    assert result.returncode == 0
     assert trace_file.exists()
+    assert trace_file.stat().st_size > 0
 
 
 def test_main_module_tracing(tmp_path):
@@ -571,7 +600,7 @@ def test_main_module_tracing(tmp_path):
     )
     assert result3.returncode == 0  # tracer catches the error
     assert b"Tracing module:" in result3.stdout
-    assert b"Error during traced execution" in result3.stderr
+    assert b"Error during traced execution" in result3.stdout
     assert trace_file3.exists()
 
 
@@ -582,10 +611,18 @@ def test_main_default_output_filename(tmp_path, monkeypatch):
     script_file = tmp_path / "test_script.py"
     script_file.write_text("x = 1\n")
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file)])
+    # Get absolute path to tracer script
+    tracer_script = Path(__file__).parent.parent.parent / "firecrown" / "fctools"
+    tracer_script = tracer_script / "tracer.py"
 
-    assert result.exit_code == 0
+    result = subprocess.run(
+        [sys.executable, str(tracer_script), str(script_file)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+    assert result.returncode == 0
     assert Path("trace.tsv").exists()
 
 
@@ -595,10 +632,20 @@ def test_main_short_output_option(tmp_path):
     script_file.write_text("x = 1\n")
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "-o", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "-o",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
+    assert result.returncode == 0
     assert trace_file.exists()
 
 
@@ -608,11 +655,21 @@ def test_main_handles_script_with_system_exit(tmp_path):
     script_file.write_text("import sys\nsys.exit(0)\n")
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
     # Should complete successfully even though script exits
-    assert "Trace complete" in result.output
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -634,8 +691,8 @@ def test_main_with_subprocess(tmp_path):
     )
 
     assert result.returncode == 0
-    assert "Tracing script:" in result.stdout
-    assert "Trace complete" in result.stdout
+    assert match_wrapped(result.stdout, "Tracing script:")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -645,11 +702,21 @@ def test_main_with_oserror_in_script(tmp_path):
     script_file.write_text("raise OSError('Test error')\n")
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert "Error during traced execution" in result.output
-    assert "Trace complete" in result.output
+    assert match_wrapped(result.stdout, "Error during traced execution")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -659,11 +726,21 @@ def test_main_with_runtime_error_in_script(tmp_path):
     script_file.write_text("raise RuntimeError('Test error')\n")
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert "Error during traced execution" in result.output
-    assert "Trace complete" in result.output
+    assert match_wrapped(result.stdout, "Error during traced execution")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -673,11 +750,21 @@ def test_main_with_value_error_in_script(tmp_path):
     script_file.write_text("raise ValueError('Test error')\n")
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert "Error during traced execution" in result.output
-    assert "Trace complete" in result.output
+    assert match_wrapped(result.stdout, "Error during traced execution")
+    assert match_wrapped(result.stdout, "Trace complete")
     assert trace_file.exists()
 
 
@@ -759,10 +846,20 @@ func()
     )
     trace_file = tmp_path / "output.tsv"
 
-    runner = CliRunner()
-    result = runner.invoke(main, [str(script_file), "--output", str(trace_file)])
+    result = subprocess.run(
+        [
+            sys.executable,
+            "firecrown/fctools/tracer.py",
+            str(script_file),
+            "--output",
+            str(trace_file),
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
 
-    assert result.exit_code == 0
+    assert result.returncode == 0
 
     # Verify TSV format
     content = trace_file.read_text()
@@ -777,3 +874,124 @@ func()
     columns = header.split("\t")
     assert len(columns) == 6
     assert columns == ["entry", "event", "level", "function", "value", "extra"]
+
+
+# Direct main() function tests for coverage
+
+
+def test_main_function_with_script(tmp_path, capsys):
+    """Test main function directly with a script file."""
+    from firecrown.fctools.tracer import main
+
+    # Create a simple test script
+    script_file = tmp_path / "test_script.py"
+    script_file.write_text("x = 1 + 1\n")
+    trace_file = tmp_path / "trace.tsv"
+
+    # Call main directly
+    main(target=str(script_file), output=str(trace_file), module=False)
+
+    # Verify trace file was created
+    assert trace_file.exists()
+    captured = capsys.readouterr()
+    assert "Tracing script:" in captured.out
+    assert "Trace complete" in captured.out
+
+
+def test_main_function_with_nonexistent_script(tmp_path, capsys):
+    """Test main function with nonexistent script."""
+    from firecrown.fctools.tracer import main
+
+    trace_file = tmp_path / "trace.tsv"
+
+    # Call main with nonexistent script - should exit with error
+    try:
+        main(target="nonexistent_script.py", output=str(trace_file), module=False)
+    except SystemExit as e:
+        assert e.code == 1
+
+    captured = capsys.readouterr()
+    assert "Error: Script file" in captured.out
+    assert "not found" in captured.out
+
+
+def test_main_function_with_module(tmp_path, capsys):
+    """Test main function in module mode."""
+    from firecrown.fctools.tracer import main
+
+    trace_file = tmp_path / "trace.tsv"
+
+    # Use json.tool as a test module (part of standard library)
+    main(target="json.tool", output=str(trace_file), module=True)
+
+    # Verify trace file was created
+    assert trace_file.exists()
+    captured = capsys.readouterr()
+    assert "Tracing module:" in captured.out
+    assert "Trace complete" in captured.out
+
+
+def test_main_function_with_invalid_module(tmp_path, capsys):
+    """Test main function with invalid module name."""
+    from firecrown.fctools.tracer import main
+
+    trace_file = tmp_path / "trace.tsv"
+
+    # Try to import nonexistent module
+    main(target="nonexistent_module_xyz", output=str(trace_file), module=True)
+
+    # Should handle ImportError gracefully
+    captured = capsys.readouterr()
+    assert "Error during traced execution" in captured.out
+    assert "Trace complete" in captured.out
+    assert trace_file.exists()
+
+
+def test_main_function_with_script_system_exit(tmp_path, capsys):
+    """Test main function with script that calls sys.exit()."""
+    from firecrown.fctools.tracer import main
+
+    script_file = tmp_path / "exit_script.py"
+    script_file.write_text("import sys\nsys.exit(0)\n")
+    trace_file = tmp_path / "trace.tsv"
+
+    # Should handle SystemExit gracefully
+    main(target=str(script_file), output=str(trace_file), module=False)
+
+    captured = capsys.readouterr()
+    assert "Trace complete" in captured.out
+    assert trace_file.exists()
+
+
+def test_main_function_with_script_import_error(tmp_path, capsys):
+    """Test main function with script that has import error."""
+    from firecrown.fctools.tracer import main
+
+    script_file = tmp_path / "bad_import.py"
+    script_file.write_text("import nonexistent_module\n")
+    trace_file = tmp_path / "trace.tsv"
+
+    # Should handle ImportError gracefully
+    main(target=str(script_file), output=str(trace_file), module=False)
+
+    captured = capsys.readouterr()
+    assert "Error during traced execution" in captured.out
+    assert "Trace complete" in captured.out
+    assert trace_file.exists()
+
+
+def test_main_function_with_script_value_error(tmp_path, capsys):
+    """Test main function with script that raises ValueError."""
+    from firecrown.fctools.tracer import main
+
+    script_file = tmp_path / "value_error.py"
+    script_file.write_text("raise ValueError('test error')\n")
+    trace_file = tmp_path / "trace.tsv"
+
+    # Should handle ValueError gracefully
+    main(target=str(script_file), output=str(trace_file), module=False)
+
+    captured = capsys.readouterr()
+    assert "Error during traced execution" in captured.out
+    assert "Trace complete" in captured.out
+    assert trace_file.exists()

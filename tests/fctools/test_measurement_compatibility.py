@@ -6,12 +6,11 @@ Tests the measurement compatibility analysis tool.
 import subprocess
 import sys
 
-from click.testing import CliRunner
+from rich.console import Console
 
 from firecrown.fctools.measurement_compatibility import (
     discover_measurements_by_space,
     generate_compatible_pairs,
-    main,
     print_compatible_pairs,
     print_efficiency_gains,
     print_measurements_by_space,
@@ -25,6 +24,8 @@ from firecrown.metadata_types import (
     measurement_supports_harmonic,
     measurement_supports_real,
 )
+
+from . import match_wrapped
 
 
 class TestDiscoverMeasurementsBySpace:
@@ -161,25 +162,31 @@ class TestPrintMeasurementsBySpace:
 
     def test_prints_counts_non_verbose(self, capsys):
         """Test printing measurement counts in non-verbose mode."""
+        console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
 
-        print_measurements_by_space(real_measurements, harmonic_measurements, False)
+        print_measurements_by_space(
+            console, real_measurements, harmonic_measurements, False
+        )
 
         captured = capsys.readouterr()
-        assert "Real-space measurements found:" in captured.out
-        assert "Harmonic-space measurements found:" in captured.out
-        assert str(len(real_measurements)) in captured.out
-        assert str(len(harmonic_measurements)) in captured.out
+        assert match_wrapped(captured.out, "Real-space measurements found:")
+        assert match_wrapped(captured.out, "Harmonic-space measurements found:")
+        assert match_wrapped(captured.out, str(len(real_measurements)))
+        assert match_wrapped(captured.out, str(len(harmonic_measurements)))
 
     def test_prints_details_verbose(self, capsys):
         """Test printing measurement details in verbose mode."""
+        console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
 
-        print_measurements_by_space(real_measurements, harmonic_measurements, True)
+        print_measurements_by_space(
+            console, real_measurements, harmonic_measurements, True
+        )
 
         captured = capsys.readouterr()
-        assert "Real-space measurements found:" in captured.out
-        assert "Harmonic-space measurements found:" in captured.out
+        assert match_wrapped(captured.out, "Real-space measurements found:")
+        assert match_wrapped(captured.out, "Harmonic-space measurements found:")
 
         # In verbose mode, should show individual measurements
         if real_measurements:
@@ -192,28 +199,30 @@ class TestPrintCompatiblePairs:
 
     def test_prints_pair_count_non_verbose(self, capsys):
         """Test printing pair counts in non-verbose mode."""
+        console = Console()
         real_measurements, _ = discover_measurements_by_space()
         pairs = generate_compatible_pairs(
             real_measurements, measurement_is_compatible_real
         )
 
-        print_compatible_pairs("real-space", pairs, False)
+        print_compatible_pairs(console, "real-space", pairs, False)
 
         captured = capsys.readouterr()
-        assert "Valid real-space pairs:" in captured.out
-        assert str(len(pairs)) in captured.out
+        assert match_wrapped(captured.out, "Valid real-space pairs:")
+        assert match_wrapped(captured.out, str(len(pairs)))
 
     def test_prints_pair_details_verbose(self, capsys):
         """Test printing pair details in verbose mode."""
+        console = Console()
         real_measurements, _ = discover_measurements_by_space()
         pairs = generate_compatible_pairs(
             real_measurements, measurement_is_compatible_real
         )
 
-        print_compatible_pairs("real-space", pairs, True)
+        print_compatible_pairs(console, "real-space", pairs, True)
 
         captured = capsys.readouterr()
-        assert "Valid real-space pairs:" in captured.out
+        assert match_wrapped(captured.out, "Valid real-space pairs:")
 
         # In verbose mode, should show individual pairs
         if pairs:
@@ -223,10 +232,11 @@ class TestPrintCompatiblePairs:
 
     def test_handles_empty_pairs(self, capsys):
         """Test handling empty pairs list."""
-        print_compatible_pairs("test-space", [], False)
+        console = Console()
+        print_compatible_pairs(console, "test-space", [], False)
 
         captured = capsys.readouterr()
-        assert "Valid test-space pairs: 0" in captured.out
+        assert match_wrapped(captured.out, "Valid test-space pairs: 0")
 
 
 class TestPrintEfficiencyGains:
@@ -234,6 +244,7 @@ class TestPrintEfficiencyGains:
 
     def test_prints_efficiency_stats(self, capsys):
         """Test printing efficiency statistics."""
+        console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
             real_measurements, measurement_is_compatible_real
@@ -242,19 +253,18 @@ class TestPrintEfficiencyGains:
             harmonic_measurements, measurement_is_compatible_harmonic
         )
 
-        print_efficiency_gains(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
-        )
+        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
 
         captured = capsys.readouterr()
-        assert "Efficiency Improvements:" in captured.out
-        assert "Real space:" in captured.out
-        assert "Harmonic space:" in captured.out
-        assert "Total:" in captured.out
-        assert "skipped tests eliminated" in captured.out
+        assert match_wrapped(captured.out, "Efficiency Improvements:")
+        assert match_wrapped(captured.out, "Real space:")
+        assert match_wrapped(captured.out, "Harmonic space:")
+        assert match_wrapped(captured.out, "Total:")
+        assert match_wrapped(captured.out, "skipped tests eliminated")
 
     def test_calculates_correct_reduction(self, capsys):
         """Test that reduction calculations are correct."""
+        console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
             real_measurements, measurement_is_compatible_real
@@ -263,9 +273,7 @@ class TestPrintEfficiencyGains:
             harmonic_measurements, measurement_is_compatible_harmonic
         )
 
-        print_efficiency_gains(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
-        )
+        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
 
         captured = capsys.readouterr()
 
@@ -273,9 +281,9 @@ class TestPrintEfficiencyGains:
         real_reduction = len(real_measurements) ** 2 - len(real_pairs)
         harmonic_reduction = len(harmonic_measurements) ** 2 - len(harmonic_pairs)
 
-        assert str(real_reduction) in captured.out
-        assert str(harmonic_reduction) in captured.out
-        assert str(real_reduction + harmonic_reduction) in captured.out
+        assert match_wrapped(captured.out, str(real_reduction))
+        assert match_wrapped(captured.out, str(harmonic_reduction))
+        assert match_wrapped(captured.out, str(real_reduction + harmonic_reduction))
 
 
 class TestPrintSummaryStats:
@@ -283,6 +291,7 @@ class TestPrintSummaryStats:
 
     def test_prints_summary_statistics(self, capsys):
         """Test printing summary statistics."""
+        console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
             real_measurements, measurement_is_compatible_real
@@ -292,19 +301,24 @@ class TestPrintSummaryStats:
         )
 
         print_summary_stats(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
         )
 
         captured = capsys.readouterr()
-        assert "Summary Statistics:" in captured.out
-        assert "Total measurements:" in captured.out
-        assert "Real-space coverage:" in captured.out
-        assert "Harmonic-space coverage:" in captured.out
-        assert "Real-space compatibility:" in captured.out
-        assert "Harmonic-space compatibility:" in captured.out
+        assert match_wrapped(captured.out, "Summary Statistics:")
+        assert match_wrapped(captured.out, "Total measurements:")
+        assert match_wrapped(captured.out, "Real-space coverage:")
+        assert match_wrapped(captured.out, "Harmonic-space coverage:")
+        assert match_wrapped(captured.out, "Real-space compatibility:")
+        assert match_wrapped(captured.out, "Harmonic-space compatibility:")
 
     def test_shows_percentages(self, capsys):
         """Test that percentages are shown."""
+        console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
             real_measurements, measurement_is_compatible_real
@@ -314,7 +328,11 @@ class TestPrintSummaryStats:
         )
 
         print_summary_stats(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
         )
 
         captured = capsys.readouterr()
@@ -325,82 +343,166 @@ class TestPrintSummaryStats:
 class TestMainFunction:  # pylint: disable=import-outside-toplevel
     """Tests for main CLI function."""
 
-    def test_main_default_options(self):
-        """Test main with default options."""
-        runner = CliRunner()
-        result = runner.invoke(main, [])
+    def test_main_default_options(self, capsys):
+        """Test main with default options (space=BOTH, verbose=False)."""
+        from firecrown.fctools.measurement_compatibility import Space, main
 
-        assert result.exit_code == 0
-        assert "Firecrown Measurement Compatibility Analysis" in result.output
-        assert "Real-space measurements found:" in result.output
-        assert "Harmonic-space measurements found:" in result.output
+        # Call main directly with default options
+        main(verbose=False, space=Space.BOTH, stats_only=False)
 
-    def test_main_verbose_flag(self):
-        """Test main with --verbose flag."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["--verbose"])
+        captured = capsys.readouterr()
+        assert "Firecrown Measurement Compatibility Analysis" in captured.out
+        assert "Real-space measurements found:" in captured.out
+        assert "Harmonic-space measurements found:" in captured.out
+        assert "Efficiency Improvements:" in captured.out
+        assert "Summary Statistics:" in captured.out
 
-        assert result.exit_code == 0
-        assert "Firecrown Measurement Compatibility Analysis" in result.output
+    def test_main_verbose_flag(self, capsys):
+        """Test main with verbose=True."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=True, space=Space.BOTH, stats_only=False)
+
+        captured = capsys.readouterr()
+        assert "Firecrown Measurement Compatibility Analysis" in captured.out
         # In verbose mode, should show individual measurements
-        assert "•" in result.output
+        assert "•" in captured.out
 
-    def test_main_short_verbose_flag(self):
-        """Test main with -v flag."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["-v"])
+    def test_main_verbose_with_space_harmonic(self, capsys):
+        """Test main with verbose=True and space=HARMONIC."""
+        from firecrown.fctools.measurement_compatibility import Space, main
 
-        assert result.exit_code == 0
-        assert "•" in result.output
+        main(verbose=True, space=Space.HARMONIC, stats_only=False)
 
-    def test_main_space_real(self):
-        """Test main with --space real."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["--space", "real"])
+        captured = capsys.readouterr()
+        assert "•" in captured.out
+        assert "harmonic-space" in captured.out
 
-        assert result.exit_code == 0
-        assert "real-space" in result.output
+    def test_main_space_real(self, capsys):
+        """Test main with space=REAL."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=False, space=Space.REAL, stats_only=False)
+
+        captured = capsys.readouterr()
+        assert "real-space" in captured.out
+        # Should show Real-space efficiency
+        assert "Real-space efficiency:" in captured.out
         # Should not show harmonic-space pairs
-        assert "harmonic-space" not in result.output
+        assert "harmonic-space" not in captured.out
 
-    def test_main_space_harmonic(self):
-        """Test main with --space harmonic."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["--space", "harmonic"])
+    def test_main_space_harmonic(self, capsys):
+        """Test main with space=HARMONIC."""
+        from firecrown.fctools.measurement_compatibility import Space, main
 
-        assert result.exit_code == 0
-        assert "harmonic-space" in result.output
+        main(verbose=False, space=Space.HARMONIC, stats_only=False)
+
+        captured = capsys.readouterr()
+        assert "harmonic-space" in captured.out
         # Should show efficiency for harmonic space
-        assert "Harmonic-space efficiency:" in result.output
+        assert "Harmonic-space efficiency:" in captured.out
 
-    def test_main_space_both(self):
-        """Test main with --space both (default)."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["--space", "both"])
+    def test_main_space_both(self, capsys):
+        """Test main with space=BOTH."""
+        from firecrown.fctools.measurement_compatibility import Space, main
 
-        assert result.exit_code == 0
-        assert "real-space" in result.output
-        assert "harmonic-space" in result.output
-        assert "Summary Statistics:" in result.output
+        main(verbose=False, space=Space.BOTH, stats_only=False)
 
-    def test_main_stats_only(self):
-        """Test main with --stats-only flag."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["--stats-only"])
+        captured = capsys.readouterr()
+        assert "real-space" in captured.out
+        assert "harmonic-space" in captured.out
+        assert "Summary Statistics:" in captured.out
 
-        assert result.exit_code == 0
-        assert "Summary Statistics:" in result.output
+    def test_main_stats_only(self, capsys):
+        """Test main with stats_only=True."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=False, space=Space.BOTH, stats_only=True)
+
+        captured = capsys.readouterr()
+        assert "Summary Statistics:" in captured.out
         # Should not show detailed pair listings
-        assert "Valid real-space pairs:" not in result.output
+        assert "Valid real-space pairs:" not in captured.out
+        # Should not show efficiency improvements
+        assert "Efficiency Improvements:" not in captured.out
 
-    def test_main_combined_flags(self):
-        """Test main with combined flags."""
-        runner = CliRunner()
-        result = runner.invoke(main, ["--verbose", "--space", "real"])
+    def test_main_stats_only_with_space_real(self, capsys):
+        """Test main with stats_only=True and space=REAL."""
+        from firecrown.fctools.measurement_compatibility import Space, main
 
-        assert result.exit_code == 0
-        assert "•" in result.output
-        assert "real-space" in result.output
+        main(verbose=False, space=Space.REAL, stats_only=True)
+
+        captured = capsys.readouterr()
+        assert "Summary Statistics:" in captured.out
+        # Should not show pair listings or efficiency when stats-only
+        assert "Valid real-space pairs:" not in captured.out
+        assert "Real-space efficiency:" not in captured.out
+
+    def test_main_stats_only_with_space_harmonic(self, capsys):
+        """Test main with stats_only=True and space=HARMONIC."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=False, space=Space.HARMONIC, stats_only=True)
+
+        captured = capsys.readouterr()
+        assert "Summary Statistics:" in captured.out
+        # Should not show pair listings or efficiency when stats-only
+        assert "Valid harmonic-space pairs:" not in captured.out
+        assert "Harmonic-space efficiency:" not in captured.out
+
+    def test_main_combined_flags(self, capsys):
+        """Test main with verbose=True and space=REAL."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=True, space=Space.REAL, stats_only=False)
+
+        captured = capsys.readouterr()
+        assert "•" in captured.out
+        assert "real-space" in captured.out
+        # Should show Real-space efficiency
+        assert "Real-space efficiency:" in captured.out
+
+    def test_main_space_real_without_verbose(self, capsys):
+        """Test main with space=REAL and verbose=False."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=False, space=Space.REAL, stats_only=False)
+
+        captured = capsys.readouterr()
+        assert "Real-space measurements found:" in captured.out
+        assert "Valid real-space pairs:" in captured.out
+        # Should show Real-space efficiency
+        assert "Real-space efficiency:" in captured.out
+
+    def test_main_space_harmonic_without_verbose(self, capsys):
+        """Test main with space=HARMONIC and verbose=False."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=False, space=Space.HARMONIC, stats_only=False)
+
+        captured = capsys.readouterr()
+        assert "harmonic-space" in captured.out
+        assert "Harmonic-space efficiency:" in captured.out
+        # Should not show real-space details when space=harmonic
+        assert "Valid real-space pairs:" not in captured.out
+
+    def test_main_space_both_shows_all_sections(self, capsys):
+        """Test main with space=BOTH shows all sections."""
+        from firecrown.fctools.measurement_compatibility import Space, main
+
+        main(verbose=False, space=Space.BOTH, stats_only=False)
+
+        captured = capsys.readouterr()
+        # Should show measurements by space
+        assert "Real-space measurements found:" in captured.out
+        assert "Harmonic-space measurements found:" in captured.out
+        # Should show both pair types
+        assert "Valid real-space pairs:" in captured.out
+        assert "Valid harmonic-space pairs:" in captured.out
+        # Should show efficiency gains section
+        assert "Efficiency Improvements:" in captured.out
+        # Should show summary statistics
+        assert "Summary Statistics:" in captured.out
 
     def test_main_with_subprocess(self):
         """Test that the script can be executed directly via subprocess.
@@ -488,16 +590,26 @@ class TestIntegration:
 
     def test_cli_produces_consistent_output(self):
         """Test that CLI produces consistent output across runs."""
-        runner = CliRunner()
+        script_path = "firecrown/fctools/measurement_compatibility.py"
 
         # Run twice
-        result1 = runner.invoke(main, ["--stats-only"])
-        result2 = runner.invoke(main, ["--stats-only"])
+        result1 = subprocess.run(
+            [sys.executable, script_path, "--stats-only"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        result2 = subprocess.run(
+            [sys.executable, script_path, "--stats-only"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
 
         # Should produce identical output
-        assert result1.exit_code == 0
-        assert result2.exit_code == 0
-        assert result1.output == result2.output
+        assert result1.returncode == 0
+        assert result2.returncode == 0
+        assert result1.stdout == result2.stdout
 
     def test_all_measurements_categorized(self):
         """Test that measurements are properly categorized."""

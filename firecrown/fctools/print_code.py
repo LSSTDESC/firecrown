@@ -6,9 +6,11 @@ definitions in a formatted way suitable for syntax highlighting.
 
 import ast
 import inspect
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, List
 
-import click
+import typer
+from rich import print as richprint
+from rich.console import Console
 
 if TYPE_CHECKING:
     from .ast_utils import format_class_docstring, get_class_definition
@@ -66,15 +68,15 @@ def display_class_attributes(cls: type[Any]) -> None:
     except OSError:  # pragma: no cover
         # Defensive: inspect.getsource raises TypeError for built-ins, not OSError
         # OSError would require file read failure for an importable class (very rare)
-        print(
+        richprint(
             f"Source code not available for {cls.__name__} "
             f"(likely a built-in or C extension class)"
         )
         return
 
-    print("```python")
-    print(code_str)
-    print("```")
+    richprint("```python")
+    richprint(code_str)
+    richprint("```")
 
 
 def display_class_without_markdown(cls: type[Any]) -> None:
@@ -91,29 +93,34 @@ def display_class_without_markdown(cls: type[Any]) -> None:
     except OSError:  # pragma: no cover
         # Defensive: inspect.getsource raises TypeError for built-ins, not OSError
         # OSError would require file read failure for an importable class (very rare)
-        print(
+        richprint(
             f"Source code not available for {cls.__name__} "
             f"(likely a built-in or C extension class)"
         )
         return
 
-    print(code_str)
+    richprint(code_str)
 
 
-@click.command()
-@click.argument("class_names", nargs=-1, required=True)
-@click.option(
-    "--no-markdown", is_flag=True, help="Output plain code without markdown code blocks"
-)
-def main(class_names, no_markdown: bool):
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    class_names: List[str] = typer.Argument(
+        ..., help="One or more fully qualified class names"
+    ),
+    no_markdown: bool = typer.Option(
+        False, "--no-markdown", help="Output plain code without markdown code blocks"
+    ),
+):
     """Display class definitions with attributes and decorators.
 
     This tool inspects Python classes and displays their definitions
     in a formatted way, showing decorators, inheritance, docstrings,
     and class attributes (but not methods).
-
-    CLASS_NAMES  One or more fully qualified class names
     """
+    console = Console()
     # Select the appropriate display function based on the no_markdown flag
     if no_markdown:
         display_class_attributes_func = display_class_without_markdown
@@ -122,23 +129,22 @@ def main(class_names, no_markdown: bool):
 
     for class_name in class_names:
         try:
-            cls = import_class_from_path(class_name)
+            cls = import_class_from_path(console, class_name)
             if len(class_names) > 1:
                 print(f"\n{'=' * 60}")
-                print(f"Class: {class_name}")
-                print("=" * 60)
+                richprint(f"Class: {class_name}")
+                richprint("=" * 60)
             display_class_attributes_func(cls)
             if len(class_names) > 1:
-                print()
+                richprint()
         except (ImportError, ValueError, AttributeError) as e:  # pragma: no cover
             # Defensive: import_class_from_path calls cli_error -> sys.exit(1)
             # So SystemExit is raised instead of ImportError/ValueError/AttributeError
-            print(f"Could not import or display class {class_name}")
-            print(f"Error message: {e}")
+            richprint(f"Could not import or display class {class_name}")
+            richprint(f"Error message: {e}")
             if len(class_names) > 1:
-                print()
+                richprint()
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    main()  # pylint: disable=no-value-for-parameter
+    app()

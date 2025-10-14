@@ -2,9 +2,11 @@
 """This script provides a way to print the class hierarchy of a given type."""
 
 import inspect
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, List
 
-import click
+import typer
+from rich import print as richprint
+from rich.console import Console
 
 if TYPE_CHECKING:
     from .common import import_class_from_path
@@ -48,22 +50,28 @@ def print_one_type(idx: int, t: type) -> None:
     This function does not traverse the type hierarchy; see
     print_type_hierarchy for that purpose.
     """
-    print(f"{idx}  {full_type_name(t)}")
+    richprint(f"{idx}  {full_type_name(t)}")
     methods = get_defined_methods(t)
     for method in methods:
-        print(f"       {method}")
+        richprint(f"       {method}")
 
 
 def print_type_hierarchy(top_type: type) -> None:
     """Print the class hierarchy for the given type."""
-    print(f"Hierarchy for {full_type_name(top_type)}:")
+    richprint(f"Hierarchy for {full_type_name(top_type)}:")
     for i, t in enumerate(inspect.getmro(top_type)):
         print_one_type(i, t)
 
 
-@click.command()
-@click.argument("typenames", nargs=-1, required=True)
-def main(typenames):
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    typenames: List[str] = typer.Argument(
+        ..., help="One or more fully qualified type names"
+    )
+):
     """Print the class hierarchy for the given type(s).
 
     This tool displays the Method Resolution Order (MRO) for Python classes,
@@ -71,14 +79,14 @@ def main(typenames):
 
     TYPENAMES  One or more fully qualified type names (e.g. mymodule.MyClass)
     """
+    console = Console()
     for typename in typenames:
         # import_class_from_path handles errors via cli_error (exits on failure)
-        type_ = import_class_from_path(typename)
+        type_ = import_class_from_path(console, typename)
         if len(typenames) > 1:
-            print(f"\n{'=' * 60}")
+            richprint(f"\n{'=' * 60}")
         print_type_hierarchy(type_)
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    main()  # pylint: disable=no-value-for-parameter
+    app()

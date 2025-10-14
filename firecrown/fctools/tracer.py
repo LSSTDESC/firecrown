@@ -30,7 +30,8 @@ import runpy
 import sys
 from pathlib import Path
 
-import click
+import typer
+from rich.console import Console
 
 
 class TracerState:
@@ -126,59 +127,59 @@ def untrace(tracer: TracerState) -> None:  # pragma: no cover
     tracer.close()
 
 
-@click.command()
-@click.argument("target")
-@click.option(
-    "--output", "-o", default="trace.tsv", help="Output trace file (default: trace.tsv)"
-)
-@click.option(
-    "--module",
-    "-m",
-    is_flag=True,
-    help="Run target as a module (like python -m module)",
-)
-def main(target: str, output: str, module: bool):
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    target: str = typer.Argument(
+        ..., help="Python script file or module name to trace"
+    ),
+    output: str = typer.Option("trace.tsv", "--output", "-o", help="Output trace file"),
+    module: bool = typer.Option(
+        False, "--module", "-m", help="Run target as a module (like python -m module)"
+    ),
+):
     """Trace execution of a Python script or module.
 
     This tool enables method tracing for Python code, recording function
     calls, returns, and exceptions to a TSV file for analysis.
-
-    TARGET  Python script file or module name to trace
     """
+    console = Console()
     # Start tracing
     tracer = settrace(output)
 
     try:
         if module:
             # Run as module (like python -m)
-            click.echo(f"Tracing module: {target}")
-            click.echo(f"Trace output: {output}")
+            console.print(f"Tracing module: [cyan]{target}[/cyan]")
+            console.print(f"Trace output: [cyan]{output}[/cyan]")
             runpy.run_module(target, run_name="__main__", alter_sys=True)
         else:
             # Run as script file
             script_path = Path(target)
             if not script_path.exists():
-                click.echo(f"Error: Script file '{target}' not found.", err=True)
+                console.print(
+                    f"[bold red]Error: Script file '{target}' not found.[/bold red]"
+                )
                 sys.exit(1)
 
-            click.echo(f"Tracing script: {target}")
-            click.echo(f"Trace output: {output}")
+            console.print(f"Tracing script: [cyan]{target}[/cyan]")
+            console.print(f"Trace output: [cyan]{output}[/cyan]")
             runpy.run_path(str(script_path), run_name="__main__")
 
     except SystemExit:
         # Allow normal script exit
         pass
     except (OSError, ImportError, ValueError, RuntimeError) as e:
-        click.echo(f"Error during traced execution: {e}", err=True)
+        console.print(f"[bold red]Error during traced execution: {e}[/bold red]")
     finally:
         # Stop tracing and close file
         untrace(tracer)
-        click.echo(  # pragma: no cover
-            f"Trace complete. Output saved to: {output}"
+        console.print(  # pragma: no cover
+            f"Trace complete. Output saved to: [cyan]{output}[/cyan]"
         )  # Coverage.py/sys.settrace() interaction prevents tracking
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    # Standalone execution - tested via subprocess in test suite
-    main()  # pylint: disable=no-value-for-parameter
+    app()

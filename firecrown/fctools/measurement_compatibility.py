@@ -14,9 +14,11 @@ Physical Examples:
 """
 
 from collections.abc import Callable
+from enum import Enum
 from itertools import product
 
-import click
+import typer
+from rich.console import Console
 
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
@@ -26,6 +28,14 @@ from firecrown.metadata_types import (
     measurement_supports_harmonic,
     measurement_supports_real,
 )
+
+
+class Space(str, Enum):
+    """Enum for space types."""
+
+    REAL = "real"
+    HARMONIC = "harmonic"
+    BOTH = "both"
 
 
 def discover_measurements_by_space() -> tuple[list[Measurement], list[Measurement]]:
@@ -66,53 +76,62 @@ def generate_compatible_pairs(
 
 
 def print_measurements_by_space(
+    console: Console,
     real_measurements: list[Measurement],
     harmonic_measurements: list[Measurement],
     verbose: bool = False,
 ) -> None:
     """Print measurements categorized by space support."""
-    print(f"📊 Real-space measurements found: {len(real_measurements)}")
+    console.print(f"📊 Real-space measurements found: {len(real_measurements)}")
     if verbose:
         for m in real_measurements:
-            print(f"   • {m}")
+            console.print(f"   • {m}")
 
-    print(f"\n📊 Harmonic-space measurements found: {len(harmonic_measurements)}")
+    console.print(
+        f"\n📊 Harmonic-space measurements found: {len(harmonic_measurements)}"
+    )
     if verbose:
         for m in harmonic_measurements:
-            print(f"   • {m}")
+            console.print(f"   • {m}")
 
 
 def print_compatible_pairs(
-    space_name: str, pairs: list[tuple[Measurement, Measurement]], verbose: bool = False
+    console: Console,
+    space_name: str,
+    pairs: list[tuple[Measurement, Measurement]],
+    verbose: bool = False,
 ) -> None:
     """Print compatible measurement pairs for a given space."""
-    print(f"\n✅ Valid {space_name} pairs: {len(pairs)}")
+    console.print(f"\n✅ Valid {space_name} pairs: {len(pairs)}")
     if verbose:
         for m1, m2 in pairs:
-            print(f"   • {m1.name} + {m2.name}")
+            console.print(f"   • {m1.name} + {m2.name}")
 
 
 def print_efficiency_gains(
+    console: Console,
     real_measurements: list[Measurement],
-    harmonic_measurements: list[Measurement],
     real_pairs: list[tuple[Measurement, Measurement]],
     harmonic_pairs: list[tuple[Measurement, Measurement]],
 ) -> None:
     """Print efficiency improvements from using compatible pairs."""
     total_real_combinations = len(real_measurements) ** 2
-    total_harmonic_combinations = len(harmonic_measurements) ** 2
+    total_harmonic_combinations = len(real_measurements) ** 2
 
     real_skip_reduction = total_real_combinations - len(real_pairs)
     harmonic_skip_reduction = total_harmonic_combinations - len(harmonic_pairs)
 
-    print("\n🚀 Efficiency Improvements:")
-    print(f"   Real space: {real_skip_reduction} skipped tests eliminated")
-    print(f"   Harmonic space: {harmonic_skip_reduction} skipped tests eliminated")
+    console.print("\n🚀 Efficiency Improvements:")
+    console.print(f"   Real space: {real_skip_reduction} skipped tests eliminated")
+    console.print(
+        f"   Harmonic space: {harmonic_skip_reduction} skipped tests eliminated"
+    )
     total_reduction = real_skip_reduction + harmonic_skip_reduction
-    print(f"   Total: {total_reduction} fewer skipped tests!")
+    console.print(f"   Total: {total_reduction} fewer skipped tests!")
 
 
 def print_summary_stats(
+    console: Console,
     real_measurements: list[Measurement],
     harmonic_measurements: list[Measurement],
     real_pairs: list[tuple[Measurement, Measurement]],
@@ -123,39 +142,45 @@ def print_summary_stats(
     real_coverage = len(real_measurements) / total_measurements * 100
     harmonic_coverage = len(harmonic_measurements) / total_measurements * 100
 
-    print("\n📈 Summary Statistics:")
-    print(f"   Total measurements: {total_measurements}")
-    print(f"   Real-space coverage: {real_coverage:.1f}%")
-    print(f"   Harmonic-space coverage: {harmonic_coverage:.1f}%")
+    console.print("\n📈 Summary Statistics:")
+    console.print(f"   Total measurements: {total_measurements}")
+    console.print(f"   Real-space coverage: {real_coverage:.1f}%")
+    console.print(f"   Harmonic-space coverage: {harmonic_coverage:.1f}%")
 
     # Calculate compatibility rates
     real_total = len(real_measurements) ** 2
     real_rate = len(real_pairs) / real_total * 100
-    print(
+    console.print(
         f"   Real-space compatibility: {len(real_pairs)}/{real_total} "
         f"({real_rate:.1f}%)"
     )
 
     harmonic_total = len(harmonic_measurements) ** 2
     harmonic_rate = len(harmonic_pairs) / harmonic_total * 100
-    print(
+    console.print(
         f"   Harmonic-space compatibility: {len(harmonic_pairs)}/{harmonic_total} "
         f"({harmonic_rate:.1f}%)"
     )
 
 
-@click.command()
-@click.option(
-    "--verbose", "-v", is_flag=True, help="Show detailed list of measurements and pairs"
-)
-@click.option(
-    "--space",
-    type=click.Choice(["real", "harmonic", "both"], case_sensitive=False),
-    default="both",
-    help="Which space to analyze (default: both)",
-)
-@click.option("--stats-only", is_flag=True, help="Show only summary statistics")
-def main(verbose: bool, space: str, stats_only: bool) -> None:
+app = typer.Typer()
+
+
+@app.command()
+def main(
+    verbose: bool = typer.Option(
+        False, "--verbose", "-v", help="Show detailed list of measurements and pairs"
+    ),
+    space: Space = typer.Option(
+        Space.BOTH,
+        "--space",
+        case_sensitive=False,
+        help="Which space to analyze",
+    ),
+    stats_only: bool = typer.Option(
+        False, "--stats-only", help="Show only summary statistics"
+    ),
+) -> None:
     """Analyze measurement compatibility for Firecrown two-point functions.
 
     This tool discovers all measurement types and analyzes which combinations
@@ -180,8 +205,9 @@ def main(verbose: bool, space: str, stats_only: bool) -> None:
       python -m firecrown.fctools.measurement_compatibility --space real
       python -m firecrown.fctools.measurement_compatibility --stats-only
     """
-    print("🔍 Firecrown Measurement Compatibility Analysis")
-    print("=" * 60)
+    console = Console()
+    console.print("🔍 Firecrown Measurement Compatibility Analysis")
+    console.print("=" * 60)
 
     # Discover measurements
     real_measurements, harmonic_measurements = discover_measurements_by_space()
@@ -196,40 +222,48 @@ def main(verbose: bool, space: str, stats_only: bool) -> None:
 
     if stats_only:
         print_summary_stats(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
         )
         return
 
     # Print measurements by space
-    if space in ["real", "both"]:
-        print_measurements_by_space(real_measurements, harmonic_measurements, verbose)
+    if space in [Space.REAL, Space.BOTH]:
+        print_measurements_by_space(
+            console, real_measurements, harmonic_measurements, verbose
+        )
 
     # Print compatible pairs
-    if space in ["real", "both"]:
-        print_compatible_pairs("real-space", real_pairs, verbose)
+    if space in [Space.REAL, Space.BOTH]:
+        print_compatible_pairs(console, "real-space", real_pairs, verbose)
 
-    if space in ["harmonic", "both"]:
-        print_compatible_pairs("harmonic-space", harmonic_pairs, verbose)
+    if space in [Space.HARMONIC, Space.BOTH]:
+        print_compatible_pairs(console, "harmonic-space", harmonic_pairs, verbose)
 
     # Print efficiency gains
-    if space == "both":
-        print_efficiency_gains(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
-        )
+    if space == Space.BOTH:
+        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
         print_summary_stats(
-            real_measurements, harmonic_measurements, real_pairs, harmonic_pairs
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
         )
-    elif space == "real":
+    elif space == Space.REAL:
         real_skip_reduction = len(real_measurements) ** 2 - len(real_pairs)
-        print(
+        console.print(
             f"\n🚀 Real-space efficiency: {real_skip_reduction} skipped tests "
             "eliminated"
         )
         return
-    elif space == "harmonic":  # pragma: no branch
+    elif space == Space.HARMONIC:  # pragma: no branch
         # Coverage.py artifact: branch-to-exit tracked but not separately testable
         harmonic_skip_reduction = len(harmonic_measurements) ** 2 - len(harmonic_pairs)
-        print(
+        console.print(
             f"\n🚀 Harmonic-space efficiency: {harmonic_skip_reduction} skipped "
             "tests eliminated"
         )
@@ -237,6 +271,4 @@ def main(verbose: bool, space: str, stats_only: bool) -> None:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    # Standalone execution - tested via subprocess in test suite
-    main()  # pylint: disable=no-value-for-parameter
+    app()

@@ -7,18 +7,26 @@ but can be overridden with the --input-format option.
 """
 
 import sys
+from enum import Enum
 from pathlib import Path
 
-import click
+import typer
+from rich.console import Console
 
 try:
     import sacc
 except ImportError:  # pragma: no cover
-    click.echo(
-        "ERROR: sacc package not found. Install it with: pip install sacc",
-        err=True,
-    )
+    console = Console()
+    msg = "ERROR: sacc package not found. Install it with: pip install sacc"
+    console.print(f"[bold red]{msg}[/bold red]")
     sys.exit(1)
+
+
+class SaccFormat(str, Enum):
+    """Enum for SACC file formats."""
+
+    FITS = "fits"
+    HDF5 = "hdf5"
 
 
 def detect_format(filepath: Path) -> str:
@@ -69,36 +77,40 @@ def determine_output_path(
     return input_path.parent / f"{stem}.hdf5"
 
 
-@click.command()
-@click.argument(
-    "input_file",
-    type=click.Path(exists=True, dir_okay=False, path_type=Path),
-)
-@click.option(
-    "--output",
-    "-o",
-    type=click.Path(dir_okay=False, path_type=Path),
-    help=(
-        "Output file path. If not specified, will use input filename "
-        "with new extension."
-    ),
-)
-@click.option(
-    "--input-format",
-    "-f",
-    type=click.Choice(["fits", "hdf5"], case_sensitive=False),
-    help="Force input format (overrides automatic detection from file extension).",
-)
-@click.option(
-    "--overwrite",
-    is_flag=True,
-    help="Overwrite output file if it exists.",
-)
+app = typer.Typer()
+
+
+@app.command()
 def main(
-    input_file: Path,
-    output: Path | None,
-    input_format: str | None,
-    overwrite: bool,
+    input_file: Path = typer.Argument(
+        ...,
+        exists=True,
+        dir_okay=False,
+        readable=True,
+        resolve_path=True,
+        help="Input SACC file path",
+    ),
+    output: Path = typer.Option(
+        None,
+        "--output",
+        "-o",
+        writable=True,
+        resolve_path=True,
+        help=(
+            "Output file path. "
+            "If not specified, uses input filename with new extension."
+        ),
+    ),
+    input_format: SaccFormat = typer.Option(
+        None,
+        "--input-format",
+        "-f",
+        case_sensitive=False,
+        help="Force input format (overrides automatic detection).",
+    ),
+    overwrite: bool = typer.Option(
+        False, "--overwrite", help="Overwrite output file if it exists."
+    ),
 ) -> None:
     r"""Convert SACC files between FITS and HDF5 formats.
 
@@ -106,10 +118,9 @@ def main(
     Format detection is automatic based on file extension (.fits, .hdf5, .h5),
     but can be overridden with --input-format.
 
-    Examples
-    --------
-    Convert FITS to HDF5 (auto-detect input, auto-generate output name)::
+    Examples::
 
+        # Convert FITS to HDF5 (auto-detect input, auto-generate output name)
         python fctools/sacc_convert.py data.fits
 
     Convert HDF5 to FITS with specific output name::
@@ -125,16 +136,17 @@ def main(
 
         python fctools/sacc_convert.py data.fits --overwrite
     """
+    cons = Console()
     # Detect or use specified input format
     if input_format:
-        src_format = input_format.lower()
-        click.echo(f"Using specified input format: {src_format.upper()}")
+        src_format = input_format.value
+        cons.print(f"Using specified input format: [bold]{src_format.upper()}[/bold]")
     else:
         try:
             src_format = detect_format(input_file)
-            click.echo(f"Detected input format: {src_format.upper()}")
+            cons.print(f"Detected input format: [bold]{src_format.upper()}[/bold]")
         except ValueError as e:
-            click.echo(f"ERROR: {e}", err=True)
+            cons.print(f"[bold red]ERROR: {e}[/bold red]")
             sys.exit(1)
 
     # Determine target format (opposite of source)
@@ -145,23 +157,25 @@ def main(
 
     # Check if output exists
     if output_path.exists() and not overwrite:
-        click.echo(
-            f"ERROR: Output file '{output_path}' already exists. "
-            "Use --overwrite to replace it.",
-            err=True,
+        cons.print(
+            f"[bold red]ERROR: Output file '{output_path}' already exists. "
+            "Use --overwrite to replace it.[/bold red]"
         )
         sys.exit(1)
 
     # Read and convert
     _read_and_convert_file(
-        input_file, src_format, output_path, target_format, overwrite
+        cons, input_file, src_format, output_path, target_format, overwrite
     )
 
     # Display success info
-    _display_conversion_summary(input_file, src_format, output_path, target_format)
+    _display_conversion_summary(
+        cons, input_file, src_format, output_path, target_format
+    )
 
 
 def _read_and_convert_file(
+    cons: Console,
     input_file: Path,
     src_format: str,
     output_path: Path,
@@ -170,22 +184,23 @@ def _read_and_convert_file(
 ) -> None:
     """Read input file and write to output format."""
     # Read input file
-    click.echo(f"Reading {src_format.upper()} file: {input_file}")
+    cons.print(f"Reading {src_format.upper()} file: [cyan]{input_file}[/cyan]")
     try:
         if src_format == "fits":
             data = sacc.Sacc.load_fits(str(input_file))
         else:  # hdf5
             data = sacc.Sacc.load_hdf5(str(input_file))
     except OSError:
-        click.echo("ERROR: Failed to read input file as SACC data.")
-        click.echo(
+        cons.print(
+            "[bold red]ERROR: Failed to read input file as SACC data.[/bold red]"
+        )
+        cons.print(
             f"The file may not be a valid SACC {src_format.upper()} file.",
-            err=True,
         )
         sys.exit(1)
 
     # Write output file
-    click.echo(f"Writing {target_format.upper()} file: {output_path}")
+    cons.print(f"Writing {target_format.upper()} file: [cyan]{output_path}[/cyan]")
     try:
         if target_format == "fits":
             data.save_fits(str(output_path), overwrite=overwrite)
@@ -195,35 +210,42 @@ def _read_and_convert_file(
                 output_path.unlink()
             data.save_hdf5(str(output_path))
     except OSError as e:
-        click.echo(f"ERROR: Failed to write SACC data to output file: {e}", err=True)
+        cons.print(
+            f"[bold red]ERROR: Failed to write SACC data to output file: {e}[/bold red]"
+        )
         sys.exit(1)
 
 
 def _display_conversion_summary(
-    input_file: Path, src_format: str, output_path: Path, target_format: str
+    cons: Console,
+    input_file: Path,
+    src_format: str,
+    output_path: Path,
+    target_format: str,
 ) -> None:
     """Display conversion summary with file sizes."""
     input_size = input_file.stat().st_size
     output_size = output_path.stat().st_size
 
-    click.echo("\n" + "=" * 60)
-    click.echo("✅ Conversion successful!")
-    click.echo("=" * 60)
-    click.echo(f"Input:  {input_file} ({src_format.upper()}, {input_size:,} bytes)")
-    click.echo(
-        f"Output: {output_path} " f"({target_format.upper()}, {output_size:,} bytes)"
+    cons.print("\n" + "=" * 60)
+    cons.print("✅ [bold green]Conversion successful![/bold green]")
+    cons.print("=" * 60)
+    input_info = f"({src_format.upper()}, {input_size:,} bytes)"
+    cons.print(f"Input:  [cyan]{input_file}[/cyan] {input_info}")
+    cons.print(
+        f"Output: [cyan]{output_path}[/cyan] "
+        f"({target_format.upper()}, {output_size:,} bytes)"
     )
 
     if output_size < input_size:
         ratio = (1 - output_size / input_size) * 100
-        click.echo(f"Size reduction: {ratio:.1f}%")
+        cons.print(f"Size reduction: [bold green]{ratio:.1f}%[/bold green]")
     elif output_size > input_size:
         ratio = (output_size / input_size - 1) * 100
-        click.echo(f"Size increase: {ratio:.1f}%")
+        cons.print(f"Size increase: [bold red]{ratio:.1f}%[/bold red]")
     else:
-        click.echo("Size unchanged")
+        cons.print("Size unchanged")
 
 
 if __name__ == "__main__":  # pragma: no cover
-    # Click decorators inject arguments automatically from sys.argv
-    main()  # pylint: disable=no-value-for-parameter
+    app()
