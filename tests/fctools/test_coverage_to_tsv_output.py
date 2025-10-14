@@ -527,13 +527,15 @@ def test_main_direct_basic(tmp_path, capsys):
 
     # Verify console output (Rich may wrap long paths with newlines)
     captured = capsys.readouterr()
-    assert "Reading coverage data from" in captured.out
-    assert "coverage.json" in captured.out
-    assert "Extracting function-level coverage data" in captured.out
-    assert "Writing 1 records to" in captured.out
-    assert "Successfully converted coverage data to TSV format" in captured.out
-    assert "Output file:" in captured.out
-    assert "Records written: 1" in captured.out
+    assert match_wrapped(captured.out, "Reading coverage data from")
+    assert match_wrapped(captured.out, "coverage.json")
+    assert match_wrapped(captured.out, "Extracting function-level coverage data")
+    assert match_wrapped(captured.out, "Writing 1 records to")
+    assert match_wrapped(
+        captured.out, "Successfully converted coverage data to TSV format"
+    )
+    assert match_wrapped(captured.out, "Output file:")
+    assert match_wrapped(captured.out, "Records written: 1")
 
 
 def test_main_direct_with_timing(tmp_path, capsys):
