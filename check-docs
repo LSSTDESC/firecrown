@@ -1,0 +1,8 @@
+#!/usr/bin/env bash -x
+
+# Remove all generated documentation artifacts
+rm -rf tutorial/_freeze tutorial/.quarto/_freeze docs/_build docs/_static/ docs/autoapi/ docs/warnings.txt
+
+# Build the tutorial first, so that the Sphinx docs can link to them
+quarto render tutorial --output-dir=../docs/_static
+make -C docs html

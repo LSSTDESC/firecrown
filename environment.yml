@@ -29,7 +29,7 @@ dependencies:
   - more-itertools
   - mypy
   - numcosmo >= 0.21.1
-  - numpy >= 1.25.0
+  - numpy >= 2.0
   - pip >= 20.1  # pip is needed as dependency
   - pip:
     - cobaya
@@ -51,7 +51,7 @@ dependencies:
   - requests
   - rich
   - sacc >= 2.1
-  - scipy
+  - scipy >= 1.12
   - sphinx
   - sphinx-autoapi
   - sphinx-autodoc-typehints
