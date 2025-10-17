@@ -36,17 +36,20 @@ This is the procedure we use for create a new release of Firecrown.
 1. When the CI system passes, merge the PR.
 1. Use the GitHub web interface to tag the commit.
     Allow the automated system to generate the release notes.
+    Make sure "Set as the latest release" is checked (or Conda will not find it).
 1. Create the new `conda` release.
-    You do this in your local clone of the conda-forge feedstock repository (<https://github.com/conda-forge/firecrown-feedstock>).
+   This can be done through the web interface at <https://github.com/conda-forge/firecrown-feedstock>.
+   Create a new issue.
+   From the pop-up window, choose "Bot commands"
+   In the next pop-up, set the title to be "@conda-forge-admin, please update version" (without the quotes).
 
-    1. `git pull` to make sure you have the latest version of everything.
-    2. Edit `recipe/meta.yaml` to update the version, and to reset the build number to 0.
-       Make sure any version pinning in `meta.yaml` (which will be used by the conda solver) is consistent with Firecrown's `environment.yml`.
-       Add any new dependencies, if appropriate.
-       Download the new `.tar.gz` file from the Firecrown repo, find the `sha256sum` of the file.
-       Update that in the `meta.yaml` file.
-    3. Commit and push changes.
-    4. If you make an error, make sure you update the build number.
+   The PR will be created by the bot.
+   Look at the files modified in the PR.
+   In the recipe directory, look at meta.yaml. Update any versions needed.
+   Then add a comment "@conda-forge-admin, please rerender" to the PR.
+   Wait for the github actions to do their thing.
+   Check and approve the PR.
+   When they are all done, merge th PR.
 
 1. Immediately change the version in `firecrown/version.py` to the next development version, then run `python tutorial/update_quarto_version.py` to update the tutorial.
     If the release just made is x.y.z, the new development version should be x.y.(z+1)a0 (where 'a0' indicates alpha/development status).
