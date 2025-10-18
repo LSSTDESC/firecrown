@@ -2,7 +2,7 @@
 
 Each of these main Firecrown concepts is represented by one (or several) types in Firecrown.
 
-The type used to represent a cosmology in Firecrown comes from CCL: [`pyccl.Cosmology`](https://ccl.readthedocs.io/en/latest/api/pyccl.html?highlight=pyccl.Cosmology#pyccl.Cosmology).
+The type used to represent a cosmology in Firecrown comes from CCL: [`pyccl.Cosmology`](https://ccl.readthedocs.io/en/latest/api/pyccl.cosmology.html).
 This class represents a parameterized cosmology.
 
 The modeling tools are represented by `firecrown.modeling_tools.ModelingTools`.

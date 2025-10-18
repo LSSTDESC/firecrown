@@ -23,6 +23,6 @@ require that the `CLASS` paper be cited:
     arXiv:1104.2933, JCAP 1107 (2011) 034.
 
 The `CLASS` repository can be found in http://class-code.net. CCL also uses code
-from the `FFTLog <http://casa.colorado.edu/~ajsh/FFTLog/>`_ package. We have
+from the `FFTLog <https://jila.colorado.edu/~ajsh/FFTLog/>`_ package. We have
 obtained permission from the FFTLog author to include modified versions of his
 source code.
