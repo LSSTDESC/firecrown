@@ -51,12 +51,16 @@ def fixture_sample_site(site_dir: Path) -> Path:
 
 @pytest.fixture(name="mock_requests_ok")
 def fixture_mock_requests_ok(monkeypatch):
-    """Mock ``requests.Session.get`` to return a simple HTML page containing id 'extid'."""
+    """Mock ``requests.Session.get``.
+
+    Mock to return a simple HTML page containing id 'extid'.
+    """
 
     class FakeResp:
         """Fake response object for requests.get()."""
 
         def __init__(self, content: str):
+            """Initialize with given content string."""
             self.content = content.encode("utf-8")
 
         def raise_for_status(self):
@@ -76,11 +80,11 @@ def test_extract_ids_basic(site_dir: Path):
     html = site_dir / "page.html"
     html.write_text(
         """
-	<html><body>
-	  <div id="one"></div>
-	  <a name="two"></a>
-	</body></html>
-	""",
+    <html><body>
+      <div id="one"></div>
+      <a name="two"></a>
+    </body></html>
+    """,
     )
 
     ids = link_checker.extract_ids(html)
@@ -140,13 +144,15 @@ def test_skip_external_prevents_download_and_allows_success(
 
     monkeypatch.setattr(requests.Session, "get", _raise_get)
 
-    # When skipping external links, the run should succeed because externals are not validated
+    # When skipping external links, the run should succeed because externals are not
+    # validated.
     code = link_checker.main(
         site_dir, download_timeout=1, verbose=False, skip_external=True
     )
     assert code == 0
 
-    # When not skipping externals, the SiteChecker will try to download and fail -> return non-zero
+    # When not skipping externals, the SiteChecker will try to download and fail ->
+    # return non-zero.
     code2 = link_checker.main(
         site_dir, download_timeout=1, verbose=False, skip_external=False
     )
@@ -412,6 +418,211 @@ def test_normalize_href_with_url_multiple_times_uses_cache(
         assert download_count == 1
     finally:
         sc.close()
+
+
+def test_page_with_id_with_no_value(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with an element that has an id attribute with no value
+    (sample_site / "idless.html").write_text("<html><body><div id></div></body></html>")
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # No links should be missing since there are no links in the file
+    assert not missing
+    assert sc.valid_links == 0
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 0
+    assert sc.invalid_anchors == 0
+
+
+def test_page_with_name_with_no_value(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with an element that has a name attribute with no value
+    (sample_site / "nameless.html").write_text("<html><body><a name></a></body></html>")
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # No links should be missing since there are no links in the file
+    assert not missing
+    assert sc.valid_links == 0
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 0
+    assert sc.invalid_anchors == 0
+
+
+def test_page_with_href_with_no_value(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with a link that has an href attribute with no value
+    (sample_site / "hrefless.html").write_text("<html><body><a href></a></body></html>")
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # No links should be missing since the href is empty
+    assert not missing
+    assert sc.valid_links == 0
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 0
+    assert sc.invalid_anchors == 0
+
+
+def test_skipping_external_links_verbose_output(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with an external link
+    (sample_site / "external.html").write_text(
+        '<a href="http://example.invalid/page.html#frag">ext</a>'
+    )
+
+    console = Console(record=True)
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=True,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # No links should be missing since external links are skipped
+    assert not missing
+    out = console.export_text()
+    # The output should indicate that external links are being skipped
+    assert "Skipping external link" in out
+
+
+def test_page_with_multiple_ids(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with multiple elements having ids
+    (sample_site / "multiid.html").write_text(
+        "<html><body><div id='id1'></div><span id='id2'>"
+        "</span><a id='id3'></a></body></html>"
+    )
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    for key, value in sc.targets.items():
+        if "multiid.html" in str(key):
+            assert value.ids == {"id1", "id2", "id3"}
+
+    # No links should be missing since there are no links in the file
+    assert not missing
+    assert sc.valid_links == 0
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 0
+    assert sc.invalid_anchors == 0
+
+
+def test_page_with_links_with_same_url_and_different_fragments(
+    sample_site: Path, mock_requests_ok
+):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with multiple links to the same URL but different fragments
+    (sample_site / "links.html").write_text(
+        '<a href="multiid.html#id1">Link to id1</a>'
+        '<a href="multiid.html#id2">Link to id2</a>'
+        '<a href="multiid.html#id3">Link to id3</a>'
+    )
+    # Create the target page with the corresponding ids
+    (sample_site / "multiid.html").write_text(
+        "<html><body><div id='id1'></div><span id='id2'>"
+        "</span><a id='id3'></a></body></html>"
+    )
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # No links should be missing since all fragments exist
+    assert not missing
+    assert sc.valid_links == 1
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 3
+    assert sc.invalid_anchors == 0
+
+
+def test_link_without_fragment_is_handled_correctly(
+    sample_site: Path, mock_requests_ok
+):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    # Create a page with a link without a fragment
+    (sample_site / "nolinkfrag.html").write_text(
+        '<a href="page.html">Link to page without fragment</a>'
+    )
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # No links should be missing since all fragments exist
+    assert not missing
+    assert sc.valid_links == 1
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 0
+    assert sc.invalid_anchors == 0
 
 
 def test_cli_runner_exit_codes(sample_site: Path, mock_requests_ok):

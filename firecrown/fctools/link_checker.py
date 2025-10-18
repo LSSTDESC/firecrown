@@ -66,12 +66,14 @@ def _extract_ids_from_soup(soup: BeautifulSoup) -> set[str]:
     for tag in soup.find_all(attrs={"id": True}):
         assert isinstance(tag, bs4.Tag)
         val = tag.get("id")
-        if isinstance(val, str):
+        if val:
+            assert isinstance(val, str)
             ids.append(val)
     for tag in soup.find_all(attrs={"name": True}):
         assert isinstance(tag, bs4.Tag)
         val = tag.get("name")
-        if isinstance(val, str):
+        if val:
+            assert isinstance(val, str)
             ids.append(val)
     return set(x for x in ids if x)
 
@@ -128,7 +130,9 @@ class SiteChecker:
                     "AppleWebKit/537.36 (KHTML, like Gecko) "
                     "Chrome/120.0 Safari/537.36"
                 ),
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept": (
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+                ),
                 "Accept-Language": "en-US,en;q=0.5",
             }
         )
@@ -154,7 +158,7 @@ class SiteChecker:
         :param full_path: Filesystem path to the file (downloaded or local).
         """
         if url_str not in self.targets:
-            ids = set()
+            ids: set[str] = set()
             if full_path.exists():
                 ids = extract_ids(full_path)
             page_anchors = PageAnchors(url_str, full_path, ids)
@@ -164,7 +168,8 @@ class SiteChecker:
         """Download an external HTTP(S) page into the temporary cache.
 
         :param url_str: External HTTP(S) URL to download.
-        :returns: Local filesystem Path for the downloaded page (or where it would be stored).
+        :returns: Local filesystem Path for the downloaded page (or where it would be
+            stored).
         """
         url_hash = sha1(url_str.encode()).hexdigest()
         subdir = self.tmp_root / url_hash
@@ -285,10 +290,6 @@ class SiteChecker:
                 if not anchors:
                     continue
 
-                if page_anchors.ids is None:
-                    missing_links.append((str(file_path), url_str, "no ids extracted"))
-                    continue
-
                 # All ids in anchors that are not in page_anchors.ids
                 missing_ids = sorted(list(anchors - page_anchors.ids))
                 self.invalid_anchors += len(missing_ids)
@@ -310,9 +311,11 @@ class SiteChecker:
         shutil.rmtree(self.tmp_root)
 
     def __enter__(self):
+        """Enter context manager."""
         return self
 
     def __exit__(self, exc_type, exc, tb):
+        """Exit context manager and clean up temporary files."""
         self.close()
 
 
@@ -329,7 +332,6 @@ def main(
     :param verbose: Enable verbose output (show downloads and skipped links).
     :param skip_external: When True, do not download or validate external http(s) links.
     """
-
     console = Console()
 
     start = time.perf_counter()
@@ -378,7 +380,8 @@ def main(
 
     console.print(table)
 
-    # Return non-zero exit code so CI (e.g. GitHub Actions) fails when broken links are found
+    # Return non-zero exit code so CI (e.g. GitHub Actions) fails when broken links are
+    # found.
     return 1
 
 
@@ -412,7 +415,10 @@ def cli(
         bool,
         typer.Option(
             "--skip-external",
-            help="Do not download or validate external http(s) links; treat them as skipped",
+            help=(
+                "Do not download or validate external http(s) links; "
+                "treat them as skipped"
+            ),
         ),
     ] = False,
 ):
