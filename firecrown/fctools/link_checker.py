@@ -15,6 +15,7 @@ from typing import Annotated
 from dataclasses import dataclass
 from pathlib import Path
 from hashlib import sha1
+import time
 import tempfile
 import os
 import shutil
@@ -103,6 +104,7 @@ class SiteChecker:
         console: Console,
         download_timeout: int,
         verbose: bool = False,
+        skip_external: bool = False,
     ) -> None:
         self.root_dir = Path(root_dir)
         self.html_files: list[Path] = []
@@ -115,7 +117,8 @@ class SiteChecker:
         self.invalid_anchors: int = 0
         self.console = console
         self.download_timeout = download_timeout
-        self.verbose = bool(verbose)
+        self.verbose = verbose
+        self.skip_external = skip_external
 
         self.session = requests.Session()
         self.session.headers.update(
@@ -234,6 +237,13 @@ class SiteChecker:
             href = str(href_val)
 
             url_str, target_path, frag = self._normalize_href(file_path, href)
+            # Optionally skip external links entirely (do not download/check)
+            if self.skip_external and url_str.startswith("http"):
+                if self.verbose:
+                    self.console.print(
+                        f"[yellow]Skipping external link[/yellow] {url_str}"
+                    )
+                continue
             self.add_to_targets(url_str, target_path)
 
             if url_str not in links:
@@ -308,34 +318,56 @@ class SiteChecker:
 
 
 def main(
-    root_dir: str | Path, download_timeout: int = 20, verbose: bool = False
+    root_dir: str | Path,
+    download_timeout: int = 20,
+    verbose: bool = False,
+    skip_external: bool = False,
 ) -> None:
-    """Main function."""
+    """Main function.
+
+    :param root_dir: Directory to scan for HTML files.
+    :param download_timeout: Timeout (seconds) for downloading external links.
+    :param verbose: Enable verbose output (show downloads and skipped links).
+    :param skip_external: When True, do not download or validate external http(s) links.
+    """
 
     console = Console()
 
-    with SiteChecker(
-        root_dir, download_timeout=download_timeout, verbose=verbose, console=console
-    ) as html_pages:
-        missing_links = html_pages.check_anchors()
+    start = time.perf_counter()
+    console.rule("[bold blue]HTML Link Checker[/bold blue]")
+    with console.status("Scanning HTML files and validating links...", spinner="dots"):
+        with SiteChecker(
+            root_dir,
+            download_timeout=download_timeout,
+            verbose=verbose,
+            console=console,
+            skip_external=skip_external,
+        ) as html_pages:
+            missing_links = html_pages.check_anchors()
+    elapsed = time.perf_counter() - start
 
     if not missing_links:
-        console.print(Panel("No broken links found", title="OK", style="green"))
+        console.print(
+            Panel(
+                f"No broken links found\nElapsed: {elapsed:.2f}s",
+                title="OK",
+                style="green",
+            )
+        )
         return
 
     # Now we print how many downloaded files there were, number of valid/invalid links
     # and anchors.
-    console.print(
-        Panel(
-            f"Downloaded {len(html_pages.downloaded_files)} external files\n"
-            f"Valid links: {html_pages.valid_links}\n"
-            f"Invalid links: {html_pages.invalid_links}\n"
-            f"Valid anchors: {html_pages.valid_anchors}\n"
-            f"Invalid anchors: {html_pages.invalid_anchors}",
-            title="Summary",
-            style="blue",
-        )
+    summary = (
+        f"Downloaded: {len(html_pages.downloaded_files)} external files\n"
+        f"Files scanned: {len(html_pages.html_files)}\n"
+        f"Elapsed: {elapsed:.2f}s\n"
+        f"Valid links: {html_pages.valid_links}\n"
+        f"Invalid links: {html_pages.invalid_links}\n"
+        f"Valid anchors: {html_pages.valid_anchors}\n"
+        f"Invalid anchors: {html_pages.invalid_anchors}"
     )
+    console.print(Panel(summary, title="Summary", style="blue"))
 
     table = Table(title="Broken links")
     table.add_column("Source", style="cyan")
@@ -377,9 +409,21 @@ def cli(
         bool,
         typer.Option("-v", "--verbose", help="Enable verbose output (show downloads)"),
     ] = False,
+    skip_external: Annotated[
+        bool,
+        typer.Option(
+            "--skip-external",
+            help="Do not download or validate external http(s) links; treat them as skipped",
+        ),
+    ] = False,
 ):
     """Command-line entry point using Typer and Rich for output."""
-    main(root_dir, download_timeout=download_timeout, verbose=verbose)
+    main(
+        root_dir,
+        download_timeout=download_timeout,
+        verbose=verbose,
+        skip_external=skip_external,
+    )
 
 
 if __name__ == "__main__":
