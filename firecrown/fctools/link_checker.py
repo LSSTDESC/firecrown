@@ -322,7 +322,7 @@ def main(
     download_timeout: int = 20,
     verbose: bool = False,
     skip_external: bool = False,
-) -> None:
+) -> int:
     """Main function.
 
     :param root_dir: Directory to scan for HTML files.
@@ -354,7 +354,7 @@ def main(
                 style="green",
             )
         )
-        return
+        return 0
 
     # Now we print how many downloaded files there were, number of valid/invalid links
     # and anchors.
@@ -378,6 +378,9 @@ def main(
         table.add_row(str(src_file), str(target_file), reason)
 
     console.print(table)
+
+    # Return non-zero exit code so CI (e.g. GitHub Actions) fails when broken links are found
+    return 1
 
 
 app = typer.Typer(
@@ -418,12 +421,13 @@ def cli(
     ] = False,
 ):
     """Command-line entry point using Typer and Rich for output."""
-    main(
+    code = main(
         root_dir,
         download_timeout=download_timeout,
         verbose=verbose,
         skip_external=skip_external,
     )
+    raise typer.Exit(code=code)
 
 
 if __name__ == "__main__":
