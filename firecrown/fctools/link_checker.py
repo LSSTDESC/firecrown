@@ -1,6 +1,14 @@
-"""Check for broken anchor links in HTML files.
+"""Scan HTML files and check for broken anchor links.
 
-This script uses Typer for a CLI and Rich for pretty terminal output.
+The module provides a SiteChecker class which scans local HTML files,
+extracts anchor identifiers (from ``id`` and ``name`` attributes), resolves
+links (including optional downloading of external HTTP(S) pages into a
+temporary cache), and reports missing files or missing anchor identifiers.
+
+Usage example::
+
+    python -m firecrown.fctools.link_checker path/to/html_dir -v
+
 """
 
 from typing import Annotated
@@ -22,9 +30,11 @@ import bs4
 
 @dataclass
 class PageAnchors:
-    """Represent a page's URL, its path, and extracted ids.
+    """Holds information about a single HTML page.
 
-    Ids can be either `id` or `name` attributes.
+    :param url_str: Canonical string used as a key for the page (local path or URL).
+    :param path: Filesystem Path pointing to the local copy of the page.
+    :param ids: Set of anchor identifiers discovered on the page.
     """
 
     url_str: str
@@ -33,13 +43,24 @@ class PageAnchors:
 
 
 def _parse_html(path: Path) -> BeautifulSoup:
-    """Read and parse an HTML file into a BeautifulSoup object."""
+    """Open and parse an HTML file into a BeautifulSoup object.
+
+    :param path: Path to the HTML file to parse.
+    :returns: Parsed BeautifulSoup document.
+    """
     with open(path, "r", encoding="utf-8") as f:
         return BeautifulSoup(f, "html.parser")
 
 
 def _extract_ids_from_soup(soup: BeautifulSoup) -> set[str]:
-    """Return a set of id and name attributes found in the soup."""
+    """Extract anchor identifiers from a parsed HTML document.
+
+    This collects values from both ``id`` and ``name`` attributes and returns
+    them as a deduplicated set of strings.
+
+    :param soup: Parsed BeautifulSoup document.
+    :returns: Set of found anchor identifier strings.
+    """
     ids: list[str] = []
     for tag in soup.find_all(attrs={"id": True}):
         if tag is not None and isinstance(tag, bs4.Tag):
@@ -55,16 +76,25 @@ def _extract_ids_from_soup(soup: BeautifulSoup) -> set[str]:
 
 
 def extract_ids(file_path: Path) -> set[str]:
-    """Extract IDs from an HTML file."""
+    """Extract anchor identifiers from an HTML file.
+
+    :param file_path: Path to the local HTML file.
+    :returns: Set of anchor identifier strings found in the file.
+    """
     soup = _parse_html(file_path)
     return _extract_ids_from_soup(soup)
 
 
 class SiteChecker:
-    """Represent HTML pages and their extracted IDs.
+    """Scan a directory of HTML files and validate anchor links.
 
-    This class is a context manager to ensure the temporary download directory
-    is removed reliably.
+    SiteChecker walks ``root_dir`` collecting local ``.html`` files and the
+    set of anchors found in each. When checking links it normalizes each
+    ``href``, downloading external pages into a temporary cache so their
+    anchors can be validated. The object is a context manager and will
+    remove the temporary download cache when closed.
+
+    The instance maintains counters of valid/invalid links and anchors for reporting.
     """
 
     def __init__(
@@ -115,7 +145,11 @@ class SiteChecker:
                     self.targets[url_str] = page_anchors
 
     def add_to_targets(self, url_str: str, full_path: Path) -> None:
-        """Add a URL string and its corresponding full path to the targets dictionary."""
+        """Ensure a URL string is present in the ``targets`` mapping.
+
+        :param url_str: Canonical URL string used as the dictionary key.
+        :param full_path: Filesystem path to the file (downloaded or local).
+        """
         if url_str not in self.targets:
             ids = set()
             if full_path.exists():
@@ -124,9 +158,10 @@ class SiteChecker:
             self.targets[url_str] = page_anchors
 
     def _download_url(self, url_str: str) -> Path:
-        """Download a URL into a unique subdir under tmp_root and return the Path.
+        """Download an external HTTP(S) page into the temporary cache.
 
-        Raises the underlying exception on failure.
+        :param url_str: External HTTP(S) URL to download.
+        :returns: Local filesystem Path for the downloaded page (or where it would be stored).
         """
         url_hash = sha1(url_str.encode()).hexdigest()
         subdir = self.tmp_root / url_hash
@@ -154,14 +189,11 @@ class SiteChecker:
     def _normalize_href(
         self, file_path: Path, href: str
     ) -> tuple[str, Path, str | None]:
-        """Normalize an href into (target_path, fragment) or return None if it should
-        be skipped.
+        """Resolve an anchor href to a canonical URL string, local Path, and fragment.
 
-        - If href contains a fragment (#frag) we return the fragment as the second element.
-        - If href points to an http(s) resource we download it to tmp_root and return
-          the local path.
-        - If the href is purely an anchor ("#frag") the target path is the same file.
-        - Returns None when the href should be ignored (empty fragment).
+        :param file_path: The source HTML file containing the href.
+        :param href: The raw href string extracted from the anchor tag.
+        :returns: Tuple of (url_str, path, fragment_or_None).
         """
         assert isinstance(href, str)
         url_str, frag = href.split("#", 1) if "#" in href else (href, None)
@@ -186,9 +218,10 @@ class SiteChecker:
         return (url_str, path, frag)
 
     def extract_links(self, file_path: Path) -> dict[str, set[str]]:
-        """Extract anchor and non-anchor links from an HTML file.
+        """Collect links from an HTML file and group fragments by target URL.
 
-        Returns a dictionary mapping URL strings to sets of fragments (or None).
+        :param file_path: Local path of the HTML file to scan for anchor tags.
+        :returns: Mapping from target URL string to a set of anchor fragments (strings).
         """
         soup = _parse_html(file_path)
         links: dict[str, set[str]] = {}
@@ -211,9 +244,16 @@ class SiteChecker:
         return links
 
     def check_anchors(self) -> list[tuple[str, str, str]]:
-        """Check anchors and links in the collected HTML files.
+        """Validate all links and anchors collected from the site.
 
-        Returns a list of tuples: (source_file, target_file, fragment_or_None, reason)
+        The method iterates over all collected HTML files, resolves links,
+        ensures target files are reachable (downloading externals when
+        necessary), and checks that requested anchor fragments exist on the
+        target page.
+
+        :returns: A list of (source_file, target_url_str, reason) tuples
+            describing broken links or missing anchors. Counters for
+            valid/invalid links and anchors are updated on the instance.
         """
         missing_links: list[tuple[str, str, str]] = []
 
@@ -257,7 +297,7 @@ class SiteChecker:
         return missing_links
 
     def close(self) -> None:
-        """Close the temporary directory."""
+        """Remove the temporary download cache directory used for external pages."""
         shutil.rmtree(self.tmp_root)
 
     def __enter__(self):
@@ -308,7 +348,10 @@ def main(
     console.print(table)
 
 
-app = typer.Typer(help="Check for broken anchor links in a directory of HTML files.")
+app = typer.Typer(
+    help="Check for broken anchor links in a directory of HTML files.",
+    no_args_is_help=True,
+)
 
 
 @app.command()
