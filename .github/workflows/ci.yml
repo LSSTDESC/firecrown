@@ -201,7 +201,6 @@ jobs:
 
   external-dependencies:
     name: External dependencies and documentation
-    needs: firecrown-miniforge
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -272,7 +271,7 @@ jobs:
         run: |
           quarto render tutorial --output-dir=../docs/_static
           make -C docs html
-          linkchecker -f linkcheckerrc docs/_build/html
+          python -m firecrown.fctools.link_checker docs/_build/html -v
       - name: Pip-install Augur and test it
         shell: bash -l {0}
         run: |
