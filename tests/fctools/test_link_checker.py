@@ -13,6 +13,7 @@ import requests
 import pytest
 
 from rich.console import Console
+from typer.testing import CliRunner
 
 from firecrown.fctools import link_checker
 
@@ -53,10 +54,13 @@ def fixture_mock_requests_ok(monkeypatch):
     """Mock ``requests.Session.get`` to return a simple HTML page containing id 'extid'."""
 
     class FakeResp:
+        """Fake response object for requests.get()."""
+
         def __init__(self, content: str):
             self.content = content.encode("utf-8")
 
         def raise_for_status(self):
+            """Simulate a successful response."""
             return None
 
     def _fake_get(_self, _url, timeout=None, **_kwargs):
@@ -197,3 +201,136 @@ def test_external_download_fails_when_get_raises(sample_site: Path, monkeypatch)
         sample_site, download_timeout=1, verbose=False, skip_external=False
     )
     assert code != 0
+
+
+def test_download_url_writes_file_when_ok(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    console = Console(record=True)
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=True,
+        skip_external=False,
+    )
+    try:
+        # pylint: disable-next=protected-access
+        path = sc._download_url("http://example.invalid/page.html")
+        # file should be present under tmp cache
+        assert path.exists()
+        content = path.read_bytes().decode("utf-8")
+        assert "extid" in content
+    finally:
+        sc.close()
+
+
+def test_download_url_handles_failure_and_returns_path(sample_site: Path, monkeypatch):
+    console = Console(record=True)
+
+    def _raise(self, url, timeout=None, **_kwargs):
+        raise requests.RequestException("network boom")
+
+    monkeypatch.setattr(requests.Session, "get", _raise)
+
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=True,
+        skip_external=False,
+    )
+    try:
+        # pylint: disable-next=protected-access
+        path = sc._download_url("http://example.invalid/page.html")
+        # path is returned but file should not exist because download failed
+        assert not path.exists()
+        # console should have a download-failed message
+        out = console.export_text()
+        assert "Download failed" in out
+    finally:
+        sc.close()
+
+
+def test_normalize_fragment_only(sample_site: Path):
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        fp = sample_site / "page.html"
+        fp.write_text('<a id="x"></a>')
+        # pylint: disable-next=protected-access
+        url_str, path, frag = sc._normalize_href(fp, "#x")
+        assert url_str == str(fp)
+        assert path == fp
+        assert frag == "x"
+    finally:
+        sc.close()
+
+
+def test_missing_file_reports_file_missing(sample_site: Path):
+    # source linking to a missing file
+    (sample_site / "src.html").write_text('<a href="nope.html">bad</a>')
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+    assert missing
+    # reason for the first missing link should be 'file missing'
+    assert any(r == "file missing" for _, _, r in missing)
+
+
+def test_unreachable_external_is_reported(sample_site: Path, monkeypatch):
+    # external link with download failing
+    (sample_site / "ext3.html").write_text(
+        '<a href="http://example.invalid/page.html#frag">ext</a>'
+    )
+
+    def _raise(self, url, timeout=None, **_kwargs):
+        raise requests.RequestException("boom")
+
+    monkeypatch.setattr(requests.Session, "get", _raise)
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=False,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    assert missing
+    # unreachable link should be reported
+    assert any(r == "unreachable link" for _, _, r in missing)
+
+
+def test_cli_runner_exit_codes(sample_site: Path, mock_requests_ok):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    runner = CliRunner()
+
+    # success case: create a valid local link
+    (sample_site / "ok.html").write_text('<a href="page.html#p1">ok</a>')
+    result = runner.invoke(link_checker.app, [str(sample_site), "--skip-external"])
+    assert result.exit_code == 0
+
+    # failure case: create a broken link
+    (sample_site / "bad.html").write_text('<a href="missing.html#x">bad</a>')
+    result2 = runner.invoke(link_checker.app, [str(sample_site), "--skip-external"])
+    assert result2.exit_code != 0
