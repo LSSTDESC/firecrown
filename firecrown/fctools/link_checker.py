@@ -64,15 +64,15 @@ def _extract_ids_from_soup(soup: BeautifulSoup) -> set[str]:
     """
     ids: list[str] = []
     for tag in soup.find_all(attrs={"id": True}):
-        if tag is not None and isinstance(tag, bs4.Tag):
-            val = tag.get("id")
-            if isinstance(val, str):
-                ids.append(val)
+        assert isinstance(tag, bs4.Tag)
+        val = tag.get("id")
+        if isinstance(val, str):
+            ids.append(val)
     for tag in soup.find_all(attrs={"name": True}):
-        if tag is not None and isinstance(tag, bs4.Tag):
-            val = tag.get("name")
-            if isinstance(val, str):
-                ids.append(val)
+        assert isinstance(tag, bs4.Tag)
+        val = tag.get("name")
+        if isinstance(val, str):
+            ids.append(val)
     return set(x for x in ids if x)
 
 
@@ -229,8 +229,7 @@ class SiteChecker:
         soup = _parse_html(file_path)
         links: dict[str, set[str]] = {}
         for tag in soup.find_all("a", href=True):
-            if tag is None or not isinstance(tag, bs4.Tag):
-                continue
+            assert isinstance(tag, bs4.Tag)
             href_val = tag.get("href")
             if not href_val:
                 continue
@@ -383,13 +382,10 @@ def main(
     return 1
 
 
-app = typer.Typer(
-    help="Check for broken anchor links in a directory of HTML files.",
-    no_args_is_help=True,
-)
+app = typer.Typer(help="Check for broken anchor links in a directory of HTML files.")
 
 
-@app.command()
+@app.command(no_args_is_help=True)
 def cli(
     root_dir: Annotated[
         Path,
@@ -428,7 +424,3 @@ def cli(
         skip_external=skip_external,
     )
     raise typer.Exit(code=code)
-
-
-if __name__ == "__main__":
-    app()

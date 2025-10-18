@@ -39,6 +39,9 @@ Homepage = "https://github.com/LSSTDESC/firecrown"
 include = ["firecrown"]
 exclude = ["examples*", "tests*", "tutorial*", "docs*"]
 
+[project.scripts]
+firecrown-link-checker = "firecrown.fctools.link_checker:app"
+
 # Coverage configuration
 [tool.coverage.report]
 exclude_also = [

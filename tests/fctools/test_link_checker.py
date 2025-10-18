@@ -165,6 +165,12 @@ def test_skip_external_prevents_download_and_allows_success(
         ("s3.html", '<a href="missing.html#x">bad</a>', 1),
         ("s4.html", '<a href="sub/inside.html#subid">sub</a>', 0),
     ],
+    ids=[
+        "ok",
+        "same file",
+        "bad",
+        "sub",
+    ],
 )
 def test_parametrized_link_scenarios(
     sample_site: Path, fname: str, content: str, expected: int
@@ -319,6 +325,93 @@ def test_unreachable_external_is_reported(sample_site: Path, monkeypatch):
     assert missing
     # unreachable link should be reported
     assert any(r == "unreachable link" for _, _, r in missing)
+
+
+def test_ignore_non_html_files(sample_site: Path):
+    # create a non-HTML file with a link
+    (sample_site / "file.txt").write_text('<a href="page.html#p1">ok</a>')
+
+    console = Console()
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=False,
+        skip_external=True,
+    )
+    try:
+        missing = sc.check_anchors()
+    finally:
+        sc.close()
+
+    # no links should be checked, so no missing links
+    assert not missing
+    assert sc.valid_links == 0
+    assert sc.invalid_links == 0
+    assert sc.valid_anchors == 0
+    assert sc.invalid_anchors == 0
+
+
+def test_downloading_same_url_multiple_times_uses_cache(
+    sample_site: Path, mock_requests_ok
+):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    console = Console(record=True)
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=True,
+        skip_external=False,
+    )
+    try:
+        url = "http://example.invalid/page.html"
+        # First download
+        # pylint: disable-next=protected-access
+        path1 = sc._download_url(url)
+        # Second download of the same URL
+        # pylint: disable-next=protected-access
+        path2 = sc._download_url(url)
+        # Both paths should be the same, indicating caching
+        assert path1 == path2
+        # The mock_requests_ok should have been called only once
+        out = console.export_text()
+        download_count = out.count("Downloaded")
+        assert download_count == 1
+    finally:
+        sc.close()
+
+
+def test_normalize_href_with_url_multiple_times_uses_cache(
+    sample_site: Path, mock_requests_ok
+):
+    assert mock_requests_ok is not None  # to avoid unused variable warning
+    console = Console(record=True)
+    sc = link_checker.SiteChecker(
+        sample_site,
+        console=console,
+        download_timeout=1,
+        verbose=True,
+        skip_external=False,
+    )
+    try:
+        url = "http://example.invalid/page.html#extid"
+        # First normalization
+        # pylint: disable-next=protected-access
+        url_str1, path1, frag1 = sc._normalize_href(sample_site / "dummy.html", url)
+        # Second normalization of the same URL
+        # pylint: disable-next=protected-access
+        url_str2, path2, frag2 = sc._normalize_href(sample_site / "dummy.html", url)
+        # Both results should be the same, indicating caching
+        assert url_str1 == url_str2
+        assert path1 == path2
+        assert frag1 == frag2
+        # The mock_requests_ok should have been called only once
+        out = console.export_text()
+        download_count = out.count("Downloaded")
+        assert download_count == 1
+    finally:
+        sc.close()
 
 
 def test_cli_runner_exit_codes(sample_site: Path, mock_requests_ok):

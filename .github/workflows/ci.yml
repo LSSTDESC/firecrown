@@ -271,7 +271,7 @@ jobs:
         run: |
           quarto render tutorial --output-dir=../docs/_static
           make -C docs html
-          python -m firecrown.fctools.link_checker docs/_build/html -v
+          firecrown-link-checker docs/_build/html -v
       - name: Pip-install Augur and test it
         shell: bash -l {0}
         run: |
