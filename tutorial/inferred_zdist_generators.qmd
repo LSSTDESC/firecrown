@@ -88,7 +88,7 @@ We use NumCosmo's `autoknots` to determine the number of knots to use in the spl
 This allows us to create the knots such that the interpolation error is less than $10^{-5}$.[^4]
 
 [^4]: The `autoknots` method is a part of the NumCosmo package, which is a dependency of Firecrown.
-See [the NumCosmo documentation](https://numcosmo.github.io/manual/NcmSplineCubicNotaknot.html) for more information.
+See [the NumCosmo documentation](https://numcosmo.readthedocs.io/en/latest/reference/numcosmo-math/class.SplineCubicNotaknot.html) for more information.
 
 The generated data are plotted in @fig-fz
 
