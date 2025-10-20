@@ -148,7 +148,14 @@ class FirecrownLikelihood:
             params=firecrown_params,
             raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
-        loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
+        # We need to clean up and reset the likelihood and tools if an exception occurs
+        # during log-likelihood computation.
+        try:
+            loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
+        except Exception as e:
+            self.likelihood.reset()
+            self.tools.reset()
+            raise e
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
