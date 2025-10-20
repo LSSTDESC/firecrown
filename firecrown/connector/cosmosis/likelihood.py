@@ -8,13 +8,14 @@ likelihood abstract base class; it the implementation of a CosmoSIS module,
 not a specific likelihood.
 """
 
+import warnings
 import cosmosis.datablock
 from cosmosis.datablock import names as section_names
 from cosmosis.datablock import option_section
 
 from firecrown.ccl_factory import CCLCreationMode
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
-from firecrown.likelihood.gaussfamily import GaussFamily
+from firecrown.likelihood.gaussfamily import GaussFamily, State
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.parameters import ParamsMap, handle_unused_params
@@ -149,13 +150,18 @@ class FirecrownLikelihood:
             raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
         # We need to clean up and reset the likelihood and tools if an exception occurs
-        # during log-likelihood computation.
+        # during log-likelihood computation. CosmoSIS will then return -inf.
         try:
             loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
-        except Exception as e:
+        except Exception:
+            warnings.warn(
+                "Exception during log-likelihood evaluation for CosmoSIS; "
+                "resetting state and re-raising for CosmoSIS handling.",
+                RuntimeWarning,
+            )
             self.likelihood.reset()
             self.tools.reset()
-            raise e
+            raise
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
@@ -186,6 +192,11 @@ class FirecrownLikelihood:
         :return: None
         """
         assert isinstance(self.likelihood, GaussFamily)
+        # Find out whether the likelihood is in a state where we can access the data
+        # vector and inverse covariance. If not, return.
+        if self.likelihood.state != State.COMPUTED:
+            return
+
         sample.put(
             "data_vector",
             "firecrown_theory",

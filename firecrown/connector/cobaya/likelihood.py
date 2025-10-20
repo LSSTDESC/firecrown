@@ -6,6 +6,7 @@ This module provides the class :class:`LikelihoodConnector`, which is an impleme
 of a Cobaya likelihood.
 """
 
+import warnings
 import numpy as np
 import numpy.typing as npt
 import pyccl
@@ -287,17 +288,24 @@ class LikelihoodConnector(Likelihood):
         )
 
         # We need to clean up and reset the likelihood and tools if an exception occurs
-        # during log-likelihood computation.
+        # during log-likelihood computation. Cobaya will not clean up after us.
         try:
             loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
-        except Exception as e:
+        except Exception:
+            warnings.warn(
+                "Exception during log-likelihood evaluation for Cobaya; "
+                "resetting state and re-raising for Cobaya handling.",
+                RuntimeWarning,
+            )
             self.likelihood.reset()
             self.tools.reset()
-            raise e
+            raise
+
+        # Handling of derived parameters for Cobaya
+        assert _derived is not None
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
-        assert _derived is not None
         for section, name, val in derived_params_collection:
             _derived[f"{section}__{name}"] = val
 
