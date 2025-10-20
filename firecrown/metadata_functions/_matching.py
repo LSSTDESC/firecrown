@@ -12,7 +12,7 @@ def match_name_type(
     tracer2: str,
     a: mdt.Measurement,
     b: mdt.Measurement,
-    require_convetion: bool = False,
+    require_convention: bool = False,
 ) -> tuple[bool, str, mdt.Measurement, str, mdt.Measurement]:
     """Use the naming convention to assign the right measurement to each tracer."""
     for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
@@ -23,9 +23,9 @@ def match_name_type(
                 return True, n1, a, n2, b
             raise ValueError(
                 "Invalid SACC file, tracer names do not respect "
-                "the naming convetion."
+                "the naming convention."
             )
-    if require_convetion:
+    if require_convention:
         if mdt.LENS_REGEX.match(tracer1) and mdt.LENS_REGEX.match(tracer2):
             return False, tracer1, a, tracer2, b
         if mdt.SOURCE_REGEX.match(tracer1) and mdt.SOURCE_REGEX.match(tracer2):
@@ -33,7 +33,7 @@ def match_name_type(
 
         raise ValueError(
             f"Invalid tracer names ({tracer1}, {tracer2}) "
-            f"do not respect the naming convetion."
+            f"do not respect the naming convention."
         )
 
     return False, tracer1, a, tracer2, b
@@ -85,6 +85,6 @@ def measurements_from_index(
         index["tracer_names"].name2,
         a,
         b,
-        require_convetion=True,
+        require_convention=True,
     )
     return n1, a, n2, b
