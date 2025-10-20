@@ -348,7 +348,7 @@ def test_get_can_support_params_with_map_none():
     assert supported_params == []
 
 
-def test_logp_with_pure_ccl_mode(fiducial_params):
+def test_logp_with_pure_ccl_mode():
     """Test logp method with PURE_CCL_MODE (non-DEFAULT creation mode)."""
     # Pure CCL mode requires different parameters than the CAMB-based DEFAULT mode
     pure_ccl_params = {
