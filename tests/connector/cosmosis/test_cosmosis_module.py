@@ -5,6 +5,7 @@ This test do not invoke the `cosmosis` executable.
 """
 
 from os.path import expandvars
+from unittest import mock
 import yaml
 import pytest
 import numpy as np
@@ -661,3 +662,28 @@ def test_same_param_names_in_different_sections_failure(sample_with_M: DataBlock
         _ = calculate_firecrown_params(
             ["section1", "section2"], "firecrown_mod", sample_with_M
         )
+
+
+def test_resetting_after_exception_in_log_likelihood(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood,
+    sample_with_M: DataBlock,
+):
+    msg = "Test exception in log-likelihood"
+    warn_msg = (
+        "Exception during log-likelihood evaluation for CosmoSIS; "
+        "resetting state and re-raising for CosmoSIS handling"
+    )
+
+    with (
+        mock.patch(
+            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            side_effect=RuntimeError(msg),
+        ),
+        pytest.warns(RuntimeWarning, match=warn_msg),
+        pytest.raises(RuntimeError, match=msg),
+    ):
+        firecrown_mod_with_const_gaussian.execute(sample_with_M)
+
+    # A second call should work
+    firecrown_mod_with_const_gaussian.execute(sample_with_M)
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
