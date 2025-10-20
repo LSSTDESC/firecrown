@@ -5,10 +5,12 @@ This test do not invoke the `cosmosis` executable.
 """
 
 from os.path import expandvars
+from unittest import mock
 import yaml
 import pytest
 import numpy as np
 
+import pyccl
 from cosmosis.datablock import DataBlock, option_section, names as section_names
 
 from firecrown.likelihood.likelihood import NamedParameters
@@ -661,3 +663,53 @@ def test_same_param_names_in_different_sections_failure(sample_with_M: DataBlock
         _ = calculate_firecrown_params(
             ["section1", "section2"], "firecrown_mod", sample_with_M
         )
+
+
+def test_resetting_after_exception_in_log_likelihood(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood,
+    sample_with_M: DataBlock,
+):
+    msg = "Test exception in log-likelihood"
+    warn_msg = (
+        "Exception during log-likelihood evaluation for CosmoSIS; "
+        "resetting state and re-raising for CosmoSIS handling"
+    )
+
+    sample_with_M2 = sample_with_M.clone()
+
+    with (
+        mock.patch(
+            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            side_effect=RuntimeError(msg),
+        ),
+        pytest.warns(RuntimeWarning, match=warn_msg),
+        pytest.raises(RuntimeError, match=msg),
+    ):
+        firecrown_mod_with_const_gaussian.execute(sample_with_M)
+
+    # A second call should work
+    firecrown_mod_with_const_gaussian.execute(sample_with_M2)
+    assert sample_with_M2.get_double("likelihoods", "firecrown_like") < 0.0
+
+
+def test_gaussfamily_special_case(
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood,
+    sample_with_M: DataBlock,
+):
+    msg = "Error CCL_ERROR_SPLINE: fake_ccl_.c:119;"
+    warn_msg = f"CCL error:.*\n.*{msg}"
+
+    sample_with_M2 = sample_with_M.clone()
+
+    with (
+        mock.patch(
+            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            side_effect=pyccl.CCLError(msg),
+        ),
+        pytest.warns(UserWarning, match=warn_msg),
+    ):
+        firecrown_mod_with_const_gaussian.execute(sample_with_M)
+
+    # A second call should work
+    firecrown_mod_with_const_gaussian.execute(sample_with_M2)
+    assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
