@@ -36,7 +36,7 @@ class ParamaterizedLikelihood(Likelihood):
     named 'sacc_filename'."""
 
     def __init__(self, params: NamedParameters):
-        """Initialize the ParameterizedLikelihood by reading the specificed
+        """Initialize the ParameterizedLikelihood by reading the specified
         sacc_filename value."""
         super().__init__()
         self.sacc_filename = params.get_string("sacc_filename")
@@ -54,7 +54,7 @@ class SamplerParameterLikelihood(Likelihood):
     named 'sacc_filename'."""
 
     def __init__(self, params: NamedParameters):
-        """Initialize the SamplerParameterLikelihood by reading the specificed
+        """Initialize the SamplerParameterLikelihood by reading the specified
         parameter_prefix value and creates a sampler parameter called "sampler_param0".
         """
         super().__init__(parameter_prefix=params.get_string("parameter_prefix"))
