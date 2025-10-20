@@ -2,6 +2,7 @@
 
 import types
 import sys
+from unittest import mock
 import pytest
 import numpy as np
 from cobaya.model import get_model, Model
@@ -99,6 +100,44 @@ def test_cobaya_ccl_likelihood(fiducial_params):
     model_fiducial = get_model(info_fiducial)
     assert isinstance(model_fiducial, Model)
     assert model_fiducial.logposterior({}).logpost == -3.0
+
+
+def test_resetting_after_exception_in_log_likelihood(fiducial_params):
+    fiducial_params.update({"pantheon_M": -19.0})
+    info_fiducial = {
+        "params": fiducial_params,
+        "likelihood": {
+            "lk_connector": {
+                "external": LikelihoodConnector,
+                "firecrownIni": (
+                    "tests/likelihood/gauss_family/lkscript_const_gaussian.py"
+                ),
+                "input_style": "CAMB",
+            }
+        },
+        "theory": {"camb": {"extra_args": {"num_massive_neutrinos": 1}}},
+    }
+    msg = "Test exception in log-likelihood"
+    warn_msg = (
+        "Exception during log-likelihood evaluation for Cobaya; "
+        "resetting state and re-raising for Cobaya handling"
+    )
+
+    model_fiducial = get_model(info_fiducial)
+    assert isinstance(model_fiducial, Model)
+
+    with (
+        mock.patch(
+            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            side_effect=RuntimeError(msg),
+        ),
+        pytest.warns(RuntimeWarning, match=warn_msg),
+        pytest.raises(RuntimeError, match=msg),
+    ):
+        model_fiducial.logposterior({})
+
+    # A second call should work
+    assert np.isfinite(model_fiducial.logposterior({}).logpost)
 
 
 def test_parameterized_likelihood_missing(fiducial_params):
