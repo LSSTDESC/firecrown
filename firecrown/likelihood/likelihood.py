@@ -142,7 +142,10 @@ class Likelihood(Updatable):
         try:
             return self.compute_loglike(tools)
         except pyccl.errors.CCLError as e:
-            if e.args[0].startswith("Error CCL_ERROR_INTEG"):
+            if e.args[0].startswith("Error CCL_ERROR"):
+                # Note: by default, Python shows identical warnings only once.
+                # To see all warnings, use:
+                #     warnings.simplefilter("always", category=UserWarning)
                 warnings.warn(f"CCL error:\n{e}\nin likelihood, returning -inf")
                 return -np.inf
             raise
