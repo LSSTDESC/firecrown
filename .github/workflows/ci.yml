@@ -187,15 +187,20 @@ jobs:
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5
         with:
+          files: ./coverage.xml
           fail_ci_if_error: true
           verbose: true
           use_oidc: false
+          # TODO: Remove the following two lines when GPG verification is fixed
+          disable_search: true
+          disable_file_fixes: true
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+          # TODO: Remove when GPG key verification issue is resolved upstream
+          CODECOV_SKIP_GPG_VERIFY: true
 
   external-dependencies:
     name: External dependencies and documentation
-    needs: firecrown-miniforge
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
@@ -266,7 +271,7 @@ jobs:
         run: |
           quarto render tutorial --output-dir=../docs/_static
           make -C docs html
-          linkchecker -f linkcheckerrc docs/_build/html
+          firecrown-link-checker docs/_build/html -v
       - name: Pip-install Augur and test it
         shell: bash -l {0}
         run: |

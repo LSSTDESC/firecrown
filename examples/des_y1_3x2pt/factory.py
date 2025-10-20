@@ -1,8 +1,8 @@
 """The DES Y1 3x2pt likelihood factory module."""
 
 import os
-import sacc
 
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood.likelihood import NamedParameters
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
@@ -105,7 +105,7 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
     sacc_file = params.get_string("sacc_file")
     # Translate envriornment variables, if needed.
     sacc_file = os.path.expandvars(sacc_file)
-    sacc_data = sacc.Sacc.load_fits(sacc_file)
+    sacc_data = load_sacc_data(sacc_file)
 
     # The read likelihood method is called passing the loaded SACC file, the
     # two-point functions will receive the appropriated sections of the SACC

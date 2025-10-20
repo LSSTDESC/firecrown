@@ -73,9 +73,9 @@ from firecrown.data_functions import (
     extract_all_real_data,
     check_two_point_consistence_real,
 )
-import sacc
+from firecrown.likelihood.factories import load_sacc_data
 
-sacc_data = sacc.Sacc.load_fits("../examples/des_y1_3x2pt/sacc_data.fits")
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
 
 two_point_reals = extract_all_real_data(sacc_data)
 check_two_point_consistence_real(two_point_reals)
@@ -131,10 +131,10 @@ To reduce this burden, Firecrown introduced a helper to extract tracer pairs and
 
 ```{python}
 from firecrown.metadata_functions import extract_all_real_metadata_indices
-import sacc
+from firecrown.likelihood.factories import load_sacc_data
 
 # Load the SACC file
-sacc_data = sacc.Sacc.load_fits("../examples/des_y1_3x2pt/sacc_data.fits")
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
 # Extract all metadata indices
 all_meta = extract_all_real_metadata_indices(sacc_data)
 ```
@@ -296,7 +296,7 @@ tpf = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 two_point_experiment = TwoPointExperiment(
     two_point_factory=tpf,
     data_source=DataSourceSacc(
-        sacc_data_file="../examples/des_y1_3x2pt/sacc_data.fits",
+        sacc_data_file="../examples/des_y1_3x2pt/sacc_data.hdf5",
         filters=TwoPointBinFilterCollection(
             require_filter_for_all=False,
             allow_empty=True,
@@ -316,7 +316,7 @@ two_point_experiment = TwoPointExperiment(
 two_point_experiment_filtered = TwoPointExperiment(
     two_point_factory=tpf,
     data_source=DataSourceSacc(
-        sacc_data_file="../examples/des_y1_3x2pt/sacc_data.fits",
+        sacc_data_file="../examples/des_y1_3x2pt/sacc_data.hdf5",
         filters=TwoPointBinFilterCollection(
             require_filter_for_all=False,
             allow_empty=True,
@@ -391,10 +391,8 @@ The lens and source redshift bin collections used for the computations are impor
 
 ```{python}
 import numpy as np
-from firecrown.metadata_functions import (
-    make_all_photoz_bin_combinations,
-    TwoPointHarmonic,
-)
+from firecrown.metadata_functions import make_all_photoz_bin_combinations
+from firecrown.metadata_types import TwoPointHarmonic
 from firecrown.generators.inferred_galaxy_zdist import (
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,

@@ -3,7 +3,7 @@
 import numpy as np
 import pytest
 
-from firecrown.models.cluster.kernel import (
+from firecrown.models.cluster import (
     Completeness,
     Purity,
     SpectroscopicRedshift,

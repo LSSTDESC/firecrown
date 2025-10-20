@@ -13,8 +13,6 @@ project:
     - two_point_generators.qmd
     - two_point_factories.qmd
     - systematics.qmd
-execute:
-  freeze: auto  # re-render only when source changes
 
 website:
   title: "Firecrown Tutorial Documents"
@@ -65,7 +63,7 @@ format:
 
 reference-location: margin
 citation-location: margin
-subtitle: "version 1.11.0a0"
+subtitle: "version 1.13.0a0"
 authors:
   - Marc Paterno
   - Sandro Vitenti

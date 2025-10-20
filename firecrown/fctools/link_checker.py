@@ -1,0 +1,432 @@
+"""Scan HTML files and check for broken anchor links.
+
+The module provides a SiteChecker class which scans local HTML files,
+extracts anchor identifiers (from ``id`` and ``name`` attributes), resolves
+links (including optional downloading of external HTTP(S) pages into a
+temporary cache), and reports missing files or missing anchor identifiers.
+
+Usage example::
+
+    python -m firecrown.fctools.link_checker path/to/html_dir -v
+
+"""
+
+from typing import Annotated
+from dataclasses import dataclass
+from pathlib import Path
+from hashlib import sha1
+import time
+import tempfile
+import os
+import shutil
+import requests
+import typer
+from rich.console import Console
+from rich.table import Table
+from rich.panel import Panel
+
+from bs4 import BeautifulSoup
+import bs4
+
+
+@dataclass
+class PageAnchors:
+    """Holds information about a single HTML page.
+
+    :param url_str: Canonical string used as a key for the page (local path or URL).
+    :param path: Filesystem Path pointing to the local copy of the page.
+    :param ids: Set of anchor identifiers discovered on the page.
+    """
+
+    url_str: str
+    path: Path
+    ids: set[str]
+
+
+def _parse_html(path: Path) -> BeautifulSoup:
+    """Open and parse an HTML file into a BeautifulSoup object.
+
+    :param path: Path to the HTML file to parse.
+    :returns: Parsed BeautifulSoup document.
+    """
+    with open(path, "r", encoding="utf-8") as f:
+        return BeautifulSoup(f, "html.parser")
+
+
+def _extract_ids_from_soup(soup: BeautifulSoup) -> set[str]:
+    """Extract anchor identifiers from a parsed HTML document.
+
+    This collects values from both ``id`` and ``name`` attributes and returns
+    them as a deduplicated set of strings.
+
+    :param soup: Parsed BeautifulSoup document.
+    :returns: Set of found anchor identifier strings.
+    """
+    ids: list[str] = []
+    for tag in soup.find_all(attrs={"id": True}):
+        assert isinstance(tag, bs4.Tag)
+        val = tag.get("id")
+        if val:
+            assert isinstance(val, str)
+            ids.append(val)
+    for tag in soup.find_all(attrs={"name": True}):
+        assert isinstance(tag, bs4.Tag)
+        val = tag.get("name")
+        if val:
+            assert isinstance(val, str)
+            ids.append(val)
+    return set(x for x in ids if x)
+
+
+def extract_ids(file_path: Path) -> set[str]:
+    """Extract anchor identifiers from an HTML file.
+
+    :param file_path: Path to the local HTML file.
+    :returns: Set of anchor identifier strings found in the file.
+    """
+    soup = _parse_html(file_path)
+    return _extract_ids_from_soup(soup)
+
+
+class SiteChecker:
+    """Scan a directory of HTML files and validate anchor links.
+
+    SiteChecker walks ``root_dir`` collecting local ``.html`` files and the
+    set of anchors found in each. When checking links it normalizes each
+    ``href``, downloading external pages into a temporary cache so their
+    anchors can be validated. The object is a context manager and will
+    remove the temporary download cache when closed.
+
+    The instance maintains counters of valid/invalid links and anchors for reporting.
+    """
+
+    def __init__(
+        self,
+        root_dir: str | Path,
+        console: Console,
+        download_timeout: int,
+        verbose: bool = False,
+        skip_external: bool = False,
+    ) -> None:
+        self.root_dir = Path(root_dir)
+        self.html_files: list[Path] = []
+        self.targets: dict[str, PageAnchors] = {}
+        self.downloaded_files: dict[str, Path] = {}
+        self.tmp_root = Path(tempfile.mkdtemp(prefix="html_cache_"))
+        self.valid_links: int = 0
+        self.invalid_links: int = 0
+        self.valid_anchors: int = 0
+        self.invalid_anchors: int = 0
+        self.console = console
+        self.download_timeout = download_timeout
+        self.verbose = verbose
+        self.skip_external = skip_external
+
+        self.session = requests.Session()
+        self.session.headers.update(
+            {
+                "User-Agent": (
+                    "Mozilla/5.0 (X11; Linux x86_64) "
+                    "AppleWebKit/537.36 (KHTML, like Gecko) "
+                    "Chrome/120.0 Safari/537.36"
+                ),
+                "Accept": (
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8"
+                ),
+                "Accept-Language": "en-US,en;q=0.5",
+            }
+        )
+
+        self._collect_html_files()
+
+    def _collect_html_files(self) -> None:
+        for dirpath, _, filenames in os.walk(self.root_dir):
+            for fname in filenames:
+                if fname.endswith(".html"):
+                    full_path = Path(os.path.normpath(Path(dirpath) / fname))
+                    self.html_files.append(full_path)
+                    url_str = str(full_path)
+                    page_anchors = PageAnchors(
+                        url_str, full_path, extract_ids(full_path)
+                    )
+                    self.targets[url_str] = page_anchors
+
+    def add_to_targets(self, url_str: str, full_path: Path) -> None:
+        """Ensure a URL string is present in the ``targets`` mapping.
+
+        :param url_str: Canonical URL string used as the dictionary key.
+        :param full_path: Filesystem path to the file (downloaded or local).
+        """
+        if url_str not in self.targets:
+            ids: set[str] = set()
+            if full_path.exists():
+                ids = extract_ids(full_path)
+            page_anchors = PageAnchors(url_str, full_path, ids)
+            self.targets[url_str] = page_anchors
+
+    def _download_url(self, url_str: str) -> Path:
+        """Download an external HTTP(S) page into the temporary cache.
+
+        :param url_str: External HTTP(S) URL to download.
+        :returns: Local filesystem Path for the downloaded page (or where it would be
+            stored).
+        """
+        url_hash = sha1(url_str.encode()).hexdigest()
+        subdir = self.tmp_root / url_hash
+        subdir.mkdir(parents=True, exist_ok=True)
+        filename = Path(url_str.split("/")[-1] or "index.html")
+        local_path = subdir / filename
+
+        if local_path.exists():
+            return local_path
+
+        try:
+            resp = self.session.get(url_str, timeout=self.download_timeout)
+            resp.raise_for_status()
+        except (requests.RequestException, OSError) as e:
+            self.console.print(f"[red][Download failed][/red] {url_str}: {e}")
+        else:
+            local_path.write_bytes(resp.content)
+            if self.verbose:
+                self.console.print(
+                    f"[green][Downloaded external][/green] "
+                    f"{url_str} => {local_path}"
+                )
+        return local_path
+
+    def _normalize_href(
+        self, file_path: Path, href: str
+    ) -> tuple[str, Path, str | None]:
+        """Resolve an anchor href to a canonical URL string, local Path, and fragment.
+
+        :param file_path: The source HTML file containing the href.
+        :param href: The raw href string extracted from the anchor tag.
+        :returns: Tuple of (url_str, path, fragment_or_None).
+        """
+        assert isinstance(href, str)
+        url_str, frag = href.split("#", 1) if "#" in href else (href, None)
+
+        # A pure `#frag` link points to the same file
+        if not url_str:
+            return (str(file_path), file_path, frag)
+
+        # A link to an http(s) resource
+        if url_str.startswith("http"):
+            if url_str not in self.downloaded_files:
+                path = self._download_url(url_str)
+                self.downloaded_files[url_str] = path
+            else:
+                path = self.downloaded_files[url_str]
+
+            return (url_str, path, frag)
+
+        # A link to an anchor in a local file
+        path = Path(os.path.normpath(file_path.parent / url_str))
+        url_str = str(path)
+        return (url_str, path, frag)
+
+    def extract_links(self, file_path: Path) -> dict[str, set[str]]:
+        """Collect links from an HTML file and group fragments by target URL.
+
+        :param file_path: Local path of the HTML file to scan for anchor tags.
+        :returns: Mapping from target URL string to a set of anchor fragments (strings).
+        """
+        soup = _parse_html(file_path)
+        links: dict[str, set[str]] = {}
+        for tag in soup.find_all("a", href=True):
+            assert isinstance(tag, bs4.Tag)
+            href_val = tag.get("href")
+            if not href_val:
+                continue
+            href = str(href_val)
+
+            url_str, target_path, frag = self._normalize_href(file_path, href)
+            # Optionally skip external links entirely (do not download/check)
+            if self.skip_external and url_str.startswith("http"):
+                if self.verbose:
+                    self.console.print(
+                        f"[yellow]Skipping external link[/yellow] {url_str}"
+                    )
+                continue
+            self.add_to_targets(url_str, target_path)
+
+            if url_str not in links:
+                links[url_str] = set()
+
+            if frag:
+                links[url_str].add(frag)
+        return links
+
+    def check_anchors(self) -> list[tuple[str, str, str]]:
+        """Validate all links and anchors collected from the site.
+
+        The method iterates over all collected HTML files, resolves links,
+        ensures target files are reachable (downloading externals when
+        necessary), and checks that requested anchor fragments exist on the
+        target page.
+
+        :returns: A list of (source_file, target_url_str, reason) tuples
+            describing broken links or missing anchors. Counters for
+            valid/invalid links and anchors are updated on the instance.
+        """
+        missing_links: list[tuple[str, str, str]] = []
+
+        for file_path in self.html_files:
+            for url_str, anchors in self.extract_links(file_path).items():
+                assert url_str in self.targets
+                page_anchors = self.targets[url_str]
+
+                if not page_anchors.path.exists():
+                    if "http" in url_str:
+                        missing_links.append(
+                            (str(file_path), url_str, "unreachable link")
+                        )
+                    else:
+                        missing_links.append((str(file_path), url_str, "file missing"))
+                    self.invalid_links += 1
+                    continue
+                self.valid_links += 1
+
+                if not anchors:
+                    continue
+
+                # All ids in anchors that are not in page_anchors.ids
+                missing_ids = sorted(list(anchors - page_anchors.ids))
+                self.invalid_anchors += len(missing_ids)
+                self.valid_anchors += len(anchors) - len(missing_ids)
+                if missing_ids:
+                    missing_links.append(
+                        (
+                            str(file_path),
+                            url_str,
+                            f"missing ids: '{', '.join(missing_ids)}'",
+                        )
+                    )
+                    continue
+
+        return missing_links
+
+    def close(self) -> None:
+        """Remove the temporary download cache directory used for external pages."""
+        shutil.rmtree(self.tmp_root)
+
+    def __enter__(self):
+        """Enter context manager."""
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        """Exit context manager and clean up temporary files."""
+        self.close()
+
+
+def main(
+    root_dir: str | Path,
+    download_timeout: int = 20,
+    verbose: bool = False,
+    skip_external: bool = False,
+) -> int:
+    """Main function.
+
+    :param root_dir: Directory to scan for HTML files.
+    :param download_timeout: Timeout (seconds) for downloading external links.
+    :param verbose: Enable verbose output (show downloads and skipped links).
+    :param skip_external: When True, do not download or validate external http(s) links.
+    """
+    console = Console()
+
+    start = time.perf_counter()
+    console.rule("[bold blue]HTML Link Checker[/bold blue]")
+    with console.status("Scanning HTML files and validating links...", spinner="dots"):
+        with SiteChecker(
+            root_dir,
+            download_timeout=download_timeout,
+            verbose=verbose,
+            console=console,
+            skip_external=skip_external,
+        ) as html_pages:
+            missing_links = html_pages.check_anchors()
+    elapsed = time.perf_counter() - start
+
+    if not missing_links:
+        console.print(
+            Panel(
+                f"No broken links found\nElapsed: {elapsed:.2f}s",
+                title="OK",
+                style="green",
+            )
+        )
+        return 0
+
+    # Now we print how many downloaded files there were, number of valid/invalid links
+    # and anchors.
+    summary = (
+        f"Downloaded: {len(html_pages.downloaded_files)} external files\n"
+        f"Files scanned: {len(html_pages.html_files)}\n"
+        f"Elapsed: {elapsed:.2f}s\n"
+        f"Valid links: {html_pages.valid_links}\n"
+        f"Invalid links: {html_pages.invalid_links}\n"
+        f"Valid anchors: {html_pages.valid_anchors}\n"
+        f"Invalid anchors: {html_pages.invalid_anchors}"
+    )
+    console.print(Panel(summary, title="Summary", style="blue"))
+
+    table = Table(title="Broken links")
+    table.add_column("Source", style="cyan")
+    table.add_column("Target", style="magenta")
+    table.add_column("Reason", style="red")
+
+    for src_file, target_file, reason in missing_links:
+        table.add_row(str(src_file), str(target_file), reason)
+
+    console.print(table)
+
+    # Return non-zero exit code so CI (e.g. GitHub Actions) fails when broken links are
+    # found.
+    return 1
+
+
+app = typer.Typer(help="Check for broken anchor links in a directory of HTML files.")
+
+
+@app.command(no_args_is_help=True)
+def cli(
+    root_dir: Annotated[
+        Path,
+        typer.Argument(
+            exists=True,
+            file_okay=False,
+            dir_okay=True,
+            help="Directory with HTML files",
+        ),
+    ],
+    download_timeout: Annotated[
+        int,
+        typer.Option(
+            "-t",
+            "--download-timeout",
+            help="Timeout in seconds for downloading external links",
+        ),
+    ] = 20,
+    verbose: Annotated[
+        bool,
+        typer.Option("-v", "--verbose", help="Enable verbose output (show downloads)"),
+    ] = False,
+    skip_external: Annotated[
+        bool,
+        typer.Option(
+            "--skip-external",
+            help=(
+                "Do not download or validate external http(s) links; "
+                "treat them as skipped"
+            ),
+        ),
+    ] = False,
+):
+    """Command-line entry point using Typer and Rich for output."""
+    code = main(
+        root_dir,
+        download_timeout=download_timeout,
+        verbose=verbose,
+        skip_external=skip_external,
+    )
+    raise typer.Exit(code=code)

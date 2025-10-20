@@ -351,6 +351,7 @@ class CCLFactory(Updatable, BaseModel):
     camb_extra_params: Annotated[CAMBExtraParams | None, Field(frozen=True)] = None
     ccl_spline_params: Annotated[CCLSplineParams | None, Field(frozen=True)] = None
 
+    # pylint: disable=too-many-branches
     def __init__(self, **data):
         """Initialize the CCLFactory object."""
         parameter_prefix = parameter_prefix = data.pop("parameter_prefix", None)
@@ -449,7 +450,7 @@ class CCLFactory(Updatable, BaseModel):
         """Update the CAMB parameters in this CCLFactory object.
 
         :param params: The parameters to update.
-        :returns: None
+        :return: None
         """
         if self.camb_extra_params is not None:
             self.camb_extra_params.update(params)

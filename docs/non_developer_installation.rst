@@ -38,6 +38,7 @@ It also makes it easier to keep all of the products in the conda environment con
     conda env config vars set CSL_DIR=${CONDA_PREFIX}/cosmosis-standard-library
     conda deactivate
     conda activate firecrown_user
+	python -m pip install cobaya
     cd ${CONDA_PREFIX}
     source ${CONDA_PREFIX}/bin/cosmosis-configure
     cosmosis-build-standard-library main

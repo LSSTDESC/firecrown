@@ -5,7 +5,7 @@ import numpy as np
 from scipy.integrate import quad
 from hypothesis import given, assume
 from hypothesis.strategies import floats
-from firecrown.models.cluster.mass_proxy import (
+from firecrown.models.cluster import (
     MurataBinned,
     MurataUnbinned,
     MassRichnessGaussian,
