@@ -60,4 +60,5 @@ dependencies:
   - tabulate
   - typer
   - types-pyyaml
+  - types-requests
   - urllib3
