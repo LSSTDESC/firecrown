@@ -126,8 +126,8 @@ jobs:
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          sed -i "s/^  - python.*/  - python=${{ matrix.python-version }}/" environment.yml
-          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune
+          python .github/update_ci.py ${{ matrix.python-version }}
+          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
       - name: Setting up CosmoSIS and Cobaya
         if: steps.cache.outputs.cache-hit != 'true'
         shell: bash -l {0}
@@ -224,8 +224,8 @@ jobs:
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
-          sed -i "s/^  - python.*/  - python=3.13/" environment.yml
-          conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune
+          python .github/update_ci.py 3.13
+          conda env update -n ${{ env.CONDA_ENV }} -f env_tmp.yml --prune
       - name: Remove redundant rpath and import isitgr
         shell: bash -l {0}
         run: |
