@@ -125,7 +125,7 @@ jobs:
           key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
-        run:
+        run: |
           conda install -n ${{ env.CONDA_ENV }} python=${{ matrix.python-version }}
           conda env update -n ${{ env.CONDA_ENV }} -f environment.yml --prune
       - name: Setting up CosmoSIS and Cobaya
@@ -223,8 +223,8 @@ jobs:
           key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
-        run:
-          conda install -n ${{ env.CONDA_ENV }} python=${{ matrix.python-version }}
+        run: |
+          conda install -n ${{ env.CONDA_ENV }} python=3.13
           conda env update -n ${{ env.CONDA_ENV }} -f environment.yml
       - name: Remove redundant rpath and import isitgr
         shell: bash -l {0}
