@@ -45,7 +45,8 @@ dependencies:
   - pytest-cov
   - pytest-json-report
   - pytest-xdist
-  - python >= 3.11
+  # Python version is controlled by setup-miniconda action in CI
+  # - python >= 3.11
   - pyyaml
   - quarto
   - requests
