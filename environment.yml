@@ -45,7 +45,7 @@ dependencies:
   - pytest-cov
   - pytest-json-report
   - pytest-xdist
-  - python >= 3.11
+  - python >=3.11,<3.14
   - pyyaml
   - quarto
   - requests
