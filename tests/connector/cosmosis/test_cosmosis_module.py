@@ -210,7 +210,11 @@ def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
     All will be double arrays of length 100.
     """
     with open("tests/distances.yml", encoding="utf-8") as stream:
-        rawdata = yaml.load(stream, yaml.CLoader)
+        try:
+            rawdata = yaml.load(stream, yaml.CLoader)
+        except AttributeError:
+            # Fallback for Python 3.14+
+            rawdata = yaml.load(stream, yaml.Loader)
     sample = sample_with_cosmo
     for section_name, section_data in rawdata.items():
         for parameter_name, value in section_data.items():
@@ -222,7 +226,11 @@ def fixture_minimal_sample(sample_with_cosmo: DataBlock) -> DataBlock:
 @pytest.fixture(name="minimal_sample_with_pk")
 def fixture_minimal_sample_with_pk(sample_with_cosmo: DataBlock) -> DataBlock:
     with open("tests/distances_and_pk.yml", encoding="utf-8") as stream:
-        rawdata = yaml.load(stream, yaml.CLoader)
+        try:
+            rawdata = yaml.load(stream, yaml.CLoader)
+        except AttributeError:
+            # Fallback for Python 3.14+
+            rawdata = yaml.load(stream, yaml.Loader)
     sample = sample_with_cosmo
     for section_name, section_data in rawdata.items():
         for parameter_name, value in section_data.items():
