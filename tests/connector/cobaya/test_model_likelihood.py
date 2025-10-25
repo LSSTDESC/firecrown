@@ -467,3 +467,45 @@ def test_get_requirements_different_modes():
     assert "Pk_grid" not in requirements_pure
     assert "comoving_radial_distance" not in requirements_pure
     assert "Hubble" not in requirements_pure
+
+
+def test_initialize_without_build_parameters_attribute():
+    """Test initialize() when build_parameters attribute doesn't exist.
+
+    This covers the case where hasattr(self, 'build_parameters') is False,
+    which triggers the branch at line 100 that creates a default NamedParameters().
+    """
+    # Create a LikelihoodConnector instance
+    lk_connector = LikelihoodConnector(
+        info={
+            "firecrownIni": "tests/likelihood/lkdir/lkscript.py",
+            "input_style": "CAMB",
+        }
+    )
+
+    # Save the original class attribute so we can restore it
+    original_build_parameters = LikelihoodConnector.build_parameters
+
+    try:
+        # Delete the class attribute from LikelihoodConnector
+        delattr(LikelihoodConnector, "build_parameters")
+
+        # Also delete from the instance if it exists
+        if "build_parameters" in lk_connector.__dict__:
+            delattr(lk_connector, "build_parameters")
+
+        # Verify build_parameters doesn't exist
+        assert not hasattr(lk_connector, "build_parameters")
+
+        # Now call initialize() - this should trigger the hasattr check and
+        # create a default NamedParameters() at line 100
+        lk_connector.initialize()
+
+        # Verify the connector was initialized successfully
+        assert isinstance(lk_connector, LikelihoodConnector)
+        assert lk_connector.likelihood is not None
+        assert lk_connector.tools is not None
+
+    finally:
+        # Restore the class attribute
+        LikelihoodConnector.build_parameters = original_build_parameters
