@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 import warnings
+from collections.abc import Sequence
 from typing import final
 
 import numpy as np
@@ -10,11 +11,32 @@ from scipy.integrate import simpson
 import pyccl
 
 from firecrown.likelihood.gaussfamily import GaussFamily, State, enforce_states
+from firecrown.likelihood.statistic import Statistic
 from firecrown.modeling_tools import ModelingTools
 
 
 class ConstGaussianPM(GaussFamily):
     """A Gaussian log-like with constant covariance, marginalizing over a point mass."""
+
+    def __init__(self, statistics: Sequence[Statistic]) -> None:
+        """Initialize the ConstGaussianPM object.
+
+        :param statistics: A list of statistics for chi-squared calculations
+        """
+        super().__init__(statistics)
+        # Initialize point mass marginalization attributes
+        self._pm_maps_ready: bool = False
+        self._pm_theta: np.ndarray | None = None
+        self._pm_row_lens_idx: np.ndarray | None = None
+        self._pm_row_src_idx: np.ndarray | None = None
+        self._pm_lens_tracers: list | None = None
+        self._pm_src_tracers: list | None = None
+        self._pm_z_l: np.ndarray | None = None
+        self._pm_z_s: np.ndarray | None = None
+        self._pm_nzL_norm: np.ndarray | None = None
+        self._pm_nzS_norm: np.ndarray | None = None
+        self._pm_inv_cov_original: np.ndarray | None = None
+        self.inv_cov_correction: np.ndarray | None = None
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood.
@@ -44,7 +66,7 @@ class ConstGaussianPM(GaussFamily):
         if we want to update the point mass correction when the cosmology changes.
         """
         # The function should only be run one time.
-        if getattr(self, "_pm_maps_ready", False):
+        if self._pm_maps_ready:
             warnings.warn(
                 "The point mass pre-computation step was already performed, "
                 "but it is being called again. ",
@@ -175,6 +197,8 @@ class ConstGaussianPM(GaussFamily):
 
     def _prepare_integrand(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute the cosmology-dependent portion of the integrand."""
+        assert self._pm_z_l is not None
+        assert self._pm_z_s is not None
         z_l = self._pm_z_l
         z_s = self._pm_z_s
         a_l = 1.0 / (1.0 + z_l)
@@ -199,6 +223,10 @@ class ConstGaussianPM(GaussFamily):
     def _compute_betas(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute beta_ij factors for all bin combinations."""
         integrand = self._prepare_integrand(cosmo)
+        assert self._pm_nzL_norm is not None
+        assert self._pm_nzS_norm is not None
+        assert self._pm_z_s is not None
+        assert self._pm_z_l is not None
         nzL_norm = self._pm_nzL_norm
         nzS_norm = self._pm_nzS_norm
 
@@ -221,6 +249,9 @@ class ConstGaussianPM(GaussFamily):
 
     def _build_V(self, betas: np.ndarray) -> np.ndarray:
         """Construct the template matrix."""
+        assert self._pm_row_src_idx is not None
+        assert self._pm_row_lens_idx is not None
+        assert self._pm_theta is not None
         V = np.zeros((len(self._pm_row_src_idx), len(self._pm_lens_tracers)))
         valid = (self._pm_row_lens_idx >= 0) & (self._pm_row_src_idx >= 0)
         beta_rows = np.zeros(valid.sum(), dtype=float)
@@ -282,7 +313,7 @@ class ConstGaussianPM(GaussFamily):
         :param tools: ModelingTools to be used in the calculation of the theory vector
         :return: the chi-squared
         """
-        if getattr(self, "inv_cov_correction", False):
+        if not self.inv_cov_correction:
             warnings.warn(
                 "The inverse covariance correction has not yet been computed."
             )
