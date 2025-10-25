@@ -2,6 +2,7 @@
 
 import os
 
+import pyccl
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood.likelihood import NamedParameters
 import firecrown.likelihood.weak_lensing as wl
