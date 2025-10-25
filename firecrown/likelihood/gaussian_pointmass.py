@@ -37,7 +37,7 @@ class ConstGaussianPM(GaussFamily):
 
         return new_data_vector
 
-    def _generate_maps(self) -> int:
+    def _generate_maps(self) -> None:
         """Build maps and masks for the data vectors.
 
         These are not needed for a constant cosmology, but will become useful
@@ -49,7 +49,7 @@ class ConstGaussianPM(GaussFamily):
                 "The point mass pre-computation step was already performed, "
                 "but it is being called again. ",
             )
-            return 0
+            return
 
         data_types = np.concatenate(
             [
@@ -172,8 +172,6 @@ class ConstGaussianPM(GaussFamily):
         self._pm_nzL_norm = nzL_norm
         self._pm_nzS_norm = nzS_norm
         self._pm_inv_cov_original = self.inv_cov
-
-        return 0
 
     def _prepare_integrand(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute the cosmology-dependent portion of the integrand."""
