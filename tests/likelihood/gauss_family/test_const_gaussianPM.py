@@ -703,4 +703,4 @@ def test_PM_correction_matrix(sacc_data):
     likelihood.compute_pointmass(cosmo)
     assert (likelihood.inv_cov != likelihood._pm_inv_cov_original).any()
     assert not np.isnan(likelihood.inv_cov).any()
-    assert not np.isinf(likelihood.inv_cov).any() 
+    assert not np.isinf(likelihood.inv_cov).any()
