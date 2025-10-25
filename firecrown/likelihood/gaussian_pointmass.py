@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 import warnings
-import itertools
 from typing import final
 
 import numpy as np
@@ -38,10 +37,6 @@ class ConstGaussianPM(GaussFamily):
 
         return new_data_vector
 
-    def _flatten_list(self, x: list) -> np.ndarray:
-        """Helper tool to flatten lists of lists."""
-        return np.array(list(itertools.chain(*x)))
-
     def _generate_maps(self) -> int:
         """Build maps and masks for the data vectors.
 
@@ -56,7 +51,7 @@ class ConstGaussianPM(GaussFamily):
             )
             return 0
 
-        data_types = self._flatten_list(
+        data_types = np.concatenate(
             [
                 np.repeat(
                     stat.statistic.sacc_data_type,
@@ -65,7 +60,7 @@ class ConstGaussianPM(GaussFamily):
                 for stat in self.statistics
             ]
         )
-        lens_keys = self._flatten_list(
+        lens_keys = np.concatenate(
             [
                 np.repeat(
                     stat.statistic.source0.sacc_tracer,
@@ -74,7 +69,7 @@ class ConstGaussianPM(GaussFamily):
                 for stat in self.statistics
             ]
         )
-        src_keys = self._flatten_list(
+        src_keys = np.concatenate(
             [
                 np.repeat(
                     stat.statistic.source1.sacc_tracer,
@@ -84,7 +79,7 @@ class ConstGaussianPM(GaussFamily):
             ]
         )
         theta = np.radians(
-            self._flatten_list([stat.statistic.thetas for stat in self.statistics]) / 60
+            np.concatenate([stat.statistic.thetas for stat in self.statistics]) / 60
         )
         assert (
             "galaxy_shearDensity_xi_t" in data_types
