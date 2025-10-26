@@ -3,6 +3,7 @@
 from __future__ import annotations
 import warnings
 from collections.abc import Sequence
+from dataclasses import dataclass
 
 import numpy as np
 import numpy.typing as npt
@@ -11,6 +12,26 @@ import pyccl
 
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.statistic import Statistic
+
+
+# Default values for point mass marginalization
+DEFAULT_SIGMA_B = 10000.0
+DEFAULT_POINT_MASS = 1e13
+
+
+@dataclass
+class PointMassData:
+    """Container for precomputed point mass data."""
+
+    theta: np.ndarray
+    row_lens_idx: np.ndarray
+    row_src_idx: np.ndarray
+    lens_tracers: list
+    src_tracers: list
+    z_l: np.ndarray
+    z_s: np.ndarray
+    nzL_norm: np.ndarray
+    nzS_norm: np.ndarray
 
 
 class ConstGaussianPM(ConstGaussian):
@@ -26,15 +47,7 @@ class ConstGaussianPM(ConstGaussian):
         super().__init__(statistics, use_cholesky=False)
         # Initialize point mass marginalization attributes
         self._pm_maps_ready: bool = False
-        self._pm_theta: np.ndarray | None = None
-        self._pm_row_lens_idx: np.ndarray | None = None
-        self._pm_row_src_idx: np.ndarray | None = None
-        self._pm_lens_tracers: list | None = None
-        self._pm_src_tracers: list | None = None
-        self._pm_z_l: np.ndarray | None = None
-        self._pm_z_s: np.ndarray | None = None
-        self._pm_nzL_norm: np.ndarray | None = None
-        self._pm_nzS_norm: np.ndarray | None = None
+        self._pm_data: PointMassData | None = None
         self._pm_inv_cov_original: np.ndarray | None = None
         self.inv_cov_correction: np.ndarray | None = None
 
@@ -63,12 +76,16 @@ class ConstGaussianPM(ConstGaussian):
         :return: Tuple of (data_types, lens_keys, src_keys, theta)
         """
         # Validate that all statistics have the required attributes
+        required_attrs = ["sacc_data_type", "source0", "source1", "thetas"]
         for stat in self.statistics:
-            required_attrs = ["sacc_data_type", "source0", "source1", "thetas"]
-            for attr in required_attrs:
-                assert hasattr(
-                    stat.statistic, attr
-                ), f"Statistic {type(stat.statistic)} missing attribute '{attr}'"
+            stat_obj = stat.statistic
+            missing_attrs = [
+                attr for attr in required_attrs if not hasattr(stat_obj, attr)
+            ]
+            if missing_attrs:
+                raise StopIteration(
+                    f"Statistic {type(stat_obj)} missing attributes: {missing_attrs}"
+                )
 
         data_types = np.concatenate(
             [
@@ -209,48 +226,22 @@ class ConstGaussianPM(ConstGaussian):
 
         return nzL_norm, nzS_norm
 
-    def _cache_precomputed_data(
-        self,
-        *,
-        theta: np.ndarray,
-        row_lens_idx: np.ndarray,
-        row_src_idx: np.ndarray,
-        lens_tracers: list,
-        src_tracers: list,
-        z_l: np.ndarray,
-        z_s: np.ndarray,
-        nzL_norm: np.ndarray,
-        nzS_norm: np.ndarray,
-    ) -> None:
+    def _cache_precomputed_data(self, data: PointMassData) -> None:
         """Cache all precomputed point mass data.
 
-        :param theta: Angular separation array
-        :param row_lens_idx: Row indices for lens tracers
-        :param row_src_idx: Row indices for source tracers
-        :param lens_tracers: List of lens tracer names
-        :param src_tracers: List of source tracer names
-        :param z_l: Lens redshift grid
-        :param z_s: Source redshift grid
-        :param nzL_norm: Normalized lens dN/dz
-        :param nzS_norm: Normalized source dN/dz
+        :param data: Container with all precomputed point mass data
         """
         self._pm_maps_ready = True
-        self._pm_theta = theta
-        self._pm_row_lens_idx = row_lens_idx
-        self._pm_row_src_idx = row_src_idx
-        self._pm_lens_tracers = lens_tracers
-        self._pm_src_tracers = src_tracers
-        self._pm_z_l = z_l
-        self._pm_z_s = z_s
-        self._pm_nzL_norm = nzL_norm
-        self._pm_nzS_norm = nzS_norm
+        self._pm_data = data
         self._pm_inv_cov_original = self.inv_cov
 
-    def _generate_maps(self) -> None:
+    def _generate_maps(self) -> PointMassData:  # pylint: disable=too-many-locals
         """Build maps and masks for the data vectors.
 
         These are not needed for a constant cosmology, but will become useful
         if we want to update the point mass correction when the cosmology changes.
+
+        :return: The precomputed point mass data
         """
         # The function should only be run one time.
         if self._pm_maps_ready:
@@ -258,7 +249,8 @@ class ConstGaussianPM(ConstGaussian):
                 "The point mass pre-computation step was already performed, "
                 "but it is being called again. ",
             )
-            return
+            assert self._pm_data is not None
+            return self._pm_data
 
         # Collect data vectors
         data_types, lens_keys, src_keys, theta = self._collect_data_vectors()
@@ -279,8 +271,8 @@ class ConstGaussianPM(ConstGaussian):
             lens_tracers, src_tracers, z_l, z_s
         )
 
-        # Cache all precomputed data
-        self._cache_precomputed_data(
+        # Create precomputed data
+        pm_data = PointMassData(
             theta=theta,
             row_lens_idx=row_lens_idx,
             row_src_idx=row_src_idx,
@@ -291,6 +283,32 @@ class ConstGaussianPM(ConstGaussian):
             nzL_norm=nzL_norm,
             nzS_norm=nzS_norm,
         )
+        self._cache_precomputed_data(pm_data)
+        return pm_data
+
+    def _get_statistic(self, tracer: str, is_lens: bool):
+        """Get a statistic for a given tracer.
+
+        :param tracer: The tracer name
+        :param is_lens: True for lens tracer, False for source tracer
+        :return: The GuardedStatistic for this tracer
+        """
+        source_attr = "source0" if is_lens else "source1"
+
+        for s in self.statistics:
+            stat = s.statistic
+            is_xi_t = (
+                stat.sacc_data_type  # type: ignore[attr-defined]
+                == "galaxy_shearDensity_xi_t"
+            )
+            source_obj = getattr(stat, source_attr)
+            is_match = source_obj.sacc_tracer == tracer
+            if is_xi_t and is_match:
+                # Validate it has TwoPoint-compatible attributes
+                assert hasattr(stat, source_attr) and hasattr(stat, "sacc_data_type")
+                return s
+        tracer_type = "lens" if is_lens else "source"
+        raise StopIteration(f"No {tracer_type} statistic found for {tracer}")
 
     def _get_lens_statistic(self, lens_tracer: str):
         """Get a statistic for a given lens tracer.
@@ -298,20 +316,7 @@ class ConstGaussianPM(ConstGaussian):
         :param lens_tracer: The lens tracer name
         :return: The GuardedStatistic for this lens tracer
         """
-        for s in self.statistics:
-            stat = s.statistic
-            is_xi_t = (
-                stat.sacc_data_type  # type: ignore[attr-defined]
-                == "galaxy_shearDensity_xi_t"
-            )
-            is_match = (
-                stat.source0.sacc_tracer == lens_tracer  # type: ignore[attr-defined]
-            )
-            if is_xi_t and is_match:
-                # Validate it has TwoPoint-compatible attributes
-                assert hasattr(stat, "source0") and hasattr(stat, "sacc_data_type")
-                return s
-        raise StopIteration(f"No lens statistic found for {lens_tracer}")
+        return self._get_statistic(lens_tracer, is_lens=True)
 
     def _get_src_statistic(self, src_tracer: str):
         """Get a statistic for a given source tracer.
@@ -319,27 +324,13 @@ class ConstGaussianPM(ConstGaussian):
         :param src_tracer: The source tracer name
         :return: The GuardedStatistic for this source tracer
         """
-        for s in self.statistics:
-            stat = s.statistic
-            is_xi_t = (
-                stat.sacc_data_type  # type: ignore[attr-defined]
-                == "galaxy_shearDensity_xi_t"
-            )
-            is_match = (
-                stat.source1.sacc_tracer == src_tracer  # type: ignore[attr-defined]
-            )
-            if is_xi_t and is_match:
-                # Validate it has TwoPoint-compatible attributes
-                assert hasattr(stat, "source1") and hasattr(stat, "sacc_data_type")
-                return s
-        raise StopIteration(f"No source statistic found for {src_tracer}")
+        return self._get_statistic(src_tracer, is_lens=False)
 
     def _prepare_integrand(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute the cosmology-dependent portion of the integrand."""
-        assert self._pm_z_l is not None
-        assert self._pm_z_s is not None
-        z_l = self._pm_z_l
-        z_s = self._pm_z_s
+        assert self._pm_data is not None
+        z_l = self._pm_data.z_l
+        z_s = self._pm_data.z_s
         a_l = 1.0 / (1.0 + z_l)
         a_s = 1.0 / (1.0 + z_s)
 
@@ -362,23 +353,20 @@ class ConstGaussianPM(ConstGaussian):
     def _compute_betas(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute beta_ij factors for all bin combinations."""
         integrand = self._prepare_integrand(cosmo)
-        assert self._pm_nzL_norm is not None
-        assert self._pm_nzS_norm is not None
-        assert self._pm_z_s is not None
-        assert self._pm_z_l is not None
-        nzL_norm = self._pm_nzL_norm
-        nzS_norm = self._pm_nzS_norm
+        assert self._pm_data is not None
+        nzL_norm = self._pm_data.nzL_norm
+        nzS_norm = self._pm_data.nzS_norm
 
         inner_integral = simpson(
             integrand[:, None, :] * nzS_norm[None, :, :],
-            x=self._pm_z_s,
+            x=self._pm_data.z_s,
             axis=2,
         )
 
         betas = (
             simpson(
                 nzL_norm[:, :, None] * inner_integral[None, :, :],
-                x=self._pm_z_l,
+                x=self._pm_data.z_l,
                 axis=1,
             )
             / cosmo["h"]
@@ -388,16 +376,15 @@ class ConstGaussianPM(ConstGaussian):
 
     def _build_V(self, betas: np.ndarray) -> np.ndarray:
         """Construct the template matrix."""
-        assert self._pm_row_src_idx is not None
-        assert self._pm_row_lens_idx is not None
-        assert self._pm_theta is not None
-        assert self._pm_lens_tracers is not None
-        V = np.zeros((len(self._pm_row_src_idx), len(self._pm_lens_tracers)))
-        valid = (self._pm_row_lens_idx >= 0) & (self._pm_row_src_idx >= 0)
+        assert self._pm_data is not None
+        V = np.zeros((len(self._pm_data.row_src_idx), len(self._pm_data.lens_tracers)))
+        valid = (self._pm_data.row_lens_idx >= 0) & (self._pm_data.row_src_idx >= 0)
         beta_rows = np.zeros(valid.sum(), dtype=float)
-        beta_rows = betas[self._pm_row_lens_idx[valid], self._pm_row_src_idx[valid]]
-        V[valid, self._pm_row_lens_idx[valid]] = beta_rows / (
-            self._pm_theta[valid] ** 2
+        beta_rows = betas[
+            self._pm_data.row_lens_idx[valid], self._pm_data.row_src_idx[valid]
+        ]
+        V[valid, self._pm_data.row_lens_idx[valid]] = beta_rows / (
+            self._pm_data.theta[valid] ** 2
         )
         return V
 
@@ -420,8 +407,8 @@ class ConstGaussianPM(ConstGaussian):
     def compute_pointmass(
         self,
         cosmo: pyccl.Cosmology,
-        sigma_B: float = 10000.0,
-        point_mass: float = 1e13,
+        sigma_B: float = DEFAULT_SIGMA_B,
+        point_mass: float = DEFAULT_POINT_MASS,
     ) -> np.ndarray:
         """Update the inverse covariance matrix to marginalize over the point mass.
 

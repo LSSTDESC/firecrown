@@ -650,12 +650,25 @@ def test_prepare_integrand(minimal_const_gaussian_PM):
     # Check that _prepare_integrand() behaves as expected.
     cosmo = pyccl.CosmologyVanillaLCDM()
 
-    minimal_const_gaussian_PM._pm_z_l = np.array([0.1, 0.2])
-    minimal_const_gaussian_PM._pm_z_s = np.array([0.3, 0.4])
+    # Create mock PointMassData
+    from firecrown.likelihood.gaussian_pointmass import PointMassData
+
+    pm_data = PointMassData(
+        theta=np.array([1.0, 2.0, 3.0]),
+        row_lens_idx=np.array([0, 1, 2]),
+        row_src_idx=np.array([0, 1, 2]),
+        lens_tracers=["lens0"],
+        src_tracers=["src0"],
+        z_l=np.array([0.1, 0.2]),
+        z_s=np.array([0.3, 0.4]),
+        nzL_norm=np.array([[1.0, 2.0]]),
+        nzS_norm=np.array([[1.0, 2.0]]),
+    )
+    minimal_const_gaussian_PM._pm_data = pm_data
     assert minimal_const_gaussian_PM._prepare_integrand(cosmo).shape == (2, 2)
 
-    minimal_const_gaussian_PM._pm_z_l = np.array([0.0, 0.2])
-    minimal_const_gaussian_PM._pm_z_s = np.array([0.0, 0.4])
+    pm_data.z_l = np.array([0.0, 0.2])
+    pm_data.z_s = np.array([0.0, 0.4])
     assert np.all(minimal_const_gaussian_PM._prepare_integrand(cosmo)) >= 0.0
 
 
@@ -776,3 +789,34 @@ def test_get_src_statistic_not_found(sacc_data):
         StopIteration, match="No source statistic found for nonexistent"
     ):
         likelihood._get_src_statistic("nonexistent")
+
+
+def test_collect_data_vectors_missing_attributes():
+    # Test that _collect_data_vectors raises StopIteration when statistics
+    # are missing required attributes
+    class IncompleteStatistic:
+        def __init__(self):
+            # Missing 'thetas' attribute
+            self.sacc_data_type = "galaxy_shearDensity_xi_t"
+            self.source0 = MockSource("lens0", None)
+            self.source1 = MockSource("src0", None)
+            # Missing self.thetas
+
+    incomplete_stat = IncompleteStatistic()
+    stat_container = MockStatisticContainer(incomplete_stat)
+
+    # Create a real likelihood first, then replace statistics with mock
+    likelihood = ConstGaussianPM(
+        statistics=[
+            TwoPoint(
+                source0=nc.NumberCounts(sacc_tracer="lens0"),
+                source1=wl.WeakLensing(sacc_tracer="src0"),
+                sacc_data_type="galaxy_shearDensity_xi_t",
+            )
+        ]
+    )
+    # Replace statistics with mock - use object.__setattr__ to bypass type checking
+    object.__setattr__(likelihood, "statistics", [stat_container])
+
+    with pytest.raises(StopIteration, match="missing attributes"):
+        likelihood._collect_data_vectors()
