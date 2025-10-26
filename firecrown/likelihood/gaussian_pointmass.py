@@ -3,19 +3,17 @@
 from __future__ import annotations
 import warnings
 from collections.abc import Sequence
-from typing import final
 
 import numpy as np
 import numpy.typing as npt
 from scipy.integrate import simpson
 import pyccl
 
-from firecrown.likelihood.gaussfamily import GaussFamily, State, enforce_states
+from firecrown.likelihood.gaussian_base import ConstGaussianBase
 from firecrown.likelihood.statistic import Statistic
-from firecrown.modeling_tools import ModelingTools
 
 
-class ConstGaussianPM(GaussFamily):
+class ConstGaussianPM(ConstGaussianBase):
     """A Gaussian log-like with constant covariance, marginalizing over a point mass."""
 
     def __init__(self, statistics: Sequence[Statistic]) -> None:
@@ -23,7 +21,9 @@ class ConstGaussianPM(GaussFamily):
 
         :param statistics: A list of statistics for chi-squared calculations
         """
-        super().__init__(statistics)
+        # Use direct inverse covariance instead of Cholesky for chi-squared
+        # calculation, because point mass correction makes Cholesky incompatible
+        super().__init__(statistics, use_cholesky=False)
         # Initialize point mass marginalization attributes
         self._pm_maps_ready: bool = False
         self._pm_theta: np.ndarray | None = None
@@ -38,41 +38,28 @@ class ConstGaussianPM(GaussFamily):
         self._pm_inv_cov_original: np.ndarray | None = None
         self.inv_cov_correction: np.ndarray | None = None
 
-    def compute_loglike(self, tools: ModelingTools) -> float:
-        """Compute the log-likelihood.
+    def compute_chisq_impl(self, residuals: npt.NDArray[np.float64]) -> float:
+        """Override chi-squared calculation to use direct inv_cov.
 
-        :params tools: The modeling tools used to compute the likelihood.
-        :return: The log-likelihood.
+        We must use direct inv_cov multiplication because the point mass
+        correction makes the Cholesky decomposition incompatible.
+
+        :param residuals: The residuals (data - theory)
+        :return: The chi-squared value
         """
-        return -0.5 * self.compute_chisq(tools)
-
-    def make_realization_vector(self) -> np.ndarray:
-        """Create a new (randomized) realization of the model.
-
-        :return: A new realization of the model
-        """
-        theory_vector = self.get_theory_vector()
-        assert self.cholesky is not None
-        new_data_vector = theory_vector + np.dot(
-            self.cholesky, np.random.randn(len(theory_vector))
-        )
-
-        return new_data_vector
-
-    def _generate_maps(self) -> None:
-        """Build maps and masks for the data vectors.
-
-        These are not needed for a constant cosmology, but will become useful
-        if we want to update the point mass correction when the cosmology changes.
-        """
-        # The function should only be run one time.
-        if self._pm_maps_ready:
+        if not self.inv_cov_correction:
             warnings.warn(
-                "The point mass pre-computation step was already performed, "
-                "but it is being called again. ",
+                "The inverse covariance correction has not yet been computed."
             )
-            return
+        return self._compute_chisq_direct(residuals)
 
+    def _collect_data_vectors(
+        self,
+    ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+        """Collect data types, lens keys, source keys, and theta from statistics.
+
+        :return: Tuple of (data_types, lens_keys, src_keys, theta)
+        """
         data_types = np.concatenate(
             [
                 np.repeat(
@@ -103,6 +90,18 @@ class ConstGaussianPM(GaussFamily):
         theta = np.radians(
             np.concatenate([stat.statistic.thetas for stat in self.statistics]) / 60
         )
+        return data_types, lens_keys, src_keys, theta
+
+    def _extract_xi_t_pairs(
+        self, data_types: np.ndarray, lens_keys: np.ndarray, src_keys: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Extract galaxy_shearDensity_xi_t pairs from data.
+
+        :param data_types: Array of data types
+        :param lens_keys: Array of lens tracer keys
+        :param src_keys: Array of source tracer keys
+        :return: Tuple of (xi_rows, xi_pairs)
+        """
         assert (
             "galaxy_shearDensity_xi_t" in data_types
         ), "Data must contain at least one 'galaxy_shearDensity_xi_t' datavector."
@@ -110,7 +109,23 @@ class ConstGaussianPM(GaussFamily):
         xi_mask = np.array([dt == "galaxy_shearDensity_xi_t" for dt in data_types])
         xi_rows = np.where(xi_mask)[0]
         xi_pairs = np.array(list(zip(lens_keys, src_keys)))[xi_rows]
+        return xi_rows, xi_pairs
 
+    def _create_tracer_indices(
+        self,
+        xi_pairs: np.ndarray,
+        xi_rows: np.ndarray,
+        lens_keys: np.ndarray,
+        src_keys: np.ndarray,
+    ) -> tuple[list, list, np.ndarray, np.ndarray]:
+        """Create tracer index mappings.
+
+        :param xi_pairs: Array of (lens, source) tracer pairs
+        :param xi_rows: Row indices for xi_t data
+        :param lens_keys: Array of lens tracer keys
+        :param src_keys: Array of source tracer keys
+        :return: Tuple of (lens_tracers, src_tracers, row_lens_idx, row_src_idx)
+        """
         lens_tracers = list(np.unique(xi_pairs[:, 0]))
         src_tracers = list(np.unique(xi_pairs[:, 1]))
         lens_index = {t: i for i, t in enumerate(lens_tracers)}
@@ -122,6 +137,13 @@ class ConstGaussianPM(GaussFamily):
             row_lens_idx[ridx] = lens_index[lens_keys[ridx]]
             row_src_idx[ridx] = src_index[src_keys[ridx]]
 
+        return lens_tracers, src_tracers, row_lens_idx, row_src_idx
+
+    def _get_redshift_grids(self) -> tuple[np.ndarray, np.ndarray]:
+        """Get and validate redshift grids from xi_t statistics.
+
+        :return: Tuple of (z_l, z_s) redshift arrays
+        """
         # Use the first xi_t statistic as the template for N(z) grid,
         # assuming all the lens/source tracers share the same N(z) sampling
         idx_is_xit = (
@@ -138,6 +160,7 @@ class ConstGaussianPM(GaussFamily):
         ]
         z_l = z_l_arr[0]
         z_s = z_s_arr[0]
+
         # Double-check that all the tracers share the same N(z) sampling
         assert all(
             np.array_equal(z_l, z_l_tracer) for z_l_tracer in z_l_arr
@@ -146,34 +169,29 @@ class ConstGaussianPM(GaussFamily):
             np.array_equal(z_s, z_s_tracer) for z_s_tracer in z_s_arr
         ), "N(z) sampling must be the same for all source tracers."
 
+        return z_l, z_s
+
+    def _compute_normalized_dndz(
+        self, lens_tracers: list, src_tracers: list, z_l: np.ndarray, z_s: np.ndarray
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """Compute normalized dN/dz distributions for all tracers.
+
+        :param lens_tracers: List of lens tracer names
+        :param src_tracers: List of source tracer names
+        :param z_l: Lens redshift grid
+        :param z_s: Source redshift grid
+        :return: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
+        """
         # Build dN/dz libraries once per unique tracer
-        def _get_lens_statistic(lt):
-            """Get a statistic for a given lens tracer."""
-            return next(
-                s
-                for s in self.statistics
-                if s.statistic.sacc_data_type == "galaxy_shearDensity_xi_t"
-                and s.statistic.source0.sacc_tracer == lt
-            )
-
-        def _get_src_statistic(st):
-            """Get a statistic for a given source tracer."""
-            return next(
-                s
-                for s in self.statistics
-                if s.statistic.sacc_data_type == "galaxy_shearDensity_xi_t"
-                and s.statistic.source1.sacc_tracer == st
-            )
-
         nzL = np.stack(
             [
-                _get_lens_statistic(lt).statistic.source0.tracer_args.dndz
+                self._get_lens_statistic(lt).statistic.source0.tracer_args.dndz
                 for lt in lens_tracers
             ]
         )
         nzS = np.stack(
             [
-                _get_src_statistic(st).statistic.source1.tracer_args.dndz
+                self._get_src_statistic(st).statistic.source1.tracer_args.dndz
                 for st in src_tracers
             ]
         )
@@ -182,7 +200,33 @@ class ConstGaussianPM(GaussFamily):
         nzL_norm = nzL / simpson(nzL, x=z_l, axis=1)[:, None]
         nzS_norm = nzS / simpson(nzS, x=z_s, axis=1)[:, None]
 
-        # Cache
+        return nzL_norm, nzS_norm
+
+    def _cache_precomputed_data(
+        self,
+        *,
+        theta: np.ndarray,
+        row_lens_idx: np.ndarray,
+        row_src_idx: np.ndarray,
+        lens_tracers: list,
+        src_tracers: list,
+        z_l: np.ndarray,
+        z_s: np.ndarray,
+        nzL_norm: np.ndarray,
+        nzS_norm: np.ndarray,
+    ) -> None:
+        """Cache all precomputed point mass data.
+
+        :param theta: Angular separation array
+        :param row_lens_idx: Row indices for lens tracers
+        :param row_src_idx: Row indices for source tracers
+        :param lens_tracers: List of lens tracer names
+        :param src_tracers: List of source tracer names
+        :param z_l: Lens redshift grid
+        :param z_s: Source redshift grid
+        :param nzL_norm: Normalized lens dN/dz
+        :param nzS_norm: Normalized source dN/dz
+        """
         self._pm_maps_ready = True
         self._pm_theta = theta
         self._pm_row_lens_idx = row_lens_idx
@@ -194,6 +238,78 @@ class ConstGaussianPM(GaussFamily):
         self._pm_nzL_norm = nzL_norm
         self._pm_nzS_norm = nzS_norm
         self._pm_inv_cov_original = self.inv_cov
+
+    def _generate_maps(self) -> None:
+        """Build maps and masks for the data vectors.
+
+        These are not needed for a constant cosmology, but will become useful
+        if we want to update the point mass correction when the cosmology changes.
+        """
+        # The function should only be run one time.
+        if self._pm_maps_ready:
+            warnings.warn(
+                "The point mass pre-computation step was already performed, "
+                "but it is being called again. ",
+            )
+            return
+
+        # Collect data vectors
+        data_types, lens_keys, src_keys, theta = self._collect_data_vectors()
+
+        # Extract xi_t pairs
+        xi_rows, xi_pairs = self._extract_xi_t_pairs(data_types, lens_keys, src_keys)
+
+        # Create tracer index mappings
+        lens_tracers, src_tracers, row_lens_idx, row_src_idx = (
+            self._create_tracer_indices(xi_pairs, xi_rows, lens_keys, src_keys)
+        )
+
+        # Get and validate redshift grids
+        z_l, z_s = self._get_redshift_grids()
+
+        # Compute normalized dN/dz
+        nzL_norm, nzS_norm = self._compute_normalized_dndz(
+            lens_tracers, src_tracers, z_l, z_s
+        )
+
+        # Cache all precomputed data
+        self._cache_precomputed_data(
+            theta=theta,
+            row_lens_idx=row_lens_idx,
+            row_src_idx=row_src_idx,
+            lens_tracers=lens_tracers,
+            src_tracers=src_tracers,
+            z_l=z_l,
+            z_s=z_s,
+            nzL_norm=nzL_norm,
+            nzS_norm=nzS_norm,
+        )
+
+    def _get_lens_statistic(self, lens_tracer: str):
+        """Get a statistic for a given lens tracer.
+
+        :param lens_tracer: The lens tracer name
+        :return: The GuardedStatistic for this lens tracer
+        """
+        return next(
+            s
+            for s in self.statistics
+            if s.statistic.sacc_data_type == "galaxy_shearDensity_xi_t"
+            and s.statistic.source0.sacc_tracer == lens_tracer
+        )
+
+    def _get_src_statistic(self, src_tracer: str):
+        """Get a statistic for a given source tracer.
+
+        :param src_tracer: The source tracer name
+        :return: The GuardedStatistic for this source tracer
+        """
+        return next(
+            s
+            for s in self.statistics
+            if s.statistic.sacc_data_type == "galaxy_shearDensity_xi_t"
+            and s.statistic.source1.sacc_tracer == src_tracer
+        )
 
     def _prepare_integrand(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute the cosmology-dependent portion of the integrand."""
@@ -296,40 +412,3 @@ class ConstGaussianPM(GaussFamily):
         self.inv_cov_correction = self._compute_correction(cosmo, sigma_B, point_mass)
         self.inv_cov = self._pm_inv_cov_original - self.inv_cov_correction
         return self.inv_cov_correction
-
-    @final
-    @enforce_states(
-        initial=[State.UPDATED, State.COMPUTED],
-        terminal=State.COMPUTED,
-        failure_message="update() must be called before compute_chisq()",
-    )
-    def compute_chisq(self, tools: ModelingTools) -> float:
-        """Calculate and return the chi-squared for the given cosmology.
-
-        We need to override the default calculation because the cholesky
-        is incompatible with the correction term. Note that in some cases
-        this may reduce the numerical stability of the Chi2 calculation.
-
-        :param tools: ModelingTools to be used in the calculation of the theory vector
-        :return: the chi-squared
-        """
-        if not self.inv_cov_correction:
-            warnings.warn(
-                "The inverse covariance correction has not yet been computed."
-            )
-
-        theory_vector: npt.NDArray[np.float64]
-        data_vector: npt.NDArray[np.float64]
-        residuals: npt.NDArray[np.float64]
-        try:
-            theory_vector = self.compute_theory_vector(tools)
-            data_vector = self.get_data_vector()
-        except NotImplementedError:
-            data_vector, theory_vector = self.compute(tools)
-
-        assert len(data_vector) == len(theory_vector)
-        residuals = np.array(data_vector - theory_vector, dtype=np.float64)
-
-        assert self.inv_cov is not None
-        chisq = residuals @ self.inv_cov @ residuals
-        return float(chisq)

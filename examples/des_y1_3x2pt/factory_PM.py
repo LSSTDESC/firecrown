@@ -8,7 +8,7 @@ from firecrown.likelihood.likelihood import NamedParameters
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.gaussian import ConstGaussianPM
+from firecrown.likelihood.gaussian_pointmass import ConstGaussianPM
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 
