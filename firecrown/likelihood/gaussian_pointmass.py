@@ -9,11 +9,11 @@ import numpy.typing as npt
 from scipy.integrate import simpson
 import pyccl
 
-from firecrown.likelihood.gaussian_base import ConstGaussianBase
+from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.statistic import Statistic
 
 
-class ConstGaussianPM(ConstGaussianBase):
+class ConstGaussianPM(ConstGaussian):
     """A Gaussian log-like with constant covariance, marginalizing over a point mass."""
 
     def __init__(self, statistics: Sequence[Statistic]) -> None:
