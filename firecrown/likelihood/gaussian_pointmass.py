@@ -226,22 +226,11 @@ class ConstGaussianPM(ConstGaussian):
 
         return nzL_norm, nzS_norm
 
-    def _cache_precomputed_data(self, data: PointMassData) -> None:
-        """Cache all precomputed point mass data.
-
-        :param data: Container with all precomputed point mass data
-        """
-        self._pm_maps_ready = True
-        self._pm_data = data
-        self._pm_inv_cov_original = self.inv_cov
-
-    def _generate_maps(self) -> PointMassData:  # pylint: disable=too-many-locals
+    def _generate_maps(self) -> None:  # pylint: disable=too-many-locals
         """Build maps and masks for the data vectors.
 
         These are not needed for a constant cosmology, but will become useful
         if we want to update the point mass correction when the cosmology changes.
-
-        :return: The precomputed point mass data
         """
         # The function should only be run one time.
         if self._pm_maps_ready:
@@ -250,7 +239,7 @@ class ConstGaussianPM(ConstGaussian):
                 "but it is being called again. ",
             )
             assert self._pm_data is not None
-            return self._pm_data
+            return
 
         # Collect data vectors
         data_types, lens_keys, src_keys, theta = self._collect_data_vectors()
@@ -283,8 +272,9 @@ class ConstGaussianPM(ConstGaussian):
             nzL_norm=nzL_norm,
             nzS_norm=nzS_norm,
         )
-        self._cache_precomputed_data(pm_data)
-        return pm_data
+        self._pm_maps_ready = True
+        self._pm_data = pm_data
+        self._pm_inv_cov_original = self.inv_cov
 
     def _get_statistic(self, tracer: str, is_lens: bool):
         """Get a statistic for a given tracer.
