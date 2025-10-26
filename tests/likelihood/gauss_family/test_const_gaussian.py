@@ -516,3 +516,27 @@ def test_create_ready_not_ready(tp_factory):
         match="The statistic .* is not ready to be used.",
     ):
         ConstGaussian.create_ready(two_points, np.diag(np.ones(11)))
+
+
+def test_compute_chisq_without_cholesky(
+    trivial_stats, sacc_data_for_trivial_stat, trivial_params
+):
+    """Test compute_chisq with use_cholesky=False.
+
+    This test ensures that the parent GaussFamily.compute_chisq_impl() method
+    correctly executes the direct chi-squared path (line 458 in gaussfamily.py)
+    when use_cholesky is False.
+    """
+    # Create likelihood with use_cholesky=False
+    likelihood = ConstGaussian(statistics=trivial_stats, use_cholesky=False)
+    likelihood.read(sacc_data_for_trivial_stat)
+
+    # Update with parameters
+    likelihood.update(trivial_params)
+
+    # Compute chi-squared - this should call GaussFamily.compute_chisq_impl()
+    # which will execute the else branch (line 458) since use_cholesky=False
+    chisq = likelihood.compute_chisq(ModelingTools())
+
+    # The expected chi-squared value should match the direct calculation
+    assert chisq == 2.0

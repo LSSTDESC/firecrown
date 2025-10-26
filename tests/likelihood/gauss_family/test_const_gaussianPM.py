@@ -586,12 +586,18 @@ def minimal_const_gaussian_PM():
             )
         ]
     )
-    likelihood.statistics = [stat_container]
+    # Replace statistics with mock - use object.__setattr__ to bypass type checking
+    object.__setattr__(likelihood, "statistics", [stat_container])
     likelihood.cholesky = np.eye(3)
     likelihood.inv_cov = np.eye(3)
-    likelihood.get_theory_vector = lambda: np.array([1.0, 2.0, 3.0])
-    likelihood.get_data_vector = lambda: np.array([1.0, 2.0, 3.0])
-    likelihood.compute_theory_vector = lambda tools: np.array([1.0, 2.0, 3.0])
+    # Use object.__setattr__ to replace final methods for testing
+    object.__setattr__(
+        likelihood, "get_theory_vector", lambda: np.array([1.0, 2.0, 3.0])
+    )
+    object.__setattr__(likelihood, "get_data_vector", lambda: np.array([1.0, 2.0, 3.0]))
+    object.__setattr__(
+        likelihood, "compute_theory_vector", lambda tools: np.array([1.0, 2.0, 3.0])
+    )
     return likelihood
 
 
@@ -701,6 +707,72 @@ def test_PM_correction_matrix(sacc_data):
     likelihood.read(sacc_data)
     cosmo = pyccl.CosmologyVanillaLCDM()
     likelihood.compute_pointmass(cosmo)
+    # Runtime checks to ensure inv_cov is not None for mypy
+    assert likelihood.inv_cov is not None
+    assert likelihood._pm_inv_cov_original is not None
     assert (likelihood.inv_cov != likelihood._pm_inv_cov_original).any()
     assert not np.isnan(likelihood.inv_cov).any()
     assert not np.isinf(likelihood.inv_cov).any()
+
+
+def test_compute_chisq_with_correction(sacc_data):
+    # Test that compute_chisq_impl works correctly when inv_cov_correction is set
+    # This tests the truthy branch of the if statement at line 50
+    stats = {}
+    stats["gammat_lens0_src0"] = TwoPoint(
+        source0=nc.NumberCounts(sacc_tracer="lens0"),
+        source1=wl.WeakLensing(sacc_tracer="src0"),
+        sacc_data_type="galaxy_shearDensity_xi_t",
+    )
+    likelihood = ConstGaussianPM(statistics=list(stats.values()))
+    likelihood.read(sacc_data)
+    cosmo = pyccl.CosmologyVanillaLCDM()
+
+    # Compute point mass correction - this sets inv_cov_correction to a non-None value
+    likelihood.compute_pointmass(cosmo)
+
+    # Verify inv_cov_correction is set (not None)
+    assert likelihood.inv_cov_correction is not None
+
+    # Now call compute_chisq_impl directly with correct-sized residuals
+    # to test the branch where inv_cov_correction is not None
+    data_vector = likelihood.get_data_vector()
+    residuals = np.zeros_like(data_vector)
+    chisq = likelihood.compute_chisq_impl(residuals)
+
+    # Verify it returns a finite value
+    assert np.isfinite(chisq)
+
+
+def test_get_lens_statistic_not_found(sacc_data):
+    # Test that _get_lens_statistic raises StopIteration when lens tracer not found
+    stats = {}
+    stats["gammat_lens0_src0"] = TwoPoint(
+        source0=nc.NumberCounts(sacc_tracer="lens0"),
+        source1=wl.WeakLensing(sacc_tracer="src0"),
+        sacc_data_type="galaxy_shearDensity_xi_t",
+    )
+    likelihood = ConstGaussianPM(statistics=list(stats.values()))
+    likelihood.read(sacc_data)
+
+    # Try to get a lens statistic that doesn't exist
+    with pytest.raises(StopIteration, match="No lens statistic found for nonexistent"):
+        likelihood._get_lens_statistic("nonexistent")
+
+
+def test_get_src_statistic_not_found(sacc_data):
+    # Test that _get_src_statistic raises StopIteration when source tracer not found
+    stats = {}
+    stats["gammat_lens0_src0"] = TwoPoint(
+        source0=nc.NumberCounts(sacc_tracer="lens0"),
+        source1=wl.WeakLensing(sacc_tracer="src0"),
+        sacc_data_type="galaxy_shearDensity_xi_t",
+    )
+    likelihood = ConstGaussianPM(statistics=list(stats.values()))
+    likelihood.read(sacc_data)
+
+    # Try to get a source statistic that doesn't exist
+    with pytest.raises(
+        StopIteration, match="No source statistic found for nonexistent"
+    ):
+        likelihood._get_src_statistic("nonexistent")

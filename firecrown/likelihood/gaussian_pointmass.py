@@ -47,7 +47,7 @@ class ConstGaussianPM(ConstGaussianBase):
         :param residuals: The residuals (data - theory)
         :return: The chi-squared value
         """
-        if not self.inv_cov_correction:
+        if self.inv_cov_correction is None:
             warnings.warn(
                 "The inverse covariance correction has not yet been computed."
             )
@@ -58,12 +58,22 @@ class ConstGaussianPM(ConstGaussianBase):
     ) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
         """Collect data types, lens keys, source keys, and theta from statistics.
 
+        All statistics must have TwoPoint-compatible attributes.
+
         :return: Tuple of (data_types, lens_keys, src_keys, theta)
         """
+        # Validate that all statistics have the required attributes
+        for stat in self.statistics:
+            required_attrs = ["sacc_data_type", "source0", "source1", "thetas"]
+            for attr in required_attrs:
+                assert hasattr(
+                    stat.statistic, attr
+                ), f"Statistic {type(stat.statistic)} missing attribute '{attr}'"
+
         data_types = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.sacc_data_type,
+                    stat.statistic.sacc_data_type,  # type: ignore[attr-defined]
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
@@ -72,7 +82,7 @@ class ConstGaussianPM(ConstGaussianBase):
         lens_keys = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.source0.sacc_tracer,
+                    stat.statistic.source0.sacc_tracer,  # type: ignore[attr-defined]
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
@@ -81,15 +91,18 @@ class ConstGaussianPM(ConstGaussianBase):
         src_keys = np.concatenate(
             [
                 np.repeat(
-                    stat.statistic.source1.sacc_tracer,
+                    stat.statistic.source1.sacc_tracer,  # type: ignore[attr-defined]
                     len(stat.statistic.get_data_vector()),
                 )
                 for stat in self.statistics
             ]
         )
-        theta = np.radians(
-            np.concatenate([stat.statistic.thetas for stat in self.statistics]) / 60
-        )
+        # Collect theta values (requires TwoPoint statistics)
+        theta_list = [
+            stat.statistic.thetas  # type: ignore[attr-defined]
+            for stat in self.statistics
+        ]
+        theta = np.radians(np.concatenate(theta_list) / 60)
         return data_types, lens_keys, src_keys, theta
 
     def _extract_xi_t_pairs(
@@ -146,18 +159,14 @@ class ConstGaussianPM(ConstGaussianBase):
         """
         # Use the first xi_t statistic as the template for N(z) grid,
         # assuming all the lens/source tracers share the same N(z) sampling
-        idx_is_xit = (
-            np.array([s.statistic.sacc_data_type for s in self.statistics])
-            == "galaxy_shearDensity_xi_t"
-        )
-        z_l_arr = [
-            s.statistic.source0.tracer_args.z
-            for s in np.array(self.statistics)[idx_is_xit]
+        sacc_types = [
+            s.statistic.sacc_data_type  # type: ignore[attr-defined]
+            for s in self.statistics
         ]
-        z_s_arr = [
-            s.statistic.source1.tracer_args.z
-            for s in np.array(self.statistics)[idx_is_xit]
-        ]
+        idx_is_xit = np.array(sacc_types) == "galaxy_shearDensity_xi_t"
+        xi_t_stats = np.array(self.statistics)[idx_is_xit]
+        z_l_arr = [s.statistic.source0.tracer_args.z for s in xi_t_stats]
+        z_s_arr = [s.statistic.source1.tracer_args.z for s in xi_t_stats]
         z_l = z_l_arr[0]
         z_s = z_s_arr[0]
 
@@ -183,18 +192,16 @@ class ConstGaussianPM(ConstGaussianBase):
         :return: Tuple of (nzL_norm, nzS_norm) normalized dN/dz arrays
         """
         # Build dN/dz libraries once per unique tracer
-        nzL = np.stack(
-            [
-                self._get_lens_statistic(lt).statistic.source0.tracer_args.dndz
-                for lt in lens_tracers
-            ]
-        )
-        nzS = np.stack(
-            [
-                self._get_src_statistic(st).statistic.source1.tracer_args.dndz
-                for st in src_tracers
-            ]
-        )
+        nzL_list = [
+            self._get_lens_statistic(lt).statistic.source0.tracer_args.dndz
+            for lt in lens_tracers
+        ]
+        nzS_list = [
+            self._get_src_statistic(st).statistic.source1.tracer_args.dndz
+            for st in src_tracers
+        ]
+        nzL = np.stack(nzL_list)
+        nzS = np.stack(nzS_list)
 
         # Normalize dN/dz
         nzL_norm = nzL / simpson(nzL, x=z_l, axis=1)[:, None]
@@ -291,12 +298,20 @@ class ConstGaussianPM(ConstGaussianBase):
         :param lens_tracer: The lens tracer name
         :return: The GuardedStatistic for this lens tracer
         """
-        return next(
-            s
-            for s in self.statistics
-            if s.statistic.sacc_data_type == "galaxy_shearDensity_xi_t"
-            and s.statistic.source0.sacc_tracer == lens_tracer
-        )
+        for s in self.statistics:
+            stat = s.statistic
+            is_xi_t = (
+                stat.sacc_data_type  # type: ignore[attr-defined]
+                == "galaxy_shearDensity_xi_t"
+            )
+            is_match = (
+                stat.source0.sacc_tracer == lens_tracer  # type: ignore[attr-defined]
+            )
+            if is_xi_t and is_match:
+                # Validate it has TwoPoint-compatible attributes
+                assert hasattr(stat, "source0") and hasattr(stat, "sacc_data_type")
+                return s
+        raise StopIteration(f"No lens statistic found for {lens_tracer}")
 
     def _get_src_statistic(self, src_tracer: str):
         """Get a statistic for a given source tracer.
@@ -304,12 +319,20 @@ class ConstGaussianPM(ConstGaussianBase):
         :param src_tracer: The source tracer name
         :return: The GuardedStatistic for this source tracer
         """
-        return next(
-            s
-            for s in self.statistics
-            if s.statistic.sacc_data_type == "galaxy_shearDensity_xi_t"
-            and s.statistic.source1.sacc_tracer == src_tracer
-        )
+        for s in self.statistics:
+            stat = s.statistic
+            is_xi_t = (
+                stat.sacc_data_type  # type: ignore[attr-defined]
+                == "galaxy_shearDensity_xi_t"
+            )
+            is_match = (
+                stat.source1.sacc_tracer == src_tracer  # type: ignore[attr-defined]
+            )
+            if is_xi_t and is_match:
+                # Validate it has TwoPoint-compatible attributes
+                assert hasattr(stat, "source1") and hasattr(stat, "sacc_data_type")
+                return s
+        raise StopIteration(f"No source statistic found for {src_tracer}")
 
     def _prepare_integrand(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute the cosmology-dependent portion of the integrand."""
@@ -368,6 +391,7 @@ class ConstGaussianPM(ConstGaussianBase):
         assert self._pm_row_src_idx is not None
         assert self._pm_row_lens_idx is not None
         assert self._pm_theta is not None
+        assert self._pm_lens_tracers is not None
         V = np.zeros((len(self._pm_row_src_idx), len(self._pm_lens_tracers)))
         valid = (self._pm_row_lens_idx >= 0) & (self._pm_row_src_idx >= 0)
         beta_rows = np.zeros(valid.sum(), dtype=float)
