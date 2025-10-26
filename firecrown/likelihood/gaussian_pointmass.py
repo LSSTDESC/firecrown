@@ -4,6 +4,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
+from typing import cast
 
 import numpy as np
 import numpy.typing as npt
@@ -23,15 +24,27 @@ DEFAULT_POINT_MASS = 1e13
 class PointMassData:
     """Container for precomputed point mass data."""
 
-    theta: np.ndarray
-    row_lens_idx: np.ndarray
-    row_src_idx: np.ndarray
-    lens_tracers: list
-    src_tracers: list
-    z_l: np.ndarray
-    z_s: np.ndarray
-    nzL_norm: np.ndarray
-    nzS_norm: np.ndarray
+    theta: np.ndarray | None = None
+    row_lens_idx: np.ndarray | None = None
+    row_src_idx: np.ndarray | None = None
+    lens_tracers: list | None = None
+    src_tracers: list | None = None
+    z_l: np.ndarray | None = None
+    z_s: np.ndarray | None = None
+    nzL_norm: np.ndarray | None = None
+    nzS_norm: np.ndarray | None = None
+
+    def assert_prepared(self) -> None:
+        """Assert that all data members have been initialized."""
+        assert self.theta is not None, "theta has not been initialized"
+        assert self.row_lens_idx is not None, "row_lens_idx has not been initialized"
+        assert self.row_src_idx is not None, "row_src_idx has not been initialized"
+        assert self.lens_tracers is not None, "lens_tracers has not been initialized"
+        assert self.src_tracers is not None, "src_tracers has not been initialized"
+        assert self.z_l is not None, "z_l has not been initialized"
+        assert self.z_s is not None, "z_s has not been initialized"
+        assert self.nzL_norm is not None, "nzL_norm has not been initialized"
+        assert self.nzS_norm is not None, "nzS_norm has not been initialized"
 
 
 class ConstGaussianPM(ConstGaussian):
@@ -46,10 +59,14 @@ class ConstGaussianPM(ConstGaussian):
         # calculation, because point mass correction makes Cholesky incompatible
         super().__init__(statistics, use_cholesky=False)
         # Initialize point mass marginalization attributes
-        self._pm_maps_ready: bool = False
         self._pm_data: PointMassData | None = None
         self._pm_inv_cov_original: np.ndarray | None = None
         self.inv_cov_correction: np.ndarray | None = None
+
+    @property
+    def pm_maps_ready(self) -> bool:
+        """Check if point mass maps have been generated."""
+        return self._pm_data is not None
 
     def compute_chisq_impl(self, residuals: npt.NDArray[np.float64]) -> float:
         """Override chi-squared calculation to use direct inv_cov.
@@ -226,14 +243,14 @@ class ConstGaussianPM(ConstGaussian):
 
         return nzL_norm, nzS_norm
 
-    def _generate_maps(self) -> None:  # pylint: disable=too-many-locals
+    def _generate_maps(self) -> None:
         """Build maps and masks for the data vectors.
 
         These are not needed for a constant cosmology, but will become useful
         if we want to update the point mass correction when the cosmology changes.
         """
         # The function should only be run one time.
-        if self._pm_maps_ready:
+        if self.pm_maps_ready:
             warnings.warn(
                 "The point mass pre-computation step was already performed, "
                 "but it is being called again. ",
@@ -241,8 +258,12 @@ class ConstGaussianPM(ConstGaussian):
             assert self._pm_data is not None
             return
 
+        # Initialize the point mass data container
+        self._pm_data = PointMassData()
+
         # Collect data vectors
         data_types, lens_keys, src_keys, theta = self._collect_data_vectors()
+        self._pm_data.theta = theta
 
         # Extract xi_t pairs
         xi_rows, xi_pairs = self._extract_xi_t_pairs(data_types, lens_keys, src_keys)
@@ -251,29 +272,24 @@ class ConstGaussianPM(ConstGaussian):
         lens_tracers, src_tracers, row_lens_idx, row_src_idx = (
             self._create_tracer_indices(xi_pairs, xi_rows, lens_keys, src_keys)
         )
+        self._pm_data.lens_tracers = lens_tracers
+        self._pm_data.src_tracers = src_tracers
+        self._pm_data.row_lens_idx = row_lens_idx
+        self._pm_data.row_src_idx = row_src_idx
 
         # Get and validate redshift grids
         z_l, z_s = self._get_redshift_grids()
+        self._pm_data.z_l = z_l
+        self._pm_data.z_s = z_s
 
         # Compute normalized dN/dz
         nzL_norm, nzS_norm = self._compute_normalized_dndz(
             lens_tracers, src_tracers, z_l, z_s
         )
+        self._pm_data.nzL_norm = nzL_norm
+        self._pm_data.nzS_norm = nzS_norm
 
-        # Create precomputed data
-        pm_data = PointMassData(
-            theta=theta,
-            row_lens_idx=row_lens_idx,
-            row_src_idx=row_src_idx,
-            lens_tracers=lens_tracers,
-            src_tracers=src_tracers,
-            z_l=z_l,
-            z_s=z_s,
-            nzL_norm=nzL_norm,
-            nzS_norm=nzS_norm,
-        )
-        self._pm_maps_ready = True
-        self._pm_data = pm_data
+        # Mark as ready and cache original inverse covariance
         self._pm_inv_cov_original = self.inv_cov
 
     def _get_statistic(self, tracer: str, is_lens: bool):
@@ -319,8 +335,10 @@ class ConstGaussianPM(ConstGaussian):
     def _prepare_integrand(self, cosmo: pyccl.Cosmology) -> np.ndarray:
         """Compute the cosmology-dependent portion of the integrand."""
         assert self._pm_data is not None
-        z_l = self._pm_data.z_l
-        z_s = self._pm_data.z_s
+        self._pm_data.assert_prepared()
+        # After assert_prepared(), we know all fields are not None
+        z_l = cast(np.ndarray, self._pm_data.z_l)
+        z_s = cast(np.ndarray, self._pm_data.z_s)
         a_l = 1.0 / (1.0 + z_l)
         a_s = 1.0 / (1.0 + z_s)
 
@@ -344,19 +362,21 @@ class ConstGaussianPM(ConstGaussian):
         """Compute beta_ij factors for all bin combinations."""
         integrand = self._prepare_integrand(cosmo)
         assert self._pm_data is not None
-        nzL_norm = self._pm_data.nzL_norm
-        nzS_norm = self._pm_data.nzS_norm
+        self._pm_data.assert_prepared()
+        # After assert_prepared(), we know all fields are not None
+        nzL_norm = cast(np.ndarray, self._pm_data.nzL_norm)
+        nzS_norm = cast(np.ndarray, self._pm_data.nzS_norm)
 
         inner_integral = simpson(
             integrand[:, None, :] * nzS_norm[None, :, :],
-            x=self._pm_data.z_s,
+            x=cast(np.ndarray, self._pm_data.z_s),
             axis=2,
         )
 
         betas = (
             simpson(
                 nzL_norm[:, :, None] * inner_integral[None, :, :],
-                x=self._pm_data.z_l,
+                x=cast(np.ndarray, self._pm_data.z_l),
                 axis=1,
             )
             / cosmo["h"]
@@ -367,15 +387,18 @@ class ConstGaussianPM(ConstGaussian):
     def _build_V(self, betas: np.ndarray) -> np.ndarray:
         """Construct the template matrix."""
         assert self._pm_data is not None
-        V = np.zeros((len(self._pm_data.row_src_idx), len(self._pm_data.lens_tracers)))
-        valid = (self._pm_data.row_lens_idx >= 0) & (self._pm_data.row_src_idx >= 0)
+        self._pm_data.assert_prepared()
+        # After assert_prepared(), we know all fields are not None
+        row_src_idx = cast(np.ndarray, self._pm_data.row_src_idx)
+        lens_tracers = cast(list, self._pm_data.lens_tracers)
+        row_lens_idx = cast(np.ndarray, self._pm_data.row_lens_idx)
+        theta = cast(np.ndarray, self._pm_data.theta)
+
+        V = np.zeros((len(row_src_idx), len(lens_tracers)))
+        valid = (row_lens_idx >= 0) & (row_src_idx >= 0)
         beta_rows = np.zeros(valid.sum(), dtype=float)
-        beta_rows = betas[
-            self._pm_data.row_lens_idx[valid], self._pm_data.row_src_idx[valid]
-        ]
-        V[valid, self._pm_data.row_lens_idx[valid]] = beta_rows / (
-            self._pm_data.theta[valid] ** 2
-        )
+        beta_rows = betas[row_lens_idx[valid], row_src_idx[valid]]
+        V[valid, row_lens_idx[valid]] = beta_rows / (theta[valid] ** 2)
         return V
 
     def _compute_correction(
