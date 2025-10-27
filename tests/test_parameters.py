@@ -437,20 +437,14 @@ def test_handle_unused_params():
     # All parameters are unused, should raise a warning
     with pytest.warns(
         UserWarning,
-        match=re.escape(
-            "Unused keys in parameters: ['a', 'b', 'c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['a', 'b', 'c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=False)
 
     # All parameters are unused, should raise an error
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "Unused keys in parameters: ['a', 'b', 'c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['a', 'b', 'c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=True)
 
@@ -461,20 +455,14 @@ def test_handle_unused_params():
     # Now 'c' is unused, should raise a warning
     with pytest.warns(
         UserWarning,
-        match=re.escape(
-            "Unused keys in parameters: ['c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=False)
 
     # Now 'c' is unused, should raise an error
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "Unused keys in parameters: ['c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=True)
 
