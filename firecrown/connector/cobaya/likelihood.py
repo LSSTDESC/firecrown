@@ -79,11 +79,18 @@ def compute_pyccl_args_options(
 class LikelihoodConnector(Likelihood):
     """A class implementing cobaya.likelihood.Likelihood."""
 
+    known_options = [
+        "firecrownIni",
+        "input_style",
+        "build_parameters",
+        "derived_parameters",
+    ]
+
     input_style: str | None = None
     likelihood: FirecrownLikelihood
-    firecrownIni: str
+    firecrownIni: str = ""
     derived_parameters: list[str] = []
-    build_parameters: NamedParameters
+    build_parameters: NamedParameters = NamedParameters()
 
     def initialize(self):
         """Initialize the likelihood object by loading its Firecrown configuration."""
