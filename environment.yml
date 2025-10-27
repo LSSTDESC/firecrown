@@ -45,7 +45,7 @@ dependencies:
   - pytest-cov
   - pytest-json-report
   - pytest-xdist
-  - python >=3.11,<3.14
+  - python >=3.11
   - pyyaml
   - quarto
   - requests
@@ -60,4 +60,5 @@ dependencies:
   - tabulate
   - typer
   - types-pyyaml
+  - types-requests
   - urllib3
