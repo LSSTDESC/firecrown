@@ -263,6 +263,8 @@ class ParamsMap:
 
         :return: A formatted string report of parameter usages.
         """
+        if not self.usages:
+            return "No Updatables have been updated."
         report_lines = ["Parameter usage report:"]
         for usage in self.usages:
             report_lines.append(f"Updatable class: {usage.cls}, Prefix: {usage.prefix}")
