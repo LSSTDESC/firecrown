@@ -7,8 +7,19 @@ provide better type safety.
 from __future__ import annotations
 
 import copy
+from dataclasses import dataclass
 import warnings
 from collections.abc import Iterable, Iterator, Sequence
+
+
+@dataclass
+class UpdatableUsageRecord:
+    """Dataclass to record the usage of parameters by an Updatable object."""
+
+    cls: str
+    prefix: str | None
+    sampler_params: list[str]
+    internal_params: list[str]
 
 
 def parameter_get_full_name(prefix: None | str, param: str) -> str:
@@ -78,6 +89,7 @@ class ParamsMap:
 
         self.lower_case: bool = False
         self.used_keys: set[str] = set()
+        self.usages: list[UpdatableUsageRecord] = []
 
     def __getitem__(self, key: str) -> float:
         """Return the value for the given key.
@@ -220,15 +232,65 @@ class ParamsMap:
         """
         return set(self.params.keys())
 
+    def record_usage(
+        self,
+        cls: type,
+        prefix: str | None,
+        sampler_params: list[str],
+        internal_params: list[str],
+    ) -> None:
+        """Record the usage of parameters based on the provided lists.
+
+        This method marks parameters as used based on the provided lists
+        of sampler and internal parameters.
+
+        :param cls: type of the updatable being recorded.
+        :param prefix: optional prefix for the parameters
+        :param sampler_params: list of sampler parameter names
+        :param internal_params: list of internal parameter names
+        """
+        self.usages.append(
+            UpdatableUsageRecord(
+                cls=cls.__name__,
+                prefix=prefix,
+                sampler_params=sampler_params,
+                internal_params=internal_params,
+            )
+        )
+
+    def report_usages(self) -> str:
+        """Generate a report of parameter usages by Updatable objects.
+
+        :return: A formatted string report of parameter usages.
+        """
+        if not self.usages:
+            return "No Updatables have been updated."
+        report_lines = ["Parameter usage report:"]
+        for usage in self.usages:
+            report_lines.append(f"Updatable class: {usage.cls}, Prefix: {usage.prefix}")
+            if usage.sampler_params:
+                report_lines.append(
+                    f"  Sampler parameters used: {', '.join(usage.sampler_params)}"
+                )
+            if usage.internal_params:
+                report_lines.append(
+                    f"  Internal parameters used: {', '.join(usage.internal_params)}"
+                )
+        return "\n".join(report_lines)
+
 
 def handle_unused_params(params: ParamsMap, raise_on_unused: bool = False):
     """Check for unused keys in the parameters map."""
     unused_keys = params.get_unused_keys()
     if unused_keys:
         message = (
-            f"Unused keys in parameters: {sorted(unused_keys)}. "
-            "This may indicate a problem with the parameter mapping."
+            f"Unused keys in parameters: {sorted(unused_keys)}.\n"
+            "This may indicate a missing statistic or systematic.\n"
+            "You may also have a modeling mismatch, e.g. you have specified "
+            "sampling of neutrino masses but did not configure CAMB to use "
+            "massive neutrinos.\n"
         )
+        message += params.report_usages()
         if raise_on_unused:
             raise ValueError(message)
 
