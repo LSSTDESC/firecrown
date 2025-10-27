@@ -5,7 +5,6 @@ Tests for the Updatable class.
 from itertools import permutations
 import pytest
 import numpy as np
-from sympy import N
 
 from firecrown.updatable import Updatable, UpdatableCollection
 from firecrown import parameters
