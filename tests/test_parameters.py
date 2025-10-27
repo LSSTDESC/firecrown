@@ -437,20 +437,14 @@ def test_handle_unused_params():
     # All parameters are unused, should raise a warning
     with pytest.warns(
         UserWarning,
-        match=re.escape(
-            "Unused keys in parameters: ['a', 'b', 'c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['a', 'b', 'c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=False)
 
     # All parameters are unused, should raise an error
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "Unused keys in parameters: ['a', 'b', 'c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['a', 'b', 'c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=True)
 
@@ -461,22 +455,124 @@ def test_handle_unused_params():
     # Now 'c' is unused, should raise a warning
     with pytest.warns(
         UserWarning,
-        match=re.escape(
-            "Unused keys in parameters: ['c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=False)
 
     # Now 'c' is unused, should raise an error
     with pytest.raises(
         ValueError,
-        match=re.escape(
-            "Unused keys in parameters: ['c']. "
-            "This may indicate a problem with the parameter mapping."
-        ),
+        match=re.escape("Unused keys in parameters: ['c']."),
     ):
         handle_unused_params(params=params, raise_on_unused=True)
+
+
+def test_report_empty_usage():
+    """Test that report_usages generates correct report for no usage of Updatable"""
+    # Test case 1: Empty usages list
+    params = ParamsMap({"a": 1.0})
+    report = params.report_usages()
+    assert report == "No Updatables have been updated."
+
+
+def test_report_usages():
+    """Test that report_usages generates correct reports for various scenarios."""
+    # Test case 2: Usage with only sampler parameters
+    params = ParamsMap({"param1": 1.0, "param2": 2.0})
+    params.record_usage(
+        cls=ParamsMap,
+        prefix="test",
+        sampler_params=["param1", "param2"],
+        internal_params=[],
+    )
+    report = params.report_usages()
+    assert "Parameter usage report:" in report
+    assert "Updatable class: ParamsMap, Prefix: test" in report
+    assert "Sampler parameters used: param1, param2" in report
+    assert "Internal parameters used:" not in report
+
+    # Test case 3: Usage with only internal parameters
+    params = ParamsMap({"internal1": 1.0, "internal2": 2.0})
+    params.record_usage(
+        cls=ParamsMap,
+        prefix="test",
+        sampler_params=[],
+        internal_params=["internal1", "internal2"],
+    )
+    report = params.report_usages()
+    assert "Parameter usage report:" in report
+    assert "Updatable class: ParamsMap, Prefix: test" in report
+    assert "Sampler parameters used:" not in report
+    assert "Internal parameters used: internal1, internal2" in report
+
+    # Test case 4: Usage with both sampler and internal parameters
+    params = ParamsMap({"s1": 1.0, "s2": 2.0, "i1": 3.0, "i2": 4.0})
+    params.record_usage(
+        cls=ParamsMap,
+        prefix="prefix1",
+        sampler_params=["s1", "s2"],
+        internal_params=["i1", "i2"],
+    )
+    report = params.report_usages()
+    assert "Parameter usage report:" in report
+    assert "Updatable class: ParamsMap, Prefix: prefix1" in report
+    assert "Sampler parameters used: s1, s2" in report
+    assert "Internal parameters used: i1, i2" in report
+
+    # Test case 5: Multiple usages with mixed scenarios
+    params = ParamsMap(
+        {
+            "a": 1.0,
+            "b": 2.0,
+            "c": 3.0,
+            "d": 4.0,
+            "e": 5.0,
+            "f": 6.0,
+        }
+    )
+    # First usage: both types
+    params.record_usage(
+        cls=ParamsMap,
+        prefix="prefix1",
+        sampler_params=["a", "b"],
+        internal_params=["c"],
+    )
+    # Second usage: only sampler
+    params.record_usage(
+        cls=ParamsMap,
+        prefix="prefix2",
+        sampler_params=["d"],
+        internal_params=[],
+    )
+    # Third usage: only internal
+    params.record_usage(
+        cls=ParamsMap,
+        prefix=None,
+        sampler_params=[],
+        internal_params=["e", "f"],
+    )
+
+    report = params.report_usages()
+    lines = report.split("\n")
+
+    # Check header
+    assert lines[0] == "Parameter usage report:"
+
+    # Check first usage
+    assert "Updatable class: ParamsMap, Prefix: prefix1" in report
+    assert "Sampler parameters used: a, b" in report
+    assert "Internal parameters used: c" in report
+
+    # Check second usage
+    assert "Updatable class: ParamsMap, Prefix: prefix2" in report
+    assert "Sampler parameters used: d" in report
+
+    # Check third usage (with None prefix)
+    assert "Updatable class: ParamsMap, Prefix: None" in report
+    assert "Internal parameters used: e, f" in report
+
+    # Verify we have the expected number of usage records
+    assert len(params.usages) == 3
 
 
 def test_params_map_union():

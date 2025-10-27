@@ -193,6 +193,12 @@ class Updatable(ABC):
                 f"update, but {','.join(internal_params)} was specified."
             )
 
+        params.record_usage(
+            type(self),
+            self.parameter_prefix,
+            [sp.name for sp in self._sampler_parameters],
+            list(self._internal_parameters.keys()),
+        )
         for parameter in self._sampler_parameters:
             try:
                 value = params.get_from_full_name(parameter.fullname)

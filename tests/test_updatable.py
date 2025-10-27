@@ -20,18 +20,18 @@ from firecrown.parameters import (
 class MinimalUpdatable(Updatable):
     """A concrete time that implements Updatable."""
 
-    def __init__(self):
+    def __init__(self, prefix: str | None = None):
         """Initialize object with defaulted value."""
-        super().__init__()
+        super().__init__(prefix)
         self.a = parameters.register_new_updatable_parameter(default_value=1.0)
 
 
 class SimpleUpdatable(Updatable):
     """A concrete type that implements Updatable."""
 
-    def __init__(self):
+    def __init__(self, prefix: str | None = None):
         """Initialize object with defaulted values."""
-        super().__init__()
+        super().__init__(prefix)
 
         self.x = parameters.register_new_updatable_parameter(default_value=2.0)
         self.y = parameters.register_new_updatable_parameter(default_value=3.0)
@@ -52,6 +52,23 @@ class UpdatableWithDerived(Updatable):
         derived_parameters = DerivedParameterCollection([derived_scale])
 
         return derived_parameters
+
+
+def test_updatable_reports():
+    su = SimpleUpdatable("bob")
+    mu = MinimalUpdatable("larry")
+    su.mu = mu  # pylint: disable=attribute-defined-outside-init
+
+    params = ParamsMap({"bob_x": 1.0, "bob_y": 2.0, "larry_a": 3.0})
+    before_use = params.report_usages()
+
+    assert before_use == "No Updatables have been updated."
+    su.update(params)
+    after_use = params.report_usages()
+    assert "Updatable class: SimpleUpdatable, Prefix: bob" in after_use
+    assert "Sampler parameters used: x, y" in after_use
+    assert "Updatable class: MinimalUpdatable, Prefix: larry" in after_use
+    assert "Sampler parameters used: a" in after_use
 
 
 def test_get_params_names():
