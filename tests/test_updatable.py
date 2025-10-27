@@ -57,7 +57,7 @@ class UpdatableWithDerived(Updatable):
 def test_updatable_reports():
     su = SimpleUpdatable("bob")
     mu = MinimalUpdatable("larry")
-    su.mu = mu
+    su.mu = mu  # pylint: disable=attribute-defined-outside-init
 
     params = ParamsMap({"bob_x": 1.0, "bob_y": 2.0, "larry_a": 3.0})
     before_use = params.report_usages()
