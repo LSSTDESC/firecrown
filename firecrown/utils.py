@@ -13,8 +13,8 @@ import yaml
 from numpy import typing as npt
 from pydantic import BaseModel, BeforeValidator, ConfigDict, field_serializer
 from typing_extensions import Self, assert_never
-from yaml import CDumper as Dumper
-from yaml import CLoader as Loader
+
+from yaml import Dumper, Loader
 
 ST = TypeVar("ST")  # This will be used in YAMLSerializable
 
