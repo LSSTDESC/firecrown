@@ -14,7 +14,7 @@ a type that implements :class:`Updatable` can be appended to the list.
 """
 
 from __future__ import annotations
-
+import warnings
 from abc import ABC
 from collections import UserList
 from collections.abc import Iterable
@@ -488,3 +488,67 @@ def get_default_params_map(*args: Updatable) -> ParamsMap:
     """
     default_parameters: dict[str, float] = get_default_params(*args)
     return ParamsMap(**default_parameters)
+
+
+_FINAL_METHODS = (
+    "update",
+    "reset",
+    "is_updated",
+    "required_parameters",
+    "get_derived_parameters",
+)
+
+
+def assert_updatable_interface(
+    obj: Updatable | UpdatableCollection,
+    recursive: bool = True,
+    raise_on_override: bool = False,
+):
+    """Asserts that all final methods were not overridden.
+
+    The methods:
+
+    - :func:`update`
+    - :func:`reset`
+    - :func:`is_updated`
+    - :func:`required_parameters`
+    - :func:`get_derived_parameters`
+
+    Are final and should not be overridden. If any of these methods are
+    overridden a TypeError is raised.
+    """
+    overwritten = []
+
+    my_type: type
+    match obj:
+        case UpdatableCollection():
+            my_type = UpdatableCollection
+            if recursive:
+                for item in obj:
+                    assert_updatable_interface(
+                        item, raise_on_override=raise_on_override
+                    )
+        case Updatable():
+            my_type = Updatable
+            if recursive:
+                # pylint: disable-next=protected-access
+                for item in obj._updatables:
+                    assert_updatable_interface(
+                        item, raise_on_override=raise_on_override
+                    )
+        case _:
+            raise TypeError("Expected Updatable or UpdatableCollection")
+
+    for method in _FINAL_METHODS:
+        original_method = getattr(my_type, method)
+        instance_attribute = getattr(obj, method, None)
+        current_method = getattr(instance_attribute, "__func__", instance_attribute)
+        if current_method is not original_method:
+            overwritten.append(method)
+
+    msg = f"Updatable interface methods {overwritten} were overridden"
+
+    if overwritten:
+        if raise_on_override:
+            raise TypeError(msg)
+        warnings.warn(msg, RuntimeWarning)
