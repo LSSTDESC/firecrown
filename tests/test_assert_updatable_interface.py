@@ -1,5 +1,6 @@
 """Unit tests for assert_updatable_interface in updatable.py."""
 
+import warnings
 import pytest
 
 from firecrown.updatable import (
@@ -93,3 +94,49 @@ def test_collection_exact_methods():
     with pytest.warns(RuntimeWarning) as record:
         assert_updatable_interface(coll)
     assert "['reset', 'get_derived_parameters']" in str(record[0].message)
+
+
+def test_recursive_flag_prevents_recursion():
+    """If recursive=False, child updatables should not be checked."""
+    BadUpdatable = type(
+        "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
+    )
+    parent = SimpleUpdatable()
+    parent.child = BadUpdatable()
+
+    # When recursive is True a warning is emitted (covered elsewhere);
+    # when recursive is False, no warnings should be emitted and no exception.
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        assert_updatable_interface(parent, recursive=False, raise_on_override=True)
+        assert len(w) == 0
+
+
+def test_collection_recursive_flag_prevents_recursion():
+    """If recursive=False, items inside an UpdatableCollection should not be checked."""
+    BadUpdatable = type(
+        "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
+    )
+    coll = UpdatableCollection([BadUpdatable()])
+
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        # Should not raise despite raise_on_override=True because recursive=False
+        assert_updatable_interface(coll, recursive=False, raise_on_override=True)
+        assert len(w) == 0
+
+
+def test_collection_recursive_raise_on_override():
+    BadUpdatable = type(
+        "BadUpdatable", (Updatable,), {"update": lambda self, params: None}
+    )
+    coll = UpdatableCollection([BadUpdatable()])
+
+    with pytest.raises(TypeError):
+        assert_updatable_interface(coll, recursive=True, raise_on_override=True)
+
+
+def test_non_updatable_input_raises_typeerror():
+    """Passing a non-Updatable and non-UpdatableCollection should raise TypeError."""
+    with pytest.raises(TypeError):
+        assert_updatable_interface(42)  # type: ignore
