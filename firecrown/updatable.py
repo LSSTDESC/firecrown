@@ -29,7 +29,7 @@ from firecrown.parameters import (
     SamplerParameter,
 )
 
-from .parameters import DerivedParameterCollection
+from .parameters import DerivedParameterCollection, UpdatableUsageRecord
 
 GeneralUpdatable: TypeAlias = Union["Updatable", "UpdatableCollection"]
 
@@ -167,7 +167,11 @@ class Updatable(ABC):
         super().__setattr__(value.name, None)
 
     @final
-    def update(self, params: ParamsMap) -> None:
+    def update(
+        self,
+        params: ParamsMap,
+        updated_record: list[UpdatableUsageRecord] | None = None,
+    ) -> None:
         """Update self by calling to prepare for the next MCMC sample.
 
         We first update the values of sampler parameters from the values in
@@ -193,12 +197,6 @@ class Updatable(ABC):
                 f"update, but {','.join(internal_params)} was specified."
             )
 
-        params.record_usage(
-            type(self),
-            self.parameter_prefix,
-            [sp.name for sp in self._sampler_parameters],
-            list(self._internal_parameters.keys()),
-        )
         for parameter in self._sampler_parameters:
             try:
                 value = params.get_from_full_name(parameter.fullname)
@@ -206,8 +204,29 @@ class Updatable(ABC):
                 raise MissingSamplerParameterError(parameter.fullname) from exc
             setattr(self, parameter.name, value)
 
+        child_records: list[UpdatableUsageRecord] | None = None
+        if updated_record is not None:
+            child_records = []
+            updated_record.append(
+                UpdatableUsageRecord(
+                    cls=type(self).__name__,
+                    prefix=self.parameter_prefix,
+                    obj_id=id(self),
+                    sampler_params=[sp.name for sp in self._sampler_parameters],
+                    internal_params=list(self._internal_parameters.keys()),
+                    child_records=child_records,
+                )
+            )
+
+        # When `updated_record` is not None, `child_records` is created as an empty
+        # list and passed to the `UpdatableUsageRecord` above. This means both the
+        # local variable `child_records` and the corresponding field in the record
+        # refer to the *same list object*. As each child `update` call appends to
+        # `updated_record=child_records`, those new entries automatically appear inside
+        # the parent record's `child_records` field. This works because lists are
+        # passed by reference (object identity), not by value.
         for item in self._updatables:
-            item.update(params)
+            item.update(params, updated_record=child_records)
 
         self._update(params)
         # We mark self as updated only after all the internal updates have
@@ -229,7 +248,7 @@ class Updatable(ABC):
     def reset(self) -> None:
         """Reset the updatable.
 
-        Clean up self by clearing the _updated status and reseting all
+        Clean up self by clearing the _updated status and resetting all
         internals. We call the abstract method _reset to allow derived classes
         to clean up any additional internals.
 
@@ -387,7 +406,11 @@ class UpdatableCollection(UserList[T], Generic[T]):
                 )
 
     @final
-    def update(self, params: ParamsMap) -> None:
+    def update(
+        self,
+        params: ParamsMap,
+        updated_record: list[UpdatableUsageRecord] | None = None,
+    ) -> None:
         """Update self by calling update() on each contained item.
 
         :param params: new parameter values for each contained item
@@ -396,7 +419,7 @@ class UpdatableCollection(UserList[T], Generic[T]):
             return
 
         for updatable in self:
-            updatable.update(params)
+            updatable.update(params, updated_record)
 
         self._updated = True
 
