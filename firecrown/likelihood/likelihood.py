@@ -403,6 +403,16 @@ def load_likelihood_from_module_type(
             f"received {type(tools)} instead."
         )
 
+    for name, obj in (("likelihood", likelihood), ("tools", tools)):
+        if obj.is_updated():
+            warnings.warn(
+                f"The factory function returned a {name} object that is already in "
+                f"an updated state. Any parameters currently set in the {name} will "
+                f"be ignored. The object will be reset automatically.",
+                category=UserWarning,
+            )
+            obj.reset()
+
     return likelihood, tools
 
 
