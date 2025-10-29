@@ -19,7 +19,7 @@ from firecrown.likelihood.gaussfamily import GaussFamily, State
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.parameters import ParamsMap, handle_unused_params
-from firecrown.updatable import MissingSamplerParameterError
+from firecrown.updatable import MissingSamplerParameterError, UpdatableUsageRecord
 
 
 def extract_section(sample: cosmosis.datablock, section: str) -> NamedParameters:
@@ -135,7 +135,7 @@ class FirecrownLikelihood:
         )
         firecrown_params = ParamsMap(firecrown_params.params | self.map.asdict())
         firecrown_params.use_lower_case_keys(True)
-        self.update_likelihood_and_tools(firecrown_params)
+        updated_records = self.update_likelihood_and_tools(firecrown_params)
 
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
             # Cosmology will be read from datablock
@@ -147,12 +147,14 @@ class FirecrownLikelihood:
 
         handle_unused_params(
             params=firecrown_params,
+            updated_records=updated_records,
             raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
+
         # We need to clean up and reset the likelihood and tools if an exception occurs
         # during log-likelihood computation. CosmoSIS will then return -inf.
         try:
-            loglike = self.likelihood.compute_loglike_for_sampling(self.tools)
+            firecrown_like = self.likelihood.compute_loglike_for_sampling(self.tools)
         except Exception:
             warnings.warn(
                 "Exception during log-likelihood evaluation for CosmoSIS; "
@@ -165,7 +167,7 @@ class FirecrownLikelihood:
 
         derived_params_collection = self.likelihood.get_derived_parameters()
         assert derived_params_collection is not None
-        sample.put_double(section_names.likelihoods, "firecrown_like", loglike)
+        sample.put_double(section_names.likelihoods, "firecrown_like", firecrown_like)
         for section, name, val in derived_params_collection:
             sample.put(section, name, val)
 
@@ -267,15 +269,21 @@ class FirecrownLikelihood:
             stat.get_data_vector(),
         )
 
-    def update_likelihood_and_tools(self, firecrown_params: ParamsMap) -> None:
+    def update_likelihood_and_tools(
+        self, firecrown_params: ParamsMap
+    ) -> list[UpdatableUsageRecord]:
         """Update the likelihood and tools with the new parameters.
 
         :param firecrown_params: the new parameters
         :return: None
         """
         try:
-            self.likelihood.update(firecrown_params)
-            self.tools.update(firecrown_params)
+            updated_records: list[UpdatableUsageRecord] = []
+            self.likelihood.update(firecrown_params, updated_records)
+            self.tools.update(firecrown_params, updated_records)
+
+            return updated_records
+
         except MissingSamplerParameterError as exc:
             msg = form_error_message(self.sampling_sections, exc)
             raise RuntimeError(msg) from exc

@@ -24,7 +24,7 @@ from firecrown.ccl_factory import (
 from firecrown.connector.mapping import Mapping, MappingCAMB, mapping_builder
 from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
 from firecrown.likelihood.likelihood import NamedParameters, load_likelihood
-from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.parameters import ParamsMap, UpdatableUsageRecord, handle_unused_params
 from firecrown.updatable import get_default_params_map
 
 
@@ -277,21 +277,24 @@ class LikelihoodConnector(Likelihood):
         Required by Cobaya.
         :params values: The values of the parameters to use.
         """
+        updated_records: list[UpdatableUsageRecord] = []
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
             pvs = ParamsMap(**params_values)
             pyccl_args, pyccl_params = self.calculate_args(pvs)
             params = pvs.union(ParamsMap(pyccl_params))
-            self.likelihood.update(params)
-            self.tools.update(params)
+            self.likelihood.update(params, updated_records)
+            self.tools.update(params, updated_records)
             self.tools.prepare(calculator_args=pyccl_args)
         else:
             params = ParamsMap(params_values)
-            self.likelihood.update(params)
-            self.tools.update(params)
+            self.likelihood.update(params, updated_records)
+            self.tools.update(params, updated_records)
             self.tools.prepare()
 
         handle_unused_params(
-            params=params, raise_on_unused=self.likelihood.raise_on_unused_parameter
+            params=params,
+            updated_records=updated_records,
+            raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
 
         # We need to clean up and reset the likelihood and tools if an exception occurs
