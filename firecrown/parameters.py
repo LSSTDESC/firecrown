@@ -5,9 +5,8 @@ provide better type safety.
 """
 
 from __future__ import annotations
-
-import copy
 from dataclasses import dataclass
+import copy
 import warnings
 from collections.abc import Iterable, Iterator, Sequence
 
@@ -18,8 +17,78 @@ class UpdatableUsageRecord:
 
     cls: str
     prefix: str | None
+    obj_id: int
     sampler_params: list[str]
     internal_params: list[str]
+    child_records: list[UpdatableUsageRecord]
+    already_updated: bool = False
+
+    @property
+    def is_empty(self) -> bool:
+        """Check if the record is empty.
+
+        Return True if the record has no sampler parameters, internal parameters, or
+        child records.
+        """
+        if self.sampler_params:
+            return False
+        if self.internal_params:
+            return False
+        return all(cr.already_updated for cr in self.child_records)
+
+    @property
+    def is_empty_parent(self) -> bool:
+        """Check if the record is an empty parent.
+
+        Return True if the record has no sampler or internal parameters and exactly one
+        child record.
+        """
+        return (
+            (len(self.sampler_params) == 0)
+            and (len(self.internal_params) == 0)
+            and (len(self.child_records) == 1)
+        )
+
+    def get_log_lines(
+        self, level: int = 0, parent: str | None = None, print_empty: bool = False
+    ) -> list[str]:
+        """Print the usage record."""
+        fullname = (
+            f"{self.cls}({self.prefix})" if self.prefix is not None else f"{self.cls}"
+        )
+        if parent is not None:
+            fullname_with_parent = f"{parent} => {fullname}"
+        else:
+            fullname_with_parent = fullname
+
+        if self.is_empty_parent:
+            return self.child_records[0].get_log_lines(
+                level, fullname_with_parent, print_empty=print_empty
+            )
+
+        if self.is_empty and (not print_empty):
+            return []
+
+        lines = []
+        next_level = level + 2
+        indent = " " * level
+        indent_next = " " * (next_level)
+        if self.already_updated:
+            lines.append(f"{indent}{fullname_with_parent}: (already updated)")
+            return lines
+        lines.append(f"{indent}{fullname_with_parent}: ")
+        if self.sampler_params:
+            lines.append(
+                f"{indent_next}Sampler parameters used:  {self.sampler_params}"
+            )
+        if self.internal_params:
+            lines.append(
+                f"{indent_next}Internal parameters used: {self.internal_params}"
+            )
+        for child in self.child_records:
+            lines += child.get_log_lines(next_level, print_empty=print_empty)
+
+        return lines
 
 
 def parameter_get_full_name(prefix: None | str, param: str) -> str:
@@ -89,7 +158,6 @@ class ParamsMap:
 
         self.lower_case: bool = False
         self.used_keys: set[str] = set()
-        self.usages: list[UpdatableUsageRecord] = []
 
     def __getitem__(self, key: str) -> float:
         """Return the value for the given key.
@@ -232,54 +300,12 @@ class ParamsMap:
         """
         return set(self.params.keys())
 
-    def record_usage(
-        self,
-        cls: type,
-        prefix: str | None,
-        sampler_params: list[str],
-        internal_params: list[str],
-    ) -> None:
-        """Record the usage of parameters based on the provided lists.
 
-        This method marks parameters as used based on the provided lists
-        of sampler and internal parameters.
-
-        :param cls: type of the updatable being recorded.
-        :param prefix: optional prefix for the parameters
-        :param sampler_params: list of sampler parameter names
-        :param internal_params: list of internal parameter names
-        """
-        self.usages.append(
-            UpdatableUsageRecord(
-                cls=cls.__name__,
-                prefix=prefix,
-                sampler_params=sampler_params,
-                internal_params=internal_params,
-            )
-        )
-
-    def report_usages(self) -> str:
-        """Generate a report of parameter usages by Updatable objects.
-
-        :return: A formatted string report of parameter usages.
-        """
-        if not self.usages:
-            return "No Updatables have been updated."
-        report_lines = ["Parameter usage report:"]
-        for usage in self.usages:
-            report_lines.append(f"Updatable class: {usage.cls}, Prefix: {usage.prefix}")
-            if usage.sampler_params:
-                report_lines.append(
-                    f"  Sampler parameters used: {', '.join(usage.sampler_params)}"
-                )
-            if usage.internal_params:
-                report_lines.append(
-                    f"  Internal parameters used: {', '.join(usage.internal_params)}"
-                )
-        return "\n".join(report_lines)
-
-
-def handle_unused_params(params: ParamsMap, raise_on_unused: bool = False):
+def handle_unused_params(
+    params: ParamsMap,
+    updated_records: list[UpdatableUsageRecord],
+    raise_on_unused: bool = False,
+):
     """Check for unused keys in the parameters map."""
     unused_keys = params.get_unused_keys()
     if unused_keys:
@@ -290,7 +316,12 @@ def handle_unused_params(params: ParamsMap, raise_on_unused: bool = False):
             "sampling of neutrino masses but did not configure CAMB to use "
             "massive neutrinos.\n"
         )
-        message += params.report_usages()
+        # Add log lines from updated records
+        log_lines = []
+        for record in updated_records:
+            log_lines += record.get_log_lines()
+        message += "\n".join(log_lines)
+
         if raise_on_unused:
             raise ValueError(message)
 
