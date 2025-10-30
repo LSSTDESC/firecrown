@@ -658,3 +658,60 @@ def test_updatable_usage_record_empty_child_and_print_empty_options():
     # with print_empty=True we should see the collapsed header
     lines = parent.get_log_lines(print_empty=True)
     assert lines == ["Parent(p) => Child(c): "]
+
+
+def test_updatable_usage_record_already_updated_flag():
+    """If an UpdatableUsageRecord indicates it was already updated, the
+    get_log_lines should return a single line noting it was already updated.
+    """
+    rec = UpdatableUsageRecord(
+        cls="Already",
+        prefix=None,
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+        already_updated=True,
+    )
+
+    lines = rec.get_log_lines(print_empty=True)
+    assert lines == ["Already: (already updated)"]
+
+
+def test_params_map_lower_case_lookup():
+    """Ensure get_from_full_name respects the lower-case fallback when enabled."""
+    p = ParamsMap({"my_key": 4.2})
+    # lookup with different case should fail until we enable lower-case handling
+    with pytest.raises(KeyError):
+        _ = p.get_from_full_name("MY_KEY")
+
+    p.use_lower_case_keys(True)
+    # now the upper-case query should find the lower-case stored key
+    val = p.get_from_full_name("MY_KEY")
+    assert val == 4.2
+
+
+def test_params_map_list_with_ints_raises_typeerror():
+    """A list value containing ints (not floats) should trigger the list
+    element type check and raise TypeError."""
+    with pytest.raises(TypeError, match="Value for parameter a is not a float"):
+        _ = ParamsMap({"a": [1, 2.0]})
+
+
+def test_updatable_usage_record_internal_params_only():
+    """If sampler_params is empty but internal_params is non-empty,
+    is_empty should be False and get_log_lines should show the internal
+    parameters line (this covers the second early-return branch).
+    """
+    rec = UpdatableUsageRecord(
+        cls="OnlyInternal",
+        prefix="p",
+        obj_id=7,
+        sampler_params=[],
+        internal_params=["i"],
+        child_records=[],
+    )
+
+    assert not rec.is_empty
+    lines = rec.get_log_lines()
+    assert lines == ["OnlyInternal(p): ", "  Internal parameters used: ['i']"]
