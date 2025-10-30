@@ -21,6 +21,7 @@ class UpdatableUsageRecord:
     sampler_params: list[str]
     internal_params: list[str]
     child_records: list[UpdatableUsageRecord]
+    already_updated: bool = False
 
     @property
     def is_empty(self) -> bool:
@@ -29,7 +30,11 @@ class UpdatableUsageRecord:
         Return True if the record has no sampler parameters, internal parameters, or
         child records.
         """
-        return not (self.sampler_params or self.internal_params or self.child_records)
+        if self.sampler_params:
+            return False
+        if self.internal_params:
+            return False
+        return all(cr.already_updated for cr in self.child_records)
 
     @property
     def is_empty_parent(self) -> bool:
@@ -68,6 +73,9 @@ class UpdatableUsageRecord:
         next_level = level + 2
         indent = " " * level
         indent_next = " " * (next_level)
+        if self.already_updated:
+            lines.append(f"{indent}{fullname_with_parent}: (already updated)")
+            return lines
         lines.append(f"{indent}{fullname_with_parent}: ")
         if self.sampler_params:
             lines.append(

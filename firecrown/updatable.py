@@ -187,6 +187,18 @@ class Updatable(ABC):
         :param params: new parameter values
         """
         if self._updated:
+            if updated_record is not None:
+                updated_record.append(
+                    UpdatableUsageRecord(
+                        cls=type(self).__name__,
+                        prefix=self.parameter_prefix,
+                        obj_id=id(self),
+                        sampler_params=[],
+                        internal_params=[],
+                        child_records=[],
+                        already_updated=True,
+                    )
+                )
             return
 
         internal_params = self._internal_parameters.keys() & params.keys()
