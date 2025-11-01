@@ -14,6 +14,8 @@ import numpy as np
 import sacc
 import pyccl as ccl
 import typer
+from rich.progress import Progress, SpinnerColumn, TextColumn
+from rich.panel import Panel
 
 from ...utils import upper_triangle_indices
 from ._base_example import Example
@@ -48,6 +50,70 @@ class ExampleCosmicShear(Example):
         ),
     ] = 42
 
+    n_bins: Annotated[
+        int,
+        typer.Option(
+            help="Number of tomographic redshift bins",
+            show_default=True,
+        ),
+    ] = 2
+
+    z_max: Annotated[
+        float,
+        typer.Option(
+            help="Maximum redshift for n(z) distributions",
+            show_default=True,
+        ),
+    ] = 2.0
+
+    n_z_points: Annotated[
+        int,
+        typer.Option(
+            help="Number of redshift points for n(z) sampling",
+            show_default=True,
+        ),
+    ] = 50
+
+    ell_min: Annotated[
+        float,
+        typer.Option(
+            help="Minimum multipole for power spectrum",
+            show_default=True,
+        ),
+    ] = 10.0
+
+    ell_max: Annotated[
+        float,
+        typer.Option(
+            help="Maximum multipole for power spectrum",
+            show_default=True,
+        ),
+    ] = 10000.0
+
+    n_ell_points: Annotated[
+        int,
+        typer.Option(
+            help="Number of multipole points for power spectrum",
+            show_default=True,
+        ),
+    ] = 10
+
+    noise_level: Annotated[
+        float,
+        typer.Option(
+            help="Relative noise level for synthetic data",
+            show_default=True,
+        ),
+    ] = 0.01
+
+    sigma_z: Annotated[
+        float,
+        typer.Option(
+            help="Width of Gaussian redshift distributions",
+            show_default=True,
+        ),
+    ] = 0.25
+
     def generate_sacc(self, output_path: Path) -> None:
         """Generate synthetic cosmic shear data in SACC format.
 
@@ -59,28 +125,53 @@ class ExampleCosmicShear(Example):
 
         :param output_path: Directory where the SACC file will be created
         """
-
         sacc_file = f"{self.files_prefix}.sacc"
         sacc_full_file = output_path / sacc_file
 
-        self.console.print("[yellow]Creating fiducial cosmology...[/yellow]")
-        cosmo = self._create_fiducial_cosmology()
-        z_range, ell_range = self._create_coordinate_arrays()
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=self.console,
+        ) as progress:
 
-        np.random.seed(self.seed)
-        sacc_data = sacc.Sacc()
+            # Phase 1: Setup
+            task1 = progress.add_task(
+                "Setting up cosmology and coordinates...", total=None
+            )
+            self._show_cosmology_config()
+            cosmo = self._create_fiducial_cosmology()
+            z_range, ell_range = self._create_coordinate_arrays()
+            self._show_coordinate_config(z_range, ell_range)
+            progress.update(task1, completed=True)
 
-        self.console.print("[yellow]Generating tomographic tracers...[/yellow]")
-        tracers = self._create_tracers(sacc_data, cosmo, z_range)
+            # Phase 2: Tracers
+            task2 = progress.add_task("Creating tomographic tracers...", total=None)
+            np.random.seed(self.seed)
+            sacc_data = sacc.Sacc()
+            self._show_tracer_config()
+            tracers = self._create_tracers(sacc_data, cosmo, z_range)
+            progress.update(task2, completed=True)
 
-        self.console.print("[yellow]Computing power spectra...[/yellow]")
-        theory_cls = self._generate_power_spectra(sacc_data, cosmo, tracers, ell_range)
+            # Phase 3: Power spectra
+            task3 = progress.add_task("Computing power spectra...", total=None)
+            self._show_power_spectrum_config()
+            theory_cls = self._generate_power_spectra(
+                sacc_data, cosmo, tracers, ell_range
+            )
+            progress.update(task3, completed=True)
 
-        self.console.print("[yellow]Adding covariance matrix...[/yellow]")
-        self._add_covariance_matrix(sacc_data, theory_cls)
+            # Phase 4: Covariance
+            task4 = progress.add_task("Adding covariance matrix...", total=None)
+            self._show_covariance_config()
+            self._add_covariance_matrix(sacc_data, theory_cls)
+            progress.update(task4, completed=True)
 
-        sacc_data.save_fits(sacc_full_file, overwrite=True)
-        self.console.print(f"[green]✓ SACC file saved:[/green] {sacc_file}")
+            # Phase 5: Save
+            task5 = progress.add_task("Saving SACC file...", total=None)
+            sacc_data.save_fits(sacc_full_file, overwrite=True)
+            progress.update(task5, completed=True)
+
+        self.console.print(f"[green]SACC file saved:[/green] {sacc_file}")
 
     def _create_fiducial_cosmology(self) -> ccl.Cosmology:
         """Create fiducial cosmology for synthetic data generation.
@@ -109,9 +200,60 @@ class ExampleCosmicShear(Example):
 
         :return: Tuple of (z_range, ell_range) arrays for sampling
         """
-        z_range = np.linspace(0, 2, 50) + 0.05
-        ell_range = np.logspace(1, 4, 10)
+        z_range = np.linspace(0, self.z_max, self.n_z_points) + 0.05
+        ell_range = np.logspace(
+            np.log10(self.ell_min), np.log10(self.ell_max), self.n_ell_points
+        )
         return z_range, ell_range
+
+    def _show_cosmology_config(self) -> None:
+        """Display cosmology configuration."""
+        config_text = "Omega_c=0.27, Omega_b=0.045, w0=-1.0\nAs=2.1e-9, ns=0.96, h=0.67"
+        self.console.print(
+            Panel(config_text, title="Fiducial Cosmology", border_style="blue")
+        )
+
+    def _show_coordinate_config(
+        self, z_range: np.ndarray, ell_range: np.ndarray
+    ) -> None:
+        """Display coordinate configuration."""
+        config_text = (
+            f"Redshift: {z_range.min():.2f} - {z_range.max():.2f} ({len(z_range)} points)\n"
+            f"Multipoles: {ell_range.min():.0f} - {ell_range.max():.0f} ({len(ell_range)} points)"
+        )
+        self.console.print(
+            Panel(config_text, title="Coordinate Sampling", border_style="cyan")
+        )
+
+    def _show_tracer_config(self) -> None:
+        """Display tracer configuration."""
+        config_text = (
+            f"Number of bins: {self.n_bins}\n"
+            f"Redshift width (sigma_z): {self.sigma_z}\n"
+            f"Random seed: {self.seed}"
+        )
+        self.console.print(
+            Panel(config_text, title="Tomographic Tracers", border_style="green")
+        )
+
+    def _show_power_spectrum_config(self) -> None:
+        """Display power spectrum configuration."""
+        n_correlations = self.n_bins * (self.n_bins + 1) // 2
+        config_text = (
+            f"Correlations: {n_correlations} (auto + cross)\n"
+            f"Noise level: {self.noise_level:.3f}"
+        )
+        self.console.print(
+            Panel(config_text, title="Power Spectra", border_style="yellow")
+        )
+
+    def _show_covariance_config(self) -> None:
+        """Display covariance configuration."""
+        total_points = self.n_ell_points * self.n_bins * (self.n_bins + 1) // 2
+        config_text = f"Matrix size: {total_points}x{total_points} (diagonal)"
+        self.console.print(
+            Panel(config_text, title="Covariance Matrix", border_style="magenta")
+        )
 
     def _create_tracers(
         self, sacc_data: sacc.Sacc, cosmo: ccl.Cosmology, z_range: np.ndarray
@@ -128,12 +270,12 @@ class ExampleCosmicShear(Example):
         :return: List of CCL WeakLensingTracer objects for theory calculations
         """
         tracers = []
-        bin_centers = [0.25, 0.75]
-        sigma_z = 0.25
+        # Distribute bin centers evenly across redshift range
+        bin_centers = np.linspace(0.2, self.z_max * 0.8, self.n_bins)
 
         for i, z_mean in enumerate(bin_centers):
             # Gaussian redshift distribution
-            nz = np.exp(-0.5 * (z_range - z_mean) ** 2 / sigma_z**2)
+            nz = np.exp(-0.5 * (z_range - z_mean) ** 2 / self.sigma_z**2)
 
             # Add tracer to SACC
             tracer_name = f"trc{i}"
@@ -142,6 +284,9 @@ class ExampleCosmicShear(Example):
             # Create CCL tracer for theory calculations
             tracers.append(ccl.WeakLensingTracer(cosmo, dndz=(z_range, nz)))
 
+        self.console.print(
+            f"[dim]Created {len(tracers)} tracers with centers at z = {bin_centers}[/dim]"
+        )
         return tracers
 
     def _generate_power_spectra(
@@ -153,7 +298,7 @@ class ExampleCosmicShear(Example):
     ) -> list[np.ndarray]:
         """Generate cosmic shear power spectra with realistic noise.
 
-        Computes theoretical C_ℓ for all auto and cross-correlations between
+        Computes theoretical C_ell for all auto and cross-correlations between
         tomographic bins, adds Gaussian noise, and stores in SACC format.
 
         :param sacc_data: SACC data object to populate with measurements
@@ -163,14 +308,13 @@ class ExampleCosmicShear(Example):
         :return: List of noise-free theoretical power spectra for covariance
         """
         theory_cls = []
-        noise_level = 0.01
 
         for i, j in upper_triangle_indices(len(tracers)):
             # Compute theoretical C_ℓ
             cl_theory = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell_range)
 
             # Add realistic noise
-            noise = np.random.normal(size=len(cl_theory)) * noise_level * cl_theory
+            noise = np.random.normal(size=len(cl_theory)) * self.noise_level * cl_theory
             cl_noisy = cl_theory + noise
 
             # Add to SACC data
@@ -179,6 +323,7 @@ class ExampleCosmicShear(Example):
             )
             theory_cls.append(cl_theory)
 
+        self.console.print(f"[dim]Generated {len(theory_cls)} power spectra[/dim]")
         return theory_cls
 
     def _add_covariance_matrix(
@@ -192,8 +337,10 @@ class ExampleCosmicShear(Example):
         :param sacc_data: SACC data object to populate with covariance
         :param theory_cls: Theoretical power spectra for uncertainty estimation
         """
-        noise_level = 0.01
         all_theory = np.concatenate(theory_cls)
-        cov_diag = (noise_level * all_theory) ** 2
+        cov_diag = (self.noise_level * all_theory) ** 2
         covariance = np.diag(cov_diag)
         sacc_data.add_covariance(covariance)
+        self.console.print(
+            f"[dim]Added {covariance.shape[0]}x{covariance.shape[1]} covariance matrix[/dim]"
+        )
