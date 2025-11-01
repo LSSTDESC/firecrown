@@ -12,18 +12,17 @@ from . import logging
 
 
 @dataclasses.dataclass
-class Experiment(logging.Logging):
+class Load(logging.Logging):
     """Experiment data visualization and analysis."""
 
     experiment_file: Annotated[
         Path, typer.Argument(help="Path to the experiment file.", show_default=True)
     ]
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         """Loads experiment."""
         super().__post_init__()
         self._load_experiment()
-        self._print_factories()
 
     def _load_experiment(self) -> None:
         """Load the experiment file, with error handling for missing or unreadable files."""
@@ -43,7 +42,17 @@ class Experiment(logging.Logging):
             )
             raise
 
-    def _print_factories(self):
+
+@dataclasses.dataclass
+class View(Load):
+    """Display a summary of the experiment file."""
+
+    def __post_init__(self) -> None:
+        """Loads experiment."""
+        super().__post_init__()
+        self._print_factories()
+
+    def _print_factories(self) -> None:
         """Print a summary table of the factories configured in the experiment."""
         tp_factory = self.tp_experiment.two_point_factory
 
