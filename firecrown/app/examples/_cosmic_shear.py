@@ -5,9 +5,9 @@ cosmic shear analysis, creating synthetic galaxy survey data with
 realistic noise properties and covariance matrices.
 """
 
-from typing import Annotated
+import shutil
+from typing import Annotated, ClassVar
 from dataclasses import dataclass
-from typing import ClassVar
 from pathlib import Path
 
 import numpy as np
@@ -19,6 +19,8 @@ from rich.panel import Panel
 
 from ...utils import upper_triangle_indices
 from ._base_example import Example
+from . import _cosmic_shear_template
+from . import _cosmosis
 
 
 @dataclass
@@ -34,10 +36,13 @@ class ExampleCosmicShear(Example):
         "Weak lensing cosmic shear analysis with synthetic galaxy data"
     )
 
-    files_prefix: Annotated[
+    prefix: Annotated[
         str,
         typer.Option(
-            help="Prefix for generated filenames (e.g., 'cosmic_shear' creates 'cosmic_shear.sacc')",
+            help=(
+                "Prefix for generated filenames "
+                "(e.g., 'cosmic_shear' creates 'cosmic_shear.sacc')"
+            ),
             show_default=True,
         ),
     ] = "cosmic_shear"
@@ -114,18 +119,18 @@ class ExampleCosmicShear(Example):
         ),
     ] = 0.25
 
-    def generate_sacc(self, output_path: Path) -> None:
+    def generate_sacc(self, output_path: Path) -> Path:
         """Generate synthetic cosmic shear data in SACC format.
 
         Creates a complete SACC file containing:
         - Two tomographic redshift bins with Gaussian n(z) distributions
-        - Auto and cross-correlation power spectra (C_ℓ)
+        - Auto and cross-correlation power spectra (C_ell)
         - Realistic noise based on theoretical predictions
         - Diagonal covariance matrix for statistical analysis
 
         :param output_path: Directory where the SACC file will be created
         """
-        sacc_file = f"{self.files_prefix}.sacc"
+        sacc_file = f"{self.prefix}.sacc"
         sacc_full_file = output_path / sacc_file
 
         with Progress(
@@ -172,6 +177,8 @@ class ExampleCosmicShear(Example):
             progress.update(task5, completed=True)
 
         self.console.print(f"[green]SACC file saved:[/green] {sacc_file}")
+
+        return sacc_full_file
 
     def _create_fiducial_cosmology(self) -> ccl.Cosmology:
         """Create fiducial cosmology for synthetic data generation.
@@ -344,3 +351,41 @@ class ExampleCosmicShear(Example):
         self.console.print(
             f"[dim]Added {covariance.shape[0]}x{covariance.shape[1]} covariance matrix[/dim]"
         )
+
+    def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
+        """Generate example configuration file."""
+        template = Path(_cosmic_shear_template.__file__)
+        output_file = output_path / f"{self.prefix}_factory.py"
+        shutil.copyfile(template, output_file)
+
+        return output_file
+
+    def generate_cosmosis_config(
+        self, output_path: Path, sacc_path: Path, factory_path: Path
+    ) -> None:
+        """Generate CosmoSIS configuration files.
+
+        Creates both the main .ini file and the values .ini file using
+        the standardized CosmoSIS utilities.
+        """
+        cosmosis_ini = output_path / f"cosmosis_{self.prefix}.ini"
+        values_ini = output_path / f"cosmosis_{self.prefix}_values.ini"
+
+        # Generate main configuration
+        cfg = _cosmosis.create_standard_cosmosis_config(
+            prefix=self.prefix,
+            factory_filename=factory_path.name,
+            sacc_filename=sacc_path.name,
+            values_filename=values_ini.name,
+            n_bins=self.n_bins,
+        )
+
+        # Generate values configuration
+        values_cfg = _cosmosis.create_standard_values_config(n_bins=self.n_bins)
+
+        # Write configuration files
+        with values_ini.open("w") as fp:
+            values_cfg.write(fp)
+
+        with cosmosis_ini.open("w") as fp:
+            cfg.write(fp)
