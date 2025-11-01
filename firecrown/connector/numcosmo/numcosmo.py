@@ -19,7 +19,7 @@ from firecrown.connector.numcosmo import helpers
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.parameters import ParamsMap, UpdatableUsageRecord, handle_unused_params
 
 
 class MappingNumCosmo(GObject.Object):
@@ -554,6 +554,7 @@ class NumCosmoData(Ncm.Data):
         self.likelihood.reset()
         self.tools.reset()
 
+        updated_records: list[UpdatableUsageRecord] = []
         if self.tools.ccl_factory.creation_mode == CCLCreationMode.DEFAULT:
             assert self._nc_mapping is not None
             self._nc_mapping.set_params_from_numcosmo(
@@ -562,19 +563,21 @@ class NumCosmoData(Ncm.Data):
             params_map = create_params_map(
                 self.model_list, mset, self._nc_mapping.mapping
             )
-            self.likelihood.update(params_map)
-            self.tools.update(params_map)
+            self.likelihood.update(params_map, updated_records)
+            self.tools.update(params_map, updated_records)
             self.tools.prepare(
                 calculator_args=self._nc_mapping.calculate_ccl_args(mset)
             )
         else:
             params_map = create_params_map(self.model_list, mset, None)
-            self.likelihood.update(params_map)
-            self.tools.update(params_map)
+            self.likelihood.update(params_map, updated_records)
+            self.tools.update(params_map, updated_records)
             self.tools.prepare()
 
         handle_unused_params(
-            params=params_map, raise_on_unused=self.likelihood.raise_on_unused_parameter
+            params=params_map,
+            updated_records=updated_records,
+            raise_on_unused=self.likelihood.raise_on_unused_parameter,
         )
 
     def do_m2lnL_val(self, _) -> float:  # pylint: disable-msg=arguments-differ

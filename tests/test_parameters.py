@@ -10,6 +10,7 @@ from firecrown.parameters import (
     parameter_get_full_name,
     ParamsMap,
     handle_unused_params,
+    UpdatableUsageRecord,
 )
 from firecrown.parameters import (
     DerivedParameter,
@@ -439,14 +440,14 @@ def test_handle_unused_params():
         UserWarning,
         match=re.escape("Unused keys in parameters: ['a', 'b', 'c']."),
     ):
-        handle_unused_params(params=params, raise_on_unused=False)
+        handle_unused_params(params=params, updated_records=[], raise_on_unused=False)
 
     # All parameters are unused, should raise an error
     with pytest.raises(
         ValueError,
         match=re.escape("Unused keys in parameters: ['a', 'b', 'c']."),
     ):
-        handle_unused_params(params=params, raise_on_unused=True)
+        handle_unused_params(params=params, updated_records=[], raise_on_unused=True)
 
     # Use some parameters
     params.get_from_full_name("a")
@@ -457,122 +458,59 @@ def test_handle_unused_params():
         UserWarning,
         match=re.escape("Unused keys in parameters: ['c']."),
     ):
-        handle_unused_params(params=params, raise_on_unused=False)
+        handle_unused_params(params=params, updated_records=[], raise_on_unused=False)
 
     # Now 'c' is unused, should raise an error
     with pytest.raises(
         ValueError,
         match=re.escape("Unused keys in parameters: ['c']."),
     ):
-        handle_unused_params(params=params, raise_on_unused=True)
+        handle_unused_params(params=params, updated_records=[], raise_on_unused=True)
 
 
-def test_report_empty_usage():
-    """Test that report_usages generates correct report for no usage of Updatable"""
-    # Test case 1: Empty usages list
-    params = ParamsMap({"a": 1.0})
-    report = params.report_usages()
-    assert report == "No Updatables have been updated."
+def test_handle_unused_params_includes_updated_records_in_message():
+    params = ParamsMap({"x": 1.0})
 
-
-def test_report_usages():
-    """Test that report_usages generates correct reports for various scenarios."""
-    # Test case 2: Usage with only sampler parameters
-    params = ParamsMap({"param1": 1.0, "param2": 2.0})
-    params.record_usage(
-        cls=ParamsMap,
-        prefix="test",
-        sampler_params=["param1", "param2"],
+    # Create a simple UpdatableUsageRecord structure
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=2,
+        sampler_params=["a"],
         internal_params=[],
+        child_records=[],
     )
-    report = params.report_usages()
-    assert "Parameter usage report:" in report
-    assert "Updatable class: ParamsMap, Prefix: test" in report
-    assert "Sampler parameters used: param1, param2" in report
-    assert "Internal parameters used:" not in report
-
-    # Test case 3: Usage with only internal parameters
-    params = ParamsMap({"internal1": 1.0, "internal2": 2.0})
-    params.record_usage(
-        cls=ParamsMap,
-        prefix="test",
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=1,
         sampler_params=[],
-        internal_params=["internal1", "internal2"],
-    )
-    report = params.report_usages()
-    assert "Parameter usage report:" in report
-    assert "Updatable class: ParamsMap, Prefix: test" in report
-    assert "Sampler parameters used:" not in report
-    assert "Internal parameters used: internal1, internal2" in report
-
-    # Test case 4: Usage with both sampler and internal parameters
-    params = ParamsMap({"s1": 1.0, "s2": 2.0, "i1": 3.0, "i2": 4.0})
-    params.record_usage(
-        cls=ParamsMap,
-        prefix="prefix1",
-        sampler_params=["s1", "s2"],
-        internal_params=["i1", "i2"],
-    )
-    report = params.report_usages()
-    assert "Parameter usage report:" in report
-    assert "Updatable class: ParamsMap, Prefix: prefix1" in report
-    assert "Sampler parameters used: s1, s2" in report
-    assert "Internal parameters used: i1, i2" in report
-
-    # Test case 5: Multiple usages with mixed scenarios
-    params = ParamsMap(
-        {
-            "a": 1.0,
-            "b": 2.0,
-            "c": 3.0,
-            "d": 4.0,
-            "e": 5.0,
-            "f": 6.0,
-        }
-    )
-    # First usage: both types
-    params.record_usage(
-        cls=ParamsMap,
-        prefix="prefix1",
-        sampler_params=["a", "b"],
-        internal_params=["c"],
-    )
-    # Second usage: only sampler
-    params.record_usage(
-        cls=ParamsMap,
-        prefix="prefix2",
-        sampler_params=["d"],
         internal_params=[],
-    )
-    # Third usage: only internal
-    params.record_usage(
-        cls=ParamsMap,
-        prefix=None,
-        sampler_params=[],
-        internal_params=["e", "f"],
+        child_records=[child],
     )
 
-    report = params.report_usages()
-    lines = report.split("\n")
+    updated_records = [parent]
 
-    # Check header
-    assert lines[0] == "Parameter usage report:"
+    # Expect a warning that contains the unused key and the log lines from the record
+    with pytest.warns(UserWarning) as record:
+        handle_unused_params(
+            params=params, updated_records=updated_records, raise_on_unused=False
+        )
 
-    # Check first usage
-    assert "Updatable class: ParamsMap, Prefix: prefix1" in report
-    assert "Sampler parameters used: a, b" in report
-    assert "Internal parameters used: c" in report
+    msg = str(record[0].message)
+    assert "Unused keys in parameters: ['x']." in msg
+    # ensure the appended log lines are present
+    assert "Parent(p) => Child(c):" in msg or "Parent(p):" in msg
 
-    # Check second usage
-    assert "Updatable class: ParamsMap, Prefix: prefix2" in report
-    assert "Sampler parameters used: d" in report
+    # Now test raise_on_unused=True includes the same information in the exception
+    with pytest.raises(ValueError) as exc:
+        handle_unused_params(
+            params=params, updated_records=updated_records, raise_on_unused=True
+        )
 
-    # Check third usage (with None prefix)
-    assert "Updatable class: ParamsMap, Prefix: None" in report
-    assert "Internal parameters used: e, f" in report
-
-    # Verify we have the expected number of usage records
-    assert len(params.usages) == 3
+    err_msg = str(exc.value)
+    assert "Unused keys in parameters: ['x']." in err_msg
+    assert "Parent(p) => Child(c):" in err_msg or "Parent(p):" in err_msg
 
 
 def test_params_map_union():
@@ -614,3 +552,166 @@ def test_params_map_items():
     d = {"a": 1.0, "b": 2.0}
     params = ParamsMap(d)
     assert params.items() == d.items()
+
+
+def test_updatable_usage_record_empty_and_print_empty():
+    rec = UpdatableUsageRecord(
+        cls="EmptyUpdatable",
+        prefix="pfx",
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+    )
+
+    assert rec.is_empty
+    assert not rec.is_empty_parent
+
+    # by default empty records are omitted
+    assert rec.get_log_lines() == []
+
+    # but when print_empty=True a header line is produced
+    lines = rec.get_log_lines(print_empty=True)
+    assert lines == ["EmptyUpdatable(pfx): "]
+
+
+def test_updatable_usage_record_parent_collapses_and_printing():
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=2,
+        sampler_params=["x"],
+        internal_params=[],
+        child_records=[],
+    )
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[child],
+    )
+
+    # Because parent has no params but exactly one child, the parent's record
+    # should collapse into the child lines, with the parent included as a prefix
+    lines = parent.get_log_lines()
+    assert lines == [
+        "Parent(p) => Child(c): ",
+        "  Sampler parameters used:  ['x']",
+    ]
+
+
+def test_updatable_usage_record_indent_and_child_recursion():
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=2,
+        sampler_params=["b"],
+        internal_params=[],
+        child_records=[],
+    )
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=1,
+        sampler_params=["a"],
+        internal_params=["i"],
+        child_records=[child],
+    )
+
+    lines = parent.get_log_lines()
+
+    expected = [
+        "Parent(p): ",
+        "  Sampler parameters used:  ['a']",
+        "  Internal parameters used: ['i']",
+        "  Child(c): ",
+        "    Sampler parameters used:  ['b']",
+    ]
+
+    assert lines == expected
+
+
+def test_updatable_usage_record_empty_child_and_print_empty_options():
+    # child is empty
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=3,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+    )
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=4,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[child],
+    )
+
+    # with default print_empty=False, collapse should result in empty output
+    assert parent.get_log_lines() == []
+
+    # with print_empty=True we should see the collapsed header
+    lines = parent.get_log_lines(print_empty=True)
+    assert lines == ["Parent(p) => Child(c): "]
+
+
+def test_updatable_usage_record_already_updated_flag():
+    """If an UpdatableUsageRecord indicates it was already updated, the
+    get_log_lines should return a single line noting it was already updated.
+    """
+    rec = UpdatableUsageRecord(
+        cls="Already",
+        prefix=None,
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+        already_updated=True,
+    )
+
+    lines = rec.get_log_lines(print_empty=True)
+    assert lines == ["Already: (already updated)"]
+
+
+def test_params_map_lower_case_lookup():
+    """Ensure get_from_full_name respects the lower-case fallback when enabled."""
+    p = ParamsMap({"my_key": 4.2})
+    # lookup with different case should fail until we enable lower-case handling
+    with pytest.raises(KeyError):
+        _ = p.get_from_full_name("MY_KEY")
+
+    p.use_lower_case_keys(True)
+    # now the upper-case query should find the lower-case stored key
+    val = p.get_from_full_name("MY_KEY")
+    assert val == 4.2
+
+
+def test_params_map_list_with_ints_raises_typeerror():
+    """A list value containing ints (not floats) should trigger the list
+    element type check and raise TypeError."""
+    with pytest.raises(TypeError, match="Value for parameter a is not a float"):
+        _ = ParamsMap({"a": [1, 2.0]})
+
+
+def test_updatable_usage_record_internal_params_only():
+    """If sampler_params is empty but internal_params is non-empty,
+    is_empty should be False and get_log_lines should show the internal
+    parameters line (this covers the second early-return branch).
+    """
+    rec = UpdatableUsageRecord(
+        cls="OnlyInternal",
+        prefix="p",
+        obj_id=7,
+        sampler_params=[],
+        internal_params=["i"],
+        child_records=[],
+    )
+
+    assert not rec.is_empty
+    lines = rec.get_log_lines()
+    assert lines == ["OnlyInternal(p): ", "  Internal parameters used: ['i']"]
