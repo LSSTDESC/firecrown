@@ -6,7 +6,7 @@ experiments, and examples used in Firecrown analyses.
 Available command groups:
   - `sacc`: Inspect and manipulate SACC data files.
   - `experiment`: Inspect and visualize Firecrown experiment configurations.
-  - `examples`: List and retrieve example configurations and data files.
+  - `examples`: Generate example data and configuration files for different analyses.
 
 Each command group provides additional subcommands.
 Use `firecrown <command> --help` for details.
@@ -59,13 +59,15 @@ app.add_typer(app_experiment, name="experiment", help="Work with experiments.")
 app_examples = typer.Typer(
     no_args_is_help=True,
     help=(
-        "List and retrieve Firecrown example configurations.\n\n"
+        "Generate example data and configurations for Firecrown analyses.\n\n"
+        "Each example creates synthetic data files and configuration templates\n"
+        "for different types of cosmological analyses.\n\n"
         "Examples:\n"
-        "  firecrown examples list\n"
-        "  firecrown examples fetch two_point_basic"
+        "  firecrown examples cosmic_shear ./output_dir\n"
+        "  firecrown examples cosmic_shear ./my_analysis --seed 123"
     ),
 )
-app.add_typer(app_examples, name="examples", help="Access bundled examples.")
+app.add_typer(app_examples, name="examples", help="Generate example analyses.")
 
 # Subcommands -----------------------------------------------------------------
 
@@ -81,8 +83,9 @@ app_experiment.command(
     help="Display information about a Firecrown experiment configuration.",
 )(experiment_app.View)
 
-app_examples.command(
-    name="list",
-    no_args_is_help=True,
-    help="List available example configurations shipped with Firecrown.",
-)(examples_app.List)
+for example_name, example_cls in examples_app.EXAMPLES_LIST.items():
+    app_examples.command(
+        name=example_name,
+        no_args_is_help=True,
+        help=example_cls.description,
+    )(example_cls)
