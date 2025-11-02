@@ -22,6 +22,7 @@ from ...utils import upper_triangle_indices
 from ._base_example import Example
 from . import _cosmic_shear_template
 from . import _cosmosis
+from . import _cobaya
 
 
 @dataclass
@@ -395,7 +396,6 @@ class ExampleCosmicShear(Example):
             sacc_path=sacc_path,
             values_path=values_ini,
             output_path=output_path,
-            n_bins=self.n_bins,
             use_absolute_path=self.use_absolute_path,
         )
         # Options particular to this example
@@ -421,3 +421,34 @@ class ExampleCosmicShear(Example):
 
         with cosmosis_ini.open("w") as fp:
             cfg.write(fp)
+
+    def generate_cobaya_config(
+        self, output_path: Path, sacc_path: Path, factory_path: Path
+    ) -> None:
+        """Generate CosmoSIS configuration files.
+
+        Creates both the main .ini file and the values .ini file using
+        the standardized CosmoSIS utilities.
+        """
+        cobaya_yaml = output_path / f"cobaya_{self.prefix}.yaml"
+
+        # Generate main configuration
+        cfg = _cobaya.create_standard_cobaya_config(
+            factory_path=factory_path,
+            sacc_path=sacc_path,
+            use_absolute_path=self.use_absolute_path,
+            likelihood_name="firecrown_likelihood",
+        )
+        # Options particular to this example
+        cfg["likelihood"]["firecrown_likelihood"]["build_parameters"][
+            "n_bins"
+        ] = self.n_bins
+
+        for bin_index in range(self.n_bins):
+            cfg["params"][f"trc{bin_index}_delta_z"] = {
+                "ref": 0.0,
+                "prior": {"min": -0.05, "max": 0.05},
+            }
+
+        # Write configuration files
+        _cobaya.write_cobaya_config(cfg, cobaya_yaml)
