@@ -398,6 +398,8 @@ class ExampleCosmicShear(Example):
             n_bins=self.n_bins,
             use_absolute_path=self.use_absolute_path,
         )
+        # Options particular to this example
+        cfg.set("firecrown_likelihood", "n_bins", str(self.n_bins))
 
         # Generate values configuration
         values_cfg = _cosmosis.create_standard_values_config()
