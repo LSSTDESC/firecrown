@@ -10,6 +10,8 @@ from enum import StrEnum
 from abc import abstractmethod
 from pathlib import Path
 import dataclasses
+from rich.panel import Panel
+from rich.rule import Rule
 
 import typer
 from .. import logging
@@ -74,27 +76,27 @@ class Example(logging.Logging):
         """
         super().__post_init__()
         self.output_path.mkdir(parents=True, exist_ok=True)
-        self.console.print(f"[cyan]Generating example in:[/cyan] {self.output_path}")
-        self.console.print()
+
+        self.console.print(
+            Panel.fit(
+                f"[bold cyan]Output directory:[/bold cyan] {self.output_path.absolute()}"
+            )
+        )
+        self.console.print(Rule("[bold cyan]Generating example data[/bold cyan]"))
         sacc = self.generate_sacc(self.output_path)
-        self.console.print()
-        self.console.print("[green]Example generation completed[/green]")
+        self.console.print("[green]Example data generated[/green]\n")
 
-        self.console.print()
-        self.console.print(
-            f"[cyan]Generating example factory in:[/cyan] {self.output_path}"
-        )
+        self.console.print(Rule("[bold cyan]Generating factory[/bold cyan]"))
         factory = self.generate_factory(self.output_path, sacc)
-        self.console.print()
-        self.console.print("[green]Example factory completed[/green]")
+        self.console.print("[green]Factory generated[/green]\n")
 
-        self.console.print()
-        self.console.print(
-            f"[cyan]Generating example configuration in:[/cyan] {self.output_path}"
-        )
+        self.console.print(Rule("[bold cyan]Generating configuration[/bold cyan]"))
         self.generate_config(self.output_path, sacc, factory)
-        self.console.print()
-        self.console.print("[green]Example configuration completed[/green]")
+        self.console.print("[green]Configuration generated[/green]\n")
+
+        self.console.print(
+            Panel.fit("[bold green]All example files successfully created[/bold green]")
+        )
 
     @abstractmethod
     def generate_sacc(self, output_path: Path) -> Path:

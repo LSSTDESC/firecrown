@@ -12,10 +12,11 @@ from pathlib import Path
 
 import numpy as np
 import sacc
-import pyccl as ccl
+import pyccl
 import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from rich.panel import Panel
+from rich.table import Table
+
 
 from ...utils import upper_triangle_indices
 from ._base_example import Example
@@ -133,6 +134,12 @@ class ExampleCosmicShear(Example):
         sacc_file = f"{self.prefix}.sacc"
         sacc_full_file = output_path / sacc_file
 
+        summary = Table(
+            title="Cosmic Shear Example", border_style="blue", show_header=False
+        )
+        summary.add_column("Parameter", style="cyan", no_wrap=True)
+        summary.add_column("Value", style="green")
+
         with Progress(
             SpinnerColumn(),
             TextColumn("[progress.description]{task.description}"),
@@ -143,31 +150,43 @@ class ExampleCosmicShear(Example):
             task1 = progress.add_task(
                 "Setting up cosmology and coordinates...", total=None
             )
-            self._show_cosmology_config()
             cosmo = self._create_fiducial_cosmology()
+            summary.add_row("[b]Cosmology[/b]", "")
+            self._show_cosmology_config(cosmo, summary)
+
             z_range, ell_range = self._create_coordinate_arrays()
-            self._show_coordinate_config(z_range, ell_range)
+            summary.add_section()
+            summary.add_row("[b]Coordinates[/b]", "")
+            self._show_coordinate_config(z_range, ell_range, summary)
             progress.update(task1, completed=True)
 
             # Phase 2: Tracers
             task2 = progress.add_task("Creating tomographic tracers...", total=None)
             np.random.seed(self.seed)
             sacc_data = sacc.Sacc()
-            self._show_tracer_config()
-            tracers = self._create_tracers(sacc_data, cosmo, z_range)
+            bin_centers, tracers = self._create_tracers(sacc_data, cosmo, z_range)
+
+            summary.add_section()
+            summary.add_row("[b]Tracers[/b]", "")
+            self._show_tracer_config(bin_centers, summary)
+
             progress.update(task2, completed=True)
 
             # Phase 3: Power spectra
             task3 = progress.add_task("Computing power spectra...", total=None)
-            self._show_power_spectrum_config()
             theory_cls = self._generate_power_spectra(
                 sacc_data, cosmo, tracers, ell_range
             )
+            summary.add_section()
+            summary.add_row("[b]Power Spectra[/b]", "")
+            self._show_power_spectrum_config(summary)
             progress.update(task3, completed=True)
 
             # Phase 4: Covariance
             task4 = progress.add_task("Adding covariance matrix...", total=None)
-            self._show_covariance_config()
+            summary.add_section()
+            summary.add_row("[b]Covariance Matrix[/b]", "")
+            self._show_covariance_config(summary)
             self._add_covariance_matrix(sacc_data, theory_cls)
             progress.update(task4, completed=True)
 
@@ -176,11 +195,16 @@ class ExampleCosmicShear(Example):
             sacc_data.save_fits(sacc_full_file, overwrite=True)
             progress.update(task5, completed=True)
 
-        self.console.print(f"[green]SACC file saved:[/green] {sacc_file}")
+            progress.console.print("Finished!")
+
+        summary.add_section()
+        summary.add_row("[b]Output File[/b]", sacc_full_file.as_posix())
+
+        self.console.print(summary)
 
         return sacc_full_file
 
-    def _create_fiducial_cosmology(self) -> ccl.Cosmology:
+    def _create_fiducial_cosmology(self) -> pyccl.Cosmology:
         """Create fiducial cosmology for synthetic data generation.
 
         Uses standard Planck-like cosmological parameters to generate
@@ -188,7 +212,7 @@ class ExampleCosmicShear(Example):
 
         :return: CCL Cosmology object with fiducial parameters
         """
-        return ccl.Cosmology(
+        return pyccl.Cosmology(
             Omega_c=0.27,
             Omega_b=0.045,
             Omega_k=0.0,
@@ -213,58 +237,51 @@ class ExampleCosmicShear(Example):
         )
         return z_range, ell_range
 
-    def _show_cosmology_config(self) -> None:
+    def _show_cosmology_config(self, cosmo: pyccl.Cosmology, table: Table) -> None:
         """Display cosmology configuration."""
-        config_text = "Omega_c=0.27, Omega_b=0.045, w0=-1.0\nAs=2.1e-9, ns=0.96, h=0.67"
-        self.console.print(
-            Panel(config_text, title="Fiducial Cosmology", border_style="blue")
-        )
+        params = [
+            ("Omega_c", ".3f"),
+            ("Omega_b", ".3f"),
+            ("w0", ".1f"),
+            ("A_s", ".1e"),
+            ("n_s", ".2f"),
+            ("h", ".2f"),
+        ]
+
+        for param, fmt in params:
+            table.add_row(param, f"{cosmo[param]:{fmt}}")
 
     def _show_coordinate_config(
-        self, z_range: np.ndarray, ell_range: np.ndarray
+        self, z_range: np.ndarray, ell_range: np.ndarray, table: Table
     ) -> None:
         """Display coordinate configuration."""
-        config_text = (
-            f"Redshift: {z_range.min():.2f} - {z_range.max():.2f} ({len(z_range)} points)\n"
-            f"Multipoles: {ell_range.min():.0f} - {ell_range.max():.0f} ({len(ell_range)} points)"
-        )
-        self.console.print(
-            Panel(config_text, title="Coordinate Sampling", border_style="cyan")
-        )
+        table.add_row("Redshift", f"{z_range.min():.2f} - {z_range.max():.2f}")
+        table.add_row("Multipoles", f"{ell_range.min():.0f} - {ell_range.max():.0f}")
 
-    def _show_tracer_config(self) -> None:
+    def _show_tracer_config(self, bin_centers: np.ndarray, table: Table) -> None:
         """Display tracer configuration."""
-        config_text = (
-            f"Number of bins: {self.n_bins}\n"
-            f"Redshift width (sigma_z): {self.sigma_z}\n"
-            f"Random seed: {self.seed}"
-        )
-        self.console.print(
-            Panel(config_text, title="Tomographic Tracers", border_style="green")
-        )
+        table.add_row("Number of bins", f"{self.n_bins}")
+        table.add_row("Redshift width", f"{self.sigma_z:.2f}")
+        table.add_row("Random seed", f"{self.seed}")
+        table.add_row("Bin centers", ", ".join(f"{x:.3f}" for x in bin_centers))
 
-    def _show_power_spectrum_config(self) -> None:
+    def _show_power_spectrum_config(self, table: Table) -> None:
         """Display power spectrum configuration."""
         n_correlations = self.n_bins * (self.n_bins + 1) // 2
-        config_text = (
-            f"Correlations: {n_correlations} (auto + cross)\n"
-            f"Noise level: {self.noise_level:.3f}"
-        )
-        self.console.print(
-            Panel(config_text, title="Power Spectra", border_style="yellow")
-        )
 
-    def _show_covariance_config(self) -> None:
+        table.add_row("Correlations", f"{n_correlations} (auto + cross)")
+        table.add_row("Noise level", f"{self.noise_level:.3f}")
+
+    def _show_covariance_config(self, table: Table) -> None:
         """Display covariance configuration."""
         total_points = self.n_ell_points * self.n_bins * (self.n_bins + 1) // 2
-        config_text = f"Matrix size: {total_points}x{total_points} (diagonal)"
-        self.console.print(
-            Panel(config_text, title="Covariance Matrix", border_style="magenta")
-        )
+
+        table.add_row("Number of points", f"{total_points}")
+        table.add_row("Format", "diagonal")
 
     def _create_tracers(
-        self, sacc_data: sacc.Sacc, cosmo: ccl.Cosmology, z_range: np.ndarray
-    ) -> list[ccl.WeakLensingTracer]:
+        self, sacc_data: sacc.Sacc, cosmo: pyccl.Cosmology, z_range: np.ndarray
+    ) -> tuple[np.ndarray, list[pyccl.WeakLensingTracer]]:
         """Create tomographic redshift bins and weak lensing tracers.
 
         Generates two tomographic bins with Gaussian redshift distributions
@@ -289,18 +306,15 @@ class ExampleCosmicShear(Example):
             sacc_data.add_tracer("NZ", tracer_name, z_range, nz)
 
             # Create CCL tracer for theory calculations
-            tracers.append(ccl.WeakLensingTracer(cosmo, dndz=(z_range, nz)))
+            tracers.append(pyccl.WeakLensingTracer(cosmo, dndz=(z_range, nz)))
 
-        self.console.print(
-            f"[dim]Created {len(tracers)} tracers with centers at z = {bin_centers}[/dim]"
-        )
-        return tracers
+        return bin_centers, tracers
 
     def _generate_power_spectra(
         self,
         sacc_data: sacc.Sacc,
-        cosmo: ccl.Cosmology,
-        tracers: list[ccl.WeakLensingTracer],
+        cosmo: pyccl.Cosmology,
+        tracers: list[pyccl.WeakLensingTracer],
         ell_range: np.ndarray,
     ) -> list[np.ndarray]:
         """Generate cosmic shear power spectra with realistic noise.
@@ -318,7 +332,7 @@ class ExampleCosmicShear(Example):
 
         for i, j in upper_triangle_indices(len(tracers)):
             # Compute theoretical C_ℓ
-            cl_theory = ccl.angular_cl(cosmo, tracers[i], tracers[j], ell_range)
+            cl_theory = pyccl.angular_cl(cosmo, tracers[i], tracers[j], ell_range)
 
             # Add realistic noise
             noise = np.random.normal(size=len(cl_theory)) * self.noise_level * cl_theory
@@ -330,7 +344,6 @@ class ExampleCosmicShear(Example):
             )
             theory_cls.append(cl_theory)
 
-        self.console.print(f"[dim]Generated {len(theory_cls)} power spectra[/dim]")
         return theory_cls
 
     def _add_covariance_matrix(
@@ -348,9 +361,6 @@ class ExampleCosmicShear(Example):
         cov_diag = (self.noise_level * all_theory) ** 2
         covariance = np.diag(cov_diag)
         sacc_data.add_covariance(covariance)
-        self.console.print(
-            f"[dim]Added {covariance.shape[0]}x{covariance.shape[1]} covariance matrix[/dim]"
-        )
 
     def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
         """Generate example configuration file."""
@@ -377,11 +387,23 @@ class ExampleCosmicShear(Example):
             factory_filename=factory_path.name,
             sacc_filename=sacc_path.name,
             values_filename=values_ini.name,
+            output_path=output_path,
             n_bins=self.n_bins,
         )
 
         # Generate values configuration
-        values_cfg = _cosmosis.create_standard_values_config(n_bins=self.n_bins)
+        values_cfg = _cosmosis.create_standard_values_config()
+
+        # Firecrown-specific parameters for two-point analysis
+        section = "firecrown_two_point"
+        values_cfg.add_section(section)
+        _cosmosis.add_comment_block(
+            values_cfg,
+            section,
+            "Photo-z shift parameters for each tomographic bin (min, start, max)",
+        )
+        for bin_index in range(self.n_bins):
+            values_cfg.set(section, f"trc{bin_index}_delta_z", "-0.05 0.0 0.05")
 
         # Write configuration files
         with values_ini.open("w") as fp:
