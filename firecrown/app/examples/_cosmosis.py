@@ -39,11 +39,12 @@ def add_comment_block(
 
 def create_standard_cosmosis_config(
     prefix: str,
-    factory_filename: str,
-    sacc_filename: str,
-    values_filename: str,
+    factory_path: Path,
+    sacc_path: Path,
+    values_path: Path,
     output_path: Path,
     n_bins: Optional[int] = None,
+    use_absolute_path: bool = True,
 ) -> configparser.ConfigParser:
     """Create standard CosmoSIS configuration with common sections.
 
@@ -58,6 +59,14 @@ def create_standard_cosmosis_config(
     cfg = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation(), allow_no_value=True
     )
+    if use_absolute_path:
+        factory_filename = factory_path.absolute().as_posix()
+        sacc_filename = sacc_path.absolute().as_posix()
+        values_filename = values_path.absolute().as_posix()
+    else:
+        factory_filename = factory_path.name
+        sacc_filename = sacc_path.name
+        values_filename = values_path.name
 
     # Runtime configuration
     cfg["runtime"] = {

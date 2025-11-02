@@ -78,7 +78,7 @@ class ExampleCosmicShear(Example):
             help="Number of redshift points for n(z) sampling",
             show_default=True,
         ),
-    ] = 50
+    ] = 600
 
     ell_min: Annotated[
         float,
@@ -120,6 +120,14 @@ class ExampleCosmicShear(Example):
         ),
     ] = 0.25
 
+    use_absolute_path: Annotated[
+        bool,
+        typer.Option(
+            help="Use absolute file paths in configuration files",
+            show_default=True,
+        ),
+    ] = True
+
     def generate_sacc(self, output_path: Path) -> Path:
         """Generate synthetic cosmic shear data in SACC format.
 
@@ -131,8 +139,7 @@ class ExampleCosmicShear(Example):
 
         :param output_path: Directory where the SACC file will be created
         """
-        sacc_file = f"{self.prefix}.sacc"
-        sacc_full_file = output_path / sacc_file
+        sacc_full_file = output_path / f"{self.prefix}.sacc"
 
         summary = Table(
             title="Cosmic Shear Example", border_style="blue", show_header=False
@@ -384,11 +391,12 @@ class ExampleCosmicShear(Example):
         # Generate main configuration
         cfg = _cosmosis.create_standard_cosmosis_config(
             prefix=self.prefix,
-            factory_filename=factory_path.name,
-            sacc_filename=sacc_path.name,
-            values_filename=values_ini.name,
+            factory_path=factory_path,
+            sacc_path=sacc_path,
+            values_path=values_ini,
             output_path=output_path,
             n_bins=self.n_bins,
+            use_absolute_path=self.use_absolute_path,
         )
 
         # Generate values configuration

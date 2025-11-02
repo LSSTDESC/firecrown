@@ -85,5 +85,5 @@ def build_likelihood(params: NamedParameters):
     likelihood.read(sacc_data)
 
     # Return fully configured likelihood ready for parameter estimation
-    # Compatible with CosmoSIS, Cobaya, NumCosmo, and other frameworks
+    # Compatible with CosmoSIS, Cobaya and NumCosmo
     return likelihood
