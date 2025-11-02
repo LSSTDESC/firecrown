@@ -6,7 +6,6 @@ with proper comment formatting and standard sections.
 
 import configparser
 import textwrap
-from typing import Optional
 from pathlib import Path
 import firecrown
 
@@ -43,7 +42,6 @@ def create_standard_cosmosis_config(
     sacc_path: Path,
     values_path: Path,
     output_path: Path,
-    n_bins: Optional[int] = None,
     use_absolute_path: bool = True,
 ) -> configparser.ConfigParser:
     """Create standard CosmoSIS configuration with common sections.
@@ -53,7 +51,6 @@ def create_standard_cosmosis_config(
     :param sacc_filename: Name of the SACC data file
     :param values_filename: Name of the values ini file
     :param output_path: Path to the output directory
-    :param n_bins: Number of tomographic bins (optional)
     :return: Configured ConfigParser object
     """
     cfg = configparser.ConfigParser(
@@ -137,9 +134,6 @@ def create_standard_cosmosis_config(
         "firecrown_two_point",
     )
     cfg.set("firecrown_likelihood", "sacc_file", sacc_filename)
-
-    if n_bins is not None:
-        cfg.set("firecrown_likelihood", "n_bins", str(n_bins))
 
     # Sampler configurations
     cfg["test"] = {"fatal_errors": "T", "save_dir": "output"}
