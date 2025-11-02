@@ -19,6 +19,8 @@ import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
 
 
 def build_likelihood(params: NamedParameters):
@@ -84,6 +86,13 @@ def build_likelihood(params: NamedParameters):
     # - Covariance matrix is loaded for parameter estimation
     likelihood.read(sacc_data)
 
-    # Return fully configured likelihood ready for parameter estimation
+    # Create modeling tools with CCL factory for computing non-linear power spectra
+    # - CCLFactory provides cosmological calculations via Core Cosmology Library
+    # - require_nonlinear_pk=True enables non-linear corrections
+    modeling_tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+
+    # Return likelihood and modeling tools for parameter estimation
+    # - likelihood: Configured ConstGaussian likelihood with SACC data
+    # - modeling_tools: CCL-based tools for cosmological computations
     # Compatible with CosmoSIS, Cobaya and NumCosmo
-    return likelihood
+    return likelihood, modeling_tools
