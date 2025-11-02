@@ -7,6 +7,8 @@ with proper comment formatting and standard sections.
 import configparser
 import textwrap
 from typing import Optional
+from pathlib import Path
+import firecrown
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
@@ -40,6 +42,7 @@ def create_standard_cosmosis_config(
     factory_filename: str,
     sacc_filename: str,
     values_filename: str,
+    output_path: Path,
     n_bins: Optional[int] = None,
 ) -> configparser.ConfigParser:
     """Create standard CosmoSIS configuration with common sections.
@@ -48,6 +51,7 @@ def create_standard_cosmosis_config(
     :param factory_filename: Name of the factory file
     :param sacc_filename: Name of the SACC data file
     :param values_filename: Name of the values ini file
+    :param output_path: Path to the output directory
     :param n_bins: Number of tomographic bins (optional)
     :return: Configured ConfigParser object
     """
@@ -56,7 +60,11 @@ def create_standard_cosmosis_config(
     )
 
     # Runtime configuration
-    cfg["runtime"] = {"sampler": "test", "root": "${PWD}", "verbosity": "quiet"}
+    cfg["runtime"] = {
+        "sampler": "test",
+        "root": str(output_path.absolute()),
+        "verbosity": "quiet",
+    }
     cfg["DEFAULT"] = {"fatal_errors": "T"}
 
     # Output configuration
@@ -100,23 +108,16 @@ def create_standard_cosmosis_config(
     add_comment_block(
         cfg,
         "firecrown_likelihood",
-        "Fix this to use an environment variable to find the files. "
-        "Set FIRECROWN_DIR to the base of the firecrown installation "
-        "(or build, if you haven't installed it)",
+        "This will point to the Firecrown's cosmosis likelihood connector module.",
     )
+
+    firecrown_path = Path(firecrown.__path__[0])
+    assert firecrown_path.exists(), f"Firecrown path not found: {firecrown_path}"
 
     cfg.set(
         "firecrown_likelihood",
         "file",
-        "${FIRECROWN_DIR}/firecrown/connector/cosmosis/likelihood.py",
-    )
-
-    add_comment_block(
-        cfg,
-        "firecrown_likelihood",
-        "Note that we're intentionally using the deprecated parameter name "
-        "'firecrown_ini' rather than the better 'likelihood_source', to "
-        "test the backward compatibility. Please don't do this for new code.",
+        f"{firecrown_path}/connector/cosmosis/likelihood.py",
     )
 
     cfg.set("firecrown_likelihood", "likelihood_source", factory_filename)
@@ -132,14 +133,12 @@ def create_standard_cosmosis_config(
         cfg.set("firecrown_likelihood", "n_bins", str(n_bins))
 
     # Sampler configurations
-    cfg["test"] = {"fatal_errors": "T", "save_dir": f"{prefix}_output"}
-    cfg["metropolis"] = {"samples": "1000"}
-    cfg["emcee"] = {"walkers": "64", "samples": "400", "nsteps": "10"}
+    cfg["test"] = {"fatal_errors": "T", "save_dir": "output"}
 
     return cfg
 
 
-def create_standard_values_config(n_bins: int) -> configparser.ConfigParser:
+def create_standard_values_config() -> configparser.ConfigParser:
     """Create standard values.ini configuration for cosmological parameters.
 
     :param n_bins: Number of tomographic bins for firecrown parameters
@@ -152,21 +151,23 @@ def create_standard_values_config(n_bins: int) -> configparser.ConfigParser:
     config.add_section(section)
 
     # Add top-level comments
-    top_comments = [
-        "; Parameters and data in CosmoSIS are organized into sections",
-        "; so we can easily see what they mean.",
-        "; There is only one section in this case, called cosmological_parameters",
-    ]
-    for comment in top_comments:
-        config.set(section, comment)
+    add_comment_block(
+        config,
+        section,
+        "Parameters and data in CosmoSIS are organized into sections "
+        "so we can easily see what they mean. "
+        "This file contains cosmological parameters "
+        "and firecrown-specific parameters.",
+    )
 
-    # Varied parameters
+    # Varied parameters (min, start, max)
     config.set(section, "omega_c", "0.06 0.26 0.46")
     config.set(section, "omega_b", "0.03 0.04 0.07")
 
     # Fixed parameters section
-    config.set(section, "; The following parameters are set, but not varied.")
-    config.set(section, ";")
+    add_comment_block(
+        config, section, "The following parameters are fixed, not varied in sampling."
+    )
     config.set(section, "omega_k", "0.0")
     config.set(section, "tau", "0.08")
     config.set(section, "n_s", "0.971")
@@ -174,11 +175,5 @@ def create_standard_values_config(n_bins: int) -> configparser.ConfigParser:
     config.set(section, "h0", "0.682")
     config.set(section, "w", "-1.0")
     config.set(section, "wa", "0.0")
-
-    # Firecrown two-point parameters
-    section = "firecrown_two_point"
-    config.add_section(section)
-    for bin_index in range(n_bins):
-        config.set(section, f"trc{bin_index}_delta_z", "-0.05 0.0 0.05")
 
     return config
