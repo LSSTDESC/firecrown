@@ -73,7 +73,18 @@ class ModelingTools(Updatable):
         if name in self.powerspectra:
             return self.powerspectra[name]
 
-        return self.ccl_cosmo.get_nonlin_power(name)
+        try:
+            return self.ccl_cosmo.get_nonlin_power(name)
+        except UnboundLocalError as exc:
+            raise RuntimeError(
+                "CCL failed to compute the nonlinear power spectrum. "
+                "This usually occurs when using CCL in 'calculator' mode "
+                "(matter_power_spectrum_type='calculator') without providing "
+                "an explicit nonlinear Pk. Ensure that a nonlinear model or "
+                "Pk2D object is supplied before requesting a nonlinear spectrum. "
+                "This can be done using "
+                "CCLFactory(require_nonlinear_pk=True) in your likelihood factory."
+            ) from exc
 
     def has_pk(self, name: str) -> bool:
         """Check if a power spectrum with name `name` is available."""
