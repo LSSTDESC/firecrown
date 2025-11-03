@@ -79,7 +79,8 @@ class Example(logging.Logging):
 
         self.console.print(
             Panel.fit(
-                f"[bold cyan]Output directory:[/bold cyan] {self.output_path.absolute()}"
+                f"[bold cyan]Output directory:[/bold cyan] "
+                f"{self.output_path.absolute()}"
             )
         )
         self.console.print(Rule("[bold cyan]Generating example data[/bold cyan]"))
