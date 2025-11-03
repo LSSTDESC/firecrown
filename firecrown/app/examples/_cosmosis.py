@@ -42,6 +42,7 @@ def create_standard_cosmosis_config(
     sacc_path: Path,
     values_path: Path,
     output_path: Path,
+    model_list: list[str],
     use_absolute_path: bool = True,
 ) -> configparser.ConfigParser:
     """Create standard CosmoSIS configuration with common sections.
@@ -132,7 +133,7 @@ def create_standard_cosmosis_config(
     cfg.set(
         "firecrown_likelihood",
         "sampling_parameters_sections",
-        "firecrown_two_point",
+        " ".join(model_list),
     )
     cfg.set("firecrown_likelihood", "sacc_file", sacc_filename)
 

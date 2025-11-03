@@ -8,10 +8,12 @@ to run a complete analysis.
 
 from ._base_example import Example
 from ._cosmic_shear import ExampleCosmicShear
+from ._sn_srd import ExampleSupernovaSRD
 
 
 EXAMPLES_LIST: dict[str, type[Example]] = {
     "cosmic_shear": ExampleCosmicShear,
+    "sn_srd": ExampleSupernovaSRD,
 }
 """Registry of available example generators.
 
