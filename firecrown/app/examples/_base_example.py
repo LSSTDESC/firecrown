@@ -68,6 +68,14 @@ class Example(logging.Logging):
         ),
     ] = Frameworks.COSMOSIS
 
+    use_absolute_path: Annotated[
+        bool,
+        typer.Option(
+            help="Use absolute file paths in configuration files",
+            show_default=True,
+        ),
+    ] = True
+
     def __post_init__(self) -> None:
         """Initialize example generator and create output files.
 
