@@ -47,10 +47,11 @@ def create_standard_cosmosis_config(
     """Create standard CosmoSIS configuration with common sections.
 
     :param prefix: Prefix for output files
-    :param factory_filename: Name of the factory file
-    :param sacc_filename: Name of the SACC data file
-    :param values_filename: Name of the values ini file
+    :param factory_path: Path to the factory file
+    :param sacc_path: Path to the SACC data file
+    :param values_path: Path to the values ini file
     :param output_path: Path to the output directory
+    :param use_absolute_path: Whether to use absolute paths
     :return: Configured ConfigParser object
     """
     cfg = configparser.ConfigParser(

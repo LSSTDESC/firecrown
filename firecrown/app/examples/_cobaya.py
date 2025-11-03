@@ -20,9 +20,10 @@ def create_standard_cobaya_config(
 ) -> Dict[str, Any]:
     """Create standard Cobaya configuration for cosmic shear analysis.
 
-    :param factory_filename: Name of the factory file
-    :param sacc_filename: Name of the SACC data file
+    :param factory_path: Path to the factory file
+    :param sacc_path: Path to the SACC data file
     :param likelihood_name: Name for the likelihood in configuration
+    :param use_absolute_path: Whether to use absolute paths
     :return: Dictionary containing Cobaya configuration
     """
 
