@@ -124,14 +124,6 @@ class ExampleCosmicShear(Example):
         ),
     ] = 0.25
 
-    use_absolute_path: Annotated[
-        bool,
-        typer.Option(
-            help="Use absolute file paths in configuration files",
-            show_default=True,
-        ),
-    ] = True
-
     def generate_sacc(self, output_path: Path) -> Path:
         """Generate synthetic cosmic shear data in SACC format.
 
@@ -342,7 +334,7 @@ class ExampleCosmicShear(Example):
         theory_cls = []
 
         for i, j in upper_triangle_indices(len(tracers)):
-            # Compute theoretical C_ℓ
+            # Compute theoretical C_ell
             cl_theory = pyccl.angular_cl(cosmo, tracers[i], tracers[j], ell_range)
 
             # Add realistic noise
