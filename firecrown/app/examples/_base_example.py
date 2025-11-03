@@ -34,7 +34,7 @@ class Example(logging.Logging):
     and logging setup, while requiring subclasses to implement the specific
     data generation logic.
 
-    Each example generator creates synthetic data and configuration files
+    Each example generator creates/downloads data and configuration files
     that demonstrate a particular type of cosmological analysis.
     """
 

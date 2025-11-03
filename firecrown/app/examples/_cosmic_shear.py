@@ -383,6 +383,7 @@ class ExampleCosmicShear(Example):
         """
         cosmosis_ini = output_path / f"cosmosis_{self.prefix}.ini"
         values_ini = output_path / f"cosmosis_{self.prefix}_values.ini"
+        model_name = f"firecrown_{self.prefix}"
 
         # Generate main configuration
         cfg = _cosmosis.create_standard_cosmosis_config(
@@ -391,6 +392,7 @@ class ExampleCosmicShear(Example):
             sacc_path=sacc_path,
             values_path=values_ini,
             output_path=output_path,
+            model_list=[model_name],
             use_absolute_path=self.use_absolute_path,
         )
         # Options particular to this example
@@ -400,15 +402,14 @@ class ExampleCosmicShear(Example):
         values_cfg = _cosmosis.create_standard_values_config()
 
         # Firecrown-specific parameters for two-point analysis
-        section = "firecrown_two_point"
-        values_cfg.add_section(section)
+        values_cfg.add_section(model_name)
         _cosmosis.add_comment_block(
             values_cfg,
-            section,
+            model_name,
             "Photo-z shift parameters for each tomographic bin (min, start, max)",
         )
         for bin_index in range(self.n_bins):
-            values_cfg.set(section, f"trc{bin_index}_delta_z", "-0.05 0.0 0.05")
+            values_cfg.set(model_name, f"trc{bin_index}_delta_z", "-0.05 0.0 0.05")
 
         # Write configuration files
         with values_ini.open("w") as fp:
