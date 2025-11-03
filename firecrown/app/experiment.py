@@ -25,7 +25,10 @@ class Load(logging.Logging):
         self._load_experiment()
 
     def _load_experiment(self) -> None:
-        """Load the experiment file, with error handling for missing or unreadable files."""
+        """Load the experiment file.
+
+        Loads the experiment file with error handling for missing or unreadable files.
+        """
         self.console.rule("[bold blue]Loading SACC file[/bold blue]")
         self.console.print(f"[cyan]File:[/cyan] {self.experiment_file}")
         try:
