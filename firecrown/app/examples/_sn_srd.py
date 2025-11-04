@@ -11,16 +11,13 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from numcosmo_py import Ncm
 
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Example, Model, Parameter
+from ._base_example import Example
+from ._types import Model, Parameter
 from . import _sn_srd_template
-from . import _cosmosis
-from . import _cobaya
-from . import _numcosmo
 
 
 @dataclass
@@ -113,95 +110,3 @@ class ExampleSupernovaSRD(Example):
                 ],
             )
         ]
-
-    def generate_cosmosis_config(
-        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
-    ) -> None:
-        """Generate CosmoSIS configuration files for the SN SRD example.
-
-        Produces a main CosmoSIS ini and a values ini using the standard helpers.
-        """
-        cosmosis_ini = output_path / f"cosmosis_{self.prefix}.ini"
-        values_ini = output_path / f"cosmosis_{self.prefix}_values.ini"
-        model_name = f"firecrown_{self.prefix}"
-
-        cfg = _cosmosis.create_standard_cosmosis_config(
-            prefix=self.prefix,
-            factory_path=factory_path,
-            build_parameters=build_parameters,
-            values_path=values_ini,
-            output_path=output_path,
-            model_list=[model_name],
-            use_absolute_path=self.use_absolute_path,
-        )
-
-        # Add example-specific comments for the SN SRD example
-        _cosmosis.add_comment_block(
-            cfg,
-            "firecrown_likelihood",
-            "Supernova SRD example: the factory below will construct "
-            "a supernova likelihood.\n"
-            "Provide `sacc_file` as a build parameter (it is already "
-            "filled by this example).",
-        )
-
-        # Write values file and main ini
-        values_cfg = _cosmosis.create_standard_values_config(self.get_models())
-
-        with values_ini.open("w") as fp:
-            values_cfg.write(fp)
-
-        with cosmosis_ini.open("w") as fp:
-            cfg.write(fp)
-
-    def generate_cobaya_config(
-        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
-    ) -> None:
-        """Generate a Cobaya YAML configuration for the SN SRD example.
-
-        Uses the standard Cobaya helper to produce a minimal test/run configuration
-        that points to the generated factory and SACC file.
-        """
-        cobaya_yaml = output_path / f"cobaya_{self.prefix}.yaml"
-
-        cfg = _cobaya.create_standard_cobaya_config(
-            factory_path=factory_path,
-            build_parameters=build_parameters,
-            likelihood_name="firecrown_likelihood",
-            use_absolute_path=self.use_absolute_path,
-        )
-
-        _cobaya.add_models_to_cobaya_config(cfg, self.get_models())
-        _cobaya.write_cobaya_config(cfg, cobaya_yaml)
-
-    def generate_numcosmo_config(
-        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
-    ) -> None:
-        """Generate NumCosmo configuration files for the SN SRD example.
-
-        Creates a NumCosmo YAML experiment file and a builders file using the
-        shared helper in `_numcosmo` and the NumCosmo `Serialize` utility.
-        """
-        # Initialize NumCosmo runtime
-        Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
-
-        model_name = f"firecrown_{self.prefix}"
-        model_list = [model_name]
-
-        config = _numcosmo.create_standard_numcosmo_config(
-            factory_path=factory_path,
-            build_parameters=build_parameters,
-            model_list=model_list,
-            use_absolute_path=self.use_absolute_path,
-        )
-
-        model_builders = _numcosmo.add_models_to_numcosmo_config(
-            config, self.get_models()
-        )
-
-        numcosmo_yaml = output_path / f"numcosmo_{self.prefix}.yaml"
-        builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
-
-        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
-        ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())
-        ser.dict_str_to_yaml_file(model_builders, builders_file.as_posix())

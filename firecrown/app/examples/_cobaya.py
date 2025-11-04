@@ -11,7 +11,7 @@ import yaml
 
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Model
+from ._types import Model
 
 
 def create_standard_cobaya_config(

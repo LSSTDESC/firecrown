@@ -6,7 +6,6 @@ example data and configurations through the command-line interface.
 """
 
 from typing import Annotated, ClassVar
-from enum import StrEnum
 from abc import abstractmethod
 from pathlib import Path
 import dataclasses
@@ -14,39 +13,13 @@ from rich.panel import Panel
 from rich.rule import Rule
 
 import typer
+from numcosmo_py import Ncm
 from firecrown.likelihood.likelihood import NamedParameters
+from ._types import Frameworks, Model
 from .. import logging
-
-
-class Frameworks(StrEnum):
-    """Supported frameworks for example generation."""
-
-    COBAYA = "cobaya"
-    COSMOSIS = "cosmosis"
-    NUMCOSMO = "numcosmo"
-
-
-@dataclasses.dataclass
-class Parameter:
-    """A parameter with associated metadata."""
-
-    name: str
-    symbol: str
-    lower_bound: float
-    upper_bound: float
-    scale: float
-    abstol: float
-    default_value: float
-    free: bool
-
-
-@dataclasses.dataclass
-class Model:
-    """A model with associated parameters."""
-
-    name: str
-    parameters: list[Parameter]
-    description: str
+from . import _cobaya
+from . import _cosmosis
+from . import _numcosmo
 
 
 @dataclasses.dataclass
@@ -179,31 +152,74 @@ class Example(logging.Logging):
         """
 
     def generate_cosmosis_config(
-        self, _output_path: Path, _factory: Path, _build_params: NamedParameters
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
-        """Generate example configuration file for Cosmosis."""
-        err = NotImplementedError(
-            f"{self.__class__.__name__} does not support CosmoSIS configuration."
+        """Generate CosmoSIS configuration files."""
+        cosmosis_ini = output_path / f"cosmosis_{self.prefix}.ini"
+        values_ini = output_path / f"cosmosis_{self.prefix}_values.ini"
+        model_name = f"firecrown_{self.prefix}"
+
+        cfg = _cosmosis.create_standard_cosmosis_config(
+            prefix=self.prefix,
+            factory_path=factory_path,
+            build_parameters=build_parameters,
+            values_path=values_ini,
+            output_path=output_path,
+            model_list=[model_name],
+            use_absolute_path=self.use_absolute_path,
         )
-        raise err
+
+        values_cfg = _cosmosis.create_standard_values_config(self.get_models())
+
+        with values_ini.open("w") as fp:
+            values_cfg.write(fp)
+
+        with cosmosis_ini.open("w") as fp:
+            cfg.write(fp)
 
     def generate_cobaya_config(
-        self, _output_path: Path, _factory: Path, _build_params: NamedParameters
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
-        """Generate example configuration file for Cobaya."""
-        err = NotImplementedError(
-            f"{self.__class__.__name__} does not support Cobaya configuration."
+        """Generate Cobaya configuration files."""
+
+        cobaya_yaml = output_path / f"cobaya_{self.prefix}.yaml"
+
+        cfg = _cobaya.create_standard_cobaya_config(
+            factory_path=factory_path,
+            build_parameters=build_parameters,
+            use_absolute_path=self.use_absolute_path,
+            likelihood_name="firecrown_likelihood",
         )
-        raise err
+
+        _cobaya.add_models_to_cobaya_config(cfg, self.get_models())
+        _cobaya.write_cobaya_config(cfg, cobaya_yaml)
 
     def generate_numcosmo_config(
-        self, _output_path: Path, _factory: Path, _build_params: NamedParameters
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
-        """Generate example configuration file for NumCosmo."""
-        err = NotImplementedError(
-            f"{self.__class__.__name__} does not support NumCosmo configuration."
+        """Generate NumCosmo configuration files."""
+        Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
+
+        model_name = f"firecrown_{self.prefix}"
+        model_list = [model_name]
+
+        config = _numcosmo.create_standard_numcosmo_config(
+            factory_path=factory_path,
+            build_parameters=build_parameters,
+            model_list=model_list,
+            use_absolute_path=self.use_absolute_path,
         )
-        raise err
+
+        model_builders = _numcosmo.add_models_to_numcosmo_config(
+            config, self.get_models()
+        )
+
+        numcosmo_yaml = output_path / f"numcosmo_{self.prefix}.yaml"
+        builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
+
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())
+        ser.dict_str_to_yaml_file(model_builders, builders_file.as_posix())
 
     def generate_config(
         self, output_path: Path, factory: Path, build_params: NamedParameters
@@ -215,7 +231,6 @@ class Example(logging.Logging):
 
         :param output_path: Directory where files should be created
         """
-
         try:
             match self.target_framework:
                 case Frameworks.COSMOSIS:

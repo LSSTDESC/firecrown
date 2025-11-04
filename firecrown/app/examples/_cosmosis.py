@@ -9,7 +9,7 @@ import textwrap
 from pathlib import Path
 import firecrown
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Model
+from ._types import Model
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
