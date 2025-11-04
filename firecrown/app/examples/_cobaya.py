@@ -10,12 +10,13 @@ from pathlib import Path
 import yaml
 
 import firecrown.connector.cobaya.likelihood
+from firecrown.likelihood.likelihood import NamedParameters
 from ._base_example import Model
 
 
 def create_standard_cobaya_config(
     factory_path: Path,
-    sacc_path: Path,
+    build_parameters: NamedParameters,
     likelihood_name: str,
     use_absolute_path: bool = False,
 ) -> Dict[str, Any]:
@@ -30,10 +31,8 @@ def create_standard_cobaya_config(
 
     if use_absolute_path:
         factory_filename = factory_path.absolute().as_posix()
-        sacc_filename = sacc_path.absolute().as_posix()
     else:
         factory_filename = factory_path.name
-        sacc_filename = sacc_path.name
 
     config = {
         "theory": {
@@ -47,7 +46,7 @@ def create_standard_cobaya_config(
                 "input_style": "CAMB",
                 "external": firecrown.connector.cobaya.likelihood.LikelihoodConnector,
                 "firecrownIni": factory_filename,
-                "build_parameters": {"sacc_file": sacc_filename},
+                "build_parameters": build_parameters.convert_to_basic_dict(),
             }
         },
         "params": _get_standard_params(),

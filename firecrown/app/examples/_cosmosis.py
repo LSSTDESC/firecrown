@@ -8,6 +8,7 @@ import configparser
 import textwrap
 from pathlib import Path
 import firecrown
+from firecrown.likelihood.likelihood import NamedParameters
 from ._base_example import Model
 
 
@@ -40,7 +41,7 @@ def add_comment_block(
 def create_standard_cosmosis_config(
     prefix: str,
     factory_path: Path,
-    sacc_path: Path,
+    build_parameters: NamedParameters,
     values_path: Path,
     output_path: Path,
     model_list: list[str],
@@ -61,11 +62,9 @@ def create_standard_cosmosis_config(
     )
     if use_absolute_path:
         factory_filename = factory_path.absolute().as_posix()
-        sacc_filename = sacc_path.absolute().as_posix()
         values_filename = values_path.absolute().as_posix()
     else:
         factory_filename = factory_path.name
-        sacc_filename = sacc_path.name
         values_filename = values_path.name
 
     # Runtime configuration
@@ -136,7 +135,9 @@ def create_standard_cosmosis_config(
         "sampling_parameters_sections",
         " ".join(model_list),
     )
-    cfg.set("firecrown_likelihood", "sacc_file", sacc_filename)
+
+    for key, value in build_parameters.convert_to_basic_dict().items():
+        cfg.set("firecrown_likelihood", key, str(value))
 
     # Sampler configurations
     cfg["test"] = {"fatal_errors": "T", "save_dir": "output"}
