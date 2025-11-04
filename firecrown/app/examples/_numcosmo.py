@@ -12,7 +12,7 @@ import numcosmo_py.external.cosmosis as nc_cosmosis
 from numcosmo_py.helper import register_model_class
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Model
+from ._types import Model
 
 
 def create_standard_numcosmo_config(
