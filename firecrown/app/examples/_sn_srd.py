@@ -40,7 +40,7 @@ class ExampleSupernovaSRD(Example):
         typer.Option(
             help=(
                 "Prefix for generated filenames "
-                "(e.g., 'cosmic_shear' creates 'cosmic_shear.sacc')"
+                "(e.g., 'sn_srd' creates 'sn_srd.sacc')"
             ),
             show_default=True,
         ),
