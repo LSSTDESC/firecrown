@@ -17,11 +17,10 @@ import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 from numcosmo_py import Ncm
-from numcosmo_py.helper import register_model_class
 
 from firecrown.likelihood.likelihood import NamedParameters
 from ...utils import upper_triangle_indices
-from ._base_example import Example
+from ._base_example import Example, Model, Parameter
 from . import _cosmic_shear_template
 from . import _cosmosis
 from . import _cobaya
@@ -373,6 +372,41 @@ class ExampleCosmicShear(Example):
 
         return output_file
 
+    def get_models(self):
+        """Return model parameters."""
+        parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
+            (
+                f"trc{bin_index}_delta_z",
+                rf"\delta_{{z{bin_index}}}",
+                -5.0,
+                5.0,
+                0.05,
+                0.0,
+                0.5,
+                True,
+            )
+            for bin_index in range(self.n_bins)
+        ]
+        return [
+            Model(
+                name=f"firecrown_{self.prefix}",
+                description="Model parameters for cosmic shear analysis",
+                parameters=[
+                    Parameter(
+                        name=param[0],
+                        symbol=param[1],
+                        lower_bound=param[2],
+                        upper_bound=param[3],
+                        scale=param[4],
+                        abstol=param[5],
+                        default_value=param[6],
+                        free=param[7],
+                    )
+                    for param in parameters
+                ],
+            )
+        ]
+
     def generate_cosmosis_config(
         self, output_path: Path, sacc_path: Path, factory_path: Path
     ) -> None:
@@ -399,17 +433,7 @@ class ExampleCosmicShear(Example):
         cfg.set("firecrown_likelihood", "n_bins", str(self.n_bins))
 
         # Generate values configuration
-        values_cfg = _cosmosis.create_standard_values_config()
-
-        # Firecrown-specific parameters for two-point analysis
-        values_cfg.add_section(model_name)
-        _cosmosis.add_comment_block(
-            values_cfg,
-            model_name,
-            "Photo-z shift parameters for each tomographic bin (min, start, max)",
-        )
-        for bin_index in range(self.n_bins):
-            values_cfg.set(model_name, f"trc{bin_index}_delta_z", "-0.05 0.0 0.05")
+        values_cfg = _cosmosis.create_standard_values_config(self.get_models())
 
         # Write configuration files
         with values_ini.open("w") as fp:
@@ -440,12 +464,7 @@ class ExampleCosmicShear(Example):
             "n_bins"
         ] = self.n_bins
 
-        for bin_index in range(self.n_bins):
-            cfg["params"][f"trc{bin_index}_delta_z"] = {
-                "ref": 0.0,
-                "prior": {"min": -0.05, "max": 0.05},
-            }
-
+        _cobaya.add_models_to_cobaya_config(cfg, self.get_models())
         # Write configuration files
         _cobaya.write_cobaya_config(cfg, cobaya_yaml)
 
@@ -468,30 +487,12 @@ class ExampleCosmicShear(Example):
             use_absolute_path=self.use_absolute_path,
         )
 
-        model_builder = Ncm.ModelBuilder.new(
-            Ncm.Model, model_name, "Model for cosmic shear"
+        model_builders = _numcosmo.add_models_to_numcosmo_config(
+            config, self.get_models()
         )
-        for bin_index in range(self.n_bins):
-            model_builder.add_sparam(
-                rf"\delta_{{z{bin_index}}}",
-                f"trc{bin_index}_delta_z",
-                -0.05,
-                0.05,
-                0.01,
-                0.0,
-                0.5,
-                Ncm.ParamType.FREE,
-            )
-        FirecrownModel = register_model_class(model_builder)
-        mset = config.get("model-set")
-        assert isinstance(mset, Ncm.MSet)
-        mset.set(FirecrownModel())
 
         numcosmo_yaml = output_path / f"numcosmo_{self.prefix}.yaml"
         builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
-
-        model_builders = Ncm.ObjDictStr.new()  # pylint: disable=no-value-for-parameter
-        model_builders.add(model_name, model_builder)
 
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())

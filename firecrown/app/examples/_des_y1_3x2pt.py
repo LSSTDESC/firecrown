@@ -11,13 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from numcosmo_py.helper import register_model_class
 from numcosmo_py import Ncm
 
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Example
+from ._base_example import Example, Model, Parameter
 from . import _des_y1_3x2pt_template
 from . import _cosmosis
 from . import _cobaya
@@ -89,6 +88,51 @@ class ExampleDESY13x2pt(Example):
         shutil.copyfile(template, output_file)
         return output_file
 
+    def get_models(self) -> list[Model]:
+        """Get the models for the example."""
+        parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
+            ("ia_bias", r"\beta_{\mathrm{ia}}", -5.0, 5.0, 0.05, 0.0, 0.5, True),
+            ("alphaz", r"\alpha_z", -5.0, 5.0, 0.05, 0.0, 0.0, True),
+            ("z_piv", r"z_{\mathrm{pivot}}", 0.0, 1.0, 0.05, 0.0, 0.62, False),
+            ("lens0_bias", r"b_0", 0.8, 3.0, 0.05, 0.0, 1.4, True),
+            ("lens1_bias", r"b_1", 0.8, 3.0, 0.05, 0.0, 1.6, True),
+            ("lens2_bias", r"b_2", 0.8, 3.0, 0.05, 0.0, 1.6, True),
+            ("lens3_bias", r"b_3", 0.8, 3.0, 0.05, 0.0, 1.9, True),
+            ("lens4_bias", r"b_4", 0.8, 3.0, 0.05, 0.0, 2.0, True),
+            ("lens0_delta_z", r"\delta z_0", -0.05, 0.05, 0.05, 0.0, 0.001, True),
+            ("lens1_delta_z", r"\delta z_1", -0.05, 0.05, 0.05, 0.0, 0.002, True),
+            ("lens2_delta_z", r"\delta z_2", -0.05, 0.05, 0.05, 0.0, 0.001, True),
+            ("lens3_delta_z", r"\delta z_3", -0.05, 0.05, 0.05, 0.0, 0.003, True),
+            ("lens4_delta_z", r"\delta z_4", -0.05, 0.05, 0.05, 0.0, 0.000, True),
+            ("src0_mult_bias", r"m_0", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src1_mult_bias", r"m_1", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src2_mult_bias", r"m_2", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src3_mult_bias", r"m_3", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src0_delta_z", r"\delta z_0", -0.05, 0.05, 0.005, 0.0, -0.001, True),
+            ("src1_delta_z", r"\delta z_1", -0.05, 0.05, 0.005, 0.0, -0.019, True),
+            ("src2_delta_z", r"\delta z_2", -0.05, 0.05, 0.005, 0.0, 0.009, True),
+            ("src3_delta_z", r"\delta z_3", -0.05, 0.05, 0.005, 0.0, -0.018, True),
+        ]
+        return [
+            Model(
+                name=f"firecrown_{self.prefix}",
+                description="DES Y1 3x2pt parameters",
+                parameters=[
+                    Parameter(
+                        name=param[0],
+                        symbol=param[1],
+                        lower_bound=param[2],
+                        upper_bound=param[3],
+                        scale=param[4],
+                        abstol=param[5],
+                        default_value=param[6],
+                        free=param[7],
+                    )
+                    for param in parameters
+                ],
+            )
+        ]
+
     def generate_cosmosis_config(
         self, output_path: Path, sacc_path: Path, factory_path: Path
     ) -> None:
@@ -107,30 +151,7 @@ class ExampleDESY13x2pt(Example):
             use_absolute_path=self.use_absolute_path,
         )
 
-        values_cfg = _cosmosis.create_standard_values_config()
-
-        values_cfg.add_section(model_name)
-        _cosmosis.add_comment_block(
-            values_cfg,
-            model_name,
-            "DES Y1 3x2pt parameters",
-        )
-
-        values_cfg.set(model_name, "ia_bias", "-5.0 0.5 5.0")
-        values_cfg.set(model_name, "alphaz", "-5.0 0.0 5.0")
-        values_cfg.set(model_name, "z_piv", "0.62")
-
-        for i in range(5):
-            values_cfg.set(model_name, f"lens{i}_bias", f"0.8 {1.4 + i*0.2:.1f} 3.0")
-
-        for i in range(4):
-            values_cfg.set(model_name, f"src{i}_delta_z", "-0.05 0.0 0.05")
-
-        for i in range(5):
-            values_cfg.set(model_name, f"lens{i}_delta_z", "-0.05 0.0 0.05")
-
-        for i in range(4):
-            values_cfg.set(model_name, f"src{i}_mult_bias", "0.001 0.012 0.1")
+        values_cfg = _cosmosis.create_standard_values_config(self.get_models())
 
         with values_ini.open("w") as fp:
             values_cfg.write(fp)
@@ -151,34 +172,7 @@ class ExampleDESY13x2pt(Example):
             likelihood_name="firecrown_likelihood",
         )
 
-        cfg["params"]["ia_bias"] = {"ref": 0.5, "prior": {"min": -5.0, "max": 5.0}}
-        cfg["params"]["alphaz"] = {"ref": 0.0, "prior": {"min": -5.0, "max": 5.0}}
-        cfg["params"]["z_piv"] = 0.62
-
-        for i in range(5):
-            cfg["params"][f"lens{i}_bias"] = {
-                "ref": 1.4 + i * 0.2,
-                "prior": {"min": 0.8, "max": 3.0},
-            }
-
-        for i in range(4):
-            cfg["params"][f"src{i}_delta_z"] = {
-                "ref": 0.0,
-                "prior": {"min": -0.05, "max": 0.05},
-            }
-
-        for i in range(5):
-            cfg["params"][f"lens{i}_delta_z"] = {
-                "ref": 0.0,
-                "prior": {"min": -0.05, "max": 0.05},
-            }
-
-        for i in range(4):
-            cfg["params"][f"src{i}_mult_bias"] = {
-                "ref": 0.012,
-                "prior": {"min": 0.001, "max": 0.1},
-            }
-
+        _cobaya.add_models_to_cobaya_config(cfg, self.get_models())
         _cobaya.write_cobaya_config(cfg, cobaya_yaml)
 
     def generate_numcosmo_config(
@@ -199,85 +193,12 @@ class ExampleDESY13x2pt(Example):
             use_absolute_path=self.use_absolute_path,
         )
 
-        model_builder = Ncm.ModelBuilder.new(
-            Ncm.Model, model_name, "Model for DES Y1 3x2pt"
+        model_builders = _numcosmo.add_models_to_numcosmo_config(
+            config, self.get_models()
         )
-
-        model_builder.add_sparam(
-            "ia_\\mathrm{bias}", "ia_bias", -5.0, 5.0, 0.1, 0.0, 0.5, Ncm.ParamType.FREE
-        )
-        model_builder.add_sparam(
-            "\\alpha_z", "alphaz", -5.0, 5.0, 0.1, 0.0, 0.0, Ncm.ParamType.FREE
-        )
-        model_builder.add_sparam(
-            "z_\\mathrm{piv}",
-            "z_piv",
-            0.496,
-            0.744,
-            0.0062,
-            0.0,
-            0.62,
-            Ncm.ParamType.FIXED,
-        )
-
-        for i in range(5):
-            model_builder.add_sparam(
-                f"b_{{\\mathrm{{lens{i}}}}}",
-                f"lens{i}_bias",
-                0.8,
-                3.0,
-                0.022,
-                0.0,
-                1.4 + i * 0.2,
-                Ncm.ParamType.FREE,
-            )
-
-        for i in range(4):
-            model_builder.add_sparam(
-                f"\\delta z_{{\\mathrm{{src{i}}}}}",
-                f"src{i}_delta_z",
-                -0.05,
-                0.05,
-                0.001,
-                0.0,
-                0.0,
-                Ncm.ParamType.FREE,
-            )
-
-        for i in range(5):
-            model_builder.add_sparam(
-                f"\\delta z_{{\\mathrm{{lens{i}}}}}",
-                f"lens{i}_delta_z",
-                -0.05,
-                0.05,
-                0.001,
-                0.0,
-                0.0,
-                Ncm.ParamType.FREE,
-            )
-
-        for i in range(4):
-            model_builder.add_sparam(
-                f"m_{{\\mathrm{{src{i}}}}}",
-                f"src{i}_mult_bias",
-                0.001,
-                0.1,
-                0.001,
-                0.0,
-                0.012,
-                Ncm.ParamType.FREE,
-            )
-
-        FirecrownModel = register_model_class(model_builder)
-        mset = config.get("model-set")
-        assert isinstance(mset, Ncm.MSet)
-        mset.set(FirecrownModel())
 
         numcosmo_yaml = output_path / f"numcosmo_{self.prefix}.yaml"
         builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
-
-        model_builders = Ncm.ObjDictStr.new()  # pylint: disable=no-value-for-parameter
-        model_builders.add(model_name, model_builder)
 
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())

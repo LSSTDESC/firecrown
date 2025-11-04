@@ -9,8 +9,10 @@ import os
 
 from numcosmo_py import Ncm, Nc
 import numcosmo_py.external.cosmosis as nc_cosmosis
+from numcosmo_py.helper import register_model_class
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
 from firecrown.likelihood.likelihood import NamedParameters
+from ._base_example import Model
 
 
 def create_standard_numcosmo_config(
@@ -79,3 +81,38 @@ def create_standard_numcosmo_config(
     experiment.add("model-set", mset)
 
     return experiment
+
+
+def add_models_to_numcosmo_config(
+    config: Ncm.ObjDictStr,
+    models: list[Model],
+) -> Ncm.ObjDictStr:
+    """Add model parameters to NumCosmo configuration.
+
+    :param config: NumCosmo configuration object
+    :param models: List of models with parameters
+    :return: ObjDictStr with model builders
+    """
+    mset = config.get("model-set")
+    assert isinstance(mset, Ncm.MSet)
+    model_builders = Ncm.ObjDictStr.new()  # pylint: disable=no-value-for-parameter
+
+    for model in models:
+        model_builder = Ncm.ModelBuilder.new(Ncm.Model, model.name, model.description)
+        for parameter in model.parameters:
+            model_builder.add_sparam(
+                parameter.symbol,
+                parameter.name,
+                parameter.lower_bound,
+                parameter.upper_bound,
+                parameter.scale,
+                parameter.abstol,
+                parameter.default_value,
+                Ncm.ParamType.FREE if parameter.free else Ncm.ParamType.FIXED,
+            )
+
+        model_builders.add(model.name, model_builder)
+        FirecrownModel = register_model_class(model_builder)
+        mset.set(FirecrownModel())
+
+    return model_builders

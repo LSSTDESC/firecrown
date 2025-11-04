@@ -8,6 +8,7 @@ import configparser
 import textwrap
 from pathlib import Path
 import firecrown
+from ._base_example import Model
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
@@ -143,10 +144,12 @@ def create_standard_cosmosis_config(
     return cfg
 
 
-def create_standard_values_config() -> configparser.ConfigParser:
+def create_standard_values_config(
+    models: list[Model] | None = None,
+) -> configparser.ConfigParser:
     """Create standard values.ini configuration for cosmological parameters.
 
-    :param n_bins: Number of tomographic bins for firecrown parameters
+    :param models: List of models with parameters to add
     :return: Configured ConfigParser object for values
     """
     config = configparser.ConfigParser(allow_no_value=True)
@@ -181,4 +184,30 @@ def create_standard_values_config() -> configparser.ConfigParser:
     config.set(section, "w", "-1.0")
     config.set(section, "wa", "0.0")
 
+    # Add firecrown parameters
+    if models:
+        for model in models:
+            section = model.name
+            config.add_section(section)
+            add_comment_block(
+                config,
+                section,
+                f"Firecrown parameters for the {model.name} model.",
+            )
+
+            for parameter in model.parameters:
+                if parameter.free:
+                    config.set(
+                        section,
+                        parameter.name,
+                        f"{parameter.lower_bound:.3g} "
+                        f"{parameter.default_value:.3g} "
+                        f"{parameter.upper_bound:.3g}",
+                    )
+                else:
+                    config.set(
+                        section,
+                        parameter.name,
+                        f"{parameter.default_value:.3g}",
+                    )
     return config

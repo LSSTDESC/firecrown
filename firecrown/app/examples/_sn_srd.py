@@ -11,13 +11,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from rich.progress import Progress, SpinnerColumn, TextColumn
-from numcosmo_py.helper import register_model_class
 from numcosmo_py import Ncm
 
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Example
+from ._base_example import Example, Model, Parameter
 from . import _sn_srd_template
 from . import _cosmosis
 from . import _cobaya
@@ -86,6 +85,27 @@ class ExampleSupernovaSRD(Example):
         shutil.copyfile(template, output_file)
         return output_file
 
+    def get_models(self):
+        """Return model parameters."""
+        return [
+            Model(
+                name=f"firecrown_{self.prefix}",
+                description="Model for SN SRD example",
+                parameters=[
+                    Parameter(
+                        name="sn_ddf_sample_M",
+                        symbol=r"\mathcal{M}",
+                        lower_bound=-20.0,
+                        upper_bound=-19.0,
+                        scale=0.1,
+                        abstol=0.0,
+                        default_value=-19.3,
+                        free=True,
+                    )
+                ],
+            )
+        ]
+
     def generate_cosmosis_config(
         self, output_path: Path, sacc_path: Path, factory_path: Path
     ) -> None:
@@ -118,16 +138,7 @@ class ExampleSupernovaSRD(Example):
         )
 
         # Write values file and main ini
-        values_cfg = _cosmosis.create_standard_values_config()
-
-        # Firecrown-specific parameters for two-point analysis
-        values_cfg.add_section(model_name)
-        _cosmosis.add_comment_block(
-            values_cfg,
-            model_name,
-            "Supernova SRD example: the sample magnitude\n",
-        )
-        values_cfg.set(model_name, "sn_ddf_sample_m", "-20.0 -19.3 -19.0")
+        values_cfg = _cosmosis.create_standard_values_config(self.get_models())
 
         with values_ini.open("w") as fp:
             values_cfg.write(fp)
@@ -152,11 +163,7 @@ class ExampleSupernovaSRD(Example):
             use_absolute_path=self.use_absolute_path,
         )
 
-        cfg["params"]["sn_ddf_sample_M"] = {
-            "ref": -19.3,
-            "prior": {"min": -20.0, "max": -19.0},
-        }
-
+        _cobaya.add_models_to_cobaya_config(cfg, self.get_models())
         _cobaya.write_cobaya_config(cfg, cobaya_yaml)
 
     def generate_numcosmo_config(
@@ -183,31 +190,12 @@ class ExampleSupernovaSRD(Example):
             use_absolute_path=self.use_absolute_path,
         )
 
-        model_builder = Ncm.ModelBuilder.new(
-            Ncm.Model, model_name, "Model for cosmic shear"
+        model_builders = _numcosmo.add_models_to_numcosmo_config(
+            config, self.get_models()
         )
-        model_builder.add_sparam(
-            r"\mathcal{M}",
-            "sn_ddf_sample_M",
-            -20.0,
-            -19.0,
-            0.01,
-            0.0,
-            -19.3,
-            Ncm.ParamType.FREE,
-        )
-        FirecrownModel = register_model_class(model_builder)
-        mset = config.get("model-set")
-        assert isinstance(mset, Ncm.MSet)
-        mset.set(FirecrownModel())
 
         numcosmo_yaml = output_path / f"numcosmo_{self.prefix}.yaml"
         builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
-
-        # Create an empty model builders container (the helper may not require
-        # a populated builders list for simple examples)
-        model_builders = Ncm.ObjDictStr.new()  # pylint: disable=no-value-for-parameter
-        model_builders.add(model_name, model_builder)
 
         ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
         ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())

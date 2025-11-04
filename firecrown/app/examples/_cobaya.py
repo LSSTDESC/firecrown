@@ -10,6 +10,7 @@ from pathlib import Path
 import yaml
 
 import firecrown.connector.cobaya.likelihood
+from ._base_example import Model
 
 
 def create_standard_cobaya_config(
@@ -87,6 +88,26 @@ def _get_standard_params() -> Dict[str, Any]:
     }
 
     return params
+
+
+def add_models_to_cobaya_config(config: Dict[str, Any], models: list[Model]) -> None:
+    """Add model parameters to Cobaya configuration.
+
+    :param config: Configuration dictionary to modify
+    :param models: List of models with parameters
+    """
+    for model in models:
+        for parameter in model.parameters:
+            if parameter.free:
+                config["params"][parameter.name] = {
+                    "ref": parameter.default_value,
+                    "prior": {
+                        "min": parameter.lower_bound,
+                        "max": parameter.upper_bound,
+                    },
+                }
+            else:
+                config["params"][parameter.name] = parameter.default_value
 
 
 def write_cobaya_config(config: Dict[str, Any], output_file: Path) -> None:
