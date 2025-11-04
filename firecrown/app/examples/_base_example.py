@@ -26,6 +26,29 @@ class Frameworks(StrEnum):
 
 
 @dataclasses.dataclass
+class Parameter:
+    """A parameter with associated metadata."""
+
+    name: str
+    symbol: str
+    lower_bound: float
+    upper_bound: float
+    scale: float
+    abstol: float
+    default_value: float
+    free: bool
+
+
+@dataclasses.dataclass
+class Model:
+    """A model with associated parameters."""
+
+    name: str
+    parameters: list[Parameter]
+    description: str
+
+
+@dataclasses.dataclass
 class Example(logging.Logging):
     """Base class for Firecrown example generators.
 
@@ -126,6 +149,18 @@ class Example(logging.Logging):
 
         :param output_path: Directory where files should be created
         :return: The string to be used as the factory in the configuration
+        """
+
+    @abstractmethod
+    def get_models(
+        self,
+    ) -> list[Model]:
+        """Generate example model parameters.
+
+        This method must be implemented by each example subclass to create
+        the specific model parameters for that analysis type.
+
+        :return: A list of models with associated parameters
         """
 
     def generate_cosmosis_config(
