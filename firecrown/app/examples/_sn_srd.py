@@ -85,6 +85,14 @@ class ExampleSupernovaSRD(Example):
         shutil.copyfile(template, output_file)
         return output_file
 
+    def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
+        if self.use_absolute_path:
+            sacc_filename = sacc_path.absolute().as_posix()
+        else:
+            sacc_filename = sacc_path.name
+
+        return NamedParameters({"sacc_file": sacc_filename})
+
     def get_models(self):
         """Return model parameters."""
         return [
@@ -107,7 +115,7 @@ class ExampleSupernovaSRD(Example):
         ]
 
     def generate_cosmosis_config(
-        self, output_path: Path, sacc_path: Path, factory_path: Path
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
         """Generate CosmoSIS configuration files for the SN SRD example.
 
@@ -120,7 +128,7 @@ class ExampleSupernovaSRD(Example):
         cfg = _cosmosis.create_standard_cosmosis_config(
             prefix=self.prefix,
             factory_path=factory_path,
-            sacc_path=sacc_path,
+            build_parameters=build_parameters,
             values_path=values_ini,
             output_path=output_path,
             model_list=[model_name],
@@ -147,7 +155,7 @@ class ExampleSupernovaSRD(Example):
             cfg.write(fp)
 
     def generate_cobaya_config(
-        self, output_path: Path, sacc_path: Path, factory_path: Path
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
         """Generate a Cobaya YAML configuration for the SN SRD example.
 
@@ -158,7 +166,7 @@ class ExampleSupernovaSRD(Example):
 
         cfg = _cobaya.create_standard_cobaya_config(
             factory_path=factory_path,
-            sacc_path=sacc_path,
+            build_parameters=build_parameters,
             likelihood_name="firecrown_likelihood",
             use_absolute_path=self.use_absolute_path,
         )
@@ -167,7 +175,7 @@ class ExampleSupernovaSRD(Example):
         _cobaya.write_cobaya_config(cfg, cobaya_yaml)
 
     def generate_numcosmo_config(
-        self, output_path: Path, sacc_path: Path, factory_path: Path
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
         """Generate NumCosmo configuration files for the SN SRD example.
 
@@ -180,11 +188,8 @@ class ExampleSupernovaSRD(Example):
         model_name = f"firecrown_{self.prefix}"
         model_list = [model_name]
 
-        build_parameters = NamedParameters({})
-
         config = _numcosmo.create_standard_numcosmo_config(
             factory_path=factory_path,
-            sacc_path=sacc_path,
             build_parameters=build_parameters,
             model_list=model_list,
             use_absolute_path=self.use_absolute_path,

@@ -88,6 +88,14 @@ class ExampleDESY13x2pt(Example):
         shutil.copyfile(template, output_file)
         return output_file
 
+    def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
+        if self.use_absolute_path:
+            sacc_filename = sacc_path.absolute().as_posix()
+        else:
+            sacc_filename = sacc_path.name
+
+        return NamedParameters({"sacc_file": sacc_filename})
+
     def get_models(self) -> list[Model]:
         """Get the models for the example."""
         parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
@@ -134,7 +142,7 @@ class ExampleDESY13x2pt(Example):
         ]
 
     def generate_cosmosis_config(
-        self, output_path: Path, sacc_path: Path, factory_path: Path
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
         """Generate CosmoSIS configuration files."""
         cosmosis_ini = output_path / f"cosmosis_{self.prefix}.ini"
@@ -144,7 +152,7 @@ class ExampleDESY13x2pt(Example):
         cfg = _cosmosis.create_standard_cosmosis_config(
             prefix=self.prefix,
             factory_path=factory_path,
-            sacc_path=sacc_path,
+            build_parameters=build_parameters,
             values_path=values_ini,
             output_path=output_path,
             model_list=[model_name],
@@ -160,14 +168,14 @@ class ExampleDESY13x2pt(Example):
             cfg.write(fp)
 
     def generate_cobaya_config(
-        self, output_path: Path, sacc_path: Path, factory_path: Path
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
         """Generate Cobaya configuration files."""
         cobaya_yaml = output_path / f"cobaya_{self.prefix}.yaml"
 
         cfg = _cobaya.create_standard_cobaya_config(
             factory_path=factory_path,
-            sacc_path=sacc_path,
+            build_parameters=build_parameters,
             use_absolute_path=self.use_absolute_path,
             likelihood_name="firecrown_likelihood",
         )
@@ -176,18 +184,16 @@ class ExampleDESY13x2pt(Example):
         _cobaya.write_cobaya_config(cfg, cobaya_yaml)
 
     def generate_numcosmo_config(
-        self, output_path: Path, sacc_path: Path, factory_path: Path
+        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
     ) -> None:
         """Generate NumCosmo configuration files."""
         Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 
         model_name = f"firecrown_{self.prefix}"
         model_list = [model_name]
-        build_parameters = NamedParameters({})
 
         config = _numcosmo.create_standard_numcosmo_config(
             factory_path=factory_path,
-            sacc_path=sacc_path,
             build_parameters=build_parameters,
             model_list=model_list,
             use_absolute_path=self.use_absolute_path,

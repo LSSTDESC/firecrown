@@ -14,6 +14,7 @@ from rich.panel import Panel
 from rich.rule import Rule
 
 import typer
+from firecrown.likelihood.likelihood import NamedParameters
 from .. import logging
 
 
@@ -122,8 +123,12 @@ class Example(logging.Logging):
         factory = self.generate_factory(self.output_path, sacc)
         self.console.print("[green]Factory generated[/green]\n")
 
+        self.console.print(Rule("[bold cyan]Generating build parameters[/bold cyan]"))
+        build_parameters = self.get_build_parameters(sacc)
+        self.console.print("[green]Build parameters generated[/green]\n")
+
         self.console.print(Rule("[bold cyan]Generating configuration[/bold cyan]"))
-        self.generate_config(self.output_path, sacc, factory)
+        self.generate_config(self.output_path, factory, build_parameters)
         self.console.print("[green]Configuration generated[/green]\n")
 
         self.console.print(
@@ -152,6 +157,16 @@ class Example(logging.Logging):
         """
 
     @abstractmethod
+    def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
+        """Generate example build parameters.
+
+        This method must be implemented by each example subclass to create
+        the specific build parameters for that analysis type.
+
+        :return: A NamedParameters of build parameters
+        """
+
+    @abstractmethod
     def get_models(
         self,
     ) -> list[Model]:
@@ -164,7 +179,7 @@ class Example(logging.Logging):
         """
 
     def generate_cosmosis_config(
-        self, _output_path: Path, _sacc: Path, _factory: Path
+        self, _output_path: Path, _factory: Path, _build_params: NamedParameters
     ) -> None:
         """Generate example configuration file for Cosmosis."""
         err = NotImplementedError(
@@ -173,7 +188,7 @@ class Example(logging.Logging):
         raise err
 
     def generate_cobaya_config(
-        self, _output_path: Path, _sacc: Path, _factory: Path
+        self, _output_path: Path, _factory: Path, _build_params: NamedParameters
     ) -> None:
         """Generate example configuration file for Cobaya."""
         err = NotImplementedError(
@@ -182,7 +197,7 @@ class Example(logging.Logging):
         raise err
 
     def generate_numcosmo_config(
-        self, _output_path: Path, _sacc: Path, _factory: Path
+        self, _output_path: Path, _factory: Path, _build_params: NamedParameters
     ) -> None:
         """Generate example configuration file for NumCosmo."""
         err = NotImplementedError(
@@ -190,7 +205,9 @@ class Example(logging.Logging):
         )
         raise err
 
-    def generate_config(self, output_path: Path, sacc: Path, factory: Path) -> None:
+    def generate_config(
+        self, output_path: Path, factory: Path, build_params: NamedParameters
+    ) -> None:
         """Generate the configuration file and related configurations.
 
         This method must be implemented by each example subclass to create
@@ -202,11 +219,11 @@ class Example(logging.Logging):
         try:
             match self.target_framework:
                 case Frameworks.COSMOSIS:
-                    self.generate_cosmosis_config(output_path, sacc, factory)
+                    self.generate_cosmosis_config(output_path, factory, build_params)
                 case Frameworks.COBAYA:
-                    self.generate_cobaya_config(output_path, sacc, factory)
+                    self.generate_cobaya_config(output_path, factory, build_params)
                 case Frameworks.NUMCOSMO:
-                    self.generate_numcosmo_config(output_path, sacc, factory)
+                    self.generate_numcosmo_config(output_path, factory, build_params)
         except NotImplementedError as e:
             # Typer will format this nicely for the CLI user
             raise typer.BadParameter(

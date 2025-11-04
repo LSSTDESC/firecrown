@@ -17,7 +17,6 @@ from ._base_example import Model
 
 def create_standard_numcosmo_config(
     factory_path: Path,
-    sacc_path: Path,
     build_parameters: NamedParameters,
     model_list: list[str],
     use_absolute_path: bool = False,
@@ -34,10 +33,8 @@ def create_standard_numcosmo_config(
     experiment = Ncm.ObjDictStr()
     if use_absolute_path:
         factory_filename = factory_path.absolute().as_posix()
-        sacc_filename = sacc_path.absolute().as_posix()
     else:
         factory_filename = factory_path.name
-        sacc_filename = sacc_path.name
 
     mapping = nc_cosmosis.create_numcosmo_mapping(
         matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
@@ -45,8 +42,6 @@ def create_standard_numcosmo_config(
         distance_max_z=distance_max_z,
         reltol=reltol,
     )
-
-    build_parameters.set_from_basic_dict({"sacc_file": sacc_filename})
 
     previous_dir = os.getcwd()
     os.chdir(factory_path.parent)
