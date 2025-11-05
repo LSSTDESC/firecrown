@@ -85,20 +85,34 @@ class Example(logging.Logging):
                 f"{self.output_path.absolute()}"
             )
         )
+
+        # Create config generator
+        generator = get_generator(
+            self.target_framework, self.output_path, self.prefix, self.use_absolute_path
+        )
+
         self.console.print(Rule("[bold cyan]Generating example data[/bold cyan]"))
         sacc = self.generate_sacc(self.output_path)
+        generator.add_sacc(sacc)
         self.console.print("[green]Example data generated[/green]\n")
 
         self.console.print(Rule("[bold cyan]Generating factory[/bold cyan]"))
         factory = self.generate_factory(self.output_path, sacc)
+        generator.add_factory(factory)
         self.console.print("[green]Factory generated[/green]\n")
 
         self.console.print(Rule("[bold cyan]Generating build parameters[/bold cyan]"))
         build_parameters = self.get_build_parameters(sacc)
+        generator.add_build_parameters(build_parameters)
         self.console.print("[green]Build parameters generated[/green]\n")
 
+        self.console.print(Rule("[bold cyan]Generating Firecrown models[/bold cyan]"))
+        models = self.get_models()
+        generator.add_models(models)
+        self.console.print("[green]Firecrown models generated[/green]\n")
+
         self.console.print(Rule("[bold cyan]Generating configuration[/bold cyan]"))
-        self.generate_config(self.output_path, factory, build_parameters)
+        generator.write_config()
         self.console.print("[green]Configuration generated[/green]\n")
 
         self.console.print(
@@ -147,27 +161,3 @@ class Example(logging.Logging):
 
         :return: A list of models with associated parameters
         """
-
-    def generate_config(
-        self, output_path: Path, factory: Path, build_params: NamedParameters
-    ) -> None:
-        """Generate configuration files for the target framework.
-
-        :param output_path: Directory where files should be created
-        :param factory: Path to the factory file
-        :param build_params: Build parameters for the likelihood
-        """
-        try:
-            generator = get_generator(self.target_framework)
-            generator.generate(
-                output_path=output_path,
-                factory_path=factory,
-                build_parameters=build_params,
-                models=self.get_models(),
-                prefix=self.prefix,
-                use_absolute_path=self.use_absolute_path,
-            )
-        except (ValueError, NotImplementedError) as e:
-            raise typer.BadParameter(
-                f"Cannot generate config for {self.target_framework.value}: {e}"
-            )
