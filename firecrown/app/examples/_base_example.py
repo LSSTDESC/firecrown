@@ -1,8 +1,7 @@
-"""Base class and interface for Firecrown example generators.
+"""Base class for Firecrown example generators.
 
-This module defines the abstract base class that all Firecrown examples
-must inherit from. It provides a consistent interface for generating
-example data and configurations through the command-line interface.
+Provides the abstract interface and orchestration logic for generating
+complete analysis examples with data files and framework configurations.
 """
 
 from typing import Annotated, ClassVar
@@ -23,13 +22,15 @@ from .. import logging
 class Example(logging.Logging):
     """Base class for Firecrown example generators.
 
-    This abstract base class defines the interface that all example generators
-    must implement. It handles common functionality like output directory creation
-    and logging setup, while requiring subclasses to implement the specific
-    data generation logic.
+    Orchestrates the generation of complete analysis examples through a phased workflow:
+    1. Generate/download SACC data file
+    2. Generate likelihood factory file
+    3. Generate build parameters
+    4. Generate model parameters
+    5. Generate framework-specific configuration files
 
-    Each example generator creates/downloads data and configuration files
-    that demonstrate a particular type of cosmological analysis.
+    Subclasses implement data-specific methods while the base class
+    handles workflow orchestration and framework configuration delegation.
     """
 
     description: ClassVar[str]
@@ -71,11 +72,7 @@ class Example(logging.Logging):
     ] = True
 
     def __post_init__(self) -> None:
-        """Initialize example generator and create output files.
-
-        Sets up logging, creates the output directory if needed,
-        and triggers the example generation process.
-        """
+        """Initialize and execute the complete example generation workflow."""
         super().__post_init__()
         self.output_path.mkdir(parents=True, exist_ok=True)
 
@@ -91,29 +88,49 @@ class Example(logging.Logging):
             self.target_framework, self.output_path, self.prefix, self.use_absolute_path
         )
 
-        self.console.print(Rule("[bold cyan]Generating example data[/bold cyan]"))
+        self.console.print(Rule("[bold cyan]Phase 1: Generating SACC data[/bold cyan]"))
         sacc = self.generate_sacc(self.output_path)
         generator.add_sacc(sacc)
-        self.console.print("[green]Example data generated[/green]\n")
+        self.console.print(
+            f"[green]✓[/green] SACC: {sacc.relative_to(self.output_path)}\n"
+        )
 
-        self.console.print(Rule("[bold cyan]Generating factory[/bold cyan]"))
+        self.console.print(Rule("[bold cyan]Phase 2: Generating factory[/bold cyan]"))
         factory = self.generate_factory(self.output_path, sacc)
         generator.add_factory(factory)
-        self.console.print("[green]Factory generated[/green]\n")
+        self.console.print(
+            f"[green]✓[/green] Factory: {factory.relative_to(self.output_path)}\n"
+        )
 
-        self.console.print(Rule("[bold cyan]Generating build parameters[/bold cyan]"))
+        self.console.print(
+            Rule("[bold cyan]Phase 3: Preparing build parameters[/bold cyan]")
+        )
         build_parameters = self.get_build_parameters(sacc)
         generator.add_build_parameters(build_parameters)
-        self.console.print("[green]Build parameters generated[/green]\n")
+        # Here I want to print key=value pairs of the build parameters
+        # in a human-readable format
+        params = ", ".join(
+            f"{k}={v}" for k, v in build_parameters.convert_to_basic_dict().items()
+        )
+        self.console.print(f"[green]✓[/green] Parameters: {params}\n")
 
-        self.console.print(Rule("[bold cyan]Generating Firecrown models[/bold cyan]"))
+        self.console.print(
+            Rule("[bold cyan]Phase 4: Preparing model parameters[/bold cyan]")
+        )
         models = self.get_models()
         generator.add_models(models)
-        self.console.print("[green]Firecrown models generated[/green]\n")
+        n_params = sum(len(m.parameters) for m in models)
+        self.console.print(
+            f"[green]✓[/green] Models: {len(models)} model(s), {n_params} parameter(s)\n"
+        )
 
-        self.console.print(Rule("[bold cyan]Generating configuration[/bold cyan]"))
+        self.console.print(
+            Rule(
+                f"[bold cyan]Phase 5: Writing {self.target_framework.value} configuration[/bold cyan]"
+            )
+        )
         generator.write_config()
-        self.console.print("[green]Configuration generated[/green]\n")
+        self.console.print("[green]✓[/green] Configuration written\n")
 
         self.console.print(
             Panel.fit("[bold green]All example files successfully created[/bold green]")
@@ -121,43 +138,32 @@ class Example(logging.Logging):
 
     @abstractmethod
     def generate_sacc(self, output_path: Path) -> Path:
-        """Generate the SACC data file and related configurations.
-
-        This method must be implemented by each example subclass to create
-        the specific data files and configurations for that analysis type.
+        """Generate or download the SACC data file.
 
         :param output_path: Directory where files should be created
+        :return: Path to the generated SACC file
         """
 
     @abstractmethod
     def generate_factory(self, output_path: Path, sacc: Path) -> Path:
-        """Generate the factory file and related configurations.
-
-        This method must be implemented by each example subclass to create
-        the specific factory files and configurations for that analysis type.
+        """Generate the likelihood factory Python file.
 
         :param output_path: Directory where files should be created
-        :return: The string to be used as the factory in the configuration
+        :param sacc: Path to the SACC data file
+        :return: Path to the generated factory file
         """
 
     @abstractmethod
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
-        """Generate example build parameters.
+        """Create build parameters for likelihood initialization.
 
-        This method must be implemented by each example subclass to create
-        the specific build parameters for that analysis type.
-
-        :return: A NamedParameters of build parameters
+        :param sacc_path: Path to the SACC data file
+        :return: Build parameters (typically includes sacc_file path)
         """
 
     @abstractmethod
-    def get_models(
-        self,
-    ) -> list[Model]:
-        """Generate example model parameters.
+    def get_models(self) -> list[Model]:
+        """Define model parameters for sampling.
 
-        This method must be implemented by each example subclass to create
-        the specific model parameters for that analysis type.
-
-        :return: A list of models with associated parameters
+        :return: List of models with their parameters (priors, bounds, etc.)
         """

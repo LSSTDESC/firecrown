@@ -1,7 +1,7 @@
 """DES Y1 3x2pt analysis example generator.
 
-This module implements an example generator for DES Y1 3x2pt analysis,
-downloading real data from the DES repository.
+Generates a complete DES Y1 3x2pt analysis example with cosmic shear,
+galaxy-galaxy lensing, and galaxy clustering.
 """
 
 import shutil
@@ -22,10 +22,10 @@ from . import _des_y1_3x2pt_template
 
 @dataclass
 class ExampleDESY13x2pt(Example):
-    """Generator for DES Y1 3x2pt analysis example.
+    """DES Y1 3x2pt analysis example.
 
-    Downloads real DES Y1 3x2pt data and creates corresponding
-    configuration files for different analysis frameworks.
+    Downloads real DES Y1 3x2pt data (cosmic shear, galaxy-galaxy lensing,
+    galaxy clustering) and generates framework configurations.
     """
 
     description: ClassVar[str] = (
@@ -49,13 +49,10 @@ class ExampleDESY13x2pt(Example):
     ] = "des_y1_3x2pt"
 
     def generate_sacc(self, output_path: Path) -> Path:
-        """Download DES Y1 3x2pt data file.
+        """Download DES Y1 3x2pt data from LSST DESC repository.
 
-        Downloads the SACC file containing DES Y1 3x2pt data from the
-        LSST DESC repository.
-
-        :param output_path: Directory where the SACC file will be downloaded
-        :return: Path to the downloaded SACC file
+        :param output_path: Output directory
+        :return: Path to downloaded SACC file
         """
         sacc_file = f"{self.prefix}.sacc"
         sacc_full_file = output_path / sacc_file
@@ -70,7 +67,7 @@ class ExampleDESY13x2pt(Example):
             try:
                 urllib.request.urlretrieve(self.data_url, sacc_full_file)
                 progress.update(task, completed=True)
-                self.console.print(f"[green]Downloaded:[/green] {sacc_file}")
+                self.console.print(f"[dim]Downloaded from {self.data_url}[/dim]")
             except Exception as e:
                 self.console.print(f"[red]Download failed:[/red] {e}")
                 raise
@@ -78,8 +75,12 @@ class ExampleDESY13x2pt(Example):
         return sacc_full_file
 
     def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
-        """Generate factory file from template."""
-        # Copy the factory.py from des_y1_3x2pt examples
+        """Copy DES Y1 3x2pt factory template.
+
+        :param output_path: Output directory
+        :param _sacc: SACC file path (unused)
+        :return: Path to factory file
+        """
         template = Path(_des_y1_3x2pt_template.__file__)
         output_file = output_path / f"{self.prefix}_factory.py"
         shutil.copyfile(template, output_file)
@@ -94,7 +95,10 @@ class ExampleDESY13x2pt(Example):
         return NamedParameters({"sacc_file": sacc_filename})
 
     def get_models(self) -> list[Model]:
-        """Get the models for the example."""
+        """Define DES Y1 systematic and bias parameters.
+
+        :return: Model with IA, photo-z, bias, and multiplicative bias parameters
+        """
         parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
             ("ia_bias", r"\beta_{\mathrm{ia}}", -5.0, 5.0, 0.05, 0.0, 0.5, True),
             ("alphaz", r"\alpha_z", -5.0, 5.0, 0.05, 0.0, 0.0, True),

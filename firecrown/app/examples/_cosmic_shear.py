@@ -1,8 +1,7 @@
-"""Cosmic Shear analysis example generator.
+"""Cosmic shear analysis example generator.
 
-This module implements a complete example generator for weak lensing
-cosmic shear analysis, creating synthetic galaxy survey data with
-realistic noise properties and covariance matrices.
+Generates synthetic weak lensing cosmic shear data with realistic
+noise and covariance for testing and demonstration purposes.
 """
 
 import shutil
@@ -26,11 +25,10 @@ from . import _cosmic_shear_template
 
 @dataclass
 class ExampleCosmicShear(Example):
-    """Generator for Cosmic Shear analysis example.
+    """Cosmic shear analysis example with synthetic data.
 
-    Creates a complete example setup for weak lensing cosmic shear analysis,
-    including synthetic data in SACC format and corresponding experiment
-    configuration files.
+    Generates synthetic weak lensing data with configurable tomographic bins,
+    multipole ranges, and noise levels for testing analysis pipelines.
     """
 
     description: ClassVar[str] = (
@@ -123,13 +121,10 @@ class ExampleCosmicShear(Example):
     def generate_sacc(self, output_path: Path) -> Path:
         """Generate synthetic cosmic shear data in SACC format.
 
-        Creates a complete SACC file containing:
-        - Two tomographic redshift bins with Gaussian n(z) distributions
-        - Auto and cross-correlation power spectra (C_ell)
-        - Realistic noise based on theoretical predictions
-        - Diagonal covariance matrix for statistical analysis
+        Creates SACC file with tomographic bins, power spectra, and covariance.
 
-        :param output_path: Directory where the SACC file will be created
+        :param output_path: Output directory
+        :return: Path to generated SACC file
         """
         sacc_full_file = output_path / f"{self.prefix}.sacc"
 
@@ -194,7 +189,9 @@ class ExampleCosmicShear(Example):
             sacc_data.save_fits(sacc_full_file, overwrite=True)
             progress.update(task5, completed=True)
 
-            progress.console.print("Finished!")
+            progress.console.print(
+                f"[dim]Generated {len(theory_cls)} power spectra[/dim]"
+            )
 
         summary.add_section()
         summary.add_row("[b]Output File[/b]", sacc_full_file.as_posix())
@@ -362,7 +359,12 @@ class ExampleCosmicShear(Example):
         sacc_data.add_covariance(covariance)
 
     def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
-        """Generate example configuration file."""
+        """Copy cosmic shear factory template.
+
+        :param output_path: Output directory
+        :param _sacc: SACC file path (unused)
+        :return: Path to factory file
+        """
         template = Path(_cosmic_shear_template.__file__)
         output_file = output_path / f"{self.prefix}_factory.py"
         shutil.copyfile(template, output_file)
@@ -377,8 +379,11 @@ class ExampleCosmicShear(Example):
 
         return NamedParameters({"sacc_file": sacc_filename, "n_bins": self.n_bins})
 
-    def get_models(self):
-        """Return model parameters."""
+    def get_models(self) -> list[Model]:
+        """Define photo-z shift parameters for each tomographic bin.
+
+        :return: Model with delta_z parameters for all bins
+        """
         parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
             (
                 f"trc{bin_index}_delta_z",

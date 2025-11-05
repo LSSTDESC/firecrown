@@ -1,7 +1,7 @@
-"""Helper functions for CosmoSIS ini file generation.
+"""CosmoSIS configuration file generation utilities.
 
-This module provides utilities for generating CosmoSIS configuration files
-with proper comment formatting and standard sections.
+Provides functions to create standard CosmoSIS .ini files with
+proper formatting, comments, and parameter sections.
 """
 
 import configparser
@@ -13,10 +13,10 @@ from ._types import Model
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
-    """Format a long comment string into wrapped lines with ;; prefix.
+    """Format text as CosmoSIS comment lines with ;; prefix.
 
-    :param text: Comment text to format
-    :param width: Maximum line width (default: 88)
+    :param text: Comment text
+    :param width: Maximum line width
     :return: List of formatted comment lines
     """
     # Account for ";; " prefix (3 characters)
@@ -28,11 +28,11 @@ def format_comment(text: str, width: int = 88) -> list[str]:
 def add_comment_block(
     config: configparser.ConfigParser, section: str, text: str
 ) -> None:
-    """Add a formatted comment block to a config section.
+    """Add formatted comment block to configuration section.
 
     :param config: ConfigParser object
-    :param section: Section name to add comments to
-    :param text: Comment text to format and add
+    :param section: Section name
+    :param text: Comment text
     """
     for comment_line in format_comment(text):
         config.set(section, comment_line)
@@ -47,15 +47,16 @@ def create_standard_cosmosis_config(
     model_list: list[str],
     use_absolute_path: bool = True,
 ) -> configparser.ConfigParser:
-    """Create standard CosmoSIS configuration with common sections.
+    """Create standard CosmoSIS pipeline configuration.
 
-    :param prefix: Prefix for output files
-    :param factory_path: Path to the factory file
-    :param sacc_path: Path to the SACC data file
-    :param values_path: Path to the values ini file
-    :param output_path: Path to the output directory
-    :param use_absolute_path: Whether to use absolute paths
-    :return: Configured ConfigParser object
+    :param prefix: Filename prefix
+    :param factory_path: Path to factory file
+    :param build_parameters: Likelihood build parameters
+    :param values_path: Path to values.ini file
+    :param output_path: Output directory
+    :param model_list: List of model section names
+    :param use_absolute_path: Use absolute paths
+    :return: Configured ConfigParser
     """
     cfg = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation(), allow_no_value=True
@@ -148,10 +149,10 @@ def create_standard_cosmosis_config(
 def create_standard_values_config(
     models: list[Model] | None = None,
 ) -> configparser.ConfigParser:
-    """Create standard values.ini configuration for cosmological parameters.
+    """Create CosmoSIS values.ini with cosmological and model parameters.
 
-    :param models: List of models with parameters to add
-    :return: Configured ConfigParser object for values
+    :param models: List of models with parameters
+    :return: Configured ConfigParser
     """
     config = configparser.ConfigParser(allow_no_value=True)
 

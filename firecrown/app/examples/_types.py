@@ -1,11 +1,14 @@
-"""Types for example generators."""
+"""Type definitions for example generators.
+
+Defines enums and dataclasses used across the example generation system.
+"""
 
 import dataclasses
 from enum import StrEnum
 
 
 class Frameworks(StrEnum):
-    """Supported frameworks for example generation."""
+    """Supported statistical analysis frameworks."""
 
     COBAYA = "cobaya"
     COSMOSIS = "cosmosis"
@@ -14,7 +17,11 @@ class Frameworks(StrEnum):
 
 @dataclasses.dataclass
 class Parameter:
-    """A parameter with associated metadata."""
+    """Model parameter with sampling metadata.
+
+    Defines a single parameter for cosmological or systematic modeling,
+    including its prior bounds, default value, and whether it's free or fixed.
+    """
 
     name: str
     symbol: str
@@ -28,7 +35,11 @@ class Parameter:
 
 @dataclasses.dataclass
 class Model:
-    """A model with associated parameters."""
+    """Model definition with multiple parameters.
+
+    Groups related parameters (e.g., all photo-z shifts, all galaxy biases)
+    into a named model for organization in configuration files.
+    """
 
     name: str
     parameters: list[Parameter]

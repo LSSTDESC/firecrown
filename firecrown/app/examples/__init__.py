@@ -1,9 +1,8 @@
-"""Example configurations and generators for Firecrown analyses.
+"""Example generators for Firecrown analyses.
 
-This module provides a framework for generating example configurations
-for different types of cosmological analyses supported by Firecrown.
-Each example includes the necessary data files and configuration files
-to run a complete analysis.
+Provides ready-to-use example generators for different cosmological analyses.
+Each example creates complete analysis setups including data files, factory files,
+and framework-specific configurations.
 """
 
 from ._base_example import Example
@@ -19,6 +18,6 @@ EXAMPLES_LIST: dict[str, type[Example]] = {
 }
 """Registry of available example generators.
 
-Maps example names to their corresponding generator classes.
-New examples should be added here to make them discoverable.
+Maps CLI-friendly names to generator classes. Add new examples here
+to make them discoverable via the command-line interface.
 """
