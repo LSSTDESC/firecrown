@@ -1,7 +1,6 @@
-"""SN SRD analysis example generator.
+"""Supernova SRD analysis example generator.
 
-This module implements an example generator for supernova SRD analysis,
-downloading real data from the LSST DESC repository.
+Generates a complete supernova analysis example using LSST DESC SRD Year 1 data.
 """
 
 import shutil
@@ -22,10 +21,10 @@ from . import _sn_srd_template
 
 @dataclass
 class ExampleSupernovaSRD(Example):
-    """Generator for SN SRD analysis example.
+    """Supernova SRD analysis example.
 
-    Downloads real supernova data from LSST DESC repository and creates corresponding
-    configuration files for different analysis frameworks.
+    Downloads LSST DESC SRD Year 1 supernova data and generates
+    framework configurations for distance modulus fitting.
     """
 
     description: ClassVar[str] = "Supernova SRD analysis with LSST DESC synthetic data"
@@ -47,13 +46,10 @@ class ExampleSupernovaSRD(Example):
     ] = "sn_srd"
 
     def generate_sacc(self, output_path: Path) -> Path:
-        """Download SN SRD data file.
+        """Download supernova SRD data from LSST DESC repository.
 
-        Downloads the SACC file containing supernova data from the
-        LSST DESC repository.
-
-        :param output_path: Directory where the SACC file will be downloaded
-        :return: Path to the downloaded SACC file
+        :param output_path: Output directory
+        :return: Path to downloaded SACC file
         """
         sacc_file = f"{self.prefix}.sacc"
         sacc_full_file = output_path / sacc_file
@@ -68,7 +64,7 @@ class ExampleSupernovaSRD(Example):
             try:
                 urllib.request.urlretrieve(self.data_url, sacc_full_file)
                 progress.update(task, completed=True)
-                self.console.print(f"[green]Downloaded:[/green] {sacc_file}")
+                self.console.print(f"[dim]Downloaded from {self.data_url}[/dim]")
             except Exception as e:
                 self.console.print(f"[red]Download failed:[/red] {e}")
                 raise
@@ -76,7 +72,12 @@ class ExampleSupernovaSRD(Example):
         return sacc_full_file
 
     def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
-        """Generate factory file from template."""
+        """Copy supernova factory template.
+
+        :param output_path: Output directory
+        :param _sacc: SACC file path (unused)
+        :return: Path to factory file
+        """
         template = Path(_sn_srd_template.__file__)
         output_file = output_path / f"{self.prefix}_factory.py"
         shutil.copyfile(template, output_file)
@@ -90,8 +91,11 @@ class ExampleSupernovaSRD(Example):
 
         return NamedParameters({"sacc_file": sacc_filename})
 
-    def get_models(self):
-        """Return model parameters."""
+    def get_models(self) -> list[Model]:
+        """Define supernova absolute magnitude parameter.
+
+        :return: Single model with M parameter
+        """
         return [
             Model(
                 name=f"firecrown_{self.prefix}",

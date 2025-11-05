@@ -1,7 +1,7 @@
-"""Configuration generator interface and implementations for different frameworks.
+"""Framework-specific configuration generators.
 
-This module provides a unified interface for generating framework-specific
-configuration files, using a strategy pattern with phased state management.
+Provides a stateful strategy pattern for generating configuration files
+through phased construction: add components incrementally, then write.
 """
 
 from abc import ABC, abstractmethod
@@ -20,7 +20,15 @@ from . import _cobaya
 
 @dataclasses.dataclass
 class ConfigGenerator(ABC):
-    """Abstract base class for framework-specific configuration generators."""
+    """Abstract base for framework-specific configuration generators.
+
+    Uses a builder pattern with phased state management:
+    1. Create generator with output settings
+    2. Add components: add_sacc(), add_factory(), add_build_parameters(), add_models()
+    3. Write configuration: write_config()
+
+    Subclasses implement write_config() to generate framework-specific files.
+    """
 
     framework: ClassVar[Frameworks]
     output_path: Path
@@ -33,28 +41,45 @@ class ConfigGenerator(ABC):
     models: list[Model] = dataclasses.field(default_factory=list)
 
     def add_sacc(self, sacc_path: Path) -> None:
-        """Add SACC data file path."""
+        """Add SACC data file path to generator state.
+
+        :param sacc_path: Path to SACC data file
+        """
         self.sacc_path = sacc_path
 
     def add_factory(self, factory_path: Path) -> None:
-        """Add factory file path."""
+        """Add factory file path to generator state.
+
+        :param factory_path: Path to likelihood factory Python file
+        """
         self.factory_path = factory_path
 
     def add_build_parameters(self, build_parameters: NamedParameters) -> None:
-        """Add build parameters."""
+        """Add build parameters to generator state.
+
+        :param build_parameters: Parameters for likelihood initialization
+        """
         self.build_parameters = build_parameters
 
     def add_models(self, models: list[Model]) -> None:
-        """Add model parameters."""
+        """Add model parameters to generator state.
+
+        :param models: List of models with sampling parameters
+        """
         self.models = models
 
     @abstractmethod
     def write_config(self) -> None:
-        """Write configuration files."""
+        """Write framework-specific configuration files using accumulated state."""
 
 
 class CosmosisConfigGenerator(ConfigGenerator):
-    """CosmoSIS configuration generator."""
+    """Generates CosmoSIS .ini configuration files.
+
+    Creates two files:
+    - cosmosis_{prefix}.ini: Pipeline configuration
+    - cosmosis_{prefix}_values.ini: Parameter values and priors
+    """
 
     framework = Frameworks.COSMOSIS
 
@@ -84,7 +109,11 @@ class CosmosisConfigGenerator(ConfigGenerator):
             cfg.write(fp)
 
     def customize_config(self, section: str, comment: str) -> None:
-        """Customize config after generation."""
+        """Add custom comment block to configuration section.
+
+        :param section: Configuration section name
+        :param comment: Comment text to add
+        """
         cosmosis_ini = self.output_path / f"cosmosis_{self.prefix}.ini"
         cfg = configparser.ConfigParser()
         cfg.read(cosmosis_ini)
@@ -94,7 +123,10 @@ class CosmosisConfigGenerator(ConfigGenerator):
 
 
 class CobayaConfigGenerator(ConfigGenerator):
-    """Cobaya configuration generator."""
+    """Generates Cobaya YAML configuration file.
+
+    Creates cobaya_{prefix}.yaml with theory, likelihood, and sampler configuration.
+    """
 
     framework = Frameworks.COBAYA
 
@@ -117,7 +149,12 @@ class CobayaConfigGenerator(ConfigGenerator):
 
 
 class NumCosmoConfigGenerator(ConfigGenerator):
-    """NumCosmo configuration generator."""
+    """Generates NumCosmo YAML configuration files.
+
+    Creates two files:
+    - numcosmo_{prefix}.yaml: Experiment configuration
+    - numcosmo_{prefix}.builders.yaml: Model builders
+    """
 
     framework = Frameworks.NUMCOSMO
 
@@ -156,13 +193,13 @@ _GENERATORS: dict[Frameworks, type[ConfigGenerator]] = {
 def get_generator(
     framework: Frameworks, output_path: Path, prefix: str, use_absolute_path: bool
 ) -> ConfigGenerator:
-    """Get the appropriate config generator for a framework.
+    """Factory function to create framework-specific configuration generator.
 
-    :param framework: Target framework
-    :param output_path: Directory where files should be created
+    :param framework: Target framework (cosmosis, cobaya, numcosmo)
+    :param output_path: Directory where configuration files will be written
     :param prefix: Prefix for generated filenames
-    :param use_absolute_path: Whether to use absolute paths
-    :return: Config generator instance
+    :param use_absolute_path: Use absolute paths in configuration files
+    :return: Initialized configuration generator
     :raises ValueError: If framework is not supported
     """
     generator_class = _GENERATORS.get(framework)

@@ -1,7 +1,7 @@
-"""Helper functions for Cobaya YAML file generation.
+"""Cobaya configuration file generation utilities.
 
-This module provides utilities for generating Cobaya configuration files
-for cosmological parameter estimation with Firecrown likelihoods.
+Provides functions to create Cobaya YAML files for cosmological
+parameter estimation with Firecrown likelihoods.
 """
 
 from typing import Dict, Any
@@ -20,13 +20,13 @@ def create_standard_cobaya_config(
     likelihood_name: str,
     use_absolute_path: bool = False,
 ) -> Dict[str, Any]:
-    """Create standard Cobaya configuration for cosmic shear analysis.
+    """Create standard Cobaya configuration dictionary.
 
-    :param factory_path: Path to the factory file
-    :param sacc_path: Path to the SACC data file
-    :param likelihood_name: Name for the likelihood in configuration
-    :param use_absolute_path: Whether to use absolute paths
-    :return: Dictionary containing Cobaya configuration
+    :param factory_path: Path to factory file
+    :param build_parameters: Likelihood build parameters
+    :param likelihood_name: Likelihood name in config
+    :param use_absolute_path: Use absolute paths
+    :return: Cobaya configuration dictionary
     """
 
     if use_absolute_path:
@@ -62,9 +62,8 @@ def create_standard_cobaya_config(
 
 
 def _get_standard_params() -> Dict[str, Any]:
-    """Generate standard parameter configuration for cosmic shear.
+    """Generate standard cosmological parameter configuration.
 
-    :param n_bins: Number of tomographic bins
     :return: Dictionary of parameter configurations
     """
     params = {
@@ -90,9 +89,9 @@ def _get_standard_params() -> Dict[str, Any]:
 
 
 def add_models_to_cobaya_config(config: Dict[str, Any], models: list[Model]) -> None:
-    """Add model parameters to Cobaya configuration.
+    """Add model parameters to Cobaya configuration dictionary.
 
-    :param config: Configuration dictionary to modify
+    :param config: Configuration dictionary (modified in-place)
     :param models: List of models with parameters
     """
     for model in models:
@@ -110,10 +109,10 @@ def add_models_to_cobaya_config(config: Dict[str, Any], models: list[Model]) -> 
 
 
 def write_cobaya_config(config: Dict[str, Any], output_file: Path) -> None:
-    """Write Cobaya configuration to YAML file.
+    """Write Cobaya configuration dictionary to YAML file.
 
     :param config: Configuration dictionary
-    :param output_file: Output YAML file path
+    :param output_file: Output file path
     """
     with output_file.open("w") as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False, indent=2)

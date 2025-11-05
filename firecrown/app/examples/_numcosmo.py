@@ -1,7 +1,7 @@
-"""Helper functions for NumCosmo ini file generation.
+"""NumCosmo configuration file generation utilities.
 
-This module provides utilities for generating NumCosmo configuration files
-with proper comment formatting and standard sections.
+Provides functions to create NumCosmo YAML configuration files
+for cosmological parameter estimation with Firecrown likelihoods.
 """
 
 from pathlib import Path
@@ -23,12 +23,15 @@ def create_standard_numcosmo_config(
     distance_max_z: float = 4.0,
     reltol: float = 1e-7,
 ) -> Ncm.ObjDictStr:
-    """Create a standard NumCosmo configuration object.
+    """Create standard NumCosmo experiment configuration.
 
-    :param factory_path: Path to the factory file
-    :param sacc_path: Path to the SACC data file
-    :param output_path: Path to the output directory
-    :return: Configured Ncm.ObjDictStr object
+    :param factory_path: Path to factory file
+    :param build_parameters: Likelihood build parameters
+    :param model_list: List of model names
+    :param use_absolute_path: Use absolute paths
+    :param distance_max_z: Maximum redshift for distance calculations
+    :param reltol: Relative tolerance for calculations
+    :return: NumCosmo experiment object
     """
     experiment = Ncm.ObjDictStr()
     if use_absolute_path:
@@ -84,9 +87,9 @@ def add_models_to_numcosmo_config(
 ) -> Ncm.ObjDictStr:
     """Add model parameters to NumCosmo configuration.
 
-    :param config: NumCosmo configuration object
+    :param config: NumCosmo experiment object (modified in-place)
     :param models: List of models with parameters
-    :return: ObjDictStr with model builders
+    :return: Model builders object
     """
     mset = config.get("model-set")
     assert isinstance(mset, Ncm.MSet)
