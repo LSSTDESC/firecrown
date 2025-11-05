@@ -10,8 +10,12 @@ from typing import ClassVar
 import configparser
 import dataclasses
 
+from numcosmo_py import Ncm
 from firecrown.likelihood.likelihood import NamedParameters
 from ._types import Model, Frameworks
+from . import _numcosmo
+from . import _cosmosis
+from . import _cobaya
 
 
 @dataclasses.dataclass
@@ -22,7 +26,7 @@ class ConfigGenerator(ABC):
     output_path: Path
     prefix: str
     use_absolute_path: bool
-    
+
     sacc_path: Path | None = None
     factory_path: Path | None = None
     build_parameters: NamedParameters | None = None
@@ -55,8 +59,7 @@ class CosmosisConfigGenerator(ConfigGenerator):
     framework = Frameworks.COSMOSIS
 
     def write_config(self) -> None:
-        from . import _cosmosis
-
+        """Write CosmoSIS configuration."""
         assert self.factory_path is not None
         assert self.build_parameters is not None
 
@@ -82,8 +85,6 @@ class CosmosisConfigGenerator(ConfigGenerator):
 
     def customize_config(self, section: str, comment: str) -> None:
         """Customize config after generation."""
-        from . import _cosmosis
-
         cosmosis_ini = self.output_path / f"cosmosis_{self.prefix}.ini"
         cfg = configparser.ConfigParser()
         cfg.read(cosmosis_ini)
@@ -98,8 +99,7 @@ class CobayaConfigGenerator(ConfigGenerator):
     framework = Frameworks.COBAYA
 
     def write_config(self) -> None:
-        from . import _cobaya
-
+        """Write Cobaya configuration."""
         assert self.factory_path is not None
         assert self.build_parameters is not None
 
@@ -122,9 +122,7 @@ class NumCosmoConfigGenerator(ConfigGenerator):
     framework = Frameworks.NUMCOSMO
 
     def write_config(self) -> None:
-        from . import _numcosmo
-        from numcosmo_py import Ncm
-
+        """Write NumCosmo configuration."""
         assert self.factory_path is not None
         assert self.build_parameters is not None
 
