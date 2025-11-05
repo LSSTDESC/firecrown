@@ -3,15 +3,38 @@
 from __future__ import annotations
 
 import sacc
-
 from firecrown.data_types import TheoryVector
-from firecrown.likelihood.binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import AbundanceData, ClusterProperty
+
+from .binned_cluster import BinnedCluster
+from .updatable_wrapper import UpdatableClusterObjects
 
 
 class BinnedClusterNumberCounts(BinnedCluster):
     """A statistic representing the number of clusters in a z, mass bin."""
+
+    def _create_updatable_parameters(self):
+        self.updatable_parameters = UpdatableClusterObjects(
+            (
+                {
+                    "attribute_name": "mass_distribution",
+                    "parameters": [
+                        "mu_p0",
+                        "mu_p1",
+                        "mu_p2",
+                        "sigma_p0",
+                        "sigma_p1",
+                        "sigma_p2",
+                    ],
+                },
+                {
+                    "attribute_name": "cluster_theory",
+                    "parameters": [],
+                    "has_cosmo": True,
+                },
+            )
+        )
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.
@@ -32,7 +55,9 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param tools: The modeling tools used to compute the statistic.
         :return: The computed statistic.
         """
-        assert tools.cluster_abundance is not None
+        self.updatable_parameters.export_all_parameters(
+            self.cluster_recipe, tools.get_ccl_cosmology()
+        )
 
         theory_vector_list: list[float] = []
         cluster_counts = []
@@ -69,12 +94,14 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param cluster_counts: The number of clusters in each bin.
         :param cluster_properties: The cluster observables to use.
         """
-        assert tools.cluster_abundance is not None
 
         mean_values = []
-        for this_bin, counts in zip(self.bins, cluster_counts, strict=False):
-            total_observable = self.cluster_recipe.evaluate_theory_prediction(
-                tools.cluster_abundance, this_bin, self.sky_area, cluster_properties
+        for this_bin, counts in zip(self.bins, cluster_counts):
+            total_observable = self.cluster_recipe.evaluate_theory_prediction_counts(
+                this_bin.z_edges,
+                this_bin.mass_proxy_edges,
+                self.sky_area,
+                cluster_properties,
             )
             mean_observable = total_observable / counts
             mean_values.append(mean_observable)
@@ -91,12 +118,11 @@ class BinnedClusterNumberCounts(BinnedCluster):
         :param tools: The modeling tools used to compute the statistic.
         :return: The number of clusters in each bin.
         """
-        assert tools.cluster_abundance is not None
 
         cluster_counts = []
         for this_bin in self.bins:
-            counts = self.cluster_recipe.evaluate_theory_prediction(
-                tools.cluster_abundance, this_bin, self.sky_area
+            counts = self.cluster_recipe.evaluate_theory_prediction_counts(
+                this_bin.z_edges, this_bin.mass_proxy_edges, self.sky_area
             )
             cluster_counts.append(counts)
 
