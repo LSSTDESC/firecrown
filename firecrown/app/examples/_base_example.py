@@ -13,13 +13,10 @@ from rich.panel import Panel
 from rich.rule import Rule
 
 import typer
-from numcosmo_py import Ncm
 from firecrown.likelihood.likelihood import NamedParameters
 from ._types import Frameworks, Model
+from ._config_generator import get_generator
 from .. import logging
-from . import _cobaya
-from . import _cosmosis
-from . import _numcosmo
 
 
 @dataclasses.dataclass
@@ -151,96 +148,26 @@ class Example(logging.Logging):
         :return: A list of models with associated parameters
         """
 
-    def generate_cosmosis_config(
-        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
-    ) -> None:
-        """Generate CosmoSIS configuration files."""
-        cosmosis_ini = output_path / f"cosmosis_{self.prefix}.ini"
-        values_ini = output_path / f"cosmosis_{self.prefix}_values.ini"
-        model_name = f"firecrown_{self.prefix}"
-
-        cfg = _cosmosis.create_standard_cosmosis_config(
-            prefix=self.prefix,
-            factory_path=factory_path,
-            build_parameters=build_parameters,
-            values_path=values_ini,
-            output_path=output_path,
-            model_list=[model_name],
-            use_absolute_path=self.use_absolute_path,
-        )
-
-        values_cfg = _cosmosis.create_standard_values_config(self.get_models())
-
-        with values_ini.open("w") as fp:
-            values_cfg.write(fp)
-
-        with cosmosis_ini.open("w") as fp:
-            cfg.write(fp)
-
-    def generate_cobaya_config(
-        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
-    ) -> None:
-        """Generate Cobaya configuration files."""
-
-        cobaya_yaml = output_path / f"cobaya_{self.prefix}.yaml"
-
-        cfg = _cobaya.create_standard_cobaya_config(
-            factory_path=factory_path,
-            build_parameters=build_parameters,
-            use_absolute_path=self.use_absolute_path,
-            likelihood_name="firecrown_likelihood",
-        )
-
-        _cobaya.add_models_to_cobaya_config(cfg, self.get_models())
-        _cobaya.write_cobaya_config(cfg, cobaya_yaml)
-
-    def generate_numcosmo_config(
-        self, output_path: Path, factory_path: Path, build_parameters: NamedParameters
-    ) -> None:
-        """Generate NumCosmo configuration files."""
-        Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
-
-        model_name = f"firecrown_{self.prefix}"
-        model_list = [model_name]
-
-        config = _numcosmo.create_standard_numcosmo_config(
-            factory_path=factory_path,
-            build_parameters=build_parameters,
-            model_list=model_list,
-            use_absolute_path=self.use_absolute_path,
-        )
-
-        model_builders = _numcosmo.add_models_to_numcosmo_config(
-            config, self.get_models()
-        )
-
-        numcosmo_yaml = output_path / f"numcosmo_{self.prefix}.yaml"
-        builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
-
-        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
-        ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())
-        ser.dict_str_to_yaml_file(model_builders, builders_file.as_posix())
-
     def generate_config(
         self, output_path: Path, factory: Path, build_params: NamedParameters
     ) -> None:
-        """Generate the configuration file and related configurations.
-
-        This method must be implemented by each example subclass to create
-        the specific configuration files and configurations for that analysis type.
+        """Generate configuration files for the target framework.
 
         :param output_path: Directory where files should be created
+        :param factory: Path to the factory file
+        :param build_params: Build parameters for the likelihood
         """
         try:
-            match self.target_framework:
-                case Frameworks.COSMOSIS:
-                    self.generate_cosmosis_config(output_path, factory, build_params)
-                case Frameworks.COBAYA:
-                    self.generate_cobaya_config(output_path, factory, build_params)
-                case Frameworks.NUMCOSMO:
-                    self.generate_numcosmo_config(output_path, factory, build_params)
-        except NotImplementedError as e:
-            # Typer will format this nicely for the CLI user
+            generator = get_generator(self.target_framework)
+            generator.generate(
+                output_path=output_path,
+                factory_path=factory,
+                build_parameters=build_params,
+                models=self.get_models(),
+                prefix=self.prefix,
+                use_absolute_path=self.use_absolute_path,
+            )
+        except (ValueError, NotImplementedError) as e:
             raise typer.BadParameter(
                 f"Cannot generate config for {self.target_framework.value}: {e}"
             )
