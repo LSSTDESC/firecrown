@@ -23,6 +23,7 @@ class Example(logging.Logging):
     """Base class for Firecrown example generators.
 
     Orchestrates the generation of complete analysis examples through a phased workflow:
+
     1. Generate/download SACC data file
     2. Generate likelihood factory file
     3. Generate build parameters
@@ -121,12 +122,14 @@ class Example(logging.Logging):
         generator.add_models(models)
         n_params = sum(len(m.parameters) for m in models)
         self.console.print(
-            f"[green]✓[/green] Models: {len(models)} model(s), {n_params} parameter(s)\n"
+            f"[green]✓[/green] Models: {len(models)} model(s), "
+            f"{n_params} parameter(s)\n"
         )
 
         self.console.print(
             Rule(
-                f"[bold cyan]Phase 5: Writing {self.target_framework.value} configuration[/bold cyan]"
+                f"[bold cyan]Phase 5: Writing {self.target_framework.value} "
+                f"configuration[/bold cyan]"
             )
         )
         generator.write_config()
