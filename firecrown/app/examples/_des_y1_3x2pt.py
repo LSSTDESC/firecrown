@@ -28,7 +28,8 @@ class ExampleDESY13x2pt(AnalysisBuilder):
     """
 
     description: ClassVar[str] = (
-        "DES Y1 3x2pt analysis with cosmic shear, galaxy-galaxy lensing, and galaxy clustering"
+        "DES Y1 3x2pt analysis with cosmic shear, galaxy-galaxy lensing, "
+        "and galaxy clustering"
     )
 
     data_url: ClassVar[str] = (
