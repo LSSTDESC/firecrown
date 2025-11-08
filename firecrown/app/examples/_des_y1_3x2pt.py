@@ -43,8 +43,8 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         str,
         typer.Option(
             help=(
-                "Prefix for generated filenames "
-                "(e.g., 'des_y1_3x2pt' creates 'des_y1_3x2pt.sacc')"
+                "Prefix for generated filenames (e.g., 'des_y1_3x2pt' creates "
+                "'des_y1_3x2pt.sacc')"
             ),
             show_default=True,
         ),

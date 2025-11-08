@@ -37,8 +37,8 @@ class ExampleCosmicShear(AnalysisBuilder):
         str,
         typer.Option(
             help=(
-                "Prefix for generated filenames "
-                "(e.g., 'cosmic_shear' creates 'cosmic_shear.sacc')"
+                "Prefix for generated filenames (e.g., 'cosmic_shear' creates "
+                "'cosmic_shear.sacc')"
             ),
             show_default=True,
         ),
