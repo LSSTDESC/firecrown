@@ -39,8 +39,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         str,
         typer.Option(
             help=(
-                "Prefix for generated filenames "
-                "(e.g., 'sn_srd' creates 'sn_srd.sacc')"
+                "Prefix for generated filenames (e.g., 'sn_srd' creates 'sn_srd.sacc')"
             ),
             show_default=True,
         ),
