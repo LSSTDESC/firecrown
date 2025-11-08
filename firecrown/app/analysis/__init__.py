@@ -14,8 +14,11 @@ without notice. Only use the public API exported in __all__.
 """
 
 from ._analysis_builder import AnalysisBuilder
-from ._types import Frameworks, Model, Parameter
-from ._config_generator import get_generator, ConfigGenerator
+from ._types import Frameworks, Model, Parameter, ConfigGenerator
+from ._config_generator import get_generator
+from ._cosmosis import CosmosisConfigGenerator
+from ._numcosmo import NumCosmoConfigGenerator
+from ._cobaya import CobayaConfigGenerator
 
 __all__ = [
     "AnalysisBuilder",
@@ -24,4 +27,7 @@ __all__ = [
     "Parameter",
     "get_generator",
     "ConfigGenerator",
+    "CosmosisConfigGenerator",
+    "NumCosmoConfigGenerator",
+    "CobayaConfigGenerator",
 ]

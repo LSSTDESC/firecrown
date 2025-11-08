@@ -8,15 +8,16 @@ This is an internal module. Use the public API from firecrown.app.analysis.
 
 from typing import Dict, Any
 from pathlib import Path
+import dataclasses
 
 import yaml
 
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model
+from ._types import Model, Frameworks, ConfigGenerator
 
 
-def create_standard_cobaya_config(
+def create_config(
     factory_path: Path,
     build_parameters: NamedParameters,
     likelihood_name: str,
@@ -90,7 +91,7 @@ def _get_standard_params() -> Dict[str, Any]:
     return params
 
 
-def add_models_to_cobaya_config(config: Dict[str, Any], models: list[Model]) -> None:
+def add_models(config: Dict[str, Any], models: list[Model]) -> None:
     """Add model parameters to Cobaya configuration dictionary.
 
     :param config: Configuration dictionary (modified in-place)
@@ -110,7 +111,7 @@ def add_models_to_cobaya_config(config: Dict[str, Any], models: list[Model]) -> 
                 config["params"][parameter.name] = parameter.default_value
 
 
-def write_cobaya_config(config: Dict[str, Any], output_file: Path) -> None:
+def write_config(config: Dict[str, Any], output_file: Path) -> None:
     """Write Cobaya configuration dictionary to YAML file.
 
     :param config: Configuration dictionary
@@ -118,3 +119,30 @@ def write_cobaya_config(config: Dict[str, Any], output_file: Path) -> None:
     """
     with output_file.open("w") as f:
         yaml.dump(config, f, default_flow_style=False, sort_keys=False, indent=2)
+
+
+@dataclasses.dataclass
+class CobayaConfigGenerator(ConfigGenerator):
+    """Generates Cobaya YAML configuration file.
+
+    Creates cobaya_{prefix}.yaml with theory, likelihood, and sampler configuration.
+    """
+
+    framework = Frameworks.COBAYA
+
+    def write_config(self) -> None:
+        """Write Cobaya configuration."""
+        assert self.factory_path is not None
+        assert self.build_parameters is not None
+
+        cobaya_yaml = self.output_path / f"cobaya_{self.prefix}.yaml"
+        likelihood_name = f"firecrown_{self.prefix}"
+
+        cfg = create_config(
+            factory_path=self.factory_path,
+            build_parameters=self.build_parameters,
+            use_absolute_path=self.use_absolute_path,
+            likelihood_name=likelihood_name,
+        )
+        add_models(cfg, self.models)
+        write_config(cfg, cobaya_yaml)
