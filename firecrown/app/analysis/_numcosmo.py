@@ -18,6 +18,65 @@ from firecrown.likelihood.likelihood import NamedParameters
 from ._types import Model, Frameworks, ConfigGenerator
 
 
+def _create_mapping(
+    distance_max_z: float, reltol: float
+) -> nc_cosmosis.MappingNumCosmo:
+    """Create NumCosmo mapping configuration."""
+    return nc_cosmosis.create_numcosmo_mapping(
+        matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
+        nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.HALOFIT,
+        distance_max_z=distance_max_z,
+        reltol=reltol,
+    )
+
+
+def _create_factory(
+    factory_path: Path,
+    factory_filename: str,
+    build_parameters: NamedParameters,
+    mapping: nc_cosmosis.MappingNumCosmo,
+    model_list: list[str],
+) -> NumCosmoFactory:
+    """Create NumCosmo factory instance."""
+    previous_dir = os.getcwd()
+    os.chdir(factory_path.parent)
+
+    numcosmo_factory = NumCosmoFactory(
+        factory_filename,
+        build_parameters,
+        mapping=mapping,
+        model_list=model_list,
+    )
+
+    os.chdir(previous_dir)
+    return numcosmo_factory
+
+
+def _setup_model_set() -> Ncm.MSet:
+    """Create and configure model set."""
+    mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+
+    cosmo = Nc.HICosmoDECpl()
+    cosmo.omega_x2omega_k()
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
+    cosmo.add_submodel(prim)
+    cosmo.add_submodel(reion)
+    mset.set(cosmo)
+
+    return mset
+
+
+def _setup_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
+    """Create and configure dataset."""
+    dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
+    firecrown_data = numcosmo_factory.get_data()
+    if isinstance(firecrown_data, Ncm.DataGaussCov):
+        firecrown_data.set_size(0)
+    dataset.append_data(firecrown_data)
+    return dataset
+
+
 def create_config(
     factory_path: Path,
     build_parameters: NamedParameters,
@@ -37,47 +96,19 @@ def create_config(
     :return: NumCosmo experiment object
     """
     experiment = Ncm.ObjDictStr()
-    if use_absolute_path:
-        factory_filename = factory_path.absolute().as_posix()
-    else:
-        factory_filename = factory_path.name
-
-    mapping = nc_cosmosis.create_numcosmo_mapping(
-        matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
-        nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.HALOFIT,
-        distance_max_z=distance_max_z,
-        reltol=reltol,
+    factory_filename = (
+        factory_path.absolute().as_posix() if use_absolute_path else factory_path.name
     )
 
-    previous_dir = os.getcwd()
-    os.chdir(factory_path.parent)
-
-    numcosmo_factory = NumCosmoFactory(
-        factory_filename,
-        build_parameters,
-        mapping=mapping,
-        model_list=model_list,
+    mapping = _create_mapping(distance_max_z, reltol)
+    numcosmo_factory = _create_factory(
+        factory_path, factory_filename, build_parameters, mapping, model_list
     )
 
-    os.chdir(previous_dir)
+    mset = _setup_model_set()
+    dataset = _setup_dataset(numcosmo_factory)
 
-    mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
-
-    cosmo = Nc.HICosmoDECpl()
-    cosmo.omega_x2omega_k()
-    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
-    cosmo.add_submodel(prim)
-    cosmo.add_submodel(reion)
-    mset.set(cosmo)
-
-    dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
     likelihood = Ncm.Likelihood.new(dataset)
-    firecrown_data = numcosmo_factory.get_data()
-    if isinstance(firecrown_data, Ncm.DataGaussCov):
-        firecrown_data.set_size(0)
-    dataset.append_data(firecrown_data)
-
     experiment.add("likelihood", likelihood)
     experiment.add("model-set", mset)
 
