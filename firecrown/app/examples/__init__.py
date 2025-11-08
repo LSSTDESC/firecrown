@@ -5,13 +5,19 @@ Each example creates complete analysis setups including data files, factory file
 and framework-specific configurations.
 """
 
-from ._base_example import Example
+from ..analysis import AnalysisBuilder
 from ._cosmic_shear import ExampleCosmicShear
 from ._sn_srd import ExampleSupernovaSRD
 from ._des_y1_3x2pt import ExampleDESY13x2pt
 
+__all__ = [
+    "EXAMPLES_LIST",
+    "ExampleCosmicShear",
+    "ExampleSupernovaSRD",
+    "ExampleDESY13x2pt",
+]
 
-EXAMPLES_LIST: dict[str, type[Example]] = {
+EXAMPLES_LIST: dict[str, type[AnalysisBuilder]] = {
     "cosmic_shear": ExampleCosmicShear,
     "sn_srd": ExampleSupernovaSRD,
     "des_y1_3x2pt": ExampleDESY13x2pt,
