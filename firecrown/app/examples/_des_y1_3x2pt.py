@@ -80,9 +80,9 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         """Return SACC file path for likelihood construction.
 
         :param sacc_path: Path to the SACC data file
-        :return: Named parameters with sacc_data path
+        :return: Named parameters with sacc_file path
         """
-        return NamedParameters({"sacc_data": self.get_sacc_file(sacc_path)})
+        return NamedParameters({"sacc_file": self.get_sacc_file(sacc_path)})
 
     def get_models(self) -> list[Model]:
         """Define DES Y1 systematic and bias parameters.

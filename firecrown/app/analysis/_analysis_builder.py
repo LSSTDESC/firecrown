@@ -95,14 +95,14 @@ class AnalysisBuilder(logging.Logging):
         sacc = self.generate_sacc(self.output_path)
         generator.add_sacc(sacc)
         self.console.print(
-            f"[green]✓[/green] SACC: {sacc.relative_to(self.output_path)}\n"
+            f"[green]OK[/green] SACC: {sacc.relative_to(self.output_path)}\n"
         )
 
         self.console.print(Rule("[bold cyan]Phase 2: Generating factory[/bold cyan]"))
         factory = self.generate_factory(self.output_path, sacc)
         generator.add_factory(factory)
         self.console.print(
-            f"[green]✓[/green] Factory: {factory.relative_to(self.output_path)}\n"
+            f"[green]OK[/green] Factory: {factory.relative_to(self.output_path)}\n"
         )
 
         self.console.print(
@@ -113,7 +113,7 @@ class AnalysisBuilder(logging.Logging):
         params = ", ".join(
             f"{k}={v}" for k, v in build_parameters.convert_to_basic_dict().items()
         )
-        self.console.print(f"[green]✓[/green] Parameters: {params}\n")
+        self.console.print(f"[green]OK[/green] Parameters: {params}\n")
 
         self.console.print(
             Rule("[bold cyan]Phase 4: Preparing model parameters[/bold cyan]")
@@ -122,7 +122,7 @@ class AnalysisBuilder(logging.Logging):
         generator.add_models(models)
         n_params = sum(len(m.parameters) for m in models)
         self.console.print(
-            f"[green]✓[/green] Models: {len(models)} model(s), "
+            f"[green]OK[/green] Models: {len(models)} model(s), "
             f"{n_params} parameter(s)\n"
         )
 
@@ -133,7 +133,7 @@ class AnalysisBuilder(logging.Logging):
             )
         )
         generator.write_config()
-        self.console.print("[green]✓[/green] Configuration written\n")
+        self.console.print("[green]OK[/green] Configuration written\n")
 
         self.console.print(
             Panel.fit("[bold green]All example files successfully created[/bold green]")
