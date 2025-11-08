@@ -13,7 +13,7 @@ from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames, TRACER_NAMES_TOTAL
 
-SACCFILE = os.path.expanduser(
+SACC_FILE = os.path.expanduser(
     os.path.expandvars("${FIRECROWN_DIR}/examples/des_y1_3x2pt/sacc_data.hdf5")
 )
 
@@ -21,7 +21,7 @@ SACCFILE = os.path.expanduser(
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Build the likelihood for the DES Y1 cosmic shear data TATT."""
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(SACCFILE)
+    sacc_data = sacc.Sacc.load_fits(SACC_FILE)
 
     n_source = 1
     stats = define_stats(n_source)
@@ -54,7 +54,7 @@ def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
 
 
 def define_stats(n_source):
-    """Define the TwoPoint objects to be returned by this factory furnciton."""
+    """Define the TwoPoint objects to be returned by this factory function."""
     sources = define_sources(n_source)
     stats = {}
     for stat, sacc_stat in [
@@ -77,7 +77,7 @@ def define_sources(n_source):
     """Return the sources to be used by the factory function."""
     result = {}
     # Define the intrinsic alignment systematic. This will be added to the
-    # lensing restult later
+    # lensing result later
     ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
     for i in range(n_source):
         # Define the photo-z shift systematic.
@@ -97,7 +97,7 @@ def run_likelihood() -> None:
     likelihood, tools = build_likelihood(None)
 
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(SACCFILE)
+    sacc_data = sacc.Sacc.load_fits(SACC_FILE)
 
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz
