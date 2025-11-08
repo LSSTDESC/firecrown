@@ -1,10 +1,12 @@
-"""Download utilities for analysis data files.
+"""Utilities for analysis data and file operations.
 
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
+import shutil
 import urllib.request
 from pathlib import Path
+from types import ModuleType
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.console import Console
 
@@ -34,3 +36,14 @@ def download_from_url(
         except Exception as e:
             console.print(f"[red]Download failed:[/red] {e}")
             raise
+
+
+def copy_template(template_module: ModuleType, output_file: Path) -> None:
+    """Copy template module file to output location.
+
+    :param template_module: Python module to copy
+    :param output_file: Destination path
+    """
+    assert template_module.__file__ is not None
+    template = Path(template_module.__file__)
+    shutil.copyfile(template, output_file)
