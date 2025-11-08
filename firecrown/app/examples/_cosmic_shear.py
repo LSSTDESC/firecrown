@@ -397,12 +397,9 @@ class ExampleCosmicShear(AnalysisBuilder):
         return output_file
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
-        if self.use_absolute_path:
-            sacc_filename = sacc_path.absolute().as_posix()
-        else:
-            sacc_filename = sacc_path.name
-
-        return NamedParameters({"sacc_file": sacc_filename, "n_bins": self.n_bins})
+        return NamedParameters(
+            {"sacc_file": self.get_sacc_file(sacc_path), "n_bins": self.n_bins}
+        )
 
     def get_models(self) -> list[Model]:
         """Define photo-z shift parameters for each tomographic bin.

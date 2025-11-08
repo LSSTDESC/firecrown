@@ -170,3 +170,19 @@ class AnalysisBuilder(logging.Logging):
 
         :return: List of models with their parameters (priors, bounds, etc.)
         """
+
+    def get_sacc_file(self, sacc_path: Path) -> str:
+        """Return the path to the SACC data file.
+
+        Returns either an absolute or relative path based on the use_absolute_path
+        setting. When use_absolute_path is True, returns the full absolute path.
+        Otherwise returns just the filename.
+
+        :param sacc_path: Path to the SACC data file
+        :return: Path to the SACC file as a string, either absolute or relative
+        """
+        if self.use_absolute_path:
+            sacc_filename = sacc_path.absolute().as_posix()
+        else:
+            sacc_filename = sacc_path.name
+        return sacc_filename
