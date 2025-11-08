@@ -3,7 +3,6 @@
 Generates a complete supernova analysis example using LSST DESC SRD Year 1 data.
 """
 
-import shutil
 from typing import ClassVar, Annotated
 from dataclasses import dataclass
 from pathlib import Path
@@ -11,7 +10,13 @@ from pathlib import Path
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ..analysis import AnalysisBuilder, Model, Parameter, download_from_url
+from ..analysis import (
+    AnalysisBuilder,
+    Model,
+    Parameter,
+    download_from_url,
+    copy_template,
+)
 from . import _sn_srd_template
 
 
@@ -60,9 +65,8 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         :param _sacc: SACC file path (unused)
         :return: Path to factory file
         """
-        template = Path(_sn_srd_template.__file__)
         output_file = output_path / f"{self.prefix}_factory.py"
-        shutil.copyfile(template, output_file)
+        copy_template(_sn_srd_template, output_file)
         return output_file
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
