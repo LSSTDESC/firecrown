@@ -4,7 +4,6 @@ Generates synthetic weak lensing cosmic shear data with realistic
 noise and covariance for testing and demonstration purposes.
 """
 
-import shutil
 from typing import Annotated, ClassVar
 from dataclasses import dataclass
 from pathlib import Path
@@ -18,7 +17,7 @@ from rich.table import Table
 
 from firecrown.likelihood.likelihood import NamedParameters
 from ...utils import upper_triangle_indices
-from ..analysis import AnalysisBuilder, Model, Parameter
+from ..analysis import AnalysisBuilder, Model, Parameter, copy_template
 from . import _cosmic_shear_template
 
 
@@ -390,10 +389,8 @@ class ExampleCosmicShear(AnalysisBuilder):
         :param _sacc: SACC file path (unused)
         :return: Path to factory file
         """
-        template = Path(_cosmic_shear_template.__file__)
         output_file = output_path / f"{self.prefix}_factory.py"
-        shutil.copyfile(template, output_file)
-
+        copy_template(_cosmic_shear_template, output_file)
         return output_file
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
