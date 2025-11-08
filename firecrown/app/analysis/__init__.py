@@ -19,6 +19,7 @@ from ._config_generator import get_generator
 from ._cosmosis import CosmosisConfigGenerator
 from ._numcosmo import NumCosmoConfigGenerator
 from ._cobaya import CobayaConfigGenerator
+from ._download import download_from_url
 
 __all__ = [
     "AnalysisBuilder",
@@ -30,4 +31,5 @@ __all__ = [
     "CosmosisConfigGenerator",
     "NumCosmoConfigGenerator",
     "CobayaConfigGenerator",
+    "download_from_url",
 ]

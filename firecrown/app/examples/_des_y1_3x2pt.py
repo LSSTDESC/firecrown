@@ -5,17 +5,14 @@ galaxy-galaxy lensing, and galaxy clustering.
 """
 
 import shutil
-import urllib.request
 from typing import ClassVar, Annotated
 from dataclasses import dataclass
 from pathlib import Path
 
-from rich.progress import Progress, SpinnerColumn, TextColumn
-
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ..analysis import AnalysisBuilder, Model, Parameter
+from ..analysis import AnalysisBuilder, Model, Parameter, download_from_url
 from . import _des_y1_3x2pt_template
 
 
@@ -54,24 +51,13 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         :param output_path: Output directory
         :return: Path to downloaded SACC file
         """
-        sacc_file = f"{self.prefix}.sacc"
-        sacc_full_file = output_path / sacc_file
-
-        with Progress(
-            SpinnerColumn(),
-            TextColumn("[progress.description]{task.description}"),
-            console=self.console,
-        ) as progress:
-            task = progress.add_task("Downloading DES Y1 3x2pt data...", total=None)
-
-            try:
-                urllib.request.urlretrieve(self.data_url, sacc_full_file)
-                progress.update(task, completed=True)
-                self.console.print(f"[dim]Downloaded from {self.data_url}[/dim]")
-            except Exception as e:
-                self.console.print(f"[red]Download failed:[/red] {e}")
-                raise
-
+        sacc_full_file = output_path / f"{self.prefix}.sacc"
+        download_from_url(
+            self.data_url,
+            sacc_full_file,
+            self.console,
+            "Downloading DES Y1 3x2pt data...",
+        )
         return sacc_full_file
 
     def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
