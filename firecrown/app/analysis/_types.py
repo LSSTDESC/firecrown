@@ -1,6 +1,8 @@
-"""Type definitions for example generators.
+"""Type definitions for analysis builders.
 
-Defines enums and dataclasses used across the example generation system.
+Defines enums and dataclasses used across the analysis generation system.
+
+This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 import dataclasses

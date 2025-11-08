@@ -15,13 +15,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Example
-from ._types import Model, Parameter
+from ..analysis import AnalysisBuilder, Model, Parameter
 from . import _des_y1_3x2pt_template
 
 
 @dataclass
-class ExampleDESY13x2pt(Example):
+class ExampleDESY13x2pt(AnalysisBuilder):
     """DES Y1 3x2pt analysis example.
 
     Downloads real DES Y1 3x2pt data (cosmic shear, galaxy-galaxy lensing,

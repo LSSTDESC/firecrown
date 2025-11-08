@@ -2,6 +2,8 @@
 
 Provides functions to create standard CosmoSIS .ini files with
 proper formatting, comments, and parameter sections.
+
+This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 import configparser

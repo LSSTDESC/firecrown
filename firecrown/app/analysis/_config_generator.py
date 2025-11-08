@@ -2,6 +2,8 @@
 
 Provides a stateful strategy pattern for generating configuration files
 through phased construction: add components incrementally, then write.
+
+This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 from abc import ABC, abstractmethod

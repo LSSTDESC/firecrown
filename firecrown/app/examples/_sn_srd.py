@@ -14,13 +14,12 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from ._base_example import Example
-from ._types import Model, Parameter
+from ..analysis import AnalysisBuilder, Model, Parameter
 from . import _sn_srd_template
 
 
 @dataclass
-class ExampleSupernovaSRD(Example):
+class ExampleSupernovaSRD(AnalysisBuilder):
     """Supernova SRD analysis example.
 
     Downloads LSST DESC SRD Year 1 supernova data and generates

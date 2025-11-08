@@ -2,6 +2,8 @@
 
 Provides functions to create Cobaya YAML files for cosmological
 parameter estimation with Firecrown likelihoods.
+
+This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 from typing import Dict, Any

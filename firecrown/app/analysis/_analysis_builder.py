@@ -1,7 +1,9 @@
-"""Base class for Firecrown example generators.
+"""Base class for Firecrown analysis builders.
 
 Provides the abstract interface and orchestration logic for generating
 complete analysis examples with data files and framework configurations.
+
+This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 from typing import Annotated, ClassVar
@@ -19,8 +21,8 @@ from .. import logging
 
 
 @dataclasses.dataclass
-class Example(logging.Logging):
-    """Base class for Firecrown example generators.
+class AnalysisBuilder(logging.Logging):
+    """Base class for Firecrown analysis builders.
 
     Orchestrates the generation of complete analysis examples through a phased workflow:
 
@@ -35,7 +37,7 @@ class Example(logging.Logging):
     """
 
     description: ClassVar[str]
-    """Human-readable description of what this example demonstrates."""
+    """Human-readable description of what this analysis demonstrates."""
 
     output_path: Annotated[
         Path,
@@ -73,7 +75,7 @@ class Example(logging.Logging):
     ] = True
 
     def __post_init__(self) -> None:
-        """Initialize and execute the complete example generation workflow."""
+        """Initialize and execute the complete analysis generation workflow."""
         super().__post_init__()
         self.output_path.mkdir(parents=True, exist_ok=True)
 
@@ -93,14 +95,14 @@ class Example(logging.Logging):
         sacc = self.generate_sacc(self.output_path)
         generator.add_sacc(sacc)
         self.console.print(
-            f"[green]OK[/green] SACC: {sacc.relative_to(self.output_path)}\n"
+            f"[green]✓[/green] SACC: {sacc.relative_to(self.output_path)}\n"
         )
 
         self.console.print(Rule("[bold cyan]Phase 2: Generating factory[/bold cyan]"))
         factory = self.generate_factory(self.output_path, sacc)
         generator.add_factory(factory)
         self.console.print(
-            f"[green]OK[/green] Factory: {factory.relative_to(self.output_path)}\n"
+            f"[green]✓[/green] Factory: {factory.relative_to(self.output_path)}\n"
         )
 
         self.console.print(
@@ -108,12 +110,10 @@ class Example(logging.Logging):
         )
         build_parameters = self.get_build_parameters(sacc)
         generator.add_build_parameters(build_parameters)
-        # Here I want to print key=value pairs of the build parameters
-        # in a human-readable format
         params = ", ".join(
             f"{k}={v}" for k, v in build_parameters.convert_to_basic_dict().items()
         )
-        self.console.print(f"[green]OK[/green] Parameters: {params}\n")
+        self.console.print(f"[green]✓[/green] Parameters: {params}\n")
 
         self.console.print(
             Rule("[bold cyan]Phase 4: Preparing model parameters[/bold cyan]")
@@ -122,7 +122,7 @@ class Example(logging.Logging):
         generator.add_models(models)
         n_params = sum(len(m.parameters) for m in models)
         self.console.print(
-            f"[green]OK[/green] Models: {len(models)} model(s), "
+            f"[green]✓[/green] Models: {len(models)} model(s), "
             f"{n_params} parameter(s)\n"
         )
 
@@ -133,7 +133,7 @@ class Example(logging.Logging):
             )
         )
         generator.write_config()
-        self.console.print("[green]OK[/green] Configuration written\n")
+        self.console.print("[green]✓[/green] Configuration written\n")
 
         self.console.print(
             Panel.fit("[bold green]All example files successfully created[/bold green]")

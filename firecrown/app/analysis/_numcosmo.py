@@ -2,6 +2,8 @@
 
 Provides functions to create NumCosmo YAML configuration files
 for cosmological parameter estimation with Firecrown likelihoods.
+
+This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
 from pathlib import Path

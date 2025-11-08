@@ -18,13 +18,12 @@ from rich.table import Table
 
 from firecrown.likelihood.likelihood import NamedParameters
 from ...utils import upper_triangle_indices
-from ._base_example import Example
-from ._types import Model, Parameter
+from ..analysis import AnalysisBuilder, Model, Parameter
 from . import _cosmic_shear_template
 
 
 @dataclass
-class ExampleCosmicShear(Example):
+class ExampleCosmicShear(AnalysisBuilder):
     """Cosmic shear analysis example with synthetic data.
 
     Generates synthetic weak lensing data with configurable tomographic bins,
