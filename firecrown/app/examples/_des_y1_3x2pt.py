@@ -126,18 +126,6 @@ class ExampleDESY13x2pt(AnalysisBuilder):
             Model(
                 name=f"firecrown_{self.prefix}",
                 description="DES Y1 3x2pt parameters",
-                parameters=[
-                    Parameter(
-                        name=param[0],
-                        symbol=param[1],
-                        lower_bound=param[2],
-                        upper_bound=param[3],
-                        scale=param[4],
-                        abstol=param[5],
-                        default_value=param[6],
-                        free=param[7],
-                    )
-                    for param in parameters
-                ],
+                parameters=[Parameter(*param) for param in parameters],
             )
         ]
