@@ -24,6 +24,11 @@ class Logging:
         """Prepare logging."""
         self.console_io = None
         if self.log_file:
-            self.console_io = open(self.log_file, "w", encoding="utf-8")
+            self.console_io = self.log_file.open("w", encoding="utf-8")
 
         self.console = Console(file=self.console_io)
+
+    def __del__(self):
+        """Destructor to ensure file is closed."""
+        if self.console_io:
+            self.console_io.close()

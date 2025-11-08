@@ -252,22 +252,34 @@ class View(Load):
                 f"No covariance found in SACC file: {self.sacc_file}"
             )
 
-        cov = self.sacc_data.covariance.dense
-        cor = np.corrcoef(cov)
-
         all_bins = self.bin_comb_harmonic + self.bin_comb_real
 
+        cor_ordered = self._get_ordered_correlation(all_bins)
+
         fig, ax = plt.subplots(figsize=(10, 8))
+        im = self._plot_correlation_matrix(ax, cor_ordered)
+        self._add_bin_annotations(ax, all_bins)
+        self._add_plot_decorations(fig, ax, im)
+        plt.show()
 
+    def _get_ordered_correlation(self, all_bins):
+        """Get the ordered correlation matrix."""
+        assert self.sacc_data.covariance is not None
+        cov = self.sacc_data.covariance.dense
+        cor = np.corrcoef(cov)
         indices_ordered = np.concatenate([b.indices for b in all_bins])
+        return cor[np.ix_(indices_ordered, indices_ordered)]
 
-        cor_ordered = cor[np.ix_(indices_ordered, indices_ordered)]
-
-        im = ax.matshow(
+    def _plot_correlation_matrix(self, ax, cor_ordered):
+        """Plot the correlation matrix."""
+        return ax.matshow(
             cor_ordered,
             cmap="RdBu_r",  # Diverging colormap for positive/negative values
             norm=Normalize(vmin=-1, vmax=1),
         )
+
+    def _add_bin_annotations(self, ax, all_bins):
+        """Add bin annotations to the plot."""
         legend_patches = []
         current_index = 0
         for i, b in enumerate(all_bins):
@@ -275,22 +287,20 @@ class View(Load):
             start = current_index - 0.5
             end = current_index + length - 0.5
 
-            # visible span (slightly opaque, drawn *below* the image)
             color = f"C{i % 10}"  # cycle through default Matplotlib colors
             ax.axvspan(start, end, color=color, alpha=0.08, zorder=2)
             ax.axhspan(start, end, color=color, alpha=0.08, zorder=2)
 
-            # store for legend
             legend_patches.append(
                 Patch(facecolor=color, alpha=0.3, label=str(b.metadata))
             )
 
             current_index += length
-        # Add colorbar
+        ax.legend(handles=legend_patches, title="Bins", loc="best", fontsize=8)
+
+    def _add_plot_decorations(self, fig, ax, im):
+        """Add title and colorbar to the plot."""
         fig.colorbar(im, ax=ax, label="Correlation")
 
         ax.set_title("Correlation Matrix")
-        # legend outside the plot
-        ax.legend(handles=legend_patches, title="Bins", loc="best", fontsize=8)
         plt.tight_layout()
-        plt.show()

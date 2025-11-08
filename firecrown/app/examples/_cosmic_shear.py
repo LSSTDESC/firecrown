@@ -117,6 +117,62 @@ class ExampleCosmicShear(AnalysisBuilder):
         ),
     ] = 0.25
 
+    def _setup_phase(self, progress, summary, _output_path):
+        """Setup phase of SACC generation."""
+        task1 = progress.add_task("Setting up cosmology and coordinates...", total=None)
+        cosmo = self._create_fiducial_cosmology()
+        summary.add_row("[b]Cosmology[/b]", "")
+        self._show_cosmology_config(cosmo, summary)
+
+        z_range, ell_range = self._create_coordinate_arrays()
+        summary.add_section()
+        summary.add_row("[b]Coordinates[/b]", "")
+        self._show_coordinate_config(z_range, ell_range, summary)
+        progress.update(task1, completed=True)
+
+        return cosmo, z_range, ell_range
+
+    def _tracer_phase(self, progress, summary, cosmo, z_range):
+        """Tracer generation phase."""
+        task2 = progress.add_task("Creating tomographic tracers...", total=None)
+        np.random.seed(self.seed)
+        sacc_data = sacc.Sacc()
+        bin_centers, tracers = self._create_tracers(sacc_data, cosmo, z_range)
+
+        summary.add_section()
+        summary.add_row("[b]Tracers[/b]", "")
+        self._show_tracer_config(bin_centers, summary)
+        progress.update(task2, completed=True)
+
+        return sacc_data, bin_centers, tracers
+
+    def _spectra_phase(self, progress, summary, sacc_data, cosmo, tracers, ell_range):
+        """Power spectra computation phase."""
+        task3 = progress.add_task("Computing power spectra...", total=None)
+        theory_cls = self._generate_power_spectra(sacc_data, cosmo, tracers, ell_range)
+        summary.add_section()
+        summary.add_row("[b]Power Spectra[/b]", "")
+        self._show_power_spectrum_config(summary)
+        progress.update(task3, completed=True)
+        return theory_cls
+
+    def _covariance_phase(self, progress, summary, sacc_data, theory_cls):
+        """Covariance matrix generation phase."""
+        task4 = progress.add_task("Adding covariance matrix...", total=None)
+        summary.add_section()
+        summary.add_row("[b]Covariance Matrix[/b]", "")
+        self._show_covariance_config(summary)
+        self._add_covariance_matrix(sacc_data, theory_cls)
+        progress.update(task4, completed=True)
+
+    def _save_phase(self, progress, sacc_data, output_path):
+        """Save SACC file phase."""
+        sacc_full_file = output_path / f"{self.prefix}.sacc"
+        task5 = progress.add_task("Saving SACC file...", total=None)
+        sacc_data.save_fits(sacc_full_file, overwrite=True)
+        progress.update(task5, completed=True)
+        return sacc_full_file
+
     def generate_sacc(self, output_path: Path) -> Path:
         """Generate synthetic cosmic shear data in SACC format.
 
@@ -125,8 +181,6 @@ class ExampleCosmicShear(AnalysisBuilder):
         :param output_path: Output directory
         :return: Path to generated SACC file
         """
-        sacc_full_file = output_path / f"{self.prefix}.sacc"
-
         summary = Table(
             title="Cosmic Shear Example", border_style="blue", show_header=False
         )
@@ -140,53 +194,25 @@ class ExampleCosmicShear(AnalysisBuilder):
         ) as progress:
 
             # Phase 1: Setup
-            task1 = progress.add_task(
-                "Setting up cosmology and coordinates...", total=None
+            cosmo, z_range, ell_range = self._setup_phase(
+                progress, summary, output_path
             )
-            cosmo = self._create_fiducial_cosmology()
-            summary.add_row("[b]Cosmology[/b]", "")
-            self._show_cosmology_config(cosmo, summary)
-
-            z_range, ell_range = self._create_coordinate_arrays()
-            summary.add_section()
-            summary.add_row("[b]Coordinates[/b]", "")
-            self._show_coordinate_config(z_range, ell_range, summary)
-            progress.update(task1, completed=True)
 
             # Phase 2: Tracers
-            task2 = progress.add_task("Creating tomographic tracers...", total=None)
-            np.random.seed(self.seed)
-            sacc_data = sacc.Sacc()
-            bin_centers, tracers = self._create_tracers(sacc_data, cosmo, z_range)
-
-            summary.add_section()
-            summary.add_row("[b]Tracers[/b]", "")
-            self._show_tracer_config(bin_centers, summary)
-
-            progress.update(task2, completed=True)
+            sacc_data, _, tracers = self._tracer_phase(
+                progress, summary, cosmo, z_range
+            )
 
             # Phase 3: Power spectra
-            task3 = progress.add_task("Computing power spectra...", total=None)
-            theory_cls = self._generate_power_spectra(
-                sacc_data, cosmo, tracers, ell_range
+            theory_cls = self._spectra_phase(
+                progress, summary, sacc_data, cosmo, tracers, ell_range
             )
-            summary.add_section()
-            summary.add_row("[b]Power Spectra[/b]", "")
-            self._show_power_spectrum_config(summary)
-            progress.update(task3, completed=True)
 
             # Phase 4: Covariance
-            task4 = progress.add_task("Adding covariance matrix...", total=None)
-            summary.add_section()
-            summary.add_row("[b]Covariance Matrix[/b]", "")
-            self._show_covariance_config(summary)
-            self._add_covariance_matrix(sacc_data, theory_cls)
-            progress.update(task4, completed=True)
+            self._covariance_phase(progress, summary, sacc_data, theory_cls)
 
             # Phase 5: Save
-            task5 = progress.add_task("Saving SACC file...", total=None)
-            sacc_data.save_fits(sacc_full_file, overwrite=True)
-            progress.update(task5, completed=True)
+            sacc_full_file = self._save_phase(progress, sacc_data, output_path)
 
             progress.console.print(
                 f"[dim]Generated {len(theory_cls)} power spectra[/dim]"
