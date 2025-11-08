@@ -168,10 +168,12 @@ class NumCosmoConfigGenerator(ConfigGenerator):
 
         Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 
+        model_list = [model.name for model in self.models]
+
         config = create_config(
             factory_path=self.factory_path,
             build_parameters=self.build_parameters,
-            model_list=[f"firecrown_{self.prefix}"],
+            model_list=model_list,
             use_absolute_path=self.use_absolute_path,
         )
         model_builders = add_models(config, self.models)
