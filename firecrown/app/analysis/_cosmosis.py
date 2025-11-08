@@ -156,6 +156,19 @@ def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
     )
 
 
+def format_float(value: float) -> str:
+    """Format a float to 3 significant digits. Add a ".0" if no decimal. This is
+    necessary to work with CosmoSIS.
+
+    :param value: Value to format
+    :return: Formatted value
+    """
+    val = f"{value:.3g}"
+    if "." not in val:
+        val += ".0"
+    return val
+
+
 def create_values_config(
     models: list[Model] | None = None,
 ) -> configparser.ConfigParser:
@@ -212,15 +225,16 @@ def create_values_config(
                     config.set(
                         section,
                         parameter.name,
-                        f"{parameter.lower_bound:.3g} "
-                        f"{parameter.default_value:.3g} "
-                        f"{parameter.upper_bound:.3g}",
+                        format_float(parameter.lower_bound)
+                        + " "
+                        + format_float(parameter.default_value)
+                        + " "
+                        + format_float(parameter.upper_bound),
                     )
                 else:
+                    # CosmoSIS does not like integers
                     config.set(
-                        section,
-                        parameter.name,
-                        f"{parameter.default_value:.3g}",
+                        section, parameter.name, format_float(parameter.default_value)
                     )
     return config
 

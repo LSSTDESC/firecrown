@@ -5,8 +5,10 @@ galaxy-galaxy lensing, and galaxy clustering.
 """
 
 from typing import ClassVar, Annotated
+from types import ModuleType
 from dataclasses import dataclass
 from pathlib import Path
+from enum import Enum
 
 import typer
 
@@ -18,7 +20,24 @@ from ..analysis import (
     download_from_url,
     copy_template,
 )
-from . import _des_y1_3x2pt_template
+from . import _des_y1_3x2pt_template, _des_y1_3x2pt_pt_template
+
+
+class FactoryType(str, Enum):
+    """Available factory implementations for DES Y1 3x2pt analysis."""
+
+    STANDARD = "standard"
+    PT = "pt"
+
+
+FACTORY_TYPE_HELP = """\
+Factory implementation to use for generating the DES Y1 3x2pt analysis.
+The factory determines how the analysis pipeline will be constructed.
+
+Available options:\n
+  - standard: uses the default implementation template\n
+  - pt:       uses perturbation theory calculations template
+"""
 
 
 @dataclass
@@ -50,6 +69,16 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         ),
     ] = "des_y1_3x2pt"
 
+    factory_type: Annotated[
+        FactoryType,
+        typer.Option(
+            help=FACTORY_TYPE_HELP,
+            show_default=True,
+            case_sensitive=False,
+            rich_help_panel="Factory Options",
+        ),
+    ] = FactoryType.STANDARD
+
     def generate_sacc(self, output_path: Path) -> Path:
         """Download DES Y1 3x2pt data from LSST DESC repository.
 
@@ -72,8 +101,17 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         :param _sacc: SACC file path (unused)
         :return: Path to factory file
         """
+        template: ModuleType
         output_file = output_path / f"{self.prefix}_factory.py"
-        copy_template(_des_y1_3x2pt_template, output_file)
+        match self.factory_type:
+            case FactoryType.PT:
+                template = _des_y1_3x2pt_pt_template
+            case FactoryType.STANDARD:
+                template = _des_y1_3x2pt_template
+            case _:
+                raise ValueError(f"Unknown factory type: {self.factory_type}")
+
+        copy_template(template, output_file)
         return output_file
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
@@ -89,7 +127,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
 
         :return: Model with IA, photo-z, bias, and multiplicative bias parameters
         """
-        parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
+        params_std: list[tuple[str, str, float, float, float, float, float, bool]] = [
             ("ia_bias", r"\beta_{\mathrm{ia}}", -5.0, 5.0, 0.05, 0.0, 0.5, True),
             ("alphaz", r"\alpha_z", -5.0, 5.0, 0.05, 0.0, 0.0, True),
             ("z_piv", r"z_{\mathrm{pivot}}", 0.0, 1.0, 0.05, 0.0, 0.62, False),
@@ -112,6 +150,31 @@ class ExampleDESY13x2pt(AnalysisBuilder):
             ("src2_delta_z", r"\delta z_2", -0.05, 0.05, 0.005, 0.0, 0.009, True),
             ("src3_delta_z", r"\delta z_3", -0.05, 0.05, 0.005, 0.0, -0.018, True),
         ]
+        params_pt: list[tuple[str, str, float, float, float, float, float, bool]] = [
+            ("ia_a_1", r"A_{\mathrm{IA},1}", 0.9, 1.2, 0.05, 0.0, 1.0, True),
+            ("ia_a_2", r"A_{\mathrm{IA},2}", 0.4, 0.6, 0.05, 0.0, 0.5, True),
+            ("ia_a_d", r"A_{\mathrm{IA},d}", 0.4, 0.6, 0.05, 0.0, 0.5, True),
+            ("ia_zpiv_1", r"z_{\mathrm{piv},1}", 0.0, 1.0, 0.05, 0.0, 0.62, False),
+            ("ia_zpiv_2", r"z_{\mathrm{piv},2}", 0.0, 1.0, 0.05, 0.0, 0.62, False),
+            ("ia_zpiv_d", r"z_{\mathrm{piv},d}", 0.0, 1.0, 0.05, 0.0, 0.62, False),
+            ("ia_alphaz_1", r"\alpha_{z,1}", -5.0, 5.0, 0.05, 0.0, 0.0, False),
+            ("ia_alphaz_2", r"\alpha_{z,2}", -5.0, 5.0, 0.05, 0.0, 0.0, False),
+            ("ia_alphaz_d", r"\alpha_{z,d}", -5.0, 5.0, 0.05, 0.0, 0.0, False),
+            ("lens0_b_2", r"b_2^0", 0.8, 1.2, 0.05, 0.0, 1.0, True),
+            ("lens0_b_s", r"b_s^0", 0.8, 1.2, 0.05, 0.0, 1.0, True),
+            ("lens0_mag_bias", r"s_{\mathrm{mag}}^0", 0.8, 1.2, 0.05, 0.0, 1.0, True),
+            ("lens0_bias", r"b_0", 0.8, 3.0, 0.05, 0.0, 2.0, True),
+            ("src0_delta_z", r"\delta z_{src0}", -0.05, 0.05, 0.005, 0.0, -0.001, True),
+            ("lens0_delta_z", r"\delta z_{lens0}", -0.05, 0.05, 0.05, 0.0, 0.001, True),
+        ]
+
+        match self.factory_type:
+            case FactoryType.STANDARD:
+                parameters = params_std
+            case FactoryType.PT:
+                parameters = params_pt
+            case _:
+                raise ValueError(f"Unknown factory type: {self.factory_type}")
         return [
             Model(
                 name=f"firecrown_{self.prefix}",
