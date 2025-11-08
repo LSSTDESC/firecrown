@@ -72,9 +72,9 @@ class ExampleSupernovaSRD(AnalysisBuilder):
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
         """Return SACC file path for likelihood construction.
 
-        :return: Named parameters with sacc_data path
+        :return: Named parameters with sacc_file path
         """
-        return NamedParameters({"sacc_data": self.get_sacc_file(sacc_path)})
+        return NamedParameters({"sacc_file": self.get_sacc_file(sacc_path)})
 
     def get_models(self) -> list[Model]:
         """Define supernova absolute magnitude parameter.
