@@ -77,12 +77,12 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         return output_file
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
-        if self.use_absolute_path:
-            sacc_filename = sacc_path.absolute().as_posix()
-        else:
-            sacc_filename = sacc_path.name
+        """Return SACC file path for likelihood construction.
 
-        return NamedParameters({"sacc_file": sacc_filename})
+        :param sacc_path: Path to the SACC data file
+        :return: Named parameters with sacc_data path
+        """
+        return NamedParameters({"sacc_data": self.get_sacc_file(sacc_path)})
 
     def get_models(self) -> list[Model]:
         """Define DES Y1 systematic and bias parameters.
