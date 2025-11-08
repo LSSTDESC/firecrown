@@ -25,6 +25,46 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 
 
+def _build_sources() -> tuple[wl.WeakLensing, nc.NumberCounts]:
+    """Create weak lensing and number counts sources with systematics.
+
+    :return: Tuple of (weak lensing source, number counts source)
+    """
+    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
+    src_pzshift = wl.PhotoZShift(sacc_tracer="src0")
+    src0 = wl.WeakLensing(sacc_tracer="src0", systematics=[src_pzshift, ia_systematic])
+
+    lens_pzshift = nc.PhotoZShift(sacc_tracer="lens0")
+    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
+    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
+    lens0 = nc.NumberCounts(
+        sacc_tracer="lens0",
+        has_rsd=True,
+        systematics=[lens_pzshift, magnification, nl_bias],
+    )
+
+    return src0, lens0
+
+
+def _build_two_point_statistics(
+    src0: wl.WeakLensing, lens0: nc.NumberCounts
+) -> list[TwoPoint]:
+    """Create two-point correlation statistics.
+
+    :param src0: Weak lensing source
+    :param lens0: Number counts source
+    :return: List of two-point statistics
+    """
+    return [
+        TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus"),
+        TwoPoint(source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_minus"),
+        TwoPoint(
+            source0=lens0, source1=src0, sacc_data_type="galaxy_shearDensity_xi_t"
+        ),
+        TwoPoint(source0=lens0, source1=lens0, sacc_data_type="galaxy_density_xi"),
+    ]
+
+
 def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Build DES Y1 3x2pt likelihood with perturbation theory modeling.
 
@@ -41,57 +81,11 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
     :raises ValueError: If required parameters are missing
     :raises FileNotFoundError: If SACC file does not exist
     """
-    # Tatt intrinsic alignment systematic with redshift dependence
-    # Models IA as a power law in (1+z): A_IA * [(1+z)/(1+z_piv)]^eta
-    # This is more flexible than LinearAlignmentSystematic
-    ia_systematic = wl.TattAlignmentSystematic(include_z_dependence=True)
+    # Create sources with systematics
+    src0, lens0 = _build_sources()
 
-    # Photo-z shift for weak lensing source
-    src_pzshift = wl.PhotoZShift(sacc_tracer="src0")
-
-    # Weak lensing source with IA and photo-z systematics
-    src0 = wl.WeakLensing(sacc_tracer="src0", systematics=[src_pzshift, ia_systematic])
-
-    # Photo-z shift for lens population
-    lens_pzshift = nc.PhotoZShift(sacc_tracer="lens0")
-
-    # Magnification bias systematic (constant across redshift)
-    magnification = nc.ConstantMagnificationBiasSystematic(sacc_tracer="lens0")
-
-    # PT-based non-linear bias systematic
-    # Models galaxy bias using perturbation theory with higher-order terms
-    # Requires EulerianPTCalculator in ModelingTools
-    nl_bias = nc.PTNonLinearBiasSystematic(sacc_tracer="lens0")
-
-    # Number counts source with RSD enabled
-    # has_rsd=True includes redshift-space distortions in clustering
-    lens0 = nc.NumberCounts(
-        sacc_tracer="lens0",
-        has_rsd=True,
-        systematics=[lens_pzshift, magnification, nl_bias],
-    )
-
-    # Cosmic shear two-point functions (xi+ and xi-)
-    xip_src0_src0 = TwoPoint(
-        source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_plus"
-    )
-    xim_src0_src0 = TwoPoint(
-        source0=src0, source1=src0, sacc_data_type="galaxy_shear_xi_minus"
-    )
-
-    # Galaxy-galaxy lensing (tangential shear)
-    gammat_lens0_src0 = TwoPoint(
-        source0=lens0,
-        source1=src0,
-        sacc_data_type="galaxy_shearDensity_xi_t",
-    )
-
-    # Galaxy clustering (angular correlation function)
-    wtheta_lens0_lens0 = TwoPoint(
-        source0=lens0,
-        source1=lens0,
-        sacc_data_type="galaxy_density_xi",
-    )
+    # Create two-point statistics
+    statistics = _build_two_point_statistics(src0, lens0)
 
     # Configure Eulerian perturbation theory calculator
     # - with_NC=True: Enable number counts (galaxy clustering) PT terms
@@ -115,9 +109,7 @@ def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTo
 
     # Build Gaussian likelihood from two-point statistics
     # Statistics order determines data vector structure
-    likelihood = ConstGaussian(
-        statistics=[xip_src0_src0, xim_src0_src0, gammat_lens0_src0, wtheta_lens0_lens0]
-    )
+    likelihood = ConstGaussian(statistics=statistics)
 
     # Load SACC data file (with environment variable expansion)
     sacc_file = params.get_string("sacc_file")
