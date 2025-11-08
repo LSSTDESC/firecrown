@@ -51,7 +51,7 @@ class AnalysisBuilder(logging.Logging):
         typer.Option(
             help=(
                 "Prefix for generated filenames "
-                "(e.g., 'cosmic_shear' creates 'cosmic_shear.sacc')"
+                "(e.g., 'analysis1' creates 'analysis1.sacc')"
             ),
             show_default=True,
         ),
