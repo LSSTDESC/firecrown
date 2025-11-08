@@ -9,9 +9,10 @@ This is an internal module. Use the public API from firecrown.app.analysis.
 import configparser
 import textwrap
 from pathlib import Path
+import dataclasses
 import firecrown
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model
+from ._types import Model, Frameworks, ConfigGenerator
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
@@ -40,13 +41,12 @@ def add_comment_block(
         config.set(section, comment_line)
 
 
-def create_standard_cosmosis_config(
+def create_config(
     prefix: str,
     factory_path: Path,
     build_parameters: NamedParameters,
     values_path: Path,
     output_path: Path,
-    model_list: list[str],
     use_absolute_path: bool = True,
 ) -> configparser.ConfigParser:
     """Create standard CosmoSIS pipeline configuration.
@@ -56,7 +56,6 @@ def create_standard_cosmosis_config(
     :param build_parameters: Likelihood build parameters
     :param values_path: Path to values.ini file
     :param output_path: Output directory
-    :param model_list: List of model section names
     :param use_absolute_path: Use absolute paths
     :return: Configured ConfigParser
     """
@@ -133,11 +132,6 @@ def create_standard_cosmosis_config(
 
     cfg.set("firecrown_likelihood", "likelihood_source", factory_filename)
     cfg.set("firecrown_likelihood", "require_nonlinear_pk", "True")
-    cfg.set(
-        "firecrown_likelihood",
-        "sampling_parameters_sections",
-        " ".join(model_list),
-    )
 
     for key, value in build_parameters.convert_to_basic_dict().items():
         cfg.set("firecrown_likelihood", key, str(value))
@@ -148,7 +142,21 @@ def create_standard_cosmosis_config(
     return cfg
 
 
-def create_standard_values_config(
+def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
+    """Add model parameters to CosmoSIS configuration.
+
+    :param config: Configuration object (modified in-place)
+    :param models: List of models with parameters
+    """
+    model_list = [model.name for model in models]
+    config.set(
+        "firecrown_likelihood",
+        "sampling_parameters_sections",
+        " ".join(model_list),
+    )
+
+
+def create_values_config(
     models: list[Model] | None = None,
 ) -> configparser.ConfigParser:
     """Create CosmoSIS values.ini with cosmological and model parameters.
@@ -215,3 +223,53 @@ def create_standard_values_config(
                         f"{parameter.default_value:.3g}",
                     )
     return config
+
+
+@dataclasses.dataclass
+class CosmosisConfigGenerator(ConfigGenerator):
+    """Generates CosmoSIS .ini configuration files.
+
+    Creates two files:
+    - cosmosis_{prefix}.ini: Pipeline configuration
+    - cosmosis_{prefix}_values.ini: Parameter values and priors
+    """
+
+    framework = Frameworks.COSMOSIS
+
+    def write_config(self) -> None:
+        """Write CosmoSIS configuration."""
+        assert self.factory_path is not None
+        assert self.build_parameters is not None
+
+        cosmosis_ini = self.output_path / f"cosmosis_{self.prefix}.ini"
+        values_ini = self.output_path / f"cosmosis_{self.prefix}_values.ini"
+
+        cfg = create_config(
+            prefix=self.prefix,
+            factory_path=self.factory_path,
+            build_parameters=self.build_parameters,
+            values_path=values_ini,
+            output_path=self.output_path,
+            use_absolute_path=self.use_absolute_path,
+        )
+        add_models(cfg, self.models)
+
+        values_cfg = create_values_config(self.models)
+
+        with values_ini.open("w") as fp:
+            values_cfg.write(fp)
+        with cosmosis_ini.open("w") as fp:
+            cfg.write(fp)
+
+    def customize_config(self, section: str, comment: str) -> None:
+        """Add custom comment block to configuration section.
+
+        :param section: Configuration section name
+        :param comment: Comment text to add
+        """
+        cosmosis_ini = self.output_path / f"cosmosis_{self.prefix}.ini"
+        cfg = configparser.ConfigParser()
+        cfg.read(cosmosis_ini)
+        add_comment_block(cfg, section, comment)
+        with cosmosis_ini.open("w") as fp:
+            cfg.write(fp)

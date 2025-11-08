@@ -8,16 +8,17 @@ This is an internal module. Use the public API from firecrown.app.analysis.
 
 from pathlib import Path
 import os
+import dataclasses
 
 from numcosmo_py import Ncm, Nc
 import numcosmo_py.external.cosmosis as nc_cosmosis
 from numcosmo_py.helper import register_model_class
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model
+from ._types import Model, Frameworks, ConfigGenerator
 
 
-def create_standard_numcosmo_config(
+def create_config(
     factory_path: Path,
     build_parameters: NamedParameters,
     model_list: list[str],
@@ -83,7 +84,7 @@ def create_standard_numcosmo_config(
     return experiment
 
 
-def add_models_to_numcosmo_config(
+def add_models(
     config: Ncm.ObjDictStr,
     models: list[Model],
 ) -> Ncm.ObjDictStr:
@@ -116,3 +117,37 @@ def add_models_to_numcosmo_config(
         mset.set(FirecrownModel())
 
     return model_builders
+
+
+@dataclasses.dataclass
+class NumCosmoConfigGenerator(ConfigGenerator):
+    """Generates NumCosmo YAML configuration files.
+
+    Creates two files:
+    - numcosmo_{prefix}.yaml: Experiment configuration
+    - numcosmo_{prefix}.builders.yaml: Model builders
+    """
+
+    framework = Frameworks.NUMCOSMO
+
+    def write_config(self) -> None:
+        """Write NumCosmo configuration."""
+        assert self.factory_path is not None
+        assert self.build_parameters is not None
+
+        Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
+
+        config = create_config(
+            factory_path=self.factory_path,
+            build_parameters=self.build_parameters,
+            model_list=[f"firecrown_{self.prefix}"],
+            use_absolute_path=self.use_absolute_path,
+        )
+        model_builders = add_models(config, self.models)
+
+        numcosmo_yaml = self.output_path / f"numcosmo_{self.prefix}.yaml"
+        builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
+
+        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+        ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())
+        ser.dict_str_to_yaml_file(model_builders, builders_file.as_posix())

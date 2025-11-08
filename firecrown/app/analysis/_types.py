@@ -7,6 +7,11 @@ This is an internal module. Use the public API from firecrown.app.analysis.
 
 import dataclasses
 from enum import StrEnum
+from abc import ABC, abstractmethod
+from pathlib import Path
+from typing import ClassVar
+
+from firecrown.likelihood.likelihood import NamedParameters
 
 
 class Frameworks(StrEnum):
@@ -46,3 +51,58 @@ class Model:
     name: str
     parameters: list[Parameter]
     description: str
+
+
+@dataclasses.dataclass
+class ConfigGenerator(ABC):
+    """Abstract base for framework-specific configuration generators.
+
+    Uses a builder pattern with phased state management:
+    1. Create generator with output settings
+    2. Add components: add_sacc(), add_factory(), add_build_parameters(), add_models()
+    3. Write configuration: write_config()
+
+    Subclasses implement write_config() to generate framework-specific files.
+    """
+
+    framework: ClassVar[Frameworks]
+    output_path: Path
+    prefix: str
+    use_absolute_path: bool
+
+    sacc_path: Path | None = None
+    factory_path: Path | None = None
+    build_parameters: NamedParameters | None = None
+    models: list[Model] = dataclasses.field(default_factory=list)
+
+    def add_sacc(self, sacc_path: Path) -> None:
+        """Add SACC data file path to generator state.
+
+        :param sacc_path: Path to SACC data file
+        """
+        self.sacc_path = sacc_path
+
+    def add_factory(self, factory_path: Path) -> None:
+        """Add factory file path to generator state.
+
+        :param factory_path: Path to likelihood factory Python file
+        """
+        self.factory_path = factory_path
+
+    def add_build_parameters(self, build_parameters: NamedParameters) -> None:
+        """Add build parameters to generator state.
+
+        :param build_parameters: Parameters for likelihood initialization
+        """
+        self.build_parameters = build_parameters
+
+    def add_models(self, models: list[Model]) -> None:
+        """Add model parameters to generator state.
+
+        :param models: List of models with sampling parameters
+        """
+        self.models = models
+
+    @abstractmethod
+    def write_config(self) -> None:
+        """Write framework-specific configuration files using accumulated state."""
