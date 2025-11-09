@@ -6,6 +6,7 @@ for cosmological parameter estimation with Firecrown likelihoods.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
+from typing import assert_never
 from pathlib import Path
 import os
 import dataclasses
@@ -46,8 +47,8 @@ def _create_mapping(
                 distance_max_z=distance_max_z,
                 reltol=reltol,
             )
-        case _:
-            raise ValueError(f"Unsupported cosmology: {required_cosmology}")
+        case _ as unreachable:
+            assert_never(unreachable)
 
 
 def _create_factory(
