@@ -13,10 +13,12 @@ from enum import Enum
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from ..analysis import (
     AnalysisBuilder,
     Model,
     Parameter,
+    FrameworkCosmology,
     download_from_url,
     copy_template,
 )
@@ -37,6 +39,9 @@ class FactoryType(str, Enum):
     TATT = "tatt"
     HMIA = "hmia"
     PK_MODIFIER = "pk_modifier"
+    YAML_DEFAULT = "yaml_default"
+    YAML_PURE_CCL = "yaml_pure_ccl"
+    YAML_MU_SIGMA = "yaml_mu_sigma"
 
 
 FACTORY_TYPE_HELP = """\
@@ -44,11 +49,14 @@ Factory implementation to use for generating the DES Y1 3x2pt analysis.
 The factory determines how the analysis pipeline will be constructed.
 
 Available options:\n
-  - standard:    uses the default implementation template\n
-  - pt:          uses perturbation theory calculations template\n
-  - tatt:        uses TATT intrinsic alignment model\n
-  - hmia:        uses halo model intrinsic alignment\n
-  - pk_modifier: uses power spectrum modifier for baryonic effects
+  - standard:       uses the default implementation template\n
+  - pt:             uses perturbation theory calculations template\n
+  - tatt:           uses TATT intrinsic alignment model\n
+  - hmia:           uses halo model intrinsic alignment\n
+  - pk_modifier:    uses power spectrum modifier for baryonic effects\n
+  - yaml_default:   uses YAML-based factory configuration (default)\n
+  - yaml_pure_ccl:  uses YAML-based factory with pure CCL mode\n
+  - yaml_mu_sigma:  uses YAML-based factory with mu-sigma ISiTGR mode
 """
 
 
@@ -88,6 +96,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
             show_default=True,
             case_sensitive=False,
             rich_help_panel="Factory Options",
+            metavar="FACTORY_TYPE",
         ),
     ] = FactoryType.STANDARD
 
@@ -107,12 +116,24 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         return sacc_full_file
 
     def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
-        """Copy DES Y1 3x2pt factory template.
+        """Copy DES Y1 3x2pt factory template or generate YAML config.
 
         :param output_path: Output directory
         :param _sacc: SACC file path (unused)
-        :return: Path to factory file
+        :return: Path to factory file or YAML config
         """
+        # YAML-based factories
+        if self.factory_type in (
+            FactoryType.YAML_DEFAULT,
+            FactoryType.YAML_PURE_CCL,
+            FactoryType.YAML_MU_SIGMA,
+        ):
+            output_file = output_path / f"{self.prefix}_experiment.yaml"
+            yaml_content = self._get_yaml_config()
+            output_file.write_text(yaml_content)
+            return output_file
+
+        # Python template-based factories
         template: ModuleType
         output_file = output_path / f"{self.prefix}_factory.py"
         match self.factory_type:
@@ -132,13 +153,59 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         copy_template(template, output_file)
         return output_file
 
+    def _get_yaml_config(self) -> str:
+        """Generate YAML configuration content based on factory type.
+
+        :return: YAML configuration as string
+        """
+        base_config = """---
+
+data_source:
+  sacc_data_file: sacc_data.sacc
+
+two_point_factory:
+  correlation_space: real
+  number_counts_factories:
+    - type_source: default
+      global_systematics: []
+      per_bin_systematics:
+        - type: PhotoZShiftFactory
+  weak_lensing_factories:
+    - type_source: default
+      global_systematics:
+        - alphag: 1
+          type: LinearAlignmentSystematicFactory
+      per_bin_systematics:
+        - type: MultiplicativeShearBiasFactory
+        - type: PhotoZShiftFactory
+"""
+
+        if self.factory_type == FactoryType.YAML_PURE_CCL:
+            return base_config + "\nccl_factory:\n  creation_mode: 'pure_ccl_mode'\n"
+        elif self.factory_type == FactoryType.YAML_MU_SIGMA:
+            return base_config + "\nccl_factory:\n  creation_mode: 'mu_sigma_isitgr'\n"
+        else:
+            return base_config
+
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
-        """Return SACC file path for likelihood construction.
+        """Return build parameters for likelihood construction.
 
         :param sacc_path: Path to the SACC data file
-        :return: Named parameters with sacc_file path
+        :return: Named parameters with sacc_file and optional config path
         """
-        return NamedParameters({"sacc_file": self.get_sacc_file(sacc_path)})
+        params = {"sacc_file": self.get_sacc_file(sacc_path)}
+
+        # For YAML-based factories, add likelihood_config parameter
+        if self.factory_type in (
+            FactoryType.YAML_DEFAULT,
+            FactoryType.YAML_PURE_CCL,
+            FactoryType.YAML_MU_SIGMA,
+        ):
+            params["likelihood_config"] = str(
+                sacc_path.parent / f"{self.prefix}_experiment.yaml"
+            )
+
+        return NamedParameters(params)
 
     def get_models(self) -> list[Model]:
         """Define DES Y1 systematic and bias parameters.
@@ -162,9 +229,50 @@ class ExampleDESY13x2pt(AnalysisBuilder):
             ("ia_a_2h", r"A_{\mathrm{IA},2h}", 0.0, 2.0, 0.1, 0.0, 1.0, True),
             ("src0_delta_z", r"\delta z_0", -0.05, 0.05, 0.005, 0.0, 0.0, True),
         ]
-        params_pk_mod: list[tuple[str, str, float, float, float, float, float, bool]] = [
+        params_pk_mod: list[
+            tuple[str, str, float, float, float, float, float, bool]
+        ] = [
             ("f_bar", r"f_{\mathrm{bar}}", 0.0, 1.0, 0.05, 0.0, 0.5, True),
             ("src0_delta_z", r"\delta z_0", -0.05, 0.05, 0.005, 0.0, 0.0, True),
+        ]
+        params_yaml_mu_sigma: list[
+            tuple[str, str, float, float, float, float, float, bool]
+        ] = [
+            ("mg_musigma_mu", r"\mu_{\mathrm{MG}}", 0.8, 1.2, 0.05, 0.0, 1.0, True),
+            (
+                "mg_musigma_sigma",
+                r"\sigma_{\mathrm{MG}}",
+                0.8,
+                1.2,
+                0.05,
+                0.0,
+                1.0,
+                True,
+            ),
+            ("mg_musigma_c1", r"c_1", 0.8, 1.2, 0.05, 0.0, 1.0, False),
+            ("mg_musigma_c2", r"c_2", 0.8, 1.2, 0.05, 0.0, 1.0, False),
+            ("mg_musigma_lambda0", r"\lambda_0", 0.8, 1.2, 0.05, 0.0, 1.0, False),
+            ("ia_bias", r"\beta_{\mathrm{ia}}", -5.0, 5.0, 0.05, 0.0, 0.5, True),
+            ("alphaz", r"\alpha_z", -5.0, 5.0, 0.05, 0.0, 0.0, True),
+            ("z_piv", r"z_{\mathrm{pivot}}", 0.0, 1.0, 0.05, 0.0, 0.62, False),
+            ("lens0_bias", r"b_0", 0.8, 3.0, 0.05, 0.0, 1.4, True),
+            ("lens1_bias", r"b_1", 0.8, 3.0, 0.05, 0.0, 1.6, True),
+            ("lens2_bias", r"b_2", 0.8, 3.0, 0.05, 0.0, 1.6, True),
+            ("lens3_bias", r"b_3", 0.8, 3.0, 0.05, 0.0, 1.9, True),
+            ("lens4_bias", r"b_4", 0.8, 3.0, 0.05, 0.0, 2.0, True),
+            ("lens0_delta_z", r"\delta z_0", -0.05, 0.05, 0.05, 0.0, 0.001, True),
+            ("lens1_delta_z", r"\delta z_1", -0.05, 0.05, 0.05, 0.0, 0.002, True),
+            ("lens2_delta_z", r"\delta z_2", -0.05, 0.05, 0.05, 0.0, 0.001, True),
+            ("lens3_delta_z", r"\delta z_3", -0.05, 0.05, 0.05, 0.0, 0.003, True),
+            ("lens4_delta_z", r"\delta z_4", -0.05, 0.05, 0.05, 0.0, 0.000, True),
+            ("src0_mult_bias", r"m_0", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src1_mult_bias", r"m_1", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src2_mult_bias", r"m_2", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src3_mult_bias", r"m_3", 0.001, 0.012, 0.05, 0.0, 0.012, True),
+            ("src0_delta_z", r"\delta z_0", -0.05, 0.05, 0.005, 0.0, -0.001, True),
+            ("src1_delta_z", r"\delta z_1", -0.05, 0.05, 0.005, 0.0, -0.019, True),
+            ("src2_delta_z", r"\delta z_2", -0.05, 0.05, 0.005, 0.0, 0.009, True),
+            ("src3_delta_z", r"\delta z_3", -0.05, 0.05, 0.005, 0.0, -0.018, True),
         ]
         params_std: list[tuple[str, str, float, float, float, float, float, bool]] = [
             ("ia_bias", r"\beta_{\mathrm{ia}}", -5.0, 5.0, 0.05, 0.0, 0.5, True),
@@ -216,6 +324,10 @@ class ExampleDESY13x2pt(AnalysisBuilder):
                 parameters = params_pk_mod
             case FactoryType.PT:
                 parameters = params_pt
+            case FactoryType.YAML_MU_SIGMA:
+                parameters = params_yaml_mu_sigma
+            case FactoryType.YAML_DEFAULT | FactoryType.YAML_PURE_CCL:
+                parameters = params_std
             case FactoryType.STANDARD:
                 parameters = params_std
             case _:
@@ -227,3 +339,9 @@ class ExampleDESY13x2pt(AnalysisBuilder):
                 parameters=[Parameter(*param) for param in parameters],
             )
         ]
+
+    def required_cosmology(self):
+        return FrameworkCosmology.NONLINEAR
+
+    def amplitude_parameter(self):
+        return PoweSpecAmplitudeParameter.SIGMA8

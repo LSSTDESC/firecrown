@@ -10,10 +10,12 @@ from pathlib import Path
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from ..analysis import (
     AnalysisBuilder,
     Model,
     Parameter,
+    FrameworkCosmology,
     download_from_url,
     copy_template,
 )
@@ -98,3 +100,9 @@ class ExampleSupernovaSRD(AnalysisBuilder):
                 ],
             )
         ]
+
+    def required_cosmology(self):
+        return FrameworkCosmology.BACKGROUND
+
+    def amplitude_parameter(self):
+        return PoweSpecAmplitudeParameter.AS
