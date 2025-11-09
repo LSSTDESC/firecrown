@@ -3,8 +3,8 @@
 import os
 
 import pyccl as ccl
-import sacc
 
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
@@ -46,7 +46,7 @@ def build_likelihood(
     sacc_path = os.path.expanduser(
         os.path.expandvars("${FIRECROWN_DIR}/examples/cluster_number_counts/")
     )
-    sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
+    sacc_data = load_sacc_data(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
     cluster_abundance = get_cluster_abundance()

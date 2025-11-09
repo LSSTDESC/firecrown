@@ -1,7 +1,6 @@
 """Example of a Firecrown DES Y1 likelihood using the halo model."""
 
 import os
-import sacc
 import pyccl as ccl
 
 import firecrown.likelihood.weak_lensing as wl
@@ -10,6 +9,7 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood.likelihood import Likelihood
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames
@@ -22,7 +22,7 @@ sacc_file = os.path.expanduser(
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Build the likelihood for the DES Y1 cosmic shear data TATT."""
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(sacc_file)
+    sacc_data = load_sacc_data(sacc_file)
 
     # Define sources
     n_source = 1
@@ -93,7 +93,7 @@ def run_likelihood() -> None:
     likelihood, tools = build_likelihood(None)
 
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(sacc_file)
+    sacc_data = load_sacc_data(sacc_file)
 
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz  # pylint: disable-msg=invalid-name

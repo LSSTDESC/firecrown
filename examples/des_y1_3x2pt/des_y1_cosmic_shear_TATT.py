@@ -1,10 +1,10 @@
 """Example of a Firecrown likelihood using the DES Y1 cosmic shear data TATT."""
 
 import os
-import sacc
 import pyccl as ccl
 import pyccl.nl_pt
 
+from firecrown.likelihood.factories import load_sacc_data
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
@@ -23,7 +23,7 @@ SACC_FILE = os.path.expanduser(
 def build_likelihood(_) -> tuple[Likelihood, ModelingTools]:
     """Build the likelihood for the DES Y1 cosmic shear data TATT."""
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(SACC_FILE)
+    sacc_data = load_sacc_data(SACC_FILE)
 
     n_source = 1
     stats = define_stats(n_source)
@@ -99,7 +99,7 @@ def run_likelihood() -> None:
     likelihood, tools = build_likelihood(None)
 
     # Load sacc file
-    sacc_data = sacc.Sacc.load_fits(SACC_FILE)
+    sacc_data = load_sacc_data(SACC_FILE)
 
     src0_tracer = sacc_data.get_tracer("src0")
     z, nz = src0_tracer.z, src0_tracer.nz
