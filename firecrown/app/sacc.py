@@ -3,7 +3,6 @@
 from typing import Annotated
 import dataclasses
 from pathlib import Path
-import sacc
 import typer
 from rich.table import Table
 from rich.panel import Panel
@@ -19,6 +18,7 @@ from firecrown import metadata_types as mdt
 from firecrown import metadata_functions as mdf
 from firecrown import data_types as dtype
 from firecrown import data_functions as dfunc
+from firecrown.likelihood import factories
 from . import logging
 
 
@@ -64,7 +64,7 @@ class Load(logging.Logging):
         try:
             if not self.sacc_file.exists():
                 raise typer.BadParameter(f"SACC file not found: {self.sacc_file}")
-            self.sacc_data = sacc.Sacc.load_fits(self.sacc_file.as_posix())
+            self.sacc_data = factories.load_sacc_data(self.sacc_file.as_posix())
         except Exception as e:
             self.console.print(f"[bold red]Failed to load SACC file:[/bold red] {e}")
             raise

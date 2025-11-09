@@ -13,12 +13,11 @@ systematic effects, and analysis requirements.
 import itertools as it
 from pathlib import Path
 
-import sacc
-
 import firecrown.likelihood.weak_lensing as wl
 from firecrown.likelihood.two_point import TwoPoint
 from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 
@@ -78,7 +77,7 @@ def build_likelihood(params: NamedParameters):
     # Validate and load SACC data file
     if not sacc_file.exists():
         raise FileNotFoundError(f"SACC file not found: {sacc_file}")
-    sacc_data = sacc.Sacc.load_fits(sacc_file)
+    sacc_data = load_sacc_data(sacc_file)
 
     # Initialize likelihood with SACC data
     # - Two-point functions extract relevant power spectra
