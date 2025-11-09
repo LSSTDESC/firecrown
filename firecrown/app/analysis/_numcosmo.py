@@ -15,26 +15,46 @@ import numcosmo_py.external.cosmosis as nc_cosmosis
 from numcosmo_py.helper import register_model_class
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model, Frameworks, ConfigGenerator
+from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology
 
 
 def _create_mapping(
-    distance_max_z: float, reltol: float
-) -> nc_cosmosis.MappingNumCosmo:
+    distance_max_z: float, reltol: float, required_cosmology: FrameworkCosmology
+) -> nc_cosmosis.MappingNumCosmo | None:
     """Create NumCosmo mapping configuration."""
-    return nc_cosmosis.create_numcosmo_mapping(
-        matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
-        nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.HALOFIT,
-        distance_max_z=distance_max_z,
-        reltol=reltol,
-    )
+    match required_cosmology:
+        case FrameworkCosmology.NONE:
+            return nc_cosmosis.MappingNumCosmo()
+        case FrameworkCosmology.BACKGROUND:
+            return nc_cosmosis.create_numcosmo_mapping(
+                matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.NONE,
+                nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.NONE,
+                distance_max_z=distance_max_z,
+                reltol=reltol,
+            )
+        case FrameworkCosmology.LINEAR:
+            return nc_cosmosis.create_numcosmo_mapping(
+                matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
+                nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.NONE,
+                distance_max_z=distance_max_z,
+                reltol=reltol,
+            )
+        case FrameworkCosmology.NONLINEAR:
+            return nc_cosmosis.create_numcosmo_mapping(
+                matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
+                nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.HALOFIT,
+                distance_max_z=distance_max_z,
+                reltol=reltol,
+            )
+        case _:
+            raise ValueError(f"Unsupported cosmology: {required_cosmology}")
 
 
 def _create_factory(
     factory_path: Path,
     factory_filename: str,
     build_parameters: NamedParameters,
-    mapping: nc_cosmosis.MappingNumCosmo,
+    mapping: nc_cosmosis.MappingNumCosmo | None,
     model_list: list[str],
 ) -> NumCosmoFactory:
     """Create NumCosmo factory instance."""
@@ -82,6 +102,7 @@ def create_config(
     build_parameters: NamedParameters,
     model_list: list[str],
     use_absolute_path: bool = False,
+    required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
     distance_max_z: float = 4.0,
     reltol: float = 1e-7,
 ) -> Ncm.ObjDictStr:
@@ -91,6 +112,7 @@ def create_config(
     :param build_parameters: Likelihood build parameters
     :param model_list: List of model names
     :param use_absolute_path: Use absolute paths
+    :param use_cosmology: Include CLASS computation
     :param distance_max_z: Maximum redshift for distance calculations
     :param reltol: Relative tolerance for calculations
     :return: NumCosmo experiment object
@@ -100,7 +122,7 @@ def create_config(
         factory_path.absolute().as_posix() if use_absolute_path else factory_path.name
     )
 
-    mapping = _create_mapping(distance_max_z, reltol)
+    mapping = _create_mapping(distance_max_z, reltol, required_cosmology)
     numcosmo_factory = _create_factory(
         factory_path, factory_filename, build_parameters, mapping, model_list
     )
@@ -175,6 +197,7 @@ class NumCosmoConfigGenerator(ConfigGenerator):
             build_parameters=self.build_parameters,
             model_list=model_list,
             use_absolute_path=self.use_absolute_path,
+            required_cosmology=self.required_cosmology,
         )
         model_builders = add_models(config, self.models)
 

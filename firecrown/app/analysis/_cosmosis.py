@@ -6,13 +6,16 @@ proper formatting, comments, and parameter sections.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
+from typing import assert_never
 import configparser
 import textwrap
 from pathlib import Path
 import dataclasses
 import firecrown
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model, Frameworks, ConfigGenerator
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
+
+from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
@@ -48,6 +51,7 @@ def create_config(
     values_path: Path,
     output_path: Path,
     use_absolute_path: bool = True,
+    required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser:
     """Create standard CosmoSIS pipeline configuration.
 
@@ -57,6 +61,7 @@ def create_config(
     :param values_path: Path to values.ini file
     :param output_path: Output directory
     :param use_absolute_path: Use absolute paths
+    :param use_cosmology: Include CAMB in pipeline
     :return: Configured ConfigParser
     """
     cfg = configparser.ConfigParser(
@@ -84,9 +89,16 @@ def create_config(
         "verbosity": "0",
     }
 
+    use_cosmology = required_cosmology != FrameworkCosmology.NONE
+
     # Pipeline configuration
+    if use_cosmology:
+        modules = "consistency camb firecrown_likelihood"
+    else:
+        modules = "consistency firecrown_likelihood"
+
     cfg["pipeline"] = {
-        "modules": "consistency camb firecrown_likelihood",
+        "modules": modules,
         "values": values_filename,
         "likelihoods": "firecrown",
         "debug": "T",
@@ -98,18 +110,26 @@ def create_config(
         "file": "${CSL_DIR}/utility/consistency/consistency_interface.py",
     }
 
-    # CAMB module
-    cfg["camb"] = {
-        "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
-        "mode": "all",
-        "lmax": "2500",
-        "feedback": "0",
-        "zmin": "0.0",
-        "zmax": "4.00",
-        "nz": "100",
-        "kmax": "50.0",
-        "nk": "1000",
-    }
+    if use_cosmology:
+        if required_cosmology == FrameworkCosmology.BACKGROUND:
+            cfg["camb"] = {
+                "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
+                "mode": "background",
+                "feedback": "0",
+            }
+        else:
+            # CAMB module
+            cfg["camb"] = {
+                "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
+                "mode": "all",
+                "lmax": "2500",
+                "feedback": "0",
+                "zmin": "0.0",
+                "zmax": "4.00",
+                "nz": "100",
+                "kmax": "50.0",
+                "nk": "1000",
+            }
 
     # Firecrown likelihood module
     cfg["firecrown_likelihood"] = {}
@@ -131,7 +151,8 @@ def create_config(
     )
 
     cfg.set("firecrown_likelihood", "likelihood_source", factory_filename)
-    cfg.set("firecrown_likelihood", "require_nonlinear_pk", "True")
+    if required_cosmology == FrameworkCosmology.NONLINEAR:
+        cfg.set("firecrown_likelihood", "require_nonlinear_pk", "True")
 
     for key, value in build_parameters.convert_to_basic_dict().items():
         cfg.set("firecrown_likelihood", key, str(value))
@@ -171,6 +192,7 @@ def format_float(value: float) -> str:
 
 def create_values_config(
     models: list[Model] | None = None,
+    amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8,
 ) -> configparser.ConfigParser:
     """Create CosmoSIS values.ini with cosmological and model parameters.
 
@@ -204,10 +226,17 @@ def create_values_config(
     config.set(section, "omega_k", "0.0")
     config.set(section, "tau", "0.08")
     config.set(section, "n_s", "0.971")
-    config.set(section, "sigma_8", "0.801")
     config.set(section, "h0", "0.682")
     config.set(section, "w", "-1.0")
     config.set(section, "wa", "0.0")
+
+    match amplitude_parameter:
+        case PoweSpecAmplitudeParameter.SIGMA8:
+            config.set(section, "sigma_8", "0.801")
+        case PoweSpecAmplitudeParameter.AS:
+            config.set(section, "A_s", "2.0e-9")
+        case _ as unreachable:
+            assert_never(unreachable)
 
     # Add firecrown parameters
     if models:
@@ -265,10 +294,11 @@ class CosmosisConfigGenerator(ConfigGenerator):
             values_path=values_ini,
             output_path=self.output_path,
             use_absolute_path=self.use_absolute_path,
+            required_cosmology=self.required_cosmology,
         )
         add_models(cfg, self.models)
 
-        values_cfg = create_values_config(self.models)
+        values_cfg = create_values_config(self.models, self.amplitude_parameter)
 
         with values_ini.open("w") as fp:
             values_cfg.write(fp)

@@ -14,11 +14,13 @@ without notice. Only use the public API exported in __all__.
 """
 
 from ._analysis_builder import AnalysisBuilder
-from ._types import Frameworks, Model, Parameter, ConfigGenerator
-from ._config_generator import get_generator
-from ._cosmosis import CosmosisConfigGenerator
-from ._numcosmo import NumCosmoConfigGenerator
-from ._cobaya import CobayaConfigGenerator
+from ._types import Frameworks, Model, Parameter, ConfigGenerator, FrameworkCosmology
+from ._config_generator import (
+    get_generator,
+    CosmosisConfigGenerator,
+    NumCosmoConfigGenerator,
+    CobayaConfigGenerator,
+)
 from ._download import download_from_url, copy_template
 
 __all__ = [
@@ -31,6 +33,7 @@ __all__ = [
     "CosmosisConfigGenerator",
     "NumCosmoConfigGenerator",
     "CobayaConfigGenerator",
+    "FrameworkCosmology",
     "download_from_url",
     "copy_template",
 ]

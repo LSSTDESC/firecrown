@@ -12,7 +12,7 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.likelihood.factories import load_sacc_data
 from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
+from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 
 def build_likelihood(params: NamedParameters):
@@ -57,7 +57,14 @@ def build_likelihood(params: NamedParameters):
     # Create modeling tools with CCL factory for cosmological calculations
     # - CCLFactory provides cosmological calculations via Core Cosmology Library
     # - require_nonlinear_pk=False for supernova analysis
-    modeling_tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=False))
+    # - amplitude_parameter=AS for supernova analysis (sigma8 would require the linear
+    #   power spectrum)
+    modeling_tools = ModelingTools(
+        ccl_factory=CCLFactory(
+            require_nonlinear_pk=False,
+            amplitude_parameter=PoweSpecAmplitudeParameter.AS,
+        )
+    )
 
     # Return likelihood and modeling tools for parameter estimation
     # - likelihood: Configured ConstGaussian likelihood with SACC data

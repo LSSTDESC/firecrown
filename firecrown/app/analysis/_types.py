@@ -12,6 +12,7 @@ from pathlib import Path
 from typing import ClassVar
 
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 
 
 class Frameworks(StrEnum):
@@ -20,6 +21,15 @@ class Frameworks(StrEnum):
     COBAYA = "cobaya"
     COSMOSIS = "cosmosis"
     NUMCOSMO = "numcosmo"
+
+
+class FrameworkCosmology(StrEnum):
+    """Cosmology required by the analysis framework."""
+
+    NONE = "none"
+    BACKGROUND = "background"
+    LINEAR = "linear"
+    NONLINEAR = "nonlinear"
 
 
 @dataclasses.dataclass
@@ -69,6 +79,8 @@ class ConfigGenerator(ABC):
     output_path: Path
     prefix: str
     use_absolute_path: bool
+    required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR
+    amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8
 
     sacc_path: Path | None = None
     factory_path: Path | None = None

@@ -6,7 +6,7 @@ parameter estimation with Firecrown likelihoods.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-from typing import Dict, Any
+from typing import Any, assert_never
 from pathlib import Path
 import dataclasses
 
@@ -14,7 +14,8 @@ import yaml
 
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model, Frameworks, ConfigGenerator
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
+from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology
 
 
 def create_config(
@@ -22,13 +23,16 @@ def create_config(
     build_parameters: NamedParameters,
     likelihood_name: str,
     use_absolute_path: bool = False,
-) -> Dict[str, Any]:
+    required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
+    amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8,
+) -> dict[str, Any]:
     """Create standard Cobaya configuration dictionary.
 
     :param factory_path: Path to factory file
     :param build_parameters: Likelihood build parameters
     :param likelihood_name: Likelihood name in config
     :param use_absolute_path: Use absolute paths
+    :param use_cosmology: Include CAMB theory
     :return: Cobaya configuration dictionary
     """
 
@@ -37,41 +41,55 @@ def create_config(
     else:
         factory_filename = factory_path.name
 
-    config = {
-        "theory": {
+    config: dict[str, Any] = {}
+
+    use_cosmology = required_cosmology != FrameworkCosmology.NONE
+
+    if use_cosmology:
+        config["theory"] = {
             "camb": {
                 "stop_at_error": True,
                 "extra_args": {"num_massive_neutrinos": 1, "halofit_version": "mead"},
             }
-        },
-        "likelihood": {
-            likelihood_name: {
-                "input_style": "CAMB",
-                "external": firecrown.connector.cobaya.likelihood.LikelihoodConnector,
-                "firecrownIni": factory_filename,
-                "build_parameters": build_parameters.convert_to_basic_dict(),
-            }
-        },
-        "params": _get_standard_params(),
-        "sampler": {"evaluate": None},
-        "stop_at_error": True,
-        "output": "output",
-        "packages_path": None,
-        "test": False,
-        "debug": False,
+        }
+
+    config["likelihood"] = {
+        likelihood_name: {
+            "external": firecrown.connector.cobaya.likelihood.LikelihoodConnector,
+            "firecrownIni": factory_filename,
+            "build_parameters": build_parameters.convert_to_basic_dict(),
+        }
     }
+
+    if use_cosmology:
+        config["likelihood"][likelihood_name]["input_style"] = "CAMB"
+
+    config.update(
+        {
+            "params": (
+                _get_standard_params(amplitude_parameter) if use_cosmology else {}
+            ),
+            "sampler": {"evaluate": None},
+            "stop_at_error": True,
+            "output": "output",
+            "packages_path": None,
+            "test": False,
+            "debug": False,
+        }
+    )
 
     return config
 
 
-def _get_standard_params() -> Dict[str, Any]:
+def _get_standard_params(
+    amplitude_parameter: PoweSpecAmplitudeParameter,
+) -> dict[str, Any]:
     """Generate standard cosmological parameter configuration.
 
     :return: Dictionary of parameter configurations
     """
     params = {
         # Cosmological parameters
-        "sigma8": {"prior": {"min": 0.7, "max": 1.2}, "ref": 0.801, "proposal": 0.801},
         "ombh2": 0.01860496,
         "omch2": {
             "prior": {"min": 0.05, "max": 0.2},
@@ -87,11 +105,26 @@ def _get_standard_params() -> Dict[str, Any]:
         "w": -1.0,
         "wa": 0.0,
     }
+    match amplitude_parameter:
+        case PoweSpecAmplitudeParameter.SIGMA8:
+            params["sigma8"] = {
+                "prior": {"min": 0.7, "max": 1.2},
+                "ref": 0.801,
+                "proposal": 0.801,
+            }
+        case PoweSpecAmplitudeParameter.AS:
+            params["As"] = {
+                "prior": {"min": 0.8e-9, "max": 5.0e-9},
+                "ref": 2.0e-9,
+                "proposal": 2.0e-9,
+            }
+        case _ as unreachable:
+            assert_never(unreachable)
 
     return params
 
 
-def add_models(config: Dict[str, Any], models: list[Model]) -> None:
+def add_models(config: dict[str, Any], models: list[Model]) -> None:
     """Add model parameters to Cobaya configuration dictionary.
 
     :param config: Configuration dictionary (modified in-place)
@@ -111,7 +144,7 @@ def add_models(config: Dict[str, Any], models: list[Model]) -> None:
                 config["params"][parameter.name] = parameter.default_value
 
 
-def write_config(config: Dict[str, Any], output_file: Path) -> None:
+def write_config(config: dict[str, Any], output_file: Path) -> None:
     """Write Cobaya configuration dictionary to YAML file.
 
     :param config: Configuration dictionary
@@ -143,6 +176,8 @@ class CobayaConfigGenerator(ConfigGenerator):
             build_parameters=self.build_parameters,
             use_absolute_path=self.use_absolute_path,
             likelihood_name=likelihood_name,
+            required_cosmology=self.required_cosmology,
+            amplitude_parameter=self.amplitude_parameter,
         )
         add_models(cfg, self.models)
         write_config(cfg, cobaya_yaml)

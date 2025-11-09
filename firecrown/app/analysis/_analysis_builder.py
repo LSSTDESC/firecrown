@@ -15,7 +15,8 @@ from rich.rule import Rule
 
 import typer
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Frameworks, Model
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
+from ._types import Frameworks, Model, FrameworkCosmology
 from ._config_generator import get_generator
 from .. import logging
 
@@ -88,7 +89,12 @@ class AnalysisBuilder(logging.Logging):
 
         # Create config generator
         generator = get_generator(
-            self.target_framework, self.output_path, self.prefix, self.use_absolute_path
+            self.target_framework,
+            self.output_path,
+            self.prefix,
+            self.use_absolute_path,
+            self.required_cosmology(),
+            self.amplitude_parameter(),
         )
 
         self.console.print(Rule("[bold cyan]Phase 1: Generating SACC data[/bold cyan]"))
@@ -169,6 +175,20 @@ class AnalysisBuilder(logging.Logging):
         """Define model parameters for sampling.
 
         :return: List of models with their parameters (priors, bounds, etc.)
+        """
+
+    @abstractmethod
+    def required_cosmology(self) -> FrameworkCosmology:
+        """Return whether the analysis requires a cosmology.
+
+        :return: True if the analysis requires a cosmology, False otherwise
+        """
+
+    @abstractmethod
+    def amplitude_parameter(self) -> PoweSpecAmplitudeParameter:
+        """Return the amplitude parameter for the analysis.
+
+        :return: The amplitude parameter for the analysis
         """
 
     def get_sacc_file(self, sacc_path: Path) -> str:

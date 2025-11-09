@@ -16,8 +16,15 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from ...utils import upper_triangle_indices
-from ..analysis import AnalysisBuilder, Model, Parameter, copy_template
+from ..analysis import (
+    AnalysisBuilder,
+    Model,
+    Parameter,
+    FrameworkCosmology,
+    copy_template,
+)
 from . import _cosmic_shear_template
 
 
@@ -423,3 +430,9 @@ class ExampleCosmicShear(AnalysisBuilder):
                 parameters=[Parameter(*param) for param in parameters],
             )
         ]
+
+    def required_cosmology(self):
+        return FrameworkCosmology.NONLINEAR
+
+    def amplitude_parameter(self):
+        return PoweSpecAmplitudeParameter.SIGMA8
