@@ -354,7 +354,6 @@ class MappingCosmoSIS(Mapping):
         h = cosmosis_params.get_float("h0")
         Omega_b = cosmosis_params.get_float("omega_b")
         Omega_c = cosmosis_params.get_float("omega_c")
-        sigma8 = cosmosis_params.get_float("sigma_8", 0.8)
         n_s = cosmosis_params.get_float("n_s", 0.96)
         Omega_k = cosmosis_params.get_float("omega_k")
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
@@ -366,11 +365,18 @@ class MappingCosmoSIS(Mapping):
         w0 = cosmosis_params.get_float("w")
         wa = cosmosis_params.get_float("wa")
 
+        A_s, sigma8 = None, None
+        if "sigma_8" in cosmosis_params:
+            sigma8 = cosmosis_params.get_float("sigma_8")
+        if "a_s" in cosmosis_params:
+            A_s = cosmosis_params.get_float("a_s")
+
         # pylint: disable=duplicate-code
         self.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
             h=h,
+            A_s=A_s,
             sigma8=sigma8,
             n_s=n_s,
             Omega_k=Omega_k,
