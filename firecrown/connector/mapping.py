@@ -177,7 +177,10 @@ class Mapping:
         self.h = h
 
         if (A_s is not None) == (sigma8 is not None):
-            raise ValueError("Exactly one of A_s and sigma8 must be supplied")
+            raise ValueError(
+                f"Exactly one of A_s and sigma8 must be supplied "
+                f"(A_s={A_s}, sigma8={sigma8})"
+            )
         if sigma8 is None:
             self.A_s = A_s
             self.sigma8 = None
@@ -370,6 +373,10 @@ class MappingCosmoSIS(Mapping):
             sigma8 = cosmosis_params.get_float("sigma_8")
         if "a_s" in cosmosis_params:
             A_s = cosmosis_params.get_float("a_s")
+        # When CosmoSIS runs CAMB it always put sigma8 in the datablock, in this case
+        # we prefer sigma8 to be backward compatible.
+        if sigma8 and A_s:
+            A_s = None
 
         # pylint: disable=duplicate-code
         self.set_params(
