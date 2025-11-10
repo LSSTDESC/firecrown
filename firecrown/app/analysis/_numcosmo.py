@@ -6,6 +6,7 @@ for cosmological parameter estimation with Firecrown likelihoods.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
+from multiprocessing import Process
 from typing import assert_never
 from pathlib import Path
 import os
@@ -174,6 +175,43 @@ def add_models(
     return model_builders
 
 
+def _write_config_worker(
+    args: tuple[Path, str, NamedParameters, list[Model], bool, FrameworkCosmology, str],
+) -> int:
+    """Worker executed in a fresh process."""
+    (
+        output_path,
+        factory_source,
+        build_parameters,
+        models,
+        use_absolute_path,
+        required_cosmology,
+        prefix,
+    ) = args
+
+    Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
+
+    model_list = [m.name for m in models]
+    config = create_config(
+        output_path,
+        factory_source=factory_source,
+        build_parameters=build_parameters,
+        model_list=model_list,
+        use_absolute_path=use_absolute_path,
+        required_cosmology=required_cosmology,
+    )
+    model_builders = add_models(config, models)
+
+    numcosmo_yaml = output_path / f"numcosmo_{prefix}.yaml"
+    builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
+
+    ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
+    ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())
+    ser.dict_str_to_yaml_file(model_builders, builders_file.as_posix())
+
+    return 0
+
+
 @dataclasses.dataclass
 class NumCosmoConfigGenerator(ConfigGenerator):
     """Generates NumCosmo YAML configuration files.
@@ -186,27 +224,22 @@ class NumCosmoConfigGenerator(ConfigGenerator):
     framework = Frameworks.NUMCOSMO
 
     def write_config(self) -> None:
-        """Write NumCosmo configuration."""
-        assert self.factory_source is not None
-        assert self.build_parameters is not None
-
-        Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
-
-        model_list = [model.name for model in self.models]
-
-        config = create_config(
+        """Write NumCosmo configuration in a fresh subprocess (safe for GType)."""
+        args = (
             self.output_path,
-            factory_source=self.factory_source,
-            build_parameters=self.build_parameters,
-            model_list=model_list,
-            use_absolute_path=self.use_absolute_path,
-            required_cosmology=self.required_cosmology,
+            self.factory_source,
+            self.build_parameters,
+            self.models,
+            self.use_absolute_path,
+            self.required_cosmology,
+            self.prefix,
         )
-        model_builders = add_models(config, self.models)
 
-        numcosmo_yaml = self.output_path / f"numcosmo_{self.prefix}.yaml"
-        builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
+        proc = Process(target=_write_config_worker, args=(args,))
+        proc.start()
+        proc.join()
 
-        ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
-        ser.dict_str_to_yaml_file(config, numcosmo_yaml.as_posix())
-        ser.dict_str_to_yaml_file(model_builders, builders_file.as_posix())
+        if proc.exitcode != 0:
+            raise RuntimeError(
+                f"write_config() subprocess failed with exit code {proc.exitcode}"
+            )
