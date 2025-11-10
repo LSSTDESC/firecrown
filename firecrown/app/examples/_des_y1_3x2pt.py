@@ -4,7 +4,7 @@ Generates a complete DES Y1 3x2pt analysis example with cosmic shear,
 galaxy-galaxy lensing, and galaxy clustering.
 """
 
-from typing import ClassVar, Annotated
+from typing import ClassVar, Annotated, assert_never
 from types import ModuleType
 from dataclasses import dataclass
 from pathlib import Path
@@ -31,7 +31,7 @@ from . import (
 )
 
 
-class FactoryType(str, Enum):
+class DESY1FactoryType(str, Enum):
     """Available factory implementations for DES Y1 3x2pt analysis."""
 
     STANDARD = "standard"
@@ -90,7 +90,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
     ] = "des_y1_3x2pt"
 
     factory_type: Annotated[
-        FactoryType,
+        DESY1FactoryType,
         typer.Option(
             help=FACTORY_TYPE_HELP,
             show_default=True,
@@ -98,7 +98,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
             rich_help_panel="Factory Options",
             metavar="FACTORY_TYPE",
         ),
-    ] = FactoryType.STANDARD
+    ] = DESY1FactoryType.STANDARD
 
     def generate_sacc(self, output_path: Path) -> Path:
         """Download DES Y1 3x2pt data from LSST DESC repository.
@@ -124,9 +124,9 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         """
         # YAML-based factories
         if self.factory_type in (
-            FactoryType.YAML_DEFAULT,
-            FactoryType.YAML_PURE_CCL,
-            FactoryType.YAML_MU_SIGMA,
+            DESY1FactoryType.YAML_DEFAULT,
+            DESY1FactoryType.YAML_PURE_CCL,
+            DESY1FactoryType.YAML_MU_SIGMA,
         ):
             output_file = output_path / f"{self.prefix}_experiment.yaml"
             yaml_content = self._get_yaml_config(sacc)
@@ -137,15 +137,15 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         template: ModuleType
         output_file = output_path / f"{self.prefix}_factory.py"
         match self.factory_type:
-            case FactoryType.PT:
+            case DESY1FactoryType.PT:
                 template = _des_y1_3x2pt_pt_template
-            case FactoryType.TATT:
+            case DESY1FactoryType.TATT:
                 template = _des_y1_cosmic_shear_tatt_template
-            case FactoryType.HMIA:
+            case DESY1FactoryType.HMIA:
                 template = _des_y1_cosmic_shear_hmia_template
-            case FactoryType.PK_MODIFIER:
+            case DESY1FactoryType.PK_MODIFIER:
                 template = _des_y1_cosmic_shear_pk_modifier_template
-            case FactoryType.STANDARD:
+            case DESY1FactoryType.STANDARD:
                 template = _des_y1_3x2pt_template
             case _:
                 raise ValueError(f"Unknown factory type: {self.factory_type}")
@@ -183,7 +183,7 @@ two_point_factory:
         - type: PhotoZShiftFactory
 """
 
-        if self.factory_type == FactoryType.YAML_PURE_CCL:
+        if self.factory_type == DESY1FactoryType.YAML_PURE_CCL:
             return (
                 base_config
                 + """
@@ -192,7 +192,7 @@ ccl_factory:
   require_nonlinear_pk: true
 """
             )
-        if self.factory_type == FactoryType.YAML_MU_SIGMA:
+        if self.factory_type == DESY1FactoryType.YAML_MU_SIGMA:
             return (
                 base_config
                 + """
@@ -220,9 +220,9 @@ ccl_factory:
 
         # For YAML-based factories, add likelihood_config parameter
         if self.factory_type in (
-            FactoryType.YAML_DEFAULT,
-            FactoryType.YAML_PURE_CCL,
-            FactoryType.YAML_MU_SIGMA,
+            DESY1FactoryType.YAML_DEFAULT,
+            DESY1FactoryType.YAML_PURE_CCL,
+            DESY1FactoryType.YAML_MU_SIGMA,
         ):
             experiment_path = sacc_path.parent / f"{self.prefix}_experiment.yaml"
             params["likelihood_config"] = (
@@ -361,33 +361,33 @@ ccl_factory:
         ]
 
         match self.factory_type:
-            case FactoryType.TATT:
+            case DESY1FactoryType.TATT:
                 parameters = params_tatt
-            case FactoryType.HMIA:
+            case DESY1FactoryType.HMIA:
                 parameters = params_hmia
-            case FactoryType.PK_MODIFIER:
+            case DESY1FactoryType.PK_MODIFIER:
                 parameters = params_pk_mod
-            case FactoryType.PT:
+            case DESY1FactoryType.PT:
                 parameters = params_pt
-            case FactoryType.YAML_MU_SIGMA:
+            case DESY1FactoryType.YAML_MU_SIGMA:
                 parameters = params_yaml_mu_sigma
-            case FactoryType.YAML_DEFAULT | FactoryType.YAML_PURE_CCL:
+            case DESY1FactoryType.YAML_DEFAULT | DESY1FactoryType.YAML_PURE_CCL:
                 parameters = params_std
-            case FactoryType.STANDARD:
+            case DESY1FactoryType.STANDARD:
                 parameters = params_std
-            case _:
-                raise ValueError(f"Unknown factory type: {self.factory_type}")
+            case _ as unreachable:
+                assert_never(unreachable)
 
         models: list[Model] = []
         if self.factory_type in (
-            FactoryType.YAML_PURE_CCL,
-            FactoryType.YAML_MU_SIGMA,
+            DESY1FactoryType.YAML_PURE_CCL,
+            DESY1FactoryType.YAML_MU_SIGMA,
         ):
             # Pure CCL and mu-sigma factories required CCL cosmological parameters
             models.append(self._get_ccl_cosmo_params())
 
         firecrown_model = Model(
-            name=f"firecrown_{self.prefix}",
+            name=f"firecrown_{self.prefix}_{self.factory_type.value}",
             description="DES Y1 3x2pt parameters",
             parameters=[Parameter(*param) for param in parameters],
         )
@@ -397,8 +397,8 @@ ccl_factory:
 
     def required_cosmology(self):
         if self.factory_type in (
-            FactoryType.YAML_PURE_CCL,
-            FactoryType.YAML_MU_SIGMA,
+            DESY1FactoryType.YAML_PURE_CCL,
+            DESY1FactoryType.YAML_MU_SIGMA,
         ):
             return FrameworkCosmology.NONE
         return FrameworkCosmology.NONLINEAR
