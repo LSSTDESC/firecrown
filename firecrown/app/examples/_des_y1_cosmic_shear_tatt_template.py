@@ -15,6 +15,8 @@ from firecrown.likelihood.gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 
+# pylint: disable=duplicate-code
+
 
 def build_likelihood(params: NamedParameters) -> tuple[ConstGaussian, ModelingTools]:
     """Build DES Y1 cosmic shear likelihood with TATT IA model.

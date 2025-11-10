@@ -17,6 +17,7 @@ from firecrown.ccl_factory import CCLFactory
 from firecrown.parameters import register_new_updatable_parameter
 
 
+# pylint: disable-next=invalid-name
 class vanDaalen19Baryonfication(PowerspectrumModifier):
     """Power spectrum modifier for van Daalen et al. 2019 baryon model."""
 
