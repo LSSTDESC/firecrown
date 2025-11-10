@@ -195,6 +195,8 @@ def fixture_sample_with_cosmo() -> DataBlock:
         "omega_nu": 0.0,
         "w": -1.0,
         "wa": 0.0,
+        "sigma_8": 0.8,
+        "n_s": 0.96,
     }
     for name, val in params.items():
         result.put_double("cosmological_parameters", name, val)
