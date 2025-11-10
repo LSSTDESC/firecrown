@@ -83,7 +83,7 @@ class ConfigGenerator(ABC):
     amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8
 
     sacc_path: Path | None = None
-    factory_path: Path | None = None
+    factory_source: str | Path | None = None
     build_parameters: NamedParameters | None = None
     models: list[Model] = dataclasses.field(default_factory=list)
 
@@ -94,12 +94,12 @@ class ConfigGenerator(ABC):
         """
         self.sacc_path = sacc_path
 
-    def add_factory(self, factory_path: Path) -> None:
+    def add_factory(self, factory_source: Path | str) -> None:
         """Add factory file path to generator state.
 
         :param factory_path: Path to likelihood factory Python file
         """
-        self.factory_path = factory_path
+        self.factory_source = factory_source
 
     def add_build_parameters(self, build_parameters: NamedParameters) -> None:
         """Add build parameters to generator state.
@@ -118,3 +118,10 @@ class ConfigGenerator(ABC):
     @abstractmethod
     def write_config(self) -> None:
         """Write framework-specific configuration files using accumulated state."""
+
+
+def get_path_str(path: Path | str, use_absolute: bool) -> str:
+    """Convert Path or str to appropriate path string based on use_absolute flag"""
+    if isinstance(path, str):
+        return path
+    return path.absolute().as_posix() if use_absolute else path.name

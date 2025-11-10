@@ -15,7 +15,7 @@ import firecrown
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 
-from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology
+from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology, get_path_str
 
 
 def format_comment(text: str, width: int = 88) -> list[str]:
@@ -46,7 +46,7 @@ def add_comment_block(
 
 def create_config(
     prefix: str,
-    factory_path: Path,
+    factory_source: str | Path,
     build_parameters: NamedParameters,
     values_path: Path,
     output_path: Path,
@@ -67,12 +67,9 @@ def create_config(
     cfg = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation(), allow_no_value=True
     )
-    if use_absolute_path:
-        factory_filename = factory_path.absolute().as_posix()
-        values_filename = values_path.absolute().as_posix()
-    else:
-        factory_filename = factory_path.name
-        values_filename = values_path.name
+
+    factory_source_str = get_path_str(factory_source, use_absolute_path)
+    values_filename = get_path_str(values_path, use_absolute_path)
 
     # Runtime configuration
     cfg["runtime"] = {
@@ -150,7 +147,7 @@ def create_config(
         f"{firecrown_path}/connector/cosmosis/likelihood.py",
     )
 
-    cfg.set("firecrown_likelihood", "likelihood_source", factory_filename)
+    cfg.set("firecrown_likelihood", "likelihood_source", factory_source_str)
     if required_cosmology == FrameworkCosmology.NONLINEAR:
         cfg.set("firecrown_likelihood", "require_nonlinear_pk", "True")
 
@@ -281,7 +278,7 @@ class CosmosisConfigGenerator(ConfigGenerator):
 
     def write_config(self) -> None:
         """Write CosmoSIS configuration."""
-        assert self.factory_path is not None
+        assert self.factory_source is not None
         assert self.build_parameters is not None
 
         cosmosis_ini = self.output_path / f"cosmosis_{self.prefix}.ini"
@@ -289,7 +286,7 @@ class CosmosisConfigGenerator(ConfigGenerator):
 
         cfg = create_config(
             prefix=self.prefix,
-            factory_path=self.factory_path,
+            factory_source=self.factory_source,
             build_parameters=self.build_parameters,
             values_path=values_ini,
             output_path=self.output_path,

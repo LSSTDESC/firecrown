@@ -15,11 +15,11 @@ import yaml
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood.likelihood import NamedParameters
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter
-from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology
+from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology, get_path_str
 
 
 def create_config(
-    factory_path: Path,
+    factory_source: str | Path,
     build_parameters: NamedParameters,
     likelihood_name: str,
     use_absolute_path: bool = False,
@@ -35,11 +35,7 @@ def create_config(
     :param use_cosmology: Include CAMB theory
     :return: Cobaya configuration dictionary
     """
-
-    if use_absolute_path:
-        factory_filename = factory_path.absolute().as_posix()
-    else:
-        factory_filename = factory_path.name
+    factory_source_str = get_path_str(factory_source, use_absolute_path)
 
     config: dict[str, Any] = {}
 
@@ -56,7 +52,7 @@ def create_config(
     config["likelihood"] = {
         likelihood_name: {
             "external": firecrown.connector.cobaya.likelihood.LikelihoodConnector,
-            "firecrownIni": factory_filename,
+            "firecrownIni": factory_source_str,
             "build_parameters": build_parameters.convert_to_basic_dict(),
         }
     }
@@ -165,14 +161,14 @@ class CobayaConfigGenerator(ConfigGenerator):
 
     def write_config(self) -> None:
         """Write Cobaya configuration."""
-        assert self.factory_path is not None
+        assert self.factory_source is not None
         assert self.build_parameters is not None
 
         cobaya_yaml = self.output_path / f"cobaya_{self.prefix}.yaml"
         likelihood_name = f"firecrown_{self.prefix}"
 
         cfg = create_config(
-            factory_path=self.factory_path,
+            factory_source=self.factory_source,
             build_parameters=self.build_parameters,
             use_absolute_path=self.use_absolute_path,
             likelihood_name=likelihood_name,

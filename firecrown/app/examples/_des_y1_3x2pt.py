@@ -115,7 +115,7 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         )
         return sacc_full_file
 
-    def generate_factory(self, output_path: Path, _sacc: Path) -> Path:
+    def generate_factory(self, output_path: Path, sacc: Path) -> str | Path:
         """Copy DES Y1 3x2pt factory template or generate YAML config.
 
         :param output_path: Output directory
@@ -129,9 +129,9 @@ class ExampleDESY13x2pt(AnalysisBuilder):
             FactoryType.YAML_MU_SIGMA,
         ):
             output_file = output_path / f"{self.prefix}_experiment.yaml"
-            yaml_content = self._get_yaml_config()
+            yaml_content = self._get_yaml_config(sacc)
             output_file.write_text(yaml_content)
-            return output_file
+            return "firecrown.likelihood.factories.build_two_point_likelihood"
 
         # Python template-based factories
         template: ModuleType
@@ -153,15 +153,18 @@ class ExampleDESY13x2pt(AnalysisBuilder):
         copy_template(template, output_file)
         return output_file
 
-    def _get_yaml_config(self) -> str:
+    def _get_yaml_config(self, sacc: Path) -> str:
         """Generate YAML configuration content based on factory type.
 
         :return: YAML configuration as string
         """
-        base_config = """---
+        sacc_path_str = (
+            sacc.absolute().as_posix() if self.use_absolute_path else sacc.name
+        )
+        base_config = f"""---
 
 data_source:
-  sacc_data_file: sacc_data.sacc
+  sacc_data_file: {sacc_path_str}
 
 two_point_factory:
   correlation_space: real
@@ -181,11 +184,31 @@ two_point_factory:
 """
 
         if self.factory_type == FactoryType.YAML_PURE_CCL:
-            return base_config + "\nccl_factory:\n  creation_mode: 'pure_ccl_mode'\n"
-        elif self.factory_type == FactoryType.YAML_MU_SIGMA:
-            return base_config + "\nccl_factory:\n  creation_mode: 'mu_sigma_isitgr'\n"
-        else:
-            return base_config
+            return (
+                base_config
+                + """
+ccl_factory:
+  creation_mode: 'pure_ccl_mode'
+  require_nonlinear_pk: true
+"""
+            )
+        if self.factory_type == FactoryType.YAML_MU_SIGMA:
+            return (
+                base_config
+                + """
+ccl_factory:
+  creation_mode: 'mu_sigma_isitgr'
+  require_nonlinear_pk: true
+"""
+            )
+
+        return (
+            base_config
+            + """
+ccl_factory:
+  require_nonlinear_pk: true
+"""
+        )
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
         """Return build parameters for likelihood construction.
@@ -201,8 +224,11 @@ two_point_factory:
             FactoryType.YAML_PURE_CCL,
             FactoryType.YAML_MU_SIGMA,
         ):
-            params["likelihood_config"] = str(
-                sacc_path.parent / f"{self.prefix}_experiment.yaml"
+            experiment_path = sacc_path.parent / f"{self.prefix}_experiment.yaml"
+            params["likelihood_config"] = (
+                experiment_path.absolute().as_posix()
+                if self.use_absolute_path
+                else experiment_path.name
             )
 
         return NamedParameters(params)
@@ -341,6 +367,11 @@ two_point_factory:
         ]
 
     def required_cosmology(self):
+        if self.factory_type in (
+            FactoryType.YAML_PURE_CCL,
+            FactoryType.YAML_MU_SIGMA,
+        ):
+            return FrameworkCosmology.NONE
         return FrameworkCosmology.NONLINEAR
 
     def amplitude_parameter(self):
