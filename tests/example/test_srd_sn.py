@@ -35,7 +35,7 @@ def fixture_sn_srd_example(
     return tmp_path, target_framework
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_srd_sn_run(sn_srd_example):
     output_path, framework = sn_srd_example
     match framework:

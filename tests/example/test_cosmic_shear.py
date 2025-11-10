@@ -35,7 +35,7 @@ def fixture_cosmic_shear_example(
     return tmp_path, target_framework
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_cosmic_shear_run(cosmic_shear_example):
     output_path, framework = cosmic_shear_example
     match framework:

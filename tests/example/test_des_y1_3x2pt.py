@@ -45,7 +45,7 @@ def fixture_des_y1_3x2pt_example(
     return tmp_path, target_framework
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_des_y1_3x2pt_run(des_y1_3x2pt_example):
     output_path, framework = des_y1_3x2pt_example
     match framework:
