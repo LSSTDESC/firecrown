@@ -238,7 +238,7 @@ class NumCosmoConfigGenerator(ConfigGenerator):
 
         proc = ctx.Process(target=_write_config_worker, args=(args,))
         proc.start()
-        proc.join(timeout=30.0)
+        proc.join(timeout=300.0)
 
         if proc.exitcode != 0:
             raise RuntimeError(
