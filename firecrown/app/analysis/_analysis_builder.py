@@ -107,9 +107,13 @@ class AnalysisBuilder(logging.Logging):
         self.console.print(Rule("[bold cyan]Phase 2: Generating factory[/bold cyan]"))
         factory = self.generate_factory(self.output_path, sacc)
         generator.add_factory(factory)
-        self.console.print(
-            f"[green]OK[/green] Factory: {factory.relative_to(self.output_path)}\n"
+
+        factory_str = (
+            factory.relative_to(self.output_path)
+            if isinstance(factory, Path)
+            else factory
         )
+        self.console.print(f"[green]OK[/green] Factory: {factory_str}\n")
 
         self.console.print(
             Rule("[bold cyan]Phase 3: Preparing build parameters[/bold cyan]")
@@ -154,7 +158,7 @@ class AnalysisBuilder(logging.Logging):
         """
 
     @abstractmethod
-    def generate_factory(self, output_path: Path, sacc: Path) -> Path:
+    def generate_factory(self, output_path: Path, sacc: Path) -> str | Path:
         """Generate the likelihood factory Python file.
 
         :param output_path: Directory where files should be created

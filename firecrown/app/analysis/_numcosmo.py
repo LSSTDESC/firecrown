@@ -16,7 +16,7 @@ import numcosmo_py.external.cosmosis as nc_cosmosis
 from numcosmo_py.helper import register_model_class
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology
+from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology, get_path_str
 
 
 def _create_mapping(
@@ -25,7 +25,7 @@ def _create_mapping(
     """Create NumCosmo mapping configuration."""
     match required_cosmology:
         case FrameworkCosmology.NONE:
-            return nc_cosmosis.MappingNumCosmo()
+            return None
         case FrameworkCosmology.BACKGROUND:
             return nc_cosmosis.create_numcosmo_mapping(
                 matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.NONE,
@@ -52,18 +52,18 @@ def _create_mapping(
 
 
 def _create_factory(
-    factory_path: Path,
-    factory_filename: str,
+    output_path: Path,
+    factory_source_str: str,
     build_parameters: NamedParameters,
     mapping: nc_cosmosis.MappingNumCosmo | None,
     model_list: list[str],
 ) -> NumCosmoFactory:
     """Create NumCosmo factory instance."""
     previous_dir = os.getcwd()
-    os.chdir(factory_path.parent)
+    os.chdir(output_path)
 
     numcosmo_factory = NumCosmoFactory(
-        factory_filename,
+        factory_source_str,
         build_parameters,
         mapping=mapping,
         model_list=model_list,
@@ -99,7 +99,8 @@ def _setup_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
 
 
 def create_config(
-    factory_path: Path,
+    output_path: Path,
+    factory_source: str | Path,
     build_parameters: NamedParameters,
     model_list: list[str],
     use_absolute_path: bool = False,
@@ -119,13 +120,11 @@ def create_config(
     :return: NumCosmo experiment object
     """
     experiment = Ncm.ObjDictStr()
-    factory_filename = (
-        factory_path.absolute().as_posix() if use_absolute_path else factory_path.name
-    )
+    factory_source_str = get_path_str(factory_source, use_absolute_path)
 
     mapping = _create_mapping(distance_max_z, reltol, required_cosmology)
     numcosmo_factory = _create_factory(
-        factory_path, factory_filename, build_parameters, mapping, model_list
+        output_path, factory_source_str, build_parameters, mapping, model_list
     )
 
     mset = _setup_model_set()
@@ -186,7 +185,7 @@ class NumCosmoConfigGenerator(ConfigGenerator):
 
     def write_config(self) -> None:
         """Write NumCosmo configuration."""
-        assert self.factory_path is not None
+        assert self.factory_source is not None
         assert self.build_parameters is not None
 
         Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
@@ -194,7 +193,8 @@ class NumCosmoConfigGenerator(ConfigGenerator):
         model_list = [model.name for model in self.models]
 
         config = create_config(
-            factory_path=self.factory_path,
+            self.output_path,
+            factory_source=self.factory_source,
             build_parameters=self.build_parameters,
             model_list=model_list,
             use_absolute_path=self.use_absolute_path,
