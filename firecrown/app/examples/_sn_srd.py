@@ -102,7 +102,9 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         ]
 
     def required_cosmology(self):
+        """Return cosmology requirement level."""
         return FrameworkCosmology.BACKGROUND
 
     def amplitude_parameter(self):
+        """Return power spectrum amplitude parameter."""
         return PoweSpecAmplitudeParameter.AS

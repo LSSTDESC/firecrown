@@ -401,6 +401,7 @@ class ExampleCosmicShear(AnalysisBuilder):
         return output_file
 
     def get_build_parameters(self, sacc_path: Path) -> NamedParameters:
+        """Return SACC file path for likelihood construction."""
         return NamedParameters(
             {"sacc_file": self.get_sacc_file(sacc_path), "n_bins": self.n_bins}
         )
@@ -432,7 +433,9 @@ class ExampleCosmicShear(AnalysisBuilder):
         ]
 
     def required_cosmology(self):
+        """Return cosmology requirement level."""
         return FrameworkCosmology.NONLINEAR
 
     def amplitude_parameter(self):
+        """Return power spectrum amplitude parameter."""
         return PoweSpecAmplitudeParameter.SIGMA8

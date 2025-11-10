@@ -396,6 +396,7 @@ ccl_factory:
         return models
 
     def required_cosmology(self):
+        """Cosmology requirement level."""
         if self.factory_type in (
             DESY1FactoryType.YAML_PURE_CCL,
             DESY1FactoryType.YAML_MU_SIGMA,
@@ -404,4 +405,5 @@ ccl_factory:
         return FrameworkCosmology.NONLINEAR
 
     def amplitude_parameter(self):
+        """Return power spectrum amplitude parameter."""
         return PoweSpecAmplitudeParameter.SIGMA8

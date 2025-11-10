@@ -121,7 +121,7 @@ class ConfigGenerator(ABC):
 
 
 def get_path_str(path: Path | str, use_absolute: bool) -> str:
-    """Convert Path or str to appropriate path string based on use_absolute flag"""
+    """Convert Path or str to appropriate path string based on use_absolute flag."""
     if isinstance(path, str):
         return path
     return path.absolute().as_posix() if use_absolute else path.name
