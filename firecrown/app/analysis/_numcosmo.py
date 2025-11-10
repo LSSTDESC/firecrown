@@ -6,7 +6,6 @@ for cosmological parameter estimation with Firecrown likelihoods.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-from multiprocessing import Process
 from typing import assert_never
 from pathlib import Path
 import os
@@ -225,6 +224,15 @@ class NumCosmoConfigGenerator(ConfigGenerator):
 
     def write_config(self) -> None:
         """Write NumCosmo configuration in a fresh subprocess (safe for GType)."""
+        # It is necessary to import here to avoid problems with multiprocessing
+        # pylint: disable=import-outside-toplevel
+        import multiprocessing as mp
+
+        try:
+            mp.set_start_method("spawn")
+        except RuntimeError:
+            pass
+
         args = (
             self.output_path,
             self.factory_source,
@@ -235,9 +243,9 @@ class NumCosmoConfigGenerator(ConfigGenerator):
             self.prefix,
         )
 
-        proc = Process(target=_write_config_worker, args=(args,))
+        proc = mp.Process(target=_write_config_worker, args=(args,))
         proc.start()
-        proc.join()
+        proc.join(timeout=30.0)
 
         if proc.exitcode != 0:
             raise RuntimeError(
