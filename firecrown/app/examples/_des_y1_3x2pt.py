@@ -233,6 +233,25 @@ ccl_factory:
 
         return NamedParameters(params)
 
+    def _get_ccl_cosmo_params(self) -> Model:
+        return Model(
+            name="firecrown_ccl_cosmo",
+            description="CCL cosmology parameters",
+            parameters=[
+                Parameter("Omega_c", r"\Omega_{c}", 0.20, 0.35, 0.05, 0.0, 0.25, True),
+                Parameter("Omega_b", r"\Omega_{b}", 0.03, 0.06, 0.01, 0.0, 0.05, True),
+                Parameter("h", r"h", 0.60, 0.80, 0.05, 0.0, 0.73, False),
+                Parameter("n_s", r"n_{s}", 0.90, 1.10, 0.05, 0.0, 0.96, False),
+                Parameter("Omega_k", r"\Omega_{k}", -0.2, 0.2, 0.05, 0.0, 0.0, False),
+                Parameter("w0", r"w_{0}", -1.5, -0.5, 0.05, 0.0, -1.0, False),
+                Parameter("wa", r"w_{a}", -1.0, 1.0, 0.05, 0.0, 0.0, False),
+                Parameter("T_CMB", r"T_{CMB}", 2.7, 2.8, 0.05, 0.0, 2.725, False),
+                Parameter("Neff", r"N_{eff}", 3.0, 4.0, 0.05, 0.0, 3.046, False),
+                Parameter("m_nu", r"m_{\nu}", 0.0, 0.1, 0.05, 0.0, 0.0, False),
+                Parameter("sigma8", r"\sigma_{8}", 0.7, 0.9, 0.05, 0.0, 0.8, False),
+            ],
+        )
+
     def get_models(self) -> list[Model]:
         """Define DES Y1 systematic and bias parameters.
 
@@ -358,13 +377,23 @@ ccl_factory:
                 parameters = params_std
             case _:
                 raise ValueError(f"Unknown factory type: {self.factory_type}")
-        return [
-            Model(
-                name=f"firecrown_{self.prefix}",
-                description="DES Y1 3x2pt parameters",
-                parameters=[Parameter(*param) for param in parameters],
-            )
-        ]
+
+        models: list[Model] = []
+        if self.factory_type in (
+            FactoryType.YAML_PURE_CCL,
+            FactoryType.YAML_MU_SIGMA,
+        ):
+            # Pure CCL and mu-sigma factories required CCL cosmological parameters
+            models.append(self._get_ccl_cosmo_params())
+
+        firecrown_model = Model(
+            name=f"firecrown_{self.prefix}",
+            description="DES Y1 3x2pt parameters",
+            parameters=[Parameter(*param) for param in parameters],
+        )
+
+        models.append(firecrown_model)
+        return models
 
     def required_cosmology(self):
         if self.factory_type in (

@@ -63,7 +63,12 @@ def create_config(
     config.update(
         {
             "params": (
-                _get_standard_params(amplitude_parameter) if use_cosmology else {}
+                _get_standard_params(
+                    required_cosmology=required_cosmology,
+                    amplitude_parameter=amplitude_parameter,
+                )
+                if use_cosmology
+                else {}
             ),
             "sampler": {"evaluate": None},
             "stop_at_error": True,
@@ -78,12 +83,15 @@ def create_config(
 
 
 def _get_standard_params(
+    required_cosmology: FrameworkCosmology,
     amplitude_parameter: PoweSpecAmplitudeParameter,
 ) -> dict[str, Any]:
     """Generate standard cosmological parameter configuration.
 
     :return: Dictionary of parameter configurations
     """
+    if required_cosmology == FrameworkCosmology.NONE:
+        return {}
     params = {
         # Cosmological parameters
         "ombh2": 0.01860496,

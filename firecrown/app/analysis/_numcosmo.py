@@ -73,9 +73,11 @@ def _create_factory(
     return numcosmo_factory
 
 
-def _setup_model_set() -> Ncm.MSet:
+def _setup_model_set(required_cosmology: FrameworkCosmology) -> Ncm.MSet:
     """Create and configure model set."""
     mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+    if required_cosmology == FrameworkCosmology.NONE:
+        return mset
 
     cosmo = Nc.HICosmoDECpl()
     cosmo.omega_x2omega_k()
@@ -127,7 +129,7 @@ def create_config(
         output_path, factory_source_str, build_parameters, mapping, model_list
     )
 
-    mset = _setup_model_set()
+    mset = _setup_model_set(required_cosmology)
     dataset = _setup_dataset(numcosmo_factory)
 
     likelihood = Ncm.Likelihood.new(dataset)
