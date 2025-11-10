@@ -183,7 +183,7 @@ jobs:
           fi
       - name: Running integration tests
         shell: bash -l {0}
-        run: python -m pytest -vv -s --integration tests/integration
+        run: python -m pytest -vv -s --integration tests/integration -n auto
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5
