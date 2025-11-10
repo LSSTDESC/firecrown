@@ -147,9 +147,6 @@ def create_config(
     )
 
     cfg.set("firecrown_likelihood", "likelihood_source", factory_source_str)
-    if required_cosmology == FrameworkCosmology.NONLINEAR:
-        cfg.set("firecrown_likelihood", "require_nonlinear_pk", "True")
-
     for key, value in build_parameters.convert_to_basic_dict().items():
         cfg.set("firecrown_likelihood", key, str(value))
 
