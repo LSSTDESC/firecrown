@@ -92,7 +92,7 @@ def create_config(
     if use_cosmology:
         modules = "consistency camb firecrown_likelihood"
     else:
-        modules = "consistency firecrown_likelihood"
+        modules = "firecrown_likelihood"
 
     cfg["pipeline"] = {
         "modules": modules,
@@ -102,12 +102,11 @@ def create_config(
         "timing": "T",
     }
 
-    # Consistency module
-    cfg["consistency"] = {
-        "file": "${CSL_DIR}/utility/consistency/consistency_interface.py",
-    }
-
     if use_cosmology:
+        # Consistency module
+        cfg["consistency"] = {
+            "file": "${CSL_DIR}/utility/consistency/consistency_interface.py",
+        }
         if required_cosmology == FrameworkCosmology.BACKGROUND:
             cfg["camb"] = {
                 "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
@@ -187,22 +186,18 @@ def format_float(value: float) -> str:
     return val
 
 
-def create_values_config(
-    models: list[Model] | None = None,
+def add_cosmological_parameters(
+    config: configparser.ConfigParser,
     amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8,
-) -> configparser.ConfigParser:
-    """Create CosmoSIS values.ini with cosmological and model parameters.
+) -> None:
+    """Add cosmological parameters section to CosmoSIS values config.
 
-    :param models: List of models with parameters
-    :return: Configured ConfigParser
+    :param config: ConfigParser object (modified in-place)
+    :param amplitude_parameter: Power spectrum amplitude parameter
     """
-    config = configparser.ConfigParser(allow_no_value=True)
-
-    # Cosmological parameters section
     section = "cosmological_parameters"
     config.add_section(section)
 
-    # Add top-level comments
     add_comment_block(
         config,
         section,
@@ -235,33 +230,61 @@ def create_values_config(
         case _ as unreachable:
             assert_never(unreachable)
 
-    # Add firecrown parameters
-    if models:
-        for model in models:
-            section = model.name
-            config.add_section(section)
-            add_comment_block(
-                config,
-                section,
-                f"Firecrown parameters for the {model.name} model.",
-            )
 
-            for parameter in model.parameters:
-                if parameter.free:
-                    config.set(
-                        section,
-                        parameter.name,
-                        format_float(parameter.lower_bound)
-                        + " "
-                        + format_float(parameter.default_value)
-                        + " "
-                        + format_float(parameter.upper_bound),
-                    )
-                else:
-                    # CosmoSIS does not like integers
-                    config.set(
-                        section, parameter.name, format_float(parameter.default_value)
-                    )
+def add_firecrown_models(
+    config: configparser.ConfigParser, models: list[Model]
+) -> None:
+    """Add firecrown model parameters to CosmoSIS values config.
+
+    :param config: ConfigParser object (modified in-place)
+    :param models: List of models with parameters
+    """
+    for model in models:
+        section = model.name
+        config.add_section(section)
+        add_comment_block(
+            config,
+            section,
+            f"Firecrown parameters for the {model.name} model.",
+        )
+        for parameter in model.parameters:
+            if parameter.free:
+                config.set(
+                    section,
+                    parameter.name,
+                    format_float(parameter.lower_bound)
+                    + " "
+                    + format_float(parameter.default_value)
+                    + " "
+                    + format_float(parameter.upper_bound),
+                )
+            else:
+                # CosmoSIS does not like integers
+                config.set(
+                    section, parameter.name, format_float(parameter.default_value)
+                )
+
+
+def create_values_config(
+    models: list[Model] | None = None,
+    amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8,
+    required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
+) -> configparser.ConfigParser:
+    """Create CosmoSIS values.ini with cosmological and model parameters.
+
+    :param models: List of models with parameters
+    :param amplitude_parameter: Power spectrum amplitude parameter
+    :param required_cosmology: Cosmology requirement level
+    :return: Configured ConfigParser
+    """
+    config = configparser.ConfigParser(allow_no_value=True)
+
+    if required_cosmology != FrameworkCosmology.NONE:
+        add_cosmological_parameters(config, amplitude_parameter)
+
+    if models:
+        add_firecrown_models(config, models)
+
     return config
 
 
@@ -295,7 +318,9 @@ class CosmosisConfigGenerator(ConfigGenerator):
         )
         add_models(cfg, self.models)
 
-        values_cfg = create_values_config(self.models, self.amplitude_parameter)
+        values_cfg = create_values_config(
+            self.models, self.amplitude_parameter, self.required_cosmology
+        )
 
         with values_ini.open("w") as fp:
             values_cfg.write(fp)
