@@ -40,7 +40,6 @@ def build_likelihood(params: NamedParameters):
     :raises ValueError: If required parameters are missing
     :raises FileNotFoundError: If SACC file does not exist
     """
-
     # Validate required configuration parameters
     if "sacc_file" not in params:
         raise ValueError("sacc_file must be provided in the configuration")

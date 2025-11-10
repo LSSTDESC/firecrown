@@ -33,7 +33,11 @@ def fixture_des_y1_3x2pt_example(
     factory_type: DESY1FactoryType,
     tmp_path: Path,
 ) -> tuple[Path, Frameworks]:
-    """Generate DES Y1 3x2pt example for all frameworks, path types, and factory types."""
+    """Generate DES Y1 3x2pt examples.
+
+    This fixture generates DES Y1 3x2pt examples for all frameworks, path types, and
+    factory types.
+    """
     ExampleDESY13x2pt(
         output_path=tmp_path,
         prefix="des_y1_3x2pt",

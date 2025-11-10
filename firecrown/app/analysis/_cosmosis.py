@@ -171,8 +171,9 @@ def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
 
 
 def format_float(value: float) -> str:
-    """Format a float to 3 significant digits. Add a ".0" if no decimal. This is
-    necessary to work with CosmoSIS.
+    """Format a float to 3 significant digits.
+
+    Add a ".0" if no decimal. This is necessary to work with CosmoSIS.
 
     :param value: Value to format
     :return: Formatted value
