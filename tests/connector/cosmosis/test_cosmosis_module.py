@@ -110,29 +110,38 @@ def fixture_config_with_two_point_real() -> DataBlock:
     return result
 
 
-@pytest.fixture(name="config_with_two_point_harmonic", params=["default", "pure_ccl"])
-def fixture_config_with_two_point_harmonic(request) -> DataBlock:
+@pytest.fixture(name="ccl_mode", params=["default", "pure_ccl"])
+def fixture_ccl_mode(request) -> DataBlock:
+    return request.param
+
+
+@pytest.fixture(name="config_with_two_point_harmonic")
+def fixture_config_with_two_point_harmonic(ccl_mode: str) -> DataBlock:
     result = DataBlock()
     likelihood_file = ""
-    if request.param == "default":
+    sampling_sections = ""
+    if ccl_mode == "default":
         likelihood_file = (
             "${FIRECROWN_DIR}/tests/likelihood/gauss_family/lkscript_two_point.py"
         )
-    elif request.param == "pure_ccl":
+        sampling_sections = "firecrown_two_point_parameters"
+    elif ccl_mode == "pure_ccl":
         likelihood_file = (
             "${FIRECROWN_DIR}/tests/likelihood/"
             "gauss_family/lkscript_two_point_pure_ccl.py"
         )
+        sampling_sections = "firecrown_ccl_parameters firecrown_two_point_parameters"
 
     result.put_string(
         option_section,
         "Likelihood_source",
         expandvars(likelihood_file),
     )
+
     result.put_string(
         option_section,
         "sampling_parameters_sections",
-        "firecrown_two_point_parameters",
+        sampling_sections,
     )
     result.put_string(
         option_section,
@@ -179,7 +188,7 @@ def fixture_firecrown_mod_with_two_point_harmonic(
 
 
 @pytest.fixture(name="sample_with_cosmo")
-def fixture_sample_with_cosmo() -> DataBlock:
+def fixture_sample_with_cosmo(ccl_mode: str) -> DataBlock:
     """Return a DataBlock that contains some cosmological parameters.
 
     It will have one section, cosmological_parameters.
@@ -187,19 +196,37 @@ def fixture_sample_with_cosmo() -> DataBlock:
     and wa.
     """
     result = DataBlock()
-    params = {
-        "h0": 0.83,
-        "omega_b": 0.22,
-        "omega_c": 0.120,
-        "omega_k": 0.0,
-        "omega_nu": 0.0,
-        "w": -1.0,
-        "wa": 0.0,
-        "sigma_8": 0.8,
-        "n_s": 0.96,
-    }
-    for name, val in params.items():
-        result.put_double("cosmological_parameters", name, val)
+    if ccl_mode == "default":
+        params = {
+            "h0": 0.83,
+            "omega_b": 0.22,
+            "omega_c": 0.120,
+            "omega_k": 0.0,
+            "omega_nu": 0.0,
+            "w": -1.0,
+            "wa": 0.0,
+            "sigma_8": 0.8,
+            "n_s": 0.96,
+        }
+        for name, val in params.items():
+            result.put_double("cosmological_parameters", name, val)
+    else:
+        assert ccl_mode == "pure_ccl"
+        params = {
+            "h": 0.83,
+            "Omega_b": 0.22,
+            "Omega_c": 0.120,
+            "Omega_k": 0.0,
+            "w0": -1.0,
+            "wa": 0.0,
+            "sigma8": 0.8,
+            "n_s": 0.96,
+            "Neff": 3.046,
+            "m_nu": 0.0,
+            "T_CMB": 2.7255,
+        }
+        for name, val in params.items():
+            result.put_double("firecrown_ccl_parameters", name, val)
     return result
 
 
@@ -271,12 +298,13 @@ def test_extract_section_raises_on_missing_section(defective_module_config: Data
         _ = extract_section(defective_module_config, "xxx")
 
 
-@pytest.mark.parametrize("config_with_two_point_harmonic", ["pure_ccl"], indirect=True)
+@pytest.mark.parametrize("ccl_mode", ["pure_ccl"], indirect=True)
 def test_wrong_use_of_camb_module_with_ccl_not_in_default_mode(
     config_with_two_point_harmonic,
+    ccl_mode: str,
 ):
     config_with_two_point_harmonic.put_string("camb", "cow", "moo")
-
+    assert ccl_mode == "pure_ccl"
     with pytest.raises(
         RuntimeError,
         match=(
@@ -317,24 +345,32 @@ def test_execute_missing_cosmological_parameters(
         _ = minimal_firecrown_mod.execute(no_cosmo_params)
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_execute_with_cosmo(
-    minimal_firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock
+    minimal_firecrown_mod: FirecrownLikelihood, minimal_sample: DataBlock, ccl_mode: str
 ):
+    assert ccl_mode == "default"
     assert minimal_firecrown_mod.execute(minimal_sample) == 0
     assert minimal_sample[section_names.likelihoods, "firecrown_like"] == -3.0
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_execute_with_derived_parameters(
     firecrown_mod_with_derived_parameters: FirecrownLikelihood,
     minimal_sample: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     assert firecrown_mod_with_derived_parameters.execute(minimal_sample) == 0
     assert minimal_sample.get_double("derived_section", "derived_param0") == 1.0
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_module_init_with_missing_sampling_sections(
     config_with_const_gaussian_missing_sampling_parameters_sections: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     with pytest.raises(RuntimeError, match=r"\['pantheon_M'\]"):
         s = config_with_const_gaussian_missing_sampling_parameters_sections.to_string()
         assert s is not None
@@ -370,9 +406,13 @@ def test_module_init_with_wrong_sampling_sections(
     assert isinstance(mod, FirecrownLikelihood)
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_module_exec_with_wrong_sampling_sections(
-    config_with_wrong_sampling_sections: DataBlock, sample_with_M: DataBlock
+    config_with_wrong_sampling_sections: DataBlock,
+    sample_with_M: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     mod = FirecrownLikelihood(config_with_wrong_sampling_sections)
     with pytest.raises(
         RuntimeError, match="Datablock section `this_is_wrong' does not exist"
@@ -380,35 +420,50 @@ def test_module_exec_with_wrong_sampling_sections(
         _ = mod.execute(sample_with_M)
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_module_exec_missing_parameter_in_sampling_sections(
-    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_without_M: DataBlock
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood,
+    sample_without_M: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     with pytest.raises(RuntimeError, match="`supernova_parameters`") as exc:
         _ = firecrown_mod_with_const_gaussian.execute(sample_without_M)
-    outer_execption = exc.value
-    inner_exception = outer_execption.__cause__
+    outer_exception = exc.value
+    inner_exception = outer_exception.__cause__
     assert isinstance(inner_exception, MissingSamplerParameterError)
     assert inner_exception.parameter == "pantheon_M"
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_module_exec_working(
-    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood,
+    sample_with_M: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     assert firecrown_mod_with_const_gaussian.execute(sample_with_M) == 0
     assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_execute_function(
-    firecrown_mod_with_const_gaussian: FirecrownLikelihood, sample_with_M: DataBlock
+    firecrown_mod_with_const_gaussian: FirecrownLikelihood,
+    sample_with_M: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     assert execute(sample_with_M, firecrown_mod_with_const_gaussian) == 0
     assert sample_with_M.get_double("likelihoods", "firecrown_like") < 0.0
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_module_exec_with_two_point_real(
     firecrown_mod_with_two_point_real: FirecrownLikelihood,
     sample_with_lens0_bias: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     assert firecrown_mod_with_two_point_real.execute(sample_with_lens0_bias) == 0
 
     # CosmoSIS always writes the output to the same section, so we can
@@ -675,10 +730,13 @@ def test_same_param_names_in_different_sections_failure(sample_with_M: DataBlock
         )
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_resetting_after_exception_in_log_likelihood(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_with_M: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     msg = "Test exception in log-likelihood"
     warn_msg = (
         "Exception during log-likelihood evaluation for CosmoSIS; "
@@ -702,10 +760,13 @@ def test_resetting_after_exception_in_log_likelihood(
     assert sample_with_M2.get_double("likelihoods", "firecrown_like") < 0.0
 
 
+@pytest.mark.parametrize("ccl_mode", ["default"], indirect=True)
 def test_gaussfamily_special_case(
     firecrown_mod_with_const_gaussian: FirecrownLikelihood,
     sample_with_M: DataBlock,
+    ccl_mode: str,
 ):
+    assert ccl_mode == "default"
     msg = "Error CCL_ERROR_SPLINE: fake_ccl_.c:119;"
     warn_msg = f"CCL error:.*\n.*{msg}"
 
