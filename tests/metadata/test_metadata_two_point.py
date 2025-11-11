@@ -7,8 +7,8 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
+    _type_to_sacc_string_harmonic as harmonic,
+    _type_to_sacc_string_real as real,
     Clusters,
     CMB,
     Galaxies,

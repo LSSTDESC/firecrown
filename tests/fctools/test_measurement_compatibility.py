@@ -19,10 +19,10 @@ from firecrown.fctools.measurement_compatibility import (
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Measurement,
-    measurement_is_compatible_harmonic,
-    measurement_is_compatible_real,
-    measurement_supports_harmonic,
-    measurement_supports_real,
+    _measurement_is_compatible_harmonic,
+    _measurement_is_compatible_real,
+    _measurement_supports_harmonic,
+    _measurement_supports_real,
 )
 
 from . import match_wrapped
@@ -49,7 +49,7 @@ class TestDiscoverMeasurementsBySpace:
 
         # All real measurements should support real space
         for m in real_measurements:
-            assert measurement_supports_real(m), f"{m} should support real space"
+            assert _measurement_supports_real(m), f"{m} should support real space"
 
     def test_harmonic_measurements_support_harmonic_space(self):
         """Test that all harmonic measurements support harmonic space."""
@@ -57,7 +57,7 @@ class TestDiscoverMeasurementsBySpace:
 
         # All harmonic measurements should support harmonic space
         for m in harmonic_measurements:
-            assert measurement_supports_harmonic(
+            assert _measurement_supports_harmonic(
                 m
             ), f"{m} should support harmonic space"
 
@@ -86,7 +86,7 @@ class TestGenerateCompatiblePairs:
         real_measurements, _ = discover_measurements_by_space()
 
         pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
 
         # Should return a list of tuples
@@ -99,7 +99,7 @@ class TestGenerateCompatiblePairs:
         _, harmonic_measurements = discover_measurements_by_space()
 
         pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         # Should return a list of tuples
@@ -112,12 +112,12 @@ class TestGenerateCompatiblePairs:
         real_measurements, _ = discover_measurements_by_space()
 
         pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
 
         # Verify each pair is compatible
         for m1, m2 in pairs:
-            assert measurement_is_compatible_real(
+            assert _measurement_is_compatible_real(
                 m1, m2
             ), f"{m1} and {m2} should be compatible"
 
@@ -126,7 +126,7 @@ class TestGenerateCompatiblePairs:
         real_measurements, _ = discover_measurements_by_space()
 
         pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
 
         # All measurements in pairs should be from the input list
@@ -136,7 +136,7 @@ class TestGenerateCompatiblePairs:
 
     def test_empty_input_returns_empty_pairs(self):
         """Test that empty measurement list returns empty pairs."""
-        pairs = generate_compatible_pairs([], measurement_is_compatible_real)
+        pairs = generate_compatible_pairs([], _measurement_is_compatible_real)
 
         assert pairs == []
 
@@ -147,10 +147,10 @@ class TestGenerateCompatiblePairs:
         if real_measurements:
             single = [real_measurements[0]]
 
-            pairs = generate_compatible_pairs(single, measurement_is_compatible_real)
+            pairs = generate_compatible_pairs(single, _measurement_is_compatible_real)
 
             # Should test the measurement with itself
-            if measurement_is_compatible_real(single[0], single[0]):
+            if _measurement_is_compatible_real(single[0], single[0]):
                 assert len(pairs) == 1
                 assert pairs[0] == (single[0], single[0])
             else:
@@ -202,7 +202,7 @@ class TestPrintCompatiblePairs:
         console = Console()
         real_measurements, _ = discover_measurements_by_space()
         pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
 
         print_compatible_pairs(console, "real-space", pairs, False)
@@ -216,7 +216,7 @@ class TestPrintCompatiblePairs:
         console = Console()
         real_measurements, _ = discover_measurements_by_space()
         pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
 
         print_compatible_pairs(console, "real-space", pairs, True)
@@ -247,10 +247,10 @@ class TestPrintEfficiencyGains:
         console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
         harmonic_pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
@@ -267,10 +267,10 @@ class TestPrintEfficiencyGains:
         console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
         harmonic_pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
@@ -294,10 +294,10 @@ class TestPrintSummaryStats:
         console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
         harmonic_pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         print_summary_stats(
@@ -321,10 +321,10 @@ class TestPrintSummaryStats:
         console = Console()
         real_measurements, harmonic_measurements = discover_measurements_by_space()
         real_pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
         harmonic_pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         print_summary_stats(
@@ -544,7 +544,7 @@ class TestIntegration:
 
         # Generate compatible pairs
         pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
 
         # Verify all pairs are valid
@@ -553,7 +553,7 @@ class TestIntegration:
 
         # Verify compatibility
         for m1, m2 in pairs:
-            assert measurement_is_compatible_real(m1, m2)
+            assert _measurement_is_compatible_real(m1, m2)
 
     def test_full_workflow_harmonic_space(self):
         """Test complete workflow for harmonic space."""
@@ -562,7 +562,7 @@ class TestIntegration:
 
         # Generate compatible pairs
         pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         # Verify all pairs are valid
@@ -571,17 +571,17 @@ class TestIntegration:
 
         # Verify compatibility
         for m1, m2 in pairs:
-            assert measurement_is_compatible_harmonic(m1, m2)
+            assert _measurement_is_compatible_harmonic(m1, m2)
 
     def test_compatibility_is_subset_of_all_combinations(self):
         """Test that compatible pairs are a subset of all possible combinations."""
         real_measurements, harmonic_measurements = discover_measurements_by_space()
 
         real_pairs = generate_compatible_pairs(
-            real_measurements, measurement_is_compatible_real
+            real_measurements, _measurement_is_compatible_real
         )
         harmonic_pairs = generate_compatible_pairs(
-            harmonic_measurements, measurement_is_compatible_harmonic
+            harmonic_measurements, _measurement_is_compatible_harmonic
         )
 
         # Compatible pairs should be <= all possible combinations
@@ -616,9 +616,9 @@ class TestIntegration:
         real_measurements, harmonic_measurements = discover_measurements_by_space()
 
         # Count measurements in each category
-        real_count = sum(1 for m in ALL_MEASUREMENTS if measurement_supports_real(m))
+        real_count = sum(1 for m in ALL_MEASUREMENTS if _measurement_supports_real(m))
         harmonic_count = sum(
-            1 for m in ALL_MEASUREMENTS if measurement_supports_harmonic(m)
+            1 for m in ALL_MEASUREMENTS if _measurement_supports_harmonic(m)
         )
 
         assert len(real_measurements) == real_count

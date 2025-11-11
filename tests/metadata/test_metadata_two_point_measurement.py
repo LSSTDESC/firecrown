@@ -10,8 +10,8 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
+    _type_to_sacc_string_harmonic as harmonic,
+    _type_to_sacc_string_real as real,
 )
 from firecrown.data_types import TwoPointMeasurement
 

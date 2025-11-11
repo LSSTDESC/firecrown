@@ -151,11 +151,11 @@ class Galaxies(YAMLSerializable, str, Enum):
 
     def __lt__(self, other):
         """Define a comparison function for the Galaxy Measurement enumeration."""
-        return compare_enums(self, other) < 0
+        return _compare_enums(self, other) < 0
 
     def __eq__(self, other):
         """Define an equality test for Galaxy Measurement enumeration."""
-        return compare_enums(self, other) == 0
+        return _compare_enums(self, other) == 0
 
     def __ne__(self, other):
         """Negation of __eq__."""
@@ -208,11 +208,11 @@ class CMB(YAMLSerializable, str, Enum):
 
     def __lt__(self, other):
         """Define a comparison function for the CMBMeasurement enumeration."""
-        return compare_enums(self, other) < 0
+        return _compare_enums(self, other) < 0
 
     def __eq__(self, other):
         """Define an equality test for CMBMeasurement enumeration."""
-        return compare_enums(self, other) == 0
+        return _compare_enums(self, other) == 0
 
     def __ne__(self, other):
         """Negation of __eq__."""
@@ -265,11 +265,11 @@ class Clusters(YAMLSerializable, str, Enum):
 
     def __lt__(self, other):
         """Define a comparison function for the ClusterMeasurement enumeration."""
-        return compare_enums(self, other) < 0
+        return _compare_enums(self, other) < 0
 
     def __eq__(self, other):
         """Define an equality test for ClusterMeasurement enumeration."""
-        return compare_enums(self, other) == 0
+        return _compare_enums(self, other) == 0
 
     def __ne__(self, other):
         """Negation of __eq__."""
@@ -303,7 +303,7 @@ GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 CMB_TYPES = (CMB.CONVERGENCE,)
 
 
-def compare_enums(a: Measurement, b: Measurement) -> int:
+def _compare_enums(a: Measurement, b: Measurement) -> int:
     """Define a comparison function for the Measurement enumeration.
 
     Return -1 if a comes before b, 0 if they are the same, and +1 if b comes before a.
@@ -383,38 +383,38 @@ def measurement_is_compatible(a: Measurement, b: Measurement) -> bool:
     return True
 
 
-def measurement_supports_real(x: Measurement) -> bool:
+def _measurement_supports_real(x: Measurement) -> bool:
     """Return True if x supports real-space calculations."""
     return x not in HARMONIC_ONLY_MEASUREMENTS
 
 
-def measurement_supports_harmonic(x: Measurement) -> bool:
+def _measurement_supports_harmonic(x: Measurement) -> bool:
     """Return True if x supports harmonic-space calculations."""
     return x not in REAL_ONLY_MEASUREMENTS
 
 
-def measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
+def _measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
     """Check if two Measurement are compatible for real-space calculations.
 
     Two Measurement are compatible if they can be correlated in a real-space two-point
     function.
     """
     return (
-        measurement_supports_real(a)
-        and measurement_supports_real(b)
+        _measurement_supports_real(a)
+        and _measurement_supports_real(b)
         and measurement_is_compatible(a, b)
     )
 
 
-def measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
+def _measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
     """Check if two Measurement are compatible for harmonic-space calculations.
 
     Two Measurement are compatible if they can be correlated in a harmonic-space
     two-point function.
     """
     return (
-        measurement_supports_harmonic(a)
-        and measurement_supports_harmonic(b)
+        _measurement_supports_harmonic(a)
+        and _measurement_supports_harmonic(b)
         and measurement_is_compatible(a, b)
     )
 
@@ -446,7 +446,7 @@ def _type_to_sacc_string_common(x: Measurement, y: Measurement) -> str:
     return part_1 + part_2
 
 
-def type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
+def _type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
     """Return the final SACC string used to denote the real-space correlation.
 
     The SACC string used to denote the real-space correlation type
@@ -465,7 +465,7 @@ def type_to_sacc_string_real(x: Measurement, y: Measurement) -> str:
     return _type_to_sacc_string_common(x, y) + (f"xi_{suffix}" if suffix else "xi")
 
 
-def type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
+def _type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
     """Return the final SACC string used to denote the harmonic-space correlation.
 
     the SACC string used to denote the harmonic-space correlation type
@@ -481,13 +481,13 @@ def type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
 
 
 MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
-    type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
+    _type_to_sacc_string_real(a, b): (a, b) if a < b else (b, a)
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_is_compatible_real(a, b)
+    if _measurement_is_compatible_real(a, b)
 } | {
-    type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
+    _type_to_sacc_string_harmonic(a, b): (a, b) if a < b else (b, a)
     for a, b in combinations_with_replacement(ALL_MEASUREMENTS, 2)
-    if measurement_is_compatible_harmonic(a, b)
+    if _measurement_is_compatible_harmonic(a, b)
 }
 
 
@@ -568,9 +568,9 @@ class TwoPointHarmonic(YAMLSerializable):
 
         self._check_window_consistency()
 
-        if not measurement_supports_harmonic(
+        if not _measurement_supports_harmonic(
             self.XY.x_measurement
-        ) or not measurement_supports_harmonic(self.XY.y_measurement):
+        ) or not _measurement_supports_harmonic(self.XY.y_measurement):
             raise ValueError(
                 f"Measurements {self.XY.x_measurement} and "
                 f"{self.XY.y_measurement} must support harmonic-space calculations."
@@ -614,7 +614,7 @@ class TwoPointHarmonic(YAMLSerializable):
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_harmonic(
+        return _type_to_sacc_string_harmonic(
             self.XY.x_measurement, self.XY.y_measurement
         )
 
@@ -651,9 +651,9 @@ class TwoPointReal(YAMLSerializable):
         if len(self.thetas.shape) != 1:
             raise ValueError("Thetas should be a 1D array.")
 
-        if not measurement_supports_real(
+        if not _measurement_supports_real(
             self.XY.x_measurement
-        ) or not measurement_supports_real(self.XY.y_measurement):
+        ) or not _measurement_supports_real(self.XY.y_measurement):
             raise ValueError(
                 f"Measurements {self.XY.x_measurement} and "
                 f"{self.XY.y_measurement} must support real-space calculations."
@@ -665,7 +665,7 @@ class TwoPointReal(YAMLSerializable):
 
     def get_sacc_name(self) -> str:
         """Return the SACC name for the two-point function."""
-        return type_to_sacc_string_real(self.XY.x_measurement, self.XY.y_measurement)
+        return _type_to_sacc_string_real(self.XY.x_measurement, self.XY.y_measurement)
 
     def __eq__(self, other) -> bool:
         """Equality test for TwoPointReal objects."""

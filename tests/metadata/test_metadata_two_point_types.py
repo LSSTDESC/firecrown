@@ -22,14 +22,14 @@ from firecrown.metadata_types import (
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
-    compare_enums,
+    _compare_enums,
     measurement_is_compatible as is_compatible,
-    measurement_is_compatible_harmonic as is_compatible_harmonic,
-    measurement_is_compatible_real as is_compatible_real,
-    measurement_supports_harmonic as supports_harmonic,
-    measurement_supports_real as supports_real,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
+    _measurement_is_compatible_harmonic as is_compatible_harmonic,
+    _measurement_is_compatible_real as is_compatible_real,
+    _measurement_supports_harmonic as supports_harmonic,
+    _measurement_supports_real as supports_real,
+    _type_to_sacc_string_harmonic as harmonic,
+    _type_to_sacc_string_real as real,
 )
 
 from firecrown.metadata_functions import (
@@ -49,20 +49,20 @@ from firecrown.data_functions import (
 
 
 def test_order_enums():
-    assert compare_enums(CMB.CONVERGENCE, Clusters.COUNTS) < 0
-    assert compare_enums(Clusters.COUNTS, CMB.CONVERGENCE) > 0
+    assert _compare_enums(CMB.CONVERGENCE, Clusters.COUNTS) < 0
+    assert _compare_enums(Clusters.COUNTS, CMB.CONVERGENCE) > 0
 
-    assert compare_enums(CMB.CONVERGENCE, Galaxies.COUNTS) < 0
-    assert compare_enums(Galaxies.COUNTS, CMB.CONVERGENCE) > 0
+    assert _compare_enums(CMB.CONVERGENCE, Galaxies.COUNTS) < 0
+    assert _compare_enums(Galaxies.COUNTS, CMB.CONVERGENCE) > 0
 
-    assert compare_enums(Galaxies.SHEAR_E, Galaxies.SHEAR_T) < 0
-    assert compare_enums(Galaxies.SHEAR_E, Galaxies.COUNTS) < 0
-    assert compare_enums(Galaxies.SHEAR_T, Galaxies.COUNTS) < 0
+    assert _compare_enums(Galaxies.SHEAR_E, Galaxies.SHEAR_T) < 0
+    assert _compare_enums(Galaxies.SHEAR_E, Galaxies.COUNTS) < 0
+    assert _compare_enums(Galaxies.SHEAR_T, Galaxies.COUNTS) < 0
 
-    assert compare_enums(Galaxies.COUNTS, Galaxies.SHEAR_E) > 0
+    assert _compare_enums(Galaxies.COUNTS, Galaxies.SHEAR_E) > 0
 
     for enumerand in ALL_MEASUREMENTS:
-        assert compare_enums(enumerand, enumerand) == 0
+        assert _compare_enums(enumerand, enumerand) == 0
 
 
 def test_galaxies_is_shear():
@@ -83,7 +83,7 @@ def test_compare_enums_wrong_type():
             "(<enum 'Galaxies'>, <class 'int'>)."
         ),
     ):
-        compare_enums(Galaxies.COUNTS, 1)  # type: ignore
+        _compare_enums(Galaxies.COUNTS, 1)  # type: ignore
 
 
 def test_enumeration_equality_galaxy():

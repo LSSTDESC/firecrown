@@ -19,8 +19,8 @@ from firecrown.metadata_types import (
     InferredGalaxyZDist,
     CMB,
     TypeSource,
-    type_to_sacc_string_harmonic,
-    type_to_sacc_string_real,
+    _type_to_sacc_string_harmonic,
+    _type_to_sacc_string_real,
 )
 from firecrown.metadata_functions import (
     extract_all_harmonic_metadata_indices,
@@ -555,7 +555,7 @@ def test_extract_all_photoz_bin_combinations_reals(
     tracer_names_list = [
         (
             TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name),
-            type_to_sacc_string_real(bin_comb.x_measurement, bin_comb.y_measurement),
+            _type_to_sacc_string_real(bin_comb.x_measurement, bin_comb.y_measurement),
         )
         for bin_comb in all_bin_combs
     ]
@@ -582,7 +582,7 @@ def test_extract_all_photoz_bin_combinations_harmonics(
     tracer_names_list = [
         (
             TracerNames(bin_comb.x.bin_name, bin_comb.y.bin_name),
-            type_to_sacc_string_harmonic(
+            _type_to_sacc_string_harmonic(
                 bin_comb.x_measurement, bin_comb.y_measurement
             ),
         )
