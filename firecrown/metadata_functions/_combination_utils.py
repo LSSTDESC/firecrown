@@ -136,3 +136,23 @@ def make_cmb_galaxy_combinations_only(
                 )
 
     return cmb_galaxy_combinations
+
+
+def make_all_bin_rule_combinations(
+    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+    bin_rule: mdt.BinRule,
+) -> list[mdt.TwoPointXY]:
+    """Extract the two-point function metadata from a sacc file."""
+    bin_combinations = [
+        mdt.TwoPointXY(
+            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
+        )
+        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
+        for x_measurement, y_measurement in product(
+            igz1.measurements, igz2.measurements
+        )
+        if mdt.measurement_is_compatible(x_measurement, y_measurement)
+        and (bin_rule.keep((igz1, igz2), (x_measurement, y_measurement)))
+    ]
+
+    return bin_combinations

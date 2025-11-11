@@ -8,9 +8,11 @@ import pytest
 import numpy as np
 from numpy.testing import assert_array_equal
 
+import yaml
 import sacc
 
 from firecrown.parameters import ParamsMap
+import firecrown.metadata_types as mt
 from firecrown.metadata_types import (
     Galaxies,
     TracerNames,
@@ -33,6 +35,7 @@ from firecrown.metadata_functions import (
     make_all_photoz_bin_combinations_with_cmb,
     make_all_photoz_bin_combinations,
     make_cmb_galaxy_combinations_only,
+    make_all_bin_rule_combinations,
 )
 from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
@@ -435,7 +438,7 @@ def test_extract_all_tracers_inconsistent_lens_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
+        match=("Invalid SACC file, tracer names do not respect the naming convention."),
     ):
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
@@ -447,7 +450,7 @@ def test_extract_all_tracers_inconsistent_source_label(
     assert sacc_data is not None
     with pytest.raises(
         ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
+        match=("Invalid SACC file, tracer names do not respect the naming convention."),
     ):
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
@@ -1778,3 +1781,564 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
     assert len(combinations) == 0
+
+
+def test_bin_rules_register_missing_kind():
+    with pytest.raises(ValueError, match="MissingBinRule has no default for 'kind'"):
+
+        @mt.register_rule
+        class MissingBinRule(mt.BinRule):
+            """BinRule with missing kind."""
+
+            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+                return True
+
+        _ = MissingBinRule(kind="foo")
+
+
+def test_bin_rules_register_duplicate_kind():
+    with pytest.raises(ValueError, match="Duplicate rule kind foo"):
+
+        @mt.register_rule
+        class Duplicate1BinRule(mt.BinRule):
+            """BinRule with duplicate kind."""
+
+            kind: str = "foo"
+
+            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+                return True
+
+        @mt.register_rule
+        class Duplicate2BinRule(mt.BinRule):
+            """BinRule with duplicate kind."""
+
+            kind: str = "foo"
+
+            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+                return True
+
+        _ = Duplicate2BinRule()
+        _ = Duplicate1BinRule()
+
+
+def test_bin_rules_auto(all_harmonic_bins):
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, auto_bin_rule
+    )
+    # AutoBinRule should create all auto-combinations
+    assert len(two_point_xy_combinations) == len(all_harmonic_bins)
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+
+
+def test_bin_rules_auto_source(all_harmonic_bins):
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
+    source_bin_rule = mt.SourceBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, auto_bin_rule & source_bin_rule
+    )
+    # AutoBinRule should create all auto-combinations for shear measurements
+    assert len(two_point_xy_combinations) == 2
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+        assert two_point_xy.x_measurement in mt.GALAXY_SOURCE_TYPES
+
+
+def test_bin_rules_auto_lens(all_harmonic_bins):
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
+    lens_bin_rule = mt.LensBinRule()
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, auto_bin_rule & lens_bin_rule
+    )
+    # AutoBinRule should create all auto-combinations for lens measurements
+    assert len(two_point_xy_combinations) == 2
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+        assert two_point_xy.x_measurement in mt.GALAXY_LENS_TYPES
+
+
+def test_bin_rules_auto_source_lens(all_harmonic_bins):
+    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
+    source_bin_rule = mt.SourceBinRule()
+    lens_bin_rule = mt.LensBinRule()
+
+    bin_rule = (auto_bin_rule & lens_bin_rule) | (auto_bin_rule & source_bin_rule)
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, bin_rule
+    )
+    # AutoBinRule should create all auto-combinations for lens measurements
+    assert len(two_point_xy_combinations) == 4
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+
+
+def test_bin_rules_named(all_harmonic_bins):
+    named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, named_bin_rule
+    )
+    # NamedBinRule should create all named combinations
+    assert len(two_point_xy_combinations) == 4
+    for two_point_xy in two_point_xy_combinations:
+        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_2", "bin_1"}
+
+
+def test_bin_rules_type_source(all_harmonic_bins):
+    type_source_bin_rule = mt.TypeSourceBinRule(type_source=mt.TypeSource.DEFAULT)
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, type_source_bin_rule
+    )
+    # TypeSourceBinRule should create all type-source combinations
+    assert len(two_point_xy_combinations) == 10
+
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="extra_src1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+        type_source=mt.TypeSource("NewTypeSource"),
+    )
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins + [z1], type_source_bin_rule
+    )
+    assert len(two_point_xy_combinations) == 10
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins + [z1],
+        mt.TypeSourceBinRule(type_source=mt.TypeSource("NewTypeSource")),
+    )
+    assert len(two_point_xy_combinations) == 1
+
+
+def test_bin_rules_not_named(all_harmonic_bins):
+    named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        all_harmonic_bins, ~named_bin_rule
+    )
+    # NamedBinRule should create all named combinations
+    assert len(two_point_xy_combinations) == 6
+    for two_point_xy in two_point_xy_combinations:
+        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} != {"bin_2", "bin_1"}
+
+
+def test_bin_rules_first_neighbor(many_harmonic_bins):
+    first_neighbor_bin_rule = mt.FirstNeighborsBinRule()
+
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_a",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_b",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        many_harmonic_bins + [z1, z2], first_neighbor_bin_rule
+    )
+    # FirstNeighborBinRule should create all first neighbor combinations
+    assert len(two_point_xy_combinations) == 31
+    for two_point_xy in two_point_xy_combinations:
+        assert re.match(r".*?\d+$", two_point_xy.x.bin_name)
+        assert re.match(r".*?\d+$", two_point_xy.y.bin_name)
+        index1 = int(re.findall(r"\d+$", two_point_xy.x.bin_name)[0])
+        index2 = int(re.findall(r"\d+$", two_point_xy.y.bin_name)[0])
+        assert abs(index1 - index2) <= 1
+
+
+def test_bin_rules_first_neighbor_no_auto(many_harmonic_bins):
+    first_neighbor_bin_rule = mt.FirstNeighborsBinRule()
+    auto_bin_rule = mt.AutoNameBinRule()
+    first_neighbor_no_auto_bin_rule = first_neighbor_bin_rule & ~auto_bin_rule
+
+    two_point_xy_combinations = make_all_bin_rule_combinations(
+        many_harmonic_bins, first_neighbor_no_auto_bin_rule
+    )
+    # FirstNeighborBinRule should create all first neighbor combinations
+    assert len(two_point_xy_combinations) == 16
+    for two_point_xy in two_point_xy_combinations:
+        assert re.match(r".*?\d+$", two_point_xy.x.bin_name)
+        assert re.match(r".*?\d+$", two_point_xy.y.bin_name)
+        index1 = int(re.findall(r"\d+$", two_point_xy.x.bin_name)[0])
+        index2 = int(re.findall(r"\d+$", two_point_xy.y.bin_name)[0])
+        assert abs(index1 - index2) == 1
+
+
+def test_bin_rules_auto_name_keep():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.AutoNameBinRule()
+    assert rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+
+def test_bin_rules_auto_measurement_keep():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.AutoMeasurementBinRule()
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
+
+
+def test_bin_rules_named_keep():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert rule.keep((z2, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+
+def test_bin_rules_lens_keep():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.LensBinRule()
+    assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+
+
+def test_bin_rules_source_keep():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="src1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="src1",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    rule = mt.SourceBinRule()
+    assert rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+
+
+def test_bin_rules_first_neighbor_mixed():
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_a",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_b",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z3 = mt.InferredGalaxyZDist(
+        bin_name="extra_src_1",
+        z=np.array([0.3]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    rule = mt.FirstNeighborsBinRule()
+    assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z1, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z2, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z3, z1), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not rule.keep((z3, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert rule.keep((z3, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+
+
+def test_bin_rules_serialization_and_or():
+    bin_rule = (
+        mt.AutoNameBinRule() & mt.AutoMeasurementBinRule() & mt.LensBinRule()
+    ) | (mt.AutoNameBinRule() & mt.AutoMeasurementBinRule() & mt.SourceBinRule())
+
+    yaml_str = yaml.dump(
+        bin_rule.model_dump(),
+        sort_keys=False,
+    )
+
+    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert bin_rule == bin_rule_from_yaml
+    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_simple_and():
+    bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
+    yaml_str = yaml.dump(bin_rule.model_dump(), sort_keys=False)
+    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert bin_rule == bin_rule_from_yaml
+    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_simple_or():
+    bin_rule = mt.AutoNameBinRule() | mt.LensBinRule()
+    yaml_str = yaml.dump(bin_rule.model_dump(), sort_keys=False)
+    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert bin_rule == bin_rule_from_yaml
+    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_nested_and_or():
+    bin_rule = (
+        (mt.AutoNameBinRule() & mt.LensBinRule())
+        | (mt.NamedBinRule(names=[("bin_1", "bin_2")]) & mt.SourceBinRule())
+        | mt.FirstNeighborsBinRule()
+    )
+    yaml_str = yaml.dump(
+        bin_rule.model_dump(), sort_keys=False, default_flow_style=None
+    )
+    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert bin_rule == bin_rule_from_yaml
+    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_negation():
+    base_rule = mt.AutoNameBinRule()
+    neg_rule = ~base_rule
+    yaml_str = yaml.dump(neg_rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert neg_rule == rule_from_yaml
+    assert neg_rule.model_dump() == rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_double_negation():
+    base_rule = mt.AutoNameBinRule()
+    double_neg_rule = ~~base_rule
+    yaml_str = yaml.dump(double_neg_rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert double_neg_rule == rule_from_yaml
+    assert double_neg_rule.model_dump() == rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_and_not():
+    rule = mt.AutoNameBinRule() & ~mt.LensBinRule()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert rule == rule_from_yaml
+    assert rule.model_dump() == rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_or_not():
+    rule = mt.AutoNameBinRule() | ~mt.LensBinRule()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert rule == rule_from_yaml
+    assert isinstance(rule_from_yaml, mt.OrBinRule)
+    assert rule.model_dump() == rule_from_yaml.model_dump()
+
+
+def test_bin_rules_serialization_type_source():
+    rule = mt.TypeSourceBinRule(type_source=mt.TypeSource("NewTypeSource"))
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert rule == rule_from_yaml
+    assert rule.model_dump() == rule_from_yaml.model_dump()
+    assert isinstance(rule_from_yaml, mt.TypeSourceBinRule)
+    assert rule.type_source == rule_from_yaml.type_source
+
+
+def test_bin_rules_deserialization_lens():
+    yaml_str = """
+    kind: lens
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.LensBinRule)
+
+
+def test_bin_rules_deserialization_source():
+    yaml_str = """
+    kind: source
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.SourceBinRule)
+
+
+def test_bin_rules_deserialization_named():
+    yaml_str = """
+    kind: named
+    names:
+      - [bin_1, bin_2]
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.NamedBinRule)
+    assert rule.names == [("bin_1", "bin_2")]
+
+
+def test_bin_rules_deserialization_auto_name():
+    yaml_str = """
+    kind: auto-name
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AutoNameBinRule)
+
+
+def test_bin_rules_deserialization_auto_measurement():
+    yaml_str = """
+    kind: auto-measurement
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AutoMeasurementBinRule)
+
+
+def test_bin_rules_deserialization_not():
+    yaml_str = """
+    kind: not
+    bin_rule:
+      kind: lens
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.NotBinRule)
+    assert isinstance(rule.bin_rule, mt.LensBinRule)
+
+
+def test_bin_rules_deserialization_and():
+    yaml_str = """
+    kind: and
+    bin_rules:
+      - kind: auto-name
+      - kind: lens
+      - kind: source
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AndBinRule)
+    assert len(rule.bin_rules) == 3
+    assert isinstance(rule.bin_rules[0], mt.AutoNameBinRule)
+    assert isinstance(rule.bin_rules[1], mt.LensBinRule)
+    assert isinstance(rule.bin_rules[2], mt.SourceBinRule)
+
+
+def test_bin_rules_deserialization_or():
+    yaml_str = """
+    kind: or
+    bin_rules:
+      - kind: auto-name
+      - kind: lens
+      - kind: source
+      - kind: auto-measurement
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.OrBinRule)
+    assert len(rule.bin_rules) == 4
+    assert isinstance(rule.bin_rules[0], mt.AutoNameBinRule)
+    assert isinstance(rule.bin_rules[1], mt.LensBinRule)
+    assert isinstance(rule.bin_rules[2], mt.SourceBinRule)
+    assert isinstance(rule.bin_rules[3], mt.AutoMeasurementBinRule)
+
+
+def test_bin_rules_deserialization_nested_and_or():
+    yaml_str = """
+    kind: and
+    bin_rules:
+      - kind: or
+        bin_rules:
+          - kind: auto-name
+          - kind: lens
+          - kind: source
+      - kind: auto-measurement
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AndBinRule)
+    assert len(rule.bin_rules) == 2
+    assert isinstance(rule.bin_rules[0], mt.OrBinRule)
+    assert len(rule.bin_rules[0].bin_rules) == 3
+    assert isinstance(rule.bin_rules[0].bin_rules[0], mt.AutoNameBinRule)
+    assert isinstance(rule.bin_rules[0].bin_rules[1], mt.LensBinRule)
+    assert isinstance(rule.bin_rules[0].bin_rules[2], mt.SourceBinRule)
+    assert isinstance(rule.bin_rules[1], mt.AutoMeasurementBinRule)
+
+
+def test_bin_rules_deserialization_nested_not():
+    yaml_str = """
+    kind: not
+    bin_rule:
+      kind: or
+      bin_rules:
+        - kind: auto-name
+        - kind: lens
+        - kind: source
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.NotBinRule)
+    assert isinstance(rule.bin_rule, mt.OrBinRule)
+    assert len(rule.bin_rule.bin_rules) == 3
+    assert isinstance(rule.bin_rule.bin_rules[0], mt.AutoNameBinRule)
+    assert isinstance(rule.bin_rule.bin_rules[1], mt.LensBinRule)
+    assert isinstance(rule.bin_rule.bin_rules[2], mt.SourceBinRule)
+
+
+def test_bin_rules_deserialization_nested_or_and():
+    yaml_str = """
+    kind: or
+    bin_rules:
+      - kind: and
+        bin_rules:
+          - kind: auto-name
+          - kind: lens
+          - kind: source
+      - kind: auto-measurement
+    """
+    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.OrBinRule)
+    assert len(rule.bin_rules) == 2
+    assert isinstance(rule.bin_rules[0], mt.AndBinRule)
+    assert len(rule.bin_rules[0].bin_rules) == 3
+    assert isinstance(rule.bin_rules[0].bin_rules[0], mt.AutoNameBinRule)
+    assert isinstance(rule.bin_rules[0].bin_rules[1], mt.LensBinRule)
+    assert isinstance(rule.bin_rules[0].bin_rules[2], mt.SourceBinRule)
+    assert isinstance(rule.bin_rules[1], mt.AutoMeasurementBinRule)
+
+
+def test_bin_rules_deserialization_invalid_kind():
+    yaml_str = """
+    kind: not_a_valid_kind
+    """
+    with pytest.raises(ValueError, match="Value error, Unknown kind not_a_valid_kind"):
+        mt.BinRule.model_validate(yaml.safe_load(yaml_str))
