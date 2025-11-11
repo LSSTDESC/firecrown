@@ -35,7 +35,7 @@ dependencies:
     - cobaya
     - isitgr
     - pygobject-stubs
-  - plotnine
+  - plotnine < 0.15
   - portalocker
   - pybobyqa
   - pyccl >= 2.8.0
