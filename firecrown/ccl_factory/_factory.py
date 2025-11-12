@@ -1,76 +1,40 @@
-"""This module contains the CCLFactory class and it supporting classes.
+"""CCLFactory class for creating pyccl.Cosmology instances."""
 
-The CCLFactory class is a factory class that creates instances of the
-`pyccl.Cosmology` class.
-"""
-
-from enum import StrEnum, auto
 from typing import Annotated, Any
 
-import numpy as np
-import numpy.typing as npt
 import pyccl
-from pyccl.modified_gravity import MuSigmaMG
 from pyccl.neutrinos import NeutrinoMassSplits
 from pydantic import (
     BaseModel,
     BeforeValidator,
     ConfigDict,
     Field,
-    PrivateAttr,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     field_serializer,
     model_serializer,
-    model_validator,
 )
-from pydantic_core import core_schema
 
 # To be moved to the import from typing when migrating to Python 3.11
-from typing_extensions import NotRequired, TypedDict, assert_never
+from typing_extensions import assert_never
 
+from firecrown.ccl_factory._enums import (
+    CCLCreationMode,
+    CCLPureModeTransferFunction,
+    PoweSpecAmplitudeParameter,
+)
+from firecrown.ccl_factory._models import (
+    CAMBExtraParams,
+    CCLSplineParams,
+    MuSigmaModel,
+)
+from firecrown.ccl_factory._types import CCLCalculatorArgs
 from firecrown.parameters import (
     ParamsMap,
     SamplerParameter,
     register_new_updatable_parameter,
 )
 from firecrown.updatable import Updatable
-from firecrown.utils import YAMLSerializable
-
-# PowerSpec is a type that represents a power spectrum.
-PowerSpec = TypedDict(
-    "PowerSpec",
-    {
-        "a": npt.NDArray[np.float64],
-        "k": npt.NDArray[np.float64],
-        "delta_matter:delta_matter": npt.NDArray[np.float64],
-    },
-)
-
-
-# Background is a type that represents the cosmological background quantities.
-class Background(TypedDict):
-    """Type representing cosmological background quantities.
-
-    Contains arrays for scale factor, comoving distance, and Hubble parameter ratio.
-    """
-
-    a: npt.NDArray[np.float64]
-    chi: npt.NDArray[np.float64]
-    h_over_h0: npt.NDArray[np.float64]
-
-
-# CCLCalculatorArgs is a type that represents the arguments for the
-# CCLCalculator.
-class CCLCalculatorArgs(TypedDict):
-    """Arguments for the CCLCalculator.
-
-    Contains background cosmology and optional linear/nonlinear power spectra.
-    """
-
-    background: Background
-    pk_linear: NotRequired[PowerSpec]
-    pk_nonlin: NotRequired[PowerSpec]
 
 
 def _validate_neutrino_mass_splits(value):
@@ -80,246 +44,6 @@ def _validate_neutrino_mass_splits(value):
         except ValueError as exc:
             raise ValueError(f"Invalid value for NeutrinoMassSplits: {value}") from exc
     return value
-
-
-class PoweSpecAmplitudeParameter(YAMLSerializable, StrEnum):
-    """This class defines the two-point correlation space.
-
-    The two-point correlation space can be either real or harmonic. The real space
-    corresponds measurements in terms of angular separation, while the harmonic space
-    corresponds to measurements in terms of spherical harmonics decomposition.
-    """
-
-    AS = auto()
-    SIGMA8 = auto()
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: Any
-    ) -> core_schema.CoreSchema:
-        """Get the Pydantic core schema for the PoweSpecAmplitudeParameter class."""
-        return core_schema.no_info_before_validator_function(
-            lambda v: cls(v) if isinstance(v, str) else v,
-            core_schema.enum_schema(cls, list(cls), sub_type="str"),
-            serialization=core_schema.plain_serializer_function_ser_schema(str),
-        )
-
-
-class CCLCreationMode(StrEnum):
-    """This class defines the CCL instance creation mode.
-
-    The DEFAULT mode represents the current CCL behavior. It will use CCL's calculator
-    mode if `prepare` is called with a `CCLCalculatorArgs` object. Otherwise, it will
-    use the default CCL mode.
-
-    The MU_SIGMA_ISITGR mode enables the mu-sigma modified gravity model with the ISiTGR
-    transfer function, it is not compatible with the Calculator mode.
-
-    The PURE_CCL_MODE mode will create a CCL instance with the default parameters. It is
-    not compatible with the Calculator mode.
-    """
-
-    DEFAULT = auto()
-    MU_SIGMA_ISITGR = auto()
-    PURE_CCL_MODE = auto()
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: Any
-    ) -> core_schema.CoreSchema:
-        """Get the Pydantic core schema for the CCLCreationMode class."""
-        return core_schema.no_info_before_validator_function(
-            lambda v: cls(v) if isinstance(v, str) else v,
-            core_schema.enum_schema(cls, list(cls), sub_type="str"),
-            serialization=core_schema.plain_serializer_function_ser_schema(str),
-        )
-
-
-class CCLPureModeTransferFunction(StrEnum):
-    """This class defines the transfer function to use in PURE_CCL_MODE.
-
-    The options are those available in CCL for the transfer_function argument.
-    See https://ccl.readthedocs.io/en/latest/api/pyccl.cosmology.html
-    """
-
-    BBKS = auto()
-    BOLTZMANN_CAMB = auto()
-    BOLTZMANN_CLASS = auto()
-    EISENSTEIN_HU = auto()
-    EISENSTEIN_HU_NOWIGGLES = auto()
-
-    @classmethod
-    def __get_pydantic_core_schema__(
-        cls, _source_type: Any, _handler: Any
-    ) -> core_schema.CoreSchema:
-        """Get the Pydantic core schema for the CCLPureModeTransferFunction class."""
-        return core_schema.no_info_before_validator_function(
-            lambda v: cls(v) if isinstance(v, str) else v,
-            core_schema.enum_schema(cls, list(cls), sub_type="str"),
-            serialization=core_schema.plain_serializer_function_ser_schema(str),
-        )
-
-
-class MuSigmaModel(Updatable):
-    """Model for the mu-sigma modified gravity model."""
-
-    def __init__(self):
-        """Initialize the MuSigmaModel object."""
-        super().__init__(parameter_prefix="mg_musigma")
-
-        self.mu = register_new_updatable_parameter(default_value=1.0)
-        self.sigma = register_new_updatable_parameter(default_value=1.0)
-        self.c1 = register_new_updatable_parameter(default_value=1.0)
-        self.c2 = register_new_updatable_parameter(default_value=1.0)
-        # We cannot clash with the lambda keyword
-        self.lambda0 = register_new_updatable_parameter(default_value=1.0)
-
-    def create(self) -> MuSigmaMG:
-        """Create a `pyccl.modified_gravity.MuSigmaMG` object."""
-        if not self.is_updated():
-            raise ValueError("Parameters have not been updated yet.")
-
-        return MuSigmaMG(self.mu, self.sigma, self.c1, self.c2, self.lambda0)
-
-
-class CAMBExtraParams(BaseModel):
-    """Extra parameters for CAMB."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    HMCode_A_baryon: Annotated[float | None, Field(frozen=False)] = None
-    HMCode_eta_baryon: Annotated[float | None, Field(frozen=False)] = None
-    HMCode_logT_AGN: Annotated[float | None, Field(frozen=False)] = None
-
-    halofit_version: Annotated[str | None, Field(frozen=True)] = None
-    kmax: Annotated[float | None, Field(frozen=True)] = None
-    lmax: Annotated[int | None, Field(frozen=True)] = None
-    dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
-
-    def get_dict(self) -> dict:
-        """Return the extra parameters as a dictionary."""
-        return {
-            key: value for key, value in self.model_dump().items() if value is not None
-        }
-
-    def update(self, params: ParamsMap) -> None:
-        """Update the CAMB sampling parameters.
-
-        :param params: The parameters to update.
-        :return: None
-        """
-        if "HMCode_A_baryon" in params:
-            self.HMCode_A_baryon = params["HMCode_A_baryon"]
-        if "HMCode_eta_baryon" in params:
-            self.HMCode_eta_baryon = params["HMCode_eta_baryon"]
-        if "HMCode_logT_AGN" in params:
-            self.HMCode_logT_AGN = params["HMCode_logT_AGN"]
-
-
-class CCLSplineParams(BaseModel):
-    """Params to control CCL spline interpolation."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    # Scale factor splines
-    a_spline_na: Annotated[int | None, Field(frozen=True)] = None
-    a_spline_min: Annotated[float | None, Field(frozen=True)] = None
-    a_spline_minlog_pk: Annotated[float | None, Field(frozen=True)] = None
-    a_spline_min_pk: Annotated[float | None, Field(frozen=True)] = None
-    a_spline_minlog_sm: Annotated[float | None, Field(frozen=True)] = None
-    a_spline_min_sm: Annotated[float | None, Field(frozen=True)] = None
-    # a_spline_max is not defined because the CCL parameter A_SPLINE_MAX is
-    # required to be 1.0.
-    a_spline_minlog: Annotated[float | None, Field(frozen=True)] = None
-    a_spline_nlog: Annotated[int | None, Field(frozen=True)] = None
-
-    # mass splines
-    logm_spline_delta: Annotated[float | None, Field(frozen=True)] = None
-    logm_spline_nm: Annotated[int | None, Field(frozen=True)] = None
-    logm_spline_min: Annotated[float | None, Field(frozen=True)] = None
-    logm_spline_max: Annotated[float | None, Field(frozen=True)] = None
-
-    # PS a and k spline
-    a_spline_na_sm: Annotated[int | None, Field(frozen=True)] = None
-    a_spline_nlog_sm: Annotated[int | None, Field(frozen=True)] = None
-    a_spline_na_pk: Annotated[int | None, Field(frozen=True)] = None
-    a_spline_nlog_pk: Annotated[int | None, Field(frozen=True)] = None
-
-    # k-splines and integrals
-    k_max_spline: Annotated[float | None, Field(frozen=True)] = None
-    k_max: Annotated[float | None, Field(frozen=True)] = None
-    k_min: Annotated[float | None, Field(frozen=True)] = None
-    dlogk_integration: Annotated[float | None, Field(frozen=True)] = None
-    dchi_integration: Annotated[float | None, Field(frozen=True)] = None
-    n_k: Annotated[int | None, Field(frozen=True)] = None
-    n_k_3dcor: Annotated[int | None, Field(frozen=True)] = None
-
-    # Correlation function parameters
-    ell_min_corr: Annotated[float | None, Field(frozen=True)] = None
-    ell_max_corr: Annotated[float | None, Field(frozen=True)] = None
-    n_ell_corr: Annotated[int | None, Field(frozen=True)] = None
-
-    # Attributes that are used for the context manager functionality.
-    # These are *not* part of the model.
-    _spline_params: dict[str, float | int] = PrivateAttr()
-
-    @model_validator(mode="after")
-    def check_spline_params(self) -> "CCLSplineParams":
-        """Check that the spline parameters are valid."""
-        # Ensure the spline boundaries and breakpoint are valid.
-        spline_breaks = [self.a_spline_minlog, self.a_spline_min, 1.0]
-        spline_breaks = list(filter(lambda x: x is not None, spline_breaks))
-        assert all(
-            a is not None and b is not None and a < b
-            for a, b in zip(spline_breaks, spline_breaks[1:], strict=False)
-        )
-
-        # Ensure the mass spline boundaries are valid
-        if self.logm_spline_min is not None and self.logm_spline_max is not None:
-            assert self.logm_spline_min < self.logm_spline_max
-
-        # Ensure the k-spline boundaries are valid
-        if self.k_min is not None and self.k_max is not None:
-            assert self.k_min < self.k_max
-
-        # Ensure the ell-spline boundaries are valid
-        if self.ell_min_corr is not None and self.ell_max_corr is not None:
-            assert self.ell_min_corr < self.ell_max_corr
-
-        return self
-
-    def __enter__(self) -> "CCLSplineParams":
-        """Enter the context manager.
-
-        This method saves the current CCL global spline parameters,
-        updates them with the values from this `CCLSplineParams` instance,
-        and returns the instance itself. This allows for temporary modification
-        of CCL spline parameters using a `with` statement.
-
-        :return:  The current instance with updated spline parameters.
-        """
-        self._spline_params = pyccl.CCLParameters.get_params_dict(pyccl.spline_params)
-        for key, value in self.model_dump().items():
-            if value is not None:
-                pyccl.spline_params[key.upper()] = value
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        """Exit the context manager.
-
-        This method resets the CCL global spline parameters to their original
-        values, as saved when entering the context manager. It ensures that
-        any temporary modifications made to the CCL spline parameters within
-        a `with` statement are reverted upon exit.
-
-        :param exc_type: The exception type, if an exception occurred.
-        :param exc_value: The exception value, if an exception occurred.
-        :param traceback: The traceback object, if an exception occurred.
-        """
-        for key, value in self._spline_params.items():
-            pyccl.spline_params[key] = value
-        if exc_type is not None:
-            raise exc_type(exc_value).with_traceback(traceback)
 
 
 # pylint: disable=too-many-instance-attributes
