@@ -32,7 +32,6 @@ from firecrown.metadata_functions._combination_utils import (
     make_cmb_galaxy_combinations_only,
 )
 from firecrown.metadata_functions._matching import (
-    match_name_type,
     make_two_point_xy,
     measurements_from_index,
 )
@@ -57,7 +56,6 @@ __all__ = [
     "make_all_photoz_bin_combinations",
     "make_all_photoz_bin_combinations_with_cmb",
     "make_cmb_galaxy_combinations_only",
-    "match_name_type",
     "make_two_point_xy",
     "measurements_from_index",
 ]

@@ -39,9 +39,9 @@ from firecrown.metadata_types._measurements import _compare_enums as compare_enu
 from firecrown.metadata_functions import (
     TwoPointRealIndex,
     extract_all_measured_types,
-    match_name_type,
     measurements_from_index,
 )
+from firecrown.metadata_functions._matching import match_name_type
 
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import (
