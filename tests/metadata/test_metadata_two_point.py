@@ -7,8 +7,6 @@ import numpy as np
 from numpy.testing import assert_array_equal
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
-    _type_to_sacc_string_harmonic as harmonic,
-    _type_to_sacc_string_real as real,
     Clusters,
     CMB,
     Galaxies,
@@ -17,6 +15,10 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
+)
+from firecrown.metadata_types._sacc_type_string import (
+    _type_to_sacc_string_harmonic as harmonic,
+    _type_to_sacc_string_real as real,
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.likelihood.source import SourceGalaxy

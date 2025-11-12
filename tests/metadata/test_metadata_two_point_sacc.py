@@ -19,6 +19,8 @@ from firecrown.metadata_types import (
     InferredGalaxyZDist,
     CMB,
     TypeSource,
+)
+from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic,
     _type_to_sacc_string_real,
 )

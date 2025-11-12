@@ -23,6 +23,8 @@ from rich.console import Console
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Measurement,
+)
+from firecrown.metadata_types._compatibility import (
     _measurement_is_compatible_harmonic,
     _measurement_is_compatible_real,
     _measurement_supports_harmonic,

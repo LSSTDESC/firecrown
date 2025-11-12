@@ -10,6 +10,8 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
+)
+from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,
     _type_to_sacc_string_real as real,
 )

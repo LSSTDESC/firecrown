@@ -27,11 +27,13 @@ from firecrown.metadata_types import (
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
+    ALL_MEASUREMENTS,
+)
+from firecrown.metadata_types._compatibility import (
     _measurement_is_compatible_harmonic,
     _measurement_is_compatible_real,
     _measurement_supports_real,
     _measurement_supports_harmonic,
-    ALL_MEASUREMENTS,
 )
 from firecrown.data_types import TwoPointMeasurement
 import firecrown.likelihood.weak_lensing as wl
