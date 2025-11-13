@@ -10,7 +10,7 @@ from sacc.tracers import MiscTracer
 
 from firecrown import parameters
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood.statistic import (
+from firecrown.likelihood._statistic import (
     Statistic,
 )
 from firecrown.modeling_tools import ModelingTools

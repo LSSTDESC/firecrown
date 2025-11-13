@@ -5,8 +5,8 @@ from __future__ import annotations
 import numpy as np
 
 from firecrown import parameters
-from firecrown.likelihood.gaussfamily import GaussFamily
-from firecrown.likelihood.statistic import Statistic
+from firecrown.likelihood._gaussfamily import GaussFamily
+from firecrown.likelihood._statistic import Statistic
 from firecrown.modeling_tools import ModelingTools
 
 

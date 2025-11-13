@@ -22,8 +22,11 @@ from firecrown.ccl_factory import (
 # See comment in compute_pyccl_args_options
 # from pyccl.pyutils import loglin_spacing
 from firecrown.connector.mapping import Mapping, MappingCAMB, mapping_builder
-from firecrown.likelihood.likelihood import Likelihood as FirecrownLikelihood
-from firecrown.likelihood.likelihood import NamedParameters, load_likelihood
+from firecrown.likelihood import (
+    Likelihood as FirecrownLikelihood,
+    NamedParameters,
+    load_likelihood,
+)
 from firecrown.parameters import ParamsMap, UpdatableUsageRecord, handle_unused_params
 from firecrown.updatable import get_default_params_map
 

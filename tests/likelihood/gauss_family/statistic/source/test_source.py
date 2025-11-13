@@ -18,10 +18,10 @@ from scipy.interpolate import Akima1DInterpolator
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.number_counts._factories as nc_factories
 import firecrown.likelihood.number_counts._systematics as nc_sys
-import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood._weak_lensing as wl
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.likelihood.weak_lensing import WeakLensingArgs
-from firecrown.likelihood.source import (
+from firecrown.likelihood._weak_lensing import WeakLensingArgs
+from firecrown.likelihood._source import (
     SourceGalaxy,
     SourceGalaxyArgs,
     SourceGalaxySelectField,

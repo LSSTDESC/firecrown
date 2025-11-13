@@ -5,15 +5,13 @@ import os
 import pyccl as ccl
 import sacc
 
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.binned_cluster_number_counts_deltasigma import (
+from firecrown.likelihood import (
+    ConstGaussian,
     BinnedClusterDeltaSigma,
-)
-from firecrown.likelihood.binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
+    Likelihood,
+    NamedParameters,
 )
-
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import (
     ClusterAbundance,

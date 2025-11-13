@@ -4,7 +4,7 @@ Provides a trivial likelihood class and factory function for testing purposes.
 
 import sacc
 from firecrown.parameters import DerivedParameterCollection, DerivedParameter
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
+from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown import parameters
 

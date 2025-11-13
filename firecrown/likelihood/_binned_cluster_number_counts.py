@@ -5,7 +5,7 @@ from __future__ import annotations
 import sacc
 
 from firecrown.data_types import TheoryVector
-from firecrown.likelihood.binned_cluster import BinnedCluster
+from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import AbundanceData, ClusterProperty
 

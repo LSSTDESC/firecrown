@@ -8,9 +8,9 @@ from __future__ import annotations
 
 import sacc
 
-from firecrown.likelihood.binned_cluster import BinnedCluster
-from firecrown.likelihood.source import SourceSystematic
-from firecrown.likelihood.statistic import (
+from firecrown.likelihood._binned_cluster import BinnedCluster
+from firecrown.likelihood._source import SourceSystematic
+from firecrown.likelihood._statistic import (
     TheoryVector,
 )
 from firecrown.modeling_tools import ModelingTools

@@ -3,7 +3,7 @@ Tests for the module firecrown.likelihood.likelihood
 """
 
 import pytest
-import firecrown.likelihood.likelihood as lk
+import firecrown.likelihood._likelihood as lk
 
 
 class DefectiveLikelihood(lk.Likelihood):

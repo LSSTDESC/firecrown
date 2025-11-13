@@ -5,7 +5,7 @@ Tests for the TwoPointTheory class and related functions.
 import pytest
 import pyccl
 import firecrown.models.two_point as models
-from firecrown.likelihood import source
+import firecrown.likelihood._source as source
 import firecrown.modeling_tools as mt
 
 

@@ -16,7 +16,7 @@ import numpy.typing as npt
 
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
-from firecrown.likelihood.statistic import TrivialStatistic
+from firecrown.likelihood._statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
@@ -36,10 +36,10 @@ from firecrown.metadata_types._compatibility import (
     _measurement_supports_harmonic,
 )
 from firecrown.data_types import TwoPointMeasurement
-import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.two_point as tp
-from firecrown.likelihood import cmb
+import firecrown.likelihood._two_point as tp
+import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
 
 

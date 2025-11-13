@@ -3,7 +3,7 @@
 import numpy as np
 import pyccl
 
-from firecrown.likelihood.source import Tracer
+from firecrown.likelihood._source import Tracer
 from firecrown.modeling_tools import ModelingTools
 
 

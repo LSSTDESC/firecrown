@@ -13,7 +13,7 @@ import numpy as np
 import pyccl
 from cosmosis.datablock import DataBlock, option_section, names as section_names
 
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.connector.cosmosis.likelihood import (
     FirecrownLikelihood,
     MissingSamplerParameterError,
@@ -687,7 +687,7 @@ def test_resetting_after_exception_in_log_likelihood(
 
     with (
         mock.patch(
-            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            "firecrown.likelihood._gaussian.ConstGaussian.compute_loglike",
             side_effect=RuntimeError(msg),
         ),
         pytest.warns(RuntimeWarning, match=warn_msg),
@@ -711,7 +711,7 @@ def test_gaussfamily_special_case(
 
     with (
         mock.patch(
-            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            "firecrown.likelihood._gaussian.ConstGaussian.compute_loglike",
             side_effect=pyccl.CCLError(msg),
         ),
         pytest.warns(UserWarning, match=warn_msg),

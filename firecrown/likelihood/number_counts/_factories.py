@@ -14,7 +14,7 @@ from firecrown.likelihood.number_counts._systematics import (
     MagnificationBiasSystematic,
     PTNonLinearBiasSystematic,
 )
-from firecrown.likelihood.source import (
+from firecrown.likelihood._source import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
     SourceGalaxySystematic,

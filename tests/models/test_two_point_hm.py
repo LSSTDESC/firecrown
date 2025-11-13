@@ -11,7 +11,7 @@ import pyccl
 
 from firecrown.models.two_point import at_least_one_tracer_has_hm
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.source import Tracer
+from firecrown.likelihood._source import Tracer
 
 
 @pytest.fixture

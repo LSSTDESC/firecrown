@@ -12,14 +12,10 @@ import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.metadata_types as mdt
 from firecrown.likelihood.factories import load_sacc_data
-from firecrown.likelihood.two_point import (
-    TwoPoint,
-    TracerNames,
-)
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import TwoPoint, ConstGaussian, Likelihood
+from firecrown.metadata_types import TracerNames
 from firecrown.parameters import ParamsMap
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.likelihood import Likelihood
 from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
 

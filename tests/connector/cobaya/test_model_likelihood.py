@@ -8,10 +8,10 @@ import numpy as np
 from cobaya.model import get_model, Model
 from cobaya.log import LoggedError
 from firecrown.connector.cobaya.likelihood import LikelihoodConnector
-from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood._likelihood import NamedParameters
+from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-import firecrown.likelihood.statistic as stat
+import firecrown.likelihood._statistic as stat
 import firecrown.ccl_factory as ccl_factory
 
 
@@ -128,7 +128,7 @@ def test_resetting_after_exception_in_log_likelihood(fiducial_params):
 
     with (
         mock.patch(
-            "firecrown.likelihood.gaussian.ConstGaussian.compute_loglike",
+            "firecrown.likelihood._gaussian.ConstGaussian.compute_loglike",
             side_effect=RuntimeError(msg),
         ),
         pytest.warns(RuntimeWarning, match=warn_msg),

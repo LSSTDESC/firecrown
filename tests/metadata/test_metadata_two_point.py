@@ -21,9 +21,9 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
 from firecrown.data_types import TwoPointMeasurement
-from firecrown.likelihood.source import SourceGalaxy
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.cmb import CMBConvergenceFactory
+from firecrown.likelihood._source import SourceGalaxy
+from firecrown.likelihood._two_point import TwoPoint
+from firecrown.likelihood._cmb import CMBConvergenceFactory
 
 
 def test_inferred_galaxy_z_dist():
@@ -814,8 +814,11 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
 
 @pytest.fixture
 def tp_factory_with_cmb():
-    from firecrown.likelihood.two_point import TwoPointFactory, TwoPointCorrelationSpace
-    from firecrown.likelihood.weak_lensing import WeakLensingFactory
+    from firecrown.likelihood._two_point import (
+        TwoPointFactory,
+        TwoPointCorrelationSpace,
+    )
+    from firecrown.likelihood._weak_lensing import WeakLensingFactory
     from firecrown.likelihood.number_counts import NumberCountsFactory
 
     return TwoPointFactory(

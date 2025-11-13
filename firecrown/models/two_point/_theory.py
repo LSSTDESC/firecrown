@@ -7,7 +7,7 @@ import sacc
 from numpy import typing as npt
 
 from firecrown.generators.two_point import EllOrThetaConfig, LogLinearElls
-from firecrown.likelihood.source import Source, Tracer
+from firecrown.likelihood._source import Source, Tracer
 from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap

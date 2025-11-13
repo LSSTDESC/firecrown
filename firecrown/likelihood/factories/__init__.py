@@ -14,7 +14,7 @@ These functions are particularly useful when the full set of statistics present 
 SACC file is being used without the need for complex customization.
 """
 
-from firecrown.likelihood.two_point import TwoPointFactory
+from firecrown.likelihood._two_point import TwoPointFactory
 from firecrown.metadata_types import TwoPointCorrelationSpace
 
 from firecrown.likelihood.factories._sacc_utils import load_sacc_data
