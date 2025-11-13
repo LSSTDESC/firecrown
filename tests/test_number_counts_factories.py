@@ -2,6 +2,7 @@
 
 import pytest
 import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.number_counts._factories as nc_factories
 import firecrown.utils as fcutils
 
 
@@ -19,7 +20,7 @@ def fixture_nc_factory() -> nc.NumberCountsFactory:
 
 
 @pytest.fixture(name="nc_sys_factory")
-def fixture_nc_sys_factory() -> nc.NumberCountsSystematicFactory:
+def fixture_nc_sys_factory() -> nc_factories.NumberCountsSystematicFactory:
     """Fixture for the NumberCountsSystematicFactory class."""
     # yaml = """
     # global_systematics: []
@@ -27,10 +28,10 @@ def fixture_nc_sys_factory() -> nc.NumberCountsSystematicFactory:
     # - type: PhotoZShiftFactory
     # """
 
-    return nc.PhotoZShiftFactory()
+    return nc_factories.PhotoZShiftFactory()
 
 
 def test_photozshift_not_applied_to_photometic_measurement():
 
-    factory = nc.PhotoZShiftFactory()
+    factory = nc_factories.PhotoZShiftFactory()
     assert factory is not None
