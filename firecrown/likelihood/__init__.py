@@ -54,6 +54,18 @@ from . import supernova
 
 # pylint: enable=unused-import
 
+# Compatibility layer for NumCosmo < 0.27
+# NumCosmo knowns aboud the old internal organization of Firecrown.
+from numcosmo_py import Ncm
+
+if not Ncm.cfg_version_check(0, 27, 0):
+    import types
+    import sys
+
+    likelihood = types.ModuleType("likelihood.likelihood")
+    likelihood.NamedParameters = NamedParameters
+    sys.modules["firecrown.likelihood.likelihood"] = likelihood
+
 __all__ = [
     # Core likelihood infrastructure
     "Likelihood",
