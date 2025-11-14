@@ -10,7 +10,6 @@ from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
     load_sacc_data,
-    TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
 )
@@ -23,6 +22,7 @@ from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
     Galaxies,
+    TwoPointCorrelationSpace,
     TwoPointHarmonic,
     TwoPointReal,
     TypeSource,

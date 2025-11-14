@@ -84,7 +84,8 @@ check_two_point_consistence_real(two_point_reals)
 Use a factory to build the `TwoPoint` objects in the **ready** state:
 
 ```{python}
-from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
+from firecrown.likelihood import TwoPoint
+from firecrown.likelihood.factories import TwoPointFactory
 from firecrown.utils import (
     base_model_from_yaml,
     ClIntegrationMethod,
@@ -116,7 +117,7 @@ two_points_ready = TwoPoint.from_measurement(two_point_reals, tp_factory)
 Create a `Likelihood` object in the ready state using the covariance matrix:
 
 ```{python}
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import ConstGaussian
 
 likelihood_ready = ConstGaussian.create_ready(
     two_points_ready, sacc_data.covariance.dense
@@ -286,10 +287,10 @@ Alternatively, by setting a restrictively small filtered range, we can remove da
 ```{python}
 from firecrown.likelihood.factories import (
     DataSourceSacc,
-    TwoPointCorrelationSpace,
     TwoPointExperiment,
     TwoPointFactory,
 )
+from firecrown.metadata_types import TwoPointCorrelationSpace
 
 tpf = base_model_from_yaml(TwoPointFactory, two_point_yaml)
 
@@ -393,7 +394,7 @@ The lens and source redshift bin collections used for the computations are impor
 import numpy as np
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.metadata_types import TwoPointHarmonic
-from firecrown.generators.inferred_galaxy_zdist import (
+from firecrown.generators import (
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )

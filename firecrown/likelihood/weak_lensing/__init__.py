@@ -22,6 +22,12 @@ from firecrown.likelihood._weak_lensing import (
     WeakLensingSystematic,
 )
 
+# Re-export shared factories from source module
+from firecrown.likelihood._source import (
+    PhotoZShiftFactory,
+    PhotoZShiftandStretchFactory,
+)
+
 __all__ = [
     "HMAlignmentSystematic",
     "LinearAlignmentSystematic",
@@ -29,7 +35,9 @@ __all__ = [
     "MultiplicativeShearBias",
     "MultiplicativeShearBiasFactory",
     "PhotoZShift",
+    "PhotoZShiftFactory",
     "PhotoZShiftandStretch",
+    "PhotoZShiftandStretchFactory",
     "SelectField",
     "TattAlignmentSystematic",
     "TattAlignmentSystematicFactory",

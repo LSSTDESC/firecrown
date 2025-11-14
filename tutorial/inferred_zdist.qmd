@@ -49,7 +49,7 @@ Using the `lens0` object created above, we can create a `TwoPointCell` object as
 
 ```{python}
 from firecrown.metadata_types import TwoPointXY, TwoPointHarmonic
-from firecrown.generators.two_point import LogLinearElls
+from firecrown.generators import LogLinearElls
 
 lens0_lens0 = TwoPointXY(
     x=lens0,
@@ -74,11 +74,9 @@ The `TwoPoint` object is used to encapsulate the theoretical model for the two-p
 Using the `lens0_lens0_cell` object created above, we can create a `TwoPoint` object as follows:
 
 ```{python}
-from firecrown.likelihood.two_point import (
-    TwoPoint,
-    TwoPointFactory,
-    NumberCountsFactory,
-)
+from firecrown.likelihood import TwoPoint
+from firecrown.likelihood.factories import TwoPointFactory
+from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.metadata_types import TwoPointCorrelationSpace
 
 # Generate a list of TwoPoint objects, one for each bin provided

@@ -3,7 +3,6 @@
 from firecrown.likelihood.number_counts._source import NumberCounts
 from firecrown.likelihood.number_counts._factories import (
     NumberCountsFactory,
-    PhotoZShiftFactory,
 )
 from firecrown.likelihood.number_counts._systematics import (
     ConstantMagnificationBiasSystematic,
@@ -19,5 +18,4 @@ __all__ = [
     "ConstantMagnificationBiasSystematic",
     "PTNonLinearBiasSystematic",
     "MagnificationBiasSystematic",
-    "PhotoZShiftFactory",
 ]

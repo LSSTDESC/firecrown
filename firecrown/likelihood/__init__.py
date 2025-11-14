@@ -7,6 +7,9 @@ the abstract base class for likelihoods and likelihood loading utilities.
 
 """
 
+# Third-party imports
+from numcosmo_py import Ncm
+
 # Core likelihood infrastructure
 from firecrown.likelihood._likelihood import (
     Likelihood,
@@ -56,14 +59,17 @@ from . import supernova
 
 # Compatibility layer for NumCosmo < 0.27
 # NumCosmo knowns aboud the old internal organization of Firecrown.
-from numcosmo_py import Ncm
-
-if not Ncm.cfg_version_check(0, 27, 0):
+if not Ncm.cfg_version_check(0, 27, 0):  # pragma: no branch
     import types
     import sys
 
+    # Create a new module 'likelihood.likelihood' for backwards compatibility
+    # with older NumCosmo versions
     likelihood = types.ModuleType("likelihood.likelihood")
-    likelihood.NamedParameters = NamedParameters
+    # Add NamedParameters class to the module, ignoring type checking since it
+    # is added dynamically
+    likelihood.NamedParameters = NamedParameters  # type: ignore[attr-defined]
+    # Register the module in sys.modules to make it importable
     sys.modules["firecrown.likelihood.likelihood"] = likelihood
 
 __all__ = [

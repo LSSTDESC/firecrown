@@ -32,7 +32,7 @@ from firecrown.likelihood._two_point import (
     use_source_factory_metadata_index,
 )
 from firecrown.models.two_point import TwoPointTheory
-from firecrown.generators.two_point import (
+from firecrown.generators._two_point import (
     generate_bin_centers,
     EllOrThetaConfig,
     LogLinearElls,
@@ -280,7 +280,7 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
 )
 def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
     """Test that generated ells are always within specified bounds using hypothesis."""
-    from firecrown.generators.two_point import generate_bin_centers
+    from firecrown.generators._two_point import generate_bin_centers
 
     # Skip invalid cases
     assume(minimum < maximum)
@@ -311,7 +311,7 @@ def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
 )
 def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int):
     """Generated thetas are always within specified bounds using hypothesis."""
-    from firecrown.generators.two_point import generate_bin_centers
+    from firecrown.generators._two_point import generate_bin_centers
 
     # Skip invalid cases
     assume(minimum < maximum)

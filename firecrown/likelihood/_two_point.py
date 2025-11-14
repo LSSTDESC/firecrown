@@ -19,7 +19,7 @@ from pydantic import (
     PrivateAttr,
 )
 
-import firecrown.generators.two_point as gen
+import firecrown.generators as gen
 import firecrown.metadata_types as mdt
 from firecrown.data_types import DataVector, TheoryVector, TwoPointMeasurement
 from firecrown.likelihood._cmb import CMBConvergence, CMBConvergenceFactory
@@ -767,7 +767,16 @@ def read_ell_cells(
 
 
 class TwoPointFactory(BaseModel):
-    """Factory class for WeakLensing objects."""
+    """Factory class for creating TwoPoint statistics from measurements.
+
+    This factory manages the creation of TwoPoint statistics by coordinating
+    multiple source factories (WeakLensing, NumberCounts, and CMBConvergence)
+    and applying them to measurements. It specifies the correlation space
+    (harmonic or real) and optional integration options for C_ℓ calculations.
+
+    Users typically instantiate this class from YAML configuration and use it
+    to build TwoPoint objects from measurements extracted from SACC files.
+    """
 
     model_config = ConfigDict(extra="forbid", frozen=True)
 

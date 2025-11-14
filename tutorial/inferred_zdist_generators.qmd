@@ -60,7 +60,7 @@ Here we are choosing $100$ equally-spaced points in the range $0 < z < 3.5$ at w
 ```{python}
 import numpy as np
 import firecrown
-from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRD
+from firecrown.generators import ZDistLSSTSRD
 
 # These are the values of z at which we will evalute f(z)
 z = np.linspace(0, 3.5, 100)
@@ -81,7 +81,6 @@ Pz_y10_lens = zdist_y10_lens.distribution(z)
 
 Pz_y1_source = zdist_y1_source.distribution(z)
 Pz_y10_source = zdist_y10_source.distribution(z)
-
 ```
 
 We use NumCosmo's `autoknots` to determine the number of knots to use in the spline interpolation.
@@ -140,9 +139,9 @@ Here we show the first bin for the lens and source samples for both Year 1 and Y
 ```{python}
 import numpy as np
 import firecrown
-from firecrown.generators.inferred_galaxy_zdist import (
+from firecrown.metadata_types import InferredGalaxyZDist
+from firecrown.generators import (
     ZDistLSSTSRD,
-    InferredGalaxyZDist,
     Y1_LENS_BINS,
     Y10_LENS_BINS,
     Y1_SOURCE_BINS,
