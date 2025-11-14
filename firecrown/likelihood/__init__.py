@@ -23,7 +23,7 @@ from firecrown.likelihood._gaussfamily import GaussFamily, State
 from firecrown.likelihood._student_t import StudentT
 
 # Two-point statistics
-from firecrown.likelihood._two_point import TwoPoint
+from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
 
 # Cluster statistics
 from firecrown.likelihood._binned_cluster import BinnedCluster
@@ -84,6 +84,7 @@ __all__ = [
     "StudentT",
     # Two-point statistics
     "TwoPoint",
+    "TwoPointFactory",
     # Cluster statistics
     "BinnedCluster",
     "BinnedClusterNumberCounts",

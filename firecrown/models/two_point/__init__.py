@@ -1,5 +1,7 @@
 """TwoPoint theory support."""
 
+# flake8: noqa
+
 from firecrown.models.two_point._interpolation import ApplyInterpolationWhen
 from firecrown.models.two_point._power_spectrum import (
     at_least_one_tracer_has_hm,
