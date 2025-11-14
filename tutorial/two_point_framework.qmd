@@ -9,31 +9,31 @@ format: html
 
 This document describes the conceptual structure behind, and design principals of, Firecrown’s framework for constructing cosmological two-point likelihoods.
 It is intended to provide a high-level overview of how measurements, binning schemes, and data layouts are represented and organized in the codebase.
-The focus is on the rationale behind each abstraction and the motivation for the chosen hierarchy. 
+The focus is on the rationale behind each abstraction and the motivation for the chosen hierarchy.
 Detailed descriptions of each component are provided in the following sections.
 
 ## Introduction
 
-Firecrown’s two-point likelihood framework is built around a structured hierarchy of metadata types that describe the configuration and organization of cosmological measurements. 
-At the foundation are basic bin descriptors, such as [[metadata_types|InferredGalaxyZDist]], which define properties of individual observables or selections. 
+Firecrown’s two-point likelihood framework is built around a structured hierarchy of metadata types that describe the configuration and organization of cosmological measurements.
+At the foundation are basic bin descriptors, such as [[metadata_types|InferredGalaxyZDist]], which define properties of individual observables or selections.
 These descriptors are not directly tied to specific measurements but are shared across multiple components in a complex analysis.
 This allows Firecrown to ensure that components that should have identical descriptors have exactly identical descriptors, by construction.
 
-These bin descriptors are combined into [[metadata_types|TwoPointXY]] objects, which represent a pair of bins that are to be cross-correlated. 
-This level abstracts the bin pairing process and ensures consistency between the inputs. 
+These bin descriptors are combined into [[metadata_types|TwoPointXY]] objects, which represent a pair of bins that are to be cross-correlated.
+This level abstracts the bin pairing process and ensures consistency between the inputs.
 It acts as a validation and grouping layer before specifying how the measurements are structured.
 
 The framework then separates measurement types by data layout: [[metadata_types|TwoPointHarmonic]] for harmonic-space measurements (e.g., as a function of multipole moments $\ell$s) and [[metadata_types|TwoPointReal]] for real-space measurements (e.g., as a function of angular separation $\theta$).
 These objects describe the arrangement of data without requiring the data itself, making them suitable for forecasting or model comparison tasks.
 
-At the top of the hierarchy is the [[data_types|TwoPointMeasurement]], which includes the data layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) and the associated measured values, either observed data or mock realizations. 
+At the top of the hierarchy is the [[data_types|TwoPointMeasurement]], which includes the data layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) and the associated measured values, either observed data or mock realizations.
 This layered structure allows for flexible modeling and reuse of components, avoiding duplication and enabling a clear separation between metadata, data layout, and measured values.
 
-The framework described so far defines dataclasses for representing metadata and measured values. 
-To compute theoretical predictions or build likelihoods, a [[likelihood.two_point|TwoPoint]] object must be created. 
-This object requires a measurement layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) or a full [[data_types|TwoPointMeasurement]], and includes all modeling assumptions—such as galaxy bias, shot noise, intrinsic alignment, and systematics. 
-Multiple [[likelihood.two_point|TwoPoint]] instances can be constructed from the same layout with different model choices.
-While this can be done manually, the [[likelihood.two_point|TwoPointFactory]] automates the creation of [[likelihood.two_point|TwoPoint]] objects from either layout or measurement objects.
+The framework described so far defines dataclasses for representing metadata and measured values.
+To compute theoretical predictions or build likelihoods, a [[likelihood|TwoPoint]] object must be created.
+This object requires a measurement layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) or a full [[data_types|TwoPointMeasurement]], and includes all modeling assumptions—such as galaxy bias, shot noise, intrinsic alignment, and systematics.
+Multiple [[likelihood|TwoPoint]] instances can be constructed from the same layout with different model choices.
+While this can be done manually, the [[likelihood|TwoPointFactory]] automates the creation of [[likelihood|TwoPoint]] objects from either layout or measurement objects.
 See [Two-Point Factories](#sec-two-point-factories) for details.
 
 The complete hierarchy is visualized in @fig-framework-hierarchy.
@@ -44,7 +44,7 @@ The complete hierarchy is visualized in @fig-framework-hierarchy.
 %%| fig-cap-location: margin
 %%| fig-cap: "Hierarchy of types in the Firecrown two-point statistic framework."
 graph TD
-  A["Basic Bin Description<br/>e.g. InferredGalaxyZDist"] 
+  A["Basic Bin Description<br/>e.g. InferredGalaxyZDist"]
   A --> B["TwoPointXY<br/>(bin combination and<br/>measured types)"]
   B --> C1["TwoPointHarmonic<br/>(ell layout)"]
   B --> C2["TwoPointReal<br/>(theta layout)"]
@@ -62,9 +62,9 @@ graph TD
 The foundation of Firecrown’s two-point framework begins with a description of individual bins, represented as dataclasses.
 These classes encapsulate the metadata required to define a bin used in cosmological measurements.
 
-A key example is the [[metadata_types|InferredGalaxyZDist]] class, which describes the inferred redshift distribution of a single bin. 
-Each bin is labeled using a [[metadata_types|InferredGalaxyZDist.bin_name]] and includes arrays [[metadata_types|InferredGalaxyZDist.z]] and [[metadata_types|InferredGalaxyZDist.dndz]] representing the redshift and corresponding distribution. 
-Additionally, it contains a set of [[metadata_types|Measurement]] types (e.g., [[metadata_types|Galaxies.COUNTS]], [[metadata_types|Galaxies.SHEAR_T]], [[metadata_types|CMB.CONVERGENCE]])[^enumerations] indicating which observables were measured in this bin. 
+A key example is the [[metadata_types|InferredGalaxyZDist]] class, which describes the inferred redshift distribution of a single bin.
+Each bin is labeled using a [[metadata_types|InferredGalaxyZDist.bin_name]] and includes arrays [[metadata_types|InferredGalaxyZDist.z]] and [[metadata_types|InferredGalaxyZDist.dndz]] representing the redshift and corresponding distribution.
+Additionally, it contains a set of [[metadata_types|Measurement]] types (e.g., [[metadata_types|Galaxies.COUNTS]], [[metadata_types|Galaxies.SHEAR_T]], [[metadata_types|CMB.CONVERGENCE]])[^enumerations] indicating which observables were measured in this bin.
 It is valid to include multiple measurement types for the same bin, such as galaxy number counts and shear measured on the same galaxy subsample.
 
 [^enumerations]: `Galaxies` and `CMB` are both Python types, each representing a different kind of measurement.
@@ -74,9 +74,9 @@ It is valid to include multiple measurement types for the same bin, such as gala
      Such additions are made in `firecrown/metadata_types.py`.
      Firecrown's use of type checking should ensure that any code that would be invalidated by adding a new type, or value, is identified.
 
-To further differentiate among subpopulations, each bin may be tagged with a [[metadata_types|InferredGalaxyZDist.type_source]]. 
-This identifier, while typically a simple string[^type_source], distinguishes between subsets within the same measurement category. 
-For example, in galaxy surveys, [[metadata_types|InferredGalaxyZDist.type_source]] might refer to red vs. blue galaxies, or in CMB lensing, to Planck vs. SPT data. 
+To further differentiate among subpopulations, each bin may be tagged with a [[metadata_types|InferredGalaxyZDist.type_source]].
+This identifier, while typically a simple string[^type_source], distinguishes between subsets within the same measurement category.
+For example, in galaxy surveys, [[metadata_types|InferredGalaxyZDist.type_source]] might refer to red vs. blue galaxies, or in CMB lensing, to Planck vs. SPT data.
 This tag allows the modeling framework to apply different theoretical treatments or nuisance parameterizations to distinct subcomponents while keeping the overall bin structure unified.
 
 [^type_source]: More precisely, `type_source` is actually of type `TypeSource`, which is a subclass of `str`.
@@ -100,16 +100,16 @@ It is also marked with *kw_only*, ensuring that only keyword arguments are accep
 In other tutorials, we explore the following topics:
 
 1. **[Inferred Redshift Distributions](inferred_zdist.qmd)**: A guide to utilizing Firecrown's capabilities to describe galaxy redshift distributions for cosmological analyses.
-   
+
 2. **[Redshift Distribution Generators](inferred_zdist_generators.qmd)**: Demonstrates how to generate [[metadata_types|InferredGalaxyZDist]] objects from LSST SRD redshift distributions.
-3. **[Redshift Distribution Serialization](inferred_zdist_serialization.qmd)**: Explains how to serialize and deserialize [[metadata_types|InferredGalaxyZDist]] objects and use the [[generators.inferred_galaxy_zdist|ZDistLSSTSRDBin]] and [[generators.inferred_galaxy_zdist|ZDistLSSTSRDBinCollection]] generators dataclasses.
+3. **[Redshift Distribution Serialization](inferred_zdist_serialization.qmd)**: Explains how to serialize and deserialize [[metadata_types|InferredGalaxyZDist]] objects and use the [[generators|ZDistLSSTSRDBin]] and [[generators|ZDistLSSTSRDBinCollection]] generators dataclasses.
 
 # Bin Combinations: [[metadata_types|TwoPointXY]]
 
-Once individual bins have been defined, they are combined to specify a particular two-point correlation measurement. 
-This is handled by the [[metadata_types|TwoPointXY]] class, which represents a pairing of two bins ([[metadata_types|TwoPointXY.x]] and [[metadata_types|TwoPointXY.y]]) along with the specific observables measured in each. 
+Once individual bins have been defined, they are combined to specify a particular two-point correlation measurement.
+This is handled by the [[metadata_types|TwoPointXY]] class, which represents a pairing of two bins ([[metadata_types|TwoPointXY.x]] and [[metadata_types|TwoPointXY.y]]) along with the specific observables measured in each.
 
-This abstraction plays a critical role in separating the shared metadata of the bins from the specific measurement being constructed. 
+This abstraction plays a critical role in separating the shared metadata of the bins from the specific measurement being constructed.
 A given bin (e.g., a sample of galaxies) may be involved in multiple different observables, such as number counts and shear.
 [[metadata_types|TwoPointXY]] allows each measurement pairing to be represented without duplicating bin information.
 
@@ -118,48 +118,48 @@ In practice, the same pair of bins may appear in multiple combinations, each cor
 ```{python}
 #| eval: false
 bin1 = InferredGalaxyZDist(
-    z=..., dndz=..., 
+    z=..., dndz=...,
     measurements={Galaxies.COUNTS, Galaxies.SHEAR_E}
 )
 bin2 = InferredGalaxyZDist(
-    z=..., dndz=..., 
+    z=..., dndz=...,
     measurements={Galaxies.COUNTS, Galaxies.SHEAR_E}
 )
 ```
 
-Here, both bins support galaxy number counts and shear measurements. 
+Here, both bins support galaxy number counts and shear measurements.
 These bins can be used to construct different [[metadata_types|TwoPointXY]] combinations, depending on which observables are being cross-correlated:
 
 ```{python}
 #| eval: false
 # Counts x Counts
 comb1 = TwoPointXY(
-    x=bin1, 
-    y=bin2, 
-    x_measurement=Galaxies.COUNTS, 
+    x=bin1,
+    y=bin2,
+    x_measurement=Galaxies.COUNTS,
     y_measurement=Galaxies.COUNTS
 )
 
 # Shear x Counts
 comb2 = TwoPointXY(
-    x=bin1, 
-    y=bin2, 
-    x_measurement=Galaxies.SHEAR_E, 
+    x=bin1,
+    y=bin2,
+    x_measurement=Galaxies.SHEAR_E,
     y_measurement=Galaxies.COUNTS
 )
 ```
 
-Each [[metadata_types|TwoPointXY]] object thus uniquely defines a single combination of two bins and the associated measurements. 
+Each [[metadata_types|TwoPointXY]] object thus uniquely defines a single combination of two bins and the associated measurements.
 This structure ensures that downstream objects (such as data layouts and likelihood components) have access to the full bin metadata while clearly distinguishing which observable is being used.
 
 This also allows validation logic to be centralized: [[metadata_types|TwoPointXY]] enforces that the specified [[metadata_types|TwoPointXY.x_measurement]] and [[metadata_types|TwoPointXY.y_measurement]] are actually among the measurements supported by the corresponding bins.
 
 # Measurement Layout: [[metadata_types|TwoPointHarmonic]] and [[metadata_types|TwoPointReal]]
 
-After defining a specific bin pairing and observable combination using [[metadata_types|TwoPointXY]], the framework distinguishes the domain in which the measurement is made—harmonic space or real space. 
+After defining a specific bin pairing and observable combination using [[metadata_types|TwoPointXY]], the framework distinguishes the domain in which the measurement is made—harmonic space or real space.
 This distinction is captured by the [[metadata_types|TwoPointHarmonic]] and [[metadata_types|TwoPointReal]] classes, which extend the structure by incorporating the data layout.
 
-Each of these classes includes a reference to the corresponding [[metadata_types|TwoPointXY]] object, preserving the bin and observable metadata while adding the angular or harmonic domain configuration. 
+Each of these classes includes a reference to the corresponding [[metadata_types|TwoPointXY]] object, preserving the bin and observable metadata while adding the angular or harmonic domain configuration.
 This avoids redundancy and keeps the measurement layout modular.
 
 In harmonic space, the measurement is characterized by a set of multipole orders ($\ell$s) at which the multipole moments ($C_\ell$s) of the measured quantity are calculated.
@@ -168,8 +168,8 @@ For example:
 ```{python}
 #| eval: false
 meta1 = TwoPointHarmonic(
-    XY=comb1, 
-    ells=..., 
+    XY=comb1,
+    ells=...,
     window=...
 )
 ```
@@ -178,27 +178,27 @@ For real-space measurements, the layout is specified by a set of angular separat
 ```{python}
 #| eval: false
 meta2 = TwoPointReal(
-    XY=comb1, 
+    XY=comb1,
     thetas=...
 )
 ```
 
-This separation allows the same bin and observable combination ([[metadata_types|TwoPointXY]]) to be used in different contexts, e.g., one for computing angular power spectra and another for correlation functions, without duplicating bin-pair metadata. 
+This separation allows the same bin and observable combination ([[metadata_types|TwoPointXY]]) to be used in different contexts, e.g., one for computing angular power spectra and another for correlation functions, without duplicating bin-pair metadata.
 It also enables use cases such as theoretical predictions or forecasts where data are not yet available, but the layout must be fully defined.
 
 # Two-Point Data Container: [[data_types|TwoPointMeasurement]]
 
-The previous types ([[metadata_types|InferredGalaxyZDist]], [[metadata_types|TwoPointXY]], [[metadata_types|TwoPointHarmonic]], [[metadata_types|TwoPointReal]]) define the structure and layout of a two-point measurement, what is being measured and how, but do not include actual data. 
+The previous types ([[metadata_types|InferredGalaxyZDist]], [[metadata_types|TwoPointXY]], [[metadata_types|TwoPointHarmonic]], [[metadata_types|TwoPointReal]]) define the structure and layout of a two-point measurement, what is being measured and how, but do not include actual data.
 These layout descriptions can be used independently of any measurement data, for example, in computing theoretical predictions, plotting expectations, or running forecasts.
 
-To represent an actual measurement, either from observational data or a simulated dataset, the framework introduces the [[data_types|TwoPointMeasurement]] class. 
+To represent an actual measurement, either from observational data or a simulated dataset, the framework introduces the [[data_types|TwoPointMeasurement]] class.
 This type links the layout with the measured data values and the corresponding covariance structure:
 ```{python}
 #| eval: false
 measurement = TwoPointMeasurement(
-    data=..., 
-    indices=..., 
-    covariance_name=..., 
+    data=...,
+    indices=...,
+    covariance_name=...,
     metadata=meta1
 )
 ```
@@ -234,7 +234,7 @@ See [Two-Point Factories](two_point_factories.qmd) for implementation and usage 
 
 ## Summary
 
-This framework provides a structured approach for managing two-point correlation measurements in cosmology. 
+This framework provides a structured approach for managing two-point correlation measurements in cosmology.
 It separates concerns into different components, each with a specific role, and supports both theoretical predictions and actual observational data.
 All dataclasses below are frozen for immutability and support YAML serialization.
 
