@@ -125,7 +125,7 @@ class ExampleCosmicShear(AnalysisBuilder):
     def _setup_phase(self, progress, summary, _output_path):
         """Setup phase of SACC generation."""
         task1 = progress.add_task("Setting up cosmology and coordinates...", total=None)
-        cosmo = self._create_fiducial_cosmology()
+        cosmo = self.cosmology_analysis_spec().cosmology.to_ccl_cosmology()
         summary.add_row("[b]Cosmology[/b]", "")
         self._show_cosmology_config(cosmo, summary)
 
@@ -230,25 +230,6 @@ class ExampleCosmicShear(AnalysisBuilder):
 
         return sacc_full_file
 
-    def _create_fiducial_cosmology(self) -> pyccl.Cosmology:
-        """Create fiducial cosmology for synthetic data generation.
-
-        Uses standard Planck-like cosmological parameters to generate
-        realistic cosmic shear power spectra.
-
-        :return: CCL Cosmology object with fiducial parameters
-        """
-        return pyccl.Cosmology(
-            Omega_c=0.27,
-            Omega_b=0.045,
-            Omega_k=0.0,
-            w0=-1.0,
-            wa=0.0,
-            A_s=2.1e-9,
-            n_s=0.96,
-            h=0.67,
-        )
-
     def _create_coordinate_arrays(self) -> tuple[np.ndarray, np.ndarray]:
         """Create coordinate arrays for redshift and multipole sampling.
 
@@ -268,14 +249,20 @@ class ExampleCosmicShear(AnalysisBuilder):
         params = [
             ("Omega_c", ".3f"),
             ("Omega_b", ".3f"),
-            ("w0", ".1f"),
-            ("A_s", ".1e"),
-            ("n_s", ".2f"),
             ("h", ".2f"),
+            ("Omega_k", ".3f"),
+            ("T_CMB", ".2f"),
+            ("Neff", ".2f"),
+            ("w0", ".1f"),
+            ("wa", ".1f"),
+            ("A_s", ".1e"),
+            ("sigma8", ".2f"),
+            ("n_s", ".2f"),
         ]
 
         for param, fmt in params:
-            table.add_row(param, f"{cosmo[param]:{fmt}}")
+            if cosmo[param] is not None and not np.isnan(cosmo[param]):
+                table.add_row(param, f"{cosmo[param]:{fmt}}")
 
     def _show_coordinate_config(
         self, z_range: np.ndarray, ell_range: np.ndarray, table: Table
