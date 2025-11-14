@@ -4,7 +4,7 @@ Generates a complete DES Y1 3x2pt analysis example with cosmic shear,
 galaxy-galaxy lensing, and galaxy clustering.
 """
 
-from typing import ClassVar, Annotated, assert_never
+from typing import ClassVar, Annotated, Sequence, assert_never
 from types import ModuleType
 from dataclasses import dataclass
 from pathlib import Path
@@ -13,7 +13,6 @@ from enum import Enum
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from ..analysis import (
     AnalysisBuilder,
     Model,
@@ -404,6 +403,7 @@ ccl_factory:
             return FrameworkCosmology.NONE
         return FrameworkCosmology.NONLINEAR
 
-    def amplitude_parameter(self):
-        """Return power spectrum amplitude parameter."""
-        return PoweSpecAmplitudeParameter.SIGMA8
+    def get_options_desc(self) -> Sequence[tuple[str, str]]:
+        return [
+            ("Factory Type", f"{self.factory_type.value}"),
+        ]

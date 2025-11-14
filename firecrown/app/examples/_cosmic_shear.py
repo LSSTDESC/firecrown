@@ -4,7 +4,7 @@ Generates synthetic weak lensing cosmic shear data with realistic
 noise and covariance for testing and demonstration purposes.
 """
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -16,7 +16,6 @@ from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from ...utils import upper_triangle_indices
 from ..analysis import (
     AnalysisBuilder,
@@ -436,6 +435,14 @@ class ExampleCosmicShear(AnalysisBuilder):
         """Return cosmology requirement level."""
         return FrameworkCosmology.NONLINEAR
 
-    def amplitude_parameter(self):
-        """Return power spectrum amplitude parameter."""
-        return PoweSpecAmplitudeParameter.SIGMA8
+    def get_options_desc(self) -> Sequence[tuple[str, str]]:
+        return [
+            ("Number of Tomographic Bins", f"{self.n_bins}"),
+            ("Noise Level", f"{self.noise_level}"),
+            ("Redshift Width", f"{self.sigma_z}"),
+            ("Redshift Max", f"{self.z_max}"),
+            ("Ell Min", f"{self.ell_min}"),
+            ("Ell Max", f"{self.ell_max}"),
+            ("Number of Ell Points", f"{self.n_ell_points}"),
+            ("Number of Z Points", f"{self.n_z_points}"),
+        ]

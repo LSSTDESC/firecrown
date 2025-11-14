@@ -14,7 +14,18 @@ without notice. Only use the public API exported in __all__.
 """
 
 from ._analysis_builder import AnalysisBuilder
-from ._types import Frameworks, Model, Parameter, ConfigGenerator, FrameworkCosmology
+from ._types import (
+    Frameworks,
+    Model,
+    Parameter,
+    ConfigGenerator,
+    FrameworkCosmology,
+    PriorUniform,
+    PriorGaussian,
+    CCLCosmologyParameters,
+    CCLCosmologyPriors,
+    CCLCosmologyAnalysisSpec,
+)
 from ._config_generator import (
     get_generator,
     CosmosisConfigGenerator,
@@ -28,6 +39,11 @@ __all__ = [
     "Frameworks",
     "Model",
     "Parameter",
+    "PriorUniform",
+    "PriorGaussian",
+    "CCLCosmologyParameters",
+    "CCLCosmologyPriors",
+    "CCLCosmologyAnalysisSpec",
     "get_generator",
     "ConfigGenerator",
     "CosmosisConfigGenerator",
