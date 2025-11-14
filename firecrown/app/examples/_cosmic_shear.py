@@ -397,14 +397,12 @@ class ExampleCosmicShear(AnalysisBuilder):
 
         :return: Model with delta_z parameters for all bins
         """
-        parameters: list[tuple[str, str, float, float, float, float, float, bool]] = [
+        parameters: list[tuple[str, str, float, float, float, bool]] = [
             (
                 f"trc{bin_index}_delta_z",
                 rf"\delta_{{z{bin_index}}}",
                 -5.0,
                 5.0,
-                0.05,
-                0.0,
                 0.5,
                 True,
             )
@@ -414,7 +412,7 @@ class ExampleCosmicShear(AnalysisBuilder):
             Model(
                 name=f"firecrown_{self.prefix}",
                 description="Model parameters for cosmic shear analysis",
-                parameters=[Parameter(*param) for param in parameters],
+                parameters=[Parameter.from_tuple(*param) for param in parameters],
             )
         ]
 
