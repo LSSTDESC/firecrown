@@ -10,12 +10,15 @@ from pathlib import Path
 import typer
 
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from ..analysis import (
     AnalysisBuilder,
     Model,
     Parameter,
     FrameworkCosmology,
+    PriorUniform,
+    CCLCosmologyParameters,
+    CCLCosmologyPriors,
+    CCLCosmologyAnalysisSpec,
     download_from_url,
     copy_template,
 )
@@ -105,6 +108,19 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         """Return cosmology requirement level."""
         return FrameworkCosmology.BACKGROUND
 
-    def amplitude_parameter(self):
-        """Return power spectrum amplitude parameter."""
-        return PoweSpecAmplitudeParameter.AS
+    def cosmology_analysis_spec(self) -> CCLCosmologyAnalysisSpec:
+        """Return the cosmology analysis specification.
+
+        :return: The cosmology analysis specification
+        """
+        cosmology = CCLCosmologyParameters(
+            Omega_c=0.25,
+            Omega_b=0.05,
+            h=0.67,
+            n_s=0.96,
+            A_s=2.1e-9,
+        )
+        priors = CCLCosmologyPriors(
+            Omega_c=PriorUniform(lower=0.06, upper=0.46),
+        )
+        return CCLCosmologyAnalysisSpec(cosmology=cosmology, priors=priors)

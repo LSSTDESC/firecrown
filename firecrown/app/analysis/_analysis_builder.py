@@ -6,17 +6,17 @@ complete analysis examples with data files and framework configurations.
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
 
-from typing import Annotated, ClassVar
+from typing import Annotated, ClassVar, Sequence
 from abc import abstractmethod
 from pathlib import Path
 import dataclasses
 from rich.panel import Panel
+from rich.table import Table
 from rich.rule import Rule
 
 import typer
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
-from ._types import Frameworks, Model, FrameworkCosmology
+from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologyAnalysisSpec
 from ._config_generator import get_generator
 from .. import logging
 
@@ -80,12 +80,27 @@ class AnalysisBuilder(logging.Logging):
         super().__post_init__()
         self.output_path.mkdir(parents=True, exist_ok=True)
 
-        self.console.print(
-            Panel.fit(
-                f"[bold cyan]Output directory:[/bold cyan] "
-                f"{self.output_path.absolute()}"
-            )
-        )
+        table = Table.grid(padding=(0, 1))
+        table.expand = False
+
+        # Simple helper to add labeled rows
+        def add_row(label, value):
+            table.add_row(f"[bold cyan]{label}[/bold cyan]", value)
+
+        add_row("Analysis prefix:", self.prefix)
+
+        opts_desc = self.get_options_desc()
+        if opts_desc:
+            table.add_row("[bold cyan]Analysis options:[/bold cyan]", "")
+            for name, desc in opts_desc:
+                table.add_row("  • " + name, desc)
+
+        add_row("Framework:", self.target_framework.value)
+        add_row("Description:", self.description)
+        add_row("Output directory:", str(self.output_path.absolute()))
+
+        panel = Panel.fit(table, title="[bold magenta]Analysis Builder[/bold magenta]")
+        self.console.print(panel)
 
         # Create config generator
         generator = get_generator(
@@ -93,8 +108,8 @@ class AnalysisBuilder(logging.Logging):
             self.output_path,
             self.prefix,
             self.use_absolute_path,
+            self.cosmology_analysis_spec(),
             self.required_cosmology(),
-            self.amplitude_parameter(),
         )
 
         self.console.print(Rule("[bold cyan]Phase 1: Generating SACC data[/bold cyan]"))
@@ -188,12 +203,12 @@ class AnalysisBuilder(logging.Logging):
         :return: True if the analysis requires a cosmology, False otherwise
         """
 
-    @abstractmethod
-    def amplitude_parameter(self) -> PoweSpecAmplitudeParameter:
-        """Return the amplitude parameter for the analysis.
+    def cosmology_analysis_spec(self) -> CCLCosmologyAnalysisSpec:
+        """Return the cosmology analysis specification.
 
-        :return: The amplitude parameter for the analysis
+        :return: The cosmology analysis specification
         """
+        return CCLCosmologyAnalysisSpec.vanilla_lcdm()
 
     def get_sacc_file(self, sacc_path: Path) -> str:
         """Return the path to the SACC data file.
@@ -210,3 +225,13 @@ class AnalysisBuilder(logging.Logging):
         else:
             sacc_filename = sacc_path.name
         return sacc_filename
+
+    def get_options_desc(self) -> Sequence[tuple[str, str]]:
+        """Return a description of the analysis options.
+
+        Subclasses can override this method to provide additional
+        information about the options used in the analysis.
+
+        :return: Description of analysis options
+        """
+        return []

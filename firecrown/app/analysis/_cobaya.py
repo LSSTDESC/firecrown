@@ -11,20 +11,44 @@ from pathlib import Path
 import dataclasses
 
 import yaml
+import numpy as np
 
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood.likelihood import NamedParameters
-from firecrown.ccl_factory import PoweSpecAmplitudeParameter
-from ._types import Model, Frameworks, ConfigGenerator, FrameworkCosmology, get_path_str
+from ._types import (
+    Model,
+    Frameworks,
+    ConfigGenerator,
+    FrameworkCosmology,
+    CCLCosmologyAnalysisSpec,
+    PriorGaussian,
+    PriorUniform,
+    get_path_str,
+)
+
+NAME_MAP = {
+    "Omega_c": "omch2",
+    "Omega_b": "ombh2",
+    "Omega_k": "omegak",
+    "T_CMB": "TCMB",
+    "h": "H0",
+    "Neff": "nnu",
+    "sum_nu_masses": "mnu",
+    "w0": "w",
+    "wa": "wa",
+    "sigma8": "sigma8",
+    "A_s": "As",
+    "n_s": "ns",
+}
 
 
 def create_config(
     factory_source: str | Path,
     build_parameters: NamedParameters,
     likelihood_name: str,
+    cosmo_spec: CCLCosmologyAnalysisSpec,
     use_absolute_path: bool = False,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
-    amplitude_parameter: PoweSpecAmplitudeParameter = PoweSpecAmplitudeParameter.SIGMA8,
 ) -> dict[str, Any]:
     """Create standard Cobaya configuration dictionary.
 
@@ -45,7 +69,14 @@ def create_config(
         config["theory"] = {
             "camb": {
                 "stop_at_error": True,
-                "extra_args": {"num_massive_neutrinos": 1, "halofit_version": "mead"},
+                "extra_args": {
+                    "num_massive_neutrinos": cosmo_spec.get_num_massive_neutrinos(),
+                    **(
+                        cosmo_spec.cosmology.extra_parameters.get_dict()
+                        if cosmo_spec.cosmology.extra_parameters
+                        else {}
+                    ),
+                },
             }
         }
 
@@ -65,7 +96,7 @@ def create_config(
             "params": (
                 _get_standard_params(
                     required_cosmology=required_cosmology,
-                    amplitude_parameter=amplitude_parameter,
+                    cosmo_spec=cosmo_spec,
                 )
                 if use_cosmology
                 else {}
@@ -82,9 +113,47 @@ def create_config(
     return config
 
 
+def _apply_prior(
+    default_value: float,
+    prior: PriorGaussian | PriorUniform | None,
+    scale: float = 1.0,
+) -> dict[str, Any] | float | None:
+    """Apply prior to parameter, returning either dict with prior or default value.
+
+    :param param_name: Parameter name
+    :param default_value: Default parameter value
+    :param prior: Prior specification
+    :param scale: Scale factor to apply to prior bounds
+    :return: Parameter configuration dict or default value
+    """
+    if prior is None:
+        return default_value * scale
+
+    match prior:
+        case PriorGaussian():
+            return {
+                "ref": default_value * scale,
+                "prior": {
+                    "dist": "norm",
+                    "loc": prior.mean * scale,
+                    "scale": prior.sigma * scale,
+                },
+            }
+        case PriorUniform():
+            return {
+                "ref": default_value * scale,
+                "prior": {
+                    "min": prior.lower * scale,
+                    "max": prior.upper * scale,
+                },
+            }
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
 def _get_standard_params(
     required_cosmology: FrameworkCosmology,
-    amplitude_parameter: PoweSpecAmplitudeParameter,
+    cosmo_spec: CCLCosmologyAnalysisSpec,
 ) -> dict[str, Any]:
     """Generate standard cosmological parameter configuration.
 
@@ -92,38 +161,31 @@ def _get_standard_params(
     """
     if required_cosmology == FrameworkCosmology.NONE:
         return {}
-    params = {
-        # Cosmological parameters
-        "ombh2": 0.01860496,
-        "omch2": {
-            "prior": {"min": 0.05, "max": 0.2},
-            "ref": 0.120932240,
-            "proposal": 0.01,
-        },
-        "omk": 0.0,
-        "TCMB": 2.7255,
-        "H0": 68.2,
-        "mnu": 0.06,
-        "nnu": 3.046,
-        "ns": 0.971,
-        "w": -1.0,
-        "wa": 0.0,
+    cosmo = cosmo_spec.cosmology.to_ccl_cosmology()
+    priors = cosmo_spec.priors
+    h = cosmo["h"]
+    h2 = h**2
+
+    name_map = {
+        "Omega_c": (h2, priors.Omega_c),
+        "Omega_b": (h2, priors.Omega_b),
+        "Omega_k": (1.0, priors.Omega_k),
+        "T_CMB": (1.0, None),
+        "h": (100.0, priors.h),
+        "Neff": (1.0, priors.Neff),
+        "sum_nu_masses": (1.0, priors.m_nu),
+        "w0": (1.0, priors.w0),
+        "wa": (1.0, priors.wa),
+        "sigma8": (1.0, priors.sigma8),
+        "A_s": (1.0, priors.A_s),
+        "n_s": (1.0, priors.n_s),
     }
-    match amplitude_parameter:
-        case PoweSpecAmplitudeParameter.SIGMA8:
-            params["sigma8"] = {
-                "prior": {"min": 0.7, "max": 1.2},
-                "ref": 0.801,
-                "proposal": 0.801,
-            }
-        case PoweSpecAmplitudeParameter.AS:
-            params["As"] = {
-                "prior": {"min": 0.8e-9, "max": 5.0e-9},
-                "ref": 2.0e-9,
-                "proposal": 2.0e-9,
-            }
-        case _ as unreachable:
-            assert_never(unreachable)
+    params = {}
+    for param, (scale, prior) in name_map.items():
+        name = NAME_MAP[param]
+        if cosmo[param] is None or np.isnan(cosmo[param]):
+            continue
+        params[name] = _apply_prior(cosmo[param], prior, scale)
 
     return params
 
@@ -180,8 +242,8 @@ class CobayaConfigGenerator(ConfigGenerator):
             build_parameters=self.build_parameters,
             use_absolute_path=self.use_absolute_path,
             likelihood_name=likelihood_name,
+            cosmo_spec=self.cosmo_spec,
             required_cosmology=self.required_cosmology,
-            amplitude_parameter=self.amplitude_parameter,
         )
         add_models(cfg, self.models)
         write_config(cfg, cobaya_yaml)
