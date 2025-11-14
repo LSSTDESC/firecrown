@@ -10,8 +10,8 @@ from enum import StrEnum
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import ClassVar, Sequence, Any
-from pydantic import BaseModel, ConfigDict
-
+from pydantic import BaseModel, ConfigDict, model_validator
+import numpy as np
 import pyccl
 
 from firecrown.likelihood.likelihood import NamedParameters
@@ -33,37 +33,6 @@ class FrameworkCosmology(StrEnum):
     BACKGROUND = "background"
     LINEAR = "linear"
     NONLINEAR = "nonlinear"
-
-
-@dataclasses.dataclass
-class Parameter:
-    """Model parameter with sampling metadata.
-
-    Defines a single parameter for cosmological or systematic modeling,
-    including its prior bounds, default value, and whether it's free or fixed.
-    """
-
-    name: str
-    symbol: str
-    lower_bound: float
-    upper_bound: float
-    scale: float
-    abstol: float
-    default_value: float
-    free: bool
-
-
-@dataclasses.dataclass
-class Model:
-    """Model definition with multiple parameters.
-
-    Groups related parameters (e.g., all photo-z shifts, all galaxy biases)
-    into a named model for organization in configuration files.
-    """
-
-    name: str
-    description: str
-    parameters: list[Parameter]
 
 
 class PriorUniform(BaseModel):
@@ -95,6 +64,88 @@ class PriorGaussian(BaseModel):
 
 
 Prior = PriorUniform | PriorGaussian
+
+
+class Parameter(BaseModel):
+    """Model parameter with sampling metadata.
+
+    Defines a single parameter for cosmological or systematic modeling,
+    including its prior bounds, default value, and whether it's free or fixed.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    symbol: str
+    lower_bound: float
+    upper_bound: float
+    scale: float = 0.0
+    abstol: float = 0.0
+    default_value: float
+    free: bool
+    prior: Prior | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def fill_defaults(cls, data: Any) -> Any:
+        """Validate that scale is positive if provided."""
+        if isinstance(data, dict):
+            if (
+                ("scale" not in data)
+                and ("default_value" in data)
+                and data["default_value"] != 0.0
+            ):
+                data["scale"] = np.abs(data["default_value"]) * 0.1
+            if (
+                ("scale" not in data)
+                and ("lower_bound" in data)
+                and ("upper_bound" in data)
+            ):
+                data["scale"] = np.abs(data["upper_bound"] - data["lower_bound"]) * 0.01
+        return data
+
+    @model_validator(mode="after")
+    def validate_bounds(self) -> "Parameter":
+        """Validate that lower_bound < upper_bound."""
+        if not self.lower_bound < self.upper_bound:
+            raise ValueError("lower_bound must be < upper_bound")
+        return self
+
+    @classmethod
+    def from_tuple(
+        cls,
+        name: str,
+        symbol: str,
+        lower_bound: float,
+        upper_bound: float,
+        default_value: float,
+        free: bool,
+        prior: Prior | None = None,
+    ):
+        """Create Parameter from tuple of values."""
+        return cls(
+            name=name,
+            symbol=symbol,
+            lower_bound=lower_bound,
+            upper_bound=upper_bound,
+            default_value=default_value,
+            free=free,
+            prior=prior,
+        )
+
+
+class Model(BaseModel):
+    """Model definition with multiple parameters.
+
+    Groups related parameters (e.g., all photo-z shifts, all galaxy biases)
+    into a named model for organization in configuration files.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
+    name: str
+    description: str
+    parameters: list[Parameter]
 
 
 # This dataclass defines cosmological parameters used in CCL (Core Cosmology Library)

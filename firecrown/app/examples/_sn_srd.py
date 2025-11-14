@@ -16,6 +16,7 @@ from ..analysis import (
     Parameter,
     FrameworkCosmology,
     PriorUniform,
+    PriorGaussian,
     CCLCosmologyParameters,
     CCLCosmologyPriors,
     CCLCosmologyAnalysisSpec,
@@ -95,10 +96,9 @@ class ExampleSupernovaSRD(AnalysisBuilder):
                         symbol=r"\mathcal{M}",
                         lower_bound=-20.0,
                         upper_bound=-19.0,
-                        scale=0.1,
-                        abstol=0.0,
                         default_value=-19.3,
                         free=True,
+                        prior=PriorGaussian(mean=-19.4, sigma=0.05),
                     )
                 ],
             )
