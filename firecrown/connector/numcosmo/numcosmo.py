@@ -95,7 +95,7 @@ class MappingNumCosmo(GObject.Object):
         self._mapping_name = value
         self.mapping = Mapping()
 
-    mapping_name = GObject.Property(
+    mapping_name: str = GObject.Property(  # type: ignore
         type=str,
         default="default",
         flags=GObject.ParamFlags.READWRITE | GObject.ParamFlags.CONSTRUCT_ONLY,
@@ -122,7 +122,7 @@ class MappingNumCosmo(GObject.Object):
         else:
             self._p = helpers.PowerSpec(value, None)
 
-    p_ml = GObject.Property(
+    p_ml: Nc.PowspecML = GObject.Property(  # type: ignore
         type=Nc.PowspecML,
         flags=GObject.ParamFlags.READWRITE,
         getter=_get_p_ml,
@@ -151,7 +151,7 @@ class MappingNumCosmo(GObject.Object):
         if self._p is not None:
             self._p.nonlinear = value
 
-    p_mnl = GObject.Property(
+    p_mnl: Nc.PowspecMNL = GObject.Property(  # type: ignore
         type=Nc.PowspecMNL,
         flags=GObject.ParamFlags.READWRITE,
         getter=_get_p_mnl,
@@ -169,7 +169,7 @@ class MappingNumCosmo(GObject.Object):
         """Set the NumCosmo Distance object."""
         self._dist = value
 
-    dist = GObject.Property(
+    dist: Nc.Distance = GObject.Property(  # type: ignore
         type=Nc.Distance,
         flags=GObject.ParamFlags.READWRITE,
         getter=_get_dist,
