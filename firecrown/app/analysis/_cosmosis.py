@@ -1,7 +1,11 @@
-"""CosmoSIS configuration file generation utilities.
+"""CosmoSIS configuration file generator.
 
-Provides functions to create standard CosmoSIS .ini files with
-proper formatting, comments, and parameter sections.
+Generates CosmoSIS INI files for cosmological parameter estimation with Firecrown.
+Produces pipeline configuration, parameter values, and optional priors files.
+
+CosmoSIS uses INI format with extended interpolation and requires specific
+formatting (e.g., floats with .0 suffix). Gaussian priors in values files are
+converted to uniform bounds (mean ± 3σ), with true Gaussian priors in separate file.
 
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
@@ -29,7 +33,10 @@ from ._types import (
     get_path_str,
 )
 
+# Section name for cosmological parameters in CosmoSIS INI files
 COSMOLOGICAL_PARAMETERS = "cosmological_parameters"
+
+# Map CCL parameter names to CosmoSIS parameter names
 NAME_MAP = {
     "Omega_c": "omega_c",
     "Omega_b": "omega_b",
@@ -45,9 +52,11 @@ NAME_MAP = {
 
 def format_comment(text: str, width: int = 88) -> list[str]:
     """Format text as CosmoSIS comment lines with ;; prefix.
+    
+    Wraps long text into multiple lines, each prefixed with ';; '.
 
-    :param text: Comment text
-    :param width: Maximum line width
+    :param text: Comment text to format
+    :param width: Maximum line width including prefix
     :return: List of formatted comment lines
     """
     # Account for ";; " prefix (3 characters)
@@ -60,10 +69,13 @@ def add_comment_block(
     config: configparser.ConfigParser, section: str, text: str
 ) -> None:
     """Add formatted comment block to configuration section.
+    
+    Comments are added as keys with no values, which ConfigParser
+    preserves when writing to file.
 
-    :param config: ConfigParser object
-    :param section: Section name
-    :param text: Comment text
+    :param config: ConfigParser object (modified in-place)
+    :param section: Section name where comment will be added
+    :param text: Comment text to format and add
     """
     for comment_line in format_comment(text):
         config.set(section, comment_line)
@@ -80,16 +92,21 @@ def create_config(
     use_absolute_path: bool = True,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser:
-    """Create standard CosmoSIS pipeline configuration.
+    """Create CosmoSIS pipeline configuration (main INI file).
+    
+    Configures runtime, pipeline modules, sampler, and likelihood connector.
+    Optionally includes CAMB and consistency modules for cosmology computation.
 
-    :param prefix: Filename prefix
-    :param factory_path: Path to factory file
-    :param build_parameters: Likelihood build parameters
-    :param values_path: Path to values.ini file
-    :param output_path: Output directory
-    :param use_absolute_path: Use absolute paths
-    :param use_cosmology: Include CAMB in pipeline
-    :return: Configured ConfigParser
+    :param prefix: Filename prefix for output files
+    :param factory_source: Path to factory file or YAML module string
+    :param build_parameters: Parameters passed to likelihood factory
+    :param values_path: Path to values.ini file (referenced in pipeline)
+    :param priors_path: Path to priors.ini file (optional)
+    :param output_path: Output directory for results
+    :param cosmo_spec: Cosmology specification
+    :param use_absolute_path: Use absolute paths in configuration
+    :param required_cosmology: Level of cosmology computation
+    :return: Configured ConfigParser ready to write
     """
     cfg = configparser.ConfigParser(
         interpolation=configparser.ExtendedInterpolation(), allow_no_value=True
@@ -191,9 +208,12 @@ def create_config(
 
 
 def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
-    """Add model parameters to CosmoSIS configuration.
+    """Register model parameter sections in pipeline configuration.
+    
+    Adds sampling_parameters_sections to firecrown_likelihood module,
+    telling CosmoSIS which sections contain parameters to sample.
 
-    :param config: Configuration object (modified in-place)
+    :param config: Pipeline configuration (modified in-place)
     :param models: List of models with parameters
     """
     model_list = [model.name for model in models]
@@ -205,12 +225,13 @@ def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
 
 
 def format_float(value: float) -> str:
-    """Format a float to 3 significant digits.
+    """Format float for CosmoSIS compatibility.
+    
+    Formats to 3 significant digits and ensures decimal point is present
+    (adds '.0' if needed). CosmoSIS requires floats to have decimal points.
 
-    Add a ".0" if no decimal. This is necessary to work with CosmoSIS.
-
-    :param value: Value to format
-    :return: Formatted value
+    :param value: Numeric value to format
+    :return: Formatted string (e.g., '0.67', '1.0', '2.5e-9')
     """
     val = f"{value:.3g}"
     if "." not in val:
@@ -223,12 +244,16 @@ def _configure_parameter(
     prior: PriorGaussian | PriorUniform | None,
     scale: float = 1.0,
 ) -> str:
-    """Configure a parameter in a CosmoSIS values file.
+    """Format parameter for CosmoSIS values file.
+    
+    Returns either a fixed value or 'min start max' for sampled parameters.
+    Gaussian priors are converted to uniform bounds (mean ± 3σ) since
+    CosmoSIS values files don't support Gaussian priors directly.
 
-    :param default_value: Default parameter value
-    :param prior: Prior specification
-    :param scale: Scale factor to apply to prior bounds
-    :return: CosmoSIS parameter string (fixed or min start max)
+    :param default_value: Default/reference parameter value
+    :param prior: Prior specification (None for fixed parameters)
+    :param scale: Scale factor applied to all values
+    :return: Formatted parameter string
     """
     if prior is None:
         return format_float(default_value * scale)
@@ -256,10 +281,13 @@ def add_cosmological_parameters(
     config: configparser.ConfigParser,
     cosmo_spec: CCLCosmologyAnalysisSpec,
 ) -> None:
-    """Add cosmological parameters section to CosmoSIS values config.
+    """Add cosmological parameters to values configuration.
+    
+    Creates 'cosmological_parameters' section with parameter values and bounds.
+    Includes fixed tau=0.08 required by CosmoSIS CAMB module.
 
-    :param config: ConfigParser object (modified in-place)
-    :param cosmo_spec: Cosmology analysis specification
+    :param config: Values ConfigParser (modified in-place)
+    :param cosmo_spec: Cosmology specification with parameters and priors
     """
     section = COSMOLOGICAL_PARAMETERS
     config.add_section(section)
@@ -301,9 +329,12 @@ def add_cosmological_parameters(
 def add_firecrown_models(
     config: configparser.ConfigParser, models: list[Model]
 ) -> None:
-    """Add firecrown model parameters to CosmoSIS values config.
+    """Add systematic/nuisance model parameters to values configuration.
+    
+    Creates a section for each model with its parameters formatted as
+    fixed values or 'min start max' for free parameters.
 
-    :param config: ConfigParser object (modified in-place)
+    :param config: Values ConfigParser (modified in-place)
     :param models: List of models with parameters
     """
     for model in models:
@@ -337,12 +368,15 @@ def create_values_config(
     models: list[Model] | None = None,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser:
-    """Create CosmoSIS values.ini with cosmological and model parameters.
+    """Create values.ini with parameter values and sampling bounds.
+    
+    Generates configuration with cosmological parameters (if cosmology required)
+    and model parameters. Free parameters get 'min start max', fixed get single value.
 
-    :param models: List of models with parameters
-    :param amplitude_parameter: Power spectrum amplitude parameter
-    :param required_cosmology: Cosmology requirement level
-    :return: Configured ConfigParser
+    :param cosmo_spec: Cosmology specification
+    :param models: List of systematic/nuisance models
+    :param required_cosmology: Level of cosmology computation
+    :return: Configured ConfigParser ready to write
     """
     config = configparser.ConfigParser(allow_no_value=True)
 
@@ -359,10 +393,13 @@ def add_cosmological_parameters_priors(
     config: configparser.ConfigParser,
     cosmo_spec: CCLCosmologyAnalysisSpec,
 ) -> None:
-    """Add cosmological parameters priors to CosmoSIS priors config.
+    """Add cosmological parameter priors to priors configuration.
+    
+    Formats priors as 'gaussian mean sigma' or 'uniform min max'.
+    Only parameters with defined priors are included.
 
-    :param config: ConfigParser object (modified in-place)
-    :param cosmo_spec: Cosmology analysis specification
+    :param config: Priors ConfigParser (modified in-place)
+    :param cosmo_spec: Cosmology specification with priors
     """
     priors = cosmo_spec.priors
     section = COSMOLOGICAL_PARAMETERS
@@ -400,12 +437,15 @@ def create_priors_config(
     _models: list[Model] | None = None,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser | None:
-    """Create CosmoSIS priors.ini with cosmological and model priors.
+    """Create priors.ini with prior specifications.
+    
+    Returns None if no priors are defined (priors file not needed).
+    Currently only supports cosmological parameter priors.
 
-    :param models: List of models with parameters
-    :param amplitude_parameter: Power spectrum amplitude parameter
-    :param required_cosmology: Cosmology requirement level
-    :return: Configured ConfigParser
+    :param cosmo_spec: Cosmology specification with priors
+    :param _models: Reserved for future model priors support
+    :param required_cosmology: Level of cosmology computation
+    :return: Configured ConfigParser or None if no priors
     """
     if cosmo_spec.priors.is_empty():
         return None
@@ -420,11 +460,12 @@ def create_priors_config(
 
 @dataclasses.dataclass
 class CosmosisConfigGenerator(ConfigGenerator):
-    """Generates CosmoSIS .ini configuration files.
+    """CosmoSIS configuration generator.
 
-    Creates two files:
-    - cosmosis_{prefix}.ini: Pipeline configuration
-    - cosmosis_{prefix}_values.ini: Parameter values and priors
+    Generates CosmoSIS INI files for parameter estimation:
+    - cosmosis_{prefix}.ini: Pipeline configuration with modules and settings
+    - cosmosis_{prefix}_values.ini: Parameter values and sampling bounds
+    - cosmosis_{prefix}_priors.ini: Prior specifications (if priors defined)
     """
 
     framework = Frameworks.COSMOSIS
