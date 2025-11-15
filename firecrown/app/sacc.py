@@ -1,6 +1,6 @@
 """SACC data visualization and analysis."""
 
-from typing import Annotated
+from typing import Annotated, TypedDict
 import dataclasses
 from pathlib import Path
 import typer
@@ -21,15 +21,27 @@ from firecrown import data_functions as dfunc
 from firecrown.likelihood import factories
 from . import logging
 
+QuadOpts = TypedDict(
+    "QuadOpts",
+    {
+        "limit": int,
+        "epsabs": float,
+        "epsrel": float,
+    },
+)
+
 
 def mean_std_tracer(tracer: mdt.InferredGalaxyZDist):
     """Compute the mean and standard deviation of a tracer."""
     # Create monotonic spline
-    spline = PchipInterpolator(tracer.z, tracer.dndz, extrapolate=0.0)
-    quad_opts = {"limit": 10000, "epsabs": 0.0, "epsrel": 1.0e-3}
+    spline = PchipInterpolator(tracer.z, tracer.dndz, extrapolate=False)
+    quad_opts: QuadOpts = {"limit": 10000, "epsabs": 0.0, "epsrel": 1.0e-3}
+
+    def spline_func(t):
+        return spline(t)
 
     # Normalization
-    norm, _ = quad(spline, tracer.z[0], tracer.z[-1], **quad_opts)
+    norm, _ = quad(spline_func, tracer.z[0], tracer.z[-1], **quad_opts)
 
     # Mean
     mean_z, _ = quad(lambda t: t * spline(t), tracer.z[0], tracer.z[-1], **quad_opts)
