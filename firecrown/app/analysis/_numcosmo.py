@@ -278,51 +278,52 @@ def _setup_model_set(
     return mset, priors
 
 
+def _create_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
+    """Create dataset from NumCosmo factory."""
+    dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
+    firecrown_data = numcosmo_factory.get_data()
+    if isinstance(firecrown_data, Ncm.DataGaussCov):
+        firecrown_data.set_size(0)
+    dataset.append_data(firecrown_data)
+    return dataset
+
+
+def _create_likelihood(dataset: Ncm.Dataset, priors: list[Ncm.Prior]) -> Ncm.Likelihood:
+    """Create likelihood with priors."""
+    likelihood = Ncm.Likelihood.new(dataset)
+    for prior in priors:
+        likelihood.priors_add(prior)
+    return likelihood
+
+
 def create_config(
     output_path: Path,
     factory_source: str | Path,
     build_parameters: NamedParameters,
     model_list: list[str],
     cosmo_spec: CCLCosmologyAnalysisSpec,
+    *,
     use_absolute_path: bool = False,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
     distance_max_z: float = 4.0,
     reltol: float = 1e-7,
 ) -> Ncm.ObjDictStr:
-    """Create standard NumCosmo experiment configuration.
-
-    :param factory_path: Path to factory file
-    :param build_parameters: Likelihood build parameters
-    :param model_list: List of model names
-    :param use_absolute_path: Use absolute paths
-    :param use_cosmology: Include CLASS computation
-    :param distance_max_z: Maximum redshift for distance calculations
-    :param reltol: Relative tolerance for calculations
-    :return: NumCosmo experiment object
-    """
-    experiment = Ncm.ObjDictStr()
-    factory_source_str = get_path_str(factory_source, use_absolute_path)
-
+    """Create NumCosmo experiment configuration."""
     mapping = _create_mapping(distance_max_z, reltol, required_cosmology)
-    numcosmo_factory = _create_factory(
-        output_path, factory_source_str, build_parameters, mapping, model_list
+    factory = _create_factory(
+        output_path,
+        get_path_str(factory_source, use_absolute_path),
+        build_parameters,
+        mapping,
+        model_list,
     )
-
     mset, priors = _setup_model_set(required_cosmology, mapping, cosmo_spec, reltol)
+    dataset = _create_dataset(factory)
+    likelihood = _create_likelihood(dataset, priors)
 
-    dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
-    firecrown_data = numcosmo_factory.get_data()
-    if isinstance(firecrown_data, Ncm.DataGaussCov):
-        firecrown_data.set_size(0)
-    dataset.append_data(firecrown_data)
-
-    likelihood = Ncm.Likelihood.new(dataset)
-    for prior in priors:
-        likelihood.priors_add(prior)
-
+    experiment = Ncm.ObjDictStr()
     experiment.add("likelihood", likelihood)
     experiment.add("model-set", mset)
-
     return experiment
 
 
@@ -389,7 +390,7 @@ def _write_config_worker(
 
     model_list = [m.name for m in models]
     config = create_config(
-        output_path,
+        output_path=output_path,
         factory_source=factory_source,
         build_parameters=build_parameters,
         cosmo_spec=cosmo_spec,
