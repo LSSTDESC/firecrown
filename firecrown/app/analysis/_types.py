@@ -1,6 +1,8 @@
-"""Type definitions for analysis builders.
+"""Type definitions for framework configuration generators.
 
-Defines enums and dataclasses used across the analysis generation system.
+Provides base classes, enums, and data models for generating framework-specific
+configurations. Includes cosmology specifications, parameter definitions, and
+the abstract ConfigGenerator base class.
 
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
@@ -19,7 +21,11 @@ from firecrown.ccl_factory import CAMBExtraParams, PoweSpecAmplitudeParameter
 
 
 class Frameworks(StrEnum):
-    """Supported statistical analysis frameworks."""
+    """Statistical analysis frameworks supported by Firecrown.
+    
+    Each framework has its own configuration generator that produces
+    framework-specific files for cosmological parameter estimation.
+    """
 
     COBAYA = "cobaya"
     COSMOSIS = "cosmosis"
@@ -27,7 +33,11 @@ class Frameworks(StrEnum):
 
 
 class FrameworkCosmology(StrEnum):
-    """Cosmology required by the analysis framework."""
+    """Level of cosmology computation required by the framework.
+    
+    Controls whether frameworks include Boltzmann solvers (CAMB/CLASS)
+    and what level of computation they perform.
+    """
 
     NONE = "none"
     BACKGROUND = "background"
@@ -36,7 +46,7 @@ class FrameworkCosmology(StrEnum):
 
 
 class PriorUniform(BaseModel):
-    """Uniform prior definition."""
+    """Uniform (flat) prior over a bounded interval [lower, upper]."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -50,7 +60,7 @@ class PriorUniform(BaseModel):
 
 
 class PriorGaussian(BaseModel):
-    """Gaussian prior definition."""
+    """Gaussian (normal) prior with specified mean and standard deviation."""
 
     model_config = ConfigDict(extra="forbid")
 
@@ -148,13 +158,12 @@ class Model(BaseModel):
     parameters: list[Parameter]
 
 
-# This dataclass defines cosmological parameters used in CCL (Core Cosmology Library)
-# with their metadata.
 class CCLCosmologyParameters(BaseModel):  # pylint: disable=too-many-instance-attributes
-    """CCL cosmological parameter with metadata.
+    """Cosmological parameters for CCL (Core Cosmology Library).
 
-    Defines a cosmological parameter used in CCL with its name,
-    symbol for display, and default value.
+    Defines all cosmological parameters supported by CCL, including
+    matter content, dark energy, neutrinos, and power spectrum options.
+    Parameters set to None are not included in the CCL cosmology.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -194,9 +203,10 @@ class CCLCosmologyParameters(BaseModel):  # pylint: disable=too-many-instance-at
 
 
 class CCLCosmologyPriors(BaseModel):
-    """Priors for CCL cosmological parameters.
+    """Prior distributions for cosmological parameters.
 
-    Defines priors for cosmological parameters used in CCL.
+    Specifies priors (uniform or Gaussian) for each cosmological parameter.
+    Parameters with None have no prior (fixed values).
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -224,9 +234,11 @@ class CCLCosmologyPriors(BaseModel):
 
 
 class CCLCosmologyAnalysisSpec(BaseModel):
-    """CCL cosmology analysis specification.
+    """Complete cosmology specification for parameter estimation.
 
-    Defines the cosmology and priors for CCL cosmology analysis.
+    Combines cosmological parameter values with their prior distributions.
+    Validates that exactly one amplitude parameter (A_s or sigma8) is specified
+    and that priors match the chosen parameters.
     """
 
     model_config = ConfigDict(extra="forbid")
@@ -337,9 +349,9 @@ class ConfigGenerator(ABC):
         self.sacc_path = sacc_path
 
     def add_factory(self, factory_source: Path | str) -> None:
-        """Add factory file path to generator state.
+        """Add likelihood factory source to generator state.
 
-        :param factory_path: Path to likelihood factory Python file
+        :param factory_source: Path to factory Python file or YAML module string
         """
         self.factory_source = factory_source
 
@@ -363,7 +375,12 @@ class ConfigGenerator(ABC):
 
 
 def get_path_str(path: Path | str, use_absolute: bool) -> str:
-    """Convert Path or str to appropriate path string based on use_absolute flag."""
+    """Convert Path to string representation.
+    
+    :param path: Path object or string
+    :param use_absolute: If True, return absolute path; otherwise return filename only
+    :return: Path string suitable for configuration files
+    """
     if isinstance(path, str):
         return path
     return path.absolute().as_posix() if use_absolute else path.name

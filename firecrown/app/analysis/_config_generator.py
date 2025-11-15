@@ -1,7 +1,7 @@
-"""Framework-specific configuration generators.
+"""Factory function for creating framework-specific configuration generators.
 
-Provides a stateful strategy pattern for generating configuration files
-through phased construction: add components incrementally, then write.
+Provides get_generator() which returns the appropriate ConfigGenerator subclass
+based on the requested framework (CosmoSIS, Cobaya, or NumCosmo).
 
 This is an internal module. Use the public API from firecrown.app.analysis.
 """
@@ -31,10 +31,11 @@ def get_generator(
 
     :param framework: Target framework (cosmosis, cobaya, numcosmo)
     :param output_path: Directory where configuration files will be written
-    :param prefix: Prefix for generated filenames
-    :param use_absolute_path: Use absolute paths in configuration files
-    :param require_cosmology: Include cosmology computation in configuration
-    :return: Initialized configuration generator
+    :param prefix: Prefix for generated filenames (e.g., 'des_y1' → 'cosmosis_des_y1.ini')
+    :param use_absolute_path: Use absolute paths in configs (True) or relative paths (False)
+    :param cosmo_spec: Cosmology specification with parameters and priors
+    :param required_cosmology: Level of cosmology computation (none/background/linear/nonlinear)
+    :return: Initialized configuration generator ready for component addition
     :raises ValueError: If framework is not supported
     """
     match framework:
