@@ -15,6 +15,7 @@ from firecrown.likelihood._likelihood import (
     Likelihood,
     NamedParameters,
     load_likelihood,
+    load_likelihood_from_module_type,
 )
 
 # Gaussian family likelihoods
@@ -77,6 +78,7 @@ __all__ = [
     "Likelihood",
     "NamedParameters",
     "load_likelihood",
+    "load_likelihood_from_module_type",
     # Gaussian family likelihoods
     "ConstGaussian",
     "GaussFamily",
