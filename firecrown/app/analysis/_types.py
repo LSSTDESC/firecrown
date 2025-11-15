@@ -22,7 +22,7 @@ from firecrown.ccl_factory import CAMBExtraParams, PoweSpecAmplitudeParameter
 
 class Frameworks(StrEnum):
     """Statistical analysis frameworks supported by Firecrown.
-    
+
     Each framework has its own configuration generator that produces
     framework-specific files for cosmological parameter estimation.
     """
@@ -34,7 +34,7 @@ class Frameworks(StrEnum):
 
 class FrameworkCosmology(StrEnum):
     """Level of cosmology computation required by the framework.
-    
+
     Controls whether frameworks include Boltzmann solvers (CAMB/CLASS)
     and what level of computation they perform.
     """
@@ -376,7 +376,7 @@ class ConfigGenerator(ABC):
 
 def get_path_str(path: Path | str, use_absolute: bool) -> str:
     """Convert Path to string representation.
-    
+
     :param path: Path object or string
     :param use_absolute: If True, return absolute path; otherwise return filename only
     :return: Path string suitable for configuration files

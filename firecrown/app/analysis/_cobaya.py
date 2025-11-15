@@ -56,7 +56,7 @@ def create_config(
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> dict[str, Any]:
     """Create Cobaya configuration dictionary.
-    
+
     Builds complete configuration with theory (CAMB), likelihood (Firecrown),
     parameters, and sampler sections. Uses LikelihoodConnector for external
     likelihood integration.
@@ -129,7 +129,7 @@ def _apply_prior(
     scale: float = 1.0,
 ) -> dict[str, Any] | float | None:
     """Format parameter with prior for Cobaya.
-    
+
     Returns either a fixed value (if no prior) or a dict with 'ref' and 'prior'.
     Cobaya supports native Gaussian priors with 'dist': 'norm'.
 
@@ -168,7 +168,7 @@ def _get_standard_params(
     cosmo_spec: CCLCosmologyAnalysisSpec,
 ) -> dict[str, Any]:
     """Generate cosmological parameter configuration for Cobaya.
-    
+
     Applies parameter name mapping and scaling (h → H0 × 100, Omega_c → omch2 × h²).
     Returns empty dict if no cosmology computation required.
 
@@ -183,6 +183,7 @@ def _get_standard_params(
     h = cosmo["h"]
     h2 = h**2
 
+    # pylint: disable=duplicate-code
     name_map = {
         "Omega_c": (h2, priors.Omega_c),
         "Omega_b": (h2, priors.Omega_b),
@@ -197,6 +198,7 @@ def _get_standard_params(
         "A_s": (1.0, priors.A_s),
         "n_s": (1.0, priors.n_s),
     }
+    # pylint: enable=duplicate-code
     params = {}
     for param, (scale, prior) in name_map.items():
         name = NAME_MAP[param]
@@ -209,7 +211,7 @@ def _get_standard_params(
 
 def add_models(config: dict[str, Any], models: list[Model]) -> None:
     """Add systematic/nuisance model parameters to configuration.
-    
+
     Adds parameters to 'params' section with uniform priors for free parameters
     or fixed values for non-free parameters.
 
@@ -232,7 +234,7 @@ def add_models(config: dict[str, Any], models: list[Model]) -> None:
 
 def write_config(config: dict[str, Any], output_file: Path) -> None:
     """Write configuration dictionary to YAML file.
-    
+
     Uses PyYAML with flow_style=False for readable output and
     sort_keys=False to preserve insertion order.
 

@@ -31,10 +31,13 @@ def get_generator(
 
     :param framework: Target framework (cosmosis, cobaya, numcosmo)
     :param output_path: Directory where configuration files will be written
-    :param prefix: Prefix for generated filenames (e.g., 'des_y1' → 'cosmosis_des_y1.ini')
-    :param use_absolute_path: Use absolute paths in configs (True) or relative paths (False)
+    :param prefix: Prefix for generated filenames (e.g., 'des_y1' →
+        'cosmosis_des_y1.ini')
+    :param use_absolute_path: Use absolute paths in configs (True) or relative paths
+        (False)
     :param cosmo_spec: Cosmology specification with parameters and priors
-    :param required_cosmology: Level of cosmology computation (none/background/linear/nonlinear)
+    :param required_cosmology: Level of cosmology computation
+        (none/background/linear/nonlinear)
     :return: Initialized configuration generator ready for component addition
     :raises ValueError: If framework is not supported
     """
