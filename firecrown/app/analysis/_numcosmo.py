@@ -84,75 +84,52 @@ def _create_factory(
     model_list: list[str],
 ) -> NumCosmoFactory:
     """Create NumCosmo factory instance."""
-    previous_dir = os.getcwd()
-    os.chdir(output_path)
-
-    numcosmo_factory = NumCosmoFactory(
-        factory_source_str,
-        build_parameters,
-        mapping=mapping,
-        model_list=model_list,
-    )
-
-    os.chdir(previous_dir)
-    return numcosmo_factory
+    cwd = os.getcwd()
+    try:
+        os.chdir(output_path)
+        return NumCosmoFactory(
+            factory_source_str, build_parameters, mapping=mapping, model_list=model_list
+        )
+    finally:
+        os.chdir(cwd)
 
 
 def _add_prior(
     priors: list[Ncm.Prior],
     param_name: str,
-    prior: PriorGaussian | PriorUniform | None,
+    prior: Prior | None,
     scale: float = 1.0,
 ) -> None:
-    """Add prior to list if specified.
-
-    :param priors: List of priors to append to
-    :param param_name: Parameter name in NumCosmo
-    :param prior: Prior specification
-    :param scale: Scale factor to apply to prior bounds
-    """
+    """Add prior to list if specified."""
     if prior is None:
         return
 
     match prior:
         case PriorGaussian():
-            prior_g = Ncm.PriorGaussParam.new_name(
-                param_name, prior.mean * scale, prior.sigma * scale
+            priors.append(
+                Ncm.PriorGaussParam.new_name(
+                    param_name, prior.mean * scale, prior.sigma * scale
+                )
             )
-            priors.append(prior_g)
         case PriorUniform():
-            prior_u = Ncm.PriorFlatParam.new_name(
-                param_name, prior.lower * scale, prior.upper * scale, 1.0e-3
+            priors.append(
+                Ncm.PriorFlatParam.new_name(
+                    param_name, prior.lower * scale, prior.upper * scale, 1.0e-3
+                )
             )
-            priors.append(prior_u)
         case _ as unreachable:
             assert_never(unreachable)
 
 
-def _setup_model_set(
-    required_cosmology: FrameworkCosmology,
-    mapping: nc_cosmosis.MappingNumCosmo | None,
+def _set_standard_params(
+    mset: Ncm.MSet,
+    cosmo: Nc.HICosmoDECpl,
+    prim: Nc.HIPrimPowerLaw,
+    ccl_cosmo: dict,
     cosmo_spec: CCLCosmologyAnalysisSpec,
-) -> tuple[Ncm.MSet, list[Ncm.Prior]]:
-    """Create and configure model set."""
-    mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
-    if required_cosmology == FrameworkCosmology.NONE:
-        return mset, []
-
-    assert mapping is not None
-    ccl_cosmo = cosmo_spec.cosmology.to_ccl_cosmology()
-    massive_nu = bool(ccl_cosmo["sum_nu_masses"])
-
-    cosmo = Nc.HICosmoDECpl(massnu_length=1 if massive_nu else 0)
-    cosmo.omega_x2omega_k()
-    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
-    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
-
-    cosmo.add_submodel(prim)
-    cosmo.add_submodel(reion)
-    mset.set(cosmo)
-
-    priors: list[Ncm.Prior] = []
+    priors: list[Ncm.Prior],
+) -> None:
+    """Set standard cosmological parameters."""
     param_map: dict[str, tuple[Ncm.Model, float, Prior | None]] = {
         "Omega_c": (cosmo, 1.0, cosmo_spec.priors.Omega_c),
         "Omega_b": (cosmo, 1.0, cosmo_spec.priors.Omega_b),
@@ -165,100 +142,140 @@ def _setup_model_set(
         "Neff": (cosmo, 1.0, cosmo_spec.priors.Neff),
     }
 
-    # Set cosmological parameters and their priors
     for ccl_name, (model, scale, prior) in param_map.items():
-        nc_name = NAME_MAP[ccl_name]
         if ccl_cosmo[ccl_name] is not None:
-            model[nc_name] = ccl_cosmo[ccl_name] * scale
+            model[NAME_MAP[ccl_name]] = ccl_cosmo[ccl_name] * scale
             _add_prior(
-                priors, f"{mset.get_ns_by_id(model.id())}:{nc_name}", prior, scale
+                priors,
+                f"{mset.get_ns_by_id(model.id())}:{NAME_MAP[ccl_name]}",
+                prior,
+                scale,
             )
 
-    # Handle massive neutrino parameters
     if ccl_cosmo["sum_nu_masses"] > 0.0:
-        nc_name = NAME_MAP["sum_nu_masses"]
-        cosmo[nc_name] = ccl_cosmo["sum_nu_masses"]
+        cosmo[NAME_MAP["sum_nu_masses"]] = ccl_cosmo["sum_nu_masses"]
         _add_prior(
-            priors, f"{mset.get_ns_by_id(cosmo.id())}:{nc_name}", cosmo_spec.priors.m_nu
+            priors,
+            f"{mset.get_ns_by_id(cosmo.id())}:{NAME_MAP['sum_nu_masses']}",
+            cosmo_spec.priors.m_nu,
         )
 
-    # Handle amplitude parameters (A_s)
+
+def _set_amplitude_A_s(
+    mset: Ncm.MSet,
+    prim: Nc.HIPrimPowerLaw,
+    A_s: float,
+    prior: Prior | None,
+    priors: list[Ncm.Prior],
+) -> None:
+    """Set A_s amplitude parameter."""
+    prim["ln10e10ASA"] = np.log(1.0e10 * A_s)
+    if prior is None:
+        return
+
+    param_name = f"{mset.get_ns_by_id(prim.id())}:ln10e10ASA"
+    match prior:
+        case PriorGaussian():
+            priors.append(
+                Ncm.PriorGaussParam.new_name(
+                    param_name,
+                    np.log(1.0e10 * prior.mean),
+                    prior.sigma / A_s,
+                )
+            )
+        case PriorUniform():
+            priors.append(
+                Ncm.PriorFlatParam.new_name(
+                    param_name,
+                    np.log(1.0e10 * prior.lower),
+                    np.log(1.0e10 * prior.upper),
+                    1.0e-3,
+                )
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+def _set_amplitude_sigma8(
+    cosmo: Nc.HICosmoDECpl,
+    prim: Nc.HIPrimPowerLaw,
+    mapping: nc_cosmosis.MappingNumCosmo,
+    sigma8: float,
+    h: float,
+    prior: Prior | None,
+    priors: list[Ncm.Prior],
+    reltol: float,
+) -> None:
+    """Set sigma8 amplitude parameter."""
+    if mapping.p_ml is None:
+        raise ValueError("Mapping must have p_ml set for sigma8")
+
+    A_s = np.exp(prim["ln10e10ASA"]) * 1.0e-10
+    fact = (sigma8 / mapping.p_ml.sigma_tophat_R(cosmo, reltol, 0.0, 8.0 / h)) ** 2
+    prim.param_set_by_name("ln10e10ASA", np.log(1.0e10 * A_s * fact))
+
+    if prior is None:
+        return
+
+    psf = Ncm.PowspecFilter.new(mapping.p_ml, Ncm.PowspecFilterType.TOPHAT)
+    sigma8_func = Ncm.MSetFuncList.new("NcHICosmo:sigma8", psf)
+
+    match prior:
+        case PriorGaussian():
+            priors.append(
+                Ncm.PriorGaussFunc.new(sigma8_func, prior.mean, prior.sigma, 0.0)
+            )
+        case PriorUniform():
+            priors.append(
+                Ncm.PriorFlatFunc.new(
+                    sigma8_func, prior.lower, prior.upper, 1.0e-3, 0.0
+                )
+            )
+        case _ as unreachable:
+            assert_never(unreachable)
+
+
+def _setup_model_set(
+    required_cosmology: FrameworkCosmology,
+    mapping: nc_cosmosis.MappingNumCosmo | None,
+    cosmo_spec: CCLCosmologyAnalysisSpec,
+    reltol: float,
+) -> tuple[Ncm.MSet, list[Ncm.Prior]]:
+    """Create and configure model set."""
+    mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
+    if required_cosmology == FrameworkCosmology.NONE:
+        return mset, []
+
+    assert mapping is not None
+    ccl_cosmo = cosmo_spec.cosmology.to_ccl_cosmology()
+
+    cosmo = Nc.HICosmoDECpl(massnu_length=1 if ccl_cosmo["sum_nu_masses"] else 0)
+    cosmo.omega_x2omega_k()
+    prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
+    reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
+    cosmo.add_submodel(prim)
+    cosmo.add_submodel(reion)
+    mset.set(cosmo)
+
+    priors: list[Ncm.Prior] = []
+    _set_standard_params(mset, cosmo, prim, ccl_cosmo, cosmo_spec, priors)
+
     if ccl_cosmo["A_s"] is not None and not np.isnan(ccl_cosmo["A_s"]):
-
-        def convert(A_s):
-            return np.log(1.0e10 * A_s)
-
-        def convert_sigma(sigma_A_s):
-            return sigma_A_s / ccl_cosmo["A_s"]
-
-        prim["ln10e10ASA"] = convert(ccl_cosmo["A_s"])
-        if cosmo_spec.priors.A_s is not None:
-            match cosmo_spec.priors.A_s:
-                case PriorGaussian():
-                    priors.append(
-                        Ncm.PriorGaussParam.new_name(
-                            f"{mset.get_ns_by_id(prim.id())}:ln10e10ASA",
-                            convert(cosmo_spec.priors.A_s.mean),
-                            convert_sigma(cosmo_spec.priors.A_s.sigma),
-                        )
-                    )
-                case PriorUniform():
-                    priors.append(
-                        Ncm.PriorFlatParam.new_name(
-                            f"{mset.get_ns_by_id(prim.id())}:ln10e10ASA",
-                            convert(cosmo_spec.priors.A_s.lower),
-                            convert(cosmo_spec.priors.A_s.upper),
-                            1.0e-3,
-                        )
-                    )
-                case _ as unreachable:
-                    assert_never(unreachable)
+        _set_amplitude_A_s(mset, prim, ccl_cosmo["A_s"], cosmo_spec.priors.A_s, priors)
 
     if ccl_cosmo["sigma8"] is not None and not np.isnan(ccl_cosmo["sigma8"]):
-        A_s = np.exp(prim["ln10e10ASA"]) * 1.0e-10
-        if mapping.p_ml is None:
-            raise ValueError("Mapping must have p_ml set for sigma8")
-        fact = (
-            ccl_cosmo["sigma8"]
-            / mapping.p_ml.sigma_tophat_R(cosmo, 1.0e-5, 0.0, 8.0 / ccl_cosmo["h"])
-        ) ** 2
-        prim.param_set_by_name("ln10e10ASA", np.log(1.0e10 * A_s * fact))
-        psf = Ncm.PowspecFilter.new(mapping.p_ml, Ncm.PowspecFilterType.TOPHAT)
-
-        if cosmo_spec.priors.sigma8 is not None:
-            sigma8_func = Ncm.MSetFuncList.new("NcHICosmo:sigma8", psf)
-            match cosmo_spec.priors.sigma8:
-                case PriorGaussian():
-                    prior_g = Ncm.PriorGaussFunc.new(
-                        sigma8_func,
-                        cosmo_spec.priors.sigma8.mean,
-                        cosmo_spec.priors.sigma8.sigma,
-                        0.0,
-                    )
-                    priors.append(prior_g)
-                case PriorUniform():
-                    prior_u = Ncm.PriorFlatFunc.new(
-                        sigma8_func,
-                        cosmo_spec.priors.sigma8.lower,
-                        cosmo_spec.priors.sigma8.upper,
-                        1.0e-3,
-                        0.0,
-                    )
-                    priors.append(prior_u)
-                case _ as unreachable:
-                    assert_never(unreachable)
+        _set_amplitude_sigma8(
+            cosmo,
+            prim,
+            mapping,
+            ccl_cosmo["sigma8"],
+            ccl_cosmo["h"],
+            cosmo_spec.priors.sigma8,
+            priors,
+            reltol,
+        )
 
     return mset, priors
-
-
-def _setup_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
-    """Create and configure dataset."""
-    dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
-    firecrown_data = numcosmo_factory.get_data()
-    if isinstance(firecrown_data, Ncm.DataGaussCov):
-        firecrown_data.set_size(0)
-    dataset.append_data(firecrown_data)
-    return dataset
 
 
 def create_config(
@@ -291,8 +308,13 @@ def create_config(
         output_path, factory_source_str, build_parameters, mapping, model_list
     )
 
-    mset, priors = _setup_model_set(required_cosmology, mapping, cosmo_spec)
-    dataset = _setup_dataset(numcosmo_factory)
+    mset, priors = _setup_model_set(required_cosmology, mapping, cosmo_spec, reltol)
+
+    dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
+    firecrown_data = numcosmo_factory.get_data()
+    if isinstance(firecrown_data, Ncm.DataGaussCov):
+        firecrown_data.set_size(0)
+    dataset.append_data(firecrown_data)
 
     likelihood = Ncm.Likelihood.new(dataset)
     for prior in priors:
