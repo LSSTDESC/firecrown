@@ -184,9 +184,35 @@ def _setup_model_set(
 
     # Handle amplitude parameters (A_s)
     if ccl_cosmo["A_s"] is not None and not np.isnan(ccl_cosmo["A_s"]):
-        nc_name = NAME_MAP["A_s"]
-        prim["As"] = ccl_cosmo["A_s"]
-        _add_prior(priors, "As", cosmo_spec.priors.A_s)
+
+        def convert(A_s):
+            return np.log(1.0e10 * A_s)
+
+        def convert_sigma(sigma_A_s):
+            return sigma_A_s / ccl_cosmo["A_s"]
+
+        prim["ln10e10ASA"] = convert(ccl_cosmo["A_s"])
+        if cosmo_spec.priors.A_s is not None:
+            match cosmo_spec.priors.A_s:
+                case PriorGaussian():
+                    priors.append(
+                        Ncm.PriorGaussParam.new_name(
+                            f"{mset.get_ns_by_id(prim.id())}:ln10e10ASA",
+                            convert(cosmo_spec.priors.A_s.mean),
+                            convert_sigma(cosmo_spec.priors.A_s.sigma),
+                        )
+                    )
+                case PriorUniform():
+                    priors.append(
+                        Ncm.PriorFlatParam.new_name(
+                            f"{mset.get_ns_by_id(prim.id())}:ln10e10ASA",
+                            convert(cosmo_spec.priors.A_s.lower),
+                            convert(cosmo_spec.priors.A_s.upper),
+                            1.0e-3,
+                        )
+                    )
+                case _ as unreachable:
+                    assert_never(unreachable)
 
     if ccl_cosmo["sigma8"] is not None and not np.isnan(ccl_cosmo["sigma8"]):
         A_s = np.exp(prim["ln10e10ASA"]) * 1.0e-10
