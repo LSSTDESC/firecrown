@@ -52,7 +52,7 @@ NAME_MAP = {
 
 def format_comment(text: str, width: int = 88) -> list[str]:
     """Format text as CosmoSIS comment lines with ;; prefix.
-    
+
     Wraps long text into multiple lines, each prefixed with ';; '.
 
     :param text: Comment text to format
@@ -69,7 +69,7 @@ def add_comment_block(
     config: configparser.ConfigParser, section: str, text: str
 ) -> None:
     """Add formatted comment block to configuration section.
-    
+
     Comments are added as keys with no values, which ConfigParser
     preserves when writing to file.
 
@@ -81,6 +81,62 @@ def add_comment_block(
         config.set(section, comment_line)
 
 
+def _add_cosmology_modules(
+    cfg: configparser.ConfigParser,
+    required_cosmology: FrameworkCosmology,
+    cosmo_spec: CCLCosmologyAnalysisSpec,
+) -> None:
+    """Add CAMB and consistency modules to pipeline configuration."""
+    cfg["consistency"] = {
+        "file": "${CSL_DIR}/utility/consistency/consistency_interface.py",
+    }
+    if required_cosmology == FrameworkCosmology.BACKGROUND:
+        cfg["camb"] = {
+            "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
+            "mode": "background",
+            "feedback": "0",
+        }
+    else:
+        cfg["camb"] = {
+            "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
+            "mode": "power",
+            "feedback": "0",
+            "zmin": "0.0",
+            "zmax": "4.0",
+            "nz": "100",
+            "kmax": "50.0",
+            "nk": "1000",
+            **(
+                cosmo_spec.cosmology.extra_parameters.get_dict()
+                if cosmo_spec.cosmology.extra_parameters
+                else {}
+            ),
+        }
+
+
+def _add_firecrown_likelihood(
+    cfg: configparser.ConfigParser,
+    factory_source_str: str,
+    build_parameters: NamedParameters,
+) -> None:
+    """Add Firecrown likelihood module to pipeline configuration."""
+    cfg["firecrown_likelihood"] = {}
+    add_comment_block(
+        cfg,
+        "firecrown_likelihood",
+        "This will point to the Firecrown's cosmosis likelihood connector module.",
+    )
+    firecrown_path = Path(firecrown.__path__[0])
+    cfg.set(
+        "firecrown_likelihood",
+        "file",
+        f"{firecrown_path}/connector/cosmosis/likelihood.py",
+    )
+    cfg.set("firecrown_likelihood", "likelihood_source", factory_source_str)
+    for key, value in build_parameters.convert_to_basic_dict().items():
+        cfg.set("firecrown_likelihood", key, str(value))
+
+
 def create_config(
     prefix: str,
     factory_source: str | Path,
@@ -89,11 +145,12 @@ def create_config(
     priors_path: Path | None,
     output_path: Path,
     cosmo_spec: CCLCosmologyAnalysisSpec,
+    *,
     use_absolute_path: bool = True,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser:
     """Create CosmoSIS pipeline configuration (main INI file).
-    
+
     Configures runtime, pipeline modules, sampler, and likelihood connector.
     Optionally includes CAMB and consistency modules for cosmology computation.
 
@@ -112,96 +169,40 @@ def create_config(
         interpolation=configparser.ExtendedInterpolation(), allow_no_value=True
     )
 
-    factory_source_str = get_path_str(factory_source, use_absolute_path)
-    values_filename = get_path_str(values_path, use_absolute_path)
+    use_cosmology = required_cosmology != FrameworkCosmology.NONE
 
-    # Runtime configuration
     cfg["runtime"] = {
         "sampler": "test",
         "root": str(output_path.absolute()),
         "verbosity": "quiet",
     }
     cfg["DEFAULT"] = {"fatal_errors": "T"}
-
-    # Output configuration
     cfg["output"] = {
         "filename": f"output/{prefix}_samples.txt",
         "format": "text",
         "verbosity": "0",
     }
-
-    use_cosmology = required_cosmology != FrameworkCosmology.NONE
-
-    # Pipeline configuration
-    if use_cosmology:
-        modules = "consistency camb firecrown_likelihood"
-    else:
-        modules = "firecrown_likelihood"
-
     cfg["pipeline"] = {
-        "modules": modules,
-        "values": values_filename,
+        "modules": (
+            "consistency camb firecrown_likelihood"
+            if use_cosmology
+            else "firecrown_likelihood"
+        ),
+        "values": get_path_str(values_path, use_absolute_path),
         "likelihoods": "firecrown",
         "debug": "T",
         "timing": "T",
     }
     if priors_path is not None:
-        priors_filename = get_path_str(priors_path, use_absolute_path)
-        cfg["pipeline"]["priors"] = priors_filename
+        cfg["pipeline"]["priors"] = get_path_str(priors_path, use_absolute_path)
 
     if use_cosmology:
-        # Consistency module
-        cfg["consistency"] = {
-            "file": "${CSL_DIR}/utility/consistency/consistency_interface.py",
-        }
-        if required_cosmology == FrameworkCosmology.BACKGROUND:
-            cfg["camb"] = {
-                "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
-                "mode": "background",
-                "feedback": "0",
-            }
-        else:
-            # CAMB module
-            cfg["camb"] = {
-                "file": "${CSL_DIR}/boltzmann/camb/camb_interface.py",
-                "mode": "power",
-                "feedback": "0",
-                "zmin": "0.0",
-                "zmax": "4.0",
-                "nz": "100",
-                "kmax": "50.0",
-                "nk": "1000",
-                **(
-                    cosmo_spec.cosmology.extra_parameters.get_dict()
-                    if cosmo_spec.cosmology.extra_parameters
-                    else {}
-                ),
-            }
+        _add_cosmology_modules(cfg, required_cosmology, cosmo_spec)
 
-    # Firecrown likelihood module
-    cfg["firecrown_likelihood"] = {}
-
-    # Add formatted comments for firecrown section
-    add_comment_block(
-        cfg,
-        "firecrown_likelihood",
-        "This will point to the Firecrown's cosmosis likelihood connector module.",
+    _add_firecrown_likelihood(
+        cfg, get_path_str(factory_source, use_absolute_path), build_parameters
     )
 
-    firecrown_path = Path(firecrown.__path__[0])
-    assert firecrown_path.exists(), f"Firecrown path not found: {firecrown_path}"
-
-    cfg.set(
-        "firecrown_likelihood",
-        "file",
-        f"{firecrown_path}/connector/cosmosis/likelihood.py",
-    )
-
-    cfg.set("firecrown_likelihood", "likelihood_source", factory_source_str)
-    for key, value in build_parameters.convert_to_basic_dict().items():
-        cfg.set("firecrown_likelihood", key, str(value))
-
-    # Sampler configurations
     cfg["test"] = {"fatal_errors": "T", "save_dir": "output"}
 
     return cfg
@@ -209,7 +210,7 @@ def create_config(
 
 def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
     """Register model parameter sections in pipeline configuration.
-    
+
     Adds sampling_parameters_sections to firecrown_likelihood module,
     telling CosmoSIS which sections contain parameters to sample.
 
@@ -226,7 +227,7 @@ def add_models(config: configparser.ConfigParser, models: list[Model]) -> None:
 
 def format_float(value: float) -> str:
     """Format float for CosmoSIS compatibility.
-    
+
     Formats to 3 significant digits and ensures decimal point is present
     (adds '.0' if needed). CosmoSIS requires floats to have decimal points.
 
@@ -245,7 +246,7 @@ def _configure_parameter(
     scale: float = 1.0,
 ) -> str:
     """Format parameter for CosmoSIS values file.
-    
+
     Returns either a fixed value or 'min start max' for sampled parameters.
     Gaussian priors are converted to uniform bounds (mean ± 3σ) since
     CosmoSIS values files don't support Gaussian priors directly.
@@ -282,7 +283,7 @@ def add_cosmological_parameters(
     cosmo_spec: CCLCosmologyAnalysisSpec,
 ) -> None:
     """Add cosmological parameters to values configuration.
-    
+
     Creates 'cosmological_parameters' section with parameter values and bounds.
     Includes fixed tau=0.08 required by CosmoSIS CAMB module.
 
@@ -330,7 +331,7 @@ def add_firecrown_models(
     config: configparser.ConfigParser, models: list[Model]
 ) -> None:
     """Add systematic/nuisance model parameters to values configuration.
-    
+
     Creates a section for each model with its parameters formatted as
     fixed values or 'min start max' for free parameters.
 
@@ -369,7 +370,7 @@ def create_values_config(
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser:
     """Create values.ini with parameter values and sampling bounds.
-    
+
     Generates configuration with cosmological parameters (if cosmology required)
     and model parameters. Free parameters get 'min start max', fixed get single value.
 
@@ -394,7 +395,7 @@ def add_cosmological_parameters_priors(
     cosmo_spec: CCLCosmologyAnalysisSpec,
 ) -> None:
     """Add cosmological parameter priors to priors configuration.
-    
+
     Formats priors as 'gaussian mean sigma' or 'uniform min max'.
     Only parameters with defined priors are included.
 
@@ -438,7 +439,7 @@ def create_priors_config(
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser | None:
     """Create priors.ini with prior specifications.
-    
+
     Returns None if no priors are defined (priors file not needed).
     Currently only supports cosmological parameter priors.
 

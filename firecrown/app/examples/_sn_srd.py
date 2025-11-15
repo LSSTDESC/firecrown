@@ -113,6 +113,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
 
         :return: The cosmology analysis specification
         """
+        # pylint: disable=duplicate-code
         cosmology = CCLCosmologyParameters(
             Omega_c=0.25,
             Omega_b=0.05,
@@ -120,6 +121,7 @@ class ExampleSupernovaSRD(AnalysisBuilder):
             n_s=0.96,
             A_s=2.1e-9,
         )
+        # pylint: enable=duplicate-code
         priors = CCLCosmologyPriors(
             Omega_c=PriorUniform(lower=0.06, upper=0.46),
         )
