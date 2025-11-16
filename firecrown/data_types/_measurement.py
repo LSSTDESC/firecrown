@@ -1,6 +1,7 @@
-"""This module deals with data types.
+"""Two-point measurement data type.
 
-This module contains data types definitions.
+This module contains the TwoPointMeasurement class for storing two-point function
+measurements on a sphere.
 """
 
 from __future__ import annotations
@@ -62,59 +63,3 @@ class TwoPointMeasurement(YAMLSerializable):
     def is_harmonic(self) -> bool:
         """Check if the metadata is harmonic."""
         return isinstance(self.metadata, TwoPointHarmonic)
-
-
-class DataVector(npt.NDArray[np.float64]):
-    """Wrapper for a np.ndarray that represents some observed data values."""
-
-    @classmethod
-    def create(cls, vals: npt.NDArray[np.float64]) -> DataVector:
-        """Create a DataVector that wraps a copy of the given array vals.
-
-        :param vals: the array to be copied and wrapped
-        :return: a new DataVector
-        """
-        return vals.view(cls)
-
-    @classmethod
-    def from_list(cls, vals: list[float]) -> DataVector:
-        """Create a DataVector from the given list of floats.
-
-        :param vals: the list of floats
-        :return: a new DataVector
-        """
-        array = np.array(vals)
-        return cls.create(array)
-
-
-class TheoryVector(npt.NDArray[np.float64]):
-    """Wrapper for an np.ndarray that represents a prediction by some theory."""
-
-    @classmethod
-    def create(cls, vals: npt.NDArray[np.float64]) -> TheoryVector:
-        """Create a TheoryVector that wraps a copy of the given array vals.
-
-        :param vals: the array to be copied and wrapped
-        :return: a new TheoryVector
-        """
-        return vals.view(cls)
-
-    @classmethod
-    def from_list(cls, vals: list[float]) -> TheoryVector:
-        """Create a TheoryVector from the given list of floats.
-
-        :param vals: the list of floats
-        :return: a new TheoryVector
-        """
-        array = np.array(vals)
-        return cls.create(array)
-
-
-def residuals(data: DataVector, theory: TheoryVector) -> npt.NDArray[np.float64]:
-    """Return a bare np.ndarray with the difference between `data` and `theory`.
-
-    This is to be preferred to using arithmetic on the vectors directly.
-    """
-    assert isinstance(data, DataVector)
-    assert isinstance(theory, TheoryVector)
-    return (data - theory).view(np.ndarray)
