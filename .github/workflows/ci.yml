@@ -261,13 +261,13 @@ jobs:
         with:
           repository: 'lsstdesc/smokescreen'
           path: 'smokescreen'
-          ref: 'v1.5.0'
+          ref: 'adjust-to-firecrown-pr-586'
       - name: Cloning Augur
         uses: actions/checkout@v4
         with:
           repository: 'lsstdesc/augur'
           path: 'augur'
-          ref: '1.1.2'
+          ref: 'adjust-to-firecrown-pr-586'
       - name: Build tutorials and documentation and check links
         shell: bash -l {0}
         run: |
