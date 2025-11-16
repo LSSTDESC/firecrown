@@ -1,21 +1,20 @@
-"""Basic Cosmology and cosmological tools definitions.
+"""Core ModelingTools class for cosmological calculations.
 
-:mod:`modeling_tools` contains the :class:`ModelingTools` class, which is
-built around the :class:`pyccl.Cosmology` class. This is used by likelihoods
-that need to access reusable objects, such as perturbation theory or halo model
-calculators.
+This module contains the main :class:`ModelingTools` class, which bundles
+together a :class:`pyccl.Cosmology` object and associated objects.
 """
 
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
 from collections.abc import Collection
 
+import pyccl
 import pyccl.nl_pt
 
 from firecrown.ccl_factory import CCLCalculatorArgs, CCLFactory
 from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 from firecrown.updatable import Updatable, UpdatableCollection
+from firecrown.modeling_tools._base import PowerspectrumModifier
 
 
 class ModelingTools(Updatable):
@@ -154,13 +153,3 @@ class ModelingTools(Updatable):
         if self.cM_relation is None:
             raise RuntimeError("A concentration-mass relation has not been set")
         return self.cM_relation
-
-
-class PowerspectrumModifier(Updatable, ABC):
-    """Abstract base class for power spectrum modifiers."""
-
-    name: str = "base:base"
-
-    @abstractmethod
-    def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
-        """Compute the 3D power spectrum P(k, z)."""
