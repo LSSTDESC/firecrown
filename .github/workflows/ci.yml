@@ -259,7 +259,7 @@ jobs:
       - name: Cloning Smokescreen
         uses: actions/checkout@v4
         with:
-          repository: 'lsstdesc/smokescreen'
+          repository: 'marcpaterno/smokescreen'
           path: 'smokescreen'
           ref: 'adjust-to-firecrown-pr-586'
       - name: Cloning Augur
