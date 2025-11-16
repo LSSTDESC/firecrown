@@ -1,10 +1,29 @@
-"""Classes used to represent likelihoods and support functions.
+"""Likelihood implementations and infrastructure.
 
-Subpackages contain specific likelihood implementations,
-e.g., Gaussian and Student-t.
-The submodule :mod:`firecrown.likelihood._likelihood` contains
-the abstract base class for likelihoods and likelihood loading utilities.
+This module provides the core likelihood framework and specific likelihood
+implementations for various cosmological observables.
 
+Core Components:
+    - :class:`Likelihood`: Abstract base class for all likelihoods
+    - :class:`Statistic`: Base class for observable statistics
+    - :class:`Source`: Infrastructure for data sources and systematics
+    - Likelihood loading utilities
+
+Likelihood Types:
+    - :class:`ConstGaussian`: Constant covariance Gaussian likelihood
+    - :class:`GaussFamily`: Gaussian family likelihoods
+    - :class:`StudentT`: Student-t distributed likelihood
+    - :class:`TwoPoint`: Two-point correlation statistics
+    - :class:`BinnedCluster`: Binned cluster statistics base class
+    - :class:`BinnedClusterNumberCounts`: Cluster abundance likelihoods
+    - :class:`BinnedClusterDeltaSigma`: Cluster weak lensing likelihoods
+    - :class:`Supernova`: Supernova distance modulus likelihoods
+
+Subpackages:
+    - :mod:`weak_lensing`: Weak lensing systematics and sources
+    - :mod:`number_counts`: Galaxy number counts systematics and sources
+    - :mod:`supernova`: Supernova-specific implementations
+    - :mod:`factories`: Factory functions for creating likelihood components
 """
 
 # Third-party imports
