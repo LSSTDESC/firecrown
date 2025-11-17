@@ -122,7 +122,7 @@ tutorials:  ## Render tutorials with quarto
 api-docs:  ## Build API documentation with Sphinx
 	$(MAKE) -C $(DOCS_DIR) html
 
-docs: tutorials api-docs  ## Build all documentation (tutorials + API docs)
+docs: tutorials api-docs  docs-linkcheck ## Build and check all documentation (tutorials + API docs)
 	@echo ""
 	@echo "Documentation built successfully:"
 	@echo "  - Tutorials: $(TUTORIAL_OUTPUT_DIR)/"
