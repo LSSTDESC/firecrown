@@ -106,11 +106,11 @@ test-coverage:  ## Run tests with coverage reporting
 	@echo "  - HTML: $(HTMLCOV_DIR)/index.html"
 	@echo "  - Terminal output above"
 
-test-slow:  ## Run tests including slow tests (with --runslow)
-	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) --runslow
+test-slow:  ## Run only slow tests (with --runslow)
+	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) -m slow --runslow $(TESTS_DIR)
 
 test-integration:  ## Run integration tests only
-	$(PYTEST) -vv -s --integration $(TESTS_DIR)/integration
+	$(PYTEST) -vv -s --integration -m integration $(TESTS_DIR)
 
 test-all: test-slow test-integration test  ## Run all tests (slow + integration)
 
