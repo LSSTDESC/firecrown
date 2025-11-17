@@ -9,7 +9,7 @@ attributes in classes.
 #
 # pylint: disable=R0903
 
-from firecrown.descriptors._base import Callable
+from collections.abc import Callable
 
 
 class TypeString:

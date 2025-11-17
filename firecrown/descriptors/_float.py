@@ -9,7 +9,7 @@ point attributes in classes.
 #
 # pylint: disable=R0903
 
-from firecrown.descriptors._base import math
+import math
 
 
 class TypeFloat:
