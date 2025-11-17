@@ -15,7 +15,6 @@ from pathlib import Path
 import dataclasses
 
 import yaml
-import numpy as np
 
 import firecrown.connector.cobaya.likelihood
 from firecrown.likelihood.likelihood import NamedParameters
@@ -24,7 +23,8 @@ from ._types import (
     Frameworks,
     ConfigGenerator,
     FrameworkCosmology,
-    CCLCosmologyAnalysisSpec,
+    CCLCosmologySpec,
+    Parameter,
     PriorGaussian,
     PriorUniform,
     get_path_str,
@@ -38,7 +38,7 @@ NAME_MAP = {
     "T_CMB": "TCMB",
     "h": "H0",  # h * 100
     "Neff": "nnu",
-    "sum_nu_masses": "mnu",
+    "m_nu": "mnu",
     "w0": "w",
     "wa": "wa",
     "sigma8": "sigma8",
@@ -51,7 +51,7 @@ def create_config(
     factory_source: str | Path,
     build_parameters: NamedParameters,
     likelihood_name: str,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    cosmo_spec: CCLCosmologySpec,
     use_absolute_path: bool = False,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> dict[str, Any]:
@@ -82,8 +82,8 @@ def create_config(
                 "extra_args": {
                     "num_massive_neutrinos": cosmo_spec.get_num_massive_neutrinos(),
                     **(
-                        cosmo_spec.cosmology.extra_parameters.get_dict()
-                        if cosmo_spec.cosmology.extra_parameters
+                        cosmo_spec.extra_parameters.get_dict()
+                        if cosmo_spec.extra_parameters
                         else {}
                     ),
                 },
@@ -123,10 +123,9 @@ def create_config(
     return config
 
 
-def _apply_prior(
-    default_value: float,
-    prior: PriorGaussian | PriorUniform | None,
-    scale: float = 1.0,
+def _configure_parameter(
+    param: Parameter,
+    param_scale: dict[str, float] | None = None,
 ) -> dict[str, Any] | float | None:
     """Format parameter with prior for Cobaya.
 
@@ -138,25 +137,36 @@ def _apply_prior(
     :param scale: Scale factor applied to all values and bounds
     :return: Parameter configuration (dict with prior or fixed float)
     """
-    if prior is None:
-        return default_value * scale
+    param_scale = param_scale or {}
+    scale = param_scale.get(param.name, 1.0)
+    if not param.free:
+        return param.default_value * scale
 
-    match prior:
+    if param.prior is None:
+        return {
+            "ref": param.default_value * scale,
+            "prior": {
+                "min": param.lower_bound * scale,
+                "max": param.upper_bound * scale,
+            },
+        }
+
+    match param.prior:
         case PriorGaussian():
             return {
-                "ref": default_value * scale,
+                "ref": param.default_value * scale,
                 "prior": {
                     "dist": "norm",
-                    "loc": prior.mean * scale,
-                    "scale": prior.sigma * scale,
+                    "loc": param.prior.mean * scale,
+                    "scale": param.prior.sigma * scale,
                 },
             }
         case PriorUniform():
             return {
-                "ref": default_value * scale,
+                "ref": param.default_value * scale,
                 "prior": {
-                    "min": prior.lower * scale,
-                    "max": prior.upper * scale,
+                    "min": param.prior.lower * scale,
+                    "max": param.prior.upper * scale,
                 },
             }
         case _ as unreachable:
@@ -165,11 +175,11 @@ def _apply_prior(
 
 def _get_standard_params(
     required_cosmology: FrameworkCosmology,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    cosmo_spec: CCLCosmologySpec,
 ) -> dict[str, Any]:
     """Generate cosmological parameter configuration for Cobaya.
 
-    Applies parameter name mapping and scaling (h → H0 × 100, Omega_c → omch2 × h²).
+    Applies parameter name mapping and scaling (h → H0 x 100, Omega_c → omch2 x h²).
     Returns empty dict if no cosmology computation required.
 
     :param required_cosmology: Level of cosmology computation
@@ -178,33 +188,14 @@ def _get_standard_params(
     """
     if required_cosmology == FrameworkCosmology.NONE:
         return {}
-    cosmo = cosmo_spec.cosmology.to_ccl_cosmology()
-    priors = cosmo_spec.priors
-    h = cosmo["h"]
+    h = cosmo_spec["h"].default_value
     h2 = h**2
 
-    # pylint: disable=duplicate-code
-    name_map = {
-        "Omega_c": (h2, priors.Omega_c),
-        "Omega_b": (h2, priors.Omega_b),
-        "Omega_k": (1.0, priors.Omega_k),
-        "T_CMB": (1.0, None),
-        "h": (100.0, priors.h),
-        "Neff": (1.0, priors.Neff),
-        "sum_nu_masses": (1.0, priors.m_nu),
-        "w0": (1.0, priors.w0),
-        "wa": (1.0, priors.wa),
-        "sigma8": (1.0, priors.sigma8),
-        "A_s": (1.0, priors.A_s),
-        "n_s": (1.0, priors.n_s),
-    }
-    # pylint: enable=duplicate-code
     params = {}
-    for param, (scale, prior) in name_map.items():
-        name = NAME_MAP[param]
-        if cosmo[param] is None or np.isnan(cosmo[param]):
-            continue
-        params[name] = _apply_prior(cosmo[param], prior, scale)
+    param_scale = {"h": 100.0, "Omega_c": h2, "Omega_b": h2}
+    for param in cosmo_spec.parameters:
+        name = NAME_MAP[param.name]
+        params[name] = _configure_parameter(param, param_scale)
 
     return params
 
@@ -220,16 +211,7 @@ def add_models(config: dict[str, Any], models: list[Model]) -> None:
     """
     for model in models:
         for parameter in model.parameters:
-            if parameter.free:
-                config["params"][parameter.name] = {
-                    "ref": parameter.default_value,
-                    "prior": {
-                        "min": parameter.lower_bound,
-                        "max": parameter.upper_bound,
-                    },
-                }
-            else:
-                config["params"][parameter.name] = parameter.default_value
+            config["params"][parameter.name] = _configure_parameter(parameter)
 
 
 def write_config(config: dict[str, Any], output_file: Path) -> None:

@@ -16,8 +16,6 @@ import textwrap
 from pathlib import Path
 import dataclasses
 
-import numpy as np
-
 import firecrown
 from firecrown.likelihood.likelihood import NamedParameters
 
@@ -26,8 +24,7 @@ from ._types import (
     Frameworks,
     ConfigGenerator,
     FrameworkCosmology,
-    CCLCosmologyAnalysisSpec,
-    Prior,
+    CCLCosmologySpec,
     PriorGaussian,
     PriorUniform,
     get_path_str,
@@ -47,6 +44,8 @@ NAME_MAP = {
     "sigma8": "sigma_8",
     "A_s": "A_s",
     "n_s": "n_s",
+    "Neff": "Neff",
+    "m_nu": "m_nu",
 }
 
 
@@ -84,7 +83,7 @@ def add_comment_block(
 def _add_cosmology_modules(
     cfg: configparser.ConfigParser,
     required_cosmology: FrameworkCosmology,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    cosmo_spec: CCLCosmologySpec,
 ) -> None:
     """Add CAMB and consistency modules to pipeline configuration."""
     cfg["consistency"] = {
@@ -107,8 +106,8 @@ def _add_cosmology_modules(
             "kmax": "50.0",
             "nk": "1000",
             **(
-                cosmo_spec.cosmology.extra_parameters.get_dict()
-                if cosmo_spec.cosmology.extra_parameters
+                cosmo_spec.extra_parameters.get_dict()
+                if cosmo_spec.extra_parameters
                 else {}
             ),
         }
@@ -144,7 +143,7 @@ def create_config(
     values_path: Path,
     priors_path: Path | None,
     output_path: Path,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    cosmo_spec: CCLCosmologySpec,
     *,
     use_absolute_path: bool = True,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
@@ -234,101 +233,17 @@ def format_float(value: float) -> str:
     :param value: Numeric value to format
     :return: Formatted string (e.g., '0.67', '1.0', '2.5e-9')
     """
-    val = f"{value:.3g}"
-    if "." not in val:
-        val += ".0"
-    return val
+    s = f"{value:.3g}"
+    return s if ("." in s or "e" in s) else s + ".0"
 
 
-def _configure_parameter(
-    default_value: float,
-    prior: PriorGaussian | PriorUniform | None,
-    scale: float = 1.0,
-) -> str:
-    """Format parameter for CosmoSIS values file.
-
-    Returns either a fixed value or 'min start max' for sampled parameters.
-    Gaussian priors are converted to uniform bounds (mean ± 3σ) since
-    CosmoSIS values files don't support Gaussian priors directly.
-
-    :param default_value: Default/reference parameter value
-    :param prior: Prior specification (None for fixed parameters)
-    :param scale: Scale factor applied to all values
-    :return: Formatted parameter string
-    """
-    if prior is None:
-        return format_float(default_value * scale)
-
-    match prior:
-        case PriorGaussian():
-            # CosmoSIS doesn't support Gaussian priors in values file
-            # Use mean ± 3*sigma as uniform bounds
-            lower = (prior.mean - 3 * prior.sigma) * scale
-            upper = (prior.mean + 3 * prior.sigma) * scale
-            ref = default_value * scale
-            return f"{format_float(lower)} {format_float(ref)} {format_float(upper)}"
-        case PriorUniform():
-            ref = default_value * scale
-            return (
-                f"{format_float(prior.lower * scale)} "
-                f"{format_float(ref)} "
-                f"{format_float(prior.upper * scale)}"
-            )
-        case _ as unreachable:
-            assert_never(unreachable)
-
-
-def add_cosmological_parameters(
+def add_firecrown_model(
     config: configparser.ConfigParser,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
-) -> None:
-    """Add cosmological parameters to values configuration.
-
-    Creates 'cosmological_parameters' section with parameter values and bounds.
-    Includes fixed tau=0.08 required by CosmoSIS CAMB module.
-
-    :param config: Values ConfigParser (modified in-place)
-    :param cosmo_spec: Cosmology specification with parameters and priors
-    """
-    section = COSMOLOGICAL_PARAMETERS
-    config.add_section(section)
-
-    add_comment_block(
-        config,
-        section,
-        "Parameters and data in CosmoSIS are organized into sections "
-        "so we can easily see what they mean. "
-        "This file contains cosmological parameters "
-        "and firecrown-specific parameters.",
-    )
-
-    cosmo = cosmo_spec.cosmology.to_ccl_cosmology()
-    priors = cosmo_spec.priors
-
-    name_map: dict[str, tuple[float, Prior | None]] = {
-        "Omega_c": (1.0, priors.Omega_c),
-        "Omega_b": (1.0, priors.Omega_b),
-        "Omega_k": (1.0, priors.Omega_k),
-        "h": (1.0, priors.h),
-        "w0": (1.0, priors.w0),
-        "wa": (1.0, priors.wa),
-        "sigma8": (1.0, priors.sigma8),
-        "A_s": (1.0, priors.A_s),
-        "n_s": (1.0, priors.n_s),
-    }
-
-    for param, (scale, prior) in name_map.items():
-        if cosmo[param] is None or np.isnan(cosmo[param]):
-            continue
-        name = NAME_MAP[param]
-        config.set(section, name, _configure_parameter(cosmo[param], prior, scale))
-    # Fixed value for reionization optical depth, CCL does not support this but
-    # CosmoSIS CAMB module requires it.
-    config.set(section, "tau", "0.08")
-
-
-def add_firecrown_models(
-    config: configparser.ConfigParser, models: list[Model]
+    model: Model,
+    section: str | None = None,
+    comment: str | None = None,
+    name_map: dict[str, str] | None = None,
+    param_scale: dict[str, float] | None = None,
 ) -> None:
     """Add systematic/nuisance model parameters to values configuration.
 
@@ -338,34 +253,32 @@ def add_firecrown_models(
     :param config: Values ConfigParser (modified in-place)
     :param models: List of models with parameters
     """
-    for model in models:
-        section = model.name
-        config.add_section(section)
-        add_comment_block(
-            config,
-            section,
-            f"Firecrown parameters for the {model.name} model.",
-        )
-        for parameter in model.parameters:
-            if parameter.free:
-                config.set(
-                    section,
-                    parameter.name,
-                    format_float(parameter.lower_bound)
-                    + " "
-                    + format_float(parameter.default_value)
-                    + " "
-                    + format_float(parameter.upper_bound),
-                )
-            else:
-                # CosmoSIS does not like integers
-                config.set(
-                    section, parameter.name, format_float(parameter.default_value)
-                )
+    section = model.name if section is None else section
+    comment = comment or f"Parameters for the {model.name} model."
+    config.add_section(section)
+    add_comment_block(config, section, comment)
+    param_scale = param_scale or {}
+    name_map = name_map or {}
+    for parameter in model.parameters:
+        name = name_map.get(parameter.name, parameter.name)
+        if parameter.free:
+            scale = param_scale.get(parameter.name, 1.0)
+            config.set(
+                section,
+                name,
+                format_float(parameter.lower_bound * scale)
+                + " "
+                + format_float(parameter.default_value * scale)
+                + " "
+                + format_float(parameter.upper_bound * scale),
+            )
+        else:
+            # CosmoSIS does not like integers
+            config.set(section, name, format_float(parameter.default_value * 1.0))
 
 
 def create_values_config(
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    cosmo_spec: CCLCosmologySpec,
     models: list[Model] | None = None,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser:
@@ -382,17 +295,41 @@ def create_values_config(
     config = configparser.ConfigParser(allow_no_value=True)
 
     if required_cosmology != FrameworkCosmology.NONE:
-        add_cosmological_parameters(config, cosmo_spec)
+        add_firecrown_model(
+            config,
+            cosmo_spec,
+            section=COSMOLOGICAL_PARAMETERS,
+            name_map=NAME_MAP,
+            comment=(
+                "Parameters and data in CosmoSIS are organized into sections "
+                "so we can easily see what they mean. "
+                "This file contains cosmological parameters "
+                "and firecrown-specific parameters."
+            ),
+        )
+        # Fixed value for reionization optical depth, CCL does not support this but
+        # CosmoSIS CAMB module requires it.
+        config.set(COSMOLOGICAL_PARAMETERS, "tau", "0.08")
+        config.set(
+            COSMOLOGICAL_PARAMETERS,
+            "num_massive_neutrinos",
+            str(cosmo_spec.get_num_massive_neutrinos()),
+        )
 
     if models:
-        add_firecrown_models(config, models)
+        for model in models:
+            add_firecrown_model(config, model)
 
     return config
 
 
-def add_cosmological_parameters_priors(
+def add_model_priors(
     config: configparser.ConfigParser,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    model: Model,
+    section: str | None = None,
+    comment: str | None = None,
+    name_map: dict[str, str] | None = None,
+    param_scale: dict[str, float] | None = None,
 ) -> None:
     """Add cosmological parameter priors to priors configuration.
 
@@ -402,40 +339,44 @@ def add_cosmological_parameters_priors(
     :param config: Priors ConfigParser (modified in-place)
     :param cosmo_spec: Cosmology specification with priors
     """
-    priors = cosmo_spec.priors
-    section = COSMOLOGICAL_PARAMETERS
+    if not model.has_priors():
+        return
+    section = model.name if section is None else section
+    comment = comment or f"Priors for the {model.name} model."
     config.add_section(section)
-    add_comment_block(
-        config, section, "This section contains priors for cosmological parameters."
-    )
+    add_comment_block(config, section, comment)
 
-    for param, name in NAME_MAP.items():
-        prior = priors.__dict__[param]
-        if prior is None:
+    for param in model.parameters:
+        if param.prior is None:
             continue
-        match prior:
+        name = name_map[param.name] if name_map else param.name
+        scale = (
+            param_scale[param.name]
+            if param_scale and (param.name in param_scale)
+            else 1.0
+        )
+        match param.prior:
             case PriorGaussian():
-                assert isinstance(prior, PriorGaussian)
                 config.set(
                     section,
-                    name,
-                    f"gaussian {format_float(prior.mean)} "
-                    f"{format_float(prior.sigma)}",
+                    param.name,
+                    f"gaussian {format_float(param.prior.mean * scale)} "
+                    f"{format_float(param.prior.sigma * scale)}",
                 )
             case PriorUniform():
                 config.set(
                     section,
                     name,
-                    f"uniform {format_float(prior.lower)} "
-                    f"{format_float(prior.upper)}",
+                    f"uniform {format_float(param.prior.lower * scale)} "
+                    f"{format_float(param.prior.upper * scale)}",
                 )
             case _ as unreachable:
                 assert_never(unreachable)
 
 
 def create_priors_config(
-    cosmo_spec: CCLCosmologyAnalysisSpec,
-    _models: list[Model] | None = None,
+    cosmo_spec: CCLCosmologySpec,
+    models: list[Model] | None = None,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> configparser.ConfigParser | None:
     """Create priors.ini with prior specifications.
@@ -448,13 +389,22 @@ def create_priors_config(
     :param required_cosmology: Level of cosmology computation
     :return: Configured ConfigParser or None if no priors
     """
-    if cosmo_spec.priors.is_empty():
+    if models is None:
+        models = []
+    if not any(m.has_priors() for m in [cosmo_spec] + models):
         return None
 
     config = configparser.ConfigParser(allow_no_value=True)
 
-    if required_cosmology != FrameworkCosmology.NONE:
-        add_cosmological_parameters_priors(config, cosmo_spec)
+    if (required_cosmology != FrameworkCosmology.NONE) and cosmo_spec.has_priors():
+        add_model_priors(
+            config, cosmo_spec, section=COSMOLOGICAL_PARAMETERS, name_map=NAME_MAP
+        )
+    else:
+        models = [cosmo_spec] + models
+
+    for model in models:
+        add_model_priors(config, model)
 
     return config
 
