@@ -18,6 +18,7 @@ from ..analysis import (
     PriorGaussian,
     CCLCosmologySpec,
     COSMO_DESC,
+    CCL_COSMOLOGY_MINIMAL_SET,
     download_from_url,
     copy_template,
 )
@@ -111,17 +112,6 @@ class ExampleSupernovaSRD(AnalysisBuilder):
 
         :return: The cosmology analysis specification
         """
-        parameter_names = [
-            "Omega_c",
-            "Omega_b",
-            "Omega_k",
-            "h",
-            "n_s",
-            "A_s",
-            "Neff",
-            "m_nu",
-            "w0",
-            "wa",
-        ]
+        parameter_names = CCL_COSMOLOGY_MINIMAL_SET + ["A_s"]
         parameters = [COSMO_DESC[param_name] for param_name in parameter_names]
         return CCLCosmologySpec(parameters=parameters)
