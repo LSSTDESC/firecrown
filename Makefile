@@ -5,7 +5,8 @@
 
 .PHONY: help format lint typecheck test test-coverage test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs \
-	lint-black lint-flake8 lint-pylint lint-mypy pre-commit install
+	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
+	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install
 
 # Default target
 .DEFAULT_GOAL := help
@@ -62,15 +63,27 @@ lint-flake8:  ## Run flake8 linter
 	@echo "Running flake8..."
 	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
 
-lint-pylint:  ## Run pylint on all packages
+lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples  ## Run pylint on all packages
+
+lint-pylint-firecrown:  ## Run pylint on firecrown package
 	@echo "Running pylint on firecrown..."
 	@pylint $(FIRECROWN_PKG_DIR) || (echo "❌ pylint failed for firecrown" && exit 1)
+	@echo "✅ pylint passed for firecrown"
+
+lint-pylint-plugins:  ## Run pylint on pylint_plugins
 	@echo "Running pylint on pylint_plugins..."
 	@pylint $(PYLINT_PLUGINS_DIR) || (echo "❌ pylint failed for pylint_plugins" && exit 1)
+	@echo "✅ pylint passed for pylint_plugins"
+
+lint-pylint-tests:  ## Run pylint on tests
 	@echo "Running pylint on tests..."
 	@pylint --rcfile $(TESTS_DIR)/pylintrc $(TESTS_DIR) || (echo "❌ pylint failed for tests" && exit 1)
+	@echo "✅ pylint passed for tests"
+
+lint-pylint-examples:  ## Run pylint on examples
 	@echo "Running pylint on examples..."
 	@pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) || (echo "❌ pylint failed for examples" && exit 1)
+	@echo "✅ pylint passed for examples"
 
 lint-mypy:  ## Run mypy type checker
 	@echo "Running mypy..."
