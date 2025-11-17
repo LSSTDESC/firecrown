@@ -10,9 +10,7 @@ from sacc.tracers import MiscTracer
 
 from firecrown import parameters
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._statistic import (
-    Statistic,
-)
+from firecrown.likelihood._statistic import Statistic
 from firecrown.modeling_tools import ModelingTools
 
 SNIA_DEFAULT_M = -19.2

@@ -60,6 +60,8 @@ from firecrown.likelihood.supernova._supernova import Supernova
 # Source infrastructure
 from firecrown.likelihood._source import (
     Source,
+    SourceGalaxyArgs,
+    SourceGalaxySystematic,
     Tracer,
     SourceSystematic,
 )
@@ -114,6 +116,8 @@ __all__ = [
     "Supernova",
     # Source infrastructure
     "Source",
+    "SourceGalaxyArgs",
+    "SourceGalaxySystematic",
     "Tracer",
     "SourceSystematic",
     # Base statistic class
