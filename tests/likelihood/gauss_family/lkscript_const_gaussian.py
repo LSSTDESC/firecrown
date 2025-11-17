@@ -6,7 +6,7 @@ for testing purposes.
 import sacc
 
 from firecrown.likelihood._gaussian import ConstGaussian
-from firecrown.likelihood._supernova import Supernova
+from firecrown.likelihood.supernova._supernova import Supernova
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 

@@ -55,7 +55,7 @@ from firecrown.likelihood._binned_cluster_number_counts_deltasigma import (
 )
 
 # Supernova statistics
-from firecrown.likelihood._supernova import Supernova
+from firecrown.likelihood.supernova._supernova import Supernova
 
 # Source infrastructure
 from firecrown.likelihood._source import (
