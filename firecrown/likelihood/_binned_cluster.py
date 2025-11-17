@@ -5,10 +5,7 @@ from __future__ import annotations
 import numpy as np
 
 from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._source import SourceSystematic
-from firecrown.likelihood._statistic import (
-    Statistic,
-)
+from firecrown.likelihood._base import SourceSystematic, Statistic
 from firecrown.models.cluster import ClusterData, ClusterProperty, SaccBin
 
 

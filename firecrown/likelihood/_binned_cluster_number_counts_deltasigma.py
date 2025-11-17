@@ -8,11 +8,9 @@ from __future__ import annotations
 
 import sacc
 
+from firecrown.data_types import TheoryVector
+from firecrown.likelihood._base import SourceSystematic
 from firecrown.likelihood._binned_cluster import BinnedCluster
-from firecrown.likelihood._source import SourceSystematic
-from firecrown.likelihood._statistic import (
-    TheoryVector,
-)
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ClusterProperty, DeltaSigmaData
 from firecrown.models.cluster import MurataBinnedSpecZDeltaSigmaRecipe

@@ -10,7 +10,7 @@ import pyccl
 
 from firecrown import parameters
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
-from firecrown.likelihood._source import (
+from firecrown.likelihood._base import (
     SourceGalaxyPhotoZShift,
     SourceGalaxyPhotoZShiftandStretch,
     SourceGalaxySelectField,

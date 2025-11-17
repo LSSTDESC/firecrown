@@ -22,8 +22,8 @@ from firecrown.likelihood._weak_lensing import (
     WeakLensingSystematic,
 )
 
-# Re-export shared factories from source module
-from firecrown.likelihood._source import (
+# Re-export shared factories from base module
+from firecrown.likelihood._base import (
     PhotoZShiftFactory,
     PhotoZShiftandStretchFactory,
 )

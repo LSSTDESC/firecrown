@@ -18,7 +18,7 @@ from firecrown.likelihood.weak_lensing import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
 )
-from firecrown.likelihood._source import SourceGalaxySystematic
+from firecrown.likelihood._base import SourceGalaxySystematic
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 

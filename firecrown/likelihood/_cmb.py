@@ -6,7 +6,7 @@ import pyccl
 import sacc
 from pydantic import BaseModel, ConfigDict, PrivateAttr
 
-from firecrown.likelihood._source import Source, Tracer
+from firecrown.likelihood._base import Source, Tracer
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 from firecrown.modeling_tools import ModelingTools
 

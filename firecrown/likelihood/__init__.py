@@ -29,10 +29,18 @@ Subpackages:
 # Third-party imports
 from numcosmo_py import Ncm
 
-# Core likelihood infrastructure
-from firecrown.likelihood._likelihood import (
+# Core likelihood infrastructure - base classes from _base.py
+from firecrown.likelihood._base import (
     Likelihood,
     NamedParameters,
+    Source,
+    SourceGalaxyArgs,
+    SourceGalaxySystematic,
+    SourceSystematic,
+    Statistic,
+    Tracer,
+)
+from firecrown.likelihood._likelihood import (
     load_likelihood,
     load_likelihood_from_module_type,
 )
@@ -57,17 +65,7 @@ from firecrown.likelihood._binned_cluster_number_counts_deltasigma import (
 # Supernova statistics
 from firecrown.likelihood.supernova._supernova import Supernova
 
-# Source infrastructure
-from firecrown.likelihood._source import (
-    Source,
-    SourceGalaxyArgs,
-    SourceGalaxySystematic,
-    Tracer,
-    SourceSystematic,
-)
-
-# Base statistic class
-from firecrown.likelihood._statistic import Statistic
+# Source and Statistic classes now imported from _base.py above
 
 # Subpackages - make them accessible as module attributes
 # This allows: import firecrown.likelihood.weak_lensing
