@@ -12,7 +12,7 @@ from ._types import (
     Frameworks,
     ConfigGenerator,
     FrameworkCosmology,
-    CCLCosmologyAnalysisSpec,
+    CCLCosmologySpec,
 )
 from ._cosmosis import CosmosisConfigGenerator
 from ._numcosmo import NumCosmoConfigGenerator
@@ -24,7 +24,7 @@ def get_generator(
     output_path: Path,
     prefix: str,
     use_absolute_path: bool,
-    cosmo_spec: CCLCosmologyAnalysisSpec,
+    cosmo_spec: CCLCosmologySpec,
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
 ) -> ConfigGenerator:
     """Factory function to create framework-specific configuration generator.

@@ -22,9 +22,8 @@ from ._types import (
     FrameworkCosmology,
     PriorUniform,
     PriorGaussian,
-    CCLCosmologyParameters,
-    CCLCosmologyPriors,
-    CCLCosmologyAnalysisSpec,
+    CCLCosmologySpec,
+    COSMO_DESC,
 )
 from ._config_generator import (
     get_generator,
@@ -41,9 +40,8 @@ __all__ = [
     "Parameter",
     "PriorUniform",
     "PriorGaussian",
-    "CCLCosmologyParameters",
-    "CCLCosmologyPriors",
-    "CCLCosmologyAnalysisSpec",
+    "CCLCosmologySpec",
+    "COSMO_DESC",
     "get_generator",
     "ConfigGenerator",
     "CosmosisConfigGenerator",

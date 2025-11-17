@@ -125,7 +125,7 @@ class ExampleCosmicShear(AnalysisBuilder):
     def _setup_phase(self, progress, summary, _output_path):
         """Setup phase of SACC generation."""
         task1 = progress.add_task("Setting up cosmology and coordinates...", total=None)
-        cosmo = self.cosmology_analysis_spec().cosmology.to_ccl_cosmology()
+        cosmo = self.cosmology_analysis_spec().to_ccl_cosmology()
         summary.add_row("[b]Cosmology[/b]", "")
         self._show_cosmology_config(cosmo, summary)
 

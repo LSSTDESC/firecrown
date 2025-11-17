@@ -16,7 +16,7 @@ from rich.rule import Rule
 
 import typer
 from firecrown.likelihood.likelihood import NamedParameters
-from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologyAnalysisSpec
+from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologySpec
 from ._config_generator import get_generator
 from .. import logging
 
@@ -203,12 +203,12 @@ class AnalysisBuilder(logging.Logging):
         :return: True if the analysis requires a cosmology, False otherwise
         """
 
-    def cosmology_analysis_spec(self) -> CCLCosmologyAnalysisSpec:
+    def cosmology_analysis_spec(self) -> CCLCosmologySpec:
         """Return the cosmology analysis specification.
 
         :return: The cosmology analysis specification
         """
-        return CCLCosmologyAnalysisSpec.vanilla_lcdm()
+        return CCLCosmologySpec.vanilla_lcdm()
 
     def get_sacc_file(self, sacc_path: Path) -> str:
         """Return the path to the SACC data file.

@@ -15,11 +15,9 @@ from ..analysis import (
     Model,
     Parameter,
     FrameworkCosmology,
-    PriorUniform,
     PriorGaussian,
-    CCLCosmologyParameters,
-    CCLCosmologyPriors,
-    CCLCosmologyAnalysisSpec,
+    CCLCosmologySpec,
+    COSMO_DESC,
     download_from_url,
     copy_template,
 )
@@ -108,21 +106,22 @@ class ExampleSupernovaSRD(AnalysisBuilder):
         """Return cosmology requirement level."""
         return FrameworkCosmology.BACKGROUND
 
-    def cosmology_analysis_spec(self) -> CCLCosmologyAnalysisSpec:
+    def cosmology_analysis_spec(self) -> CCLCosmologySpec:
         """Return the cosmology analysis specification.
 
         :return: The cosmology analysis specification
         """
-        # pylint: disable=duplicate-code
-        cosmology = CCLCosmologyParameters(
-            Omega_c=0.25,
-            Omega_b=0.05,
-            h=0.67,
-            n_s=0.96,
-            A_s=2.1e-9,
-        )
-        # pylint: enable=duplicate-code
-        priors = CCLCosmologyPriors(
-            Omega_c=PriorUniform(lower=0.06, upper=0.46),
-        )
-        return CCLCosmologyAnalysisSpec(cosmology=cosmology, priors=priors)
+        parameter_names = [
+            "Omega_c",
+            "Omega_b",
+            "Omega_k",
+            "h",
+            "n_s",
+            "A_s",
+            "Neff",
+            "m_nu",
+            "w0",
+            "wa",
+        ]
+        parameters = [COSMO_DESC[param_name] for param_name in parameter_names]
+        return CCLCosmologySpec(parameters=parameters)

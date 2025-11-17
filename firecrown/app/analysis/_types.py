@@ -11,8 +11,8 @@ import dataclasses
 from enum import StrEnum
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import ClassVar, Sequence, Any
-from pydantic import BaseModel, ConfigDict, model_validator
+from typing import ClassVar, Any
+from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 import numpy as np
 import pyccl
 
@@ -99,19 +99,20 @@ class Parameter(BaseModel):
     @classmethod
     def fill_defaults(cls, data: Any) -> Any:
         """Validate that scale is positive if provided."""
+        sd = 0.01  # Default scale factor
         if isinstance(data, dict):
             if (
                 ("scale" not in data)
                 and ("default_value" in data)
                 and data["default_value"] != 0.0
             ):
-                data["scale"] = np.abs(data["default_value"]) * 0.1
+                data["scale"] = np.abs(data["default_value"]) * sd
             if (
                 ("scale" not in data)
                 and ("lower_bound" in data)
                 and ("upper_bound" in data)
             ):
-                data["scale"] = np.abs(data["upper_bound"] - data["lower_bound"]) * 0.01
+                data["scale"] = np.abs(data["upper_bound"] - data["lower_bound"]) * sd
         return data
 
     @model_validator(mode="after")
@@ -151,169 +152,174 @@ class Model(BaseModel):
     into a named model for organization in configuration files.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(extra="forbid", frozen=True)
 
     name: str
     description: str
     parameters: list[Parameter]
 
+    _param_dict: dict[str, Parameter] = PrivateAttr(default_factory=dict)
 
-class CCLCosmologyParameters(BaseModel):  # pylint: disable=too-many-instance-attributes
-    """Cosmological parameters for CCL (Core Cosmology Library).
+    def model_post_init(self, context, /) -> None:
+        """Validate that parameter names are unique.
 
-    Defines all cosmological parameters supported by CCL, including
-    matter content, dark energy, neutrinos, and power spectrum options.
-    Parameters set to None are not included in the CCL cosmology.
+        Creates a dictionary of parameters by name.
+        """
+        super().model_post_init(context)
+
+        for param in self.parameters:
+            if param.name in self._param_dict:
+                raise ValueError(f"Duplicate parameter name: {param.name}")
+            self._param_dict[param.name] = param
+
+    def has_priors(self) -> bool:
+        """Check if any parameters have priors defined.
+
+        :return: True if at least one parameter has a prior; False otherwise
+        """
+        for param in self.parameters:
+            if param.prior is not None:
+                return True
+        return False
+
+    def __getitem__(self, key: str) -> Parameter:
+        """Return the value for the given key.
+
+        If the key has not been used, add it to the set of used keys.
+
+        :param key: key
+        :return: value
+        """
+        if key not in self._param_dict:
+            raise KeyError(f"Parameter {key} not found in model {self.name}")
+        return self._param_dict[key]
+
+    def __contains__(self, key: str) -> bool:
+        """Return True if the key is in the map, False otherwise.
+
+        :param key: key
+        :return: True if the key is in the map, False otherwise
+        """
+        return key in self._param_dict
+
+
+CCL_COSMOLOGY_MINIMAL_SET = [
+    "Omega_c",
+    "Omega_b",
+    "Omega_k",
+    "h",
+    "n_s",
+    "Neff",
+    "m_nu",
+    "w0",
+    "wa",
+]
+CCL_COSMOLOGY_PARAMETERS = CCL_COSMOLOGY_MINIMAL_SET + [
+    "sigma8",
+    "T_CMB",
+    "A_s",
+    "T_ncdm",
+]
+
+COSMO_DESC = {
+    "Omega_c": Parameter.from_tuple("Omega_c", r"\Omega_c", 0.06, 0.46, 0.25, True),
+    "Omega_b": Parameter.from_tuple("Omega_b", r"\Omega_b", 0.03, 0.07, 0.05, True),
+    "h": Parameter.from_tuple("h", r"h", 0.55, 0.85, 0.67, False),
+    "n_s": Parameter.from_tuple("n_s", r"n_s", 0.87, 1.07, 0.96, False),
+    "sigma8": Parameter.from_tuple("sigma8", r"\sigma_8", 0.6, 1.0, 0.81, True),
+    "A_s": Parameter.from_tuple("A_s", r"A_s", 1e-10, 3e-9, 2.1e-9, True),
+    "Omega_k": Parameter.from_tuple("Omega_k", r"\Omega_k", -0.2, 0.2, 0.0, False),
+    "Neff": Parameter.from_tuple("Neff", r"N_\mathrm{eff}", 2.0, 5.0, 3.046, False),
+    "m_nu": Parameter.from_tuple("m_nu", r"m_\nu", 0.0, 5.0, 0.0, False),
+    "w0": Parameter.from_tuple("w0", r"w_0", -3.0, 0.0, -1.0, False),
+    "wa": Parameter.from_tuple("wa", r"w_a", -1.0, 1.0, 0.0, False),
+    "T_CMB": Parameter.from_tuple("T_CMB", r"T_\mathrm{CMB}", 2.0, 3.0, 2.7255, False),
+    "T_ncdm": Parameter.from_tuple(
+        "T_ncdm", r"T_\mathrm{ncdm}", 0.5, 1.0, 0.71611, False
+    ),
+}
+
+
+class CCLCosmologySpec(Model):
+    """CCL cosmology specification model.
+
+    A specialized Model that represents the cosmological parameters
+    used in CCL-based analyses.
     """
 
-    model_config = ConfigDict(extra="forbid")
+    name: str = "ccl_cosmology"
+    description: str = "CCL cosmology specification"
 
-    Omega_c: float | None = None
-    Omega_b: float | None = None
-    h: float | None = None
-    n_s: float | None = None
-    sigma8: float | None = None
-    A_s: float | None = None
-    Omega_k: float = 0.0
-    Omega_g: float | None = None
-    Neff: float | None = None
-    m_nu: float | Sequence[float] = 0.0
+    # CCL cosmological parameters
     mass_split: str = "normal"
-
-    w0: float = -1.0
-    wa: float = 0.0
-
-    T_CMB: float = 2.7255
-    T_ncdm: float = 0.71611
-
     transfer_function: str | Any = "boltzmann_camb"
     matter_power_spectrum: str | Any = "halofit"
-
-    baryonic_effects: Any | None = None
-    mg_parametrization: Any | None = None
-
     extra_parameters: CAMBExtraParams | None = None
+
+    def model_post_init(self, context, /) -> None:
+        """Validate that all parameters are cosmological."""
+        super().model_post_init(context)
+        for param in self.parameters:
+            if param.name not in CCL_COSMOLOGY_PARAMETERS:
+                raise ValueError(
+                    f"Parameter '{param.name}' is not a valid CCL cosmological parameter."
+                )
+
+        # Has at least the minimal set of parameters
+        for req_param in CCL_COSMOLOGY_MINIMAL_SET:
+            if req_param not in self._param_dict:
+                raise ValueError(
+                    f"CCLCosmologySpec is missing required parameter '{req_param}'."
+                )
+        if ("sigma8" in self._param_dict) == ("A_s" in self._param_dict):
+            raise ValueError("Exactly one of A_s and sigma8 must be supplied.")
 
     def to_ccl_cosmology(self) -> pyccl.Cosmology:
         """Convert to CCL cosmology dictionary.
 
         :return: Dictionary of cosmological parameters for CCL
         """
-        return pyccl.Cosmology(**self.model_dump(exclude_none=True))
-
-
-class CCLCosmologyPriors(BaseModel):
-    """Prior distributions for cosmological parameters.
-
-    Specifies priors (uniform or Gaussian) for each cosmological parameter.
-    Parameters with None have no prior (fixed values).
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    Omega_c: Prior | None = None
-    Omega_b: Prior | None = None
-    h: Prior | None = None
-    n_s: Prior | None = None
-    sigma8: Prior | None = None
-    A_s: Prior | None = None
-    Omega_k: Prior | None = None
-    Neff: Prior | None = None
-    m_nu: Prior | None = None
-
-    w0: Prior | None = None
-    wa: Prior | None = None
-
-    def is_empty(self) -> bool:
-        """Check if no priors are defined.
-
-        :return: True if no priors are set, False otherwise
-        """
-        fields = CCLCosmologyPriors.model_fields
-        return all(getattr(self, field) is None for field in fields.keys())
-
-
-class CCLCosmologyAnalysisSpec(BaseModel):
-    """Complete cosmology specification for parameter estimation.
-
-    Combines cosmological parameter values with their prior distributions.
-    Validates that exactly one amplitude parameter (A_s or sigma8) is specified
-    and that priors match the chosen parameters.
-    """
-
-    model_config = ConfigDict(extra="forbid")
-
-    cosmology: CCLCosmologyParameters
-    priors: CCLCosmologyPriors
-
-    def _validate_as_sigma8_exclusivity(self) -> None:
-        """Validate that either sigma8 or A_s is set, but not both."""
-        A_s_val = self.cosmology.A_s
-        sig8_val = self.cosmology.sigma8
-        A_s_prior = self.priors.A_s
-        sig8_prior = self.priors.sigma8
-        # Exactly one of A_s and sigma8 must have a value
-        if (A_s_val is None) == (sig8_val is None):
-            raise ValueError(
-                f"Exactly one of A_s and sigma8 must be supplied. "
-                f"(A_s={A_s_val}, sigma8={sig8_val})"
+        args: dict[str, Any] = {}
+        if self._param_dict is not None:
+            args.update(
+                {key: value.default_value for key, value in self._param_dict.items()}
             )
-        # Exactly one of the priors must be provided
-        if (A_s_prior is not None) and (sig8_prior is not None):
-            raise ValueError(
-                f"Both A_s and sigma8 priors cannot be provided. "
-                f"(A_s_prior={A_s_prior}, sigma8_prior={sig8_prior})"
-            )
-        # The chosen param must match the chosen prior
-        if A_s_prior is not None and A_s_val is None:
-            raise ValueError("A_s prior provided but A_s value is missing.")
-        if sig8_prior is not None and sig8_val is None:
-            raise ValueError("sigma8 prior provided but sigma8 value is missing.")
+        if self.extra_parameters:
+            args["extra_parameters"] = self.extra_parameters.model_dump()
+        if self.matter_power_spectrum:
+            args["matter_power_spectrum"] = self.matter_power_spectrum
+        if self.transfer_function:
+            args["transfer_function"] = self.transfer_function
+        if self.mass_split:
+            args["mass_split"] = self.mass_split
 
-    def _validate_m_nu_priors(self) -> None:
-        """Validate that m_nu priors match the number of masses."""
-        m_nu_val = self.cosmology.m_nu
-        m_nu_priors = self.priors.m_nu
-        if isinstance(m_nu_val, float):
-            num_masses = 1 if m_nu_val > 0 else 0
-        else:
-            num_masses = len(m_nu_val)
-        if m_nu_priors is not None and num_masses == 0:
-            raise ValueError("m_nu prior provided but no massive neutrinos defined.")
-
-    def model_post_init(self, _, /) -> None:
-        """Run validations after initialization."""
-        self._validate_as_sigma8_exclusivity()
-        self._validate_m_nu_priors()
+        return pyccl.Cosmology(**args)
 
     @classmethod
-    def vanilla_lcdm(cls) -> "CCLCosmologyAnalysisSpec":
+    def vanilla_lcdm(cls) -> "CCLCosmologySpec":
         """Create a vanilla LCDM cosmology analysis spec with standard parameters."""
-        cosmology = CCLCosmologyParameters(
-            Omega_c=0.25,
-            Omega_b=0.05,
-            h=0.67,
-            n_s=0.96,
-            sigma8=0.81,
-        )
-        priors = CCLCosmologyPriors(
-            Omega_c=PriorUniform(lower=0.06, upper=0.46),
-            Omega_b=PriorUniform(lower=0.03, upper=0.07),
-            sigma8=PriorUniform(lower=0.7, upper=1.2),
-        )
-        return cls(cosmology=cosmology, priors=priors)
+        vanilla_params = [
+            COSMO_DESC[param_name] for param_name in CCL_COSMOLOGY_MINIMAL_SET
+        ] + [COSMO_DESC["sigma8"]]
+        return cls(parameters=vanilla_params)
+
+    @classmethod
+    def vanilla_lcdm_with_neutrinos(cls) -> "CCLCosmologySpec":
+        """Create a vanilla LCDM cosmology analysis spec with standard parameters."""
+        parameters = [
+            COSMO_DESC[param_name] for param_name in CCL_COSMOLOGY_MINIMAL_SET
+        ] + [COSMO_DESC["sigma8"], COSMO_DESC["Neff"], COSMO_DESC["m_nu"]]
+        return cls(parameters=parameters)
 
     def get_num_massive_neutrinos(self) -> int:
         """Get the number of massive neutrinos defined in the cosmology."""
-        m_nu_val = self.cosmology.m_nu
-        if isinstance(m_nu_val, float):
-            return 1 if m_nu_val > 0 else 0
-        return len(m_nu_val)
+        mnu_param = self._param_dict["m_nu"]
+        return 1 if (mnu_param.default_value > 0.0 or mnu_param.free) else 0
 
     def get_amplitude_parameter(self) -> PoweSpecAmplitudeParameter:
         """Get the amplitude parameter for the power spectrum."""
-        if self.cosmology.sigma8 is not None:
-            return PoweSpecAmplitudeParameter.SIGMA8
+        if "A_s" in self._param_dict:
+            return PoweSpecAmplitudeParameter.AS
         return PoweSpecAmplitudeParameter.SIGMA8
 
 
@@ -333,7 +339,7 @@ class ConfigGenerator(ABC):
     output_path: Path
     prefix: str
     use_absolute_path: bool
-    cosmo_spec: CCLCosmologyAnalysisSpec
+    cosmo_spec: CCLCosmologySpec
     required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR
 
     sacc_path: Path | None = None
