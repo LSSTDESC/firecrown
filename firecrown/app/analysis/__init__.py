@@ -24,6 +24,7 @@ from ._types import (
     PriorGaussian,
     CCLCosmologySpec,
     COSMO_DESC,
+    CCL_COSMOLOGY_MINIMAL_SET,
 )
 from ._config_generator import (
     get_generator,
@@ -42,6 +43,7 @@ __all__ = [
     "PriorGaussian",
     "CCLCosmologySpec",
     "COSMO_DESC",
+    "CCL_COSMOLOGY_MINIMAL_SET",
     "get_generator",
     "ConfigGenerator",
     "CosmosisConfigGenerator",

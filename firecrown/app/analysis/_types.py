@@ -262,7 +262,8 @@ class CCLCosmologySpec(Model):
         for param in self.parameters:
             if param.name not in CCL_COSMOLOGY_PARAMETERS:
                 raise ValueError(
-                    f"Parameter '{param.name}' is not a valid CCL cosmological parameter."
+                    f"Parameter '{param.name}' is not a "
+                    f"valid CCL cosmological parameter."
                 )
 
         # Has at least the minimal set of parameters

@@ -52,42 +52,72 @@ NAME_MAP: dict[str, str] = {
 }
 
 
-def _create_mapping(
-    distance_max_z: float, reltol: float, required_cosmology: FrameworkCosmology
-) -> nc_cosmosis.MappingNumCosmo | None:
-    """Create NumCosmo cosmology mapping.
+@dataclasses.dataclass
+class ConfigOptions:
+    """Configuration options for NumCosmo experiment setup.
 
-    Configures CLASS computation level based on required cosmology.
-    Returns None if no cosmology computation needed.
+    Bundles all configuration parameters needed to set up a NumCosmo experiment,
+    simplifying function signatures throughout the module.
 
-    :param distance_max_z: Maximum redshift for distance calculations
-    :param reltol: Relative tolerance for numerical computations
-    :param required_cosmology: Level of cosmology computation
-    :return: NumCosmo mapping or None
+    :ivar output_path: Output directory for YAML files and temporary data
+    :ivar factory_source: Firecrown factory YAML path or module identifier
+    :ivar build_parameters: Parameters passed to likelihood factory
+    :ivar models: List of systematic/nuisance models to configure
+    :ivar cosmo_spec: Cosmology specification with parameters and priors
+    :ivar use_absolute_path: Whether to use absolute paths in configuration files
+    :ivar required_cosmology: Level of cosmology computation
+        (NONE/BACKGROUND/LINEAR/NONLINEAR)
+    :ivar prefix: Filename prefix for generated YAML files
+    :ivar distance_max_z: Maximum redshift for distance integrals (default: 4.0)
+    :ivar reltol: Relative tolerance for numerical calculations (default: 1e-7)
     """
-    match required_cosmology:
+
+    output_path: Path
+    factory_source: str | Path
+    build_parameters: NamedParameters
+    models: list[Model]
+    cosmo_spec: CCLCosmologySpec
+    use_absolute_path: bool
+    required_cosmology: FrameworkCosmology
+    prefix: str
+    distance_max_z: float = 4.0
+    reltol: float = 1e-7
+
+
+def _create_mapping(options: ConfigOptions) -> nc_cosmosis.MappingNumCosmo | None:
+    """Create NumCosmo cosmology power spectrum mapping.
+
+    Configures NumCosmo computation level (background, linear power spectrum, or
+    nonlinear with HaloFit) based on required cosmology. Returns None if no cosmology
+    computation is needed.
+
+    :param options: Configuration options containing required_cosmology,
+        distance_max_z, and reltol
+    :return: Configured NumCosmo mapping or None if computation not needed
+    """
+    match options.required_cosmology:
         case FrameworkCosmology.NONE:
             return None
         case FrameworkCosmology.BACKGROUND:
             return nc_cosmosis.create_numcosmo_mapping(
                 matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.NONE,
                 nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.NONE,
-                distance_max_z=distance_max_z,
-                reltol=reltol,
+                distance_max_z=options.distance_max_z,
+                reltol=options.reltol,
             )
         case FrameworkCosmology.LINEAR:
             return nc_cosmosis.create_numcosmo_mapping(
                 matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
                 nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.NONE,
-                distance_max_z=distance_max_z,
-                reltol=reltol,
+                distance_max_z=options.distance_max_z,
+                reltol=options.reltol,
             )
         case FrameworkCosmology.NONLINEAR:
             return nc_cosmosis.create_numcosmo_mapping(
                 matter_ps=nc_cosmosis.LinearMatterPowerSpectrum.CLASS,
                 nonlin_matter_ps=nc_cosmosis.NonLinearMatterPowerSpectrum.HALOFIT,
-                distance_max_z=distance_max_z,
-                reltol=reltol,
+                distance_max_z=options.distance_max_z,
+                reltol=options.reltol,
             )
         case _ as unreachable:
             assert_never(unreachable)
@@ -100,17 +130,18 @@ def _create_factory(
     mapping: nc_cosmosis.MappingNumCosmo | None,
     model_list: list[str],
 ) -> NumCosmoFactory:
-    """Create NumCosmo factory instance.
+    """Create NumCosmo factory instance for likelihood computation.
 
-    Temporarily changes to output_path directory for factory initialization,
-    then restores original working directory.
+    Initializes the Firecrown likelihood factory in the output directory context.
+    Temporarily changes working directory for factory initialization, then restores the
+    original directory to avoid side effects.
 
-    :param output_path: Output directory
-    :param factory_source_str: Factory source path or module string
-    :param build_parameters: Parameters for likelihood factory
-    :param mapping: NumCosmo cosmology mapping
-    :param model_list: List of model names
-    :return: Initialized NumCosmo factory
+    :param output_path: Output directory for factory initialization
+    :param factory_source_str: Factory source YAML path or module identifier string
+    :param build_parameters: Parameters passed to likelihood factory builder
+    :param mapping: NumCosmo CLASS cosmology mapping (or None for no cosmology)
+    :param model_list: List of model names to register with factory
+    :return: Initialized NumCosmo factory instance
     """
     cwd = os.getcwd()
     try:
@@ -128,15 +159,16 @@ def _add_prior(
     prior: Prior | None,
     param_scale: dict[str, float] | None = None,
 ) -> None:
-    """Add prior to list if specified.
+    """Add prior constraint to priors list if specified.
 
-    Creates appropriate NumCosmo prior object (Gaussian or flat/uniform)
-    and appends to priors list. Does nothing if prior is None.
+    Creates appropriate NumCosmo prior object (Gaussian or uniform) and appends it to
+    the priors list. Does nothing if prior is None. Applies optional scaling to prior
+    bounds and values.
 
-    :param priors: List of priors (modified in-place)
+    :param priors: List of prior objects (modified in-place)
     :param param_name: Full parameter name with namespace (e.g., 'NcHICosmo:H0')
-    :param prior: Prior specification
-    :param scale: Scale factor applied to prior bounds
+    :param prior: Prior specification (Gaussian or uniform)
+    :param param_scale: Optional scale factors indexed by parameter name
     """
     if prior is None:
         return
@@ -163,12 +195,15 @@ def _add_prior(
 def _param_to_nc_dict(
     param: Parameter, param_scale: dict[str, float] | None = None
 ) -> dict[str, Any]:
-    """Format parameter with prior for NumCosmo.
+    """Convert Firecrown parameter to NumCosmo parameter descriptor dictionary.
 
-    :param default_value: Default/reference parameter value
-    :param prior: Prior specification (None for fixed parameters)
-    :param scale: Scale factor applied to all values and bounds
-    :return: Parameter configuration (dict with prior or fixed float)
+    Transforms parameter specification to NumCosmo format with field name mapping
+    (e.g., 'lower_bound' → 'lower-bound') and applies scaling. Excludes derived fields
+    like 'name', 'symbol', and 'prior'.
+
+    :param param: Parameter specification with bounds, default, and flags
+    :param param_scale: Optional scale factors indexed by parameter name
+    :return: Parameter configuration dictionary for NumCosmo
     """
     param_scale = param_scale or {}
     scale = param_scale.get(param.name, 1.0)
@@ -187,29 +222,32 @@ def _param_to_nc_dict(
 
 
 def _set_standard_params(
+    options: ConfigOptions,
     mset: Ncm.MSet,
     cosmo: Nc.HICosmoDECpl,
     prim: Nc.HIPrimPowerLaw,
     reion: Nc.HIReionCamb,
-    cosmo_spec: CCLCosmologySpec,
     priors: list[Ncm.Prior],
 ) -> None:
-    """Set standard cosmological parameters in model set.
+    """Set standard cosmological parameters with priors in NumCosmo model set.
 
-    Configures parameters like Omega_c, Omega_b, h, n_s, etc. with their
-    values and priors. Applies scaling where needed (e.g., h → H0 x 100).
+    Configures standard LCDM and extended parameters (Omega_c, Omega_b, h, n_s, Neff,
+    T_CMB, etc.) with their values and optional prior constraints. Applies scaling
+    where needed (h → H0 x 100). Skips special amplitude and neutrino mass parameters
+    (A_s, sigma8, m_nu) which are handled separately.
 
-    :param mset: NumCosmo model set
-    :param cosmo: Cosmology model
-    :param prim: Primordial power spectrum model
-    :param ccl_cosmo: CCL cosmology dictionary
-    :param cosmo_spec: Cosmology specification with priors
-    :param priors: List of priors (modified in-place)
+    :param options: Configuration options containing cosmology specification
+    :param mset: NumCosmo model set (modified in-place)
+    :param cosmo: Cosmology model (HICosmoDECpl)
+    :param prim: Primordial power spectrum model (HIPrimPowerLaw)
+    :param reion: Reionization model (HIReionCamb)
+    :param priors: Prior list (modified in-place)
+    :raises ValueError: If parameter name is not recognized in NAME_MAP
     """
     targets: list[Ncm.Model] = [cosmo, prim, reion]
     skip_list = ["A_s", "sigma8", "m_nu"]
     param_scale = {"h": 100.0}
-    for param in cosmo_spec.parameters:
+    for param in options.cosmo_spec.parameters:
         if param.name in skip_list:
             continue
         nc_name = NAME_MAP[param.name]
@@ -230,26 +268,26 @@ def _set_standard_params(
 
 
 def _set_amplitude_A_s(
+    options: ConfigOptions,
     mset: Ncm.MSet,
     prim: Nc.HIPrimPowerLaw,
-    cosmo_spec: CCLCosmologySpec,
     priors: list[Ncm.Prior],
 ) -> None:
-    """Set A_s amplitude parameter with logarithmic transformation.
+    """Set A_s amplitude parameter with logarithmic transformation and priors.
 
-    NumCosmo stores A_s as ln10e10ASA = ln(10e10 x A_s) for numerical stability.
-    Prior bounds are transformed accordingly. Does nothing if A_s is not in the
-    cosmology specification.
+    NumCosmo stores A_s as ln(10^10 x A_s) for numerical stability. Prior bounds are
+    transformed accordingly using logarithmic scaling. Does nothing if A_s is not
+    specified in the cosmology.
 
+    :param options: Configuration options containing cosmology specification
     :param mset: NumCosmo model set
-    :param prim: Primordial power spectrum model
-    :param cosmo_spec: Cosmology specification with parameter values and priors
-    :param priors: List of priors (modified in-place)
+    :param prim: Primordial power spectrum model (modified in-place)
+    :param priors: Prior list (modified in-place if A_s prior exists)
     """
-    if "A_s" not in cosmo_spec:
+    if "A_s" not in options.cosmo_spec:
         return
 
-    A_s_param = cosmo_spec["A_s"]
+    A_s_param = options.cosmo_spec["A_s"]
     A_s = A_s_param.default_value
     prim["ln10e10ASA"] = np.log(1.0e10 * A_s)
     if A_s_param.prior is None:
@@ -279,39 +317,41 @@ def _set_amplitude_A_s(
 
 
 def _set_amplitude_sigma8(
+    options: ConfigOptions,
     cosmo: Nc.HICosmoDECpl,
     prim: Nc.HIPrimPowerLaw,
     mapping: nc_cosmosis.MappingNumCosmo | None,
-    cosmo_spec: CCLCosmologySpec,
     priors: list[Ncm.Prior],
-    reltol: float,
 ) -> None:
     """Set sigma8 amplitude parameter as functional prior.
 
-    Computes A_s from sigma8 target value and sets up functional prior
-    that constrains sigma8 directly. This allows sampling in A_s space
-    while applying prior to derived sigma8. Does nothing if sigma8 is not
-    in the cosmology specification or if mapping is not available.
+    Computes A_s from target sigma8 value by computing sigma8(A_s=1) and scaling
+    accordingly. Sets up functional prior constraint that applies directly to the
+    derived sigma8 quantity. This allows sampling in A_s parameter space while
+    constraining the final sigma8 value. Does nothing if sigma8 not specified or if
+    mapping unavailable.
 
-    :param cosmo: Cosmology model
-    :param prim: Primordial power spectrum model
-    :param mapping: NumCosmo mapping with power spectrum
-    :param cosmo_spec: Cosmology specification with parameter values and priors
-    :param priors: List of priors (modified in-place)
-    :param reltol: Relative tolerance for sigma8 calculation
+    :param options: Configuration options containing cosmology specification and
+        tolerances
+    :param cosmo: Cosmology model (modified in-place for A_s computation)
+    :param prim: Primordial power spectrum model (modified in-place)
+    :param mapping: NumCosmo mapping with power spectrum (required if sigma8 present)
+    :param priors: Prior list (modified in-place if sigma8 prior exists)
+    :raises ValueError: If sigma8 specified but mapping or p_ml unavailable
     """
-    if "sigma8" not in cosmo_spec:
+    if "sigma8" not in options.cosmo_spec:
         return
 
     if mapping is None or mapping.p_ml is None:
         raise ValueError("Mapping must have p_ml set for sigma8")
 
-    sigma8_param = cosmo_spec["sigma8"]
+    sigma8_param = options.cosmo_spec["sigma8"]
     sigma8 = sigma8_param.default_value
 
     A_s = np.exp(prim["ln10e10ASA"]) * 1.0e-10
     fact = (
-        sigma8 / mapping.p_ml.sigma_tophat_R(cosmo, reltol, 0.0, 8.0 / cosmo.h())
+        sigma8
+        / mapping.p_ml.sigma_tophat_R(cosmo, options.reltol, 0.0, 8.0 / cosmo.h())
     ) ** 2
     prim.param_set_by_name("ln10e10ASA", np.log(1.0e10 * A_s * fact))
 
@@ -343,26 +383,26 @@ def _set_amplitude_sigma8(
 
 
 def _set_neutrino_masses(
+    options: ConfigOptions,
     cosmo: Nc.HICosmoDECpl,
-    cosmo_spec: CCLCosmologySpec,
     mset: Ncm.MSet,
     priors: list[Ncm.Prior],
 ) -> None:
-    """Set neutrino mass parameter with prior configuration.
+    """Set neutrino mass parameter with optional prior constraint.
 
-    Sets the m_nu parameter in the cosmology model and configures any
-    associated prior constraints.
+    Configures massive neutrino mass m_nu in the cosmology model and adds any
+    associated prior constraints. Does nothing if no massive neutrinos are present.
 
-    :param cosmo: Cosmology model
-    :param cosmo_spec: Cosmology specification with parameter values and priors
-    :param mset: NumCosmo model set
-    :param priors: List of priors (modified in-place)
+    :param options: Configuration options containing cosmology specification
+    :param cosmo: Cosmology model (modified in-place)
+    :param mset: NumCosmo model set (used for namespace resolution)
+    :param priors: Prior list (modified in-place if m_nu prior exists)
     """
-    if cosmo_spec.get_num_massive_neutrinos() == 0:
+    if options.cosmo_spec.get_num_massive_neutrinos() == 0:
         return
 
     nc_name = NAME_MAP["m_nu"]
-    param = cosmo_spec["m_nu"]
+    param = options.cosmo_spec["m_nu"]
     assert nc_name in cosmo.param_names()
     cosmo[nc_name] = param.default_value
     cosmo.param_set_desc(nc_name, _param_to_nc_dict(param))
@@ -375,30 +415,33 @@ def _set_neutrino_masses(
 
 
 def _setup_cosmology(
+    options: ConfigOptions,
     mset: Ncm.MSet,
-    required_cosmology: FrameworkCosmology,
     mapping: nc_cosmosis.MappingNumCosmo | None,
-    cosmo_spec: CCLCosmologySpec,
     priors: list[Ncm.Prior],
-    reltol: float,
 ) -> None:
-    """Create and configure NumCosmo model set with cosmology.
+    """Set up cosmology models and parameters in NumCosmo model set.
 
-    Sets up cosmology model (HICosmoDECpl), primordial power spectrum (HIPrimPowerLaw),
-    and reionization (HIReionCamb). Configures all parameters and priors.
+    Creates and configures cosmology model (HICosmoDECpl), primordial power spectrum
+    (HIPrimPowerLaw), and reionization (HIReionCamb) with all parameters and
+    constraints. Handles standard parameters (Omega_c, Omega_b, etc.), amplitude
+    parameters (A_s, sigma8), and neutrino masses. Does nothing if required_cosmology
+    is NONE.
 
-    :param required_cosmology: Level of cosmology computation
-    :param mapping: NumCosmo cosmology mapping
-    :param cosmo_spec: Cosmology specification
-    :param reltol: Relative tolerance for calculations
-    :return: Tuple of (model set, list of priors)
+    :param options: Configuration options containing cosmology specification and
+        settings
+    :param mset: NumCosmo model set (modified in-place)
+    :param mapping: NumCosmo CLASS mapping (required if computation needed)
+    :param priors: Prior list (modified in-place)
     """
-    if required_cosmology == FrameworkCosmology.NONE:
+    if options.required_cosmology == FrameworkCosmology.NONE:
         return
 
     assert mapping is not None
 
-    cosmo = Nc.HICosmoDECpl(massnu_length=cosmo_spec.get_num_massive_neutrinos())
+    cosmo = Nc.HICosmoDECpl(
+        massnu_length=options.cosmo_spec.get_num_massive_neutrinos()
+    )
     cosmo.omega_x2omega_k()
     prim = Nc.HIPrimPowerLaw.new()  # pylint: disable=no-value-for-parameter
     reion = Nc.HIReionCamb.new()  # pylint: disable=no-value-for-parameter
@@ -406,35 +449,49 @@ def _setup_cosmology(
     cosmo.add_submodel(reion)
     mset.set(cosmo)
 
-    _set_standard_params(mset, cosmo, prim, reion, cosmo_spec, priors)
-    _set_amplitude_A_s(mset, prim, cosmo_spec, priors)
-    _set_amplitude_sigma8(cosmo, prim, mapping, cosmo_spec, priors, reltol)
-    _set_neutrino_masses(cosmo, cosmo_spec, mset, priors)
+    _set_standard_params(options, mset, cosmo, prim, reion, priors)
+    _set_amplitude_A_s(options, mset, prim, priors)
+    _set_amplitude_sigma8(options, cosmo, prim, mapping, priors)
+    _set_neutrino_masses(options, cosmo, mset, priors)
 
 
 def _to_pascal(s: str) -> str:
-    """NumCosmo model names must be PascalCase."""
+    """Convert string to PascalCase for NumCosmo model names.
+
+    Splits on non-alphanumeric characters and capitalizes first letter of each part
+    while preserving case of remaining characters.
+
+    Examples:
+        - 'intrinsic_alignment' → 'IntrinsicAlignment'
+        - 'ia_model_v1' → 'IaModelV1'
+        - 'shear_bias_multiplicative' → 'ShearBiasMultiplicative'
+
+    :param s: Input string (typically model or parameter name)
+    :return: PascalCase formatted string
+    """
     parts = re.split(r"[^A-Za-z0-9]+", s)
-    return "".join(p.capitalize() for p in parts if p)
+    return "".join(p[0].upper() + p[1:] for p in parts if p)
 
 
 def _setup_models(
+    options: ConfigOptions,
     mset: Ncm.MSet,
-    models: list[Model],
     priors: list[Ncm.Prior],
 ) -> Ncm.ObjDictStr:
-    """Add systematic/nuisance models to NumCosmo configuration.
+    """Add systematic/nuisance models to NumCosmo model set.
 
-    Creates model builders for each model, registers them dynamically,
-    and adds instances to the model set.
+    Creates NumCosmo ModelBuilder objects for each model, registers them dynamically,
+    instantiates them, and adds to the model set. Also configures any parameter priors
+    for the models.
 
-    :param config: NumCosmo experiment object (modified in-place)
-    :param models: List of models with parameters
-    :return: Model builders object dictionary
+    :param options: Configuration options containing models list
+    :param mset: NumCosmo model set (modified in-place)
+    :param priors: Prior list (modified in-place for model parameter priors)
+    :return: ObjDictStr mapping model names to builder objects
     """
     model_builders = Ncm.ObjDictStr.new()  # pylint: disable=no-value-for-parameter
 
-    for model in models:
+    for model in options.models:
         model_name = _to_pascal(model.name)
         model_builder = Ncm.ModelBuilder.new(Ncm.Model, model_name, model.description)
         for parameter in model.parameters:
@@ -464,12 +521,13 @@ def _setup_models(
 
 
 def _create_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
-    """Create NumCosmo dataset from factory.
+    """Create NumCosmo dataset from Firecrown factory data.
 
-    Wraps Firecrown data object in NumCosmo dataset container.
+    Wraps the likelihood data object from the Firecrown factory in a NumCosmo dataset
+    container for use in likelihood calculations.
 
-    :param numcosmo_factory: NumCosmo factory instance
-    :return: NumCosmo dataset
+    :param numcosmo_factory: Firecrown factory with likelihood data
+    :return: NumCosmo dataset wrapper
     """
     dataset = Ncm.Dataset.new()  # pylint: disable=no-value-for-parameter
     firecrown_data = numcosmo_factory.get_data()
@@ -480,13 +538,14 @@ def _create_dataset(numcosmo_factory: NumCosmoFactory) -> Ncm.Dataset:
 
 
 def _create_likelihood(dataset: Ncm.Dataset, priors: list[Ncm.Prior]) -> Ncm.Likelihood:
-    """Create NumCosmo likelihood with priors.
+    """Create NumCosmo likelihood combining data and prior constraints.
 
-    Combines dataset with prior constraints into complete likelihood.
+    Wraps dataset in a likelihood object and adds all prior constraints for use in
+    parameter estimation.
 
-    :param dataset: NumCosmo dataset
-    :param priors: List of prior objects
-    :return: NumCosmo likelihood
+    :param dataset: NumCosmo dataset with observations
+    :param priors: Prior constraints on parameters
+    :return: NumCosmo likelihood combining data and priors
     """
     likelihood = Ncm.Likelihood.new(dataset)
     for prior in priors:
@@ -494,47 +553,30 @@ def _create_likelihood(dataset: Ncm.Dataset, priors: list[Ncm.Prior]) -> Ncm.Lik
     return likelihood
 
 
-def create_config(
-    output_path: Path,
-    factory_source: str | Path,
-    build_parameters: NamedParameters,
-    models: list[Model],
-    cosmo_spec: CCLCosmologySpec,
-    *,
-    use_absolute_path: bool = False,
-    required_cosmology: FrameworkCosmology = FrameworkCosmology.NONLINEAR,
-    distance_max_z: float = 4.0,
-    reltol: float = 1e-7,
-) -> tuple[Ncm.ObjDictStr, Ncm.ObjDictStr]:
-    """Create NumCosmo experiment configuration.
+def _setup_experiment(options: ConfigOptions) -> tuple[Ncm.ObjDictStr, Ncm.ObjDictStr]:
+    """Set up complete NumCosmo experiment with cosmology, models, and likelihood.
 
-    Builds complete experiment with cosmology mapping, model set, dataset,
-    and likelihood. Returns serializable object dictionary.
+    Creates factory, model set with cosmology and systematic models, dataset, and
+    likelihood. Returns serializable objects for saving to YAML.
 
-    :param output_path: Output directory
-    :param factory_source: Factory source path or module string
-    :param build_parameters: Parameters for likelihood factory
-    :param model_list: List of model names
-    :param cosmo_spec: Cosmology specification
-    :param use_absolute_path: Use absolute paths in configuration
-    :param required_cosmology: Level of cosmology computation
-    :param distance_max_z: Maximum redshift for distance calculations
-    :param reltol: Relative tolerance for numerical computations
-    :return: NumCosmo experiment object dictionary
+    All configuration parameters are provided via the ConfigOptions dataclass, which
+    bundles them for cleaner function signatures.
+
+    :param options: Configuration options with all necessary parameters
+    :return: Tuple of (experiment config dict, model builders dict)
     """
-    mapping = _create_mapping(distance_max_z, reltol, required_cosmology)
-    model_list = [_to_pascal(model.name) for model in models]
+    mapping = _create_mapping(options)
     factory = _create_factory(
-        output_path,
-        get_path_str(factory_source, use_absolute_path),
-        build_parameters,
+        options.output_path,
+        get_path_str(options.factory_source, options.use_absolute_path),
+        options.build_parameters,
         mapping,
-        model_list,
+        [_to_pascal(model.name) for model in options.models],
     )
     priors: list[Ncm.Prior] = []
     mset = Ncm.MSet.empty_new()  # pylint: disable=no-value-for-parameter
-    _setup_cosmology(mset, required_cosmology, mapping, cosmo_spec, priors, reltol)
-    model_builders = _setup_models(mset, models, priors)
+    _setup_cosmology(options, mset, mapping, priors)
+    model_builders = _setup_models(options, mset, priors)
 
     likelihood = _create_likelihood(_create_dataset(factory), priors)
     experiment = Ncm.ObjDictStr()
@@ -544,50 +586,23 @@ def create_config(
     return experiment, model_builders
 
 
-def _write_config_worker(
-    args: tuple[
-        Path,
-        str,
-        NamedParameters,
-        list[Model],
-        CCLCosmologySpec,
-        bool,
-        FrameworkCosmology,
-        str,
-    ],
-) -> int:
-    """Worker function executed in fresh subprocess.
+def _write_config_worker(options: ConfigOptions) -> int:
+    """Worker function executed in fresh subprocess for YAML serialization.
 
-    Runs in isolated process to avoid GType conflicts. Creates configuration
-    and writes YAML files using NumCosmo serialization.
+    Runs in isolated process to avoid GType conflicts with NumCosmo's type system.
+    Creates configuration and writes YAML files using NumCosmo's serialization API.
 
-    :param args: Tuple of configuration parameters
+    Configuration is encapsulated in ConfigOptions to allow passing through
+    multiprocessing context without serialization issues.
+
+    :param options: Configuration options with all necessary parameters
     :return: Exit code (0 for success)
     """
-    (
-        output_path,
-        factory_source,
-        build_parameters,
-        models,
-        cosmo_spec,
-        use_absolute_path,
-        required_cosmology,
-        prefix,
-    ) = args
-
     Ncm.cfg_init()  # pylint: disable=no-value-for-parameter
 
-    experiment, model_builders = create_config(
-        output_path=output_path,
-        factory_source=factory_source,
-        build_parameters=build_parameters,
-        cosmo_spec=cosmo_spec,
-        models=models,
-        use_absolute_path=use_absolute_path,
-        required_cosmology=required_cosmology,
-    )
+    experiment, model_builders = _setup_experiment(options)
 
-    numcosmo_yaml = output_path / f"numcosmo_{prefix}.yaml"
+    numcosmo_yaml = options.output_path / f"numcosmo_{options.prefix}.yaml"
     builders_file = numcosmo_yaml.with_suffix(".builders.yaml")
 
     ser = Ncm.Serialize.new(Ncm.SerializeOpt.CLEAN_DUP)
@@ -614,8 +629,9 @@ class NumCosmoConfigGenerator(ConfigGenerator):
 
     def write_config(self) -> None:
         """Write NumCosmo configuration in a fresh subprocess (safe for GType)."""
-        ctx = mp.get_context("spawn")
-        args = (
+        assert self.factory_source is not None
+        assert self.build_parameters is not None
+        config_options = ConfigOptions(
             self.output_path,
             self.factory_source,
             self.build_parameters,
@@ -625,8 +641,8 @@ class NumCosmoConfigGenerator(ConfigGenerator):
             self.required_cosmology,
             self.prefix,
         )
-
-        proc = ctx.Process(target=_write_config_worker, args=(args,))
+        ctx = mp.get_context("spawn")
+        proc = ctx.Process(target=_write_config_worker, args=(config_options,))
         proc.start()
         proc.join(timeout=300.0)
 
