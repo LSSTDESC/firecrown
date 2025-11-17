@@ -7,11 +7,15 @@ this package to avoid circular dependencies.
 Classes moved from:
 - _likelihood.py: Likelihood, NamedParameters
 - _statistic.py: Statistic, StatisticUnreadError, GuardedStatistic, TrivialStatistic
-- _source.py: Source, SourceSystematic, Tracer, SourceGalaxyArgs, SourceGalaxySystematic,
-              SourceGalaxyPhotoZShift, SourceGalaxyPhotoZShiftandStretch,
-              SourceGalaxySelectField, SourceGalaxy, PhotoZShift, PhotoZShiftFactory,
-              PhotoZShiftandStretch, PhotoZShiftandStretchFactory, helper functions
+- _source.py: Source, SourceSystematic, Tracer, SourceGalaxyArgs,
+              SourceGalaxySystematic, SourceGalaxyPhotoZShift,
+              SourceGalaxyPhotoZShiftandStretch, SourceGalaxySelectField, SourceGalaxy,
+              PhotoZShift, PhotoZShiftFactory, PhotoZShiftandStretch,
+              PhotoZShiftandStretchFactory, helper functions
 """
+
+# pylint: disable=too-many-lines
+# This module consolidates base classes to avoid circular dependencies
 
 from __future__ import annotations
 
