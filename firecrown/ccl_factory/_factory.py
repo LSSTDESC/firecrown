@@ -46,7 +46,6 @@ def _validate_neutrino_mass_splits(value):
     return value
 
 
-# pylint: disable=too-many-instance-attributes
 # Inheriting from both Updatable and BaseModel gives this class many attributes.
 class CCLFactory(Updatable, BaseModel):
     """Factory class for creating instances of the `pyccl.Cosmology` class."""
@@ -106,7 +105,7 @@ class CCLFactory(Updatable, BaseModel):
         )
         self.m_nu: float | None
         match self.mass_split:
-            case NeutrinoMassSplits.LIST:
+            case NeutrinoMassSplits.LIST | NeutrinoMassSplits.SUM:
                 assert self.num_neutrino_masses is not None
                 for i in range(self.num_neutrino_masses):
                     if i == 0:
@@ -164,11 +163,17 @@ class CCLFactory(Updatable, BaseModel):
                     "you must include camb_extra_parameters."
                 )
             # The default values are taken from CAMB v1.6.0
-            self.HMCode_A_baryon = register_new_updatable_parameter(default_value=3.13)
-            self.HMCode_eta_baryon = register_new_updatable_parameter(
-                default_value=0.603
-            )
-            self.HMCode_logT_AGN = register_new_updatable_parameter(default_value=7.8)
+            if self.camb_extra_params.is_mead():
+                self.HMCode_A_baryon = register_new_updatable_parameter(
+                    default_value=3.13
+                )
+                self.HMCode_eta_baryon = register_new_updatable_parameter(
+                    default_value=0.603
+                )
+            if self.camb_extra_params.is_mead2020_feedback():
+                self.HMCode_logT_AGN = register_new_updatable_parameter(
+                    default_value=7.8
+                )
 
     def _update(self, params: ParamsMap) -> None:
         """Update the CAMB parameters in this CCLFactory object.
@@ -234,13 +239,15 @@ class CCLFactory(Updatable, BaseModel):
             "mass_split": self.mass_split.value,
         }
         match self.mass_split:
-            case NeutrinoMassSplits.LIST:
+            case NeutrinoMassSplits.LIST | NeutrinoMassSplits.SUM:
                 assert self.num_neutrino_masses is not None
                 mass_list = [self.m_nu] + [
                     getattr(self, f"m_nu_{i + 1}")
                     for i in range(1, self.num_neutrino_masses)
                 ]
                 ccl_args["m_nu"] = mass_list
+            case _:
+                ccl_args["m_nu"] = self.m_nu
         # pylint: enable=duplicate-code
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
