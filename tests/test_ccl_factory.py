@@ -25,6 +25,8 @@ from firecrown.parameters import ParamsMap
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
 from firecrown.modeling_tools import ModelingTools
 
+# pylint: disable=too-many-lines
+
 
 @pytest.fixture(name="amplitude_parameter", params=list(PoweSpecAmplitudeParameter))
 def fixture_amplitude_parameter(request):
@@ -317,6 +319,15 @@ def test_ccl_spline_params_context_manager_exception():
             assert False
 
 
+def _nu_mass_is_list(mass_split: NeutrinoMassSplits):
+    """Check if the neutrino mass split is a list.
+
+    This function is used to check if the neutrino mass split is a list or a sum.
+    """
+    assert mass_split in NeutrinoMassSplits
+    return mass_split in (NeutrinoMassSplits.LIST, NeutrinoMassSplits.SUM)
+
+
 # pylint: disable=too-many-arguments
 # pylint: disable=too-many-positional-arguments
 def test_ccl_factory_simple(
@@ -340,9 +351,7 @@ def test_ccl_factory_simple(
         creation_mode=ccl_creation_mode,
         camb_extra_params=camb_extra_params,
         ccl_spline_params=ccl_spline_params,
-        num_neutrino_masses=(
-            3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
-        ),
+        num_neutrino_masses=(3 if _nu_mass_is_list(neutrino_mass_splits) else None),
     )
 
     assert ccl_factory is not None
@@ -386,9 +395,7 @@ def test_ccl_factory_ccl_args(
         mass_split=neutrino_mass_splits,
         require_nonlinear_pk=require_nonlinear_pk,
         ccl_spline_params=ccl_spline_params,
-        num_neutrino_masses=(
-            3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
-        ),
+        num_neutrino_masses=(3 if _nu_mass_is_list(neutrino_mass_splits) else None),
     )
 
     assert ccl_factory is not None
@@ -460,9 +467,7 @@ def test_ccl_factory_neutrino_mass_splits(
 ) -> None:
     ccl_factory = CCLFactory(
         mass_split=neutrino_mass_splits,
-        num_neutrino_masses=(
-            3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
-        ),
+        num_neutrino_masses=(3 if _nu_mass_is_list(neutrino_mass_splits) else None),
     )
 
     assert ccl_factory is not None
@@ -586,7 +591,7 @@ def test_ccl_factory_tofrom_yaml_all_options(
     neutrino_mass_splits: NeutrinoMassSplits,
     require_nonlinear_pk: bool,
 ) -> None:
-    num_neutrino_masses = 3 if neutrino_mass_splits == NeutrinoMassSplits.LIST else None
+    num_neutrino_masses = 3 if _nu_mass_is_list(neutrino_mass_splits) else None
 
     ccl_factory = CCLFactory(
         amplitude_parameter=amplitude_parameter,
@@ -700,6 +705,108 @@ def test_ccl_factory_camb_extra_params_invalid_model() -> None:
         CCLFactory(camb_extra_params={"dark_energy_model": "Im not a valid value"})
 
 
+def test_camb_extra_params_hmcode_logT_with_old_mead() -> None:
+    for halofit_version in ["mead", "mead2015", "mead2016"]:
+        with pytest.raises(
+            ValueError,
+            match=(
+                f"HMCode_logT_AGN is not available for "
+                f"halofit_version={halofit_version}"
+            ),
+        ):
+            CAMBExtraParams(
+                halofit_version=halofit_version,
+                HMCode_logT_AGN=7.8,
+            )
+
+
+def test_camb_extra_params_hmcode_A_eta_with_mead2020_feedback() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "HMCode_A_baryon and HMCode_eta_baryon are only available for "
+            "halofit_version in \\(mead, mead2015, mead2016\\)"
+        ),
+    ):
+        CAMBExtraParams(
+            halofit_version="mead2020_feedback",
+            HMCode_A_baryon=3.13,
+        )
+
+    with pytest.raises(
+        ValueError,
+        match=(
+            "HMCode_A_baryon and HMCode_eta_baryon are only available for "
+            "halofit_version in \\(mead, mead2015, mead2016\\)"
+        ),
+    ):
+        CAMBExtraParams(
+            halofit_version="mead2020_feedback",
+            HMCode_eta_baryon=0.603,
+        )
+
+
+def test_camb_extra_params_hmcode_with_unknown_halofit() -> None:
+    unknown_versions = ["invalid_version", "halofit2", "peacock"]
+    for version in unknown_versions:
+        with pytest.raises(
+            ValueError,
+            match=(
+                f"HMCode parameters are not compatible with "
+                f"halofit_version={version}"
+            ),
+        ):
+            CAMBExtraParams(
+                halofit_version=version,
+                HMCode_A_baryon=3.13,
+            )
+
+
+def test_camb_extra_params_hmcode_with_no_halofit() -> None:
+    with pytest.raises(
+        ValueError,
+        match="HMCode parameters are not compatible with",
+    ):
+        CAMBExtraParams(HMCode_A_baryon=3.13)
+    with pytest.raises(
+        ValueError,
+        match="HMCode parameters are not compatible with",
+    ):
+        CAMBExtraParams(HMCode_logT_AGN=7.8)
+
+
+def test_camb_extra_params_valid_mead() -> None:
+    for halofit_version in ["mead", "mead2015", "mead2016"]:
+        params = CAMBExtraParams(
+            halofit_version=halofit_version,
+            HMCode_A_baryon=3.13,
+            HMCode_eta_baryon=0.603,
+        )
+        assert params.HMCode_A_baryon == 3.13
+        assert params.HMCode_eta_baryon == 0.603
+
+
+def test_camb_extra_params_valid_mead2020_feedback() -> None:
+    params = CAMBExtraParams(
+        halofit_version="mead2020_feedback",
+        HMCode_logT_AGN=7.8,
+    )
+    assert params.HMCode_logT_AGN == 7.8
+
+
+def test_camb_extra_params_valid_no_hmcode() -> None:
+    for halofit_version in [None, "mead", "mead2015", "mead2016", "mead2020_feedback"]:
+        params = CAMBExtraParams(halofit_version=halofit_version)
+        assert params.halofit_version == halofit_version
+
+
+def test_empty_camb_extra_params() -> None:
+    params = CAMBExtraParams()
+    assert params.halofit_version is None
+    assert params.is_mead()
+    assert not params.is_mead2020_feedback()
+
+
 def test_ccl_factory_invalid_extra_params() -> None:
     with pytest.raises(
         ValueError,
@@ -777,33 +884,37 @@ def test_hm_sampling_misconfiguration() -> None:
         _ = CCLFactory(use_camb_hm_sampling=True, camb_extra_params=CAMBExtraParams())
 
 
-def test_hm_sampling_configuration() -> None:
+@pytest.mark.parametrize(
+    "halofit_version", ["mead", "mead2015", "mead2016", "mead2020_feedback"]
+)
+def test_hm_sampling_configuration(halofit_version: str) -> None:
     factory = CCLFactory(
         creation_mode=CCLCreationMode.PURE_CCL_MODE,
         use_camb_hm_sampling=True,
-        camb_extra_params=CAMBExtraParams(),
+        camb_extra_params=CAMBExtraParams(halofit_version=halofit_version),
     )
     assert factory.camb_extra_params is not None
-    assert (
-        factory.camb_extra_params.HMCode_A_baryon is None  # pylint: disable=no-member
-    )
-
-    assert (
-        factory.camb_extra_params.HMCode_eta_baryon is None  # pylint: disable=no-member
-    )
-    assert factory.HMCode_logT_AGN is None  # pylint: disable=no-member
+    camb_extra_params: CAMBExtraParams = factory.camb_extra_params
+    assert isinstance(camb_extra_params, CAMBExtraParams)
+    # There is something here that is confusing pylint
+    # pylint: disable=no-member
+    is_mead = camb_extra_params.is_mead()
+    is_mead2020_feedback = factory.camb_extra_params.is_mead2020_feedback()
+    if is_mead:
+        assert camb_extra_params.HMCode_A_baryon is None
+        assert camb_extra_params.HMCode_eta_baryon is None
+    if is_mead2020_feedback:
+        assert factory.HMCode_logT_AGN is None
 
     # Update the factory to make it have default values
     params = get_default_params_map(factory)
     factory.update(params)
-    assert (
-        factory.camb_extra_params.HMCode_A_baryon == 3.13  # pylint: disable=no-member
-    )
-    assert (
-        factory.camb_extra_params.HMCode_eta_baryon  # pylint: disable=no-member
-        == 0.603
-    )
-    assert factory.camb_extra_params.HMCode_logT_AGN == 7.8  # pylint: disable=no-member
+    if is_mead:
+        assert camb_extra_params.HMCode_A_baryon == 3.13
+        assert camb_extra_params.HMCode_eta_baryon == 0.603
+    if is_mead2020_feedback:
+        assert camb_extra_params.HMCode_logT_AGN == 7.8
+    # pylint: enable=no-member
 
 
 @pytest.mark.parametrize(
@@ -946,7 +1057,7 @@ def test_ccl_factory_parameters_passthrough_all(m_nu, As_sigma8, mass_split) -> 
         cosmo_dict["sigma8"] = sigma8
         amplitude_parameter = PoweSpecAmplitudeParameter.SIGMA8
 
-    m_nu_is_list = mass_split in (NeutrinoMassSplits.LIST, NeutrinoMassSplits.SUM)
+    m_nu_is_list = _nu_mass_is_list(mass_split)
 
     assert amplitude_parameter is not None
     tools = ModelingTools(
