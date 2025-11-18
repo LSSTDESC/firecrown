@@ -13,7 +13,7 @@ import dataclasses
 from rich.panel import Panel
 from rich.table import Table
 from rich.rule import Rule
-
+import yaml
 import typer
 from firecrown.likelihood.likelihood import NamedParameters
 from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologySpec
@@ -75,10 +75,27 @@ class AnalysisBuilder(logging.Logging):
         ),
     ] = True
 
+    cosmology_spec: Annotated[
+        Path | None,
+        typer.Option(
+            help="Path to cosmology specification file",
+            show_default=True,
+        ),
+    ] = None
+
     def __post_init__(self) -> None:
         """Initialize and execute the complete analysis generation workflow."""
         super().__post_init__()
         self.output_path.mkdir(parents=True, exist_ok=True)
+        self._spec: CCLCosmologySpec | None = None
+        if self.cosmology_spec is not None:
+            if not self.cosmology_spec.exists():
+                raise ValueError(
+                    f"Specified cosmology file does not exist: {self.cosmology_spec}"
+                )
+            self._spec = CCLCosmologySpec.model_validate(
+                yaml.safe_load(self.cosmology_spec.read_text())
+            )
 
         table = Table.grid(padding=(0, 1))
         table.expand = False
@@ -208,6 +225,8 @@ class AnalysisBuilder(logging.Logging):
 
         :return: The cosmology analysis specification
         """
+        if self._spec is not None:
+            return self._spec
         return CCLCosmologySpec.vanilla_lcdm()
 
     def get_sacc_file(self, sacc_path: Path) -> str:
