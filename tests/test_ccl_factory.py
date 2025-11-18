@@ -771,7 +771,7 @@ def test_camb_extra_params_hmcode_with_no_halofit() -> None:
 
 
 def test_camb_extra_params_valid_mead() -> None:
-    for halofit_version in ["mead", "mead2015", "mead2016"]:
+    for halofit_version in [None, "mead", "mead2015", "mead2016"]:
         params = CAMBExtraParams(
             halofit_version=halofit_version,
             HMCode_A_baryon=3.13,
