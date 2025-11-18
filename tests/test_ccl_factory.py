@@ -770,6 +770,33 @@ def test_camb_extra_params_hmcode_with_no_halofit() -> None:
         CAMBExtraParams(HMCode_logT_AGN=7.8)
 
 
+def test_camb_extra_params_hmcode_with_another_halofit() -> None:
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Value error, HMCode parameters are not compatible with "
+            "halofit_version=another"
+        ),
+    ):
+        CAMBExtraParams(halofit_version="another", HMCode_logT_AGN=7.8)
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Value error, HMCode parameters are not compatible with "
+            "halofit_version=another"
+        ),
+    ):
+        CAMBExtraParams(halofit_version="another", HMCode_A_baryon=3.13)
+    with pytest.raises(
+        ValueError,
+        match=(
+            "Value error, HMCode parameters are not compatible with "
+            "halofit_version=another"
+        ),
+    ):
+        CAMBExtraParams(halofit_version="another", HMCode_eta_baryon=0.603)
+
+
 def test_camb_extra_params_valid_mead() -> None:
     for halofit_version in [None, "mead", "mead2015", "mead2016"]:
         params = CAMBExtraParams(
