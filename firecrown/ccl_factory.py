@@ -382,7 +382,7 @@ class CCLFactory(Updatable, BaseModel):
         )
         self.m_nu: float | None
         match self.mass_split:
-            case NeutrinoMassSplits.LIST:
+            case NeutrinoMassSplits.LIST | NeutrinoMassSplits.SUM:
                 assert self.num_neutrino_masses is not None
                 for i in range(self.num_neutrino_masses):
                     if i == 0:
@@ -510,13 +510,15 @@ class CCLFactory(Updatable, BaseModel):
             "mass_split": self.mass_split.value,
         }
         match self.mass_split:
-            case NeutrinoMassSplits.LIST:
+            case NeutrinoMassSplits.LIST | NeutrinoMassSplits.SUM:
                 assert self.num_neutrino_masses is not None
                 mass_list = [self.m_nu] + [
                     getattr(self, f"m_nu_{i + 1}")
                     for i in range(1, self.num_neutrino_masses)
                 ]
                 ccl_args["m_nu"] = mass_list
+            case _:
+                ccl_args["m_nu"] = self.m_nu
         # pylint: enable=duplicate-code
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
