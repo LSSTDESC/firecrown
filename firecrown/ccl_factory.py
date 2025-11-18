@@ -196,6 +196,39 @@ class CAMBExtraParams(BaseModel):
     lmax: Annotated[int | None, Field(frozen=True)] = None
     dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
 
+    def model_post_init(self, _, /):
+        """Validate that HMCode parameters are compatible with halofit_version."""
+        if self.is_mead():
+            if self.HMCode_logT_AGN is not None:
+                raise ValueError(
+                    f"HMCode_logT_AGN is not available for "
+                    f"halofit_version={self.halofit_version}. "
+                    f"It is only available for halofit_version=mead2020_feedback"
+                )
+        elif self.is_mead2020_feedback():
+            if self.HMCode_A_baryon is not None or self.HMCode_eta_baryon is not None:
+                raise ValueError(
+                    "HMCode_A_baryon and HMCode_eta_baryon are only available for "
+                    "halofit_version in (mead, mead2015, mead2016), "
+                    "not mead2020_feedback"
+                )
+        else:
+            # Unknown halofit_version
+            if any(
+                param is not None
+                for param in [
+                    self.HMCode_A_baryon,
+                    self.HMCode_eta_baryon,
+                    self.HMCode_logT_AGN,
+                ]
+            ):
+                raise ValueError(
+                    f"HMCode parameters are not compatible with "
+                    f"halofit_version={self.halofit_version}. "
+                    f"Valid halofit versions are: mead, mead2015, "
+                    f"mead2016, mead2020_feedback"
+                )
+
     def get_dict(self) -> dict:
         """Return the extra parameters as a dictionary."""
         return {
@@ -214,6 +247,23 @@ class CAMBExtraParams(BaseModel):
             self.HMCode_eta_baryon = params["HMCode_eta_baryon"]
         if "HMCode_logT_AGN" in params:
             self.HMCode_logT_AGN = params["HMCode_logT_AGN"]
+
+    def is_mead2020_feedback(self) -> bool:
+        """Return True if the halofit_version is mead2020_feedback."""
+        if self.halofit_version is None:
+            return False
+        return self.halofit_version == "mead2020_feedback"
+
+    def is_mead(self) -> bool:
+        """Return True if the halofit_version is mead, mead2015, or mead2016.
+
+        CAMB treats None as mead.
+
+        :return: True if the halofit_version is mead, mead2015, or mead2016
+        """
+        if self.halofit_version is None:
+            return True
+        return self.halofit_version in {"mead", "mead2015", "mead2016"}
 
 
 class CCLSplineParams(BaseModel):
@@ -382,7 +432,7 @@ class CCLFactory(Updatable, BaseModel):
         )
         self.m_nu: float | None
         match self.mass_split:
-            case NeutrinoMassSplits.LIST:
+            case NeutrinoMassSplits.LIST | NeutrinoMassSplits.SUM:
                 assert self.num_neutrino_masses is not None
                 for i in range(self.num_neutrino_masses):
                     if i == 0:
@@ -440,11 +490,17 @@ class CCLFactory(Updatable, BaseModel):
                     "you must include camb_extra_parameters."
                 )
             # The default values are taken from CAMB v1.6.0
-            self.HMCode_A_baryon = register_new_updatable_parameter(default_value=3.13)
-            self.HMCode_eta_baryon = register_new_updatable_parameter(
-                default_value=0.603
-            )
-            self.HMCode_logT_AGN = register_new_updatable_parameter(default_value=7.8)
+            if self.camb_extra_params.is_mead():
+                self.HMCode_A_baryon = register_new_updatable_parameter(
+                    default_value=3.13
+                )
+                self.HMCode_eta_baryon = register_new_updatable_parameter(
+                    default_value=0.603
+                )
+            if self.camb_extra_params.is_mead2020_feedback():
+                self.HMCode_logT_AGN = register_new_updatable_parameter(
+                    default_value=7.8
+                )
 
     def _update(self, params: ParamsMap) -> None:
         """Update the CAMB parameters in this CCLFactory object.
@@ -510,13 +566,15 @@ class CCLFactory(Updatable, BaseModel):
             "mass_split": self.mass_split.value,
         }
         match self.mass_split:
-            case NeutrinoMassSplits.LIST:
+            case NeutrinoMassSplits.LIST | NeutrinoMassSplits.SUM:
                 assert self.num_neutrino_masses is not None
                 mass_list = [self.m_nu] + [
                     getattr(self, f"m_nu_{i + 1}")
                     for i in range(1, self.num_neutrino_masses)
                 ]
                 ccl_args["m_nu"] = mass_list
+            case _:
+                ccl_args["m_nu"] = self.m_nu
         # pylint: enable=duplicate-code
         match self.amplitude_parameter:
             case PoweSpecAmplitudeParameter.AS:
