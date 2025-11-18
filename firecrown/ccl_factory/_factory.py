@@ -47,6 +47,7 @@ def _validate_neutrino_mass_splits(value):
 
 
 # Inheriting from both Updatable and BaseModel gives this class many attributes.
+# pylint: disable=too-many-instance-attributes
 class CCLFactory(Updatable, BaseModel):
     """Factory class for creating instances of the `pyccl.Cosmology` class."""
 
