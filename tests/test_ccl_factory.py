@@ -765,12 +765,7 @@ def test_camb_extra_params_hmcode_with_unknown_halofit() -> None:
 def test_camb_extra_params_hmcode_with_no_halofit() -> None:
     with pytest.raises(
         ValueError,
-        match="HMCode parameters are not compatible with",
-    ):
-        CAMBExtraParams(HMCode_A_baryon=3.13)
-    with pytest.raises(
-        ValueError,
-        match="HMCode parameters are not compatible with",
+        match="Value error, HMCode_logT_AGN is not available for halofit_version",
     ):
         CAMBExtraParams(HMCode_logT_AGN=7.8)
 

@@ -198,15 +198,14 @@ class CAMBExtraParams(BaseModel):
 
     def model_post_init(self, _, /):
         """Validate that HMCode parameters are compatible with halofit_version."""
-        old_mead_versions = {"mead", "mead2015", "mead2016"}
-        if self.halofit_version in old_mead_versions:
+        if self.is_mead():
             if self.HMCode_logT_AGN is not None:
                 raise ValueError(
                     f"HMCode_logT_AGN is not available for "
                     f"halofit_version={self.halofit_version}. "
                     f"It is only available for halofit_version=mead2020_feedback"
                 )
-        elif self.halofit_version == "mead2020_feedback":
+        elif self.is_mead2020_feedback():
             if self.HMCode_A_baryon is not None or self.HMCode_eta_baryon is not None:
                 raise ValueError(
                     "HMCode_A_baryon and HMCode_eta_baryon are only available for "
