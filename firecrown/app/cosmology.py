@@ -9,9 +9,8 @@ parameter specifications with default values and optional prior constraints.
 The configuration supports two types of priors that constrain parameter values
 during inference:
 
-1. **Gaussian Prior**: Constrains parameter around a mean with sigma (standard deviation)
-   ```yaml
-   parameter_name:
+1. **Gaussian Prior**: Constrains parameter around a mean with sigma (standard
+   deviation) ```yaml parameter_name:
      default_value: 0.06
      prior:
        mean: 0.06
@@ -39,7 +38,8 @@ You may:
 
 **Example workflow:**
 
-1. Generate base configuration: ``firecrown cosmology --cosmology vanilla_lcdm config.yaml``
+1. Generate base configuration: ``firecrown cosmology --cosmology vanilla_lcdm
+   config.yaml``
 2. Edit ``config.yaml`` to add priors or adjust parameter values
 3. Use configuration in parameter estimation pipeline
 """
