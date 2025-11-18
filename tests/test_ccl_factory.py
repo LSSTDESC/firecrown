@@ -796,6 +796,14 @@ def test_camb_extra_params_hmcode_with_another_halofit() -> None:
     ):
         CAMBExtraParams(halofit_version="another", HMCode_eta_baryon=0.603)
 
+    params = CAMBExtraParams(halofit_version="another")
+    assert params is not None
+    assert isinstance(params, CAMBExtraParams)
+    assert params.HMCode_logT_AGN is None
+    assert params.HMCode_A_baryon is None
+    assert params.HMCode_eta_baryon is None
+    assert params.halofit_version == "another"
+
 
 def test_camb_extra_params_valid_mead() -> None:
     for halofit_version in [None, "mead", "mead2015", "mead2016"]:
