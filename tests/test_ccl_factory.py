@@ -975,15 +975,7 @@ def test_ccl_factory_parameters_passthrough_all(m_nu, As_sigma8, mass_split) -> 
     tools_cosmo = tools.ccl_cosmo
 
     assert isinstance(tools_cosmo, pyccl.Cosmology)
-
-    # Compare each provided parameter. Use allclose for numeric comparisons to be
-    # robust against tiny floating point differences.
     for key in cosmo_dict:
         expected = ccl_cosmo[key]
         got = tools_cosmo[key]
-        try:
-            # Works for scalars and arrays
-            assert_allclose(expected, got, rtol=1e-12, atol=0)
-        except AssertionError:
-            # Fall back to equality for non-numeric types
-            assert expected == got
+        assert_allclose(expected, got, rtol=1e-12, atol=0)
