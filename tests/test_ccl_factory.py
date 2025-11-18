@@ -1,7 +1,9 @@
 """Test the CCLFactory object."""
 
 import re
+import itertools as it
 import numpy as np
+from numpy.testing import assert_allclose
 import pytest
 import pyccl
 import pyccl.modified_gravity
@@ -21,6 +23,7 @@ from firecrown.ccl_factory import (
 from firecrown.updatable import get_default_params_map
 from firecrown.parameters import ParamsMap
 from firecrown.utils import base_model_from_yaml, base_model_to_yaml
+from firecrown.modeling_tools import ModelingTools
 
 
 @pytest.fixture(name="amplitude_parameter", params=list(PoweSpecAmplitudeParameter))
@@ -904,3 +907,83 @@ def test_ccl_factory_ccl_powerspectra(
     assert cosmo is not None
     assert isinstance(cosmo, pyccl.Cosmology)
     assert cosmo.to_dict()["matter_power_spectrum"] == matter_pk_str
+
+
+@pytest.mark.parametrize(
+    "m_nu,As_sigma8,mass_split",
+    it.product(
+        [0.0, 0.1, 0.2], [(2.0e-9, None), (None, 0.81)], list(NeutrinoMassSplits)
+    ),
+)
+def test_ccl_factory_parameters_passthrough_all(m_nu, As_sigma8, mass_split) -> None:
+    """Ensure all cosmology parameters provided by the user are passed through
+    unchanged to the created CCL cosmology when using the CCLFactory/ModelingTools
+    plumbing.
+
+    This test builds a reference `pyccl.Cosmology` directly from the parameter
+    dictionary and compares each parameter against the `pyccl.Cosmology` created
+    by `ModelingTools` using a `CCLFactory`. The `mass_split='equal'` mode is
+    specifically exercised since that was the reported failing case.
+    """
+    As, sigma8 = As_sigma8
+    cosmo_dict = {
+        "Omega_c": 0.2906682,
+        "Omega_b": 0.04575,
+        "h": 0.6714,
+        "n_s": 0.9493,
+        "Neff": 3.044,
+        "m_nu": m_nu,
+        "w0": -1.0,
+        "wa": 0.0,
+        "T_CMB": 2.7255,
+        "Omega_k": 0.0,
+    }
+    amplitude_parameter: PoweSpecAmplitudeParameter | None = None
+    if As is not None:
+        cosmo_dict["A_s"] = As
+        amplitude_parameter = PoweSpecAmplitudeParameter.AS
+    if sigma8 is not None:
+        cosmo_dict["sigma8"] = sigma8
+        amplitude_parameter = PoweSpecAmplitudeParameter.SIGMA8
+
+    m_nu_is_list = mass_split in (NeutrinoMassSplits.LIST, NeutrinoMassSplits.SUM)
+
+    assert amplitude_parameter is not None
+    tools = ModelingTools(
+        ccl_factory=CCLFactory(
+            amplitude_parameter=amplitude_parameter,
+            mass_split=mass_split,
+            num_neutrino_masses=(3 if m_nu_is_list else None),
+        )
+    )
+
+    if m_nu_is_list:
+        cosmo_dict["m_nu"] = 0.01
+        cosmo_dict["m_nu_2"] = 0.02
+        cosmo_dict["m_nu_3"] = 0.03
+
+    tools.update(ParamsMap(cosmo_dict))
+    tools.prepare()
+
+    if m_nu_is_list:
+        cosmo_dict["m_nu"] = [0.01, 0.02, 0.03]
+        del cosmo_dict["m_nu_2"]
+        del cosmo_dict["m_nu_3"]
+
+    # Reference cosmology built directly with pyccl
+    ccl_cosmo = pyccl.Cosmology(**cosmo_dict, mass_split=mass_split)
+    tools_cosmo = tools.ccl_cosmo
+
+    assert isinstance(tools_cosmo, pyccl.Cosmology)
+
+    # Compare each provided parameter. Use allclose for numeric comparisons to be
+    # robust against tiny floating point differences.
+    for key in cosmo_dict:
+        expected = ccl_cosmo[key]
+        got = tools_cosmo[key]
+        try:
+            # Works for scalars and arrays
+            assert_allclose(expected, got, rtol=1e-12, atol=0)
+        except AssertionError:
+            # Fall back to equality for non-numeric types
+            assert expected == got
