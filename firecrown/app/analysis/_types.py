@@ -152,7 +152,7 @@ class Model(BaseModel):
     into a named model for organization in configuration files.
     """
 
-    model_config = ConfigDict(extra="forbid", frozen=True)
+    model_config = ConfigDict(extra="forbid")
 
     name: str
     description: str
@@ -286,7 +286,7 @@ class CCLCosmologySpec(Model):
                 {key: value.default_value for key, value in self._param_dict.items()}
             )
         if self.extra_parameters:
-            args["extra_parameters"] = self.extra_parameters.model_dump()
+            args["extra_parameters"] = {"camb": self.extra_parameters.model_dump()}
         if self.matter_power_spectrum:
             args["matter_power_spectrum"] = self.matter_power_spectrum
         if self.transfer_function:
@@ -307,9 +307,20 @@ class CCLCosmologySpec(Model):
     @classmethod
     def vanilla_lcdm_with_neutrinos(cls) -> "CCLCosmologySpec":
         """Create a vanilla LCDM cosmology analysis spec with standard parameters."""
-        parameters = [
-            COSMO_DESC[param_name] for param_name in CCL_COSMOLOGY_MINIMAL_SET
-        ] + [COSMO_DESC["sigma8"], COSMO_DESC["Neff"], COSMO_DESC["m_nu"]]
+        parameters = (
+            [
+                COSMO_DESC[param_name]
+                for param_name in CCL_COSMOLOGY_MINIMAL_SET
+                if param_name != "m_nu"
+            ]
+            + [
+                COSMO_DESC["m_nu"].model_copy(
+                    update={"default_value": 0.06, "free": True}
+                )
+            ]
+            + [COSMO_DESC["sigma8"]]
+        )
+
         return cls(parameters=parameters)
 
     def get_num_massive_neutrinos(self) -> int:

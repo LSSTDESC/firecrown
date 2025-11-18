@@ -16,6 +16,7 @@ import typer
 import firecrown.app.sacc as sacc_app
 import firecrown.app.experiment as experiment_app
 import firecrown.app.examples as examples_app
+import firecrown.app.cosmology as cosmology_app
 
 # Root application ------------------------------------------------------------
 
@@ -40,10 +41,15 @@ app_sacc = typer.Typer(
         "  firecrown sacc view my_data.sacc"
     ),
 )
+# - Subcommands
+app_sacc.command(
+    name="view",
+    no_args_is_help=True,
+    help="View the contents of a SACC file (e.g., data points, metadata).",
+)(sacc_app.View)
 app.add_typer(app_sacc, name="sacc", help="Work with SACC data files.")
 
 # Experiment commands ---------------------------------------------------------
-
 app_experiment = typer.Typer(
     no_args_is_help=True,
     help=(
@@ -52,6 +58,12 @@ app_experiment = typer.Typer(
         "  firecrown experiment view my_experiment.yml"
     ),
 )
+# - Subcommands
+app_experiment.command(
+    name="view",
+    no_args_is_help=True,
+    help="Display information about a Firecrown experiment configuration.",
+)(experiment_app.View)
 app.add_typer(app_experiment, name="experiment", help="Work with experiments.")
 
 # Examples commands -----------------------------------------------------------
@@ -67,25 +79,15 @@ app_examples = typer.Typer(
         "  firecrown examples cosmic_shear ./my_analysis --seed 123"
     ),
 )
-app.add_typer(app_examples, name="examples", help="Generate example analyses.")
-
-# Subcommands -----------------------------------------------------------------
-
-app_sacc.command(
-    name="view",
-    no_args_is_help=True,
-    help="View the contents of a SACC file (e.g., data points, metadata).",
-)(sacc_app.View)
-
-app_experiment.command(
-    name="view",
-    no_args_is_help=True,
-    help="Display information about a Firecrown experiment configuration.",
-)(experiment_app.View)
-
 for example_name, example_cls in examples_app.EXAMPLES_LIST.items():
     app_examples.command(
         name=example_name,
         no_args_is_help=True,
         help=example_cls.description,
     )(example_cls)
+app.add_typer(app_examples, name="examples", help="Generate example analyses.")
+
+# Cosmology commands ----------------------------------------------------------
+app.command(
+    name="cosmology", no_args_is_help=True, help="Generate cosmology configurations."
+)(cosmology_app.Generate)
