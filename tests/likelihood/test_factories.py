@@ -6,16 +6,15 @@ import pytest
 import numpy as np
 
 import sacc
+from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
-    ensure_path,
     load_sacc_data,
-    TwoPointCorrelationSpace,
     TwoPointExperiment,
-    TwoPointFactory,
 )
-from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.factories._sacc_utils import ensure_path
+from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.cmb import CMBConvergenceFactory
@@ -992,7 +991,9 @@ def test_data_source_sacc_absolute_path_exists() -> None:
 
 def test_build_two_point_likelihood_real_fast() -> None:
     """Fast test for real-space likelihood building using direct function call."""
-    from firecrown.likelihood.factories import _build_two_point_likelihood_real
+    from firecrown.likelihood.factories._models import (
+        _build_two_point_likelihood_real,
+    )
     import sacc
 
     # Create a minimal SACC file with real-space data
@@ -1030,7 +1031,9 @@ def test_build_two_point_likelihood_real_fast() -> None:
 
 def test_build_two_point_likelihood_real_with_filters_fast() -> None:
     """Fast test for real-space likelihood building with filters."""
-    from firecrown.likelihood.factories import _build_two_point_likelihood_real
+    from firecrown.likelihood.factories._models import (
+        _build_two_point_likelihood_real,
+    )
     import sacc
 
     # Create a minimal SACC file with real-space data
