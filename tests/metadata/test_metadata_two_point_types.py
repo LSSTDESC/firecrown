@@ -22,22 +22,26 @@ from firecrown.metadata_types import (
     TracerNames,
     TwoPointHarmonic,
     TwoPointReal,
-    compare_enums,
     measurement_is_compatible as is_compatible,
-    measurement_is_compatible_harmonic as is_compatible_harmonic,
-    measurement_is_compatible_real as is_compatible_real,
-    measurement_supports_harmonic as supports_harmonic,
-    measurement_supports_real as supports_real,
-    type_to_sacc_string_harmonic as harmonic,
-    type_to_sacc_string_real as real,
 )
+from firecrown.metadata_types._compatibility import (
+    _measurement_is_compatible_harmonic as is_compatible_harmonic,
+    _measurement_is_compatible_real as is_compatible_real,
+    _measurement_supports_harmonic as supports_harmonic,
+    _measurement_supports_real as supports_real,
+)
+from firecrown.metadata_types._sacc_type_string import (
+    _type_to_sacc_string_harmonic as harmonic,
+    _type_to_sacc_string_real as real,
+)
+from firecrown.metadata_types._measurements import _compare_enums as compare_enums
 
 from firecrown.metadata_functions import (
     TwoPointRealIndex,
     extract_all_measured_types,
-    match_name_type,
     measurements_from_index,
 )
+from firecrown.metadata_functions._matching import match_name_type
 
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import (
@@ -75,7 +79,7 @@ def test_galaxies_is_shear():
     assert not Galaxies.COUNTS.is_shear()
 
 
-def test_compare_enums_wrong_type():
+def testcompare_enums_wrong_type():
     with pytest.raises(
         ValueError,
         match=re.escape(
@@ -83,7 +87,7 @@ def test_compare_enums_wrong_type():
             "(<enum 'Galaxies'>, <class 'int'>)."
         ),
     ):
-        compare_enums(Galaxies.COUNTS, 1)  # type: ignore
+        compare_enums(Galaxies.COUNTS, 1)
 
 
 def test_enumeration_equality_galaxy():

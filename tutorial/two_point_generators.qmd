@@ -83,6 +83,7 @@ The code below defines the factories for the weak lensing and number counts syst
 
 ```{python}
 
+from firecrown.likelihood.source import PhotoZShiftFactory
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 import firecrown.likelihood.two_point as tp
@@ -91,13 +92,13 @@ import warnings
 # WeakLensing systematics -- global
 ia_systematic = wl.LinearAlignmentSystematicFactory()
 # WeakLensing systematics -- per-bin
-wl_photoz = wl.PhotoZShiftFactory()
+wl_photoz = PhotoZShiftFactory()
 wl_mult_bias = wl.MultiplicativeShearBiasFactory()
 
 # NumberCounts systematics -- global
 # As of the current Firecrown version, we do not have any global systematics for number counts
 # NumberCounts systematics -- per-bin
-nc_photoz = nc.PhotoZShiftFactory()
+nc_photoz = PhotoZShiftFactory()
 
 wlf = wl.WeakLensingFactory(
     per_bin_systematics=[wl_mult_bias, wl_photoz],
