@@ -8,8 +8,8 @@ import pyccl as ccl
 
 import sacc
 
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.two_point import TwoPointFactory
+from firecrown.likelihood import ConstGaussian
+from firecrown.likelihood import TwoPointFactory
 from firecrown.likelihood.factories import (
     DataSourceSacc,
     TwoPointExperiment,

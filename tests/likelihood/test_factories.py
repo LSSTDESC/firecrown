@@ -14,7 +14,7 @@ from firecrown.likelihood.factories import (
     TwoPointExperiment,
 )
 from firecrown.likelihood.factories._sacc_utils import ensure_path
-from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
+from firecrown.likelihood import TwoPoint, TwoPointFactory
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood._cmb import CMBConvergenceFactory
@@ -22,7 +22,6 @@ from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
     Galaxies,
-    TwoPointCorrelationSpace,
     TwoPointHarmonic,
     TwoPointReal,
     TypeSource,
