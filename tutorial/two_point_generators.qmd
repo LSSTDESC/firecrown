@@ -83,6 +83,7 @@ The code below defines the factories for the weak lensing and number counts syst
 
 ```{python}
 
+from firecrown.likelihood.source import PhotoZShiftFactory
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 from firecrown.likelihood import TwoPoint

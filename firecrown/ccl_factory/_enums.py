@@ -5,8 +5,10 @@ from typing import Any
 
 from pydantic_core import core_schema
 
+from firecrown.utils import YAMLSerializable
 
-class PoweSpecAmplitudeParameter(StrEnum):
+
+class PoweSpecAmplitudeParameter(YAMLSerializable, StrEnum):
     """This class defines the two-point correlation space.
 
     The two-point correlation space can be either real or harmonic. The real space
