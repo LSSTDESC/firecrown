@@ -6,16 +6,15 @@ import pytest
 import numpy as np
 
 import sacc
+from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
     load_sacc_data,
-    TwoPointCorrelationSpace,
     TwoPointExperiment,
-    TwoPointFactory,
 )
 from firecrown.likelihood.factories._sacc_utils import ensure_path
-from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.cmb import CMBConvergenceFactory
