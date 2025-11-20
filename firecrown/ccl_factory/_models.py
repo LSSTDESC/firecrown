@@ -46,6 +46,39 @@ class CAMBExtraParams(BaseModel):
     lmax: Annotated[int | None, Field(frozen=True)] = None
     dark_energy_model: Annotated[str | None, Field(frozen=True)] = None
 
+    def model_post_init(self, _, /):
+        """Validate that HMCode parameters are compatible with halofit_version."""
+        if self.is_mead():
+            if self.HMCode_logT_AGN is not None:
+                raise ValueError(
+                    f"HMCode_logT_AGN is not available for "
+                    f"halofit_version={self.halofit_version}. "
+                    f"It is only available for halofit_version=mead2020_feedback"
+                )
+        elif self.is_mead2020_feedback():
+            if self.HMCode_A_baryon is not None or self.HMCode_eta_baryon is not None:
+                raise ValueError(
+                    "HMCode_A_baryon and HMCode_eta_baryon are only available for "
+                    "halofit_version in (mead, mead2015, mead2016), "
+                    "not mead2020_feedback"
+                )
+        else:
+            # Unknown halofit_version
+            if any(
+                param is not None
+                for param in [
+                    self.HMCode_A_baryon,
+                    self.HMCode_eta_baryon,
+                    self.HMCode_logT_AGN,
+                ]
+            ):
+                raise ValueError(
+                    f"HMCode parameters are not compatible with "
+                    f"halofit_version={self.halofit_version}. "
+                    f"Valid halofit versions are: mead, mead2015, "
+                    f"mead2016, mead2020_feedback"
+                )
+
     def get_dict(self) -> dict:
         """Return the extra parameters as a dictionary."""
         return {
@@ -64,6 +97,23 @@ class CAMBExtraParams(BaseModel):
             self.HMCode_eta_baryon = params["HMCode_eta_baryon"]
         if "HMCode_logT_AGN" in params:
             self.HMCode_logT_AGN = params["HMCode_logT_AGN"]
+
+    def is_mead2020_feedback(self) -> bool:
+        """Return True if the halofit_version is mead2020_feedback."""
+        if self.halofit_version is None:
+            return False
+        return self.halofit_version == "mead2020_feedback"
+
+    def is_mead(self) -> bool:
+        """Return True if the halofit_version is mead, mead2015, or mead2016.
+
+        CAMB treats None as mead.
+
+        :return: True if the halofit_version is mead, mead2015, or mead2016
+        """
+        if self.halofit_version is None:
+            return True
+        return self.halofit_version in {"mead", "mead2015", "mead2016"}
 
 
 class CCLSplineParams(BaseModel):
