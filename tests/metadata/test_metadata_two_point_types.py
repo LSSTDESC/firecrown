@@ -6,6 +6,7 @@ from dataclasses import replace
 from itertools import product, chain
 from unittest.mock import MagicMock
 import re
+import warnings
 import pytest
 import numpy as np
 
@@ -622,3 +623,276 @@ def test_measurements_types_multiple_galaxy_and_cmb():
 
     assert has_mixed is True
     assert set(types) == {"Galaxy lens", "Galaxy source", "CMB"}
+
+
+def test_extract_all_measured_mixed_types_with_genuinely_mixed_tracers(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+):
+    """Test extract_all_measured_types with allow_mixed_types=True on mixed tracers.
+
+    This test verifies that when allow_mixed_types=True, the function permits
+    tracers to have multiple measurement types without raising an error.
+    """
+    sacc_data, _, _ = sacc_galaxy_cells
+
+    # This should NOT raise an error even though src/lens tracers may have
+    # mixed types from different measurement combinations
+    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+    # Verify we got a result for all tracers
+    assert len(result) > 0
+    for measurements in result.values():
+        assert isinstance(measurements, set)
+        assert len(measurements) > 0
+
+
+def test_extract_all_measured_mixed_types_galaxy_only(
+    sacc_galaxy_cells_src0_src0: tuple[sacc.Sacc, dict, dict],
+):
+    """Test extract_all_measured_types with allow_mixed_types=True on single type.
+
+    This test verifies that tracers with only one measurement type work
+    correctly with allow_mixed_types=True.
+    """
+    sacc_data, _, _ = sacc_galaxy_cells_src0_src0
+
+    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+    assert "src0" in result
+    assert result["src0"] == {Galaxies.SHEAR_E}
+
+
+def test_extract_all_measured_mixed_types_density_only(
+    sacc_galaxy_cells_lens0_lens0: tuple[sacc.Sacc, dict, dict],
+):
+    """Test extract_all_measured_types with allow_mixed_types=True on density.
+
+    Verifies that galaxy density (COUNTS) measurements work correctly
+    with allow_mixed_types=True.
+    """
+    sacc_data, _, _ = sacc_galaxy_cells_lens0_lens0
+
+    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+    assert "lens0" in result
+    assert result["lens0"] == {Galaxies.COUNTS}
+
+
+def test_extract_all_measured_mixed_types_mixed_real_space(
+    sacc_galaxy_xis_src0_lens0: tuple[sacc.Sacc, dict, dict, dict],
+):
+    """Test extract_all_measured_types with allow_mixed_types=True on real-space data.
+
+    This test verifies behavior with real-space data (xi correlations)
+    when mixed types are allowed.
+    """
+    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0
+
+    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+    # src0 should have SHEAR_T (from galaxy_shearDensity_xi_t)
+    assert "src0" in result
+    assert Galaxies.SHEAR_T in result["src0"]
+
+    # lens0 should have COUNTS (from galaxy_shearDensity_xi_t)
+    assert "lens0" in result
+    assert Galaxies.COUNTS in result["lens0"]
+
+
+def test_extract_all_measured_mixed_types_no_auto_correction():
+    """Test that allow_mixed_types=True doesn't trigger auto-correction.
+
+    This test creates a SACC file where tracers have genuinely mixed types
+    and verifies that no DeprecationWarning is raised (unlike the case
+    when allow_mixed_types=False and auto-correction is attempted).
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    thetas = np.linspace(0.0, 2.0 * np.pi, 10)
+
+    # Add two tracers
+    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "tracer0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.6) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "tracer1", z, dndz1)
+
+    # Add a shear-density measurement (mixed types)
+    xis = np.random.normal(size=thetas.shape[0])
+    sacc_data.add_theta_xi(
+        "galaxy_shearDensity_xi_t", "tracer0", "tracer1", thetas, xis
+    )
+
+    cov = np.diag(np.ones_like(xis) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    # With allow_mixed_types=True, this should NOT trigger deprecation warning
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
+        result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+        # Verify no DeprecationWarning about SACC convention was raised
+        deprecation_warnings = [
+            warning
+            for warning in w
+            if issubclass(warning.category, DeprecationWarning)
+            and "AUTO-CORRECTION" in str(warning.message)
+        ]
+        assert len(deprecation_warnings) == 0
+
+    # Verify the result has mixed types for the tracers
+    assert "tracer0" in result
+    assert "tracer1" in result
+    assert Galaxies.SHEAR_T in result["tracer0"]
+    assert Galaxies.COUNTS in result["tracer1"]
+
+
+def test_extract_all_measured_mixed_types_different_tracer_types():
+    """Test extract_all_measured_types with allow_mixed_types=True on different tracers.
+
+    This test verifies that allow_mixed_types=True correctly processes
+    measurements where different tracers have different measurement types,
+    which is expected and normal behavior.
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add two different galaxy tracers
+    dndz_src = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "source_bin", z, dndz_src)
+
+    dndz_lens = np.exp(-0.5 * (z - 0.3) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens_bin", z, dndz_lens)
+
+    # Add shear-density (different measurement types for different tracers)
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl(
+        "galaxy_shearDensity_cl_e", "source_bin", "lens_bin", ells, Cells
+    )
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    # This should work without raising an error
+    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+    assert "source_bin" in result
+    assert "lens_bin" in result
+    assert Galaxies.SHEAR_E in result["source_bin"]
+    assert Galaxies.COUNTS in result["lens_bin"]
+
+
+def test_extract_all_measured_mixed_types_multiple_measurements_same_tracer():
+    """Test extract_all_measured_types with multiple measurement types per tracer.
+
+    This test verifies that a tracer can simultaneously measure different
+    quantities (e.g., both lens and source) when allow_mixed_types=True.
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add a tracer that will have both galaxy shear and density measurements
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "galaxy", z, dndz)
+
+    # Add galaxy shear measurement (source)
+    Cells_shear = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "galaxy", "galaxy", ells, Cells_shear)
+
+    # Add galaxy density measurement (lens) - same tracer
+    Cells_density = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_density_cl", "galaxy", "galaxy", ells, Cells_density)
+
+    cov_data = np.concatenate([Cells_shear, Cells_density])
+    cov = np.diag(np.ones_like(cov_data) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    # With allow_mixed_types=True, this should work
+    result = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+
+    assert "galaxy" in result
+    # Tracer should have both SHEAR_E and COUNTS
+    assert Galaxies.SHEAR_E in result["galaxy"]
+    assert Galaxies.COUNTS in result["galaxy"]
+    assert len(result["galaxy"]) == 2
+
+
+def test_extract_all_measured_types_allow_mixed_types_vs_false(
+    sacc_galaxy_cells: tuple[sacc.Sacc, dict, dict],
+):
+    """Test the difference between allow_mixed_types=True and False.
+
+    This test verifies that with allow_mixed_types=False, we may get
+    an error (after potential auto-correction attempts), while with
+    allow_mixed_types=True, we get results without error.
+    """
+    sacc_data, _, _ = sacc_galaxy_cells
+
+    # Try with allow_mixed_types=True - should work without error
+    result_true = extract_all_measured_types(sacc_data, allow_mixed_types=True)
+    assert result_true is not None
+    assert len(result_true) > 0
+
+    # With allow_mixed_types=False, we might get an error or deprecation warning
+    # depending on the SACC data structure. Both are acceptable.
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", DeprecationWarning)
+            result_false = extract_all_measured_types(
+                sacc_data, allow_mixed_types=False
+            )
+        assert result_false is not None
+    except ValueError:
+        # Expected if the SACC data genuinely has mixed-type issues
+        pass
+
+
+def test_extract_all_measured_types_raises_on_mixed_types_when_not_allowed():
+    """Test that extract_all_measured_types raises ValueError for mixed types.
+
+    This test creates a SACC file with a tracer that has genuinely mixed
+    measurement types (both lens and source) and verifies that
+    extract_all_measured_types raises a ValueError when allow_mixed_types=False.
+
+    The error message should include diagnostic information about the mixed types
+    and reference the SACC documentation.
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add a single tracer that will have mixed measurement types
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "mixed_bin", z, dndz)
+
+    # Add galaxy shear measurement (source type)
+    Cells_shear = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl(
+        "galaxy_shear_cl_ee", "mixed_bin", "mixed_bin", ells, Cells_shear
+    )
+
+    # Add galaxy density measurement (lens type) - same tracer creates mixed type
+    Cells_density = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl(
+        "galaxy_density_cl", "mixed_bin", "mixed_bin", ells, Cells_density
+    )
+
+    cov_data = np.concatenate([Cells_shear, Cells_density])
+    cov = np.diag(np.ones_like(cov_data) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    # With allow_mixed_types=False, this should raise ValueError
+    with pytest.raises(
+        ValueError,
+        match=(
+            r"Tracer 'mixed_bin' has multiple "
+            r"measurement types.*allow_mixed_types=True"
+        ),
+    ):
+        extract_all_measured_types(sacc_data, allow_mixed_types=False)
