@@ -20,6 +20,7 @@ from firecrown.metadata_types import (
 from firecrown.metadata_functions import (
     make_two_point_xy,
     extract_all_real_metadata_indices,
+    extract_all_harmonic_metadata_indices,
 )
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,
@@ -1230,4 +1231,201 @@ def test_extract_all_real_metadata_indices_multiple_combinations():
     for idx in indices:
         a, b = idx["tracer_types"]
         assert a == Galaxies.SHEAR_T
+        assert b == Galaxies.COUNTS
+
+
+def test_extract_all_harmonic_metadata_indices_no_swap(
+    sacc_galaxy_cells_src0_lens0: tuple,
+):
+    """Test extract_all_harmonic_metadata_indices with no tracer swap needed.
+
+    This test verifies that when tracers are in the correct order according to
+    the SACC convention (measurement type order matches tracer order), no swap
+    is performed.
+    """
+    sacc_data, _, _, _ = sacc_galaxy_cells_src0_lens0
+
+    indices = extract_all_harmonic_metadata_indices(sacc_data)
+
+    # Should have at least one harmonic measurement (galaxy_shearDensity_cl_e)
+    assert len(indices) > 0
+
+    # Find the shear-density measurement
+    shear_density_indices = [
+        idx for idx in indices if "shearDensity" in idx["data_type"]
+    ]
+    assert len(shear_density_indices) > 0
+
+    for idx in shear_density_indices:
+        # The first tracer should be source (SHEAR_E) and second should be lens (COUNTS)
+        a, b = idx["tracer_types"]
+        assert a == Galaxies.SHEAR_E
+        assert b == Galaxies.COUNTS
+
+
+def test_extract_all_harmonic_metadata_indices_with_swap():
+    """Test extract_all_harmonic_metadata_indices when tracer swap is necessary.
+
+    This test creates a SACC file where tracers are in reversed order compared
+    to what the measurement type implies, triggering the swap logic.
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add tracers in "wrong" order for shear-density measurement
+    # Normally: source (SHEAR_E) should come first, lens (COUNTS) second
+    # But we add lens first, then source
+
+    dndz_lens = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens_bin", z, dndz_lens)
+
+    dndz_src = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "source_bin", z, dndz_src)
+
+    # Add measurement: galaxy_shearDensity_cl_e expects (SHEAR_E, COUNTS)
+    # But we provide it with (lens_bin, source_bin) which is (COUNTS, SHEAR_E)
+    Cells = np.random.normal(size=ells.shape[0])
+    # The only way to determine the incorrect order is to add autocorrelation
+    sacc_data.add_ell_cl(
+        "galaxy_shearDensity_cl_e", "lens_bin", "source_bin", ells, Cells
+    )
+    sacc_data.add_ell_cl("galaxy_density_cl", "lens_bin", "lens_bin", ells, Cells)
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "source_bin", "source_bin", ells, Cells)
+
+    cov = np.ones(30) * 0.01
+    sacc_data.add_covariance(cov)
+
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        indices = extract_all_harmonic_metadata_indices(sacc_data)
+
+    # Should have the measurement
+    assert len(indices) > 0
+
+    # Find the shear-density measurement
+    shear_density_indices = [
+        idx for idx in indices if "shearDensity" in idx["data_type"]
+    ]
+    assert len(shear_density_indices) > 0
+
+    for idx in shear_density_indices:
+        # The swap should have corrected the order
+        a, b = idx["tracer_types"]
+        assert a == Galaxies.COUNTS
+        assert b == Galaxies.SHEAR_E
+
+
+def test_extract_all_harmonic_metadata_indices_density_only():
+    """Test extract_all_harmonic_metadata_indices with density-only measurement."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add lens tracers
+    dndz0 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.3) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "lens1", z, dndz1)
+
+    # Add density-density measurement
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_density_cl", "lens0", "lens1", ells, Cells)
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    indices = extract_all_harmonic_metadata_indices(sacc_data)
+
+    # Should have the measurement
+    assert len(indices) > 0
+
+    for idx in indices:
+        if "density" in idx["data_type"]:
+            a, b = idx["tracer_types"]
+            assert a == Galaxies.COUNTS
+            assert b == Galaxies.COUNTS
+
+
+def test_extract_all_harmonic_metadata_indices_shear_only():
+    """Test extract_all_harmonic_metadata_indices with shear-only measurement."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add source tracers
+    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz0)
+
+    dndz1 = np.exp(-0.5 * (z - 0.6) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src1", z, dndz1)
+
+    # Add shear-shear measurement (both tracers have SHEAR_E)
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src1", ells, Cells)
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    indices = extract_all_harmonic_metadata_indices(sacc_data)
+
+    # Should have the measurement
+    assert len(indices) > 0
+
+    for idx in indices:
+        if "shear" in idx["data_type"]:
+            a, b = idx["tracer_types"]
+            assert a == Galaxies.SHEAR_E
+            assert b == Galaxies.SHEAR_E
+
+
+def test_extract_all_harmonic_metadata_indices_multiple_combinations():
+    """Test extract_all_harmonic_metadata_indices with multiple tracer combinations."""
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add multiple source and lens tracers
+    src_tracers = []
+    for i in range(2):
+        dndz = np.exp(-0.5 * (z - 0.5 + i * 0.1) ** 2 / 0.05 / 0.05)
+        tracer_name = f"src{i}"
+        sacc_data.add_tracer("NZ", tracer_name, z, dndz)
+        src_tracers.append(tracer_name)
+
+    lens_tracers = []
+    for i in range(2):
+        dndz = np.exp(-0.5 * (z - 0.1 + i * 0.1) ** 2 / 0.05 / 0.05)
+        tracer_name = f"lens{i}"
+        sacc_data.add_tracer("NZ", tracer_name, z, dndz)
+        lens_tracers.append(tracer_name)
+
+    # Add cross-correlations: shear-density measurements
+    data_list = []
+    for src in src_tracers:
+        for lens in lens_tracers:
+            Cells = np.random.normal(size=ells.shape[0])
+            sacc_data.add_ell_cl("galaxy_shearDensity_cl_e", src, lens, ells, Cells)
+            data_list.append(Cells)
+
+    cov_data = np.concatenate(data_list)
+    cov = np.diag(np.ones_like(cov_data) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    indices = extract_all_harmonic_metadata_indices(sacc_data)
+
+    # Should have multiple measurements
+    assert len(indices) == len(src_tracers) * len(lens_tracers)
+
+    # All should be shear-density measurements with correct type order
+    for idx in indices:
+        a, b = idx["tracer_types"]
+        assert a == Galaxies.SHEAR_E
         assert b == Galaxies.COUNTS
