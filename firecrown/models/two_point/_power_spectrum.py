@@ -10,7 +10,7 @@ import pyccl
 from firecrown.modeling_tools import ModelingTools
 
 if TYPE_CHECKING:
-    from firecrown.likelihood._source import Tracer
+    from firecrown.likelihood._base import Tracer
 
 
 def calculate_pk(

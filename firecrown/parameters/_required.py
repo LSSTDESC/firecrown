@@ -1,11 +1,9 @@
 """Required parameters functionality."""
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
 from collections.abc import Iterable, Iterator
 
-if TYPE_CHECKING:
-    from ._types import SamplerParameter
+from ._types import SamplerParameter
 
 
 class RequiredParameters:

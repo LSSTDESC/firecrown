@@ -19,7 +19,7 @@ from firecrown.models.two_point._interpolation import ApplyInterpolationWhen
 from firecrown.models.two_point._sacc_utils import determine_ccl_kind
 
 if TYPE_CHECKING:
-    from firecrown.likelihood._source import Source, Tracer
+    from firecrown.likelihood._base import Source, Tracer
 
 
 class TwoPointTheory(Updatable):
