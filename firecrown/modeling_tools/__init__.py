@@ -6,8 +6,10 @@ that need to access reusable objects, such as perturbation theory or halo model
 calculators.
 """
 
-from firecrown.modeling_tools._base import PowerspectrumModifier
-from firecrown.modeling_tools._modeling_tools import ModelingTools
+from firecrown.modeling_tools._modeling_tools import (
+    ModelingTools,
+    PowerspectrumModifier,
+)
 
 __all__ = [
     "ModelingTools",

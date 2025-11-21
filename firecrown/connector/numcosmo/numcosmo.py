@@ -23,7 +23,8 @@ from firecrown.likelihood import (
     load_likelihood,
 )
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap, UpdatableUsageRecord, handle_unused_params
+from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.updatable import UpdatableUsageRecord
 
 
 class MappingNumCosmo(GObject.Object):

@@ -74,8 +74,7 @@ The `TwoPoint` object is used to encapsulate the theoretical model for the two-p
 Using the `lens0_lens0_cell` object created above, we can create a `TwoPoint` object as follows:
 
 ```{python}
-from firecrown.likelihood import TwoPoint
-from firecrown.likelihood.factories import TwoPointFactory
+from firecrown.likelihood import TwoPoint, TwoPointFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.metadata_types import TwoPointCorrelationSpace
 

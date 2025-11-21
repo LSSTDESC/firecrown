@@ -22,6 +22,7 @@ TUTORIAL_DIR := tutorial
 # Output directories
 HTMLCOV_DIR := htmlcov
 DOCS_BUILD_DIR := $(DOCS_DIR)/_build
+AUTOAPI_BUILD_DIR := $(DOCS_DIR)/autoapi
 TUTORIAL_OUTPUT_DIR := $(DOCS_DIR)/_static
 
 # Test configuration
@@ -140,6 +141,8 @@ clean-coverage:  ## Remove coverage reports
 clean-docs:  ## Remove built documentation
 	rm -rf $(DOCS_BUILD_DIR)
 	rm -rf $(TUTORIAL_OUTPUT_DIR)
+	rm -rf $(AUTOAPI_BUILD_DIR)
+
 
 clean-build:  ## Remove build artifacts
 	rm -rf build/ dist/ *.egg-info/

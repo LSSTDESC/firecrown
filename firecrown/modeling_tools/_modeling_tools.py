@@ -6,6 +6,7 @@ together a :class:`pyccl.Cosmology` object and associated objects.
 
 from __future__ import annotations
 
+from abc import ABC, abstractmethod
 from collections.abc import Collection
 
 import pyccl
@@ -14,7 +15,16 @@ import pyccl.nl_pt
 from firecrown.ccl_factory import CCLCalculatorArgs, CCLFactory
 from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 from firecrown.updatable import Updatable, UpdatableCollection
-from firecrown.modeling_tools._base import PowerspectrumModifier
+
+
+class PowerspectrumModifier(Updatable, ABC):
+    """Abstract base class for power spectrum modifiers."""
+
+    name: str = "base:base"
+
+    @abstractmethod
+    def compute_p_of_k_z(self, tools: ModelingTools) -> pyccl.Pk2D:
+        """Compute the 3D power spectrum P(k, z)."""
 
 
 class ModelingTools(Updatable):

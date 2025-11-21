@@ -12,11 +12,10 @@ from firecrown.parameters import (
     ParamsMap,
     RequiredParameters,
     SamplerParameter,
+    DerivedParameterCollection,
 )
-
-from firecrown.parameters import DerivedParameterCollection, UpdatableUsageRecord
-
 from firecrown.updatable._exceptions import MissingSamplerParameterError
+from firecrown.updatable._records import UpdatableUsageRecord
 from firecrown.updatable._types import UpdatableProtocol
 
 

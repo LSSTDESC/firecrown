@@ -116,10 +116,10 @@ The class `SourceSystematic`[^1] is the base class for all source systematics.
 A systematic represents a source of uncertainty in some measurement associated with a source.
 One concrete example is `PhotoZShift`[^2], which encapsulate a shift in the center of redshift bins for measurements based on photometric measurement of the redshift.
 
-[^1]: `firecrown.likelihood.source.SourceSystematic` is the full name of this class.
+[^1]: `firecrown.likelihood.SourceSystematic` is the full name of this class.
 
 [^2]: There are actually two classes named `PhotoZShift`: one is `firecrown.likelihood.weak_lensing.PhotoZShift`; the other is `firecrown.likelihood.number_counts.PhotoZShift`.
-      They are both derived from the `firecrown.likelihood.source.SourceSystematic` base class.
+      They are both derived from the `firecrown.likelihood.SourceSystematic` base class.
 
 Derived from `SourceSystematic`, and defined in the same module, is the class `SourceGalaxySystematic`.
 This class includes the `apply` method which is used to apply the systematic to a source galaxy tracer argument.

@@ -27,7 +27,8 @@ from firecrown.likelihood import (
     NamedParameters,
     load_likelihood,
 )
-from firecrown.parameters import ParamsMap, UpdatableUsageRecord, handle_unused_params
+from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.updatable import UpdatableUsageRecord
 from firecrown.updatable import get_default_params_map
 
 

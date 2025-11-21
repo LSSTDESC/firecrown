@@ -7,8 +7,8 @@ from firecrown.parameters import (
     ParamsMap,
     RequiredParameters,
     DerivedParameterCollection,
-    UpdatableUsageRecord,
 )
+from firecrown.updatable._records import UpdatableUsageRecord
 
 
 @runtime_checkable

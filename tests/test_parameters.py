@@ -10,15 +10,13 @@ from firecrown.parameters import (
     parameter_get_full_name,
     ParamsMap,
     handle_unused_params,
-    UpdatableUsageRecord,
-)
-from firecrown.parameters import (
     DerivedParameter,
     DerivedParameterCollection,
     register_new_updatable_parameter,
     InternalParameter,
     SamplerParameter,
 )
+from firecrown.updatable import UpdatableUsageRecord
 
 
 def test_register_new_updatable_parameter_with_no_arg():

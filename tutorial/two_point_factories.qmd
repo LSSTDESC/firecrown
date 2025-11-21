@@ -84,8 +84,7 @@ check_two_point_consistence_real(two_point_reals)
 Use a factory to build the `TwoPoint` objects in the **ready** state:
 
 ```{python}
-from firecrown.likelihood import TwoPoint
-from firecrown.likelihood.factories import TwoPointFactory
+from firecrown.likelihood import TwoPoint, TwoPointFactory
 from firecrown.utils import (
     base_model_from_yaml,
     ClIntegrationMethod,
@@ -286,7 +285,7 @@ Alternatively, by setting a restrictively small filtered range, we can remove da
 
 ```{python}
 from firecrown.metadata_types import TwoPointCorrelationSpace
-from firecrown.likelihood.two_point import TwoPointFactory
+from firecrown.likelihood import TwoPointFactory
 from firecrown.likelihood.factories import (
     DataSourceSacc,
     TwoPointExperiment,
