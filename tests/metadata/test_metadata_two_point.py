@@ -916,6 +916,34 @@ def test_make_two_point_xy_valid_cmb_galaxy():
     assert xy.y_measurement == Galaxies.COUNTS
 
 
+def test_make_two_point_xy_valid_cmb_galaxy_needs_swap():
+    """Test make_two_point_xy with CMB-galaxy measurements."""
+    cmb = InferredGalaxyZDist(
+        bin_name="cmb_convergence",
+        z=np.array([1100.0]),
+        dndz=np.array([1.0]),
+        measurements={CMB.CONVERGENCE},
+    )
+    galaxy = InferredGalaxyZDist(
+        bin_name="galaxy_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    inferred_dict = {"cmb_convergence": cmb, "galaxy_bin_0": galaxy}
+    tracer_names = TracerNames("galaxy_bin_0", "cmb_convergence")
+    data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
+    # Even though the order is swapped, this should still work this behavior will be
+    # removed in the future. It is kept for backwards compatibility and to avoid
+    # breaking existing data files.
+    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    assert xy.x == cmb
+    assert xy.y == galaxy
+    assert xy.x_measurement == CMB.CONVERGENCE
+    assert xy.y_measurement == Galaxies.COUNTS
+
+
 def test_make_two_point_xy_missing_x_measurement():
     """Test make_two_point_xy when first tracer lacks required measurement."""
     x = InferredGalaxyZDist(
