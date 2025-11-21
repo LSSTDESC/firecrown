@@ -4,12 +4,20 @@
 # Run 'make help' for a list of available targets.
 
 .PHONY: help format lint typecheck test test-coverage test-integration test-slow \
-	test-all clean clean-docs clean-coverage docs tutorials api-docs \
+	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
-	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install
+	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks
 
 # Default target
 .DEFAULT_GOAL := help
+
+# Parallel execution configuration
+JOBS ?= auto
+ifeq ($(JOBS),auto)
+	NPROCS := $(shell nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 4)
+else
+	NPROCS := $(JOBS)
+endif
 
 # Project directories
 FIRECROWN_PKG_DIR := firecrown
@@ -43,6 +51,11 @@ help:  ## Show this help message
 	@echo "  make test-all        - Run all tests including slow tests"
 	@echo "  make pre-commit      - Run all pre-commit checks (format, lint, test)"
 	@echo "  make docs            - Build all documentation (tutorials + API)"
+	@echo ""
+	@echo "Parallel execution:"
+	@echo "  make -j4 lint        - Run linting with 4 parallel jobs"
+	@echo "  JOBS=8 make lint     - Set parallel jobs via environment variable"
+	@echo "  Detected CPUs: $(NPROCS)"
 
 ##@ Formatting
 
@@ -54,7 +67,13 @@ format-check:  ## Check code formatting without modifying files
 
 ##@ Linting
 
-lint: lint-black lint-flake8 lint-mypy lint-pylint  ## Run all linting tools in parallel
+lint:  ## Run all linting tools in parallel
+	@echo "Running all linters in parallel..."
+	@(black --check $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ black passed" || (echo "❌ black failed" && exit 1)) & \
+	(flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ && echo "✅ flake8 passed" || (echo "❌ flake8 failed" && exit 1)) & \
+	(mypy -p $(FIRECROWN_PKG_DIR) -p $(EXAMPLES_DIR) -p $(TESTS_DIR) && echo "✅ mypy passed" || (echo "❌ mypy failed" && exit 1)) & \
+	($(MAKE) lint-pylint && echo "✅ pylint passed" || (echo "❌ pylint failed" && exit 1)) & \
+	wait
 
 lint-black:  ## Check code formatting with black
 	@echo "Running black..."
@@ -64,7 +83,13 @@ lint-flake8:  ## Run flake8 linter
 	@echo "Running flake8..."
 	@flake8 $(FIRECROWN_PKG_DIR)/ $(EXAMPLES_DIR)/ $(TESTS_DIR)/ || (echo "❌ flake8 failed" && exit 1)
 
-lint-pylint: lint-pylint-firecrown lint-pylint-plugins lint-pylint-tests lint-pylint-examples  ## Run pylint on all packages
+lint-pylint:  ## Run pylint on all packages in parallel
+	@echo "Running pylint on all packages in parallel..."
+	@(pylint $(FIRECROWN_PKG_DIR) && echo "✅ pylint passed for firecrown" || (echo "❌ pylint failed for firecrown" && exit 1)) & \
+	(pylint $(PYLINT_PLUGINS_DIR) && echo "✅ pylint passed for pylint_plugins" || (echo "❌ pylint failed for pylint_plugins" && exit 1)) & \
+	(pylint --rcfile $(TESTS_DIR)/pylintrc $(TESTS_DIR) && echo "✅ pylint passed for tests" || (echo "❌ pylint failed for tests" && exit 1)) & \
+	(pylint --rcfile $(EXAMPLES_DIR)/pylintrc $(EXAMPLES_DIR) && echo "✅ pylint passed for examples" || (echo "❌ pylint failed for examples" && exit 1)) & \
+	wait
 
 lint-pylint-firecrown:  ## Run pylint on firecrown package
 	@echo "Running pylint on firecrown..."
@@ -123,7 +148,9 @@ tutorials:  ## Render tutorials with quarto
 api-docs:  ## Build API documentation with Sphinx
 	$(MAKE) -C $(DOCS_DIR) html
 
-docs: tutorials api-docs  docs-linkcheck ## Build and check all documentation (tutorials + API docs)
+docs-build: tutorials api-docs  ## Build tutorials and API docs (can run in parallel with make -j2)
+
+docs: docs-build docs-linkcheck ## Build and check all documentation (tutorials + API docs)
 	@echo ""
 	@echo "Documentation built successfully:"
 	@echo "  - Tutorials: $(TUTORIAL_OUTPUT_DIR)/"
@@ -143,20 +170,23 @@ clean-docs:  ## Remove built documentation
 	rm -rf $(TUTORIAL_OUTPUT_DIR)
 	rm -rf $(AUTOAPI_BUILD_DIR)
 
-
 clean-build:  ## Remove build artifacts
 	rm -rf build/ dist/ *.egg-info/
 	find . -type d -name __pycache__ -exec rm -rf {} + 2>/dev/null || true
 	find . -type f -name "*.pyc" -delete
 	find . -type f -name "*.pyo" -delete
 
-clean: clean-coverage clean-docs clean-build  ## Remove all generated files
+clean: clean-coverage clean-docs clean-build  ## Remove all generated files (can run with make -j3 clean)
 
 ##@ Pre-commit
 
 pre-commit: format lint test-coverage  ## Run all pre-commit checks (format, lint, test with coverage)
 	@echo ""
 	@echo "✅ All pre-commit checks passed!"
+
+all-checks: format lint test-coverage test-slow test-integration docs  ## Run everything: format, lint, all tests, and docs with optimal parallelism
+	@echo ""
+	@echo "✅ All checks passed! (format, lint, coverage, slow tests, integration tests, docs)"
 
 install:  ## Install firecrown in development mode
 	pip install --no-deps -e .
