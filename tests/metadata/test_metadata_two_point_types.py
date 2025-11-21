@@ -288,6 +288,7 @@ def test_measurements_from_index1():
     index: TwoPointRealIndex = {
         "data_type": "galaxy_shearDensity_xi_t",
         "tracer_names": TracerNames("src0", "lens0"),
+        "tracer_types": (Galaxies.SHEAR_T, Galaxies.COUNTS),
     }
     n1, a, n2, b = measurements_from_index(index)
     assert n1 == "src0"
@@ -300,6 +301,7 @@ def test_measurements_from_index2():
     index: TwoPointRealIndex = {
         "data_type": "galaxy_shearDensity_xi_t",
         "tracer_names": TracerNames("lens0", "src0"),
+        "tracer_types": (Galaxies.SHEAR_T, Galaxies.COUNTS),
     }
     n1, a, n2, b = measurements_from_index(index)
     assert n1 == "lens0"

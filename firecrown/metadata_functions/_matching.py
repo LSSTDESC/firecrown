@@ -68,9 +68,16 @@ def make_two_point_xy(
     igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
 
     if (a not in igz1.measurements) or (b not in igz2.measurements):
-        raise ValueError(
-            _make_two_point_xy_error_message(data_type, a, b, tracer_names, igz1, igz2)
-        )
+        if (a in igz2.measurements) and (b in igz1.measurements):
+            # swap the order of the tracers, this is a temporary fix following
+            # _should_swap_tracers_for_convention in _extraction.py
+            igz1, igz2 = igz2, igz1
+        else:
+            raise ValueError(
+                _make_two_point_xy_error_message(
+                    data_type, a, b, tracer_names, igz1, igz2
+                )
+            )
     return mdt.TwoPointXY(x=igz1, y=igz2, x_measurement=a, y_measurement=b)
 
 
@@ -78,5 +85,5 @@ def measurements_from_index(
     index: TwoPointRealIndex | TwoPointHarmonicIndex,
 ) -> tuple[str, mdt.Measurement, str, mdt.Measurement]:
     """Return the measurements from a TwoPointXiThetaIndex object."""
-    a, b = mdt.MEASURED_TYPE_STRING_MAP[index["data_type"]]
+    a, b = index["tracer_types"]
     return index["tracer_names"].name1, a, index["tracer_names"].name2, b

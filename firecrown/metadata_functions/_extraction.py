@@ -307,6 +307,7 @@ def extract_all_real_metadata_indices(
     tag_name = "theta"
 
     data_types = sacc_data.get_data_types()
+    tracer_types = extract_all_measured_types(sacc_data)
 
     data_types_reals = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
@@ -320,16 +321,23 @@ def extract_all_real_metadata_indices(
 
     all_real_indices: list[TwoPointRealIndex] = []
     for data_type in data_types_reals:
+        a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
         for combo in sacc_data.get_tracer_combinations(data_type):
             if len(combo) != 2:
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
+            if (
+                (a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]])
+            ) and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]])):
+                # Swap the order of the tracer types due to the convention
+                a, b = b, a
 
             all_real_indices.append(
                 {
                     "data_type": data_type,
                     "tracer_names": mdt.TracerNames(*combo),
+                    "tracer_types": (a, b),
                 }
             )
 
@@ -343,6 +351,7 @@ def extract_all_harmonic_metadata_indices(
     tag_name = "ell"
 
     data_types = sacc_data.get_data_types()
+    tracer_types = extract_all_measured_types(sacc_data)
 
     data_types_cells = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
@@ -357,16 +366,23 @@ def extract_all_harmonic_metadata_indices(
 
     all_harmonic_indices: list[TwoPointHarmonicIndex] = []
     for data_type in data_types_cells:
+        a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
         for combo in sacc_data.get_tracer_combinations(data_type):
             if len(combo) != 2:
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
+            if (
+                (a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]])
+            ) and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]])):
+                # Swap the order of the tracer types due to the convention
+                a, b = b, a
 
             all_harmonic_indices.append(
                 {
                     "data_type": data_type,
                     "tracer_names": mdt.TracerNames(*combo),
+                    "tracer_types": (a, b),
                 }
             )
 

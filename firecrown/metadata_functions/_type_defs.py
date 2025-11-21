@@ -13,6 +13,8 @@ class TwoPointRealIndex(TypedDict):
 
     data_type: str
     tracer_names: mdt.TracerNames
+    # This is necessary to handle inconsistent SACC files
+    tracer_types: tuple[mdt.Measurement, mdt.Measurement]
 
 
 class TwoPointHarmonicIndex(TypedDict):
@@ -23,3 +25,5 @@ class TwoPointHarmonicIndex(TypedDict):
 
     data_type: str
     tracer_names: mdt.TracerNames
+    # This is necessary to handle inconsistent SACC files
+    tracer_types: tuple[mdt.Measurement, mdt.Measurement]
