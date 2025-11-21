@@ -16,24 +16,31 @@ from firecrown.metadata_types import (
     TwoPointXY,
     TwoPointReal,
 )
+from firecrown.metadata_functions import make_two_point_xy
 from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_harmonic as harmonic,
     _type_to_sacc_string_real as real,
 )
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.likelihood.source import SourceGalaxy
-from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.two_point import (
+    TwoPoint,
+    TwoPointFactory,
+    TwoPointCorrelationSpace,
+)
 from firecrown.likelihood.cmb import CMBConvergenceFactory
+from firecrown.likelihood.weak_lensing import WeakLensingFactory
+from firecrown.likelihood.number_counts import NumberCountsFactory
 
 
 def test_inferred_galaxy_z_dist():
     z_dist = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
-    assert z_dist.bin_name == "bname1"
+    assert z_dist.bin_name == "b_name1"
     assert z_dist.z[0] == 0
     assert z_dist.z[-1] == 1
     assert z_dist.dndz[0] == 1
@@ -46,7 +53,7 @@ def test_inferred_galaxy_z_dist_bad_shape():
         ValueError, match="The z and dndz arrays should have the same shape."
     ):
         InferredGalaxyZDist(
-            bin_name="bname1",
+            bin_name="b_name1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(101),
             measurements={Clusters.COUNTS},
@@ -56,7 +63,7 @@ def test_inferred_galaxy_z_dist_bad_shape():
 def test_inferred_galaxy_z_dist_bad_type():
     with pytest.raises(ValueError, match="The measurement should be a Measurement."):
         InferredGalaxyZDist(
-            bin_name="bname1",
+            bin_name="b_name1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={0},  # type: ignore
@@ -75,13 +82,13 @@ def test_inferred_galaxy_z_dist_bad_name():
 
 def test_two_point_xy_gal_gal():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
@@ -97,20 +104,20 @@ def test_two_point_xy_gal_gal():
 
 def test_two_point_xy_gal_gal_invalid_x_measurement():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
     with pytest.raises(
         ValueError,
-        match="Measurement .* not in the measurements of bname1.",
+        match="Measurement .* not in the measurements of b_name1.",
     ):
         TwoPointXY(
             x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
@@ -119,20 +126,20 @@ def test_two_point_xy_gal_gal_invalid_x_measurement():
 
 def test_two_point_xy_gal_gal_invalid_y_measurement():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
     with pytest.raises(
         ValueError,
-        match="Measurement .* not in the measurements of bname2.",
+        match="Measurement .* not in the measurements of b_name2.",
     ):
         TwoPointXY(
             x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.COUNTS
@@ -141,35 +148,35 @@ def test_two_point_xy_gal_gal_invalid_y_measurement():
 
 def test_two_point_xy_cmb_gal():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={CMB.CONVERGENCE},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=CMB.CONVERGENCE
+        x=x, y=y, x_measurement=CMB.CONVERGENCE, y_measurement=Galaxies.COUNTS
     )
     assert xy.x == x
     assert xy.y == y
-    assert xy.x_measurement == Galaxies.COUNTS
-    assert xy.y_measurement == CMB.CONVERGENCE
+    assert xy.x_measurement == CMB.CONVERGENCE
+    assert xy.y_measurement == Galaxies.COUNTS
 
 
 def test_two_point_xy_invalid():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
@@ -185,13 +192,13 @@ def test_two_point_xy_invalid():
 
 def test_two_point_harmonic():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
@@ -210,13 +217,13 @@ def test_two_point_harmonic():
 
 def test_two_point_harmonic_invalid_ells():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
@@ -234,19 +241,19 @@ def test_two_point_harmonic_invalid_ells():
 
 def test_two_point_harmonic_invalid_type():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     with pytest.raises(
@@ -339,19 +346,19 @@ def test_two_point_cwindow_invalid():
     window_ells = np.array([0, 1, 2, 3], dtype=np.float64)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     with pytest.raises(
@@ -363,19 +370,19 @@ def test_two_point_cwindow_invalid():
 
 def test_two_point_cwindow_invalid_window():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
     with pytest.raises(
         ValueError,
@@ -391,19 +398,19 @@ def test_two_point_cwindow_invalid_window_shape():
     weights = np.ones(400, dtype=np.float64)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
     with pytest.raises(
         ValueError,
@@ -417,19 +424,19 @@ def test_two_point_cwindow_window_ell_not_match():
     weights = np.ones(400).reshape(-1, 4)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
     with pytest.raises(
         ValueError,
@@ -443,19 +450,19 @@ def test_two_point_cwindow_missing_window_ells():
     weights = np.ones(400).reshape(-1, 4)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
     with pytest.raises(
         ValueError,
@@ -469,19 +476,19 @@ def test_two_point_cwindow_window_ells_wrong_shape():
     weights = np.ones(400).reshape(-1, 4)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
 
     with pytest.raises(
@@ -501,19 +508,19 @@ def test_two_point_cwindow_window_ells_wrong_len():
     weights = np.ones(400).reshape(-1, 4)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
 
     with pytest.raises(
@@ -532,19 +539,19 @@ def test_two_point_cwindow_no_window_with_window_ells():
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
 
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_T},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_T
+        x=x, y=y, x_measurement=Galaxies.SHEAR_T, y_measurement=Galaxies.COUNTS
     )
 
     with pytest.raises(
@@ -556,13 +563,13 @@ def test_two_point_cwindow_no_window_with_window_ells():
 
 def test_two_point_real():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
@@ -581,19 +588,19 @@ def test_two_point_real():
 
 def test_two_point_real_invalid():
     x = InferredGalaxyZDist(
-        bin_name="bname1",
-        z=np.linspace(0, 1, 100),
-        dndz=np.ones(100),
-        measurements={Galaxies.COUNTS},
-    )
-    y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.SHEAR_E},
     )
+    y = InferredGalaxyZDist(
+        bin_name="b_name2",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
     xy = TwoPointXY(
-        x=x, y=y, x_measurement=Galaxies.COUNTS, y_measurement=Galaxies.SHEAR_E
+        x=x, y=y, x_measurement=Galaxies.SHEAR_E, y_measurement=Galaxies.COUNTS
     )
     theta = np.array(np.linspace(0, 100, 100))
     with pytest.raises(
@@ -607,14 +614,14 @@ def test_harmonic_type_string_invalid():
     with pytest.raises(
         ValueError, match="Harmonic-space correlation not supported for shear T."
     ):
-        harmonic(Galaxies.COUNTS, Galaxies.SHEAR_T)
+        harmonic(Galaxies.SHEAR_T, Galaxies.COUNTS)
 
 
 def test_real_type_string_invalid():
     with pytest.raises(
         ValueError, match="Real-space correlation not supported for shear E."
     ):
-        real(Galaxies.COUNTS, Galaxies.SHEAR_E)
+        real(Galaxies.SHEAR_E, Galaxies.COUNTS)
 
 
 def test_tracer_names_serialization():
@@ -790,13 +797,13 @@ def test_two_point_from_metadata_xi_theta(optimized_real_two_point_xy, tp_factor
 def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Clusters.COUNTS},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
@@ -812,12 +819,8 @@ def test_two_point_from_metadata_cells_unsupported_type(tp_factory):
         TwoPoint.from_metadata([cells], tp_factory)
 
 
-@pytest.fixture
-def tp_factory_with_cmb():
-    from firecrown.likelihood.two_point import TwoPointFactory, TwoPointCorrelationSpace
-    from firecrown.likelihood.weak_lensing import WeakLensingFactory
-    from firecrown.likelihood.number_counts import NumberCountsFactory
-
+@pytest.fixture(name="tp_factory_with_cmb")
+def fixture_tp_factory_with_cmb():
     return TwoPointFactory(
         correlation_space=TwoPointCorrelationSpace.HARMONIC,
         weak_lensing_factories=[WeakLensingFactory()],
@@ -830,13 +833,13 @@ def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
     """Test that CMB measurements work when CMB factory is provided."""
     ells = np.array(np.linspace(0, 100, 100), dtype=np.int64)
     x = InferredGalaxyZDist(
-        bin_name="bname1",
+        bin_name="b_name1",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={CMB.CONVERGENCE},
     )
     y = InferredGalaxyZDist(
-        bin_name="bname2",
+        bin_name="b_name2",
         z=np.linspace(0, 1, 100),
         dndz=np.ones(100),
         measurements={Galaxies.COUNTS},
@@ -850,4 +853,177 @@ def test_two_point_from_metadata_cmb_supported(tp_factory_with_cmb):
     two_points = TwoPoint.from_metadata([cells], tp_factory_with_cmb)
     assert len(two_points) == 1
     two_point = two_points[0]
+    assert two_point is not None
+    assert isinstance(two_point, TwoPoint)
+    # pylint: disable-next=no-member
     assert two_point.sacc_data_type == cells.get_sacc_name()
+
+
+def test_make_two_point_xy_valid_galaxies():
+    """Test make_two_point_xy with valid galaxy measurements."""
+    x = InferredGalaxyZDist(
+        bin_name="shear_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="shear_bin_1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
+    data_type = "galaxy_shear_cl_ee"
+
+    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    assert xy.x == x
+    assert xy.y == y
+    assert xy.x_measurement == Galaxies.SHEAR_E
+    assert xy.y_measurement == Galaxies.SHEAR_E
+
+
+def test_make_two_point_xy_valid_cmb_galaxy():
+    """Test make_two_point_xy with CMB-galaxy measurements."""
+    cmb = InferredGalaxyZDist(
+        bin_name="cmb_convergence",
+        z=np.array([1100.0]),
+        dndz=np.array([1.0]),
+        measurements={CMB.CONVERGENCE},
+    )
+    galaxy = InferredGalaxyZDist(
+        bin_name="galaxy_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},
+    )
+    inferred_dict = {"cmb_convergence": cmb, "galaxy_bin_0": galaxy}
+    tracer_names = TracerNames("cmb_convergence", "galaxy_bin_0")
+    data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
+
+    xy = make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    assert xy.x == cmb
+    assert xy.y == galaxy
+    assert xy.x_measurement == CMB.CONVERGENCE
+    assert xy.y_measurement == Galaxies.COUNTS
+
+
+def test_make_two_point_xy_missing_x_measurement():
+    """Test make_two_point_xy when first tracer lacks required measurement."""
+    x = InferredGalaxyZDist(
+        bin_name="shear_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},  # Has SHEAR_T but needs SHEAR_E
+    )
+    y = InferredGalaxyZDist(
+        bin_name="shear_bin_1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
+    data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
+
+    with pytest.raises(ValueError) as exc_info:
+        make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    error_msg = str(exc_info.value)
+    assert "Tracer measurements do not match the SACC naming convention" in error_msg
+    assert f"Data type: {data_type}" in error_msg
+    assert (
+        f"Expected measurements: ({Galaxies.SHEAR_E}, {Galaxies.SHEAR_E})" in error_msg
+    )
+    assert "shear_bin_0" in error_msg
+    assert "shear_bin_1" in error_msg
+
+
+def test_make_two_point_xy_missing_y_measurement():
+    """Test make_two_point_xy when second tracer lacks required measurement."""
+    x = InferredGalaxyZDist(
+        bin_name="shear_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="shear_bin_1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},  # Has SHEAR_T but needs SHEAR_E
+    )
+    inferred_dict = {"shear_bin_0": x, "shear_bin_1": y}
+    tracer_names = TracerNames("shear_bin_0", "shear_bin_1")
+    data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
+
+    with pytest.raises(ValueError) as exc_info:
+        make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    error_msg = str(exc_info.value)
+    assert "Tracer measurements do not match the SACC naming convention" in error_msg
+    assert f"Data type: {data_type}" in error_msg
+    assert (
+        f"Expected measurements: ({Galaxies.SHEAR_E}, {Galaxies.SHEAR_E})" in error_msg
+    )
+    assert "shear_bin_1" in error_msg
+
+
+def test_make_two_point_xy_both_measurements_missing():
+    """Test make_two_point_xy when both tracers lack required measurements."""
+    x = InferredGalaxyZDist(
+        bin_name="counts_bin_0",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.COUNTS},  # Has COUNTS, needs SHEAR_E
+    )
+    y = InferredGalaxyZDist(
+        bin_name="shear_bin_1",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_T},  # Has SHEAR_T, needs SHEAR_E
+    )
+    inferred_dict = {"counts_bin_0": x, "shear_bin_1": y}
+    tracer_names = TracerNames("counts_bin_0", "shear_bin_1")
+    data_type = harmonic(Galaxies.SHEAR_E, Galaxies.SHEAR_E)
+
+    with pytest.raises(ValueError) as exc_info:
+        make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    error_msg = str(exc_info.value)
+    assert "Tracer measurements do not match the SACC naming convention" in error_msg
+    assert (
+        f"Expected measurements: ({Galaxies.SHEAR_E}, {Galaxies.SHEAR_E})" in error_msg
+    )
+
+
+def test_make_two_point_xy_sacc_convention_explanation():
+    """Test that error message includes SACC convention explanation."""
+    x = InferredGalaxyZDist(
+        bin_name="cmb_bin",
+        z=np.array([1100.0]),
+        dndz=np.array([1.0]),
+        measurements={CMB.CONVERGENCE},
+    )
+    y = InferredGalaxyZDist(
+        bin_name="galaxy_bin",
+        z=np.linspace(0, 1, 100),
+        dndz=np.ones(100),
+        measurements={Galaxies.SHEAR_E},  # Has SHEAR_E but needs COUNTS
+    )
+    inferred_dict = {"cmb_bin": x, "galaxy_bin": y}
+    tracer_names = TracerNames("cmb_bin", "galaxy_bin")
+    data_type = harmonic(CMB.CONVERGENCE, Galaxies.COUNTS)
+
+    with pytest.raises(ValueError) as exc_info:
+        make_two_point_xy(inferred_dict, tracer_names, data_type)
+
+    error_msg = str(exc_info.value)
+    # Check for convention explanation
+    assert "According to the SACC convention" in error_msg
+    assert "order of measurement types" in error_msg
+    # Check for documentation link
+    assert "sacc_usage.html" in error_msg

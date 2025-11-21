@@ -543,14 +543,18 @@ data_source:
     )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
-    with pytest.raises(
-        ValueError,
-        match=re.compile(
-            "No two-point measurements in harmonic space found in the SACC file.",
-            re.DOTALL,
-        ),
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
     ):
-        _ = build_two_point_likelihood(build_parameters)
+        with pytest.raises(
+            ValueError,
+            match=re.compile(
+                "No two-point measurements in harmonic space found in the SACC file.",
+                re.DOTALL,
+            ),
+        ):
+            _ = build_two_point_likelihood(build_parameters)
 
 
 def test_build_two_point_likelihood_empty_likelihood_config(tmp_path: Path) -> None:

@@ -50,9 +50,7 @@ def cov_hash(sacc_data: sacc.Sacc) -> str:
 
 
 def extract_all_harmonic_data(
-    sacc_data: sacc.Sacc,
-    allowed_data_type: None | list[str] = None,
-    include_maybe_types=False,
+    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
@@ -60,9 +58,7 @@ def extract_all_harmonic_data(
 
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(
-            sacc_data, include_maybe_types=include_maybe_types
-        )
+        for igz in extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     }
 
     result: list[TwoPointMeasurement] = []
@@ -101,9 +97,7 @@ def extract_all_harmonic_data(
 
 
 def extract_all_real_data(
-    sacc_data: sacc.Sacc,
-    allowed_data_type: None | list[str] = None,
-    include_maybe_types=False,
+    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
@@ -111,9 +105,7 @@ def extract_all_real_data(
 
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(
-            sacc_data, include_maybe_types=include_maybe_types
-        )
+        for igz in extract_all_tracers_inferred_galaxy_zdists(sacc_data)
     }
 
     result: list[TwoPointMeasurement] = []
