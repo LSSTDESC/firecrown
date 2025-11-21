@@ -17,11 +17,12 @@ related cosmological probes. SACC files organize measurements from multiple trac
 
 **Note**: This guide focuses on the naming conventions and best practices for
 **two-point measurements** specifically. While SACC supports diverse measurement
-types, the conventions described here are tailored to two-point galaxy correlations.
+types, the conventions described here are tailored to two-point correlations.
 
 Key Features of SACC:
 
-- **Tracers**: Represent tomographic bins or other matter distribution tracers (e.g., galaxies in a redshift range, CMB temperature map)
+- **Tracers**: Represent tomographic bins or other matter distribution tracers 
+  (e.g., galaxies in a redshift range, CMB convergence map)
 - **Data Points**: Individual measurements of correlations between pairs of tracers
 - **Metadata**: Including covariances, window functions, and measurement types
 - **Data Types**: Standardized strings that identify what kind of measurement is stored
@@ -82,7 +83,7 @@ type, since both tracers have the same type.
 **Important**: The tracer names (``bin_0``, ``bin_1``) are **not** used to determine
 measurement types. The measurement type is determined entirely from the data type string
 and validated against the tracers involved. You could name tracers anything
-(e.g., ``alpha``, ``beta``) and the convention would still apply—both would still be
+(e.g., ``alpha``, ``beta``) and the convention would still apply, both would still be
 shear measurements.
 
 Example 2: Two Different Measurement Types
@@ -116,29 +117,45 @@ type string and the order of tracers in the measurement, not on their names.
 Canonical Ordering in Firecrown
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-SACC additionally enforces a **canonical ordering** of measurement types:
+SACC proposes a **canonical ordering** of measurement types that determines the order in
+which tracers should appear in a measurement. This ordering is essential for unambiguous
+interpretation of data type strings:
 
     **CMB < Clusters < Galaxies**
 
-This ordering applies when combining measurements across multiple types. For example:
+This ordering applies when combining measurements across different measurement type categories.
+For example:
 
 - CMB convergence measurements always come before cluster measurements
 - Cluster measurements always come before galaxy measurements
-- Within each category, measurements are ordered by tracer name
+- When two tracers have types from the same category, they are ordered according to the
+  internal enum ordering within that category
 
-This canonical ordering ensures deterministic ordering regardless of how measurements
-are specified in the SACC file.
+**Why Canonical Ordering Matters**: The canonical ordering enables deterministic construction
+of data type strings. For example, if you have one CMB tracer and one galaxy tracer, the only
+valid data type string is ``cmbGalaxy_convergenceDensity_cl`` (CMB first), not
+``galaxyCMB_densityConvergence_cl``. Moreover, since the measurement type order in the data
+type string must match the tracer order (see convention examples above), the tracers must be
+ordered such that the first tracer's type comes before the second tracer's type in the
+canonical ordering.
 
 **Internal Enum Ordering**: Within each measurement type category (CMB, Clusters, Galaxies),
 the measurement types are also ordered canonically. For example, within ``Galaxies``:
 
-    **Galaxies.SHEAR_E < Galaxies.COUNTS**
+    **Galaxies.SHEAR_E < Galaxies.SHEAR_T < ... < Galaxies.COUNTS**
 
-This means that when determining tracer order for cross-measurements (e.g., shear
-cross-correlation with counts), shear measurements always come before count measurements.
-Similarly, CMB and cluster measurement types are ordered internally according to their
-relative positions in their respective enums. This internal ordering is applied
-automatically by Firecrown to ensure consistency.
+This means:
+
+- When determining tracer order for cross-measurements (e.g., shear cross-correlation with counts),
+  shear measurements always come before count measurements
+- CMB and cluster measurement types are ordered internally according to their positions in
+  their respective enums
+- Firecrown applies this internal ordering automatically to ensure consistency
+
+**Firecrown's Ordering Support**: Firecrown provides utilities to help you determine the correct
+tracer order based on the canonical ordering. When creating or fixing SACC files, you can use
+Firecrown's ordering functions to automatically compute the correct order of tracers for a
+given pair of measurement types.
 
 Understanding Measurement Types
 -------------------------------
@@ -208,7 +225,7 @@ Handling Mixed-Type Measurements
 
 **What are Mixed-Type Measurements?**: In the context of Firecrown, "mixed-type measurements"
 refers to a tracer being associated with measurement types from **different measurement sets**
-(e.g., both source types and lens types, or galaxy measurements mixed with CMB measurements).
+(e.g., both source types and lens types).
 
 **Within the same set is allowed**: A tracer **may** have multiple measurement types as long
 as they belong to the same measurement set. For example:
