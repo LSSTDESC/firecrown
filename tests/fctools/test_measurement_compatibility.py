@@ -255,7 +255,13 @@ class TestPrintEfficiencyGains:
             harmonic_measurements, measurement_is_compatible_harmonic
         )
 
-        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
+        print_efficiency_gains(
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
+        )
 
         captured = capsys.readouterr()
         assert match_wrapped(captured.out, "Efficiency Improvements:")
@@ -275,10 +281,14 @@ class TestPrintEfficiencyGains:
             harmonic_measurements, measurement_is_compatible_harmonic
         )
 
-        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
-
+        print_efficiency_gains(
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
+        )
         captured = capsys.readouterr()
-
         # Calculate expected reductions
         real_reduction = len(real_measurements) ** 2 - len(real_pairs)
         harmonic_reduction = len(harmonic_measurements) ** 2 - len(harmonic_pairs)

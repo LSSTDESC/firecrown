@@ -113,12 +113,13 @@ def print_compatible_pairs(
 def print_efficiency_gains(
     console: Console,
     real_measurements: list[Measurement],
+    harmonic_measurements: list[Measurement],
     real_pairs: list[tuple[Measurement, Measurement]],
     harmonic_pairs: list[tuple[Measurement, Measurement]],
 ) -> None:
     """Print efficiency improvements from using compatible pairs."""
     total_real_combinations = len(real_measurements) ** 2
-    total_harmonic_combinations = len(real_measurements) ** 2
+    total_harmonic_combinations = len(harmonic_measurements) ** 2
 
     real_skip_reduction = total_real_combinations - len(real_pairs)
     harmonic_skip_reduction = total_harmonic_combinations - len(harmonic_pairs)
@@ -247,7 +248,13 @@ def main(
 
     # Print efficiency gains
     if space == Space.BOTH:
-        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
+        print_efficiency_gains(
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
+        )
         print_summary_stats(
             console,
             real_measurements,
