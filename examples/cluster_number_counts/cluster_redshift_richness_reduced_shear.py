@@ -11,7 +11,6 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ClusterProperty
 
 # remove this line after crow becomes installable
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from crow import ClusterShearProfile, kernel, mass_proxy
 from crow.recipes.murata_binned_spec_z import MurataBinnedSpecZRecipe
 
@@ -40,15 +39,17 @@ def build_likelihood(
     redshift_distribution = kernel.SpectroscopicRedshift()
     pivot_mass, pivot_redshift = 14.625862906, 0.6
     mass_distribution = mass_proxy.MurataBinned(pivot_mass, pivot_redshift)
-    survey_name = "numcosmo_simulated_redshift_richness_deltasigma"
+    survey_name = "numcosmo_simulated_redshift_richness_gt"
 
     cluster_theory = ClusterShearProfile(
         cosmo=pyccl.CosmologyVanillaLCDM(),
         halo_mass_function=pyccl.halos.MassFuncTinker08(mass_def="200c"),
         cluster_concentration=4.0,
-        is_delta_sigma=True,
+        is_delta_sigma=False,
         use_beta_s_interp=True,
     )
+    cluster_theory.set_beta_parameters(10.0, 5.0)
+
     recipe = MurataBinnedSpecZRecipe(
         cluster_theory=cluster_theory,
         redshift_distribution=redshift_distribution,
@@ -57,6 +58,7 @@ def build_likelihood(
         mass_interval=(12, 17),
         true_z_interval=(0.1, 2.0),
     )
+
     likelihood = ConstGaussian(
         [
             BinnedClusterNumberCounts(
@@ -73,7 +75,7 @@ def build_likelihood(
     )
 
     # Read in sacc data
-    sacc_file_nm = "cluster_redshift_richness_deltasigma_sacc_data.fits"
+    sacc_file_nm = "cluster_redshift_richness_gt_sacc_data.fits"
     sacc_data = sacc.Sacc.load_fits(sacc_file_nm)
     likelihood.read(sacc_data)
 
