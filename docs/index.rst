@@ -19,6 +19,11 @@ within those samplers.
 It can also be used as a library in other contexts, and so the installation of
 Firecrown does not *require* the installation of a sampler.
 
+.. note::
+   Before installing Firecrown, we recommend visiting the `tutorial site <_static/index.html>`_.
+   This site serves as a comprehensive resource for Firecrown, offering both pre-installation information and post-installation guidance. 
+   It covers essential topics such as the general concepts behind Firecrown, installation instructions, and usage guidelines.
+
 Data Format
 -----------
 
@@ -37,11 +42,6 @@ For detailed information about using SACC files with Firecrown, including naming
 conventions, mixed-type measurements, and guidance for fixing convention violations,
 see the **SACC Usage** guide.
 
-.. note::
-   Before installing Firecrown, we recommend visiting the `tutorial site <_static/index.html>`_.
-   This site serves as a comprehensive resource for Firecrown, offering both pre-installation information and post-installation guidance. 
-   It covers essential topics such as the general concepts behind Firecrown, installation instructions, and usage guidelines.
-
 .. toctree::
    :maxdepth: 1
    :caption: Getting Started
@@ -50,6 +50,7 @@ see the **SACC Usage** guide.
    Installation Quickstart<install_quick.rst>
    Using Firecrown<basic_usage.rst>
    SACC Usage<sacc_usage.rst>
+   Tutorial Site <tutorial.rst>
 
 .. toctree::
    :maxdepth: 1
