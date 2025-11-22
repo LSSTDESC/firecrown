@@ -72,7 +72,7 @@ jobs:
     name: Quick validation
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -106,7 +106,7 @@ jobs:
             python-version: "3.12"
             coverage: true
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -204,7 +204,7 @@ jobs:
     name: External dependencies and documentation
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Setting up Miniforge
         uses: conda-incubator/setup-miniconda@v3
         with:
@@ -257,17 +257,17 @@ jobs:
           pip install --no-deps -e .
           conda list
       - name: Cloning Smokescreen
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: 'marcpaterno/smokescreen'
           path: 'smokescreen'
           ref: 'adjust-to-firecrown-pr-586'
       - name: Cloning Augur
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           repository: 'lsstdesc/augur'
           path: 'augur'
-          ref: 'b59cfaf'
+          ref: 'b59cfaf3dec90aa606a4add453a5a77e0c8ea942'
       - name: Build tutorials and documentation and check links
         shell: bash -l {0}
         run: |
