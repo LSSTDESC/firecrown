@@ -267,7 +267,7 @@ jobs:
         with:
           repository: 'lsstdesc/augur'
           path: 'augur'
-          ref: 'adjust-to-firecrown-pr-586'
+          ref: 'b59cfaf'
       - name: Build tutorials and documentation and check links
         shell: bash -l {0}
         run: |
