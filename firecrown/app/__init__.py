@@ -47,6 +47,12 @@ app_sacc.command(
     no_args_is_help=True,
     help="View the contents of a SACC file (e.g., data points, metadata).",
 )(sacc_app.View)
+app_sacc.command(
+    name="convert",
+    no_args_is_help=True,
+    help="Convert SACC file format.",
+)(sacc_app.Convert)
+
 app.add_typer(app_sacc, name="sacc", help="Work with SACC data files.")
 
 # Experiment commands ---------------------------------------------------------
