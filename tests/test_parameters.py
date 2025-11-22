@@ -713,3 +713,137 @@ def test_updatable_usage_record_internal_params_only():
     assert not rec.is_empty
     lines = rec.get_log_lines()
     assert lines == ["OnlyInternal(p): ", "  Internal parameters used: ['i']"]
+
+
+def test_params_map_setitem():
+    """Test ParamsMap.__setitem__() method for setting values."""
+    params = ParamsMap({"a": 1.0})
+    params["b"] = 2.0
+    assert params["b"] == 2.0
+    params["a"] = 3.0
+    assert params["a"] == 3.0
+
+
+def test_params_map_contains():
+    """Test ParamsMap.__contains__() method with in operator."""
+    params = ParamsMap({"a": 1.0, "b": 2.0})
+    assert "a" in params
+    assert "b" in params
+    assert "c" not in params
+    assert "nonexistent" not in params
+
+
+def test_params_map_copy():
+    """Test ParamsMap.copy() creates an independent copy."""
+    original = ParamsMap({"a": 1.0, "b": 2.0})
+    _ = original["a"]  # Mark 'a' as used
+    assert original.used_keys == {"a"}
+
+    # Create copy
+    copied = original.copy()
+
+    # Verify copy has same data and same used_keys state
+    assert copied.params == {"a": 1.0, "b": 2.0}
+    assert copied.used_keys == {"a"}
+    assert copied.lower_case == original.lower_case
+
+    # Verify independence: modifying copy doesn't affect original
+    copied["c"] = 3.0
+    assert "c" in copied
+    assert "c" not in original
+
+    copied.used_keys.add("b")
+    assert "b" not in original.used_keys
+
+    copied.lower_case = True
+    assert original.lower_case is False
+
+
+def test_params_map_update_duplicate_key():
+    """Test ParamsMap.update() raises error for duplicate keys."""
+    params = ParamsMap({"a": 1.0})
+
+    # Update with new key should work
+    params.update({"b": 2.0})
+    assert params["b"] == 2.0
+
+    # Update with duplicate key should raise ValueError
+    with pytest.raises(ValueError, match="Key a is already present in the ParamsMap"):
+        params.update({"a": 3.0})
+
+
+def test_params_map_keys():
+    """Test ParamsMap.keys() returns correct set of keys."""
+    params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
+    keys = params.keys()
+
+    assert isinstance(keys, set)
+    assert keys == {"a", "b", "c"}
+
+    # Verify returned set is independent (modifying doesn't affect ParamsMap)
+    keys.add("d")
+    assert params.keys() == {"a", "b", "c"}
+
+
+def test_required_parameters_subtraction():
+    """Test RequiredParameters.__sub__() subtraction operator."""
+    param_a = SamplerParameter(name="a", default_value=1.0)
+    param_b = SamplerParameter(name="b", default_value=2.0)
+    param_c = SamplerParameter(name="c", default_value=3.0)
+    param_d = SamplerParameter(name="d", default_value=4.0)
+
+    params1 = RequiredParameters([param_a, param_b, param_c])
+    params2 = RequiredParameters([param_b, param_d])
+
+    # Subtract params2 from params1
+    result = params1 - params2
+
+    # Result should have 'a' and 'c' (not 'b' which was in params2)
+    result_names = set(result.get_params_names())
+    assert result_names == {"a", "c"}
+
+    # Verify original objects unchanged
+    assert set(params1.get_params_names()) == {"a", "b", "c"}
+    assert set(params2.get_params_names()) == {"b", "d"}
+
+
+def test_required_parameters_addition():
+    """Test RequiredParameters.__add__() addition operator."""
+    param_a = SamplerParameter(name="a", default_value=1.0)
+    param_b = SamplerParameter(name="b", default_value=2.0)
+    param_c = SamplerParameter(name="c", default_value=3.0)
+
+    params1 = RequiredParameters([param_a, param_b])
+    params2 = RequiredParameters([param_c])
+
+    # Add params2 to params1
+    result = params1 + params2
+
+    # Result should have all three parameters
+    result_names = set(result.get_params_names())
+    assert result_names == {"a", "b", "c"}
+
+    # Verify original objects unchanged
+    assert set(params1.get_params_names()) == {"a", "b"}
+    assert set(params2.get_params_names()) == {"c"}
+
+
+def test_sampler_parameter_set_fullname():
+    """Test SamplerParameter.set_fullname() method."""
+    sp = SamplerParameter(default_value=1.0)
+
+    # Initially no name/prefix set, accessing name should raise
+    with pytest.raises(ValueError, match="Parameter name is not set"):
+        _ = sp.name
+
+    # Set fullname with prefix
+    sp.set_fullname("my_prefix", "my_name")
+    assert sp.name == "my_name"
+    assert sp.prefix == "my_prefix"
+    assert sp.fullname == "my_prefix_my_name"
+
+    # Set fullname with None prefix
+    sp.set_fullname(None, "another_name")
+    assert sp.name == "another_name"
+    assert sp.prefix is None
+    assert sp.fullname == "another_name"
