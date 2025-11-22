@@ -383,9 +383,9 @@ Suppose you have this incorrect entry:
 .. code-block:: python
 
     # Incorrect: tracers are (cmb, shear) but data type implies (shear, cmb)
-    sacc_data.add_data_point("galaxy_shearCMB_convergence_cl",
-                              ("cmb_bin_0",      # First tracer (should be shear)
-                              "shear_bin_0"),    # Second tracer (should be cmb)
+    sacc_data.add_data_point("cmbGalaxy_convergenceShear_cl_e",
+                              ("shear_bin_0",   # First tracer (should be cmb)
+                              "cmb_bin_0"),     # Second tracer (should be shear)
                               ...)
 
 To fix it, swap the tracer order:
@@ -393,9 +393,9 @@ To fix it, swap the tracer order:
 .. code-block:: python
 
     # Correct: tracers are (shear, cmb) matching the data type
-    sacc_data.add_data_point("galaxyCMB_shearConvergence_cl",
-                              ("shear_bin_0",    # First tracer (shear) ✓
-                              "cmb_bin_0"),      # Second tracer (cmb) ✓
+    sacc_data.add_data_point("cmbGalaxy_convergenceShear_cl_e",
+                              ("cmb_bin_0",     # First tracer (cmb) ✓
+                              "shear_bin_0"),   # Second tracer (shear) ✓
                               ...)
 
 **Programmatic Approach:**
