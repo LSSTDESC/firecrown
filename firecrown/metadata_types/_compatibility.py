@@ -5,6 +5,10 @@ from firecrown.metadata_types._measurements import (
     HARMONIC_ONLY_MEASUREMENTS,
     INCOMPATIBLE_MEASUREMENTS,
     REAL_ONLY_MEASUREMENTS,
+    GALAXY_LENS_TYPES,
+    GALAXY_SOURCE_TYPES,
+    CMB_TYPES,
+    CLUSTER_TYPES,
     Measurement,
 )
 

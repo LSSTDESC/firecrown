@@ -211,7 +211,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         harmonic_bin_12_list = [
             (_make_harmonic_bin("bin_1", 0.5, m1), _make_harmonic_bin("bin_2", 0.6, m2))
             for m1, m2 in product([Galaxies.COUNTS, Galaxies.SHEAR_E], repeat=2)
-            if measurement_is_compatible_harmonic(m1, m2)
+            if _measurement_is_compatible_harmonic(m1, m2)
         ]
         metafunc.parametrize(
             "harmonic_bin_1,harmonic_bin_2",

@@ -44,7 +44,6 @@ from firecrown.metadata_functions import (
     extract_all_measured_types,
     measurements_from_index,
 )
-from firecrown.metadata_functions._matching import match_name_type
 
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import (

@@ -4,7 +4,10 @@ This module contains metadata types definitions.
 """
 
 # Import all public types and classes from private submodules
-from firecrown.metadata_types._compatibility import measurement_is_compatible
+from firecrown.metadata_types._compatibility import (
+    measurement_is_compatible,
+    measurements_types,
+)
 from firecrown.metadata_types._inferred_galaxy_zdist import InferredGalaxyZDist
 from firecrown.metadata_types._measurements import (
     ALL_MEASUREMENTS,
@@ -62,6 +65,7 @@ __all__ = [
     "TwoPointFilterMethod",
     # Compatibility function (public)
     "measurement_is_compatible",
+    "measurements_types",
     # SACC conversion constant
     "MEASURED_TYPE_STRING_MAP",
 ]
