@@ -847,3 +847,77 @@ def test_sampler_parameter_set_fullname():
     assert sp.name == "another_name"
     assert sp.prefix is None
     assert sp.fullname == "another_name"
+
+
+def test_params_map_union_no_common_keys():
+    """Test ParamsMap.union() when there are no common keys.
+
+    This covers the branch where the for loop over common keys is not entered.
+    """
+    p1 = ParamsMap({"a": 1.0, "b": 2.0})
+    p2 = ParamsMap({"c": 3.0, "d": 4.0})
+
+    # Union with no overlapping keys
+    p3 = p1.union(p2)
+
+    assert p3.get_from_full_name("a") == 1.0
+    assert p3.get_from_full_name("b") == 2.0
+    assert p3.get_from_full_name("c") == 3.0
+    assert p3.get_from_full_name("d") == 4.0
+
+
+def test_params_map_union_common_keys_same_values():
+    """Test ParamsMap.union() when common keys have the same values.
+
+    This covers the branch where common keys exist but don't trigger
+    the ValueError because they have matching values.
+    """
+    p1 = ParamsMap({"a": 1.0, "b": 2.0})
+    p2 = ParamsMap({"b": 2.0, "c": 3.0})
+
+    # Union with overlapping key 'b' having the same value
+    p3 = p1.union(p2)
+
+    assert p3.get_from_full_name("a") == 1.0
+    assert p3.get_from_full_name("b") == 2.0
+    assert p3.get_from_full_name("c") == 3.0
+
+
+def test_params_map_lower_case_key_not_found():
+    """Test ParamsMap with lower_case enabled but key still not found.
+
+    This covers the branch where lower_case is True but the lowercased
+    key is not in the map.
+    """
+    p = ParamsMap({"my_key": 4.2})
+    p.use_lower_case_keys(True)
+
+    # Even with lower_case enabled, a completely different key should raise
+    with pytest.raises(KeyError, match="Key NONEXISTENT not found"):
+        _ = p.get_from_full_name("NONEXISTENT")
+
+
+def test_handle_unused_params_all_used():
+    """Test handle_unused_params when all parameters are used.
+
+    This covers the early return branch when there are no unused keys.
+    """
+    params = ParamsMap({"a": 1.0, "b": 2.0})
+
+    # Use all parameters
+    _ = params.get_from_full_name("a")
+    _ = params.get_from_full_name("b")
+
+    # Should not raise or warn when all keys are used
+    handle_unused_params(params=params, updated_records=[], raise_on_unused=False)
+    handle_unused_params(params=params, updated_records=[], raise_on_unused=True)
+
+
+def test_params_map_with_list_of_floats():
+    """Test ParamsMap accepts a list of floats as a valid value.
+
+    This covers the branch in _validate_params_map_value where
+    the value is a list and all elements are floats.
+    """
+    params = ParamsMap({"a": [1.0, 2.0, 3.0]})
+    assert "a" in params
