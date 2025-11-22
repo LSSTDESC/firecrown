@@ -62,6 +62,7 @@ def test_murata_binned_spec_z_init():
     assert recipe.my_updatables[0] is recipe.mass_distribution
 
 
+@pytest.mark.integration
 def test_get_theory_prediction_returns_value(
     cluster_abundance: ClusterAbundance,
     murata_binned_spec_z: MurataBinnedSpecZRecipe,
@@ -83,6 +84,7 @@ def test_get_theory_prediction_returns_value(
     assert np.all(result > 0)
 
 
+@pytest.mark.integration
 @given(
     mass=floats(min_value=13.0, max_value=17.0),
     z=floats(min_value=0.1, max_value=1.0),
@@ -115,6 +117,7 @@ def test_cluster_prediction_positivity_property(
     assert np.all(np.isfinite(result)), f"All predictions must be finite, got {result}"
 
 
+@pytest.mark.integration
 def test_get_theory_prediction_with_average_returns_value(
     cluster_abundance: ClusterAbundance,
     murata_binned_spec_z: MurataBinnedSpecZRecipe,
@@ -164,6 +167,7 @@ def test_get_theory_prediction_with_average_returns_value(
     assert np.all(result > 0)
 
 
+@pytest.mark.integration
 def test_get_theory_prediction_throws_with_nonimpl_average(
     cluster_abundance: ClusterAbundance,
     murata_binned_spec_z: MurataBinnedSpecZRecipe,
@@ -184,6 +188,7 @@ def test_get_theory_prediction_throws_with_nonimpl_average(
     #    _ = prediction(mass, z, mass_proxy_limits, sky_area)
 
 
+@pytest.mark.integration
 def test_get_function_to_integrate_returns_value(
     cluster_abundance: ClusterAbundance,
     murata_binned_spec_z: MurataBinnedSpecZRecipe,
@@ -204,6 +209,7 @@ def test_get_function_to_integrate_returns_value(
     assert np.all(result > 0)
 
 
+@pytest.mark.integration
 def test_evaluates_theory_prediction_returns_value(
     cluster_abundance: ClusterAbundance,
     murata_binned_spec_z: MurataBinnedSpecZRecipe,

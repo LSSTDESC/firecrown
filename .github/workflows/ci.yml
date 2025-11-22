@@ -35,7 +35,7 @@
 #
 # Performance Improvements:
 # - Quick feedback: 25-30 min → 2-3 min (90% faster)
-# - Coverage upload: 25-30 min → 8-12 min (60% faster) 
+# - Coverage upload: 25-30 min → 8-12 min (60% faster)
 # - Failed PRs: 25-30 min → 3-5 min (85% faster)
 # - Successful PRs: 25-30 min → 20-25 min (20% faster)
 #
@@ -50,18 +50,18 @@ name: firecrown-ci
 on:
   push:
     branches:
-      - 'master'
+      - "master"
     paths-ignore:
-      - 'docs/**/*.md'
-      - '*.md'
+      - "docs/**/*.md"
+      - "*.md"
   pull_request:
     branches:
-      - '*'
+      - "*"
     paths-ignore:
-      - 'docs/**/*.md'
-      - '*.md'
+      - "docs/**/*.md"
+      - "*.md"
   schedule:
-    - cron: '47 1 * * *'
+    - cron: "47 1 * * *"
 
 env:
   CONDA_ENV: firecrown_developer
@@ -77,7 +77,7 @@ jobs:
         uses: conda-incubator/setup-miniconda@v3
         with:
           miniforge-version: latest
-          python-version: '3.12'
+          python-version: "3.12"
           show-channel-urls: true
           conda-remove-defaults: true
           environment-file: environment.yml
@@ -181,9 +181,9 @@ jobs:
             # All other jobs: full test suite including slow tests
             python -m pytest -vv --runslow -n auto
           fi
-      - name: Running integration tests
+      - name: Running example tests
         shell: bash -l {0}
-        run: python -m pytest -vv -s --integration tests/integration
+        run: python -m pytest -vv -s --example -m example tests/example
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5
@@ -259,15 +259,15 @@ jobs:
       - name: Cloning Smokescreen
         uses: actions/checkout@v5
         with:
-          repository: 'marcpaterno/smokescreen'
-          path: 'smokescreen'
-          ref: 'adjust-to-firecrown-pr-586'
+          repository: "marcpaterno/smokescreen"
+          path: "smokescreen"
+          ref: "adjust-to-firecrown-pr-586"
       - name: Cloning Augur
         uses: actions/checkout@v5
         with:
-          repository: 'lsstdesc/augur'
-          path: 'augur'
-          ref: 'b59cfaf3dec90aa606a4add453a5a77e0c8ea942'
+          repository: "lsstdesc/augur"
+          path: "augur"
+          ref: "b59cfaf3dec90aa606a4add453a5a77e0c8ea942"
       - name: Build tutorials and documentation and check links
         shell: bash -l {0}
         run: |

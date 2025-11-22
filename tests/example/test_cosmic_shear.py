@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_cosmic_shear_cosmosis():
     result = subprocess.run(
         [
@@ -26,7 +26,7 @@ def test_cosmic_shear_cosmosis():
     print(result.stdout)
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_cosmic_shear_numcosmo():
     result = subprocess.run(
         [

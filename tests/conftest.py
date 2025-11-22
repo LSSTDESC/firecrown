@@ -48,16 +48,16 @@ def pytest_addoption(parser):
     """Add handling of firecrown-specific options for the pytest test runner.
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
-    --integration: used to run only integration tests, which are otherwise not run.
+    --example: used to run only example tests, which are otherwise not run.
     """
     parser.addoption(
         "--runslow", action="store_true", default=False, help="run slow tests"
     )
     parser.addoption(
-        "--integration",
+        "--example",
         action="store_true",
         default=False,
-        help="run integration tests",
+        help="run example tests",
     )
 
 
@@ -74,8 +74,8 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     """Apply our special markers and option handling for pytest."""
 
-    if not config.getoption("--integration"):
-        _skip_tests(items, "integration", "need --integration option to run")
+    if not config.getoption("--example"):
+        _skip_tests(items, "example", "need --example option to run")
 
     if not config.getoption("--runslow"):
         _skip_tests(items, "slow", "need --runslow option to run")

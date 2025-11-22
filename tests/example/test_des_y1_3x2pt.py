@@ -31,7 +31,7 @@ def fixture_cobaya_yaml_file(request) -> str:
     return request.param
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_des_y1_3x2pt_cosmosis(ini_file: str):
     result = subprocess.run(
         [
@@ -52,7 +52,7 @@ def test_des_y1_3x2pt_cosmosis(ini_file: str):
     print(result.stdout)
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_des_y1_3x2pt_numcosmo(ini_file: str):
     result = subprocess.run(
         [
@@ -73,7 +73,7 @@ def test_des_y1_3x2pt_numcosmo(ini_file: str):
     print(result.stdout)
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_des_y1_3x2pt_cobaya(cobaya_yaml_file: str):
     result = subprocess.run(
         [

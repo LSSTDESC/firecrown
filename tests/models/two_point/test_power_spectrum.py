@@ -1,4 +1,4 @@
-"""Tests for the at_least_one_tracer_has_hm function in firecrown.models.two_point."""
+"""Tests for the power_spectrum module (at_least_one_tracer_has_hm and related)."""
 
 # pylint: disable=redefined-outer-name
 # Disable redefined-outer-name warnings as pytest fixtures create this
@@ -9,7 +9,11 @@ from unittest.mock import Mock, patch
 import pytest
 import pyccl
 
-from firecrown.models.two_point import at_least_one_tracer_has_hm
+from firecrown.models.two_point import (
+    at_least_one_tracer_has_hm,
+    at_least_one_tracer_has_pt,
+    calculate_pk,
+)
 from firecrown.modeling_tools import ModelingTools
 from firecrown.likelihood._source import Tracer
 
@@ -279,3 +283,165 @@ def test_pk2d_addition_result(mock_tools, mock_tracer_with_hm):
         # Verify the result is the sum
         assert result == mock_pk_total
         assert result is mock_pk_total  # Ensure it's the exact same object
+
+
+def test_calculate_pk_with_existing_pk(mock_tools):
+    """Test calculate_pk when power spectrum already exists in tools."""
+
+    pk_name = "existing_pk"
+    mock_pk = Mock(spec=pyccl.Pk2D)
+    mock_tools.has_pk.return_value = True
+    mock_tools.get_pk.return_value = mock_pk
+
+    tracer0 = Mock(spec=Tracer)
+    tracer1 = Mock(spec=Tracer)
+
+    result = calculate_pk(pk_name, mock_tools, tracer0, tracer1)
+
+    mock_tools.has_pk.assert_called_once_with(pk_name)
+    mock_tools.get_pk.assert_called_once_with(pk_name)
+    assert result == mock_pk
+
+
+def test_calculate_pk_with_pt_tracers():
+    """Test calculate_pk when at least one tracer has PT."""
+
+    pk_name = "pt_pk"
+    mock_tools = Mock(spec=ModelingTools)
+    mock_tools.has_pk.return_value = False
+
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_pt = True
+    tracer0.has_hm = False
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_pt = False
+    tracer1.has_hm = False
+
+    mock_pk = Mock(spec=pyccl.Pk2D)
+
+    with patch(
+        "firecrown.models.two_point._power_spectrum.at_least_one_tracer_has_pt",
+        return_value=mock_pk,
+    ) as mock_pt_func:
+        result = calculate_pk(pk_name, mock_tools, tracer0, tracer1)
+
+        mock_pt_func.assert_called_once_with(mock_tools, tracer0, tracer1)
+        assert result == mock_pk
+
+
+def test_calculate_pk_with_hm_tracers():
+    """Test calculate_pk when at least one tracer has HM."""
+
+    pk_name = "hm_pk"
+    mock_tools = Mock(spec=ModelingTools)
+    mock_tools.has_pk.return_value = False
+
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_pt = False
+    tracer0.has_hm = True
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_pt = False
+    tracer1.has_hm = False
+
+    mock_pk = Mock(spec=pyccl.Pk2D)
+
+    with patch(
+        "firecrown.models.two_point._power_spectrum.at_least_one_tracer_has_hm",
+        return_value=mock_pk,
+    ) as mock_hm_func:
+        result = calculate_pk(pk_name, mock_tools, tracer0, tracer1)
+
+        mock_hm_func.assert_called_once_with(mock_tools, tracer0, tracer1)
+        assert result == mock_pk
+
+
+def test_calculate_pk_no_valid_method():
+    """Test calculate_pk raises ValueError when no valid method exists."""
+
+    pk_name = "invalid_pk"
+    mock_tools = Mock(spec=ModelingTools)
+    mock_tools.has_pk.return_value = False
+
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_pt = False
+    tracer0.has_hm = False
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_pt = False
+    tracer1.has_hm = False
+
+    with pytest.raises(ValueError, match="No power spectrum for invalid_pk"):
+        calculate_pk(pk_name, mock_tools, tracer0, tracer1)
+
+
+def test_at_least_one_tracer_has_pt_both_have_pt():
+    """Test at_least_one_tracer_has_pt when both tracers have PT."""
+
+    mock_tools = Mock(spec=ModelingTools)
+    mock_pt_calc = Mock()
+    mock_pk = Mock(spec=pyccl.Pk2D)
+    mock_pt_calc.get_biased_pk2d.return_value = mock_pk
+    mock_tools.get_pt_calculator.return_value = mock_pt_calc
+
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_pt = True
+    tracer0.pt_tracer = Mock()
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_pt = True
+    tracer1.pt_tracer = Mock()
+
+    result = at_least_one_tracer_has_pt(mock_tools, tracer0, tracer1)
+
+    mock_pt_calc.get_biased_pk2d.assert_called_once()
+    assert result == mock_pk
+
+
+def test_at_least_one_tracer_has_pt_first_missing_pt():
+    """Test at_least_one_tracer_has_pt when first tracer does not have PT."""
+
+    mock_tools = Mock(spec=ModelingTools)
+    mock_pt_calc = Mock()
+    mock_pk = Mock(spec=pyccl.Pk2D)
+    mock_pt_calc.get_biased_pk2d.return_value = mock_pk
+    mock_tools.get_pt_calculator.return_value = mock_pt_calc
+
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_pt = False
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_pt = True
+    tracer1.pt_tracer = Mock()
+
+    with patch("pyccl.nl_pt.PTMatterTracer") as mock_matter_tracer:
+        result = at_least_one_tracer_has_pt(mock_tools, tracer0, tracer1)
+
+        mock_matter_tracer.assert_called_once()
+        assert tracer0.pt_tracer is not None
+        assert result == mock_pk
+
+
+def test_at_least_one_tracer_has_pt_second_missing_pt():
+    """Test at_least_one_tracer_has_pt when second tracer does not have PT."""
+
+    mock_tools = Mock(spec=ModelingTools)
+    mock_pt_calc = Mock()
+    mock_pk = Mock(spec=pyccl.Pk2D)
+    mock_pt_calc.get_biased_pk2d.return_value = mock_pk
+    mock_tools.get_pt_calculator.return_value = mock_pt_calc
+
+    tracer0 = Mock(spec=Tracer)
+    tracer0.has_pt = True
+    tracer0.pt_tracer = Mock()
+
+    tracer1 = Mock(spec=Tracer)
+    tracer1.has_pt = False
+
+    with patch("pyccl.nl_pt.PTMatterTracer") as mock_matter_tracer:
+        result = at_least_one_tracer_has_pt(mock_tools, tracer0, tracer1)
+
+        mock_matter_tracer.assert_called_once()
+        assert tracer1.pt_tracer is not None
+        assert result == mock_pk

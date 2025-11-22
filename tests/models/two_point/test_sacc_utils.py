@@ -1,6 +1,4 @@
-"""
-Tests for the TwoPointTheory class and related functions.
-"""
+"""Tests for the sacc_utils module (determine_ccl_kind function)."""
 
 import pytest
 import pyccl

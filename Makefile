@@ -6,7 +6,9 @@
 .PHONY: help format lint typecheck test test-coverage test-integration test-slow \
 	test-all clean clean-docs clean-coverage docs tutorials api-docs docs-build \
 	lint-black lint-flake8 lint-pylint lint-pylint-firecrown lint-pylint-plugins \
-	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks
+	lint-pylint-tests lint-pylint-examples lint-mypy pre-commit install all-checks \
+	test-updatable test-utils test-parameters test-models test-models-cluster \
+	test-models-two-point unit-tests
 
 # Default target
 .DEFAULT_GOAL := help
@@ -135,35 +137,76 @@ test-coverage:  ## Run tests with coverage reporting
 test-slow:  ## Run only slow tests (with --runslow)
 	$(PYTEST_PARALLEL) $(PYTEST_DURATIONS) -m slow --runslow $(TESTS_DIR)
 
-test-integration:  ## Run integration tests only
-	$(PYTEST) -vv -s --integration -m integration $(TESTS_DIR)
+test-example:  ## Run example tests only
+	$(PYTEST) -vv -s --example -m example tests/example
 
-test-all: test-slow test-integration test  ## Run all tests (slow + integration)
+test-integration:  ## Run integration tests only
+	$(PYTEST) -vv -s -m integration tests/integration
+
+test-all: test-slow test-example test-integration test  ## Run all tests (slow + example + integration)
 
 test-updatable:  ## Run tests for firecrown.updatable module with coverage
 	$(PYTEST) tests/test_updatable.py tests/test_assert_updatable_interface.py \
 		--cov=firecrown.updatable \
 		--cov-report=term-missing \
-		--cov-branch
+		--cov-branch \
+		--cov-fail-under=100
 
 test-utils:  ## Run tests for firecrown.utils module with coverage
 	$(PYTEST) tests/test_utils.py \
 		--cov=firecrown.utils \
 		--cov-report=term-missing \
-		--cov-branch
+		--cov-branch \
+		--cov-fail-under=100
 
 test-parameters:  ## Run tests for firecrown.parameters module with coverage
 	$(PYTEST) tests/test_parameters.py \
 		--cov=firecrown.parameters \
 		--cov-report=term-missing \
-		--cov-branch
+		--cov-branch \
+		--cov-fail-under=100
 
-unit-tests:  ## Run unit tests for updatable, utils, and parameters modules in parallel
+test-models-cluster:  ## Run unit tests for firecrown.models.cluster package with coverage
+	$(PYTEST) tests/models/cluster/ \
+		--cov=firecrown.models.cluster \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100
+
+test-models-two-point:  ## Run unit tests for firecrown.models.two_point package with coverage
+	$(PYTEST) tests/models/two_point/ \
+		--cov=firecrown.models.two_point \
+		--cov-report=term-missing \
+		--cov-branch \
+		--cov-fail-under=100
+
+unit-tests:  ## Run all unit tests in parallel
 	@echo "Running unit tests in parallel..."
-	@($(MAKE) test-updatable && echo "✅ test-updatable passed" || (echo "❌ test-updatable failed" && exit 1)) & \
-	($(MAKE) test-utils && echo "✅ test-utils passed" || (echo "❌ test-utils failed" && exit 1)) & \
-	($(MAKE) test-parameters && echo "✅ test-parameters passed" || (echo "❌ test-parameters failed" && exit 1)) & \
-	wait
+	@rm -f .coverage.* .coverage
+	@(COVERAGE_FILE=.coverage.updatable $(MAKE) test-updatable && echo "✅ test-updatable passed" || (echo "❌ test-updatable failed" && exit 1)) & \
+	PID1=$$! ; \
+	(COVERAGE_FILE=.coverage.utils $(MAKE) test-utils && echo "✅ test-utils passed" || (echo "❌ test-utils failed" && exit 1)) & \
+	PID2=$$! ; \
+	(COVERAGE_FILE=.coverage.parameters $(MAKE) test-parameters && echo "✅ test-parameters passed" || (echo "❌ test-parameters failed" && exit 1)) & \
+	PID3=$$! ; \
+	(COVERAGE_FILE=.coverage.models-cluster $(MAKE) test-models-cluster && echo "✅ test-models-cluster passed" || (echo "❌ test-models-cluster failed" && exit 1)) & \
+	PID4=$$! ; \
+	(COVERAGE_FILE=.coverage.models-two-point $(MAKE) test-models-two-point && echo "✅ test-models-two-point passed" || (echo "❌ test-models-two-point failed" && exit 1)) & \
+	PID5=$$! ; \
+	FAILED=0 ; \
+	wait $$PID1 || FAILED=1 ; \
+	wait $$PID2 || FAILED=1 ; \
+	wait $$PID3 || FAILED=1 ; \
+	wait $$PID4 || FAILED=1 ; \
+	wait $$PID5 || FAILED=1 ; \
+	if [ $$FAILED -eq 1 ]; then \
+		echo "❌ One or more unit test targets failed" ; \
+		exit 1 ; \
+	fi
+	@echo "Combining coverage data..."
+	@coverage combine
+	@coverage report
+	@echo "✅ All unit tests passed!"
 
 ##@ Documentation
 

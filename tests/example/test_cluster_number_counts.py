@@ -4,7 +4,7 @@ import subprocess
 import pytest
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_cluster_number_counts_cosmosis():
     result = subprocess.run(
         [
@@ -28,7 +28,7 @@ def test_cluster_number_counts_cosmosis():
     print(result.stdout)
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_cluster_number_counts_sdss_cosmosis():
     result = subprocess.run(
         [
@@ -50,7 +50,7 @@ def test_cluster_number_counts_sdss_cosmosis():
     print(result.stdout)
 
 
-@pytest.mark.integration
+@pytest.mark.example
 def test_cluster_number_counts_numcosmo():
     result = subprocess.run(
         [

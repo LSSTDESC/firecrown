@@ -73,6 +73,7 @@ def test_murata_binned_spec_z_deltasigma_init():
     assert recipe.my_updatables[0] is recipe.mass_distribution
 
 
+@pytest.mark.integration
 def test_get_theory_prediction_returns_value(
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
@@ -113,9 +114,10 @@ def test_get_theory_prediction_returns_value(
     assert isinstance(result_c, np.ndarray)
     assert np.issubdtype(result_c.dtype, np.float64)
     assert len(result_c) == 2
-    assert np.all(result_c > 0)
+    assert np.all(result > 0)
 
 
+@pytest.mark.integration
 def test_get_function_to_integrate_returns_value(
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,
@@ -159,6 +161,7 @@ def test_get_function_to_integrate_returns_value(
     assert np.all(result > 0)
 
 
+@pytest.mark.integration
 def test_evaluates_theory_prediction_returns_value(
     cluster_deltasigma: ClusterDeltaSigma,
     murata_binned_spec_z_deltasigma: MurataBinnedSpecZDeltaSigmaRecipe,

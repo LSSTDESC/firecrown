@@ -76,3 +76,21 @@ def test_deltasigma_profile_returns_value(
     assert np.issubdtype(result_conc.dtype, np.float64)
     assert len(result_conc) == 5
     assert np.all(result_conc > 0)
+
+
+def test_deltasigma_profile_with_critical_mass_def():
+    """Test delta_sigma with critical mass definition (not matter)."""
+    hmf = pyccl.halos.MassFuncTinker08(mass_def="200c")
+    cluster_deltasigma = ClusterDeltaSigma((13, 17), (0, 2), hmf)
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_deltasigma.update_ingredients(cosmo)
+
+    result = cluster_deltasigma.delta_sigma(
+        np.linspace(13, 17, 5, dtype=np.float64),
+        np.linspace(0.1, 1, 5, dtype=np.float64),
+        5.0,
+    )
+    assert isinstance(result, np.ndarray)
+    assert np.issubdtype(result.dtype, np.float64)
+    assert len(result) == 5
+    assert np.all(result > 0)

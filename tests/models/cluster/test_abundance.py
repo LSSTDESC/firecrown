@@ -52,7 +52,6 @@ def test_abundance_comoving_returns_value(cluster_abundance: ClusterAbundance):
     assert np.all(result > 0)
 
 
-@pytest.mark.slow
 def test_abundance_massfunc_returns_value(cluster_abundance: ClusterAbundance):
     cosmo = pyccl.CosmologyVanillaLCDM()
     cluster_abundance.update_ingredients(cosmo)
@@ -65,3 +64,25 @@ def test_abundance_massfunc_returns_value(cluster_abundance: ClusterAbundance):
     assert np.issubdtype(result.dtype, np.float64)
     assert len(result) == 5
     assert np.all(result > 0)
+
+
+def test_abundance_massfunc_cache_hit(cluster_abundance: ClusterAbundance):
+    """Test that mass function uses cached values on repeated calls."""
+    cosmo = pyccl.CosmologyVanillaLCDM()
+    cluster_abundance.update_ingredients(cosmo)
+
+    mass = np.array([14.0, 15.0])
+    z = np.array([0.5, 0.6])
+
+    # First call - should populate cache
+    result1 = cluster_abundance.mass_function(mass, z)
+
+    # Second call with same values - should use cache
+    result2 = cluster_abundance.mass_function(mass, z)
+
+    # Results should be identical
+    np.testing.assert_array_equal(result1, result2)
+
+    # Cache should have entries
+    # pylint: disable=protected-access
+    assert len(cluster_abundance._hmf_cache) > 0
