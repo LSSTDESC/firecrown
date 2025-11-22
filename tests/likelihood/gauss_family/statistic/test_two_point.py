@@ -280,8 +280,6 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
 )
 def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
     """Test that generated ells are always within specified bounds using hypothesis."""
-    from firecrown.generators.two_point import generate_bin_centers
-
     # Skip invalid cases
     assume(minimum < maximum)
 
@@ -311,8 +309,6 @@ def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
 )
 def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int):
     """Generated thetas are always within specified bounds using hypothesis."""
-    from firecrown.generators.two_point import generate_bin_centers
-
     # Skip invalid cases
     assume(minimum < maximum)
     assume(minimum > 0.0)  # Physical constraint for angles and log binning
@@ -535,6 +531,7 @@ def test_from_metadata_only_harmonic(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": tp.TracerNames("lens0", "lens0"),
+        "tracer_types": (Galaxies.COUNTS, Galaxies.COUNTS),
     }
     two_point = tp.TwoPoint.from_metadata_index([metadata], tp_factory).pop()
     assert isinstance(two_point, tp.TwoPoint)
@@ -545,6 +542,7 @@ def test_from_metadata_only_real(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointRealIndex = {
         "data_type": "galaxy_shear_xi_plus",
         "tracer_names": tp.TracerNames("src0", "src0"),
+        "tracer_types": (Galaxies.PART_OF_XI_PLUS, Galaxies.PART_OF_XI_PLUS),
     }
     two_point = tp.TwoPoint.from_metadata_index([metadata], tp_factory).pop()
     assert isinstance(two_point, tp.TwoPoint)

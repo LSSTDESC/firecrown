@@ -272,4 +272,7 @@ GALAXY_SOURCE_TYPES = (
 GALAXY_LENS_TYPES = (Galaxies.COUNTS,)
 
 # CMB measurement types
-CMB_TYPES = (CMB.CONVERGENCE,)
+CMB_TYPES = tuple(CMB)
+
+# Cluster measurement types
+CLUSTER_TYPES = tuple(Clusters)

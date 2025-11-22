@@ -38,7 +38,9 @@ class TwoPointXY(YAMLSerializable):
     """Class defining a two-point correlation pair of redshift resolutions.
 
     It is used to store the two redshift resolutions for the two bins being
-    correlated.
+    correlated. The measurements must follow the canonical SACC ordering:
+    CMB < Clusters < Galaxies, and within each type, the ordering defined by
+    the Measurement enum (e.g., for Galaxies: shape measurements before counts).
     """
 
     x: InferredGalaxyZDist
@@ -47,7 +49,7 @@ class TwoPointXY(YAMLSerializable):
     y_measurement: Measurement
 
     def __post_init__(self) -> None:
-        """Make sure the two redshift resolutions are compatible."""
+        """Validate that measurements are compatible and follow canonical ordering."""
         if self.x_measurement not in self.x.measurements:
             raise ValueError(
                 f"Measurement {self.x_measurement} not in the measurements of "
