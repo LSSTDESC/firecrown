@@ -393,7 +393,7 @@ To fix it, swap the tracer order:
 .. code-block:: python
 
     # Correct: tracers are (shear, cmb) matching the data type
-    sacc_data.add_data_point("galaxy_shearCMB_convergence_cl",
+    sacc_data.add_data_point("galaxyCMB_shearConvergence_cl",
                               ("shear_bin_0",    # First tracer (shear) ✓
                               "cmb_bin_0"),      # Second tracer (cmb) ✓
                               ...)
