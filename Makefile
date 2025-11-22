@@ -140,6 +140,34 @@ test-integration:  ## Run integration tests only
 
 test-all: test-slow test-integration test  ## Run all tests (slow + integration)
 
+test-updatable:  ## Run tests for firecrown.updatable module with coverage
+	$(PYTEST) tests/test_updatable.py tests/test_assert_updatable_interface.py \
+		--cov=firecrown.updatable \
+		--cov-report=term-missing \
+		--cov-branch
+
+test-utils:  ## Run tests for firecrown.utils module with coverage
+	$(PYTEST) tests/test_utils.py \
+		--cov=firecrown.utils \
+		--cov-report=term-missing \
+		--cov-branch
+
+test-parameters:  ## Run tests for firecrown.parameters module with coverage
+	$(PYTEST) tests/test_parameters.py \
+		--cov=firecrown.parameters \
+		--cov-report=term-missing \
+		--cov-branch
+
+unit-tests:  ## Run unit tests for updatable, utils, and parameters modules in parallel
+	@echo "Running unit tests in parallel..."
+	@($(MAKE) test-updatable && echo "✅ test-updatable passed" || (echo "❌ test-updatable failed" && exit 1)) & \
+	($(MAKE) test-utils && echo "✅ test-utils passed" || (echo "❌ test-utils failed" && exit 1)) & \
+	($(MAKE) test-parameters && echo "✅ test-parameters passed" || (echo "❌ test-parameters failed" && exit 1)) & \
+	wait
+
+##@ Documentation
+
+
 ##@ Documentation
 
 tutorials:  ## Render tutorials with quarto
