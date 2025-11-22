@@ -44,8 +44,8 @@ def build_likelihood(
         sacc_data_type="galaxy_shear_cl_ee",
     )
     lens0_src2 = TwoPoint(
-        source0=lens0,
-        source1=src2,
+        source0=src2,
+        source1=lens0,
         sacc_data_type="galaxy_shearDensity_cl_e",
     )
     lens0_lens0 = TwoPoint(
@@ -181,8 +181,8 @@ def test_eval_cl_window_lens0_src2() -> None:
     lens0 = wl.WeakLensing(sacc_tracer="lens0")
 
     lens0_src2 = TwoPoint(
-        source0=lens0,
-        source1=src2,
+        source0=src2,
+        source1=lens0,
         sacc_data_type="galaxy_shearDensity_cl_e",
     )
 

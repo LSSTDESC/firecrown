@@ -326,7 +326,11 @@ def test_default_factory():
             },
         },
     }
-    model_fiducial = get_model(info_fiducial)
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        model_fiducial = get_model(info_fiducial)
     assert isinstance(model_fiducial, Model)
     logpost = model_fiducial.logposterior({})
     assert np.isfinite(logpost.logpost)

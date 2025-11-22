@@ -295,7 +295,11 @@ def test_default_factory_const_gauss():
     model_name = "firecrown_model_gauss"
 
     likelihood_source = "firecrown.likelihood.factories.build_two_point_likelihood"
-    likelihood, tools = load_likelihood(likelihood_source, build_parameters)
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        likelihood, tools = load_likelihood(likelihood_source, build_parameters)
     assert isinstance(likelihood, ConstGaussian)
     data = NumCosmoGaussCov.new_from_likelihood(
         likelihood,
@@ -318,7 +322,11 @@ def test_default_factory_plain():
     model_name = "firecrown_model_plain"
 
     likelihood_source = "firecrown.likelihood.factories.build_two_point_likelihood"
-    likelihood, tools = load_likelihood(likelihood_source, build_parameters)
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        likelihood, tools = load_likelihood(likelihood_source, build_parameters)
     assert isinstance(likelihood, ConstGaussian)
     data = NumCosmoData.new_from_likelihood(
         likelihood,

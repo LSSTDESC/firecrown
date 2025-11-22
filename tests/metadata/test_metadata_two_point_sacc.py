@@ -77,112 +77,6 @@ def fixture_sacc_galaxy_src0_src0_invalid_data_type(
     return sacc_data, z, dndz
 
 
-@pytest.fixture(name="sacc_galaxy_xis_src0_lens0_bad_lens_label")
-def fixture_sacc_galaxy_xis_src0_lens0_bad_lens_label() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
-    sacc_data = sacc.Sacc()
-
-    z = np.linspace(0, 1.0, 50) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
-
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "src0", z, dndz0)
-
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "non_informative_label", z, dndz1)
-
-    xis = np.random.normal(size=thetas.shape[0])
-    sacc_data.add_theta_xi(
-        "galaxy_shearDensity_xi_t", "src0", "non_informative_label", thetas, xis
-    )
-
-    cov = np.diag(np.ones_like(xis) * 0.01)
-    sacc_data.add_covariance(cov)
-
-    return sacc_data, z, dndz0, dndz1
-
-
-@pytest.fixture(name="sacc_galaxy_xis_src0_lens0_bad_source_label")
-def fixture_sacc_galaxy_xis_src0_lens0_bad_source_label() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
-    sacc_data = sacc.Sacc()
-
-    z = np.linspace(0, 1.0, 50) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
-
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "non_informative_label", z, dndz0)
-
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
-
-    xis = np.random.normal(size=thetas.shape[0])
-    sacc_data.add_theta_xi(
-        "galaxy_shearDensity_xi_t", "non_informative_label", "lens0", thetas, xis
-    )
-
-    cov = np.diag(np.ones_like(xis) * 0.01)
-    sacc_data.add_covariance(cov)
-
-    return sacc_data, z, dndz0, dndz1
-
-
-@pytest.fixture(name="sacc_galaxy_xis_inconsistent_lens_label")
-def fixture_sacc_galaxy_xis_inconsistent_lens_label() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
-    sacc_data = sacc.Sacc()
-
-    z = np.linspace(0, 1.0, 50) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
-
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "src0", z, dndz0)
-
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
-
-    xis = np.random.normal(size=thetas.shape[0])
-    sacc_data.add_theta_xi(
-        "cmbGalaxy_convergenceShear_xi_t", "src0", "lens0", thetas, xis
-    )
-
-    cov = np.diag(np.ones_like(xis) * 0.01)
-    sacc_data.add_covariance(cov)
-
-    return sacc_data, z, dndz0, dndz1
-
-
-@pytest.fixture(name="sacc_galaxy_xis_inconsistent_source_label")
-def fixture_sacc_galaxy_xis_inconsistent_source_label() -> (
-    tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray]
-):
-    """Fixture for a SACC data without window functions."""
-    sacc_data = sacc.Sacc()
-
-    z = np.linspace(0, 1.0, 50) + 0.05
-    thetas = np.linspace(0.0, 2.0 * np.pi, 20)
-
-    dndz0 = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "src0", z, dndz0)
-
-    dndz1 = np.exp(-0.5 * (z - 0.1) ** 2 / 0.05 / 0.05)
-    sacc_data.add_tracer("NZ", "lens0", z, dndz1)
-
-    xis = np.random.normal(size=thetas.shape[0])
-    sacc_data.add_theta_xi("clusterGalaxy_density_xi", "src0", "lens0", thetas, xis)
-
-    cov = np.diag(np.ones_like(xis) * 0.01)
-    sacc_data.add_covariance(cov)
-
-    return sacc_data, z, dndz0, dndz1
-
-
 @pytest.fixture(name="sacc_galaxy_xis_three_tracers")
 def fixture_sacc_galaxy_xis_three_tracers() -> (
     tuple[sacc.Sacc, np.ndarray, np.ndarray, np.ndarray, np.ndarray]
@@ -404,56 +298,6 @@ def test_extract_all_tracers_invalid_data_type(
     assert sacc_data is not None
     with pytest.raises(
         ValueError, match="Tracer src0 does not have data points associated with it."
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_bad_lens_label(
-    sacc_galaxy_xis_src0_lens0_bad_lens_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0_bad_lens_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match="Tracer src0 does not have data points associated with it.",
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_bad_source_label(
-    sacc_galaxy_xis_src0_lens0_bad_source_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0_bad_source_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match=(
-            "Tracer non_informative_label does not have data points associated with it."
-        ),
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_inconsistent_lens_label(
-    sacc_galaxy_xis_inconsistent_lens_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_inconsistent_lens_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_inconsistent_source_label(
-    sacc_galaxy_xis_inconsistent_source_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_inconsistent_source_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convetion."),
     ):
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
@@ -980,7 +824,7 @@ def test_extract_all_data_harmonic_no_cov(sacc_galaxy_cells):
         ValueError,
         match=("The SACC object does not have a dense covariance matrix."),
     ):
-        _ = extract_all_harmonic_data(sacc_data, include_maybe_types=True)
+        _ = extract_all_harmonic_data(sacc_data)
 
 
 def test_extract_all_data_real_no_cov(sacc_galaxy_xis):
@@ -990,7 +834,7 @@ def test_extract_all_data_real_no_cov(sacc_galaxy_xis):
         ValueError,
         match=("The SACC object does not have a dense covariance matrix."),
     ):
-        _ = extract_all_real_data(sacc_data, include_maybe_types=True)
+        _ = extract_all_real_data(sacc_data)
 
 
 def test_make_all_photoz_bin_combinations_with_cmb_basic():
@@ -1019,11 +863,10 @@ def test_make_all_photoz_bin_combinations_with_cmb_basic():
     # Should have galaxy-galaxy combinations + CMB-galaxy cross-correlations
     galaxy_only_combinations = make_all_photoz_bin_combinations(galaxy_bins)
 
-    # Expected: 3 galaxy combinations + 4 CMB-galaxy combinations
-    # (2 each direction for compatible measurements)
-    # bin_1 (COUNTS) is compatible with CMB.CONVERGENCE -> 2 combinations
-    # bin_2 (SHEAR_E) is compatible with CMB.CONVERGENCE -> 2 combinations
-    expected_total = len(galaxy_only_combinations) + 4
+    # Expected: 3 galaxy combinations + 2 CMB-galaxy combinations
+    # bin_1 (COUNTS) is compatible with CMB.CONVERGENCE -> 1 combination
+    # bin_2 (SHEAR_E) is compatible with CMB.CONVERGENCE -> 1 combination
+    expected_total = len(galaxy_only_combinations) + 2
 
     assert len(combinations) == expected_total
 
@@ -1138,15 +981,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_measurement_compatibility():
         )
     ]
 
-    # Should have 4 combinations: 2 for each galaxy bin (both directions)
-    assert len(cmb_galaxy_combinations) == 4
+    # Should have 2 combinations: 2 for each galaxy bin
+    assert len(cmb_galaxy_combinations) == 2
 
     # Verify specific combinations exist
     expected_combinations = [
         ("cmb_convergence", CMB.CONVERGENCE, "counts_bin", Galaxies.COUNTS),
-        ("counts_bin", Galaxies.COUNTS, "cmb_convergence", CMB.CONVERGENCE),
         ("cmb_convergence", CMB.CONVERGENCE, "shear_bin", Galaxies.SHEAR_E),
-        ("shear_bin", Galaxies.SHEAR_E, "cmb_convergence", CMB.CONVERGENCE),
     ]
 
     actual_combinations = [
@@ -1251,8 +1092,8 @@ def test_make_all_photoz_bin_combinations_with_cmb_multiple_measurements():
         )
     ]
 
-    # Should have 4 combinations: 2 directions × 2 measurement types
-    assert len(cmb_galaxy_combinations) == 4
+    # Should have 2 combinations: 2 measurement types
+    assert len(cmb_galaxy_combinations) == 2
 
     # Verify both measurement types are present
     galaxy_measurements = {
@@ -1290,8 +1131,8 @@ def test_make_cmb_galaxy_combinations_only_basic():
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
     # Should have only CMB-galaxy cross-correlations (no galaxy-galaxy or CMB auto)
-    # 2 galaxy bins × 2 directions = 4 combinations
-    assert len(combinations) == 4
+    # 2 galaxy bins = 2 combinations
+    assert len(combinations) == 2
 
     # Verify all combinations involve CMB
     for combo in combinations:
@@ -1376,15 +1217,13 @@ def test_make_cmb_galaxy_combinations_only_measurement_compatibility():
 
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
-    # Should have 4 combinations: 2 for each galaxy bin (both directions)
-    assert len(combinations) == 4
+    # Should have 2 combinations: 2 for each galaxy bin
+    assert len(combinations) == 2
 
     # Verify specific combinations exist
     expected_combinations = [
         ("cmb_convergence", CMB.CONVERGENCE, "counts_bin", Galaxies.COUNTS),
-        ("counts_bin", Galaxies.COUNTS, "cmb_convergence", CMB.CONVERGENCE),
         ("cmb_convergence", CMB.CONVERGENCE, "shear_bin", Galaxies.SHEAR_E),
-        ("shear_bin", Galaxies.SHEAR_E, "cmb_convergence", CMB.CONVERGENCE),
     ]
 
     actual_combinations = [
@@ -1420,7 +1259,7 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements_0():
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
     # Should still have combinations if any measurements are compatible
-    assert len(combinations) >= 0
+    assert len(combinations) > 0
 
     # All combinations should involve CMB
     for combo in combinations:
@@ -1470,8 +1309,8 @@ def test_make_cmb_galaxy_combinations_only_multiple_measurements():
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
     # Should have combinations for both measurement types (if both compatible)
-    # 2 directions × 2 measurement types = 4 combinations
-    assert len(combinations) == 4
+    # 2 measurement types = 2 combinations
+    assert len(combinations) == 2
 
     # Verify both measurement types are present
     galaxy_measurements = {
@@ -1500,8 +1339,8 @@ def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
 
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
-    # Should have 2 combinations: (CMB, galaxy) and (galaxy, CMB)
-    assert len(combinations) == 2
+    # Should have 1 combination: (CMB, galaxy)
+    assert len(combinations) == 1
 
     # Check that we have both directions
     cmb_first = any(
@@ -1516,7 +1355,7 @@ def test_make_cmb_galaxy_combinations_only_symmetric_pairs():
     )
 
     assert cmb_first
-    assert galaxy_first
+    assert not galaxy_first
 
 
 def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
@@ -1532,8 +1371,8 @@ def test_make_cmb_galaxy_combinations_only_single_galaxy_bin():
 
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
-    # Should have 2 combinations: both directions for the single bin
-    assert len(combinations) == 2
+    # Should have 1 combination: one combination for the single bin
+    assert len(combinations) == 1
     for combo in combinations:
         # Both combinations should involve the same galaxy bin
         galaxy_bin_names = {combo.x.bin_name, combo.y.bin_name}
@@ -1654,9 +1493,9 @@ def test_make_all_photoz_bin_combinations_with_cmb_incompatible_measurements():
         )
     ]
 
-    # Both measurements are compatible, so we should have 4 combinations
-    # 2 for each galaxy bin (both directions)
-    assert len(cmb_galaxy_combinations) == 4
+    # Both measurements are compatible, so we should have 2 combinations
+    # 1 for each galaxy bin
+    assert len(cmb_galaxy_combinations) == 2
 
     # Verify both measurements are present
     galaxy_measurements = {
@@ -1693,9 +1532,9 @@ def test_make_cmb_galaxy_combinations_only_incompatible_measurements():
 
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
-    # Both measurements are compatible, so we should have 4 combinations
-    # 2 for each galaxy bin (both directions)
-    assert len(combinations) == 4
+    # Both measurements are compatible, so we should have 2 combinations
+    # 1 for each galaxy bin
+    assert len(combinations) == 2
 
     # Verify both measurements are present
     galaxy_measurements = {
@@ -1746,7 +1585,7 @@ def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
     ]
 
     # Since SHEAR_T is compatible, we should have CMB combinations
-    assert len(cmb_combinations) == 2  # 2 directions for the single bin
+    assert len(cmb_combinations) == 1
     # Total should be galaxy combinations + CMB combinations
     assert len(combinations) == len(galaxy_only_combinations) + len(cmb_combinations)
 
@@ -1766,8 +1605,8 @@ def test_make_cmb_galaxy_combinations_only_all_incompatible():
 
     combinations = make_cmb_galaxy_combinations_only(galaxy_bins)
 
-    # Since SHEAR_T is actually compatible, we should have combinations
-    assert len(combinations) == 2  # 2 directions for the single bin
+    # Since SHEAR_T is actually compatible, we should have one combination
+    assert len(combinations) == 1
 
 
 def test_make_all_photoz_bin_combinations_with_cmb_empty():
