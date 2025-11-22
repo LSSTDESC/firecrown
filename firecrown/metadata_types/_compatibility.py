@@ -47,7 +47,7 @@ def _measurement_supports_harmonic(x: Measurement) -> bool:
     return x not in REAL_ONLY_MEASUREMENTS
 
 
-def _measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
+def measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
     """Check if two Measurement are compatible for real-space calculations.
 
     Two Measurement are compatible if they can be correlated in a real-space two-point
@@ -60,7 +60,7 @@ def _measurement_is_compatible_real(a: Measurement, b: Measurement) -> bool:
     )
 
 
-def _measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
+def measurement_is_compatible_harmonic(a: Measurement, b: Measurement) -> bool:
     """Check if two Measurement are compatible for harmonic-space calculations.
 
     Two Measurement are compatible if they can be correlated in a harmonic-space

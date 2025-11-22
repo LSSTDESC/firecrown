@@ -3,8 +3,8 @@
 from itertools import product
 
 from firecrown.metadata_types._compatibility import (
-    _measurement_is_compatible_harmonic,
-    _measurement_is_compatible_real,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
 )
 from firecrown.metadata_types._measurements import (
     ALL_MEASUREMENTS,
@@ -77,9 +77,9 @@ def _type_to_sacc_string_harmonic(x: Measurement, y: Measurement) -> str:
 MEASURED_TYPE_STRING_MAP: dict[str, tuple[Measurement, Measurement]] = {
     _type_to_sacc_string_real(a, b): (a, b)
     for a, b in product(ALL_MEASUREMENTS, repeat=2)
-    if _measurement_is_compatible_real(a, b)
+    if measurement_is_compatible_real(a, b)
 } | {
     _type_to_sacc_string_harmonic(a, b): (a, b)
     for a, b in product(ALL_MEASUREMENTS, repeat=2)
-    if _measurement_is_compatible_harmonic(a, b)
+    if measurement_is_compatible_harmonic(a, b)
 }

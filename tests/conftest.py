@@ -31,8 +31,8 @@ from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
 )
 from firecrown.metadata_types._compatibility import (
-    _measurement_is_compatible_harmonic,
-    _measurement_is_compatible_real,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
     _measurement_supports_real,
     _measurement_supports_harmonic,
 )
@@ -211,7 +211,7 @@ def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
         harmonic_bin_12_list = [
             (_make_harmonic_bin("bin_1", 0.5, m1), _make_harmonic_bin("bin_2", 0.6, m2))
             for m1, m2 in product([Galaxies.COUNTS, Galaxies.SHEAR_E], repeat=2)
-            if _measurement_is_compatible_harmonic(m1, m2)
+            if measurement_is_compatible_harmonic(m1, m2)
         ]
         metafunc.parametrize(
             "harmonic_bin_1,harmonic_bin_2",
@@ -341,7 +341,7 @@ def fixture_harmonic_two_point_xy(
     """Generate a TwoPointCWindow object with 100 ells."""
     m1 = list(harmonic_bin_1.measurements)[0]
     m2 = list(harmonic_bin_2.measurements)[0]
-    if not _measurement_is_compatible_harmonic(m1, m2):
+    if not measurement_is_compatible_harmonic(m1, m2):
         pytest.skip("Incompatible measurements")
     xy = TwoPointXY(
         x=harmonic_bin_1, y=harmonic_bin_2, x_measurement=m1, y_measurement=m2
@@ -357,7 +357,7 @@ def fixture_real_two_point_xy(
     """Generate a TwoPointCWindow object with 100 ells."""
     m1 = list(real_bin_1.measurements)[0]
     m2 = list(real_bin_2.measurements)[0]
-    if not _measurement_is_compatible_real(m1, m2):
+    if not measurement_is_compatible_real(m1, m2):
         pytest.skip("Incompatible measurements")
     xy = TwoPointXY(x=real_bin_1, y=real_bin_2, x_measurement=m1, y_measurement=m2)
     return xy
@@ -1267,11 +1267,11 @@ def _generate_compatible_pairs(measurements, compatibility_func):
 _REAL_MEASUREMENTS, _HARMONIC_MEASUREMENTS = _discover_measurements_by_space()
 
 _VALID_REAL_MEASUREMENT_PAIRS = _generate_compatible_pairs(
-    _REAL_MEASUREMENTS, _measurement_is_compatible_real
+    _REAL_MEASUREMENTS, measurement_is_compatible_real
 )
 
 _VALID_HARMONIC_MEASUREMENT_PAIRS = _generate_compatible_pairs(
-    _HARMONIC_MEASUREMENTS, _measurement_is_compatible_harmonic
+    _HARMONIC_MEASUREMENTS, measurement_is_compatible_harmonic
 )
 
 

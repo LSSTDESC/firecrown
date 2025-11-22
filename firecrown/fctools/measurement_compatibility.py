@@ -25,8 +25,8 @@ from firecrown.metadata_types import (
     Measurement,
 )
 from firecrown.metadata_types._compatibility import (
-    _measurement_is_compatible_harmonic,
-    _measurement_is_compatible_real,
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
     _measurement_supports_harmonic,
     _measurement_supports_real,
 )
@@ -217,10 +217,10 @@ def main(
 
     # Generate compatible pairs
     real_pairs = generate_compatible_pairs(
-        real_measurements, _measurement_is_compatible_real
+        real_measurements, measurement_is_compatible_real
     )
     harmonic_pairs = generate_compatible_pairs(
-        harmonic_measurements, _measurement_is_compatible_harmonic
+        harmonic_measurements, measurement_is_compatible_harmonic
     )
 
     if stats_only:

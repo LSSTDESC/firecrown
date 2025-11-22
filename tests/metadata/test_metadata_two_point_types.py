@@ -28,8 +28,8 @@ from firecrown.metadata_types import (
     measurements_types,
 )
 from firecrown.metadata_types._compatibility import (
-    _measurement_is_compatible_harmonic as is_compatible_harmonic,
-    _measurement_is_compatible_real as is_compatible_real,
+    measurement_is_compatible_harmonic as is_compatible_harmonic,
+    measurement_is_compatible_real as is_compatible_real,
     _measurement_supports_harmonic as supports_harmonic,
     _measurement_supports_real as supports_real,
 )
