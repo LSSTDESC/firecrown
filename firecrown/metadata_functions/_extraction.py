@@ -19,6 +19,7 @@ from firecrown.metadata_functions._combination_utils import (
 
 def extract_all_tracers_inferred_galaxy_zdists(
     sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
 ) -> list[mdt.InferredGalaxyZDist]:
     """Extracts the two-point function metadata from a Sacc object.
 
@@ -29,7 +30,9 @@ def extract_all_tracers_inferred_galaxy_zdists(
     and returns it in a list.
     """
     tracers: list[sacc.tracers.BaseTracer] = sacc_data.tracers.values()
-    tracer_types = extract_all_measured_types(sacc_data)
+    tracer_types = extract_all_measured_types(
+        sacc_data, allow_mixed_types=allow_mixed_types
+    )
     for tracer0, tracer_types0 in tracer_types.items():
         if len(tracer_types0) == 0:
             raise ValueError(
@@ -231,6 +234,32 @@ def _validate_tracer_types(
             )
 
 
+def _check_tracer_swap_needed(
+    a: mdt.Measurement,
+    b: mdt.Measurement,
+    tracer_types: dict[str, set[mdt.Measurement]],
+    combo: tuple[str, str],
+    allow_mixed_types: bool,
+) -> bool:
+    """Check if tracers need to be swapped to follow SACC convention.
+
+    This function determines if the assignment of measurement types to tracers
+    violates the SACC naming convention and whether swapping would fix it.
+
+    :param a: First measurement type from data type string.
+    :param b: Second measurement type from data type string.
+    :param tracer_types: Dictionary mapping tracer names to their measurement types.
+    :param combo: Tuple of (tracer1_name, tracer2_name).
+    :param allow_mixed_types: Whether to allow mixed-type measurements.
+    :return: True if tracers should be swapped, False otherwise.
+    """
+    return (
+        (not allow_mixed_types)
+        and ((a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]]))
+        and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]]))
+    )
+
+
 def extract_all_measured_types(
     sacc_data: sacc.Sacc, allow_mixed_types: bool = False
 ) -> dict[str, set[mdt.Measurement]]:
@@ -297,6 +326,7 @@ def extract_all_measured_types(
 
 def extract_all_real_metadata_indices(
     sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
     allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointRealIndex]:
     """Extract all two-point function metadata from a sacc file.
@@ -307,7 +337,7 @@ def extract_all_real_metadata_indices(
     tag_name = "theta"
 
     data_types = sacc_data.get_data_types()
-    tracer_types = extract_all_measured_types(sacc_data)
+    tracer_types = extract_all_measured_types(sacc_data, allow_mixed_types)
 
     data_types_reals = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
@@ -327,9 +357,7 @@ def extract_all_real_metadata_indices(
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
-            if (
-                (a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]])
-            ) and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]])):
+            if _check_tracer_swap_needed(a, b, tracer_types, combo, allow_mixed_types):
                 # Swap the order of the tracer types due to the convention
                 a, b = b, a
 
@@ -345,13 +373,15 @@ def extract_all_real_metadata_indices(
 
 
 def extract_all_harmonic_metadata_indices(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+    allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointHarmonicIndex]:
     """Extracts the two-point function metadata from a sacc file."""
     tag_name = "ell"
 
     data_types = sacc_data.get_data_types()
-    tracer_types = extract_all_measured_types(sacc_data)
+    tracer_types = extract_all_measured_types(sacc_data, allow_mixed_types)
 
     data_types_cells = [
         data_type for data_type in data_types if tag_name in required_tags[data_type]
@@ -372,9 +402,7 @@ def extract_all_harmonic_metadata_indices(
                 raise ValueError(
                     f"Tracer combination {combo} does not have exactly two tracers."
                 )
-            if (
-                (a not in tracer_types[combo[0]]) or (b not in tracer_types[combo[1]])
-            ) and ((a in tracer_types[combo[1]]) and (b in tracer_types[combo[0]])):
+            if _check_tracer_swap_needed(a, b, tracer_types, combo, allow_mixed_types):
                 # Swap the order of the tracer types due to the convention
                 a, b = b, a
 
@@ -390,17 +418,21 @@ def extract_all_harmonic_metadata_indices(
 
 
 def extract_all_harmonic_metadata(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+    allowed_data_type: None | list[str] = None,
 ) -> list[mdt.TwoPointHarmonic]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+        for igz in extract_all_tracers_inferred_galaxy_zdists(
+            sacc_data, allow_mixed_types
+        )
     }
 
     result: list[mdt.TwoPointHarmonic] = []
     for cell_index in extract_all_harmonic_metadata_indices(
-        sacc_data, allowed_data_type
+        sacc_data, allow_mixed_types, allowed_data_type
     ):
         tracer_names = cell_index["tracer_names"]
         dt = cell_index["data_type"]
@@ -429,16 +461,22 @@ def extract_all_harmonic_metadata(
 
 
 def extract_all_real_metadata(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+    allowed_data_type: None | list[str] = None,
 ) -> list[mdt.TwoPointReal]:
     """Extract the two-point function metadata and data from a sacc file."""
     inferred_galaxy_zdists_dict = {
         igz.bin_name: igz
-        for igz in extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+        for igz in extract_all_tracers_inferred_galaxy_zdists(
+            sacc_data, allow_mixed_types
+        )
     }
 
     tprs: list[mdt.TwoPointReal] = []
-    for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
+    for real_index in extract_all_real_metadata_indices(
+        sacc_data, allow_mixed_types, allowed_data_type
+    ):
         tracer_names = real_index["tracer_names"]
         dt = real_index["data_type"]
 
@@ -454,9 +492,13 @@ def extract_all_real_metadata(
     return tprs
 
 
-def extract_all_photoz_bin_combinations(sacc_data: sacc.Sacc) -> list[mdt.TwoPointXY]:
+def extract_all_photoz_bin_combinations(
+    sacc_data: sacc.Sacc, allow_mixed_types: bool = False
+) -> list[mdt.TwoPointXY]:
     """Extracts the two-point function metadata from a sacc file."""
-    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+    inferred_galaxy_zdists = extract_all_tracers_inferred_galaxy_zdists(
+        sacc_data, allow_mixed_types
+    )
     bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
 
     return bin_combinations
