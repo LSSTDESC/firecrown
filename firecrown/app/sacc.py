@@ -110,7 +110,7 @@ class View(Load):
         else:
             n_cov_elements = self.sacc_data.covariance.dense.shape[0]
         self.all_tracers = mdf.extract_all_tracers_inferred_galaxy_zdists(
-            self.sacc_data, include_maybe_types=True
+            self.sacc_data
         )
         self.all_tracers.sort(key=lambda t: t.bin_name)
         self.console.rule("[bold blue]SACC Summary[/bold blue]")
