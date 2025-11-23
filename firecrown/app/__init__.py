@@ -38,13 +38,19 @@ app_sacc.command(
     help="View the contents of a SACC file (e.g., data points, metadata).",
 )(sacc_app.View)
 app_sacc.command(
-    name="convert",
+    name="transform",
     no_args_is_help=True,
-    help="Convert SACC file format.",
-)(sacc_app.Convert)
+    help=(
+        "Transform SACC file by updating internal representation "
+        "and/or converting between formats."
+    ),
+)(sacc_app.Transform)
 
 SACC_HELP = """
-Inspect, visualize, and convert SACC data files.
+Inspect, visualize, and transform SACC data files.
+
+
+Available subcommands: view, transform
 
 
 Use 'firecrown sacc SUBCOMMAND --help' for detailed help.
