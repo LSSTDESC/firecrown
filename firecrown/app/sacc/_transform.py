@@ -25,11 +25,64 @@ class SaccFormat(str, Enum):
 
 @dataclasses.dataclass(kw_only=True)
 class Transform(Load):
-    """Transform SACC files by updating internal representation.
+    """Transform SACC files by updating internal representation and fixing issues.
 
     This command reads a SACC file and writes it back, which updates the internal
     representation of older SACC files to the current format. Optionally converts
-    between FITS and HDF5 formats.
+    between FITS and HDF5 formats and fixes tracer ordering issues.
+
+    The primary use cases are:
+
+    1. Updating legacy SACC files to the current internal format
+    2. Converting between FITS and HDF5 formats
+    3. Fixing tracer ordering violations that don't follow SACC naming conventions
+
+    CLI Usage::
+
+        # Update internal format (in-place)
+        firecrown sacc transform data.sacc --overwrite
+
+        # Fix tracer ordering issues
+        firecrown sacc transform data.sacc --fix-ordering --overwrite
+
+        # Convert FITS to HDF5
+        firecrown sacc transform data.fits --output-format hdf5 --output data.h5
+
+        # Fix ordering and convert format
+        firecrown sacc transform data.fits --fix-ordering --output-format hdf5 -o data.h5
+
+    Python Usage::
+
+        from pathlib import Path
+        from firecrown.app.sacc import Transform
+
+        # Fix ordering and update file
+        Transform(
+            sacc_file=Path("data.sacc"),
+            fix_ordering=True,
+            overwrite=True
+        )
+
+    :param sacc_file: Path to the input SACC file (inherited from Load)
+    :type sacc_file: Path
+    :param output: Output file path. If not specified, uses input filename with new
+        extension if format changes.
+    :type output: Path | None
+    :param input_format: Force input format (overrides automatic detection).
+    :type input_format: SaccFormat | None
+    :param output_format: Output format. If not specified, uses input format.
+    :type output_format: SaccFormat | None
+    :param fix_ordering: Fix tracer ordering issues according to SACC naming conventions.
+    :type fix_ordering: bool
+    :param overwrite: Overwrite output file if it exists.
+    :type overwrite: bool
+    :param allow_mixed_types: Allow tracers with mixed measurement types (inherited from Load).
+    :type allow_mixed_types: bool
+
+    .. seealso::
+        :class:`View` - For inspecting SACC files and detecting issues
+
+        ``docs/sacc_usage.rst`` - Comprehensive guide to SACC conventions
     """
 
     output: Annotated[
@@ -65,7 +118,7 @@ class Transform(Load):
         bool,
         typer.Option(
             "--fix-ordering",
-            help="Fix tracer ordering issues (not yet implemented).",
+            help="Fix tracer ordering issues according to SACC naming conventions.",
         ),
     ] = False
     overwrite: Annotated[
@@ -259,7 +312,42 @@ class Transform(Load):
             self.console.print("Size unchanged")
 
     def _fix_ordering(self, sacc_data: sacc.Sacc) -> None:
-        """Fix tracer ordering and print summary of corrections."""
+        """Fix tracer ordering issues and print summary of corrections.
+
+        This method detects and corrects tracer ordering violations where the order
+        of tracers in a measurement doesn't match the order of measurement types in
+        the SACC data type string.
+
+        The SACC naming convention requires that tracer order matches the measurement
+        type order in the data type string. For example:
+
+        - Data type 'galaxy_shearDensity_cl_e' means (shear, density)
+        - Tracers must be ordered as (shear_tracer, density_tracer)
+        - If found as (density_tracer, shear_tracer), they will be swapped
+
+        The method:
+
+        1. Extracts metadata indices for all real and harmonic measurements
+        2. Identifies measurements where tracer types are reversed (a > b)
+        3. Swaps tracer order in data points to match canonical ordering
+        4. Prints detailed summary of corrections made
+
+        Canonical ordering follows: CMB < Clusters < Galaxies
+
+        Within galaxies: SHEAR < COUNTS
+
+        :param sacc_data: SACC data object to fix (modified in-place)
+        :type sacc_data: sacc.Sacc
+        :returns: None (modifies sacc_data in place)
+        :rtype: None
+
+        .. note::
+            The method prints:
+
+            - Number of unique corrections needed
+            - For each correction: data type, tracers, and number of data points flipped
+            - If no issues found: confirmation message
+        """
         real_indices = extract_all_real_metadata_indices(
             sacc_data, self.allow_mixed_types
         )

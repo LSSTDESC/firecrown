@@ -35,7 +35,61 @@ from ._utils import mean_std_tracer
 
 @dataclasses.dataclass(kw_only=True)
 class View(Load):
-    """Display a summary of the SACC file."""
+    """Display comprehensive summary of SACC file contents and run quality checks.
+
+    This command provides detailed inspection of SACC files including:
+
+    - Tracers and their properties (redshift distributions, measurement types)
+    - Harmonic and real-space bin combinations
+    - Covariance matrix visualization (optional)
+    - Quality checks for naming convention compliance (with --check flag)
+
+    The quality checks validate:
+
+    - SACC naming convention compliance (tracer order matches data type string)
+    - Tracer ordering according to canonical ordering (CMB < Clusters < Galaxies)
+    - Metadata attributes consistency
+
+    CLI Usage::
+
+        # Basic inspection
+        firecrown sacc view data.sacc
+
+        # Run quality checks
+        firecrown sacc view data.sacc --check
+
+        # View with covariance plot
+        firecrown sacc view data.sacc --plot-covariance
+
+        # Full inspection with checks and plot
+        firecrown sacc view data.sacc --check --plot-covariance
+
+    Python Usage::
+
+        from pathlib import Path
+        from firecrown.app.sacc import View
+
+        # Basic view
+        View(sacc_file=Path("data.sacc"))
+
+        # With quality checks
+        View(sacc_file=Path("data.sacc"), check=True)
+
+    :param sacc_file: Path to the SACC file (inherited from Load)
+    :type sacc_file: Path
+    :param plot_covariance: Plot the covariance matrix with bin annotations.
+    :type plot_covariance: bool
+    :param check: Validate SACC file for naming convention compliance, tracer ordering,
+        and other quality issues.
+    :type check: bool
+    :param allow_mixed_types: Allow tracers with mixed measurement types (inherited from Load).
+    :type allow_mixed_types: bool
+
+    .. seealso::
+        :class:`Transform` - For fixing detected issues
+
+        ``docs/sacc_usage.rst`` - Comprehensive guide to SACC conventions
+    """
 
     plot_covariance: Annotated[
         bool, typer.Option(help="Plot the covariance matrix.", show_default=True)
@@ -221,7 +275,66 @@ class View(Load):
         self.console.print(f"[yellow]Total tracers:[/yellow] {len(self.all_tracers)}")
 
     def _check_sacc_quality(self) -> None:
-        """Validate SACC file quality and compliance."""
+        """Validate SACC file quality and compliance with naming conventions.
+
+        This method runs comprehensive quality checks on the SACC file:
+
+        1. **Naming Convention Compliance**: Validates that tracer order matches
+           the order of measurement types in data type strings according to SACC
+           naming conventions.
+
+        2. **Tracer Ordering**: Checks that tracers follow canonical ordering
+           (CMB < Clusters < Galaxies) and detects reversed tracer pairs.
+
+        3. **Metadata Validation**: Verifies that all required metadata attributes
+           are present and consistent.
+
+        The method uses a handler-based architecture to process warnings and output:
+
+        - Warning handlers detect deprecation warnings about convention violations
+        - Stream handlers parse stdout/stderr for quality issues
+        - All handlers report findings in a structured format
+
+        Results are printed to console with:
+
+        - Green checkmark if all checks pass
+        - Yellow warnings for detected issues with detailed descriptions
+        - Red errors for validation failures
+        - Recommendations for fixing issues using CLI tools
+
+        Common Issues Detected:
+
+        - Tracers in wrong order for cross-correlation measurements
+        - Mixed measurement types within a single tracer
+        - Missing or inconsistent metadata
+
+        :returns: None
+        :rtype: None
+
+        .. rubric:: Example Output
+
+        All checks passing::
+
+            ═══════════════════ SACC Quality Checks ════════════════════
+            ✅ All quality checks passed!
+
+        With issues detected::
+
+            ═══════════════════ SACC Quality Checks ════════════════════
+            ❌ Tracer Ordering Issues Detected
+
+            The following data types have tracers in the wrong order:
+            - For data type galaxy_shearDensity_cl_e:
+              Expected order: (src0, lens0)
+              Actual order:   (lens0, src0)
+
+            Recommendation: Use 'firecrown sacc transform --fix-ordering'
+
+        .. seealso::
+            :meth:`Transform._fix_ordering` - Method to automatically fix ordering issues
+
+            ``docs/sacc_usage.rst`` - Detailed explanation of SACC conventions
+        """
         self.console.rule("[bold blue]SACC Quality Checks[/bold blue]")
 
         # Step 1: Capture all output and warnings during SACC operations
@@ -296,8 +409,27 @@ class View(Load):
     ) -> tuple[str, str, list[warnings.WarningMessage], str | None]:
         """Capture stdout, stderr, and warnings from SACC operations.
 
-        :return: Tuple of (stdout_content, stderr_content, warnings_list,
-            validation_error).
+        This method loads the SACC file and extracts tracers in a controlled
+        environment that captures all output streams and warnings. This allows
+        detailed quality checking without polluting the main output.
+
+        The method performs:
+
+        1. Loading SACC data using Firecrown factories
+        2. Extracting tracers (which may trigger naming convention warnings)
+        3. Capturing all warnings (especially DeprecationWarnings)
+        4. Catching validation errors for non-compliant files
+
+        :returns: Tuple containing:
+            - stdout_content: Captured standard output as string
+            - stderr_content: Captured standard error as string
+            - warnings_list: List of warning messages captured during operations
+            - validation_error: Error message if validation failed, None otherwise
+        :rtype: tuple[str, str, list[warnings.WarningMessage], str | None]
+
+        .. note::
+            This method uses context managers to safely redirect streams and
+            ensure cleanup even if exceptions occur.
         """
         stdout_buffer = io.StringIO()
         stderr_buffer = io.StringIO()
