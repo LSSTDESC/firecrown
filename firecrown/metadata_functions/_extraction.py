@@ -516,7 +516,12 @@ def extract_window_function(
        given indices from a sacc object, or a tuple of (None, None)
        if the indices represent the measured Cells directly.
     """
-    bandpower_window = sacc_data.get_bandpower_windows(indices)
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="No bandpower windows associated with these data",
+        )
+        bandpower_window = sacc_data.get_bandpower_windows(indices)
     if bandpower_window is None:
         return None, None
     ells = bandpower_window.values
