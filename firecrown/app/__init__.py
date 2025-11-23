@@ -20,27 +20,17 @@ import firecrown.app.cosmology as cosmology_app
 
 # Root application ------------------------------------------------------------
 
-app = typer.Typer(
-    no_args_is_help=True,
-    help=(
-        "Firecrown main application.\n\n"
-        "Use this command-line interface to inspect data, view experiments, "
-        "and manage example configurations. "
-        "For help on a specific topic, run:\n\n"
-        "  firecrown <command> --help"
-    ),
-)
+MAIN_HELP = """
+Firecrown command-line tools for cosmological analyses.
+
+
+Use 'firecrown COMMAND --help' for detailed help on each command.
+"""
+app = typer.Typer(no_args_is_help=True, help=MAIN_HELP)
 
 # SACC commands ---------------------------------------------------------------
 
-app_sacc = typer.Typer(
-    no_args_is_help=True,
-    help=(
-        "Inspect, visualize, and manipulate SACC data files.\n\n"
-        "Examples:\n"
-        "  firecrown sacc view my_data.sacc"
-    ),
-)
+app_sacc = typer.Typer(no_args_is_help=True)
 # - Subcommands
 app_sacc.command(
     name="view",
@@ -53,47 +43,56 @@ app_sacc.command(
     help="Convert SACC file format.",
 )(sacc_app.Convert)
 
-app.add_typer(app_sacc, name="sacc", help="Work with SACC data files.")
+SACC_HELP = """
+Inspect, visualize, and convert SACC data files.
+
+
+Use 'firecrown sacc SUBCOMMAND --help' for detailed help.
+"""
+app.add_typer(app_sacc, name="sacc", help=SACC_HELP)
 
 # Experiment commands ---------------------------------------------------------
-app_experiment = typer.Typer(
-    no_args_is_help=True,
-    help=(
-        "Inspect and visualize Firecrown experiment configurations.\n\n"
-        "Examples:\n"
-        "  firecrown experiment view my_experiment.yml"
-    ),
-)
+HELP_EXPERIMENT = """
+Inspect and visualize Firecrown experiment configurations.
+
+
+Available subcommands: view
+
+
+Use 'firecrown experiment SUBCOMMAND --help' for detailed help.
+"""
+app_experiment = typer.Typer(no_args_is_help=True)
 # - Subcommands
 app_experiment.command(
     name="view",
     no_args_is_help=True,
     help="Display information about a Firecrown experiment configuration.",
 )(experiment_app.View)
-app.add_typer(app_experiment, name="experiment", help="Work with experiments.")
+app.add_typer(app_experiment, name="experiment", help=HELP_EXPERIMENT)
 
 # Examples commands -----------------------------------------------------------
+HELP_EXAMPLES = """
+Generate example analyses with synthetic data and configuration files.
 
-app_examples = typer.Typer(
-    no_args_is_help=True,
-    help=(
-        "Generate example data and configurations for Firecrown analyses.\n\n"
-        "Each example creates synthetic data files and configuration templates\n"
-        "for different types of cosmological analyses.\n\n"
-        "Examples:\n"
-        "  firecrown examples cosmic_shear ./output_dir\n"
-        "  firecrown examples cosmic_shear ./my_analysis --seed 123"
-    ),
-)
+
+Each example creates complete analysis templates for different cosmological analyses.
+
+
+IMPORTANT: First run 'firecrown examples' to see available examples, then use 'firecrown examples EXAMPLE_NAME --help' for detailed help on a specific example.
+"""
+app_examples = typer.Typer(no_args_is_help=True)
 for example_name, example_cls in examples_app.EXAMPLES_LIST.items():
     app_examples.command(
         name=example_name,
         no_args_is_help=True,
         help=example_cls.description,
     )(example_cls)
-app.add_typer(app_examples, name="examples", help="Generate example analyses.")
+app.add_typer(app_examples, name="examples", help=HELP_EXAMPLES)
 
 # Cosmology commands ----------------------------------------------------------
-app.command(
-    name="cosmology", no_args_is_help=True, help="Generate cosmology configurations."
-)(cosmology_app.Generate)
+HELP_COSMOLOGY = """
+Generate cosmology configuration files for Firecrown analyses.
+"""
+app.command(name="cosmology", no_args_is_help=True, help=HELP_COSMOLOGY)(
+    cosmology_app.Generate
+)
