@@ -9,7 +9,11 @@ from typing import Annotated
 import sacc
 import typer
 
-from firecrown.app.logging import Logging
+from ._load import Load
+from firecrown.metadata_functions import (
+    extract_all_real_metadata_indices,
+    extract_all_harmonic_metadata_indices,
+)
 
 
 class SaccFormat(str, Enum):
@@ -20,7 +24,7 @@ class SaccFormat(str, Enum):
 
 
 @dataclasses.dataclass(kw_only=True)
-class Transform(Logging):
+class Transform(Load):
     """Transform SACC files by updating internal representation.
 
     This command reads a SACC file and writes it back, which updates the internal
@@ -28,9 +32,6 @@ class Transform(Logging):
     between FITS and HDF5 formats.
     """
 
-    input_file: Annotated[
-        Path, typer.Argument(help="Input SACC file path", show_default=True)
-    ]
     output: Annotated[
         Path | None,
         typer.Option(
@@ -73,20 +74,29 @@ class Transform(Logging):
 
     def __post_init__(self) -> None:
         """Transform the SACC file."""
+        # Do not call Load's _load_sacc_file, but keep console and error handling
         super().__post_init__()
 
-        if not self.input_file.exists():
+        if not self.sacc_file.exists():
             self.console.print(
-                f"[bold red]ERROR: Input file not found: {self.input_file}[/bold red]"
+                f"[bold red]ERROR: Input file not found: {self.sacc_file}[/bold red]"
             )
             sys.exit(1)
 
+        # Prepare transformation: determine formats and output path, check for errors
+        output_path, src_format, target_format = self._prepare_transform()
+        # Read SACC data
+        sacc_data = self._read_sacc_data(src_format)
+        # Optionally fix ordering
         if self.fix_ordering:
-            self.console.print(
-                "[bold yellow]WARNING: --fix-ordering is not yet implemented[/bold yellow]"
-            )
+            self._fix_ordering(sacc_data)
+        # Write SACC data
+        self._write_sacc_data(sacc_data, output_path, target_format)
+        # Display success info
+        self._display_transform_summary(src_format, output_path, target_format)
 
-        self._transform_file()
+    def _load_sacc_file(self) -> None:
+        """Override Load's file loader to do nothing for Transform."""
 
     def _detect_format(self, filepath: Path) -> SaccFormat:
         """Detect file format from extension."""
@@ -130,8 +140,8 @@ class Transform(Logging):
             case _:
                 raise ValueError(f"Unknown target format: {target_format}")
 
-    def _transform_file(self) -> None:
-        """Perform the file transformation."""
+    def _prepare_transform(self) -> tuple[Path, SaccFormat, SaccFormat]:
+        """Prepare transformation: determine formats, output path, and check for errors."""
         # Detect or use specified input format
         if self.input_format:
             src_format = self.input_format
@@ -140,7 +150,7 @@ class Transform(Logging):
             )
         else:
             try:
-                src_format = self._detect_format(self.input_file)
+                src_format = self._detect_format(self.sacc_file)
                 self.console.print(
                     f"Detected input format: [bold]{src_format.upper()}[/bold]"
                 )
@@ -153,11 +163,11 @@ class Transform(Logging):
 
         # Determine output path
         output_path = self._determine_output_path(
-            self.input_file, self.output, target_format
+            self.sacc_file, self.output, target_format
         )
 
         # Check if output would overwrite input without --overwrite
-        if output_path == self.input_file and not self.overwrite:
+        if output_path == self.sacc_file and not self.overwrite:
             self.console.print(
                 f"[bold red]ERROR: Output path '{output_path}' is the same as input. "
                 "Use --overwrite to update in place.[/bold red]"
@@ -167,7 +177,7 @@ class Transform(Logging):
         # Check if output exists
         if (
             output_path.exists()
-            and output_path != self.input_file
+            and output_path != self.sacc_file
             and not self.overwrite
         ):
             self.console.print(
@@ -176,26 +186,19 @@ class Transform(Logging):
             )
             sys.exit(1)
 
-        # Read and transform
-        self._read_and_transform_file(src_format, output_path, target_format)
+        return output_path, src_format, target_format
 
-        # Display success info
-        self._display_transform_summary(src_format, output_path, target_format)
-
-    def _read_and_transform_file(
-        self, src_format: str, output_path: Path, target_format: SaccFormat
-    ) -> None:
-        """Read input file and write to output format."""
-        # Read input file
+    def _read_sacc_data(self, src_format: str):
+        """Read input file and return SACC data object."""
         self.console.print(
-            f"Reading {src_format.upper()} file: [cyan]{self.input_file}[/cyan]"
+            f"Reading {src_format.upper()} file: [cyan]{self.sacc_file}[/cyan]"
         )
         try:
             match src_format:
                 case SaccFormat.FITS | "fits":
-                    data = sacc.Sacc.load_fits(str(self.input_file))
+                    return sacc.Sacc.load_fits(str(self.sacc_file))
                 case SaccFormat.HDF5 | "hdf5":
-                    data = sacc.Sacc.load_hdf5(str(self.input_file))
+                    return sacc.Sacc.load_hdf5(str(self.sacc_file))
                 case _:
                     raise ValueError(f"Unknown input format: {src_format}")
         except OSError:
@@ -207,16 +210,19 @@ class Transform(Logging):
             )
             sys.exit(1)
 
-        # Write output file
+    def _write_sacc_data(
+        self, sacc_data: sacc.Sacc, output_path: Path, target_format: SaccFormat
+    ) -> None:
+        """Write SACC data object to output file."""
         self.console.print(f"Writing {target_format} file: [cyan]{output_path}[/cyan]")
         try:
             match target_format:
                 case SaccFormat.FITS:
-                    data.save_fits(str(output_path), overwrite=self.overwrite)
+                    sacc_data.save_fits(str(output_path), overwrite=self.overwrite)
                 case SaccFormat.HDF5:
                     if self.overwrite and output_path.exists():
                         output_path.unlink()
-                    data.save_hdf5(str(output_path))
+                    sacc_data.save_hdf5(str(output_path))
                 case _:
                     raise ValueError(f"Unknown output format: {target_format}")
         except OSError as e:
@@ -230,14 +236,14 @@ class Transform(Logging):
         self, src_format: str, output_path: Path, target_format: SaccFormat
     ) -> None:
         """Display transformation summary with file sizes."""
-        input_size = self.input_file.stat().st_size
+        input_size = self.sacc_file.stat().st_size
         output_size = output_path.stat().st_size
 
         self.console.print("\n" + "=" * 60)
         self.console.print("✅ [bold green]Transformation successful![/bold green]")
         self.console.print("=" * 60)
         input_info = f"({src_format.upper()}, {input_size:,} bytes)"
-        self.console.print(f"Input:  [cyan]{self.input_file}[/cyan] {input_info}")
+        self.console.print(f"Input:  [cyan]{self.sacc_file}[/cyan] {input_info}")
         self.console.print(
             f"Output: [cyan]{output_path}[/cyan] "
             f"({target_format.upper()}, {output_size:,} bytes)"
@@ -251,3 +257,51 @@ class Transform(Logging):
             self.console.print(f"Size increase: [bold red]{ratio:.1f}%[/bold red]")
         else:
             self.console.print("Size unchanged")
+
+    def _fix_ordering(self, sacc_data: sacc.Sacc) -> None:
+        """Fix tracer ordering and print summary of corrections."""
+        real_indices = extract_all_real_metadata_indices(
+            sacc_data, self.allow_mixed_types
+        )
+        harmonic_indices = extract_all_harmonic_metadata_indices(
+            sacc_data, self.allow_mixed_types
+        )
+        tracers_to_fix = {}
+        for real_index in real_indices:
+            a, b = real_index["tracer_types"]
+            if a > b:
+                tracers_to_fix[
+                    (real_index["data_type"], tuple(real_index["tracer_names"]))
+                ] = real_index
+        for harmonic_index in harmonic_indices:
+            a, b = harmonic_index["tracer_types"]
+            if a > b:
+                tracers_to_fix[
+                    (harmonic_index["data_type"], tuple(harmonic_index["tracer_names"]))
+                ] = harmonic_index
+        if not tracers_to_fix:
+            self.console.print("No tracer ordering issues detected.")
+            return
+
+        self.console.print(
+            f"[bold yellow]Fixing tracer ordering for {len(tracers_to_fix)} "
+            f"unique corrections.[/bold yellow]"
+        )
+        data_points = sacc_data.get_data_points()
+        # Track how many data points are corrected for each correction
+        correction_counts = {key: 0 for key in tracers_to_fix}
+        for dp in data_points:
+            key = (dp.data_type, dp.tracers)
+            if key in tracers_to_fix:
+                assert len(dp.tracers) == 2
+                dp.tracers = (dp.tracers[1], dp.tracers[0])
+                correction_counts[key] += 1
+        # Print summary for each correction
+        for key, count in correction_counts.items():
+            dt, tracers = key
+            tracer_str = ", ".join(tracers)
+            self.console.print(
+                f"For data type [cyan]{dt}[/cyan] and tracers "
+                f"[magenta]{tracer_str}[/magenta], [green]{count}[/green] "
+                "data points were flipped."
+            )
