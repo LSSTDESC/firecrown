@@ -948,6 +948,26 @@ def test_get_default_params_map_empty_args():
     assert len(result.keys()) == 0
 
 
+def test_tuple_attribute_adds_to_updatables():
+    """Test that setting a tuple attribute adds Updatable elements to _updatables.
+
+    When an Updatable container has an attribute set to an iterable containing
+    Updatable objects, those objects should be added to the container's
+    _updatables list so they are updated when the container is updated.
+    """
+
+    container = Updatable()
+    item1 = MinimalUpdatable()
+    item2 = MinimalUpdatable()
+
+    # Setting a tuple attribute should add the items to _updatables
+    container.test_tuple = (item1, item2)
+
+    # Items should be added to _updatables
+    assert item1 in container._updatables  # pylint: disable=protected-access
+    assert item2 in container._updatables  # pylint: disable=protected-access
+
+
 def test_get_default_params_with_multiple_updatables():
     """Test get_default_params() with multiple updatables.
 

@@ -12,22 +12,81 @@ from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
 from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point import ApplyInterpolationWhen
+from firecrown.likelihood import Source
 
 
 @pytest.fixture
 def mock_source():
-    """Create a mock source."""
-    source = Mock()
+    """Create a mock source that behaves like a real Updatable Source."""
+    source = Mock(spec=Source)
     source.sacc_tracer = "tracer_1"
+    source._updated = False
+    source.is_updated = Mock(return_value=False)
+
+    def update_side_effect(params, updated_record=None):
+        if source._updated:
+            return  # Mimic Updatable: do nothing if already updated
+        source._updated = True
+        source.is_updated.return_value = True
+
+    def reset_side_effect():
+        source._updated = False
+        source.is_updated.return_value = False
+
+    source.update = Mock(side_effect=update_side_effect)
+    source.reset = Mock(side_effect=reset_side_effect)
     return source
 
 
 @pytest.fixture
 def mock_source_pair(mock_source):
     """Create a pair of mock sources."""
-    source2 = Mock()
+    source2 = Mock(spec=Source)
     source2.sacc_tracer = "tracer_2"
+    source2._updated = False
+    source2.is_updated = Mock(return_value=False)
+
+    def update_side_effect2(params, updated_record=None):
+        if source2._updated:
+            return
+        source2._updated = True
+        source2.is_updated.return_value = True
+
+    def reset_side_effect2():
+        source2._updated = False
+        source2.is_updated.return_value = False
+
+    source2.update = Mock(side_effect=update_side_effect2)
+    source2.reset = Mock(side_effect=reset_side_effect2)
     return (mock_source, source2)
+
+
+class TestSource(Source):
+    """A minimal concrete Source implementation for testing."""
+
+    def __init__(self, sacc_tracer: str):
+        super().__init__(sacc_tracer)
+
+    def read_systematics(self, sacc_data: sacc.Sacc) -> None:
+        pass
+
+    def _read(self, sacc_data: sacc.Sacc) -> None:
+        pass
+
+    def _update_source(self, params: ParamsMap) -> None:
+        pass
+
+    def get_scale(self) -> float:
+        return 1.0
+
+    def create_tracers(self, tools: ModelingTools):
+        return []
+
+
+@pytest.fixture
+def source_pair():
+    """Create a pair of concrete TestSource instances."""
+    return (TestSource("tracer_1"), TestSource("tracer_2"))
 
 
 def test_two_point_theory_initialization():
@@ -159,8 +218,9 @@ def test_two_point_theory_update(mock_source_pair):
     params = ParamsMap({})
     theory.update(params)
 
-    mock_source_pair[0].update.assert_called_once_with(params)
-    mock_source_pair[1].update.assert_called_once_with(params)
+    # Check that sources are marked as updated
+    assert mock_source_pair[0].is_updated()
+    assert mock_source_pair[1].is_updated()
 
 
 def test_two_point_theory_reset(mock_source_pair):
@@ -170,11 +230,17 @@ def test_two_point_theory_reset(mock_source_pair):
         sources=mock_source_pair,
     )
 
+    # First update to set them as updated
+    params = ParamsMap({})
+    theory.update(params)
+    assert mock_source_pair[0].is_updated()
+    assert mock_source_pair[1].is_updated()
+
     # Call the protected _reset method which is what gets invoked
     theory._reset()  # pylint: disable=protected-access
 
-    mock_source_pair[0].reset.assert_called_once()
-    mock_source_pair[1].reset.assert_called_once()
+    assert not mock_source_pair[0].is_updated()
+    assert not mock_source_pair[1].is_updated()
 
 
 def test_two_point_theory_initialize_sources_different_sources():
