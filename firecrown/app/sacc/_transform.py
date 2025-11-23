@@ -23,9 +23,9 @@ class SaccFormat(str, Enum):
 class Transform(Logging):
     """Transform SACC files by updating internal representation.
 
-    This command reads a SACC file and writes it back, which updates the
-    internal representation of older SACC files to the current format.
-    Optionally converts between FITS and HDF5 formats.
+    This command reads a SACC file and writes it back, which updates the internal
+    representation of older SACC files to the current format. Optionally converts
+    between FITS and HDF5 formats.
     """
 
     input_file: Annotated[
