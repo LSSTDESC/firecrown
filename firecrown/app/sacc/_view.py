@@ -8,7 +8,6 @@ from typing import Annotated
 
 import matplotlib.pyplot as plt
 import numpy as np
-import sacc
 import typer
 from matplotlib.colors import Normalize
 from matplotlib.patches import Patch
@@ -20,6 +19,7 @@ from firecrown import data_functions as dfunc
 from firecrown import data_types as dtype
 from firecrown import metadata_functions as mdf
 from firecrown import metadata_types as mdt
+from firecrown.likelihood import factories
 
 from ._handlers import (
     MessageHandler,
@@ -312,7 +312,7 @@ class View(Load):
             warnings.simplefilter("always")
             try:
                 # Load SACC data
-                sacc_data_raw = sacc.Sacc.load_fits(str(self.sacc_file))
+                sacc_data_raw = factories.load_sacc_data(str(self.sacc_file))
 
                 # Extract tracers (this may trigger warnings about naming conventions)
                 _ = mdf.extract_all_tracers_inferred_galaxy_zdists(
