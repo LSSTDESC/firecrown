@@ -391,6 +391,7 @@ ccl_factory:
         return FrameworkCosmology.NONLINEAR
 
     def get_options_desc(self) -> Sequence[tuple[str, str]]:
+        """Return description of DES Y1 3x2pt options."""
         return [
             ("Factory Type", f"{self.factory_type.value}"),
         ]
