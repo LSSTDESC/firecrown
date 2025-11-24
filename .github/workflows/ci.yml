@@ -117,12 +117,22 @@ jobs:
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
+      - name: Compute environment.yml hash
+        id: env-hash
+        run: |
+          if command -v sha256sum &>/dev/null 2>&1; then
+            h=$(sha256sum environment.yml | cut -d' ' -f1)
+          else
+            h=$(shasum -a 256 environment.yml | cut -d' ' -f1)
+          fi
+          echo "env_hash=${h}" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Cache Conda env
         uses: actions/cache/restore@v4
         id: cache
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py${{ matrix.python-version }}-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
@@ -215,12 +225,22 @@ jobs:
         id: get-date
         run: echo "today=$(/bin/date -u '+%Y%m%d')" >> $GITHUB_OUTPUT
         shell: bash
+      - name: Compute environment.yml hash
+        id: env-hash
+        run: |
+          if command -v sha256sum &>/dev/null 2>&1; then
+            h=$(sha256sum environment.yml | cut -d' ' -f1)
+          else
+            h=$(shasum -a 256 environment.yml | cut -d' ' -f1)
+          fi
+          echo "env_hash=${h}" >> $GITHUB_OUTPUT
+        shell: bash
       - name: Cache Conda env
         uses: actions/cache/restore@v4
         id: cache
         with:
           path: ${{ env.CONDA }}/envs
-          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ hashFiles('environment.yml') }}-v${{ env.CACHE_VERSION }}
+          key: conda-${{ runner.os }}-${{ runner.arch }}-py3.13-${{ steps.get-date.outputs.today }}-${{ steps.env-hash.outputs.env_hash }}-v${{ env.CACHE_VERSION }}
       - name: Update environment
         if: steps.cache.outputs.cache-hit != 'true'
         run: |
