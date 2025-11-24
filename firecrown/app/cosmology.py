@@ -193,14 +193,13 @@ class Generate(logging.Logging):
         ),
     ]
 
-    add_extra_params: Annotated[
-        bool,
+    camb_halofit: Annotated[
+        str | None,
         typer.Option(
-            "--add-extra-params",
-            "-a",
-            help="Add CAMB extra parameters to the configuration.",
+            "--camb-halofit",
+            help="Add CAMB halofit extra parameters to the cosmology.",
         ),
-    ] = False
+    ] = None
 
     parameter: Annotated[
         list[str],
@@ -246,16 +245,34 @@ class Generate(logging.Logging):
             case _:
                 raise ValueError(f"Unknown cosmology: {self.cosmology}")
 
-        if self.add_extra_params:
-            spec.extra_parameters = CAMBExtraParams(
-                HMCode_A_baryon=3.13,
-                HMCode_eta_baryon=0.603,
-                HMCode_logT_AGN=7.8,
-                dark_energy_model="ppf",
-                halofit_version="mead",
-                kmax=10.0,
-                lmax=0,
-            )
+        if self.camb_halofit:
+            match self.camb_halofit.lower():
+                case "mead":
+                    spec.extra_parameters = CAMBExtraParams(
+                        HMCode_A_baryon=3.13,
+                        HMCode_eta_baryon=0.603,
+                        dark_energy_model="ppf",
+                        halofit_version="mead",
+                        kmax=10.0,
+                        lmax=0,
+                    )
+                case "mead2020_feedback":
+                    spec.extra_parameters = CAMBExtraParams(
+                        HMCode_logT_AGN=7.8,
+                        dark_energy_model="ppf",
+                        halofit_version="mead2020_feedback",
+                        kmax=10.0,
+                        lmax=0,
+                    )
+                case _:
+                    spec.extra_parameters = CAMBExtraParams(
+                        HMCode_logT_AGN=7.8,
+                        dark_energy_model="ppf",
+                        halofit_version=self.camb_halofit,
+                        kmax=10.0,
+                        lmax=0,
+                    )
+
         for param_spec in self.parameter:
             key, value, prior_obj = _parse_prior(param_spec)
             if key not in spec:
