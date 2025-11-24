@@ -82,7 +82,8 @@ class View(Load):
     :param check: Validate SACC file for naming convention compliance, tracer ordering,
         and other quality issues.
     :type check: bool
-    :param allow_mixed_types: Allow tracers with mixed measurement types (inherited from Load).
+    :param allow_mixed_types: Allow tracers with mixed measurement types
+        (inherited from Load).
     :type allow_mixed_types: bool
 
     .. seealso::
@@ -331,7 +332,8 @@ class View(Load):
             Recommendation: Use 'firecrown sacc transform --fix-ordering'
 
         .. seealso::
-            :meth:`Transform._fix_ordering` - Method to automatically fix ordering issues
+            :meth:`Transform._fix_ordering` - Method to automatically fix ordering
+                issues
 
             ``docs/sacc_usage.rst`` - Detailed explanation of SACC conventions
         """
@@ -376,6 +378,42 @@ class View(Load):
                 if handled and not stderr_lines:
                     break  # All lines consumed
 
+        # Report quality check results
+        self._report_quality_check_results(
+            warning_handlers, stdout_handlers, stderr_handlers, validation_error
+        )
+
+    def _report_quality_check_results(
+        self,
+        warning_handlers: list[MessageHandler],
+        stdout_handlers: list[StreamHandler],
+        stderr_handlers: list[StreamHandler],
+        validation_error: str | None,
+    ) -> None:
+        """Report quality check results to console.
+
+        This method collects all handlers and reports any issues found during
+        quality checks. Results are printed with appropriate formatting:
+
+        - Green checkmark if all checks pass
+        - Yellow warnings for detected issues with detailed descriptions
+        - Red errors for validation failures
+
+        :param warning_handlers: List of warning message handlers
+        :type warning_handlers: list[MessageHandler]
+        :param stdout_handlers: List of stdout stream handlers
+        :type stdout_handlers: list[StreamHandler]
+        :param stderr_handlers: List of stderr stream handlers
+        :type stderr_handlers: list[StreamHandler]
+        :param validation_error: Error message if validation failed, None otherwise
+        :type validation_error: str | None
+        :returns: None
+        :rtype: None
+
+        .. note::
+            This is Step 6-8 of the quality check pipeline. It collects all
+            handlers, counts issues, and reports findings to console.
+        """
         # Step 6: Collect all handlers and check for issues
         all_handlers: list[OutputHandler] = []
         all_handlers.extend(warning_handlers)

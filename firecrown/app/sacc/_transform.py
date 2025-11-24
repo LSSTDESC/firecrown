@@ -9,11 +9,11 @@ from typing import Annotated
 import sacc
 import typer
 
-from ._load import Load
 from firecrown.metadata_functions import (
     extract_all_real_metadata_indices,
     extract_all_harmonic_metadata_indices,
 )
+from ._load import Load
 
 
 class SaccFormat(str, Enum):
@@ -49,7 +49,8 @@ class Transform(Load):
         firecrown sacc transform data.fits --output-format hdf5 --output data.h5
 
         # Fix ordering and convert format
-        firecrown sacc transform data.fits --fix-ordering --output-format hdf5 -o data.h5
+        firecrown sacc transform data.fits --fix-ordering --output-format hdf5 -o \
+data.h5
 
     Python Usage::
 
@@ -72,11 +73,13 @@ class Transform(Load):
     :type input_format: SaccFormat | None
     :param output_format: Output format. If not specified, uses input format.
     :type output_format: SaccFormat | None
-    :param fix_ordering: Fix tracer ordering issues according to SACC naming conventions.
+    :param fix_ordering: Fix tracer ordering issues according to SACC naming
+        conventions.
     :type fix_ordering: bool
     :param overwrite: Overwrite output file if it exists.
     :type overwrite: bool
-    :param allow_mixed_types: Allow tracers with mixed measurement types (inherited from Load).
+    :param allow_mixed_types: Allow tracers with mixed measurement types
+        (inherited from Load).
     :type allow_mixed_types: bool
 
     .. seealso::
@@ -194,7 +197,10 @@ class Transform(Load):
                 raise ValueError(f"Unknown target format: {target_format}")
 
     def _prepare_transform(self) -> tuple[Path, SaccFormat, SaccFormat]:
-        """Prepare transformation: determine formats, output path, and check for errors."""
+        """Prepare transformation.
+
+        Determine formats, output path, and check for errors.
+        """
         # Detect or use specified input format
         if self.input_format:
             src_format = self.input_format
@@ -312,7 +318,7 @@ class Transform(Load):
             self.console.print("Size unchanged")
 
     def _fix_ordering(self, sacc_data: sacc.Sacc) -> None:
-        """Fix tracer ordering issues and print summary of corrections.
+        """Fix tracer ordering issues in SACC data.
 
         This method detects and corrects tracer ordering violations where the order
         of tracers in a measurement doesn't match the order of measurement types in
@@ -330,7 +336,7 @@ class Transform(Load):
         1. Extracts metadata indices for all real and harmonic measurements
         2. Identifies measurements where tracer types are reversed (a > b)
         3. Swaps tracer order in data points to match canonical ordering
-        4. Prints detailed summary of corrections made
+        4. Reports summary of corrections made
 
         Canonical ordering follows: CMB < Clusters < Galaxies
 
@@ -341,12 +347,8 @@ class Transform(Load):
         :returns: None (modifies sacc_data in place)
         :rtype: None
 
-        .. note::
-            The method prints:
-
-            - Number of unique corrections needed
-            - For each correction: data type, tracers, and number of data points flipped
-            - If no issues found: confirmation message
+        .. seealso::
+            :meth:`_report_ordering_corrections` - Reports summary of corrections made
         """
         real_indices = extract_all_real_metadata_indices(
             sacc_data, self.allow_mixed_types
@@ -367,6 +369,7 @@ class Transform(Load):
                 tracers_to_fix[
                     (harmonic_index["data_type"], tuple(harmonic_index["tracer_names"]))
                 ] = harmonic_index
+
         if not tracers_to_fix:
             self.console.print("No tracer ordering issues detected.")
             return
@@ -375,8 +378,9 @@ class Transform(Load):
             f"[bold yellow]Fixing tracer ordering for {len(tracers_to_fix)} "
             f"unique corrections.[/bold yellow]"
         )
-        data_points = sacc_data.get_data_points()
+
         # Track how many data points are corrected for each correction
+        data_points = sacc_data.get_data_points()
         correction_counts = {key: 0 for key in tracers_to_fix}
         for dp in data_points:
             key = (dp.data_type, dp.tracers)
@@ -384,7 +388,34 @@ class Transform(Load):
                 assert len(dp.tracers) == 2
                 dp.tracers = (dp.tracers[1], dp.tracers[0])
                 correction_counts[key] += 1
-        # Print summary for each correction
+
+        # Report corrections made
+        self._report_ordering_corrections(correction_counts)
+
+    def _report_ordering_corrections(
+        self, correction_counts: dict[tuple[str, tuple[str, ...]], int]
+    ) -> None:
+        """Report summary of tracer ordering corrections made.
+
+        This method prints a detailed summary of all tracer ordering corrections,
+        showing for each correction the data type, affected tracers, and number of
+        data points that were reordered.
+
+        :param correction_counts: Dictionary mapping (data_type, tracers) tuples
+            to the count of data points corrected for that combination
+        :type correction_counts: dict[tuple[str, tuple[str, ...]], int]
+        :returns: None
+        :rtype: None
+
+        .. rubric:: Example Output
+
+        ::
+
+            For data type galaxy_shearDensity_cl_e and tracers src0, lens0, 6 \
+data points were flipped.
+            For data type galaxy_shearDensity_cl_e and tracers src1, lens0, 7 \
+data points were flipped.
+        """
         for key, count in correction_counts.items():
             dt, tracers = key
             tracer_str = ", ".join(tracers)

@@ -32,7 +32,7 @@ def extract_all_harmonic_data(
 
     result: list[TwoPointMeasurement] = []
     for cell_index in extract_all_harmonic_metadata_indices(
-        sacc_data, allowed_data_type
+        sacc_data, allow_mixed_types, allowed_data_type
     ):
         t1, t2 = cell_index["tracer_names"]
         dt = cell_index["data_type"]
@@ -63,7 +63,9 @@ def extract_all_harmonic_data(
 
 
 def extract_all_real_data(
-    sacc_data: sacc.Sacc, allowed_data_type: None | list[str] = None
+    sacc_data: sacc.Sacc,
+    allow_mixed_types: bool = False,
+    allowed_data_type: None | list[str] = None,
 ) -> list[TwoPointMeasurement]:
     """Extract the two-point function metadata and data from a sacc file."""
     if sacc_data.covariance is None or sacc_data.covariance.dense is None:
@@ -75,7 +77,9 @@ def extract_all_real_data(
     }
 
     result: list[TwoPointMeasurement] = []
-    for real_index in extract_all_real_metadata_indices(sacc_data, allowed_data_type):
+    for real_index in extract_all_real_metadata_indices(
+        sacc_data, allow_mixed_types, allowed_data_type
+    ):
         t1, t2 = real_index["tracer_names"]
         dt = real_index["data_type"]
 

@@ -181,9 +181,8 @@ class MissingSaccOrderingHandler(StreamHandler):
                 break
         if found_at >= 0:
             # Remove the matched lines from the list
-            remaining_lines = (
-                lines[:found_at] + lines[found_at + 2 :]
-            )  # Skip the two matched lines
+            c = found_at + 2
+            remaining_lines = lines[:found_at] + lines[c:]
             return True, remaining_lines
         return False, lines
 
