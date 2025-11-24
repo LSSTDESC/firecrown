@@ -20,13 +20,21 @@ class Logging:
         ),
     ] = None
 
+    quiet: Annotated[
+        bool,
+        typer.Option(
+            "--quiet",
+            "-q",
+            help="Suppress console output; log only to file if --log-file is set.",
+        ),
+    ] = False
+
     def __post_init__(self):
         """Prepare logging."""
         self.console_io = None
         if self.log_file:
             self.console_io = self.log_file.open("w", encoding="utf-8")
-
-        self.console = Console(file=self.console_io)
+        self.console = Console(file=self.console_io, quiet=self.quiet)
 
     def __del__(self):
         """Destructor to ensure file is closed."""

@@ -17,8 +17,9 @@ import yaml
 import typer
 from firecrown.likelihood.likelihood import NamedParameters
 from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologySpec
-from ._config_generator import get_generator
+from ._config_generator import get_generator, ConfigGenerator
 from .. import logging
+from ..sacc import SaccFormat, Transform
 
 
 @dataclasses.dataclass
@@ -66,6 +67,10 @@ class AnalysisBuilder(logging.Logging):
             case_sensitive=False,
         ),
     ] = Frameworks.COSMOSIS
+
+    sacc_format: Annotated[
+        SaccFormat, typer.Option(help="SACC file format.", show_default=True)
+    ] = SaccFormat.HDF5
 
     use_absolute_path: Annotated[
         bool,
@@ -128,9 +133,25 @@ class AnalysisBuilder(logging.Logging):
             self.cosmology_analysis_spec(),
             self.required_cosmology(),
         )
+        self._proceed_generation(generator)
 
+    def _proceed_generation(self, generator: ConfigGenerator) -> None:
+        """Execute the phased analysis generation workflow."""
         self.console.print(Rule("[bold cyan]Phase 1: Generating SACC data[/bold cyan]"))
         sacc = self.generate_sacc(self.output_path)
+        if Transform.detect_format(sacc) != self.sacc_format:
+            self.console.print(
+                f"[yellow]Converting SACC file to target format "
+                f"[bold]{self.sacc_format.upper()}[/bold][/yellow]"
+            )
+            transform = Transform(
+                sacc_file=sacc,
+                overwrite=True,
+                output_format=self.sacc_format,
+                quiet=True,
+            )
+            sacc.unlink()  # Remove original file
+            sacc = transform.output_path
         generator.add_sacc(sacc)
         self.console.print(
             f"[green]OK[/green] SACC: {sacc.relative_to(self.output_path)}\n"
