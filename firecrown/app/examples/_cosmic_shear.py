@@ -421,6 +421,7 @@ class ExampleCosmicShear(AnalysisBuilder):
         return FrameworkCosmology.NONLINEAR
 
     def get_options_desc(self) -> Sequence[tuple[str, str]]:
+        """Return description of Cosmic Shear options."""
         return [
             ("Number of Tomographic Bins", f"{self.n_bins}"),
             ("Noise Level", f"{self.noise_level}"),
