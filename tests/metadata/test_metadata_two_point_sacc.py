@@ -3,6 +3,7 @@
 In this module, we test the functions and classes involved SACC extraction tools.
 """
 
+import warnings
 import re
 import pytest
 import numpy as np
@@ -354,7 +355,10 @@ def test_extract_no_window(
     sacc_data, _, _ = sacc_galaxy_cells_src0_src0
     indices = np.array([0, 1, 2], dtype=np.int64)
 
-    with pytest.warns(UserWarning):
+    with warnings.catch_warnings():
+        # Ensure no warning is emitted by this call. If one appears, treat it as an
+        # error.
+        warnings.simplefilter("error")  # turn warnings into exceptions
         window = extract_window_function(sacc_data, indices=indices)
         assert window[0] is None
         assert window[1] is None

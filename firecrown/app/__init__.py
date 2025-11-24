@@ -81,10 +81,13 @@ HELP_EXAMPLES = """
 Generate example analyses with synthetic data and configuration files.
 
 
-Each example creates complete analysis templates for different cosmological analyses.
+Each example creates complete analysis templates for different cosmological
+analyses.
 
 
-IMPORTANT: First run 'firecrown examples' to see available examples, then use 'firecrown examples EXAMPLE_NAME --help' for detailed help on a specific example.
+IMPORTANT: First run 'firecrown examples' to see available examples,
+then use 'firecrown examples EXAMPLE_NAME --help' for detailed help
+on a specific example.
 """
 app_examples = typer.Typer(no_args_is_help=True)
 for example_name, example_cls in examples_app.EXAMPLES_LIST.items():

@@ -7,7 +7,8 @@ import pytest
 import numpy as np
 import sacc
 from firecrown import metadata_types as mdt
-from firecrown.app.sacc import mean_std_tracer, Load, View
+from firecrown.app.sacc import Load, View
+from firecrown.app.sacc._utils import mean_std_tracer
 
 
 @pytest.fixture(name="mock_tracer")

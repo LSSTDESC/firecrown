@@ -33,12 +33,15 @@ def extract_all_tracers_inferred_galaxy_zdists(
     tracer_types, _ = extract_all_measured_types(
         sacc_data, allow_mixed_types=allow_mixed_types
     )
-    for tracer0, tracer_types0 in tracer_types.items():
-        if len(tracer_types0) == 0:
-            raise ValueError(
-                f"Tracer {tracer0} does not have data points associated with it. "
-                f"Inconsistent SACC object."
-            )
+    for tracer in tracers:
+        if isinstance(tracer, sacc.tracers.NZTracer):
+            if (tracer.name not in tracer_types) or (
+                len(tracer_types[tracer.name]) == 0
+            ):
+                raise ValueError(
+                    f"Tracer {tracer.name} does not have data points "
+                    f"associated with it. Inconsistent SACC object."
+                )
 
     return [
         mdt.InferredGalaxyZDist(
@@ -313,6 +316,7 @@ def extract_all_measured_types(
     """
     # Extract data type information from SACC
     all_data_types = _extract_data_types_from_sacc(sacc_data)
+    data_types = sacc_data.get_data_types()
 
     # Initialize measurement type tracking
     tracer_types = _initialize_tracer_types(all_data_types)
@@ -326,7 +330,13 @@ def extract_all_measured_types(
     # Validate result
     _validate_tracer_types(tracer_types, allow_mixed_types)
 
-    return tracer_types, sorted([data_type for data_type, _, _ in all_data_types])
+    # Filter all data types in data_types and keep only in all_data_types
+    data_types_in_all = {data_type for data_type, _, _ in all_data_types}
+    data_types = [
+        data_type for data_type in data_types if data_type in data_types_in_all
+    ]
+
+    return tracer_types, data_types
 
 
 def extract_all_real_metadata_indices(
@@ -351,7 +361,6 @@ def extract_all_real_metadata_indices(
             for data_type in data_types_reals
             if data_type in allowed_data_type
         ]
-
     all_real_indices: list[TwoPointRealIndex] = []
     for data_type in data_types_reals:
         a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
@@ -363,7 +372,6 @@ def extract_all_real_metadata_indices(
             if _check_tracer_swap_needed(a, b, tracer_types, combo, allow_mixed_types):
                 # Swap the order of the tracer types due to the convention
                 a, b = b, a
-
             all_real_indices.append(
                 {
                     "data_type": data_type,
