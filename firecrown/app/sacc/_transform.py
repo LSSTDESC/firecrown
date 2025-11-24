@@ -150,12 +150,16 @@ data.h5
         self._write_sacc_data(sacc_data, output_path, target_format)
         # Display success info
         self._display_transform_summary(src_format, output_path, target_format)
+        self.output_path = output_path
+        self.src_format = src_format
+        self.target_format = target_format
 
     def _load_sacc_file(self) -> None:
         """Override Load's file loader to do nothing for Transform."""
 
-    def _detect_format(self, filepath: Path) -> SaccFormat:
-        """Detect file format from extension."""
+    @staticmethod
+    def detect_format(filepath: Path) -> SaccFormat:
+        """Detect file format from extension or file contents."""
         suffix = filepath.suffix.lower()
 
         match suffix:
@@ -209,7 +213,7 @@ data.h5
             )
         else:
             try:
-                src_format = self._detect_format(self.sacc_file)
+                src_format = self.detect_format(self.sacc_file)
                 self.console.print(
                     f"Detected input format: [bold]{src_format.upper()}[/bold]"
                 )
