@@ -54,8 +54,8 @@ def conversion(hdg):
     hhub.columns = col
     hub = hhub
     hub["#name"] = np.linspace(0, np.shape(hub)[0] - 1, np.shape(hub)[0]).astype(int)
-    hub = np.array(hub.T)
-    return hub
+    hub_T = np.array(hub.T)
+    return hub_T
 
 
 def read_hubble_data(args):

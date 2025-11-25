@@ -6,16 +6,15 @@ import pytest
 import numpy as np
 
 import sacc
+from firecrown.metadata_types import TwoPointCorrelationSpace
 from firecrown.likelihood.factories import (
     build_two_point_likelihood,
     DataSourceSacc,
-    ensure_path,
     load_sacc_data,
-    TwoPointCorrelationSpace,
     TwoPointExperiment,
-    TwoPointFactory,
 )
-from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood.factories._sacc_utils import ensure_path
+from firecrown.likelihood.two_point import TwoPoint, TwoPointFactory
 from firecrown.likelihood.weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 from firecrown.likelihood.cmb import CMBConvergenceFactory
@@ -41,6 +40,7 @@ from firecrown.utils import (
     ClIntegrationMethod,
     ClLimberMethod,
 )
+from firecrown.likelihood.factories._models import _build_two_point_likelihood_real
 
 
 @pytest.fixture(name="empty_factory_harmonic")
@@ -432,7 +432,11 @@ data_source:
     )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
-    likelihood, tools = build_two_point_likelihood(build_parameters)
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        likelihood, tools = build_two_point_likelihood(build_parameters)
     assert isinstance(likelihood, Likelihood)
     assert isinstance(tools, ModelingTools)
 
@@ -544,14 +548,18 @@ data_source:
     )
 
     build_parameters = NamedParameters({"likelihood_config": str(tmp_experiment_file)})
-    with pytest.raises(
-        ValueError,
-        match=re.compile(
-            "No two-point measurements in harmonic space found in the SACC file.",
-            re.DOTALL,
-        ),
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
     ):
-        _ = build_two_point_likelihood(build_parameters)
+        with pytest.raises(
+            ValueError,
+            match=re.compile(
+                "No two-point measurements in harmonic space found in the SACC file.",
+                re.DOTALL,
+            ),
+        ):
+            _ = build_two_point_likelihood(build_parameters)
 
 
 def test_build_two_point_likelihood_empty_likelihood_config(tmp_path: Path) -> None:
@@ -672,7 +680,11 @@ def test_build_two_point_real_with_filter(empty_factory_real: TwoPointFactory) -
             ),
         ),
     )
-    assert two_point_experiment.make_likelihood() is not None
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        assert two_point_experiment.make_likelihood() is not None
 
 
 @pytest.mark.slow
@@ -698,8 +710,12 @@ def test_build_two_point_real_with_filter_require_filter(
             ),
         ),
     )
-    with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
-        _ = two_point_experiment.make_likelihood()
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        with pytest.raises(ValueError, match="The bin name .* does not have a filter."):
+            _ = two_point_experiment.make_likelihood()
 
 
 @pytest.mark.slow
@@ -725,14 +741,18 @@ def test_build_two_point_real_with_filter_empty(
             ),
         ),
     )
-    with pytest.raises(
-        ValueError,
-        match=(
-            "The TwoPointMeasurement .* does "
-            "not have any elements matching the filter."
-        ),
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
     ):
-        _ = two_point_experiment.make_likelihood()
+        with pytest.raises(
+            ValueError,
+            match=(
+                "The TwoPointMeasurement .* does "
+                "not have any elements matching the filter."
+            ),
+        ):
+            _ = two_point_experiment.make_likelihood()
 
 
 @pytest.mark.slow
@@ -758,7 +778,11 @@ def test_build_two_point_real_with_filter_allow_empty(
             ),
         ),
     )
-    assert two_point_experiment.make_likelihood() is not None
+    with pytest.warns(
+        DeprecationWarning,
+        match="AUTO-CORRECTION PERFORMED",
+    ):
+        assert two_point_experiment.make_likelihood() is not None
 
 
 def test_build_from_metadata_harmonic(
@@ -992,9 +1016,6 @@ def test_data_source_sacc_absolute_path_exists() -> None:
 
 def test_build_two_point_likelihood_real_fast() -> None:
     """Fast test for real-space likelihood building using direct function call."""
-    from firecrown.likelihood.factories import _build_two_point_likelihood_real
-    import sacc
-
     # Create a minimal SACC file with real-space data
     sacc_data = sacc.Sacc()
 
@@ -1006,7 +1027,7 @@ def test_build_two_point_likelihood_real_fast() -> None:
     xi = np.array([0.01, 0.005, 0.002])  # correlation function values
     error = np.array([0.001, 0.001, 0.001])  # errors
 
-    for i, (t, x, e) in enumerate(zip(theta, xi, error)):
+    for t, x, e in zip(theta, xi, error):
         sacc_data.add_data_point(
             "galaxy_density_xi", ("lens0", "lens0"), x, error=e, theta=t
         )
@@ -1030,9 +1051,6 @@ def test_build_two_point_likelihood_real_fast() -> None:
 
 def test_build_two_point_likelihood_real_with_filters_fast() -> None:
     """Fast test for real-space likelihood building with filters."""
-    from firecrown.likelihood.factories import _build_two_point_likelihood_real
-    import sacc
-
     # Create a minimal SACC file with real-space data
     sacc_data = sacc.Sacc()
 
@@ -1044,7 +1062,7 @@ def test_build_two_point_likelihood_real_with_filters_fast() -> None:
     xi = np.array([0.01, 0.005, 0.002])
     error = np.array([0.001, 0.001, 0.001])
 
-    for i, (t, x, e) in enumerate(zip(theta, xi, error)):
+    for t, x, e in zip(theta, xi, error):
         sacc_data.add_data_point(
             "galaxy_density_xi", ("lens0", "lens0"), x, error=e, theta=t
         )

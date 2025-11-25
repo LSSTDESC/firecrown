@@ -21,7 +21,7 @@ from firecrown.parameters import (
     SamplerParameter,
 )
 from firecrown.likelihood.two_point import TwoPoint
-from firecrown.metadata_types import TracerNames
+from firecrown.metadata_types import TracerNames, Galaxies
 from firecrown.metadata_functions import TwoPointHarmonicIndex
 from firecrown.data_functions import extract_all_harmonic_data
 
@@ -507,6 +507,7 @@ def test_create_ready_not_ready(tp_factory):
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
+        "tracer_types": (Galaxies.COUNTS, Galaxies.COUNTS),
     }
 
     two_points = TwoPoint.from_metadata_index([metadata], tp_factory)

@@ -5,8 +5,8 @@ import pyccl
 import sacc
 
 from firecrown.updatable import get_default_params_map
-from firecrown.likelihood.number_counts import (
-    NumberCounts,
+from firecrown.likelihood.number_counts import NumberCounts
+from firecrown.likelihood.number_counts._systematics import (
     PTNonLinearBiasSystematic,
 )
 from firecrown.likelihood.two_point import TwoPoint

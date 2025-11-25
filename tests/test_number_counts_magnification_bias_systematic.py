@@ -5,13 +5,14 @@ Tests for the module firecrown.likelihood.number_counts_magnification_bias_syste
 import numpy as np
 import numpy.typing as npt
 
-import firecrown.likelihood.number_counts as nc
+import firecrown.likelihood.number_counts._systematics as nc_sys
+import firecrown.likelihood.number_counts._args as nc_args
 import firecrown.parameters as fp
 import firecrown.modeling_tools as mt
 
 
 def test_creation_nc_magnification_bias_systematic():
-    sys = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+    sys = nc_sys.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     assert sys.eta is None
     assert sys.r_lim is None
@@ -23,7 +24,7 @@ def test_creation_nc_magnification_bias_systematic():
 def test_update_nc_magnification_bias_systematic(
     tools_with_vanilla_cosmology: mt.ModelingTools,
 ):
-    sys = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+    sys = nc_sys.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     sys.update(
         fp.ParamsMap(
@@ -42,7 +43,7 @@ def test_update_nc_magnification_bias_systematic(
     assert sys.z_c == 0.39
     assert sys.z_m == 0.055
 
-    ta = nc.NumberCountsArgs(
+    ta = nc_args.NumberCountsArgs(
         z=np.array([1.0, 2.0]),
         dndz=np.array([1.0, 0.5]),
     )
@@ -61,7 +62,7 @@ def test_update_nc_magnification_bias_systematic(
 def test_update_nc_magnification_bias_systematic_with_mag_bias(
     tools_with_vanilla_cosmology: mt.ModelingTools,
 ):
-    sys = nc.MagnificationBiasSystematic(sacc_tracer="lens0")
+    sys = nc_sys.MagnificationBiasSystematic(sacc_tracer="lens0")
     assert sys.parameter_prefix == "lens0"
     sys.update(
         fp.ParamsMap(
@@ -80,7 +81,7 @@ def test_update_nc_magnification_bias_systematic_with_mag_bias(
     assert sys.z_c == 0.39
     assert sys.z_m == 0.055
 
-    ta = nc.NumberCountsArgs(
+    ta = nc_args.NumberCountsArgs(
         z=np.array([1.0, 2.0]),
         dndz=np.array([1.0, 0.5]),
         mag_bias=(np.array([0.1, 0.8]), np.array([0.9, 0.95])),

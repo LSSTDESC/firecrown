@@ -184,6 +184,7 @@ We now verify that both approaches—constructing the likelihood in two phases (
 First, we extract the required parameter sets for both likelihoods:
 ```{python}
 from firecrown.parameters import ParamsMap
+import pandas as pd
 
 req_params = likelihood.required_parameters()
 req_params_ready = likelihood_ready.required_parameters()
@@ -192,6 +193,13 @@ assert req_params_ready == req_params
 
 default_values = req_params.get_default_values()
 params = ParamsMap(default_values)
+
+pd.DataFrame(
+    {
+        "ready": sorted(req_params_ready.get_params_names()),
+        "regular": sorted(req_params.get_params_names()),
+    }
+)
 ```
 
 Both likelihoods depend on the same parameter set. The default values used are:
@@ -284,11 +292,11 @@ With this formalism, we are able to evaluate the likelihood exactly as the previ
 Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis and do so in the example below by filtering-out all galaxy clustering data. 
 
 ```{python}
+from firecrown.metadata_types import TwoPointCorrelationSpace
+from firecrown.likelihood.two_point import TwoPointFactory
 from firecrown.likelihood.factories import (
     DataSourceSacc,
-    TwoPointCorrelationSpace,
     TwoPointExperiment,
-    TwoPointFactory,
 )
 
 tpf = base_model_from_yaml(TwoPointFactory, two_point_yaml)
