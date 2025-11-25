@@ -1,9 +1,9 @@
 """Unit testing for ConstGaussianPM"""
 
+import os
 import re
 
 import pytest
-import os
 import numpy as np
 import numpy.typing as npt
 from numpy.testing import assert_allclose
@@ -13,19 +13,18 @@ import sacc
 import pyccl
 
 import firecrown.parameters
-from firecrown.likelihood.gaussian_pointmass import ConstGaussianPM
-from firecrown.likelihood.gaussfamily import Statistic
-from firecrown.likelihood.statistic import TrivialStatistic
+from firecrown.likelihood import ConstGaussianPM, Statistic, TrivialStatistic, TwoPoint
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
     SamplerParameter,
 )
-from firecrown.likelihood.two_point import TwoPoint
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-from firecrown.metadata_types import TracerNames
+from firecrown.likelihood._gaussian_pointmass import PointMassData
+
+from firecrown.metadata_types import TracerNames, Galaxies
 from firecrown.metadata_functions import TwoPointHarmonicIndex
 from firecrown.data_functions import extract_all_harmonic_data
 
@@ -513,6 +512,7 @@ def test_create_ready_not_ready(tp_factory):
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
+        "tracer_types": (Galaxies.COUNTS, Galaxies.COUNTS),
     }
 
     two_points = TwoPoint.from_metadata_index([metadata], tp_factory)
@@ -651,8 +651,6 @@ def test_prepare_integrand(minimal_const_gaussian_PM):
     cosmo = pyccl.CosmologyVanillaLCDM()
 
     # Create mock PointMassData
-    from firecrown.likelihood.gaussian_pointmass import PointMassData
-
     pm_data = PointMassData(
         theta=np.array([1.0, 2.0, 3.0]),
         row_lens_idx=np.array([0, 1, 2]),

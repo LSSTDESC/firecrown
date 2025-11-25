@@ -39,6 +39,7 @@ from firecrown.likelihood._base import (
     SourceSystematic,
     Statistic,
     Tracer,
+    TrivialStatistic,
 )
 from firecrown.likelihood._likelihood import (
     load_likelihood,
@@ -49,6 +50,7 @@ from firecrown.likelihood._likelihood import (
 from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._gaussfamily import GaussFamily, State
 from firecrown.likelihood._student_t import StudentT
+from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM
 
 # Two-point statistics
 from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
@@ -103,6 +105,7 @@ __all__ = [
     "GaussFamily",
     "State",
     "StudentT",
+    "ConstGaussianPM",
     # Two-point statistics
     "TwoPoint",
     "TwoPointFactory",
@@ -120,6 +123,7 @@ __all__ = [
     "SourceSystematic",
     # Base statistic class
     "Statistic",
+    "TrivialStatistic",
     # Subpackages
     "weak_lensing",
     "number_counts",
