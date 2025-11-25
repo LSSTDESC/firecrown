@@ -5,11 +5,8 @@ from firecrown.parameters import ParamsMap
 from firecrown.likelihood import Source
 
 
-class TestSource(Source):
+class ForTestSource(Source):
     """A minimal concrete Source implementation for testing."""
-
-    def __init__(self, sacc_tracer: str):
-        super().__init__(sacc_tracer)
 
     def read_systematics(self, sacc_data) -> None:
         pass
@@ -29,8 +26,8 @@ class TestSource(Source):
 
 def test_two_point_theory_update_integration():
     """Integration test: update method updates real sources."""
-    source1 = TestSource("tracer_1")
-    source2 = TestSource("tracer_2")
+    source1 = ForTestSource("tracer_1")
+    source2 = ForTestSource("tracer_2")
     sources = (source1, source2)
 
     theory = TwoPointTheory(
@@ -47,8 +44,8 @@ def test_two_point_theory_update_integration():
 
 def test_two_point_theory_reset_integration():
     """Integration test: reset method resets real sources."""
-    source1 = TestSource("tracer_1")
-    source2 = TestSource("tracer_2")
+    source1 = ForTestSource("tracer_1")
+    source2 = ForTestSource("tracer_2")
     sources = (source1, source2)
 
     theory = TwoPointTheory(

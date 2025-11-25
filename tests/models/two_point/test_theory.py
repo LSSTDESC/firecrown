@@ -14,16 +14,18 @@ from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point import ApplyInterpolationWhen
 from firecrown.likelihood import Source
 
+# pylint: disable=protected-access
 
-@pytest.fixture
-def mock_source():
+
+@pytest.fixture(name="mock_source")
+def fixture_mock_source():
     """Create a mock source that behaves like a real Updatable Source."""
     source = Mock(spec=Source)
     source.sacc_tracer = "tracer_1"
     source._updated = False
     source.is_updated = Mock(return_value=False)
 
-    def update_side_effect(params, updated_record=None):
+    def update_side_effect(_params, _updated_record=None):
         if source._updated:
             return  # Mimic Updatable: do nothing if already updated
         source._updated = True
@@ -38,15 +40,15 @@ def mock_source():
     return source
 
 
-@pytest.fixture
-def mock_source_pair(mock_source):
+@pytest.fixture(name="mock_source_pair")
+def fixture_mock_source_pair(mock_source):
     """Create a pair of mock sources."""
     source2 = Mock(spec=Source)
     source2.sacc_tracer = "tracer_2"
     source2._updated = False
     source2.is_updated = Mock(return_value=False)
 
-    def update_side_effect2(params, updated_record=None):
+    def update_side_effect2(_params, _updated_record=None):
         if source2._updated:
             return
         source2._updated = True
@@ -61,11 +63,8 @@ def mock_source_pair(mock_source):
     return (mock_source, source2)
 
 
-class TestSource(Source):
+class ForTestSource(Source):
     """A minimal concrete Source implementation for testing."""
-
-    def __init__(self, sacc_tracer: str):
-        super().__init__(sacc_tracer)
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:
         pass
@@ -86,7 +85,7 @@ class TestSource(Source):
 @pytest.fixture
 def source_pair():
     """Create a pair of concrete TestSource instances."""
-    return (TestSource("tracer_1"), TestSource("tracer_2"))
+    return (ForTestSource("tracer_1"), ForTestSource("tracer_2"))
 
 
 def test_two_point_theory_initialization():
