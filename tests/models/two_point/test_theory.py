@@ -25,7 +25,8 @@ def fixture_mock_source():
     source._updated = False
     source.is_updated = Mock(return_value=False)
 
-    def update_side_effect(_params, _updated_record=None):
+    # pylint: disable=unused-argument
+    def update_side_effect(params, updated_record=None):
         if source._updated:
             return  # Mimic Updatable: do nothing if already updated
         source._updated = True
@@ -48,7 +49,8 @@ def fixture_mock_source_pair(mock_source):
     source2._updated = False
     source2.is_updated = Mock(return_value=False)
 
-    def update_side_effect2(_params, _updated_record=None):
+    # pylint: disable=unused-argument
+    def update_side_effect2(params, updated_record=None):
         if source2._updated:
             return
         source2._updated = True
