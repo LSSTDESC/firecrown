@@ -17,7 +17,7 @@ from pathlib import Path
 import dataclasses
 
 import firecrown
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 
 from ._types import (
     Model,

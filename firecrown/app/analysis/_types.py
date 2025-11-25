@@ -16,7 +16,7 @@ from pydantic import BaseModel, ConfigDict, PrivateAttr, model_validator
 import numpy as np
 import pyccl
 
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from firecrown.ccl_factory import CAMBExtraParams, PoweSpecAmplitudeParameter
 
 

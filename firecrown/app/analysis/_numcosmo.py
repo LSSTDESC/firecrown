@@ -23,7 +23,7 @@ from numcosmo_py import Ncm, Nc
 import numcosmo_py.external.cosmosis as nc_cosmosis
 from numcosmo_py.helper import register_model_class
 from firecrown.connector.numcosmo.numcosmo import NumCosmoFactory
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from ._types import (
     Model,
     Parameter,

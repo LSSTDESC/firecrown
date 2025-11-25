@@ -3,11 +3,9 @@
 import os
 
 from firecrown.likelihood.factories import load_sacc_data
-from firecrown.likelihood.likelihood import NamedParameters
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import ConstGaussian, NamedParameters, TwoPoint
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory
 

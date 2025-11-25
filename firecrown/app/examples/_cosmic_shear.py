@@ -15,7 +15,7 @@ import typer
 from rich.progress import Progress, SpinnerColumn, TextColumn
 from rich.table import Table
 
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from ...utils import upper_triangle_indices
 from ..analysis import (
     AnalysisBuilder,

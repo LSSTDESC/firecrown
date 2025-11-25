@@ -15,7 +15,7 @@ from rich.table import Table
 from rich.rule import Rule
 import yaml
 import typer
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from ._types import Frameworks, Model, FrameworkCosmology, CCLCosmologySpec
 from ._config_generator import get_generator, ConfigGenerator
 from .. import logging

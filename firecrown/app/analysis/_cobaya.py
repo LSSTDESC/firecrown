@@ -17,7 +17,7 @@ import dataclasses
 import yaml
 
 import firecrown.connector.cobaya.likelihood
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from ._types import (
     Model,
     Frameworks,

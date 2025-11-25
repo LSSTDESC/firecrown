@@ -12,7 +12,7 @@ from enum import Enum
 
 import typer
 
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 from ..analysis import (
     AnalysisBuilder,
     Model,
