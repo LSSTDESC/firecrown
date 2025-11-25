@@ -14,11 +14,11 @@ from firecrown.likelihood.number_counts._systematics import (
     MagnificationBiasSystematic,
     PTNonLinearBiasSystematic,
 )
-from firecrown.likelihood.source import (
+from firecrown.likelihood.weak_lensing import (
     PhotoZShiftandStretchFactory,
     PhotoZShiftFactory,
-    SourceGalaxySystematic,
 )
+from firecrown.likelihood._base import SourceGalaxySystematic
 from firecrown.likelihood.number_counts._args import NumberCountsArgs
 from firecrown.metadata_types import InferredGalaxyZDist, TypeSource
 

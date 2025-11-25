@@ -14,7 +14,7 @@ from numcosmo_py import Ncm
 
 import yaml
 
-from firecrown.generators.inferred_galaxy_zdist import (
+from firecrown.generators._inferred_galaxy_zdist import (
     ZDistLSSTSRD,
     Y1_LENS_BINS,
     Y10_LENS_BINS,

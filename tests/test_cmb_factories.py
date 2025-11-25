@@ -6,7 +6,7 @@ import numpy as np
 import sacc
 
 
-from firecrown.likelihood.cmb import (
+from firecrown.likelihood._cmb import (
     CMBConvergence,
     CMBConvergenceFactory,
     CMBConvergenceArgs,

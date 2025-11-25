@@ -80,7 +80,7 @@ To run the same set of tests that will be run by the CI system, use:
 
 .. code:: bash
 
-    python -m pytest --runslow -vv --integration tests
+    python -m pytest --runslow -vv --example tests
 
 Please note that when the CI system runs the tests, it will also ensure that all modified or newly-added code is actually tested.
 For a PR to be reviewed, it must pass this requirement.

@@ -9,14 +9,14 @@ from firecrown.models.cluster import (
     ClusterRecipe,
     MurataBinnedSpecZDeltaSigmaRecipe,
 )
-from firecrown.likelihood.source import SourceSystematic
+from firecrown.likelihood._source import SourceSystematic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ClusterProperty, ClusterAbundance
-from firecrown.likelihood.binned_cluster_number_counts import (
+from firecrown.likelihood._binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
 from firecrown.models.cluster import ClusterDeltaSigma
-from firecrown.likelihood.binned_cluster_number_counts_deltasigma import (
+from firecrown.likelihood._binned_cluster_number_counts_deltasigma import (
     BinnedClusterDeltaSigma,
 )
 

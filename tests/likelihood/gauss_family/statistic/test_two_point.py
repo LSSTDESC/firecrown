@@ -20,19 +20,19 @@ from firecrown.parameters import ParamsMap
 from firecrown.likelihood.number_counts import (
     NumberCounts,
 )
-from firecrown.likelihood.weak_lensing import (
+from firecrown.likelihood._weak_lensing import (
     WeakLensing,
 )
 import firecrown.metadata_types as mdt
-import firecrown.likelihood.two_point as tp
-from firecrown.likelihood.two_point import (
+import firecrown.likelihood._two_point as tp
+from firecrown.likelihood._two_point import (
     NumberCountsFactory,
     TwoPointFactory,
     use_source_factory,
     use_source_factory_metadata_index,
 )
 from firecrown.models.two_point import TwoPointTheory
-from firecrown.generators.two_point import (
+from firecrown.generators._two_point import (
     generate_bin_centers,
     EllOrThetaConfig,
     LogLinearElls,
@@ -805,7 +805,7 @@ def test_calculate_pk_with_halo_model():
     """Test calculate_pk function when tracers have halo model (covers line 126)."""
     from unittest.mock import Mock, patch
     from firecrown.models.two_point import calculate_pk
-    from firecrown.likelihood.source import Tracer
+    from firecrown.likelihood._source import Tracer
 
     # Create mock tools with halo model capabilities
     tools = Mock(spec=ModelingTools)

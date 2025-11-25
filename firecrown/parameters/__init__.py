@@ -13,7 +13,6 @@ from ._types import (
     SamplerParameter,
     register_new_updatable_parameter,
 )
-from ._usage import UpdatableUsageRecord
 
 __all__ = [
     "DerivedParameter",
@@ -22,7 +21,6 @@ __all__ = [
     "ParamsMap",
     "RequiredParameters",
     "SamplerParameter",
-    "UpdatableUsageRecord",
     "handle_unused_params",
     "parameter_get_full_name",
     "register_new_updatable_parameter",

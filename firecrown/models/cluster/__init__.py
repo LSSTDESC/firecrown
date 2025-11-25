@@ -8,6 +8,7 @@ from firecrown.models.cluster._deltasigma import ClusterDeltaSigma
 from firecrown.models.cluster._deltasigma_data import DeltaSigmaData
 from firecrown.models.cluster._integrator import (
     Integrator,
+    NumCosmoIntegralMethod,
     NumCosmoIntegrator,
     ScipyIntegrator,
 )
@@ -49,6 +50,7 @@ __all__ = [
     "TrueMass",
     "SpectroscopicRedshift",
     "Integrator",
+    "NumCosmoIntegralMethod",
     "NumCosmoIntegrator",
     "ScipyIntegrator",
     "ClusterRecipe",

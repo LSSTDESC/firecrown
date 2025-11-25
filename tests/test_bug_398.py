@@ -18,11 +18,11 @@ import sacc
 from numpy.testing import assert_allclose
 
 from firecrown.updatable import get_default_params_map
-import firecrown.likelihood.weak_lensing as wl
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.gaussian import ConstGaussian
+import firecrown.likelihood._weak_lensing as wl
+from firecrown.likelihood._two_point import TwoPoint
+from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
+from firecrown.likelihood._likelihood import Likelihood, NamedParameters
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 
 

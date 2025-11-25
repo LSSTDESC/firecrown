@@ -27,14 +27,14 @@ from firecrown.metadata_types._sacc_type_string import (
     _type_to_sacc_string_real as real,
 )
 from firecrown.data_types import TwoPointMeasurement
-from firecrown.likelihood.source import SourceGalaxy
-from firecrown.likelihood.two_point import (
+from firecrown.likelihood._source import SourceGalaxy
+from firecrown.likelihood._two_point import (
     TwoPoint,
     TwoPointFactory,
     TwoPointCorrelationSpace,
 )
-from firecrown.likelihood.cmb import CMBConvergenceFactory
-from firecrown.likelihood.weak_lensing import WeakLensingFactory
+from firecrown.likelihood._cmb import CMBConvergenceFactory
+from firecrown.likelihood._weak_lensing import WeakLensingFactory
 from firecrown.likelihood.number_counts import NumberCountsFactory
 
 

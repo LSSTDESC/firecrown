@@ -3,7 +3,7 @@ Provides a trivial likelihood factory function for testing purposes.
 The likelihood created provides one derived parameter named "derived_param0".
 """
 
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.modeling_tools import ModelingTools
 from firecrown.ccl_factory import CCLFactory, PoweSpecAmplitudeParameter
 from . import lkmodule

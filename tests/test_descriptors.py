@@ -250,3 +250,29 @@ def test_string_predicate():
     d.x = "cowabunga"
     with pytest.raises(ValueError):
         d.x = "dog"
+
+
+# Tests for _base module
+def test_base_module_exports_math():
+    """Test that _base module exports math."""
+    # Import the module to ensure coverage
+    # pylint: disable=import-outside-toplevel
+    import firecrown.descriptors._base as base_module
+
+    assert hasattr(base_module, "math")
+    assert base_module.math is math
+    # Test that it's in __all__
+    assert "math" in base_module.__all__
+
+
+def test_base_module_exports_callable():
+    """Test that _base module exports Callable."""
+    # Import the module to ensure coverage
+    # pylint: disable=import-outside-toplevel
+    import firecrown.descriptors._base as base_module
+    from collections.abc import Callable
+
+    assert hasattr(base_module, "Callable")
+    assert base_module.Callable is Callable
+    # Test that it's in __all__
+    assert "Callable" in base_module.__all__
