@@ -24,7 +24,7 @@ from firecrown.ccl_factory import (
     PoweSpecAmplitudeParameter,
 )
 from firecrown.descriptors import TypeFloat, TypeString
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import NamedParameters
 
 
 def build_ccl_background_dict(

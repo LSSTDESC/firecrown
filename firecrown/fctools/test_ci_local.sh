@@ -78,9 +78,9 @@ echo "🧪 Step 6: Running unit tests..."
 echo "Note: Running with --runslow since this simulates a non-coverage matrix job"
 python -m pytest -vv --runslow
 
-# Step 7: Run integration tests
-echo "🔗 Step 7: Running integration tests..."
-python -m pytest -vv -s --integration tests/integration
+# Step 7: Run example tests
+echo "📋 Step 7: Running example tests..."
+python -m pytest -vv -s --example -m example tests/example
 
 echo ""
 echo "✅ Local CI test completed successfully!"

@@ -60,5 +60,5 @@ pyline firecrown
 pylint --rcfile firecrown/models/pylintrc firecrown/models
 pylint --rcfile tests/pylintrc tests
 mypy -p firecrown -p tests -p examples
-python -m pytest --runslow -vv --integration tests
+python -m pytest --runslow -vv --example tests
 ```

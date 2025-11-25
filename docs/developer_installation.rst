@@ -119,7 +119,6 @@ All of these are used as part of the CI system as part of the checking of all pu
     # We are using pylint to enforce a variety of rules.
     # Different directories require some different rules.
     pylint firecrown
-    pylint --rcfile firecrown/models/pylintrc firecrown/models
     pylint --rcfile tests/pylintrc tests
 
     # We are using type hints and mypy to help catch type-related errors.

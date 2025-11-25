@@ -167,3 +167,5 @@ tutorial/theoretical_predictions_tutorial.html
 /.luarc.json
 *.Rproj
 coverage.json
+
+**/*.quarto_ipynb

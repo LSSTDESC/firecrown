@@ -1,10 +1,16 @@
 """Power spectrum calculation functions for two-point theory."""
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import numpy as np
 import pyccl
 
-from firecrown.likelihood.source import Tracer
 from firecrown.modeling_tools import ModelingTools
+
+if TYPE_CHECKING:
+    from firecrown.likelihood._base import Tracer
 
 
 def calculate_pk(

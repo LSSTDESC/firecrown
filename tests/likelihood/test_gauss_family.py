@@ -3,7 +3,7 @@
 import re
 
 import pytest
-import firecrown.likelihood.gaussian as g
+import firecrown.likelihood._gaussian as g
 
 
 def test_init_rejects_non_statistics():

@@ -25,7 +25,7 @@ In the serialization [tutorial](inferred_zdist_serialization.qmd#sec-lsst-srd), 
 Here we will use the LSST SRD year 1 redshift distribution to generate the two-point statistics.
 
 ```{python}
-from firecrown.generators.inferred_galaxy_zdist import (
+from firecrown.generators import (
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )
@@ -83,10 +83,11 @@ The code below defines the factories for the weak lensing and number counts syst
 
 ```{python}
 
-from firecrown.likelihood.source import PhotoZShiftFactory
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.two_point as tp
+from firecrown.likelihood import TwoPoint, TwoPointFactory
+from firecrown.metadata_types import TwoPointCorrelationSpace
+from firecrown.likelihood.weak_lensing import PhotoZShiftFactory
 import warnings
 
 # WeakLensing systematics -- global
@@ -141,10 +142,10 @@ These factories are responsible for producing the necessary systematics applied 
 Below is the code defining the factories for weak lensing and number counts systematics:
 
 ```{python}
-all_two_point_functions = tp.TwoPoint.from_metadata(
+all_two_point_functions = TwoPoint.from_metadata(
     metadata_seq=all_two_point_cells,
-    tp_factory=tp.TwoPointFactory(
-        correlation_space=tp.TwoPointCorrelationSpace.HARMONIC,
+    tp_factory=TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
         weak_lensing_factories=[wlf],
         number_counts_factories=[ncf],
     ),

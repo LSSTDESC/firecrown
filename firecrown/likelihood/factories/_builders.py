@@ -1,7 +1,7 @@
-"""Likelihood builder functions for two-point statistics."""
+"""Factory methods for creating Likelihood objects from configuration."""
 
 from firecrown.likelihood.factories._models import TwoPointExperiment
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
+from firecrown.likelihood._base import Likelihood, NamedParameters
 from firecrown.modeling_tools import ModelingTools
 
 

@@ -10,8 +10,12 @@ from firecrown.connector.numcosmo.numcosmo import (
     NumCosmoGaussCov,
 )
 
-from firecrown.likelihood.likelihood import NamedParameters, Likelihood, load_likelihood
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood._likelihood import (
+    NamedParameters,
+    Likelihood,
+    load_likelihood,
+)
+from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.updatable import get_default_params
 
 Ncm.cfg_init()

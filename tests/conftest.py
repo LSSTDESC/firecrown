@@ -16,7 +16,7 @@ import numpy.typing as npt
 
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
-from firecrown.likelihood.statistic import TrivialStatistic
+from firecrown.likelihood._statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
@@ -37,10 +37,10 @@ from firecrown.metadata_types._compatibility import (
     _measurement_supports_harmonic,
 )
 from firecrown.data_types import TwoPointMeasurement
-import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.two_point as tp
-from firecrown.likelihood import cmb
+import firecrown.likelihood._two_point as tp
+import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
 
 
@@ -48,16 +48,16 @@ def pytest_addoption(parser):
     """Add handling of firecrown-specific options for the pytest test runner.
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
-    --integration: used to run only integration tests, which are otherwise not run.
+    --example: used to run only example tests, which are otherwise not run.
     """
     parser.addoption(
         "--runslow", action="store_true", default=False, help="run slow tests"
     )
     parser.addoption(
-        "--integration",
+        "--example",
         action="store_true",
         default=False,
-        help="run integration tests",
+        help="run example tests",
     )
 
 
@@ -74,8 +74,8 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     """Apply our special markers and option handling for pytest."""
 
-    if not config.getoption("--integration"):
-        _skip_tests(items, "integration", "need --integration option to run")
+    if not config.getoption("--example"):
+        _skip_tests(items, "example", "need --example option to run")
 
     if not config.getoption("--runslow"):
         _skip_tests(items, "slow", "need --runslow option to run")

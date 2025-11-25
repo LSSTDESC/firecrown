@@ -10,15 +10,13 @@ from firecrown.parameters import (
     parameter_get_full_name,
     ParamsMap,
     handle_unused_params,
-    UpdatableUsageRecord,
-)
-from firecrown.parameters import (
     DerivedParameter,
     DerivedParameterCollection,
     register_new_updatable_parameter,
     InternalParameter,
     SamplerParameter,
 )
+from firecrown.updatable import UpdatableUsageRecord
 
 
 def test_register_new_updatable_parameter_with_no_arg():
@@ -554,130 +552,6 @@ def test_params_map_items():
     assert params.items() == d.items()
 
 
-def test_updatable_usage_record_empty_and_print_empty():
-    rec = UpdatableUsageRecord(
-        cls="EmptyUpdatable",
-        prefix="pfx",
-        obj_id=1,
-        sampler_params=[],
-        internal_params=[],
-        child_records=[],
-    )
-
-    assert rec.is_empty
-    assert not rec.is_empty_parent
-
-    # by default empty records are omitted
-    assert rec.get_log_lines() == []
-
-    # but when print_empty=True a header line is produced
-    lines = rec.get_log_lines(print_empty=True)
-    assert lines == ["EmptyUpdatable(pfx): "]
-
-
-def test_updatable_usage_record_parent_collapses_and_printing():
-    child = UpdatableUsageRecord(
-        cls="Child",
-        prefix="c",
-        obj_id=2,
-        sampler_params=["x"],
-        internal_params=[],
-        child_records=[],
-    )
-    parent = UpdatableUsageRecord(
-        cls="Parent",
-        prefix="p",
-        obj_id=1,
-        sampler_params=[],
-        internal_params=[],
-        child_records=[child],
-    )
-
-    # Because parent has no params but exactly one child, the parent's record
-    # should collapse into the child lines, with the parent included as a prefix
-    lines = parent.get_log_lines()
-    assert lines == [
-        "Parent(p) => Child(c): ",
-        "  Sampler parameters used:  ['x']",
-    ]
-
-
-def test_updatable_usage_record_indent_and_child_recursion():
-    child = UpdatableUsageRecord(
-        cls="Child",
-        prefix="c",
-        obj_id=2,
-        sampler_params=["b"],
-        internal_params=[],
-        child_records=[],
-    )
-    parent = UpdatableUsageRecord(
-        cls="Parent",
-        prefix="p",
-        obj_id=1,
-        sampler_params=["a"],
-        internal_params=["i"],
-        child_records=[child],
-    )
-
-    lines = parent.get_log_lines()
-
-    expected = [
-        "Parent(p): ",
-        "  Sampler parameters used:  ['a']",
-        "  Internal parameters used: ['i']",
-        "  Child(c): ",
-        "    Sampler parameters used:  ['b']",
-    ]
-
-    assert lines == expected
-
-
-def test_updatable_usage_record_empty_child_and_print_empty_options():
-    # child is empty
-    child = UpdatableUsageRecord(
-        cls="Child",
-        prefix="c",
-        obj_id=3,
-        sampler_params=[],
-        internal_params=[],
-        child_records=[],
-    )
-    parent = UpdatableUsageRecord(
-        cls="Parent",
-        prefix="p",
-        obj_id=4,
-        sampler_params=[],
-        internal_params=[],
-        child_records=[child],
-    )
-
-    # with default print_empty=False, collapse should result in empty output
-    assert parent.get_log_lines() == []
-
-    # with print_empty=True we should see the collapsed header
-    lines = parent.get_log_lines(print_empty=True)
-    assert lines == ["Parent(p) => Child(c): "]
-
-
-def test_updatable_usage_record_already_updated_flag():
-    """If an UpdatableUsageRecord indicates it was already updated, the
-    get_log_lines should return a single line noting it was already updated.
-    """
-    rec = UpdatableUsageRecord(
-        cls="Already",
-        prefix=None,
-        obj_id=1,
-        sampler_params=[],
-        internal_params=[],
-        child_records=[],
-        already_updated=True,
-    )
-
-    lines = rec.get_log_lines(print_empty=True)
-    assert lines == ["Already: (already updated)"]
-
-
 def test_params_map_lower_case_lookup():
     """Ensure get_from_full_name respects the lower-case fallback when enabled."""
     p = ParamsMap({"my_key": 4.2})
@@ -698,20 +572,209 @@ def test_params_map_list_with_ints_raises_typeerror():
         _ = ParamsMap({"a": [1, 2.0]})
 
 
-def test_updatable_usage_record_internal_params_only():
-    """If sampler_params is empty but internal_params is non-empty,
-    is_empty should be False and get_log_lines should show the internal
-    parameters line (this covers the second early-return branch).
-    """
-    rec = UpdatableUsageRecord(
-        cls="OnlyInternal",
-        prefix="p",
-        obj_id=7,
-        sampler_params=[],
-        internal_params=["i"],
-        child_records=[],
-    )
+def test_params_map_setitem():
+    """Test ParamsMap.__setitem__() method for setting values."""
+    params = ParamsMap({"a": 1.0})
+    params["b"] = 2.0
+    assert params["b"] == 2.0
+    params["a"] = 3.0
+    assert params["a"] == 3.0
 
-    assert not rec.is_empty
-    lines = rec.get_log_lines()
-    assert lines == ["OnlyInternal(p): ", "  Internal parameters used: ['i']"]
+
+def test_params_map_contains():
+    """Test ParamsMap.__contains__() method with in operator."""
+    params = ParamsMap({"a": 1.0, "b": 2.0})
+    assert "a" in params
+    assert "b" in params
+    assert "c" not in params
+    assert "nonexistent" not in params
+
+
+def test_params_map_copy():
+    """Test ParamsMap.copy() creates an independent copy."""
+    original = ParamsMap({"a": 1.0, "b": 2.0})
+    _ = original["a"]  # Mark 'a' as used
+    assert original.used_keys == {"a"}
+
+    # Create copy
+    copied = original.copy()
+
+    # Verify copy has same data and same used_keys state
+    assert copied.params == {"a": 1.0, "b": 2.0}
+    assert copied.used_keys == {"a"}
+    assert copied.lower_case == original.lower_case
+
+    # Verify independence: modifying copy doesn't affect original
+    copied["c"] = 3.0
+    assert "c" in copied
+    assert "c" not in original
+
+    copied.used_keys.add("b")
+    assert "b" not in original.used_keys
+
+    copied.lower_case = True
+    assert original.lower_case is False
+
+
+def test_params_map_update_duplicate_key():
+    """Test ParamsMap.update() raises error for duplicate keys."""
+    params = ParamsMap({"a": 1.0})
+
+    # Update with new key should work
+    params.update({"b": 2.0})
+    assert params["b"] == 2.0
+
+    # Update with duplicate key should raise ValueError
+    with pytest.raises(ValueError, match="Key a is already present in the ParamsMap"):
+        params.update({"a": 3.0})
+
+
+def test_params_map_keys():
+    """Test ParamsMap.keys() returns correct set of keys."""
+    params = ParamsMap({"a": 1.0, "b": 2.0, "c": 3.0})
+    keys = params.keys()
+
+    assert isinstance(keys, set)
+    assert keys == {"a", "b", "c"}
+
+    # Verify returned set is independent (modifying doesn't affect ParamsMap)
+    keys.add("d")
+    assert params.keys() == {"a", "b", "c"}
+
+
+def test_required_parameters_subtraction():
+    """Test RequiredParameters.__sub__() subtraction operator."""
+    param_a = SamplerParameter(name="a", default_value=1.0)
+    param_b = SamplerParameter(name="b", default_value=2.0)
+    param_c = SamplerParameter(name="c", default_value=3.0)
+    param_d = SamplerParameter(name="d", default_value=4.0)
+
+    params1 = RequiredParameters([param_a, param_b, param_c])
+    params2 = RequiredParameters([param_b, param_d])
+
+    # Subtract params2 from params1
+    result = params1 - params2
+
+    # Result should have 'a' and 'c' (not 'b' which was in params2)
+    result_names = set(result.get_params_names())
+    assert result_names == {"a", "c"}
+
+    # Verify original objects unchanged
+    assert set(params1.get_params_names()) == {"a", "b", "c"}
+    assert set(params2.get_params_names()) == {"b", "d"}
+
+
+def test_required_parameters_addition():
+    """Test RequiredParameters.__add__() addition operator."""
+    param_a = SamplerParameter(name="a", default_value=1.0)
+    param_b = SamplerParameter(name="b", default_value=2.0)
+    param_c = SamplerParameter(name="c", default_value=3.0)
+
+    params1 = RequiredParameters([param_a, param_b])
+    params2 = RequiredParameters([param_c])
+
+    # Add params2 to params1
+    result = params1 + params2
+
+    # Result should have all three parameters
+    result_names = set(result.get_params_names())
+    assert result_names == {"a", "b", "c"}
+
+    # Verify original objects unchanged
+    assert set(params1.get_params_names()) == {"a", "b"}
+    assert set(params2.get_params_names()) == {"c"}
+
+
+def test_sampler_parameter_set_fullname():
+    """Test SamplerParameter.set_fullname() method."""
+    sp = SamplerParameter(default_value=1.0)
+
+    # Initially no name/prefix set, accessing name should raise
+    with pytest.raises(ValueError, match="Parameter name is not set"):
+        _ = sp.name
+
+    # Set fullname with prefix
+    sp.set_fullname("my_prefix", "my_name")
+    assert sp.name == "my_name"
+    assert sp.prefix == "my_prefix"
+    assert sp.fullname == "my_prefix_my_name"
+
+    # Set fullname with None prefix
+    sp.set_fullname(None, "another_name")
+    assert sp.name == "another_name"
+    assert sp.prefix is None
+    assert sp.fullname == "another_name"
+
+
+def test_params_map_union_no_common_keys():
+    """Test ParamsMap.union() when there are no common keys.
+
+    This covers the branch where the for loop over common keys is not entered.
+    """
+    p1 = ParamsMap({"a": 1.0, "b": 2.0})
+    p2 = ParamsMap({"c": 3.0, "d": 4.0})
+
+    # Union with no overlapping keys
+    p3 = p1.union(p2)
+
+    assert p3.get_from_full_name("a") == 1.0
+    assert p3.get_from_full_name("b") == 2.0
+    assert p3.get_from_full_name("c") == 3.0
+    assert p3.get_from_full_name("d") == 4.0
+
+
+def test_params_map_union_common_keys_same_values():
+    """Test ParamsMap.union() when common keys have the same values.
+
+    This covers the branch where common keys exist but don't trigger
+    the ValueError because they have matching values.
+    """
+    p1 = ParamsMap({"a": 1.0, "b": 2.0})
+    p2 = ParamsMap({"b": 2.0, "c": 3.0})
+
+    # Union with overlapping key 'b' having the same value
+    p3 = p1.union(p2)
+
+    assert p3.get_from_full_name("a") == 1.0
+    assert p3.get_from_full_name("b") == 2.0
+    assert p3.get_from_full_name("c") == 3.0
+
+
+def test_params_map_lower_case_key_not_found():
+    """Test ParamsMap with lower_case enabled but key still not found.
+
+    This covers the branch where lower_case is True but the lowercased
+    key is not in the map.
+    """
+    p = ParamsMap({"my_key": 4.2})
+    p.use_lower_case_keys(True)
+
+    # Even with lower_case enabled, a completely different key should raise
+    with pytest.raises(KeyError, match="Key NONEXISTENT not found"):
+        _ = p.get_from_full_name("NONEXISTENT")
+
+
+def test_handle_unused_params_all_used():
+    """Test handle_unused_params when all parameters are used.
+
+    This covers the early return branch when there are no unused keys.
+    """
+    params = ParamsMap({"a": 1.0, "b": 2.0})
+
+    # Use all parameters
+    _ = params.get_from_full_name("a")
+    _ = params.get_from_full_name("b")
+
+    # Should not raise or warn when all keys are used
+    handle_unused_params(params=params, updated_records=[], raise_on_unused=False)
+    handle_unused_params(params=params, updated_records=[], raise_on_unused=True)
+
+
+def test_params_map_with_list_of_floats():
+    """Test ParamsMap accepts a list of floats as a valid value.
+
+    This covers the branch in _validate_params_map_value where
+    the value is a list and all elements are floats.
+    """
+    params = ParamsMap({"a": [1.0, 2.0, 3.0]})
+    assert "a" in params
