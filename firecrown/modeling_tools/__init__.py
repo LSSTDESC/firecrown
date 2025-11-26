@@ -9,9 +9,11 @@ calculators.
 from firecrown.modeling_tools._modeling_tools import (
     ModelingTools,
     PowerspectrumModifier,
+    CCLCalculatorArgs,
 )
 
 __all__ = [
+    "CCLCalculatorArgs",
     "ModelingTools",
     "PowerspectrumModifier",
 ]

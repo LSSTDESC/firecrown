@@ -1,4 +1,4 @@
-"""Tests for the modules firecrown.metata_types and firecrown.metadata_functions.
+"""Tests for the modules firecrown.metadaa_types and firecrown.metadata_functions.
 
 In this module, we test the functions and classes involved SACC extraction tools.
 """
@@ -301,6 +301,44 @@ def test_extract_all_tracers_invalid_data_type(
         ValueError, match="Tracer src0 does not have data points associated with it."
     ):
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+
+
+def test_extract_all_tracers_skips_non_nztracer() -> None:
+    """Test that extract_all_tracers_inferred_galaxy_zdists skips non-NZTracer types.
+
+    Verifies that when a SACC object contains both NZTracer and non-NZTracer types
+    (e.g., WeakLensingTracer, DeltaFunctionTracer), only the NZTracer instances are
+    extracted and returned. This tests the filtering logic on line 37-45 in
+    extract_all_tracers_inferred_galaxy_zdists.
+    """
+    sacc_data = sacc.Sacc()
+
+    z = np.linspace(0, 1.0, 50) + 0.05
+    ells = np.unique(np.logspace(1, 3, 10).astype(np.int64))
+
+    # Add NZTracer (should be included)
+    dndz = np.exp(-0.5 * (z - 0.5) ** 2 / 0.05 / 0.05)
+    sacc_data.add_tracer("NZ", "src0", z, dndz)
+
+    # Add a DeltaFunctionTracer (non-NZTracer, should be skipped)
+    sacc_data.add_tracer("misc", "sample")
+
+    # Add measurement data using only the NZTracer
+    Cells = np.random.normal(size=ells.shape[0])
+    sacc_data.add_ell_cl("galaxy_shear_cl_ee", "src0", "src0", ells, Cells)
+
+    cov = np.diag(np.ones_like(Cells) * 0.01)
+    sacc_data.add_covariance(cov)
+
+    # Extract tracers - should only get the NZTracer, skipping DeltaFunctionTracer
+    all_tracers = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
+
+    # Verify only the NZTracer was extracted
+    assert len(all_tracers) == 1
+    assert all_tracers[0].bin_name == "src0"
+    assert_array_equal(all_tracers[0].z, z)
+    assert_array_equal(all_tracers[0].dndz, dndz)
+    assert all_tracers[0].measurements == {Galaxies.SHEAR_E}
 
 
 def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
