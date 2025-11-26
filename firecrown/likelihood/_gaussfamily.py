@@ -142,10 +142,14 @@ class GaussFamily(Likelihood):
     def __init__(
         self,
         statistics: Sequence[Statistic],
+        use_cholesky: bool = True,
     ) -> None:
         """Initialize the base class parts of a GaussFamily object.
 
         :param statistics: A list of statistics to be include in chisquared calculations
+        :param use_cholesky: Whether to use Cholesky decomposition for chi-squared
+            calculation. Set to False if covariance modifications make Cholesky
+            incompatible.
         """
         super().__init__()
         self.state: State = State.INITIALIZED
@@ -168,6 +172,7 @@ class GaussFamily(Likelihood):
         self.cov_index_map: None | dict[int, int] = None
         self.theory_vector: None | npt.NDArray[np.double] = None
         self.data_vector: None | npt.NDArray[np.double] = None
+        self._use_cholesky_for_chisq: bool = use_cholesky
 
     @classmethod
     def create_ready(
@@ -392,6 +397,66 @@ class GaussFamily(Likelihood):
         )
         return self.get_data_vector(), self.compute_theory_vector(tools)
 
+    def _compute_chisq_cholesky(self, residuals: npt.NDArray[np.float64]) -> float:
+        """Compute chi-squared using Cholesky decomposition.
+
+        This is the numerically stable method for chi-squared calculation.
+
+        :param residuals: The residuals (data - theory)
+        :return: The chi-squared value
+        """
+        assert self.cholesky is not None
+        x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
+        chisq = np.dot(x, x)
+        return float(chisq)
+
+    def _compute_chisq_direct(self, residuals: npt.NDArray[np.float64]) -> float:
+        """Compute chi-squared using direct inverse covariance multiplication.
+
+        This method is less numerically stable but necessary when covariance
+        modifications make Cholesky decomposition incompatible.
+
+        :param residuals: The residuals (data - theory)
+        :return: The chi-squared value
+        """
+        assert self.inv_cov is not None
+        chisq = residuals @ self.inv_cov @ residuals
+        return float(chisq)
+
+    def _get_theory_and_data(
+        self, tools: ModelingTools
+    ) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
+        """Get theory and data vectors.
+
+        :param tools: The ModelingTools to use for theory calculation
+        :return: Tuple of (theory_vector, data_vector)
+        """
+        theory_vector: npt.NDArray[np.float64]
+        data_vector: npt.NDArray[np.float64]
+        try:
+            theory_vector = self.compute_theory_vector(tools)
+            data_vector = self.get_data_vector()
+        except NotImplementedError:
+            data_vector, theory_vector = self.compute(tools)
+
+        assert len(data_vector) == len(theory_vector)
+        return theory_vector, data_vector
+
+    def compute_chisq_impl(self, residuals: npt.NDArray[np.float64]) -> float:
+        """Implementation of chi-squared calculation.
+
+        This method can be overridden by subclasses that need different
+        chi-squared calculation strategies. By default, it uses either
+        Cholesky decomposition (more stable) or direct inverse covariance
+        multiplication, depending on the _use_cholesky_for_chisq flag.
+
+        :param residuals: The residuals (data - theory)
+        :return: The chi-squared value
+        """
+        if self._use_cholesky_for_chisq:
+            return self._compute_chisq_cholesky(residuals)
+        return self._compute_chisq_direct(residuals)
+
     @final
     @enforce_states(
         initial=[State.UPDATED, State.COMPUTED],
@@ -405,22 +470,9 @@ class GaussFamily(Likelihood):
             theory vector
         :return: the chi-squared
         """
-        theory_vector: npt.NDArray[np.float64]
-        data_vector: npt.NDArray[np.float64]
-        residuals: npt.NDArray[np.float64]
-        try:
-            theory_vector = self.compute_theory_vector(tools)
-            data_vector = self.get_data_vector()
-        except NotImplementedError:
-            data_vector, theory_vector = self.compute(tools)
-
-        assert len(data_vector) == len(theory_vector)
+        theory_vector, data_vector = self._get_theory_and_data(tools)
         residuals = np.array(data_vector - theory_vector, dtype=np.float64)
-
-        assert self.cholesky is not None
-        x = scipy.linalg.solve_triangular(self.cholesky, residuals, lower=True)
-        chisq = np.dot(x, x)
-        return chisq
+        return self.compute_chisq_impl(residuals)
 
     @enforce_states(
         initial=[State.READY, State.UPDATED, State.COMPUTED],

@@ -62,8 +62,8 @@ def test_two_point_theory_reset_integration():
     assert source1.is_updated()
     assert source2.is_updated()
 
-    # Call the protected _reset method which is what gets invoked
-    theory._reset()  # pylint: disable=protected-access
+    # Ensure reset makes them not updated
+    theory.reset()
 
     assert not source1.is_updated()
     assert not source2.is_updated()

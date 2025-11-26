@@ -20,17 +20,14 @@ def mock_source():
     """Create a mock source that behaves like a real Updatable Source."""
     source = Mock(spec=Source)
     source.sacc_tracer = "tracer_1"
-    source._updated = False
     source.is_updated = Mock(return_value=False)
 
-    def update_side_effect(params, updated_record=None):
-        if source._updated:
+    def update_side_effect(_params, _updated_record=None):
+        if source.is_updated():
             return  # Mimic Updatable: do nothing if already updated
-        source._updated = True
         source.is_updated.return_value = True
 
     def reset_side_effect():
-        source._updated = False
         source.is_updated.return_value = False
 
     source.update = Mock(side_effect=update_side_effect)
@@ -43,17 +40,14 @@ def mock_source_pair(mock_source):
     """Create a pair of mock sources."""
     source2 = Mock(spec=Source)
     source2.sacc_tracer = "tracer_2"
-    source2._updated = False
     source2.is_updated = Mock(return_value=False)
 
-    def update_side_effect2(params, updated_record=None):
-        if source2._updated:
+    def update_side_effect2(_params, _updated_record=None):
+        if source2.is_updated():
             return
-        source2._updated = True
         source2.is_updated.return_value = True
 
     def reset_side_effect2():
-        source2._updated = False
         source2.is_updated.return_value = False
 
     source2.update = Mock(side_effect=update_side_effect2)
@@ -61,11 +55,8 @@ def mock_source_pair(mock_source):
     return (mock_source, source2)
 
 
-class TestSource(Source):
+class FakeSource(Source):
     """A minimal concrete Source implementation for testing."""
-
-    def __init__(self, sacc_tracer: str):
-        super().__init__(sacc_tracer)
 
     def read_systematics(self, sacc_data: sacc.Sacc) -> None:
         pass
@@ -85,8 +76,8 @@ class TestSource(Source):
 
 @pytest.fixture
 def source_pair():
-    """Create a pair of concrete TestSource instances."""
-    return (TestSource("tracer_1"), TestSource("tracer_2"))
+    """Create a pair of concrete FakeSource instances."""
+    return (FakeSource("tracer_1"), FakeSource("tracer_2"))
 
 
 def test_two_point_theory_initialization():
@@ -236,8 +227,8 @@ def test_two_point_theory_reset(mock_source_pair):
     assert mock_source_pair[0].is_updated()
     assert mock_source_pair[1].is_updated()
 
-    # Call the protected _reset method which is what gets invoked
-    theory._reset()  # pylint: disable=protected-access
+    # Call the public reset method to clear updated state
+    theory.reset()
 
     assert not mock_source_pair[0].is_updated()
     assert not mock_source_pair[1].is_updated()
