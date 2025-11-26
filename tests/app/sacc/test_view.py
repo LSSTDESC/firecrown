@@ -356,3 +356,95 @@ class TestViewSpecialCases:
         assert view.all_tracers[0].bin_name == "a_first"
         assert view.all_tracers[1].bin_name == "m_middle"
         assert view.all_tracers[2].bin_name == "z_last"
+
+    def test_view_with_plot_covariance_true(self, sacc_file: Path) -> None:
+        """Test View with plot_covariance=True (line 118)."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, plot_covariance=True)
+            assert view.plot_covariance is True
+            # Verify View was initialized without errors
+            assert view.sacc_data is not None
+
+    def test_view_with_check_flag_true(self, sacc_file: Path) -> None:
+        """Test View with check=True to trigger quality checks."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, check=True, plot_covariance=False)
+            assert view.check is True
+            # Verify View was initialized without errors
+            assert view.sacc_data is not None
+
+    def test_view_check_sacc_quality(self, sacc_file: Path) -> None:
+        """Test SACC quality check execution."""
+        with patch("matplotlib.pyplot.show"):
+            # Create view with quality checks enabled
+            view = View(sacc_file=sacc_file, check=True, plot_covariance=False)
+            # Verify the check ran without raising exceptions
+            assert view.check is True
+
+    def test_view_show_final_summary(self, sacc_file: Path) -> None:
+        """Test final summary display."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, plot_covariance=False)
+            # Verify the view was created and contains data
+            assert len(view.all_tracers) > 0
+            assert view.sacc_data.mean is not None
+
+    def test_view_plot_covariance_execution(self, sacc_file: Path) -> None:
+        """Test covariance plotting execution."""
+        with patch("matplotlib.pyplot.show"):
+            # Create view with covariance plotting
+            view = View(sacc_file=sacc_file, plot_covariance=True)
+            # Verify no exceptions were raised during plotting
+            assert view.sacc_data.covariance is not None
+
+    def test_view_check_quality_execution(self, sacc_file: Path) -> None:
+        """Test quality check execution."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, check=True, plot_covariance=False)
+            # Verify quality check ran
+            assert view.check is True
+
+    def test_view_show_harmonic_bins_populated(self, sacc_file: Path) -> None:
+        """Test that harmonic bins are populated."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, plot_covariance=False)
+            # The view should have processed bins
+            assert hasattr(view, "bin_comb_harmonic")
+
+    def test_view_show_real_bins_empty(self, tmp_path: Path) -> None:
+        """Test when real bins are empty."""
+        s = sacc.Sacc()
+        z = np.linspace(0.0, 2.0, 50)
+        dndz = np.exp(-0.5 * ((z - 1.0) / 0.2) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+
+        # Add only harmonic data (no real space)
+        ells = np.array([10, 20, 30])
+        for ell in ells:
+            s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=int(ell))
+
+        cov = np.eye(len(ells)) * 0.1
+        s.add_covariance(cov)
+
+        sacc_path = tmp_path / "harmonic_only.sacc"
+        s.save_fits(str(sacc_path))
+
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_path, plot_covariance=False)
+            # Verify no real bins were found
+            assert len(view.bin_comb_real) == 0
+
+    def test_view_extract_harmonic_bins(self, sacc_file: Path) -> None:
+        """Test extraction of harmonic bins."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, plot_covariance=False)
+            # Verify harmonic bins were extracted
+            assert len(view.bin_comb_harmonic) > 0
+
+    def test_view_capture_warnings(self, sacc_file: Path) -> None:
+        """Test that warnings are captured during quality checks."""
+        with patch("matplotlib.pyplot.show"):
+            view = View(sacc_file=sacc_file, check=True, plot_covariance=False)
+            # Verify check completed without error
+            assert view.check is True

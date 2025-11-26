@@ -6,7 +6,9 @@ Tests the SACC file transform command.
 # pylint: disable=missing-class-docstring,missing-function-docstring
 
 from pathlib import Path
+import time
 
+import numpy as np
 import pytest
 import sacc
 from _pytest.capture import CaptureFixture, CaptureResult
@@ -377,3 +379,131 @@ class TestTransformIntegration:
         assert "Transformation successful!" in captured.out
         assert str(input_size) in captured.out or "bytes" in captured.out
         assert str(output_size) in captured.out or "bytes" in captured.out
+
+
+class TestTransformFixOrdering:
+    """Tests for Transform fix_ordering functionality."""
+
+    def test_transform_with_fix_ordering_false(self, tmp_path: Path) -> None:
+        """Test Transform without fixing ordering."""
+        input_file: Path = tmp_path / "test.fits"
+        output_file: Path = tmp_path / "test_output.fits"
+
+        # Create a minimal SACC file
+        s: sacc.Sacc = sacc.Sacc()
+        z = np.linspace(0.0, 1.0, 10)
+        dndz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+        s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=10)
+        s.save_fits(str(input_file), overwrite=False)
+
+        # Transform without fix_ordering
+        Transform(
+            sacc_file=input_file,
+            output=output_file,
+            fix_ordering=False,
+        )
+
+        assert output_file.exists()
+        s2: sacc.Sacc = sacc.Sacc.load_fits(str(output_file))
+        assert len(s2.tracers) == 2
+
+    def test_transform_with_fix_ordering_true(self, tmp_path: Path) -> None:
+        """Test Transform with fix_ordering enabled."""
+        input_file: Path = tmp_path / "test_ordering.fits"
+        output_file: Path = tmp_path / "test_ordering_fixed.fits"
+
+        # Create SACC with NZ tracers (needed for ordering checks)
+        s: sacc.Sacc = sacc.Sacc()
+        z = np.linspace(0.0, 1.0, 10)
+        dndz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
+        s.add_tracer("NZ", "bin0", z, dndz)
+        s.add_tracer("NZ", "bin1", z, dndz)
+        s.add_data_point("galaxy_shear_cl_ee", ("bin0", "bin1"), 1.0, ell=10)
+        s.save_fits(str(input_file), overwrite=False)
+
+        # Transform with fix_ordering
+        Transform(
+            sacc_file=input_file,
+            output=output_file,
+            fix_ordering=True,
+        )
+
+        assert output_file.exists()
+
+    def test_transform_overwrite_flag(self, tmp_path: Path) -> None:
+        """Test Transform with overwrite flag."""
+        input_file: Path = tmp_path / "test_overwrite.fits"
+
+        # Create a SACC file
+        s: sacc.Sacc = sacc.Sacc()
+        s.add_tracer("misc", "tracer1")
+        s.save_fits(str(input_file), overwrite=False)
+
+        # Transform with overwrite=True (should modify in place)
+        # Small delay to ensure mtime changes if file is modified
+        time.sleep(0.01)
+
+        Transform(
+            sacc_file=input_file,
+            overwrite=True,
+            output_format=SaccFormat.FITS,
+        )
+
+        # File should still exist
+        assert input_file.exists()
+
+    def test_transform_with_hdf5_format(self, tmp_path: Path) -> None:
+        """Test Transform detecting and writing HDF5 format."""
+        input_file: Path = tmp_path / "test.hdf5"
+        output_file: Path = tmp_path / "test_output.hdf5"
+
+        # Create a minimal SACC file in HDF5 format
+        s: sacc.Sacc = sacc.Sacc()
+        s.add_tracer("misc", "tracer1")
+        s.save_hdf5(str(input_file))
+
+        # Transform with HDF5 input and output
+        Transform(
+            sacc_file=input_file,
+            output=output_file,
+            output_format=SaccFormat.HDF5,
+        )
+
+        assert output_file.exists()
+        s2: sacc.Sacc = sacc.Sacc.load_hdf5(str(output_file))
+        assert len(s2.tracers) == 1
+
+    def test_detect_format_fits(self, tmp_path: Path) -> None:
+        """Test format detection for FITS files."""
+        input_file: Path = tmp_path / "test.fits"
+        s: sacc.Sacc = sacc.Sacc()
+        s.add_tracer("misc", "tracer1")
+        s.save_fits(str(input_file), overwrite=False)
+
+        # Detect format
+        detected = Transform.detect_format(input_file)
+        assert detected == SaccFormat.FITS
+
+    def test_detect_format_hdf5(self, tmp_path: Path) -> None:
+        """Test format detection for HDF5 files."""
+        input_file: Path = tmp_path / "test.hdf5"
+        s: sacc.Sacc = sacc.Sacc()
+        s.add_tracer("misc", "tracer1")
+        s.save_hdf5(str(input_file))
+
+        # Detect format
+        detected = Transform.detect_format(input_file)
+        assert detected == SaccFormat.HDF5
+
+    def test_detect_format_h5_extension(self, tmp_path: Path) -> None:
+        """Test format detection for .h5 extension."""
+        input_file: Path = tmp_path / "test.h5"
+        s: sacc.Sacc = sacc.Sacc()
+        s.add_tracer("misc", "tracer1")
+        s.save_hdf5(str(input_file))
+
+        # Detect format
+        detected = Transform.detect_format(input_file)
+        assert detected == SaccFormat.HDF5

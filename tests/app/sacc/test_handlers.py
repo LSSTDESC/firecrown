@@ -28,9 +28,9 @@ Specifically, assigning measurement type 'SHEAR_E' to tracer 'src0' and measurem
 type 'COUNTS' to tracer 'lens0' would create mixed-type measurements (multiple distinct
 measurement types in the same tomographic bin).
 
-The data type string 'galaxy_shearDensity_cl_e' follows the SACC naming convention, where the order
-of measurement types in the string must match the order of tracers. However, your SACC
-file/object appears to violate this convention.
+The data type string 'galaxy_shearDensity_cl_e' follows the SACC naming convention,
+where the order of measurement types in the string must match the order of tracers.
+However, your SACC file/object appears to violate this convention.
 """
         result = handler.try_handle(message)
 
@@ -109,7 +109,10 @@ class TestLegacyCovarianceHandler:
     def test_try_handle_matching_message(self) -> None:
         """Test handling of legacy covariance warning."""
         handler = LegacyCovarianceHandler()
-        message = "Warning: You are reading an older sacc legacy sacc file format. The covariance matrix..."
+        message = (
+            "Warning: You are reading an older sacc legacy sacc file "
+            "format. The covariance matrix..."
+        )
         result = handler.try_handle(message)
 
         assert result is True
@@ -131,7 +134,10 @@ class TestLegacyCovarianceHandler:
     def test_get_title(self) -> None:
         """Test title generation."""
         handler = LegacyCovarianceHandler()
-        message = "Warning: You are reading an older sacc legacy sacc file format. The covariance matrix..."
+        message = (
+            "Warning: You are reading an older sacc legacy sacc file "
+            "format. The covariance matrix..."
+        )
         handler.try_handle(message)
         title = handler.get_title()
 
@@ -140,7 +146,10 @@ class TestLegacyCovarianceHandler:
     def test_multiple_detections(self) -> None:
         """Test multiple legacy format detections."""
         handler = LegacyCovarianceHandler()
-        msg1 = "Warning: You are reading an older sacc legacy sacc file format. The covariance matrix..."
+        msg1 = (
+            "Warning: You are reading an older sacc legacy sacc file "
+            "format. The covariance matrix..."
+        )
         msg2 = "Another message about older sacc legacy sacc file format and covariance"
 
         handler.try_handle(msg1)
@@ -158,7 +167,10 @@ class TestMissingSaccOrderingHandler:
         lines = [
             "Some initial content",
             "The FITS format without the 'sacc_ordering' column is deprecated.",
-            "Assuming data rows are in the correct order according to the internal ordering.",
+            (
+                "Assuming data rows are in the correct order according "
+                "to the internal ordering."
+            ),
             "Some trailing content",
         ]
         handled, remaining = handler.try_handle(lines)
@@ -187,7 +199,10 @@ class TestMissingSaccOrderingHandler:
         handler = MissingSaccOrderingHandler()
         lines = [
             "The FITS format without the 'sacc_ordering' column is deprecated.",
-            "Assuming data rows are in the correct order according to the internal ordering.",
+            (
+                "Assuming data rows are in the correct order according "
+                "to the internal ordering."
+            ),
         ]
         handler.try_handle(lines)
         title = handler.get_title()
@@ -199,7 +214,10 @@ class TestMissingSaccOrderingHandler:
         handler = MissingSaccOrderingHandler()
         lines = [
             "The FITS format without the 'sacc_ordering' column is deprecated.",
-            "Assuming data rows are in the correct order according to the internal ordering.",
+            (
+                "Assuming data rows are in the correct order according "
+                "to the internal ordering."
+            ),
         ]
         handler.try_handle(lines)
         details = handler.get_details()
@@ -207,6 +225,14 @@ class TestMissingSaccOrderingHandler:
         assert details is not None
         assert "older SACC file format" in details
         assert "pre-1.0" in details
+
+    def test_get_details_empty(self) -> None:
+        """Test details when no issues detected."""
+        handler = MissingSaccOrderingHandler()
+        # Don't handle anything, leave _matched_issues empty
+        details = handler.get_details()
+
+        assert details is None
 
 
 class TestUnknownWarningHandler:
@@ -268,7 +294,7 @@ class TestUnknownStdoutHandler:
         handled, remaining = handler.try_handle(lines)
 
         assert handled is True
-        assert remaining == []
+        assert not remaining
         assert handler.count() == 3  # Only non-empty lines
 
     def test_try_handle_empty_lines(self) -> None:
@@ -278,7 +304,7 @@ class TestUnknownStdoutHandler:
         handled, remaining = handler.try_handle(lines)
 
         assert handled is True
-        assert remaining == []
+        assert not remaining
         assert handler.count() == 0  # Empty lines not captured
 
     def test_get_title(self) -> None:
@@ -302,6 +328,13 @@ class TestUnknownStdoutHandler:
         assert "line 1" in details
         assert "line 2" in details
 
+    def test_get_details_empty(self) -> None:
+        """Test details when no stdout lines captured."""
+        handler = UnknownStdoutHandler()
+        details = handler.get_details()
+
+        assert details is None
+
 
 class TestUnknownStderrHandler:
     """Tests for UnknownStderrHandler."""
@@ -318,7 +351,7 @@ class TestUnknownStderrHandler:
         handled, remaining = handler.try_handle(lines)
 
         assert handled is True
-        assert remaining == []
+        assert not remaining
         assert handler.count() == 3  # Only non-empty lines
 
     def test_try_handle_empty_lines(self) -> None:
@@ -328,7 +361,7 @@ class TestUnknownStderrHandler:
         handled, remaining = handler.try_handle(lines)
 
         assert handled is True
-        assert remaining == []
+        assert not remaining
         assert handler.count() == 0  # Empty lines not captured
 
     def test_get_title(self) -> None:
@@ -351,3 +384,10 @@ class TestUnknownStderrHandler:
         assert details is not None
         assert "error 1" in details
         assert "error 2" in details
+
+    def test_get_details_empty(self) -> None:
+        """Test details when no stderr lines captured."""
+        handler = UnknownStderrHandler()
+        details = handler.get_details()
+
+        assert details is None
