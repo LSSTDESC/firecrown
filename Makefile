@@ -251,7 +251,7 @@ clean: clean-coverage clean-docs clean-build  ## Remove all generated files (can
 
 ##@ Pre-commit
 
-pre-commit: format lint test-coverage  ## Run all pre-commit checks (format, lint, test with coverage)
+pre-commit: format lint test-coverage docs  ## Run all pre-commit checks (format, lint, test with coverage, docs)
 	@echo ""
 	@echo "✅ All pre-commit checks passed!"
 

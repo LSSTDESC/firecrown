@@ -9,7 +9,11 @@ from firecrown.modeling_tools import ModelingTools
 
 
 class ConstGaussian(GaussFamily):
-    """A Gaussian log-likelihood with a constant covariance matrix."""
+    """Base class for constant covariance Gaussian likelihoods.
+
+    Provides shared implementations of compute_loglike and make_realization_vector
+    for all constant covariance Gaussian likelihood variants.
+    """
 
     def compute_loglike(self, tools: ModelingTools) -> float:
         """Compute the log-likelihood.
