@@ -148,8 +148,7 @@ def _process_single_type_measurements(
     :param tracer_types: Dictionary to update with detected measurement types.
     """
     for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in mdt.MEASURED_TYPE_STRING_MAP:
-            continue
+        assert data_type in mdt.MEASURED_TYPE_STRING_MAP
         a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
         if a == b:
             tracer_types[tracer1].update({a})
@@ -194,8 +193,7 @@ def _process_two_type_measurements(
     :param allow_mixed_types: Whether to allow mixed-type measurements.
     """
     for data_type, tracer1, tracer2 in all_data_types:
-        if data_type not in mdt.MEASURED_TYPE_STRING_MAP:
-            continue
+        assert data_type in mdt.MEASURED_TYPE_STRING_MAP
         a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
         if a != b:
             # Skip if types are already correctly assigned
