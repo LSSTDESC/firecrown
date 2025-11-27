@@ -260,6 +260,7 @@ all-checks: format lint test-coverage test-slow test-integration docs  ## Run ev
 	@echo "✅ All checks passed! (format, lint, coverage, slow tests, integration tests, docs)"
 
 install:  ## Install firecrown in development mode
+	pip uninstall -y firecrown || true
 	pip install --no-deps -e .
 
 ##@ Advanced
