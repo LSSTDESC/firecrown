@@ -40,6 +40,7 @@ include = ["firecrown*"]
 exclude = ["examples*", "tests*", "tutorial*", "docs*"]
 
 [project.scripts]
+firecrown = "firecrown.app:app"
 firecrown-link-checker = "firecrown.fctools.link_checker:app"
 
 # Coverage configuration

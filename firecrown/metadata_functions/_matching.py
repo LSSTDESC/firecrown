@@ -64,8 +64,13 @@ def make_two_point_xy(
     """
     a, b = mdt.MEASURED_TYPE_STRING_MAP[data_type]
 
-    igz1 = inferred_galaxy_zdists_dict[tracer_names[0]]
-    igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
+    try:
+        igz1 = inferred_galaxy_zdists_dict[tracer_names[0]]
+        igz2 = inferred_galaxy_zdists_dict[tracer_names[1]]
+    except KeyError as e:
+        raise ValueError(
+            f"Tracer '{e.args[0]}' not found in inferred galaxy z distributions."
+        ) from e
 
     if (a not in igz1.measurements) or (b not in igz2.measurements):
         if (a in igz2.measurements) and (b in igz1.measurements):

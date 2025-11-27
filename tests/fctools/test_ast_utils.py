@@ -408,6 +408,7 @@ class MyClass:
             keywords=[],
             body=[ast.Expr(value=ast.Constant(value=""))],
             decorator_list=[],
+            type_params=[],
         )
         result = format_class_docstring(class_def)
 

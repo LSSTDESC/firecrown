@@ -8,9 +8,6 @@ from firecrown.likelihood import Source
 class FakeSource(Source):
     """A minimal concrete Source implementation for testing."""
 
-    def __init__(self, sacc_tracer: str):
-        super().__init__(sacc_tracer)
-
     def read_systematics(self, sacc_data) -> None:
         pass
 

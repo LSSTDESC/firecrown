@@ -361,11 +361,138 @@ follows:
     documentation for detailed instructions:
         https://firecrown.readthedocs.io/en/latest/sacc_usage.html
 
-How to Fix Your SACC File
-~~~~~~~~~~~~~~~~~~~~~~~~~~
+Using Firecrown CLI for Quality Control
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-To fix SACC convention violations, you need to reorder tracers in your data type
-entries so that they match the measurement type order in the data type string.
+Firecrown provides command-line tools to detect and fix SACC convention violations
+automatically.
+
+**Step 1: Check Your SACC File**
+
+Use the ``view`` command with the ``--check`` flag to validate your SACC file:
+
+.. code-block:: bash
+
+    firecrown sacc view data.sacc --check
+
+This command will:
+
+- Display file contents (tracers, measurements, covariance)
+- Run quality checks for naming convention compliance
+- Detect tracer ordering issues
+- Report any violations with detailed diagnostics
+
+**Example Output:**
+
+.. code-block:: text
+
+    ──────────────────────────────────── Loading SACC file ─────────────────────────────────────
+    File: sacc_data.sacc
+    Allow mixed types: False
+    ─────────────────────────────────────── SACC Summary ───────────────────────────────────────
+    ╭────── SACC Summary ──────╮
+    │ Number of tracers: 9     │
+    │ Data points: 457         │
+    │ Covariance elements: 457 │
+    ╰──────────────────────────╯
+    ───────────────────────────────────────── Tracers ──────────────────────────────────────────
+    ┏━━━━━━━┳━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓
+    ┃ Name  ┃ TypeSource ┃ z min-max (density) ┃ dndz mean, std  ┃ Measurements                ┃
+    ┡━━━━━━━╇━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┩
+    │ lens0 │ default    │ 0.005-3.995         │ 0.240 +/- 0.044 │ {COUNTS}                    │
+    │ lens1 │ default    │ 0.005-3.995         │ 0.383 +/- 0.050 │ {COUNTS}                    │
+    │ ...   │ ...        │ ...                 │ ...             │ ...                         │
+    │ src0  │ default    │ 0.005-3.995         │ 0.390 +/- 0.250 │ {SHEAR_T, PART_OF_XI_MINUS, │
+    │       │            │                     │                 │ PART_OF_XI_PLUS}            │
+    └───────┴────────────┴─────────────────────┴─────────────────┴─────────────────────────────┘
+    ...(bin combinations and summary omitted)...
+    ─────────────────────────────────── SACC Quality Checks ────────────────────────────────────
+    ⚠️  Found 20 tracer naming convention violation(s)
+      • Tracers 'lens0' and 'src0' (data type: 'galaxy_shearDensity_xi_t')
+      • Tracers 'lens0' and 'src1' (data type: 'galaxy_shearDensity_xi_t')
+      • Tracers 'lens0' and 'src2' (data type: 'galaxy_shearDensity_xi_t')
+      • Tracers 'lens0' and 'src3' (data type: 'galaxy_shearDensity_xi_t')
+      ...(16 more violations)...
+    
+    Recommendation: Use 'firecrown sacc transform --fix-ordering' to correct.
+
+**Step 2: Fix Ordering Issues**
+
+Use the ``transform`` command with ``--fix-ordering`` to automatically correct
+tracer ordering:
+
+.. code-block:: bash
+
+    firecrown sacc transform data.sacc --fix-ordering --overwrite
+
+This command will:
+
+- Read the SACC file
+- Detect tracer ordering violations
+- Swap tracers to match the data type string convention
+- Write the corrected file back (with ``--overwrite``)
+- Display a summary of corrections
+
+**Example Output:**
+
+.. code-block:: text
+
+    Detected input format: HDF5
+    Reading HDF5 file: sacc_data.sacc
+    Fixing tracer ordering for 20 unique corrections.
+    For data type galaxy_shearDensity_xi_t and tracers lens0, src0, 6 data points were flipped.
+    For data type galaxy_shearDensity_xi_t and tracers lens0, src1, 6 data points were flipped.
+    For data type galaxy_shearDensity_xi_t and tracers lens0, src2, 6 data points were flipped.
+    For data type galaxy_shearDensity_xi_t and tracers lens0, src3, 6 data points were flipped.
+    For data type galaxy_shearDensity_xi_t and tracers lens1, src0, 8 data points were flipped.
+    ...(15 more corrections)...
+    For data type galaxy_shearDensity_xi_t and tracers lens4, src3, 11 data points were flipped.
+    Writing SaccFormat.HDF5 file: sacc_data.sacc
+    
+    ============================================================
+    ✅ Transformation successful!
+    ============================================================
+    Input:  sacc_data.sacc (HDF5, 1,679,790 bytes)
+    Output: sacc_data.sacc (HDF5, 1,653,400 bytes)
+    Size reduction: 1.6%
+
+**Step 3: Verify the Fix**
+
+Run the check again to confirm all issues are resolved:
+
+.. code-block:: bash
+
+    firecrown sacc view data.sacc --check
+
+**Example Output:**
+
+.. code-block:: text
+
+    ──────────────────────────────────── Loading SACC file ─────────────────────────────────────
+    File: sacc_data.sacc
+    Allow mixed types: False
+    ...(file contents omitted)...
+    ─────────────────────────────────── SACC Quality Checks ────────────────────────────────────
+    ✅ All quality checks passed!
+
+**Additional Options:**
+
+- ``--output <path>``: Specify output file (default: overwrites input if formats match)
+- ``--output-format {fits|hdf5}``: Convert format while fixing
+- ``--input-format {fits|hdf5}``: Force input format detection
+
+**Example: Fix and Convert Format:**
+
+.. code-block:: bash
+
+    firecrown sacc transform data.fits --fix-ordering --output-format hdf5 --output data.h5
+
+How to Fix Your SACC File Manually
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If you prefer to fix SACC convention violations manually, you need to reorder tracers
+in your data type entries so that they match the measurement type order in the data
+type string.
 
 **Manual Approach:**
 
@@ -438,9 +565,22 @@ Best Practices
    - Why mixed-type measurements are used (if applicable)
    - Any deviations from the standard convention
 
-4. **Validate Early**
+4. **Validate Early and Often**
    
-   When loading a SACC file, always validate it:
+   Use the CLI to validate your SACC files before using them in analyses:
+   
+   .. code-block:: bash
+   
+       # Check for quality issues
+       firecrown sacc view my_data.sacc --check
+       
+       # Fix any detected issues
+       firecrown sacc transform my_data.sacc --fix-ordering --overwrite
+       
+       # Verify the fix
+       firecrown sacc view my_data.sacc --check
+   
+   Or programmatically:
    
    .. code-block:: python
    
@@ -457,6 +597,102 @@ Best Practices
                for warning in w:
                    print(f"  {warning.message}")
 
+5. **Automate Quality Checks in Your Pipeline**
+   
+   Include SACC validation in your data processing pipeline:
+   
+   .. code-block:: bash
+   
+       #!/bin/bash
+       # Example pipeline script
+       
+       # Generate SACC file
+       python generate_sacc.py --output raw_data.sacc
+       
+       # Validate and fix
+       firecrown sacc view raw_data.sacc --check || \
+           firecrown sacc transform raw_data.sacc --fix-ordering --overwrite
+       
+       # Final verification
+       firecrown sacc view raw_data.sacc --check
+       
+       # Proceed with analysis
+       firecrown examples des_y1_3x2pt ./output --sacc raw_data.sacc
+
+Command Reference
+-----------------
+
+firecrown sacc view
+~~~~~~~~~~~~~~~~~~~
+
+Inspect and validate SACC files.
+
+**Syntax:**
+
+.. code-block:: bash
+
+    firecrown sacc view SACC_FILE [OPTIONS]
+
+**Options:**
+
+- ``--check``: Run quality checks for naming convention compliance
+- ``--plot-covariance``: Display covariance matrix visualization
+- ``--allow-mixed-types``: Allow tracers with mixed measurement types (default: False)
+- ``--help``: Show command help
+
+**Examples:**
+
+.. code-block:: bash
+
+    # Basic inspection
+    firecrown sacc view data.sacc
+
+    # With quality checks
+    firecrown sacc view data.sacc --check
+
+    # Full inspection with visualization
+    firecrown sacc view data.sacc --check --plot-covariance
+
+firecrown sacc transform
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Transform SACC files: update internal format, fix ordering, or convert formats.
+
+**Syntax:**
+
+.. code-block:: bash
+
+    firecrown sacc transform SACC_FILE [OPTIONS]
+
+**Options:**
+
+- ``--output PATH`` or ``-o PATH``: Output file path (default: same as input)
+- ``--input-format {fits|hdf5}`` or ``-f``: Force input format
+- ``--output-format {fits|hdf5}`` or ``-t``: Output format (default: same as input)
+- ``--fix-ordering``: Fix tracer ordering issues
+- ``--overwrite``: Overwrite output file if it exists
+- ``--allow-mixed-types``: Allow tracers with mixed measurement types (default: False)
+- ``--help``: Show command help
+
+**Examples:**
+
+.. code-block:: bash
+
+    # Update internal format in-place
+    firecrown sacc transform data.sacc --overwrite
+
+    # Fix tracer ordering
+    firecrown sacc transform data.sacc --fix-ordering --overwrite
+
+    # Convert FITS to HDF5
+    firecrown sacc transform data.fits --output-format hdf5 -o data.h5
+
+    # Fix ordering and convert format
+    firecrown sacc transform data.fits --fix-ordering --output-format hdf5 -o data.h5
+
+    # Create backup before fixing
+    firecrown sacc transform data.sacc --fix-ordering -o data_fixed.sacc
+
 Getting Help
 ------------
 
@@ -469,10 +705,12 @@ For Firecrown-specific questions:
 
 - :py:func:`firecrown.metadata_functions.extract_all_measured_types`
 - :py:func:`firecrown.metadata_functions.extract_all_tracers_inferred_galaxy_zdists`
+- :py:class:`firecrown.app.sacc.View` - CLI view command
+- :py:class:`firecrown.app.sacc.Transform` - CLI transform command
 - Firecrown GitHub Issues and Discussions
 
 See Also
 --------
 
 - :doc:`basic_usage` - Using Firecrown with your data
-- :doc:`dev-notes` - Developer notes on the metadata system
+- :doc:`dev-notes` - Developer notes

@@ -193,7 +193,7 @@ jobs:
           fi
       - name: Running example tests
         shell: bash -l {0}
-        run: python -m pytest -vv -s --example -m example tests/example
+        run: python -m pytest -vv -s --example tests/example -n auto
       - name: Upload coverage reports to Codecov
         if: ${{ matrix.coverage == true }}
         uses: codecov/codecov-action@v5

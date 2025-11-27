@@ -46,14 +46,14 @@ def build_ccl_background_dict(
 class Mapping:
     """Base class defining the interface for each supported code.
 
-    The interface describes a mapping of cosmological constants from some
-    concrete Boltzmann calculator to the form those constants take in CCL. Each
-    supported Boltzmann calculator must have its own concrete subclass.
+    The interface describes a mapping of cosmological constants from some concrete
+    Boltzmann calculator to the form those constants take in CCL. Each supported
+    Boltzmann calculator must have its own concrete subclass.
 
-    The class attributes are all :mod:`firecrown.connector.descriptors`. This is
-    to control the allowed types for the instance attributes. A descriptor of
-    name 'x' will provide an apparent attribute with name `x` in
-    each object, as well as an entry `_x` in the object's `__dict__`.
+    The class attributes are all :mod:`firecrown.connector.descriptors`. This is to
+    control the allowed types for the instance attributes. A descriptor of name 'x'
+    will provide an apparent attribute with name `x` in each object, as well as an
+    entry `_x` in the object's `__dict__`.
 
     """
 
@@ -100,7 +100,7 @@ class Mapping:
         assert k_h is not None  # use assertion to silence pylint warning
         warnings.warn(
             "This method is implementation specific and should only be "
-            "implemented in the appropriat subclasses. This method is going to"
+            "implemented in the appropriate subclasses. This method is going to"
             "be removed in the next major release.",
             category=DeprecationWarning,
         )
@@ -177,7 +177,10 @@ class Mapping:
         self.h = h
 
         if (A_s is not None) == (sigma8 is not None):
-            raise ValueError("Exactly one of A_s and sigma8 must be supplied")
+            raise ValueError(
+                f"Exactly one of A_s and sigma8 must be supplied "
+                f"(A_s={A_s}, sigma8={sigma8})"
+            )
         if sigma8 is None:
             self.A_s = A_s
             self.sigma8 = None
@@ -212,9 +215,8 @@ class Mapping:
     ) -> npt.NDArray[np.float64]:
         """Converts power spectrum from redshift to scale factor.
 
-        Given an 2d arrays power spectrum ordered by (redshift, mode)
-        return a 2d array with the rows flipped to match the reordering
-        from redshift to scale factor.
+        Given an 2d arrays power spectrum ordered by (redshift, mode) return a 2d array
+        with the rows flipped to match the reordering from redshift to scale factor.
 
         :param p_k: a power spectrum, ordered by (redshift, mode)
         :return: array of power spectrum, ordered by (scale factor, mode)
@@ -318,7 +320,7 @@ class MappingCosmoSIS(Mapping):
     ) -> npt.NDArray[np.float64]:
         """Transform the given k_h (k over h) to k.
 
-        :param k_h: the array of wavenumber/h to be transformeed
+        :param k_h: the array of wavenumber/h to be transformed
         :return: the transformed array
         """
         return np.array(k_h * self.h, dtype=np.float64)
@@ -355,7 +357,6 @@ class MappingCosmoSIS(Mapping):
         h = cosmosis_params.get_float("h0")
         Omega_b = cosmosis_params.get_float("omega_b")
         Omega_c = cosmosis_params.get_float("omega_c")
-        sigma8 = cosmosis_params.get_float("sigma_8", 0.8)
         n_s = cosmosis_params.get_float("n_s", 0.96)
         Omega_k = cosmosis_params.get_float("omega_k")
         # Read omega_nu from CosmoSIS (in newer CosmoSIS)
@@ -367,11 +368,22 @@ class MappingCosmoSIS(Mapping):
         w0 = cosmosis_params.get_float("w")
         wa = cosmosis_params.get_float("wa")
 
+        A_s, sigma8 = None, None
+        if "sigma_8" in cosmosis_params:
+            sigma8 = cosmosis_params.get_float("sigma_8")
+        if "a_s" in cosmosis_params:
+            A_s = cosmosis_params.get_float("a_s")
+        # When CosmoSIS runs CAMB it always put sigma8 in the datablock, in this case
+        # we prefer sigma8 to be backward compatible.
+        if sigma8 and A_s:
+            A_s = None
+
         # pylint: disable=duplicate-code
         self.set_params(
             Omega_c=Omega_c,
             Omega_b=Omega_b,
             h=h,
+            A_s=A_s,
             sigma8=sigma8,
             n_s=n_s,
             Omega_k=Omega_k,
@@ -444,8 +456,8 @@ class MappingCosmoSIS(Mapping):
 class MappingCAMB(Mapping):
     """Mapping support for PyCAMB, the Python version of CAMB.
 
-    Note that the Python version of CAMB uses some different conventions from
-    the Fortran version of CAMB. The two are not interchangeable.
+    Note that the Python version of CAMB uses some different conventions from the
+    Fortran version of CAMB. The two are not interchangeable.
     """
 
     def get_params_names(
@@ -510,13 +522,12 @@ class MappingCAMB(Mapping):
             As = None
             sigma8 = params_values["sigma8"]
 
-        # Here we have the following problem, some parameters used by CAMB
-        # are implicit, i.e., since they are not explicitly set the default
-        # ones are used. Thus, for instance, here we do not know which type of
-        # neutrino hierarchy is used. Reading cobaya interface to CAMB
-        # I noticed that it does not touch the neutrino variables and consequently
-        # in that case, we could assume that the defaults are being used.
-        # Nevertheless, we need a better solution.
+        # Here we have the following problem, some parameters used by CAMB are
+        # implicit, i.e., since they are not explicitly set the default ones are used.
+        # Thus, for instance, here we do not know which type of neutrino hierarchy is
+        # used. Reading cobaya interface to CAMB I noticed that it does not touch the
+        # neutrino variables and consequently in that case, we could assume that the
+        # defaults are being used. Nevertheless, we need a better solution.
 
         self.set_params(
             Omega_c=Omega_c0,
