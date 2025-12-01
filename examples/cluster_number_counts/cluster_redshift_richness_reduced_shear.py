@@ -1,27 +1,25 @@
 """Likelihood factory function for cluster number counts."""
-
-import os
-import sys
-
-import pyccl
-import sacc
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
-from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import ClusterProperty
-
-# remove this line after crow becomes installable
-from crow import ClusterShearProfile, kernel, mass_proxy
-from crow.recipes.murata_binned_spec_z import MurataBinnedSpecZRecipe
-
-# to be moved to firecrown eventually
-from firecrown.likelihood.binned_cluster_number_counts import (
-    BinnedClusterNumberCounts,
-)
-from firecrown.likelihood.binned_cluster_number_counts_deltasigma import (
-    BinnedClusterShearProfile,
-)
-
+import os                                                                                                                                                                        
+import sys                                                                                                                                                                       
+                                                                                                                                                                                 
+import pyccl                                                                                                                                                                     
+import sacc                                                                                                                                                                      
+# remove this line after crow becomes installable                                                                                                                                
+sys.path.append("/sps/lsst/users/ebarroso/crow/crow/")                                                                                                                           
+from crow import ClusterShearProfile, kernel, mass_proxy                                                                                                                         
+from crow.properties import ClusterProperty                                                                                                                                      
+from crow.recipes.binned_grid import GridBinnedClusterRecipe                                                                                                                     
+from crow.recipes.binned_exact import ExactBinnedClusterRecipe                                                                                                                   
+                                                                                                                                                                                 
+from firecrown.likelihood import (                                                                                                                                               
+    ConstGaussian,                                                                                                                                                               
+    BinnedClusterShearProfile,                                                                                                                                                   
+    BinnedClusterNumberCounts,                                                                                                                                                   
+    Likelihood,                                                                                                                                                                  
+    NamedParameters,                                                                                                                                                             
+)                                                                                                                                                                                
+                                                                                                                                                                                 
+from firecrown.modeling_tools import ModelingTools     
 
 def build_likelihood(
     build_parameters: NamedParameters,

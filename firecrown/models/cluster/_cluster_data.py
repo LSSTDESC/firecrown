@@ -8,7 +8,7 @@ import sacc
 from sacc.tracers import SurveyTracer
 
 from firecrown.models.cluster._binning import SaccBin
-from firecrown.models.cluster._properties import ClusterProperty
+from crow.properties import ClusterProperty
 
 
 class ClusterData:

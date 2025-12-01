@@ -6,10 +6,15 @@ from __future__ import annotations
 # directory structure is removed.
 import firecrown  # pylint: disable=unused-import # noqa: F401
 import numpy as np
+from firecrown.models.cluster import ClusterData, SaccBin
 from firecrown.data_types import DataVector, TheoryVector
 from firecrown.likelihood._base import SourceSystematic, Statistic
-from firecrown.models.cluster import ClusterData, ClusterProperty, SaccBin
 
+from .updatable_wrapper import UpdatableClusterObjects
+
+from crow.recipes.binned_parent import (
+    BinnedClusterRecipe,
+)
 
 class BinnedCluster(Statistic):
     """A statistic representing clusters in a z, mass bin."""
@@ -18,7 +23,7 @@ class BinnedCluster(Statistic):
         self,
         cluster_properties: ClusterProperty,
         survey_name: str,
-        cluster_recipe,
+        cluster_recipe: BinnedClusterRecipe,
         systematics: None | list[SourceSystematic] = None,
     ):
         """Initialize this statistic.
@@ -41,7 +46,18 @@ class BinnedCluster(Statistic):
         self.updatable_parameters.init_all_parameters(self.cluster_recipe)
 
     def _create_updatable_parameters(self):
-        raise NotImplementedError("method _create_updatable_parameters missing!")
+        cluster_objects_configs = []
+        for name in ("cluster_theory", "mass_distribution", "completeness", "purity"):
+            _rec_attr = getattr(self.cluster_recipe, name)
+            if _rec_attr is not None:
+                cluster_objects_configs.append(
+                    {
+                        "recipe_attribute_name": name,
+                        "parameters": _rec_attr.parameters.keys(),
+                        "has_cosmo": hasattr(_rec_attr, "cosmo"),
+                    }
+                )
+        self.updatable_parameters = UpdatableClusterObjects(cluster_objects_configs)
 
     def _read(self, cluster_data: ClusterData) -> None:
         sacc_adapter = cluster_data

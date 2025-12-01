@@ -6,25 +6,21 @@ import sys
 import pyccl
 import sacc
 # remove this line after crow becomes installable
-sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.append("/sps/lsst/users/ebarroso/crow/crow/")
 from crow import ClusterShearProfile, kernel, mass_proxy
-from crow.recipes.murata_binned_spec_z import MurataBinnedSpecZRecipe
+from crow.properties import ClusterProperty
+from crow.recipes.binned_grid import GridBinnedClusterRecipe
+from crow.recipes.binned_exact import ExactBinnedClusterRecipe
 
 from firecrown.likelihood import (
     ConstGaussian,
-    BinnedClusterDeltaSigma,
+    BinnedClusterShearProfile,
     BinnedClusterNumberCounts,
     Likelihood,
     NamedParameters,
 )
-from firecrown.likelihood.binned_cluster_number_counts_deltasigma import (
-    BinnedClusterShearProfile,
+
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import (
-    ClusterAbundance,
-    ClusterDeltaSigma,
-    ClusterProperty,
-)
 
 
 def build_likelihood(
@@ -52,7 +48,7 @@ def build_likelihood(
         is_delta_sigma=True,
         use_beta_s_interp=True,
     )
-    recipe = MurataBinnedSpecZRecipe(
+    recipe = ExactBinnedClusterRecipe(
         cluster_theory=cluster_theory,
         redshift_distribution=redshift_distribution,
         mass_distribution=mass_distribution,

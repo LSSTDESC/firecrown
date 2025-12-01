@@ -4,7 +4,7 @@ import sacc
 
 from firecrown.models.cluster._binning import SaccBin
 from firecrown.models.cluster._cluster_data import ClusterData
-from firecrown.models.cluster._properties import ClusterProperty
+from crow.properties import ClusterProperty
 
 
 class AbundanceData(ClusterData):

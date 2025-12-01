@@ -4,38 +4,18 @@ from __future__ import annotations
 
 import sacc
 from firecrown.data_types import TheoryVector
-from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import AbundanceData, ClusterProperty
+from firecrown.models.cluster import AbundanceData
 
-from .binned_cluster import BinnedCluster
-from .updatable_wrapper import UpdatableClusterObjects
+from firecrown.likelihood import BinnedCluster
 
+from crow.recipes.binned_parent import (
+    BinnedClusterRecipe,
+)
+from crow.properties import ClusterProperty
 
 class BinnedClusterNumberCounts(BinnedCluster):
     """A statistic representing the number of clusters in a z, mass bin."""
-
-    def _create_updatable_parameters(self):
-        self.updatable_parameters = UpdatableClusterObjects(
-            (
-                {
-                    "attribute_name": "mass_distribution",
-                    "parameters": [
-                        "mu_p0",
-                        "mu_p1",
-                        "mu_p2",
-                        "sigma_p0",
-                        "sigma_p1",
-                        "sigma_p2",
-                    ],
-                },
-                {
-                    "attribute_name": "cluster_theory",
-                    "parameters": [],
-                    "has_cosmo": True,
-                },
-            )
-        )
 
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.

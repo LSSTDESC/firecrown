@@ -12,7 +12,7 @@ class UpdatableParameters(Updatable):
         Name of updatable parameters.
     """
 
-    def __init__(self, updatable_parameters):
+    def __init__(self, recipe_attribute_name, updatable_parameters):
         """
         Parameters
         ----------
@@ -20,7 +20,11 @@ class UpdatableParameters(Updatable):
             Name of updatable parameters.
         """
         super().__init__()
+        self.recipe_attribute_name = recipe_attribute_name
         self.updatable_parameters = updatable_parameters
+
+    def _ini_file_par_name(self, par_name):
+        return f"{self.recipe_attribute_name}.{par_name}"
 
     def init_parameters(self, cluster_object):
         """
@@ -34,9 +38,9 @@ class UpdatableParameters(Updatable):
         for par_name in self.updatable_parameters:
             setattr(
                 self,
-                par_name,
+                self._ini_file_par_name(par_name),
                 parameters.register_new_updatable_parameter(
-                    default_value=getattr(cluster_object, par_name)
+                    default_value=cluster_object.parameters[par_name]
                 ),
             )
 
@@ -50,10 +54,8 @@ class UpdatableParameters(Updatable):
             cluster object to export internal parameters to.
         """
         for par_name in self.updatable_parameters:
-            setattr(
-                cluster_object,
-                par_name,
-                getattr(self, par_name),
+            cluster_object.parameters[par_name] = getattr(
+                self, self._ini_file_par_name(par_name)
             )
 
 
@@ -74,21 +76,21 @@ class UpdatableClusterObjects(Updatable):
 
     cluster_objects_configs = (
         {
-            "attribute_name": "mass_distribution",
-            "parameters": ["mu_p0", "mu_p1", "mu_p2", "sigma_p0", "sigma_p1", "sigma_p2"],
+            "recipe_attribute_name": "mass_distribution",
+            "parameters": ["mu0", "mu1", "mu2", "sigma0", "sigma1", "sigma2"],
         },
         {
-            "attribute_name": "cluster_theory",
-            "parameters": [],
+            "recipe_attribute_name": "cluster_theory",
+            "parameters": ["cluster_concentration"], # if wl profile
             "has_cosmo": True,
         },
         {
-            "attribute_name": "completeness",
-            "parameters": ["ac_nc", "bc_nc", "ac_rc", "bc_rc"],
+            "recipe_attribute_name": "completeness",
+            "parameters": ["a_n", "b_n", "a_logm_piv", "b_logm_piv"],
         },
         {
-            "attribute_name": "purity",
-            "parameters": ["ap_nc", "bp_nc", "ap_rc", "bp_rc"],
+            "recipe_attribute_name": "purity",
+            "parameters": ["a_n", "b_n", "a_logm_piv", "b_logm_piv"],
         },
     )
     """
@@ -102,9 +104,12 @@ class UpdatableClusterObjects(Updatable):
             of each cluster objects in the recipe that will be updated. Each
             dictionary should contain the keys:
 
-            - attribute_name: name of the attribute in the recipe.
+            - recipe_attribute_name: name of the attribute in the recipe.
             - parameters: list name of parameters that should be updatable.
             - has_cosmo (optional, defalut=False): if this attribute has an internal cosmology.
+
+            BinnedCluster has a function that automatically creates the correct
+            list according to the elements in the recipe.
         """
         super().__init__()
         self.cluster_objects_configs = cluster_objects_configs
@@ -112,10 +117,10 @@ class UpdatableClusterObjects(Updatable):
         for conf in self.cluster_objects_configs:
             setattr(
                 self,
-                conf["attribute_name"],
-                UpdatableParameters(conf["parameters"]),
+                conf["recipe_attribute_name"],
+                UpdatableParameters(conf["recipe_attribute_name"], conf["parameters"]),
             )
-            self.my_updatables.append(getattr(self, conf["attribute_name"]))
+            self.my_updatables.append(getattr(self, conf["recipe_attribute_name"]))
 
     def init_all_parameters(self, cluster_recipe):
         """
@@ -127,8 +132,8 @@ class UpdatableClusterObjects(Updatable):
             Recipe containing all cluster objects (as attributes) to get the defalt parameters from.
         """
         for conf in self.cluster_objects_configs:
-            getattr(self, conf["attribute_name"]).init_parameters(
-                getattr(cluster_recipe, conf["attribute_name"])
+            getattr(self, conf["recipe_attribute_name"]).init_parameters(
+                getattr(cluster_recipe, conf["recipe_attribute_name"])
             )
 
     def export_all_parameters(self, cluster_recipe, cosmo):
@@ -141,7 +146,9 @@ class UpdatableClusterObjects(Updatable):
             Recipe containing all cluster objects (as attributes) to export internal parameters to.
         """
         for conf in self.cluster_objects_configs:
-            _recipe_attribute = getattr(cluster_recipe, conf["attribute_name"])
-            getattr(self, conf["attribute_name"]).export_parameters(_recipe_attribute)
+            _recipe_attribute = getattr(cluster_recipe, conf["recipe_attribute_name"])
+            getattr(self, conf["recipe_attribute_name"]).export_parameters(
+                _recipe_attribute
+            )
             if conf.get("has_cosmo", False):
                 _recipe_attribute.cosmo = cosmo
