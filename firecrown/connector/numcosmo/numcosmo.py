@@ -16,10 +16,15 @@ from firecrown.ccl_factory import (
 )
 from firecrown.connector.mapping import Mapping, build_ccl_background_dict
 from firecrown.connector.numcosmo import helpers
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
+from firecrown.likelihood import (
+    ConstGaussian,
+    Likelihood,
+    NamedParameters,
+    load_likelihood,
+)
 from firecrown.modeling_tools import ModelingTools
-from firecrown.parameters import ParamsMap, UpdatableUsageRecord, handle_unused_params
+from firecrown.parameters import ParamsMap, handle_unused_params
+from firecrown.updatable import UpdatableUsageRecord
 
 
 class MappingNumCosmo(GObject.Object):

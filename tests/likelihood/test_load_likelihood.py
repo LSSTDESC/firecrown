@@ -6,7 +6,7 @@ import os
 import sys
 import pytest
 
-from firecrown.likelihood.likelihood import (
+from firecrown.likelihood._likelihood import (
     load_likelihood_from_script,
     load_likelihood_from_module,
     load_likelihood,

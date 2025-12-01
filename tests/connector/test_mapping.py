@@ -12,7 +12,7 @@ from firecrown.connector.mapping import (
     MappingCosmoSIS,
     MappingCAMB,
 )
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.ccl_factory import PoweSpecAmplitudeParameter
 from firecrown.parameters import ParamsMap
 

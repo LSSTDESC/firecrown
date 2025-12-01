@@ -53,4 +53,4 @@ fi
 
 rm -f coverage.json
 rm -rf htmlcov
-pytest --numprocesses auto --durations 0 --cov firecrown --cov-report json --cov-report html --cov-branch
+pytest --numprocesses auto --durations 10 --cov firecrown --cov-report json --cov-report html --cov-report term-missing --cov-branch

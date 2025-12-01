@@ -3,7 +3,7 @@
 import pytest
 import numpy as np
 
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood._likelihood import NamedParameters
 
 
 def test_named_parameters_sanity():

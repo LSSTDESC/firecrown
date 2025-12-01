@@ -8,11 +8,11 @@ import pyccl as ccl
 
 import sacc
 
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import ConstGaussian
+from firecrown.likelihood import TwoPointFactory
 from firecrown.likelihood.factories import (
     DataSourceSacc,
     TwoPointExperiment,
-    TwoPointFactory,
 )
 from firecrown.data_functions import (
     TwoPointBinFilterCollection,
@@ -20,7 +20,8 @@ from firecrown.data_functions import (
 )
 from firecrown.metadata_types import Galaxies, TwoPointFilterMethod
 from firecrown.modeling_tools import ModelingTools
-from firecrown.updatable import get_default_params, ParamsMap
+from firecrown.parameters import ParamsMap
+from firecrown.updatable import get_default_params
 from firecrown.utils import base_model_from_yaml, upper_triangle_indices
 
 

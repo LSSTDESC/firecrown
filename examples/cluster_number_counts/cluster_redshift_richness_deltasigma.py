@@ -5,22 +5,25 @@ import sys
 
 import pyccl
 import sacc
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters
-from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import ClusterProperty
-
 # remove this line after crow becomes installable
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from crow import ClusterShearProfile, kernel, mass_proxy
 from crow.recipes.murata_binned_spec_z import MurataBinnedSpecZRecipe
 
-# to be moved to firecrown eventually
-from firecrown.likelihood.binned_cluster_number_counts import (
+from firecrown.likelihood import (
+    ConstGaussian,
+    BinnedClusterDeltaSigma,
     BinnedClusterNumberCounts,
+    Likelihood,
+    NamedParameters,
 )
 from firecrown.likelihood.binned_cluster_number_counts_deltasigma import (
     BinnedClusterShearProfile,
+from firecrown.modeling_tools import ModelingTools
+from firecrown.models.cluster import (
+    ClusterAbundance,
+    ClusterDeltaSigma,
+    ClusterProperty,
 )
 
 

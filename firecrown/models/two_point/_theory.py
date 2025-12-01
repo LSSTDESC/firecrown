@@ -1,13 +1,15 @@
 """Core TwoPointTheory class for making predictions."""
 
+from __future__ import annotations
+
 from collections.abc import Sequence
+from typing import TYPE_CHECKING
 
 import numpy as np
 import sacc
 from numpy import typing as npt
 
-from firecrown.generators.two_point import EllOrThetaConfig, LogLinearElls
-from firecrown.likelihood.source import Source, Tracer
+from firecrown.generators import EllOrThetaConfig, LogLinearElls
 from firecrown.metadata_types import TracerNames
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap
@@ -15,6 +17,9 @@ from firecrown.updatable import Updatable
 from firecrown.utils import ClIntegrationOptions
 from firecrown.models.two_point._interpolation import ApplyInterpolationWhen
 from firecrown.models.two_point._sacc_utils import determine_ccl_kind
+
+if TYPE_CHECKING:
+    from firecrown.likelihood._base import Source, Tracer
 
 
 class TwoPointTheory(Updatable):

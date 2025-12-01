@@ -3,9 +3,9 @@ import pyccl
 import pytest
 import sacc
 import types
-import firecrown.likelihood.likelihood as like
+import firecrown.likelihood._likelihood as like
 from firecrown.modeling_tools import ModelingTools
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood._likelihood import NamedParameters
 from firecrown.parameters import ParamsMap
 
 

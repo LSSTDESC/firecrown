@@ -10,11 +10,9 @@ import pyccl as ccl
 import pyccl.nl_pt
 
 import firecrown.likelihood.weak_lensing as wl
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import TwoPoint, ConstGaussian, Likelihood
 from firecrown.parameters import ParamsMap, register_new_updatable_parameter
 from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
-from firecrown.likelihood.likelihood import Likelihood
 from firecrown.ccl_factory import CCLFactory
 from firecrown.updatable import get_default_params_map
 from firecrown.metadata_types import TracerNames

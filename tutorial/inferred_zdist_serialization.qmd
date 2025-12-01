@@ -25,8 +25,7 @@ In this tutorial, we will demonstrate how to serialize and read back these datac
 First, we discuss the `ZDistLSSTSRDBin` dataclass. This class stores the parameters used to generate a single photometric redshift bin.
 The code snippet below demonstrates how to initialize and serialize this dataclass.
 ```{python}
-
-from firecrown.generators.inferred_galaxy_zdist import ZDistLSSTSRDBin, LinearGrid1D
+from firecrown.generators import ZDistLSSTSRDBin, LinearGrid1D
 from firecrown.metadata_types import Galaxies
 from firecrown.utils import base_model_to_yaml
 
@@ -62,7 +61,7 @@ Next, we discuss the `ZDistLSSTSRDBinCollection` dataclass.
 This class stores the parameters used to generate all the photometric redshift bins, including the `ZDistLSSTSRD` parameters.
 The code snippet below demonstrates how to initialize and serialize this dataclass.
 ```{python}
-from firecrown.generators.inferred_galaxy_zdist import (
+from firecrown.generators import (
     ZDistLSSTSRDBinCollection,
     Y1_LENS_ALPHA,
     Y1_LENS_BETA,
@@ -133,7 +132,7 @@ Similar collections, `LSST_Y10_LENS_HARMONIC_BIN_COLLECTION` and `LSST_Y10_SOURC
 
 Below is a code snippet demonstrating how to serialize and read back these dataclasses:
 ```{python}
-from firecrown.generators.inferred_galaxy_zdist import (
+from firecrown.generators import (
     LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
     LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
 )

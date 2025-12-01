@@ -5,10 +5,10 @@ import itertools
 
 import pyccl
 import numpy as np
-from firecrown.models.cluster._integrator import NumCosmoIntegralMethod
 from firecrown.models.cluster import (
     ClusterAbundance,
     MurataBinnedSpecZRecipe,
+    NumCosmoIntegralMethod,
     TupleBin,
 )
 

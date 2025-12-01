@@ -19,10 +19,12 @@ from firecrown.fctools.measurement_compatibility import (
 from firecrown.metadata_types import (
     ALL_MEASUREMENTS,
     Measurement,
+)
+from firecrown.metadata_types._compatibility import (
     measurement_is_compatible_harmonic,
     measurement_is_compatible_real,
-    measurement_supports_harmonic,
-    measurement_supports_real,
+    _measurement_supports_harmonic as measurement_supports_harmonic,
+    _measurement_supports_real as measurement_supports_real,
 )
 
 from . import match_wrapped
@@ -253,7 +255,13 @@ class TestPrintEfficiencyGains:
             harmonic_measurements, measurement_is_compatible_harmonic
         )
 
-        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
+        print_efficiency_gains(
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
+        )
 
         captured = capsys.readouterr()
         assert match_wrapped(captured.out, "Efficiency Improvements:")
@@ -273,10 +281,14 @@ class TestPrintEfficiencyGains:
             harmonic_measurements, measurement_is_compatible_harmonic
         )
 
-        print_efficiency_gains(console, real_measurements, real_pairs, harmonic_pairs)
-
+        print_efficiency_gains(
+            console,
+            real_measurements,
+            harmonic_measurements,
+            real_pairs,
+            harmonic_pairs,
+        )
         captured = capsys.readouterr()
-
         # Calculate expected reductions
         real_reduction = len(real_measurements) ** 2 - len(real_pairs)
         harmonic_reduction = len(harmonic_measurements) ** 2 - len(harmonic_pairs)
