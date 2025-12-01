@@ -64,7 +64,7 @@ class BinnedClusterShearProfile(BinnedCluster):
         a single point of the parameter space, and returns the predicted
         mean deltasigma of the clusters in each bin.
         """
-
+        self.cluster_recipe.setup()
         mean_values = []
 
         grouped = {}
