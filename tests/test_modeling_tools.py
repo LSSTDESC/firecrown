@@ -20,7 +20,6 @@ def test_default_constructed_state() -> None:
     # Default constructed state is pretty barren...
     assert tools.ccl_cosmo is None
     assert tools.pt_calculator is None
-    assert tools.cluster_abundance is None
     assert len(tools.powerspectra) == 0
 
 

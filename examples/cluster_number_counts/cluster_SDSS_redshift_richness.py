@@ -1,12 +1,11 @@
 """Likelihood factory function for cluster number counts."""
 
 import os
-import sys
 
 import pyccl as ccl
 import sacc
-# remove this line after crow becomes installable
-sys.path.append("/sps/lsst/users/ebarroso/crow/crow/")
+
+
 from crow import ClusterAbundance, kernel, mass_proxy
 from crow.properties import ClusterProperty
 from crow.recipes.binned_exact import ExactBinnedClusterRecipe
@@ -16,7 +15,7 @@ from firecrown.likelihood import (
     BinnedClusterNumberCounts,
     Likelihood,
     NamedParameters,
-)   
+)
 
 from firecrown.modeling_tools import ModelingTools
 
@@ -33,6 +32,7 @@ def get_cluster_abundance() -> ClusterAbundance:
     )
 
     return cluster_theory
+
 
 def get_cluster_recipe(
     cluster_theory=None,
@@ -69,7 +69,6 @@ def get_cluster_recipe(
     )
 
     return recipe
-
 
 
 def build_likelihood(

@@ -1,3 +1,5 @@
+"""Cluster updatables connector."""
+
 from firecrown import parameters
 from firecrown.updatable import Updatable, UpdatableCollection
 
@@ -106,7 +108,8 @@ class UpdatableClusterObjects(Updatable):
 
             - recipe_attribute_name: name of the attribute in the recipe.
             - parameters: list name of parameters that should be updatable.
-            - has_cosmo (optional, defalut=False): if this attribute has an internal cosmology.
+            - has_cosmo (optional, defalut=False): if this attribute
+            has an internal cosmology.
 
             BinnedCluster has a function that automatically creates the correct
             list according to the elements in the recipe.
@@ -129,7 +132,8 @@ class UpdatableClusterObjects(Updatable):
         Parameters
         ----------
         cluster_recipe: recipe object
-            Recipe containing all cluster objects (as attributes) to get the defalt parameters from.
+            Recipe containing all cluster objects (as attributes) to
+            get the defalt parameters from.
         """
         for conf in self.cluster_objects_configs:
             getattr(self, conf["recipe_attribute_name"]).init_parameters(
@@ -143,7 +147,8 @@ class UpdatableClusterObjects(Updatable):
         Parameters
         ----------
         cluster_object: list
-            Recipe containing all cluster objects (as attributes) to export internal parameters to.
+            Recipe containing all cluster objects (as attributes) to
+            export internal parameters to.
         """
         for conf in self.cluster_objects_configs:
             _recipe_attribute = getattr(cluster_recipe, conf["recipe_attribute_name"])

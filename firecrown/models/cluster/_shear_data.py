@@ -1,10 +1,10 @@
 """The module responsible for extracting cluster data from a sacc file."""
 
 import sacc
+from crow.properties import ClusterProperty
 
 from firecrown.models.cluster._binning import SaccBin
 from firecrown.models.cluster._cluster_data import ClusterData
-from crow.properties import ClusterProperty
 
 
 class ShearData(ClusterData):
@@ -44,7 +44,7 @@ class ShearData(ClusterData):
             raise ValueError(
                 f"The property should be related to the "
                 f"{sacc.standard_types.cluster_shear} data type."
-                )
+            )
 
         data_vectors, sacc_indices = self._get_observed_data_and_indices_by_survey(
             survey_nm, data_types, 4
@@ -68,10 +68,10 @@ class ShearData(ClusterData):
                 data_type = sacc.standard_types.cluster_shear
         if data_type is None:
             # pylint: disable=no-member
-                raise ValueError(
+            raise ValueError(
                 f"The property should be related to the "
                 f"{sacc.standard_types.cluster_shear} data type."
-                ) 
+            )
         bin_combinations_for_survey = (
             self._all_bin_combinations_for_data_type_and_survey(survey_nm, data_type, 4)
         )

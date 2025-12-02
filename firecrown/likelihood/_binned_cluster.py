@@ -2,20 +2,22 @@
 
 from __future__ import annotations
 
-# firecrown is needed for backward compatibility; remove support for deprecated
-# directory structure is removed.
-import firecrown  # pylint: disable=unused-import # noqa: F401
 import numpy as np
-from firecrown.models.cluster import ClusterData, SaccBin
-from firecrown.data_types import DataVector, TheoryVector
-from firecrown.likelihood._base import SourceSystematic, Statistic
-
-from .updatable_wrapper import UpdatableClusterObjects
 
 from crow.properties import ClusterProperty
 from crow.recipes.binned_parent import (
     BinnedClusterRecipe,
 )
+
+# firecrown is needed for backward compatibility; remove support for deprecated
+# directory structure is removed.
+import firecrown  # pylint: disable=unused-import # noqa: F401
+
+from firecrown.models.cluster import ClusterData, SaccBin
+from firecrown.data_types import DataVector, TheoryVector
+from firecrown.likelihood._base import SourceSystematic, Statistic
+from firecrown.likelihood import UpdatableClusterObjects
+
 
 class BinnedCluster(Statistic):
     """A statistic representing clusters in a z, mass bin."""

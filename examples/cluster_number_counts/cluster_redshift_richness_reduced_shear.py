@@ -1,25 +1,24 @@
 """Likelihood factory function for cluster number counts."""
-import os                                                                                                                                                                        
-import sys                                                                                                                                                                       
-                                                                                                                                                                                 
-import pyccl as ccl                                                                                                                                                                    
-import sacc                                                                                                                                                                      
-# remove this line after crow becomes installable                                                                                                                                
-sys.path.append("/sps/lsst/users/ebarroso/crow/crow/")                                                                                                                           
-from crow import ClusterShearProfile, kernel, mass_proxy                                                                                                                         
-from crow.properties import ClusterProperty                                                                                                                                      
-from crow.recipes.binned_grid import GridBinnedClusterRecipe                                                                                                                     
-from crow.recipes.binned_exact import ExactBinnedClusterRecipe                                                                                                                   
-                                                                                                                                                                                 
-from firecrown.likelihood import (                                                                                                                                               
-    ConstGaussian,                                                                                                                                                               
-    BinnedClusterShearProfile,                                                                                                                                                   
-    BinnedClusterNumberCounts,                                                                                                                                                   
-    Likelihood,                                                                                                                                                                  
-    NamedParameters,                                                                                                                                                             
-)                                                                                                                                                                                
-                                                                                                                                                                                 
-from firecrown.modeling_tools import ModelingTools     
+
+import os
+
+import pyccl as ccl
+import sacc
+
+from crow import ClusterShearProfile, kernel, mass_proxy
+from crow.properties import ClusterProperty
+from crow.recipes.binned_grid import GridBinnedClusterRecipe
+
+from firecrown.likelihood import (
+    ConstGaussian,
+    BinnedClusterShearProfile,
+    BinnedClusterNumberCounts,
+    Likelihood,
+    NamedParameters,
+)
+
+from firecrown.modeling_tools import ModelingTools
+
 
 def get_cluster_shear_profile() -> ClusterShearProfile:
     """
@@ -30,12 +29,13 @@ def get_cluster_shear_profile() -> ClusterShearProfile:
     cluster_theory = ClusterShearProfile(
         cosmo=ccl.CosmologyVanillaLCDM(),
         halo_mass_function=ccl.halos.MassFuncTinker08(mass_def="200c"),
-        cluster_concentration=4.0,
+        cluster_concentration=None,
         is_delta_sigma=False,
         use_beta_s_interp=True,
     )
 
     return cluster_theory
+
 
 def get_cluster_recipe(
     cluster_theory=None,
@@ -91,7 +91,6 @@ def build_likelihood(
     if build_parameters.get_bool("use_mean_reduced_shear", True):
         average_on |= ClusterProperty.SHEAR
 
-
     survey_name = "numcosmo_sim_red_richness_shear_dsigma"
 
     recipe = get_cluster_recipe()
@@ -113,7 +112,10 @@ def build_likelihood(
 
     # Read in sacc data
     sacc_file_nm = "cluster_redshift_richness_shear_dsigma_sacc.fits"
-    sacc_data = sacc.Sacc.load_fits(sacc_file_nm)
+    sacc_path = os.path.expanduser(
+        os.path.expandvars("${FIRECROWN_DIR}/examples/cluster_number_counts/")
+    )
+    sacc_data = sacc.Sacc.load_fits(os.path.join(sacc_path, sacc_file_nm))
     likelihood.read(sacc_data)
 
     modeling_tools = ModelingTools()

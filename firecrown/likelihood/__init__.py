@@ -16,8 +16,10 @@ Likelihood Types:
     - :class:`TwoPoint`: Two-point correlation statistics
     - :class:`BinnedCluster`: Binned cluster statistics base class
     - :class:`BinnedClusterNumberCounts`: Cluster abundance likelihoods
-    - :class:`BinnedClusterDeltaSigma`: Cluster weak lensing likelihoods
+    - :class:`BinnedClusterShearProfile`: Cluster weak lensing likelihoods
     - :class:`Supernova`: Supernova distance modulus likelihoods
+    - :class:`UpdatableClusterObjects`: Connector for creating Firecrown
+    - cluster updatables from external code
 
 Subpackages:
     - :mod:`weak_lensing`: Weak lensing systematics and sources
@@ -51,6 +53,7 @@ from firecrown.likelihood._gaussian import ConstGaussian
 from firecrown.likelihood._gaussfamily import GaussFamily, State
 from firecrown.likelihood._student_t import StudentT
 from firecrown.likelihood._gaussian_pointmass import ConstGaussianPM
+from firecrown.likelihood._updatable_wrapper import UpdatableClusterObjects
 
 # Two-point statistics
 from firecrown.likelihood._two_point import TwoPoint, TwoPointFactory
@@ -106,13 +109,14 @@ __all__ = [
     "State",
     "StudentT",
     "ConstGaussianPM",
+    "UpdatableClusterObjects",
     # Two-point statistics
     "TwoPoint",
     "TwoPointFactory",
     # Cluster statistics
     "BinnedCluster",
     "BinnedClusterNumberCounts",
-    "BinnedClusterDeltaSigma",
+    "BinnedClusterShearProfile",
     # Supernova statistics
     "Supernova",
     # Source infrastructure

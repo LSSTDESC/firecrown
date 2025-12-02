@@ -8,17 +8,13 @@ from __future__ import annotations
 
 import sacc
 import numpy as np
+from crow.properties import ClusterProperty
+
 from firecrown.data_types import TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import ShearData
-
 from firecrown.likelihood import BinnedCluster
 
-from crow.recipes.binned_parent import (
-    BinnedClusterRecipe,
-)
-
-from crow.properties import ClusterProperty
 
 class BinnedClusterShearProfile(BinnedCluster):
     """The Binned Cluster Delta Sigma statistic.
@@ -26,6 +22,7 @@ class BinnedClusterShearProfile(BinnedCluster):
     This class will make a prediction for the shear of clusters in a z, mass,
     radial bin and compare that prediction to the data provided in the sacc file.
     """
+
     def read(self, sacc_data: sacc.Sacc) -> None:
         """Read the data for this statistic and mark it as ready for use.
 
@@ -66,13 +63,8 @@ class BinnedClusterShearProfile(BinnedCluster):
         mean deltasigma of the clusters in each bin.
         """
         self.cluster_recipe.setup()
-        mean_values = []
 
-        grouped = {}
-        # Create a dictionary where each key is a bin combination of proxy versus redshit and then add the radiuses for each combination 
-        for i, this_bin in enumerate(self.bins):
-            key = (this_bin.z_edges, this_bin.mass_proxy_edges)
-            grouped.setdefault(key, []).append((i, this_bin.radius_center))
+        grouped = self._group_bins_by_edges()
 
         results = {}
         # loop trough all the redshift proxy bins, but now we know all the radiuses
@@ -81,20 +73,34 @@ class BinnedClusterShearProfile(BinnedCluster):
             radius_array = np.array(radius_list)
 
             counts = self.cluster_recipe.evaluate_theory_prediction_counts(
-            z_edges, proxy_edges, self.sky_area
-        )
-
-            total_observable = self.cluster_recipe.evaluate_theory_prediction_lensing_profile(
-            z_edges,
-            proxy_edges,
-            radius_array,
-            self.sky_area,
-            cluster_properties,
+                z_edges, proxy_edges, self.sky_area
             )
-            mean_obs = total_observable / counts if counts != 0.0 else np.zeros_like(total_observable)
+
+            total_observable = (
+                self.cluster_recipe.evaluate_theory_prediction_lensing_profile(
+                    z_edges,
+                    proxy_edges,
+                    radius_array,
+                    self.sky_area,
+                    cluster_properties,
+                )
+            )
+            mean_obs = (
+                total_observable / counts
+                if counts != 0.0
+                else np.zeros_like(total_observable)
+            )
             # store results indexed by radius bin index
             for (i_bin, _), value in zip(entries, mean_obs):
                 results[i_bin] = value
 
         # 3. return in the original order of self.bins
         return [results[i] for i in range(len(self.bins))]
+
+    def _group_bins_by_edges(self):
+        """Group bins by (z_edges, mass_proxy_edges)."""
+        grouped = {}
+        for i, b in enumerate(self.bins):
+            key = (b.z_edges, b.mass_proxy_edges)
+            grouped.setdefault(key, []).append((i, b.radius_center))
+        return grouped

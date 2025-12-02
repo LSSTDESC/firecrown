@@ -3,16 +3,14 @@
 from __future__ import annotations
 
 import sacc
+from crow.properties import ClusterProperty
+
 from firecrown.data_types import TheoryVector
 from firecrown.modeling_tools import ModelingTools
 from firecrown.models.cluster import AbundanceData
 
 from firecrown.likelihood import BinnedCluster
 
-from crow.recipes.binned_parent import (
-    BinnedClusterRecipe,
-)
-from crow.properties import ClusterProperty
 
 class BinnedClusterNumberCounts(BinnedCluster):
     """A statistic representing the number of clusters in a z, mass bin."""
@@ -43,7 +41,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
         theory_vector_list: list[float] = []
         cluster_counts = []
 
-        cluster_counts = self.get_binned_cluster_counts(tools)
+        cluster_counts = self.get_binned_cluster_counts()
 
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
@@ -58,13 +56,12 @@ class BinnedClusterNumberCounts(BinnedCluster):
             if cl_property == ClusterProperty.SHEAR:
                 continue
             theory_vector_list += self.get_binned_cluster_property(
-                tools, cluster_counts, cl_property
+                cluster_counts, cl_property
             )
         return TheoryVector.from_list(theory_vector_list)
 
     def get_binned_cluster_property(
         self,
-        tools: ModelingTools,
         cluster_counts: list[float],
         cluster_properties: ClusterProperty,
     ) -> list[float]:
@@ -91,7 +88,7 @@ class BinnedClusterNumberCounts(BinnedCluster):
 
         return mean_values
 
-    def get_binned_cluster_counts(self, tools: ModelingTools) -> list[float]:
+    def get_binned_cluster_counts(self) -> list[float]:
         """Computes the number of clusters in each bin.
 
         Using the data from the sacc file, this function evaluates the likelihood for
