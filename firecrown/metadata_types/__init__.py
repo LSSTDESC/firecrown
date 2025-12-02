@@ -22,6 +22,22 @@ from firecrown.metadata_types._measurements import (
     Galaxies,
     Measurement,
 )
+from firecrown.metadata_types._rule import (
+    AndBinRule,
+    AutoMeasurementBinRule,
+    AutoNameBinRule,
+    BinRule,
+    FirstNeighborsBinRule,
+    LensBinRule,
+    MeasurementPair,
+    NamedBinRule,
+    NotBinRule,
+    OrBinRule,
+    SourceBinRule,
+    TypeSourceBinRule,
+    ZDistPair,
+    register_rule,
+)
 from firecrown.metadata_types._sacc_type_string import MEASURED_TYPE_STRING_MAP
 from firecrown.metadata_types._two_point_types import (
     TwoPointCorrelationSpace,
@@ -68,4 +84,19 @@ __all__ = [
     "measurements_types",
     # SACC conversion constant
     "MEASURED_TYPE_STRING_MAP",
+    # Bin rule types and functions
+    "BinRule",
+    "AndBinRule",
+    "OrBinRule",
+    "NotBinRule",
+    "NamedBinRule",
+    "AutoNameBinRule",
+    "AutoMeasurementBinRule",
+    "SourceBinRule",
+    "LensBinRule",
+    "FirstNeighborsBinRule",
+    "TypeSourceBinRule",
+    "ZDistPair",
+    "MeasurementPair",
+    "register_rule",
 ]

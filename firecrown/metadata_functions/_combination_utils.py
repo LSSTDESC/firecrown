@@ -1,6 +1,6 @@
 """Utilities for creating combinations of photo-z bins and measurements."""
 
-from itertools import product, chain
+from itertools import product, chain, combinations_with_replacement
 
 import numpy as np
 
