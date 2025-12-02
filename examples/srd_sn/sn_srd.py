@@ -2,8 +2,7 @@
 
 import sacc
 import firecrown.likelihood.supernova as sn
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.likelihood import NamedParameters
+from firecrown.likelihood import ConstGaussian, NamedParameters
 
 
 def build_likelihood(params: NamedParameters):

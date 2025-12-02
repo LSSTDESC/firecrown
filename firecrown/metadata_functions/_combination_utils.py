@@ -1,6 +1,6 @@
 """Utilities for creating combinations of photo-z bins and measurements."""
 
-from itertools import combinations_with_replacement, product
+from itertools import product, chain
 
 import numpy as np
 
@@ -15,7 +15,7 @@ def make_all_photoz_bin_combinations(
         mdt.TwoPointXY(
             x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
         )
-        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
+        for igz1, igz2 in product(inferred_galaxy_zdists, repeat=2)
         for x_measurement, y_measurement in product(
             igz1.measurements, igz2.measurements
         )
@@ -40,60 +40,17 @@ def make_all_photoz_bin_combinations_with_cmb(
     """
     # Get all galaxy-galaxy combinations first
     galaxy_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
-
-    # Create a mock mdt.CMB "bin" for cross-correlations
-    cmb_bin = mdt.InferredGalaxyZDist(
-        bin_name=cmb_tracer_name,
-        z=np.array([1100.0]),  # mdt.CMB redshift
-        dndz=np.array([1.0]),  # Unity normalization
-        measurements={mdt.CMB.CONVERGENCE},
-        type_source=mdt.TypeSource.DEFAULT,
+    all_combinations = galaxy_combinations + make_cmb_galaxy_combinations_only(
+        inferred_galaxy_zdists, cmb_tracer_name, include_cmb_auto
     )
 
-    # Create mdt.CMB-galaxy cross-correlations only
-    cmb_galaxy_combinations = []
-
-    for galaxy_bin in inferred_galaxy_zdists:
-        for galaxy_measurement in galaxy_bin.measurements:
-            # Only create cross-correlations that are physically meaningful
-            if mdt.measurement_is_compatible(mdt.CMB.CONVERGENCE, galaxy_measurement):
-                # mdt.CMB-galaxy cross-correlation
-                cmb_galaxy_combinations.append(
-                    mdt.TwoPointXY(
-                        x=cmb_bin,
-                        y=galaxy_bin,
-                        x_measurement=mdt.CMB.CONVERGENCE,
-                        y_measurement=galaxy_measurement,
-                    )
-                )
-
-                # Galaxy-mdt.CMB cross-correlation (symmetric)
-                cmb_galaxy_combinations.append(
-                    mdt.TwoPointXY(
-                        x=galaxy_bin,
-                        y=cmb_bin,
-                        x_measurement=galaxy_measurement,
-                        y_measurement=mdt.CMB.CONVERGENCE,
-                    )
-                )
-
-    # Optionally include mdt.CMB auto-correlation
-    if include_cmb_auto:
-        cmb_galaxy_combinations.append(
-            mdt.TwoPointXY(
-                x=cmb_bin,
-                y=cmb_bin,
-                x_measurement=mdt.CMB.CONVERGENCE,
-                y_measurement=mdt.CMB.CONVERGENCE,
-            )
-        )
-
-    return galaxy_combinations + cmb_galaxy_combinations
+    return all_combinations
 
 
 def make_cmb_galaxy_combinations_only(
     inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
     cmb_tracer_name: str = "cmb_convergence",
+    include_cmb_auto: bool = False,
 ) -> list[mdt.TwoPointXY]:
     """Create only mdt.CMB-galaxy cross-correlations.
 
@@ -113,27 +70,28 @@ def make_cmb_galaxy_combinations_only(
     cmb_galaxy_combinations = []
 
     for galaxy_bin in inferred_galaxy_zdists:
-        for galaxy_measurement in galaxy_bin.measurements:
-            if mdt.measurement_is_compatible(mdt.CMB.CONVERGENCE, galaxy_measurement):
+        galaxy_bin_type = list(product([galaxy_bin], list(galaxy_bin.measurements)))
+        cmb_bin_type = list(product([cmb_bin], list(cmb_bin.measurements)))
+        for (x, m1), (y, m2) in chain(
+            product(galaxy_bin_type, cmb_bin_type),
+            product(cmb_bin_type, galaxy_bin_type),
+        ):
+            if mdt.measurement_is_compatible(m1, m2):
                 # mdt.CMB-galaxy cross-correlation
                 cmb_galaxy_combinations.append(
-                    mdt.TwoPointXY(
-                        x=cmb_bin,
-                        y=galaxy_bin,
-                        x_measurement=mdt.CMB.CONVERGENCE,
-                        y_measurement=galaxy_measurement,
-                    )
+                    mdt.TwoPointXY(x=x, y=y, x_measurement=m1, y_measurement=m2)
                 )
 
-                # Galaxy-mdt.CMB cross-correlation (symmetric)
-                cmb_galaxy_combinations.append(
-                    mdt.TwoPointXY(
-                        x=galaxy_bin,
-                        y=cmb_bin,
-                        x_measurement=galaxy_measurement,
-                        y_measurement=mdt.CMB.CONVERGENCE,
-                    )
-                )
+    # Optionally include mdt.CMB auto-correlation
+    if include_cmb_auto:
+        cmb_galaxy_combinations.append(
+            mdt.TwoPointXY(
+                x=cmb_bin,
+                y=cmb_bin,
+                x_measurement=mdt.CMB.CONVERGENCE,
+                y_measurement=mdt.CMB.CONVERGENCE,
+            )
+        )
 
     return cmb_galaxy_combinations
 

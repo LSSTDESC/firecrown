@@ -56,7 +56,7 @@ In Firecrown, this means writing a new *likelihood factory function* -- the func
 #| eval: false
 import os.path 
 import firecrown.likelihood.supernova as sn
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import ConstGaussian
 from firecrown.likelihood.factories import load_sacc_data
 
 SACC_FILENAME = os.path.expandvars( \

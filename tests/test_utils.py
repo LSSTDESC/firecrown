@@ -4,6 +4,7 @@ Tests for the firecrown.utils modle.
 
 import pytest
 import numpy as np
+import pyccl
 from numpy.testing import assert_allclose
 
 from firecrown.utils import (
@@ -17,6 +18,7 @@ from firecrown.utils import (
     ClLimberMethod,
     ClIntegrationOptions,
     make_log_interpolator,
+    cached_angular_cl,
 )
 
 
@@ -456,3 +458,90 @@ def test_make_log_interpolator_negative():
     f = make_log_interpolator(x, y)
 
     assert_allclose(f(x), y, atol=0.0, rtol=1e-12)
+
+
+def test_cached_angular_cl(tools_with_vanilla_cosmology):
+    tools = tools_with_vanilla_cosmology
+    cosmo = tools.get_ccl_cosmology()
+
+    z = np.linspace(0, 1, 100)
+    nz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
+    tracer1 = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
+    tracer2 = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
+
+    ells = tuple([10, 20, 30])
+
+    cl = cached_angular_cl(
+        cosmo, (tracer1, tracer2), ells, p_of_k_a="delta_matter:delta_matter"
+    )
+    assert len(cl) == len(ells)
+    assert np.all(np.isfinite(cl))
+
+
+def test_cached_angular_cl_with_options(tools_with_vanilla_cosmology):
+    tools = tools_with_vanilla_cosmology
+    cosmo = tools.get_ccl_cosmology()
+
+    z = np.linspace(0, 1, 100)
+    nz = np.exp(-0.5 * ((z - 0.5) / 0.1) ** 2)
+    tracer1 = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
+    tracer2 = pyccl.WeakLensingTracer(cosmo, dndz=(z, nz))
+
+    ells = tuple([10, 20, 30])
+    int_options = ClIntegrationOptions(
+        method=ClIntegrationMethod.LIMBER, limber_method=ClLimberMethod.GSL_SPLINE
+    )
+
+    cl = cached_angular_cl(
+        cosmo,
+        (tracer1, tracer2),
+        ells,
+        p_of_k_a="delta_matter:delta_matter",
+        int_options=int_options,
+    )
+    assert len(cl) == len(ells)
+    assert np.all(np.isfinite(cl))
+
+
+@pytest.mark.parametrize(
+    "method,expected",
+    [
+        (ClIntegrationMethod.LIMBER, "limber"),
+        (ClIntegrationMethod.FKEM_AUTO, "fkem_auto"),
+        (ClIntegrationMethod.FKEM_L_LIMBER, "fkem_l_limber"),
+    ],
+)
+def test_yaml_serializable_to_yaml(method, expected):
+    # Add test to verify all enum values are covered
+    all_methods = set(ClIntegrationMethod)
+    test_methods = {
+        param[0] for param in test_yaml_serializable_to_yaml.pytestmark[0].args[1]
+    }
+    assert (
+        all_methods == test_methods
+    ), f"Test missing enum values: {all_methods - test_methods}"
+
+    yaml_str = method.to_yaml()
+    assert expected in yaml_str.lower()
+
+
+@pytest.mark.parametrize(
+    "yaml_str,expected",
+    [
+        ("limber", ClIntegrationMethod.LIMBER),
+        ("fkem_auto", ClIntegrationMethod.FKEM_AUTO),
+        ("fkem_l_limber", ClIntegrationMethod.FKEM_L_LIMBER),
+    ],
+)
+def test_yaml_serializable_from_yaml(yaml_str, expected):
+    # Add test to verify all enum values are covered
+    all_methods = set(ClIntegrationMethod)
+    test_methods = {
+        param[1] for param in test_yaml_serializable_from_yaml.pytestmark[0].args[1]
+    }
+    assert (
+        all_methods == test_methods
+    ), f"Test missing enum values: {all_methods - test_methods}"
+
+    restored = ClIntegrationMethod.from_yaml(yaml_str)
+    assert restored == expected

@@ -16,28 +16,31 @@ import numpy.typing as npt
 
 from firecrown.updatable import get_default_params_map
 from firecrown.utils import upper_triangle_indices
-from firecrown.likelihood.statistic import TrivialStatistic
+from firecrown.likelihood._statistic import TrivialStatistic
 from firecrown.parameters import ParamsMap
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
 from firecrown.modeling_tools import ModelingTools
 from firecrown.metadata_types import (
+    Measurement,
     Galaxies,
     InferredGalaxyZDist,
     TracerNames,
     TwoPointHarmonic,
     TwoPointXY,
     TwoPointReal,
-    measurement_is_compatible_harmonic,
-    measurement_is_compatible_real,
-    measurement_supports_real,
-    measurement_supports_harmonic,
     ALL_MEASUREMENTS,
 )
+from firecrown.metadata_types._compatibility import (
+    measurement_is_compatible_harmonic,
+    measurement_is_compatible_real,
+    _measurement_supports_real,
+    _measurement_supports_harmonic,
+)
 from firecrown.data_types import TwoPointMeasurement
-import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood._weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
-import firecrown.likelihood.two_point as tp
-from firecrown.likelihood import cmb
+import firecrown.likelihood._two_point as tp
+import firecrown.likelihood._cmb as cmb
 from firecrown.metadata_types import Clusters, CMB
 
 
@@ -45,16 +48,16 @@ def pytest_addoption(parser):
     """Add handling of firecrown-specific options for the pytest test runner.
 
     --runslow: used to run tests marked as slow, which are otherwise not run.
-    --integration: used to run only integration tests, which are otherwise not run.
+    --example: used to run only example tests, which are otherwise not run.
     """
     parser.addoption(
         "--runslow", action="store_true", default=False, help="run slow tests"
     )
     parser.addoption(
-        "--integration",
+        "--example",
         action="store_true",
         default=False,
-        help="run integration tests",
+        help="run example tests",
     )
 
 
@@ -71,8 +74,8 @@ def pytest_configure(config):
 def pytest_collection_modifyitems(config, items):
     """Apply our special markers and option handling for pytest."""
 
-    if not config.getoption("--integration"):
-        _skip_tests(items, "integration", "need --integration option to run")
+    if not config.getoption("--example"):
+        _skip_tests(items, "example", "need --example option to run")
 
     if not config.getoption("--runslow"):
         _skip_tests(items, "slow", "need --runslow option to run")
@@ -97,7 +100,7 @@ def fixture_empty_pyccl_tracer() -> pyccl.Tracer:
 
 
 @pytest.fixture(name="trivial_stats")
-def make_stats() -> list[TrivialStatistic]:
+def fixture_stats() -> list[TrivialStatistic]:
     """Return a non-empty list of TrivialStatistics.
 
     Function-scoped because TrivialStatistic objects have mutable state
@@ -113,7 +116,7 @@ def fixture_trivial_params() -> ParamsMap:
 
 
 @pytest.fixture(name="sacc_data_for_trivial_stat")
-def make_sacc_data() -> sacc.Sacc:
+def fixture_sacc_data() -> sacc.Sacc:
     """Create a sacc.Sacc object suitable for configuring a
     :class:`TrivialStatistic`."""
     result = sacc.Sacc()
@@ -185,49 +188,61 @@ def fixture_tools_with_vanilla_cosmology() -> ModelingTools:
     return result
 
 
-@pytest.fixture(
-    name="harmonic_bin_1",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
-    ids=["counts", "shear_e"],
-)
-def make_harmonic_bin_1(request) -> InferredGalaxyZDist:
+@pytest.fixture(name="harmonic_bin_1")
+def fixture_harmonic_bin_1(request) -> InferredGalaxyZDist:
+    """Generate an InferredGalaxyZDist object with 5 bins."""
+    return request.param
+
+
+def _make_harmonic_bin(name: str, z_mean: float, m: Measurement) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
     z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
-    z_mean = 0.5
     z_sigma = 0.05
     dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
         np.sqrt(2 * np.pi) * z_sigma
     )
-    x = InferredGalaxyZDist(
-        bin_name="bin_1", z=z, dndz=dndz, measurements={request.param}
-    )
+    x = InferredGalaxyZDist(bin_name=name, z=z, dndz=dndz, measurements={m})
     return x
 
 
-@pytest.fixture(
-    name="harmonic_bin_2",
-    params=[Galaxies.COUNTS, Galaxies.SHEAR_E],
-    ids=["counts", "shear_e"],
-)
-def make_harmonic_bin_2(request) -> InferredGalaxyZDist:
-    """Generate an InferredGalaxyZDist object with 3 bins."""
-    z = np.linspace(0.0, 1.0, 256)  # Necessary to match the default lensing kernel size
-    z_mean = 0.6
-    z_sigma = 0.05
-    dndz = np.exp(-0.5 * (z - z_mean) ** 2 / z_sigma**2) / (
-        np.sqrt(2 * np.pi) * z_sigma
-    )
-    x = InferredGalaxyZDist(
-        bin_name="bin_2", z=z, dndz=dndz, measurements={request.param}
-    )
-    return x
+def pytest_generate_tests(metafunc: pytest.Metafunc) -> None:
+    """Generate tests for harmonic bins."""
+    if {"harmonic_bin_1", "harmonic_bin_2"} <= set(metafunc.fixturenames):
+        harmonic_bin_12_list = [
+            (_make_harmonic_bin("bin_1", 0.5, m1), _make_harmonic_bin("bin_2", 0.6, m2))
+            for m1, m2 in product([Galaxies.COUNTS, Galaxies.SHEAR_E], repeat=2)
+            if measurement_is_compatible_harmonic(m1, m2)
+        ]
+        metafunc.parametrize(
+            "harmonic_bin_1,harmonic_bin_2",
+            harmonic_bin_12_list,
+        )
+    else:
+        if "harmonic_bin_1" in metafunc.fixturenames:
+            harmonic_bin_1_list = [
+                _make_harmonic_bin("bin_1", 0.5, m)
+                for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
+            ]
+            metafunc.parametrize(
+                "harmonic_bin_1",
+                harmonic_bin_1_list,
+            )
+        if "harmonic_bin_2" in metafunc.fixturenames:
+            harmonic_bin_2_list = [
+                _make_harmonic_bin("bin_2", 0.6, m)
+                for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
+            ]
+            metafunc.parametrize(
+                "harmonic_bin_2",
+                harmonic_bin_2_list,
+            )
 
 
 @pytest.fixture(
     name="all_harmonic_bins",
 )
-def make_all_harmonic_bins() -> list[InferredGalaxyZDist]:
-    """Generate a list of InferredGalaxyZDist objects with 2 bins."""
+def fixture_all_harmonic_bins() -> list[InferredGalaxyZDist]:
+    """Generate a list of InferredGalaxyZDist objects with 4 bins."""
     z = np.linspace(0.0, 1.0, 256)
     dndzs = [
         np.exp(-0.5 * (z - 0.5) ** 2 / 0.05**2) / (np.sqrt(2 * np.pi) * 0.05),
@@ -271,7 +286,7 @@ def make_many_harmonic_bins() -> list[InferredGalaxyZDist]:
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
-def make_real_bin_1(request) -> InferredGalaxyZDist:
+def fixture_real_bin_1(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 5 bins."""
     x = InferredGalaxyZDist(
         bin_name="bin_1",
@@ -292,7 +307,7 @@ def make_real_bin_1(request) -> InferredGalaxyZDist:
     ],
     ids=["counts", "shear_t", "shear_minus", "shear_plus"],
 )
-def make_real_bin_2(request) -> InferredGalaxyZDist:
+def fixture_real_bin_2(request) -> InferredGalaxyZDist:
     """Generate an InferredGalaxyZDist object with 3 bins."""
     x = InferredGalaxyZDist(
         bin_name="bin_2",
@@ -306,7 +321,7 @@ def make_real_bin_2(request) -> InferredGalaxyZDist:
 @pytest.fixture(
     name="all_real_bins",
 )
-def make_all_real_bins() -> list[InferredGalaxyZDist]:
+def fixture_all_real_bins() -> list[InferredGalaxyZDist]:
     """Generate a list of InferredGalaxyZDist objects with 5 bins."""
     return [
         InferredGalaxyZDist(
@@ -326,7 +341,7 @@ def make_all_real_bins() -> list[InferredGalaxyZDist]:
 
 
 @pytest.fixture(name="window_1")
-def make_window_1() -> (
+def fixture_window_1() -> (
     tuple[npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]]
 ):
     """Generate a Window object with 100 ells."""
@@ -338,7 +353,7 @@ def make_window_1() -> (
 
 
 @pytest.fixture(name="harmonic_two_point_xy")
-def make_harmonic_two_point_xy(
+def fixture_harmonic_two_point_xy(
     harmonic_bin_1: InferredGalaxyZDist,
     harmonic_bin_2: InferredGalaxyZDist,
 ) -> TwoPointXY:
@@ -354,7 +369,7 @@ def make_harmonic_two_point_xy(
 
 
 @pytest.fixture(name="real_two_point_xy")
-def make_real_two_point_xy(
+def fixture_real_two_point_xy(
     real_bin_1: InferredGalaxyZDist,
     real_bin_2: InferredGalaxyZDist,
 ) -> TwoPointXY:
@@ -368,7 +383,7 @@ def make_real_two_point_xy(
 
 
 @pytest.fixture(name="two_point_cwindow")
-def make_two_point_cwindow(
+def fixture_two_point_cwindow(
     window_1: tuple[
         npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
     ],
@@ -385,7 +400,7 @@ def make_two_point_cwindow(
 
 
 @pytest.fixture(name="two_point_cell")
-def make_two_point_cell(
+def fixture_two_point_cell(
     harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
     """Generate a TwoPointCWindow object with 100 ells."""
@@ -394,7 +409,7 @@ def make_two_point_cell(
 
 
 @pytest.fixture(name="two_point_real")
-def make_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
+def fixture_two_point_real(real_two_point_xy: TwoPointXY) -> TwoPointReal:
     """Generate a TwoPointCWindow object with 100 ells."""
     thetas = np.array(np.linspace(0, 100, 100), dtype=np.float64)
     return TwoPointReal(thetas=thetas, XY=real_two_point_xy)
@@ -1071,8 +1086,8 @@ def fixture_sacc_galaxy_xis_inverted() -> tuple[
     return sacc_data, tracers, tracer_pairs
 
 
-@pytest.fixture(name="sacc_galaxy_cells_ambiguous")
-def fixture_sacc_galaxy_cells_ambiguous() -> sacc.Sacc:
+@pytest.fixture(name="sacc_galaxy_cells_order_convention")
+def fixture_sacc_galaxy_cells_order_convention() -> sacc.Sacc:
     """Fixture for a SACC data without window functions with ambiguous tracers."""
     sacc_data = sacc.Sacc()
 
@@ -1197,19 +1212,19 @@ def fixture_sacc_galaxy_xis_lens0_lens0_real() -> (
 
 
 @pytest.fixture(name="wl_factory")
-def make_wl_factory() -> wl.WeakLensingFactory:
+def fixture_wl_factory() -> wl.WeakLensingFactory:
     """Generate a WeakLensingFactory object."""
     return wl.WeakLensingFactory(per_bin_systematics=[], global_systematics=[])
 
 
 @pytest.fixture(name="nc_factory")
-def make_nc_factory() -> nc.NumberCountsFactory:
+def fixture_nc_factory() -> nc.NumberCountsFactory:
     """Generate a NumberCountsFactory object."""
     return nc.NumberCountsFactory(per_bin_systematics=[], global_systematics=[])
 
 
 @pytest.fixture(name="tp_factory")
-def make_tp_factory(
+def fixture_tp_factory(
     wl_factory: wl.WeakLensingFactory, nc_factory: nc.NumberCountsFactory
 ) -> tp.TwoPointFactory:
     """Generate a TwoPointFactory object."""
@@ -1249,10 +1264,10 @@ def _discover_measurements_by_space():
     real_measurements = [
         m
         for m in supported_measurements
-        if measurement_supports_real(m) and m != CMB.CONVERGENCE
+        if _measurement_supports_real(m) and m != CMB.CONVERGENCE
     ]
     harmonic_measurements = [
-        m for m in supported_measurements if measurement_supports_harmonic(m)
+        m for m in supported_measurements if _measurement_supports_harmonic(m)
     ]
 
     return real_measurements, harmonic_measurements
@@ -1289,7 +1304,7 @@ def _create_measurement_pair_ids(pairs):
     params=_VALID_REAL_MEASUREMENT_PAIRS,
     ids=_create_measurement_pair_ids(_VALID_REAL_MEASUREMENT_PAIRS),
 )
-def make_optimized_real_measurement_pair(request):
+def fixture_optimized_real_measurement_pair(request):
     """Generate only valid real-space measurement pairs.
 
     Eliminates all "incompatible measurements" skips by pre-filtering
@@ -1304,7 +1319,7 @@ def make_optimized_real_measurement_pair(request):
     params=_VALID_HARMONIC_MEASUREMENT_PAIRS,
     ids=_create_measurement_pair_ids(_VALID_HARMONIC_MEASUREMENT_PAIRS),
 )
-def make_optimized_harmonic_measurement_pair(request):
+def fixture_optimized_harmonic_measurement_pair(request):
     """Generate only valid harmonic-space measurement pairs.
 
     Eliminates all "incompatible measurements" skips by pre-filtering
@@ -1315,7 +1330,7 @@ def make_optimized_harmonic_measurement_pair(request):
 
 
 @pytest.fixture(name="optimized_real_two_point_xy")
-def make_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoPointXY:
+def fixture_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoPointXY:
     """Generate TwoPointXY for real space with zero skipped tests.
 
     Uses auto-discovered valid measurement pairs, eliminating all
@@ -1342,7 +1357,7 @@ def make_optimized_real_two_point_xy(optimized_real_measurement_pair) -> TwoPoin
 
 
 @pytest.fixture(name="optimized_harmonic_two_point_xy")
-def make_optimized_harmonic_two_point_xy(
+def fixture_optimized_harmonic_two_point_xy(
     optimized_harmonic_measurement_pair,
 ) -> TwoPointXY:
     """Generate TwoPointXY for harmonic space with zero skipped tests.
@@ -1374,7 +1389,7 @@ def make_optimized_harmonic_two_point_xy(
 
 # Optimized versions of dependent fixtures
 @pytest.fixture(name="optimized_two_point_cwindow")
-def make_optimized_two_point_cwindow(
+def fixture_optimized_two_point_cwindow(
     window_1: tuple[
         npt.NDArray[np.int64], npt.NDArray[np.float64], npt.NDArray[np.float64]
     ],
@@ -1394,7 +1409,7 @@ def make_optimized_two_point_cwindow(
 
 
 @pytest.fixture(name="optimized_two_point_cell")
-def make_optimized_two_point_cell(
+def fixture_optimized_two_point_cell(
     optimized_harmonic_two_point_xy: TwoPointXY,
 ) -> TwoPointHarmonic:
     """Generate a TwoPointCell object with zero skipped tests.
@@ -1406,7 +1421,7 @@ def make_optimized_two_point_cell(
 
 
 @pytest.fixture(name="optimized_two_point_real")
-def make_optimized_two_point_real(
+def fixture_optimized_two_point_real(
     optimized_real_two_point_xy: TwoPointXY,
 ) -> TwoPointReal:
     """Generate a TwoPointReal object with zero skipped tests.

@@ -15,9 +15,14 @@ from cosmosis.datablock import option_section
 
 from firecrown.ccl_factory import CCLCreationMode
 from firecrown.connector.mapping import MappingCosmoSIS, mapping_builder
-from firecrown.likelihood.gaussfamily import GaussFamily, State
-from firecrown.likelihood.likelihood import Likelihood, NamedParameters, load_likelihood
-from firecrown.likelihood.two_point import TwoPoint
+from firecrown.likelihood import (
+    GaussFamily,
+    State,
+    Likelihood,
+    NamedParameters,
+    load_likelihood,
+    TwoPoint,
+)
 from firecrown.parameters import ParamsMap, handle_unused_params
 from firecrown.updatable import MissingSamplerParameterError, UpdatableUsageRecord
 

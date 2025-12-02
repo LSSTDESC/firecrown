@@ -7,7 +7,7 @@ from unittest.mock import Mock, patch
 import pyccl
 import pyccl.nl_pt
 
-import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood._weak_lensing as wl
 from firecrown.metadata_types import InferredGalaxyZDist, Galaxies
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import ParamsMap

@@ -20,19 +20,19 @@ from firecrown.parameters import ParamsMap
 from firecrown.likelihood.number_counts import (
     NumberCounts,
 )
-from firecrown.likelihood.weak_lensing import (
+from firecrown.likelihood._weak_lensing import (
     WeakLensing,
 )
 import firecrown.metadata_types as mdt
-import firecrown.likelihood.two_point as tp
-from firecrown.likelihood.two_point import (
+import firecrown.likelihood._two_point as tp
+from firecrown.likelihood._two_point import (
     NumberCountsFactory,
     TwoPointFactory,
     use_source_factory,
     use_source_factory_metadata_index,
 )
 from firecrown.models.two_point import TwoPointTheory
-from firecrown.generators.two_point import (
+from firecrown.generators._two_point import (
     generate_bin_centers,
     EllOrThetaConfig,
     LogLinearElls,
@@ -280,8 +280,6 @@ def test_two_point_lens0_lens0_no_data(sacc_galaxy_xis_lens0_lens0_no_data) -> N
 )
 def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
     """Test that generated ells are always within specified bounds using hypothesis."""
-    from firecrown.generators.two_point import generate_bin_centers
-
     # Skip invalid cases
     assume(minimum < maximum)
 
@@ -311,8 +309,6 @@ def test_ell_generation_bounds_property(minimum: float, maximum: float, n: int):
 )
 def test_theta_generation_bounds_property(minimum: float, maximum: float, n: int):
     """Generated thetas are always within specified bounds using hypothesis."""
-    from firecrown.generators.two_point import generate_bin_centers
-
     # Skip invalid cases
     assume(minimum < maximum)
     assume(minimum > 0.0)  # Physical constraint for angles and log binning
@@ -535,6 +531,7 @@ def test_from_metadata_only_harmonic(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": tp.TracerNames("lens0", "lens0"),
+        "tracer_types": (Galaxies.COUNTS, Galaxies.COUNTS),
     }
     two_point = tp.TwoPoint.from_metadata_index([metadata], tp_factory).pop()
     assert isinstance(two_point, tp.TwoPoint)
@@ -545,6 +542,7 @@ def test_from_metadata_only_real(tp_factory: TwoPointFactory) -> None:
     metadata: TwoPointRealIndex = {
         "data_type": "galaxy_shear_xi_plus",
         "tracer_names": tp.TracerNames("src0", "src0"),
+        "tracer_types": (Galaxies.PART_OF_XI_PLUS, Galaxies.PART_OF_XI_PLUS),
     }
     two_point = tp.TwoPoint.from_metadata_index([metadata], tp_factory).pop()
     assert isinstance(two_point, tp.TwoPoint)
@@ -807,7 +805,7 @@ def test_calculate_pk_with_halo_model():
     """Test calculate_pk function when tracers have halo model (covers line 126)."""
     from unittest.mock import Mock, patch
     from firecrown.models.two_point import calculate_pk
-    from firecrown.likelihood.source import Tracer
+    from firecrown.likelihood._source import Tracer
 
     # Create mock tools with halo model capabilities
     tools = Mock(spec=ModelingTools)

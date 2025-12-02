@@ -20,6 +20,9 @@ website:
   navbar:
     search: true
     left:
+      - text: "Main Documentation"
+        href: ../index.html
+        icon: book
       - about.qmd
   sidebar:
       style: "docked"

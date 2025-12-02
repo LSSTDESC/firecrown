@@ -6,7 +6,13 @@ from itertools import permutations
 import pytest
 import numpy as np
 
-from firecrown.updatable import Updatable, UpdatableCollection
+from firecrown.updatable import (
+    Updatable,
+    UpdatableCollection,
+    UpdatableUsageRecord,
+    get_default_params,
+    get_default_params_map,
+)
 from firecrown import parameters
 from firecrown.parameters import (
     RequiredParameters,
@@ -14,7 +20,6 @@ from firecrown.parameters import (
     DerivedParameter,
     DerivedParameterCollection,
     SamplerParameter,
-    UpdatableUsageRecord,
 )
 
 
@@ -27,7 +32,7 @@ class MinimalUpdatable(Updatable):
         self.a = parameters.register_new_updatable_parameter(default_value=1.0)
 
 
-class SimpleUpdatable(Updatable):
+class SimpleUpdatable(Updatable):  # pylint: disable=too-many-instance-attributes
     """A concrete type that implements Updatable."""
 
     def __init__(self, prefix: str | None = None):
@@ -563,3 +568,421 @@ def test_nesting_updatables_derived_parameters(nested_updatables):
 
     assert base.get_derived_parameters() == derived_parameters
     assert base.get_derived_parameters() is None
+
+
+# Tests for UpdatableUsageRecord (moved from test_parameters.py)
+
+
+def test_updatable_usage_record_empty_and_print_empty():
+    rec = UpdatableUsageRecord(
+        cls="EmptyUpdatable",
+        prefix="pfx",
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+    )
+
+    assert rec.is_empty
+    assert not rec.is_empty_parent
+
+    # by default empty records are omitted
+    assert rec.get_log_lines() == []
+
+    # but when print_empty=True a header line is produced
+    lines = rec.get_log_lines(print_empty=True)
+    assert lines == ["EmptyUpdatable(pfx): "]
+
+
+def test_updatable_usage_record_parent_collapses_and_printing():
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=2,
+        sampler_params=["x"],
+        internal_params=[],
+        child_records=[],
+    )
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[child],
+    )
+
+    # Because parent has no params but exactly one child, the parent's record
+    # should collapse into the child lines, with the parent included as a prefix
+    lines = parent.get_log_lines()
+    assert lines == [
+        "Parent(p) => Child(c): ",
+        "  Sampler parameters used:  ['x']",
+    ]
+
+
+def test_updatable_usage_record_indent_and_child_recursion():
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=2,
+        sampler_params=["b"],
+        internal_params=[],
+        child_records=[],
+    )
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=1,
+        sampler_params=["a"],
+        internal_params=["i"],
+        child_records=[child],
+    )
+
+    lines = parent.get_log_lines()
+
+    expected = [
+        "Parent(p): ",
+        "  Sampler parameters used:  ['a']",
+        "  Internal parameters used: ['i']",
+        "  Child(c): ",
+        "    Sampler parameters used:  ['b']",
+    ]
+
+    assert lines == expected
+
+
+def test_updatable_usage_record_empty_child_and_print_empty_options():
+    # child is empty
+    child = UpdatableUsageRecord(
+        cls="Child",
+        prefix="c",
+        obj_id=3,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+    )
+    parent = UpdatableUsageRecord(
+        cls="Parent",
+        prefix="p",
+        obj_id=4,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[child],
+    )
+
+    # with default print_empty=False, collapse should result in empty output
+    assert parent.get_log_lines() == []
+
+    # with print_empty=True we should see the collapsed header
+    lines = parent.get_log_lines(print_empty=True)
+    assert lines == ["Parent(p) => Child(c): "]
+
+
+def test_updatable_usage_record_already_updated_flag():
+    """If an UpdatableUsageRecord indicates it was already updated, the
+    get_log_lines should return a single line noting it was already updated.
+    """
+    rec = UpdatableUsageRecord(
+        cls="Already",
+        prefix=None,
+        obj_id=1,
+        sampler_params=[],
+        internal_params=[],
+        child_records=[],
+        already_updated=True,
+    )
+
+    lines = rec.get_log_lines(print_empty=True)
+    assert lines == ["Already: (already updated)"]
+
+
+def test_updatable_usage_record_internal_params_only():
+    """If sampler_params is empty but internal_params is non-empty,
+    is_empty should be False and get_log_lines should show the internal
+    parameters line (this covers the second early-return branch).
+    """
+    rec = UpdatableUsageRecord(
+        cls="OnlyInternal",
+        prefix="p",
+        obj_id=7,
+        sampler_params=[],
+        internal_params=["i"],
+        child_records=[],
+    )
+
+    assert not rec.is_empty
+    lines = rec.get_log_lines()
+    assert lines == ["OnlyInternal(p): ", "  Internal parameters used: ['i']"]
+
+
+# Tests for _base.py edge cases to achieve 100% coverage
+
+
+def test_setattr_with_list_of_updatables():
+    """Test setting an attribute to a list of Updatable objects.
+
+    This tests the code path in __setattr__ that handles iterables containing
+    UpdatableProtocol instances (line 69 in _base.py).
+    """
+    parent = SimpleUpdatable("parent")
+    child1 = MinimalUpdatable("child1")
+    child2 = MinimalUpdatable("child2")
+
+    # Set attribute to a list of updatables
+    parent.children = [child1, child2]  # pylint: disable=attribute-defined-outside-init
+
+    # Verify both children were added to _updatables
+    assert child1 in parent._updatables  # pylint: disable=protected-access
+    assert child2 in parent._updatables  # pylint: disable=protected-access
+
+    # Verify they can be updated through the parent
+    params = ParamsMap(
+        {"parent_x": 1.0, "parent_y": 2.0, "child1_a": 3.0, "child2_a": 4.0}
+    )
+    parent.update(params)
+    assert parent.x == 1.0
+    assert parent.y == 2.0
+    assert child1.a == 3.0
+    assert child2.a == 4.0
+
+
+def test_update_already_updated_with_updated_record():
+    """Test calling update() twice with updated_record parameter.
+
+    When an object is already updated and update() is called again with
+    updated_record tracking, it should add a record with already_updated=True
+    and return early (lines 153-165 in _base.py).
+    """
+    obj = SimpleUpdatable("test")
+    params = ParamsMap({"test_x": 1.0, "test_y": 2.0})
+
+    # First update
+    updated_records: list[UpdatableUsageRecord] = []
+    obj.update(params, updated_record=updated_records)
+    assert len(updated_records) == 1
+    assert not updated_records[0].already_updated
+
+    # Second update with tracking - should record already_updated=True
+    updated_records2: list[UpdatableUsageRecord] = []
+    obj.update(params, updated_record=updated_records2)
+    assert len(updated_records2) == 1
+    assert updated_records2[0].already_updated is True
+    assert updated_records2[0].cls == "SimpleUpdatable"
+    assert updated_records2[0].prefix == "test"
+    assert updated_records2[0].sampler_params == []
+    assert updated_records2[0].internal_params == []
+
+
+def test_update_already_updated_without_record():
+    """Test calling update() twice without updated_record parameter.
+
+    When an object is already updated and update() is called again without
+    updated_record tracking, it should return early without recording anything
+    (branch 153->165 in _base.py).
+    """
+    obj = SimpleUpdatable("test")
+    params = ParamsMap({"test_x": 1.0, "test_y": 2.0})
+
+    # First update
+    obj.update(params)
+    assert obj.is_updated()
+    assert obj.x == 1.0
+    assert obj.y == 2.0
+
+    # Modify params
+    params2 = ParamsMap({"test_x": 10.0, "test_y": 20.0})
+
+    # Second update without record tracking - should be a no-op
+    obj.update(params2)
+
+    # Values should remain unchanged
+    assert obj.x == 1.0
+    assert obj.y == 2.0
+
+
+def test_reset_when_not_updated():
+    """Test calling reset() on an object that hasn't been updated.
+
+    Should return early without doing anything (lines 234-235 in _base.py).
+    """
+    obj = SimpleUpdatable("test")
+
+    # Object hasn't been updated yet
+    assert not obj.is_updated()
+
+    # Call reset - should be a no-op
+    obj.reset()
+
+    # Still not updated
+    assert not obj.is_updated()
+
+    # Parameters should still be None (not set)
+    assert obj.x is None
+    assert obj.y is None
+
+
+def test_reset_with_nested_updatables_and_sampler_params():
+    """Test reset() with nested updatables and sampler parameters.
+
+    Verifies that reset():
+    1. Resets nested updatables
+    2. Sets sampler parameters back to None
+    3. Clears the _updated flag
+    (lines 239-248 in _base.py)
+    """
+    parent = SimpleUpdatable("parent")
+    child = MinimalUpdatable("child")
+    parent.child = child  # pylint: disable=attribute-defined-outside-init
+
+    params = ParamsMap({"parent_x": 1.0, "parent_y": 2.0, "child_a": 3.0})
+
+    # Update both parent and child
+    parent.update(params)
+    assert parent.is_updated()
+    assert child.is_updated()
+    assert parent.x == 1.0
+    assert parent.y == 2.0
+    assert child.a == 3.0
+
+    # Reset parent (should cascade to child)
+    parent.reset()
+
+    # Parent should be reset
+    assert not parent.is_updated()
+    assert parent.x is None
+    assert parent.y is None
+
+    # Child should also be reset
+    assert not child.is_updated()
+    assert child.a is None
+
+
+# Tests for _collection.py edge cases to achieve 100% coverage
+
+
+def test_collection_update_already_updated():
+    """Test calling update() twice on an UpdatableCollection.
+
+    The second call should return early without updating items again
+    (line 61 in _collection.py).
+    """
+    obj1 = SimpleUpdatable("obj1")
+    obj2 = MinimalUpdatable("obj2")
+    coll = UpdatableCollection([obj1, obj2])
+
+    params = ParamsMap({"obj1_x": 1.0, "obj1_y": 2.0, "obj2_a": 3.0})
+
+    # First update
+    coll.update(params)
+    assert coll.is_updated()
+    assert obj1.x == 1.0
+    assert obj1.y == 2.0
+    assert obj2.a == 3.0
+
+    # Modify params for second update
+    params2 = ParamsMap({"obj1_x": 10.0, "obj1_y": 20.0, "obj2_a": 30.0})
+
+    # Second update should be a no-op due to early return
+    coll.update(params2)
+
+    # Values should remain unchanged from first update
+    assert obj1.x == 1.0
+    assert obj1.y == 2.0
+    assert obj2.a == 3.0
+
+
+def test_collection_reset_with_items():
+    """Test reset() on an UpdatableCollection with items.
+
+    Verifies that reset() sets _updated to False and calls reset() on all
+    contained items (lines 81-83 in _collection.py).
+    """
+    obj1 = SimpleUpdatable("obj1")
+    obj2 = MinimalUpdatable("obj2")
+    coll = UpdatableCollection([obj1, obj2])
+
+    params = ParamsMap({"obj1_x": 1.0, "obj1_y": 2.0, "obj2_a": 3.0})
+
+    # Update collection
+    coll.update(params)
+    assert coll.is_updated()
+    assert obj1.is_updated()
+    assert obj2.is_updated()
+    assert obj1.x == 1.0
+    assert obj2.a == 3.0
+
+    # Reset collection
+    coll.reset()
+
+    # Collection should not be updated
+    assert not coll.is_updated()
+
+    # All items should be reset
+    assert not obj1.is_updated()
+    assert not obj2.is_updated()
+    assert obj1.x is None
+    assert obj2.a is None
+
+
+# Tests for _utils.py edge cases to achieve 100% coverage
+
+
+def test_get_default_params_empty_args():
+    """Test get_default_params() with no arguments.
+
+    Should return an empty dictionary (lines 19-23 in _utils.py).
+    """
+    result = get_default_params()
+    assert result == {}
+    assert isinstance(result, dict)
+
+
+def test_get_default_params_map_empty_args():
+    """Test get_default_params_map() with no arguments.
+
+    Should return an empty ParamsMap (lines 32-33 in _utils.py).
+    """
+    result = get_default_params_map()
+    assert isinstance(result, ParamsMap)
+    assert len(result.keys()) == 0
+
+
+def test_tuple_attribute_adds_to_updatables():
+    """Test that setting a tuple attribute adds Updatable elements to _updatables.
+
+    When an Updatable container has an attribute set to an iterable containing
+    Updatable objects, those objects should be added to the container's
+    _updatables list so they are updated when the container is updated.
+    """
+
+    container = Updatable()
+    item1 = MinimalUpdatable()
+    item2 = MinimalUpdatable()
+
+    # Setting a tuple attribute should add the items to _updatables
+    container.test_tuple = (item1, item2)
+
+    # Items should be added to _updatables
+    assert item1 in container._updatables  # pylint: disable=protected-access
+    assert item2 in container._updatables  # pylint: disable=protected-access
+
+
+def test_get_default_params_with_multiple_updatables():
+    """Test get_default_params() with multiple updatables.
+
+    Verifies that all default values are collected correctly.
+    """
+    obj1 = SimpleUpdatable()
+    obj2 = MinimalUpdatable()
+
+    # Test get_default_params
+    result = get_default_params(obj1, obj2)
+    assert result == {"x": 2.0, "y": 3.0, "a": 1.0}
+
+    # Test get_default_params_map
+    params_map = get_default_params_map(obj1, obj2)
+    assert isinstance(params_map, ParamsMap)
+    assert params_map.get("x") == 2.0
+    assert params_map.get("y") == 3.0
+    assert params_map.get("a") == 1.0

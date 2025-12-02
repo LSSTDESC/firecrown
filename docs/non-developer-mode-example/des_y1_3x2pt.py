@@ -5,9 +5,7 @@ import os
 import firecrown.likelihood.weak_lensing as wl
 import firecrown.likelihood.number_counts as nc
 
-from firecrown.likelihood.two_point import TwoPoint
-
-from firecrown.likelihood.gaussian import ConstGaussian
+from firecrown.likelihood import TwoPoint, ConstGaussian
 
 import sacc
 

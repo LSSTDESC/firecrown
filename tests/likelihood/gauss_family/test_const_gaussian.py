@@ -11,17 +11,17 @@ from scipy.stats import chi2
 import sacc
 
 import firecrown.parameters
-from firecrown.likelihood.gaussian import ConstGaussian
-from firecrown.likelihood.gaussfamily import Statistic
-from firecrown.likelihood.statistic import TrivialStatistic
+from firecrown.likelihood._gaussian import ConstGaussian
+from firecrown.likelihood._gaussfamily import Statistic
+from firecrown.likelihood._statistic import TrivialStatistic
 from firecrown.modeling_tools import ModelingTools
 from firecrown.parameters import (
     RequiredParameters,
     DerivedParameterCollection,
     SamplerParameter,
 )
-from firecrown.likelihood.two_point import TwoPoint
-from firecrown.metadata_types import TracerNames
+from firecrown.likelihood._two_point import TwoPoint
+from firecrown.metadata_types import TracerNames, Galaxies
 from firecrown.metadata_functions import TwoPointHarmonicIndex
 from firecrown.data_functions import extract_all_harmonic_data
 
@@ -507,6 +507,7 @@ def test_create_ready_not_ready(tp_factory):
     metadata: TwoPointHarmonicIndex = {
         "data_type": "galaxy_density_xi",
         "tracer_names": TracerNames("lens0", "lens0"),
+        "tracer_types": (Galaxies.COUNTS, Galaxies.COUNTS),
     }
 
     two_points = TwoPoint.from_metadata_index([metadata], tp_factory)
@@ -516,3 +517,27 @@ def test_create_ready_not_ready(tp_factory):
         match="The statistic .* is not ready to be used.",
     ):
         ConstGaussian.create_ready(two_points, np.diag(np.ones(11)))
+
+
+def test_compute_chisq_without_cholesky(
+    trivial_stats, sacc_data_for_trivial_stat, trivial_params
+):
+    """Test compute_chisq with use_cholesky=False.
+
+    This test ensures that the parent GaussFamily.compute_chisq_impl() method
+    correctly executes the direct chi-squared path (line 458 in gaussfamily.py)
+    when use_cholesky is False.
+    """
+    # Create likelihood with use_cholesky=False
+    likelihood = ConstGaussian(statistics=trivial_stats, use_cholesky=False)
+    likelihood.read(sacc_data_for_trivial_stat)
+
+    # Update with parameters
+    likelihood.update(trivial_params)
+
+    # Compute chi-squared - this should call GaussFamily.compute_chisq_impl()
+    # which will execute the else branch (line 458) since use_cholesky=False
+    chisq = likelihood.compute_chisq(ModelingTools())
+
+    # The expected chi-squared value should match the direct calculation
+    assert chisq == 2.0
