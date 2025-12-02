@@ -55,6 +55,8 @@ class BinnedClusterNumberCounts(BinnedCluster):
                 continue
             if cl_property == ClusterProperty.DELTASIGMA:
                 continue
+            if cl_property == ClusterProperty.SHEAR:
+                continue
             theory_vector_list += self.get_binned_cluster_property(
                 tools, cluster_counts, cl_property
             )

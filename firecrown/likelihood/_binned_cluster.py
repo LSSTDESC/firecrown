@@ -12,6 +12,7 @@ from firecrown.likelihood._base import SourceSystematic, Statistic
 
 from .updatable_wrapper import UpdatableClusterObjects
 
+from crow.properties import ClusterProperty
 from crow.recipes.binned_parent import (
     BinnedClusterRecipe,
 )

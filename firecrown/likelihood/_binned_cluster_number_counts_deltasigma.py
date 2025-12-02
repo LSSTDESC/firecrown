@@ -10,7 +10,7 @@ import sacc
 import numpy as np
 from firecrown.data_types import TheoryVector
 from firecrown.modeling_tools import ModelingTools
-from firecrown.models.cluster import DeltaSigmaData
+from firecrown.models.cluster import ShearData
 
 from firecrown.likelihood import BinnedCluster
 
@@ -19,11 +19,11 @@ from crow.recipes.binned_parent import (
 )
 
 from crow.properties import ClusterProperty
-from firecrown.likelihood._base import SourceSystematic
+
 class BinnedClusterShearProfile(BinnedCluster):
     """The Binned Cluster Delta Sigma statistic.
 
-    This class will make a prediction for the deltasigma of clusters in a z, mass,
+    This class will make a prediction for the shear of clusters in a z, mass,
     radial bin and compare that prediction to the data provided in the sacc file.
     """
     def read(self, sacc_data: sacc.Sacc) -> None:
@@ -34,7 +34,7 @@ class BinnedClusterShearProfile(BinnedCluster):
         # Build the data vector and indices needed for the likelihood
         if self.cluster_properties == ClusterProperty.NONE:
             raise ValueError("You must specify at least one cluster property.")
-        cluster_data = DeltaSigmaData(sacc_data)
+        cluster_data = ShearData(sacc_data)
         self._read(cluster_data)
 
         super().read(sacc_data)
@@ -45,12 +45,13 @@ class BinnedClusterShearProfile(BinnedCluster):
         self.updatable_parameters.export_all_parameters(
             self.cluster_recipe, tools.get_ccl_cosmology()
         )
-
         for cl_property in ClusterProperty:
             include_prop = cl_property & self.cluster_properties
             if not include_prop:
                 continue
             if cl_property == ClusterProperty.DELTASIGMA:
+                theory_vector_list += self.get_binned_cluster_property(cl_property)
+            elif cl_property == ClusterProperty.SHEAR:
                 theory_vector_list += self.get_binned_cluster_property(cl_property)
         return TheoryVector.from_list(theory_vector_list)
 
@@ -83,7 +84,7 @@ class BinnedClusterShearProfile(BinnedCluster):
             z_edges, proxy_edges, self.sky_area
         )
 
-            total_observable = self.cluster_recipe.evaluate_theory_prediction_shear_profile(
+            total_observable = self.cluster_recipe.evaluate_theory_prediction_lensing_profile(
             z_edges,
             proxy_edges,
             radius_array,

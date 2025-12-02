@@ -1,5 +1,4 @@
 """Likelihood factory function for cluster number counts."""
-
 import os
 import sys
 
@@ -22,6 +21,59 @@ from firecrown.likelihood import (
 
 from firecrown.modeling_tools import ModelingTools
 
+def get_cluster_shear_profile() -> ClusterShearProfile:
+    """
+    Creates and returns a ClusterShearProfile object with the same
+    configuration as in your previous code snippet.
+    """
+
+    cluster_theory = ClusterShearProfile(
+        cosmo=pyccl.CosmologyVanillaLCDM(),
+        halo_mass_function=pyccl.halos.MassFuncTinker08(mass_def="200c"),
+        cluster_concentration=4.0,
+        is_delta_sigma=True,
+        use_beta_s_interp=True,
+    )
+
+    return cluster_theory
+
+def get_cluster_recipe(
+    cluster_theory=None,
+    pivot_mass: float = 14.625862906,
+    pivot_redshift: float = 0.6,
+    mass_interval=(12, 17),
+    true_z_interval=(0.1, 2.0),
+):
+    """
+    Creates and returns an ExactBinnedClusterRecipe.
+    Parameters
+    ----------
+    cluster_theory : ClusterShearProfile or None
+        If None, uses get_cluster_shear_profile()
+
+    Returns
+    -------
+    ExactBinnedClusterRecipe
+    """
+
+    if cluster_theory is None:
+        cluster_theory = get_cluster_shear_profile()
+
+    redshift_distribution = kernel.SpectroscopicRedshift()
+    mass_distribution = mass_proxy.MurataBinned(pivot_mass, pivot_redshift)
+
+    recipe = ExactBinnedClusterRecipe(
+        cluster_theory=cluster_theory,
+        redshift_distribution=redshift_distribution,
+        mass_distribution=mass_distribution,
+        completeness=None,
+        purity=None,
+        mass_interval=mass_interval,
+        true_z_interval=true_z_interval,
+    )
+
+    return recipe
+
 
 def build_likelihood(
     build_parameters: NamedParameters,
@@ -36,26 +88,10 @@ def build_likelihood(
     if build_parameters.get_bool("use_mean_deltasigma", True):
         average_on |= ClusterProperty.DELTASIGMA
 
-    redshift_distribution = kernel.SpectroscopicRedshift()
-    pivot_mass, pivot_redshift = 14.625862906, 0.6
-    mass_distribution = mass_proxy.MurataBinned(pivot_mass, pivot_redshift)
-    survey_name = "numcosmo_simulated_redshift_richness_deltasigma"
+    survey_name = "numcosmo_sim_red_richness_shear_dsigma"
 
-    cluster_theory = ClusterShearProfile(
-        cosmo=pyccl.CosmologyVanillaLCDM(),
-        halo_mass_function=pyccl.halos.MassFuncTinker08(mass_def="200c"),
-        cluster_concentration=4.0,
-        is_delta_sigma=True,
-        use_beta_s_interp=True,
-    )
-    recipe = ExactBinnedClusterRecipe(
-        cluster_theory=cluster_theory,
-        redshift_distribution=redshift_distribution,
-        mass_distribution=mass_distribution,
-        completeness=None,
-        mass_interval=(12, 17),
-        true_z_interval=(0.1, 2.0),
-    )
+    recipe = get_cluster_recipe()
+
     likelihood = ConstGaussian(
         [
             BinnedClusterNumberCounts(
@@ -72,7 +108,7 @@ def build_likelihood(
     )
 
     # Read in sacc data
-    sacc_file_nm = "cluster_redshift_richness_deltasigma_sacc_data.fits"
+    sacc_file_nm = "cluster_redshift_richness_shear_dsigma_sacc.fits"
     sacc_data = sacc.Sacc.load_fits(sacc_file_nm)
     likelihood.read(sacc_data)
 
