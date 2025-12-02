@@ -12,7 +12,7 @@ class SamplerParameter:
         default_value: float,
         name: None | str = None,
         prefix: None | str = None,
-        shared: bool = True,
+        shared: bool = False,
     ):
         """Creates a new SamplerParameter instance.
 
@@ -21,8 +21,8 @@ class SamplerParameter:
         :param default_value: the default value of the parameter
         :param name: the name of the parameter
         :param prefix: the prefix of the parameter
-        :param shared: if False, the parameter will not receive a prefix,
-            making it the same across all instances
+        :param shared: if True, the parameter will not receive a prefix,
+            making it shared across all instances
         """
         self._prefix = prefix
         self._name = name
@@ -36,16 +36,16 @@ class SamplerParameter:
     def set_fullname(self, prefix: str | None, name: str):
         """Set the prefix and name of this parameter.
 
-        If the parameter is not shared (shared=False), the prefix will be
+        If the parameter is shared (shared=True), the prefix will be
         ignored and the parameter will have the same name across all instances.
 
-        :param prefix: new prefix (ignored if shared=False)
+        :param prefix: new prefix (ignored if shared=True)
         :param name: the name of the parameter
         """
         if self._shared:
-            self._prefix = prefix
-        else:
             self._prefix = None
+        else:
+            self._prefix = prefix
         self._name = name
 
     @property
@@ -116,7 +116,7 @@ class InternalParameter:
 
 
 def register_new_updatable_parameter(
-    value: None | float = None, *, default_value: float, shared: bool = True
+    value: None | float = None, *, default_value: float, shared: bool = False
 ):
     """Create a new parameter, either a SamplerParameter or an InternalParameter.
 
@@ -131,8 +131,8 @@ def register_new_updatable_parameter(
     :param value: the value of the parameter
     :param default_value: the default value of the parameter to be used
         if `value` is `None`
-    :param shared: if False, the parameter will not receive a prefix,
-        making it the same across all instances (only applies when value is None)
+    :param shared: if True, the parameter will not receive a prefix,
+        making it shared across all instances (only applies when value is None)
     :return: a `SamplerParameter` if `value` is `None`, otherwise an `InternalParameter`
     :raises TypeError: if `value` is not `None` and not a `float`
     """
