@@ -44,7 +44,8 @@ def test_wrong_property(cluster_sacc_data: sacc.Sacc) -> None:
     dsd = ShearData(cluster_sacc_data)
     with pytest.raises(
         ValueError,
-        match=f"The property must be {ClusterProperty.DELTASIGMA}.",
+        match=f"The property must be {ClusterProperty.SHEAR} or"
+        f"{ClusterProperty.DELTASIGMA}.",
     ):
         dsd.get_bin_edges("my_survey", ClusterProperty.COUNTS)
 

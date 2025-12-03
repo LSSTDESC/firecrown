@@ -5,6 +5,7 @@ surface mass of clusters within a single redshift and mass bin.
 """
 
 from __future__ import annotations
+from typing import Any
 
 import sacc
 import numpy as np
@@ -97,9 +98,9 @@ class BinnedClusterShearProfile(BinnedCluster):
         # 3. return in the original order of self.bins
         return [results[i] for i in range(len(self.bins))]
 
-    def _group_bins_by_edges(self):
+    def _group_bins_by_edges(self) -> dict[tuple[Any, Any], list[tuple[int, float]]]:
         """Group bins by (z_edges, mass_proxy_edges)."""
-        grouped = {}
+        grouped = {}  # type: dict[tuple, list[tuple[int, float]]]
         for i, b in enumerate(self.bins):
             key = (b.z_edges, b.mass_proxy_edges)
             grouped.setdefault(key, []).append((i, b.radius_center))

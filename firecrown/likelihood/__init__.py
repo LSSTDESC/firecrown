@@ -63,7 +63,7 @@ from firecrown.likelihood._binned_cluster import BinnedCluster
 from firecrown.likelihood._binned_cluster_number_counts import (
     BinnedClusterNumberCounts,
 )
-from firecrown.likelihood._binned_cluster_number_counts_deltasigma import (
+from firecrown.likelihood._binned_cluster_number_counts_shear import (
     BinnedClusterShearProfile,
 )
 

@@ -1,5 +1,7 @@
 """Cluster updatables connector."""
 
+from __future__ import annotations
+
 from firecrown import parameters
 from firecrown.updatable import Updatable, UpdatableCollection
 
@@ -116,7 +118,7 @@ class UpdatableClusterObjects(Updatable):
         """
         super().__init__()
         self.cluster_objects_configs = cluster_objects_configs
-        self.my_updatables = UpdatableCollection()
+        self.my_updatables: UpdatableCollection = UpdatableCollection()
         for conf in self.cluster_objects_configs:
             setattr(
                 self,
