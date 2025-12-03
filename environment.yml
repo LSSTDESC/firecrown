@@ -33,6 +33,7 @@ dependencies:
   - pip >= 20.1  # pip is needed as dependency
   - pip:
     - cobaya
+    - desc-crow
     - isitgr
     - pygobject-stubs
   - plotnine < 0.15
