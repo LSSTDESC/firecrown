@@ -28,7 +28,7 @@ class UpdatableParameters(Updatable):
         self.updatable_parameters = updatable_parameters
 
     def _ini_file_par_name(self, par_name):
-        return f"{self.recipe_attribute_name}.{par_name}"
+        return f"{self.recipe_attribute_name}_{par_name}"
 
     def init_parameters(self, cluster_object):
         """
