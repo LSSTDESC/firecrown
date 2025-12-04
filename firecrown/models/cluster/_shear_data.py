@@ -30,6 +30,11 @@ class ShearData(ClusterData):
         For example if the caller has enabled DELTASIGMA then the observed
         cluster profile within each N dimensional bin will be returned.
         """
+        shear_props = ClusterProperty.DELTASIGMA | ClusterProperty.SHEAR
+        if (properties & shear_props) == shear_props:
+            raise ValueError(
+                "ShearData cannot handle both DELTASIGMA and SHEAR at the same time."
+            )
         data_types = []
         for cluster_property in ClusterProperty:
             include_prop = cluster_property & properties

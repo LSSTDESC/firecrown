@@ -213,10 +213,27 @@ def test_read_multiple_properties(
 ) -> None:
     recipe = binned_exact
     bnc = BinnedClusterNumberCounts(
-        (ClusterProperty.COUNTS | ClusterProperty.MASS), "my_survey", recipe
+        (
+            ClusterProperty.COUNTS
+            | ClusterProperty.MASS
+            | ClusterProperty.SHEAR
+            | ClusterProperty.DELTASIGMA
+        ),
+        "my_survey",
+        recipe,
     )
     bns = BinnedClusterShearProfile(
-        ClusterProperty.SHEAR | ClusterProperty.DELTASIGMA, "my_survey", recipe
+        ClusterProperty.COUNTS | ClusterProperty.MASS | ClusterProperty.DELTASIGMA,
+        "my_survey",
+        recipe,
+    )
+    bnrds = BinnedClusterShearProfile(
+        ClusterProperty.COUNTS
+        | ClusterProperty.MASS
+        | ClusterProperty.DELTASIGMA
+        | ClusterProperty.SHEAR,
+        "my_survey",
+        recipe,
     )
     bnc.read(cluster_sacc_data)
     bns.read(cluster_sacc_data)
@@ -225,11 +242,17 @@ def test_read_multiple_properties(
     assert len(bnc.bins) == 2
     assert len(bns.bins) == 2
     assert len(bnc.data_vector) == 4
-    assert len(bns.data_vector) == 4
+    assert len(bns.data_vector) == 2
     assert bnc.sacc_indices is not None
     assert bns.sacc_indices is not None
     assert len(bnc.sacc_indices) == 4
-    assert len(bns.sacc_indices) == 4
+    assert len(bns.sacc_indices) == 2
+
+    with pytest.raises(
+        ValueError,
+        match="ShearData cannot handle both DELTASIGMA and SHEAR",
+    ):
+        bnrds.read(cluster_sacc_data)
 
 
 def test_compute_theory_vector(
@@ -272,7 +295,12 @@ def test_compute_theory_vector(
     assert len(tv) == 4
 
     bnc = BinnedClusterNumberCounts(
-        (ClusterProperty.COUNTS | ClusterProperty.MASS | ClusterProperty.DELTASIGMA),
+        (
+            ClusterProperty.COUNTS
+            | ClusterProperty.MASS
+            | ClusterProperty.DELTASIGMA
+            | ClusterProperty.SHEAR
+        ),
         "my_survey",
         recipe,
     )
@@ -298,16 +326,7 @@ def test_compute_theory_vector(
     tv = bnd.compute_theory_vector(tools)
     assert tv is not None
     assert len(tv) == 2
-    bns = BinnedClusterShearProfile(ClusterProperty.DELTASIGMA, "my_survey", recipe_rs)
-    bns.read(cluster_sacc_data)
-    bns.update(params)
-    tv = bns.compute_theory_vector(tools)
-    assert tv is not None
-    assert len(tv) == 2
-
-    bns = BinnedClusterShearProfile(
-        (ClusterProperty.COUNTS | ClusterProperty.DELTASIGMA), "my_survey", recipe_rs
-    )
+    bns = BinnedClusterShearProfile(ClusterProperty.SHEAR, "my_survey", recipe_rs)
     bns.read(cluster_sacc_data)
     bns.update(params)
     tv = bns.compute_theory_vector(tools)

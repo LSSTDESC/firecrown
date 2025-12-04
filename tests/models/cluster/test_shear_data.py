@@ -100,3 +100,17 @@ def test_observed_data_and_indices_wrong_property():
         f"{sacc.standard_types.cluster_shear} data type.",
     ):
         ads.get_observed_data_and_indices_by_survey("my_survey", ClusterProperty.MASS)
+
+
+def test_observed_data_and_indices_both_deltasigma_and_shear(
+    cluster_sacc_data: sacc.Sacc,
+):
+    """Ensure error is raised if both DELTASIGMA and SHEAR are requested at once."""
+    dsd = ShearData(cluster_sacc_data)
+    with pytest.raises(
+        ValueError,
+        match="cannot handle both DELTASIGMA and SHEAR",
+    ):
+        dsd.get_observed_data_and_indices_by_survey(
+            "my_survey", ClusterProperty.DELTASIGMA | ClusterProperty.SHEAR
+        )
