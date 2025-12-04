@@ -41,7 +41,6 @@ from firecrown.metadata_types._measurements import _compare_enums as compare_enu
 
 from firecrown.metadata_functions import (
     TwoPointRealIndex,
-    match_name_type,
     extract_all_measured_types,
     measurements_from_index,
 )
@@ -308,72 +307,6 @@ def test_measurements_from_index2():
     assert a == Galaxies.SHEAR_T
     assert n2 == "src0"
     assert b == Galaxies.COUNTS
-
-
-def test_match_name_type_convention2():
-    match, n1, a, n2, b = match_name_type(
-        "no_convention", "lens0", Galaxies.COUNTS, Galaxies.COUNTS
-    )
-    assert not match
-    assert n1 == "no_convention"
-    assert a == Galaxies.COUNTS
-    assert n2 == "lens0"
-    assert b == Galaxies.COUNTS
-
-
-def test_match_name_type_convention3():
-    match, n1, a, n2, b = match_name_type(
-        "no_convention", "here_too", Galaxies.COUNTS, Galaxies.SHEAR_T
-    )
-    assert not match
-    assert n1 == "no_convention"
-    assert a == Galaxies.COUNTS
-    assert n2 == "here_too"
-    assert b == Galaxies.SHEAR_T
-
-
-def test_match_name_type_require_convention_fail():
-    with pytest.raises(
-        ValueError,
-        match="Invalid tracer names (.*) do not respect the naming convention.",
-    ):
-        match_name_type(
-            "no_convention",
-            "here_too",
-            Galaxies.COUNTS,
-            Galaxies.SHEAR_T,
-            require_convention=True,
-        )
-
-
-def test_match_name_type_require_convention_lens():
-    match, n1, a, n2, b = match_name_type(
-        "lens0",
-        "lens0",
-        Galaxies.COUNTS,
-        Galaxies.COUNTS,
-        require_convention=True,
-    )
-    assert not match
-    assert n1 == "lens0"
-    assert a == Galaxies.COUNTS
-    assert n2 == "lens0"
-    assert b == Galaxies.COUNTS
-
-
-def test_match_name_type_require_convention_source():
-    match, n1, a, n2, b = match_name_type(
-        "src0",
-        "src0",
-        Galaxies.PART_OF_XI_MINUS,
-        Galaxies.PART_OF_XI_MINUS,
-        require_convention=True,
-    )
-    assert not match
-    assert n1 == "src0"
-    assert a == Galaxies.PART_OF_XI_MINUS
-    assert n2 == "src0"
-    assert b == Galaxies.PART_OF_XI_MINUS
 
 
 def test_check_two_point_consistence_harmonic(two_point_cell: TwoPointHarmonic):

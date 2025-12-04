@@ -305,56 +305,6 @@ def test_extract_all_tracers_invalid_data_type(
         _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
 
 
-def test_extract_all_tracers_bad_lens_label(
-    sacc_galaxy_xis_src0_lens0_bad_lens_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0_bad_lens_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match="Tracer src0 does not have data points associated with it.",
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_bad_source_label(
-    sacc_galaxy_xis_src0_lens0_bad_source_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_src0_lens0_bad_source_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match=(
-            "Tracer non_informative_label does not have data points associated with it."
-        ),
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_inconsistent_lens_label(
-    sacc_galaxy_xis_inconsistent_lens_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_inconsistent_lens_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convention."),
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
-def test_extract_all_tracers_inconsistent_source_label(
-    sacc_galaxy_xis_inconsistent_source_label,
-):
-    sacc_data, _, _, _ = sacc_galaxy_xis_inconsistent_source_label
-    assert sacc_data is not None
-    with pytest.raises(
-        ValueError,
-        match=("Invalid SACC file, tracer names do not respect the naming convention."),
-    ):
-        _ = extract_all_tracers_inferred_galaxy_zdists(sacc_data)
-
-
 def test_extract_all_metadata_index_harmonics(sacc_galaxy_cells):
     sacc_data, _, tracer_pairs = sacc_galaxy_cells
 
@@ -1609,13 +1559,13 @@ def test_make_all_photoz_bin_combinations_with_cmb_all_incompatible():
     # measurements that we know ARE compatible and adjust expectations
     galaxy_bins = [
         InferredGalaxyZDist(
-            bin_name="compatible_bin",
+            bin_name="compatible_bin1",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.SHEAR_T},  # Actually compatible with CMB.CONVERGENCE
         ),
         InferredGalaxyZDist(
-            bin_name="compatible_bin",
+            bin_name="compatible_bin2",
             z=np.linspace(0, 1, 100),
             dndz=np.ones(100),
             measurements={Galaxies.PART_OF_XI_MINUS},
@@ -1723,7 +1673,8 @@ def test_bin_rules_auto(all_harmonic_bins):
         all_harmonic_bins, auto_bin_rule
     )
     # AutoBinRule should create all auto-combinations
-    assert len(two_point_xy_combinations) == len(all_harmonic_bins)
+    # There is two measurements per bin in all_harmonic_bins
+    assert len(two_point_xy_combinations) == 2 * len(all_harmonic_bins)
     for two_point_xy in two_point_xy_combinations:
         assert two_point_xy.x == two_point_xy.y
         assert two_point_xy.x_measurement == two_point_xy.y_measurement
@@ -1782,9 +1733,9 @@ def test_bin_rules_named(all_harmonic_bins):
         all_harmonic_bins, named_bin_rule
     )
     # NamedBinRule should create all named combinations
-    assert len(two_point_xy_combinations) == 4
+    assert len(two_point_xy_combinations) == 3
     for two_point_xy in two_point_xy_combinations:
-        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_2", "bin_1"}
+        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_1", "bin_2"}
 
 
 def test_bin_rules_type_source(all_harmonic_bins):
@@ -1822,9 +1773,9 @@ def test_bin_rules_not_named(all_harmonic_bins):
         all_harmonic_bins, ~named_bin_rule
     )
     # NamedBinRule should create all named combinations
-    assert len(two_point_xy_combinations) == 6
+    assert len(two_point_xy_combinations) == 7
     for two_point_xy in two_point_xy_combinations:
-        assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} != {"bin_2", "bin_1"}
+        assert [two_point_xy.x.bin_name, two_point_xy.y.bin_name] != ["bin_1", "bin_2"]
 
 
 def test_bin_rules_first_neighbor(many_harmonic_bins):
@@ -1924,7 +1875,6 @@ def test_bin_rules_named_keep():
     )
     rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
     assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
-    assert rule.keep((z2, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
 
 
 def test_bin_rules_lens_keep():

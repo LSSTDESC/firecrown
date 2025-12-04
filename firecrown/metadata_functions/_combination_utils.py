@@ -1,28 +1,47 @@
 """Utilities for creating combinations of photo-z bins and measurements."""
 
-from itertools import product, chain, combinations_with_replacement
+from itertools import product, chain
 
 import numpy as np
 
 import firecrown.metadata_types as mdt
 
 
+def _validate_list_of_inferred_galaxy_zdists(
+    inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
+) -> None:
+    """Validate that the list of inferred galaxy z dists do not contain duplicates."""
+    bin_names_set = set()
+    # Produce a list of duplicates
+    bin_names = []
+    for igz in inferred_galaxy_zdists:
+        if igz.bin_name in bin_names_set:
+            bin_names.append(igz.bin_name)
+        else:
+            bin_names_set.add(igz.bin_name)
+
+    if bin_names:
+        raise ValueError(
+            f"Duplicate inferred galaxy z distribution bin names found: {bin_names}"
+        )
+
+
 def make_all_photoz_bin_combinations(
     inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
 ) -> list[mdt.TwoPointXY]:
     """Extract the two-point function metadata from a sacc file."""
-    bin_combinations = [
-        mdt.TwoPointXY(
-            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
-        )
-        for igz1, igz2 in product(inferred_galaxy_zdists, repeat=2)
-        for x_measurement, y_measurement in product(
-            igz1.measurements, igz2.measurements
-        )
-        if mdt.measurement_is_compatible(x_measurement, y_measurement)
+    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
+    expanded = [
+        (igz, m) for igz in inferred_galaxy_zdists for m in igz.measurement_list
     ]
-
-    return bin_combinations
+    # Create all combinations of the expanded list, keeping only compatible ones
+    # and avoiding duplicates in the case of correlations of the same type
+    return [
+        mdt.TwoPointXY(x=igz1, y=igz2, x_measurement=m1, y_measurement=m2)
+        for (igz1, m1), (igz2, m2) in product(expanded, repeat=2)
+        if mdt.measurement_is_compatible(m1, m2)
+        and ((m1 != m2) or (igz2.bin_name >= igz1.bin_name))
+    ]
 
 
 def make_all_photoz_bin_combinations_with_cmb(
@@ -38,6 +57,7 @@ def make_all_photoz_bin_combinations_with_cmb(
         (default: False)
     :return: List of all XY combinations including mdt.CMB-galaxy crosses
     """
+    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
     # Get all galaxy-galaxy combinations first
     galaxy_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
     all_combinations = galaxy_combinations + make_cmb_galaxy_combinations_only(
@@ -58,6 +78,7 @@ def make_cmb_galaxy_combinations_only(
     :param cmb_tracer_name: Name of the mdt.CMB tracer
     :return: List of mdt.CMB-galaxy cross-correlation XY combinations only
     """
+    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
     # Create a mock mdt.CMB "bin"
     cmb_bin = mdt.InferredGalaxyZDist(
         bin_name=cmb_tracer_name,
@@ -101,16 +122,10 @@ def make_all_bin_rule_combinations(
     bin_rule: mdt.BinRule,
 ) -> list[mdt.TwoPointXY]:
     """Extract the two-point function metadata from a sacc file."""
-    bin_combinations = [
-        mdt.TwoPointXY(
-            x=igz1, y=igz2, x_measurement=x_measurement, y_measurement=y_measurement
-        )
-        for igz1, igz2 in combinations_with_replacement(inferred_galaxy_zdists, 2)
-        for x_measurement, y_measurement in product(
-            igz1.measurements, igz2.measurements
-        )
-        if mdt.measurement_is_compatible(x_measurement, y_measurement)
-        and (bin_rule.keep((igz1, igz2), (x_measurement, y_measurement)))
+    _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
+    all_bin_combinations = make_all_photoz_bin_combinations(inferred_galaxy_zdists)
+    return [
+        xy
+        for xy in all_bin_combinations
+        if bin_rule.keep((xy.x, xy.y), (xy.x_measurement, xy.y_measurement))
     ]
-
-    return bin_combinations

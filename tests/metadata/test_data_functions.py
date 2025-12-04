@@ -2,6 +2,7 @@
 Tests for the module firecrown.data_functions.
 """
 
+import re
 import itertools as it
 import pytest
 import numpy as np
@@ -10,9 +11,9 @@ from firecrown.metadata_types import (
     TwoPointReal,
     TwoPointHarmonic,
     InferredGalaxyZDist,
+    TwoPointFilterMethod,
     Galaxies,
 )
-from firecrown.metadata_types import TwoPointFilterMethod
 from firecrown.metadata_functions import make_all_photoz_bin_combinations
 from firecrown.data_types import TwoPointMeasurement
 from firecrown.data_functions import (
@@ -650,5 +651,36 @@ def test_bin_filter_methods(
             )
         ]
     )
+
     assert bin_col.filters[0].method == method
-    assert bin_col.apply_filter_single(harmonic_window_bins[0])
+    assert bin_col.apply_filter_single(harmonic_window_bins[4])
+
+
+def test_raise_with_two_bins_same_name():
+    # Here we test if make_all_photoz_bin_combinations raises an error when
+    # there are two bins with the same name and measurement.
+    igz1 = InferredGalaxyZDist(
+        bin_name="bin_1",
+        dndz=np.linspace(0.0, 2.0, 100),
+        z=np.linspace(0.0, 2.0, 100),
+        measurements={Galaxies.COUNTS},
+    )
+    igz2 = InferredGalaxyZDist(
+        bin_name="bin_2",
+        dndz=np.linspace(0.0, 2.0, 100),
+        z=np.linspace(0.0, 2.0, 100),
+        measurements={Galaxies.COUNTS},
+    )
+    igz3 = InferredGalaxyZDist(
+        bin_name="bin_3",
+        dndz=np.linspace(0.0, 2.0, 100),
+        z=np.linspace(0.0, 2.0, 100),
+        measurements={Galaxies.COUNTS},
+    )
+    with pytest.raises(
+        ValueError,
+        match=re.escape(
+            "Duplicate inferred galaxy z distribution bin names found: ['bin_1', 'bin_2']"
+        ),
+    ):
+        _ = make_all_photoz_bin_combinations([igz1, igz1, igz2, igz2, igz3])

@@ -239,10 +239,7 @@ class NamedBinRule(BinRule):
 
         :return: True if the bin name pair matches any configured name pair.
         """
-        return (zdist[0].bin_name, zdist[1].bin_name) in self.names or (
-            zdist[1].bin_name,
-            zdist[0].bin_name,
-        ) in self.names
+        return (zdist[0].bin_name, zdist[1].bin_name) in self.names
 
 
 @register_rule

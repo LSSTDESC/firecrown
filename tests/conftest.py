@@ -250,10 +250,12 @@ def fixture_all_harmonic_bins() -> list[InferredGalaxyZDist]:
     ]
     return [
         InferredGalaxyZDist(
-            bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+            bin_name=f"bin_{i + 1}",
+            z=z,
+            dndz=dndzs[i],
+            measurements={Galaxies.COUNTS, Galaxies.SHEAR_E},
         )
         for i in range(2)
-        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
     ]
 
 
@@ -269,10 +271,12 @@ def make_many_harmonic_bins() -> list[InferredGalaxyZDist]:
     ]
     return [
         InferredGalaxyZDist(
-            bin_name=f"bin_{i + 1}", z=z, dndz=dndzs[i], measurements={m}
+            bin_name=f"bin_{i + 1}",
+            z=z,
+            dndz=dndzs[i],
+            measurements={Galaxies.COUNTS, Galaxies.SHEAR_E},
         )
         for i in range(5)
-        for m in [Galaxies.COUNTS, Galaxies.SHEAR_E]
     ]
 
 
@@ -328,15 +332,14 @@ def fixture_all_real_bins() -> list[InferredGalaxyZDist]:
             bin_name=f"bin_{i + 1}",
             z=np.linspace(0, 1, 5),
             dndz=np.array([0.1, 0.5, 0.2, 0.3, 0.4]),
-            measurements={m},
+            measurements={
+                Galaxies.COUNTS,
+                Galaxies.SHEAR_T,
+                Galaxies.PART_OF_XI_MINUS,
+                Galaxies.PART_OF_XI_PLUS,
+            },
         )
         for i in range(2)
-        for m in [
-            Galaxies.COUNTS,
-            Galaxies.SHEAR_T,
-            Galaxies.PART_OF_XI_MINUS,
-            Galaxies.PART_OF_XI_PLUS,
-        ]
     ]
 
 

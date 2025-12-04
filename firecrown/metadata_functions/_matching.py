@@ -7,38 +7,6 @@ from firecrown.metadata_functions._type_defs import (
 )
 
 
-def match_name_type(
-    tracer1: str,
-    tracer2: str,
-    a: mdt.Measurement,
-    b: mdt.Measurement,
-    require_convention: bool = False,
-) -> tuple[bool, str, mdt.Measurement, str, mdt.Measurement]:
-    """Use the naming convention to assign the right measurement to each tracer."""
-    for n1, n2 in ((tracer1, tracer2), (tracer2, tracer1)):
-        if mdt.LENS_REGEX.match(n1) and mdt.SOURCE_REGEX.match(n2):
-            if a in mdt.GALAXY_SOURCE_TYPES and b in mdt.GALAXY_LENS_TYPES:
-                return True, n1, b, n2, a
-            if b in mdt.GALAXY_SOURCE_TYPES and a in mdt.GALAXY_LENS_TYPES:
-                return True, n1, a, n2, b
-            raise ValueError(
-                "Invalid SACC file, tracer names do not respect "
-                "the naming convention."
-            )
-    if require_convention:
-        if mdt.LENS_REGEX.match(tracer1) and mdt.LENS_REGEX.match(tracer2):
-            return False, tracer1, a, tracer2, b
-        if mdt.SOURCE_REGEX.match(tracer1) and mdt.SOURCE_REGEX.match(tracer2):
-            return False, tracer1, a, tracer2, b
-
-        raise ValueError(
-            f"Invalid tracer names ({tracer1}, {tracer2}) "
-            f"do not respect the naming convention."
-        )
-
-    return False, tracer1, a, tracer2, b
-
-
 def _make_two_point_xy_error_message(
     data_type: str,
     a: mdt.Measurement,
