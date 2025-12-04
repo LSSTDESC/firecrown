@@ -1,4 +1,19 @@
-"""Bin pair selector classes for combining two-point measurements."""
+"""Bin pair selector classes for filtering tomographic bin pairs in two-point measurements.
+
+This module provides a flexible system for selecting which pairs of tomographic bins
+should be included when constructing two-point correlation functions. Selectors can be
+combined using logical operators (AND, OR, NOT) to create complex selection rules.
+
+Example usage:
+    # Select only auto-correlations with the same bin name
+    selector = AutoNameBinPairSelector() & AutoMeasurementBinPairSelector()
+
+    # Select source pairs or lens pairs
+    selector = SourceBinPairSelector() | LensBinPairSelector()
+
+    # Select everything except auto-correlations
+    selector = ~AutoNameBinPairSelector()
+"""
 
 import re
 from abc import abstractmethod
@@ -27,11 +42,15 @@ RULE_REGISTRY: dict[str, type["BinPairSelector"]] = {}
 
 
 def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSelector"]:
-    """Register a new bin pair selector class using its Pydantic `kind` default.
+    """Register a new bin pair selector class in the global registry.
+
+    This decorator registers a BinPairSelector subclass using its Pydantic `kind`
+    field default value as the registry key. This enables polymorphic deserialization
+    from configuration files.
 
     :param cls: The BinPairSelector class to register.
 
-    :return: The registered BinPairSelector class.
+    :return: The registered BinPairSelector class (for use as a decorator).
 
     :raises ValueError: If the class has no default for 'kind' or if the kind is
         already registered.
@@ -48,15 +67,26 @@ def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSel
     return cls
 
 
+# Type aliases for clarity
 TomographicBinPair = tuple[InferredGalaxyZDist, InferredGalaxyZDist]
+"""A pair of tomographic bin distributions to be correlated."""
+
 MeasurementPair = tuple[Measurement, Measurement]
+"""A pair of measurement types (e.g., galaxy_shear_plus, galaxy_density)."""
 
 
 class BinPairSelector(BaseModel):
-    """Class defining the bin combinator for two-point measurements.
+    """Base class for filtering pairs of tomographic bins in two-point measurements.
 
-    The bin combinator is used to combine several `InferredGalaxyZDist` into
-    `TwoPointXY` objects.
+    A BinPairSelector determines which pairs of `InferredGalaxyZDist` bins should
+    be included when constructing `TwoPointXY` objects. Concrete implementations
+    define specific selection criteria (e.g., auto-correlations only, specific
+    bin names, measurement types, etc.).
+
+    Selectors support logical composition via operators:
+    - AND: selector1 & selector2
+    - OR: selector1 | selector2
+    - NOT: ~selector
     """
 
     kind: str
@@ -74,6 +104,10 @@ class BinPairSelector(BaseModel):
     def __and__(self, other: "BinPairSelector") -> "BinPairSelector":
         """Return the AND combinator of this pair selector with another.
 
+        Example:
+            # Select auto-correlations that are also source measurements
+            selector = AutoNameBinPairSelector() & SourceBinPairSelector()
+
         :param other: Another BinPairSelector to combine with.
 
         :return: An AndBinPairSelector combining both pair selectors.
@@ -83,6 +117,10 @@ class BinPairSelector(BaseModel):
     def __or__(self, other: "BinPairSelector") -> "BinPairSelector":
         """Return the OR combinator of this pair selector with another.
 
+        Example:
+            # Select either source or lens pairs
+            selector = SourceBinPairSelector() | LensBinPairSelector()
+
         :param other: Another BinPairSelector to combine with.
 
         :return: An OrBinPairSelector combining both pair selectors.
@@ -91,6 +129,10 @@ class BinPairSelector(BaseModel):
 
     def __invert__(self) -> "BinPairSelector":
         """Return the inverse of this bin pair selector.
+
+        Example:
+            # Select everything except auto-correlations
+            selector = ~AutoNameBinPairSelector()
 
         :return: A NotBinPairSelector inverting this pair selector.
         """
@@ -127,9 +169,10 @@ class BinPairSelector(BaseModel):
 
 @register_bin_pair_selector
 class AndBinPairSelector(BinPairSelector):
-    """Class defining the AND combinator for two-point measurements.
+    """Logical AND combinator for bin pair selectors.
 
-    This pair selector keeps pairs only if all contained bin pair selectors pass.
+    This selector keeps a bin pair only if ALL contained selectors accept it.
+    Nested AndBinPairSelectors are automatically flattened for efficiency.
     """
 
     kind: str = "and"
@@ -148,7 +191,11 @@ class AndBinPairSelector(BinPairSelector):
         )
 
     def model_post_init(self, _, /) -> None:
-        """Flatten nested AndBinPairSelectors."""
+        """Flatten nested AndBinPairSelectors for efficiency.
+
+        This optimization reduces (A & B) & C to a single AndBinPairSelector
+        containing [A, B, C], avoiding unnecessary nesting.
+        """
         flattened = []
         for br in self.pair_selectors:
             if isinstance(br, AndBinPairSelector):
@@ -160,9 +207,10 @@ class AndBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class OrBinPairSelector(BinPairSelector):
-    """Class defining the OR combinator for bin pair selectors.
+    """Logical OR combinator for bin pair selectors.
 
-    This pair selector keeps pairs if any of the contained bin pair selectors pass.
+    This selector keeps a bin pair if ANY of the contained selectors accept it.
+    Nested OrBinPairSelectors are automatically flattened for efficiency.
     """
 
     kind: str = "or"
@@ -181,7 +229,11 @@ class OrBinPairSelector(BinPairSelector):
         )
 
     def model_post_init(self, _, /) -> None:
-        """Flatten nested OrBinPairSelectors."""
+        """Flatten nested OrBinPairSelectors for efficiency.
+
+        This optimization reduces (A | B) | C to a single OrBinPairSelector
+        containing [A, B, C], avoiding unnecessary nesting.
+        """
         flattened = []
         for br in self.pair_selectors:
             if isinstance(br, OrBinPairSelector):
@@ -193,9 +245,10 @@ class OrBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class NotBinPairSelector(BinPairSelector):
-    """Class defining the NOT combinator for two-point measurements.
+    """Logical NOT combinator for bin pair selectors.
 
-    This pair selector inverts the result of the contained bin pair selector.
+    This selector inverts the result of the contained selector, accepting pairs
+    that would be rejected and vice versa.
     """
 
     kind: str = "not"
@@ -214,10 +267,14 @@ class NotBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class NamedBinPairSelector(BinPairSelector):
-    """Class defining the named bin pair selector for two-point measurements.
+    """Selector for explicitly specified bin name pairs.
 
-    This pair selector keeps pairs if their bin names match any of the specified name
-    pairs. The order of names in the pair doesn't matter (symmetric matching).
+    This selector keeps bin pairs if their names match any entry in the configured
+    list. Matching is symmetric: (name1, name2) is considered equivalent to
+    (name2, name1).
+
+    Example:
+        names=[("bin0", "bin1"), ("bin2", "bin2")]  # Cross-correlation and one auto
     """
 
     kind: str = "named"
@@ -226,19 +283,31 @@ class NamedBinPairSelector(BinPairSelector):
     @field_serializer("names")
     @classmethod
     def serialize_names(cls, value: list[tuple[str, str]]) -> list[list[str]]:
-        """Serialize the names parameter."""
+        """Serialize name tuples to lists for JSON/YAML compatibility.
+
+        :param value: List of name tuples.
+        :return: List of name lists (tuples converted to lists).
+        """
         return [list(name) for name in value]
 
     @field_validator("names")
     @classmethod
     def validate_names(cls, value: list[list[str]]) -> list[tuple[str, str]]:
-        """Validate the names parameter."""
+        """Validate and convert name lists to tuples.
+
+        :param value: List of name lists (from deserialization).
+        :return: List of name tuples.
+        :raises AssertionError: If any name list doesn't have exactly 2 elements.
+        """
         for names in value:
             assert len(names) == 2
         return [(names[0], names[1]) for names in value]
 
     def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
-        """Return True if the bin name pair is in the list of names.
+        """Return True if the bin name pair matches any configured pair.
+
+        Note: Matching is currently order-dependent. To achieve symmetric matching,
+        include both (name1, name2) and (name2, name1) in the names list.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
         :param m: Pair of Measurement objects (unused).
@@ -250,9 +319,10 @@ class NamedBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class AutoNameBinPairSelector(BinPairSelector):
-    """Class defining the auto-name bin pair selectors.
+    """Selector for auto-correlations based on bin names.
 
-    This pair selector keeps pairs of bins that have the same bin name.
+    This selector keeps only pairs where both bins have identical names,
+    effectively selecting auto-correlations within the same tomographic bin.
     """
 
     kind: str = "auto-name"
@@ -270,9 +340,10 @@ class AutoNameBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class AutoMeasurementBinPairSelector(BinPairSelector):
-    """Class defining the auto-measurement bin pair selector.
+    """Selector for auto-correlations based on measurement type.
 
-    This pair selector keeps pairs where both measurements are the same.
+    This selector keeps only pairs where both measurements are identical
+    (e.g., both are galaxy_shear_plus or both are galaxy_density).
     """
 
     kind: str = "auto-measurement"
@@ -290,10 +361,11 @@ class AutoMeasurementBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class SourceBinPairSelector(BinPairSelector):
-    """Class defining the source bin pair selector.
+    """Selector for galaxy source (weak lensing) measurement pairs.
 
-    This pair selector keeps pairs where both measurements are galaxy source
-    measurements.
+    This selector keeps pairs where both measurements are galaxy source types,
+    which correspond to weak lensing shear measurements (e.g., galaxy_shear_plus,
+    galaxy_shear_minus).
     """
 
     kind: str = "source"
@@ -311,10 +383,10 @@ class SourceBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class LensBinPairSelector(BinPairSelector):
-    """Class defining the lens bin pair selector.
+    """Selector for galaxy lens (clustering) measurement pairs.
 
-    This pair selector keeps pairs where both measurements are galaxy lens
-    measurements.
+    This selector keeps pairs where both measurements are galaxy lens types,
+    which correspond to galaxy number density or clustering measurements.
     """
 
     kind: str = "lens"
@@ -332,10 +404,16 @@ class LensBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class FirstNeighborsBinPairSelector(BinPairSelector):
-    """Class defining the first neighbors bin pair selector.
+    """Selector for neighboring tomographic bins.
 
-    This pair selector keeps pairs where the bin names differ by at most num_neighbors.
-    Bin names must follow the pattern <text><number>.
+    This selector keeps bin pairs where the bin indices differ by at most
+    `num_neighbors`. Bin names must follow the pattern <text><number>, where
+    the text part must be identical and the numeric part represents the bin index.
+
+    Example:
+        With num_neighbors=1:
+        - Keeps: ("bin0", "bin1"), ("bin2", "bin2"), ("src1", "src2")
+        - Rejects: ("bin0", "bin2"), ("bin0", "src0")
     """
 
     kind: str = "first-neighbors"
@@ -365,10 +443,11 @@ class FirstNeighborsBinPairSelector(BinPairSelector):
 
 @register_bin_pair_selector
 class TypeSourceBinPairSelector(BinPairSelector):
-    """Class defining the type-source bin pair selector.
+    """Selector for bins with matching type-source.
 
-    This pair selector keeps pairs where both bins have the same type-source and it
-    matches the configured type_source.
+    This selector keeps bin pairs where both bins have identical type-sources
+    that also match the configured value. The type-source typically indicates
+    whether data comes from spectroscopy or photometry.
     """
 
     kind: str = "type-source"

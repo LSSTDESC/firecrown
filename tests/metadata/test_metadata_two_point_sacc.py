@@ -37,7 +37,7 @@ from firecrown.metadata_functions import (
     make_all_photoz_bin_combinations_with_cmb,
     make_all_photoz_bin_combinations,
     make_cmb_galaxy_combinations_only,
-    make_all_pair_selector_combinations,
+    make_binned_two_point_filtered,
 )
 from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
@@ -1679,7 +1679,7 @@ def test_pair_selector_auto(all_harmonic_bins):
         mt.AutoNameBinPairSelector() & mt.AutoMeasurementBinPairSelector()
     )
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, auto_pair_selector
     )
     # AutoBinPairSelector should create all auto-combinations
@@ -1696,7 +1696,7 @@ def test_pair_selector_auto_source(all_harmonic_bins):
     )
     source_pair_selector = mt.SourceBinPairSelector()
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, auto_pair_selector & source_pair_selector
     )
     # AutoBinPairSelector should create all auto-combinations for shear measurements
@@ -1713,7 +1713,7 @@ def test_pair_selector_auto_lens(all_harmonic_bins):
     )
     lens_pair_selector = mt.LensBinPairSelector()
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, auto_pair_selector & lens_pair_selector
     )
     # AutoBinPairSelector should create all auto-combinations for lens measurements
@@ -1734,7 +1734,7 @@ def test_pair_selector_auto_source_lens(all_harmonic_bins):
     pair_selector = (auto_pair_selector & lens_pair_selector) | (
         auto_pair_selector & source_pair_selector
     )
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, pair_selector
     )
     # AutoBinPairSelector should create all auto-combinations for lens measurements
@@ -1747,7 +1747,7 @@ def test_pair_selector_auto_source_lens(all_harmonic_bins):
 def test_pair_selector_named(all_harmonic_bins):
     named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, named_pair_selector
     )
     # NamedBinPairSelector should create all named combinations
@@ -1761,7 +1761,7 @@ def test_pair_selector_type_source(all_harmonic_bins):
         type_source=mt.TypeSource.DEFAULT
     )
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, type_source_pair_selector
     )
     # TypeSourceBinPairSelector should create all type-source combinations
@@ -1775,11 +1775,11 @@ def test_pair_selector_type_source(all_harmonic_bins):
         type_source=mt.TypeSource("NewTypeSource"),
     )
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins + [z1], type_source_pair_selector
     )
     assert len(two_point_xy_combinations) == 10
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins + [z1],
         mt.TypeSourceBinPairSelector(type_source=mt.TypeSource("NewTypeSource")),
     )
@@ -1789,7 +1789,7 @@ def test_pair_selector_type_source(all_harmonic_bins):
 def test_pair_selector_not_named(all_harmonic_bins):
     named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         all_harmonic_bins, ~named_pair_selector
     )
     # NamedBinPairSelector should create all named combinations
@@ -1813,7 +1813,7 @@ def test_pair_selector_first_neighbor(many_harmonic_bins):
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         many_harmonic_bins + [z1, z2], first_neighbor_pair_selector
     )
     # FirstNeighborBinPairSelector should create all first neighbor combinations
@@ -1833,7 +1833,7 @@ def test_pair_selector_first_neighbor_no_auto(many_harmonic_bins):
         first_neighbor_pair_selector & ~auto_pair_selector
     )
 
-    two_point_xy_combinations = make_all_pair_selector_combinations(
+    two_point_xy_combinations = make_binned_two_point_filtered(
         many_harmonic_bins, first_neighbor_no_auto_pair_selector
     )
     # FirstNeighborBinPairSelector should create all first neighbor combinations
