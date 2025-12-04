@@ -117,9 +117,9 @@ def make_cmb_galaxy_combinations_only(
     return cmb_galaxy_combinations
 
 
-def make_all_bin_rule_combinations(
+def make_all_pair_selector_combinations(
     inferred_galaxy_zdists: list[mdt.InferredGalaxyZDist],
-    bin_rule: mdt.BinRule,
+    bin_pair_selector: mdt.BinPairSelector,
 ) -> list[mdt.TwoPointXY]:
     """Extract the two-point function metadata from a sacc file."""
     _validate_list_of_inferred_galaxy_zdists(inferred_galaxy_zdists)
@@ -127,5 +127,5 @@ def make_all_bin_rule_combinations(
     return [
         xy
         for xy in all_bin_combinations
-        if bin_rule.keep((xy.x, xy.y), (xy.x_measurement, xy.y_measurement))
+        if bin_pair_selector.keep((xy.x, xy.y), (xy.x_measurement, xy.y_measurement))
     ]

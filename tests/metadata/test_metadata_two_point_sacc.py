@@ -37,7 +37,7 @@ from firecrown.metadata_functions import (
     make_all_photoz_bin_combinations_with_cmb,
     make_all_photoz_bin_combinations,
     make_cmb_galaxy_combinations_only,
-    make_all_bin_rule_combinations,
+    make_all_pair_selector_combinations,
 )
 from firecrown.data_functions import (
     check_two_point_consistence_harmonic,
@@ -1628,51 +1628,61 @@ def test_make_all_photoz_bin_combinations_with_cmb_empty():
     assert len(combinations) == 0
 
 
-def test_bin_rules_register_missing_kind():
-    with pytest.raises(ValueError, match="MissingBinRule has no default for 'kind'"):
+def test_pair_selector_register_missing_kind():
+    with pytest.raises(
+        ValueError, match="MissingBinPairSelector has no default for 'kind'"
+    ):
 
-        @mt.register_rule
-        class MissingBinRule(mt.BinRule):
-            """BinRule with missing kind."""
+        @mt.register_bin_pair_selector
+        class MissingBinPairSelector(mt.BinPairSelector):
+            """BinPairSelector with missing kind."""
 
-            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+            def keep(
+                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
+            ) -> bool:
                 return True
 
-        _ = MissingBinRule(kind="foo")
+        _ = MissingBinPairSelector(kind="foo")
 
 
-def test_bin_rules_register_duplicate_kind():
-    with pytest.raises(ValueError, match="Duplicate rule kind foo"):
+def test_pair_selector_register_duplicate_kind():
+    with pytest.raises(ValueError, match="Duplicate pair selector kind foo"):
 
-        @mt.register_rule
-        class Duplicate1BinRule(mt.BinRule):
-            """BinRule with duplicate kind."""
+        @mt.register_bin_pair_selector
+        class Duplicate1BinPairSelector(mt.BinPairSelector):
+            """BinPairSelector with duplicate kind."""
 
             kind: str = "foo"
 
-            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+            def keep(
+                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
+            ) -> bool:
                 return True
 
-        @mt.register_rule
-        class Duplicate2BinRule(mt.BinRule):
-            """BinRule with duplicate kind."""
+        @mt.register_bin_pair_selector
+        class Duplicate2BinPairSelector(mt.BinPairSelector):
+            """BinPairSelector with duplicate kind."""
 
             kind: str = "foo"
 
-            def keep(self, _zdist: mt.ZDistPair, _m: mt.MeasurementPair) -> bool:
+            def keep(
+                self, _zdist: mt.TomographicBinPair, _m: mt.MeasurementPair
+            ) -> bool:
                 return True
 
-        _ = Duplicate2BinRule()
-        _ = Duplicate1BinRule()
+        _ = Duplicate2BinPairSelector()
+        _ = Duplicate1BinPairSelector()
 
 
-def test_bin_rules_auto(all_harmonic_bins):
-    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
-
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, auto_bin_rule
+def test_pair_selector_auto(all_harmonic_bins):
+    auto_pair_selector = (
+        mt.AutoNameBinPairSelector() & mt.AutoMeasurementBinPairSelector()
     )
-    # AutoBinRule should create all auto-combinations
+
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, auto_pair_selector
+    )
+    # AutoBinPairSelector should create all auto-combinations
     # There is two measurements per bin in all_harmonic_bins
     assert len(two_point_xy_combinations) == 2 * len(all_harmonic_bins)
     for two_point_xy in two_point_xy_combinations:
@@ -1680,14 +1690,16 @@ def test_bin_rules_auto(all_harmonic_bins):
         assert two_point_xy.x_measurement == two_point_xy.y_measurement
 
 
-def test_bin_rules_auto_source(all_harmonic_bins):
-    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
-    source_bin_rule = mt.SourceBinRule()
-
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, auto_bin_rule & source_bin_rule
+def test_pair_selector_auto_source(all_harmonic_bins):
+    auto_pair_selector = (
+        mt.AutoNameBinPairSelector() & mt.AutoMeasurementBinPairSelector()
     )
-    # AutoBinRule should create all auto-combinations for shear measurements
+    source_pair_selector = mt.SourceBinPairSelector()
+
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, auto_pair_selector & source_pair_selector
+    )
+    # AutoBinPairSelector should create all auto-combinations for shear measurements
     assert len(two_point_xy_combinations) == 2
     for two_point_xy in two_point_xy_combinations:
         assert two_point_xy.x == two_point_xy.y
@@ -1695,14 +1707,16 @@ def test_bin_rules_auto_source(all_harmonic_bins):
         assert two_point_xy.x_measurement in mt.GALAXY_SOURCE_TYPES
 
 
-def test_bin_rules_auto_lens(all_harmonic_bins):
-    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
-    lens_bin_rule = mt.LensBinRule()
-
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, auto_bin_rule & lens_bin_rule
+def test_pair_selector_auto_lens(all_harmonic_bins):
+    auto_pair_selector = (
+        mt.AutoNameBinPairSelector() & mt.AutoMeasurementBinPairSelector()
     )
-    # AutoBinRule should create all auto-combinations for lens measurements
+    lens_pair_selector = mt.LensBinPairSelector()
+
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, auto_pair_selector & lens_pair_selector
+    )
+    # AutoBinPairSelector should create all auto-combinations for lens measurements
     assert len(two_point_xy_combinations) == 2
     for two_point_xy in two_point_xy_combinations:
         assert two_point_xy.x == two_point_xy.y
@@ -1710,41 +1724,47 @@ def test_bin_rules_auto_lens(all_harmonic_bins):
         assert two_point_xy.x_measurement in mt.GALAXY_LENS_TYPES
 
 
-def test_bin_rules_auto_source_lens(all_harmonic_bins):
-    auto_bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
-    source_bin_rule = mt.SourceBinRule()
-    lens_bin_rule = mt.LensBinRule()
-
-    bin_rule = (auto_bin_rule & lens_bin_rule) | (auto_bin_rule & source_bin_rule)
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, bin_rule
+def test_pair_selector_auto_source_lens(all_harmonic_bins):
+    auto_pair_selector = (
+        mt.AutoNameBinPairSelector() & mt.AutoMeasurementBinPairSelector()
     )
-    # AutoBinRule should create all auto-combinations for lens measurements
+    source_pair_selector = mt.SourceBinPairSelector()
+    lens_pair_selector = mt.LensBinPairSelector()
+
+    pair_selector = (auto_pair_selector & lens_pair_selector) | (
+        auto_pair_selector & source_pair_selector
+    )
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, pair_selector
+    )
+    # AutoBinPairSelector should create all auto-combinations for lens measurements
     assert len(two_point_xy_combinations) == 4
     for two_point_xy in two_point_xy_combinations:
         assert two_point_xy.x == two_point_xy.y
         assert two_point_xy.x_measurement == two_point_xy.y_measurement
 
 
-def test_bin_rules_named(all_harmonic_bins):
-    named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+def test_pair_selector_named(all_harmonic_bins):
+    named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
 
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, named_bin_rule
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, named_pair_selector
     )
-    # NamedBinRule should create all named combinations
+    # NamedBinPairSelector should create all named combinations
     assert len(two_point_xy_combinations) == 3
     for two_point_xy in two_point_xy_combinations:
         assert {two_point_xy.x.bin_name, two_point_xy.y.bin_name} == {"bin_1", "bin_2"}
 
 
-def test_bin_rules_type_source(all_harmonic_bins):
-    type_source_bin_rule = mt.TypeSourceBinRule(type_source=mt.TypeSource.DEFAULT)
-
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, type_source_bin_rule
+def test_pair_selector_type_source(all_harmonic_bins):
+    type_source_pair_selector = mt.TypeSourceBinPairSelector(
+        type_source=mt.TypeSource.DEFAULT
     )
-    # TypeSourceBinRule should create all type-source combinations
+
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, type_source_pair_selector
+    )
+    # TypeSourceBinPairSelector should create all type-source combinations
     assert len(two_point_xy_combinations) == 10
 
     z1 = mt.InferredGalaxyZDist(
@@ -1755,31 +1775,31 @@ def test_bin_rules_type_source(all_harmonic_bins):
         type_source=mt.TypeSource("NewTypeSource"),
     )
 
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins + [z1], type_source_bin_rule
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins + [z1], type_source_pair_selector
     )
     assert len(two_point_xy_combinations) == 10
-    two_point_xy_combinations = make_all_bin_rule_combinations(
+    two_point_xy_combinations = make_all_pair_selector_combinations(
         all_harmonic_bins + [z1],
-        mt.TypeSourceBinRule(type_source=mt.TypeSource("NewTypeSource")),
+        mt.TypeSourceBinPairSelector(type_source=mt.TypeSource("NewTypeSource")),
     )
     assert len(two_point_xy_combinations) == 1
 
 
-def test_bin_rules_not_named(all_harmonic_bins):
-    named_bin_rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+def test_pair_selector_not_named(all_harmonic_bins):
+    named_pair_selector = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
 
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        all_harmonic_bins, ~named_bin_rule
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        all_harmonic_bins, ~named_pair_selector
     )
-    # NamedBinRule should create all named combinations
+    # NamedBinPairSelector should create all named combinations
     assert len(two_point_xy_combinations) == 7
     for two_point_xy in two_point_xy_combinations:
         assert [two_point_xy.x.bin_name, two_point_xy.y.bin_name] != ["bin_1", "bin_2"]
 
 
-def test_bin_rules_first_neighbor(many_harmonic_bins):
-    first_neighbor_bin_rule = mt.FirstNeighborsBinRule()
+def test_pair_selector_first_neighbor(many_harmonic_bins):
+    first_neighbor_pair_selector = mt.FirstNeighborsBinPairSelector()
 
     z1 = mt.InferredGalaxyZDist(
         bin_name="extra_src_a",
@@ -1793,10 +1813,10 @@ def test_bin_rules_first_neighbor(many_harmonic_bins):
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        many_harmonic_bins + [z1, z2], first_neighbor_bin_rule
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        many_harmonic_bins + [z1, z2], first_neighbor_pair_selector
     )
-    # FirstNeighborBinRule should create all first neighbor combinations
+    # FirstNeighborBinPairSelector should create all first neighbor combinations
     assert len(two_point_xy_combinations) == 31
     for two_point_xy in two_point_xy_combinations:
         assert re.match(r".*?\d+$", two_point_xy.x.bin_name)
@@ -1806,15 +1826,17 @@ def test_bin_rules_first_neighbor(many_harmonic_bins):
         assert abs(index1 - index2) <= 1
 
 
-def test_bin_rules_first_neighbor_no_auto(many_harmonic_bins):
-    first_neighbor_bin_rule = mt.FirstNeighborsBinRule()
-    auto_bin_rule = mt.AutoNameBinRule()
-    first_neighbor_no_auto_bin_rule = first_neighbor_bin_rule & ~auto_bin_rule
-
-    two_point_xy_combinations = make_all_bin_rule_combinations(
-        many_harmonic_bins, first_neighbor_no_auto_bin_rule
+def test_pair_selector_first_neighbor_no_auto(many_harmonic_bins):
+    first_neighbor_pair_selector = mt.FirstNeighborsBinPairSelector()
+    auto_pair_selector = mt.AutoNameBinPairSelector()
+    first_neighbor_no_auto_pair_selector = (
+        first_neighbor_pair_selector & ~auto_pair_selector
     )
-    # FirstNeighborBinRule should create all first neighbor combinations
+
+    two_point_xy_combinations = make_all_pair_selector_combinations(
+        many_harmonic_bins, first_neighbor_no_auto_pair_selector
+    )
+    # FirstNeighborBinPairSelector should create all first neighbor combinations
     assert len(two_point_xy_combinations) == 16
     for two_point_xy in two_point_xy_combinations:
         assert re.match(r".*?\d+$", two_point_xy.x.bin_name)
@@ -1824,7 +1846,7 @@ def test_bin_rules_first_neighbor_no_auto(many_harmonic_bins):
         assert abs(index1 - index2) == 1
 
 
-def test_bin_rules_auto_name_keep():
+def test_pair_selector_auto_name_keep():
     z1 = mt.InferredGalaxyZDist(
         bin_name="bin_1",
         z=np.array([0.1]),
@@ -1837,12 +1859,12 @@ def test_bin_rules_auto_name_keep():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    rule = mt.AutoNameBinRule()
+    rule = mt.AutoNameBinPairSelector()
     assert rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
     assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
 
 
-def test_bin_rules_auto_measurement_keep():
+def test_pair_selector_auto_measurement_keep():
     z1 = mt.InferredGalaxyZDist(
         bin_name="bin_1",
         z=np.array([0.1]),
@@ -1855,12 +1877,12 @@ def test_bin_rules_auto_measurement_keep():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    rule = mt.AutoMeasurementBinRule()
+    rule = mt.AutoMeasurementBinPairSelector()
     assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
     assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
 
 
-def test_bin_rules_named_keep():
+def test_pair_selector_named_keep():
     z1 = mt.InferredGalaxyZDist(
         bin_name="bin_1",
         z=np.array([0.1]),
@@ -1873,11 +1895,11 @@ def test_bin_rules_named_keep():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    rule = mt.NamedBinRule(names=[("bin_1", "bin_2")])
+    rule = mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
     assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
 
 
-def test_bin_rules_lens_keep():
+def test_pair_selector_lens_keep():
     z1 = mt.InferredGalaxyZDist(
         bin_name="bin_1",
         z=np.array([0.1]),
@@ -1890,12 +1912,12 @@ def test_bin_rules_lens_keep():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.COUNTS},
     )
-    rule = mt.LensBinRule()
+    rule = mt.LensBinPairSelector()
     assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
     assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
 
-def test_bin_rules_source_keep():
+def test_pair_selector_source_keep():
     z1 = mt.InferredGalaxyZDist(
         bin_name="src1",
         z=np.array([0.1]),
@@ -1908,11 +1930,11 @@ def test_bin_rules_source_keep():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    rule = mt.SourceBinRule()
+    rule = mt.SourceBinPairSelector()
     assert rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
 
-def test_bin_rules_first_neighbor_mixed():
+def test_pair_selector_first_neighbor_mixed():
     z1 = mt.InferredGalaxyZDist(
         bin_name="extra_src_a",
         z=np.array([0.1]),
@@ -1931,7 +1953,7 @@ def test_bin_rules_first_neighbor_mixed():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    rule = mt.FirstNeighborsBinRule()
+    rule = mt.FirstNeighborsBinPairSelector()
     assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
     assert not rule.keep((z1, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
     assert not rule.keep((z2, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
@@ -1940,250 +1962,275 @@ def test_bin_rules_first_neighbor_mixed():
     assert rule.keep((z3, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
 
 
-def test_bin_rules_serialization_and_or():
-    bin_rule = (
-        mt.AutoNameBinRule() & mt.AutoMeasurementBinRule() & mt.LensBinRule()
-    ) | (mt.AutoNameBinRule() & mt.AutoMeasurementBinRule() & mt.SourceBinRule())
+def test_pair_selector_serialization_and_or():
+    pair_selector = (
+        mt.AutoNameBinPairSelector()
+        & mt.AutoMeasurementBinPairSelector()
+        & mt.LensBinPairSelector()
+    ) | (
+        mt.AutoNameBinPairSelector()
+        & mt.AutoMeasurementBinPairSelector()
+        & mt.SourceBinPairSelector()
+    )
 
     yaml_str = yaml.dump(
-        bin_rule.model_dump(),
+        pair_selector.model_dump(),
         sort_keys=False,
     )
 
-    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert bin_rule == bin_rule_from_yaml
-    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+    pair_selector_from_yaml = mt.BinPairSelector.model_validate(
+        yaml.safe_load(yaml_str)
+    )
+    assert pair_selector == pair_selector_from_yaml
+    assert pair_selector.model_dump() == pair_selector_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_simple_and():
-    bin_rule = mt.AutoNameBinRule() & mt.AutoMeasurementBinRule()
-    yaml_str = yaml.dump(bin_rule.model_dump(), sort_keys=False)
-    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert bin_rule == bin_rule_from_yaml
-    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+def test_pair_selector_serialization_simple_and():
+    pair_selector = mt.AutoNameBinPairSelector() & mt.AutoMeasurementBinPairSelector()
+    yaml_str = yaml.dump(pair_selector.model_dump(), sort_keys=False)
+    pair_selector_from_yaml = mt.BinPairSelector.model_validate(
+        yaml.safe_load(yaml_str)
+    )
+    assert pair_selector == pair_selector_from_yaml
+    assert pair_selector.model_dump() == pair_selector_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_simple_or():
-    bin_rule = mt.AutoNameBinRule() | mt.LensBinRule()
-    yaml_str = yaml.dump(bin_rule.model_dump(), sort_keys=False)
-    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert bin_rule == bin_rule_from_yaml
-    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+def test_pair_selector_serialization_simple_or():
+    pair_selector = mt.AutoNameBinPairSelector() | mt.LensBinPairSelector()
+    yaml_str = yaml.dump(pair_selector.model_dump(), sort_keys=False)
+    pair_selector_from_yaml = mt.BinPairSelector.model_validate(
+        yaml.safe_load(yaml_str)
+    )
+    assert pair_selector == pair_selector_from_yaml
+    assert pair_selector.model_dump() == pair_selector_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_nested_and_or():
-    bin_rule = (
-        (mt.AutoNameBinRule() & mt.LensBinRule())
-        | (mt.NamedBinRule(names=[("bin_1", "bin_2")]) & mt.SourceBinRule())
-        | mt.FirstNeighborsBinRule()
+def test_pair_selector_serialization_nested_and_or():
+    pair_selector = (
+        (mt.AutoNameBinPairSelector() & mt.LensBinPairSelector())
+        | (
+            mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
+            & mt.SourceBinPairSelector()
+        )
+        | mt.FirstNeighborsBinPairSelector()
     )
     yaml_str = yaml.dump(
-        bin_rule.model_dump(), sort_keys=False, default_flow_style=None
+        pair_selector.model_dump(), sort_keys=False, default_flow_style=None
     )
-    bin_rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert bin_rule == bin_rule_from_yaml
-    assert bin_rule.model_dump() == bin_rule_from_yaml.model_dump()
+    pair_selector_from_yaml = mt.BinPairSelector.model_validate(
+        yaml.safe_load(yaml_str)
+    )
+    assert pair_selector == pair_selector_from_yaml
+    assert pair_selector.model_dump() == pair_selector_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_negation():
-    base_rule = mt.AutoNameBinRule()
+def test_pair_selector_serialization_negation():
+    base_rule = mt.AutoNameBinPairSelector()
     neg_rule = ~base_rule
     yaml_str = yaml.dump(neg_rule.model_dump(), sort_keys=False)
-    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
     assert neg_rule == rule_from_yaml
     assert neg_rule.model_dump() == rule_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_double_negation():
-    base_rule = mt.AutoNameBinRule()
+def test_pair_selector_serialization_double_negation():
+    base_rule = mt.AutoNameBinPairSelector()
     double_neg_rule = ~~base_rule
     yaml_str = yaml.dump(double_neg_rule.model_dump(), sort_keys=False)
-    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
     assert double_neg_rule == rule_from_yaml
     assert double_neg_rule.model_dump() == rule_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_and_not():
-    rule = mt.AutoNameBinRule() & ~mt.LensBinRule()
+def test_pair_selector_serialization_and_not():
+    rule = mt.AutoNameBinPairSelector() & ~mt.LensBinPairSelector()
     yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
-    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
     assert rule == rule_from_yaml
     assert rule.model_dump() == rule_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_or_not():
-    rule = mt.AutoNameBinRule() | ~mt.LensBinRule()
+def test_pair_selector_serialization_or_not():
+    rule = mt.AutoNameBinPairSelector() | ~mt.LensBinPairSelector()
     yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
-    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
     assert rule == rule_from_yaml
-    assert isinstance(rule_from_yaml, mt.OrBinRule)
+    assert isinstance(rule_from_yaml, mt.OrBinPairSelector)
     assert rule.model_dump() == rule_from_yaml.model_dump()
 
 
-def test_bin_rules_serialization_type_source():
-    rule = mt.TypeSourceBinRule(type_source=mt.TypeSource("NewTypeSource"))
+def test_pair_selector_serialization_type_source():
+    rule = mt.TypeSourceBinPairSelector(type_source=mt.TypeSource("NewTypeSource"))
     yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
-    rule_from_yaml = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
     assert rule == rule_from_yaml
     assert rule.model_dump() == rule_from_yaml.model_dump()
-    assert isinstance(rule_from_yaml, mt.TypeSourceBinRule)
+    assert isinstance(rule_from_yaml, mt.TypeSourceBinPairSelector)
     assert rule.type_source == rule_from_yaml.type_source
 
 
-def test_bin_rules_deserialization_lens():
+def test_pair_selector_deserialization_lens():
     yaml_str = """
     kind: lens
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.LensBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.LensBinPairSelector)
 
 
-def test_bin_rules_deserialization_source():
+def test_pair_selector_deserialization_source():
     yaml_str = """
     kind: source
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.SourceBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.SourceBinPairSelector)
 
 
-def test_bin_rules_deserialization_named():
+def test_pair_selector_deserialization_named():
     yaml_str = """
     kind: named
     names:
       - [bin_1, bin_2]
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.NamedBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.NamedBinPairSelector)
     assert rule.names == [("bin_1", "bin_2")]
 
 
-def test_bin_rules_deserialization_auto_name():
+def test_pair_selector_deserialization_auto_name():
     yaml_str = """
     kind: auto-name
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.AutoNameBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AutoNameBinPairSelector)
 
 
-def test_bin_rules_deserialization_auto_measurement():
+def test_pair_selector_deserialization_auto_measurement():
     yaml_str = """
     kind: auto-measurement
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.AutoMeasurementBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AutoMeasurementBinPairSelector)
 
 
-def test_bin_rules_deserialization_not():
+def test_pair_selector_deserialization_not():
     yaml_str = """
     kind: not
-    bin_rule:
+    pair_selector:
       kind: lens
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.NotBinRule)
-    assert isinstance(rule.bin_rule, mt.LensBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.NotBinPairSelector)
+    assert isinstance(rule.pair_selector, mt.LensBinPairSelector)
 
 
-def test_bin_rules_deserialization_and():
+def test_pair_selector_deserialization_and():
     yaml_str = """
     kind: and
-    bin_rules:
+    pair_selectors:
       - kind: auto-name
       - kind: lens
       - kind: source
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.AndBinRule)
-    assert len(rule.bin_rules) == 3
-    assert isinstance(rule.bin_rules[0], mt.AutoNameBinRule)
-    assert isinstance(rule.bin_rules[1], mt.LensBinRule)
-    assert isinstance(rule.bin_rules[2], mt.SourceBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AndBinPairSelector)
+    assert len(rule.pair_selectors) == 3
+    assert isinstance(rule.pair_selectors[0], mt.AutoNameBinPairSelector)
+    assert isinstance(rule.pair_selectors[1], mt.LensBinPairSelector)
+    assert isinstance(rule.pair_selectors[2], mt.SourceBinPairSelector)
 
 
-def test_bin_rules_deserialization_or():
+def test_pair_selector_deserialization_or():
     yaml_str = """
     kind: or
-    bin_rules:
+    pair_selectors:
       - kind: auto-name
       - kind: lens
       - kind: source
       - kind: auto-measurement
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.OrBinRule)
-    assert len(rule.bin_rules) == 4
-    assert isinstance(rule.bin_rules[0], mt.AutoNameBinRule)
-    assert isinstance(rule.bin_rules[1], mt.LensBinRule)
-    assert isinstance(rule.bin_rules[2], mt.SourceBinRule)
-    assert isinstance(rule.bin_rules[3], mt.AutoMeasurementBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.OrBinPairSelector)
+    assert len(rule.pair_selectors) == 4
+    assert isinstance(rule.pair_selectors[0], mt.AutoNameBinPairSelector)
+    assert isinstance(rule.pair_selectors[1], mt.LensBinPairSelector)
+    assert isinstance(rule.pair_selectors[2], mt.SourceBinPairSelector)
+    assert isinstance(rule.pair_selectors[3], mt.AutoMeasurementBinPairSelector)
 
 
-def test_bin_rules_deserialization_nested_and_or():
+def test_pair_selector_deserialization_nested_and_or():
     yaml_str = """
     kind: and
-    bin_rules:
+    pair_selectors:
       - kind: or
-        bin_rules:
+        pair_selectors:
           - kind: auto-name
           - kind: lens
           - kind: source
       - kind: auto-measurement
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.AndBinRule)
-    assert len(rule.bin_rules) == 2
-    assert isinstance(rule.bin_rules[0], mt.OrBinRule)
-    assert len(rule.bin_rules[0].bin_rules) == 3
-    assert isinstance(rule.bin_rules[0].bin_rules[0], mt.AutoNameBinRule)
-    assert isinstance(rule.bin_rules[0].bin_rules[1], mt.LensBinRule)
-    assert isinstance(rule.bin_rules[0].bin_rules[2], mt.SourceBinRule)
-    assert isinstance(rule.bin_rules[1], mt.AutoMeasurementBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AndBinPairSelector)
+    assert len(rule.pair_selectors) == 2
+    assert isinstance(rule.pair_selectors[0], mt.OrBinPairSelector)
+    assert len(rule.pair_selectors[0].pair_selectors) == 3
+    assert isinstance(
+        rule.pair_selectors[0].pair_selectors[0], mt.AutoNameBinPairSelector
+    )
+    assert isinstance(rule.pair_selectors[0].pair_selectors[1], mt.LensBinPairSelector)
+    assert isinstance(
+        rule.pair_selectors[0].pair_selectors[2], mt.SourceBinPairSelector
+    )
+    assert isinstance(rule.pair_selectors[1], mt.AutoMeasurementBinPairSelector)
 
 
-def test_bin_rules_deserialization_nested_not():
+def test_pair_selector_deserialization_nested_not():
     yaml_str = """
     kind: not
-    bin_rule:
+    pair_selector:
       kind: or
-      bin_rules:
+      pair_selectors:
         - kind: auto-name
         - kind: lens
         - kind: source
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.NotBinRule)
-    assert isinstance(rule.bin_rule, mt.OrBinRule)
-    assert len(rule.bin_rule.bin_rules) == 3
-    assert isinstance(rule.bin_rule.bin_rules[0], mt.AutoNameBinRule)
-    assert isinstance(rule.bin_rule.bin_rules[1], mt.LensBinRule)
-    assert isinstance(rule.bin_rule.bin_rules[2], mt.SourceBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.NotBinPairSelector)
+    assert isinstance(rule.pair_selector, mt.OrBinPairSelector)
+    assert len(rule.pair_selector.pair_selectors) == 3
+    assert isinstance(rule.pair_selector.pair_selectors[0], mt.AutoNameBinPairSelector)
+    assert isinstance(rule.pair_selector.pair_selectors[1], mt.LensBinPairSelector)
+    assert isinstance(rule.pair_selector.pair_selectors[2], mt.SourceBinPairSelector)
 
 
-def test_bin_rules_deserialization_nested_or_and():
+def test_pair_selector_deserialization_nested_or_and():
     yaml_str = """
     kind: or
-    bin_rules:
+    pair_selectors:
       - kind: and
-        bin_rules:
+        pair_selectors:
           - kind: auto-name
           - kind: lens
           - kind: source
       - kind: auto-measurement
     """
-    rule = mt.BinRule.model_validate(yaml.safe_load(yaml_str))
-    assert isinstance(rule, mt.OrBinRule)
-    assert len(rule.bin_rules) == 2
-    assert isinstance(rule.bin_rules[0], mt.AndBinRule)
-    assert len(rule.bin_rules[0].bin_rules) == 3
-    assert isinstance(rule.bin_rules[0].bin_rules[0], mt.AutoNameBinRule)
-    assert isinstance(rule.bin_rules[0].bin_rules[1], mt.LensBinRule)
-    assert isinstance(rule.bin_rules[0].bin_rules[2], mt.SourceBinRule)
-    assert isinstance(rule.bin_rules[1], mt.AutoMeasurementBinRule)
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.OrBinPairSelector)
+    assert len(rule.pair_selectors) == 2
+    assert isinstance(rule.pair_selectors[0], mt.AndBinPairSelector)
+    assert len(rule.pair_selectors[0].pair_selectors) == 3
+    assert isinstance(
+        rule.pair_selectors[0].pair_selectors[0], mt.AutoNameBinPairSelector
+    )
+    assert isinstance(rule.pair_selectors[0].pair_selectors[1], mt.LensBinPairSelector)
+    assert isinstance(
+        rule.pair_selectors[0].pair_selectors[2], mt.SourceBinPairSelector
+    )
+    assert isinstance(rule.pair_selectors[1], mt.AutoMeasurementBinPairSelector)
 
 
-def test_bin_rules_deserialization_invalid_kind():
+def test_pair_selector_deserialization_invalid_kind():
     yaml_str = """
     kind: not_a_valid_kind
     """
     with pytest.raises(ValueError, match="Value error, Unknown kind not_a_valid_kind"):
-        mt.BinRule.model_validate(yaml.safe_load(yaml_str))
+        mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))

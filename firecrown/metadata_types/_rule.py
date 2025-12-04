@@ -1,4 +1,4 @@
-"""Bin rule classes for combining two-point measurements."""
+"""Bin pair selector classes for combining two-point measurements."""
 
 import re
 from abc import abstractmethod
@@ -23,15 +23,15 @@ from firecrown.metadata_types._measurements import (
 )
 from firecrown.metadata_types._utils import TypeSource
 
-RULE_REGISTRY: dict[str, type["BinRule"]] = {}
+RULE_REGISTRY: dict[str, type["BinPairSelector"]] = {}
 
 
-def register_rule(cls: type["BinRule"]) -> type["BinRule"]:
-    """Register a new bin rule class using its Pydantic `kind` default.
+def register_bin_pair_selector(cls: type["BinPairSelector"]) -> type["BinPairSelector"]:
+    """Register a new bin pair selector class using its Pydantic `kind` default.
 
-    :param cls: The BinRule class to register.
+    :param cls: The BinPairSelector class to register.
 
-    :return: The registered BinRule class.
+    :return: The registered BinPairSelector class.
 
     :raises ValueError: If the class has no default for 'kind' or if the kind is
         already registered.
@@ -43,16 +43,16 @@ def register_rule(cls: type["BinRule"]) -> type["BinRule"]:
         raise ValueError(f"{cls.__name__} has no default for 'kind'")
     kind_value = kind_field.default
     if kind_value in RULE_REGISTRY:
-        raise ValueError(f"Duplicate rule kind {kind_value}")
+        raise ValueError(f"Duplicate pair selector kind {kind_value}")
     RULE_REGISTRY[kind_value] = cls
     return cls
 
 
-ZDistPair = tuple[InferredGalaxyZDist, InferredGalaxyZDist]
+TomographicBinPair = tuple[InferredGalaxyZDist, InferredGalaxyZDist]
 MeasurementPair = tuple[Measurement, Measurement]
 
 
-class BinRule(BaseModel):
+class BinPairSelector(BaseModel):
     """Class defining the bin combinator for two-point measurements.
 
     The bin combinator is used to combine several `InferredGalaxyZDist` into
@@ -62,7 +62,7 @@ class BinRule(BaseModel):
     kind: str
 
     @abstractmethod
-    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the pair should be kept.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
@@ -71,30 +71,30 @@ class BinRule(BaseModel):
         :return: True if the pair should be kept, False otherwise.
         """
 
-    def __and__(self, other: "BinRule") -> "BinRule":
-        """Return the AND combinator of this rule with another.
+    def __and__(self, other: "BinPairSelector") -> "BinPairSelector":
+        """Return the AND combinator of this pair selector with another.
 
-        :param other: Another BinRule to combine with.
+        :param other: Another BinPairSelector to combine with.
 
-        :return: An AndBinRule combining both rules.
+        :return: An AndBinPairSelector combining both pair selectors.
         """
-        return AndBinRule(bin_rules=[self, other])
+        return AndBinPairSelector(pair_selectors=[self, other])
 
-    def __or__(self, other: "BinRule") -> "BinRule":
-        """Return the OR combinator of this rule with another.
+    def __or__(self, other: "BinPairSelector") -> "BinPairSelector":
+        """Return the OR combinator of this pair selector with another.
 
-        :param other: Another BinRule to combine with.
+        :param other: Another BinPairSelector to combine with.
 
-        :return: An OrBinRule combining both rules.
+        :return: An OrBinPairSelector combining both pair selectors.
         """
-        return OrBinRule(bin_rules=[self, other])
+        return OrBinPairSelector(pair_selectors=[self, other])
 
-    def __invert__(self) -> "BinRule":
-        """Return the inverse of this bin rule.
+    def __invert__(self) -> "BinPairSelector":
+        """Return the inverse of this bin pair selector.
 
-        :return: A NotBinRule inverting this rule.
+        :return: A NotBinPairSelector inverting this pair selector.
         """
-        return NotBinRule(bin_rule=self)
+        return NotBinPairSelector(pair_selector=self)
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -103,12 +103,14 @@ class BinRule(BaseModel):
         handler: GetCoreSchemaHandler,
         /,
     ) -> core_schema.CoreSchema:
-        """Get the Pydantic core schema for the BinRule class."""
+        """Get the Pydantic core schema for the BinPairSelector class."""
 
-        def dispatch_rule(v: Any, dispatch_handler: ValidatorFunctionWrapHandler):
+        def dispatch_pair_selector(
+            v: Any, dispatch_handler: ValidatorFunctionWrapHandler
+        ):
             if isinstance(v, cls):
                 return v
-            if cls == BinRule:
+            if cls == BinPairSelector:
                 assert isinstance(v, dict)
                 assert "kind" in v
                 kind = v["kind"]
@@ -119,99 +121,103 @@ class BinRule(BaseModel):
             return dispatch_handler(v)
 
         return core_schema.no_info_wrap_validator_function(
-            dispatch_rule, handler(source_type)
+            dispatch_pair_selector, handler(source_type)
         )
 
 
-@register_rule
-class AndBinRule(BinRule):
+@register_bin_pair_selector
+class AndBinPairSelector(BinPairSelector):
     """Class defining the AND combinator for two-point measurements.
 
-    This rule keeps pairs only if all contained bin rules pass.
+    This pair selector keeps pairs only if all contained bin pair selectors pass.
     """
 
     kind: str = "and"
-    bin_rules: list[SerializeAsAny[BinRule]]
+    pair_selectors: list[SerializeAsAny[BinPairSelector]]
 
-    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
-        """Return True if all of the bin rules pass.
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+        """Return True if all of the bin pair selectors pass.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if all rules pass, False otherwise.
+        :return: True if all bin pair selectors pass, False otherwise.
         """
-        return all(bin_rule.keep(zdist, m) for bin_rule in self.bin_rules)
+        return all(
+            pair_selector.keep(zdist, m) for pair_selector in self.pair_selectors
+        )
 
     def model_post_init(self, _, /) -> None:
-        """Flatten nested AndBinRules."""
+        """Flatten nested AndBinPairSelectors."""
         flattened = []
-        for br in self.bin_rules:
-            if isinstance(br, AndBinRule):
-                flattened.extend(br.bin_rules)
+        for br in self.pair_selectors:
+            if isinstance(br, AndBinPairSelector):
+                flattened.extend(br.pair_selectors)
             else:
                 flattened.append(br)
-        object.__setattr__(self, "bin_rules", flattened)
+        object.__setattr__(self, "pair_selectors", flattened)
 
 
-@register_rule
-class OrBinRule(BinRule):
-    """Class defining the OR combinator for two-point measurements.
+@register_bin_pair_selector
+class OrBinPairSelector(BinPairSelector):
+    """Class defining the OR combinator for bin pair selectors.
 
-    This rule keeps pairs if any of the contained bin rules pass.
+    This pair selector keeps pairs if any of the contained bin pair selectors pass.
     """
 
     kind: str = "or"
-    bin_rules: list[SerializeAsAny[BinRule]]
+    pair_selectors: list[SerializeAsAny[BinPairSelector]]
 
-    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
-        """Return True if any of the bin rules pass.
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+        """Return True if any of the bin pair selectors pass.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if any rule passes, False otherwise.
+        :return: True if any bin pair selector passes, False otherwise.
         """
-        return any(bin_rule.keep(zdist, m) for bin_rule in self.bin_rules)
+        return any(
+            pair_selector.keep(zdist, m) for pair_selector in self.pair_selectors
+        )
 
     def model_post_init(self, _, /) -> None:
-        """Flatten nested OrBinRules."""
+        """Flatten nested OrBinPairSelectors."""
         flattened = []
-        for br in self.bin_rules:
-            if isinstance(br, OrBinRule):
-                flattened.extend(br.bin_rules)
+        for br in self.pair_selectors:
+            if isinstance(br, OrBinPairSelector):
+                flattened.extend(br.pair_selectors)
             else:
                 flattened.append(br)
-        object.__setattr__(self, "bin_rules", flattened)
+        object.__setattr__(self, "pair_selectors", flattened)
 
 
-@register_rule
-class NotBinRule(BinRule):
+@register_bin_pair_selector
+class NotBinPairSelector(BinPairSelector):
     """Class defining the NOT combinator for two-point measurements.
 
-    This rule inverts the result of the contained bin rule.
+    This pair selector inverts the result of the contained bin pair selector.
     """
 
     kind: str = "not"
-    bin_rule: SerializeAsAny[BinRule]
+    pair_selector: SerializeAsAny[BinPairSelector]
 
-    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
-        """Return the negation of the contained rule's result.
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
+        """Return the negation of the contained pair selector's result.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
         :param m: Pair of Measurement objects.
 
-        :return: True if the contained rule returns False, False otherwise.
+        :return: True if the contained pair selector returns False, False otherwise.
         """
-        return not self.bin_rule.keep(zdist, m)
+        return not self.pair_selector.keep(zdist, m)
 
 
-@register_rule
-class NamedBinRule(BinRule):
-    """Class defining the named bin rule for two-point measurements.
+@register_bin_pair_selector
+class NamedBinPairSelector(BinPairSelector):
+    """Class defining the named bin pair selector for two-point measurements.
 
-    This rule keeps pairs if their bin names match any of the specified name pairs.
-    The order of names in the pair doesn't matter (symmetric matching).
+    This pair selector keeps pairs if their bin names match any of the specified name
+    pairs. The order of names in the pair doesn't matter (symmetric matching).
     """
 
     kind: str = "named"
@@ -231,7 +237,7 @@ class NamedBinRule(BinRule):
             assert len(names) == 2
         return [(names[0], names[1]) for names in value]
 
-    def keep(self, zdist: ZDistPair, m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if the bin name pair is in the list of names.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
@@ -242,16 +248,16 @@ class NamedBinRule(BinRule):
         return (zdist[0].bin_name, zdist[1].bin_name) in self.names
 
 
-@register_rule
-class AutoNameBinRule(BinRule):
-    """Class defining the auto-name combinator for two-point measurements.
+@register_bin_pair_selector
+class AutoNameBinPairSelector(BinPairSelector):
+    """Class defining the auto-name bin pair selectors.
 
-    This rule keeps pairs of bins that have the same bin name.
+    This pair selector keeps pairs of bins that have the same bin name.
     """
 
     kind: str = "auto-name"
 
-    def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
         """Return True if both bins have the same bin name.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
@@ -262,16 +268,16 @@ class AutoNameBinRule(BinRule):
         return zdist[0].bin_name == zdist[1].bin_name
 
 
-@register_rule
-class AutoMeasurementBinRule(BinRule):
-    """Class defining the auto-measurement combinator for two-point measurements.
+@register_bin_pair_selector
+class AutoMeasurementBinPairSelector(BinPairSelector):
+    """Class defining the auto-measurement bin pair selector.
 
-    This rule keeps pairs where both measurements are the same.
+    This pair selector keeps pairs where both measurements are the same.
     """
 
     kind: str = "auto-measurement"
 
-    def keep(self, _zdist: ZDistPair, m: MeasurementPair) -> bool:
+    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both measurements are the same.
 
         :param _zdist: Pair of InferredGalaxyZDist objects (unused).
@@ -282,16 +288,17 @@ class AutoMeasurementBinRule(BinRule):
         return m[0] == m[1]
 
 
-@register_rule
-class SourceBinRule(BinRule):
-    """Class defining the source bin rule for two-point measurements.
+@register_bin_pair_selector
+class SourceBinPairSelector(BinPairSelector):
+    """Class defining the source bin pair selector.
 
-    This rule keeps pairs where both measurements are galaxy source measurements.
+    This pair selector keeps pairs where both measurements are galaxy source
+    measurements.
     """
 
     kind: str = "source"
 
-    def keep(self, _zdist: ZDistPair, m: MeasurementPair) -> bool:
+    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both measurements are galaxy source measurements.
 
         :param _zdist: Pair of InferredGalaxyZDist objects (unused).
@@ -302,16 +309,17 @@ class SourceBinRule(BinRule):
         return (m[0] in GALAXY_SOURCE_TYPES) and (m[1] in GALAXY_SOURCE_TYPES)
 
 
-@register_rule
-class LensBinRule(BinRule):
-    """Class defining the lens bin rule for two-point measurements.
+@register_bin_pair_selector
+class LensBinPairSelector(BinPairSelector):
+    """Class defining the lens bin pair selector.
 
-    This rule keeps pairs where both measurements are galaxy lens measurements.
+    This pair selector keeps pairs where both measurements are galaxy lens
+    measurements.
     """
 
     kind: str = "lens"
 
-    def keep(self, _zdist: ZDistPair, m: MeasurementPair) -> bool:
+    def keep(self, _zdist: TomographicBinPair, m: MeasurementPair) -> bool:
         """Return True if both measurements are galaxy lens measurements.
 
         :param _zdist: Pair of InferredGalaxyZDist objects (unused).
@@ -322,18 +330,18 @@ class LensBinRule(BinRule):
         return (m[0] in GALAXY_LENS_TYPES) and (m[1] in GALAXY_LENS_TYPES)
 
 
-@register_rule
-class FirstNeighborsBinRule(BinRule):
-    """Class defining the first neighbors bin rule for two-point measurements.
+@register_bin_pair_selector
+class FirstNeighborsBinPairSelector(BinPairSelector):
+    """Class defining the first neighbors bin pair selector.
 
-    This rule keeps pairs where the bin names differ by at most num_neighbors.
+    This pair selector keeps pairs where the bin names differ by at most num_neighbors.
     Bin names must follow the pattern <text><number>.
     """
 
     kind: str = "first-neighbors"
     num_neighbors: Annotated[int, Field(ge=0)] = 1
 
-    def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
         """Return True if bin names differ by at most num_neighbors.
 
         Bin names must match the pattern <text><number>. The text parts must
@@ -355,18 +363,18 @@ class FirstNeighborsBinRule(BinRule):
         )
 
 
-@register_rule
-class TypeSourceBinRule(BinRule):
-    """Class defining the type-source bin rule for two-point measurements.
+@register_bin_pair_selector
+class TypeSourceBinPairSelector(BinPairSelector):
+    """Class defining the type-source bin pair selector.
 
-    This rule keeps pairs where both bins have the same type-source and it matches
-    the configured type_source.
+    This pair selector keeps pairs where both bins have the same type-source and it
+    matches the configured type_source.
     """
 
     kind: str = "type-source"
     type_source: TypeSource
 
-    def keep(self, zdist: ZDistPair, _m: MeasurementPair) -> bool:
+    def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
         """Return True if both bins have the same matching type-source.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
