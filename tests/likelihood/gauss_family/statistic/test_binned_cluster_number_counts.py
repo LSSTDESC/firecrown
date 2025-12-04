@@ -284,7 +284,7 @@ def test_compute_theory_vector(
 
     bnd = BinnedClusterShearProfile(ClusterProperty.DELTASIGMA, "my_survey", recipe_ds)
     bnd.read(cluster_sacc_data)
-    params.params["cluster_theory.cluster_concentration"] = 4.0
+    params.params["cluster_theory_cluster_concentration"] = 4.0
     bnd.update(params)
     tv = bnd.compute_theory_vector(tools)
     assert tv is not None
