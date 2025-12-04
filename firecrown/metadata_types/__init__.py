@@ -22,7 +22,7 @@ from firecrown.metadata_types._measurements import (
     Galaxies,
     Measurement,
 )
-from firecrown.metadata_types._rule import (
+from firecrown.metadata_types._pair_selector import (
     AndBinPairSelector,
     AutoMeasurementBinPairSelector,
     AutoNameBinPairSelector,
