@@ -185,7 +185,9 @@ def test_pair_selector_not_named(all_harmonic_bins):
 
 
 def test_pair_selector_first_neighbor(many_harmonic_bins):
-    first_neighbor_pair_selector = mt.FirstNeighborsBinPairSelector()
+    first_neighbor_pair_selector = mt.AutoNameDiffBinPairSelector(
+        neighbors_diff=[0, 1, -1]
+    )
 
     z1 = mt.InferredGalaxyZDist(
         bin_name="extra_src_a",
@@ -213,7 +215,9 @@ def test_pair_selector_first_neighbor(many_harmonic_bins):
 
 
 def test_pair_selector_first_neighbor_no_auto(many_harmonic_bins):
-    first_neighbor_pair_selector = mt.FirstNeighborsBinPairSelector()
+    first_neighbor_pair_selector = mt.AutoNameDiffBinPairSelector(
+        neighbors_diff=[1, -1]
+    )
     auto_pair_selector = mt.AutoNameBinPairSelector()
     first_neighbor_no_auto_pair_selector = (
         first_neighbor_pair_selector & ~auto_pair_selector
@@ -339,7 +343,7 @@ def test_pair_selector_first_neighbor_mixed():
         dndz=np.array([1.0]),
         measurements={mt.Galaxies.SHEAR_E},
     )
-    rule = mt.FirstNeighborsBinPairSelector()
+    rule = mt.AutoNameDiffBinPairSelector(neighbors_diff=[0, 1, -1])
     assert not rule.keep((z1, z2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
     assert not rule.keep((z1, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
     assert not rule.keep((z2, z3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
@@ -398,7 +402,7 @@ def test_pair_selector_serialization_nested_and_or():
             mt.NamedBinPairSelector(names=[("bin_1", "bin_2")])
             & mt.SourceBinPairSelector()
         )
-        | mt.FirstNeighborsBinPairSelector()
+        | mt.AutoNameDiffBinPairSelector(neighbors_diff=[0, 1, -1])
     )
     yaml_str = yaml.dump(
         pair_selector.model_dump(), sort_keys=False, default_flow_style=None
@@ -1009,3 +1013,260 @@ def test_cross_selectors_are_inverses():
     cross_bin = mt.CrossBinPairSelector()
     for zdist, measurements in test_cases:
         assert auto_bin.keep(zdist, measurements) != cross_bin.keep(zdist, measurements)
+
+
+# ============================================================================
+# 3x2pt Selector Tests
+# ============================================================================
+
+
+def test_three_two_bin_pair_selector_keep():
+    """Test ThreeTwoBinPairSelector keep method with various combinations."""
+    selector = mt.ThreeTwoBinPairSelector()
+
+    # Create test bins
+    src1 = mt.InferredGalaxyZDist(
+        bin_name="src_0",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    src2 = mt.InferredGalaxyZDist(
+        bin_name="src_1",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    lens1 = mt.InferredGalaxyZDist(
+        bin_name="lens_0",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    lens2 = mt.InferredGalaxyZDist(
+        bin_name="lens_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+
+    # Test 1: Source-source (cosmic shear) - should be kept
+    assert selector.keep((src1, src1), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert selector.keep((src1, src2), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+
+    # Test 2: Lens-lens (galaxy clustering) - should be kept
+    assert selector.keep((lens1, lens1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert selector.keep((lens1, lens2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+    # Test 3: Source-lens with different names (galaxy-galaxy lensing) - should be kept
+    assert selector.keep((src2, lens1), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS))
+
+    # Test 4: Source-lens with SAME name - should NOT be kept (excluded by CrossNameDiff)
+    src_lens_same = mt.InferredGalaxyZDist(
+        bin_name="bin_0",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS},
+    )
+    assert not selector.keep(
+        (src_lens_same, src_lens_same), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS)
+    )
+
+
+def test_three_two_bin_pair_selector_integration(all_harmonic_bins):
+    """Test ThreeTwoBinPairSelector with realistic bin structure."""
+    selector = mt.ThreeTwoBinPairSelector()
+
+    # Ensure we have distinct prefixes for cross source-lens pairs
+    extra_bins = [
+        mt.InferredGalaxyZDist(
+            bin_name="srcX1",
+            z=np.array([0.3]),
+            dndz=np.array([1.0]),
+            measurements={mt.Galaxies.SHEAR_E},
+        ),
+        mt.InferredGalaxyZDist(
+            bin_name="lensX0",
+            z=np.array([0.1]),
+            dndz=np.array([1.0]),
+            measurements={mt.Galaxies.COUNTS},
+        ),
+    ]
+
+    two_point_xy_combinations = make_binned_two_point_filtered(
+        all_harmonic_bins + extra_bins, selector
+    )
+
+    source_source_count = 0
+    lens_lens_count = 0
+    source_lens_cross_count = 0
+    source_lens_auto_count = 0
+
+    for two_point_xy in two_point_xy_combinations:
+        x_is_source = two_point_xy.x_measurement in mt.GALAXY_SOURCE_TYPES
+        y_is_source = two_point_xy.y_measurement in mt.GALAXY_SOURCE_TYPES
+        x_is_lens = two_point_xy.x_measurement in mt.GALAXY_LENS_TYPES
+        y_is_lens = two_point_xy.y_measurement in mt.GALAXY_LENS_TYPES
+        same_bin_name = two_point_xy.x.bin_name == two_point_xy.y.bin_name
+
+        if x_is_source and y_is_source:
+            source_source_count += 1
+        elif x_is_lens and y_is_lens:
+            lens_lens_count += 1
+        elif x_is_source and y_is_lens:
+            if same_bin_name:
+                source_lens_auto_count += 1
+            else:
+                source_lens_cross_count += 1
+
+    # Verify we have all three components
+    assert source_source_count > 0, "Should have cosmic shear pairs"
+    assert lens_lens_count > 0, "Should have galaxy clustering pairs"
+    assert source_lens_cross_count > 0, "Should have galaxy-galaxy lensing pairs"
+
+    # Verify no auto-correlations for source-lens
+    assert source_lens_auto_count == 0, "Should NOT have same-bin source-lens pairs"
+
+
+def test_three_two_bin_pair_selector_components():
+    """Test that ThreeTwoBinPairSelector includes the right components."""
+    selector = mt.ThreeTwoBinPairSelector()
+
+    # Explicitly build source-only and lens-only bins with distinct prefixes
+    sources = [
+        mt.InferredGalaxyZDist(
+            bin_name=f"src{i}",
+            z=np.array([0.1 * (i + 1)]),
+            dndz=np.array([1.0]),
+            measurements={mt.Galaxies.SHEAR_E},
+        )
+        for i in range(2)
+    ]
+    lenses = [
+        mt.InferredGalaxyZDist(
+            bin_name=f"lens{i}",
+            z=np.array([0.2 * (i + 1)]),
+            dndz=np.array([1.0]),
+            measurements={mt.Galaxies.COUNTS},
+        )
+        for i in range(2)
+    ]
+
+    kept_pairs = []
+    for i, bin1 in enumerate(sources + lenses):
+        for j, bin2 in enumerate(sources + lenses):
+            for meas1 in [mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS]:
+                for meas2 in [mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS]:
+                    if selector.keep((bin1, bin2), (meas1, meas2)):
+                        kept_pairs.append((i, j, meas1, meas2))
+
+    # Verify structure: should have source-source, lens-lens, and cross-name source-lens
+    has_shear_shear = any(
+        m1 == mt.Galaxies.SHEAR_E and m2 == mt.Galaxies.SHEAR_E
+        for _, _, m1, m2 in kept_pairs
+    )
+    has_counts_counts = any(
+        m1 == mt.Galaxies.COUNTS and m2 == mt.Galaxies.COUNTS
+        for _, _, m1, m2 in kept_pairs
+    )
+    has_shear_counts_cross = any(
+        m1 == mt.Galaxies.SHEAR_E and m2 == mt.Galaxies.COUNTS and i != j
+        for i, j, m1, m2 in kept_pairs
+    )
+    has_shear_counts_auto = any(
+        m1 == mt.Galaxies.SHEAR_E and m2 == mt.Galaxies.COUNTS and i == j
+        for i, j, m1, m2 in kept_pairs
+    )
+
+    assert has_shear_shear, "Should include cosmic shear (source-source)"
+    assert has_counts_counts, "Should include galaxy clustering (lens-lens)"
+    assert has_shear_counts_cross, "Should include cross-bin galaxy-galaxy lensing"
+    assert not has_shear_counts_auto, "Should NOT include same-bin source-lens"
+
+
+def test_three_two_bin_pair_selector_serialization():
+    """Test serialization of ThreeTwoBinPairSelector."""
+    selector = mt.ThreeTwoBinPairSelector()
+    yaml_str = yaml.dump(selector.model_dump(), sort_keys=False)
+    selector_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(selector_from_yaml, mt.ThreeTwoBinPairSelector)
+    assert selector == selector_from_yaml
+
+
+def test_three_two_bin_pair_selector_deserialization():
+    """Test deserialization of ThreeTwoBinPairSelector."""
+    yaml_str = """
+    kind: 3x2pt
+    """
+    selector = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(selector, mt.ThreeTwoBinPairSelector)
+
+
+def test_three_two_bin_pair_selector_distance_parameters():
+    """Test distance parameters for ThreeTwoBinPairSelector."""
+    selector = mt.ThreeTwoBinPairSelector(
+        source_dist=1, lens_dist=1, source_lens_dist=2
+    )
+
+    # Source bins with numeric suffixes
+    src0 = mt.InferredGalaxyZDist(
+        bin_name="src0",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    src1 = mt.InferredGalaxyZDist(
+        bin_name="src1",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    src2 = mt.InferredGalaxyZDist(
+        bin_name="src2",
+        z=np.array([0.3]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    src3 = mt.InferredGalaxyZDist(
+        bin_name="src3",
+        z=np.array([0.4]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+
+    # Lens bins
+    lens0 = mt.InferredGalaxyZDist(
+        bin_name="lens0",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    lens1 = mt.InferredGalaxyZDist(
+        bin_name="lens1",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    lens3 = mt.InferredGalaxyZDist(
+        bin_name="lens3",
+        z=np.array([0.4]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+
+    # Source-source: allowed diffs are -1 and 0 (range(-1,1))
+    assert selector.keep((src0, src1), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert selector.keep((src0, src0), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not selector.keep((src1, src0), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+    assert not selector.keep((src0, src3), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E))
+
+    # Lens-lens: allowed diffs are -1 and 0
+    assert selector.keep((lens0, lens1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert selector.keep((lens0, lens0), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not selector.keep((lens1, lens0), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    assert not selector.keep((lens0, lens3), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+    # Source-lens: allowed diffs are 1..2 (positive only, different prefixes)
+    assert selector.keep((src3, lens1), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS))
+    assert selector.keep((src2, lens0), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS))
+    assert not selector.keep((src0, lens1), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS))

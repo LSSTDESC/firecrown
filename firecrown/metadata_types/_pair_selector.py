@@ -17,11 +17,10 @@ Example usage:
 
 import re
 from abc import abstractmethod
-from typing import Annotated, Any
+from typing import Any
 
 from pydantic import (
     BaseModel,
-    Field,
     GetCoreSchemaHandler,
     SerializeAsAny,
     ValidatorFunctionWrapHandler,
@@ -561,27 +560,44 @@ class SourceLensBinPairSelector(CompositeSelector):
 
 
 @register_bin_pair_selector
-class FirstNeighborsBinPairSelector(BinPairSelector):
-    """Selector for neighboring tomographic bins.
+class NameDiffBinPairSelector(BinPairSelector):
+    """Selector for tomographic bins based on numeric index proximity.
 
-    This selector keeps bin pairs where the bin indices differ by at most
-    `num_neighbors`. Bin names must follow the pattern <text><number>, where
-    the text part must be identical and the numeric part represents the bin index.
+    This selector filters bin pairs based on the numeric suffix of their names,
+    with optional constraints on the text prefix. Bin names must follow the pattern
+    `<text><number>`, where `<text>` is any text prefix and `<number>` is the bin
+    index suffix.
+
+    The selector keeps pairs where the numeric indices differ by one of the allowed
+    values in `neighbors_diff`. If `same_name_prefix=True`, the text prefixes must
+    also be identical. If `same_name_prefix=False`, the text prefixes must differ.
+
+    :param same_name_prefix: If True, keep pairs with identical text prefixes;
+        if False, keep pairs with different text prefixes.
+    :param neighbors_diff: An integer or list of integers specifying which index
+        differences are allowed. Differences are computed as (left_index -
+        right_index).
 
     Example:
-        With num_neighbors=1:
-        - Keeps: ("bin0", "bin1"), ("bin2", "bin2"), ("src1", "src2")
+        With same_name_prefix=True, neighbors_diff=1 (auto-pairs with adjacent indices):
+        - Keeps: ("bin0", "bin1"), ("bin1", "bin0"), ("bin2", "bin2")
         - Rejects: ("bin0", "bin2"), ("bin0", "src0")
+
+        With same_name_prefix=False, neighbors_diff=[1, -1] (cross-pairs with different prefixes):
+        - Keeps: ("src0", "bin1"), ("bin1", "src0")
+        - Rejects: ("bin0", "bin1"), ("src0", "src1")
     """
 
-    kind: str = "first-neighbors"
-    num_neighbors: Annotated[int, Field(ge=0)] = 1
+    kind: str = "name-diff"
+    same_name_prefix: bool = True
+    neighbors_diff: int | list[int] = 1
 
     def keep(self, zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
-        """Return True if bin names differ by at most num_neighbors.
+        """Return True if bin name indices differ by an allowed amount.
 
-        Bin names must match the pattern <text><number>. The text parts must
-        be identical, and the numeric parts must differ by at most num_neighbors.
+        Both bin names must match the pattern <text><number>. The numeric parts are
+        extracted and their difference is checked against the allowed values.
+        If same_name_prefix is set, the text parts must also satisfy the constraint.
 
         :param zdist: Pair of InferredGalaxyZDist objects.
         :param _m: Pair of Measurement objects (unused).
@@ -589,13 +605,144 @@ class FirstNeighborsBinPairSelector(BinPairSelector):
         :return: True if bins are neighbors, False otherwise.
         """
         pattern = re.compile(r"^(?P<text>.*?)(?P<number>\d+)$")
+        allowed_neighbors = (
+            [self.neighbors_diff]
+            if isinstance(self.neighbors_diff, int)
+            else self.neighbors_diff
+        )
         if not (
             (match1 := pattern.match(zdist[0].bin_name))
             and (match2 := pattern.match(zdist[1].bin_name))
         ):
             return False
-        return (match1["text"] == match2["text"]) and (
-            abs(int(match1["number"]) - int(match2["number"])) <= self.num_neighbors
+        if self.same_name_prefix and (match1["text"] != match2["text"]):
+            return False
+        if not self.same_name_prefix and (match1["text"] == match2["text"]):
+            return False
+
+        return (int(match1["number"]) - int(match2["number"])) in allowed_neighbors
+
+
+@register_bin_pair_selector
+class AutoNameDiffBinPairSelector(CompositeSelector):
+    """Selector for tomographic bins with identical prefix and nearby indices.
+
+    This selector keeps bin pairs where:
+    1. Both bins have identical text prefixes (e.g., both start with "bin")
+    2. Their numeric indices differ by one of the allowed amounts in `neighbors_diff`
+
+    This is useful for selecting bin combinations with similar properties while
+    allowing for spatial or redshift proximity constraints.
+
+    :param neighbors_diff: An integer or list of integers specifying which index
+        differences are allowed. For example, [0, 1, -1] allows identical
+        indices and immediate neighbors.
+
+    Example:
+        With neighbors_diff=1 (same prefix, adjacent or identical indices):
+        - Keeps: ("bin0", "bin1"), ("bin1", "bin0"), ("bin2", "bin2")
+        - Rejects: ("bin0", "bin2"), ("src0", "bin0")
+    """
+
+    kind: str = "auto-name-diff"
+
+    neighbors_diff: int | list[int] = 1
+
+    def model_post_init(self, _: Any, /) -> None:
+        self._impl = NameDiffBinPairSelector(
+            same_name_prefix=True, neighbors_diff=self.neighbors_diff
+        )
+
+
+@register_bin_pair_selector
+class CrossNameDiffBinPairSelector(CompositeSelector):
+    """Selector for tomographic bins with different prefixes and nearby indices.
+
+    This selector keeps bin pairs where:
+    1. Both bins have different text prefixes (e.g., one "bin" and one "src")
+    2. Their numeric indices differ by one of the allowed amounts in `neighbors_diff`
+
+    This is useful for selecting cross-type bin combinations (e.g., clustering-lensing
+    pairs) with spatial or redshift proximity constraints.
+
+    :param neighbors_diff: An integer or list of integers specifying which index
+        differences are allowed.
+
+    Example:
+        With neighbors_diff=[0, 1, -1] (different prefixes, nearby indices):
+        - Keeps: ("src0", "bin0"), ("src0", "bin1"), ("bin1", "src0")
+        - Rejects: ("bin0", "bin1"), ("src0", "src1")
+    """
+
+    kind: str = "cross-name-diff"
+
+    neighbors_diff: int | list[int] = 1
+
+    def model_post_init(self, _: Any, /) -> None:
+        self._impl = NameDiffBinPairSelector(
+            same_name_prefix=False, neighbors_diff=self.neighbors_diff
+        )
+
+
+@register_bin_pair_selector
+class ThreeTwoBinPairSelector(CompositeSelector):
+    """Selector for 3x2pt analysis bin pairs.
+
+    This selector implements the standard 3x2pt cosmological analysis selection,
+    which includes three types of two-point correlations:
+    1. Source-source (cosmic shear): auto-correlations of weak lensing shear
+    2. Lens-lens (galaxy clustering): auto-correlations of galaxy positions
+    3. Source-lens (galaxy-galaxy lensing): cross-correlations between source
+       and lens samples with different bin names
+
+    The galaxy-galaxy lensing component explicitly excludes auto-correlations
+    (same bin name) to avoid mixing source and lens samples from the same
+    tomographic bin, which is the standard practice in 3x2pt analyses.
+
+    Implementation note: This is a composite selector combining:
+        SourceBinPairSelector() | LensBinPairSelector() |
+        (SourceLensBinPairSelector() & CrossNameBinPairSelector())
+
+    Example:
+        selector = ThreeTwoBinPairSelector()
+        # Includes: source-source, lens-lens, and cross-name source-lens pairs
+
+    :param source_dist: Maximum allowed index separation (left minus right) for
+        source-source bin pairs. The allowed set is ``range(-source_dist,
+        source_dist)`` (zero included, upper bound exclusive).
+    :param lens_dist: Maximum allowed index separation (left minus right) for
+        lens-lens bin pairs. The allowed set is ``range(-lens_dist, lens_dist)``.
+    :param source_lens_dist: Maximum positive index separation allowed for
+        source-lens pairs. The allowed set is ``range(1, source_lens_dist + 1)``.
+        Only pairs with different prefixes (enforced by ``CrossNameDiff``) are kept.
+    """
+
+    kind: str = "3x2pt"
+
+    source_dist: int = 5
+    lens_dist: int = 5
+    source_lens_dist: int = 5
+
+    def model_post_init(self, _: Any, /) -> None:
+        self._impl = (
+            (
+                SourceBinPairSelector()
+                & AutoNameDiffBinPairSelector(
+                    neighbors_diff=list(range(-self.source_dist, self.source_dist))
+                )
+            )
+            | (
+                LensBinPairSelector()
+                & AutoNameDiffBinPairSelector(
+                    neighbors_diff=list(range(-self.lens_dist, self.lens_dist))
+                )
+            )
+            | (
+                SourceLensBinPairSelector()
+                & CrossNameDiffBinPairSelector(
+                    neighbors_diff=list(range(1, self.source_lens_dist + 1))
+                )
+            )
         )
 
 
