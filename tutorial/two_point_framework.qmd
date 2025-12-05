@@ -12,7 +12,7 @@ It is intended to provide a high-level overview of how measurements, binning sch
 The focus is on the rationale behind each abstraction and the motivation for the chosen hierarchy.
 Detailed descriptions of each component are provided in the following sections.
 
-If you are looking for practical instructions on how to use the system, you may go directly to the sections on [Working with Two-Point Data](#sec-two-point-data), [Constructing TwoPoint Objects with Factories](#sec-two-point-factories), [Data Filtering and Scale Cuts](#sec-data-filtering), and [Computing Theory Predictions](#sec-computing-theory-predictions).
+If you are looking for practical instructions on how to use the system, you may go directly to the workflow tutorial: [Two-Point Workflow](two_point_workflow.qmd).
 
 ## Introduction
 
@@ -36,7 +36,7 @@ To compute theoretical predictions or build likelihoods, a [[likelihood|TwoPoint
 This object requires a measurement layout ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) or a full [[data_types|TwoPointMeasurement]], and includes all modeling assumptions—such as galaxy bias, shot noise, intrinsic alignment, and systematics.
 Multiple [[likelihood|TwoPoint]] instances can be constructed from the same layout with different model choices.
 While this can be done manually, the [[likelihood|TwoPointFactory]] automates the creation of [[likelihood|TwoPoint]] objects from either layout or measurement objects.
-See [Two-Point Factories](#sec-two-point-factories) for details.
+See [Two-Point Factories](two_point_factory_basics.qmd) for details.
 
 The complete hierarchy is visualized in @fig-framework-hierarchy.
 
@@ -213,50 +213,6 @@ Where:
 - [[data_types|TwoPointMeasurement.metadata]] is an instance of [[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]], fully specifying the measurement layout.
 
 This final level completes the description by connecting the theoretical and structural metadata with real or simulated observations, enabling their use in likelihood evaluations, consistency checks, or other statistical analyses.
-
-# Working with Two-Point Data {#sec-two-point-data}
-
-There are **two primary workflows** for obtaining the data needed to construct [[likelihood|TwoPoint]] objects:
-
-1. **Generate from Scratch** ([Two-Point Generators](two_point_generators.qmd)): Create metadata and data programmatically using Firecrown's generators for LSST-SRD distributions or custom specifications.
-
-2. **Extract from SACC Files** ([Loading SACC Data](two_point_sacc_loading.qmd)): Extract both metadata and data from existing SACC files containing real or simulated measurements.
-
-Both workflows produce the same fundamental components: measurement layouts ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) with optional data ([[data_types|TwoPointMeasurement]]).
-
-# Constructing TwoPoint Objects with Factories {#sec-two-point-factories}
-
-Once you have metadata (and optionally data) from either workflow above, you need to construct [[likelihood|TwoPoint]] objects that include modeling choices. This is where the [[likelihood|TwoPointFactory]] comes in.
-
-A [[likelihood|TwoPoint]] object can be constructed from either:
-
-- A layout only ([[metadata_types|TwoPointHarmonic]] or [[metadata_types|TwoPointReal]]) — produces theory predictions
-- A measurement ([[data_types|TwoPointMeasurement]]) — includes both data and theory for likelihood evaluation
-
-The [[likelihood|TwoPointFactory]] automates this construction by inspecting the measurement types in the metadata and delegating to appropriate source factories:
-
-- [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
-- [[metadata_types|Galaxies.SHEAR_E]] `|` [[metadata_types|Galaxies.SHEAR_T]] `| ...` → [[likelihood.weak_lensing|WeakLensingFactory]]
-
-The factory can hold multiple instances of the same source factory type, each tied to a different [[metadata_types|TypeSource]], enabling distinct modeling choices for subpopulations (e.g., red vs. blue galaxies).
-
-See [Factory Basics](two_point_factory_basics.qmd) for detailed construction patterns.
-
-# Data Filtering and Scale Cuts {#sec-data-filtering}
-
-After obtaining metadata and data (from either generators or SACC files), you may need to apply scale cuts to restrict the analysis to physically valid ranges. This is independent of the data source.
-
-The [[data_functions|TwoPointBinFilterCollection]] allows you to define valid analysis ranges for specific tracer combinations, filtering out scales where models may be inaccurate.
-
-See [Scale Cuts and Filtering](two_point_scale_cuts.qmd) for implementation details.
-
-# Computing Theory Predictions {#sec-computing-theory-predictions}
-
-When computing theory vectors with [[likelihood|TwoPoint]] objects, you can control the integration methods used for harmonic-space calculations. This choice affects accuracy and computational cost.
-
-Available integration options include Limber approximation methods and more accurate FKEM approaches, configurable via [[utils|ClIntegrationOptions]].
-
-See [Integration Methods](two_point_integration.qmd) for detailed comparisons and usage.
 
 # Summary {#sec-summary}
 

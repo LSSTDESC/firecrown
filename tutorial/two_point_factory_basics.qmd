@@ -46,11 +46,8 @@ Each produced [[likelihood|TwoPoint]] object:
 
 The [[likelihood|TwoPointFactory]] automatically maps measurement types to appropriate source factories:
 
-| Measurement Type | Source Factory |
-|-----------------|----------------|
-| [[metadata_types|Galaxies.COUNTS]] | [[likelihood.number_counts|NumberCountsFactory]] |
-| [[metadata_types|Galaxies.SHEAR_E]], [[metadata_types|Galaxies.SHEAR_T]], etc. | [[likelihood.weak_lensing|WeakLensingFactory]] |
-| [[metadata_types|CMB.CONVERGENCE]] | [[likelihood.weak_lensing|WeakLensingFactory]] |
+- [[metadata_types|Galaxies.COUNTS]] → [[likelihood.number_counts|NumberCountsFactory]]
+- [[metadata_types|Galaxies.SHEAR_E]], [[metadata_types|Galaxies.SHEAR_T]], etc. → [[likelihood.weak_lensing|WeakLensingFactory]]
 
 ### Multiple TypeSource Support
 
