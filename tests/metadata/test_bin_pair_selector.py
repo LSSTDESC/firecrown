@@ -4,6 +4,7 @@ This module contains comprehensive tests for all bin pair selector implementatio
 including atomic selectors, composite selectors, logical combinators, and serialization.
 """
 
+from typing import Any
 import re
 import pytest
 import numpy as np
@@ -619,3 +620,176 @@ def test_pair_selector_deserialization_invalid_kind():
     """
     with pytest.raises(ValueError, match="Value error, Unknown kind not_a_valid_kind"):
         mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+
+
+# ============================================================================
+# CompositeSelector and BadSelector Tests
+# ============================================================================
+
+
+def test_composite_selector_bad_selector_not_initialized():
+    """Test that CompositeSelector raises NotImplementedError when _impl is not set."""
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+
+    # Create a composite selector that doesn't properly initialize _impl
+    class BadCompositeSelector(mt.CompositeSelector):
+        """A composite selector that doesn't initialize _impl."""
+
+        kind: str = "bad-composite"
+
+        def model_post_init(self, _: Any, /) -> None:
+            # Intentionally not setting _impl - leaves it as BadSelector
+            pass
+
+    # Register temporarily for this test
+    bad_composite = BadCompositeSelector()
+
+    # Trying to use keep() should raise NotImplementedError
+    with pytest.raises(NotImplementedError, match="BadSelector should not be used"):
+        bad_composite.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+
+def test_auto_bin_pair_selector(all_harmonic_bins):
+    """Test AutoBinPairSelector composite selector."""
+    auto_pair_selector = mt.AutoBinPairSelector()
+
+    two_point_xy_combinations = make_binned_two_point_filtered(
+        all_harmonic_bins, auto_pair_selector
+    )
+    # AutoBinPairSelector should create all auto-combinations
+    # There are two measurements per bin in all_harmonic_bins
+    assert len(two_point_xy_combinations) == 2 * len(all_harmonic_bins)
+    for two_point_xy in two_point_xy_combinations:
+        assert two_point_xy.x == two_point_xy.y
+        assert two_point_xy.x_measurement == two_point_xy.y_measurement
+
+
+def test_auto_bin_pair_selector_keep():
+    """Test AutoBinPairSelector keep method."""
+    z1 = mt.InferredGalaxyZDist(
+        bin_name="bin_1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    z2 = mt.InferredGalaxyZDist(
+        bin_name="bin_2",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+    rule = mt.AutoBinPairSelector()
+    # Same bin and same measurement: should keep
+    assert rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    # Different bins: should not keep
+    assert not rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+    # Same bin but different measurements: should not keep
+    assert not rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
+
+
+def test_source_lens_pair_selector():
+    """Test SourceLensBinPairSelector with order-dependent matching."""
+    source_lens_pair_selector = mt.SourceLensBinPairSelector()
+
+    # Create a mixed measurement bin for testing
+    z_source = mt.InferredGalaxyZDist(
+        bin_name="src0",
+        z=np.linspace(0, 1.0, 50) + 0.05,
+        dndz=np.exp(-0.5 * (np.linspace(0, 1.0, 50) + 0.05 - 0.5) ** 2 / 0.05 / 0.05),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z_lens = mt.InferredGalaxyZDist(
+        bin_name="lens0",
+        z=np.linspace(0, 1.0, 50) + 0.05,
+        dndz=np.exp(-0.5 * (np.linspace(0, 1.0, 50) + 0.05 - 0.5) ** 2 / 0.05 / 0.05),
+        measurements={mt.Galaxies.COUNTS},
+    )
+
+    mixed_bins = [z_source, z_lens]
+
+    two_point_xy_combinations = make_binned_two_point_filtered(
+        mixed_bins, source_lens_pair_selector
+    )
+    # SourceLensBinPairSelector should only keep source-left, lens-right pairs
+    # Not lens-left, source-right (order matters)
+    assert len(two_point_xy_combinations) == 1
+    two_point_xy = two_point_xy_combinations[0]
+    assert two_point_xy.x.bin_name == "src0"
+    assert two_point_xy.y.bin_name == "lens0"
+    assert two_point_xy.x_measurement == mt.Galaxies.SHEAR_E
+    assert two_point_xy.y_measurement == mt.Galaxies.COUNTS
+
+
+def test_source_lens_pair_selector_keep():
+    """Test SourceLensBinPairSelector keep method with fixed order."""
+    z_source = mt.InferredGalaxyZDist(
+        bin_name="src1",
+        z=np.array([0.1]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.SHEAR_E},
+    )
+    z_lens = mt.InferredGalaxyZDist(
+        bin_name="lens1",
+        z=np.array([0.2]),
+        dndz=np.array([1.0]),
+        measurements={mt.Galaxies.COUNTS},
+    )
+
+    rule = mt.SourceLensBinPairSelector()
+    # Source-left, lens-right should match
+    assert rule.keep((z_source, z_lens), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS))
+    # Lens-left, source-right should NOT match (fixed order convention)
+    assert not rule.keep((z_lens, z_source), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
+    # Both source should NOT match
+    assert not rule.keep(
+        (z_source, z_source), (mt.Galaxies.SHEAR_E, mt.Galaxies.SHEAR_E)
+    )
+    # Both lens should NOT match
+    assert not rule.keep((z_lens, z_lens), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
+
+
+def test_auto_bin_pair_selector_serialization():
+    """Test serialization of AutoBinPairSelector."""
+    rule = mt.AutoBinPairSelector()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule_from_yaml, mt.AutoBinPairSelector)
+    assert rule == rule_from_yaml
+
+
+def test_source_lens_pair_selector_serialization():
+    """Test serialization of SourceLensBinPairSelector."""
+    rule = mt.SourceLensBinPairSelector()
+    yaml_str = yaml.dump(rule.model_dump(), sort_keys=False)
+    rule_from_yaml = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule_from_yaml, mt.SourceLensBinPairSelector)
+    assert rule == rule_from_yaml
+
+
+def test_auto_bin_pair_selector_deserialization():
+    """Test deserialization of AutoBinPairSelector."""
+    yaml_str = """
+    kind: auto-bin
+    """
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.AutoBinPairSelector)
+
+
+def test_source_lens_pair_selector_deserialization():
+    """Test deserialization of SourceLensBinPairSelector."""
+    yaml_str = """
+    kind: source-lens
+    """
+    rule = mt.BinPairSelector.model_validate(yaml.safe_load(yaml_str))
+    assert isinstance(rule, mt.SourceLensBinPairSelector)

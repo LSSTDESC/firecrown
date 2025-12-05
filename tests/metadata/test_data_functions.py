@@ -680,7 +680,8 @@ def test_raise_with_two_bins_same_name():
     with pytest.raises(
         ValueError,
         match=re.escape(
-            "Duplicate inferred galaxy z distribution bin names found: ['bin_1', 'bin_2']"
+            "Duplicate inferred galaxy z distribution bin "
+            "names found: ['bin_1', 'bin_2']"
         ),
     ):
         _ = make_all_photoz_bin_combinations([igz1, igz1, igz2, igz2, igz3])

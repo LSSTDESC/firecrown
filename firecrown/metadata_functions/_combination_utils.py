@@ -79,9 +79,10 @@ def make_all_photoz_bin_combinations_with_cmb(
     This function generates all possible two-point correlations including both
     galaxy-galaxy auto/cross-correlations and CMB-galaxy cross-correlations.
 
-    :param inferred_galaxy_zdists: List of galaxy redshift bins with their
-        associated measurement types.
-    :param cmb_tracer_name: Name to assign to the CMB tracer (default: "cmb_convergence").
+    :param inferred_galaxy_zdists: List of galaxy redshift bins with their associated
+        measurement types.
+    :param cmb_tracer_name: Name to assign to the CMB tracer (default:
+        "cmb_convergence").
     :param include_cmb_auto: Whether to include CMB auto-correlation (default: False).
 
     :return: Combined list of galaxy-galaxy and CMB-galaxy correlation combinations.
@@ -111,10 +112,12 @@ def make_cmb_galaxy_combinations_only(
 
     :param inferred_galaxy_zdists: List of galaxy redshift bins with their
         associated measurement types.
-    :param cmb_tracer_name: Name to assign to the CMB tracer (default: "cmb_convergence").
+    :param cmb_tracer_name: Name to assign to the CMB tracer (default:
+        "cmb_convergence").
     :param include_cmb_auto: Whether to include CMB auto-correlation (default: False).
 
-    :return: List of CMB-galaxy cross-correlation combinations (and optionally CMB auto).
+    :return: List of CMB-galaxy cross-correlation combinations (and optionally CMB
+        auto).
 
     :raises ValueError: If duplicate bin names are found in inferred_galaxy_zdists.
     """
@@ -163,9 +166,9 @@ def make_binned_two_point_filtered(
 ) -> list[mdt.TwoPointXY]:
     """Create two-point correlations filtered by a bin pair selector.
 
-    This function generates all possible bin combinations and then filters them
-    using the provided selector, keeping only pairs that satisfy the selection
-    criteria (e.g., auto-correlations only, specific measurements, neighboring bins).
+    This function generates all possible bin combinations and then filters them using
+    the provided selector, keeping only pairs that satisfy the selection criteria
+    (e.g., auto-correlations only, specific measurements, neighboring bins).
 
     :param inferred_galaxy_zdists: List of tomographic redshift bins with their
         associated measurement types.

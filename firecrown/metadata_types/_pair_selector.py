@@ -1,4 +1,4 @@
-"""Bin pair selector classes for filtering tomographic bin pairs in two-point measurements.
+"""Bin pair selector classes for filtering tomographic bin pairs.
 
 This module provides a flexible system for selecting which pairs of tomographic bins
 should be included when constructing two-point correlation functions. Selectors can be
@@ -78,10 +78,10 @@ MeasurementPair = tuple[Measurement, Measurement]
 class BinPairSelector(BaseModel):
     """Base class for filtering pairs of tomographic bins in two-point measurements.
 
-    A BinPairSelector determines which pairs of `InferredGalaxyZDist` bins should
-    be included when constructing `TwoPointXY` objects. Concrete implementations
-    define specific selection criteria (e.g., auto-correlations only, specific
-    bin names, measurement types, etc.).
+    A BinPairSelector determines which pairs of `InferredGalaxyZDist` bins should be
+    included when constructing `TwoPointXY` objects. Concrete implementations define
+    specific selection criteria (e.g., auto-correlations only, specific bin names,
+    measurement types, etc.).
 
     Selectors support logical composition via operators:
     - AND: selector1 & selector2
@@ -265,13 +265,28 @@ class NotBinPairSelector(BinPairSelector):
         return not self.pair_selector.keep(zdist, m)
 
 
+class BadSelector(BinPairSelector):
+    """A BinPairSelector that always raises NotImplementedError."""
+
+    kind: str = "bad-selector"
+
+    def keep(self, _zdist: TomographicBinPair, _m: MeasurementPair) -> bool:
+        """Raise NotImplementedError always.
+
+        :raise NotImplementedError: Always raised since this selector should not be
+            used.
+        """
+        raise NotImplementedError("BadSelector should not be used directly.")
+
+
 class CompositeSelector(BinPairSelector):
     """Base class for selectors composed from other selectors."""
 
-    _impl: BinPairSelector
+    _impl: BinPairSelector = BadSelector()
 
     def keep(self, zdist: TomographicBinPair, m: MeasurementPair):
         """Delegate to the underlying selector implementation."""
+        assert isinstance(self._impl, BinPairSelector)
         return self._impl.keep(zdist, m)
 
 
