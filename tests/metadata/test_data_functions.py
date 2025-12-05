@@ -651,9 +651,8 @@ def test_bin_filter_methods(
             )
         ]
     )
-
     assert bin_col.filters[0].method == method
-    assert bin_col.apply_filter_single(harmonic_window_bins[4])
+    assert bin_col.apply_filter_single(harmonic_window_bins[7])
 
 
 def test_raise_with_two_bins_same_name():

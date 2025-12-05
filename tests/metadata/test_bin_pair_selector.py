@@ -862,7 +862,9 @@ def test_cross_measurement_bin_pair_selector_keep():
 
 
 def test_cross_measurement_bin_pair_selector(all_harmonic_bins):
-    """Test CrossMeasurementBinPairSelector filters out auto-measurement correlations."""
+    """Test CrossMeasurementBinPairSelector.
+
+    Test filters out auto-measurement correlations."""
     cross_measurement_selector = mt.CrossMeasurementBinPairSelector()
 
     two_point_xy_combinations = make_binned_two_point_filtered(
@@ -893,7 +895,8 @@ def test_cross_bin_pair_selector_keep():
     assert rule.keep((z1, z2), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
     # Same bin and same measurement: should NOT keep
     assert not rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.COUNTS))
-    # Same bin but different measurement: should keep (because AutoBinPairSelector requires both to match)
+    # Same bin but different measurement: should keep (because AutoBinPairSelector
+    # requires both to match)
     assert rule.keep((z1, z1), (mt.Galaxies.COUNTS, mt.Galaxies.SHEAR_E))
 
 
@@ -1061,7 +1064,8 @@ def test_three_two_bin_pair_selector_keep():
     # Test 3: Source-lens with different names (galaxy-galaxy lensing) - should be kept
     assert selector.keep((src2, lens1), (mt.Galaxies.SHEAR_E, mt.Galaxies.COUNTS))
 
-    # Test 4: Source-lens with SAME name - should NOT be kept (excluded by CrossNameDiff)
+    # Test 4: Source-lens with SAME name - should NOT be kept (excluded by
+    # CrossNameDiff)
     src_lens_same = mt.InferredGalaxyZDist(
         bin_name="bin_0",
         z=np.array([0.1]),

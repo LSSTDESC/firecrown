@@ -579,11 +579,15 @@ class NameDiffBinPairSelector(BinPairSelector):
         right_index).
 
     Example:
-        With same_name_prefix=True, neighbors_diff=1 (auto-pairs with adjacent indices):
+        With same_name_prefix=True, neighbors_diff=1 (auto-pairs with adjacent
+        indices):
+
         - Keeps: ("bin0", "bin1"), ("bin1", "bin0"), ("bin2", "bin2")
         - Rejects: ("bin0", "bin2"), ("bin0", "src0")
 
-        With same_name_prefix=False, neighbors_diff=[1, -1] (cross-pairs with different prefixes):
+        With same_name_prefix=False, neighbors_diff=[1, -1] (cross-pairs with different
+        prefixes):
+
         - Keeps: ("src0", "bin1"), ("bin1", "src0")
         - Rejects: ("bin0", "bin1"), ("src0", "src1")
     """
