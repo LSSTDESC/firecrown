@@ -6,6 +6,7 @@ import pytest
 import pyccl
 from firecrown.updatable import get_default_params_map
 from firecrown.modeling_tools import ModelingTools, PowerspectrumModifier
+from firecrown.models.cluster import ClusterAbundance, ClusterDeltaSigma
 
 
 @pytest.fixture(name="dummy_powerspectrum", scope="session")
@@ -92,7 +93,7 @@ def test_modeling_tools_get_hm_calculator_without_setting() -> None:
 
 
 def test_modeling_tools_get_hm_calculator_with_setting() -> None:
-    """Test get_hm_calculator when hm_calculator is set (covers line 152)."""
+    """Test get_hm_calculator when hm_calculator is set."""
     # Create a mock halo model calculator with required parameters
     mass_function = pyccl.halos.MassFuncTinker10()
     halo_bias = pyccl.halos.HaloBiasTinker10()
@@ -101,7 +102,7 @@ def test_modeling_tools_get_hm_calculator_with_setting() -> None:
     )
     tools = ModelingTools(hm_calculator=hm_calculator)
 
-    # This should return the hm_calculator successfully (line 152)
+    # This should return the hm_calculator successfully
     result = tools.get_hm_calculator()
     assert result is hm_calculator
 
@@ -115,11 +116,11 @@ def test_modeling_tools_get_cM_relation_without_setting() -> None:
 
 
 def test_modeling_tools_get_cM_relation_with_setting() -> None:
-    """Test get_cM_relation when cM_relation is set (covers line 158)."""
+    """Test get_cM_relation when cM_relation is set."""
     cM_relation = "duffy2008"
     tools = ModelingTools(cM_relation=cM_relation)
 
-    # This should return the cM_relation successfully (line 158)
+    # This should return the cM_relation successfully
     result = tools.get_cM_relation()
     assert result == cM_relation
 
@@ -145,3 +146,177 @@ def test_modeling_tools_add_pk_modifiers() -> None:
 
     assert tools.get_pk("dummy:dummy") is not None
     assert isinstance(tools.get_pk("dummy:dummy"), pyccl.Pk2D)
+
+
+def test_get_pk_fallback_to_ccl_cosmology() -> None:
+    """Test get_pk falls back to ccl_cosmo.get_nonlin_power.
+
+    When a power spectrum is not in the local table, get_pk should fall back
+    to requesting it from the CCL cosmology object.
+    """
+    tools = ModelingTools()
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
+
+    # Request a power spectrum that's not in the local table
+    # CCL cosmology should provide 'delta_matter:delta_matter'
+    pk = tools.get_pk("delta_matter:delta_matter")
+    assert pk is not None
+    assert isinstance(pk, pyccl.Pk2D)
+
+
+def test_has_pk_returns_true_for_existing_pk(dummy_powerspectrum: pyccl.Pk2D) -> None:
+    """Test has_pk returns True for existing power spectrum."""
+    tools = ModelingTools()
+    tools.add_pk("test_pk", dummy_powerspectrum)
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
+
+    assert tools.has_pk("test_pk") is True
+
+
+def test_has_pk_returns_false_for_nonexistent_pk() -> None:
+    """Test has_pk returns False for nonexistent power spectrum.
+
+    When the power spectrum doesn't exist in the local table and CCL raises
+    KeyError, has_pk should catch it and return False.
+    """
+    tools = ModelingTools()
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
+
+    # Request a power spectrum that CCL doesn't have
+    # This should raise KeyError internally, which has_pk catches
+    assert tools.has_pk("nonexistent:invalid") is False
+
+
+def test_get_ccl_cosmology_success() -> None:
+    """Test get_ccl_cosmology returns cosmology object successfully."""
+    tools = ModelingTools()
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
+
+    cosmo = tools.get_ccl_cosmology()
+    assert cosmo is not None
+    assert isinstance(cosmo, pyccl.Cosmology)
+    assert cosmo is tools.ccl_cosmo
+
+
+def test_get_pt_calculator_success() -> None:
+    """Test get_pt_calculator returns PT calculator successfully."""
+    # Create a real PT calculator
+    pt_calculator = pyccl.nl_pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=False,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
+    )
+
+    tools = ModelingTools(pt_calculator=pt_calculator)
+    params = get_default_params_map(tools)
+    tools.update(params)
+
+    # Get the PT calculator before prepare to avoid update_ingredients call
+    result = tools.get_pt_calculator()
+    assert result is not None
+    assert result is pt_calculator
+
+
+def test_reset_method() -> None:
+    """Test _reset method clears ccl_cosmo, powerspectra, and _prepared flag."""
+    tools = ModelingTools()
+    params = get_default_params_map(tools)
+    tools.update(params)
+    tools.prepare()
+
+    # Verify tools are prepared and have data
+    assert tools.ccl_cosmo is not None
+    assert tools._prepared is True  # pylint: disable=protected-access
+
+    # Call _reset
+    tools._reset()  # pylint: disable=protected-access
+
+    # Verify everything is reset
+    assert tools.ccl_cosmo is None
+    assert not tools.powerspectra
+    assert tools._prepared is False  # pylint: disable=protected-access
+
+
+def test_prepare_with_pt_calculator_updates_ingredients() -> None:
+    """Test prepare() calls update_ingredients on pt_calculator when set."""
+    # Create a real PT calculator
+    pt_calculator = pyccl.nl_pt.EulerianPTCalculator(
+        with_NC=True,
+        with_IA=False,
+        log10k_min=-4,
+        log10k_max=2,
+        nk_per_decade=20,
+    )
+
+    tools = ModelingTools(pt_calculator=pt_calculator)
+    params = get_default_params_map(tools)
+    tools.update(params)
+
+    # Before prepare, the PT calculator should exist but not have cosmology set
+    assert tools.pt_calculator is not None
+
+    # Call prepare - this should call update_ingredients on the PT calculator
+    tools.prepare()
+
+    # After prepare, verify the cosmology was set and PT calculator was updated
+    assert tools.ccl_cosmo is not None
+
+
+def test_prepare_with_cluster_abundance_updates_ingredients() -> None:
+    """Test prepare() calls update_ingredients on cluster_abundance when set."""
+    # Create a real ClusterAbundance object
+    hmf = pyccl.halos.MassFuncTinker08(mass_def="200c")
+    min_mass, max_mass = 13.0, 16.0
+    min_z, max_z = 0.2, 0.8
+    cluster_abundance = ClusterAbundance((min_mass, max_mass), (min_z, max_z), hmf)
+
+    tools = ModelingTools(cluster_abundance=cluster_abundance)
+    params = get_default_params_map(tools)
+    tools.update(params)
+
+    # Before prepare, cluster_abundance should not have cosmology set
+    assert cluster_abundance.cosmo is None
+
+    # Call prepare - this should call update_ingredients on cluster_abundance
+    tools.prepare()
+
+    # After prepare, verify the cosmology was set on cluster_abundance
+    assert tools.ccl_cosmo is not None
+    assert cluster_abundance.cosmo is not None
+    assert cluster_abundance.cosmo is tools.ccl_cosmo
+
+
+def test_prepare_with_cluster_deltasigma_updates_ingredients() -> None:
+    """Test prepare() calls update_ingredients on cluster_deltasigma when set."""
+    # Create a real ClusterDeltaSigma object
+    hmf = pyccl.halos.MassFuncTinker08(mass_def="200c")
+    min_mass, max_mass = 13.0, 16.0
+    min_z, max_z = 0.2, 0.8
+    cluster_deltasigma = ClusterDeltaSigma(
+        (min_mass, max_mass), (min_z, max_z), hmf, conc_parameter=True
+    )
+
+    tools = ModelingTools(cluster_deltasigma=cluster_deltasigma)
+    params = get_default_params_map(tools)
+    tools.update(params)
+
+    # Before prepare, cluster_deltasigma should not have cosmology set
+    assert cluster_deltasigma.cosmo is None
+
+    # Call prepare - this should call update_ingredients on cluster_deltasigma
+    tools.prepare()
+
+    # After prepare, verify the cosmology was set on cluster_deltasigma
+    assert tools.ccl_cosmo is not None
+    assert cluster_deltasigma.cosmo is not None
+    assert cluster_deltasigma.cosmo is tools.ccl_cosmo
