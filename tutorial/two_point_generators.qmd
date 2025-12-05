@@ -13,7 +13,7 @@ This document outlines how to use `InferredGalaxyZDist` objects to derive the tw
 
 This tutorial focuses on generating two-point statistics from scratch using metadata. For loading existing data from SACC files and applying scale cuts, see:
 - [Two-Point Factory Basics](two_point_factory_basics.qmd)
-- [Loading SACC Data](two_point_sacc_loading.qmd)
+- [Loading SACC Data](two_point_sacc_data.qmd)
 - [Scale Cuts and Filtering](two_point_scale_cuts.qmd)
 
 ## Two-point statistics
@@ -22,7 +22,7 @@ Two-point statistics are widely used in cosmological analyses.
 They provide a statistical summary of the distribution, in either real or harmonic space, of galaxies and the matter density field, or of other observables.
 In Firecrown, two-point statistics are represented by the `TwoPoint` class, in the module `firecrown.likelihood.two_point`.
 
-**Note:** This tutorial demonstrates generating two-point statistics from scratch. If you have existing data in a SACC file, see [Loading SACC Data](two_point_sacc_loading.qmd) for how to extract and use it.
+**Note:** This tutorial demonstrates generating two-point statistics from scratch. If you have existing data in a SACC file, see [Loading SACC Data](two_point_sacc_data.qmd) for how to extract and use it.
 
 ## Generating the LSST Year 1 Redshift Distribution Bins
 
@@ -74,212 +74,20 @@ df = pd.DataFrame(two_point_names, columns=["bin-x", "bin-y", "SACC data-type"])
 Markdown(df.to_markdown())
 ```
 
-## Defining Two-Point Statistics Factories {#sec-factories}
+## Summary
 
-In Firecrown, "systematics" are classes that are used to represent modifications to physical models which incorporate corrections for various modeling imperfections.
-Some examples are the intrinsic alignment (IA) of galaxies, the multiplicative bias of weak lensing, and photo-z shifts.
-These are represented by the classes `LinearAlignmentSystematic`,  `MultiplicativeShearBias`, and `PhotoZShift`, respectively[^1].
-Firecrown contains several factories for generating the objects that represent these systematics.
-The purpose of the factories is to ensure that each of the systematics created by a given factory are consistent.
+You now have metadata for all LSST Year 1 two-point statistics. The key outputs are:
 
-[^1]: The classes `LinearAlignmentSystematic`, `MultiplicativeShearBias`, and `PhotoZShift` are all found in the module `firecrown.likelihood.weak_lensing`.
+- **`all_y1_bins`**: Redshift distributions for all lens and source bins
+- **`all_two_point_xy`**: All possible tracer pair combinations
+- **`all_two_point_cells`**: Complete harmonic-space metadata (layouts)
 
-In order to generate the two-point statistics we need to define the factories for the weak lensing and number counts systematics.
-These factories are responsible for generating the systematics that will be applied to the two-point statistics.
-The code below defines the factories for the weak lensing and number counts systematics:
+These metadata objects contain no observational data—they describe the structure of measurements you want to analyze.
 
-```{python}
+## Next Steps
 
-import firecrown.likelihood.weak_lensing as wl
-import firecrown.likelihood.number_counts as nc
-from firecrown.likelihood import TwoPoint, TwoPointFactory
-from firecrown.metadata_types import TwoPointCorrelationSpace
-from firecrown.likelihood.weak_lensing import PhotoZShiftFactory
-import warnings
+To construct **[[likelihood|TwoPoint]]** objects from this metadata and compute predictions:
 
-# WeakLensing systematics -- global
-ia_systematic = wl.LinearAlignmentSystematicFactory()
-# WeakLensing systematics -- per-bin
-wl_photoz = PhotoZShiftFactory()
-wl_mult_bias = wl.MultiplicativeShearBiasFactory()
-
-# NumberCounts systematics -- global
-# As of the current Firecrown version, we do not have any global systematics for number counts
-# NumberCounts systematics -- per-bin
-nc_photoz = PhotoZShiftFactory()
-
-wlf = wl.WeakLensingFactory(
-    per_bin_systematics=[wl_mult_bias, wl_photoz],
-    global_systematics=[ia_systematic],
-)
-ncf = nc.NumberCountsFactory(
-    per_bin_systematics=[nc_photoz],
-    global_systematics=[],
-)
-```
-
-The choice of systematics is dependent on the specific analysis being conducted.
-In order to allow sharing of the systematics between different analyses, the factories can be serialized and deserialized.
-
-For example, the factories can be serialized as follows:
-```{python}
-from firecrown.utils import base_model_to_yaml
-
-wl_yaml = base_model_to_yaml(wlf)
-nc_yaml = base_model_to_yaml(ncf)
-
-```
-
-The generated YAML for the weak lensing factory is:
-```{python}
-# | code-fold: true
-Markdown(f"```yaml\n{wl_yaml}\n```")
-```
-The generated YAML for the number counts factory is:
-```{python}
-# | code-fold: true
-Markdown(f"```yaml\n{nc_yaml}\n```")
-```
-
-
-## Generating the Two-Point Statistics
-
-To generate the required two-point statistics, we must define factories for weak lensing and number counts systematics.
-These factories are responsible for producing the necessary systematics applied to the two-point statistics.
-Below is the code defining the factories for weak lensing and number counts systematics:
-
-```{python}
-all_two_point_functions = TwoPoint.from_metadata(
-    metadata_seq=all_two_point_cells,
-    tp_factory=TwoPointFactory(
-        correlation_space=TwoPointCorrelationSpace.HARMONIC,
-        weak_lensing_factories=[wlf],
-        number_counts_factories=[ncf],
-    ),
-)
-```
-
-The `TwoPointFactory` here uses default integration options. For information on controlling integration methods (Limber approximation vs. FKEM methods), see [Integration Methods](two_point_integration.qmd).
-
-
-## Setting Up the Two-Point Statistics
-
-Setting up the two-point statistics requires a cosmology and a set of parameters.
-The parameters necessary in our analysis depend on the cosmology, two-point statistic measurements and the systematics we are considering.
-The `ModelingTools` class is used to manage the cosmology and general computation objects.
-In the code below, we extract the required parameters for the cosmology and the two-point statistics and create a `ParamsMap` object with the parameters' default values:
-
-```{python}
-from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
-from firecrown.updatable import get_default_params
-from firecrown.parameters import ParamsMap
-
-tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
-default_values = get_default_params(tools, all_two_point_functions)
-params = ParamsMap(default_values)
-
-```
-
-Before generating the two-point statistics, it's necessary to set the parameters to their default values.
-These default values are:
-
-```{python}
-# | code-fold: true
-import yaml
-
-default_values_yaml = yaml.dump(dict(params), default_flow_style=False)
-
-Markdown(f"```yaml\n{default_values_yaml}\n```")
-```
-
-Lastly, we must configure the cosmology and prepare the two-point statistics for analysis:
-
-```{python}
-tools.update(params)
-tools.prepare()
-all_two_point_functions.update(params)
-
-```
-
-# Computing the Two-Point Statistics
-
-With the cosmology configured and the two-point statistics prepared, we can now proceed to compute the two-point statistics.
-Let's begin by computing the first two-point statistic as an example:
-
-
-```{python}
-
-two_point0 = all_two_point_functions[0]
-meta0 = all_two_point_cells[0]
-tv0 = two_point0.compute_theory_vector(tools)
-
-```
-
-Here, we plot the first two-point statistic representing the first pair of bins:
-
-```{python}
-# | label: fig-fz
-# | fig-cap: First pair of bins for the LSST year 1 redshift distribution
-# | fig-cap-location: margin
-# | code-fold: true
-from plotnine import *  # bad form in programs, but seems OK for plotnine
-import pandas as pd
-
-# The data were not originally generated in a dataframe convenient for
-# plotting, so our first task it to put them into such a form.
-# First we create a dataframe with the raw data.
-data = pd.DataFrame(
-    {
-        "ell": two_point0.ells,
-        "Cell": tv0,
-        "bin-x": meta0.XY.x.bin_name,
-        "bin-y": meta0.XY.y.bin_name,
-        "measurement": meta0.get_sacc_name(),
-    }
-)
-
-# Now we can generate the plot.
-(
-    ggplot(data, aes("ell", "Cell"))
-    + geom_line()
-    + labs(x=r"$\ell$", y=r"$C_\ell$")
-    + scale_x_log10()
-    + scale_y_log10()
-    + doc_theme()
-)
-
-```
-
-The plot above illustrates the first pair of bins.
-To complete the analysis, we can generate the two-point statistics for all bin pairs.
-
-```{python}
-# | code-fold: true
-
-two_point_pd_list = []
-for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
-    two_point_pd_list.append(
-        pd.DataFrame(
-            {
-                "ell": two_point.ells,
-                "Cell": np.abs(two_point.compute_theory_vector(tools)),
-                "bin-x": meta.XY.x.bin_name,
-                "bin-y": meta.XY.y.bin_name,
-                "measurement": meta.get_sacc_name(),
-            }
-        )
-    )
-
-data = pd.concat(two_point_pd_list)
-
-(
-    ggplot(data, aes("ell", "Cell", color="bin-x", shape="bin-y"))
-    + geom_point()
-    + labs(x=r"$\ell$", y=r"$C_\ell$")
-    + scale_x_log10()
-    + scale_y_log10()
-    + facet_wrap("measurement")
-    + doc_theme()
-)
-```
+- **[Factory Basics](two_point_factory_basics.qmd)**: Learn how to use [[likelihood|TwoPointFactory]] to build TwoPoint objects, define systematics, and compute theory vectors
+- **[Scale Cuts](two_point_scale_cuts.qmd)**: Apply physical scale cuts to restrict analysis ranges
+- **[Integration Methods](two_point_integration.qmd)**: Control computation accuracy and speed

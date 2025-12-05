@@ -9,7 +9,7 @@ format: html
 
 This tutorial demonstrates how to apply physical scale cuts to two-point statistics using **[[data_functions|TwoPointBinFilterCollection]]**. Scale cuts are essential for limiting analyses to scales where theoretical models are accurate.
 
-For background on the factory system, see [Two-Point Factory Basics](two_point_factory_basics.qmd). For loading SACC data, see [Loading SACC Data](two_point_sacc_loading.qmd). For information on defining systematics factories, see [Two-Point Generators](two_point_generators.qmd#sec-factories).
+For background on the factory system, see [Two-Point Factory Basics](two_point_factory_basics.qmd). For loading SACC data, see [Loading SACC Data](two_point_sacc_data.qmd). For information on defining systematics factories, see [Two-Point Factories Basics](two_point_factory_basics.qmd).
 
 ## Filtering Data: Scale Cuts
 
@@ -66,7 +66,7 @@ One may alternatively define the tracers directly (instead of from arguments) as
 
 A [[likelihood.factories|TwoPointExperiment]] object keeps track of the relevant `Factory` instances to generate the two-point configurations of the analysis (either in configuration or harmonic space) and the scale-cut/data filtering choices to evaluate a defined likelihood. The interpretation of the filtered lower and upper limits of the data depend on the definition of the [[likelihood.factories|TwoPointExperiment]] factories in either configuration or harmonic space.
 
-With this formalism, we can evaluate the likelihood exactly as in the [Loading SACC Data](two_point_sacc_loading.qmd) tutorial by defining filters to be very wide. Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis. In the example below, we filter out all galaxy clustering data by using an extremely narrow range.
+With this formalism, we can evaluate the likelihood exactly as in the [Loading SACC Data](two_point_sacc_data.qmd) tutorial by defining filters to be very wide. Alternatively, by setting a restrictively small filtered range, we can remove data from the analysis. In the example below, we filter out all galaxy clustering data by using an extremely narrow range.
 
 ```{python}
 from firecrown.likelihood import TwoPointFactory

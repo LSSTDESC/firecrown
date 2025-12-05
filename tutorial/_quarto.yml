@@ -13,7 +13,7 @@ project:
     - two_point_generators.qmd
     - two_point_workflow.qmd
     - two_point_factory_basics.qmd
-    - two_point_sacc_loading.qmd
+    - two_point_sacc_data.qmd
     - two_point_scale_cuts.qmd
     - two_point_integration.qmd
     - systematics.qmd
@@ -53,8 +53,8 @@ website:
                   text: "Workflow"
                 - href: two_point_generators.qmd
                   text: "Generators"
-                - href: two_point_sacc_loading.qmd
-                  text: "Loading SACC Data"
+                - href: two_point_sacc_data.qmd
+                  text: "SACC Data"
                 - href: two_point_factory_basics.qmd
                   text: "Factory Basics"
                 - href: two_point_scale_cuts.qmd

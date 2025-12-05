@@ -130,67 +130,27 @@ likelihood.read(sacc_data)
 
 > **Note:** This indices-only method is deprecated and kept for compatibility with older code. For new projects, prefer the full extraction interface above.
 
-## Comparing Results
+## Summary
 
-We now verify that both approaches—constructing the likelihood in two phases (metadata-only) and directly in the ready state—produce identical results.
+You've learned two methods for extracting data from SACC files:
 
-First, we extract the required parameter sets for both likelihoods:
-```{python}
-from firecrown.parameters import ParamsMap
-import pandas as pd
+1. **Full Extraction (Recommended)**: Extract complete measurements with `extract_all_real_data()` and construct ready-state TwoPoint objects directly
+2. **Indices-Only (Deprecated)**: Extract metadata indices with `extract_all_real_metadata_indices()`, construct TwoPoint objects, then load data separately
 
-req_params = likelihood.required_parameters()
-req_params_ready = likelihood_ready.required_parameters()
+Both produce the same fundamental components:
+- **Metadata layouts** describing measurement structure
+- **TwoPoint objects** (via TwoPointFactory) ready for analysis
+- **Likelihood objects** combining predictions with data
 
-assert req_params_ready == req_params
-
-default_values = req_params.get_default_values()
-params = ParamsMap(default_values)
-
-pd.DataFrame(
-    {
-        "ready": sorted(req_params_ready.get_params_names()),
-        "regular": sorted(req_params.get_params_names()),
-    }
-)
-```
-
-Both likelihoods depend on the same parameter set. The default values used are:
-```{python}
-# | code-fold: true
-import yaml
-from IPython.display import Markdown
-
-default_values_yaml = yaml.dump(default_values, default_flow_style=False)
-Markdown(f"```yaml\n{default_values_yaml}\n```")
-```
-
-Next, we prepare both likelihoods with the same model setup and parameters:
-```{python}
-from firecrown.modeling_tools import ModelingTools
-from firecrown.ccl_factory import CCLFactory
-from firecrown.updatable import get_default_params_map
-
-tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
-params = get_default_params_map(tools, likelihood)
-
-tools.update(params)
-tools.prepare()
-
-likelihood.update(params)
-likelihood_ready.update(params)
-```
-
-Finally, we compute and compare the log-likelihood values from both construction methods:
-```{python}
-# | code-fold: true
-print(f"Loglike (metadata-only): {likelihood.compute_loglike(tools)}")
-print(f"Loglike (ready state):   {likelihood_ready.compute_loglike(tools)}")
-```
-
-Both values should match exactly, confirming that the two construction methods are consistent.
+The key outputs from this tutorial are:
+- **`two_point_reals`**: Measurements extracted from SACC
+- **`two_points_ready`**: TwoPoint objects in ready state
+- **`likelihood_ready`**: Complete likelihood with covariance
 
 ## Next Steps
 
-- [Scale Cuts and Filtering](two_point_scale_cuts.qmd): Learn how to apply physical scale cuts to your data
-- [Integration Methods](two_point_integration.qmd): Control how two-point functions are computed
+To compute predictions and evaluate likelihoods:
+
+- **[Factory Basics](two_point_factory_basics.qmd)**: Detailed examples of setting up parameters, computing theory vectors, and evaluating likelihoods
+- **[Scale Cuts](two_point_scale_cuts.qmd)**: Apply physical scale cuts to your data
+- **[Integration Methods](two_point_integration.qmd)**: Control computation accuracy and speed

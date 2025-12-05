@@ -92,7 +92,7 @@ two_point_lens0_lens0 = all_two_points[0]
 ```
 
 Above we use the `NumberCountsFactory` to create the `TwoPoint` object.
-The source factories are discussed in [the tutorial on generators](two_point_generators.qmd#sec-factories).
+The source factories are discussed in [the tutorial on factories](two_point_factory_basics.qmd).
 
 Depending on the theoretical model, the `TwoPoint` object may require additional parameters.
 To obtain a list of required parameters, one can use the following commands:

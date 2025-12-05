@@ -15,7 +15,7 @@ Choose your starting point:
 
 If you're working with existing data or simulations in SACC format:
 
-1. **[Loading SACC Data](two_point_sacc_loading.qmd)** — Extract metadata and measurements
+1. **[Loading SACC Data](two_point_sacc_data.qmd)** — Extract metadata and measurements
 2. **[Factory Basics](two_point_factory_basics.qmd)** — Construct TwoPoint objects with modeling choices
 3. **[Scale Cuts](two_point_scale_cuts.qmd)** *(optional)* — Restrict to valid physical ranges
 4. **[Integration Methods](two_point_integration.qmd)** *(optional)* — Tune computation accuracy/speed
@@ -71,7 +71,7 @@ Create metadata and data programmatically for forecasts or simulations:
 
 **When to use:** Creating forecasts, Fisher forecasts, synthetic analyses, or testing new models.
 
-### From SACC Files ([Tutorial](two_point_sacc_loading.qmd))
+### From SACC Files ([Tutorial](two_point_sacc_data.qmd))
 
 Extract both metadata and measurements from standardized SACC files:
 
@@ -124,7 +124,7 @@ Control integration methods for harmonic-space calculations via [[utils|ClIntegr
 |----------|---------|----------|
 | [Framework](two_point_framework.qmd) | Conceptual foundations | Learning Firecrown concepts |
 | [Generators](two_point_generators.qmd) | Create data from scratch | Forecasts, simulations, testing |
-| [Loading SACC](two_point_sacc_loading.qmd) | Extract from SACC files | Real data, existing simulations |
+| [Loading SACC](two_point_sacc_data.qmd) | Extract from SACC files | Real data, existing simulations |
 | [Factory Basics](two_point_factory_basics.qmd) | Construct TwoPoint objects | **All analyses** (required) |
 | [Scale Cuts](two_point_scale_cuts.qmd) | Filter by physical scales | Limited model validity |
 | [Integration](two_point_integration.qmd) | Tune computation methods | Accuracy/speed optimization |

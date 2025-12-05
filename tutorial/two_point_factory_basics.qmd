@@ -30,7 +30,7 @@ The factory accepts either:
 The metadata can come from two sources:
 
 1. **Generated** ([Two-Point Generators](two_point_generators.qmd)): Programmatically created using Firecrown's generators
-2. **Extracted** ([Loading SACC Data](two_point_sacc_loading.qmd)): Read from existing SACC files
+2. **Extracted** ([Loading SACC Data](two_point_sacc_data.qmd)): Read from existing SACC files
 
 Regardless of source, the factory treats the metadata identically.
 
@@ -101,18 +101,272 @@ There are two primary workflows for obtaining the metadata that the factory need
 Use this when creating forecasts or simulations.
 
 ### 2. Extract from SACC Files
-[Loading SACC Data](two_point_sacc_loading.qmd) shows how to:
+[Loading SACC Data](two_point_sacc_data.qmd) shows how to:
 - Extract metadata and data from SACC files
 - Use full extraction (recommended) or legacy indices-only approach
 - Validate extracted data consistency
 
 Use this when working with real observations or pre-existing data files.
 
+## Complete Example: Generated Metadata {#sec-example-generated}
+
+This example shows the full workflow starting from generated metadata. For details on generating the LSST Year 1 bins and metadata, see [Two-Point Generators](two_point_generators.qmd).
+
+### Step 1: Generate Metadata
+
+```{python}
+import numpy as np
+from firecrown.generators import (
+    LSST_Y1_LENS_HARMONIC_BIN_COLLECTION,
+    LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION,
+)
+from firecrown.metadata_functions import make_all_photoz_bin_combinations
+from firecrown.metadata_types import TwoPointHarmonic
+
+# Generate LSST Y1 bins
+count_bins = LSST_Y1_LENS_HARMONIC_BIN_COLLECTION.generate()
+shear_bins = LSST_Y1_SOURCE_HARMONIC_BIN_COLLECTION.generate()
+all_y1_bins = count_bins + shear_bins
+
+# Create all possible two-point combinations
+all_two_point_xy = make_all_photoz_bin_combinations(all_y1_bins)
+ells = np.unique(np.geomspace(2, 2000, 128).astype(int))
+all_two_point_cells = [TwoPointHarmonic(XY=xy, ells=ells) for xy in all_two_point_xy]
+```
+
+### Step 2: Define Systematics Factories
+
+```{python}
+import firecrown.likelihood.weak_lensing as wl
+import firecrown.likelihood.number_counts as nc
+from firecrown.likelihood.weak_lensing import PhotoZShiftFactory
+
+# WeakLensing systematics
+ia_systematic = wl.LinearAlignmentSystematicFactory()
+wl_photoz = PhotoZShiftFactory()
+wl_mult_bias = wl.MultiplicativeShearBiasFactory()
+
+wlf = wl.WeakLensingFactory(
+    per_bin_systematics=[wl_mult_bias, wl_photoz],
+    global_systematics=[ia_systematic],
+)
+
+# NumberCounts systematics
+nc_photoz = PhotoZShiftFactory()
+ncf = nc.NumberCountsFactory(
+    per_bin_systematics=[nc_photoz],
+    global_systematics=[],
+)
+```
+
+Systematics factories can be serialized for reuse:
+```{python}
+from firecrown.utils import base_model_to_yaml
+
+wl_yaml = base_model_to_yaml(wlf)
+nc_yaml = base_model_to_yaml(ncf)
+```
+
+### Step 3: Construct TwoPoint Objects
+
+```{python}
+from firecrown.likelihood import TwoPoint, TwoPointFactory
+from firecrown.metadata_types import TwoPointCorrelationSpace
+
+all_two_point_functions = TwoPoint.from_metadata(
+    metadata_seq=all_two_point_cells,
+    tp_factory=TwoPointFactory(
+        correlation_space=TwoPointCorrelationSpace.HARMONIC,
+        weak_lensing_factories=[wlf],
+        number_counts_factories=[ncf],
+    ),
+)
+```
+
+### Step 4: Setup and Compute Predictions
+
+```{python}
+from firecrown.modeling_tools import ModelingTools
+from firecrown.ccl_factory import CCLFactory
+from firecrown.updatable import get_default_params
+from firecrown.parameters import ParamsMap
+
+# Setup modeling tools and parameters
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+default_values = get_default_params(tools, all_two_point_functions)
+params = ParamsMap(default_values)
+
+# Prepare for computation
+tools.update(params)
+tools.prepare()
+all_two_point_functions.update(params)
+```
+
+Compute theory predictions:
+```{python}
+two_point0 = all_two_point_functions[0]
+meta0 = all_two_point_cells[0]
+tv0 = two_point0.compute_theory_vector(tools)
+```
+
+Visualize the first correlation:
+```{python}
+# | label: fig-generated
+# | fig-cap: First two-point correlation from generated metadata
+# | code-fold: true
+from plotnine import *
+import pandas as pd
+
+data = pd.DataFrame(
+    {
+        "ell": two_point0.ells,
+        "Cell": tv0,
+        "bin-x": meta0.XY.x.bin_name,
+        "bin-y": meta0.XY.y.bin_name,
+        "measurement": meta0.get_sacc_name(),
+    }
+)
+
+(
+    ggplot(data, aes("ell", "Cell"))
+    + geom_line()
+    + labs(x=r"$\ell$", y=r"$C_\ell$")
+    + scale_x_log10()
+    + scale_y_log10()
+    + doc_theme()
+)
+```
+
+Compute all correlations:
+```{python}
+# | code-fold: true
+two_point_pd_list = []
+for two_point, meta in zip(all_two_point_functions, all_two_point_cells):
+    two_point_pd_list.append(
+        pd.DataFrame(
+            {
+                "ell": two_point.ells,
+                "Cell": np.abs(two_point.compute_theory_vector(tools)),
+                "bin-x": meta.XY.x.bin_name,
+                "bin-y": meta.XY.y.bin_name,
+                "measurement": meta.get_sacc_name(),
+            }
+        )
+    )
+
+data = pd.concat(two_point_pd_list)
+
+(
+    ggplot(data, aes("ell", "Cell", color="bin-x", shape="bin-y"))
+    + geom_point()
+    + labs(x=r"$\ell$", y=r"$C_\ell$")
+    + scale_x_log10()
+    + scale_y_log10()
+    + facet_wrap("measurement")
+    + doc_theme()
+)
+```
+
+## Complete Example: SACC Data {#sec-example-sacc}
+
+This example shows the full workflow starting from SACC data. For details on SACC extraction methods, see [Loading SACC Data](two_point_sacc_data.qmd).
+
+### Using Full Extraction (Recommended)
+
+```{python}
+from firecrown.data_functions import (
+    extract_all_real_data,
+    check_two_point_consistence_real,
+)
+from firecrown.likelihood.factories import load_sacc_data
+from firecrown.utils import base_model_from_yaml
+
+# Load and extract
+sacc_data = load_sacc_data("../examples/des_y1_3x2pt/sacc_data.hdf5")
+two_point_reals = extract_all_real_data(sacc_data)
+check_two_point_consistence_real(two_point_reals)
+
+# Define factory via YAML
+two_point_yaml = """
+correlation_space: real
+weak_lensing_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: MultiplicativeShearBiasFactory
+    - type: PhotoZShiftFactory
+    global_systematics:
+    - type: LinearAlignmentSystematicFactory
+      alphag: 1.0
+number_counts_factories:
+  - type_source: default
+    per_bin_systematics:
+    - type: PhotoZShiftFactory
+    global_systematics: []
+"""
+
+tp_factory = base_model_from_yaml(TwoPointFactory, two_point_yaml)
+two_points_ready = TwoPoint.from_measurement(two_point_reals, tp_factory)
+```
+
+Create likelihood and compute:
+```{python}
+from firecrown.likelihood import ConstGaussian
+from firecrown.updatable import get_default_params_map
+
+likelihood_ready = ConstGaussian.create_ready(
+    two_points_ready, sacc_data.covariance.dense
+)
+
+# Setup and compute
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+params = get_default_params_map(tools, likelihood_ready)
+
+tools.update(params)
+tools.prepare()
+likelihood_ready.update(params)
+
+loglike = likelihood_ready.compute_loglike(tools)
+print(f"Log-likelihood: {loglike}")
+```
+
+### Using Indices-Only Extraction (Deprecated)
+
+```{python}
+from firecrown.metadata_functions import extract_all_real_metadata_indices
+
+# Extract metadata indices
+all_meta = extract_all_real_metadata_indices(sacc_data)
+
+# Construct TwoPoint objects
+two_point_list = TwoPoint.from_metadata_index(all_meta, tp_factory)
+
+# Create likelihood and load data
+likelihood = ConstGaussian(two_point_list)
+likelihood.read(sacc_data)
+
+# Prepare and compute
+tools = ModelingTools(ccl_factory=CCLFactory(require_nonlinear_pk=True))
+params2 = get_default_params_map(tools, likelihood)
+tools.update(params2)
+tools.prepare()
+likelihood.update(params2)
+
+loglike2 = likelihood.compute_loglike(tools)
+print(f"Log-likelihood (legacy): {loglike2}")
+```
+
+Both methods produce identical results:
+```{python}
+import numpy as np
+assert np.isclose(loglike, loglike2)
+print(f"Results match: {np.isclose(loglike, loglike2)}")
+```
+
 ## Next Steps
 
-Once you understand factory basics:
+Now that you understand factory construction and computation:
 
-- **Work with SACC files**: [Loading SACC Data](two_point_sacc_loading.qmd)
-- **Generate from scratch**: [Two-Point Generators](two_point_generators.qmd)
-- **Apply scale cuts** (optional): [Scale Cuts and Filtering](two_point_scale_cuts.qmd)
-- **Control integration**: [Integration Methods](two_point_integration.qmd)
+- **Generate metadata**: [Two-Point Generators](two_point_generators.qmd)
+- **Load SACC data**: [Loading SACC Data](two_point_sacc_data.qmd)
+- **Apply scale cuts**: [Scale Cuts and Filtering](two_point_scale_cuts.qmd)
+- **Tune computation**: [Integration Methods](two_point_integration.qmd)
