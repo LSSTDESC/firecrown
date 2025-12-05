@@ -546,10 +546,10 @@ def get_lsst_y1_lens_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
                 zpu=zpu,
                 sigma_z=y1_lens_bins["sigma_z"],
                 z=RawGrid1D(values=[0.0, 3.5]),
-                bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y1",
+                bin_name=f"lsst_y1_lens{i}",
                 measurements={Galaxies.COUNTS},
             )
-            for zpl, zpu in pairwise(y1_lens_bins["edges"])
+            for i, (zpl, zpu) in enumerate(pairwise(y1_lens_bins["edges"]))
         ],
     )
 
@@ -568,10 +568,10 @@ def get_lsst_y1_source_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
                 zpu=zpu,
                 sigma_z=y1_source_bins["sigma_z"],
                 z=RawGrid1D(values=[0.0, 3.5]),
-                bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y1",
+                bin_name=f"lsst_y1_source{i}",
                 measurements={Galaxies.SHEAR_E},
             )
-            for zpl, zpu in pairwise(y1_source_bins["edges"])
+            for i, (zpl, zpu) in enumerate(pairwise(y1_source_bins["edges"]))
         ],
     )
 
@@ -590,10 +590,10 @@ def get_lsst_y10_lens_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
                 zpu=zpu,
                 sigma_z=y10_lens_bins["sigma_z"],
                 z=RawGrid1D(values=[0.0, 3.5]),
-                bin_name=f"lens_{zpl:.1f}_{zpu:.1f}_y10",
+                bin_name=f"lsst_y10_lens{i}",
                 measurements={Galaxies.COUNTS},
             )
-            for zpl, zpu in pairwise(y10_lens_bins["edges"])
+            for i, (zpl, zpu) in enumerate(pairwise(y10_lens_bins["edges"]))
         ],
     )
 
@@ -612,10 +612,10 @@ def get_lsst_y10_source_harmonic_bin_collection() -> ZDistLSSTSRDBinCollection:
                 zpu=zpu,
                 sigma_z=y10_source_bins["sigma_z"],
                 z=RawGrid1D(values=[0.0, 3.5]),
-                bin_name=f"source_{zpl:.1f}_{zpu:.1f}_y10",
+                bin_name=f"lsst_y10_source{i}",
                 measurements={Galaxies.SHEAR_E},
             )
-            for zpl, zpu in pairwise(y10_source_bins["edges"])
+            for i, (zpl, zpu) in enumerate(pairwise(y10_source_bins["edges"]))
         ],
     )
 
