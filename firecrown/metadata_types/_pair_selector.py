@@ -690,10 +690,11 @@ class ThreeTwoBinPairSelector(CompositeSelector):
 
     This selector implements the standard 3x2pt cosmological analysis selection,
     which includes three types of two-point correlations:
+
     1. Source-source (cosmic shear): auto-correlations of weak lensing shear
     2. Lens-lens (galaxy clustering): auto-correlations of galaxy positions
-    3. Source-lens (galaxy-galaxy lensing): cross-correlations between source
-       and lens samples with different bin names
+    3. Source-lens (galaxy-galaxy lensing): cross-correlations between source and lens
+       samples with different bin names
 
     The galaxy-galaxy lensing component explicitly excludes auto-correlations
     (same bin name) to avoid mixing source and lens samples from the same
